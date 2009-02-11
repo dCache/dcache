@@ -1333,10 +1333,10 @@ public String command( String c ) throws CommandExitException {
       Reader reader  = new StringReader( o.toString() ) ;
 
       return args.getOpt("run") == null ?
-             execute_reader( reader , args ) :
-             run_reader( reader , args , null ) ;
-
+          execute_reader(env, reader , args ) :
+          run_reader(env, reader , args , null ) ;
    }
+
    public String hh_exec_context =
        "-shell -loop=<contextName> [-run [-ifok|-ifnotok]] <contextName> [<args>]" ;
    public String ac_exec_context_$_1_99( Args args ) throws CommandException {
@@ -1350,8 +1350,8 @@ public String command( String c ) throws CommandExitException {
             throw new CommandException( 66 , "Context not found : "+context )  ;
          }
          return args.getOpt("run") == null ?
-                execute_reader( reader , args ) :
-                run_reader( reader , args , null ) ;
+             execute_reader(context, reader , args ) :
+             run_reader(context, reader , args , null ) ;
       }else{
 
            Reader loopReader = null;
@@ -1368,7 +1368,7 @@ public String command( String c ) throws CommandExitException {
 						Args altArgs = new Args(line);
 						try {
 							reader = _nucleus.getDomainContextReader(context);
-							result.append(run_reader(reader, args, altArgs))
+							result.append(run_reader(context, reader, args, altArgs))
 									.append("\n");
 						} catch (FileNotFoundException e) {
 							throw new CommandException(66,
@@ -1391,138 +1391,140 @@ public String command( String c ) throws CommandExitException {
            return result.toString() ;
       }
    }
-   private String execute_reader( Reader reader , Args args )
-           throws CommandException  {
-      //
-      // shall we execute a new shell
-      //
-      boolean newShell = args.getOpt("shell") != null ;
-      List<String>  store    = _argumentVector ;
-      _argumentVector  = new Vector<String>() ;
-      for( int i = 0 ; i < args.argc() ; i ++ )
-          _argumentVector.add( args.argv(i) ) ;
-      StringBuffer sb = args.getOpt("output") == null ?
-                        null  : new StringBuffer() ;
-      //
-      // create a buffered reader
-      //
-      BufferedReader bRead  = new BufferedReader( reader ) ;
-      CellShell      shell  = newShell ?
-                              new CellShell( _nucleus ) : this ;
-      String         line   = null ;
-      //
-      // we discard all the output
-      //
-      try{
-         while( ( line = bRead.readLine() ) != null ){
-            try{
-               Object answer = shell.objectCommand2( line ) ;
-               if( answer == null )continue ;
-               if( sb != null ){
-                   String str = answer.toString() ;
-                   sb.append( str ) ;
-                   if( ( str.length() > 0 ) &&
-                       ( str.charAt(str.length()-1) != '\n' ) )
-                       sb.append( '\n' ) ;
-               }
-            }catch( CommandExitException cee ){
-               throw cee ;
-            }catch( CommandException ce ){
-               throw ce ;
-            }
-         }
-      }catch( Exception e ){
-         throw new CommandException("Exception : "+e.toString() ) ;
-      }finally{
-         _argumentVector = store ;
-      }
-      return sb == null ? "" : sb.toString() ;
-   }
-   private String run_reader( Reader reader , Args args , Args altArgs )
-           throws CommandExitException  {
 
-      String var = null ;
-      if( ( var = args.getOpt("ifok") ) != null ){
-          if( var.equals("") ) {
-              //
-              // no variable specified, so take the ${rc}.
-              //
-              if( _errorCode != 0 ) return "" ;
-          } else {
-              //
-              // but now
-              //
-              Object x = getDictionaryEntry(var) ;
-              if( ( x == null ) ||
-                  ( ! x.toString().equals("0") ) )return "" ;
-          }
-      }
-      if( ( var = args.getOpt("ifnotok") ) != null ){
-          if( var.equals("") ) {
-              //
-              // no variable specified, so take the ${rc}.
-              //
-              if ( _errorCode == 0 ) return "" ;
-          } else {
-              //
-              // but now ( the none existence of the
-              //           specified variable is an error, so
-              //           the context is executed :-) )
-              //
-              Object x = getDictionaryEntry(var) ;
-              if( ( x != null ) &&
-                  ( x.toString().equals("0") ) )return "" ;
-          }
-      }
-      //
-      // shall we execute a new shell
-      //
-      boolean newShell = args.getOpt("shell") != null ;
-      List<String>  store    = _argumentVector ;
-      _argumentVector  = new Vector<String>() ;
-      Args currentArgs = altArgs == null ? args : altArgs ;
-      for( int i = 0 ; i < currentArgs.argc() ; i ++ )
-          _argumentVector.add( currentArgs.argv(i) ) ;
-      StringBuffer sb = args.getOpt("nooutput") != null ?
-                        null  : new StringBuffer() ;
-      //
-      // create a buffered reader
-      //
-      BufferedReader bRead  = new BufferedReader( reader ) ;
-      CellShell      shell  = newShell ?
-                              new CellShell( _nucleus ) : this ;
-      String         line   = null ;
-      //
-      // unfortunately the result of the last command
-      // is not propagated to the top caller.
-      // The reason is that we can only return the
-      // (rc,msg) pair via an exception or the
-      // return String through the return value,
-      // but not both. In this case we need to
-      // return the 'return string' because otherwise
-      // we would loose all the output of the preceeding
-      // commands which were ok.
-      //
-      try{
-         while( ( line = bRead.readLine() ) != null ){
-             Object answer = shell.objectCommand( line ) ;
-             if( answer == null )continue ;
-             if( sb != null ){
-                 String str = answer.toString() ;
-                 sb.append( str ) ;
-                 if( ( str.length() > 0 ) &&
-                     ( str.charAt(str.length()-1) != '\n' ) )
-                     sb.append( '\n' ) ;
-             }
-         }
-      }catch( IOException e ){
-         throw new
-         CommandExitException("IOException : "+e.getMessage() , 11) ;
-      }finally{
-         _argumentVector = store ;
-      }
-      return sb == null ? "" : sb.toString() ;
-   }
+    private void println(Writer out, String s)
+        throws IOException
+    {
+        out.append(s);
+        if ((s.length() > 0) && (s.charAt(s.length() - 1) != '\n')) {
+            out.append('\n');
+        }
+    }
+
+    public void execute(String source, Reader in, Writer out, Writer err, Args args)
+        throws CommandExitException, IOException
+    {
+        List<String> store = _argumentVector;
+        try {
+            _argumentVector  = new Vector<String>();
+            for (int i = 0; i < args.argc(); i++) {
+                _argumentVector.add(args.argv(i));
+            }
+
+            int no = 0;
+            String line;
+            StringBuffer sb = null;
+            BufferedReader input = new BufferedReader(in);
+            while ((line = input.readLine()) != null) {
+                no = no + 1;
+
+                /* Skip empty and comment lines.
+                 */
+                String s = line.trim();
+                if (s.length() == 0 || s.charAt(0) == '#')
+                    continue;
+
+                /* Handle line continuation.
+                 */
+                int len = line.length();
+                if (line.charAt(len - 1) == '\\') {
+                    if (sb == null) {
+                        sb = new StringBuffer();
+                    }
+                    sb.append(line.substring(0, len - 1)).append(' ');
+                    continue;
+                } else if (sb != null) {
+                    sb.append(line);
+                    line = sb.toString();
+                    sb = null;
+                }
+
+                /* Execute command.
+                 */
+                Object answer = objectCommand2(line);
+
+                /* CommandEvaluationException does not generate output
+                 * since it is not really an error. Runtime exceptions
+                 * are logged. Other exceptions are printed to the
+                 * error output.
+                 */
+                if (!(answer instanceof Throwable)) {
+                    println(out, answer.toString());
+                } else if (answer instanceof RuntimeException) {
+                    _nucleus.esay((Throwable) answer);
+                } else if (!(answer instanceof CommandEvaluationException)) {
+                    String msg =
+                        String.format("%s: %d: %s", source, no,
+                                      ((Throwable) answer).getMessage());
+                    println(err, msg);
+                }
+            }
+        } finally {
+            _argumentVector = store;
+        }
+    }
+
+    private String execute_reader(String source, Reader in, Args args)
+        throws CommandException
+    {
+        try {
+            StringWriter out = new StringWriter();
+            CellShell shell  =
+                (args.getOpt("shell") != null)
+                ? new CellShell(_nucleus)
+                : this;
+
+            shell.execute(source, in, out, out, args);
+
+            return (args.getOpt("output") == null) ? null : out.toString();
+        } catch (IOException e) {
+            throw new CommandExitException("I/O error: " + e.getMessage(), 11);
+        }
+    }
+
+    private String run_reader(String source, Reader in, Args args, Args altArgs)
+        throws CommandExitException
+    {
+        String var;
+        if ((var = args.getOpt("ifok")) != null) {
+            if (var.equals("")) {
+                if (_errorCode != 0) {
+                    return "";
+                }
+            } else {
+                Object x = getDictionaryEntry(var) ;
+                if ((x == null) || (!x.toString().equals("0"))) {
+                    return "";
+                }
+            }
+        }
+        if ((var = args.getOpt("ifnotok")) != null) {
+            if (var.equals("")) {
+                if (_errorCode == 0) {
+                    return "";
+                }
+            } else {
+                Object x = getDictionaryEntry(var) ;
+                if ((x != null) && (x.toString().equals("0"))) {
+                    return "";
+                }
+            }
+        }
+
+        try {
+            StringWriter out = new StringWriter();
+            CellShell shell =
+                (args.getOpt("shell") != null)
+                ? new CellShell(_nucleus)
+                : this ;
+
+            shell.execute(source, in, out, out, (altArgs == null ? args : altArgs));
+
+            return (args.getOpt("nooutput") != null) ? "" : out.toString();
+        } catch (IOException e) {
+            throw new CommandExitException("I/O error: " + e.getMessage(), 11);
+        }
+    }
 
    public String hh_eval = "upn expression" ;
    public String ac_eval_$_1_99( Args args )throws CommandException{

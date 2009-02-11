@@ -1,145 +1,104 @@
-package  dmg.cells.services ;
+package dmg.cells.services;
 
-import   dmg.cells.nucleus.* ;
-import   dmg.util.* ;
+import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellShell;
+import dmg.util.Args;
+import dmg.util.Log4jWriter;
+import dmg.util.CommandExitException;
 
-import java.util.* ;
-import java.io.* ;
+import java.io.Reader;
+import java.io.FileReader;
+import java.io.InputStreamReader;
+import java.io.StringReader;
+import java.io.IOException;
+import java.io.InputStream;
 
-/**
-  *
-  *
-  * @author Patrick Fuhrmann
-  * @version 0.1, 15 Feb 1998
-  */
-public class BatchCell extends CellAdapter implements Runnable {
-   private BufferedReader _in     = null ;
-   private Thread         _worker = null ;
-   private CellShell      _shell  = null ;
-   private CellNucleus    _nucleus ;
+import org.apache.log4j.Logger;
+import org.apache.log4j.Level;
 
-   public BatchCell( String name , String [] argStrings )
-          throws Exception {
-      super( name , ""  , true ) ;
+public class BatchCell extends CellAdapter implements Runnable
+{
+    private final static Logger _log = Logger.getLogger(BatchCell.class);
 
-      useInterpreter(false) ;
-//      setPrintoutLevel( 3 ) ;
-      _nucleus = getNucleus() ;
-      _shell   = new CellShell( _nucleus ) ;
-      try{
-         String line = null ;
-         for( int i = 0 ; i < argStrings.length ; i++ ){
-            line = argStrings[i] ;
-            if( line.length() == 0 )continue ;
-            if( line.charAt(0) == '#' )continue ;
-            try{
-               say( "Executing ...  : "+line ) ;
-               Object result = _shell.objectCommand2( line ) ;
-               if( result == null )break ;
-               else if( result instanceof Throwable )esay( (Throwable) result ) ;
-               say( result.toString() ) ;
-            }catch( CommandExitException cee ){
-               int rc = cee.getErrorCode() ;
-               if( rc == 666 ){
-                  System.err.println( "PANIC : "+cee.getErrorMessage() ) ;
-                  System.exit(6) ;
-               }
-               break ;
-            }catch( Exception ee ){
-               esay( "Problem executing : '"+line+"' : "+ee ) ;
-               break ;
+    private final Reader _in;
+    private final String _source;
+    private CellShell _shell;
+
+    public BatchCell(String name, String [] argStrings)
+        throws Exception
+    {
+        super(name, "", true);
+
+        try {
+            useInterpreter(false);
+            StringBuilder input = new StringBuilder();
+            for (String s: argStrings) {
+                input.append(s).append('\n');
             }
-         }
-      }catch( Exception e ){
-          kill() ;
-          throw e ;
 
-      }
-      kill() ;
-   }
-   public BatchCell( String name , String argString )
-          throws Exception {
-      super( name , argString  , false ) ;
-
-      Args args = getArgs() ;
-
-      useInterpreter(false) ;
-//      setPrintoutLevel( 3 ) ;
-      _nucleus = getNucleus() ;
-      try{
-         if( args.argc() < 1 )
-            throw new IllegalArgumentException( "Usage : ... <batchFilename>" ) ;
-
-         String inputObject = args.argv(0) ;
-
-         if( args.getOpt("jar") != null ){
-            InputStream input = ClassLoader.getSystemResourceAsStream(inputObject) ;
-            if( input == null )
-               throw new
-               IllegalArgumentException("Resource not found : "+inputObject);
-            _in = new BufferedReader( new InputStreamReader(input) ) ;
-         }else{
-            _in = new BufferedReader( new FileReader( inputObject ) ) ;
-         }
-         _shell   = new CellShell( getNucleus() ) ;
-         //         _worker  = getNucleus().newThread(this);
-         _worker = new Thread(this);
-         _worker.start() ;
-      }catch( Exception e ){
-          start() ;
-          kill() ;
-          throw e ;
-
-      }
-      start() ;
-   }
-   public void run(){
-     if( Thread.currentThread() == _worker ){
-        initLoggingContext();
-        String line = null ;
-        StringBuffer sb = null ;
-        try{
-           while( ( line = _in.readLine() ) != null ){
-              if( line.length() == 0 )continue ;
-              if( line.charAt(0) == '#' )continue ;
-              if( sb == null )sb = new StringBuffer() ;
-              int len = line.length()  ;
-              if( line.charAt(len-1) == '\\' ){
-                 if( len < 2 )continue ;
-                 sb.append( line.substring(0,len-1) ) ;
-                 continue ;
-              }else{
-                 sb.append( line ) ;
-              }
-              try{
-                 line = sb.toString() ;
-                 sb   = null ;
-                 say( "Executing ...  : "+line ) ;
-                 Object result = _shell.objectCommand2( line ) ;
-                 if( result == null )break ;
-                 if( ( result instanceof Throwable ) && ! ( result instanceof CommandException ) ){
-                     esay( (Throwable) result ) ;
-                 }
-                 say( result.toString() ) ;
-              }catch( CommandExitException cee ){
-                 int rc = cee.getErrorCode() ;
-                 if( rc == 666 ){
-                    System.err.println( "PANIC : "+cee.getErrorMessage() ) ;
-                    System.exit(6) ;
-                 }
-                 break ;
-              }catch( Exception ee ){
-                 esay( "Problem executing : '"+line+"' : "+ee ) ;
-                 break ;
-              }
-           }
-
-        }catch( IOException ioe ){
-           esay( "Io Problem : "+ioe ) ;
+            _in = new StringReader(input.toString());
+            _source = name;
+            Thread worker = new Thread(this);
+            worker.start();
+        } catch (Exception e) {
+            kill();
+            throw e;
         }
-        try{ _in.close() ; }catch( IOException e ) {}
-        kill() ;
-     }
-   }
+    }
 
+    public BatchCell(String name, String argString)
+        throws Exception
+    {
+        super(name, argString, true);
+
+        try {
+            Args args = getArgs();
+            if (args.argc() < 1)
+                throw new IllegalArgumentException("Usage : ... <batchFilename>");
+            _source = args.argv(0);
+            if (args.getOpt("jar") != null) {
+                InputStream input =
+                    ClassLoader.getSystemResourceAsStream(_source);
+                if (input == null)
+                    throw new IllegalArgumentException("Resource not found : " + _source);
+                _in = new InputStreamReader(input);
+            } else {
+                _in = new FileReader(_source);
+            }
+            Thread worker = new Thread(this);
+            worker.start();
+        } catch (Exception e) {
+            kill();
+            throw e;
+        }
+    }
+
+    public void run()
+    {
+        try {
+            initLoggingContext();
+            _shell = new CellShell(getNucleus());
+            _shell.execute(_source,
+                           _in,
+                           new Log4jWriter(_log, Level.INFO),
+                           new Log4jWriter(_log, Level.ERROR),
+                           new Args(""));
+        } catch (CommandExitException e) {
+            int rc = e.getErrorCode();
+            if (rc == 666) {
+                _log.fatal(e.getMessage());
+                System.exit(6);
+            } else {
+                _log.error(e.getMessage());
+            }
+        } catch (IOException e) {
+            _log.error("I/O error: " + e.getMessage());
+        } finally {
+            try {
+                _in.close();
+            } catch (IOException e) {
+            }
+            kill();
+        }
+    }
 }
