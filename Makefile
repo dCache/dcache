@@ -84,10 +84,10 @@ install: rebuild dirs
 	$(CP) dccp.c $(BIN_PATH)/sources/;
 
 dirs:
-	@./mkdirs.sh $(BIN_PATH)/bin/
-	@./mkdirs.sh $(BIN_PATH)/lib
-	@./mkdirs.sh $(BIN_PATH)/include/
-	@./mkdirs.sh $(BIN_PATH)/sources/
+	./mkdirs.sh $(BIN_PATH)/bin/
+	./mkdirs.sh $(BIN_PATH)/lib
+	./mkdirs.sh $(BIN_PATH)/include/
+	./mkdirs.sh $(BIN_PATH)/sources/
 
 
 rpm:
