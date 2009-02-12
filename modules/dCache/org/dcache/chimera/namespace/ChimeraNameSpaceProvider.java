@@ -428,7 +428,7 @@ public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoP
 
     public PnfsId getParentOf(PnfsId pnfsId) throws CacheException {
         FsInode inodeOfResource = new FsInode(_fs, pnfsId.toIdString());
-        FsInode inodeParent = null;
+        FsInode inodeParent;
 
         try {
             inodeParent = _fs.getParentOf(inodeOfResource);
