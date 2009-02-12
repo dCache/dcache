@@ -148,13 +148,16 @@ import diskCacheV111.util.Checksum;
 import diskCacheV111.util.PnfsHandler;
 import org.dcache.auth.UserAuthBase;
 import org.dcache.auth.AuthorizationRecord;
-import diskCacheV111.services.acl.PermissionHandlerInterface;
+import diskCacheV111.services.acl.PermissionHandler;
+import diskCacheV111.services.acl.DelegatingPermissionHandler;
+import diskCacheV111.services.FileMetaDataSource;
 
 import org.dcache.cells.AbstractCell;
 import org.dcache.cells.Option;
 import org.dcache.chimera.acl.ACLException;
 import org.dcache.chimera.acl.Origin;
 import org.dcache.chimera.acl.Subject;
+import org.dcache.chimera.acl.enums.AccessType;
 import org.dcache.chimera.acl.enums.AuthType;
 import org.dcache.chimera.acl.enums.FileAttribute;
 import org.dcache.chimera.acl.enums.InetAddressType;
@@ -251,6 +254,8 @@ public abstract class AbstractFtpDoorV1
         PASSIVE, ACTIVE;
     }
 
+    private FileMetaDataSource _metadataSource = null;
+
     /**
      * Used for generating session IDs unique to this domain.
      */
@@ -333,13 +338,19 @@ public abstract class AbstractFtpDoorV1
     /**
      * Permission Handler
      */
-    protected PermissionHandlerInterface _permissionHandler;
+    protected PermissionHandler _permissionHandler;
 
     @Option(
         name = "permission-handler",
         defaultValue = "diskCacheV111.services.acl.UnixPermissionHandler"
     )
     protected String _permissionHandlerName;
+
+    @Option(
+            name = "meta-data-provider",
+            defaultValue = "diskCacheV111.services.PnfsManagerFileMetaDataSource"
+    )
+    protected String _metadataProviderName;
 
     @Option(
         name = "poolManager",
@@ -943,13 +954,8 @@ public abstract class AbstractFtpDoorV1
 
         /* Permission handler.
          */
-        Class<?> [] argClass = { dmg.cells.nucleus.CellAdapter.class };
-        Class<?> permissionHandlerClass =
-            Class.forName(_permissionHandlerName);
-        Constructor<?> permissionHandlerCon = permissionHandlerClass.getConstructor( argClass ) ;
-        Object[] initargs = { this };
-        _permissionHandler =
-            (PermissionHandlerInterface)permissionHandlerCon.newInstance(initargs);
+        _metadataSource = initMetadataProvider(_metadataProviderName);
+        _permissionHandler = new DelegatingPermissionHandler(this);
         _origin =
             new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
                        _engine.getInetAddress());
@@ -1423,7 +1429,7 @@ public abstract class AbstractFtpDoorV1
                     } else {
                         _transfer.perfMarkerTask.stop();
                         reportBug("messageArrived",
-			          "DoorTransferFinishedMessage arrived and " +
+                    "DoorTransferFinishedMessage arrived and " +
                                   "ProtocolInfo is null or is not of type " +
                                   "GFtpProtocolInfo", null);
                     }
@@ -1633,12 +1639,12 @@ public abstract class AbstractFtpDoorV1
         }
 
         info("FTP Door got admin command to delete " + arg);
-        String pathInPnfs = absolutePath(arg);
+        String pnfsPath = absolutePath(arg);
 
         // We do not allow DELE of a directory.
         // Some FTP clients let this slip through, like uberftp client.
         // Some FTP clients detect this and send as an "RMD" request instead.
-        File theFileToDelete = new File(pathInPnfs);
+        File theFileToDelete = new File(pnfsPath);
         if (theFileToDelete.isDirectory()) {
             reply("553 Cannot delete a directory");
             return;
@@ -1659,17 +1665,15 @@ public abstract class AbstractFtpDoorV1
             cmd = _encpPutCmd + " rm " +
                 _pwdRecord.UID + " " +
                 _pwdRecord.GID + " " +
-                pathInPnfs;
+                pnfsPath;
             if( spawn(cmd, 1000) != 0 ) {
                 reply("553 Permission denied (actually permissions looked ok, but the delete failed anyway)");
                 return;
             }
         } else {
             try {
-                Subject subject = new Subject(_pwdRecord.UID, _pwdRecord.GID);
-                if (_permissionHandler.canDeleteFile(pathInPnfs, subject,   _origin)) {
-                    _pnfs.deletePnfsEntry(pathInPnfs);
-                } else {
+
+                if (_permissionHandler.canDeleteFile(_pnfs.getPnfsIdByPath(pnfsPath), getSubject(), _origin) != AccessType.ACCESS_ALLOWED) {
                     if(!setNextPwdRecord()) {
                         reply("553 Permission denied");
                         return;
@@ -1678,6 +1682,9 @@ public abstract class AbstractFtpDoorV1
                         return;
                     }
                 }
+
+                _pnfs.deletePnfsEntry(pnfsPath);
+
             }catch(ACLException e) {
                 reply("553 Permission denied");
                 error("FTP Door: DELE got AclException: " + e.getMessage());
@@ -1692,7 +1699,7 @@ public abstract class AbstractFtpDoorV1
                 return;
             }
         }
-        sendRemoveInfoToBilling(pathInPnfs);
+        sendRemoveInfoToBilling(pnfsPath);
         reply("200 file deleted");
     }
 
@@ -1818,8 +1825,8 @@ public abstract class AbstractFtpDoorV1
             }
         }
 
-        String pathInPnfs = absolutePath(arg);
-        if (pathInPnfs == null) {
+        String pnfsPath = absolutePath(arg);
+        if (pnfsPath == null) {
             if(!setNextPwdRecord()) {
                 reply("553 Cannot determine full directory pathname in PNFS: " + arg);
                 return;
@@ -1829,23 +1836,14 @@ public abstract class AbstractFtpDoorV1
             }
         }
 
-        // canDeleteDir() will test that isDirectory() and canWrite()
         try {
-            Subject subject = new Subject(_pwdRecord.UID, _pwdRecord.GID);
-            if (_permissionHandler.canDeleteDir(pathInPnfs, subject,  _origin)) {
-                File theDirToDelete = new File(pathInPnfs);
-                if (theDirToDelete.list().length == 0) { // Only delete empty directories
-                    _pnfs.deletePnfsEntry(pathInPnfs);
-                } else {
-                    if(!setNextPwdRecord()) {
+            // first check that directory is empty and then check permissions to delete empty directory
+            if (new File(pnfsPath).list().length != 0) { //Directory is not empty
                         reply("553 Directory not empty. Cannot delete.");
                         return;
-                    } else {
-                        ac_rmd(arg);
-                        return;
                     }
-                }
-            } else {
+            PnfsId pnfsId = _pnfs.getPnfsIdByPath(pnfsPath);
+            if (_permissionHandler.canDeleteDir(pnfsId, getSubject(), _origin) != AccessType.ACCESS_ALLOWED) {
                 if(!setNextPwdRecord()) {
                     reply("553 Permission denied");
                     return;
@@ -1854,6 +1852,9 @@ public abstract class AbstractFtpDoorV1
                     return;
                 }
             }
+
+            _pnfs.deletePnfsEntry(pnfsPath);
+
         }catch(ACLException e) {
             reply("553 Permission denied, reason (Acl) ");
             error("FTP Door: ACL module failed: " + e);
@@ -1909,8 +1910,8 @@ public abstract class AbstractFtpDoorV1
             }
         }
 
-        String pathInPnfs = absolutePath(arg);
-        if (pathInPnfs == null) {
+        String pnfsPath = absolutePath(arg);
+        if (pnfsPath == null) {
             if(!setNextPwdRecord()) {
                 reply("553 Cannot create directory in PNFS: " + arg);
                 return;
@@ -1921,7 +1922,7 @@ public abstract class AbstractFtpDoorV1
         }
 
         if (_useEncpScripts) {
-            File x = new File(pathInPnfs);
+            File x = new File(pnfsPath);
             if (x.exists()) {
                 reply("550 " + arg + ": already exists");
                 return;
@@ -1930,7 +1931,7 @@ public abstract class AbstractFtpDoorV1
             String cmd = _encpPutCmd + " chkc " +
                 _pwdRecord.UID + " " +
                 _pwdRecord.GID + " " +
-                pathInPnfs;
+                pnfsPath;
             if (spawn(cmd, 1000) != 0) {
                 reply("553 Permission denied");
                 return;
@@ -1939,17 +1940,16 @@ public abstract class AbstractFtpDoorV1
             cmd = _encpPutCmd + " mkd " +
                 _pwdRecord.UID + " " +
                 _pwdRecord.GID + " " +
-                pathInPnfs;
+                pnfsPath;
             if (spawn(cmd, 1000) != 0) {
                 reply("552 Error creating directory " + arg);
                 return;
             }
         } else {
             try {
-                Subject subject = new Subject(_pwdRecord.UID, _pwdRecord.GID);
-                if (_permissionHandler.canCreateDir(pathInPnfs, subject, _origin)) {
-                    _pnfs.createPnfsDirectory(pathInPnfs,_pwdRecord.UID,_pwdRecord.GID, 0755);
-                } else {
+                String parent = new File(pnfsPath).getParent();
+                PnfsId parentId = _pnfs.getPnfsIdByPath(parent);
+                if (_permissionHandler.canCreateDir(parentId, getSubject(), _origin) != AccessType.ACCESS_ALLOWED) {
                     if(!setNextPwdRecord()) {
                         reply("553 Permission denied");
                         return;
@@ -1958,6 +1958,9 @@ public abstract class AbstractFtpDoorV1
                         return;
                     }
                 }
+
+                _pnfs.createPnfsDirectory(pnfsPath, _pwdRecord.UID, _pwdRecord.GID, 0755);
+
             }catch(ACLException e) {
                 reply("553 Permission denied, reason (Acl) ");
                 error("FTP Door: ACL module failed: " + e);
@@ -2257,8 +2260,8 @@ public abstract class AbstractFtpDoorV1
             return;
         }
 
-        String pathInPnfs = absolutePath(path);
-        if (pathInPnfs == null) {
+        String pnfsPath = absolutePath(path);
+        if (pnfsPath == null) {
             if(!setNextPwdRecord()) {
                 reply("553 Cannot determine full directory pathname in PNFS: " + path);
                 return;
@@ -2279,7 +2282,7 @@ public abstract class AbstractFtpDoorV1
         // Get meta-data for this file/directory
         PnfsGetFileMetaDataMessage fileMetaDataMsg;
         try {
-            fileMetaDataMsg = _pnfs.getFileMetaDataByPath(pathInPnfs);
+            fileMetaDataMsg = _pnfs.getFileMetaDataByPath(pnfsPath);
         } catch (CacheException ce) {
             if(!setNextPwdRecord()) {
                 reply("553 Permission denied, reason: " + ce);
@@ -2655,9 +2658,9 @@ public abstract class AbstractFtpDoorV1
                 }
             } else {
 
-                Subject subject = new Subject(_pwdRecord.UID, _pwdRecord.GID);
+                PnfsId pnfsId = _pnfs.getPnfsIdByPath(_transfer.path);
                 try {
-                    if (!_permissionHandler.canReadFile(_transfer.path, subject, _origin)) {
+                    if (_permissionHandler.canReadFile(pnfsId, getSubject(), _origin) != AccessType.ACCESS_ALLOWED) {
                         if(setNextPwdRecord()) {
                             retrieve(file, offset, size,
                                      mode, xferMode,
@@ -2965,9 +2968,9 @@ public abstract class AbstractFtpDoorV1
                 _transfer.state = "checking permissions via permission handler";
                 info("FTP Door: store: checking permissions via permission " +
                      "handler for path: " + _transfer.path);
-                Subject subject = new Subject(_pwdRecord.UID, _pwdRecord.GID);
-                try{
-                    if (!_permissionHandler.canCreateFile(_transfer.path, subject, _origin)) {
+                String parent = new File(_transfer.path).getParent();
+                PnfsId parentId = _pnfs.getPnfsIdByPath(parent);
+                if (_permissionHandler.canCreateFile(parentId, getSubject(), _origin) != AccessType.ACCESS_ALLOWED) {
                         if(!setNextPwdRecord()) {
                             throw new FTPCommandException
                                 (550,
@@ -2980,11 +2983,7 @@ public abstract class AbstractFtpDoorV1
                             return;
                         }
                     }
-                }catch(ACLException e) {
-                    error("FTP Door: ACL module failed: " + e);
-                    throw new FTPCommandException(553," Permission denied, reason (Acl) ");
                 }
-            }
 
             /* Create PNFS entry.
              */
@@ -3097,6 +3096,8 @@ public abstract class AbstractFtpDoorV1
                                 _perfMarkerConf.period,
                                 _perfMarkerConf.period);
             }
+        } catch (ACLException e) {
+            abortTransfer(553, "Permission denied, ACLException", e);
         } catch (FTPCommandException e) {
             abortTransfer(e.getCode(), e.getReply());
         } catch (InterruptedException e) {
@@ -3604,10 +3605,8 @@ public abstract class AbstractFtpDoorV1
         } else {
             try {
                 PnfsGetStorageInfoMessage info = _pnfs.getStorageInfoByPath(path);
-                Subject subject = new Subject(_pwdRecord.UID, _pwdRecord.GID);
-                if (_permissionHandler.canGetAttributes(path, subject, _origin, FileAttribute.FATTR4_ACL)) {
-                    filelength = info.getMetaData().getFileSize();
-                } else {
+                PnfsId pnfsId = _pnfs.getPnfsIdByPath(path);
+                if (_permissionHandler.canGetAttributes(pnfsId, getSubject(), _origin, FileAttribute.FATTR4_SIZE) != AccessType.ACCESS_ALLOWED) {
                     if(!setNextPwdRecord()) {
                         reply("553 Permission denied");
                     } else {
@@ -3615,6 +3614,8 @@ public abstract class AbstractFtpDoorV1
                     }
                     return;
                 }
+                filelength = info.getMetaData().getFileSize();
+
             }catch(ACLException e) {
                 reply("553 Permission denied, reason (Acl) ");
                 error("FTP Door: ACL module failed: " + e);
@@ -3661,10 +3662,8 @@ public abstract class AbstractFtpDoorV1
         } else {
             try {
                 PnfsGetStorageInfoMessage info = _pnfs.getStorageInfoByPath(path);
-                Subject subject = new Subject(_pwdRecord.UID, _pwdRecord.GID);
-                if (_permissionHandler.canReadFile(path, subject, _origin)) {
-                    modification_time = info.getMetaData().getLastModifiedTime();
-                } else {
+                PnfsId pnfsId = _pnfs.getPnfsIdByPath(path);
+                if (_permissionHandler.canGetAttributes(pnfsId, getSubject(), _origin, FileAttribute.FATTR4_SUPPORTED_ATTRS) != AccessType.ACCESS_ALLOWED) {
                     if(!setNextPwdRecord()) {
                         reply("553 Permission denied");
                     } else {
@@ -3672,6 +3671,9 @@ public abstract class AbstractFtpDoorV1
                     }
                     return;
                 }
+
+                modification_time = info.getMetaData().getLastModifiedTime();
+
             } catch(ACLException e) {
                 reply("553 Permission denied, reason (Acl) ");
                 error("FTP Door: ACL module failed: " + e);
@@ -3732,15 +3734,56 @@ public abstract class AbstractFtpDoorV1
     public void ac_list(String arg)
     {
         Args args = new Args(arg);
-        boolean long_format = true;
-        if (!args.options().isEmpty()) {
-            long_format = false;
-        }
-        if (args.getOpt("l") != null) {
-            long_format = true;
-        }
-
+        boolean long_format =
+            args.options().isEmpty() || (args.getOpt("l") != null);
         list(args,long_format);
+    }
+
+    private String ftpListLong(File file, Subject subject)
+    throws ACLException, CacheException
+    {
+    StringBuilder mode = new StringBuilder();
+    String path = file.getAbsolutePath();
+    PnfsId pnfsId = _pnfs.getPnfsIdByPath(path);
+
+    if (file.isDirectory()) {
+        boolean canListDir =
+            _permissionHandler.canListDir(pnfsId, subject, _origin) == AccessType.ACCESS_ALLOWED;
+        boolean canCreateFile =
+            _permissionHandler.canCreateFile(pnfsId, subject, _origin) == AccessType.ACCESS_ALLOWED;
+        boolean canCreateDir =
+            _permissionHandler.canCreateDir(pnfsId, subject, _origin) == AccessType.ACCESS_ALLOWED;
+        mode.append('d');
+        mode.append(canListDir ? 'r' : '-');
+        mode.append(canCreateFile || canCreateDir ? 'w' : '-');
+        mode.append(canListDir ? 'x' : '-');
+        mode.append("------");
+    } else {
+        boolean canReadFile =
+            _permissionHandler.canReadFile(pnfsId, subject, _origin)== AccessType.ACCESS_ALLOWED;
+        mode.append('-');
+        mode.append(canReadFile ? 'r' : '-');
+        mode.append('-');
+        mode.append('-');
+        mode.append("------");
+    }
+
+    long modified = file.lastModified();
+    long age = System.currentTimeMillis() - modified;
+    String format;
+    if (age > (182L * 24 * 60 * 60 * 1000)) {
+        format = "%1$s  1 %2$-10s %3$-10s %4$12d %5$tb %5$2te %5$5tY %6$s";
+    } else {
+        format = "%1$s  1 %2$-10s %3$-10s %4$12d %5$tb %5$2te %5$5tR %6$s";
+    }
+
+    return String.format(format,
+                         mode,
+                         _pwdRecord.Username,
+                         _pwdRecord.Username,
+                         file.length(),
+                         modified,
+                         file.getName());
     }
 
     public void list(Args args,boolean listLong)
@@ -3829,41 +3872,23 @@ public abstract class AbstractFtpDoorV1
         }
 
         StringBuffer result = new StringBuffer();
-        for (int i = 0; i < files.length; ++i){
-            File nextf = files[i];
-            int line_length=0;
-            if (listLong){
-                try {
-                    Subject subject = new Subject(_pwdRecord.UID, _pwdRecord.GID);
-                    result.append(nextf.isDirectory()?'d':'-');
-                    line_length++;
-                    result.append( _permissionHandler.canReadFile(nextf.getAbsolutePath(), subject, _origin) ?'r':'-');
-                    line_length++;
-                    result.append( _permissionHandler.canWriteFile(nextf.getAbsolutePath(), subject, _origin) ?'w':'-');
-                    line_length++;
-
-                    result.append("               ");
-                    line_length+= 15;
-                    long length =  nextf.length();
-                    String length_str = Long.toString(length);
-                    result.append(length_str);
-                    line_length +=length_str.length();
-
-                } catch(ACLException e) {
-                    result.append('?');
-                    error("FTP Door: ACL module failed: " + e);
-                } catch (CacheException e){
-                    result.append('?');
-                }
-
-                while (line_length<30){
-                    line_length++;
-                    result.append(' ');
-                }
+        try {
+            for (int i = 0; i < files.length; ++i){
+                File nextf = files[i];
+                if (listLong){
+                    result.append(ftpListLong(nextf, getSubject()));
+                 } else {
+                    result.append(nextf.getName());
+                 }
+                result.append("\r\n");
             }
-            result.append(nextf.getName());
-            result.append('\r').append('\n');
-        }
+          } catch(ACLException e) {
+            reply("451 Internal lookup failure: " + e);
+            return;
+          } catch (CacheException e){
+            reply("451 Internal lookup failure: " + e);
+              return;
+          }
 
         OutputStream ostream = null;
         reply("150 Opening ASCII data connection for file list", false);
@@ -4540,22 +4565,68 @@ public abstract class AbstractFtpDoorV1
             reply(String.valueOf(e.getCode()) + " " + e.getReply());
         }
     }
-    
+
+
+    /**
+    * Initialize metadata provider
+    *
+    * <ul>
+    * <li>default: diskCacheV111.services.PnfsManagerFileMetaDataSource
+    * </ul>
+    *
+    * @param initargs
+    *            Array of arguments
+    */
+    private FileMetaDataSource initMetadataProvider(String className) throws CacheException {
+        try {
+            Class<?>[] argClass = { dmg.cells.nucleus.CellAdapter.class };
+            Object[] initargs = { this };
+            Class<?> metadataProviderClass = Class.forName(className);
+            Constructor<?> metadataSourceCon = metadataProviderClass.getConstructor(argClass);
+            return (FileMetaDataSource) metadataSourceCon.newInstance(initargs);
+
+        } catch (IllegalArgumentException e) {
+            throw new CacheException("Initialize Metadata Provider failed, IllegalArgumentException: " + e.getMessage());
+
+        } catch (SecurityException e) {
+            throw new CacheException("Initialize Metadata Provider failed, SecurityException: " + e.getMessage());
+
+        } catch (ClassNotFoundException e) {
+            throw new CacheException("Initialize Metadata Provider failed, ClassNotFoundException: " + e.getMessage());
+
+        } catch (NoSuchMethodException e) {
+            throw new CacheException("Initialize Metadata Provider failed, NoSuchMethodException: " + e.getMessage());
+
+        } catch (InstantiationException e) {
+            throw new CacheException("Initialize Metadata Provider failed, SecurityException: " + e.getMessage());
+
+        } catch (IllegalAccessException e) {
+            throw new CacheException("Initialize Metadata Provider failed, InstantiationException: " + e.getMessage());
+
+        } catch (InvocationTargetException e) {
+            throw new CacheException("Initialize Metadata Provider failed, InvocationTargetException: " + e.getMessage());
+        }
+    }
+
+    private final Subject getSubject() {
+        return new Subject(_pwdRecord.UID, _pwdRecord.GID);
+    }
+
     private void sendRemoveInfoToBilling(String pathInPnfs) {
- 	    try {
-    	    DoorRequestInfoMessage infoRemove = 
-        	    new DoorRequestInfoMessage(getNucleus().getCellName()+"@"+
+        try {
+            DoorRequestInfoMessage infoRemove =
+                new DoorRequestInfoMessage(getNucleus().getCellName()+"@"+
                                            getNucleus().getCellDomainName(), "remove");
-    	    infoRemove.setOwner(_dnUser == null? _user : _dnUser);
+            infoRemove.setOwner(_dnUser == null? _user : _dnUser);
             infoRemove.setGid(_pwdRecord.GID);
             infoRemove.setUid(_pwdRecord.UID);
             infoRemove.setPath(pathInPnfs);
-            infoRemove.setClient(_client_data_host);  
+            infoRemove.setClient(_client_data_host);
 
-    	    sendMessage(new CellMessage(_billingCellPath, infoRemove));
-    	    } catch (NoRouteToCellException e) {
-     		     error("FTP Door: Can't send remove message to " +
-      			    	 "billing database: " + e.getMessage()); 
+            sendMessage(new CellMessage(_billingCellPath, infoRemove));
+            } catch (NoRouteToCellException e) {
+                error("FTP Door: Can't send remove message to " +
+                        "billing database: " + e.getMessage());
             }
      }
 }
