@@ -222,7 +222,7 @@ public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoP
         	FsInode inode = new FsInode(_fs, pnfsId.toIdString());
         	_fs.addInodeLocation(inode, StorageGenericLocation.DISK, cacheLocation);
         }catch(FileNotFoundHimeraFsException e) {
-            throw new FileNotFoundCacheException(e.getMessage());            
+            throw new FileNotFoundCacheException(e.getMessage());
         } catch (ChimeraFsException e){
             _logNameSpace.error("Exception in addCacheLocation "+e);
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
@@ -406,11 +406,11 @@ public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoP
             if(value != null) {
                 checksums.add(new Checksum(type,value));
             }
-            
+
         }
         return checksums;
     }
-    
+
     public int[] listChecksumTypes(PnfsId pnfsId ) throws Exception
     {
         return null;
@@ -426,9 +426,22 @@ public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoP
 
     }
 
-    public PnfsId getParentOf(PnfsId id)
-    {
-        // TODO!
-        return null;
+    public PnfsId getParentOf(PnfsId pnfsId) throws CacheException {
+        FsInode inodeOfResource = new FsInode(_fs, pnfsId.toIdString());
+        FsInode inodeParent = null;
+
+        try {
+            inodeParent = _fs.getParentOf(inodeOfResource);
+        }catch(ChimeraFsException e) {
+            _logNameSpace.error("getParentOf failed : " + e);
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
+        }
+
+        if (inodeParent == null) {
+        	throw new FileNotFoundCacheException("no such file or directory: "+pnfsId.toIdString());
+        }
+
+        return new PnfsId( inodeParent.toString() );
     }
+
 }
