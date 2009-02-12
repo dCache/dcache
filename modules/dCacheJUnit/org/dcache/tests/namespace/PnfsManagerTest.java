@@ -34,7 +34,7 @@ import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
-import diskCacheV111.vehicles.PnfsGetParentMessage;
+//import diskCacheV111.vehicles.PnfsGetParentMessage;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PnfsRenameMessage;
 import diskCacheV111.vehicles.StorageInfo;
@@ -266,7 +266,7 @@ public class PnfsManagerTest {
 
         // I don't know yet what is expected reply, but not NPE !
     }
-
+/*
     @Test
     public void testGetParentOf() throws ChimeraFsException {
         PnfsCreateDirectoryMessage pnfsCreateDirectoryMessage = new PnfsCreateDirectoryMessage("/pnfs/testRoot/testDir", 3750, 1000, 0750);
@@ -311,7 +311,7 @@ public class PnfsManagerTest {
         assertTrue("get parent of non existing resource should return FILE_NOT_FOUND", pnfsGetParentMessage.getReturnCode() == CacheException.FILE_NOT_FOUND );
 
     }
-
+*/
     @Test
     @Ignore
     public void testAddCacheLocationNonExist() {
