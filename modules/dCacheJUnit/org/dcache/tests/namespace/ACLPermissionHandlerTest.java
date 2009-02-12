@@ -1,621 +1,375 @@
 package org.dcache.tests.namespace;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileReader;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Properties;
 
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import org.dcache.chimera.acl.ACE;
 import org.dcache.chimera.acl.ACL;
 import org.dcache.chimera.acl.Origin;
 import org.dcache.chimera.acl.Subject;
-import org.dcache.chimera.acl.enums.AccessMask;
-import org.dcache.chimera.acl.enums.AceType;
+import org.dcache.chimera.acl.enums.AccessType;
 import org.dcache.chimera.acl.enums.AuthType;
+import org.dcache.chimera.acl.enums.FileAttribute;
 import org.dcache.chimera.acl.enums.RsType;
-import org.dcache.chimera.acl.enums.Who;
-import org.dcache.chimera.acl.handler.AclHandler;
+import org.dcache.chimera.acl.handler.singleton.AclHandler;
+import org.dcache.chimera.acl.parser.ACLParser;
 import org.dcache.tests.cells.CellAdapterHelper;
+import org.dcache.tests.namespace.FileMetaDataProviderHelper;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import diskCacheV111.services.acl.ACLPermissionHandler;
 import diskCacheV111.util.FileMetaData;
-import diskCacheV111.util.FileMetaDataX;
 import diskCacheV111.util.PnfsId;
+
+/**
+ * @author Irina Kozlova, David Melkumyan
+ *
+ */
 
 public class ACLPermissionHandlerTest {
 
+    /***********************************************************************************************************************************************************
+    * Constants
+    */
 
-    private static final AuthType authTypeCONST=AuthType.ORIGIN_AUTHTYPE_STRONG;
-    //private static final InetAddressType inetAddressTypeCONST=InetAddressType.IPv4;
-    private static final String hostCONST="127.0.0.1";
+    private final static String CELL_ARGS = //
+        " -aclConnDriver=org.hsqldb.jdbcDriver"
+        + " -aclConnUrl=jdbc:hsqldb:mem:chimeraaclmem"
+        + " -aclConnUser=sa"
+        + " -meta-data-provider=org.dcache.tests.namespace.FileMetaDataProviderHelper";
 
-    private static Connection _conn;
+    private static final int UID = 111, GID = 1000;
 
+    private static final String PREFIX_USER = "USER:" + UID + ":";
 
-    private final static String aclProperties = "modules/dCacheJUnit/org/dcache/tests/namespace/acl.properties";
-	private final static String cellArgs =
-		" -acl-permission-handler-config=" + aclProperties +
-		" -meta-data-provider=org.dcache.tests.namespace.FileMetaDataProviderHelper";
+    /***********************************************************************************************************************************************************
+    * Static member variables
+    */
+    private static Connection connection;
 
-	private final static CellAdapterHelper _dummyCell = new CellAdapterHelper("aclTtestCell", cellArgs) ;
-	private final FileMetaDataProviderHelper _metaDataSource = new FileMetaDataProviderHelper(_dummyCell);
+    private static CellAdapterHelper cell;
+    private static ACLPermissionHandler permissionHandler;
+    private static FileMetaDataProviderHelper metadataSource;
 
-    private ACLPermissionHandler _permissionHandler;
+    private static FileMetaData fileMetadata, dirMetadata;
 
-    private AclHandler _aclHandler;
+    private static Origin origin;
+    private static Subject subject;
 
+    /***********************************************************************************************************************************************************
+    * Static methods
+    */
 
     @BeforeClass
     public static void setUpClass() throws Exception {
+        initConnection(); // Initialize connection to Chimera Database
 
-    	/*
-         * init Chimera DB
-         */
+        cell = new CellAdapterHelper("TestCell", CELL_ARGS); // Initialize dummy CellAdapter
 
-        Class.forName("org.hsqldb.jdbcDriver");
+        permissionHandler = new ACLPermissionHandler(cell); // Initialize ACL Permission Handler
+        metadataSource = (FileMetaDataProviderHelper) permissionHandler.getMetadataSource(); // Initialize Metadata Source
 
-        _conn = DriverManager.getConnection("jdbc:hsqldb:mem:chimeraaclmem", "sa", "");
+        Properties aclProps = new Properties();
 
-        File sqlFile = new File("modules/external/Chimera/sql/create-hsqldb.sql");
-        StringBuilder sql = new StringBuilder();
+        aclProps.setProperty("aclConnDriver", "org.hsqldb.jdbcDriver");
+        aclProps.setProperty("aclConnUrl", "jdbc:hsqldb:mem:chimeraaclmem");
+        aclProps.setProperty("aclConnUser", "sa");
 
-        BufferedReader dataStr = new BufferedReader(new FileReader(sqlFile));
-        String inLine = null;
+        AclHandler.setAclConfig(aclProps);
 
-        while ((inLine = dataStr.readLine()) != null) {
-            sql.append(inLine);
-        }
+        origin = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG, "127.0.0.1"); // Initialize origin
+        subject = new Subject(UID, GID); // Initialize subject
 
-        Statement st = _conn.createStatement();
-
-        st.executeUpdate(sql.toString());
-
-        tryToClose(st);
-
+        fileMetadata = new FileMetaData(false, UID, GID, 0600); // Initialize file metadata
+        dirMetadata = new FileMetaData(true, UID, GID, 0600); // Initialize directory metadata
     }
 
     @AfterClass
     public static void tearDown() throws Exception {
+        shutdownConnection(); // Shutdown connection to Chimera Database
+        }
 
-        _conn.createStatement().execute("SHUTDOWN;");
-        _conn.close();
+    /**
+    * Initialize connection to Chimera Database
+    *
+    * @throws Exception
+    */
+
+    private static void initConnection() throws Exception {
+        Class.forName("org.hsqldb.jdbcDriver");
+        connection = DriverManager.getConnection("jdbc:hsqldb:mem:chimeraaclmem", "sa", "");
+
+        BufferedReader dataStr = new BufferedReader(new FileReader("modules/external/Chimera/sql/create-hsqldb.sql"));
+        StringBuilder sql = new StringBuilder();
+        String inLine = null;
+        while ((inLine = dataStr.readLine()) != null)
+            sql.append(inLine);
+
+        Statement stmt = connection.createStatement();
+        stmt.executeUpdate(sql.toString());
+        attemptClose(stmt);
     }
 
-
-    @Before
-    public void setUp() throws Exception
-    {
-    	_permissionHandler = new ACLPermissionHandler(_dummyCell);
-        _metaDataSource.cleanAll();
-        _aclHandler = new AclHandler(aclProperties);
+    /**
+    * Shutdown connection to Chimera Database
+    *
+    * @throws Exception
+    */
+    private static void shutdownConnection() throws Exception {
+        connection.createStatement().execute("SHUTDOWN;");
+        attemptClose(connection);
     }
+
+    /**
+    * @param Close
+    *            statement
+    */
+    private static void attemptClose(Statement stmt) {
+        try {
+            if (stmt != null)
+                stmt.close();
+        } catch (SQLException IgnoreMe) {
+    }
+    }
+
+    /**
+    * @param Close
+    *            statement attempt
+    */
+    private static void attemptClose(Connection conn) {
+        try {
+            if (conn != null)
+                conn.close();
+        } catch (SQLException IgnoreMe) {
+    }
+    }
+
+    private static void setACL(ACL acl) throws Exception {
+        if (acl == null)
+            throw new IllegalArgumentException("SetAcl failed: argument 'acl' is NULL.");
+
+        final String rsId = acl.getRsId();
+
+        ACL oldACL = AclHandler.getACL(rsId);
+        if (oldACL != null) {
+            int n = AclHandler.removeACL(rsId);
+            Assert.assertTrue("Remove ACL failed! Returns: " + n, n == 1);
+            try {
+                Assert.assertTrue("Set ACL failed!", AclHandler.setACL(acl));
+
+            } catch (Exception e) { // rollback old ACL
+                AclHandler.setACL(oldACL);
+            }
+
+        } else
+            Assert.assertTrue("Set ACL failed!", AclHandler.setACL(acl));
+
+        Assert.assertEquals("Expected ACL is not equal to actual ACL!", //
+                acl.toNFSv4String(), AclHandler.getACL(rsId).toNFSv4String());
+    }
+
+    /***********************************************************************************************************************************************************
+    * Tests
+    */
 
     @Test
     public void testReadFile() throws Exception {
+        final PnfsId pnfsID = new PnfsId("0000416DFB43177548A8ADE89BAB82EC529C");
+        metadataSource.setMetaData(pnfsID, fileMetadata);
 
-        boolean isAllowed = false;
-        String fileId =  "0000416DFB43177548A8ADE89BAB82EC529C";
+        assertTrue("Read file should be undefined!", //
+                permissionHandler.canReadFile(pnfsID, subject, origin) == AccessType.ACCESS_UNDEFINED);
 
-        List<ACE> aces = new ArrayList<ACE>();
+        setACL(ACLParser.parseAdm(pnfsID.toIdString(), RsType.FILE, PREFIX_USER + "-r"));
+        assertTrue("Read file should be denied!", //
+                permissionHandler.canReadFile(pnfsID, subject, origin) == AccessType.ACCESS_DENIED);
 
-        aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
-                0,
-                AccessMask.READ_DATA.getValue(),
-                Who.USER,
-                111,
-                ACE.DEFAULT_ADDRESS_MSK,
-                0 ) );
-
-
-        ACL acl = new ACL(fileId, RsType.FILE, aces);
-
-        _aclHandler.setACL(acl);
-
-        FileMetaDataX fileMetaData = new FileMetaDataX(new PnfsId(fileId),
-        		new FileMetaData(false, 111, 1000, 0600) );
-
-        Origin origin = new Origin(authTypeCONST, hostCONST);
-        Subject subject = new Subject(111, 1000);
-
-        _metaDataSource.setXMetaData("/pnfs/desy.de/data/privateFile", fileMetaData);
-
-        isAllowed =  _permissionHandler.canReadFile("/pnfs/desy.de/data/privateFile", subject, origin);
-
-        assertTrue("It is allowed to read file", isAllowed);
-
+        setACL(ACLParser.parseAdm(pnfsID.toIdString(), RsType.FILE, PREFIX_USER + "+r"));
+        assertTrue("Read file should be allowed!", //
+                permissionHandler.canReadFile(pnfsID, subject, origin) == AccessType.ACCESS_ALLOWED);
     }
 
     @Test
     public void testWriteFile() throws Exception {
+        final PnfsId pnfsID = new PnfsId("0000416DFB43177548A8ADE89BAB82EC529C");
+        metadataSource.setMetaData(pnfsID, fileMetadata);
 
-        boolean isAllowed = false;
-        String fileId =  "00006E4FCE51400C4FA38F2E10AAB52E6306";
+        assertTrue("Write file should be undefined!", //
+                permissionHandler.canWriteFile(pnfsID, subject, origin) == AccessType.ACCESS_UNDEFINED);
 
-        List<ACE> aces = new ArrayList<ACE>();
+        setACL(ACLParser.parseAdm(pnfsID.toIdString(), RsType.FILE, PREFIX_USER + "-w"));
+        assertTrue("Write file should be denied!", //
+                permissionHandler.canWriteFile(pnfsID, subject, origin) == AccessType.ACCESS_DENIED);
 
-        aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
-                0,
-                AccessMask.WRITE_DATA.getValue(),
-                Who.USER,
-                111,
-                ACE.DEFAULT_ADDRESS_MSK,
-                0 ) );
-
-        ACL acl = new ACL(fileId, RsType.FILE, aces);
-
-        _aclHandler.setACL(acl);
-
-        FileMetaDataX fileMetaData = new FileMetaDataX(new PnfsId(fileId),
-        		new FileMetaData(false, 111, 1000, 0600) );
-
-        Origin origin = new Origin(authTypeCONST, hostCONST);
-        Subject subject = new Subject(111, 1000);
-
-        _metaDataSource.setXMetaData("/pnfs/desy.de/data/privateFile", fileMetaData);
-
-        isAllowed =  _permissionHandler.canWriteFile("/pnfs/desy.de/data/privateFile", subject, origin);
-
-        assertTrue("It is allowed to write to a file", isAllowed);
-
-    }
-
-    @Test
-    public void testCreateDir() throws Exception {
-
-        boolean isAllowed = false;
-        String dirId =  "000088AAB6D5022F4A69BC2D4576828EF12B";
-        String parentDirId =  "000088AAB6D512B12B12B12B12B12B12B12B";
-
-        List<ACE> aces = new ArrayList<ACE>();
-
-        aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
-				1,
-				AccessMask.ADD_SUBDIRECTORY.getValue(),
-				Who.USER,
-				111,
-				ACE.DEFAULT_ADDRESS_MSK,
-				0 ) );
-
-
-        //In reality, acl exists only for parentDirId:
-        ACL acl = new ACL(parentDirId, RsType.DIR, aces);
-
-        _aclHandler.setACL(acl);
-
-        //here 'true' means this is a 'Directory'.
-        //In reality, PnfId is not defined at all here, as we just ask to create an object.
-        //That is, dirId is only for the test here.
-        FileMetaDataX fileMetaData = new FileMetaDataX(new PnfsId(dirId),
-        		new FileMetaData(true, 111, 1000, 0600) );
-
-        //define parent directory with pnfsId, which is the pnfsId that will be checked by ACL
-        FileMetaDataX parentMetaData = new FileMetaDataX(new PnfsId(parentDirId),
-        		new FileMetaData(true, 111, 1000, 0600) );
-
-        Origin origin = new Origin(authTypeCONST, hostCONST);
-        Subject subject = new Subject(111, 1000);
-
-        _metaDataSource.setXMetaData("/pnfs/desy.de/data", parentMetaData);
-        _metaDataSource.setXMetaData("/pnfs/desy.de/data/privateDir", fileMetaData);
-
-        isAllowed =  _permissionHandler.canCreateDir("/pnfs/desy.de/data/privateDir", subject, origin);
-
-        assertTrue("It is allowed to create a directory", isAllowed);
-
+        setACL(ACLParser.parseAdm(pnfsID.toIdString(), RsType.FILE, PREFIX_USER + "+w"));
+        assertTrue("Write file should be allowed!", //
+                permissionHandler.canWriteFile(pnfsID, subject, origin) == AccessType.ACCESS_ALLOWED);
     }
 
     @Test
     public void testCreateFile() throws Exception {
+        //pnfsId of parent-directory:
+        final PnfsId pnfsID = new PnfsId("00009C3FCDDC3FCDDC3FCDDC3FCDDC3FCDD7");
+        metadataSource.setMetaData(pnfsID, dirMetadata);
 
-        boolean isAllowed = false;
-        //file to create. Actually, fileId does not exist . Only for test:
-        String fileId =  "00009C3FCDDB7FC74D38A3DFE77EA77A8EB3";
+        assertTrue("Create file should be undefined!", //
+                permissionHandler.canCreateFile(pnfsID, subject, origin) == AccessType.ACCESS_UNDEFINED);
 
-        //Directory where file has to be created. Permission to perform action 'CREATE'
-        //will be checked for this directory  parentDirId :
-        String parentDirId =  "00009C3FCDDC3FCDDC3FCDDC3FCDDC3FCDD7";
+        setACL(ACLParser.parseAdm(pnfsID.toIdString(), RsType.DIR, PREFIX_USER + "-f"));
+        assertTrue("Create file should be denied!", //
+                permissionHandler.canCreateFile(pnfsID, subject, origin) == AccessType.ACCESS_DENIED);
 
-        List<ACE> aces = new ArrayList<ACE>();
-
-        aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
-				1,
-				AccessMask.ADD_FILE.getValue(),
-				Who.USER,
-				111,
-				ACE.DEFAULT_ADDRESS_MSK,
-				0 ) );
-        //just add some more ACEs, deny to add a directory:
-        aces.add(new ACE( AceType.ACCESS_DENIED_ACE_TYPE,
-                1,
-                AccessMask.ADD_SUBDIRECTORY.getValue(),
-                Who.USER,
-                111,
-                ACE.DEFAULT_ADDRESS_MSK,
-                1 ) );
-
-        //In reality, acl exists only for parentDirId:
-        ACL acl = new ACL(parentDirId, RsType.DIR, aces);
-
-        _aclHandler.setACL(acl);
-
-        //here 'false' means this is a 'File'.
-        //In reality, PnfId is not defined at all here, as we just ask to create an object.
-        //That is, fileId is only for the test here.
-        FileMetaDataX fileMetaData = new FileMetaDataX(new PnfsId(fileId),
-        		new FileMetaData(false, 111, 1000, 0600) );
-
-        //here 'true' means this is a 'Directory'.
-        //Define parent directory with pnfsId parentDirId.
-        //ACL of this Id will be checked to allow/deny a permission
-        FileMetaDataX parentMetaData = new FileMetaDataX(new PnfsId(parentDirId),
-        		new FileMetaData(true, 111, 1000, 0600) );
-
-        Origin origin = new Origin(authTypeCONST,  hostCONST);
-        Subject subject = new Subject(111, 1000);
-
-        _metaDataSource.setXMetaData("/pnfs/desy.de/data", parentMetaData);
-        _metaDataSource.setXMetaData("/pnfs/desy.de/data/newPrivateFile", fileMetaData);
-
-        isAllowed =  _permissionHandler.canCreateFile("/pnfs/desy.de/data/newPrivateFile", subject, origin);
-
-        assertTrue("It is allowed to create a directory", isAllowed);
-
+        setACL(ACLParser.parseAdm(pnfsID.toIdString(), RsType.DIR, PREFIX_USER + "+f"));
+        assertTrue("Create file should be allowed!", //
+                permissionHandler.canCreateFile(pnfsID, subject, origin) == AccessType.ACCESS_ALLOWED);
     }
 
+    @Test
+    public void testCreateDir() throws Exception {
+        //pnfsId of parent-directory:
+        final PnfsId pnfsID = new PnfsId("00009C3FCDDC3FCDDC3FCDDC3FCDDC3FCDD7");
+        metadataSource.setMetaData(pnfsID, dirMetadata);
+
+        assertTrue("Create directory should be undefined!", //
+                permissionHandler.canCreateDir(pnfsID, subject, origin) == AccessType.ACCESS_UNDEFINED);
+
+        setACL(ACLParser.parseAdm(pnfsID.toIdString(), RsType.DIR, PREFIX_USER + "-s"));
+        assertTrue("Create directory should be denied!", //
+                permissionHandler.canCreateDir(pnfsID, subject, origin) == AccessType.ACCESS_DENIED);
+
+        setACL(ACLParser.parseAdm(pnfsID.toIdString(), RsType.DIR, PREFIX_USER + "+s"));
+        assertTrue("Create directory should be allowed!", //
+                permissionHandler.canCreateDir(pnfsID, subject, origin) == AccessType.ACCESS_ALLOWED);
+    }
+    //testDeleteFile and testDeleteDir are commented for now.
+    /*
     @Test
     public void testDeleteFile() throws Exception {
+        //pnfsId of file:
+        final PnfsId filePnfsID = new PnfsId("00007AFC6292C068435DA9B7661A716F2709");
+        metadataSource.setMetaData(filePnfsID, fileMetadata);
+        //pnfsId of parent-directory:
+        final PnfsId parentDirPnfsID = new PnfsId("00007AFC62920000735DA000070000700007");
+        metadataSource.setMetaData(parentDirPnfsID, dirMetadata);
 
-        boolean isAllowed = false;
-        //File to delete
-        String fileId =  "00007AFC6292C068435DA9B7661A716F2709";
+        assertTrue("Delete file should be undefined!", //
+                permissionHandler.canDeleteFile(filePnfsID, subject, origin) == AccessType.ACCESS_UNDEFINED);
 
-        //Parent directory
-        String parentDirId =  "00007AFC62920000735DA000070000700007";
+        setACL(ACLParser.parseAdm(filePnfsID.toIdString(), RsType.FILE, PREFIX_USER + "+d"));
+        setACL(ACLParser.parseAdm(parentDirPnfsID.toIdString(), RsType.DIR, PREFIX_USER + "+D"));
+        assertTrue("Delete file should be allowed!", //
+                permissionHandler.canDeleteFile(filePnfsID, subject, origin) == AccessType.ACCESS_ALLOWED);
 
-        //Set ACL for the File
-        List<ACE> acesForFile = new ArrayList<ACE>();
+        setACL(ACLParser.parseAdm(filePnfsID.toIdString(), RsType.FILE, PREFIX_USER + "-d"));
+        setACL(ACLParser.parseAdm(parentDirPnfsID.toIdString(), RsType.DIR, PREFIX_USER + "+D"));
+        assertTrue("Delete file should be denied!", //
+                permissionHandler.canDeleteFile(filePnfsID, subject, origin) == AccessType.ACCESS_DENIED);
 
-        acesForFile.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
-                0,
-                AccessMask.DELETE.getValue(),
-                Who.USER,
-                111,
-                ACE.DEFAULT_ADDRESS_MSK,
-                0 ) );
+        setACL(ACLParser.parseAdm(filePnfsID.toIdString(), RsType.FILE, PREFIX_USER + "+d"));
+        setACL(ACLParser.parseAdm(parentDirPnfsID.toIdString(), RsType.DIR, PREFIX_USER + "-D"));
+        assertTrue("Delete file should be denied!", //
+                permissionHandler.canDeleteFile(filePnfsID, subject, origin) == AccessType.ACCESS_DENIED);
 
-
-        ACL aclForFile = new ACL(fileId, RsType.FILE, acesForFile);
-
-        _aclHandler.setACL(aclForFile);
-
-      //Set ACL for the parent directory
-        List<ACE> acesForDir = new ArrayList<ACE>();
-
-        acesForDir.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
-                1,
-                AccessMask.DELETE_CHILD.getValue(),
-                Who.USER,
-                111,
-                ACE.DEFAULT_ADDRESS_MSK,
-                0 ) );
-
-
-        ACL aclForDir = new ACL(parentDirId, RsType.DIR, acesForDir);
-
-        _aclHandler.setACL(aclForDir);
-
-        //Define metadata for the File
-        FileMetaDataX fileMetaData = new FileMetaDataX(new PnfsId(fileId),
-        		new FileMetaData(false, 111, 1000, 0600) );
-
-       //Define metadata for the parent Directory
-        FileMetaDataX dirMetaData = new FileMetaDataX(new PnfsId(parentDirId),
-        		new FileMetaData(true, 111, 1000, 0600) );
-
-        //Define Origin for the user. (Subject user_id=111)
-        Origin origin = new Origin(authTypeCONST,  hostCONST);
-        Subject subject = new Subject(111, 1000);
-
-        //Set metadata for the File and for the parent Directory
-        _metaDataSource.setXMetaData("/pnfs/desy.de/data/dir1/privateFile", fileMetaData);
-        _metaDataSource.setXMetaData("/pnfs/desy.de/data/dir1", dirMetaData);
-
-        isAllowed =  _permissionHandler.canDeleteFile("/pnfs/desy.de/data/dir1/privateFile", subject, origin);
-
-        assertTrue("It is allowed to delete this file", isAllowed);
-
+        setACL(ACLParser.parseAdm(filePnfsID.toIdString(), RsType.FILE, PREFIX_USER + "-d"));
+        setACL(ACLParser.parseAdm(parentDirPnfsID.toIdString(), RsType.DIR, PREFIX_USER + "-D"));
+        assertTrue("Delete file should be denied!", //
+                permissionHandler.canDeleteFile(filePnfsID, subject, origin) == AccessType.ACCESS_DENIED);
     }
 
     @Test
-    public void testDeleteDirectory() throws Exception {
+    public void testDeleteDir() throws Exception {
+        //pnfsId of directory:
+        final PnfsId dirPnfsID = new PnfsId("00007AFC6292C068435DA9B7661A716F2709");
+        metadataSource.setMetaData(dirPnfsID, dirMetadata);
+        //pnfsId of parent-directory:
+        final PnfsId parentDirPnfsID = new PnfsId("00007AFC62920000735DA000070000700007");
+        metadataSource.setMetaData(parentDirPnfsID, dirMetadata);
 
-        boolean isAllowed = false;
-        //Directory to delete
-        String dirId =  "0000FF2A3233948A4692A5F5EB22F60C4F05";
+        assertTrue("Delete directory should be undefined!", //
+                permissionHandler.canDeleteDir(dirPnfsID, subject, origin) == AccessType.ACCESS_UNDEFINED);
 
-        //Parent directory
-        String parentDirId =  "0000FF2A323390000FF2A325EB0000FF2A32";
+        setACL(ACLParser.parseAdm(dirPnfsID.toIdString(), RsType.FILE, PREFIX_USER + "+d"));
+        setACL(ACLParser.parseAdm(parentDirPnfsID.toIdString(), RsType.DIR, PREFIX_USER + "+D"));
+        assertTrue("Delete directory should be allowed!", //
+                permissionHandler.canDeleteDir(dirPnfsID, subject, origin) == AccessType.ACCESS_ALLOWED);
 
-        //Set ACL for the directory (directory to be deleted)
-        List<ACE> acesForDir = new ArrayList<ACE>();
+        setACL(ACLParser.parseAdm(dirPnfsID.toIdString(), RsType.FILE, PREFIX_USER + "-d"));
+        setACL(ACLParser.parseAdm(parentDirPnfsID.toIdString(), RsType.DIR, PREFIX_USER + "+D"));
+        assertTrue("Delete directory should be denied!", //
+                permissionHandler.canDeleteDir(dirPnfsID, subject, origin) == AccessType.ACCESS_DENIED);
 
-        acesForDir.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
-                1,
-                AccessMask.DELETE.getValue(),
-                Who.USER,
-                111,
-                ACE.DEFAULT_ADDRESS_MSK,
-                0 ) );
+        setACL(ACLParser.parseAdm(dirPnfsID.toIdString(), RsType.FILE, PREFIX_USER + "+d"));
+        setACL(ACLParser.parseAdm(parentDirPnfsID.toIdString(), RsType.DIR, PREFIX_USER + "-D"));
+        assertTrue("Delete directory should be denied!", //
+                permissionHandler.canDeleteDir(dirPnfsID, subject, origin) == AccessType.ACCESS_DENIED);
 
-        ACL aclForDir = new ACL(dirId, RsType.DIR, acesForDir);
-
-        _aclHandler.setACL(aclForDir);
-
-       //Set ACL for the parent directory
-        List<ACE> acesForParentDir = new ArrayList<ACE>();
-
-        acesForParentDir.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
-                1,
-                AccessMask.DELETE_CHILD.getValue(),
-                Who.USER,
-                111,
-                ACE.DEFAULT_ADDRESS_MSK,
-                0 ) );
-
-
-        ACL aclForParentDir = new ACL(parentDirId, RsType.DIR, acesForParentDir);
-
-        _aclHandler.setACL(aclForParentDir);
-
-        //Define metadata for the directory
-        FileMetaDataX dirMetaData = new FileMetaDataX(new PnfsId(dirId),
-        		new FileMetaData(true, 111, 1000, 0600) );
-
-        //Define metadata for the parent Directory
-        FileMetaDataX parentDirMetaData = new FileMetaDataX(new PnfsId(parentDirId),
-        		new FileMetaData(true, 111, 1000, 0600) );
-
-       //Define Origin for the user.
-        Origin origin = new Origin(authTypeCONST,  hostCONST);
-        Subject subject = new Subject(111, 1000);
-
-        //Set metadata for the directory and for the parent directory
-        _metaDataSource.setXMetaData("/pnfs/desy.de/data/dir1", dirMetaData);
-        _metaDataSource.setXMetaData("/pnfs/desy.de/data", parentDirMetaData);
-
-        //permission to delete this directory
-        isAllowed =  _permissionHandler.canDeleteDir("/pnfs/desy.de/data/dir1", subject, origin);
-
-        assertTrue("It is allowed to delete a directory", isAllowed);
-
-    }
-
-/////////////////////////////////////////////
-/*
-    @Test
-    public void testSetAttributesFile() throws Exception {
-
-    	boolean isAllowed = false;
-
-    	//File to set attributes
-        String fileId =  "0000FF948A460C4F052A3233948A460C4F05";
-
-                List<ACE> aces = new ArrayList<ACE>();
-
-                int
-                masks = (AccessMask.WRITE_ATTRIBUTES.getValue());
-                masks |= (AccessMask.WRITE_ACL.getValue());
-                masks |= (AccessMask.WRITE_OWNER.getValue());
-
-               aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
-                        0,
-                        masks,
-                        Who.USER,
-                        111,
-                        ACE.DEFAULT_ADDRESS_MSK,
-                        0 ) );
-
-               aces.add(new ACE( AceType.ACCESS_DENIED_ACE_TYPE,
-                       0,
-                       AccessMask.WRITE_DATA.getValue(),
-                       Who.USER,
-                       111,
-                       ACE.DEFAULT_ADDRESS_MSK,
-                       1 ) );
-
-              // aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
-               //        0,
-                //       AccessMask.WRITE_ACL.getValue(),
-                //       Who.USER,
-                //       111,
-               //       ACE.DEFAULT_ADDRESS_MSK,
-                //     0 ) );
-
-               ACL newACL = new ACL(fileId, RsType.FILE, aces);
-
-               _aclHandler.setACL(newACL);
-
-             //Define metadata for the file
-               FileMetaDataX fileMetaData = new FileMetaDataX(new PnfsId(fileId),
-               		new FileMetaData(true, 111, 1000, 0600) );
-
-		     		Subject subject = new Subject(111,1000);
-
-		     		//Define Origin for the user.
-		            Origin origin = new Origin(authTypeCONST, hostCONST);
-
-		          //Set metadata for the file
-		           _metaDataSource.setXMetaData("/pnfs/desy.de/data/filename", fileMetaData);
-
-		           //permission to set attributes for the file.
-		           //Check SETATTR (Attribute ACL). Access flag: WRITE_ACL
-		           isAllowed =  _permissionHandler.canSetAttributes("/pnfs/desy.de/data/filename", subject, origin, FileAttribute.FATTR4_ACL);
-
-		           assertTrue("It is allowed to set attributes  FATTR4_ACL ", isAllowed);
-
-		           // next check
-		           //Check SETATTR (Attribute OWNER_GROUP). Access flag: WRITE_OWNER
-		           isAllowed =  _permissionHandler.canSetAttributes("/pnfs/desy.de/data/filename", subject, origin, FileAttribute.FATTR4_OWNER_GROUP);
-
-		           assertTrue("It is allowed to set attributes  OWNER_GROUP ", isAllowed);
-
-		           //next check
-		           //Check SETATTR (Attributes OWNER_GROUP and OWNER). Access flag: WRITE_OWNER
-
-		          int fileAttrTest = (FileAttribute.FATTR4_OWNER_GROUP.getValue());
-		                 fileAttrTest|=(FileAttribute.FATTR4_OWNER.getValue());
-
-		          isAllowed =  _permissionHandler.canSetAttributes("/pnfs/desy.de/data/filename", subject, origin, FileAttribute.valueOf(fileAttrTest));
-
-				  assertTrue("It is allowed to set attributes  OWNER_GROUP and OWNER ", isAllowed);
-
-
-		           //Check SETATTR (Attribute SIZE). Access flag: WRITE_DATA (is denied)
-				   isAllowed =  _permissionHandler.canSetAttributes("/pnfs/desy.de/data/filename", subject, origin, FileAttribute.FATTR4_SIZE);
-
-		           assertFalse("It is allowed to set attributes  FATTR4_SIZE ", isAllowed);
-
+        setACL(ACLParser.parseAdm(dirPnfsID.toIdString(), RsType.FILE, PREFIX_USER + "-d"));
+        setACL(ACLParser.parseAdm(parentDirPnfsID.toIdString(), RsType.DIR, PREFIX_USER + "-D"));
+        assertTrue("Delete directory should be denied!", //
+                permissionHandler.canDeleteDir(dirPnfsID, subject, origin) == AccessType.ACCESS_DENIED);
     }
 */
+    @Test
+    public void testListDir() throws Exception {
 
-/////////////////////////////////////////////
-/*
+        final PnfsId pnfsID = new PnfsId("00007AFC6292C068435DA9B7661A71655555");
+        metadataSource.setMetaData(pnfsID, dirMetadata);
+
+        assertTrue("List directory should be undefined!", //
+                permissionHandler.canListDir(pnfsID, subject, origin) == AccessType.ACCESS_UNDEFINED);
+
+        setACL(ACLParser.parseAdm(pnfsID.toIdString(), RsType.DIR, PREFIX_USER + "+l"));
+        assertTrue("List directory should be allowed!", //
+                permissionHandler.canListDir(pnfsID, subject, origin) == AccessType.ACCESS_ALLOWED);
+
+        setACL(ACLParser.parseAdm(pnfsID.toIdString(), RsType.DIR, PREFIX_USER + "-l"));
+        assertTrue("List directory should be denied!", //
+                permissionHandler.canListDir(pnfsID, subject, origin) == AccessType.ACCESS_DENIED);
+    }
+
+    @Test
+    public void testSetAttributes() throws Exception {
+
+        final PnfsId pnfsID = new PnfsId("00007AFC6292C068435DA9B7661A71655555");
+        metadataSource.setMetaData(pnfsID, dirMetadata);
+
+        assertTrue("Set attributes should be undefined!", //
+                permissionHandler.canSetAttributes(pnfsID, subject, origin, FileAttribute.FATTR4_ACL) == AccessType.ACCESS_UNDEFINED);
+
+        setACL(ACLParser.parseAdm(pnfsID.toIdString(), RsType.DIR, PREFIX_USER + "+C"));
+        assertTrue("Set attributes should be allowed!", //
+                permissionHandler.canSetAttributes(pnfsID, subject, origin, FileAttribute.FATTR4_ACL) == AccessType.ACCESS_ALLOWED);
+
+        setACL(ACLParser.parseAdm(pnfsID.toIdString(), RsType.DIR, PREFIX_USER + "-C"));
+        assertTrue("Set attributes should be denied!", //
+                permissionHandler.canSetAttributes(pnfsID, subject, origin, FileAttribute.FATTR4_ACL) == AccessType.ACCESS_DENIED);
+    }
+
     @Test
     public void testGetAttributes() throws Exception {
 
-    	boolean isAllowed = false;
+        final PnfsId pnfsID = new PnfsId("00007AFC6292C068435DA9B7661A71655555");
+        metadataSource.setMetaData(pnfsID, dirMetadata);
 
-    	//File pnfsID
-        String fileId =  "0000FF948A460C4F00000FF9948A40000FF9";
+        assertTrue("Get attributes (read ACL) should be undefined!", //
+                permissionHandler.canGetAttributes(pnfsID, subject, origin, FileAttribute.FATTR4_ACL) == AccessType.ACCESS_UNDEFINED);
 
-                List<ACE> aces = new ArrayList<ACE>();
+        setACL(ACLParser.parseAdm(pnfsID.toIdString(), RsType.DIR, PREFIX_USER + "+c"));
+        assertTrue("Get attributes (read ACL) should be allowed!", //
+                permissionHandler.canGetAttributes(pnfsID, subject, origin, FileAttribute.FATTR4_ACL) == AccessType.ACCESS_ALLOWED);
 
-                //for user who_id=111: READ_ACL allowed, READ_ATTRIBUTES denied
-               aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
-                        0,
-                        AccessMask.READ_ACL.getValue(),
-                        Who.USER,
-                        111,
-                        ACE.DEFAULT_ADDRESS_MSK,
-                        0 ) );
-
-               aces.add(new ACE( AceType.ACCESS_DENIED_ACE_TYPE,
-                       0,
-                       AccessMask.READ_ATTRIBUTES.getValue(),
-                       Who.USER,
-                       111,
-                       ACE.DEFAULT_ADDRESS_MSK,
-                       1 ) );
-
-               //for user who_id=222: READ_ACL denied, READ_ATTRIBUTES allowed
-               aces.add(new ACE( AceType.ACCESS_DENIED_ACE_TYPE,
-                       0,
-                       AccessMask.READ_ACL.getValue(),
-                       Who.USER,
-                       222,
-                       ACE.DEFAULT_ADDRESS_MSK,
-                       2 ) );
-
-              aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
-                      0,
-                      AccessMask.READ_ATTRIBUTES.getValue(),
-                      Who.USER,
-                      222,
-                      ACE.DEFAULT_ADDRESS_MSK,
-                      3 ) );
-
-               ACL newACL = new ACL(fileId, RsType.FILE, aces);
-
-               _aclHandler.setACL(newACL);
-
-             //Define metadata for the file
-               FileMetaDataX fileMetaData = new FileMetaDataX(new PnfsId(fileId),
-               		new FileMetaData(true, 111, 1000, 0600) );
-
-		     		Subject subject = new Subject(111,1000);
-
-		     		//Define Origin for the user.
-		            Origin origin = new Origin(authTypeCONST,  hostCONST);
-
-		          //Set metadata for the file
-		           _metaDataSource.setXMetaData("/pnfs/desy.de/data/filename", fileMetaData);
-
-
-		           //Check GETATTR (Attribute ACL).
-		           isAllowed =  _permissionHandler.canGetAttributes( "/pnfs/desy.de/data/filename", subject, origin, FileAttribute.FATTR4_ACL);
-
-		           assertTrue("It is allowed to get attribute FATTR4_ACL (read ACL) ", isAllowed);
-
-
-		           //Check GETATTR (Attribute OWNER_GROUP).
-		           isAllowed =  _permissionHandler.canGetAttributes("/pnfs/desy.de/data/filename", subject, origin, FileAttribute.FATTR4_OWNER_GROUP);
-
-		           assertFalse("It is NOT allowed to get attribute OWNER_GROUP, as bit READ_ATTRIBUTES is denied", isAllowed);
-
-
-		           //Check GETATTR (Attributes OWNER_GROUP and OWNER).
-
-		           int fileAttrTest = (FileAttribute.FATTR4_OWNER_GROUP.getValue());
-		                 fileAttrTest|=(FileAttribute.FATTR4_OWNER.getValue());
-
-		           isAllowed =  _permissionHandler.canGetAttributes("/pnfs/desy.de/data/filename", subject, origin, FileAttribute.valueOf(fileAttrTest));
-
-				   assertFalse("It is NOT allowed to get attributes  OWNER_GROUP and OWNER, as bit READ_ATTRIBUTES is denied ", isAllowed);
-
-
-		           //Check GETATTR (Attribute SIZE).
-				   isAllowed =  _permissionHandler.canGetAttributes("/pnfs/desy.de/data/filename", subject, origin, FileAttribute.FATTR4_SIZE);
-
-		           assertFalse("It is NOT allowed to get attribute  FATTR4_SIZE, as bit READ_ATTRIBUTES is denied ", isAllowed);
-
-		           ///////////////////////////////////////////////////
-
-		           //Take user who_id=222, where READ_ACL denied, READ_ATTRIBUTES allowed
-		       	   Subject subject2 = new Subject(222,1000);
-
-		       	   //Check GETATTR (Attribute ACL).
-		           isAllowed =  _permissionHandler.canGetAttributes("/pnfs/desy.de/data/filename", subject2, origin, FileAttribute.FATTR4_ACL);
-
-		           assertFalse("For who_id=222: It is NOT allowed to get attribute FATTR4_ACL (read ACL), as READ_ACL is denied ", isAllowed);
-
-
-		           //Check GETATTR (Attribute FATTR4_ARCHIVE).
-		           isAllowed =  _permissionHandler.canGetAttributes("/pnfs/desy.de/data/filename", subject2, origin, FileAttribute.FATTR4_ARCHIVE);
-
-		           assertTrue("For who_id=222: It is allowed to get attribute FATTR4_ARCHIVE, as READ_ATTRIBUTES is allowed", isAllowed);
-
-		           //Check GETATTR (Attributes OWNER_GROUP and OWNER).
-		           isAllowed =  _permissionHandler.canGetAttributes("/pnfs/desy.de/data/filename", subject2, origin, FileAttribute.valueOf(fileAttrTest));
-
-				   assertTrue("For who_id=222: It is allowed to get attributes  OWNER_GROUP and OWNER, as READ_ATTRIBUTES is allowed ", isAllowed);
-
-
-		           //Check GETATTR (Attribute FATTR4_TIME_MODIFY_SET).
-				   isAllowed =  _permissionHandler.canGetAttributes("/pnfs/desy.de/data/filename", subject2, origin, FileAttribute.FATTR4_TIME_MODIFY_SET);
-
-		           assertTrue("For who_id=222: It is allowed to get attribute  FATTR4_TIME_MODIFY_SET, as READ_ATTRIBUTES is allowed ", isAllowed);
-    }
-*/
-    static void tryToClose(Statement o) {
-        try {
-            if (o != null)
-                o.close();
-        } catch (SQLException e) {
-            // _logNamespace.error("tryToClose PreparedStatement", e);
-        }
+        setACL(ACLParser.parseAdm(pnfsID.toIdString(), RsType.DIR, PREFIX_USER + "-c"));
+        assertTrue("Get attributes (read ACL) should be denied!", //
+                permissionHandler.canGetAttributes(pnfsID, subject, origin, FileAttribute.FATTR4_ACL) == AccessType.ACCESS_DENIED);
     }
 
 }

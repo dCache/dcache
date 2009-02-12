@@ -1,273 +1,205 @@
 package org.dcache.tests.namespace;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
 
 import org.dcache.chimera.acl.Origin;
 import org.dcache.chimera.acl.Subject;
+import org.dcache.chimera.acl.enums.AccessType;
 import org.dcache.chimera.acl.enums.AuthType;
 import org.dcache.tests.cells.CellAdapterHelper;
+import org.dcache.tests.namespace.FileMetaDataProviderHelper;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import diskCacheV111.services.acl.UnixPermissionHandler;
 import diskCacheV111.util.FileMetaData;
+import diskCacheV111.util.PnfsId;
 
+/**
+ * @author Irina Kozlova, David Melkumyan
+ *
+ */
 public class UnixPermissionHandlerTest {
 
-
-    //private final static String cellArgs =
-    //    " -meta-data-provider=org.dcache.tests.namespace.FileMetaDataProviderHelper";
-
-    private final static String aclProperties = "modules/dCacheJUnit/org/dcache/tests/namespace/acl.properties";
-    private final static String cellArgs =
-        " -acl-permission-handler-config=" + aclProperties +
+    /***********************************************************************************************************************************************************
+    * Constants
+    */
+    private static final String CELL_ARGS = //
         " -meta-data-provider=org.dcache.tests.namespace.FileMetaDataProviderHelper";
 
-    private final static CellAdapterHelper _dummyCell = new CellAdapterHelper("UnixPermissionsTtestCell", cellArgs) ;
-    private final FileMetaDataProviderHelper _metaDataSource = new FileMetaDataProviderHelper(_dummyCell);
+    private static final boolean DIR = true, FILE = false;
 
-    private static final AuthType authTypeCONST=AuthType.ORIGIN_AUTHTYPE_STRONG;
-    //private static final InetAddressType inetAddressTypeCONST=InetAddressType.IPv4;
-    private static final String hostCONST="127.0.0.1";
+    private static final int ROOT_UID = 0, OWNER_UID = 3750, GROUP_MEMBER_UID = 3752, OTHER_UID = 3752, ANONYMOUOS_UID = 1111;
+    private static final int ROOT_GID = 0, OWNER_GID = 1000, OTHER_GID = 7777, ANONYMOUOS_GID = 2222;
 
-    private UnixPermissionHandler _permissionHandler;
+    /***********************************************************************************************************************************************************
+    * Static member variables
+    */
+
+    private static CellAdapterHelper cell;
+    private static UnixPermissionHandler permissionHandler;
+    private static FileMetaDataProviderHelper metadataSource;
+
+    private static Origin origin;
+    private static Subject subject_owner, subject_groupMember, subject_other, subject_anonymouos;
+
+    /***********************************************************************************************************************************************************
+    * Static methods
+    */
+    @BeforeClass
+    public static void setUpClass() throws Exception {
+        cell = new CellAdapterHelper("TestCell", CELL_ARGS); // Initialize dummy CellAdapter
+
+        permissionHandler = new UnixPermissionHandler(cell); // Initialize Permission Handler
+        metadataSource = (FileMetaDataProviderHelper) permissionHandler.getMetadataSource(); // Initialize Metadata Source
+
+        origin = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG, "127.0.0.1"); // Initialize origin
+
+        subject_owner = new Subject(OWNER_UID, OWNER_GID); // Initialize owner subject
+        subject_groupMember = new Subject(GROUP_MEMBER_UID, OWNER_GID); // Initialize group member subject
+        subject_other = new Subject(OTHER_UID, OTHER_GID); // Initialize other subject
+        subject_anonymouos = new Subject(ANONYMOUOS_UID, ANONYMOUOS_GID); // Initialize anonymous subject
+    }
 
     @Before
     public void setUp() throws Exception {
-        _permissionHandler = new UnixPermissionHandler(_dummyCell);
-        _metaDataSource.cleanAll();
+        metadataSource.cleanAll();
     }
+
+    /***********************************************************************************************************************************************************
+    * Tests
+    */
 
     @Test
     public void testCreateFile() throws Exception {
+        final PnfsId parentPnfsId = new PnfsId("00006E4FCE51400C4FA38F2E10AAB52E6306");
+        metadataSource.setMetaData(parentPnfsId, new FileMetaData(DIR, ROOT_UID, ROOT_GID, 0755));
+        assertTrue("Regular user is not allowed to create a file without sufficient permissions", //
+                permissionHandler.canCreateFile(parentPnfsId, subject_owner, origin) == AccessType.ACCESS_DENIED);
 
-        boolean isAllowed = false;
-
-        Origin origin = new Origin(authTypeCONST,  hostCONST);
-
-        FileMetaData parentMetaData =  new FileMetaData(true, 0, 0, 0755);
-        FileMetaData dirMetaData =  new FileMetaData(true, 3750, 1000, 0755);
-
-        _metaDataSource.setMetaData("/pnfs/desy.de/data", parentMetaData);
-        _metaDataSource.setMetaData("/pnfs/desy.de/data/tigran", dirMetaData);
-
-        Subject user = new Subject(3750, 1000, null);
-
-        isAllowed =  _permissionHandler.canCreateFile("/pnfs/desy.de/data/testFile", user, origin);
-
-        assertFalse("Regular user is not allowed to create a file without sufficient permissions", isAllowed);
-
-        isAllowed =  _permissionHandler.canCreateFile("/pnfs/desy.de/data/tigran/testFile", user, origin);
-
-        assertTrue("User should be allowed to create a file with sufficient permissions", isAllowed);
+        final PnfsId dirPnfsId = new PnfsId("00006E4FCE51400C4FA38F2E177777777776");
+        metadataSource.setMetaData(dirPnfsId, new FileMetaData(DIR, OWNER_UID, OWNER_GID, 0755));
+        assertTrue("User should be allowed to create a file with sufficient permissions", //
+                permissionHandler.canCreateFile(dirPnfsId, subject_owner, origin) == AccessType.ACCESS_ALLOWED);
     }
-
 
     @Test
     public void testCreateDir() throws Exception {
-
-        Origin origin = new Origin(authTypeCONST, hostCONST);
-        boolean isAllowed = false;
-
-        FileMetaData parentMetaData =  new FileMetaData(true, 0, 0, 0755);
-
-        _metaDataSource.setMetaData("/pnfs/desy.de/data", parentMetaData);
-
-        Subject user = new Subject(3750, 1000, null);
-
-        isAllowed =  _permissionHandler.canCreateDir("/pnfs/desy.de/data/tigran", user, origin);
-
-        assertFalse("Regular user is not allowed to create a directory without sufficient permissions", isAllowed);
-
+        final PnfsId pnfsId = new PnfsId("00006E4FCE51400C4FA38F2E10AAB52E6306");
+        metadataSource.setMetaData(pnfsId, new FileMetaData(DIR, ROOT_UID, ROOT_GID, 0755));
+        assertTrue("Regular user is not allowed to create a directory without sufficient permissions", //
+                permissionHandler.canCreateDir(pnfsId, subject_owner, origin) == AccessType.ACCESS_DENIED);
     }
+/*
+    @Test
+    public void testReadFile() throws Exception {
+        final PnfsId parentPnfsId = new PnfsId("00006E4FCE51400C4FA38F2E10AAB52E6306");
+        metadataSource.setMetaData(parentPnfsId, new FileMetaData(DIR, ROOT_UID, ROOT_GID, 0755));
 
+        final PnfsId filePnfsId = new PnfsId("00006E4FCE51400C4FA38F2E177777777777");
+        metadataSource.setMetaData(filePnfsId, new FileMetaData(FILE, OWNER_UID, OWNER_GID, 0600));
+
+        assertTrue("Owner is allowed to read his file with mode 0600", //
+                permissionHandler.canReadFile(filePnfsId, subject_owner, origin) == AccessType.ACCESS_ALLOWED);
+
+        assertTrue("Group member not allowed to read a file with mode 0600", //
+                permissionHandler.canReadFile(filePnfsId, subject_groupMember, origin) == AccessType.ACCESS_DENIED);
+
+        assertTrue("Other not allowed to read a file with mode 0600", //
+                permissionHandler.canReadFile(filePnfsId, subject_other, origin) == AccessType.ACCESS_DENIED);
+    }
+*/
+    @Test
+    public void testWriteFile() throws Exception {
+        final PnfsId parentPnfsId = new PnfsId("00006E4FCE51400C4FA38F2E10AAB52E6306");
+        metadataSource.setMetaData(parentPnfsId, new FileMetaData(DIR, ROOT_UID, ROOT_GID, 0755));
+
+        final PnfsId filePnfsId = new PnfsId("00006E4FCE51400C4FA38F2E177777777777");
+        metadataSource.setMetaData(filePnfsId, new FileMetaData(FILE, OWNER_UID, OWNER_GID, 0600));
+
+        assertTrue("Owner is allowed to write into his file with mode 0600", //
+                permissionHandler.canWriteFile(filePnfsId, subject_owner, origin) == AccessType.ACCESS_ALLOWED);
+
+        assertTrue("Group member not allowed to write into a file with mode 0600", //
+                permissionHandler.canWriteFile(filePnfsId, subject_groupMember, origin) == AccessType.ACCESS_DENIED);
+
+        assertTrue("Other not allowed to write into a file with mode 0600", //
+                permissionHandler.canWriteFile(filePnfsId, subject_other, origin) == AccessType.ACCESS_DENIED);
+    }
+/*
+    @Test
+    public void testGroupRead() throws Exception {
+        final PnfsId parentPnfsId = new PnfsId("00006E4FCE51400C4FA38F2E10AAB52E6306");
+        metadataSource.setMetaData(parentPnfsId, new FileMetaData(DIR, ROOT_UID, ROOT_GID, 0755));
+
+        final PnfsId filePnfsId = new PnfsId("00006E4FCE51400C4FA38F2E177777777777");
+        metadataSource.setMetaData(filePnfsId, new FileMetaData(FILE, OWNER_UID, OWNER_GID, 0640));
+
+        assertTrue("Owner is allowed to read his file with mode 0640", //
+                permissionHandler.canReadFile(filePnfsId, subject_owner, origin) == AccessType.ACCESS_ALLOWED);
+
+        assertTrue("Group member is allowed to read a file with mode 0640", //
+                permissionHandler.canReadFile(filePnfsId, subject_groupMember, origin) == AccessType.ACCESS_ALLOWED);
+
+        assertTrue("Group member not allowed to write into a file with mode 0640", //
+                permissionHandler.canWriteFile(filePnfsId, subject_groupMember, origin) == AccessType.ACCESS_DENIED);
+    }
 
     @Test
-    public void testReadPrivateFile() throws Exception {
+    public void testGroupWrite() throws Exception {
+        final PnfsId parentPnfsId = new PnfsId("00006E4FCE51400C4FA38F2E10AAB52E6306");
+        metadataSource.setMetaData(parentPnfsId, new FileMetaData(DIR, ROOT_UID, ROOT_GID, 0755));
 
-        Origin origin = new Origin(authTypeCONST,  hostCONST);
-        boolean isAllowed = false;
+        final PnfsId filePnfsId = new PnfsId("00006E4FCE51400C4FA38F2E177777777777");
+        metadataSource.setMetaData(filePnfsId, new FileMetaData(FILE, OWNER_UID, OWNER_GID, 0660));
 
-        FileMetaData parentMetaData =  new FileMetaData(true, 0, 0, 0755);
-        FileMetaData fileMetaData =  new FileMetaData(true, 3750, 1000, 0600);
+        assertTrue("Owner is allowed to read his file with mode 0660", //
+                permissionHandler.canReadFile(filePnfsId, subject_owner, origin) == AccessType.ACCESS_ALLOWED);
 
-        _metaDataSource.setMetaData("/pnfs/desy.de/data", parentMetaData);
-        _metaDataSource.setMetaData("/pnfs/desy.de/data/privateFile", fileMetaData);
+        assertTrue("Group member is allowed to read a file with mode 0660", //
+                permissionHandler.canReadFile(filePnfsId, subject_groupMember, origin) == AccessType.ACCESS_ALLOWED);
 
-        Subject owner = new Subject(3750, 1000, null);
-        Subject groupMember = new Subject(3752, 1000, null);
-        Subject other = new Subject(3752, 7777, null);
-
-        isAllowed =  _permissionHandler.canReadFile("/pnfs/desy.de/data/privateFile", owner, origin);
-
-        assertTrue("Owner is allowed to read his file with mode 0600", isAllowed);
-
-        isAllowed =  _permissionHandler.canReadFile("/pnfs/desy.de/data/privateFile", groupMember, origin);
-        assertFalse("Group member not allowed to read a file with mode 0600", isAllowed);
-
-        isAllowed =  _permissionHandler.canReadFile("/pnfs/desy.de/data/privateFile", other, origin);
-        assertFalse("Other not allowed to read a file with mode 0600", isAllowed);
-
+        assertTrue("Group member is allowed to write into a file with mode 0660", //
+                permissionHandler.canWriteFile(filePnfsId, subject_groupMember, origin) == AccessType.ACCESS_ALLOWED);
     }
-
-
-    @Test
-    public void testWritePrivateFile() throws Exception {
-
-        Origin origin = new Origin(authTypeCONST, hostCONST);
-        boolean isAllowed = false;
-
-        FileMetaData parentMetaData =  new FileMetaData(true, 0, 0, 0755);
-        FileMetaData fileMetaData =  new FileMetaData(true, 3750, 1000, 0600);
-
-        _metaDataSource.setMetaData("/pnfs/desy.de/data", parentMetaData);
-        _metaDataSource.setMetaData("/pnfs/desy.de/data/privateFile", fileMetaData);
-
-        Subject owner = new Subject(3750, 1000, null);
-        Subject groupMember = new Subject(3752, 1000, null);
-        Subject other = new Subject(3752, 7777, null);
-
-        isAllowed =  _permissionHandler.canWriteFile("/pnfs/desy.de/data/privateFile", owner, origin);
-
-        assertTrue("Owner is allowed to write into his file with mode 0600", isAllowed);
-
-        isAllowed =  _permissionHandler.canWriteFile("/pnfs/desy.de/data/privateFile", groupMember, origin);
-        assertFalse("Group member not allowed to write into a file with mode 0600", isAllowed);
-
-        isAllowed =  _permissionHandler.canWriteFile("/pnfs/desy.de/data/privateFile", other, origin);
-        assertFalse("Other not allowed to write into a file with mode 0600", isAllowed);
-
-    }
-
-
-    @Test
-    public void testGrouRead() throws Exception {
-
-        Origin origin = new Origin(authTypeCONST, hostCONST);
-        boolean isAllowed = false;
-
-        FileMetaData parentMetaData =  new FileMetaData(true, 0, 0, 0755);
-        FileMetaData fileMetaData =  new FileMetaData(true, 3750, 1000, 0640);
-
-        _metaDataSource.setMetaData("/pnfs/desy.de/data", parentMetaData);
-        _metaDataSource.setMetaData("/pnfs/desy.de/data/privateFile", fileMetaData);
-
-        Subject owner = new Subject(3750, 1000, null);
-        Subject groupMember = new Subject(3752, 1000, null);
-
-        isAllowed =  _permissionHandler.canReadFile("/pnfs/desy.de/data/privateFile", owner, origin);
-
-        assertTrue("Owner is allowed to read his file with mode 0600", isAllowed);
-
-        isAllowed =  _permissionHandler.canReadFile("/pnfs/desy.de/data/privateFile", groupMember, origin);
-        assertTrue("Group member is allowed to read a file with mode 0640", isAllowed);
-
-        isAllowed =  _permissionHandler.canWriteFile("/pnfs/desy.de/data/privateFile", groupMember, origin);
-        assertFalse("Group member not allowed to write into a file with mode 0640", isAllowed);
-
-    }
-
-
-    @Test
-    public void testGrouWrite() throws Exception {
-
-        Origin origin = new Origin(authTypeCONST,  hostCONST);
-        boolean isAllowed = false;
-
-        FileMetaData parentMetaData =  new FileMetaData(true, 0, 0, 0755);
-        FileMetaData fileMetaData =  new FileMetaData(true, 3750, 1000, 0660);
-
-        _metaDataSource.setMetaData("/pnfs/desy.de/data", parentMetaData);
-        _metaDataSource.setMetaData("/pnfs/desy.de/data/privateFile", fileMetaData);
-
-        Subject owner = new Subject(3750, 1000, null);
-        Subject groupMember = new Subject(3752, 1000, null);
-
-        isAllowed =  _permissionHandler.canReadFile("/pnfs/desy.de/data/privateFile", owner, origin);
-
-        assertTrue("Owner is allowed to read his file with mode 0600", isAllowed);
-
-        isAllowed =  _permissionHandler.canReadFile("/pnfs/desy.de/data/privateFile", groupMember, origin);
-        assertTrue("Group member is allowed to read a file with mode 0640", isAllowed);
-
-        isAllowed =  _permissionHandler.canWriteFile("/pnfs/desy.de/data/privateFile", groupMember, origin);
-        assertTrue("Group member is allowed to write into a file with mode 0660", isAllowed);
-
-    }
-
-
+*/
     @Test
     public void testGroupCreate() throws Exception {
-
-        Origin origin = new Origin(authTypeCONST,  hostCONST);
-        boolean isAllowed = false;
-
-        FileMetaData parentMetaData =  new FileMetaData(true, 3750, 1000, 0775);
-
-        _metaDataSource.setMetaData("/pnfs/desy.de/data", parentMetaData);
-
-        Subject groupMember = new Subject(3752, 1000, null);
-
-        isAllowed =  _permissionHandler.canCreateDir("/pnfs/desy.de/data/newDir", groupMember, origin);
-        assertTrue("Group member is allowed to create a new directory in a parent with mode 0770", isAllowed);
-
+        final PnfsId parentPnfsId = new PnfsId("00006E4FCE51400C4FA38F2E10AAB52E6306");
+        metadataSource.setMetaData(parentPnfsId, new FileMetaData(DIR, OWNER_UID, OWNER_GID, 0770));
+        assertTrue("Group member is allowed to create a new directory in a parent with mode 0770", //
+                permissionHandler.canCreateDir(parentPnfsId, subject_groupMember, origin) == AccessType.ACCESS_ALLOWED);
     }
 
     @Test
     public void testNegativeGroup() throws Exception {
-
-        Origin origin = new Origin(authTypeCONST,  hostCONST);
-        boolean isAllowed = false;
-
-        FileMetaData parentMetaData =  new FileMetaData(true, 3750, 1000, 0707);
-
-        _metaDataSource.setMetaData("/pnfs/desy.de/data", parentMetaData);
-
-        Subject groupMember = new Subject(3752, 1000, null);
-
-        isAllowed =  _permissionHandler.canCreateDir("/pnfs/desy.de/data/newDir", groupMember, origin);
-        assertFalse("Negative group member not allowed to create a new directory in a parent with mode 0707", isAllowed);
-
+        final PnfsId parentPnfsId = new PnfsId("00006E4FCE51400C4FA38F2E10AAB52E6306");
+        metadataSource.setMetaData(parentPnfsId, new FileMetaData(DIR, OWNER_UID, OWNER_GID, 0707));
+        assertTrue("Negative group member not allowed to create a new directory in a parent with mode 0707", //
+                permissionHandler.canCreateDir(parentPnfsId, subject_groupMember, origin) == AccessType.ACCESS_DENIED);
     }
 
     @Test
     public void testNegativeOwner() throws Exception {
-
-        Origin origin = new Origin(authTypeCONST,  hostCONST);
-        boolean isAllowed = false;
-
-        FileMetaData parentMetaData =  new FileMetaData(true, 3750, 1000, 0077);
-
-        _metaDataSource.setMetaData("/pnfs/desy.de/data", parentMetaData);
-
-        Subject groupMember = new Subject(3750, 1000, null);
-
-        isAllowed =  _permissionHandler.canCreateDir("/pnfs/desy.de/data/newDir", groupMember, origin);
-        assertFalse("Negative owner not allowed to create a new directory in a parent with mode 0077", isAllowed);
-
+        final PnfsId parentPnfsId = new PnfsId("00006E4FCE51400C4FA38F2E10AAB52E6306");
+        metadataSource.setMetaData(parentPnfsId, new FileMetaData(DIR, OWNER_UID, OWNER_GID, 0077));
+        assertTrue("Negative owner not allowed to create a new directory in a parent with mode 0077", //
+                permissionHandler.canCreateDir(parentPnfsId, subject_owner, origin) == AccessType.ACCESS_DENIED);
     }
 
-    @Ignore // I guess we, should never allow .....
+    @Ignore
+    // I guess we, should never allow ..... Ignore this test
     @Test
     public void testAnonymousWrite() throws Exception {
+        final PnfsId parentPnfsId = new PnfsId("00006E4FCE51400C4FA38F2E10AAB52E6306");
+        metadataSource.setMetaData(parentPnfsId, new FileMetaData(DIR, OWNER_UID, OWNER_GID, 0777));
 
-        Origin origin = new Origin(authTypeCONST,  hostCONST);
-        boolean isAllowed = false;
+        assertTrue("Anonymous not allowed to create a new files or directories",
+                permissionHandler.canCreateDir(parentPnfsId, subject_anonymouos, origin) == AccessType.ACCESS_DENIED);
 
-        FileMetaData parentMetaData =  new FileMetaData(true, 3750, 1000, 0777);
-
-        _metaDataSource.setMetaData("/pnfs/desy.de/data", parentMetaData);
-
-        Subject anonymouos = new Subject(1111, 2222, null);
-
-        isAllowed =  _permissionHandler.canCreateDir("/pnfs/desy.de/data/newDir", anonymouos, origin);
-        assertFalse("Anonymous not allowed to create a new files or directories", isAllowed);
-
-        isAllowed =  _permissionHandler.canWriteFile("/pnfs/desy.de/data/newFile", anonymouos, origin);
-        assertFalse("Anonymous not allowed to create a new files or directories", isAllowed);
-
+        assertTrue("Anonymous not allowed to create a new files or directories", //
+                permissionHandler.canWriteFile(parentPnfsId, subject_anonymouos, origin) == AccessType.ACCESS_DENIED);
     }
 }

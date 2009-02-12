@@ -34,6 +34,7 @@ import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
+import diskCacheV111.vehicles.PnfsGetParentMessage;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PnfsRenameMessage;
 import diskCacheV111.vehicles.StorageInfo;
@@ -264,6 +265,51 @@ public class PnfsManagerTest {
         _pnfsManager.getStorageInfo(pnfsGetStorageInfoMessage);
 
         // I don't know yet what is expected reply, but not NPE !
+    }
+
+    @Test
+    public void testGetParentOf() throws ChimeraFsException {
+        PnfsCreateDirectoryMessage pnfsCreateDirectoryMessage = new PnfsCreateDirectoryMessage("/pnfs/testRoot/testDir", 3750, 1000, 0750);
+        _pnfsManager.createDirectory(pnfsCreateDirectoryMessage);
+
+        FsInode rootInode = _fs.path2inode("/pnfs");
+        FsInode parentDirInode = _fs.path2inode("/pnfs/testRoot");
+        FsInode testDirInode = _fs.path2inode("/pnfs/testRoot/testDir");
+
+        PnfsId rootDirPnfs = new PnfsId(rootInode.toString());
+        PnfsId parentDirPnfs = new PnfsId(parentDirInode.toString());
+        PnfsId testDirPnfs = new PnfsId(testDirInode.toString());
+
+        PnfsGetParentMessage pnfsGetParentMessage1 = new PnfsGetParentMessage(testDirPnfs);
+        _pnfsManager.getParent(pnfsGetParentMessage1);
+        PnfsId pnfsOfParent1 = pnfsGetParentMessage1.getParent();
+
+        assertEquals("ok: pnfsOfParent1=parentDirPnfs", parentDirPnfs.toString(), pnfsOfParent1.toString());
+
+        PnfsGetParentMessage pnfsGetParentMessage2 = new PnfsGetParentMessage(parentDirPnfs);
+        _pnfsManager.getParent(pnfsGetParentMessage2);
+        PnfsId pnfsOfParent2 = pnfsGetParentMessage2.getParent();
+
+        assertEquals("ok: pnfsOfParent2=rootDirPnfs", rootDirPnfs.toString(), pnfsOfParent2.toString());
+
+        PnfsGetParentMessage pnfsGetParentMessage3 = new PnfsGetParentMessage(rootDirPnfs);
+        _pnfsManager.getParent(pnfsGetParentMessage3);
+        PnfsId pnfsOfParent3 = pnfsGetParentMessage3.getParent();
+
+        assertEquals("ok: pnfsOfParent3=000000000000000000000000000000000000","000000000000000000000000000000000000",pnfsOfParent3.toString());
+
+    }
+
+    @Test
+    public void testGetParentOfNotExistingResource() throws ChimeraFsException {
+
+        PnfsId tmp=new PnfsId("111113333300000000000000000000222222");
+        PnfsGetParentMessage pnfsGetParentMessage = new PnfsGetParentMessage(tmp);
+
+        _pnfsManager.getParent(pnfsGetParentMessage);
+
+        assertTrue("get parent of non existing resource should return FILE_NOT_FOUND", pnfsGetParentMessage.getReturnCode() == CacheException.FILE_NOT_FOUND );
+
     }
 
     @Test
