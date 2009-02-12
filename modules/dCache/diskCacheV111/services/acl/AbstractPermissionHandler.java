@@ -2,106 +2,125 @@ package diskCacheV111.services.acl;
 
 import java.io.File;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 
 import org.apache.log4j.Logger;
 import org.dcache.chimera.acl.ACLException;
 import org.dcache.chimera.acl.Origin;
 import org.dcache.chimera.acl.Subject;
 import org.dcache.chimera.acl.enums.FileAttribute;
-import org.dcache.chimera.acl.handler.AclFsHandler;
 
 import diskCacheV111.services.FileMetaDataSource;
-import diskCacheV111.util.FsPath;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellPath;
 import dmg.util.Args;
 
 /**
- * @author mdavid, irinak
+ * Abstract class that implements interface PermissionHandler.
+ *
+ * @author David Melkumyan, Irina Kozlova
  *
  */
-public abstract class AbstractPermissionHandler implements PermissionHandlerInterface {
+public abstract class AbstractPermissionHandler implements PermissionHandler {
 
-	private static final Logger logger = Logger.getLogger("logger.org.dcache.authorization." + AbstractPermissionHandler.class.getName());
+    private static final Logger _logger = Logger.getLogger("logger.org.dcache.authorization." + AbstractPermissionHandler.class.getName());
 
-	protected final FileMetaDataSource metadataSource ;
+    private static final long DEFAULT_PNFS_TIMEOUT = 60 * 1000L;
 
-	protected AbstractPermissionHandler(CellAdapter cell) throws ACLException {
-		final Args args = cell.getArgs();
+    protected FileMetaDataSource _metadataSource;
 
-		String metadataProvider = args.getOpt("meta-data-provider");
-		if ( metadataProvider == null || metadataProvider.length() == 0 )
-			metadataProvider = "diskCacheV111.services.PnfsManagerFileMetaDataSource";
+    private PnfsHandler _pnfsHandler;
 
-		logger.debug("Loading metadata provider: " + metadataProvider);
+    protected AbstractPermissionHandler(CellAdapter cell) throws ACLException {
+        if (cell == null)
+            throw new ACLException("Initialize Permission Handler failed: Argument 'cell' is NULL.");
 
-		try {
+        final Args args = cell.getArgs();
+        try {
+        String metadataProvider = args.getOpt("meta-data-provider");
+        if ( metadataProvider == null || metadataProvider.length() == 0 )
+            metadataProvider = "diskCacheV111.services.PnfsManagerFileMetaDataSource";
 
-    		Class<?>[] argClass = { dmg.cells.nucleus.CellAdapter.class };
-    		Constructor<?> constructor = Class.forName(metadataProvider).getConstructor(argClass);
-    		Object[] init_args = { cell };
-    		metadataSource = (FileMetaDataSource) constructor.newInstance(init_args);
+            _logger.debug("Loading metadata provider: " + metadataProvider);
+            Class<?>[] argClass = { CellAdapter.class };
+            Constructor<?> constructor = Class.forName(metadataProvider).getConstructor(argClass);
+            Object[] init_args = { cell };
+            _metadataSource = (FileMetaDataSource) constructor.newInstance(init_args);
 
-		}catch(IllegalArgumentException e) {
-		    throw new ACLException("Failed to initialize ACL", e);
-		}catch(NoSuchMethodException e) {
-		    throw new ACLException("Failed to initialize ACL", e);
-		}catch(ClassNotFoundException e) {
-		    throw new ACLException("Failed to initialize ACL", e);
-		}catch(InvocationTargetException e) {
-		    throw new ACLException("Failed to initialize ACL", e);
-		}catch(IllegalAccessException e) {
-		    throw new ACLException("Failed to initialize ACL", e);
-		}catch(InstantiationException e) {
-		    throw new ACLException("Failed to initialize ACL", e);
-		}
-	}
+            String pnfsManager = args.getOpt("pnfsManager");
+            if (pnfsManager == null || pnfsManager.length() == 0)
+                pnfsManager = "PnfsManager";
 
-	protected PnfsId getParentId(PnfsId pnfsId) {
-		return null; // TODO: implement
-	}
+            _logger.debug("Initializing PnfsHandler from: " + pnfsManager);
+            _pnfsHandler = new PnfsHandler(cell, new CellPath(pnfsManager));
+            long msec = DEFAULT_PNFS_TIMEOUT;
+            String tmpstr = null;
+            try {
+                tmpstr = args.getOpt("pnfsTimeout");
+                if(tmpstr == null || tmpstr.length() == 0)  {
+                    msec = DEFAULT_PNFS_TIMEOUT;
+                } else {
+                    int secTimeout = Integer.parseInt(tmpstr);
+                    if (secTimeout < 0) {
+                        throw new IllegalArgumentException("Incorrect configuraion of pnfsTimeout (negative number): "+ tmpstr);
+                    }
+                    msec = secTimeout * 1000L;
+                }
+            } catch (java.lang.NumberFormatException e) {
+                throw new IllegalArgumentException("Incorrect configuraion of pnfsTimeout: "+ tmpstr);
+            }
+            _pnfsHandler.setPnfsTimeout(msec);
 
-	protected String getParentPath(String pnfsPath) {
-		return (new File(pnfsPath)).getParent();
-	}
+        } catch (Exception e) {
+            throw new ACLException("Failed to Initialize ACL ", e);
+        }
+    }
 
-	protected String getParentPath(FsPath fsPath) {
-		fsPath.add(".."); // go one level up
-		return fsPath.toString();
-	}
+    public FileMetaDataSource getMetadataSource() {
+        return _metadataSource;
+    }
 
-	protected String args2String(String pnfsPath) {
-		return "Args:\n" + "pnfsPath: " + pnfsPath + "\n";
-	}
-	protected String args2String(PnfsId pnfsId) {
-		return "Args:\n" + "pnfsId: " + pnfsId.toString() + "\n";
-	}
+    public void setMetadataSource(FileMetaDataSource metadataSource) {
+        _metadataSource = metadataSource;
+    }
 
-	protected String args2String(String pnfsPath, Subject subject, Origin origin) {
-		StringBuilder sb = new StringBuilder("Args:\n");
-		sb.append("pnfsPath: ").append(pnfsPath).append("\n");
-		sb.append("subject: ").append(subject).append("\n");
-		sb.append("origin: ").append(origin).append("\n");
-		return sb.toString();
-	}
-	protected String args2String(PnfsId pnfsId, Subject subject, Origin origin) {
-		StringBuilder sb = new StringBuilder("Args:\n");
-		sb.append("pnfsId: ").append(pnfsId).append("\n");
-		sb.append("subject: ").append(subject).append("\n");
-		sb.append("origin: ").append(origin).append("\n");
-		return sb.toString();
-	}
+    protected PnfsId getParentId(PnfsId pnfsId) throws CacheException {
 
-	protected String args2String(String pnfsPath, Subject subject, Origin origin, FileAttribute attribute) {
-		StringBuilder sb = new StringBuilder(args2String(pnfsPath, subject, origin));
-		sb.append("attributes: ").append(attribute.toString()).append("\n");
-		return sb.toString();
-	}
-	protected String args2String(PnfsId pnfsId, Subject subject, Origin origin, FileAttribute attribute) {
-		StringBuilder sb = new StringBuilder(args2String(pnfsId, subject, origin));
-		sb.append("attributes: ").append(attribute.toString()).append("\n");
-		return sb.toString();
-	}
+        PnfsId parentPnfsId = _pnfsHandler.getParentOf(pnfsId);
+        if (_logger.isDebugEnabled()) {
+            _logger.debug("Getting parent pnfsId of: " + pnfsId);
+            _logger.debug("parentPnfsId = " + parentPnfsId);
+        }
+
+        return parentPnfsId;
+    }
+
+    protected String getParentPath(String pnfsPath) {
+        return (new File(pnfsPath)).getParent();
+    }
+
+    protected String args2String(String pnfsPath) {
+        return "Args:\n" + "pnfsPath: " + pnfsPath + "\n";
+    }
+
+    protected String args2String(PnfsId pnfsId) {
+        return "Args:\n" + "pnfsId: " + pnfsId.toString() + "\n";
+    }
+
+    protected String args2String(PnfsId pnfsId, Subject subject, Origin origin) {
+        StringBuilder sb = new StringBuilder("Args:\n");
+        sb.append("pnfsId: ").append(pnfsId).append("\n");
+        sb.append("subject: ").append(subject).append("\n");
+        sb.append("origin: ").append(origin).append("\n");
+        return sb.toString();
+    }
+
+    protected String args2String(PnfsId pnfsId, Subject subject, Origin origin, FileAttribute attribute) {
+        StringBuilder sb = new StringBuilder(args2String(pnfsId, subject, origin));
+        sb.append("attributes: ").append(attribute.toString()).append("\n");
+        return sb.toString();
+    }
 
 }
