@@ -110,17 +110,17 @@ create diskCacheV111.cells.CleanerV2 cleaner \
         "default \
          -export \
          -trash=${trash} \
-	 -refresh=${cleanerRefresh} \
+  -refresh=${cleanerRefresh} \
          -recover=${cleanerRecover} \
-	 -db=${cleanerDB} \
+  -db=${cleanerDB} \
          -reportRemove=broadcast \
          -poolTimeout=${cleanerPoolTimeout}   \
          -processFilesPerRun=${cleanerProcessFilesPerRun} \
          -archive=${cleanerArchive} \
-	"
+  "
 
 #
-# HSM cleaner. 
+# HSM cleaner.
 #
 onerror continue
 
@@ -136,3 +136,25 @@ eval ${hsmCleaner} enabled ==
 exec context hsmcleaner.exe -run -ifok=rc
 
 onerror shutdown
+
+#
+# ACL-administration
+#
+onerror continue
+
+set context -c aclTable      t_acl
+set context -c aclConnDriver org.postgresql.Driver
+set context -c aclConnUrl    jdbc:postgresql://localhost/chimera?prepareThreshold=3
+set context -c aclConnUser   postgres
+set context -c aclConnPswd   ""
+#
+create org.dcache.acl.AclCell acladmin \
+        "-export \
+         -aclTable=${aclTable} \
+         -aclConnDriver=${aclConnDriver} \
+         -aclConnUrl=${aclConnUrl} \
+         -aclConnUser=${aclConnUser} \
+         -aclConnPswd=${aclConnPswd} \
+         "
+onerror shutdown
+

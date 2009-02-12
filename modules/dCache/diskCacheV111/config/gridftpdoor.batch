@@ -50,8 +50,16 @@ set context -c gsiftpAdapterInternalInterface ""
 set context -c gsiftpIoQueue                  ""
 set context -c overwriteEnabled false
 set context -c gsiftpAllowPassivePool false
-set context -c PermissionHandlerDataSource diskCacheV111.services.PnfsFileMetaDataSource
+set context -c PermissionHandlerDataSource diskCacheV111.services.PnfsManagerFileMetaDataSource
 set context -c FtpTLogDir ""
+set context -c permissionHandler diskCacheV111.services.acl.UnixPermissionHandler
+#  ----- ACL-variables
+set context -c aclTable      t_acl
+set context -c aclConnDriver org.postgresql.Driver
+set context -c aclConnUrl    jdbc:postgresql://localhost/chimera?prepareThreshold=3
+set context -c aclConnUser   postgres
+set context -c aclConnPswd   ""
+
 #
 #  ----  Usage of Srm Space Manager
 #
@@ -103,8 +111,12 @@ create dmg.cells.services.login.LoginManager GFTP-${thisHostname} \
              -gplazma-authorization-module-policy=${gplazmaPolicy} \
              -io-queue=${gsiftpIoQueue} \
              -kpwd-file=${kpwdFile} \
-#             -permission-handler=diskCacheV111.services.acl.ACLPermissionHandler \
-#             -acl-permission-handler-config=acl.properties \
+             -permission-handler=${permissionHandler} \
+             -aclTable=${aclTable} \
+             -aclConnDriver=${aclConnDriver} \
+             -aclConnUrl=${aclConnUrl} \
+             -aclConnUser=${aclConnUser} \
+             -aclConnPswd=${aclConnPswd} \
              -ftp-adapter-internal-interface=${gsiftpAdapterInternalInterface} \
              -meta-data-provider=${PermissionHandlerDataSource} \
              -overwrite=${overwriteEnabled} \

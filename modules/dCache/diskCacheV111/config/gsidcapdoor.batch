@@ -32,6 +32,13 @@ onerror continue
    set context -c gsidcapIoQueue              ""
    set context -c gsidcapIoQueueOverwrite     denied
    set context -c gsidcapMaxLogin             1500
+   set context -c permissionHandler           diskCacheV111.services.acl.UnixPermissionHandler
+#  ----- ACL-variables
+   set context -c aclTable      t_acl
+   set context -c aclConnDriver org.postgresql.Driver
+   set context -c aclConnUrl    jdbc:postgresql://localhost/chimera?prepareThreshold=3
+   set context -c aclConnUser   postgres
+   set context -c aclConnPswd   ""
 
 #
 #  ----  Usage of Srm Space Manager
@@ -65,7 +72,13 @@ create dmg.cells.services.login.LoginManager DCap-gsi-${thisHostname} \
               -protocolFamily=gsidcap \
               -protocolVersion=1.3.0 \
               -authorization=strong \
-              -poolProxy=PoolManager  \
+              -poolProxy=PoolManager \
+              -permission-handler=${permissionHandler} \
+              -aclTable=${aclTable} \
+              -aclConnDriver=${aclConnDriver} \
+              -aclConnUrl=${aclConnUrl} \
+              -aclConnUser=${aclConnUser} \
+              -aclConnPswd=${aclConnPswd} \
               -io-queue=${gsidcapIoQueue} \
               -io-queue-overwrite=${gsidcapIoQueueOverwrite} \
               -use-gplazma-authorization-module=${useGPlazmaAuthorizationModule} \

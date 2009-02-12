@@ -576,9 +576,9 @@ pnfs=/pnfs/fs
 
 #  ---- Number of cache location threads
 #
-#   The number of threads used for cache location updates and 
+#   The number of threads used for cache location updates and
 #   lookups. If 0 then the regular pnfs manager thread queues are
-#   used for cache location lookups. If non-zero then dedicated 
+#   used for cache location lookups. If non-zero then dedicated
 #   threads for cache location operations are created.
 #
 #pnfsNumberOfLocationThreads=0
@@ -642,7 +642,7 @@ pnfs=/pnfs/fs
 #
 cacheInfo=companion
 
-#  ---- Default Access Latency and Retention Policy 
+#  ---- Default Access Latency and Retention Policy
 #
 #   These variables affect only newly created files.
 #
@@ -978,7 +978,7 @@ billingDb=${ourHomeDir}/billing
 #billingDbName=billing
 #billingDbCommitRows=100
 #billingDbCommitIntervalInMilliseconds=30000
-# the following enables using pgfile, which is disabled by 
+# the following enables using pgfile, which is disabled by
 #billingDbPgPassFileName=/root/.pgpass
 
 
@@ -1101,7 +1101,7 @@ statisticsLocation=${ourHomeDir}/statistics
 
 #  ---- Authorization options
 #
-# 	The following two variables enable authorization in the xrootd
+#   The following two variables enable authorization in the xrootd
 #   door.  Currently, dCache supports only one plugin, which
 #   implements token based authorization controlled by a remote
 #   filecatalogue.  This requires an additional keystore file that
@@ -1131,3 +1131,37 @@ statisticsLocation=${ourHomeDir}/statistics
 #   instance).
 #
 #xrootdMaxOpenFilesPerConnection=5000
+
+
+#  -----------------------------------------------------------------------
+#       ACL Configuration
+#  -----------------------------------------------------------------------
+#
+#     The following options describe how dCache ACL support will contact
+#     a database for querying and updating ACLs.
+#     By default, the table 't_acl' is used in database 'chimera' on
+#     the machine 'localhost'.
+#     If Chimera is deployed with the 'chimera' database on the same machine
+#     as ChimeraDomain then the table will exist locally and
+#     no configuration is needed.
+#     If PNFS is deployed then a suitable table must be created and
+#     the acl variables adjusted accordingly.
+#
+#     One of the following cases must be used:
+#     1) only UNIX permissions are used
+#        permissionHandler=diskCacheV111.services.acl.UnixPermissionHandler
+#     2) only ACL permissions are used
+#        permissionHandler=diskCacheV111.services.acl.ACLPermissionHandler
+#     3) ACL permissions are used first. If ACLs do not state whether
+#        an operation is allowed or denied then UNIX permissions are used
+#        permissionHandler=diskCacheV111.services.acl.ACLPermissionHandler,diskCacheV111.services.acl.UnixPermissionHandler
+#
+#     The default case is 1).
+#
+#permissionHandler=diskCacheV111.services.acl.UnixPermissionHandler
+#aclTable=t_acl
+#aclConnDriver=org.postgresql.Driver
+#aclConnUrl=jdbc:postgresql://localhost/chimera?prepareThreshold=3
+#aclConnUser=postgres
+#aclConnPswd=
+

@@ -111,6 +111,30 @@ create org.dcache.chimera.namespace.ChimeraCleaner cleaner \
          -poolTimeout=${cleanerPoolTimeout}   \
          -processFilesPerRun=${cleanerProcessFilesPerRun} \
          -chimeraConfig=${config}/chimera-config.xml \
-	"
+  "
 
 #
+# ACL-administration
+#
+onerror continue
+
+set context -c aclTable      t_acl
+set context -c aclConnDriver org.postgresql.Driver
+set context -c aclConnUrl    jdbc:postgresql://localhost/chimera?prepareThreshold=3
+set context -c aclConnUser   postgres
+set context -c aclConnPswd   ""
+#
+create org.dcache.acl.AclCell acladmin \
+        "-export \
+         -aclTable=${aclTable} \
+         -aclConnDriver=${aclConnDriver} \
+         -aclConnUrl=${aclConnUrl} \
+         -aclConnUser=${aclConnUser} \
+         -aclConnPswd=${aclConnPswd} \
+         "
+onerror shutdown
+#
+create org.dcache.chimera.namespace.DirectoryLookUpPool dirLookupPool \
+        "-export \
+         -chimeraConfig=${config}/chimera-config.xml \
+        "
