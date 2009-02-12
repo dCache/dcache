@@ -189,7 +189,7 @@ CREATE TABLE t_storageinfo (
    ipnfsid CHAR(36) PRIMARY KEY,
    ihsmName VARCHAR(64) NOT NULL,
    istorageGroup VARCHAR(64) NOT NULL,
-   istorageSubGroup VARCHAR(64) NOT NULL,   
+   istorageSubGroup VARCHAR(64) NOT NULL,
    FOREIGN KEY (ipnfsid) REFERENCES t_inodes( ipnfsid ) ON DELETE CASCADE
 );
 
@@ -230,7 +230,7 @@ CREATE TABLE t_locationinfo_trash (
 
 CREATE INDEX i_locationinfo_ipnfsid ON t_locationinfo(ipnfsid);
 
-CREATE TABLE t_acl ( 
+CREATE TABLE t_acl (
 	 rs_id varchar(36) NOT NULL,
 	 rs_type  integer NOT NULL,
 	 type  integer NOT NULL,
@@ -240,17 +240,8 @@ CREATE TABLE t_acl (
 	 who_id  integer,
 	 address_msk  varchar(32) DEFAULT 'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF',
 	 ace_order  integer NOT NULL,
-	PRIMARY KEY (rs_id, ace_order)
- );
- CREATE INDEX i_t_acl_rs_id ON t_acl(rs_id);
- 
- CREATE TABLE  t_users  ( 
-	 id  integer  PRIMARY KEY,
-	 user_name  varchar(64) NOT NULL,
-	 dn  varchar(64)
+	 PRIMARY KEY (rs_id, ace_order),
+     FOREIGN KEY (rs_id) REFERENCES t_inodes( ipnfsid ) ON DELETE CASCADE
  );
 
- CREATE TABLE  t_groups  ( 
-	 id  integer PRIMARY KEY,
-	 group_name  varchar(64) NOT NULL
- );
+ CREATE INDEX i_t_acl_rs_id ON t_acl(rs_id);

@@ -62,8 +62,6 @@ $t_inodes_trash$ LANGUAGE plpgsql;
 CREATE TRIGGER tgr_locationinfo_trash BEFORE DELETE ON t_inodes FOR EACH ROW EXECUTE PROCEDURE f_locationinfo2trash();
 
 
-
-
 ---
 --- populate inhereted tags
 ---
@@ -83,3 +81,59 @@ $t_populate_tags$ LANGUAGE plpgsql;
 --
 
 CREATE TRIGGER tgr_populate_tags AFTER INSERT ON t_dirs FOR EACH ROW EXECUTE PROCEDURE f_populate_tags();
+
+--
+-- ********  ACL in dCache  **********
+--
+
+-------------------------------------------------------------------------------
+--  trigger to inherit ACLs for newly created file/directory
+
+-------------------------------------------------------------------------------
+-- optimized by mdavid
+--
+CREATE SEQUENCE serial MINVALUE 0;
+
+CREATE OR REPLACE FUNCTION f_insertACL() RETURNS trigger AS $$
+DECLARE
+    msk INTEGER;
+    flag INTEGER;
+    rstype INTEGER;
+    id character(36);
+    parentid character(36);
+
+BEGIN
+    IF (TG_OP = 'INSERT') THEN
+        msk := 0;
+        SELECT INTO rstype itype FROM t_inodes WHERE ipnfsid = NEW.ipnfsid;
+
+        IF rstype = 32768  THEN
+            id := NEW.ipnfsid;
+            parentid := NEW.iparent;
+            rstype := 1;    -- inserted object is a file
+            flag := 1;      -- check flags for 'f' bit
+            msk := 11;      -- mask contains 'o','d' and 'f' bits
+
+        ELSIF (rstype = 16384 AND NEW.iname = '..') THEN
+            id := NEW.iparent;
+            parentid := NEW.ipnfsid;
+            rstype := 0;    -- inserted object is a directory
+            flag := 3;      -- check flags for 'd' and 'f' bits
+            msk := 8;       -- mask contains 'o' bit
+        END IF;
+
+        IF msk > 0 THEN
+            ALTER SEQUENCE serial START 0;
+
+            INSERT INTO t_acl
+            SELECT id, rstype, type, (flags | msk) # msk, access_msk, who, who_id, address_msk, nextval('serial')
+            FROM t_acl
+            WHERE  rs_id = parentid AND (flags & flag > 0)
+            ORDER BY ace_order;
+        END IF;
+    END IF;
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER  tgr_insertACL AFTER INSERT ON  t_dirs FOR EACH ROW EXECUTE PROCEDURE  f_insertACL();
