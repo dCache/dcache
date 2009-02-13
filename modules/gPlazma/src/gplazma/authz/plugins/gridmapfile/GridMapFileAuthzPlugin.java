@@ -103,9 +103,13 @@ public class GridMapFileAuthzPlugin extends RecordMappingPlugin {
             throw new AuthorizationException(denied);
         }
 
-        //authRecord = storageRecordsServ.getStorageUserRecord(user_name);
-        //return authRecord;
-        return getgPlazmaAuthorizationRecord(user_name, subjectDN, role);
+        gPlazmaAuthorizationRecord gauthrec = getgPlazmaAuthorizationRecord(user_name, subjectDN, role);
+        if (gauthrec!=null) {
+            gauthrec.setSubjectDN(subjectDN);
+            // Set the fqan to null, because it was not used for authorization.
+            gauthrec.setFqan(null);
+        }
+        return gauthrec;
     }
 
 

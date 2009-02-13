@@ -85,10 +85,8 @@ public class VORoleMapAuthzPlugin extends RecordMappingPlugin {
             throws AuthorizationException {
 
         String user_name=null;
-        if(role == null) {
-            role = "";
-        }
-        String identity = subjectDN.concat(role);
+
+        String identity = (role!=null) ? subjectDN.concat(role) : subjectDN;
 
         VORoleMapHandler voRoleMapHandler;
 
@@ -147,7 +145,12 @@ public class VORoleMapAuthzPlugin extends RecordMappingPlugin {
             }
         }
 
-        return getgPlazmaAuthorizationRecord(user_name, subjectDN, role);
+        gPlazmaAuthorizationRecord gauthrec = getgPlazmaAuthorizationRecord(user_name, subjectDN, role);
+        if (gauthrec!=null) {
+            gauthrec.setSubjectDN(subjectDN);
+            gauthrec.setFqan(role);
+        }
+        return gauthrec;
     }
 
     private String mapUsername(VORoleMapHandler gridVORolemapServ, String gridFineGrainIdentity) throws Exception {
