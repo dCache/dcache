@@ -722,11 +722,13 @@ public class PnfsManagerV3 extends CellAdapter {
 
     public String ac_dump_path_cache(Args args)
     {
-        StringBuffer s = new StringBuffer();
-        for (Map.Entry<String,Integer> e: _pathToDBCache.entrySet()) {
-            s.append(String.format("%3d -> %s\n", e.getValue(), e.getKey()));
+        synchronized (_pathToDBCache) {
+            StringBuffer s = new StringBuffer();
+            for (Map.Entry<String,Integer> e: _pathToDBCache.entrySet()) {
+                s.append(String.format("%3d -> %s\n", e.getValue(), e.getKey()));
+            }
+            return s.toString();
         }
-        return s.toString();
     }
 
     private void dumpThreadQueue(int queueId) {
@@ -1505,9 +1507,14 @@ public class PnfsManagerV3 extends CellAdapter {
                         (Math.abs(pnfsId.hashCode()) % _threads);
                     say("Using thread [" + pnfsId + "] " + index);
                 } else if (path != null) {
-                    index =
-                        (pathToDatabaseId(path) % _threadGroups) * _threads +
-                        (Math.abs(path.hashCode()) % _threads);
+                    if (_threadGroups > 1) {
+                        index =
+                            (pathToDatabaseId(path) % _threadGroups) * _threads +
+                            (Math.abs(path.hashCode()) % _threads);
+                    } else {
+                        index =
+                            (Math.abs(path.hashCode()) % _threads);
+                    }
                     say("Using thread [" + path + "] " + index);
                 } else {
                     index = _random.nextInt(_fifos.length);
@@ -1735,11 +1742,17 @@ public class PnfsManagerV3 extends CellAdapter {
     private void updatePathToDatabaseIdCache(String path, int id)
     {
         try {
-            SortedMap<String,Integer> map = _pathToDBCache.headMap(path);
-            if (map.isEmpty() || !path.startsWith(map.lastKey()) ||
-                map.get(map.lastKey()) != id) {
-                String root = getDatabaseRoot(new File(path)).getPath();
-                int db = _nameSpaceProvider.pathToPnfsid(root, true).getDatabaseId();
+            synchronized (_pathToDBCache) {
+                SortedMap<String,Integer> map = _pathToDBCache.headMap(path);
+                if (!map.isEmpty() && path.startsWith(map.lastKey()) &&
+                    map.get(map.lastKey()) == id) {
+                    return;
+                }
+            }
+
+            String root = getDatabaseRoot(new File(path)).getPath();
+            int db = _nameSpaceProvider.pathToPnfsid(root, true).getDatabaseId();
+            synchronized (_pathToDBCache) {
                 _pathToDBCache.put(root + File.separator, db);
             }
         } catch (Exception e) {
@@ -1806,9 +1819,11 @@ public class PnfsManagerV3 extends CellAdapter {
         throws CacheException
     {
         try {
-            SortedMap<String,Integer> map = _pathToDBCache.headMap(path);
-            if (!map.isEmpty() && path.startsWith(map.lastKey())) {
-                return map.get(map.lastKey());
+            synchronized (_pathToDBCache) {
+                SortedMap<String,Integer> map = _pathToDBCache.headMap(path);
+                if (!map.isEmpty() && path.startsWith(map.lastKey())) {
+                    return map.get(map.lastKey());
+                }
             }
 
             return pathToPnfsid(path, true).getDatabaseId();
