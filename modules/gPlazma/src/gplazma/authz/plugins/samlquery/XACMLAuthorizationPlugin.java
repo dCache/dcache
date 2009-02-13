@@ -7,6 +7,9 @@ import java.util.*;
 import java.lang.*;
 import java.net.Socket;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CRLException;
+import java.io.IOException;
 
 import gplazma.authz.AuthorizationException;
 import gplazma.authz.util.HostUtil;
@@ -16,9 +19,8 @@ import org.opensciencegrid.authz.xacml.common.LocalId;
 import org.opensciencegrid.authz.xacml.common.XACMLConstants;
 import org.opensciencegrid.authz.xacml.client.MapCredentialsClient;
 import org.apache.log4j.*;
-import org.glite.security.voms.ac.AttributeCertificate;
-import org.glite.security.voms.VOMSAttribute;
 import org.ietf.jgss.GSSException;
+import org.glite.voms.VOMSAttribute;
 
 /**
  *
@@ -77,6 +79,17 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
             }
         } catch (GSSException e) {
             getLogger().warn("Could not find attribute certificate for fqan : " + fqan + "\n" + e.getMessage());
+        }catch(IOException e) {
+            getLogger().error("Problems while initializing the attribute certificate verifier: " + e.getMessage());
+            throw new IllegalArgumentException("Problems with the passed store: " + e.getMessage());
+        }
+        catch (CertificateException e) {
+            getLogger().error("Problems while initializing the attribute certificate verifier: " + e.getMessage());
+            throw new IllegalArgumentException("Problems with the passed store: " + e.getMessage());
+        }
+        catch (CRLException e) {
+            getLogger().error("Problems while initializing the attribute certificate verifier: " + e.getMessage());
+            throw new IllegalArgumentException("Problems with the passed store: " + e.getMessage());
         }
 
 
@@ -158,9 +171,9 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
             throw new AuthorizationException(denied);
         }
 
-        gPlazmaAuthorizationRecord authRecord = getgPlazmaAuthorizationRecord(localId, X509Subject, fqan);
+        gPlazmaAuthorizationRecord gauthrec = getgPlazmaAuthorizationRecord(localId, X509Subject, fqan);
 
-        if(authRecord==null) {
+        if(gauthrec==null) {
             String denied = DENIED_MESSAGE + ": No authorization record found for username " + localId.getUserName() + " mapped from " + X509Subject + " and role " + fqan;
             getLogger().warn(denied);
             throw new AuthorizationException(denied);
@@ -168,7 +181,7 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
 
         if(getCacheLifetime()>0) putUsernameMapping(key, new TimedLocalId(localId, resourceX509ID, desiredUserName));
 
-        return authRecord;
+        return gauthrec;
     }
 
     private gPlazmaAuthorizationRecord getgPlazmaAuthorizationRecord(LocalId localId, String subjectDN, String role) throws AuthorizationException {
@@ -177,7 +190,12 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
 
         if(username!=null) {
             getLogger().info("xacml-vo-mapping service returned Username: " + username);
-            return getgPlazmaAuthorizationRecord(username, subjectDN, role);
+            gPlazmaAuthorizationRecord gauthrec = getgPlazmaAuthorizationRecord(username, subjectDN, role);
+            if(gauthrec!=null) {
+                gauthrec.setSubjectDN(subjectDN);
+                gauthrec.setFqan(role);
+            }
+            return gauthrec;
         } else {
             if(localId.getUID() == null || localId.getGID() == null) {
                 String denied = DENIED_MESSAGE + ": XACML mapping returned a null username and no uid or gid for DN " + subjectDN + " amd role " + role;
@@ -189,9 +207,9 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
         }
 
         username = localId.getUID() + ":" + localId.getGID();
-        gPlazmaAuthorizationRecord authRecord = getgPlazmaAuthorizationRecord(username, subjectDN, role);
+        gPlazmaAuthorizationRecord gauthrec = getgPlazmaAuthorizationRecord(username, subjectDN, role);
 
-        if(authRecord==null) {
+        if(gauthrec==null) {
             String denied = DENIED_MESSAGE + ": No authorization record found for username " + username + " mapped from DN " + subjectDN + " and role " + role;
             getLogger().warn(denied);
             throw new AuthorizationException(denied);
@@ -207,7 +225,7 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
             throw new AuthorizationException(denied);
         }
 
-        if (authRecord.getUID() != uid || authRecord.getGID() != gid) {
+        if (gauthrec.getUID() != uid || gauthrec.getGID() != gid) {
             String denied = DENIED_MESSAGE + ": uid or gid from mapping service did not match uid or gid of authorization record";
             getLogger().warn(denied);
             throw new AuthorizationException(denied);
@@ -217,7 +235,7 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
         // If the authorization service returned secondary GIDs, add them to the GIDs obtained from the local policy.
         String[] secndgids = localId.getSecondaryGIDs();
         if (secndgids !=null && secndgids.length > 0) {
-            int[] authzgids = authRecord.getGIDs();
+            int[] authzgids = gauthrec.getGIDs();
             LinkedHashSet<String> allGIDs = new LinkedHashSet<String>(authzgids.length + secndgids.length);
             for (int gidl : authzgids) {
                 allGIDs.add(Integer.toString(gidl));
@@ -231,21 +249,25 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
                 while (GIDsIter.hasNext()) {
                     newGIDs[i++] = Integer.decode(GIDsIter.next());
                 }
-                authRecord =  new gPlazmaAuthorizationRecord(authRecord.getUsername(),
-                        authRecord.isReadOnly(),
-                        authRecord.getPriority(),
-                        authRecord.getUID(),
+                gauthrec =  new gPlazmaAuthorizationRecord(gauthrec.getUsername(),
+                        gauthrec.isReadOnly(),
+                        gauthrec.getPriority(),
+                        gauthrec.getUID(),
                         newGIDs,
-                        authRecord.getHome(),
-                        authRecord.getRoot(),
-                        authRecord.getFsRoot(),
-                        authRecord.getSubjectDN(),
-                        authRecord.getFqan(),
-                        authRecord.getRequestID());
+                        gauthrec.getHome(),
+                        gauthrec.getRoot(),
+                        gauthrec.getFsRoot(),
+                        gauthrec.getSubjectDN(),
+                        gauthrec.getFqan(),
+                        gauthrec.getRequestID());
             }
         }
+        if (gauthrec!=null) {
+            gauthrec.setSubjectDN(subjectDN);
+            gauthrec.setFqan(role);
+        }
 
-        return authRecord;
+        return gauthrec;
     }
 
     private synchronized void putUsernameMapping(String key, TimedLocalId tlocalId) {

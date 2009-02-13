@@ -55,7 +55,12 @@ public class SAML1AuthorizationPlugin extends SAMLAuthorizationPlugin {
                     tlocalId.sameDesiredUserName(desiredUserName)) {
                 getLogger().info("Using cached mapping for User with DN: " + subjectDN + " and Role " + role + "with Desired user name: " + desiredUserName);
 
-                return getgPlazmaAuthorizationRecord(tlocalId.getLocalId(), subjectDN, role);
+                gPlazmaAuthorizationRecord gauthrec = getgPlazmaAuthorizationRecord(tlocalId.getLocalId(), subjectDN, role);
+                if (gauthrec!=null) {
+                    gauthrec.setSubjectDN(subjectDN);
+                    gauthrec.setFqan(role);
+                }
+                return gauthrec;
             }
         }
 
@@ -88,7 +93,12 @@ public class SAML1AuthorizationPlugin extends SAMLAuthorizationPlugin {
 
         if(getCacheLifetime()>0) putUsernameMapping(key, new TimedLocalId(localId, serviceName, desiredUserName));
 
-        return getgPlazmaAuthorizationRecord(localId, subjectDN, role);
+        gPlazmaAuthorizationRecord gauthrec = getgPlazmaAuthorizationRecord(localId, subjectDN, role);
+        if (gauthrec!=null) {
+            gauthrec.setSubjectDN(subjectDN);
+            gauthrec.setFqan(role);
+        }
+        return gauthrec;
     }
 
     private gPlazmaAuthorizationRecord getgPlazmaAuthorizationRecord(LocalId localId, String subjectDN, String role) throws AuthorizationException {

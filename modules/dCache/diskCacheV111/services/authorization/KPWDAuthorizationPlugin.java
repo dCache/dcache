@@ -126,9 +126,16 @@ public class KPWDAuthorizationPlugin extends CachingPlugin {
             throw new AuthorizationException("dcache.kpwd Authorization Plugin: Authorization denied for user " +user_name+ " with Subject DN " +subjectDN);
     }
 
-    authRecord.DN = subjectDN;
+        authRecord.DN = subjectDN;
 
-        return getgPlazmaAuthorizationRecord(authRecord);
+        gPlazmaAuthorizationRecord gauthrec = getgPlazmaAuthorizationRecord(authRecord);
+        if (gauthrec!=null) {
+            gauthrec.setSubjectDN(subjectDN);
+            // Set the fqan to null, because it was not used for authorization.
+            gauthrec.setFqan(null);
+        }
+        return gauthrec;
+
 	}	
 
 
