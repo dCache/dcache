@@ -6,9 +6,6 @@
 
 package gplazma.authz.plugins.vorolemap;
 
-import org.glite.security.voms.*;
-import org.glite.security.voms.ac.*;
-
 import java.security.cert.X509Certificate;
 import java.util.*;
 
@@ -19,6 +16,12 @@ import org.gridforum.jgss.ExtendedGSSContext;
 import org.bouncycastle.asn1.x509.X509Name;
 import org.globus.gsi.bc.X509NameHelper;
 import org.apache.log4j.Logger;
+import org.glite.voms.VOMSValidator;
+import org.glite.voms.BasicVOMSTrustStore;
+import org.glite.voms.VOMSAttribute;
+import org.glite.voms.FQAN;
+import org.glite.voms.ac.AttributeCertificate;
+import gplazma.authz.util.X509CertUtil;
 
 
 /**
@@ -85,9 +88,8 @@ public class VORoleMapModule {
 			X509Certificate cert=(X509Certificate)chain[i];
         }
 			//following changed in new VOMS API
-            //VOMSValidator validator = new VOMSValidator(chain,null,new BasicVOMSTrustStore(dir,30000));
-			VOMSValidator validator = new VOMSValidator(chain);
-			VOMSValidator.setTrustStore(new BasicVOMSTrustStore(dir,30000));
+            VOMSValidator validator = X509CertUtil.getVOMSValidatorInstance();
+            validator.setClientChain(chain);
             if(validate == true) {
             	validator=validator.validate();
            		if (!validator.isValidated()) {

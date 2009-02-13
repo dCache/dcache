@@ -100,12 +100,16 @@ import org.globus.gsi.bc.BouncyCastleUtil;
 import org.dcache.srm.security.SslGsiSocketFactory;
 import org.gridforum.jgss.ExtendedGSSManager;
 import org.gridforum.jgss.ExtendedGSSContext;
-import org.glite.security.voms.VOMSValidator;
-import org.glite.security.voms.VOMSAttribute;
-import org.glite.security.voms.BasicVOMSTrustStore;
-import org.glite.security.util.DirectoryList;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CRLException;
+
 import org.dcache.srm.SRMAuthorizationException;
+import org.glite.security.util.DirectoryList;
+import org.glite.voms.BasicVOMSTrustStore;
+import org.glite.voms.VOMSValidator;
+import org.glite.voms.VOMSAttribute;
+import gplazma.authz.util.X509CertUtil;
 
 // The following imports are needed to extract the user's credential
 // from the servlet context
@@ -123,17 +127,6 @@ public class SrmAuthorizer {
    public org.apache.log4j.Logger log;
    private static boolean initialized = false;
    private String logConfigFile;
-   private static String vomsdir = "/etc/grid-security/vomsdir";
-   private static String service_trusted_certs = "/etc/grid-security/certificates";
-    
-   static {
-        try {
-            new DirectoryList(vomsdir).getListing();
-        } catch (IOException e) {
-            vomsdir = service_trusted_certs;
-        }
-        VOMSValidator.setTrustStore(new BasicVOMSTrustStore(vomsdir, 12*3600*1000));
-    }
    
    public SrmAuthorizer(SrmDCacheConnector srmConn) {
       initialize(srmConn);
@@ -308,7 +301,8 @@ public class SrmAuthorizer {
     }
     
     public static Collection <String> getFQANsFromX509Chain(X509Certificate[] chain, boolean validate) throws Exception {
-        VOMSValidator validator = new VOMSValidator(chain);
+        VOMSValidator validator = X509CertUtil.getVOMSValidatorInstance();
+        validator.setClientChain(chain);
         return getFQANsFromX509Chain(validator, validate);
     }
     
@@ -330,8 +324,9 @@ public class SrmAuthorizer {
         return validatedroles;
     }
     
-    public static Collection <String> getFQANs(X509Certificate[] chain) throws GSSException {
-        VOMSValidator validator = new VOMSValidator(chain);
+    public static Collection <String> getFQANs(X509Certificate[] chain) throws IOException, CertificateException, CRLException, GSSException {
+        VOMSValidator validator = X509CertUtil.getVOMSValidatorInstance();
+        validator.setClientChain(chain);
         return getFQANs(validator);
     }
     
@@ -353,8 +348,9 @@ public class SrmAuthorizer {
         return fqans;
     }
     
-    public static Collection <String> getValidatedFQANArray(X509Certificate[] chain) throws GSSException {
-        VOMSValidator validator = new VOMSValidator(chain);
+    public static Collection <String> getValidatedFQANArray(X509Certificate[] chain) throws IOException, CertificateException, CRLException, GSSException {
+        VOMSValidator validator = X509CertUtil.getVOMSValidatorInstance();
+        validator.setClientChain(chain);
         return getValidatedFQANs(validator);
     }
     
