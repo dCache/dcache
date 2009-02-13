@@ -70,20 +70,25 @@ public class ChimeraOsmStorageInfoExtractor implements
         try {
 
             List<StorageLocatable> locations = inode.getFs().getInodeLocations(inode, StorageGenericLocation.TAPE );
+            InodeStorageInformation inodeStorageInfo = null ;
+            try { 
+                inodeStorageInfo = inode.getFs().getSorageInfo(inode);
+            }catch(FileNotFoundHimeraFsException e) {
+                /*
+                 * file exist, but there is no explicit storage info for it;
+                 * 
+                 * have to be fixed in chimera
+                 */
+            }
 
             if ( locations.isEmpty() ) {
                 info = (OSMStorageInfo) getDirStorageInfo(inode);
             } else {
 
-
-                InodeStorageInformation inodeStorageInfo = inode.getFs().getSorageInfo(inode);
-
                 info = new OSMStorageInfo( inodeStorageInfo.storageGroup(),
                         inodeStorageInfo.storageSubGroup() );
 
                 info.setIsNew(false);
-                info.setAccessLatency(diskCacheV111.util.AccessLatency.getAccessLatency( inodeStorageInfo.accessLatency().getId() ) );
-                info.setRetentionPolicy(diskCacheV111.util.RetentionPolicy.getRetentionPolicy( inodeStorageInfo.retentionPolicy().getId() ) );
 
                 for(StorageLocatable location: locations) {
                     if( location.isOnline() ) {
@@ -94,6 +99,19 @@ public class ChimeraOsmStorageInfoExtractor implements
                         }
                     }
                 }
+            }
+
+            if( inodeStorageInfo != null ) {
+                info.setAccessLatency(
+                        diskCacheV111.util.AccessLatency.getAccessLatency(
+                                inodeStorageInfo.accessLatency().getId()
+                            )
+                    );
+                info.setRetentionPolicy(
+                        diskCacheV111.util.RetentionPolicy.getRetentionPolicy(
+                                inodeStorageInfo.retentionPolicy().getId()
+                            )
+                    );
             }
 
         } catch (ChimeraFsException e) {
