@@ -231,17 +231,17 @@ CREATE TABLE t_locationinfo_trash (
 CREATE INDEX i_locationinfo_ipnfsid ON t_locationinfo(ipnfsid);
 
 CREATE TABLE t_acl (
-	 rs_id varchar(36) NOT NULL,
-	 rs_type  integer NOT NULL,
-	 type  integer NOT NULL,
-	 flags  integer NULL,
-	 access_msk  integer NOT NULL,
-	 who  integer NOT NULL,
-	 who_id  integer,
-	 address_msk  varchar(32) DEFAULT 'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF',
-	 ace_order  integer NOT NULL,
-	 PRIMARY KEY (rs_id, ace_order),
-     FOREIGN KEY (rs_id) REFERENCES t_inodes( ipnfsid ) ON DELETE CASCADE
+	 rs_id CHAR(36) NOT NULL,
+	 rs_type  INT NOT NULL,
+	 type  INT DEFAULT 0 NOT NULL,
+	 flags INT NULL,
+	 access_msk  INT DEFAULT 0 NOT NULL,
+	 who INT NOT NULL,
+	 who_id INT,
+	 address_msk  CHAR(32) DEFAULT 'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF' NOT NULL,
+	 ace_order  INT DEFAULT 0 NOT NULL,
+     FOREIGN KEY (rs_id) REFERENCES t_inodes( ipnfsid ) ON DELETE CASCADE,
+	 PRIMARY KEY (rs_id, ace_order)
  );
 
  CREATE INDEX i_t_acl_rs_id ON t_acl(rs_id);
