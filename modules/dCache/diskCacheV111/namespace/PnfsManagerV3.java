@@ -42,6 +42,11 @@ public class PnfsManagerV3 extends CellAdapter {
     private final BlockingQueue<CellMessage> [] _fifos;
 
 
+    /**
+     * Cache of path prefix to database IDs mappings.
+     */
+    SortedMap<String,Integer> _pathToDBCache = new TreeMap();
+
     private CellPath     _cacheModificationRelay = null ;
     private boolean      _simulateLargeFiles     = false ;
     private boolean      _storeFilesize          = false ;
@@ -315,7 +320,7 @@ public class PnfsManagerV3 extends CellAdapter {
         PnfsId pnfsId = null;
         StringBuffer sb = new StringBuffer();
         try {
-           pnfsId = _nameSpaceProvider.pathToPnfsid(args.argv(0), false);
+           pnfsId = pathToPnfsid(args.argv(0), false);
            sb.append(pnfsId.toString());
         }catch(Exception e){
             sb.append("pnfsidof failed:" +e.getMessage());
@@ -334,7 +339,7 @@ public class PnfsManagerV3 extends CellAdapter {
                 pnfsId   = new PnfsId( args.argv(0) ) ;
 
             }catch(Exception ee ){
-                pnfsId = _nameSpaceProvider.pathToPnfsid( args.argv(0), true );
+                pnfsId = pathToPnfsid( args.argv(0), true );
             }
 
             List<String> locations = _cacheLocationProvider.getCacheLocation( pnfsId );
@@ -368,7 +373,7 @@ public class PnfsManagerV3 extends CellAdapter {
 
         }catch(Exception ee ){
             try {
-                pnfsId = _nameSpaceProvider.pathToPnfsid( args.argv(0), true );
+                pnfsId = pathToPnfsid( args.argv(0), true );
             }catch(Exception e) {
                 return "rename failed: " + e.getMessage() ;
             }
@@ -399,7 +404,7 @@ public class PnfsManagerV3 extends CellAdapter {
                 pnfsId   = new PnfsId( args.argv(0) ) ;
 
             }catch(Exception ee ){
-                pnfsId = _nameSpaceProvider.pathToPnfsid( args.argv(0), true);
+                pnfsId = pathToPnfsid( args.argv(0), true);
             }
 
             FileMetaData metaData = _nameSpaceProvider.getFileMetaData(pnfsId);
@@ -432,7 +437,7 @@ public class PnfsManagerV3 extends CellAdapter {
                 pnfsId = new PnfsId(args.argv(0));
 
             } catch (Exception ee) {
-                pnfsId = _nameSpaceProvider.pathToPnfsid(args.argv(0), true);
+                pnfsId = pathToPnfsid(args.argv(0), true);
             }
 
             StorageInfo storageInfo = _storageInfoProvider.getStorageInfo(pnfsId);
@@ -488,7 +493,7 @@ public class PnfsManagerV3 extends CellAdapter {
                 pnfsId = new PnfsId( args.argv(0) ) ;
                 if(v)sb.append("PnfsId : "+pnfsId).append("\n") ;
             }catch(Exception ee ){
-                pnfsId = _nameSpaceProvider.pathToPnfsid( args.argv(0) , n ) ;
+                pnfsId = pathToPnfsid( args.argv(0) , n ) ;
 
                 if(v)sb.append("   Local Path : ").append(args.argv(0)).append("\n") ;
                 if(v)sb.append("       PnfsId : ").append(pnfsId).append("\n") ;
@@ -525,7 +530,7 @@ public class PnfsManagerV3 extends CellAdapter {
                 pnfsId = new PnfsId( args.argv(0) ) ;
                 if(v)sb.append("PnfsId : "+pnfsId).append("\n") ;
             }catch(Exception ee ){
-                pnfsId = _nameSpaceProvider.pathToPnfsid( args.argv(0) , n ) ;
+                pnfsId = pathToPnfsid( args.argv(0) , n ) ;
 
                 if(v)sb.append("   Local Path : ").append(args.argv(0)).append("\n") ;
                 if(v)sb.append("       PnfsId : ").append(pnfsId).append("\n") ;
@@ -727,6 +732,15 @@ public class PnfsManagerV3 extends CellAdapter {
     public String ac_set_log_slow_threshold_disabled_$_0( Args args) {
     	_logSlowThreshold = THRESHOLD_DISABLED;
     	return "";
+    }
+
+    public String ac_dump_path_cache(Args args)
+    {
+        StringBuffer s = new StringBuffer();
+        for (Map.Entry<String,Integer> e: _pathToDBCache.entrySet()) {
+            s.append(String.format("%3d -> %s\n", e.getValue(), e.getKey()));
+        }
+        return s.toString();
     }
 
     private void dumpThreadQueue(int queueId) {
@@ -942,7 +956,7 @@ public class PnfsManagerV3 extends CellAdapter {
                 }
 
                 say("get cache locations (by path) global : "+pnfsPath  ) ;
-                PnfsId     id       = _nameSpaceProvider.pathToPnfsid( pnfsPath, true);
+                PnfsId     id       = pathToPnfsid( pnfsPath, true);
 
                 if( id == null ) {
                     throw new
@@ -1067,7 +1081,7 @@ public class PnfsManagerV3 extends CellAdapter {
                     throw new InvalidMessageCacheException("no pnfsid or path defined");
                 }
                 say("setStorageInfo (by path) global : "+pnfsPath  ) ;
-                PnfsId     id       = _nameSpaceProvider.pathToPnfsid( pnfsPath, true);
+                PnfsId     id       = pathToPnfsid( pnfsPath, true);
 
                 if( id == null ) {
                     throw new
@@ -1113,7 +1127,7 @@ public class PnfsManagerV3 extends CellAdapter {
                 }
 
                 say("getStorageInfo (by path) global : "+pnfsPath  ) ;
-                PnfsId     id       = _nameSpaceProvider.pathToPnfsid( pnfsPath, true);
+                PnfsId     id       = pathToPnfsid( pnfsPath, true);
 
                 if( id == null ) {
                     throw new
@@ -1170,7 +1184,7 @@ public class PnfsManagerV3 extends CellAdapter {
                 }
 
                 say("getFileMetaData (by path) : "+  pnfsPath ) ;
-                PnfsId   id         = _nameSpaceProvider.pathToPnfsid(pnfsPath, resolve );
+                PnfsId   id         = pathToPnfsid(pnfsPath, resolve );
                 if( id == null ) {
                     throw new
                     CacheException( "can't get pnfsId (not a pnfsfile)" ) ;
@@ -1234,7 +1248,7 @@ public class PnfsManagerV3 extends CellAdapter {
             }
 
             if( path != null ) {
-                currentId = _nameSpaceProvider.pathToPnfsid(path, false);
+                currentId = pathToPnfsid(path, false);
                 /*
                  * raice condition check:
                  *
@@ -1383,7 +1397,7 @@ public class PnfsManagerV3 extends CellAdapter {
                 pnfsMessage.setGlobalPath(pathfinder(pnfsId));
             } else {
                 say("map:  path2id for " + globalPath);
-                pnfsMessage.setPnfsId(_nameSpaceProvider.pathToPnfsid( globalPath, false));
+                pnfsMessage.setPnfsId(pathToPnfsid( globalPath, false));
             }
         } catch(FileNotFoundCacheException fnf){
         	pnfsMessage.setFailed( CacheException.FILE_NOT_FOUND , fnf.getMessage() ) ;
@@ -1466,40 +1480,50 @@ public class PnfsManagerV3 extends CellAdapter {
 
         }
 
-        boolean isCacheOperation =
-            ((pnfs instanceof PnfsAddCacheLocationMessage) ||
-             (pnfs instanceof PnfsClearCacheLocationMessage) ||
-             (pnfs instanceof PnfsGetCacheLocationsMessage));
-        BlockingQueue<CellMessage> fifo;
-        if (isCacheOperation && _locationFifos != _fifos) {
-            int index;
-            if (pnfsId != null) {
-                index = (Math.abs(pnfsId.hashCode()) % _locationFifos.length);
-                say("Using location thread [" + pnfsId + "] " + index);
-            } else {
-                index = _random.nextInt(_locationFifos.length);
-                say("Using location thread [" + path + "] " + index);
-            }
-            fifo = _locationFifos[index];
-        } else {
-            int index;
-            if (pnfsId != null) {
-                index =
-                    (pnfsId.getDatabaseId() % _threadGroups) * _threads +
-                    (Math.abs(pnfsId.hashCode()) % _threads);
-                say("Using thread [" + pnfsId + "] " + index);
-            } else if (path != null) {
-                index = Math.abs(path.hashCode()) % _fifos.length;
-                say("Using thread [" + path + "] " + index);
-            } else {
-                index = _random.nextInt(_fifos.length);
-                say("Using thread [" + pnfsId + "] " + index);
-            }
-            fifo = _fifos[index];
-        }
-
         try {
+            boolean isCacheOperation =
+                ((pnfs instanceof PnfsAddCacheLocationMessage) ||
+                 (pnfs instanceof PnfsClearCacheLocationMessage) ||
+                 (pnfs instanceof PnfsGetCacheLocationsMessage));
+            BlockingQueue<CellMessage> fifo;
+            if (isCacheOperation && _locationFifos != _fifos) {
+                int index;
+                if (pnfsId != null) {
+                    index = (Math.abs(pnfsId.hashCode()) % _locationFifos.length);
+                    say("Using location thread [" + pnfsId + "] " + index);
+                } else {
+                    index = _random.nextInt(_locationFifos.length);
+                    say("Using location thread [" + path + "] " + index);
+                }
+                fifo = _locationFifos[index];
+            } else {
+                int index;
+                if (pnfsId != null) {
+                    index =
+                        (pnfsId.getDatabaseId() % _threadGroups) * _threads +
+                        (Math.abs(pnfsId.hashCode()) % _threads);
+                    say("Using thread [" + pnfsId + "] " + index);
+                } else if (path != null) {
+                    index =
+                        (pathToDatabaseId(path) % _threadGroups) * _threads +
+                        (Math.abs(path.hashCode()) % _threads);
+                    say("Using thread [" + path + "] " + index);
+                } else {
+                    index = _random.nextInt(_fifos.length);
+                    say("Using thread [" + pnfsId + "] " + index);
+                }
+                fifo = _fifos[index];
+            }
+
             fifo.put( message ) ;
+        } catch (CacheException e) {
+            pnfs.setFailed(e.getRc(), e);
+            try {
+                message.revertDirection();
+                sendMessage(message);
+            } catch (NoRouteToCellException f) {
+                esay("Requester cell disappeared: " + f.getMessage());
+            }
         } catch (InterruptedException e) {
             esay("failed to add a message into queue "+e.getMessage()) ;
         }
@@ -1688,5 +1712,110 @@ public class PnfsManagerV3 extends CellAdapter {
         }
 
         return mode;
+    }
+
+    /**
+     * Maps path to PnfsId.
+     *
+     * Internally updates the path to database ID cache.
+     */
+    private PnfsId pathToPnfsid(String path, boolean resolve)
+        throws Exception
+    {
+        PnfsId pnfsId = _nameSpaceProvider.pathToPnfsid(path, resolve);
+        updatePathToDatabaseIdCache(path, pnfsId.getDatabaseId());
+        return pnfsId;
+    }
+
+    /**
+     * Adds an entry to the path to database ID cache if that entry
+     * does not already exist.
+     */
+    private void updatePathToDatabaseIdCache(String path, int id)
+    {
+        try {
+            SortedMap<String,Integer> map = _pathToDBCache.headMap(path);
+            if (map.isEmpty() || !path.startsWith(map.lastKey()) ||
+                map.get(map.lastKey()) != id) {
+                String root = getDatabaseRoot(new File(path)).getPath();
+                int db = _nameSpaceProvider.pathToPnfsid(root, true).getDatabaseId();
+                _pathToDBCache.put(root + File.separator, db);
+            }
+        } catch (Exception e) {
+            /* Log it, but since it is only a cache update we don't
+             * mind too much.
+             */
+            esay("Error while resolving the database ID: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Given a PNFS path, returns the database mount point of the
+     * database containing the entry.
+     */
+    private File getDatabaseRoot(File file)
+        throws Exception
+    {
+        /* First find the PNFS ID of file. May fail if the file does
+         * not exist, but then we look at the parent instead.
+         */
+        PnfsId id;
+        try {
+            id = _nameSpaceProvider.pathToPnfsid(file.getPath(), true);
+        } catch (Exception e) {
+            file = file.getParentFile();
+            if (file == null) {
+                throw e;
+            }
+            return getDatabaseRoot(file);
+        }
+
+        /* Now look at the path back to the root and find the point at
+         * which the database ID changes, or resolving the PNFS ID
+         * fails. That point is the database mount point.
+         */
+        try {
+            String parent = file.getParent();
+            if (parent == null) {
+                return file;
+            }
+
+            PnfsId parentId = _nameSpaceProvider.pathToPnfsid(parent, true);
+            while (parentId.getDatabaseId() == id.getDatabaseId()) {
+                file = new File(parent);
+                parent = file.getParent();
+                if (parent == null) {
+                    return file;
+                }
+                parentId = _nameSpaceProvider.pathToPnfsid(parent, true);
+            }
+
+            return file;
+        } catch (Exception e) {
+            return file;
+        }
+    }
+
+    /**
+     * Returns the Database ID of a path. A cache is used to avoid
+     * lookups in the name space provider once the path prefix for a
+     * database has been determined.
+     */
+    private int pathToDatabaseId(String path)
+        throws CacheException
+    {
+        try {
+            SortedMap<String,Integer> map = _pathToDBCache.headMap(path);
+            if (!map.isEmpty() && path.startsWith(map.lastKey())) {
+                return map.get(map.lastKey());
+            }
+
+            return pathToPnfsid(path, true).getDatabaseId();
+        } catch (Exception e) {
+            /* NameSpaceProvider throws Exception, so we have to catch it.
+             */
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     e.getMessage());
+        }
     }
 }
