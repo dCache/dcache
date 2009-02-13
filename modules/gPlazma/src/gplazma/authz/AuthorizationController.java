@@ -114,7 +114,8 @@ import java.net.Socket;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.security.cert.X509Certificate;
-
+import java.security.cert.CRLException;
+import java.security.cert.CertificateException;
 
 //import org.apache.log4j.Logger;
 //import org.apache.log4j.Level;
@@ -123,9 +124,6 @@ import org.ietf.jgss.GSSContext;
 import org.globus.gsi.gssapi.net.GssSocket;
 import org.globus.gsi.gssapi.GSSConstants;
 import org.gridforum.jgss.ExtendedGSSContext;
-import org.glite.security.voms.VOMSValidator;
-import org.glite.security.voms.BasicVOMSTrustStore;
-import org.glite.security.util.DirectoryList;
 import org.apache.log4j.*;
 import gplazma.authz.plugins.AuthorizationPlugin;
 import gplazma.authz.plugins.saz.SAZAuthorizationPlugin;
@@ -148,7 +146,6 @@ public class AuthorizationController {
     private static String service_cert          = "/etc/grid-security/hostcert.pem";
     private static String service_key           = "/etc/grid-security/hostkey.pem";
     private static String trusted_cacerts = "/etc/grid-security/certificates";
-    private static String vomsdir = "/etc/grid-security/vomsdir";
 
     private long authRequestID;
     private String authRequestID_str;
@@ -168,14 +165,9 @@ public class AuthorizationController {
     
     static {
         Logger.getLogger(org.glite.security.trustmanager.CRLFileTrustManager.class.getName()).setLevel(Level.ERROR);
+        Logger.getLogger("org.glite.security.trustmanager.ContextWrapper").setLevel(Level.OFF);
         Logger.getLogger("org.glite.security.trustmanager.axis.AXISSocketFactory").setLevel(Level.OFF);
         Logger.getLogger("org.glite.security.util.DirectoryList").setLevel(Level.OFF);
-        try {
-            new DirectoryList(vomsdir).getListing();
-        } catch (IOException e) {
-            vomsdir = trusted_cacerts;
-        }
-        VOMSValidator.setTrustStore(new BasicVOMSTrustStore(vomsdir, 12*3600*1000));
     }
     
 
@@ -320,8 +312,7 @@ public class AuthorizationController {
         
         try {
             roles = X509CertUtil.getFQANsFromX509Chain(chain, authConfig.getVOMSValidation());
-        } catch(Exception e) {
-            String msg = e.getMessage();
+        } catch(Exception e) {            String msg = e.getMessage();
             if(msg==null)
                 throw new AuthorizationException("for subject DN " + subjectDN);
             else throw new AuthorizationException("for subject DN " + subjectDN + " " + msg);
@@ -383,8 +374,6 @@ public class AuthorizationController {
         
         if(authexceptions!=null && r==null) throw authexceptions;
 
-        r.setSubjectDN(subjectDN);
-        r.setFqan(role);
         r.setRequestID(authRequestID);
         
         return r;

@@ -445,7 +445,7 @@
         <mkdir dir="${server.bin.dir}/classes/glite" />
         <copy todir="${server.bin.dir}/classes/glite" flatten="true">
             <fileset dir="${glite.untarred}">
-                <include name="**/glite*.jar" />
+                <include name="**/*.jar" />
             </fileset>
         </copy>
 

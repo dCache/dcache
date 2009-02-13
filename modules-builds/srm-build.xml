@@ -75,6 +75,7 @@
         <pathelement location="${glue.untared}/jcert.jar" />
         <pathelement location="${glue.untared}/servlet.jar" />
         <pathelement location="${classesDir}/cells.jar" />
+	<pathelement location="${classesDir}/gplazma.jar" />
     </path>
 
     <!--       =======

@@ -6,7 +6,8 @@
 
 package gplazma.authz.plugins.vorolemap;
 
-import org.glite.security.voms.*;
+import org.glite.voms.FQAN;
+
 //import org.opensciencegrid.authz.ac.FQAN;
                                                                                                                                                                                                      
                                                                                                                                                                                                      
