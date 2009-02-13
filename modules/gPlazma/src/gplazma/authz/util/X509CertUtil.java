@@ -23,14 +23,20 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DERString;
-import org.glite.security.voms.VOMSValidator;
-import org.glite.security.voms.VOMSAttribute;
-import org.glite.security.voms.ac.AttributeCertificate;
 import org.opensciencegrid.authz.xacml.common.FQAN;
+import org.glite.voms.*;
+import org.glite.voms.ac.AttributeCertificate;
+import org.glite.voms.ac.VOMSTrustStore;
+import org.glite.voms.ac.ACValidator;
+import org.glite.voms.ac.ACTrustStore;
 
 import java.net.Socket;
 import java.util.*;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CRLException;
+import java.io.IOException;
+import java.io.File;
 
 import gplazma.authz.AuthorizationException;
 import gplazma.authz.AuthorizationController;
@@ -47,6 +53,15 @@ public class X509CertUtil {
     public static String default_service_cert          = "/etc/grid-security/hostcert.pem";
     public static String default_service_key           = "/etc/grid-security/hostkey.pem";
     public static String default_trusted_cacerts = "/etc/grid-security/certificates";
+
+    private static PKIStore caTrustStore=null;
+    private static VOMSTrustStore vomsTrustStore=null;
+    private static ACTrustStore acTrustStore=null;
+    private static VOMSValidator vomsValidator=null;
+    private static ACValidator acValidator=null;
+    private static PKIVerifier pkiVerifier=null;
+
+    public static int REFRESH_TIME_MS=20000;
 
     public static GSSContext getUserContext(String proxy_cert) throws GSSException {
        return getUserContext(proxy_cert, default_trusted_cacerts);
@@ -267,7 +282,8 @@ public class X509CertUtil {
     }
 
     public static Collection <String> getFQANsFromX509Chain(X509Certificate[] chain, boolean validate) throws Exception {
-        VOMSValidator validator = new VOMSValidator(chain);
+        VOMSValidator validator = getVOMSValidatorInstance();
+        validator.setClientChain(chain);
         return getFQANsFromX509Chain(validator, validate);
     }
 
@@ -289,8 +305,9 @@ public class X509CertUtil {
         return validatedroles;
     }
 
-    public static Collection <String> getFQANs(X509Certificate[] chain) throws GSSException {
-        VOMSValidator validator = new VOMSValidator(chain);
+    public static Collection <String> getFQANs(X509Certificate[] chain) throws IOException, CertificateException, CRLException, GSSException {
+        VOMSValidator validator = getVOMSValidatorInstance();
+        validator.setClientChain(chain);
         return getFQANs(validator);
     }
 
@@ -341,8 +358,9 @@ attribute : /cms/uscms/Role=cmsprod/Capability=NULL
         return fqans;
     }
 
-    public static Collection <String> getValidatedFQANArray(X509Certificate[] chain) throws GSSException {
-        VOMSValidator validator = new VOMSValidator(chain);
+    public static Collection <String> getValidatedFQANArray(X509Certificate[] chain) throws IOException, CertificateException, CRLException, GSSException {
+        VOMSValidator validator = getVOMSValidatorInstance();
+        validator.setClientChain(chain);
         return getValidatedFQANs(validator);
     }
 
@@ -364,20 +382,20 @@ attribute : /cms/uscms/Role=cmsprod/Capability=NULL
         return fqans;
     }
 
-    public static AttributeCertificate getAttributeCertificate(X509Certificate[] chain, String fqan) throws GSSException {
+    public static AttributeCertificate getAttributeCertificate(X509Certificate[] chain, String fqan) throws IOException, CertificateException, CRLException, GSSException {
         return getVOMSAttribute(chain, fqan).getAC();
     }
 
-    public static VOMSAttribute getVOMSAttribute(X509Certificate[] chain, String fqan) throws GSSException {
+    public static VOMSAttribute getVOMSAttribute(X509Certificate[] chain, String fqan) throws IOException, CertificateException, CRLException, GSSException {
 
         if(fqan.endsWith(AuthorizationController.capnull))
                 fqan = fqan.substring(0, fqan.length() - AuthorizationController.capnulllen);
         if(fqan.endsWith(AuthorizationController.rolenull))
                 fqan = fqan.substring(0, fqan.length() - AuthorizationController.rolenulllen);
 
-        LinkedHashSet<String> fqans = new LinkedHashSet <String> ();
-        VOMSValidator validator = new VOMSValidator(chain);
-        validator.parse();
+        VOMSValidator validator = getVOMSValidatorInstance();
+        validator.setClientChain(chain);
+        validator.parse(chain);
         List listOfAttributes = validator.getVOMSAttributes();
 
         Iterator i = listOfAttributes.iterator();
@@ -451,4 +469,11 @@ attribute : /cms/uscms/Role=cmsprod/Capability=NULL
 
 	  return buf.toString();
     }
+
+    public static synchronized VOMSValidator getVOMSValidatorInstance() throws IOException, CertificateException, CRLException {
+        if(vomsValidator!=null) return vomsValidator;
+        vomsValidator = new VOMSValidator(null, null);
+        return vomsValidator;
+    }
+
 }
