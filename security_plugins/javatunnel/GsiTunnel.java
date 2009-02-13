@@ -16,10 +16,10 @@ import org.ietf.jgss.*;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.glite.security.util.DirectoryList;
-import org.glite.security.voms.BasicVOMSTrustStore;
-import org.glite.security.voms.VOMSAttribute;
-import org.glite.security.voms.VOMSValidator;
-import org.glite.security.voms.FQAN;
+import org.glite.voms.BasicVOMSTrustStore;
+import org.glite.voms.VOMSValidator;
+import org.glite.voms.VOMSAttribute;
+import org.glite.voms.FQAN;
 import org.globus.gsi.GSIConstants;
 import org.globus.gsi.GlobusCredential;
 import org.globus.gsi.gssapi.GSSConstants;
@@ -42,11 +42,11 @@ class GsiTunnel extends GssTunnel  {
 
 
     static {
-        try {
-            new DirectoryList(vomsdir).getListing();
-        } catch (IOException e) {
+        //try {
+        //    new DirectoryList(vomsdir).getListing();
+        //} catch (IOException e) {
             vomsdir = service_trusted_certs;
-        }
+        //} workaround so the constructor doesn't fail
         VOMSValidator.setTrustStore(new BasicVOMSTrustStore(vomsdir, 12*3600*1000));
     }
 
