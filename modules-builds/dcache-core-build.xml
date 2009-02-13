@@ -104,14 +104,11 @@
     <!-- Classpath for enhancement -->
 
     <path id="dcache-srm-enhance.classpath">
-        <pathelement location="${classesDir}/gplazma.jar" />
+        <pathelement location="${classesDir}/cells.jar" />
         <pathelement location="${libDir}/jpox/jdo2-api-2.0.jar" />
         <pathelement location="${libDir}/jpox/jpox-core-1.2.2.jar" />
         <pathelement location="${libDir}/jpox/jpox-enhancer-1.2.2.jar" />
-        <pathelement location="${libDir}/jpox/jpox-java5-1.2.2.jar" />
-        <pathelement location="${libDir}/jpox/bcel-5.1.jar" />
         <pathelement location="${libDir}/asm/asm-3.1.jar" />
-        <pathelement path="${buildDir}/dcache-srm" />
         <pathelement path="${dcache.build.dir}" />
     </path>
 
@@ -252,7 +249,7 @@
         <copy file="${dcache.src}/diskCacheV111/config/persistence.xml" todir="${dcache.build.dir}/META-INF" />
         <copy file="${dcache.src}/org/dcache/auth/AuthRecordORM.xml" todir="${dcache.build.dir}/org/dcache/auth/" />
         <jar jarfile="${dcache.jar}">
-            <fileset dir="${dcache.src}" includes="**/*.xml" excludes="diskCacheV111/config/*,**/WEB-INF/*.xml" />
+            <fileset dir="${dcache.src}" includes="**/*.xml,**/*.jdo" excludes="diskCacheV111/config/*,**/WEB-INF/*.xml" />
             <fileset dir="${dcache.build.dir}" includes="**/*.class,META-INF/*.xml" />
             <manifest>
                 <section name="Shared">
@@ -319,7 +316,7 @@
         generate JDO persistency backend
     -->
     <target name="-dcache.enhance" depends="-dcache.compile">
-        <java classname="org.jpox.enhancer.JPOXEnhancer" classpathref="dcache-srm-enhance.classpath" fork="true" failonerror="true">
+            <java classname="org.jpox.enhancer.JPOXEnhancer" classpathref="dcache-srm-enhance.classpath" fork="true" failonerror="true">
             <arg value="${dcache.src}/diskCacheV111/services/package.jdo" />
             <sysproperty key="log4j.configuration" value="file:${dcache.src}/diskCacheV111/services/log4j.properties" />
         </java>
