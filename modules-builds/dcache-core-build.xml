@@ -826,7 +826,7 @@
 	    <mkdir dir="${binDir}/classes/glite" />
 	    <copy todir="${binDir}/classes/glite" flatten="true">
               <fileset dir="${libDir}/glite">
-                <include name="**/glite*.jar" />
+                <include name="**/*.jar" />
               </fileset>
             </copy>	
 	    

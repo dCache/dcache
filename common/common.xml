@@ -255,7 +255,7 @@
   </target>
 
 
-  <target name="srm.bin" depends="prepare,cells" description="Compile srm package and create srm.jar and srm-tomcat.jar in 'binDir'">
+  <target name="srm.bin" depends="prepare,cells,gplazma" description="Compile srm package and create srm.jar and srm-tomcat.jar in 'binDir'">
 
     <ant dir="modules-builds" antfile="srm-build.xml" target="srm-bin" inheritAll="false">
       <property name="libDir" location="${libDir}" />
@@ -541,7 +541,7 @@
     <echo>Unpacking to ${glite.untarredTo}</echo>
     <untar dest="${glite.untarredTo}" compression="gzip">
       <patternset>
-        <include name="**/glite*.jar"/>
+        <include name="**/*.jar"/>
       </patternset>
       <fileset dir="${glite.libDir}">
         <include name="**/*.tar.gz"/>

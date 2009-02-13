@@ -53,7 +53,7 @@
 	    <filename name="axis/**/*.jar" />
             <filename name="cog/**/*.jar" />
 	    <filename name="gplazma/**/*.jar" />
-	    <filename name="glite/**/glite*.jar" />
+	    <filename name="glite/**/*.jar" />
 	    <filename name="opensaml/**/*.jar" />
 	    <filename name="security/bcprov-jdk15-133.jar" />
 	</or>
