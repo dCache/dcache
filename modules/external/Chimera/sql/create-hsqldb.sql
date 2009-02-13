@@ -240,7 +240,6 @@ CREATE TABLE t_acl (
 	 who_id INT,
 	 address_msk  CHAR(32) DEFAULT 'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF' NOT NULL,
 	 ace_order  INT DEFAULT 0 NOT NULL,
-     FOREIGN KEY (rs_id) REFERENCES t_inodes( ipnfsid ) ON DELETE CASCADE,
 	 PRIMARY KEY (rs_id, ace_order)
  );
 
