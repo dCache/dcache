@@ -57,8 +57,6 @@ class MyFakeNameSpaceProvider implements NameSpaceProvider {
     public Set<org.dcache.util.Checksum> 
        getChecksums(PnfsId pnfsId) throws Exception { return null; }
 
-    public PnfsId getParentOf(PnfsId pnfsId) { return null; }
-
 }
 
 
