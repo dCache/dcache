@@ -231,10 +231,10 @@ public class AuthorizationRecord implements Serializable, SRMUser{
 
     @Transient
     public String getVoRole() {
-        
         String primaryAttribute = getPrimaryAttribute();
-        if(primaryAttribute != null) {
-            return new FQAN(primaryAttribute).getRole();
+        if(primaryAttribute != null && !primaryAttribute.equals("")) {
+            String role = new FQAN(primaryAttribute).getRole();
+            return (role==null || role.equals("")) ? null : role;
         }
         return null;
     }
@@ -242,8 +242,9 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     @Transient
     public String getVoGroup() {
         String primaryAttribute = getPrimaryAttribute();
-        if(primaryAttribute != null) {
-            return new FQAN(primaryAttribute).getGroup();
+        if(primaryAttribute != null && !primaryAttribute.equals("")) {
+            String group = new FQAN(primaryAttribute).getGroup();
+            return (group==null || group.equals("")) ? identity : group;
         }
         return identity;
     }
