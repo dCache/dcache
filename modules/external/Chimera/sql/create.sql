@@ -17,9 +17,9 @@ CREATE TABLE t_inodes (
     igid integer NOT NULL,
     isize bigint NOT NULL,
     iio integer NOT NULL,
-    ictime timestamp without time zone NOT NULL,
-    iatime timestamp without time zone NOT NULL,
-    imtime timestamp without time zone NOT NULL
+    ictime timestamp with time zone NOT NULL,
+    iatime timestamp with time zone NOT NULL,
+    imtime timestamp with time zone NOT NULL
 );
 
 --
@@ -65,9 +65,9 @@ CREATE TABLE t_level_1 (
     iuid integer NOT NULL,
     igid integer NOT NULL,
     isize bigint NOT NULL,
-    ictime timestamp without time zone NOT NULL,
-    iatime timestamp without time zone NOT NULL,
-    imtime timestamp without time zone NOT NULL,
+    ictime timestamp with time zone NOT NULL,
+    iatime timestamp with time zone NOT NULL,
+    imtime timestamp with time zone NOT NULL,
     ifiledata bytea,
 	FOREIGN KEY (ipnfsid) REFERENCES t_inodes( ipnfsid )
 );
@@ -79,9 +79,9 @@ CREATE TABLE t_level_2 (
     iuid integer NOT NULL,
     igid integer NOT NULL,
     isize bigint NOT NULL,
-    ictime timestamp without time zone NOT NULL,
-    iatime timestamp without time zone NOT NULL,
-    imtime timestamp without time zone NOT NULL,
+    ictime timestamp with time zone NOT NULL,
+    iatime timestamp with time zone NOT NULL,
+    imtime timestamp with time zone NOT NULL,
     ifiledata bytea,
 	FOREIGN KEY (ipnfsid) REFERENCES t_inodes( ipnfsid )
 );
@@ -93,9 +93,9 @@ CREATE TABLE t_level_3 (
     iuid integer NOT NULL,
     igid integer NOT NULL,
     isize bigint NOT NULL,
-    ictime timestamp without time zone NOT NULL,
-    iatime timestamp without time zone NOT NULL,
-    imtime timestamp without time zone NOT NULL,
+    ictime timestamp with time zone NOT NULL,
+    iatime timestamp with time zone NOT NULL,
+    imtime timestamp with time zone NOT NULL,
     ifiledata bytea,
 	FOREIGN KEY (ipnfsid) REFERENCES t_inodes( ipnfsid )
 );
@@ -107,9 +107,9 @@ CREATE TABLE t_level_4 (
     iuid integer NOT NULL,
     igid integer NOT NULL,
     isize bigint NOT NULL,
-    ictime timestamp without time zone NOT NULL,
-    iatime timestamp without time zone NOT NULL,
-    imtime timestamp without time zone NOT NULL,
+    ictime timestamp with time zone NOT NULL,
+    iatime timestamp with time zone NOT NULL,
+    imtime timestamp with time zone NOT NULL,
     ifiledata bytea,
 	FOREIGN KEY (ipnfsid) REFERENCES t_inodes( ipnfsid )
 );
@@ -121,9 +121,9 @@ CREATE TABLE t_level_5 (
     iuid integer NOT NULL,
     igid integer NOT NULL,
     isize bigint NOT NULL,
-    ictime timestamp without time zone NOT NULL,
-    iatime timestamp without time zone NOT NULL,
-    imtime timestamp without time zone NOT NULL,
+    ictime timestamp with time zone NOT NULL,
+    iatime timestamp with time zone NOT NULL,
+    imtime timestamp with time zone NOT NULL,
     ifiledata bytea,
 	FOREIGN KEY (ipnfsid) REFERENCES t_inodes( ipnfsid )
 );
@@ -135,9 +135,9 @@ CREATE TABLE t_level_6 (
     iuid integer NOT NULL,
     igid integer NOT NULL,
     isize bigint NOT NULL,
-    ictime timestamp without time zone NOT NULL,
-    iatime timestamp without time zone NOT NULL,
-    imtime timestamp without time zone NOT NULL,
+    ictime timestamp with time zone NOT NULL,
+    iatime timestamp with time zone NOT NULL,
+    imtime timestamp with time zone NOT NULL,
     ifiledata bytea,
 	FOREIGN KEY (ipnfsid) REFERENCES t_inodes( ipnfsid )
 );
@@ -149,9 +149,9 @@ CREATE TABLE t_level_7 (
     iuid integer NOT NULL,
     igid integer NOT NULL,
     isize bigint NOT NULL,
-    ictime timestamp without time zone NOT NULL,
-    iatime timestamp without time zone NOT NULL,
-    imtime timestamp without time zone NOT NULL,
+    ictime timestamp with time zone NOT NULL,
+    iatime timestamp with time zone NOT NULL,
+    imtime timestamp with time zone NOT NULL,
     ifiledata bytea,
 	FOREIGN KEY (ipnfsid) REFERENCES t_inodes( ipnfsid )
 );
@@ -168,9 +168,9 @@ CREATE TABLE t_tags_inodes (
     iuid integer NOT NULL,
     igid integer NOT NULL,
     isize bigint NOT NULL,
-    ictime timestamp without time zone NOT NULL,
-    iatime timestamp without time zone NOT NULL,
-    imtime timestamp without time zone NOT NULL,
+    ictime timestamp with time zone NOT NULL,
+    iatime timestamp with time zone NOT NULL,
+    imtime timestamp with time zone NOT NULL,
     ivalue bytea
 );
 
@@ -287,8 +287,8 @@ CREATE TABLE t_locationinfo (
 	itype INT NOT NULL,
 	ilocation VARCHAR(1024) NOT NULL,
 	ipriority INT NOT NULL,
-	ictime timestamp NOT NULL,
-	iatime timestamp NOT NULL,
+	ictime timestamp with time zone NOT NULL,
+	iatime timestamp with time zone NOT NULL,
 	istate INT NOT NULL,
 	FOREIGN KEY (ipnfsid) REFERENCES t_inodes( ipnfsid ) ON DELETE CASCADE,
 	PRIMARY KEY (ipnfsid,itype,ilocation)
@@ -304,8 +304,8 @@ CREATE TABLE t_locationinfo_trash (
 	itype INT NOT NULL,
 	ilocation VARCHAR(1024) NOT NULL,
 	ipriority INT NOT NULL,
-	ictime timestamp NOT NULL,
-	iatime timestamp NOT NULL,
+	ictime timestamp with time zone NOT NULL,
+	iatime timestamp with time zone NOT NULL,
 	istate INT NOT NULL,
 	PRIMARY KEY (ipnfsid,itype,ilocation)
 );
