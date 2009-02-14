@@ -74,7 +74,7 @@
 
   <!-- Compile -->
 
-  <target name="gplazma.compile" depends="prepare,lib.glite.untar" unless="gplazma.jar.upToDate" description="Compile Java code for gplazma.jar" >
+  <target name="gplazma.compile" depends="prepare,lib.glite.untar,lib.axis.untar" unless="gplazma.jar.upToDate" description="Compile Java code for gplazma.jar" >
 
     <javac destdir="${buildDir}"
            source="${javac.source}"
