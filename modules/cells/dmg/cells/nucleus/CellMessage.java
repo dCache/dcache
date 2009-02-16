@@ -15,6 +15,7 @@ public class CellMessage implements Cloneable , Serializable {
   private CellPath    _markSource = null , _markDestination = null ;
   private Object      _message ;
   private long        _creationTime ;
+  private long        _ttl = Long.MAX_VALUE;
   private int         _mode ;
   private UOID        _umid , _lastUmid ;
   private byte []     _messageStream = null ;
@@ -26,6 +27,7 @@ public class CellMessage implements Cloneable , Serializable {
   private static final int   ORIGINAL_MODE  = 0 ;
   private static final int   STREAM_MODE    = 1 ;
   private static final int   DUMMY_MODE     = 2 ;
+  private transient long _receivedAt;
 
   public CellMessage( CellPath addr , Object msg ){
 
@@ -33,6 +35,7 @@ public class CellMessage implements Cloneable , Serializable {
      _message      = msg ;
      _source       = new CellPath() ;
      _creationTime = System.currentTimeMillis() ;
+     _receivedAt   = _creationTime;
      _mode         = ORIGINAL_MODE ;
      _umid         = new UOID() ;
      _lastUmid     = _umid ;
@@ -56,6 +59,8 @@ public class CellMessage implements Cloneable , Serializable {
     sb.append( ";O=" ).append( _umid ).append( ";LO=" ).append( _lastUmid );
     if (_session != null)
         sb.append(";SID=").append(_session);
+    if (_ttl < Long.MAX_VALUE)
+        sb.append(";TTL=").append(_ttl);
     sb.append( ">" ) ;
     return sb.toString() ;
   }
@@ -72,8 +77,7 @@ public boolean equals( Object obj ){
   }
   public void        setAcknowledge( boolean ack ){ _isAcknowledge = ack ; }
   public boolean     isAcknowledge(){ return _isAcknowledge ; }
-  public void        setPersistence( boolean ack ){ _isPersistent = ack ; }
-  public boolean     isPersistent(){ return _isPersistent ; }
+  public boolean     isReply() { return _isPersistent; }
   public int         getHopCount(){ return _hopCount ; }
   public void        incHopCount(){ _hopCount++ ; }
   public UOID        getUOID() { return _umid ; }
@@ -88,6 +92,8 @@ public boolean equals( Object obj ){
   }
   public Object      getSession() { return _session; }
   public void        setSession(Object session) { _session = session; }
+  public void        setTtl(long ttl) { _ttl = ttl; }
+  public long        getTtl() { return _ttl; }
   public CellPath    getDestinationAddress(){ return _destination ; }
   public CellPath    getSourceAddress(){ return _source ; }
   public CellPath    getDestinationPath(){ return _destination ; }
@@ -153,12 +159,14 @@ public boolean equals( Object obj ){
      _markSource      = cm._markSource==null?null:
                         (CellPath)cm._markSource.clone() ;
      _creationTime  = cm._creationTime ;
+     _receivedAt    = cm._receivedAt;
      _umid          = cm._umid ;    // UOID is immutable
      _lastUmid      = cm._lastUmid ;
      _hopCount      = cm._hopCount ;
      _isPersistent  = cm._isPersistent ;
      _isAcknowledge = cm._isAcknowledge ;
      _session       = cm._session;
+     _ttl           = cm._ttl;
   }
   private void _originalToStream( CellMessage cm )
       throws SerializationException {
@@ -201,4 +209,25 @@ public boolean equals( Object obj ){
      }
 
   }
+
+    private void readObject(ObjectInputStream stream)
+        throws IOException, ClassNotFoundException
+    {
+        stream.defaultReadObject();
+        _receivedAt = System.currentTimeMillis();
+        if (_ttl == 0) {
+            _ttl = Long.MAX_VALUE;
+        }
+    }
+
+    /**
+     * Returns the number of milliseconds since this message was
+     * received by the local domain. If the message created in the
+     * local domain, then the method returns the number of
+     * milliseconds since it was created.
+     */
+    public long getLocalAge()
+    {
+        return System.currentTimeMillis() - _receivedAt;
+    }
 }

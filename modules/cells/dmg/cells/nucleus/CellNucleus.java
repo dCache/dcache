@@ -270,6 +270,8 @@ public class CellNucleus implements Runnable, ThreadFactory {
             msg.touch();
         }
 
+        msg.setTtl(timeout);
+
         EventLogger.sendBegin(this, msg, "blocking");
         UOID uoid = msg.getUOID();
         try {
@@ -364,6 +366,8 @@ public class CellNucleus implements Runnable, ThreadFactory {
         if (!msg.isStreamMode()) {
             msg.touch();
         }
+
+        msg.setTtl(timeout);
 
         EventLogger.sendBegin(this, msg, "callback");
         UOID uoid = msg.getUOID();
