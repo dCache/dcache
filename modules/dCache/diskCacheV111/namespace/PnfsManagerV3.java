@@ -137,6 +137,21 @@ public class PnfsManagerV3 extends CellAdapter {
             _xsetMetadataInfo
     } ;
 
+    /**
+     * These messages are subject to being discarded if their time to
+     * live has been exceeded (or is expected to be exceeded).
+     */
+    private final Class[] DISCARD_EARLY = {
+        PnfsGetCacheLocationsMessage.class,
+        PnfsGetStorageInfoMessage.class,
+        PnfsGetCacheStatisticsMessage.class,
+        PnfsMapPathMessage.class,
+        PnfsGetFileMetaDataMessage.class,
+        PnfsGetChecksumAllMessage.class,
+        PnfsGetChecksumMessage.class,
+        PnfsCreateEntryMessage.class,
+        PnfsCreateDirectoryMessage.class
+    };
 
     public PnfsManagerV3( String cellName , String args ) throws Exception {
 
@@ -1508,11 +1523,26 @@ public class PnfsManagerV3 extends CellAdapter {
                     continue;
                 }
 
-                PnfsMessage pnfsMessage = (PnfsMessage)message.getMessageObject() ;
                 CDC.setMessageContext(message);
-                try{
-                    processPnfsMessage( message , pnfsMessage );
-                }catch(Throwable processException ){
+                try {
+                    /* Discard messages if we are close to their
+                     * timeout (within 10% of the TTL or 10 seconds,
+                     * whatever is smaller)
+                     */
+                    PnfsMessage pnfs =
+                        (PnfsMessage)message.getMessageObject() ;
+                    long adjustedTtl = message.getTtl() -
+                        Math.min(10000, message.getTtl() / 10);
+                    if (message.getLocalAge() > adjustedTtl
+                        && useEarlyDiscard(pnfs)) {
+                        esay("Discarding " + pnfs.getClass().getSimpleName() +
+                             " because its time to live has been exceeded.");
+                        sendTimeout(message, "TTL exceeded");
+                        continue;
+                    }
+
+                    processPnfsMessage(message, pnfs);
+                } catch(Throwable processException) {
                     esay( "processPnfsMessage : "+
                             Thread.currentThread().getName()+" : "+
                             processException );
@@ -1898,6 +1928,31 @@ public class PnfsManagerV3 extends CellAdapter {
              */
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                      e.getMessage());
+        }
+    }
+
+    private boolean useEarlyDiscard(PnfsMessage message)
+    {
+        Class msgClass = message.getClass();
+        for (Class c: DISCARD_EARLY) {
+            if (c.equals(msgClass)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void sendTimeout(CellMessage envelope, String error)
+    {
+        Message msg = (Message) envelope.getMessageObject();
+        if (msg.getReplyRequired()) {
+            try {
+                msg.setFailed(CacheException.TIMEOUT, error);
+                envelope.revertDirection();
+                sendMessage(envelope);
+            } catch (NoRouteToCellException e) {
+                esay("Failed to send reply: " + e.getMessage());
+            }
         }
     }
 }

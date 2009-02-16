@@ -198,7 +198,7 @@ public class      SystemCell
    public void messageArrived( CellMessage msg ){
         say( "Message arrived : "+msg ) ;
         _packetsReceived ++ ;
-        if( msg.isPersistent() ){
+        if( msg.isReply() ){
             esay("Seems to a bounce : "+msg);
             return ;
          }

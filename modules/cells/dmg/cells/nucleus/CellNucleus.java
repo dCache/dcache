@@ -265,6 +265,8 @@ public class CellNucleus implements Runnable, ThreadFactory {
             msg.touch();
         }
 
+        msg.setTtl(timeout);
+
         UOID uoid = msg.getUOID();
         try {
             CellLock lock = new CellLock();
@@ -355,6 +357,8 @@ public class CellNucleus implements Runnable, ThreadFactory {
         if (!msg.isStreamMode()) {
             msg.touch();
         }
+
+        msg.setTtl(timeout);
 
         UOID uoid = msg.getUOID();
         boolean success = false;

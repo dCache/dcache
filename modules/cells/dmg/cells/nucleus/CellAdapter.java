@@ -928,7 +928,7 @@ public class   CellAdapter
             //        say("messageArrived Object : [final="+
             //               msg.isFinalDestination()+";i="+_useInterpreter+"] "+obj.getClass());
             if (msg.isFinalDestination()) {
-                if (_useInterpreter && (! msg.isPersistent()) &&
+                if (_useInterpreter && (! msg.isReply()) &&
                     ((obj instanceof String) ||
                      (obj instanceof AuthorizedString) ||
                      (obj instanceof CommandRequestable))) {
