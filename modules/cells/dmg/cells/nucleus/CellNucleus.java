@@ -433,6 +433,41 @@ public class CellNucleus implements Runnable, ThreadFactory {
         return __cellGlue.join(cellName, timeout);
     }
 
+    /**
+     * Returns the non-daemon threads of a thread group.
+     */
+    private Collection<Thread> getNonDaemonThreads(ThreadGroup group)
+    {
+        Thread[] threads = new Thread[group.activeCount()];
+        int count = group.enumerate(threads);
+        Collection<Thread> nonDaemonThreads = new ArrayList(count);
+        for (int i = 0; i < count; i++) {
+            Thread thread = threads[i];
+            if (!thread.isDaemon()) {
+                nonDaemonThreads.add(thread);
+            }
+        }
+        return nonDaemonThreads;
+    }
+
+    /**
+     * Kills threads. We leave daemon threads alone since they
+     * are supposed to execute background processes and may be shared
+     * between cells.
+     */
+    private void killThreads(Collection<Thread> threads)
+        throws InterruptedException
+    {
+        for (Thread thread: threads) {
+            nsay("killerThread : interrupting " + thread.getName());
+            thread.interrupt();
+        }
+
+        for (Thread thread: threads) {
+            nsay("killerThread : joining " + thread.getName());
+            thread.join();
+        }
+    }
 
     public void run() {
         CDC.setCellsContext(this);
@@ -511,16 +546,22 @@ public class CellNucleus implements Runnable, ThreadFactory {
             nsay("killerThread : waiting for all threads in "+_threads+" to finish");
 
             try {
-                int activeCount;
-                Thread[] activeThreads = new Thread[_threads.activeCount()];
-                _threads.interrupt();
-                while ((activeCount = _threads.enumerate(activeThreads)) > 0) {
-                    for (int i = 0; i < activeCount; i++) {
-                        nsay("killerThread : joining " + activeThreads[i].getName());
-                        activeThreads[i].join();
+                Collection<Thread> threads = getNonDaemonThreads(_threads);
+                if (!threads.isEmpty()) {
+                    /* Some threads shut down asynchronously. Give
+                     * them a moment before killing them.
+                     */
+                    Thread.currentThread().sleep(1000);
+
+                    threads = getNonDaemonThreads(_threads);
+                    while (!threads.isEmpty()) {
+                        killThreads(threads);
+                        threads = getNonDaemonThreads(_threads);
                     }
                 }
                 _threads.destroy();
+            } catch (IllegalThreadStateException e) {
+                nsay("killThread : thread group not destroyed since it is not empty");
             } catch (InterruptedException e) {
                 nesay("killerThread : Interrupted while waiting for threads");
             }

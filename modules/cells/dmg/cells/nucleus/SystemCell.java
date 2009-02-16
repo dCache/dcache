@@ -135,7 +135,7 @@ public class      SystemCell
            try {
                _nucleus.kill(cellName);
            } catch (IllegalArgumentException e) {
-               esay("Problem killing : " + cellName + " -> " + e.getMessage());
+               say("Problem killing : " + cellName + " -> " + e.getMessage());
            }
        }
 
