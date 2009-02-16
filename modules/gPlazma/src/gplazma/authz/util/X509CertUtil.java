@@ -328,11 +328,15 @@ attribute : /cms/uscms/Role=cmsprod/Capability=NULL
    * @throws org.ietf.jgss.GSSException
    */
     public static Collection <String> getFQANs(VOMSValidator validator) throws GSSException {
-        LinkedHashSet<String> fqans = new LinkedHashSet <String> ();
         validator.parse();
         List listOfAttributes = validator.getVOMSAttributes();
+        LinkedHashSet<String> fqans = getFQANSfromVOMSAttributes(listOfAttributes);
+        return fqans;
+    }
 
-        boolean usingroles=false;
+    public static LinkedHashSet<String> getFQANSfromVOMSAttributes(List listOfAttributes) {
+        LinkedHashSet<String> fqans = new LinkedHashSet <String> ();
+
         Iterator i = listOfAttributes.iterator();
         while (i.hasNext()) {
             VOMSAttribute vomsAttribute = (VOMSAttribute) i.next();
@@ -340,16 +344,15 @@ attribute : /cms/uscms/Role=cmsprod/Capability=NULL
             Iterator j = listOfFqans.iterator();
             while (j.hasNext()) {
                 String attr = (String) j.next();
-                String attrtmp=attr;
-                if(attrtmp.endsWith(AuthorizationController.capnull))
-                attrtmp = attrtmp.substring(0, attrtmp.length() - AuthorizationController.capnulllen);
-                if(attrtmp.endsWith(AuthorizationController.rolenull))
-                attrtmp = attrtmp.substring(0, attrtmp.length() - AuthorizationController.rolenulllen);
+                if(attr.endsWith(AuthorizationController.capnull))
+                attr = attr.substring(0, attr.length() - AuthorizationController.capnulllen);
+                if(attr.endsWith(AuthorizationController.rolenull))
+                attr = attr.substring(0, attr.length() - AuthorizationController.rolenulllen);
                 Iterator k = fqans.iterator();
                 boolean issubrole=false;
                 while (k.hasNext()) {
                   String fqanattr=(String) k.next();
-                  if (fqanattr.startsWith(attrtmp)) {issubrole=true; break;}
+                  if (fqanattr.startsWith(attr)) {issubrole=true; break;}
                 }
                 if(!issubrole) fqans.add(attr);
             }
@@ -365,20 +368,9 @@ attribute : /cms/uscms/Role=cmsprod/Capability=NULL
     }
 
     public static Collection <String> getValidatedFQANs(VOMSValidator validator) throws GSSException {
-        LinkedHashSet <String> fqans = new LinkedHashSet <String> ();
         validator.validate();
         List listOfAttributes = validator.getVOMSAttributes();
-
-        Iterator i = listOfAttributes.iterator();
-        while (i.hasNext()) {
-            VOMSAttribute vomsAttribute = (VOMSAttribute) i.next();
-            List listOfFqans = vomsAttribute.getFullyQualifiedAttributes();
-            Iterator j = listOfFqans.iterator();
-            if (j.hasNext()) {
-                fqans.add((String) j.next());
-            }
-        }
-
+        LinkedHashSet<String> fqans = getFQANSfromVOMSAttributes(listOfAttributes);
         return fqans;
     }
 
