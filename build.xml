@@ -253,6 +253,10 @@
        <echo message="     server.rpm        : generate dcache-server-xxx.rpm" />
        <echo message="     server.tgz        : generate dcache-server-xxx.tgz" />
        <echo message="     server.dep        : generate dcache-server-xxx.dep" />
+       <echo message="     server.solpkg     : generate dcache-server-xxx.pkg (Solaris)" />
+       <echo message="" />
+       <echo message="     dcap32.rpm        : generate dcache-dcap32-xxx.rpm" />
+       <echo message="     dcap64.rpm        : generate dcache-dcap64-xxx.rpm" />
        <echo message="" />
        <echo message="     srmclient.rpm     : generate srmclient-xxx.rpm" />
        <echo message="" />
