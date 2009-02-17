@@ -58,6 +58,7 @@ set context -c namespaceProvider diskCacheV111.namespace.provider.BasicNameSpace
 set context -c pnfsDbUser        srmdcache
 set context -c pnfsDbPassword    srmdcache
 set context -c pnfsPasswordFile  ""
+set context -c pnfsFolding       false
 set env -c locationThreads 0
 
 #
@@ -90,6 +91,7 @@ create diskCacheV111.namespace.PnfsManagerV3 PnfsManager \
         -cachelocation-provider-dbPass=${pnfsDbPassword} \
         -cachelocation-provider-pgPass=${pnfsPasswordFile}  \
         -cachelocation-threads=${locationThreads} \
+        -folding=${pnfsFolding} \
        "
 #
 #   The 'remove' handler (informs the dCache about pfns removes)

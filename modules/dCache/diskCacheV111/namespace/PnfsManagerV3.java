@@ -47,6 +47,11 @@ public class PnfsManagerV3 extends CellAdapter {
     private boolean      _storeFilesize          = false ;
     private CellPath     _pnfsDeleteNotificationRelay = null;
 
+    /**
+     * Whether to use folding of idempotent messages.
+     */
+    private boolean      _canFold = false;
+
     private final NameSpaceProvider     _nameSpaceProvider;
     private final CacheLocationProvider _cacheLocationProvider;
     private final StorageInfoProvider   _storageInfoProvider;
@@ -54,6 +59,31 @@ public class PnfsManagerV3 extends CellAdapter {
     private final static String defaultCacheLocationProvider  = "diskCacheV111.namespace.provider.BasicNameSpaceProviderFactory";
     private final static String defaultStorageInfoProvider    = "diskCacheV111.namespace.provider.BasicNameSpaceProviderFactory";
 
+    private final Map<Class,StatItem> _requestMap = new HashMap();
+
+    private void populateRequestMap()
+    {
+        _requestMap.put(PnfsAddCacheLocationMessage.class, _xaddCacheLocation);
+        _requestMap.put(PnfsClearCacheLocationMessage.class, _xclearCacheLocation);
+        _requestMap.put(PnfsGetCacheLocationsMessage.class, _xgetCacheLocations);
+        _requestMap.put(PnfsCreateDirectoryMessage.class, _xcreateDirectory);
+        _requestMap.put(PnfsCreateEntryMessage.class, _xcreateEntry);
+        _requestMap.put(PnfsDeleteEntryMessage.class, _xdeleteEntry);
+        _requestMap.put(PnfsGetStorageInfoMessage.class, _xgetStorageInfo);
+        _requestMap.put(PnfsSetStorageInfoMessage.class, _xsetStorageInfo);
+        _requestMap.put(PnfsGetFileMetaDataMessage.class, _xgetMetadataInfo);
+        _requestMap.put(PnfsSetFileMetaDataMessage.class, _xsetMetadataInfo);
+        _requestMap.put(PnfsSetLengthMessage.class, _xsetLength);
+        _requestMap.put(PnfsGetCacheStatisticsMessage.class, _xgetCacheStatistics);
+        _requestMap.put(PnfsUpdateCacheStatisticsMessage.class, _xupdateCacheStatistics);
+        _requestMap.put(PnfsMapPathMessage.class, _xmapPath2Id);
+        _requestMap.put(PnfsRenameMessage.class, _xrename);
+        _requestMap.put(PnfsFlagMessage.class, _xflag);
+        _requestMap.put(PnfsSetChecksumMessage.class, _xsetChecksum);
+        _requestMap.put(PnfsGetChecksumMessage.class, _xgetChecksum);
+        _requestMap.put(PoolFileFlushedMessage.class, _xfileFlushed);
+        _requestMap.put(PnfsGetChecksumAllMessage.class, _xlistChecksumTypes);
+    }
 
     /**
      * Cache of path prefix to database IDs mappings.
@@ -75,16 +105,18 @@ public class PnfsManagerV3 extends CellAdapter {
         private final String _name ;
         int    _requests = 0 ;
         int    _failed   = 0 ;
+        int    _folded   = 0;
         private  StatItem( String name ){ _name = name ; }
         private  void request(){ _requests ++ ; }
         private  void failed(){ _failed ++ ; }
+        private  void folded() { _folded++; }
         @Override
         public String toString(){
         	StringBuilder sb = new StringBuilder();
 
         	Formatter formatter = new Formatter(sb);
 
-        	formatter.format("%-32s %9d %9d", new Object[]{_name,_requests,  _failed});
+                formatter.format("%-32s %9d %9d %9d", new Object[]{_name,_requests,  _failed, _folded});
         	formatter.flush();
         	formatter.close();
 
@@ -160,6 +192,8 @@ public class PnfsManagerV3 extends CellAdapter {
         _cellName = cellName ;
         _args     = getArgs() ;
         _nucleus  = getNucleus() ;
+
+        populateRequestMap();
 
         useInterpreter( true ) ;
 
@@ -292,6 +326,12 @@ public class PnfsManagerV3 extends CellAdapter {
                 }
             } else {
                 _locationFifos = _fifos;
+            }
+
+            tmp = _args.getOpt("folding");
+            if (tmp != null && (tmp.equals("true") || tmp.equals("yes") ||
+                                tmp.equals("enabled"))) {
+                _canFold = true;
             }
         } catch (Exception e){
             esay ("Exception occurred: "+e);
@@ -1240,6 +1280,7 @@ public class PnfsManagerV3 extends CellAdapter {
         }
 
     }
+
     public void getFileMetaData( PnfsGetFileMetaDataMessage pnfsMessage ){
         PnfsId pnfsId   = pnfsMessage.getPnfsId() ;
         boolean resolve = pnfsMessage.resolve() ;
@@ -1505,7 +1546,6 @@ public class PnfsManagerV3 extends CellAdapter {
         pnfsMessage.setFailed( 5 , "Not supported" ) ;
     }
 
-
     private class ProcessThread implements Runnable {
         private final BlockingQueue<CellMessage> _fifo ;
         private ProcessThread( BlockingQueue<CellMessage> fifo ){ _fifo = fifo ; }
@@ -1542,6 +1582,7 @@ public class PnfsManagerV3 extends CellAdapter {
                     }
 
                     processPnfsMessage(message, pnfs);
+                    fold(pnfs);
                 } catch(Throwable processException) {
                     esay( "processPnfsMessage : "+
                             Thread.currentThread().getName()+" : "+
@@ -1551,6 +1592,39 @@ public class PnfsManagerV3 extends CellAdapter {
                 }
             }
             say("Thread <"+Thread.currentThread().getName()+"> finished");
+        }
+
+        protected void fold(PnfsMessage message)
+        {
+            if (_canFold && message.isIdempotent()) {
+                Iterator<CellMessage> i = _fifo.iterator();
+                while (i.hasNext()) {
+                    CellMessage envelope = (CellMessage) i.next();
+                    PnfsMessage other =
+                        (PnfsMessage) envelope.getMessageObject();
+
+                    if (other.invalidates(message)) {
+                        break;
+                    }
+
+                    if (other.isSubsumedBy(message)) {
+                        say("Collapsing " + message.getClass().getSimpleName());
+                        StatItem stat = _requestMap.get(message.getClass());
+                        if (stat != null)
+                            stat.folded();
+
+                        i.remove();
+                        envelope.revertDirection();
+                        envelope.setMessageObject(message);
+
+                        try {
+                            sendMessage(envelope);
+                        } catch (NoRouteToCellException e) {
+                            esay("Failed to send reply: " + e.getMessage());
+                        }
+                    }
+                }
+            }
         }
     }
 

@@ -3,12 +3,12 @@
 package diskCacheV111.vehicles;
 
 public class PnfsCreateEntryMessage extends PnfsGetStorageInfoMessage {
-    
+
     private String      _path        = null;
     private int _uid = -1 , _gid = -1 , _mode = 0 ;
-    
+
     private static final long serialVersionUID = -8197311585737333341L;
-    
+
     public PnfsCreateEntryMessage(String path){
 	_path = path;
 	setReplyRequired(true);
@@ -26,5 +26,27 @@ public class PnfsCreateEntryMessage extends PnfsGetStorageInfoMessage {
     public int getUid(){ return _uid ; }
     public int getGid(){ return _gid ; }
     public int getMode(){return _mode ; }
-    
+
+    @Override
+    public boolean invalidates(Message message)
+    {
+        /* Notice that PnfsCreateEntryMessage inherits from
+         * PnfsGetStorageInfoMessage. Therefore we cannot rely on the
+         * default implementation in PnfsMessage.
+         */
+        if (message instanceof PnfsMessage) {
+            PnfsMessage msg = (PnfsMessage) message;
+            if (getPnfsPath() != null && msg.getPnfsPath() != null &&
+                !getPnfsPath().equals(msg.getPnfsPath())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public boolean isIdempotent()
+    {
+        return false;
+    }
 }

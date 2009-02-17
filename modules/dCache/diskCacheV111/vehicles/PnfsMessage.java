@@ -39,6 +39,24 @@ public class PnfsMessage extends Message {
                (_path==null?"NULL":("Path="+_path)):
                ("PnfsId="+_pnfsId.toString()) ; 
     }
+
+    @Override
+    public boolean invalidates(Message message)
+    {
+        if (message instanceof PnfsMessage) {
+            PnfsMessage msg = (PnfsMessage) message;
+            if (getPnfsId() != null && msg.getPnfsId() != null &&
+                !getPnfsId().equals(msg.getPnfsId())) {
+                return false;
+            }
+
+            if (getPnfsPath() != null && msg.getPnfsPath() != null &&
+                !getPnfsPath().equals(msg.getPnfsPath())) {
+                return false;
+            }
+        }
+        return true;
+    }
 }
 
 

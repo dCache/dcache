@@ -40,4 +40,32 @@ public class PnfsGetCacheLocationsMessage extends PnfsMessage {
                append(",") ;
        return sb.toString() ;
     }
+
+    @Override
+    public boolean invalidates(Message message)
+    {
+        return false;
+    }
+
+    @Override
+    public boolean isSubsumedBy(Message message)
+    {
+        if (message.getClass().equals(PnfsGetCacheLocationsMessage.class)) {
+            PnfsId pnfsId = getPnfsId();
+            String path = getPnfsPath();
+            PnfsGetCacheLocationsMessage msg =
+                (PnfsGetCacheLocationsMessage) message;
+            return
+                (pnfsId == null || pnfsId.equals(msg.getPnfsId())) &&
+                (path == null || path.equals(msg.getPnfsPath()));
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean isIdempotent()
+    {
+        return true;
+    }
 }
