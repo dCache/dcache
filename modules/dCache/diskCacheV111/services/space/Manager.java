@@ -3345,7 +3345,9 @@ public class Manager
 						int vos_length = fqans.length;
 						vos = new VOInfo[vos_length];
 						for(int j = 0; j<fqans.length ; ++j) {
-							vos[j] = new VOInfo(fqans[j].getGroup(), fqans[j].getRole());
+                            String voRole = fqans[j].getRole();
+                            voRole = (voRole==null || voRole.equals("")) ? "*" : voRole;
+							vos[j] = new VOInfo(fqans[j].getGroup(), voRole);
 						}
 
 					}
