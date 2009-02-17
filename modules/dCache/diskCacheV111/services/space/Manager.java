@@ -3454,9 +3454,11 @@ public class Manager
 			sqlStatement2.close();
 			for(Iterator<VOInfo> i = insertVOs.iterator(); i.hasNext();) {
 				VOInfo nextVo=i.next();
-				String insertLinkGroupVO = "INSERT INTO "+ManagerSchemaConstants.LinkGroupVOsTableName +
+                String voRole = nextVo.getVoRole();
+                voRole = (voRole==null || voRole.equals("")) ? "*" : voRole;
+                String insertLinkGroupVO = "INSERT INTO "+ManagerSchemaConstants.LinkGroupVOsTableName +
 					" VALUES ( '"+nextVo.getVoGroup()+
-					"','"+nextVo.getVoRole()+
+					"','"+voRole+
 					"',"+id+")";
 				Statement sqlStatement3 = connection.createStatement();
 				sqlStatement3.executeUpdate(insertLinkGroupVO);
@@ -3465,9 +3467,11 @@ public class Manager
 			}
 			for(Iterator<VOInfo> i = deleteVOs.iterator(); i.hasNext();) {
 				VOInfo nextVo=i.next();
-				String insertLinkGroupVO = "DELETE FROM "+ManagerSchemaConstants.LinkGroupVOsTableName +
+                String voRole = nextVo.getVoRole();
+                voRole = (voRole==null || voRole.equals("")) ? "*" : voRole;
+                String insertLinkGroupVO = "DELETE FROM "+ManagerSchemaConstants.LinkGroupVOsTableName +
 					" WHERE VOGroup = '"+nextVo.getVoGroup()+
-					"' AND VORole ='"+nextVo.getVoRole()+
+					"' AND VORole ='"+voRole+
 					"' AND linkGroupId="+id;
 				Statement sqlStatement4 = connection.createStatement();
 				sqlStatement4.executeUpdate(insertLinkGroupVO);
