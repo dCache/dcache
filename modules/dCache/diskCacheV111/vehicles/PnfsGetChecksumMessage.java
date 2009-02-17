@@ -9,9 +9,9 @@ import  diskCacheV111.util.PnfsId ;
 public class PnfsGetChecksumMessage extends PnfsMessage {
    private String _value     = null ;
    private int    _type      = 0;
-   
+
    private static final long serialVersionUID = 8848728352746947852L;
-   
+
    public PnfsGetChecksumMessage( PnfsId pnfsId , int type ){
       super( pnfsId ) ;
      _type  = type;
@@ -20,4 +20,10 @@ public class PnfsGetChecksumMessage extends PnfsMessage {
    public String getValue(){ return _value; }
    public void   setValue(String value){ _value = value; }
    public int    getType(){ return _type; }
+
+    @Override
+    public boolean invalidates(Message message)
+    {
+        return false;
+    }
 }

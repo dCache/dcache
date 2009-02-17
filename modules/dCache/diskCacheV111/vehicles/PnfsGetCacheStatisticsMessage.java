@@ -6,11 +6,11 @@ import  diskCacheV111.util.* ;
 import java.util.*;
 
 public class PnfsGetCacheStatisticsMessage extends PnfsMessage {
-    
+
     private CacheStatistics _cacheStatistics;
 
     private static final long serialVersionUID = 8035834344050871201L;
-    
+
     public PnfsGetCacheStatisticsMessage(String pnfsId){
 	super(pnfsId);
 	setReplyRequired(true);
@@ -28,4 +28,9 @@ public class PnfsGetCacheStatisticsMessage extends PnfsMessage {
 	_cacheStatistics = cacheStatistics;
     }
 
+    @Override
+    public boolean invalidates(Message message)
+    {
+        return false;
+    }
 }

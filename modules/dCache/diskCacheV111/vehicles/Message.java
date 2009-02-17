@@ -99,5 +99,41 @@ public class Message
         PnfsId id = ReflectionUtils.getPnfsId(this);
         return (id == null) ? name : (name + " " + id);
     }
+
+    /**
+     * Returns true if this message could possibly change the effect
+     * or result of <code>message</code>.
+     *
+     * In a message queue, two idempotent operations can be folded if
+     * they are not invalidated by any messages in between.
+     */
+    public boolean invalidates(Message message)
+    {
+        return true;
+    }
+
+    /**
+     * Returns true if this message is subsumed by the message
+     * provided as an argument.
+     *
+     * A message A subsumes a message B if and only if both A and B
+     * are idempotent and a reply to A can be used as a valid reply to
+     * B.
+     */
+    public boolean isSubsumedBy(Message message)
+    {
+        return false;
+    }
+
+    /**
+     * Returns true if this message is idempotent, that is, the result
+     * of applying two identical instances of this message is the
+     * same, assuming the state of the system has not changed in
+     * between.
+     */
+    public boolean isIdempotent()
+    {
+        return false;
+    }
 }
 
