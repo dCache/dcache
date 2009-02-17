@@ -462,10 +462,23 @@ attribute : /cms/uscms/Role=cmsprod/Capability=NULL
 	  return buf.toString();
     }
 
-    public static synchronized VOMSValidator getVOMSValidatorInstance() throws IOException, CertificateException, CRLException {
+    public static VOMSValidator getVOMSValidatorInstance() throws IOException, CertificateException, CRLException {
         if(vomsValidator!=null) return vomsValidator;
-        vomsValidator = new VOMSValidator(null, null);
+        File theDir = new File(PKIStore.DEFAULT_VOMSDIR);
+        if (!theDir.exists() || !theDir.isDirectory() || theDir.list().length == 0) {
+            VOMSValidator.setTrustStore(getACTrustStoreInstance());
+            vomsValidator = new VOMSValidator(null, null);
+            vomsValidator.cleanup();
+        } else {
+            vomsValidator = new VOMSValidator(null, null);
+        }
         return vomsValidator;
     }
-
+    
+    public static ACTrustStore getACTrustStoreInstance() throws IOException, CertificateException, CRLException {
+        if(acTrustStore!=null) return acTrustStore;
+        acTrustStore = new BasicVOMSTrustStore(PKIStore.DEFAULT_CADIR, 12*3600*1000);
+        ((BasicVOMSTrustStore)acTrustStore).stopRefresh();
+        return acTrustStore;
+    }
 }
