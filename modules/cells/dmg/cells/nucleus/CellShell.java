@@ -1300,12 +1300,15 @@ public String command( String c ) throws CommandExitException {
       }
       return sb.toString() ;
    }
-   public String fh_exec =
-      "exec context|env <envName> [-shell] [-run [-nooutput] [okOptions]"+
-          " <context/envName> [<args>]\n" +
+
+   public final static String fh_exec =
+      "exec [<options>] <url> [<args>]\n" +
+      "exec [<options>] context <contextName> [<args>]\n" +
+      "exec [<options>] env <envName> [<args>]\n"+
       "\n"+
-      "   executes the content of an env or context variable.\n"+
-      "    ( the -run option will be the default in future releases)\n"+
+      "   Executes the content of an env or context variable or the\n" +
+      "   resource identified by the URL.\n"+
+      "    (the -run option will be the default in future releases)\n"+
       "     -shell : opens a new shell for the execution\n"+
       "     -run   : displays the output of the executed commands\n"+
       "     Option which can only be used together with -run\n"+
@@ -1319,10 +1322,28 @@ public String command( String c ) throws CommandExitException {
       "                           specified value of <varName> is '0'\n"+
       "                           The default <varName> is 'rc'\n"+
       "       -ifnotok[=<varName>]  : negation of -ifok\n\n" ;
-   public String fh_exec_context = fh_exec ;
-   public String fh_exec_env     = fh_exec ;
-   public String hh_exec_env =
+   public final static String fh_exec_context = fh_exec;
+   public final static String fh_exec_env = fh_exec;
+   public final static String hh_exec_env =
        "-shell [-run [-ifok|-ifnotok]] <envName> [<args>]" ;
+
+    public String ac_exec_$_1_99(Args args)
+        throws CommandException
+    {
+        try {
+            String url = args.argv(0);
+            Reader reader = open(new URL(url));
+            try {
+                return args.getOpt("run") == null ?
+                    execute_reader(url, reader , args ) :
+                    run_reader(url, reader , args , null ) ;
+            } finally {
+                reader.close();
+            }
+        } catch (IOException e) {
+            throw new CommandException(43 , e.getMessage());
+        }
+    }
 
    public String ac_exec_env_$_1_99( Args args ) throws CommandException {
       String env     = args.argv(0);
@@ -1677,47 +1698,29 @@ public String command( String c ) throws CommandExitException {
       //
       // check the syntax
       //
-      String fromProtocol = from.getProtocol() ;
-      fromProtocol        = fromProtocol.equals("") ? "env" : fromProtocol ;
-      String fromFile     = from.getFile() ;
-
       String toProtocol   = to.getProtocol() ;
       toProtocol          = toProtocol.equals("")   ? "env" : toProtocol ;
       String toFile       = to.getFile() ;
 
-      if( fromFile.length() == 0 )fromFile = "/" ;
-      if( fromFile.equals("") || toFile.equals("") )
-         throw new CommandException( 43 , "From or To object missing !!!" ) ;
+      if (toFile.equals(""))
+         throw new CommandException( 43 , "To URL missing !!!" ) ;
 
-      String source = null ;
-      Reader reader = null ;
-      BufferedReader in = null;
-      try{
-         URLConnection con = from.openConnection() ;
-         if( con instanceof CellUrl.DomainUrlConnection ){
-            CellUrl.DomainUrlConnection dc =
-               (CellUrl.DomainUrlConnection)con ;
-            dc.setNucleus( _nucleus ) ;
-            dc.setEnvironment( _environment ) ;
-            reader = dc.getReader() ;
-         }else{
-            reader = new InputStreamReader( con.getInputStream() ) ;
-         }
-         in = new BufferedReader( reader ) ;
-         String line ;
-         StringBuilder sb = new StringBuilder() ;
-         while( ( line = in.readLine() ) != null ){
-             sb.append( line ).append( "\n" ) ;
-         }
-         source = sb.toString() ;
-      }catch( Exception ee ){
-         throw new CommandException( 43 , ee.toString() ) ;
-      }finally{
-    	 if(in != null) try{ in.close() ; }catch(IOException xe){}
-         if(reader != null) try{ reader.close() ; }catch(IOException xe){}
+      String source;
+      try {
+          BufferedReader in = new BufferedReader(open(from));
+          try{
+              String line ;
+              StringBuilder sb = new StringBuilder() ;
+              while( ( line = in.readLine() ) != null ){
+                  sb.append( line ).append( "\n" ) ;
+              }
+              source = sb.toString() ;
+          } finally {
+              in.close();
+          }
+      } catch (Exception e) {
+          throw new CommandException( 43 , e.toString() ) ;
       }
-      if( source == null )
-        throw new CommandException( 43 ,"Source not found : "+from ) ;
 
       String toHost = to.getHost() ;
       if( ! toHost.equals("") )throw new
@@ -1738,30 +1741,7 @@ public String command( String c ) throws CommandExitException {
       }
       return "" ;
    }
-   private String doRealUrl( String urlString ) throws CommandException {
-      BufferedReader reader = null ;
-      StringBuilder sb = new StringBuilder() ;
-      try{
-         URL url = new URL( urlString ) ;
-         reader =
-             new BufferedReader(
-                new InputStreamReader(
-                    url.openStream() ) ) ;
-         String line ;
 
-         while( ( line = reader.readLine() ) != null ){
-             sb.append( line ).append( "\n" ) ;
-         }
-
-      }catch( Exception urle ){
-         throw new CommandException( 51 , "Problem with :"+urlString+" : "+urle ) ;
-      }finally{
-        if(reader != null) try{ reader.close() ; }catch( Exception eeee ){}
-      }
-
-      return sb.toString() ;
-
-   }
    ////////////////////////////////////////////////////////////
    //
    // ----------------------------------------------
@@ -1783,4 +1763,19 @@ public String command( String c ) throws CommandExitException {
        throw new CommandExitException( msg , code ) ;
    }
 
+    private Reader open(URL url)
+        throws IOException
+    {
+        Reader reader;
+        URLConnection con = url.openConnection();
+        if (con instanceof CellUrl.DomainUrlConnection) {
+            CellUrl.DomainUrlConnection dc =
+                (CellUrl.DomainUrlConnection)con;
+            dc.setNucleus(_nucleus) ;
+            dc.setEnvironment(_environment);
+            return dc.getReader();
+        } else {
+            return new InputStreamReader(con.getInputStream());
+        }
+    }
 }
