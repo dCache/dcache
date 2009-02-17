@@ -42,7 +42,7 @@ def processXML ( inFile, outFile, vos, options )
     e = doc.elements['//[@name="VO-name-to-path"]']
     e.delete_if { true }
     vos.each do |vo|      
-      e.add_element("sub", { "match" => vo, "replace-with" => options["NAME-SPACE-PREFIX"]+ vo })
+      e.add_element("sub", { "match" => vo, "replace-with" => options["NAME-SPACE-PREFIX"] + "/" + vo })
     end
     e.add_element("default", { "value" => "/UNDEFINEDPATH" })
   end
