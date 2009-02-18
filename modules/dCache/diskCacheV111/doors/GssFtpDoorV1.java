@@ -399,7 +399,6 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         }
 
         _pwdRecord = _userAuthRecords.next();
-        System.err.println(_pwdRecord);
         _user = _pwdRecord.Username;
 
         if(_pathRoot == null) {
