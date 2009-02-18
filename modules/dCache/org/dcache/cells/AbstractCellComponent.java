@@ -14,7 +14,8 @@ import dmg.cells.nucleus.SerializationException;
 public class AbstractCellComponent
     implements CellInfoProvider,
                CellSetupProvider,
-               CellMessageSender
+               CellMessageSender,
+               CellLifeCycleAware
 {
     private CellEndpoint _endpoint;
 
@@ -39,7 +40,22 @@ public class AbstractCellComponent
     /**
      * Implements CellSetupProvider interface.
      */
-    public void afterSetupExecuted() {}
+    public void beforeSetup() {}
+
+    /**
+     * Implements CellSetupProvider interface.
+     */
+    public void afterSetup() {}
+
+    /**
+     * Implements CellLifeCycleAware interface.
+     */
+    public void afterStart() {}
+
+    /**
+     * Implements CellLifeCycleAware interface.
+     */
+    public void beforeStop() {}
 
     /**
      * Implements CellMessageSender interface.

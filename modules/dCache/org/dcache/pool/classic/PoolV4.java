@@ -435,7 +435,8 @@ public class PoolV4
         _pingThread.start();
     }
 
-    public void afterSetupExecuted()
+    @Override
+    public void afterStart()
     {
         assertNotRunning("Cannot initialize several times");
 
@@ -453,6 +454,19 @@ public class PoolV4
                         666, "Init failed: " + e.getMessage());
         }
         _log.info("Repository finished");
+    }
+
+    @Override
+    public void beforeStop()
+    {
+        disablePool(PoolV2Mode.DISABLED_DEAD | PoolV2Mode.DISABLED_STRICT,
+                    666, "Shutdown");
+    }
+
+    public void cleanUp()
+    {
+        _ioQueue.shutdown();
+        _p2pQueue.shutdown();
     }
 
     /**
@@ -688,14 +702,6 @@ public class PoolV4
                 s.shutdown();
             }
         }
-    }
-
-    public void cleanUp()
-    {
-        disablePool(PoolV2Mode.DISABLED_DEAD | PoolV2Mode.DISABLED_STRICT,
-                    666, "Shutdown");
-        _ioQueue.shutdown();
-        _p2pQueue.shutdown();
     }
 
     /**

@@ -93,6 +93,14 @@ public class UniversalSpringCell
         new TreeSet<CellSetupProvider>(new ClassNameComparator());
 
     /**
+     * List of registered life cycle aware beans. Sorted to maintain
+     * consistent ordering.
+     */
+    private final Set<CellLifeCycleAware> _lifeCycleAware =
+        new TreeSet<CellLifeCycleAware>(new ClassNameComparator());
+
+
+    /**
      * Cell name of the setup controller.
      */
     private String _setupController;
@@ -105,7 +113,7 @@ public class UniversalSpringCell
     /**
      * Setup to execute during start and to which to save the setup.
      */
-    private String _setupFile;
+    private File _setupFile;
 
     public UniversalSpringCell(String cellName, String arguments)
         throws InterruptedException, ExecutionException
@@ -127,7 +135,10 @@ public class UniversalSpringCell
         _setupController = args.getOpt("setupController");
         info("Setup controller set to "
              + (_setupController == null ? "none" : _setupController));
-        _setupFile = args.getOpt("setupFile");
+        _setupFile =
+            (args.getOpt("setupFile") == null)
+            ? null
+            : new File(args.getOpt("setupFile"));
         _setupClass = args.getOpt("setupClass");
 
         if (_setupController != null && _setupClass == null)
@@ -144,26 +155,31 @@ public class UniversalSpringCell
          */
         init();
 
-        /* Execute both the defined setup and the setup file.
+        /* The timeout task is essential to handle cell message
+         * timeouts.
          */
-        executeDefinedSetup();
+        startTimeoutTask();
+
+        /* Execute setup. In case the setup file is missing, we wait
+         * until it becomes available.
+         */
         if (_setupFile != null) {
-            File file = new File(_setupFile);
-            while (!file.exists()) {
+            while (!_setupFile.exists()) {
                 error("Setup does not exists; waiting");
                 Thread.sleep(30000);
             }
-
-            execFile(file);
         }
+        executeSetup();
 
         /* Now that everything is instantiated and configured, we can
-         * start the cell and run the final initialisation hooks.
+         * start the cell.
          */
-        startTimeoutTask();
         start();
-        for (CellSetupProvider provider: _setupProviders) {
-            provider.afterSetupExecuted();
+
+        /* Run the final initialisation hooks.
+         */
+        for (CellLifeCycleAware bean: _lifeCycleAware) {
+            bean.afterStart();
         }
     }
 
@@ -173,12 +189,45 @@ public class UniversalSpringCell
     public void cleanUp()
     {
         super.cleanUp();
+        for (CellLifeCycleAware bean: _lifeCycleAware) {
+            bean.beforeStop();
+        }
         if (_context != null) {
             _context.close();
             _context = null;
         }
         _infoProviders.clear();
         _setupProviders.clear();
+        _lifeCycleAware.clear();
+    }
+
+    private void executeSetup()
+        throws IOException, CommandException
+    {
+        for (CellSetupProvider provider: _setupProviders) {
+            provider.beforeSetup();
+        }
+
+        executeDefinedSetup();
+        if (_setupFile != null) {
+            execFile(_setupFile);
+        }
+
+        for (CellSetupProvider provider: _setupProviders) {
+            provider.afterSetup();
+        }
+    }
+
+    @Override
+    public void messageToForward(CellMessage envelope)
+    {
+        super.messageToForward(envelope);
+    }
+
+    @Override
+    public void messageArrived(CellMessage envelope)
+    {
+        super.messageArrived(envelope);
     }
 
     /**
@@ -297,10 +346,10 @@ public class UniversalSpringCell
 
         if ("none".equals(controller)) {
             controller = null;
-            file = _setupFile;
+            file = _setupFile.getPath();
         } else if (file == null && controller == null) {
             controller = _setupController;
-            file = _setupFile;
+            file = _setupFile.getPath();
         }
 
         if (file == null && controller == null) {
@@ -401,6 +450,30 @@ public class UniversalSpringCell
         }
     }
 
+    public String hh_reload = "-yes";
+    public String fh_reload =
+        "This command destroys the current setup and replaces it" +
+        "by the setup on disk.";
+    public String ac_reload(Args args)
+        throws IOException, CommandException
+    {
+        if (args.getOpt("yes") == null) {
+            return
+                " This command destroys the current setup\n" +
+                " and replaces it by the setup on disk\n" +
+                " Please use 'reload -yes' if you really want\n" +
+                " to do that.";
+        }
+
+        if (_setupFile != null && !_setupFile.exists()) {
+            return String.format("Setup file [%s] does not exist", _setupFile);
+        }
+
+        executeSetup();
+
+        return "";
+    }
+
     /**
      * Should be renamed to 'info' when command interpreter learns
      * to handle overloaded commands.
@@ -481,11 +554,6 @@ public class UniversalSpringCell
             return s.toString();
         }
         return "No such bean: " + name;
-    }
-
-    public String ac_bean_restart(Args args)
-    {
-        return "";
     }
 
     /** Returns a formated name of a message class. */
@@ -586,6 +654,15 @@ public class UniversalSpringCell
     }
 
     /**
+     * Registers a life cycle aware bean. Life cycle aware beans are
+     * notified about cell start and stop events.
+     */
+    public void addLifeCycleAwareBean(CellLifeCycleAware bean)
+    {
+        _lifeCycleAware.add(bean);
+    }
+
+    /**
      * Registers a thread factory aware bean. Thread factory aware
      * bean provide hooks for registering thread factories. This
      * method registers the Cell nulceus thread factory on the bean.
@@ -624,6 +701,10 @@ public class UniversalSpringCell
 
         if (CellSetupProvider.class.isInstance(bean)) {
             addSetupProviderBean((CellSetupProvider)bean);
+        }
+
+        if (CellLifeCycleAware.class.isInstance(bean)) {
+            addLifeCycleAwareBean((CellLifeCycleAware)bean);
         }
 
         if (ThreadFactoryAware.class.isInstance(bean)) {

@@ -11,8 +11,7 @@ import diskCacheV111.util.JobScheduler;
 import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.vehicles.JobInfo;
 import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.CellInfoProvider;
-import org.dcache.cells.CellSetupProvider;
+import org.dcache.cells.AbstractCellComponent;
 import dmg.util.Args;
 import dmg.cells.nucleus.CellInfo;
 import org.apache.log4j.Logger;
@@ -82,10 +81,9 @@ class SchedulerEntry
 }
 
 public class JobTimeoutManager
+    extends AbstractCellComponent
     implements Runnable,
-               CellCommandListener,
-               CellInfoProvider,
-               CellSetupProvider
+               CellCommandListener
 {
     private final static Logger _log =
         Logger.getLogger(JobTimeoutManager.class);
@@ -122,8 +120,6 @@ public class JobTimeoutManager
         }
     }
 
-    public void afterSetupExecuted() {}
-
     public void getInfo(PrintWriter pw)
     {
         pw.println("Job Timeout Manager");
@@ -133,11 +129,6 @@ public class JobTimeoutManager
                        " (lastAccess=" + (entry.getLastAccessed() / 1000L) +
                        ";total=" + (entry.getTotal() / 1000L) + ")");
         }
-    }
-
-    public CellInfo getCellInfo(CellInfo info)
-    {
-        return info;
     }
 
     public String hh_jtm_go = "trigger the worker thread";

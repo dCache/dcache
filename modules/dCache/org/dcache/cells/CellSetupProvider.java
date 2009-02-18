@@ -6,6 +6,13 @@ import java.io.PrintWriter;
  * Classes implementing this interface can participate in the creation
  * of a cell setup file. Cell setup files are batch files, which when
  * executed recreate the current settings.
+ *
+ * The interface provides notification points before and after the
+ * setup file is executed. Notice that the setup may be executed
+ * during normal operation.
+ *
+ * Notice that UniversalSpringCell will invoke the notification
+ * methods no matter whether a setup file is actually defined or not.
  */
 public interface CellSetupProvider
 {
@@ -15,15 +22,13 @@ public interface CellSetupProvider
     void printSetup(PrintWriter pw);
 
     /**
-     * Invoked during initialisation after the setup file has been or
-     * would have been executed. This is called no matter whether a
-     * setup file was actually executed or not.
-     *
-     * This allows for some late initialisation, that cannot happen
-     * until the settings have been restored. The Spring init-method
-     * is called before the setup file is executed and can thus not be
-     * used for this purpose.
+     * Invoked before the setup file is executed. 
      */
-    void afterSetupExecuted();
+    void beforeSetup();
+
+    /**
+     * Invoked after the setup file has been executed.
+     */
+    void afterSetup();
 }
 

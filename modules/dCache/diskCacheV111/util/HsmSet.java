@@ -258,8 +258,12 @@ public class HsmSet
             }
         }
     }
+    
+    @Override
+    public void beforeSetup() {}
 
-    public void afterSetupExecuted() {}
+    @Override
+    public void afterSetup() {}
 
     private void _printInfos(StringBuilder sb, String instance)
     {
