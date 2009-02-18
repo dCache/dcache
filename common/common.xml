@@ -60,7 +60,8 @@
         <echo>Unpacking to ${glite.untarred}</echo>
         <untar dest="${unpackTop}" compression="gzip">
             <patternset>
-                <include name="**/*.jar" />
+                <include name="**/glite*.jar" />
+		<include name="**/voms*.jar" />
             </patternset>
             <fileset dir="${glite.libDir}">
                 <include name="**/*.tar.gz" />
