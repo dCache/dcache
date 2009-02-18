@@ -39,21 +39,9 @@ onerror continue
   set context -c pnfsmanager            PnfsManager
   set context -c flushMessageTarget     broadcast
   set context -c sweeper                org.dcache.pool.classic.SpaceSweeper2
+  set context -c poolupDestination      broadcast
 
 onerror shutdown
-
-#
-# Set poolupDestination to broadcast if hsmCleaner is enabled
-#
-onerror continue
-define env hsmCleanerEnabled endDefine
-  set context -c poolupDestination broadcast
-endDefine
-eval ${hsmCleaner} enabled ==
-exec env hsmCleanerEnabled -run -ifok
-set context -c poolupDestination PoolManager
-onerror shutdown
-
 
 #
 # NIO ftp mover
@@ -67,7 +55,7 @@ endDefine
 # This defines how to instantiate the pool code.
 #
 # Notice that most of the following arguments are redundant, since
-# the values will be picked up from the context if not defined as 
+# the values will be picked up from the context if not defined as
 # an option.
 ###############################################
 define context startPools endDefine
