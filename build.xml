@@ -589,6 +589,7 @@
     <target name="cleanall" description="Remove everything produced by me.">
         <delete dir="${distDir}" />
         <delete dir="${buildDir}" />
+	<delete dir="${glite.untarredTo}/share"/>
     </target>
 
 
