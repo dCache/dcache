@@ -1,6 +1,6 @@
 package org.dcache.pool.migration;
 
-import org.dcache.pool.repository.StateChangeListener;
+import org.dcache.pool.repository.AbstractStateChangeListener;
 import org.dcache.pool.repository.StateChangeEvent;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.CacheEntry;
@@ -71,7 +71,7 @@ import org.apache.log4j.Logger;
  * FINISHED       Job completed
  */
 public class Job
-    implements StateChangeListener
+    extends AbstractStateChangeListener
 {
     enum State { INITIALIZING, RUNNING, SLEEPING, SUSPENDED,
             CANCELLING, CANCELLED, FINISHED }
@@ -401,6 +401,7 @@ public class Job
     }
 
     /** Callback from repository. */
+    @Override
     public void stateChanged(StateChangeEvent event)
     {
         Repository repository = _configuration.getRepository();

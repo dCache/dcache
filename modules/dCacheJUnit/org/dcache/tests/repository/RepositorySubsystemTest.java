@@ -36,7 +36,7 @@ import static org.dcache.pool.repository.EntryState.*;
 import org.dcache.pool.repository.ReadHandle;
 import org.dcache.pool.repository.WriteHandle;
 import org.dcache.pool.repository.CacheEntry;
-import org.dcache.pool.repository.StateChangeListener;
+import org.dcache.pool.repository.AbstractStateChangeListener;
 import org.dcache.pool.repository.StateChangeEvent;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.MetaDataStore;
@@ -47,7 +47,7 @@ import org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository;
 import org.dcache.pool.repository.v3.RepositoryException;
 
 public class RepositorySubsystemTest
-    implements StateChangeListener
+    extends AbstractStateChangeListener
 {
     private long size1 = 1024;
     private long size2 = 1024;
@@ -205,6 +205,7 @@ public class RepositorySubsystemTest
         repository.setPnfsHandler(pnfs);
         repository.setLegacyRepository(rep);
         repository.addListener(this);
+        repository.setSynchronousNotification(true);
         repository.init(0);
 
         /* Remove scan notifications from queue.
@@ -222,6 +223,7 @@ public class RepositorySubsystemTest
             deleteDirectory(root);
     }
 
+    @Override
     public void stateChanged(StateChangeEvent event)
     {
         stateChangeEvents.add(event);
@@ -230,7 +232,7 @@ public class RepositorySubsystemTest
     public void expectStateChangeEvent(PnfsId id, EntryState oldState, EntryState newState)
         throws InterruptedException
     {
-        StateChangeEvent event = stateChangeEvents.poll(1, TimeUnit.SECONDS);
+        StateChangeEvent event = stateChangeEvents.poll();
         assertNotNull(event);
         assertEquals(id, event.getPnfsId());
         assertEquals(oldState, event.getOldState());

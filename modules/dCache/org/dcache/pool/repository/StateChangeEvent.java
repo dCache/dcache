@@ -1,23 +1,19 @@
 package org.dcache.pool.repository;
 
-import diskCacheV111.util.PnfsId;
-
-public class StateChangeEvent
+/**
+ * Encapsulates information describing changes to the state of a
+ * repository entry.
+ */
+public class StateChangeEvent extends EntryChangeEvent
 {
-    private final PnfsId _id;
     private final EntryState _oldState;
     private final EntryState _newState;
 
-    public StateChangeEvent(PnfsId id, EntryState oldState, EntryState newState)
+    public StateChangeEvent(CacheEntry entry, EntryState oldState, EntryState newState)
     {
-        _id = id;
+        super(entry);
         _oldState = oldState;
         _newState = newState;
-    }
-
-    public PnfsId getPnfsId()
-    {
-        return _id;
     }
 
     public EntryState getOldState()
@@ -34,6 +30,6 @@ public class StateChangeEvent
     {
         return
             String.format("StateChangedEvent [id=%s,oldState=%s,newState=%s]",
-                          _id, _oldState, _newState);
+                          getPnfsId(), _oldState, _newState);
     }
 }

@@ -90,20 +90,20 @@ public class CacheRepositoryEntryState {
         return ret;
     }
 
-
-    public boolean removeExpiredStickyFlags()
+    public List<StickyRecord> removeExpiredStickyFlags()
     {
         _stateLock.writeLock().lock();
         try {
-            if (_sticky.removeExpired()) {
-                makeStatePercistent();
-                return true;
+            List<StickyRecord> removed = _sticky.removeExpired();
+            try {
+                if (!removed.isEmpty()) {
+                    makeStatePercistent();
+                }
+            } catch (IOException e) {
+                _logBussiness.error("Failed to store repository state: " +
+                                    e.getMessage());
             }
-            return false;
-        } catch (IOException e) {
-            _logBussiness.error("Failed to store repository state: " +
-                                e.getMessage());
-            return true;
+            return removed;
         } finally {
             _stateLock.writeLock().unlock();
         }
@@ -115,7 +115,7 @@ public class CacheRepositoryEntryState {
      *
      */
 
-    public void setSticky(String owner, long expire, boolean overwrite) throws IllegalStateException, IOException {
+    public boolean setSticky(String owner, long expire, boolean overwrite) throws IllegalStateException, IOException {
 
 
         _stateLock.writeLock().lock();
@@ -127,7 +127,9 @@ public class CacheRepositoryEntryState {
             // if sticky flag modified, make changes persistent
             if( _sticky.addRecord(owner, expire, overwrite) ) {
                 makeStatePercistent();
+                return true;
             }
+            return false;
         }finally{
             _stateLock.writeLock().unlock();
         }

@@ -158,20 +158,20 @@ public class CacheRepositoryEntryState implements Serializable
         return new ArrayList<StickyRecord>(_sticky);
     }
 
-    public synchronized boolean removeExpiredStickyFlags()
+    public synchronized List<StickyRecord> removeExpiredStickyFlags()
     {
+        List<StickyRecord> removed = new ArrayList();
         long now = System.currentTimeMillis();
-        boolean modified = false;
         Iterator<StickyRecord> i = _sticky.iterator();
         while (i.hasNext()) {
             StickyRecord record = i.next();
             if (!record.isValidAt(now)) {
                 i.remove();
-                modified = true;
+                removed.add(record);
                 markDirty();
             }
         }
-        return modified;
+        return removed;
     }
 
     /*
@@ -179,7 +179,7 @@ public class CacheRepositoryEntryState implements Serializable
      *  State transitions
      *
      */
-    public synchronized void setSticky(String owner, long expire, boolean overwrite)
+    public synchronized boolean setSticky(String owner, long expire, boolean overwrite)
         throws IllegalStateException
     {
         // too late
@@ -192,7 +192,9 @@ public class CacheRepositoryEntryState implements Serializable
                 _sticky.add(new StickyRecord(owner, expire));
                 markDirty();
             }
+            return true;
         }
+        return false;
     }
 
     /**

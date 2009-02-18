@@ -87,22 +87,21 @@ public class Sticky {
     }
 
     /**
-     * Removes expired flags. Returns true when modified, false
-     * otherwise.
+     * Removes expired flags. Returns the list of removed records.
      */
-    synchronized public boolean removeExpired()
+    synchronized public List<StickyRecord> removeExpired()
     {
+        List<StickyRecord> removed = new ArrayList();
         long now = System.currentTimeMillis();
-        boolean modified = false;
         Iterator<StickyRecord> i = _records.values().iterator();
         while (i.hasNext()) {
             StickyRecord record = i.next();
             if (!record.isValidAt(now)) {
                 i.remove();
-                modified = true;
+                removed.add(record);
             }
         }
-        return modified;
+        return removed;
     }
 
 }

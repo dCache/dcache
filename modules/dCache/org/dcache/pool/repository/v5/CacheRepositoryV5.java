@@ -16,6 +16,8 @@ import org.dcache.pool.repository.v3.RepositoryException;
 import org.dcache.pool.repository.v4.CacheRepositoryV4;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.StateChangeEvent;
+import org.dcache.pool.repository.EntryChangeEvent;
+import org.dcache.pool.repository.StickyChangeEvent;
 import org.dcache.pool.repository.StateChangeListener;
 import org.dcache.pool.repository.ReadHandle;
 import org.dcache.pool.repository.WriteHandle;
@@ -423,7 +425,7 @@ public class CacheRepositoryV5
                 break;
             case BROKEN:
                 entry.setBad(true);
-                updateState(entry.getPnfsId(), BROKEN);
+                updateState(entry, BROKEN);
                 break;
             case CACHED:
                 entry.setBad(false);
@@ -512,10 +514,53 @@ public class CacheRepositoryV5
     /**
      * Asynchronously notify listeners about a state change.
      */
-    protected void notify(PnfsId id, EntryState oldState, EntryState newState)
+    protected void stateChanged(CacheRepositoryEntry entry,
+                                EntryState oldState, EntryState newState)
     {
-        StateChangeEvent event = new StateChangeEvent(id, oldState, newState);
-        _stateChangeListeners.notify(event);
+        try {
+            StateChangeEvent event =
+                new StateChangeEvent(new CacheEntryImpl(entry, newState),
+                                     oldState, newState);
+            _stateChangeListeners.stateChanged(event);
+        } catch (CacheException e) {
+            fail(FaultAction.READONLY, "Internal repository error", e);
+            throw new RuntimeException("Internal repository error", e);
+        }
+    }
+
+    /**
+     * Asynchronously notify listeners about an access time change.
+     */
+    protected void accessTimeChanged(CacheRepositoryEntry entry)
+    {
+        try {
+            PnfsId id = entry.getPnfsId();
+            EntryChangeEvent event =
+                new EntryChangeEvent(new CacheEntryImpl(entry, getState(id)));
+            _stateChangeListeners.accessTimeChanged(event);
+        } catch (CacheException e) {
+            fail(FaultAction.READONLY, "Internal repository error", e);
+            throw new RuntimeException("Internal repository error", e);
+        }
+    }
+
+    /**
+     * Asynchronously notify listeners about a change of a sticky
+     * record.
+     */
+    protected void stickyChanged(CacheRepositoryEntry entry,
+                                 StickyRecord record)
+    {
+        try {
+            PnfsId id = entry.getPnfsId();
+            StickyChangeEvent event =
+                new StickyChangeEvent(new CacheEntryImpl(entry, getState(id)),
+                                      record);
+            _stateChangeListeners.stickyChanged(event);
+        } catch (CacheException e) {
+            fail(FaultAction.READONLY, "Internal repository error", e);
+            throw new RuntimeException("Internal repository error", e);
+        }
     }
 
     /**
@@ -535,6 +580,18 @@ public class CacheRepositoryV5
     void fail(FaultAction action, String message)
     {
         fail(action, message, null);
+    }
+
+    /**
+     * If set to true, then state change listeners are notified
+     * synchronously. In this case listeners must not acquire any
+     * locks or call back into the repository, as there is otherwise a
+     * risk that the component will deadlock. Synchronous notification
+     * is mainly provided for testing purposes.
+     */
+    public void setSynchronousNotification(boolean value)
+    {
+        _stateChangeListeners.setSynchronousNotification(value);
     }
 
     /**
@@ -593,9 +650,11 @@ public class CacheRepositoryV5
      * <code>_states</code> hash table. This method updates an entry
      * in that table.
      */
-    protected void updateState(PnfsId id, EntryState newState)
+    protected void updateState(CacheRepositoryEntry entry,
+                               EntryState newState)
     {
         EntryState oldState;
+        PnfsId id = entry.getPnfsId();
         synchronized (_states) {
             oldState = getState(id);
             if (newState == DESTROYED)
@@ -603,19 +662,19 @@ public class CacheRepositoryV5
             else
                 _states.put(id, newState);
         }
-        notify(id, oldState, newState);
+        stateChanged(entry, oldState, newState);
     }
 
     /** Callback. */
     public void precious(CacheRepositoryEvent event)
     {
-        updateState(event.getRepositoryEntry().getPnfsId(), PRECIOUS);
+        updateState(event.getRepositoryEntry(), PRECIOUS);
     }
 
     /** Callback. */
     public void cached(CacheRepositoryEvent event)
     {
-        updateState(event.getRepositoryEntry().getPnfsId(), CACHED);
+        updateState(event.getRepositoryEntry(), CACHED);
     }
 
     /** Callback. */
@@ -624,9 +683,9 @@ public class CacheRepositoryV5
         try {
             CacheRepositoryEntry entry = event.getRepositoryEntry();
             if (entry.isReceivingFromClient())
-                updateState(entry.getPnfsId(), FROM_CLIENT);
+                updateState(entry, FROM_CLIENT);
             else if (entry.isReceivingFromStore())
-                updateState(entry.getPnfsId(), FROM_STORE);
+                updateState(entry, FROM_STORE);
         } catch (CacheException e) {
             fail(FaultAction.READONLY, "Internal repository error", e);
             throw new RuntimeException("Internal repository error", e);
@@ -636,21 +695,21 @@ public class CacheRepositoryV5
     /** Callback. */
     public void touched(CacheRepositoryEvent event)
     {
-
+        accessTimeChanged(event.getRepositoryEntry());
     }
 
     /** Callback. */
     public void removed(CacheRepositoryEvent event)
     {
-        PnfsId id = event.getRepositoryEntry().getPnfsId();
-        updateState(id, REMOVED);
-        _pnfs.clearCacheLocation(id, _volatile);
+        CacheRepositoryEntry entry = event.getRepositoryEntry();
+        updateState(entry, REMOVED);
+        _pnfs.clearCacheLocation(entry.getPnfsId(), _volatile);
     }
 
     /** Callback. */
     public void destroyed(CacheRepositoryEvent event)
     {
-        updateState(event.getRepositoryEntry().getPnfsId(), DESTROYED);
+        updateState(event.getRepositoryEntry(), DESTROYED);
     }
 
     /** Callback. */
@@ -675,7 +734,7 @@ public class CacheRepositoryV5
             else
                 state = NEW;
 
-            updateState(entry.getPnfsId(), state);
+            updateState(entry, state);
         } catch (CacheException e) {
             fail(FaultAction.READONLY, "Internal repository error", e);
             throw new RuntimeException("Internal repository error", e);
@@ -690,7 +749,8 @@ public class CacheRepositoryV5
     /** Callback. */
     public void sticky(CacheRepositoryEvent event)
     {
-
+        stickyChanged(event.getRepositoryEntry(),
+                      event.getStickyRecord());
     }
 
     /** Callback. */

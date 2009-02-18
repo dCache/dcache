@@ -320,9 +320,10 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry {
 
     public void removeExpiredStickyFlags()
     {
-        if (_state.removeExpiredStickyFlags() && !_state.isSticky()) {
+        List<StickyRecord> removed = _state.removeExpiredStickyFlags();
+        for (StickyRecord record: removed) {
             CacheRepositoryEvent event =
-                new CacheRepositoryEvent(_eventProcessor, clone());
+                new CacheRepositoryEvent(_eventProcessor, clone(), record);
             _eventProcessor.processEvent(EventType.STICKY, event);
         }
     }
@@ -347,10 +348,12 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry {
 
     public void setSticky(String owner, long expire, boolean overwrite) throws CacheException {
         try {
-            _state.setSticky(owner, expire, overwrite);
-
-            CacheRepositoryEvent sickyEvent = new CacheRepositoryEvent(_eventProcessor, clone() );
-            _eventProcessor.processEvent(EventType.STICKY, sickyEvent);
+            if (_state.setSticky(owner, expire, overwrite)) {
+                CacheRepositoryEvent event =
+                    new CacheRepositoryEvent(_eventProcessor, clone(),
+                                             new StickyRecord("owner", expire));
+                _eventProcessor.processEvent(EventType.STICKY, event);
+            }
 
         } catch (IllegalStateException e) {
             throw new CacheException(e.getMessage());

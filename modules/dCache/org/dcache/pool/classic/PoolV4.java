@@ -42,7 +42,7 @@ import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.WriteHandle;
 import org.dcache.pool.repository.ReadHandle;
 import org.dcache.pool.repository.CacheEntry;
-import org.dcache.pool.repository.StateChangeListener;
+import org.dcache.pool.repository.AbstractStateChangeListener;
 import org.dcache.pool.repository.StateChangeEvent;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.Account;
@@ -707,8 +707,9 @@ public class PoolV4
     /**
      * Sets the h-flag in PNFS.
      */
-    private class HFlagMaintainer implements StateChangeListener
+    private class HFlagMaintainer extends AbstractStateChangeListener
     {
+        @Override
         public void stateChanged(StateChangeEvent event)
         {
             if (event.getOldState() == EntryState.FROM_CLIENT) {
@@ -725,8 +726,9 @@ public class PoolV4
     /**
      * Interface between the repository and the StorageQueueContainer.
      */
-    private class RepositoryLoader implements StateChangeListener
+    private class RepositoryLoader extends AbstractStateChangeListener
     {
+        @Override
         public void stateChanged(StateChangeEvent event)
         {
             PnfsId id = event.getPnfsId();
@@ -765,8 +767,10 @@ public class PoolV4
         }
     }
 
-    private class NotifyBillingOnRemoveListener implements StateChangeListener
+    private class NotifyBillingOnRemoveListener
+        extends AbstractStateChangeListener
     {
+        @Override
         public void stateChanged(StateChangeEvent event)
         {
             if (_reportOnRemovals && event.getNewState() == EntryState.REMOVED) {
@@ -1281,7 +1285,8 @@ public class PoolV4
     //
     // replication on data arrived
     //
-    private class ReplicationHandler implements StateChangeListener
+    private class ReplicationHandler
+        extends AbstractStateChangeListener
     {
         private boolean _enabled = false;
         private CellPath _replicationManager = new CellPath("PoolManager");
@@ -1296,6 +1301,7 @@ public class PoolV4
         {
         }
 
+        @Override
         public void stateChanged(StateChangeEvent event)
         {
             EntryState from = event.getOldState();
@@ -1601,7 +1607,7 @@ public class PoolV4
         if (msg.isReply()) {
             return;
         }
-         
+
         if ((msg instanceof PoolAcceptFileMessage
              && _poolMode.isDisabled(PoolV2Mode.DISABLED_STORE))
             || (msg instanceof PoolDeliverFileMessage
@@ -1611,7 +1617,7 @@ public class PoolV4
                       + _poolMode);
             throw new CacheException(104, "Pool is disabled");
         }
-        
+
         msg.setReply();
         ioFile(envelope, msg);
     }

@@ -280,6 +280,13 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
         _repository.processEvent(type, event);
     }
 
+    private void generateStickyEvent(StickyRecord record)
+    {
+        CacheRepositoryEvent event =
+            new CacheRepositoryEvent(_repository, this, record);
+        _repository.processEvent(EventType.STICKY, event);
+    }
+
     public void setBad(boolean bad)
     {
         try {
@@ -365,10 +372,11 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
 
     public void removeExpiredStickyFlags()
     {
-        if (_state.removeExpiredStickyFlags()) {
+        List<StickyRecord> removed = _state.removeExpiredStickyFlags();
+        if (!removed.isEmpty()) {
             storeStateIfDirty();
-            if (!isSticky()) {
-                generateEvent(EventType.STICKY);
+            for (StickyRecord record: removed) {
+                generateStickyEvent(record);
             }
         }
     }
@@ -376,10 +384,10 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
     public void setSticky(boolean sticky) throws CacheException
     {
         try {
-            _state.setSticky("system", sticky ? -1 : 0, true);
-            storeStateIfDirty();
-
-            generateEvent(EventType.STICKY);
+            if (_state.setSticky("system", sticky ? -1 : 0, true)) {
+                storeStateIfDirty();
+                generateStickyEvent(new StickyRecord("system", sticky ? -1 : 0));
+            }
         } catch (IllegalStateException e) {
             throw new CacheException(e.getMessage());
         }
@@ -388,10 +396,10 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
     public void setSticky(String owner, long expire, boolean overwrite) throws CacheException
     {
         try {
-            _state.setSticky(owner, expire, overwrite);
-            storeStateIfDirty();
-
-            generateEvent(EventType.STICKY);
+            if (_state.setSticky(owner, expire, overwrite)) {
+                storeStateIfDirty();
+                generateStickyEvent(new StickyRecord(owner, expire));
+            }
 
         } catch (IllegalStateException e) {
             throw new CacheException(e.getMessage());
