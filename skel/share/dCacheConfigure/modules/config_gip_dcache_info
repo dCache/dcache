@@ -271,6 +271,8 @@ config_gip_dcache_info_run()
   local rcisvd
   local rcdcache_info_check
   local infosetuprc
+  local giponlyrc
+  local bdiionlyrc
   yaimlog DEBUG "function config_gip_dcache_info_run start"
   config_gip_dcache_info_check
   rcdcache_info_check=$?
@@ -278,6 +280,18 @@ config_gip_dcache_info_run()
     yaimlog INFO "Information system is not needed here."
     return 0
   fi
+  config_gip_only
+  giponlyrc=$?
+  if [ "${giponlyrc}" != "0" ] ; then
+    yaimlog ERROR "function config_gip_only returned the ${giponlyrc} error code"
+    return ${giponlyrc}
+  fi
+  config_bdii_only
+  bdiionlyrc=$?
+  if [ "${bdiionlyrc}" != "0" ] ; then
+    yaimlog ERROR "function config_bdii_only returned the ${bdiionlyrc} error code"
+    return ${bdiionlyrc}
+  fi  
   yaim_query_conf_infoprovider_system
   rcisvd=$?  
   if [ "${rcisvd}" == "1" ] ; then
