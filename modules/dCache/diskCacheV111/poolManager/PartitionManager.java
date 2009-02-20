@@ -10,10 +10,10 @@ import dmg.util.Args;
 public class PartitionManager implements java.io.Serializable {
 
     public static class Info implements java.io.Serializable  {
-    
+
         private final String               _name ;
         private final PoolManagerParameter _parameter  ;
-        
+
         private Info( String name , Info info ){
            _name      = name ;
            _parameter = new PoolManagerParameter( info._parameter ) ;
@@ -27,16 +27,16 @@ public class PartitionManager implements java.io.Serializable {
         public String getName(){ return _name ; }
         public PoolManagerParameter getParameter(){ return _parameter ; }
     }
-    private final Info        _defaultPartitionInfo ; 
+    private final Info        _defaultPartitionInfo ;
     private final Map<String, Info>         _infoMap = new HashMap<String, Info>() ;
     private final CellAdapter _adapter;
-    
+
     public PartitionManager( CellAdapter adapter ){
-    
+
        _adapter = adapter ;
        _defaultPartitionInfo  = new Info("default");
        _infoMap.put( "default" , _defaultPartitionInfo ) ;
-      
+
     }
     public void clear(){
        _infoMap.clear() ;
@@ -54,18 +54,18 @@ public class PartitionManager implements java.io.Serializable {
        return new PoolManagerParameter( _defaultPartitionInfo.getParameter() ) ;
     }
     public PoolManagerParameter getParameterCopyOf( String partitionName ){
-    
+
        PoolManagerParameter defaultParameter = new PoolManagerParameter( _defaultPartitionInfo.getParameter() ) ;
        if( partitionName == null )return defaultParameter;
-       
+
        Info info = _infoMap.get( partitionName ) ;
        if( info == null )return defaultParameter ;
        return defaultParameter.merge( info.getParameter() ) ;
     }
     public Info getInfoPartitionByName( String partitionName ){
-    
+
         return _infoMap.get( partitionName ) ;
-        
+
     }
     /**
       *  New way of setting 'partitioned parameters'.
@@ -75,8 +75,8 @@ public class PartitionManager implements java.io.Serializable {
     public Object ac_pmx_get_map( Args args ){
        return getParameterMap() ;
     }
-    
-    public String fh_pm_set = 
+
+    public String fh_pm_set =
        "pm set [<partitionName>|default]  OPTIONS\n"+
        "    OPTIONS\n"+
        "       -spacecostfactor=<scf>|off\n"+
@@ -96,42 +96,42 @@ public class PartitionManager implements java.io.Serializable {
        "";
     public String hh_pm_set = "[<partitionName>] OPTIONS #  help pm set" ;
     public String ac_pm_set_$_0_1( Args args ){
-    
+
         String name = args.argc() == 0 ? "default" : args.argv(0) ;
         Info info = _infoMap.get(name) ;
-        
+
         if( info == null )
           _infoMap.put( name , info = new Info( name , _defaultPartitionInfo ) ) ;
-        
+
         scanParameter( args , info._parameter ) ;
-        
+
         return "" ;
     }
     public String hh_pm_destroy = "<partitionName> # destroys parameter partition" ;
     public String ac_pm_destroy_$_1( Args args ){
-    
+
         String name = args.argv(0) ;
         if( name.equals("default") )
            throw new
            IllegalArgumentException("Can't destroy default parameter partition");
-           
+
         Info info = _infoMap.get(name) ;
         if( info == null )
           throw new
           IllegalArgumentException("No such parameter partition "+name);
-          
+
         _infoMap.remove( name ) ;
-                
+
         return "" ;
     }
     public String hh_pm_ls = "[<section>] [-l]" ;
     public String ac_pm_ls_$_0_1( Args args ){
-    
+
        StringBuffer sb = new StringBuffer() ;
        boolean extended = args.getOpt("l") != null ;
        if( args.argc() == 0 ){
           if( extended ){
-              for( Info info:  _infoMap.values() ){       
+              for( Info info:  _infoMap.values() ){
                   sb.append(info._name).append("\n");
                   printParameterSet( sb , info._parameter ) ;
               }
@@ -149,13 +149,13 @@ public class PartitionManager implements java.io.Serializable {
 
           sb.append(info._name).append("\n");
           printParameterSet( sb , info._parameter ) ;
-             
-          
+
+
        }
        return sb.toString() ;
     }
     private void printParameterSet( StringBuffer sb , PoolManagerParameter para ){
-    
+
        if(para._performanceCostFactorSet)sb.append("   -cpucostfactor=").append(para._performanceCostFactor).append("\n");
        if(para._spaceCostFactorSet      )sb.append("   -spacecostfactor=").append(para._spaceCostFactor).append("\n");
        if(para._minCostCutSet           )sb.append("   -idle=").append(para._minCostCut).append("\n");
@@ -169,7 +169,7 @@ public class PartitionManager implements java.io.Serializable {
        if(para._hasHsmBackendSet        )sb.append("   -stage-allowed=").append(para._hasHsmBackend).append("\n");
        if(para._stageOnCostSet          )sb.append("   -stage-oncost=").append(para._stageOnCost).append("\n");
        if(para._maxPnfsFileCopiesSet    )sb.append("   -max-copies=").append(para._maxPnfsFileCopies).append("\n") ;
-    
+
        return ;
     }
     /**
@@ -178,17 +178,17 @@ public class PartitionManager implements java.io.Serializable {
       */
     public String hh_rc_set_max_copies = "<maxNumberOfP2pCopies>" ;
     public String ac_rc_set_max_copies_$_1(Args args ){
-    
+
        _defaultPartitionInfo._parameter._maxPnfsFileCopies = Integer.parseInt(args.argv(0));
        return "" ;
     }
-    public String hh_set_pool_decision = 
+    public String hh_set_pool_decision =
        "[-spacecostfactor=<scf>] [-cpucostfactor=<ccf>] # values for default dCache partition" ;
-       
+
     public String ac_set_pool_decision( Args args )throws Exception {
-    
+
        scanParameter( args , _defaultPartitionInfo._parameter ) ;
-       
+
        return "scf="+_defaultPartitionInfo._parameter._spaceCostFactor+
              ";ccf="+_defaultPartitionInfo._parameter._performanceCostFactor ;
     }
@@ -198,7 +198,7 @@ public class PartitionManager implements java.io.Serializable {
        PoolManagerParameter para = _defaultPartitionInfo._parameter ;
 
        String mode = args.argv(0) ;
-       
+
        if( mode.equals("on") ){
           para._p2pAllowed      = true ;
           para._p2pOnCost       = false ;
@@ -215,7 +215,7 @@ public class PartitionManager implements java.io.Serializable {
           para._p2pAllowed      = true ;
        }else throw new
              IllegalArgumentException("Usage : rc set p2p on|off|oncost|fortransfer");
-             
+
        return "p2p="+( para._p2pAllowed ? "on" : "off" )+
               ";oncost="+( para._p2pOnCost ? "on" : "off" )+
               ";fortransfer="+( para._p2pForTransfer ? "on" : "off" ) ;
@@ -226,7 +226,7 @@ public class PartitionManager implements java.io.Serializable {
        PoolManagerParameter para = _defaultPartitionInfo._parameter ;
        String help   = "rc set stage "+hh_rc_set_stage;
        String oncost = args.argv(0) ;
-       
+
        if( oncost.equals( "on" ) ){
           para._hasHsmBackend = true ;
           return "stage on" ;
@@ -237,7 +237,7 @@ public class PartitionManager implements java.io.Serializable {
           if( args.argc() < 2 )
               throw new
               IllegalArgumentException(help);
-          
+
           String mode = args.argv(1) ;
           if( mode.equals("on") ){
              para._stageOnCost   = true ;
@@ -247,30 +247,30 @@ public class PartitionManager implements java.io.Serializable {
           }else{
                 throw new
                 IllegalArgumentException(help);
-          }   
+          }
           return "stage-oncost="+(para._stageOnCost?"on":"off") ;
-       }else 
+       }else
            throw new
            IllegalArgumentException(help);
 
     }
-    public String fh_set_costcuts = 
+    public String fh_set_costcuts =
           "  set costcuts [-<options>=<value> ... ]\n"+
           "\n"+
           "   Options  |  Default  |  Description\n"+
           " -------------------------------------------------------------------\n"+
-          "     idle   |   0.0     |  below 'idle' : 'reduce duplicate' mode\n"+ 
+          "     idle   |   0.0     |  below 'idle' : 'reduce duplicate' mode\n"+
           "     p2p    |   0.0     |  above : start pool to pool mode\n"+
           "     alert  |   0.0     |  stop pool 2 pool mode, start stage only mode\n"+
           "     halt   |   0.0     |  suspend system\n"+
           "   fallback |   0.0     |  Allow fallback in Permission matrix on high load\n"+
           "\n"+
-          "     A value of zero disabled the corresponding value\n\n";       
+          "     A value of zero disabled the corresponding value\n\n";
     public String hh_set_costcuts = "[-<option>=<value> ...] # see 'help set costcuts'" ;
     public String ac_set_costcuts( Args args ){
 
        PoolManagerParameter para = _defaultPartitionInfo._parameter ;
-    
+
        String value = args.getOpt("idle") ;
        if( value != null )para._minCostCut = Double.parseDouble(value) ;
        value = args.getOpt("p2p") ;
@@ -281,8 +281,8 @@ public class PartitionManager implements java.io.Serializable {
        if( value != null )para._panicCostCut = Double.parseDouble(value) ;
        value = args.getOpt("fallback") ;
        if( value != null )para._fallbackCostCut = Double.parseDouble(value) ;
-       
-       
+
+
        return "costcuts;idle="+para._minCostCut+
                       ";p2p="+para._costCut+
                       ";alert="+para._alertCostCut+
@@ -291,14 +291,14 @@ public class PartitionManager implements java.io.Serializable {
     }
     public String hh_rc_set_slope = "<p2p source/destination slope>" ;
     public String ac_rc_set_slope_$_1( Args args ){
-    
+
        PoolManagerParameter para = _defaultPartitionInfo._parameter ;
 
         double d = Double.parseDouble(args.argv(0));
         if( ( d < 0.0 ) || ( d > 1.0 ) )
            throw new
            IllegalArgumentException("0 < slope < 1");
-           
+
         para._slope = d ;
         return "p2p slope set to "+para._slope ;
     }
@@ -309,7 +309,7 @@ public class PartitionManager implements java.io.Serializable {
       *   cpucostfactor     double
       *
       * COSTCUTS
-      *   
+      *
       *   idle      boolean
       *   p2p       boolean
       *   alert     boolean
@@ -317,13 +317,13 @@ public class PartitionManager implements java.io.Serializable {
       *   fallback  boolean
       *
       * P2P
-      *   
+      *
       *   p2p-allowed     boolean
       *   p2p-oncost      boolean
       *   p2p-fortransfer boolean
       *
       * STAGING
-      *   
+      *
       *   stage-allowed   boolean
       *   stage-oncost    boolean
       *
@@ -339,10 +339,10 @@ public class PartitionManager implements java.io.Serializable {
       *      -booleanvalue=yes
       *      -booleanvalue=no
       *      -booleanvalue=off
-      *      
+      *
       */
     private void scanParameter( Args args , PoolManagerParameter parameter ){
-    
+
        String tmp = args.getOpt("spacecostfactor") ;
        if( tmp != null ){
           if( parameter._spaceCostFactorSet = ! tmp.equals("off") ){
@@ -399,7 +399,7 @@ public class PartitionManager implements java.io.Serializable {
              }
           }
        }
-       
+
        if( ( tmp = args.getOpt("p2p-oncost") ) != null ){
           if( parameter._p2pOnCostSet = ! tmp.equals("off") ){
              if( parameter._p2pOnCost = tmp.equals("yes")){
@@ -416,7 +416,7 @@ public class PartitionManager implements java.io.Serializable {
              }
           }
        }
-       
+
        if( ( tmp = args.getOpt("stage-allowed") ) != null ){
           if( parameter._hasHsmBackendSet = ! tmp.equals("off") ){
              if( ! ( parameter._hasHsmBackend = tmp.equals("yes") ) ){
@@ -425,7 +425,7 @@ public class PartitionManager implements java.io.Serializable {
              }
           }
        }
-       
+
        if( ( tmp = args.getOpt("stage-oncost") ) != null ){
           if( parameter._stageOnCostSet = ! tmp.equals("off") ){
              if( parameter._stageOnCost = tmp.equals("yes") ){
@@ -434,12 +434,12 @@ public class PartitionManager implements java.io.Serializable {
              }
           }
        }
-       
+
     }
     private boolean _useLegacySetupPrintout = true ;
-    
+
     public void dumpSetup( StringBuffer sb ){
-    
+
         if( _useLegacySetupPrintout ){
            dumpLegacyDefaultInfo( sb , _defaultPartitionInfo ) ;
         }else{
@@ -447,40 +447,40 @@ public class PartitionManager implements java.io.Serializable {
            dumpInfo( sb , info ) ;
         }
         for( Info info : _infoMap.values() ){
-        	
+
             if( info._name.equals("default") )continue ;
-            
+
             dumpInfo( sb , info ) ;
         }
     }
     private void dumpInfo( StringBuffer sb , Info info ){
-    
+
        PoolManagerParameter para = info._parameter ;
 
        sb.append("pm set ").append(info._name).append(" ") ;
        dumpCostOptions( sb , para ) ;
        sb.append("\n") ;
-         
+
        sb.append("pm set ").append(info._name).append(" ") ;
        dumpThresholdOptions( sb , para ) ;
        sb.append("\n");
-       
+
        sb.append("pm set ").append(info._name).append(" ") ;
        dumpP2pOptions( sb , para ) ;
        sb.append("\n");
-       
+
        sb.append("pm set ").append(info._name).append(" ") ;
        dumpStageOptions( sb , para ) ;
        sb.append("\n");
-       
+
        sb.append("pm set ").append(info._name).append(" ") ;
        dumpMiscOptions( sb , para ) ;
        sb.append("\n");
-       
+
     }
     private void dumpCostOptions( StringBuffer sb , PoolManagerParameter para ){
        sb.append(" -cpucostfactor=").append(para._performanceCostFactor).
-          append(" -spacecostfactor=").append(para._spaceCostFactor) ;     
+          append(" -spacecostfactor=").append(para._spaceCostFactor) ;
     }
     private void dumpThresholdOptions( StringBuffer sb , PoolManagerParameter para ){
        sb.append(" -idle=").append(para._minCostCut).
@@ -510,22 +510,22 @@ public class PartitionManager implements java.io.Serializable {
         sb.append(" -max-copies=").append(para._maxPnfsFileCopies) ;
     }
     /**
-      *   legacy output 
+      *   legacy output
       */
     private void dumpLegacyDefaultInfo( StringBuffer sb , Info info ){
-    
+
        PoolManagerParameter para = info._parameter ;
-       
+
        sb.append("set pool decision") ;
        dumpCostOptions( sb , para ) ;
        sb.append("\n") ;
-         
+
        sb.append("set costcuts") ;
        dumpThresholdOptions( sb , para ) ;
        sb.append("\n");
-       
+
        dumpP2pDefaultOptions( sb , para ) ;
-       
+
     }
     private void dumpP2pDefaultOptions( StringBuffer sb , PoolManagerParameter para ){
        sb.append("rc set p2p " ).append(para._p2pAllowed ? "on":"off").append("\n");

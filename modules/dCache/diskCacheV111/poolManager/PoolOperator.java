@@ -1,4 +1,4 @@
-// $Id: PoolOperator.java,v 1.2 2003-08-23 16:53:47 cvs Exp $ 
+// $Id: PoolOperator.java,v 1.2 2003-08-23 16:53:47 cvs Exp $
 
 package diskCacheV111.poolManager ;
 
@@ -8,9 +8,9 @@ import diskCacheV111.vehicles.* ;
 
 
 public class PoolOperator extends CostModuleV1 {
-   
-   private HashMap _poolHash = new HashMap() ; 
-   
+
+   private HashMap _poolHash = new HashMap() ;
+
    public PoolOperator( CellAdapter cell ) throws Exception {
       super(cell) ;
    }
@@ -21,15 +21,15 @@ public class PoolOperator extends CostModuleV1 {
       if( message instanceof PoolManagerPoolUpMessage ){
          PoolManagerPoolUpMessage msg = (PoolManagerPoolUpMessage)message ;
          String poolName = msg.getPoolName() ;
-         
+
 //         System.out.println("PoolOperator :  "+poolName+" -> tags="+msg.getTagMap());
          _poolHash.put(  poolName ,  msg.getTagMap() ) ;
-         
+
       }
-      
+
    }
    public PoolCostCheckable getPoolCost( String poolName , long filesize ){
-   
+
 //      System.out.println("PoolOperator : getPoolCost "+poolName ) ;
       try{
          PoolCostCheckable cost = super.getPoolCost( poolName , filesize ) ;
@@ -41,6 +41,6 @@ public class PoolOperator extends CostModuleV1 {
          esay( "Missing resource exception from get cost : "+ee ) ;
          return null ;
       }
-       
+
    }
 }

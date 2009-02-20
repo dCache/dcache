@@ -1,4 +1,4 @@
-// $Id: DummyCostModule.java,v 1.2 2006-10-10 13:50:50 tigran Exp $ 
+// $Id: DummyCostModule.java,v 1.2 2006-10-10 13:50:50 tigran Exp $
 
 package diskCacheV111.poolManager ;
 import  dmg.cells.nucleus.* ;
@@ -16,8 +16,8 @@ public class DummyCostModule implements CostModule {
    }
    public void messageArrived( CellMessage cellMessage ){
       Object message = cellMessage.getMessageObject() ;
-      _cell.say( "DummyCostModule : messageArrived : "+message.getClass().getName() ) ; 
-   
+      _cell.say( "DummyCostModule : messageArrived : "+message.getClass().getName() ) ;
+
    }
    public  PoolCostCheckable getPoolCost( String poolName , long filesize ){
       return null ;

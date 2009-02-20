@@ -1,4 +1,4 @@
-// $Id: CostModule.java,v 1.2 2006-10-10 13:50:50 tigran Exp $ 
+// $Id: CostModule.java,v 1.2 2006-10-10 13:50:50 tigran Exp $
 
 package diskCacheV111.poolManager ;
 import java.io.PrintWriter;
@@ -6,7 +6,7 @@ import java.io.PrintWriter;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.vehicles.PoolCostCheckable;
 import dmg.cells.nucleus.CellMessage;
-  
+
 public interface CostModule {
 
    public void messageArrived( CellMessage cellMessage ) ;
