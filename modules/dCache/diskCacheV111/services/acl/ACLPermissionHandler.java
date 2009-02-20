@@ -36,10 +36,12 @@ public class ACLPermissionHandler extends AbstractPermissionHandler {
 
     public ACLPermissionHandler(CellAdapter cell) throws ACLException {
         super(cell);
-        Args args = cell.getArgs();
-        Properties aclProperties = getAclProperties(args);
+        if (AclHandler.getAclConfig() == null){
+           Args args = cell.getArgs();
+           Properties aclProperties = getAclProperties(args);
 
-        AclHandler.setAclConfig(aclProperties);
+           AclHandler.setAclConfig(aclProperties);
+        }
     }
 
     private  Properties getAclProperties(Args args) {
