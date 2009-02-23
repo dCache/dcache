@@ -444,16 +444,16 @@
         <scale to-integer="round" factor="bytes-to-gigabytes">
           <sum>
             <term>
-              <lookup default="0" child="path">/dCache/pools/pool[name=<item/>]/space/metric[name=total]</lookup>
+              <lookup default="0" child="path">/dCache/poolgroups/poolgroup[name=<item/>]/space/metric[name=total]</lookup>
             </term>
             <term>
               <scale factor="negative">
-                <lookup default="0" child="path">/dCache/pools/pool[name=<item/>]/space/metric[name=free]</lookup>
+                <lookup default="0" child="path">/dCache/poolgroups/poolgroup[name=<item/>]/space/metric[name=free]</lookup>
               </scale>
             </term>
             <term>
               <scale factor="negative">
-                <lookup default="0" child="path">/dCache/pools/pool[name=<item/>]/space/metric[name=removable]</lookup>
+                <lookup default="0" child="path">/dCache/poolgroups/poolgroup[name=<item/>]/space/metric[name=removable]</lookup>
               </scale>
             </term>
           </sum>
@@ -470,10 +470,10 @@
         <scale to-integer="round" factor="bytes-to-gigabytes">
           <sum>
             <term>
-              <lookup default="0" child="path">/dCache/pools/pool[name=<item/>]/space/metric[name=free]</lookup>
+              <lookup default="0" child="path">/dCache/poolgroups/poolgroup[name=<item/>]/space/metric[name=free]</lookup>
             </term>
             <term>
-              <lookup default="0" child="path">/dCache/pools/pool[name=<item/>]/space/metric[name=removable]</lookup>
+              <lookup default="0" child="path">/dCache/poolgroups/poolgroup[name=<item/>]/space/metric[name=removable]</lookup>
             </term>
           </sum>
         </scale>
@@ -514,16 +514,16 @@
         <scale to-integer="round" factor="bytes-to-kilobytes">
           <sum>
             <term>
-              <lookup default="0" child="path">/dCache/pools/pool[name=<item/>]/space/metric[name=total]</lookup>
+              <lookup default="0" child="path">/dCache/poolgroups/poolgroup[name=<item/>]/space/metric[name=total]</lookup>
             </term>
             <term>
               <scale factor="negative">
-                <lookup default="0" child="path">/dCache/pools/pool[name=<item/>]/space/metric[name=free]</lookup>
+                <lookup default="0" child="path">/dCache/poolgroups/poolgroup[name=<item/>]/space/metric[name=free]</lookup>
               </scale>
             </term>
             <term>
               <scale factor="negative">
-                <lookup default="0" child="path">/dCache/pools/pool[name=<item/>]/space/metric[name=removable]</lookup>
+                <lookup default="0" child="path">/dCache/poolgroups/poolgroup[name=<item/>]/space/metric[name=removable]</lookup>
               </scale>
             </term>
           </sum>
@@ -535,10 +535,10 @@
         <scale to-integer="round" factor="bytes-to-kilobytes">
           <sum>
             <term>
-              <lookup default="0" child="path">/dCache/pools/pool[name=<item/>]/space/metric[name=free]</lookup>
+              <lookup default="0" child="path">/dCache/poolgroups/poolgroup[name=<item/>]/space/metric[name=free]</lookup>
             </term>
             <term>
-              <lookup default="0" child="path">/dCache/pools/pool[name=<item/>]/space/metric[name=removable]</lookup>
+              <lookup default="0" child="path">/dCache/poolgroups/poolgroup[name=<item/>]/space/metric[name=removable]</lookup>
             </term>
           </sum>
         </scale>
