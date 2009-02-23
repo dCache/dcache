@@ -186,7 +186,7 @@
           <!-- Publish "access protocols" -->
           <object rdn="GlueSEAccessProtocolLocalID"
 		          select="dCache/doors/door"
-		          classes="GlueSETop GlueSEAccessProtocol GlueChunkKey GlueSchemaVersion">
+		          classes="GlueSETop GlueSEAccessProtocol GlueKey GlueSchemaVersion">
             <attr name="GlueChunkKey"><parent-rdn rdn="GlueSEUniqueID"/></attr>
 
             <!-- Never publish SRM here -->
@@ -204,7 +204,7 @@
           <object rdn="GlueSEControlProtocolLocalID"
 		          select="dCache/doors/door"
 		          select-mode="default-suppress"
-                  classes="GlueSETop GlueSEControlProtocol GlueChunkKey GlueSchemaVersion">
+                  classes="GlueSETop GlueSEControlProtocol GlueKey GlueSchemaVersion">
             <attr name="GlueChunkKey"><parent-rdn rdn="GlueSEUniqueID"/></attr>
 
             <!-- Only publish the SRM door as a control protocol. -->
@@ -214,7 +214,7 @@
           <!-- Publish GlueSA's for non-SRM clients and Glue v1.2 -->
           <object rdn="GlueSALocalID"
 		          list="GlueSA-VOs"
-		          classes="GlueSATop GlueSA GlueSAPolicy GlueSAState GlueSAAccessControlBase GlueSchemaVersion">
+		          classes="GlueSATop GlueSA GlueSAPolicy GlueSAState GlueSAAccessControlBase GlueKey GlueSchemaVersion">
             <attr name="GlueChunkKey"><parent-rdn rdn="GlueSEUniqueID"/></attr>
           </object>
 
