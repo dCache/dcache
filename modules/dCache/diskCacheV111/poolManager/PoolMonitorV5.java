@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Collection;
 
-import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 
@@ -31,30 +31,46 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 
-public class PoolMonitorV5 {
+import org.dcache.cells.AbstractCellComponent;
+
+import org.apache.log4j.Logger;
+
+public class PoolMonitorV5
+    extends AbstractCellComponent
+{
+    private final static Logger _log = Logger.getLogger(PoolMonitorV5.class);
 
    private long              _poolTimeout   = 15 * 1000;
-   private final CellAdapter       _cell          ;
-   private final PoolSelectionUnit _selectionUnit ;
-   private final PnfsHandler       _pnfsHandler   ;
-   private final CostModule        _costModule    ;
+   private PoolSelectionUnit _selectionUnit ;
+   private PnfsHandler       _pnfsHandler   ;
+   private CostModule        _costModule    ;
    private double            _maxWriteCost          = 1000000.0;
-   private boolean           _verbose               = true ;
-   private final PartitionManager  _partitionManager ;
+   private PartitionManager  _partitionManager ;
 
-   public PoolMonitorV5( CellAdapter cell ,
-                         PoolSelectionUnit selectionUnit ,
-                         PnfsHandler  pnfsHandler ,
-                         CostModule   costModule ,
-                         PartitionManager partitionManager ){
+    public PoolMonitorV5()
+    {
+    }
 
-      _cell             = cell ;
-      _selectionUnit    = selectionUnit ;
-      _pnfsHandler      = pnfsHandler ;
-      _costModule       = costModule ;
-      _partitionManager = partitionManager ;
+    public void setPoolSelectionUnit(PoolSelectionUnit selectionUnit)
+    {
+        _selectionUnit = selectionUnit;
+    }
 
-   }
+    public void setPnfsHandler(PnfsHandler pnfsHandler)
+    {
+        _pnfsHandler = pnfsHandler;
+    }
+
+    public void setCostModule(CostModule costModule)
+    {
+        _costModule = costModule;
+    }
+
+    public void setPartitionManager(PartitionManager partitionManager)
+    {
+        _partitionManager = partitionManager;
+    }
+
    public void messageToCostModule( CellMessage cellMessage ){
       _costModule.messageArrived(cellMessage);
    }
@@ -430,7 +446,7 @@ public class PoolMonitorV5 {
          return costMatrix ;
       }
       private void say(String message ){
-         if( _verbose )_cell.say("PFL ["+_pnfsId+"] : "+message) ;
+          _log.debug("PFL ["+_pnfsId+"] : "+message);
       }
 
        public List<PoolCostCheckable> getStorePoolList(long filesize)
@@ -584,7 +600,7 @@ public class PoolMonitorV5 {
 
         if (checkFileExistence) {
 
-            SpreadAndWait control = new SpreadAndWait(_cell,
+            SpreadAndWait control = new SpreadAndWait(getCellEndpoint(),
                     _poolTimeout);
 
             while (pools.hasNext()) {
@@ -598,8 +614,8 @@ public class PoolMonitorV5 {
                 if ((pool == null) || !pool.canRead() || !pool.isActive())
                     continue;
 
-                _cell.say("queryPoolsForPnfsId : PoolCheckFileRequest to : "
-                        + poolName);
+                _log.info("queryPoolsForPnfsId : PoolCheckFileRequest to : "
+                          + poolName);
                 //
                 // send query
                 //
@@ -613,7 +629,7 @@ public class PoolMonitorV5 {
                     //
                     // here we don't care about exceptions
                     //
-                    _cell.esay("Exception sending PoolCheckFileRequest to "
+                    _log.warn("Exception sending PoolCheckFileRequest to "
                             + poolName + " : " + exc);
                 }
             }
@@ -628,17 +644,16 @@ public class PoolMonitorV5 {
                 Object message = answer.getMessageObject();
 
                 if (!(message instanceof PoolCheckFileMessage)) {
-                    _cell
-                            .esay("queryPoolsForPnfsId : Unexpected message from ("
-                                    + answer.getSourcePath()
-                                    + ") "
-                                    + message.getClass());
+                    _log.warn("queryPoolsForPnfsId : Unexpected message from ("
+                         + answer.getSourcePath()
+                         + ") "
+                         + message.getClass());
                     continue;
                 }
 
                 PoolCheckFileMessage poolMessage =
                     (PoolCheckFileMessage) message;
-                _cell.say("queryPoolsForPnfsId : reply : " + poolMessage);
+                _log.info("queryPoolsForPnfsId : reply : " + poolMessage);
 
                 boolean have = poolMessage.getHave();
                 String poolName = poolMessage.getPoolName();
@@ -651,11 +666,10 @@ public class PoolMonitorV5 {
                         check.setHave(have);
                         check.setPnfsId(pnfsId);
                         list.add(check);
-                        _cell.say("queryPoolsForPnfsId : returning : " + check);
+                        _log.info("queryPoolsForPnfsId : returning : " + check);
                     }
                 } else if (poolMessage.getReturnCode() == 0) {
-                    _cell
-                            .esay("queryPoolsForPnfsId : clearingCacheLocation for pnfsId "
+                    _log.warn("queryPoolsForPnfsId : clearingCacheLocation for pnfsId "
                                     + pnfsId + " at pool " + poolName);
                     _pnfsHandler.clearCacheLocation(pnfsId, poolName);
                 }
@@ -678,7 +692,7 @@ public class PoolMonitorV5 {
 
         }
 
-        _cell.say("queryPoolsForPnfsId : number of valid replies : "
+        _log.info("queryPoolsForPnfsId : number of valid replies : "
                 + list.size());
         return list;
 
@@ -710,7 +724,7 @@ public class PoolMonitorV5 {
     {
         List<PoolCostCheckable> list = new ArrayList<PoolCostCheckable>();
         SpreadAndWait control =
-              new SpreadAndWait( _cell , _poolTimeout ) ;
+            new SpreadAndWait(getCellEndpoint(), _poolTimeout);
 
 	while( pools.hasNext() ){
 
@@ -718,7 +732,7 @@ public class PoolMonitorV5 {
             PoolCostCheckable costCheck = _costModule.getPoolCost( poolName , filesize ) ;
             if( costCheck != null ){
                list.add( costCheck ) ;
-               _cell.say( "queryPoolsForCost : costModule : "+poolName+" ("+filesize+") "+costCheck);
+               _log.info( "queryPoolsForCost : costModule : "+poolName+" ("+filesize+") "+costCheck);
             }else{
                //
                // send query
@@ -729,14 +743,14 @@ public class PoolMonitorV5 {
                                         new PoolCheckCostMessage(poolName,filesize)
                                      );
 
-               _cell.say( "queryPoolsForCost : "+poolName+" query sent");
+               _log.info( "queryPoolsForCost : "+poolName+" query sent");
 	       try{
                   control.send( cellMessage ) ;
 	       }catch(Exception exc){
                   //
                   // here we don't care about exceptions
                   //
-	          _cell.esay ("queryPoolsForCost : Exception sending PoolCheckFileRequest to "+poolName+" : "+exc);
+                   _log.warn("queryPoolsForCost : Exception sending PoolCheckFileRequest to "+poolName+" : "+exc);
 	       }
             }
 
@@ -754,15 +768,15 @@ public class PoolMonitorV5 {
            Object message = answer.getMessageObject();
 
 	   if( ! ( message instanceof PoolCostCheckable )){
-	      _cell.esay("queryPoolsForCost : Unexpected message from ("+
+	      _log.warn("queryPoolsForCost : Unexpected message from ("+
                    answer.getSourcePath()+") "+message.getClass());
               continue ;
 	   }
 	   PoolCostCheckable poolMessage = (PoolCostCheckable)message;
-           _cell.say( "queryPoolsForCost : reply : "+poolMessage ) ;
+           _log.info( "queryPoolsForCost : reply : "+poolMessage ) ;
            list.add( poolMessage ) ;
         }
-        _cell.say( "queryPoolsForCost : number of valid replies : "+list.size() );
+        _log.info( "queryPoolsForCost : number of valid replies : "+list.size() );
         return list ;
     }
 

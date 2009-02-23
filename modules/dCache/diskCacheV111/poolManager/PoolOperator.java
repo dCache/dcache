@@ -6,28 +6,23 @@ import dmg.cells.nucleus.* ;
 import java.util.* ;
 import diskCacheV111.vehicles.* ;
 
-
-public class PoolOperator extends CostModuleV1 {
+public class PoolOperator
+    extends CostModuleV1
+{
 
    private HashMap _poolHash = new HashMap() ;
 
-   public PoolOperator( CellAdapter cell ) throws Exception {
-      super(cell) ;
-   }
-   public synchronized void messageArrived( CellMessage cellMessage ){
-      super.messageArrived( cellMessage ) ;
-      Object message = cellMessage.getMessageObject() ;
+    public PoolOperator()
+    {
+        super();
+    }
 
-      if( message instanceof PoolManagerPoolUpMessage ){
-         PoolManagerPoolUpMessage msg = (PoolManagerPoolUpMessage)message ;
-         String poolName = msg.getPoolName() ;
+    public synchronized void messageArrived(PoolManagerPoolUpMessage msg)
+    {
+        super.messageArrived(msg);
+        _poolHash.put(msg.getPoolName(), msg.getTagMap());
+    }
 
-//         System.out.println("PoolOperator :  "+poolName+" -> tags="+msg.getTagMap());
-         _poolHash.put(  poolName ,  msg.getTagMap() ) ;
-
-      }
-
-   }
    public PoolCostCheckable getPoolCost( String poolName , long filesize ){
 
 //      System.out.println("PoolOperator : getPoolCost "+poolName ) ;

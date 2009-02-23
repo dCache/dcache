@@ -52,9 +52,9 @@ public class HsmRestoreTest {
     private static GenericMockCellHelper _cell = new GenericMockCellHelper("HsmRestoreTest", "-threadPool=org.dcache.tests.util.CurrentThreadExceutorHelper");
 
     private PoolMonitorV5 _poolMonitor;
-    private CostModule _costModule ;
+    private CostModuleV1 _costModule ;
     private PoolSelectionUnit _selectionUnit;
-    private PartitionManager _partitionManager = new PartitionManager(_cell);
+    private PartitionManager _partitionManager = new PartitionManager();
     private PnfsHandler      _pnfsHandler;
     private RequestContainerV5 _rc;
 
@@ -69,21 +69,28 @@ public class HsmRestoreTest {
     public void setUp() throws Exception {
         Logger.getLogger("logger.org.dcache.poolselection").setLevel(Level.DEBUG);
 
+        _partitionManager.setCellEndpoint(_cell);
         _selectionUnit = new PoolSelectionUnitV2();
-        _costModule = new CostModuleV1(_cell);
-        _pnfsHandler = new PnfsHandler(_cell, new CellPath("PnfsManager"));
-        _poolMonitor = new PoolMonitorV5( _cell ,
-                _selectionUnit ,
-                _pnfsHandler ,
-                _costModule ,
-                _partitionManager );
-
+        _costModule = new CostModuleV1();
+        _costModule.setCellEndpoint(_cell);
+        _pnfsHandler = new PnfsHandler(new CellPath("PnfsManager"));
+        _pnfsHandler.setCellEndpoint(_cell);
+        _poolMonitor = new PoolMonitorV5();
+        _poolMonitor.setCellEndpoint(_cell);
+        _poolMonitor.setPoolSelectionUnit(_selectionUnit);
+        _poolMonitor.setPnfsHandler(_pnfsHandler);
+        _poolMonitor.setCostModule(_costModule);
+        _poolMonitor.setPartitionManager(_partitionManager);
 
         /*
          * allow stage
          */
         _partitionManager.ac_rc_set_stage_$_1_2(new Args("on"));
-        _rc = new RequestContainerV5(_cell, _selectionUnit, _poolMonitor, _partitionManager);
+        _rc = new RequestContainerV5();
+        _rc.setPoolSelectionUnit(_selectionUnit);
+        _rc.setPoolMonitor(_poolMonitor);
+        _rc.setPartitionManager(_partitionManager);
+        _rc.setCellEndpoint(_cell);
         _rc.ac_rc_set_retry_$_1(new Args("0"));
 
         __messages = new ArrayList<CellMessage>();

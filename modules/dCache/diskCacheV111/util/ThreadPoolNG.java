@@ -5,6 +5,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import dmg.cells.nucleus.CellAdapter;
+
 /**
  *
  * ThreadPoolNG ( Thread Pool New Generation is a
@@ -17,23 +18,34 @@ import dmg.cells.nucleus.CellAdapter;
  */
 public class ThreadPoolNG implements ThreadPool {
 
-	private final CellAdapter _cell;
+    private static final int CORE_SIZE = 0;
+    private static final int MAX_SIZE = Integer.MAX_VALUE;
+    private static final long KEEP_ALIVE = 60L;
+
 	private final ThreadPoolExecutor _executor;
 
 	public ThreadPoolNG(CellAdapter cell) {
-		_cell = cell;
-
 		// we can get all options from batch file
 		_executor = new ThreadPoolExecutor(
-					0 , // core size
-					Integer.MAX_VALUE, // max size
-					60L, // keep alive time
+					CORE_SIZE,
+					MAX_SIZE,
+					KEEP_ALIVE,
 					TimeUnit.SECONDS,
 					new SynchronousQueue<Runnable>() , // backend queue
-					_cell.getNucleus() // thread factory
+					cell.getNucleus() // thread factory
 					// + rejection policy
 				);
 	}
+
+    public ThreadPoolNG()
+    {
+        // we can get all options from batch file
+        _executor = new ThreadPoolExecutor(CORE_SIZE,
+                                           MAX_SIZE,
+                                           KEEP_ALIVE,
+                                           TimeUnit.SECONDS,
+                                           new SynchronousQueue<Runnable>());
+    }
 
 
 	public int getCurrentThreadCount() {

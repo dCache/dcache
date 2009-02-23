@@ -28,6 +28,7 @@ import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.Version;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.PoolCostCheckable;
@@ -57,12 +58,15 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 import dmg.util.CommandException;
 
-public class PoolManagerV5 extends CellAdapter {
+import org.dcache.cells.AbstractCellComponent;
+import org.dcache.cells.CellCommandListener;
+import org.dcache.cells.CellMessageReceiver;
 
-    private final String      _cellName;
-    private final Args        _args    ;
-    private final CellNucleus _nucleus ;
-
+public class PoolManagerV5
+    extends AbstractCellComponent
+    implements CellCommandListener,
+               CellMessageReceiver
+{
     private int  _writeThreads     = 0 ;
     private int  _readThreads      = 0 ;
 
@@ -70,232 +74,130 @@ public class PoolManagerV5 extends CellAdapter {
     private int _counterSelectWritePool= 0 ;
     private int _counterSelectReadPool = 0 ;
 
-    private String  _pnfsManagerName   = "PnfsManager";
-    private String  _selectionUnitName = "diskCacheV111.poolManager.PoolSelectionUnitV2" ;
-    private final String  _setupFileName  ;
     private Map _readHandlerList   = new HashMap() ;
     private final Object  _readHandlerLock   = new Object() ;
 
-    private final PnfsHandler       _pnfsHandler  ;
-    private final PoolSelectionUnit _selectionUnit ;
-    private final PoolMonitorV5     _poolMonitor   ;
+    private PnfsHandler       _pnfsHandler  ;
+    private PoolSelectionUnit _selectionUnit ;
+    private PoolMonitorV5     _poolMonitor   ;
 
-    private long _interval         = 15 * 1000;
     private long _pnfsTimeout      = 15 * 1000;
     private long _readPoolTimeout  = 15 * 1000;
     private long _poolFetchTimeout = 5 * 24 * 3600 * 1000;
     private long _writePoolTimeout = 15 * 1000;
     private long _poolTimeout      = 15 * 1000;
 
-    private final CostModule   _costModule  ;
-    private PoolOperator _poolOperator = null ;
+    private CostModule   _costModule  ;
     private CellPath     _poolStatusRelayPath = null ;
 
-    private final Object _setupLock             = new Object() ;
-
-    private final RequestContainerV5 _requestContainer ;
+    private RequestContainerV5 _requestContainer ;
     private WatchdogThread     _watchdog         = null ;
-    private final PartitionManager   _partitionManager ;
+    private PartitionManager   _partitionManager ;
 
     private boolean _sendCostInfo  = false ;                   //VP
     private boolean _quotasEnabled = false ;
-    private String  _quotaManager  = "QuotaManager" ;
+    private String  _quotaManager  = "none";
 
 
+    private final static Logger _log = Logger.getLogger(PoolManagerV5.class);
     private final static Logger _logPoolMonitor = Logger.getLogger("logger.org.dcache.poolmonitor." + PoolManagerV5.class.getName());
 
 
-    public PoolManagerV5( String cellName , String args ) throws Exception {
-	super( cellName , PoolManagerV5.class.getName(), args , false );
-
-	_cellName = cellName;
-	_args     = getArgs();
-	_nucleus  = getNucleus();
-
-        useInterpreter( true );
-
-        try{
-
-           if( _args.argc() == 0 )
-              throw new
-              IllegalArgumentException( "Usage : ... <setupFile>" ) ;
-
-           _setupFileName = _args.argv(0) ;
-           say("Using setupfile : "+_setupFileName);
-
-           String tmp         = _args.getOpt( "selectionUnit" ) ;
-           _selectionUnitName = tmp == null ? _selectionUnitName : tmp ;
-           _selectionUnit     = (PoolSelectionUnit)Class.forName( _selectionUnitName ).newInstance() ;
-
-           addCommandListener( _selectionUnit ) ;
-
-           say("Starting Cost module");
-           _costModule = _poolOperator = new PoolOperator(this) ;
-           say("Cost module successfully started");
-
-           say("Cost module : "+_costModule);
-           addCommandListener( _costModule );
-
-
-           _partitionManager = new PartitionManager( this ) ;
-           addCommandListener( _partitionManager ) ;
-
-           String poolStatus = _args.getOpt("poolStatusRelay") ;
-           if( poolStatus != null )_poolStatusRelayPath = new CellPath(poolStatus) ;
-
-           _pnfsHandler      = new PnfsHandler( this , new CellPath(_pnfsManagerName) ) ;
-
-           _poolMonitor      = new PoolMonitorV5( this , _selectionUnit , _pnfsHandler , _costModule , _partitionManager ) ;
-
-           _requestContainer = new RequestContainerV5( this , _selectionUnit , _poolMonitor , _partitionManager ) ;
-           addCommandListener( _requestContainer ) ;
-
-           //
-           // Quota settings
-           //
-           _quotasEnabled = false ;
-           _quotaManager  = "QuotaManager" ;
-           if( ( tmp = _args.getOpt("quotaManager") ) != null ){
-               if( tmp.length() == 0 ){
-                   _quotasEnabled = true ;
-               }else{
-                   if( tmp.equals("none" ) ){
-                      _quotasEnabled = false ;
-                   }else{
-                      _quotasEnabled = true ;
-                      _quotaManager  = tmp ;
-                   }
-               }
-           }
-           if( _quotasEnabled ){
-              say("Quotas enabled ; QuotaManager = <"+_quotaManager+">");
-           }else{
-              say("Quotas disabled");
-           }
-           //
-           //  additional info about cost
-           //
-           String sendCostString = _args.getOpt("sendCostInfoMessages" ) ;              //VP
-           if( sendCostString != null ) _sendCostInfo = sendCostString.equals("yes") ;  //VP
-           say( "send CostInfoMessages : "+(_sendCostInfo?"yes":"no") ) ;               //VP
-           _requestContainer.setSendCostInfo(_sendCostInfo) ;                           //VP
-
-
-           synchronized( _setupLock ){
-              runSetupFile() ;
-           }
-
-	}catch(Exception ee ){
-           ee.printStackTrace();
-           start() ;
-           kill() ;
-           esay(ee);
-           throw ee ;
-        }
-
-        getNucleus().export();
-
-	new MessageTimeoutThread();
-
-        String watchdogParam = _args.getOpt("watchdog") ;
-        if( watchdogParam != null ){
-            _watchdog = watchdogParam.length() > 0 ? new WatchdogThread( watchdogParam ) :  new WatchdogThread() ;
-            say("Watchdog : "+_watchdog);
-        }
-	start();
+    public PoolManagerV5()
+    {
     }
-    private void runSetupFile() throws Exception {
-      runSetupFile(null);
+
+    public void setPoolSelectionUnit(PoolSelectionUnit selectionUnit)
+    {
+        _selectionUnit = selectionUnit;
     }
-    private void runSetupFile(StringBuffer sb) throws Exception {
-        File setupFile = new File(_setupFileName);
-        if (!setupFile.exists())
-            throw new IllegalArgumentException("Setup File not found : "
-                    + _setupFileName);
 
-        BufferedReader reader = new BufferedReader(new FileReader(setupFile));
-        try {
+    public void setCostModule(CostModule costModule)
+    {
+        _costModule = costModule;
+    }
 
-            int lineCounter = 0;
-            String line = null;
-            while ((line = reader.readLine()) != null) {
-                ++lineCounter;
-                line = line.trim();
-                if (line.length() == 0)
-                    continue;
-                if (line.charAt(0) == '#')
-                    continue;
-                try {
-                    say("Executing : " + line);
-                    String answer = command(line);
-                    if (answer.length() > 0)
-                        say("Answer    : " + answer);
-                } catch (Exception ee) {
-                    esay("Exception at line " +lineCounter + " : " + ee.toString());
-                    if (sb != null)
-                        sb.append(line).append(" -> ").append(ee.toString())
-                                .append("\n");
-                }
-            }
-        } finally {
-            reader.close();
+    public void setPartitionManager(PartitionManager partitionManager)
+    {
+        _partitionManager = partitionManager;
+    }
+
+    public void setPnfsHandler(PnfsHandler pnfsHandler)
+    {
+        _pnfsHandler = pnfsHandler;
+    }
+
+    public void setPoolMonitor(PoolMonitorV5 poolMonitor)
+    {
+        _poolMonitor = poolMonitor;
+    }
+
+    public void setRequestContainer(RequestContainerV5 requestContainer)
+    {
+        _requestContainer = requestContainer;
+    }
+
+    public void setPoolStatusRelayPath(CellPath poolStatusRelayPath)
+    {
+        _poolStatusRelayPath =
+            (poolStatusRelayPath.hops() == 0)
+            ? null
+            : poolStatusRelayPath;
+    }
+
+    public void setQuotaManager(String quotaManager)
+    {
+        _quotaManager = quotaManager;
+        _quotasEnabled = !_quotaManager.equals("none");
+    }
+
+    public void setSendCostInfo(boolean sendCostInfo)
+    {
+        _sendCostInfo = sendCostInfo;
+    }
+
+    public void init()
+    {
+        String watchdogParam = getArgs().getOpt("watchdog");
+        if (watchdogParam != null) {
+            _watchdog =
+                (watchdogParam.length() > 0)
+                ? new WatchdogThread(watchdogParam)
+                : new WatchdogThread();
+            _log.info("Watchdog : " + _watchdog);
         }
-
     }
+
     @Override
-    public CellVersion getCellVersion(){ return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision$" ); }
-    private void dumpSetup() throws Exception {
-
-       File setupFile = new File( _setupFileName ).getCanonicalFile() ;
-       File tmpFile   = new File( setupFile.getParent() , "."+setupFile.getName() ) ;
-
-       PrintWriter writer =
-          new PrintWriter( new FileWriter( tmpFile ) ) ;
-
-       try{
-          writer.print( "#\n# Setup of " ) ;
-          writer.print(_nucleus.getCellName() ) ;
-          writer.print(" (") ;
-          writer.print(this.getClass().getName()) ;
-          writer.print(") at ") ;
-          writer.println( new Date().toString() ) ;
-          writer.println( "#") ;
-          writer.print("set timeout pool ");
-          writer.println(""+(_poolMonitor.getPoolTimeout()/1000L));
-          writer.println( "#" ) ;
-
-          StringBuffer sb = new StringBuffer(16*1024) ;
-
-          _selectionUnit.dumpSetup(sb) ;
-          _requestContainer.dumpSetup(sb);
-          _partitionManager.dumpSetup(sb);
-
-          writer.println(sb.toString());
-
-       }catch(Exception ee){
-          tmpFile.delete() ;
-          throw ee ;
-       }finally{
-          writer.close() ;
-       }
-       if( ! tmpFile.renameTo( setupFile ) ){
-
-          tmpFile.delete() ;
-
-          throw new
-          IllegalArgumentException( "Rename failed : "+_setupFileName ) ;
-
-       }
-       return ;
+    public CellInfo getCellInfo(CellInfo info)
+    {
+        info.setCellVersion(new CellVersion(Version.getVersion(),"$Revision$" ));
+        return info;
     }
+
+    @Override
+    public void printSetup(PrintWriter writer)
+    {
+        writer.print("#\n# Setup of ");
+        writer.print(getCellName());
+        writer.print(" (");
+        writer.print(getClass().getName());
+        writer.print(") at ");
+        writer.println(new Date().toString());
+        writer.println("#");
+        writer.print("set timeout pool ");
+        writer.println(""+(_poolMonitor.getPoolTimeout()/1000L));
+        writer.println("#");
+    }
+
     private class WatchdogThread implements Runnable {
         private long _deathDetected = 10L * 60L * 1000L; // 10 minutes
         private long _sleepTimer = 1L * 60L * 1000L; // 1 minute
         private long _watchdogSequenceCounter = 0L;
 
         public WatchdogThread() {
-            _nucleus.newThread(this, "watchdog").start();
-            say("WatchdogThread initialized with : " + this);
+            new Thread(this, "watchdog").start();
+            _log.info("WatchdogThread initialized with : " + this);
         }
 
         public WatchdogThread(String parameter) {
@@ -327,25 +229,25 @@ public class PoolManagerV5 extends CellAdapter {
                     _sleepTimer = sleeping * 1000L;
 
             } catch (Exception ee) {
-                esay("WatchdogThread : illegal arguments [" + parameter + "] (using defaults) " + ee.getMessage());
+                _log.warn("WatchdogThread : illegal arguments [" + parameter + "] (using defaults) " + ee.getMessage());
             }
-            _nucleus.newThread(this, "watchdog").start();
-            say("WatchdogThread initialized with : " + this);
+            new Thread(this, "watchdog").start();
+            _log.info("WatchdogThread initialized with : " + this);
         }
 
         public void run() {
-            say("watchdog thread activated");
+            _log.info("watchdog thread activated");
             while (true) {
                 try {
                     Thread.sleep(_sleepTimer);
                 } catch (InterruptedException e) {
-                    say("watchdog thread interrupted");
+                    _log.info("watchdog thread interrupted");
                     break;
                 }
                 runWatchdogSequence(_deathDetected);
                 _watchdogSequenceCounter++;
             }
-            say("watchdog finished");
+            _log.info("watchdog finished");
         }
 
         @Override
@@ -378,11 +280,11 @@ public class PoolManagerV5 extends CellAdapter {
         if (!msg.getReplyRequired())
             return;
         try {
-            say("Sending reply " + message);
+            _log.info("Sending reply " + message);
             message.revertDirection();
             sendMessage(message);
         } catch (Exception e) {
-            esay("Can't reply message : " + e);
+            _log.warn("Can't reply message : " + e);
         }
 
     }
@@ -406,25 +308,6 @@ public class PoolManagerV5 extends CellAdapter {
         }
     }
 
-    private class MessageTimeoutThread implements Runnable {
-        public MessageTimeoutThread() {
-            _nucleus.newThread(this, "messageTimeout").start();
-        }
-
-        public void run() {
-            while (true) {
-                _nucleus.updateWaitQueue();
-                try {
-                    Thread.sleep(_interval);
-                } catch (InterruptedException e) {
-                    say("Message timeout thread interrupted");
-                    break;
-                }
-            }
-            say("Message timeout thread finished");
-        }
-    }
-
     @Override
     public void getInfo( PrintWriter pw ){
 	pw.println("PoolManager V [$Id: PoolManagerV5.java,v 1.48 2007-10-10 08:05:34 tigran Exp $]");
@@ -441,8 +324,6 @@ public class PoolManagerV5 extends CellAdapter {
         }else{
              pw.println("         Watchdog : "+_watchdog ) ;
         }
-        if( _requestContainer != null )_requestContainer.getInfo( pw ) ;
-        _costModule.getInfo(pw);
     }
     @Override
     public CellInfo getCellInfo(){
@@ -453,11 +334,6 @@ public class PoolManagerV5 extends CellAdapter {
     public String hh_set_max_threads = " # DEPRICATED 	" ;
     public String ac_set_max_threads_$_1( Args args )throws CommandException{
       return "" ;
-    }
-    public String hh_save = " # make setup permanent" ;
-    public String ac_save( Args args )throws Exception {
-       dumpSetup() ;
-       return "" ;
     }
     public String hh_set_timeout_pool = "[-read] [-write] <timeout/secs>" ;
     public String ac_set_timeout_pool_$_1( Args args )throws CommandException{
@@ -587,30 +463,18 @@ public class PoolManagerV5 extends CellAdapter {
           PoolStatusChangedMessage msg = new PoolStatusChangedMessage( poolName , status ) ;
           msg.setPoolMode( poolMode ) ;
           msg.setDetail( statusCode , statusMessage ) ;
-          say("sendPoolStatusRelay : "+msg);
+          _log.info("sendPoolStatusRelay : "+msg);
           sendMessage(
                new CellMessage( _poolStatusRelayPath , msg )
                      ) ;
 
        }catch(Exception ee ){
-          esay("Failed to send poolStatus changed message : "+ee ) ;
+          _log.warn("Failed to send poolStatus changed message : "+ee ) ;
        }
     }
-    @Override
-    public void messageToForward(  CellMessage cellMessage ){
 
-        _costModule.messageArrived(cellMessage);
-
-        super.messageToForward(cellMessage);
-    }
-    @Override
-    public void messageArrived( CellMessage cellMessage ){
-
-        Object message  = cellMessage.getMessageObject();
-        synchronized( _setupLock ){
-
-           _costModule.messageArrived( cellMessage ) ;
-
+    public void messageArrived(CellMessage cellMessage, Object message)
+    {
            if( message instanceof PoolManagerPoolUpMessage ){
 
                _counterPoolUp ++ ;
@@ -661,8 +525,6 @@ public class PoolManagerV5 extends CellAdapter {
            } else {
                _requestContainer.messageArrived( cellMessage ) ;
 	   }
-
-        }
     }
 
     private void getLinkGroups(PoolMgrGetPoolLinkGroups poolMessage,CellMessage cellMessage ){
@@ -677,7 +539,7 @@ public class PoolManagerV5 extends CellAdapter {
         try{
            sendMessage( cellMessage ) ;
         }catch(Exception ee ){
-           esay( "Problem replying to getLinkGroups Request : "+ee ) ;
+           _log.warn( "Problem replying to getLinkGroups Request : "+ee ) ;
         }
     }
 
@@ -693,7 +555,7 @@ public class PoolManagerV5 extends CellAdapter {
        try{
           sendMessage( cellMessage ) ;
        }catch(Exception ee ){
-          esay( "Problem replying to getPoolList Request : "+ee ) ;
+          _log.warn( "Problem replying to getPoolList Request : "+ee ) ;
        }
     }
     private void getPoolByLink( PoolMgrGetPoolByLink poolMessage ,
@@ -721,7 +583,7 @@ public class PoolManagerV5 extends CellAdapter {
        try{
           sendMessage( cellMessage ) ;
        }catch(Exception ee ){
-          esay( "Problem replying to getPoolByLink Request : "+ee ) ;
+          _log.warn( "Problem replying to getPoolByLink Request : "+ee ) ;
        }
     }
 
@@ -740,7 +602,7 @@ public class PoolManagerV5 extends CellAdapter {
             envelope.revertDirection();
             sendMessage(envelope);
         } catch (NoRouteToCellException e) {
-            esay("Problem replying to getPoolsByLink request: " + e);
+            _log.warn("Problem replying to getPoolsByLink request: " + e);
         }
     }
 
@@ -761,7 +623,7 @@ public class PoolManagerV5 extends CellAdapter {
         try {
             sendMessage(envelope);
         } catch (NoRouteToCellException e) {
-            esay("Problem replying to getPoolsByPoolGroup request: " + e);
+            _log.warn("Problem replying to getPoolsByPoolGroup request: " + e);
         }
     }
 
@@ -790,7 +652,7 @@ public class PoolManagerV5 extends CellAdapter {
        try{
           sendMessage( cellMessage ) ;
        }catch(Exception ee ){
-          esay( "Problem replying to queryPool Request : "+ee ) ;
+          _log.warn( "Problem replying to queryPool Request : "+ee ) ;
        }
     }
     private static class XProtocolInfo implements IpProtocolInfo {
@@ -892,23 +754,7 @@ public class PoolManagerV5 extends CellAdapter {
        }
     }
     */
-    public String hh_reload = "[-yes]  # reloads the setup from disk" ;
-    public String ac_reload( Args args )throws Exception {
-       if( args.getOpt("yes") == null ){
-          return " This Command destroys the current setup\n"+
-                 " and replaces it by the setup on disk\n"+
-                 " Please use 'reload -yes' if you ready want\n"+
-                 " to do that\n" ;
-       }
-       synchronized( _setupLock ){
-          _selectionUnit.clear() ;
-          _partitionManager.clear() ;
-          StringBuffer sb = new StringBuffer() ;
-          runSetupFile(sb) ;
-          sb.append("\n");
-          return sb.toString() ;
-       }
-    }
+
     private boolean quotasExceeded( StorageInfo info ){
 
        String storageClass = info.getStorageClass()+"@"+info.getHsm() ;
@@ -918,12 +764,12 @@ public class PoolManagerV5 extends CellAdapter {
        try{
            msg = sendAndWait( msg , 20000L ) ;
            if( msg == null ){
-              esay("quotasExceeded of "+storageClass+" : request timed out");
+              _log.warn("quotasExceeded of "+storageClass+" : request timed out");
               return false ;
            }
            Object obj = msg.getMessageObject() ;
            if( ! (obj instanceof QuotaMgrCheckQuotaMessage ) ){
-              esay("quotasExceeded of "+storageClass+" : unexpected object arrived : "+obj.getClass().getName());
+              _log.warn("quotasExceeded of "+storageClass+" : unexpected object arrived : "+obj.getClass().getName());
               return false ;
            }
 
@@ -931,8 +777,8 @@ public class PoolManagerV5 extends CellAdapter {
 
        }catch(Exception ee ){
 
-           esay( "quotasExceeded of "+storageClass+" : Exception : "+ee);
-           esay(ee);
+           _log.warn( "quotasExceeded of "+storageClass+" : Exception : "+ee);
+           _log.warn(ee);
            return false ;
        }
 
@@ -955,14 +801,14 @@ public class PoolManagerV5 extends CellAdapter {
            _cellMessage = cellMessage ;
            _request     =  (PoolMgrSelectWritePoolMsg)_cellMessage.getMessageObject() ;
            _pnfsId      = _request.getPnfsId();
-           _nucleus.newThread( this , "writeHandler" ).start() ;
+           new Thread( this , "writeHandler" ).start() ;
        }
        public void run(){
 
            StorageInfo  storageInfo  = _request.getStorageInfo() ;
            ProtocolInfo protocolInfo = _request.getProtocolInfo() ;
 
-           say( _pnfsId.toString()+" write handler started" );
+           _log.info( _pnfsId.toString()+" write handler started" );
            long started = System.currentTimeMillis();
 
            if( storageInfo == null ){
@@ -1003,7 +849,7 @@ public class PoolManagerV5 extends CellAdapter {
                              _pnfsId, storeList.get(0), true
                                                  );        //VP
 
-              say(_pnfsId+" write handler selected "+poolName+" after "+
+              _log.info(_pnfsId+" write handler selected "+poolName+" after "+
                   ( System.currentTimeMillis() - started ) );
               requestSucceeded( poolName ) ;
 
@@ -1019,8 +865,8 @@ public class PoolManagerV5 extends CellAdapter {
 	       _cellMessage.revertDirection();
 	       sendMessage(_cellMessage);
 	   } catch (Exception e){
-	       esay("Exception requestFailed : "+e);
-               esay(e);
+	       _log.warn("Exception requestFailed : "+e);
+               _log.warn(e);
 	   }
        }
        protected void requestSucceeded(String poolName){
@@ -1031,8 +877,8 @@ public class PoolManagerV5 extends CellAdapter {
 	       sendMessage(_cellMessage);
                _costModule.messageArrived(_cellMessage);
 	   }catch (Exception e){
-	       esay("Exception in requestSucceeded : "+e);
-	       esay(e);
+	       _log.warn("Exception in requestSucceeded : "+e);
+	       _log.warn(e);
 	   }
        }
     }
@@ -1052,5 +898,4 @@ public class PoolManagerV5 extends CellAdapter {
     	return sb.toString();
 
     }
-
 }

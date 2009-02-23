@@ -3,6 +3,7 @@
 package diskCacheV111.poolManager ;
 import  java.util.* ;
 import  java.util.regex.* ;
+import  java.io.StringWriter;
 import  java.io.PrintWriter ;
 import  dmg.cells.nucleus.* ;
 import  dmg.util.* ;
@@ -10,14 +11,28 @@ import  diskCacheV111.vehicles.* ;
 import  diskCacheV111.pools.* ;
 import diskCacheV111.pools.PoolCostInfo.NamedPoolQueueInfo;
 
-public class CostModuleV1 implements CostModule {
+import org.dcache.cells.CellCommandListener;
+import org.dcache.cells.CellMessageReceiver;
+import org.dcache.cells.AbstractCellComponent;
+import org.dcache.cells.CellMessageDispatcher;
 
-   private final CellAdapter _cell;
+import org.apache.log4j.Logger;
+
+public class CostModuleV1
+    extends AbstractCellComponent
+    implements CostModule,
+               CellCommandListener,
+               CellMessageReceiver
+{
+    private final static Logger _log = Logger.getLogger(CostModuleV1.class);
+
    private final Map<String, Entry>     _hash     = new HashMap<String, Entry>() ;
    private boolean     _isActive = true ;
    private boolean     _update   = true ;
    private boolean     _magic    = true ;
    private boolean     _debug    = false ;
+    private final CellMessageDispatcher _handlers =
+        new CellMessageDispatcher("messageToForward");
 
    private static class Entry {
        private long timestamp ;
@@ -70,207 +85,227 @@ public class CostModuleV1 implements CostModule {
        }
    }
 
-   public CostModuleV1( CellAdapter cellAdapter ) throws Exception {
-      _cell = cellAdapter ;
+    public CostModuleV1()
+    {
+    }
 
-      String costName = _cell.getArgs().getOpt("costCalculator") ;
-      costName = costName == null ? "diskCacheV111.pools.CostCalculationV5" : costName ;
-      _costCalculationEngine =  new CostCalculationEngine(costName) ;
-   }
-   public synchronized void messageArrived( CellMessage cellMessage ){
+    public void setCostCalculationEngine(CostCalculationEngine engine)
+    {
+        _costCalculationEngine = engine;
+    }
 
-      Object message = cellMessage.getMessageObject() ;
+    public synchronized void messageArrived(PoolManagerPoolUpMessage msg)
+    {
+        if (! _update)
+            return;
 
-      //say( "messageArrived : class "+message.getClass().getName() ) ;
-      //say( "messageArrived : objec "+message ) ;
+        String poolName = msg.getPoolName() ;
+        PoolV2Mode poolMode = msg.getPoolMode();
+        if (poolMode.getMode() != PoolV2Mode.DISABLED &&
+            !poolMode.isDisabled(PoolV2Mode.DISABLED_STRICT) &&
+            !poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD)) {
+            if (msg.getPoolCostInfo() != null) {
+                Entry e = _hash.get(poolName);
 
-      if( message instanceof PoolManagerPoolUpMessage ){
+                if (e == null) {
+                    e = new Entry(msg.getPoolCostInfo());
+                    _hash.put(poolName, e);
+                } else {
+                    e.setPoolCostInfo(msg.getPoolCostInfo());
+                }
+                e.setTagMap(msg.getTagMap());
+            }
+        } else {
+            _hash.remove(poolName);
+        }
+    }
 
-         if( ! _update )return ;
+    public synchronized void messageToForward(PoolIoFileMessage msg)
+    {
+        String poolName = msg.getPoolName();
+        Entry e = _hash.get(poolName);
+        if (e == null)
+            return;
 
-         PoolManagerPoolUpMessage msg = (PoolManagerPoolUpMessage)message ;
-         String poolName = msg.getPoolName() ;
-         PoolV2Mode poolMode = msg.getPoolMode();
-         if (poolMode.getMode() != PoolV2Mode.DISABLED &&
-             !poolMode.isDisabled(PoolV2Mode.DISABLED_STRICT) &&
-             !poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD)) {
-             if( msg.getPoolCostInfo() != null ){
-                 Entry e = _hash.get(poolName);
+        String requestedQueueName = msg.getIoQueueName();
 
-                 if( e == null ){
-                     e = new Entry( msg.getPoolCostInfo() );
-                     _hash.put( poolName , e ) ;
-                 }else{
-                     e.setPoolCostInfo( msg.getPoolCostInfo() ) ;
-                 }
-                 e.setTagMap(msg.getTagMap());
-             }
+        Map<String, NamedPoolQueueInfo> map =
+            e.getPoolCostInfo().getExtendedMoverHash();
+
+        PoolCostInfo.PoolQueueInfo queue = null;
+
+        if (map == null) {
+            queue = e.getPoolCostInfo().getMoverQueue();
+        } else {
+            requestedQueueName =
+                (requestedQueueName == null ||
+                 map.get(requestedQueueName) == null)
+                ? e.getPoolCostInfo().getDefaultQueueName()
+                : requestedQueueName;
+            queue = map.get(requestedQueueName);
+        }
+
+        int diff =
+            (msg.isReply() && msg.getReturnCode() != 0)
+            ? -1
+            : ((!msg.isReply() && !_magic) ? 1 : 0);
+
+        queue.modifyQueue(diff);
+
+        xsay("Mover"+(requestedQueueName==null?"":("("+requestedQueueName+")")) , poolName, diff, msg);
+    }
+
+    public synchronized void messageToForward(DoorTransferFinishedMessage msg)
+    {
+        String poolName = msg.getPoolName();
+        Entry e = _hash.get(poolName);
+        if (e == null)
+            return;
+
+        String requestedQueueName = msg.getIoQueueName();
+
+        Map<String, NamedPoolQueueInfo> map =
+            e.getPoolCostInfo().getExtendedMoverHash();
+        PoolCostInfo.PoolQueueInfo queue = null;
+
+        if (map == null) {
+            queue = e.getPoolCostInfo().getMoverQueue();
+        } else {
+            requestedQueueName =
+                (requestedQueueName == null) ||
+                (map.get(requestedQueueName) == null)
+                ? e.getPoolCostInfo().getDefaultQueueName()
+                : requestedQueueName;
+
+            queue = map.get(requestedQueueName);
+        }
+
+        int diff = -1;
+        queue.modifyQueue(diff);
+
+        xsay("Mover"+(requestedQueueName==null?"":("("+requestedQueueName+")")), poolName, diff, msg);
+    }
+
+    public synchronized void messageToForward(PoolFetchFileMessage msg)
+    {
+         String poolName = msg.getPoolName();
+         Entry e = _hash.get(poolName);
+         if (e == null)
+             return;
+
+         PoolCostInfo.PoolQueueInfo queue =
+             e.getPoolCostInfo().getRestoreQueue();
+
+         int diff = msg.isReply() ? -1 : 1;
+         queue.modifyQueue(diff);
+
+         xsay( "Restore" , poolName, diff, msg);
+    }
+
+    public synchronized void messageToForward(PoolMgrSelectPoolMsg msg)
+    {
+         if (!_magic)
+             return;
+
+         if (!msg.isReply())
+             return;
+         String poolName = msg.getPoolName();
+         Entry e = _hash.get(poolName);
+         if (e == null)
+             return;
+
+         String requestedQueueName = msg.getIoQueueName();
+
+         Map<String, NamedPoolQueueInfo> map =
+             e.getPoolCostInfo().getExtendedMoverHash();
+         PoolCostInfo.PoolQueueInfo queue = null;
+
+         if (map == null) {
+            queue = e.getPoolCostInfo().getMoverQueue();
          } else {
-             _hash.remove( poolName ) ;
-         }
-      }else if( message instanceof PoolIoFileMessage ){
-
-         PoolIoFileMessage msg = (PoolIoFileMessage)message ;
-         String poolName = msg.getPoolName();
-         Entry e = _hash.get(poolName);
-         if( e == null )return ;
-
-         String requestedQueueName = msg.getIoQueueName() ;
-
-         Map<String, NamedPoolQueueInfo> map = e.getPoolCostInfo().getExtendedMoverHash() ;
-
-         PoolCostInfo.PoolQueueInfo queue = null ;
-
-         if( map == null ){
-            queue = e.getPoolCostInfo().getMoverQueue() ;
-         }else{
-            requestedQueueName = ( requestedQueueName == null ) ||
-                                 ( map.get(requestedQueueName) == null ) ?
-                                 e.getPoolCostInfo().getDefaultQueueName() :
-                                 requestedQueueName ;
-
-            queue = map.get(requestedQueueName) ;
-
-
+            requestedQueueName =
+                (requestedQueueName == null) ||
+                (map.get(requestedQueueName) == null)
+                ? e.getPoolCostInfo().getDefaultQueueName()
+                : requestedQueueName;
+            queue = map.get(requestedQueueName);
          }
 
-         int diff = ( msg.isReply() && ( msg.getReturnCode() != 0 ) ) ? -1 :
-                    ( ( ! msg.isReply() )  && ( ! _magic ) )          ?  1 : 0 ;
+         int diff = 1;
 
-         queue.modifyQueue( diff ) ;
+         queue.modifyQueue(diff);
 
-         xsay( "Mover"+(requestedQueueName==null?"":("("+requestedQueueName+")")) , poolName, diff, message ) ;
+         xsay("Mover (magic)"+(requestedQueueName==null?"":("("+requestedQueueName+")")), poolName, diff, msg);
+    }
 
-      }else if( message instanceof DoorTransferFinishedMessage){
+    public synchronized void messageToForward(Pool2PoolTransferMsg msg)
+    {
+        say( "Pool2PoolTransferMsg : reply="+msg.isReply());
 
-         DoorTransferFinishedMessage msg = (DoorTransferFinishedMessage)message ;
-         String poolName = msg.getPoolName();
-         Entry e = _hash.get(poolName);
-         if( e == null )return ;
+        String sourceName = msg.getSourcePoolName();
+        Entry source = _hash.get(sourceName);
+        if (source == null)
+            return;
 
-         String requestedQueueName = msg.getIoQueueName() ;
+        PoolCostInfo.PoolQueueInfo sourceQueue =
+            source.getPoolCostInfo().getP2pQueue();
 
-         Map<String, NamedPoolQueueInfo> map = e.getPoolCostInfo().getExtendedMoverHash() ;
-         PoolCostInfo.PoolQueueInfo queue = null ;
+        String destinationName = msg.getDestinationPoolName();
+        Entry destination = _hash.get(destinationName);
+        if (destination == null)
+            return;
 
-         if( map == null ){
-            queue = e.getPoolCostInfo().getMoverQueue() ;
-         }else{
-            requestedQueueName = ( requestedQueueName == null ) ||
-                                 ( map.get(requestedQueueName) == null ) ?
-                                 e.getPoolCostInfo().getDefaultQueueName() :
-                                 requestedQueueName ;
+        PoolCostInfo.PoolQueueInfo destinationQueue =
+            destination.getPoolCostInfo().getP2pClientQueue();
 
-            queue = map.get(requestedQueueName) ;
+        int diff = msg.isReply() ? -1 : 1;
 
-         }
-         int diff = -1 ;
+        sourceQueue.modifyQueue(diff);
+        destinationQueue.modifyQueue(diff);
 
-         queue.modifyQueue( diff ) ;
+        xsay("P2P client (magic)", destinationName, diff, msg);
+        xsay("P2P server (magic)", sourceName, diff, msg);
+    }
 
-         xsay( "Mover"+(requestedQueueName==null?"":("("+requestedQueueName+")")), poolName, diff, message ) ;
-      }else if( message instanceof PoolFetchFileMessage ){
-         PoolFetchFileMessage msg = (PoolFetchFileMessage)message ;
-         String poolName = msg.getPoolName();
-         Entry e = _hash.get(poolName);
-         if( e == null )return ;
+    /**
+     * Defined by CostModule interface. Used by PoolManager to inject
+     * the replies PoolManager sends to doors.
+     */
+    public void messageArrived(CellMessage cellMessage)
+    {
+        _handlers.call(cellMessage);
+    }
 
-         PoolCostInfo.PoolQueueInfo queue = e.getPoolCostInfo().getRestoreQueue() ;
+    @Override
+    public void getInfo(PrintWriter pw)
+    {
+        pw.append( "Submodule : CostModule (cm) : ").println(getClass().getName());
+        pw.println("Version : $Revision$");
+        pw.append(" Debug   : ").println(_debug?"on":"off");
+        pw.append(" Update  : ").println(_update?"on":"off");
+        pw.append(" Active  : ").println(_isActive?"yes":"no");
+        pw.append(" Magic   : ").println(_magic?"yes":"no");
+    }
 
-         int diff = msg.isReply() ? -1 : 1 ;
+    @Override
+    public void printSetup(PrintWriter pw)
+    {
+        pw.append( "#\n# Submodule CostModule (cm) : ")
+            .println(this.getClass().getName());
+        pw.println("# $Revision$ \n#\n") ;
+        pw.println("cm set debug "+(_debug?"on":"off"));
+        pw.println("cm set update "+(_update?"on":"off"));
+        pw.println("cm set magic "+(_magic?"on":"off"));
+    }
 
-         queue.modifyQueue( diff ) ;
-
-         xsay( "Restore" , poolName, diff, message ) ;
-      }else if( message instanceof PoolMgrSelectPoolMsg ){
-
-         if( ! _magic )return ;
-
-         PoolMgrSelectPoolMsg msg = (PoolMgrSelectPoolMsg)message ;
-         if( ! msg.isReply() )return ;
-         String poolName = msg.getPoolName();
-         Entry e = _hash.get(poolName);
-         if( e == null )return ;
-
-         String requestedQueueName = msg.getIoQueueName() ;
-
-         Map<String, NamedPoolQueueInfo> map = e.getPoolCostInfo().getExtendedMoverHash() ;
-         PoolCostInfo.PoolQueueInfo queue = null ;
-
-         if( map == null ){
-            queue = e.getPoolCostInfo().getMoverQueue() ;
-         }else{
-            requestedQueueName = ( requestedQueueName == null ) ||
-                                 ( map.get(requestedQueueName) == null ) ?
-                                 e.getPoolCostInfo().getDefaultQueueName() :
-                                 requestedQueueName ;
-
-            queue = map.get(requestedQueueName) ;
-
-         }
-
-         int diff = 1 ;
-
-         queue.modifyQueue( diff ) ;
-
-         xsay( "Mover (magic)"+(requestedQueueName==null?"":("("+requestedQueueName+")")) , poolName, diff, message ) ;
-
-      }else if( message instanceof Pool2PoolTransferMsg ){
-         Pool2PoolTransferMsg msg = (Pool2PoolTransferMsg)message ;
-         say( "Pool2PoolTransferMsg : reply="+msg.isReply());
-
-         String sourceName      = msg.getSourcePoolName() ;
-         Entry source = _hash.get(sourceName);
-         if( source == null )return ;
-
-         PoolCostInfo.PoolQueueInfo sourceQueue = source.getPoolCostInfo().getP2pQueue() ;
-
-         String destinationName = msg.getDestinationPoolName() ;
-         Entry destination = _hash.get(destinationName);
-         if( destination == null )return ;
-
-         PoolCostInfo.PoolQueueInfo destinationQueue = destination.getPoolCostInfo().getP2pClientQueue() ;
-
-         int diff = msg.isReply() ? -1 : 1 ;
-
-         sourceQueue.modifyQueue( diff ) ;
-         destinationQueue.modifyQueue( diff ) ;
-
-         xsay( "P2P client (magic)" , destinationName , diff, message ) ;
-         xsay( "P2P server (magic)" , sourceName , diff, message ) ;
-      }
-   }
-   public void getInfo( StringBuffer sb ){
-      sb.append( "Submodule : CostModule (cm) : ").
-         append(this.getClass().getName()).
-         append("\n Version : $Revision$\n") ;
-        sb.append(" Debug   : ").append(_debug?"on":"off").append("\n");
-        sb.append(" Update  : ").append(_update?"on":"off").append("\n");
-        sb.append(" Active  : ").append(_isActive?"yes":"no").append("\n");
-        sb.append(" Magic   : ").append(_magic?"yes":"no").append("\n");
-   }
-   public void getInfo( PrintWriter pw ){
-      StringBuffer sb = new StringBuffer() ;
-      getInfo(sb) ;
-      pw.print(sb.toString());
-   }
-   public void dumpSetup( StringBuffer sb ){
-      sb.append( "#\n# Submodule CostModule (cm) : ").
-         append(this.getClass().getName()).
-         append("\n# $Revision$ \n#\n") ;
-      sb.append("cm set debug "+(_debug?"on":"off")+"\n");
-      sb.append("cm set update "+(_update?"on":"off")+"\n");
-      sb.append("cm set magic "+(_magic?"on":"off")+"\n");
-
-   }
    protected void say( String msg ){
-      if(_debug)_cell.say("CostModuleV1 : "+msg ) ;
+       _log.debug(msg);
    }
    protected void esay( String msg ){
-      if(_debug)_cell.esay("CostModuleV1 : "+msg ) ;
+       _log.warn(msg);
    }
    private void xsay( String queue , String pool , int diff , Object obj ){
-      if(_debug)_cell.say("CostModuleV1 : "+queue+" queue of "+pool+" modified by "+diff+" due to "+obj.getClass().getName());
+      if(_debug)_log.debug("CostModuleV1 : "+queue+" queue of "+pool+" modified by "+diff+" due to "+obj.getClass().getName());
    }
    public  PoolCostCheckable getPoolCost( String poolName , long filesize ){
 
@@ -283,12 +318,15 @@ public class CostModuleV1 implements CostModule {
 
    }
    public boolean isActive(){ return _isActive ; }
-   public String hh_cm_info = "" ;
-   public String ac_cm_info( Args args ){
-      StringBuffer sb = new StringBuffer() ;
-      getInfo(sb);
-      return sb.toString();
-   }
+
+    public String hh_cm_info = "";
+    public String ac_cm_info(Args args)
+    {
+        StringWriter s = new StringWriter();
+        getInfo(new PrintWriter(s));
+        return s.toString();
+    }
+
    public String hh_cm_set_debug = "on|off" ;
    public String ac_cm_set_debug_$_1( Args args ){
      if( args.argv(0).equals("on") ){ _debug = true ; }

@@ -6,7 +6,14 @@ import java.util.* ;
 import dmg.cells.nucleus.CellAdapter ;
 import dmg.util.Args ;
 
-public class ThreadCounter implements ThreadPool, Runnable {
+import org.dcache.cells.CellCommandListener;
+import org.apache.log4j.Logger;
+
+public class ThreadCounter
+    implements ThreadPool, Runnable, CellCommandListener
+{
+
+    private final static Logger _log = Logger.getLogger(ThreadCounter.class);
 
     private CellAdapter _cell          = null ;
     private int    _currentThreadCount = 0 ;
@@ -26,9 +33,12 @@ public class ThreadCounter implements ThreadPool, Runnable {
        _cell = cell ;
        _cell.getNucleus().newThread(this,"ThreadCounter").start() ;
     }
-    private void say(String message){ _cell.say(message) ; }
-    private void esay(String message){ _cell.esay(message) ; }
-    private void esay(Throwable t ){ _cell.esay(t) ; }
+
+    public ThreadCounter()
+    {
+        new Thread(this,"ThreadCounter").start();
+    }
+
     public String toString(){
        int currentThreadCount = 0 ;
        int waitingThreads     = 0 ;
@@ -65,7 +75,7 @@ public class ThreadCounter implements ThreadPool, Runnable {
        synchronized( _fifo ){
           _fifo.addFirst( new Runner( runner , runnerName ) ) ;
           _fifo.notifyAll();
-//          say("ThreadCounter : thread added "+_currentThreadCount);
+//          _log.info("ThreadCounter : thread added "+_currentThreadCount);
        }
     }
     private class ClientRunner implements Runnable {
@@ -77,11 +87,11 @@ public class ThreadCounter implements ThreadPool, Runnable {
           try{
              _runner.run();
           }catch(Throwable t ){
-             esay(t);
+             _log.warn(t);
           }finally{
              synchronized( _fifo ){
                 _currentThreadCount-- ;
-//                say("ThreadCounter : thread finished "+_currentThreadCount);
+//                _log.info("ThreadCounter : thread finished "+_currentThreadCount);
                 _fifo.notifyAll();
              }
           }
@@ -89,7 +99,7 @@ public class ThreadCounter implements ThreadPool, Runnable {
     }
     public void run(){
 
-       say("Thread Counter thread started");
+       _log.info("Thread Counter thread started");
        try{
           while( ! Thread.currentThread().isInterrupted() ){
 
@@ -107,26 +117,30 @@ public class ThreadCounter implements ThreadPool, Runnable {
 
                 final Runner r = (Runner)_fifo.removeLast();
                 try{
-                   _cell.getNucleus().newThread( new ClientRunner(r.runner) , r.name ).start() ;
-//                   say("ThreadCounter : thread started "+_currentThreadCount);
+                    if (_cell != null) {
+                        _cell.getNucleus().newThread( new ClientRunner(r.runner) , r.name ).start() ;
+                    } else {
+                        new Thread(new ClientRunner(r.runner), r.name).start();
+                    }
+//                   _log.info("ThreadCounter : thread started "+_currentThreadCount);
                    _currentThreadCount ++ ;
                 }catch(Throwable tt ){
-                    esay(tt);
+                    _log.warn(tt);
                     try{
                        if( r.runner instanceof ExtendedRunnable ){
                            ((ExtendedRunnable)r.runner).runFailed() ;
                        }
                     }catch(Throwable ttt){
-                       esay(ttt);
+                       _log.warn(ttt);
                     }
                 }
 
              }
           }
        }catch(InterruptedException ee ){
-          say("Thread Counter thread was interrupted");
+          _log.info("Thread Counter thread was interrupted");
        }
-       say("Thread Counter thread finished");
+       _log.info("Thread Counter thread finished");
     }
     //
     // DEBUG ONLY

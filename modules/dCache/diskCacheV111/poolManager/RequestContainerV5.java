@@ -36,7 +36,6 @@ import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.Pool2PoolTransferMsg;
-import diskCacheV111.vehicles.PoolCheckFileMessage;
 import diskCacheV111.vehicles.PoolCheckable;
 import diskCacheV111.vehicles.PoolCostCheckable;
 import diskCacheV111.vehicles.PoolFetchFileMessage;
@@ -50,9 +49,18 @@ import diskCacheV111.vehicles.RestoreHandlerInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.WarningPnfsFileInfoMessage;
 
-public class RequestContainerV5 implements Runnable {
-    //
-    //
+import org.dcache.cells.AbstractCellComponent;
+import org.dcache.cells.CellCommandListener;
+
+import org.apache.log4j.Logger;
+import org.apache.log4j.NDC;
+
+public class RequestContainerV5
+    extends AbstractCellComponent
+    implements Runnable, CellCommandListener
+{
+    private static final Logger _log =
+        Logger.getLogger(RequestContainerV5.class);
 
     /**
      * State of CheckFilePingHandler.
@@ -72,7 +80,6 @@ public class RequestContainerV5 implements Runnable {
 
     private final Map<UOID, PoolRequestHandler>     _messageHash   = new HashMap<UOID, PoolRequestHandler>() ;
     private final Map<String, PoolRequestHandler>   _handlerHash   = new HashMap<String, PoolRequestHandler>() ;
-    private final CellAdapter _cell;
 
     private String      _warningPath   = "billing" ;
     private long        _retryTimer    = 15 * 60 * 1000 ;
@@ -89,12 +96,12 @@ public class RequestContainerV5 implements Runnable {
     private boolean     _suspendIncoming = false ;
     private boolean     _suspendStaging  = false ;
 
-    private final PoolSelectionUnit  _selectionUnit;
-    private final PoolMonitorV5      _poolMonitor;
+    private PoolSelectionUnit  _selectionUnit;
+    private PoolMonitorV5      _poolMonitor;
     private final SimpleDateFormat   _formatter        = new SimpleDateFormat ("MM.dd HH:mm:ss");
-    private final ThreadPool         _threadPool ;
+    private ThreadPool         _threadPool ;
     private final Map<PnfsId, CacheException>            _selections       = new HashMap<PnfsId, CacheException>() ;
-    private final PartitionManager   _partitionManager ;
+    private PartitionManager   _partitionManager ;
     private long               _checkFilePingTimer = 10 * 60 * 1000 ;
 
     /**
@@ -102,52 +109,36 @@ public class RequestContainerV5 implements Runnable {
      */
     private int _sameHostRetry = SAME_HOST_RETRY_NOTCHECKED ;
 
-    public RequestContainerV5( CellAdapter cell ,
-                               PoolSelectionUnit selectionUnit ,
-                               PoolMonitorV5 poolMonitor ,
-                               PartitionManager partitionManager ){
-
-       _cell             = cell ;
-       _selectionUnit    = selectionUnit ;
-       _poolMonitor      = poolMonitor ;
-       _partitionManager = partitionManager ;
-
-       _threadPool = createThreadPool( _cell.getArgs().getOpt("threadPool") ) ;
-
-       String sendHitString = _cell.getArgs().getOpt("sendHitInfoMessages" ) ;                 //VP
-       if( sendHitString != null ) _sendHitInfo = sendHitString.equals("yes") ;                //VP
-       say( "send HitInfoMessages : "+(_sendHitInfo?"yes":"no") ) ;                            //VP
-
-       _cell.addCommandListener(_threadPool);
-
-       _cell.getNucleus().newThread(this,"Container-ticker").start();
+    public RequestContainerV5()
+    {
+       new Thread(this,"Container-ticker").start();
     }
 
-    private ThreadPool createThreadPool( String poolClass ){
-
-       ThreadPool threadPool = null ;
-       Class<?>    [] classArgs = { dmg.cells.nucleus.CellAdapter.class } ;
-       Object   [] objArgs   = { _cell } ;
-
-       if( ( poolClass != null ) && ( ! poolClass.equals("") ) ){
-          try{
-              say("ThreadPool : Trying to initialize : "+poolClass);
-              Class<?> cl = Class.forName(poolClass) ;
-              Constructor<?> con = cl.getConstructor(classArgs) ;
-              threadPool = (ThreadPool)con.newInstance(objArgs);
-              say("ThreadPool : Initializing "+poolClass+" succeeded");
-          }catch(Exception ee ){
-             esay("Problems creating ThreadPool : "+ee );
-             esay(ee);
-          }
-       }
-       threadPool = threadPool == null ?
-                    new ThreadCounter( _cell ) :
-                    threadPool ;
-
-       say("ThreadPool : using  ThreadPool : "+threadPool.getClass().getName());
-       return threadPool ;
+    public void setPoolSelectionUnit(PoolSelectionUnit selectionUnit)
+    {
+        _selectionUnit = selectionUnit;
     }
+
+    public void setPoolMonitor(PoolMonitorV5 poolMonitor)
+    {
+        _poolMonitor = poolMonitor;
+    }
+
+    public void setPartitionManager(PartitionManager partitionManager)
+    {
+        _partitionManager = partitionManager;
+    }
+
+    public void setThreadPool(ThreadPool threadPool)
+    {
+        _threadPool = threadPool;
+    }
+
+    public void setHitInfoMessages(boolean sendHitInfo)
+    {
+        _sendHitInfo = sendHitInfo;
+    }
+
     public void messageArrived( CellMessage cellMessage ){
 
        UOID   uoid    = cellMessage.getLastUOID() ;
@@ -160,7 +151,7 @@ public class RequestContainerV5 implements Runnable {
            handler = _messageHash.remove( uoid ) ;
 
            if( handler == null ){
-              esay("Unexpected message class 9 "+
+              _log.warn("Unexpected message class 9 "+
                   message.getClass()+" from source = "+
                   cellMessage.getSourceAddress() );
               return;
@@ -186,16 +177,16 @@ public class RequestContainerV5 implements Runnable {
                    handler.alive() ;
                 }
              }catch(Throwable t){
-                esay(t) ;
+                _log.warn(t) ;
                 continue ;
              }
           }
        }catch(InterruptedException ie ){
-          esay("Container-ticker done");
+          _log.warn("Container-ticker done");
        }
     }
     public void poolStatusChanged(String poolName, int poolStatus) {
-        say("Restore Manager : got 'poolRestarted' for " + poolName);
+        _log.info("Restore Manager : got 'poolRestarted' for " + poolName);
         try {
             List<PoolRequestHandler> list = null;
             synchronized (_handlerHash) {
@@ -217,7 +208,7 @@ public class RequestContainerV5 implements Runnable {
                          * in this construction we will fall down to next case
                          */
                         if (rph.getPoolCandidate().equals(POOL_UNKNOWN_STRING) ) {
-                            say("Restore Manager : retrying : " + rph);
+                            _log.info("Restore Manager : retrying : " + rph);
                             rph.retry(false);
                         }
                     case PoolStatusChangedMessage.DOWN:
@@ -226,7 +217,7 @@ public class RequestContainerV5 implements Runnable {
                          * pool
                          */
                         if (rph.getPoolCandidate().equals(poolName) ) {
-                            say("Restore Manager : retrying : " + rph);
+                            _log.info("Restore Manager : retrying : " + rph);
                             rph.retry(false);
                         }
                 }
@@ -234,11 +225,13 @@ public class RequestContainerV5 implements Runnable {
             }
 
         } catch (Exception ee) {
-            esay("Problem retrying pool " + poolName + " (" + ee + ")");
+            _log.warn("Problem retrying pool " + poolName + " (" + ee + ")");
         }
     }
-    public void getInfo( PrintWriter pw ){
 
+    @Override
+    public void getInfo(PrintWriter pw)
+    {
        PoolManagerParameter def = _partitionManager.getParameterCopyOf() ;
 
        pw.println("Restore Controller [$Revision$]\n") ;
@@ -267,25 +260,24 @@ public class RequestContainerV5 implements Runnable {
        if( _suspendStaging )
             pw.println( "   Suspend Staging  : on (not persistent)");
     }
-    public void dumpSetup( StringBuffer sb ){
-       sb.append("#\n# Submodule [rc] : ").append(this.getClass().toString()).append("\n#\n");
-       sb.append("rc onerror ").append(_onError).append("\n");
-       sb.append("rc set max retries ").append(_maxRetries).append("\n");
-       sb.append("rc set retry ").append(_retryTimer/1000).append("\n");
-       sb.append("rc set warning path ").append(_warningPath).append("\n");
-       sb.append("rc set poolpingtimer ").append(_checkFilePingTimer/1000).append("\n");
-       sb.append("rc set max restore ").
-          append(_maxRestore<0?"unlimited":(""+_maxRestore)).
-          append("\n");
-       sb.append("rc set sameHostCopy ").
-          append(getSameHostCopyMode()).
-          append("\n") ;
-          sb.append("rc set sameHostRetry ").
-          append(getSameHostRetryMode()).
-          append("\n") ;
-       sb.append("rc set max threads ").
-          append(_threadPool.getMaxThreadCount()).
-          append("\n");
+
+    @Override
+    public void printSetup(PrintWriter pw)
+    {
+        pw.append("#\n# Submodule [rc] : ").append(this.getClass().toString()).append("\n#\n");
+        pw.append("rc onerror ").println(_onError);
+        pw.append("rc set max retries ").println(_maxRetries);
+        pw.append("rc set retry ").println(_retryTimer/1000);
+        pw.append("rc set warning path ").println(_warningPath);
+        pw.append("rc set poolpingtimer ").println(_checkFilePingTimer/1000);
+        pw.append("rc set max restore ")
+            .println(_maxRestore<0?"unlimited":(""+_maxRestore));
+        pw.append("rc set sameHostCopy ")
+            .println(getSameHostCopyMode());
+        pw.append("rc set sameHostRetry ")
+            .println(getSameHostRetryMode());
+        pw.append("rc set max threads ")
+            .println(_threadPool.getMaxThreadCount());
     }
 
     private String getSameHostRetryMode(){
@@ -613,7 +605,7 @@ public class RequestContainerV5 implements Runnable {
 
         if( request instanceof PoolMgrReplicateFileMsg ){
            if( request.isReply() ){
-               esay("Unexpected PoolMgrReplicateFileMsg arrived (is a reply)");
+               _log.warn("Unexpected PoolMgrReplicateFileMsg arrived (is a reply)");
                return ;
            }else{
                enforceP2P = true ;
@@ -623,7 +615,7 @@ public class RequestContainerV5 implements Runnable {
         //
         //
         PoolRequestHandler handler = null ;
-        say( "Adding request for : "+canonicalName ) ;
+        _log.info( "Adding request for : "+canonicalName ) ;
         synchronized( _handlerHash ){
            //
            handler = _handlerHash.get(canonicalName);
@@ -652,7 +644,7 @@ public class RequestContainerV5 implements Runnable {
             CellMessage request = new CellMessage(new CellPath("PnfsManager"),
                     getStorageInfo);
 
-            request = _cell.sendAndWait(request, 30000);
+            request = sendAndWait(request, 30000);
             if (request == null) {
                 throw new Exception(
                         "Timeout : PnfsManager request for storageInfo of "
@@ -669,7 +661,7 @@ public class RequestContainerV5 implements Runnable {
                     storageInfo, new DCapProtocolInfo("DCap", 3, 0,
                             args.argv(1), 2222), storageInfo.getFileSize());
 
-            _cell.sendMessage( new CellMessage(new CellPath("PoolManager"), req) );
+            sendMessage( new CellMessage(new CellPath("PoolManager"), req) );
 
         } catch (Exception ee) {
             commandReply = "P2P failed : " + ee.getMessage();
@@ -678,18 +670,6 @@ public class RequestContainerV5 implements Runnable {
         return commandReply;
     }
 
-
-
-
-    public void say(String message){
-       _cell.say(message) ;
-    }
-    public void esay(String message){
-       _cell.esay(message) ;
-    }
-    public void esay(Throwable e){
-       _cell.esay(e) ;
-    }
     private static final String [] ST_STRINGS = {
 
         "Init" , "Done" , "Pool2Pool" , "Staging" , "Waiting" ,
@@ -786,13 +766,13 @@ public class RequestContainerV5 implements Runnable {
                 if (now > _timer) {
                     switch (_state) {
                     case WAITING:
-                        say("CheckFilePingHandler : sending " + _query + " to " + _candidate);
+                        _log.info("CheckFilePingHandler : sending " + _query + " to " + _candidate);
                         sendQuery();
                         _state = PingState.QUERYING;
                         break;
 
                     case QUERYING:
-                        say("CheckFilePingHandler : requests died");
+                        _log.info("CheckFilePingHandler : requests died");
                         /* No reply since last query.
                          */
                         errorHandler();
@@ -810,7 +790,7 @@ public class RequestContainerV5 implements Runnable {
                 if (_state == PingState.QUERYING && object instanceof String) {
                     String s = (String) object;
                     if (s.contains(_pnfsId.toString())) {
-                        say("CheckFilePingHandler : request is alive");
+                        _log.info("CheckFilePingHandler : request is alive");
                         _state = PingState.WAITING;
                     }
                 }
@@ -822,12 +802,11 @@ public class RequestContainerV5 implements Runnable {
                     new CellMessage(new CellPath(_candidate), _query);
                 synchronized (_messageHash) {
                     try {
-                        _cell.sendMessage(envelope);
+                        sendMessage(envelope);
                         _waitingFor = envelope.getUOID();
                         _messageHash.put(_waitingFor, PoolRequestHandler.this);
                     } catch (Exception e) {
-                        esay("Can't send pool ping to " + _candidate + " :");
-                        esay(e);
+                        _log.warn("Can't send pool ping to " + _candidate + " :", e);
                     }
                 }
             }
@@ -912,7 +891,7 @@ public class RequestContainerV5 implements Runnable {
            // !!!!!!!!! remove this
            //
            //if( message instanceof PoolFetchFileMessage ){
-           //    say("mailForYou !!!!! reply ignored ") ;
+           //    _log.info("mailForYou !!!!! reply ignored ") ;
            //    return ;
            //}
            add( message ) ;
@@ -951,21 +930,13 @@ public class RequestContainerV5 implements Runnable {
            IllegalArgumentException("Error number must be > 0");
 
         }
+
         //...................................................................
         //
         // from now on, methods can only be called from within
         // the state mechanism. (which is thread save because
         // we only allow to run a single thread at a time.
         //
-        public void say(String message){
-           _cell.say(_pnfsId.toString()+" : "+message) ;
-        }
-        public void esay(String message){
-           _cell.esay(_pnfsId.toString()+" : "+message) ;
-        }
-        public void esay(Exception e){
-           _cell.esay(e) ;
-        }
         private void waitFor( long millis ){
            _waitUntil = System.currentTimeMillis() + millis ;
         }
@@ -1002,7 +973,7 @@ public class RequestContainerV5 implements Runnable {
             synchronized( _messageHash ){
                 if( ( _maxRestore >=0 ) &&
                     ( _messageHash.size() >= _maxRestore ) )return false ;
-                _cell.sendMessage( cellMessage );
+                sendMessage( cellMessage );
                 _poolMonitor.messageToCostModule( cellMessage ) ;
                 _messageHash.put( _waitingFor = cellMessage.getUOID() , this ) ;
                 _state = "Staging "+_formatter.format(new Date()) ;
@@ -1016,7 +987,7 @@ public class RequestContainerV5 implements Runnable {
             Pool2PoolTransferMsg pool2pool =
                   new Pool2PoolTransferMsg(sourcePool,destPool,_pnfsId,_storageInfo) ;
             pool2pool.setDestinationFileStatus( _destinationFileStatus ) ;
-            say("Sending pool2pool request : "+pool2pool);
+            _log.info("Sending pool2pool request : "+pool2pool);
 	    CellMessage cellMessage =
                 new CellMessage(
                                   new CellPath( destPool ),
@@ -1024,7 +995,7 @@ public class RequestContainerV5 implements Runnable {
                                 );
 
             synchronized( _messageHash ){
-                _cell.sendMessage( cellMessage );
+                sendMessage( cellMessage );
                 _poolMonitor.messageToCostModule( cellMessage ) ;
                 if( _waitingFor != null )_messageHash.remove( _waitingFor ) ;
                 _messageHash.put( _waitingFor = cellMessage.getUOID() , this ) ;
@@ -1050,11 +1021,11 @@ public class RequestContainerV5 implements Runnable {
                 }
                 try {
                     m.revertDirection();
-                    _cell.sendMessage(m);
+                    sendMessage(m);
                     _poolMonitor.messageToCostModule(m);
                 } catch (Exception e) {
-                    esay("Exception requestSucceeded : " + e);
-                    esay(e);
+                    _log.warn("Exception requestSucceeded : " + e);
+                    _log.warn(e);
                 }
                 messages.remove();
             }
@@ -1117,10 +1088,10 @@ public class RequestContainerV5 implements Runnable {
         private void add( Object obj ){
 
            synchronized( _fifo ){
-               say( "Adding Object : "+obj ) ;
+               _log.info( "Adding Object : "+obj ) ;
                _fifo.addFirst(obj) ;
                if( _stateEngineActive )return ;
-               say( "Starting Engine" ) ;
+               _log.info( "Starting Engine" ) ;
                _stateEngineActive = true ;
 
                _threadPool.invokeLater( new RunEngine() , "Read-"+_pnfsId ) ;
@@ -1129,7 +1100,7 @@ public class RequestContainerV5 implements Runnable {
         private void stateLoop(){
 
            Object inputObject ;
-           say( "ACTIVATING STATE ENGINE "+_pnfsId+" "+(System.currentTimeMillis()-_started)) ;
+           _log.info( "ACTIVATING STATE ENGINE "+_pnfsId+" "+(System.currentTimeMillis()-_started)) ;
 
            while( ! Thread.interrupted() ){
 
@@ -1147,7 +1118,7 @@ public class RequestContainerV5 implements Runnable {
               }
               _forceContinue = false ;
               try{
-                 say("StageEngine called in mode "+
+                 _log.info("StageEngine called in mode "+
                      ST_STRINGS[_mode]+
                      " with object "+
                         (  inputObject == null ?
@@ -1161,12 +1132,12 @@ public class RequestContainerV5 implements Runnable {
 
                  stateEngine( inputObject ) ;
 
-                 say("StageEngine left with   : "+ST_STRINGS[_mode]+
+                 _log.info("StageEngine left with   : "+ST_STRINGS[_mode]+
                      "  ("+ ( _forceContinue?"Continue":"Wait")+")");
 
               }catch(Exception ee ){
-                 esay("Unexpected Exception in state loop for "+_pnfsId+" : "+ee) ;
-                 esay(ee);
+                 _log.warn("Unexpected Exception in state loop for "+_pnfsId+" : "+ee) ;
+                 _log.warn(ee);
               }
            }
         }
@@ -1341,7 +1312,7 @@ public class RequestContainerV5 implements Runnable {
 
                        setError(0,"");
                        nextStep( ST_DONE , CONTINUE ) ;
-                       say("AskIfAvailable found the object");
+                       _log.info("AskIfAvailable found the object");
                        if (_sendHitInfo ) sendHitMsg(  _pnfsId, (_bestPool!=null)?_bestPool.getPoolName():"<UNKNOWN>", true );   //VP
 
                     }else if( rc == RT_NOT_FOUND ){
@@ -1392,7 +1363,7 @@ public class RequestContainerV5 implements Runnable {
                     }else if( rc == RT_ERROR ){
 
                        nextStep( ST_STAGE , CONTINUE ) ;
-                       say("AskIfAvailable returned an error, will continue with Staging");
+                       _log.info("AskIfAvailable returned an error, will continue with Staging");
 
                     }
 
@@ -1427,7 +1398,7 @@ public class RequestContainerV5 implements Runnable {
                             if( _enforceP2P ){
                                nextStep( ST_DONE , CONTINUE ) ;
                             }else if( _parameter._hasHsmBackend && _storageInfo.isStored() ){
-                               say("ST_POOL_2_POOL : Pool to pool not permitted, trying to stage the file");
+                               _log.info("ST_POOL_2_POOL : Pool to pool not permitted, trying to stage the file");
                                nextStep( ST_STAGE , CONTINUE ) ;
                             }else{
                                setError(265,"Pool to pool not permitted");
@@ -1435,7 +1406,7 @@ public class RequestContainerV5 implements Runnable {
                             }
                         }else{
                             _poolCandidateInfo = _bestPool ;
-                            say("ST_POOL_2_POOL : Choosing high cost pool "+_poolCandidateInfo.getPoolName());
+                            _log.info("ST_POOL_2_POOL : Choosing high cost pool "+_poolCandidateInfo.getPoolName());
 
                           if( _sendCostInfo )sendCostMsg(_pnfsId, _bestPool , false);
 
@@ -1445,14 +1416,14 @@ public class RequestContainerV5 implements Runnable {
 
                     }else if( rc == RT_S_COST_EXCEEDED ){
 
-                       say("ST_POOL_2_POOL : RT_S_COST_EXCEEDED");
+                       _log.info("ST_POOL_2_POOL : RT_S_COST_EXCEEDED");
 
                        if( _parameter._hasHsmBackend && _parameter._stageOnCost && _storageInfo.isStored() ){
 
                            if( _enforceP2P ){
                               nextStep( ST_DONE , CONTINUE ) ;
                            }else{
-                              say("ST_POOL_2_POOL : staging");
+                              _log.info("ST_POOL_2_POOL : staging");
                               nextStep( ST_STAGE , CONTINUE ) ;
                            }
                        }else{
@@ -1460,7 +1431,7 @@ public class RequestContainerV5 implements Runnable {
                           if( _bestPool != null ){
 
                               _poolCandidateInfo = _bestPool;
-                              say("ST_POOL_2_POOL : Choosing high cost pool "+_poolCandidateInfo.getPoolName());
+                              _log.info("ST_POOL_2_POOL : Choosing high cost pool "+_poolCandidateInfo.getPoolName());
 
                              if( _sendCostInfo )sendCostMsg(_pnfsId, _bestPool , false);
                              setError(0,"");
@@ -1494,7 +1465,7 @@ public class RequestContainerV5 implements Runnable {
 
                           if( _sendCostInfo )sendCostMsg(_pnfsId, _bestPool , false);
 
-                          say(" found high cost object");
+                          _log.info(" found high cost object");
 
                           setError(0,"");
                           nextStep( ST_DONE , CONTINUE ) ;
@@ -1566,10 +1537,10 @@ public class RequestContainerV5 implements Runnable {
                         //
                         //
                     }else{
-                        say("ST_POOL_2_POOL : Pool to pool reported a problem");
+                        _log.info("ST_POOL_2_POOL : Pool to pool reported a problem");
                         if( _parameter._hasHsmBackend && _storageInfo.isStored() ){
 
-                            say("ST_POOL_2_POOL : trying to stage the file");
+                            _log.info("ST_POOL_2_POOL : trying to stage the file");
                             nextStep( ST_STAGE , CONTINUE ) ;
 
                         }else{
@@ -1682,7 +1653,7 @@ public class RequestContainerV5 implements Runnable {
                                        new CellPath("PnfsManager") ,
                                        getStorageInfo ) ;
 
-              request = _cell.sendAndWait( request , 30000 ) ;
+              request = sendAndWait( request , 30000 ) ;
               if( request == null )
                  throw new
                  Exception("Timeout : PnfsManager request for storageInfo of "+_pnfsId);
@@ -1698,12 +1669,12 @@ public class RequestContainerV5 implements Runnable {
                            "File not found");
                   break;
               default:
-                  esay("Fetching storage info failed: " +
-                       getStorageInfo.getErrorObject());
+                  _log.warn("Fetching storage info failed: " +
+                            getStorageInfo.getErrorObject());
                   break;
               }
            }catch(Exception ee ){
-              esay("Fetching storage info failed : "+ee);
+               _log.warn("Fetching storage info failed : "+ee);
            }
         }
         private void outOfResources( String detail ){
@@ -1786,8 +1757,8 @@ public class RequestContainerV5 implements Runnable {
            }catch(Exception ee ){
               _currentRc = ee instanceof CacheException ? ((CacheException)ee).getRc() : 102 ;
               _currentRm = ee.getMessage();
-              esay("exerciseStageReply : "+ee ) ;
-              esay(ee);
+              _log.warn("exerciseStageReply : "+ee ) ;
+              _log.warn(ee);
               return RT_ERROR ;
            }
         }
@@ -1796,7 +1767,7 @@ public class RequestContainerV5 implements Runnable {
 
               if( messageArrived instanceof Pool2PoolTransferMsg ){
                  Pool2PoolTransferMsg reply = (Pool2PoolTransferMsg)messageArrived ;
-                 say("Pool2PoolTransferMsg replied with : "+reply);
+                 _log.info("Pool2PoolTransferMsg replied with : "+reply);
                  if( ( _currentRc = reply.getReturnCode() ) == 0 ){
                      _poolCandidateInfo = _p2pPoolCandidateInfo ;
                     return RT_OK ;
@@ -1819,8 +1790,8 @@ public class RequestContainerV5 implements Runnable {
            }catch(Exception ee ){
               _currentRc = ee instanceof CacheException ? ((CacheException)ee).getRc() : 102 ;
               _currentRm = ee.getMessage();
-              esay("exercisePool2PoolReply : "+ee ) ;
-              esay(ee);
+              _log.warn("exercisePool2PoolReply : "+ee ) ;
+              _log.warn(ee);
               return RT_ERROR ;
            }
         }
@@ -1884,7 +1855,7 @@ public class RequestContainerV5 implements Runnable {
 
                   err="Configuration Error : No entries in Permission Matrix for this request" ;
                   setError(130,err) ;
-                  esay("askIfAvailable : "+err);
+                  _log.warn("askIfAvailable : "+err);
                   return RT_ERROR ;
 
               }
@@ -1899,7 +1870,7 @@ public class RequestContainerV5 implements Runnable {
               // The file is not in the dCache at all.
               //
               if( _pnfsFileLocation.getAcknowledgedPnfsPools().size() == 0 ){
-                  say("askIfAvailable : file not in pool at all");
+                  _log.info("askIfAvailable : file not in pool at all");
                   return RT_NOT_FOUND ;
               }
               //
@@ -1907,7 +1878,7 @@ public class RequestContainerV5 implements Runnable {
               // we would be allowed to read it from.
               //
               if( _pnfsFileLocation.getAvailablePoolCount()  == 0 ){
-                  say("askIfAvailable : file in cache but not in read-allowed pool");
+                  _log.info("askIfAvailable : file in cache but not in read-allowed pool");
                   return RT_NOT_PERMITTED ;
               }
               //
@@ -1968,24 +1939,24 @@ public class RequestContainerV5 implements Runnable {
                     // better cost than the last one, so we have
                     // to correct here.
                     //
-                    say("askIfAvailable : allowFallback , recalculation best cost");
+                    _log.info("askIfAvailable : allowFallback , recalculation best cost");
                     _bestPool = Collections.min(
                                    tmpList ,
                                     _poolMonitor.getCostComparator(false,_parameter)
                                 ) ;
 
                  }
-                 say("askIfAvailable : cost exceeded on all available pools, "+
+                 _log.info("askIfAvailable : cost exceeded on all available pools, "+
                      "best pool would have been "+_bestPool);
                  return RT_COST_EXCEEDED ;
               }
 
               if( ( _parameter._panicCostCut > 0.0 ) && ( bestPoolPerformanceCost > _parameter._panicCostCut ) ){
-                 say("askIfAvailable : cost of best pool exceeds 'panic' level");
+                 _log.info("askIfAvailable : cost of best pool exceeds 'panic' level");
                  setError(125,"Cost of best pool exceeds panic level") ;
                  return RT_ERROR ;
               }
-              say("askIfAvailable : Found candidates : "+bestAv);
+              _log.info("askIfAvailable : Found candidates : "+bestAv);
               //
               //  this part is intended to get rid of duplicates if the
               //  load is decreasing.
@@ -2008,7 +1979,7 @@ public class RequestContainerV5 implements Runnable {
                        // (whatever that means)
                        //
                        String poolName = cost.getPoolName() ;
-                       say("askIfAvailable : "+poolName+" below "+_parameter._minCostCut+" : "+costValue);
+                       _log.info("askIfAvailable : "+poolName+" below "+_parameter._minCostCut+" : "+costValue);
                        list.put((_pnfsId.toString()+poolName).hashCode(), cost);
                     }
                  }
@@ -2018,7 +1989,7 @@ public class RequestContainerV5 implements Runnable {
               cost =
                   (list.size() > 0 ? list.get(list.firstKey()) : bestAv.get(0));
 
-              say( "askIfAvailable : candidate : "+cost ) ;
+              _log.info( "askIfAvailable : candidate : "+cost ) ;
 
 
               if( _sendCostInfo )sendCostMsg( _pnfsId, cost, false );
@@ -2029,12 +2000,12 @@ public class RequestContainerV5 implements Runnable {
               return RT_FOUND ;
 
            }catch(Exception ee ){
-              esay(err="Exception in getFileAvailableList : "+ee ) ;
-              esay(ee);
+              _log.warn(err="Exception in getFileAvailableList : "+ee ) ;
+              _log.warn(ee);
               setError(130,err) ;
               return RT_ERROR ;
            }finally{
-              say( "askIfAvailable : Took  "+(System.currentTimeMillis()-_started));
+              _log.info( "askIfAvailable : Took  "+(System.currentTimeMillis()-_started));
            }
 
         }
@@ -2076,7 +2047,7 @@ public class RequestContainerV5 implements Runnable {
 					//
 					// already too many copies of the file
 					//
-					say("askForPoolToPool : already too many copies : "
+					_log.info("askForPoolToPool : already too many copies : "
 							+ sources.size());
 					setError(133, "Not replicated : already too many copies : "
 							+ sources.size());
@@ -2089,7 +2060,7 @@ public class RequestContainerV5 implements Runnable {
 					//
 					// all source are too busy
 					//
-					say("askForPoolToPool : all p2p source(s) are too busy (cost > "
+					_log.info("askForPoolToPool : all p2p source(s) are too busy (cost > "
 							+ parameter._alertCostCut + ")");
 					setError(134,
 							"Not replicated : all p2p source(s) are too busy (cost > "
@@ -2113,7 +2084,7 @@ public class RequestContainerV5 implements Runnable {
 					setError(
 							136,
 							"Not replicated : No pool candidates available/configured/left for p2p or file already everywhere");
-					say("askForPoolToPool : No pool candidates available/configured/left for p2p or file already everywhere");
+					_log.info("askForPoolToPool : No pool candidates available/configured/left for p2p or file already everywhere");
 					return RT_NOT_PERMITTED;
 				}
 				//
@@ -2133,7 +2104,7 @@ public class RequestContainerV5 implements Runnable {
 				for (PoolCostCheckable dest : destinations) {
 					for (PoolCheckable src : sources) {
 						if (dest.getPoolName().equals( src.getPoolName()) ) {
-							say("removing pool "+dest.getPoolName()+" from dest pool list");
+							_log.info("removing pool "+dest.getPoolName()+" from dest pool list");
 							destinations.remove(dest);
 						}
 					}
@@ -2144,7 +2115,7 @@ public class RequestContainerV5 implements Runnable {
 					//
 					// file already everywhere
 					//
-					say("askForPoolToPool : file already everywhere");
+					_log.info("askForPoolToPool : file already everywhere");
 					setError(137, "Not replicated : file already everywhere");
 					return RT_NOT_PERMITTED;
 				}
@@ -2159,7 +2130,7 @@ public class RequestContainerV5 implements Runnable {
 							selected.add(cost);
 					}
 					if (selected.size() == 0) {
-						say("askForPoolToPool : All destination pools exceed cost "
+						_log.info("askForPoolToPool : All destination pools exceed cost "
 								+ maxCost);
 						setError(137,
 								"Not replicated : All destination pools exceed cost "
@@ -2212,7 +2183,7 @@ public class RequestContainerV5 implements Runnable {
 						if (bestEffortSourcePool == null) bestEffortSourcePool = sourceCost;
 						if (bestEffortDestinationPool == null) bestEffortDestinationPool = destinationCost;
 
-						say("p2p same host checking : "
+						_log.info("p2p same host checking : "
 								+ sourceCost.getPoolName() + " "
 								+ destinationCost.getPoolName());
 
@@ -2234,25 +2205,25 @@ public class RequestContainerV5 implements Runnable {
 //					ok, we could not find a pair on different hosts, what now?
 
 					if (parameter._allowSameHostCopy == PoolManagerParameter.P2P_SAME_HOST_BEST_EFFORT) {
-						say("P2P : sameHostCopy=bestEffort : couldn't find a src/dest-pair on different hosts, choosing pair with the least cost");
+						_log.info("P2P : sameHostCopy=bestEffort : couldn't find a src/dest-pair on different hosts, choosing pair with the least cost");
 						sourcePool = bestEffortSourcePool;
 						destinationPool = bestEffortDestinationPool;
 
 					} else if (parameter._allowSameHostCopy == PoolManagerParameter.P2P_SAME_HOST_NEVER) {
-						say("P2P : sameHostCopy=never : no matching pool found");
+						_log.info("P2P : sameHostCopy=never : no matching pool found");
 						setError(137,
 								"Not replicated : sameHostCopy=never : no matching pool found");
 						return RT_NOT_PERMITTED;
 
 					} else {
-						say("P2P : coding error, bad state");
+						_log.info("P2P : coding error, bad state");
 						setError(137,
 								"Not replicated : coding error, bad state");
 						return RT_NOT_PERMITTED;
 					}
 				}
 
-                say("P2P : source=" + sourcePool.getPoolName() + ";dest=" + destinationPool.getPoolName());
+                _log.info("P2P : source=" + sourcePool.getPoolName() + ";dest=" + destinationPool.getPoolName());
 
                 sendPool2PoolRequest(
                       (_p2pSourcePoolInfo    = sourcePool).getPoolName(),
@@ -2267,19 +2238,19 @@ public class RequestContainerV5 implements Runnable {
             } catch ( CacheException ce) {
 
                 setError( ce.getRc() , ce.getMessage());
-                esay(ce.toString());
+                _log.warn(ce.toString());
 
                 return RT_ERROR;
 
             } catch (Exception ee) {
 
                 setError( 128 , ee.getMessage());
-                _cell.esay(ee);
+                _log.warn(ee);
 
                 return RT_ERROR;
 
             } finally {
-                say("Selection pool 2 pool took : "+ (System.currentTimeMillis() - _started));
+                _log.info("Selection pool 2 pool took : "+ (System.currentTimeMillis() - _started));
             }
 
 		}
@@ -2342,7 +2313,7 @@ public class RequestContainerV5 implements Runnable {
                        // skip this one if we tried this last time
                        //
                        if( c.getPoolName().equals(_poolCandidateInfo.getPoolName()) &&  n.hasNext() ) {
-                           say("askFor "+mode+" : Second shot excluding : " + _poolCandidateInfo.getPoolName() ) ;
+                           _log.info("askFor "+mode+" : Second shot excluding : " + _poolCandidateInfo.getPoolName() ) ;
                            continue;
                        }
 
@@ -2415,7 +2386,7 @@ public class RequestContainerV5 implements Runnable {
 
                //_poolCandidate     = _poolCandidateInfo.getPoolName() ;
 
-               say( "askForStaging : poolCandidate -> "+_poolCandidateInfo.getPoolName());
+               _log.info( "askForStaging : poolCandidate -> "+_poolCandidateInfo.getPoolName());
 
                if( ! sendFetchRequest( _poolCandidateInfo.getPoolName() , _storageInfo ) )return RT_OUT_OF_RESOURCES ;
 
@@ -2429,19 +2400,19 @@ public class RequestContainerV5 implements Runnable {
            }catch( CacheException ce ){
 
                setError( ce.getRc() , ce.getMessage() );
-               esay( ce.toString() );
+               _log.warn( ce.toString() );
 
                return RT_NOT_FOUND ;
 
            }catch( Exception ee ){
 
               setError( 128 , ee.getMessage() );
-              esay(ee) ;
+              _log.warn(ee) ;
 
               return RT_ERROR ;
 
            }finally{
-              say( "Selection cache took : "+(System.currentTimeMillis()-_started));
+              _log.info( "Selection cache took : "+(System.currentTimeMillis()-_started));
            }
 
        }
@@ -2458,12 +2429,12 @@ public class RequestContainerV5 implements Runnable {
                                     rc , infoMessage )  ;
             info.setStorageInfo( storageInfo ) ;
 
-        _cell.sendMessage(
+        sendMessage(
          new CellMessage( new CellPath(_warningPath), info )
                              ) ;
 
       }catch(Exception ee){
-         esay("Coudn't send WarningInfoMessage : "+ee ) ;
+         _log.warn("Coudn't send WarningInfoMessage : "+ee ) ;
       }
     }
 
@@ -2479,7 +2450,7 @@ public class RequestContainerV5 implements Runnable {
           _cell.sendMessage(new CellMessage( new CellPath(_warningPath), msg));
         */
        }catch (Exception ee){
-          esay("Couldn't report cost for : "+pnfsId+" : "+ee);
+          _log.warn("Couldn't report cost for : "+pnfsId+" : "+ee);
        }
     }
 
@@ -2488,9 +2459,9 @@ public class RequestContainerV5 implements Runnable {
         try {
             PoolHitInfoMessage msg = new PoolHitInfoMessage(poolName, pnfsId);
             msg.setFileCached(cached);
-            _cell.sendMessage(new CellMessage( new CellPath(_warningPath), msg));
+            sendMessage(new CellMessage( new CellPath(_warningPath), msg));
         } catch (Exception ee) {
-            esay("Couldn't report hit info for : "+pnfsId+" : "+ee);
+            _log.warn("Couldn't report hit info for : "+pnfsId+" : "+ee);
         }
     }
 

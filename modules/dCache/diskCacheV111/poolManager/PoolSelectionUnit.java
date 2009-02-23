@@ -153,7 +153,6 @@ public interface PoolSelectionUnit  {
 	   public boolean isOnlineAllowed();
 	   public boolean isNearlineAllowed();
 	}
-   public void dumpSetup( StringBuffer setup ) throws Exception ;
    public SelectionPool getPool( String poolName ) ;
    public SelectionPool getPool( String poolName , boolean create ) ;
    public SelectionLink getLinkByName( String linkName ) throws NoSuchElementException ;
@@ -166,7 +165,6 @@ public interface PoolSelectionUnit  {
    public String    getVersion() ;
    public String getNetIdentifier( String address ) ;
    public String getProtocolUnit( String protocolUnitName ) ;
-   public void clear() ;
    public SelectionLinkGroup getLinkGroupByName(String linkGroupName) throws NoSuchElementException ;
    public String [] getLinkGroups();
    public String [] getLinksByGroupName(String linkGroupName) throws NoSuchElementException ;

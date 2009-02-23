@@ -22,7 +22,7 @@ public class LinkGroupInfoTest {
 
     private static GenericMockCellHelper _cell = new GenericMockCellHelper("LinkGroupInfoTestCell", "");
     private PoolSelectionUnit _selectionUnit;
-    private CostModule _costModule ;
+    private CostModuleV1 _costModule ;
     private CommandInterpreter _ci;
 
     @Before
@@ -30,7 +30,8 @@ public class LinkGroupInfoTest {
 
 
         _selectionUnit = new PoolSelectionUnitV2();
-        _costModule = new CostModuleV1(_cell);
+        _costModule = new CostModuleV1();
+        _costModule.setCellEndpoint(_cell);
         _ci = new CommandInterpreter(_selectionUnit);
 
         _ci.command( new Args("psu create pool p0" )  );

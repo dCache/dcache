@@ -24,7 +24,8 @@ public class CostModuleTest {
 
     @Before
     public void setUp() throws Exception {
-        _costModule = new CostModuleV1(_cell);
+        _costModule = new CostModuleV1();
+        _costModule.setCellEndpoint(_cell);
     }
 
     @Test

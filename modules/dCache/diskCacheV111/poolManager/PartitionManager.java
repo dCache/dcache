@@ -3,14 +3,20 @@ package diskCacheV111.poolManager ;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.io.Serializable;
+import java.io.PrintWriter;
 
-import dmg.cells.nucleus.CellAdapter;
 import dmg.util.Args;
 
-public class PartitionManager implements java.io.Serializable {
+import org.dcache.cells.CellCommandListener;
+import org.dcache.cells.AbstractCellComponent;
 
-    public static class Info implements java.io.Serializable  {
-
+public class PartitionManager
+    extends AbstractCellComponent
+    implements Serializable, CellCommandListener
+{
+    public static class Info implements Serializable
+    {
         private final String               _name ;
         private final PoolManagerParameter _parameter  ;
 
@@ -29,11 +35,9 @@ public class PartitionManager implements java.io.Serializable {
     }
     private final Info        _defaultPartitionInfo ;
     private final Map<String, Info>         _infoMap = new HashMap<String, Info>() ;
-    private final CellAdapter _adapter;
 
-    public PartitionManager( CellAdapter adapter ){
+    public PartitionManager(){
 
-       _adapter = adapter ;
        _defaultPartitionInfo  = new Info("default");
        _infoMap.put( "default" , _defaultPartitionInfo ) ;
 
@@ -438,102 +442,125 @@ public class PartitionManager implements java.io.Serializable {
     }
     private boolean _useLegacySetupPrintout = true ;
 
-    public void dumpSetup( StringBuffer sb ){
+    @Override
+    public void beforeSetup()
+    {
+        clear();
+    }
 
-        if( _useLegacySetupPrintout ){
-           dumpLegacyDefaultInfo( sb , _defaultPartitionInfo ) ;
-        }else{
+    @Override
+    public void printSetup(PrintWriter pw)
+    {
+        if (_useLegacySetupPrintout) {
+           dumpLegacyDefaultInfo(pw, _defaultPartitionInfo);
+        } else {
            Info info = _infoMap.get("default");
-           dumpInfo( sb , info ) ;
+           dumpInfo(pw, info);
         }
-        for( Info info : _infoMap.values() ){
-
-            if( info._name.equals("default") )continue ;
-
-            dumpInfo( sb , info ) ;
+        for (Info info: _infoMap.values()) {
+            if (info._name.equals("default"))
+                continue;
+            dumpInfo(pw, info);
         }
     }
-    private void dumpInfo( StringBuffer sb , Info info ){
 
-       PoolManagerParameter para = info._parameter ;
+    private void dumpInfo(PrintWriter pw, Info info)
+    {
+        PoolManagerParameter para = info._parameter;
 
-       sb.append("pm set ").append(info._name).append(" ") ;
-       dumpCostOptions( sb , para ) ;
-       sb.append("\n") ;
+        pw.append("pm set ").append(info._name).append(" ");
+        dumpCostOptions(pw, para);
+        pw.append("\n") ;
 
-       sb.append("pm set ").append(info._name).append(" ") ;
-       dumpThresholdOptions( sb , para ) ;
-       sb.append("\n");
+        pw.append("pm set ").append(info._name).append(" ");
+        dumpThresholdOptions(pw, para);
+        pw.append("\n");
 
-       sb.append("pm set ").append(info._name).append(" ") ;
-       dumpP2pOptions( sb , para ) ;
-       sb.append("\n");
+        pw.append("pm set ").append(info._name).append(" ");
+        dumpP2pOptions(pw, para);
+        pw.append("\n");
 
-       sb.append("pm set ").append(info._name).append(" ") ;
-       dumpStageOptions( sb , para ) ;
-       sb.append("\n");
+        pw.append("pm set ").append(info._name).append(" ");
+        dumpStageOptions(pw, para);
+        pw.append("\n");
 
-       sb.append("pm set ").append(info._name).append(" ") ;
-       dumpMiscOptions( sb , para ) ;
-       sb.append("\n");
-
+        pw.append("pm set ").append(info._name).append(" ");
+        dumpMiscOptions(pw, para);
+        pw.append("\n");
     }
-    private void dumpCostOptions( StringBuffer sb , PoolManagerParameter para ){
-       sb.append(" -cpucostfactor=").append(para._performanceCostFactor).
-          append(" -spacecostfactor=").append(para._spaceCostFactor) ;
+
+    private void dumpCostOptions(PrintWriter pw, PoolManagerParameter para)
+    {
+        pw.append(" -cpucostfactor=").print(para._performanceCostFactor);
+        pw.append(" -spacecostfactor=").print(para._spaceCostFactor);
     }
-    private void dumpThresholdOptions( StringBuffer sb , PoolManagerParameter para ){
-       sb.append(" -idle=").append(para._minCostCut).
-          append(" -p2p=").append(para._costCut).
-          append(" -alert=").append(para._alertCostCut).
-          append(" -halt=").append(para._panicCostCut).
-          append(" -fallback=").append(para._fallbackCostCut) ;
+
+    private void dumpThresholdOptions(PrintWriter pw, PoolManagerParameter para)
+    {
+        pw.append(" -idle=").print(para._minCostCut);
+        pw.append(" -p2p=").print(para._costCut);
+        pw.append(" -alert=").print(para._alertCostCut);
+        pw.append(" -halt=").print(para._panicCostCut);
+        pw.append(" -fallback=").print(para._fallbackCostCut);
     }
-    private void dumpP2pOptions( StringBuffer sb , PoolManagerParameter para ){
-       if( ! para._p2pAllowed ){
-           sb.append(" -p2p-allowed=false") ;
-       }else{
-           sb.append(" -p2p-allowed") ;
-           if( para._p2pOnCost )sb.append(" -p2p-oncost") ;
-           if( para._p2pForTransfer )sb.append(" -p2p-fortransfer");
-       }
+
+    private void dumpP2pOptions(PrintWriter pw, PoolManagerParameter para)
+    {
+        if (!para._p2pAllowed) {
+            pw.append(" -p2p-allowed=false");
+        } else {
+            pw.append(" -p2p-allowed");
+            if (para._p2pOnCost)
+                pw.append(" -p2p-oncost");
+            if (para._p2pForTransfer)
+                pw.append(" -p2p-fortransfer");
+        }
     }
-    private void dumpStageOptions( StringBuffer sb , PoolManagerParameter para ){
-       if( ! para._hasHsmBackend ){
-           sb.append(" -stage-allowed=false") ;
-       }else{
-           sb.append(" -stage-allowed") ;
-           if( para._stageOnCost )sb.append(" -stage-oncost") ;
-       }
+
+    private void dumpStageOptions(PrintWriter pw, PoolManagerParameter para)
+    {
+        if (!para._hasHsmBackend) {
+            pw.append(" -stage-allowed=false");
+        } else {
+            pw.append(" -stage-allowed");
+            if (para._stageOnCost)
+                pw.append(" -stage-oncost");
+        }
     }
-    private void dumpMiscOptions( StringBuffer sb , PoolManagerParameter para ){
-        sb.append(" -max-copies=").append(para._maxPnfsFileCopies) ;
+
+    private void dumpMiscOptions(PrintWriter pw, PoolManagerParameter para)
+    {
+        pw.append(" -max-copies=").print(para._maxPnfsFileCopies);
     }
+
     /**
       *   legacy output
       */
-    private void dumpLegacyDefaultInfo( StringBuffer sb , Info info ){
+    private void dumpLegacyDefaultInfo(PrintWriter pw, Info info)
+    {
+        PoolManagerParameter para = info._parameter;
 
-       PoolManagerParameter para = info._parameter ;
+        pw.append("set pool decision");
+        dumpCostOptions(pw, para);
+        pw.append("\n");
 
-       sb.append("set pool decision") ;
-       dumpCostOptions( sb , para ) ;
-       sb.append("\n") ;
+        pw.append("set costcuts") ;
+        dumpThresholdOptions(pw, para);
+        pw.append("\n");
 
-       sb.append("set costcuts") ;
-       dumpThresholdOptions( sb , para ) ;
-       sb.append("\n");
-
-       dumpP2pDefaultOptions( sb , para ) ;
-
+        dumpP2pDefaultOptions(pw, para);
     }
-    private void dumpP2pDefaultOptions( StringBuffer sb , PoolManagerParameter para ){
-       sb.append("rc set p2p " ).append(para._p2pAllowed ? "on":"off").append("\n");
-       if( para._p2pOnCost )sb.append("rc set p2p oncost\n" );
-       if( para._p2pForTransfer )sb.append("rc set p2p fortransfer\n" );
-       sb.append("rc set stage oncost ").append(para._stageOnCost?"on":"off").append("\n");
-       sb.append("rc set stage ").append(para._hasHsmBackend?"on":"off").append("\n");
-       sb.append("rc set slope ").append(para._slope).append("\n");
-       sb.append("rc set max copies ").append(para._maxPnfsFileCopies).append("\n");
+
+    private void dumpP2pDefaultOptions(PrintWriter pw, PoolManagerParameter para)
+    {
+        pw.append("rc set p2p " ).println(para._p2pAllowed ? "on":"off");
+        if (para._p2pOnCost)
+            pw.println("rc set p2p oncost");
+        if (para._p2pForTransfer )
+            pw.println("rc set p2p fortransfer");
+        pw.append("rc set stage oncost ").println(para._stageOnCost?"on":"off");
+        pw.append("rc set stage ").println(para._hasHsmBackend?"on":"off");
+        pw.append("rc set slope ").println(para._slope);
+        pw.append("rc set max copies ").println(para._maxPnfsFileCopies);
     }
 }

@@ -6,8 +6,14 @@ import  dmg.util.Args ;
 import diskCacheV111.pools.PoolCostInfo;
 import  diskCacheV111.vehicles.PoolCostCheckable ;
 import  java.io.PrintWriter ;
+import org.dcache.cells.AbstractCellComponent;
+import org.dcache.cells.CellCommandListener;
 
-public class DummyCostModule implements CostModule {
+public class DummyCostModule
+    extends AbstractCellComponent
+    implements CostModule,
+               CellCommandListener
+{
 
    private CellAdapter _cell = null ;
 
@@ -27,21 +33,23 @@ public class DummyCostModule implements CostModule {
    public String ac_cm_$_0_99( Args args ){
      return "Ok (DUMMY)";
    }
-   public void getInfo( StringBuffer sb ){
-      sb.append( " Submodule CostModule (cm) : ").
-         append(this.getClass().getName()).
-         append("\n $Id: DummyCostModule.java,v 1.2 2006-10-10 13:50:50 tigran Exp $\n\n") ;
-   }
-   public void getInfo( PrintWriter pw ){
-      StringBuffer sb = new StringBuffer() ;
-      getInfo(sb) ;
-      pw.print(sb.toString());
-   }
-   public void dumpSetup( StringBuffer sb ){
-      sb.append( "#\n# Submodule CostModule (cm) : ").
-         append(this.getClass().getName()).
-         append("\n# $Id: DummyCostModule.java,v 1.2 2006-10-10 13:50:50 tigran Exp $\n#\n") ;
-   }
+
+    @Override
+    public void getInfo(PrintWriter pw)
+    {
+        pw.append( " Submodule CostModule (cm) : ").
+            append(this.getClass().getName()).
+            append("\n $Id: DummyCostModule.java,v 1.2 2006-10-10 13:50:50 tigran Exp $\n\n");
+    }
+
+    @Override
+    public void printSetup(PrintWriter pw)
+    {
+        pw.append( "#\n# Submodule CostModule (cm) : ").
+            append(this.getClass().getName()).
+            append("\n# $Id: DummyCostModule.java,v 1.2 2006-10-10 13:50:50 tigran Exp $\n#\n");
+    }
+
    public PoolCostInfo getPoolCostInfo(String poolName) {
 	// TODO Auto-generated method stub
 	return null;

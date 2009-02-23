@@ -24,12 +24,11 @@ create dmg.cells.services.LocationManager lm \
        "${serviceLocatorHost} ${serviceLocatorPort}"
 #
 #
-create diskCacheV111.poolManager.PoolManagerV5 PoolManager \
-   "${config}/PoolManager.conf \
-       -threadPool=diskCacheV111.util.ThreadPoolNG \
-       -replyObject \
-       -poolStatusRelay=broadcast \
-       -costModule=diskCacheV111.poolManager.CostModuleV1"
+create org.dcache.cells.UniversalSpringCell PoolManager \
+   "classpath:diskCacheV111/poolManager/poolmanager.xml \
+    -setupFile=${config}/PoolManager.conf \
+    -export \
+    -replyObject"
 #
 create diskCacheV111.hsmControl.DummyStager Prestager "${config}"
 

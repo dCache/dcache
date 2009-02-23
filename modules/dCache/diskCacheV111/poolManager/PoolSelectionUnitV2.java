@@ -20,6 +20,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Pattern;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 import org.apache.log4j.Logger;
 
@@ -28,8 +30,14 @@ import dmg.util.CommandSyntaxException;
 
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.pools.PoolV2Mode;
+import org.dcache.cells.CellCommandListener;
+import org.dcache.cells.AbstractCellComponent;
 
-public class PoolSelectionUnitV2 implements PoolSelectionUnit {
+public class PoolSelectionUnitV2
+    extends AbstractCellComponent
+    implements PoolSelectionUnit,
+               CellCommandListener
+{
 
     private static final String __version = "$Id: PoolSelectionUnitV2.java,v 1.42 2007-10-25 14:03:54 tigran Exp $";
     private static final Logger _logPoolSelection = Logger.getLogger("logger.org.dcache.poolselection."+PoolSelectionUnitV2.class.getName());
@@ -705,103 +713,110 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
         return list.toArray(new String[list.size()]);
     }
 
-    public void dumpSetup(StringBuffer sb) {
+    @Override
+    public void beforeSetup()
+    {
+          clear();
+    }
 
+    @Override
+    public void printSetup(PrintWriter pw)
+    {
         _psuReadLock.lock();
         try {
 
-            sb.append("#\n# Printed by ").append(this.getClass().getName())
+            pw.append("#\n# Printed by ").append(getClass().getName())
                     .append(" at ").append(new Date().toString()).append(
                             "\n#\n#\n");
-            sb.append("#\n# The units ...\n#\n");
+            pw.append("#\n# The units ...\n#\n");
             for (Unit unit : _units.values()) {
                 int type = unit._type;
-                sb.append("psu create unit ").append(
+                pw.append("psu create unit ").append(
                         type == STORE ? "-store " : type == DCACHE ? "-dcache"
                                 : type == PROTOCOL ? "-protocol" : "-net   ")
                         .append(" ").append(unit.getName()).append("\n");
             }
-            sb.append("#\n# The unit Groups ...\n#\n");
+            pw.append("#\n# The unit Groups ...\n#\n");
             for (UGroup group : _uGroups.values()) {
-                sb.append("psu create ugroup ").append(group.getName()).append(
+                pw.append("psu create ugroup ").append(group.getName()).append(
                         "\n");
                 for (Unit unit : group._unitList.values()) {
-                    sb.append("psu addto ugroup ").append(group.getName())
+                    pw.append("psu addto ugroup ").append(group.getName())
                             .append(" ").append(unit.getName()).append("\n");
                 }
             }
-            sb.append("#\n# The pools ...\n#\n");
+            pw.append("#\n# The pools ...\n#\n");
             for (Pool pool : _pools.values()) {
-                sb.append("psu create pool ").append(pool.getName());
+                pw.append("psu create pool ").append(pool.getName());
 
                 if (!pool.isPing())
-                    sb.append(" -noping");
+                    pw.append(" -noping");
                 if (!pool.isEnabled())
-                    sb.append(" -disabled");
+                    pw.append(" -disabled");
 
-                sb.append("\n");
+                pw.append("\n");
             }
-            sb.append("#\n# The pool groups ...\n#\n");
+            pw.append("#\n# The pool groups ...\n#\n");
             for (PGroup group : _pGroups.values()) {
-                sb.append("psu create pgroup ").append(group.getName()).append(
+                pw.append("psu create pgroup ").append(group.getName()).append(
                         "\n");
                 for (Pool pool : group._poolList.values()) {
-                    sb.append("psu addto pgroup ").append(group.getName())
+                    pw.append("psu addto pgroup ").append(group.getName())
                             .append(" ").append(pool.getName()).append("\n");
                 }
             }
-            sb.append("#\n# The links ...\n#\n");
+            pw.append("#\n# The links ...\n#\n");
             for (Link link : _links.values()) {
-                sb.append("psu create link ").append(link.getName());
+                pw.append("psu create link ").append(link.getName());
                 for (UGroup group : link._uGroupList.values()) {
-                    sb.append(" ").append(group.getName());
+                    pw.append(" ").append(group.getName());
                 }
-                sb.append("\n");
-                sb.append("psu set link ").append(link.getName()).append(" ")
-                        .append(link.getAttraction()).append("\n");
+                pw.append("\n");
+                pw.append("psu set link ").append(link.getName()).append(" ")
+                        .println(link.getAttraction());
                 for (PoolCore poolCore : link._poolList.values()) {
-                    sb.append("psu add link ").append(link.getName()).append(
-                            " ").append(poolCore.getName()).append("\n");
+                    pw.append("psu add link ").append(link.getName()).append(
+                            " ").println(poolCore.getName());
                 }
             }
 
-            sb.append("#\n# The link Groups ...\n#\n");
+            pw.append("#\n# The link Groups ...\n#\n");
             for (LinkGroup linkGroup : _linkGroups.values()) {
-                sb.append("psu create linkGroup ").append(linkGroup.getName());
-                sb.append("\n");
+                pw.append("psu create linkGroup ").append(linkGroup.getName());
+                pw.append("\n");
 
-                sb.append("psu set linkGroup custodialAllowed ").append(
-                        linkGroup.getName()).append(" ").append(
-                        linkGroup.isCustodialAllowed()).append("\n");
-                sb.append("psu set linkGroup replicaAllowed ").append(
-                        linkGroup.getName()).append(" ").append(
-                        linkGroup.isReplicaAllowed()).append("\n");
-                sb.append("psu set linkGroup nearlineAllowed ").append(
-                        linkGroup.getName()).append(" ").append(
-                        linkGroup.isNearlineAllowed()).append("\n");
-                sb.append("psu set linkGroup outputAllowed ").append(
-                        linkGroup.getName()).append(" ").append(
-                        linkGroup.isOutputAllowed()).append("\n");
-                sb.append("psu set linkGroup onlineAllowed ").append(
-                        linkGroup.getName()).append(" ").append(
-                        linkGroup.isOnlineAllowed()).append("\n");
+                pw.append("psu set linkGroup custodialAllowed ").append(
+                        linkGroup.getName()).append(" ").println(
+                        linkGroup.isCustodialAllowed());
+                pw.append("psu set linkGroup replicaAllowed ").append(
+                        linkGroup.getName()).append(" ").println(
+                        linkGroup.isReplicaAllowed());
+                pw.append("psu set linkGroup nearlineAllowed ").append(
+                        linkGroup.getName()).append(" ").println(
+                        linkGroup.isNearlineAllowed());
+                pw.append("psu set linkGroup outputAllowed ").append(
+                        linkGroup.getName()).append(" ").println(
+                        linkGroup.isOutputAllowed());
+                pw.append("psu set linkGroup onlineAllowed ").append(
+                        linkGroup.getName()).append(" ").println(
+                        linkGroup.isOnlineAllowed());
 
                 for (Map.Entry<String, Set<String>> aAttribute : linkGroup
                         .attributes().entrySet()) {
 
                     String attributeName = aAttribute.getKey();
                     for (String aAttributeValue : aAttribute.getValue()) {
-                        sb.append("psu set linkGroup attribute ").append(
+                        pw.append("psu set linkGroup attribute ").append(
                                 linkGroup.getName()).append(" ").append(
-                                attributeName).append("=").append(
-                                aAttributeValue).append("\n");
+                                attributeName).append("=").println(
+                                aAttributeValue);
                     }
                 }
 
                 for (SelectionLink link : linkGroup.links()) {
-                    sb.append("psu addto linkGroup ").append(
-                            linkGroup.getName()).append(" ").append(
-                            link.getName()).append("\n");
+                    pw.append("psu addto linkGroup ").append(
+                            linkGroup.getName()).append(" ").println(
+                            link.getName());
                 }
             }
 
@@ -2491,13 +2506,11 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
     }
 
     public String hh_psu_dump_setup = "";
-
-    public String ac_psu_dump_setup(Args args) {
-        StringBuffer sb = new StringBuffer(4 * 1024);
-
-        // no lock required, while method does it
-        dumpSetup(sb);
-        return sb.toString();
+    public String ac_psu_dump_setup(Args args)
+    {
+        StringWriter s = new StringWriter();
+        printSetup(new PrintWriter(s));
+        return s.toString();
     }
 
     //
