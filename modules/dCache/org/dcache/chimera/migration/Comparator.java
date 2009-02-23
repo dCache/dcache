@@ -13,7 +13,7 @@ import java.io.FileReader;
 
 import org.dcache.chimera.namespace.ChimeraNameSpaceProvider;
 
-public class Comperator {
+public class Comparator {
 
     private static void pass(String msg, boolean pass) {
         if (!pass) {
