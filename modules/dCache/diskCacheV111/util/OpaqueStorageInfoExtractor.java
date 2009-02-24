@@ -4,6 +4,7 @@
 package diskCacheV111.util;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 
 import diskCacheV111.namespace.StorageInfoProvider;
@@ -21,7 +22,7 @@ import diskCacheV111.vehicles.StorageInfo;
  */
 public class OpaqueStorageInfoExtractor extends OsmInfoExtractor {
 
-    private static final URI DUMMY_URI = URI.create("dummy://unknown-HSM/unknown-path");
+    private static final URI DUMMY_URI = URI.create("osm://unknown-HSM/unknown-path");
 
     // FIXME: this should be configurable.
     private final int _pnfsLevel = 3;
@@ -40,17 +41,26 @@ public class OpaqueStorageInfoExtractor extends OsmInfoExtractor {
 
         PnfsFile pnfsFile = PnfsFile.getFileByPnfsId( pnfsMountpoint , pnfsId );
 
-        if( pnfsFile == null )
-            throw new CacheException( 37 , "Not a valid PnfsId "+pnfsId ) ;
+        if (pnfsFile != null && pnfsFile.isLink())
+            try {
+                pnfsFile = new PnfsFile( pnfsFile.getCanonicalPath());
+            } catch (final IOException e) {
+                throw new CacheException( 37, "Failed to dereference link with ID "
+                        + pnfsId);
+            }
 
-        // NB we assume that this file has no level-1 content
-        StorageInfo info = extractFile( pnfsMountpoint, pnfsFile);
+        if (pnfsFile == null)
+            throw new CacheException( 37, "Not a valid PNFS ID " + pnfsId);
+
+        final StorageInfo info = super.getStorageInfo( pnfsMountpoint, pnfsId);
 
         // Manually add a dummy URI if the required level is present.
-        File levelFile = pnfsFile.getLevelFile( _pnfsLevel);
+        if (pnfsFile.isFile()) {
+            File levelFile = pnfsFile.getLevelFile( _pnfsLevel);
 
-        if( levelFile.length() > 0)
-            info.addLocation( DUMMY_URI);
+            if (levelFile.length() > 0)
+                info.addLocation( DUMMY_URI);
+        }
 
         return info;
     }
