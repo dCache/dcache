@@ -7,6 +7,7 @@ import java.util.Properties;
 import org.apache.log4j.Logger;
 import org.dcache.chimera.acl.ACE;
 import org.dcache.chimera.acl.ACL;
+import org.dcache.chimera.acl.ACLException;
 import org.dcache.chimera.acl.config.AclConfig;
 import org.dcache.chimera.acl.enums.RsType;
 import org.dcache.chimera.acl.handler.AclHandler;
@@ -119,7 +120,7 @@ public class AclCell extends CellAdapter {
             "The extra format is suitable for the setfacl command. \n" +
             "See the help for that command for more details.";
 
-     public String ac_getfacl_$_1(Args args) throws Exception {
+     public String ac_getfacl_$_1(Args args) throws ACLException, CacheException {
 
         if ( args.argc() < 1 )
             throw new IllegalArgumentException("Usage : getfacl <pnfsId>|<globalPath> ");
@@ -142,7 +143,7 @@ public class AclCell extends CellAdapter {
 
         if ( acl != null ) {
             _logger.info("getfacl Response: " + acl.toString());
-            return acl.toString();
+            return acl.toExtraFormat();
         } else
             return "ACL for the object rsId = " + rsId + "  does not exist.";
     }
