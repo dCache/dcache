@@ -169,7 +169,7 @@ public class DcacheFileMetaData extends org.dcache.srm.FileMetaData {
     
     public boolean isGroupMember(SRMUser user) {
         try {
-            return Integer.parseInt(group) == ((AuthorizationRecord) user).getUid();
+            return Integer.parseInt(group) == ((AuthorizationRecord) user).getGid();
         } catch (NumberFormatException nfe) {
             logger.error("group is not a number: "+group,nfe);
             throw nfe;
