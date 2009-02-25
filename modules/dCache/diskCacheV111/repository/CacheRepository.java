@@ -11,12 +11,6 @@ import diskCacheV111.util.event.CacheRepositoryListener ;
 
 public interface CacheRepository
 {
-   public static final int ERROR_IO_DISK = 204 ;
-   public static final int ALLOW_CONTROL_RECOVERY = 0x1 ;
-   public static final int ALLOW_INFO_RECOVERY    = 0x2 ;
-   public static final int ALLOW_SPACE_RECOVERY   = 0x4 ;
-   public static final int ALLOW_RECOVER_ANYWAY       = 0x8 ;
-
    public CacheRepositoryEntry createEntry( PnfsId pnfsId )
           throws CacheException ;
 	/**

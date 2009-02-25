@@ -24,6 +24,7 @@ import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.RepositoryEntryHealer;
 import org.dcache.pool.repository.CacheEntryLRUOrder;
 import org.dcache.pool.repository.DuplicateEntryException;
+import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.v3.RepositoryException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
@@ -403,7 +404,7 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
                     "Overbooked, " + usedDataSpace +
                     " bytes of data exceeds inventory size of " +
                     total + " bytes";
-                if ((flags & ALLOW_SPACE_RECOVERY) == 0)
+                if ((flags & Repository.ALLOW_SPACE_RECOVERY) == 0)
                     throw new CacheException(206, error);
 
                 _log.error(error);
@@ -452,7 +453,8 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
             _stickyInspector = new StickyInspector(_allEntries.values());
             addCacheRepositoryListener(_stickyInspector);
         } catch (IOException e) {
-            throw new CacheException(ERROR_IO_DISK , "Failed to load repository: " + e);
+            throw new CacheException(CacheException.ERROR_IO_DISK,
+                                     "Failed to load repository: " + e);
         } catch (InterruptedException e) {
             throw new CacheException("Inventory was interrupted");
         } finally {

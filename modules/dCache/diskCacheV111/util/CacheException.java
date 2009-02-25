@@ -14,6 +14,11 @@ public class CacheException extends Exception {
     private final String _message;
 
     /**
+     * Disk I/O error.
+     */
+    public final static int ERROR_IO_DISK = 204 ;
+
+    /**
      * Usually followed by component shutdown.
      */
     public final static int PANIC             = 10000 ;

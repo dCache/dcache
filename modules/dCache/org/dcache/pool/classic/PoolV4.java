@@ -46,6 +46,7 @@ import org.dcache.pool.repository.AbstractStateChangeListener;
 import org.dcache.pool.repository.StateChangeEvent;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.Account;
+import org.dcache.pool.repository.Repository;
 import org.dcache.pool.p2p.P2PClient;
 import org.dcache.pool.movers.MoverProtocol;
 import org.dcache.cells.CellCommandListener;
@@ -55,7 +56,6 @@ import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.pools.SpaceSweeper;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolCellInfo;
-import diskCacheV111.repository.CacheRepository;
 import diskCacheV111.repository.CacheRepositoryEntryInfo;
 import diskCacheV111.repository.RepositoryCookie;
 import diskCacheV111.util.AccessLatency;
@@ -226,18 +226,18 @@ public class PoolV4
 
         String recover = _args.getOpt("recover-control");
         if ((recover != null) && (!recover.equals("no"))) {
-            _recoveryFlags |= CacheRepository.ALLOW_CONTROL_RECOVERY;
+            _recoveryFlags |= Repository.ALLOW_CONTROL_RECOVERY;
             _log.info("Enabled : recover-control");
         }
         recover = _args.getOpt("recover-space");
         if ((recover != null) && (!recover.equals("no"))) {
-            _recoveryFlags |= CacheRepository.ALLOW_SPACE_RECOVERY;
+            _recoveryFlags |= Repository.ALLOW_SPACE_RECOVERY;
             _log.info("Enabled : recover-space");
         }
 
         recover = _args.getOpt("recover-anyway");
         if ((recover != null) && (!recover.equals("no"))) {
-            _recoveryFlags |= CacheRepository.ALLOW_RECOVER_ANYWAY;
+            _recoveryFlags |= Repository.ALLOW_RECOVER_ANYWAY;
             _log.info("Enabled : recover-anyway");
         }
 
@@ -831,11 +831,11 @@ public class PoolV4
         pw.println("Gap               : " + _gap);
         pw.println("Report remove     : " + (_reportOnRemovals ? "on" : "off"));
         pw.println("Recovery          : "
-                   + ((_recoveryFlags & CacheRepository.ALLOW_CONTROL_RECOVERY) > 0 ? "CONTROL "
+                   + ((_recoveryFlags & Repository.ALLOW_CONTROL_RECOVERY) > 0 ? "CONTROL "
                       : "")
-                   + ((_recoveryFlags & CacheRepository.ALLOW_SPACE_RECOVERY) > 0 ? "SPACE "
+                   + ((_recoveryFlags & Repository.ALLOW_SPACE_RECOVERY) > 0 ? "SPACE "
                       : "")
-                   + ((_recoveryFlags & CacheRepository.ALLOW_RECOVER_ANYWAY) > 0 ? "ANYWAY "
+                   + ((_recoveryFlags & Repository.ALLOW_RECOVER_ANYWAY) > 0 ? "ANYWAY "
                       : ""));
         pw.println("Pool Mode         : " + _poolMode);
         if (_poolMode.isDisabled()) {
@@ -1254,9 +1254,9 @@ public class PoolV4
             } catch (CacheException e) {
                 rc = e.getRc();
                 msg = e.getMessage();
-                if (rc == CacheRepository.ERROR_IO_DISK) {
+                if (rc == CacheException.ERROR_IO_DISK) {
                     disablePool(PoolV2Mode.DISABLED_STRICT,
-                                CacheRepository.ERROR_IO_DISK,
+                                CacheException.ERROR_IO_DISK,
                                 msg);
                 }
                 rc = e.getRc();
@@ -1678,7 +1678,7 @@ public class PoolV4
             return msg;
         } catch (CacheException e) {
             _log.error(e);
-            if (e.getRc() == CacheRepository.ERROR_IO_DISK)
+            if (e.getRc() == CacheException.ERROR_IO_DISK)
                 disablePool(PoolV2Mode.DISABLED_STRICT,
                             e.getRc(), e.getMessage());
             throw e;

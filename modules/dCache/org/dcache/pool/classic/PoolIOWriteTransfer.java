@@ -16,7 +16,6 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.pool.movers.MoverProtocol;
 import org.dcache.pool.movers.ChecksumMover;
-import diskCacheV111.repository.CacheRepository;
 
 import dmg.cells.nucleus.NoRouteToCellException;
 
@@ -146,7 +145,7 @@ public class PoolIOWriteTransfer
                 raf.close();
             }
         } catch (FileNotFoundException e) {
-            throw new CacheException(CacheRepository.ERROR_IO_DISK,
+            throw new CacheException(CacheException.ERROR_IO_DISK,
                                      "File could not be created; please check the file system");
 
         }

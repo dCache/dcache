@@ -25,7 +25,6 @@ import org.dcache.net.ProtocolConnectionPool;
 import org.dcache.net.ProtocolConnectionPoolFactory;
 import org.dcache.pool.repository.Allocator;
 
-import diskCacheV111.repository.CacheRepository;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.Checksum;
 import diskCacheV111.util.DCapProrocolChallenge;
@@ -515,7 +514,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
                         String errmsg = "WRITE denied (IO not ok)";
                         esay(errmsg);
-                        cntOut.writeACK(DCapConstants.IOCMD_WRITE,CacheRepository.ERROR_IO_DISK,errmsg);
+                        cntOut.writeACK(DCapConstants.IOCMD_WRITE,CacheException.ERROR_IO_DISK,errmsg);
                         socketChannel.write(cntOut.buffer());
 
                     }else if((access & MoverProtocol.WRITE) != 0){
@@ -536,7 +535,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                             socketChannel.write(cntOut.buffer());
                         }else{
                             esay("Reporting IO problem to client");
-                            cntOut.writeFIN(DCapConstants.IOCMD_WRITE,CacheRepository.ERROR_IO_DISK,
+                            cntOut.writeFIN(DCapConstants.IOCMD_WRITE,CacheException.ERROR_IO_DISK,
                                             "[2]Problem in writing");
                             socketChannel.write(cntOut.buffer());
                         }
@@ -545,7 +544,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
                         String errmsg = "WRITE denied (not allowed)";
                         esay(errmsg);
-                        cntOut.writeACK(DCapConstants.IOCMD_WRITE,CacheRepository.ERROR_IO_DISK,errmsg);
+                        cntOut.writeACK(DCapConstants.IOCMD_WRITE,CacheException.ERROR_IO_DISK,errmsg);
                         socketChannel.write(cntOut.buffer());
 
                     }
@@ -576,14 +575,14 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                         }else{
                             String errmsg = "FIN : READ failed (IO not ok)";
                             esay(errmsg);
-                            cntOut.writeFIN(DCapConstants.IOCMD_READ,CacheRepository.ERROR_IO_DISK,errmsg);
+                            cntOut.writeFIN(DCapConstants.IOCMD_READ,CacheException.ERROR_IO_DISK,errmsg);
                             socketChannel.write(cntOut.buffer());
                         }
                     }else{
 
                         String errmsg = "ACK : READ denied (IO not ok)";
                         esay(errmsg);
-                        cntOut.writeACK(DCapConstants.IOCMD_READ,CacheRepository.ERROR_IO_DISK,errmsg);
+                        cntOut.writeACK(DCapConstants.IOCMD_READ,CacheException.ERROR_IO_DISK,errmsg);
                         socketChannel.write(cntOut.buffer());
 
                     }
@@ -646,14 +645,14 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                         }else{
                             String errmsg = "FIN : SEEK_READ failed (IO not ok)";
                             esay(errmsg);
-                            cntOut.writeFIN(DCapConstants.IOCMD_SEEK_AND_READ,CacheRepository.ERROR_IO_DISK,errmsg);
+                            cntOut.writeFIN(DCapConstants.IOCMD_SEEK_AND_READ,CacheException.ERROR_IO_DISK,errmsg);
                             socketChannel.write(cntOut.buffer());
                         }
 
                     }else{
                         String errmsg = "SEEK_AND_READ denied : IOError " ;
                         esay(errmsg);
-                        cntOut.writeACK(DCapConstants.IOCMD_SEEK_AND_READ,CacheRepository.ERROR_IO_DISK,errmsg);
+                        cntOut.writeACK(DCapConstants.IOCMD_SEEK_AND_READ,CacheException.ERROR_IO_DISK,errmsg);
                         socketChannel.write(cntOut.buffer());
                     }
                     break;
@@ -686,14 +685,14 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                         }else{
                             String errmsg = "SEEK_AND_WRITE failed : IOError";
                             esay(errmsg);
-                            cntOut.writeFIN(DCapConstants.IOCMD_SEEK_AND_WRITE,CacheRepository.ERROR_IO_DISK,errmsg);
+                            cntOut.writeFIN(DCapConstants.IOCMD_SEEK_AND_WRITE,CacheException.ERROR_IO_DISK,errmsg);
                             socketChannel.write(cntOut.buffer());
                         }
 
                     }else{
                         String errmsg = "SEEK_AND_WRITE denied : IOError";
                         esay(errmsg);
-                        cntOut.writeACK(DCapConstants.IOCMD_SEEK_AND_WRITE,CacheRepository.ERROR_IO_DISK,errmsg);
+                        cntOut.writeACK(DCapConstants.IOCMD_SEEK_AND_WRITE,CacheException.ERROR_IO_DISK,errmsg);
                         socketChannel.write(cntOut.buffer());
                     }
                     break;
@@ -715,7 +714,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                             esay("Problem in close block "+ee);
                         }
                     }else{
-                        cntOut.writeACK(DCapConstants.IOCMD_CLOSE,CacheRepository.ERROR_IO_DISK,"IOError");
+                        cntOut.writeACK(DCapConstants.IOCMD_CLOSE,CacheException.ERROR_IO_DISK,"IOError");
                         socketChannel.write(cntOut.buffer());
                     }
                     notDone = false;
@@ -758,14 +757,14 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                             }else{
                                 String errmsg = "FIN : READV failed (IO not ok)";
                                 esay(errmsg);
-                                cntOut.writeFIN(DCapConstants.IOCMD_READV,CacheRepository.ERROR_IO_DISK,errmsg);
+                                cntOut.writeFIN(DCapConstants.IOCMD_READV,CacheException.ERROR_IO_DISK,errmsg);
                                 socketChannel.write(cntOut.buffer());
                             }
                         }else{
 
                             String errmsg = "ACK : READV denied (IO not ok)";
                             esay(errmsg);
-                            cntOut.writeACK(DCapConstants.IOCMD_READV,CacheRepository.ERROR_IO_DISK,errmsg);
+                            cntOut.writeACK(DCapConstants.IOCMD_READV,CacheException.ERROR_IO_DISK,errmsg);
                             socketChannel.write(cntOut.buffer());
 
                         }
@@ -834,7 +833,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
             if(! _io_ok) {
                 throw new
                     CacheException(
-                                   CacheRepository.ERROR_IO_DISK,
+                                   CacheException.ERROR_IO_DISK,
                                    "Disk I/O Error " +
                                    (ioException!=null?ioException.toString():"")    );
             }else{
