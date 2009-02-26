@@ -3,6 +3,7 @@
 # chkconfig: 345 25 75
 # description: chimera nfs3 startup script
 
+PORTMAP_PORT=111
 
 if [  -z ${ourHomeDir} ]
 then
@@ -15,13 +16,44 @@ pfile=/var/run/chimera-nfsv3.pid
 . ${ourHomeDir}/classes/extern.classpath
 . ${ourHomeDir}/config/dCacheSetup
 
+#
+#  If the system SunRPC portmap service isn't running, Chimera will start
+#  an internal one.  The waitForChimera routine assumes that portmap is
+#  running, so we must wait for this to happen.
+waitForPortmap()
+{
+    netstat -na|grep [^0-9]$PORTMAP_PORT >/dev/null
+
+    if [ $? -eq 0 ]; then
+      return 0
+    fi
+
+    echo -n "Waiting for portmap server: "
+    for try in 1 2 3 4 5 6 7 8 9 10 too-much; do
+        netstat -na|grep [^0-9]$PORTMAP_PORT >/dev/null
+        if [ $? -eq 0 ]; then
+            echo
+            break
+        else
+            echo -n "."
+        fi
+
+        if [ "x$try"  = "xtoo-much" ]; then
+            echo
+            echo "Chimera portmap is taking too long; carrying on"
+            break
+        else
+            sleep 1
+        fi
+    done
+}
 
 waitForChimera()
 {
     echo -n "Waiting for NFS server to register itself: "
-    for try in 1 2 3 4 5 6 7 too-much; do 
+    for try in 1 2 3 4 5 6 7 too-much; do
         rpcinfo -p localhost|grep 100003 >/dev/null
-        if [ $? == 0 ]; then
+        if [ $? -eq 0 ]; then
             echo
             break
         else
@@ -58,6 +90,7 @@ dCacheChimeraStart()
   ${ourHomeDir}/config/chimera-config.xml > ${log} 2>&1 &
   echo $! > ${pfile}
 
+  waitForPortmap
   waitForChimera
 }
 
