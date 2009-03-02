@@ -35,7 +35,6 @@ onerror continue
   set context -c metaDataRepositoryImport org.dcache.pool.repository.meta.EmptyMetaDataStore
   set context -c gsiftpReadAhead        16777216
   set context -c allowCleaningPreciousFiles false
-  set context -c poolupDestination      PoolManager
   set context -c pnfsmanager            PnfsManager
   set context -c flushMessageTarget     broadcast
   set context -c sweeper                org.dcache.pool.classic.SpaceSweeper2
