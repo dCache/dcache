@@ -13,6 +13,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Timer;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
@@ -27,9 +28,10 @@ import dmg.util.Args;
 
 import org.dcache.chimera.DbConnectionInfo;
 import org.dcache.chimera.XMLconfig;
+import org.dcache.services.hsmcleaner.BroadcastRegistrationTask;
 
 import diskCacheV111.vehicles.PoolRemoveFilesMessage;
-import diskCacheV111.vehicles.PoolStatusChangedMessage;
+import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 
 /**
  * @author Irina Kozlova
@@ -53,20 +55,34 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
 
     private final Object _sleepLock = new Object();
 
-    private long _recoverTimer = 120000L; // 2 min in milliseconds
+    private long _recoverTimer = 1800000L; // 30 min in milliseconds
 
     // how many files will be processed at once, default 100 :
     private int _processAtOnce = 100;
 
     private Connection _dbConnection;
 
+    private final static String POOLUP_MESSAGE =
+        "diskCacheV111.vehicles.PoolManagerPoolUpMessage";
+
     /**
-     * list of pools which is excluded for cleanup
+     * Task for periodically registering the cleaner at the broadcast
+     * to receive pool up messages.
+     */
+    private final BroadcastRegistrationTask _broadcastRegistration;
+
+    /**
+     * Timer used for implementing timeouts.
+     */
+    private Timer _timer = new Timer();
+
+    /**
+     * List of pools that are excluded from cleanup
      */
     private final Map<String, Long> _poolsBlackList = new ConcurrentHashMap<String, Long>();
 
     /**
-     * logger
+     * Logger
      */
     private static final Logger _logNamespace = Logger.getLogger("logger.org.dcache.namespace."+ ChimeraCleaner.class.getName());
 
@@ -79,6 +95,11 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
         _nucleus = getNucleus();
 
         useInterpreter(true);
+
+        CellPath me = new CellPath(_cellName, _nucleus.getCellDomainName());
+        _broadcastRegistration =
+            new BroadcastRegistrationTask(this, POOLUP_MESSAGE, me);
+        _timer.schedule(_broadcastRegistration, 0, 300000); // 5 minutes
 
         XMLconfig config = new XMLconfig( new File( _args.getOpt("chimeraConfig") ) );
         // for now we are looking for fsid==0 only
@@ -417,7 +438,10 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
 
             _logNamespace.info("runDelete(): Now processing pool : "+ thisPool);
 
+            //only if pool is not in poolsBlackPool start cleaning
+            if (! _poolsBlackList.containsKey(thisPool)) {
             cleanPoolComplete(_dbConnection, thisPool);
+            }
 
         }
     }
@@ -548,24 +572,19 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
     @Override
     public void messageArrived(CellMessage message) {
         Object obj = message.getMessageObject();
-        if (obj instanceof PoolStatusChangedMessage) {
-            PoolStatusChangedMessage poolStatusChangedMessage = (PoolStatusChangedMessage) obj;
+        if (obj instanceof PoolManagerPoolUpMessage) {
+        	PoolManagerPoolUpMessage poolManagerPoolUpMessage = (PoolManagerPoolUpMessage) obj;
+            String poolName = poolManagerPoolUpMessage.getPoolName();
 
-            if (poolStatusChangedMessage.getDetailCode() == PoolStatusChangedMessage.RESTART ||
-                        poolStatusChangedMessage.getDetailCode() == PoolStatusChangedMessage.UP ) {
-
-                if(_logNamespace.isDebugEnabled()) {
-                _logNamespace.debug("original htBlackPools.toString()="+ _poolsBlackList.toString());
+            //if pool is Enabled now and is in poolsBlackList, then remove this pool from poolsBlackList
+            if ( poolManagerPoolUpMessage.getPoolMode().isEnabled() && _poolsBlackList.containsKey(poolName) ) {
+                _poolsBlackList.remove(poolName);
                 }
 
-                _poolsBlackList.remove(poolStatusChangedMessage.getPoolName());
-
-
-                if(_logNamespace.isDebugEnabled()) {
-                _logNamespace.debug(" after deleting pool=" + poolStatusChangedMessage.getPoolName());
-                _logNamespace.debug(" new htBlackPools.toString()="+ _poolsBlackList.toString());
+            //if pool is Disabled now and it is not in poolsBlackList, then put this pool into poolsBlackList
+            if ( poolManagerPoolUpMessage.getPoolMode().isDisabled() && !_poolsBlackList.containsKey(poolName) ) {
+                _poolsBlackList.put(poolName, Long.valueOf(System.currentTimeMillis()));
                 }
-            }
             return;
         }
         _logNamespace.error("Unexpected message arrived from : " + message.getSourcePath()
@@ -628,13 +647,12 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
 
                         }
                         removeFiles(dbConnection, poolName, okRemoved);
-                    }
-
+                    } else if (okRemoved == null) {
+                        _poolsBlackList.put(poolName, Long.valueOf(System.currentTimeMillis()));
                     if(_logNamespace.isDebugEnabled()) {
-                    	if (okRemoved == null){
-                    		 _logNamespace.debug("***okRemoved == null***  all submitted files could NOT be deleted from pool "+poolName);
+                                _logNamespace.debug("cleanPoolComplete: put in poolsBlackList poolName= "+ poolName +
+                                                    " and time="+ System.currentTimeMillis());
                     	}
-
                     }
 
                     counter = 0;
@@ -793,8 +811,12 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
     public String ac_clean_pool_$_1(Args args) throws Exception {
 
         String poolName = args.argv(0);
+        if (! _poolsBlackList.containsKey(poolName)) {
         cleanPoolComplete(_dbConnection, poolName);
         return "";
+        } else {
+            return "This pool is not available for the moment and therefore will not be cleaned.";
+    }
     }
 
     public static String hh_set_refresh = "<refreshTimeInSeconds> # > 5 [-wakeup] (Time must be greater than 5 seconds)" ;
