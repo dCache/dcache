@@ -133,6 +133,8 @@
 			<filename name="**/cells.jar" />
 			<filename name="**/dcache.jar" />
 			<filename name="Chimera/chimera-core.jar" />
+                        <filename name="dbcp/commons-pool.jar" />
+                        <filename name="dbcp/commons-dbcp.jar" />
 		    <filename name="Chimera/chimera-acl.jar" />
 			<filename name="log4j/log4j-1.2.8.jar" />
 		</or>
