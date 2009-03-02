@@ -25,8 +25,10 @@ import org.dcache.chimera.posix.Stat;
 import org.dcache.tests.cells.CellAdapterHelper;
 
 import diskCacheV111.namespace.PnfsManagerV3;
+import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsCreateDirectoryMessage;
@@ -216,7 +218,7 @@ public class PnfsManagerTest {
     @Test
     public void testWriteTokenTag() throws ChimeraFsException {
 
-        // use back boor to create the tag
+        // use back door to create the tag
         FsInode dirInode = _fs.path2inode("/pnfs/testRoot");
         _fs.createTag(dirInode, "WriteToken");
 
@@ -233,6 +235,43 @@ public class PnfsManagerTest {
 
     }
 
+    @Test
+    public void testDefaultALandRP() throws ChimeraFsException {
+
+
+        /*
+         * this test relays on the fact that default values in PnfsManager
+         * is CUSTODIAL/NEARLINE
+         */
+
+        // use back door to create the tag
+        FsInode dirInode = _fs.path2inode("/pnfs/testRoot");
+        _fs.createTag(dirInode, "AccessLatency");
+        _fs.createTag(dirInode, "RetentionPolicy");
+
+
+        String al = "ONLINE";
+        String rp = "OUTPUT";
+
+        _fs.setTag(dirInode, "AccessLatency", al.getBytes(), 0, al.getBytes().length );
+        _fs.setTag(dirInode, "RetentionPolicy", rp.getBytes(), 0, rp.getBytes().length);
+
+
+        PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/testDefaultALandRP");
+
+        _pnfsManager.createEntry(pnfsCreateEntryMessage);
+
+        StorageInfo storageInfo = pnfsCreateEntryMessage.getStorageInfo();
+
+        assertEquals("AccessLatensy is not taken from the parent directory",
+                AccessLatency.ONLINE,
+                storageInfo.getAccessLatency());
+
+        assertEquals("RetentionPolicy is not taken from the parent directory",
+                RetentionPolicy.OUTPUT,
+                storageInfo.getRetentionPolicy());
+
+    }
 
     @Test
     public void testRemoveByPath() throws ChimeraFsException {
