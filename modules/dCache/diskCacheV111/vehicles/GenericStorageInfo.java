@@ -6,12 +6,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
 
 public class GenericStorageInfo implements StorageInfo,
 java.io.Serializable {
 
+    private static Logger _logger = Logger.getLogger( GenericStorageInfo.class);
 
     static final long serialVersionUID = 2089636591513548893L;
 
@@ -50,6 +53,7 @@ java.io.Serializable {
         _hsm = hsm;
     }
 
+    @Deprecated
     public void addKeys(Map<String, String> keys) {
         _keyHash.putAll(keys);
     }
@@ -79,10 +83,12 @@ java.io.Serializable {
         return _hsm;
     }
 
+    @Deprecated
     public String getKey(String key) {
         return _keyHash.get(key);
     }
 
+    @Deprecated
     public Map<String, String> getMap() {
         return new HashMap<String, String>(_keyHash);
     }
@@ -191,6 +197,7 @@ java.io.Serializable {
         _isNew = isNew;
     }
 
+    @Deprecated
     public void setKey(String key, String value) {
         if (value == null) {
             _keyHash.remove(key);
@@ -248,6 +255,65 @@ java.io.Serializable {
             }
         }
         return sb.toString();
+    }
+
+    @Override
+    public int hashCode() {
+        return getAccessLatency().hashCode() ^
+        getRetentionPolicy().hashCode() ^
+        locations().hashCode() ^
+        (int) getFileSize() ^
+        getStorageClass().hashCode() ^
+        (isStored() ? 1 << 0 : 0) ^
+        (isCreatedOnly() ? 1 << 1 : 0);
+    }
+
+    @Override
+    public boolean equals( Object o) {
+
+        if ( o == this) return true;
+
+        if( !( o instanceof GenericStorageInfo )) return false;
+
+        GenericStorageInfo other = (GenericStorageInfo)o;
+
+        if ( !other.getAccessLatency().equals( this.getAccessLatency()) ) return false;
+        if ( !other.getRetentionPolicy().equals( this.getRetentionPolicy()) ) return  false;
+
+        if( ! other.locations().equals(this.locations())) return false;
+
+        /**
+         *  If two GenericStorageInfo objects have location URIs specified then we ignore any
+         *  BitfieldId values.
+         */
+        if( this.locations().isEmpty()) {
+            if ( other.getBitfileId() != null && this.getBitfileId() != null  &&
+                    ! other.getBitfileId().equals(this.getBitfileId() )) return false;
+
+            if ( other.getBitfileId() != null && this.getBitfileId() == null  ) return false;
+            if ( other.getBitfileId() == null && this.getBitfileId() != null  ) return false;
+        }
+
+        if( !other.getHsm().equals(this.getHsm() )) return false;
+
+        if( other.getCacheClass() != null && this.getCacheClass() != null &&
+                !other.getCacheClass().equals(this.getCacheClass())) return false;
+
+        if( other.getCacheClass() == null && this.getCacheClass() != null ) return false;
+        if( other.getCacheClass() != null && this.getCacheClass() == null ) return false;
+
+        /**
+         *  We deliberately choose not to test _keyHash, since the use of any information
+         *  populated by PnfsManager in this field is deprecated.
+         */
+
+        if( other.getFileSize() != this.getFileSize() ) return false;
+        if( !other.getStorageClass().equals(this.getStorageClass())) return false;
+
+        if( other.isStored() != this.isStored() ) return false;
+        if( other.isCreatedOnly() != this.isCreatedOnly() ) return false;
+
+        return true;
     }
 
 
