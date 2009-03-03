@@ -35,7 +35,6 @@ onerror continue
   set context -c metaDataRepositoryImport ""
   set context -c gsiftpReadAhead        16777216
   set context -c allowCleaningPreciousFiles false
-  set context -c poolupDestination      PoolManager
   set context -c pnfsmanager            PnfsManager
   set context -c flushMessageTarget     broadcast
   set context -c sweeper                org.dcache.pool.classic.SpaceSweeper2
@@ -46,14 +45,13 @@ onerror shutdown
 # Set poolupDestination to broadcast if hsmCleaner is enabled
 #
 onerror continue
+set env poolupDestination PoolManager
 define env hsmCleanerEnabled endDefine
-  set context -c poolupDestination broadcast
+  set env poolupDestination broadcast
 endDefine
 eval ${hsmCleaner} enabled ==
 exec env hsmCleanerEnabled -run -ifok
-set context -c poolupDestination PoolManager
 onerror shutdown
-
 
 #
 # NIO ftp mover
