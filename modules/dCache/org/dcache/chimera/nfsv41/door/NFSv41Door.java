@@ -40,8 +40,10 @@ import org.dcache.chimera.nfs.v4.stateid4;
 import org.dcache.chimera.nfs.v4.uint32_t;
 import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
 
+import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.PoolDeliverFileMessage;
 import diskCacheV111.vehicles.PoolIoFileMessage;
@@ -83,7 +85,7 @@ public class NFSv41Door extends CellAdapter implements NFSv41DeviceManager {
     private JdbcFs _fs = null;
 
     /** storage info extractor */
-    private final ChimeraStorageInfoExtractable _storageInfoExctractor = new ChimeraOsmStorageInfoExtractor();
+    private final ChimeraStorageInfoExtractable _storageInfoExctractor;
 
     /** cell name of PoolManager */
     private final String _poolManagerName = "PoolManager";
@@ -99,6 +101,29 @@ public class NFSv41Door extends CellAdapter implements NFSv41DeviceManager {
 
             _nucleus = getNucleus();
             _args = getArgs();
+
+            AccessLatency defaultAccessLatency;
+            String accessLatensyOption = _args.getOpt("DefaultAccessLatency");
+            if( accessLatensyOption != null && accessLatensyOption.length() > 0) {
+                /*
+                 * IllegalArgumentException thrown if option is invalid
+                 */
+                defaultAccessLatency = AccessLatency.getAccessLatency(accessLatensyOption);
+            }else{
+                defaultAccessLatency = StorageInfo.DEFAULT_ACCESS_LATENCY;
+            }
+
+            RetentionPolicy defaultRetentionPolicy;
+            String retentionPolicyOption = _args.getOpt("DefaultRetentionPolicy");
+            if( retentionPolicyOption != null && retentionPolicyOption.length() > 0) {
+                /*
+                 * IllegalArgumentException thrown if option is invalid
+                 */
+                defaultRetentionPolicy = RetentionPolicy.getRetentionPolicy(retentionPolicyOption);
+            }else{
+                defaultRetentionPolicy = StorageInfo.DEFAULT_RETENTION_POLICY;
+            }            
+            _storageInfoExctractor = new ChimeraOsmStorageInfoExtractor(defaultAccessLatency, defaultRetentionPolicy);
 
             XMLconfig config = new XMLconfig(new File(_args
                     .getOpt("chimeraConfig")));

@@ -4,6 +4,7 @@
 package org.dcache.chimera.namespace;
 
 import java.io.File;
+import java.lang.reflect.Constructor;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -28,10 +29,12 @@ import diskCacheV111.namespace.CacheLocationProvider;
 import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.namespace.StorageInfoProvider;
 
+import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.util.FileNotFoundCacheException;
 import dmg.cells.nucleus.CellNucleus;
@@ -54,8 +57,32 @@ public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoP
 	    _fs = new JdbcFs(  config );
 	    _args = args;
 
-	    Class<ChimeraStorageInfoExtractable> exClass = (Class<ChimeraStorageInfoExtractable>) Class.forName( _args.argv(0)) ;
-        _extractor = exClass.newInstance() ;
+        diskCacheV111.util.AccessLatency defaultAccessLatency;
+        String accessLatensyOption = args.getOpt("DefaultAccessLatency");
+            if( accessLatensyOption != null && accessLatensyOption.length() > 0) {
+                /*
+                 * IllegalArgumentException thrown if option is invalid
+                 */
+                defaultAccessLatency = diskCacheV111.util.AccessLatency.getAccessLatency(accessLatensyOption);
+            }else{
+                defaultAccessLatency = StorageInfo.DEFAULT_ACCESS_LATENCY;
+            }
+
+            diskCacheV111.util.RetentionPolicy defaultRetentionPolicy;
+            String retentionPolicyOption = args.getOpt("DefaultRetentionPolicy");
+            if( retentionPolicyOption != null && retentionPolicyOption.length() > 0) {
+                /*
+                 * IllegalArgumentException thrown if option is invalid
+                 */
+                defaultRetentionPolicy = diskCacheV111.util.RetentionPolicy.getRetentionPolicy(retentionPolicyOption);
+            }else{
+                defaultRetentionPolicy = StorageInfo.DEFAULT_RETENTION_POLICY;
+            }
+
+        Class<ChimeraStorageInfoExtractable> exClass = (Class<ChimeraStorageInfoExtractable>) Class.forName( _args.argv(0)) ;
+        Constructor<ChimeraStorageInfoExtractable>  extractorInit =
+            exClass.getConstructor(AccessLatency.class, RetentionPolicy.class);
+        _extractor =  extractorInit.newInstance(defaultAccessLatency, defaultRetentionPolicy);
 
     }
 

@@ -3,8 +3,11 @@
 package diskCacheV111.util ;
 
 import  diskCacheV111.vehicles.* ;
+import dmg.util.Args;
+
 import  java.util.* ;
 import  java.io.* ;
+import java.lang.reflect.Constructor;
 
 import java.util.HashMap;
 
@@ -12,10 +15,24 @@ import java.util.HashMap;
 public class       GenericInfoExtractor
        implements  StorageInfoExtractable {
 
+    /**
+     * default access latency for newly created files
+     */
+    private final diskCacheV111.util.AccessLatency _defaultAccessLatency;
+
+    /**
+     * default retention policy for newly created files
+     */
+    private final diskCacheV111.util.RetentionPolicy _defaultRetentionPolicy;
+
+    public GenericInfoExtractor(AccessLatency defaultAL, RetentionPolicy defaultRP) {
+
+        _defaultAccessLatency = defaultAL;
+        _defaultRetentionPolicy = defaultRP;
+    }
 
 
-
-   private HashMap _extractors = new HashMap();
+   private Map<String, StorageInfoExtractable> _extractors = new HashMap();
 
 
    public void setStorageInfo(String pnfsMountpoint, PnfsId pnfsId, StorageInfo storageInfo, int accessMode) throws CacheException {
@@ -23,9 +40,9 @@ public class       GenericInfoExtractor
       StorageInfoExtractable extr = null ;
 
       if( storageInfo instanceof OSMStorageInfo ){
-          extr = new OsmInfoExtractor() ;
+          extr = new OsmInfoExtractor(_defaultAccessLatency, _defaultRetentionPolicy) ;
       }else if( storageInfo instanceof EnstoreStorageInfo ){
-          extr = new EnstoreInfoExtractor() ;
+          extr = new EnstoreInfoExtractor(_defaultAccessLatency, _defaultRetentionPolicy) ;
       }else{
           try{
 
@@ -102,11 +119,14 @@ public class       GenericInfoExtractor
           StorageInfoExtractable extr = null ;
 
 
-          extr = (StorageInfoExtractable)_extractors.get(className);
+          extr = _extractors.get(className);
 
           if( extr == null ) {
               try{
-                 extr = (StorageInfoExtractable)Class.forName(className).newInstance() ;
+                 Class<StorageInfoExtractable> extractorClass = (Class<StorageInfoExtractable>)Class.forName(className);
+                 Constructor<StorageInfoExtractable>  extractorInit = 
+                     extractorClass.getConstructor(AccessLatency.class, RetentionPolicy.class);
+                 extr =  extractorInit.newInstance(_defaultAccessLatency, _defaultRetentionPolicy);
                  _extractors.put(className, extr);
               }catch(Exception ee ){
                  throw new
@@ -172,22 +192,6 @@ public class       GenericInfoExtractor
            ( cacheClass.length() > 0 ) )return "lfs" ;
 
        return null ;
-    }
-
-    public static void main( String [] args ) throws Exception {
-       if( args.length < 2 ){
-          System.err.println( "Usage : ... <mp> <pnfsId>" ) ;
-          System.exit(4);
-       }
-       StorageInfoExtractable sie = new GenericInfoExtractor() ;
-
-       StorageInfo info = sie.getStorageInfo( args[0] , new PnfsId(args[1]) ) ;
-       System.out.println( "java class        = ["+info.getClass().getName()+"]") ;
-       System.out.println( "object.toString() = "+info.toString() ) ;
-       System.out.println( "storage class     = "+info.getStorageClass() ) ;
-       System.out.println( "cache class       = "+info.getCacheClass() ) ;
-       System.out.println( "hsm               = "+info.getHsm() ) ;
-       System.exit(0);
     }
 
 }

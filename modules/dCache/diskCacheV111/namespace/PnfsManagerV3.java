@@ -91,16 +91,6 @@ public class PnfsManagerV3 extends CellAdapter {
      */
     SortedMap<String,Integer> _pathToDBCache = new TreeMap();
 
-    /**
-     * default access latency for newly created files
-     */
-    private final AccessLatency _defaultAccessLatency;
-
-    /**
-     * default retention policy for newly created files
-     */
-    private final RetentionPolicy _defaultRetentionPolicy;
-
     private static class StatItem {
 
         private final String _name ;
@@ -288,27 +278,6 @@ public class PnfsManagerV3 extends CellAdapter {
             DcacheNameSpaceProviderFactory storageInfoProviderFactory = (DcacheNameSpaceProviderFactory) Class.forName(storageInfo_provider).newInstance();
             _storageInfoProvider = (StorageInfoProvider)storageInfoProviderFactory.getProvider(_args, _nucleus);
 
-
-            String accessLatensyOption = _args.getOpt("DefaultAccessLatency");
-            if( accessLatensyOption != null && accessLatensyOption.length() > 0) {
-                /*
-                 * IllegalArgumentException thrown if option is invalid
-                 */
-                _defaultAccessLatency = AccessLatency.getAccessLatency(accessLatensyOption);
-            }else{
-                _defaultAccessLatency = AccessLatency.NEARLINE;
-            }
-
-            String retentionPolicyOption = _args.getOpt("DefaultRetentionPolicy");
-            if( retentionPolicyOption != null && retentionPolicyOption.length() > 0) {
-                /*
-                 * IllegalArgumentException thrown if option is invalid
-                 */
-                _defaultRetentionPolicy = RetentionPolicy.getRetentionPolicy(retentionPolicyOption);
-            }else{
-                _defaultRetentionPolicy = RetentionPolicy.CUSTODIAL;
-            }
-
             String queueMaxSizeOption = _args.getOpt("queueMaxSize");
             int queueMaxSize =  queueMaxSizeOption == null ? 0 : Integer.parseInt(queueMaxSizeOption);
             //
@@ -366,9 +335,6 @@ public class PnfsManagerV3 extends CellAdapter {
         pw.println( _cacheLocationProvider.toString() );
         pw.println( "StorageInfo Provider: " );
         pw.println( _storageInfoProvider.toString() );
-        pw.println();
-        pw.println("Default Access   Latency: " + _defaultAccessLatency);
-        pw.println("Default Retention Policy: " + _defaultRetentionPolicy);
         pw.println();
         pw.println("Threads (" + _fifos.length + ") Queue");
         for (int i = 0; i < _fifos.length; i++) {
@@ -1133,21 +1099,6 @@ public class PnfsManagerV3 extends CellAdapter {
         	FileMetaData metadata = new FileMetaData(false, pnfsMessage.getUid(), pnfsMessage.getGid(), pnfsMessage.getMode());
             pnfsId = _nameSpaceProvider.createEntry( pnfsMessage.getPath(),metadata, false );
 
-
-            /*
-             * apply defaults
-             *
-             * TODO: as soon as pnfs obsolete we can move this functionality in Chimera
-             * as a database trigger
-             *
-             */
-             StorageInfo si = new GenericStorageInfo();
-             si.setAccessLatency(_defaultAccessLatency);
-             si.isSetAccessLatency(true);
-             si.setRetentionPolicy(_defaultRetentionPolicy);
-             si.isSetRetentionPolicy(true);
-             _storageInfoProvider.setStorageInfo(pnfsId, si, StorageInfoProvider.SI_OVERWRITE);
-
             pnfsMessage.setPnfsId(pnfsId);
             pnfsMessage.setSucceeded();
 
@@ -1162,7 +1113,18 @@ public class PnfsManagerV3 extends CellAdapter {
             try{
                 say( "Trying to get storageInfo for "+pnfsId) ;
 
-                StorageInfo info = _storageInfoProvider.getStorageInfo( pnfsId)  ;
+                StorageInfo info = _storageInfoProvider.getStorageInfo( pnfsId);
+
+                /*
+                 * store current values of access latency and retention policy
+                 */
+                info.isSetAccessLatency(true);
+                info.isSetRetentionPolicy(true);
+                _storageInfoProvider.setStorageInfo(pnfsId, info, StorageInfoProvider.SI_OVERWRITE);
+
+                info.isSetAccessLatency(false);
+                info.isSetRetentionPolicy(false);
+
                 info.setKey("path", pnfsMessage.getPath() );
 
                 /*

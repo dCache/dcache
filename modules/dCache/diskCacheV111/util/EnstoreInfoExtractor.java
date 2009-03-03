@@ -7,6 +7,22 @@ import  java.io.* ;
 public class       EnstoreInfoExtractor
        implements  StorageInfoExtractable {
 
+    /**
+     * default access latency for newly created files
+     */
+    private final diskCacheV111.util.AccessLatency _defaultAccessLatency;
+
+    /**
+     * default retention policy for newly created files
+     */
+    private final diskCacheV111.util.RetentionPolicy _defaultRetentionPolicy;
+
+    public EnstoreInfoExtractor(AccessLatency defaultAL, RetentionPolicy defaultRP) {
+
+        _defaultAccessLatency = defaultAL;
+        _defaultRetentionPolicy = defaultRP;
+    }
+
    public void setStorageInfo( String pnfsMountpoint , PnfsId pnfsId ,
                                StorageInfo storageInfo , int accessMode )
            throws CacheException {
@@ -122,6 +138,9 @@ public class       EnstoreInfoExtractor
         	   }catch(IllegalArgumentException iae) {
         		   // TODO: do we fail here or not?
         	   }
+           }else{
+               // force default
+               info.setAccessLatency(_defaultAccessLatency);
            }
 
            if(retentionPolicy != null) {
@@ -131,6 +150,9 @@ public class       EnstoreInfoExtractor
         	   }catch(IllegalArgumentException iae) {
         		   // TODO: do we fail here or not?
         	   }
+           }else{
+               // force default
+               info.setRetentionPolicy(_defaultRetentionPolicy);
            }
 
            if( spaceToken != null ) {
@@ -235,18 +257,4 @@ public class       EnstoreInfoExtractor
         return info ;
 
     }
-    public static void main( String [] args ) throws Exception {
-       if( args.length < 2 ){
-          System.err.println( "Usage : ... <mp> <pnfsId>" ) ;
-          System.exit(4);
-       }
-       StorageInfoExtractable sie = new EnstoreInfoExtractor() ;
-
-       StorageInfo info = sie.getStorageInfo( args[0] , new PnfsId(args[1]) ) ;
-       System.out.println( "java class        = ["+info.getClass().getName()+"]") ;
-       System.out.println( "object.toString() = "+info.toString() ) ;
-       System.out.println( "storage class     = "+info.getStorageClass() ) ;
-       System.exit(0);
-    }
-
 }
