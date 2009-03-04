@@ -146,6 +146,7 @@ import org.dcache.srm.SRMDuplicationException;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.SRMAuthorizationException;
+import org.dcache.srm.SRMPermissionDeniedException;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.GetFileInfoCallbacks;
 import org.dcache.srm.PrepareToPutCallbacks;
@@ -404,7 +405,8 @@ public class Storage
         config.setPort(getIntOption("srmport",config.getPort()));
         config.setSizeOfSingleRemoveBatch(getIntOption("size-of-single-remove-batch",config.getSizeOfSingleRemoveBatch()));
 	config.setGlue_mapfile(getOption("srmmap",config.getGlue_mapfile()));
-        
+        config.setMaxNumberOfLsEntries(getIntOption("max-number-of-ls-entries",config.getMaxNumberOfLsEntries()));
+        config.setMaxNumberOfLsLevels(getIntOption("max-number-of-ls-levels",config.getMaxNumberOfLsLevels()));       
         config.setKpwdfile( getOption("kpwd-file",config.getKpwdfile()) );
         config.setUseGplazmaAuthzCellFlag(isOptionSetToTrueOrYes(
             "use-gplazma-authorization-cell",
@@ -2593,9 +2595,9 @@ public class Storage
                 if (!permissionHandler.worldCanRead(
                     absolute_path, parent_util_fmd, util_fmd)) {
                     esay("getFileMetaData have no read permission " +
-                        "(or file does not exists) ");
-                    throw new SRMException("getFileMetaData have no read " +
-                        "permission (or file does not exists) ");
+                         "(or file does not exists) ");
+                    throw new SRMPermissionDeniedException("getFileMetaData have no read " +
+                                                           "permission (or file does not exists) ");
                 }
             } 
         } 
