@@ -37,7 +37,6 @@ import diskCacheV111.util.PnfsFile.VirtualMountPoint;
 import diskCacheV111.vehicles.CacheInfo;
 import diskCacheV111.vehicles.StorageInfo;
 
-import org.dcache.chimera.namespace.ChimeraStorageInfoExtractable;
 import org.dcache.util.Checksum;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.util.Args;
