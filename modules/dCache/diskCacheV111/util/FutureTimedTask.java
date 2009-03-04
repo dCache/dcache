@@ -7,6 +7,7 @@
 
 package diskCacheV111.util;
 
+import dmg.cells.nucleus.CDC;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
@@ -21,17 +22,20 @@ import java.util.concurrent.Future;
     private Runnable runnable;
     private Future timer;
     private long createtime;
+    private CDC cdc;
 
     public FutureTimedTask(Callable callable, long createtime) {
       super(callable);
       this.callable = callable;
       this.createtime = createtime;
+      this.cdc = new CDC();
     }
 
     public FutureTimedTask(Runnable runnable, Object result, long createtime) {
       super(runnable, result);
       this.runnable = runnable;
       this.createtime = createtime;
+      this.cdc = new CDC();
     }
     public Callable getCallable() {
       return callable;
@@ -79,4 +83,23 @@ import java.util.concurrent.Future;
       }
     }
 
+      public void run()
+      {
+          cdc.apply();
+          try {
+              super.run();
+          } finally {
+              CDC.clear();
+          }
+      }
+
+      protected boolean runAndReset()
+      {
+          cdc.apply();
+          try {
+              return super.runAndReset();
+          } finally {
+              CDC.clear();
+          }
+      }
   }

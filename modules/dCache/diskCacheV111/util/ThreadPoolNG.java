@@ -5,6 +5,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CDC;
 
 /**
  *
@@ -60,10 +61,23 @@ public class ThreadPoolNG implements ThreadPool {
 		return 0;
 	}
 
-	public void invokeLater(Runnable runner, String name)
-			throws IllegalArgumentException {
-		_executor.execute(runner);
-	}
+    public void invokeLater(final Runnable runner, String name)
+    {
+        final CDC cdc = new CDC();
+        Runnable wrapper = new Runnable() {
+                public void run()
+                {
+                    cdc.apply();
+                    try {
+                        runner.run();
+                    } finally {
+                        CDC.clear();
+                    }
+                }
+            };
+
+        _executor.execute(wrapper);
+    }
 
 	public void setMaxThreadCount(int maxThreadCount)
 			throws IllegalArgumentException {

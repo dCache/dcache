@@ -4,6 +4,7 @@ package diskCacheV111.util ;
 
 import java.util.* ;
 import dmg.cells.nucleus.CellAdapter ;
+import dmg.cells.nucleus.CDC ;
 import dmg.util.Args ;
 
 import org.dcache.cells.CellCommandListener;
@@ -20,15 +21,20 @@ public class ThreadCounter
     private int    _maxThreadCount     = 0 ;
     private LinkedList _fifo           = new LinkedList() ;
 
-    private class Runner {
-       private Runnable runner = null ;
-       private String   name   = null ;
-       private Runner( Runnable runner , String runnerName ){
-         this.runner = runner ;
-         this.name   = runnerName ;
+    private class Runner
+    {
+        public final Runnable runner;
+        public final String name;
+        public CDC cdc;
 
-       }
+        private Runner(Runnable runner, String name)
+        {
+            this.runner = runner;
+            this.name = name;
+            this.cdc = new CDC();
+        }
     }
+
     public ThreadCounter( CellAdapter cell ){
        _cell = cell ;
        _cell.getNucleus().newThread(this,"ThreadCounter").start() ;
@@ -80,15 +86,19 @@ public class ThreadCounter
     }
     private class ClientRunner implements Runnable {
        private Runnable _runner = null ;
-       private ClientRunner( Runnable runner ){
+       private CDC _cdc;
+       private ClientRunner( Runnable runner, CDC cdc ){
           _runner = runner ;
+          _cdc = cdc ;
        }
        public void run(){
+          _cdc.apply();
           try{
              _runner.run();
           }catch(Throwable t ){
              _log.warn(t);
           }finally{
+              CDC.clear();
              synchronized( _fifo ){
                 _currentThreadCount-- ;
 //                _log.info("ThreadCounter : thread finished "+_currentThreadCount);
@@ -118,9 +128,9 @@ public class ThreadCounter
                 final Runner r = (Runner)_fifo.removeLast();
                 try{
                     if (_cell != null) {
-                        _cell.getNucleus().newThread( new ClientRunner(r.runner) , r.name ).start() ;
+                        _cell.getNucleus().newThread( new ClientRunner(r.runner, r.cdc) , r.name ).start() ;
                     } else {
-                        new Thread(new ClientRunner(r.runner), r.name).start();
+                        new Thread(new ClientRunner(r.runner, r.cdc), r.name).start();
                     }
 //                   _log.info("ThreadCounter : thread started "+_currentThreadCount);
                    _currentThreadCount ++ ;
