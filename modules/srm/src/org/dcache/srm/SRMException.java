@@ -81,6 +81,8 @@ COPYRIGHT STATUS:
 
 
 package org.dcache.srm;
+import org.dcache.srm.v2_2.TReturnStatus;
+import org.dcache.srm.v2_2.TStatusCode;
 
 /**
  * A Superclass of all SRM exceptions
@@ -94,22 +96,48 @@ package org.dcache.srm;
 public class SRMException extends java.lang.Exception {
     
     private static final long serialVersionUID = -8113621955516703431L;
+    TReturnStatus status;
     
     public SRMException() {
         super();
+        status = new TReturnStatus(TStatusCode.SRM_FAILURE,
+                                   TStatusCode.SRM_FAILURE.toString());
     }
     
     public SRMException(String message) {
         super(message);
+        status = new TReturnStatus(TStatusCode.SRM_FAILURE,message);
+    }
+    
+    public SRMException(TReturnStatus status) { 
+        super(status.getStatusCode()+" : "+status.getExplanation());
+        this.status=status;
+    }
+
+    public SRMException(TStatusCode code,String explanation) {
+        super(code +" : "+explanation);
+        this.status=new TReturnStatus(code,explanation);
     }
     
     public SRMException(String message,Throwable cause) {
         super(message,cause);
+        status = new TReturnStatus(TStatusCode.SRM_FAILURE,
+                                   message);
     }
     
     public SRMException(Throwable cause) {
         super(cause);
+        status = new TReturnStatus(TStatusCode.SRM_FAILURE,
+                                   cause.getMessage());
     }
+    
+    public TReturnStatus getReturnStatus() { 
+            return status;
+    }
+    
+    public void setReturnStatus(TReturnStatus status) { 
+            this.status=status;
+}
     
     
 }

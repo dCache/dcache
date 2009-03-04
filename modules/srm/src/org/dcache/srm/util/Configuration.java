@@ -247,8 +247,10 @@ public class Configuration {
     private boolean jdbcMonitoringDebugLevel = false;
     private boolean overwrite = false;
     private boolean overwrite_by_default = false;
-	private int sizeOfSingleRemoveBatch = 100;
-    
+    private int sizeOfSingleRemoveBatch = 100;
+    private int maxNumberOfLsEntries = 1000;
+    private int maxNumberOfLsLevels = 100;
+   
     /** Creates a new instance of Configuration */
     public Configuration() {
         
@@ -2375,6 +2377,22 @@ public class Configuration {
 
     public void setSizeOfSingleRemoveBatch(int size) {
 	    sizeOfSingleRemoveBatch=size;
+    }
+
+    public int getMaxNumberOfLsLevels() {
+	    return maxNumberOfLsLevels;
+    }
+
+    public void setMaxNumberOfLsLevels(int max_ls_levels) {
+	    maxNumberOfLsLevels=max_ls_levels;
+    }
+
+    public int getMaxNumberOfLsEntries() {
+	    return maxNumberOfLsEntries;
+    }
+
+    public void setMaxNumberOfLsEntries(int max_ls_entries) {
+	   maxNumberOfLsEntries=max_ls_entries;
     }
 
     public boolean isOverwrite_by_default() {
