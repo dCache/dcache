@@ -4,6 +4,7 @@
 <log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
   <!-- appender name="FileAppender" class="org.apache.log4j.FileAppender" -->
   <appender name="detailed" class="org.apache.log4j.ConsoleAppender">
+    <param name="Threshold" value="WARN"/>
     <!-- param name="Threshold" value="INFO"/ -->
     <!-- param name="File" value="Indentify-Log.txt"/ -->
     <!-- param name="Append" value="false"/ -->
@@ -61,6 +62,12 @@
   </appender>
 
 
+  <appender name="pinboard" class="dmg.util.PinboardAppender">
+    <layout class="org.apache.log4j.PatternLayout">
+      <param name="ConversionPattern" value="[%t] [%x] %m"/>
+    </layout>
+  </appender>
+
   <!-- The below filters out too-detailed and too many messages from NSStack. -->
   <category name="org.apache.axis.utils.NSStack">
     <priority value="WARN"/>
@@ -108,8 +115,9 @@
   </category>
 
   <root>
-    <priority value ="WARN" />
+    <priority value ="INFO" />
     <appender-ref ref="detailed"/>
+    <appender-ref ref="pinboard"/>
   </root>
 
 </log4j:configuration>
