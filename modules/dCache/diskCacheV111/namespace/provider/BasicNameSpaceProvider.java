@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,6 +24,7 @@ import org.apache.log4j.Logger;
 import diskCacheV111.namespace.CacheLocationProvider;
 import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.namespace.StorageInfoProvider;
+import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileMetaData;
@@ -30,10 +32,12 @@ import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PathMap;
 import diskCacheV111.util.PnfsFile;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.StorageInfoExtractable;
 import diskCacheV111.util.PnfsFile.VirtualMountPoint;
 import diskCacheV111.vehicles.CacheInfo;
 import diskCacheV111.vehicles.StorageInfo;
+
 import org.dcache.util.Checksum;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.util.Args;
@@ -61,11 +65,36 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
 
         _attChecksumImpl = new AttributeChecksumBridge(this);
 
+        AccessLatency defaultAccessLatency;
+        String accessLatensyOption = args.getOpt("DefaultAccessLatency");
+            if( accessLatensyOption != null && accessLatensyOption.length() > 0) {
+                /*
+                 * IllegalArgumentException thrown if option is invalid
+                 */
+                defaultAccessLatency = AccessLatency.getAccessLatency(accessLatensyOption);
+            }else{
+                defaultAccessLatency = StorageInfo.DEFAULT_ACCESS_LATENCY;
+            }
+
+            RetentionPolicy defaultRetentionPolicy;
+            String retentionPolicyOption = args.getOpt("DefaultRetentionPolicy");
+            if( retentionPolicyOption != null && retentionPolicyOption.length() > 0) {
+                /*
+                 * IllegalArgumentException thrown if option is invalid
+                 */
+                defaultRetentionPolicy = RetentionPolicy.getRetentionPolicy(retentionPolicyOption);
+            }else{
+                defaultRetentionPolicy = StorageInfo.DEFAULT_RETENTION_POLICY;
+            }
+
         //
         // get the extractor
         //
-        Class<?> exClass = Class.forName( _args.argv(0)) ;
-        _extractor = (StorageInfoExtractable)exClass.newInstance() ;
+        Class<StorageInfoExtractable> exClass = (Class<StorageInfoExtractable>) Class.forName( _args.argv(0)) ;
+        Constructor<StorageInfoExtractable>  extractorInit =
+            exClass.getConstructor(AccessLatency.class, RetentionPolicy.class);
+        _extractor =  extractorInit.newInstance(defaultAccessLatency, defaultRetentionPolicy);
+
 
         _mountPoint = _args.getOpt("pnfs")  ;
 

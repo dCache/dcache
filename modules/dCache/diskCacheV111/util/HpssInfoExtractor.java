@@ -7,6 +7,23 @@ import  java.io.* ;
 public class       HpssInfoExtractor
        implements StorageInfoExtractable {
 
+    /**
+     * default access latency for newly created files
+     */
+    private final diskCacheV111.util.AccessLatency _defaultAccessLatency;
+
+    /**
+     * default retention policy for newly created files
+     */
+    private final diskCacheV111.util.RetentionPolicy _defaultRetentionPolicy;
+
+
+    public HpssInfoExtractor(AccessLatency defaultAL, RetentionPolicy defaultRP) {
+
+        _defaultAccessLatency = defaultAL;
+        _defaultRetentionPolicy = defaultRP;
+    }
+
     public void setStorageInfo( String pnfsMountpoint , PnfsId pnfsId ,
                                 StorageInfo storageInfo , int accessMode )
            throws CacheException {
@@ -162,6 +179,9 @@ public class       HpssInfoExtractor
         	   }catch(IllegalArgumentException iae) {
         		   // TODO: do we fail here or not?
         	   }
+           }else{
+               // force default
+               info.setAccessLatency(_defaultAccessLatency);
            }
 
            if(retentionPolicy != null) {
@@ -171,6 +191,9 @@ public class       HpssInfoExtractor
         	   }catch(IllegalArgumentException iae) {
         		   // TODO: do we fail here or not?
         	   }
+           }else{
+               // force default
+               info.setRetentionPolicy(_defaultRetentionPolicy);
            }
 
            if( spaceToken != null ) {
@@ -244,17 +267,6 @@ public class       HpssInfoExtractor
 
         return info ;
 
-    }
-    public static void main( String [] args ) throws Exception {
-       if( args.length < 2 ){
-          System.err.println( "Usage : ... <mp> <pnfsId>" ) ;
-          System.exit(4);
-       }
-       StorageInfoExtractable sie = new HpssInfoExtractor() ;
-
-       StorageInfo info = sie.getStorageInfo( args[0] , new PnfsId(args[1]) ) ;
-       System.out.println( "["+info.getClass()+"]="+info.toString() ) ;
-       System.exit(0);
     }
 
 }

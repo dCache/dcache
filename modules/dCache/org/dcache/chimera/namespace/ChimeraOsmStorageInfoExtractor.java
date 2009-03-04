@@ -35,6 +35,24 @@ import diskCacheV111.vehicles.StorageInfo;
 public class ChimeraOsmStorageInfoExtractor implements
         ChimeraStorageInfoExtractable {
 
+    /**
+     * default access latency for newly created files
+     */
+    private final diskCacheV111.util.AccessLatency _defaultAccessLatency;
+
+    /**
+     * default retention policy for newly created files
+     */
+    private final diskCacheV111.util.RetentionPolicy _defaultRetentionPolicy;
+
+
+    public ChimeraOsmStorageInfoExtractor(diskCacheV111.util.AccessLatency defaultAL, 
+            diskCacheV111.util.RetentionPolicy defaultRP) {
+
+        _defaultAccessLatency = defaultAL;
+        _defaultRetentionPolicy = defaultRP;
+    }
+
     /*
      * (non-Javadoc)
      *
@@ -60,7 +78,7 @@ public class ChimeraOsmStorageInfoExtractor implements
         return info;
     }
 
-    private static StorageInfo getFileStorageInfo(FsInode inode) throws CacheException {
+    private StorageInfo getFileStorageInfo(FsInode inode) throws CacheException {
 
         OSMStorageInfo info = null;
 
@@ -127,7 +145,7 @@ public class ChimeraOsmStorageInfoExtractor implements
         return info;
     }
 
-    private static StorageInfo getDirStorageInfo(FsInode inode) throws CacheException {
+    private StorageInfo getDirStorageInfo(FsInode inode) throws CacheException {
 
         FsInode dirInode = null;
 
@@ -200,6 +218,9 @@ public class ChimeraOsmStorageInfoExtractor implements
                 }catch(IllegalArgumentException iae) {
                     // TODO: do we fail here or not?
                 }
+            }else{
+                // force default
+                info.setAccessLatency(_defaultAccessLatency);
             }
 
             if(retentionPolicy != null) {
@@ -209,6 +230,9 @@ public class ChimeraOsmStorageInfoExtractor implements
                 }catch(IllegalArgumentException iae) {
                     // TODO: do we fail here or not?
                 }
+            }else{
+                // force default
+                info.setRetentionPolicy(_defaultRetentionPolicy);
             }
 
 

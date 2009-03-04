@@ -22,6 +22,10 @@ import diskCacheV111.vehicles.StorageInfo;
  */
 public class OpaqueStorageInfoExtractor extends OsmInfoExtractor {
 
+    public OpaqueStorageInfoExtractor(AccessLatency defaultAL, RetentionPolicy defaultRP) {
+        super(defaultAL,defaultRP );
+    }
+
     private static final URI DUMMY_URI = URI.create("osm://unknown-HSM/unknown-path");
 
     // FIXME: this should be configurable.

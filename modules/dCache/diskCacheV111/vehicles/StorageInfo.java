@@ -29,6 +29,14 @@ import diskCacheV111.util.AccessLatency;
   *  
   */
 public interface StorageInfo extends java.io.Serializable {
+
+    /**
+     * Classic dCache default all files go to tape and can be removed
+     * from the pool afterwards. 
+     */
+    public static final AccessLatency DEFAULT_ACCESS_LATENCY = AccessLatency.NEARLINE;
+    public static final RetentionPolicy DEFAULT_RETENTION_POLICY = RetentionPolicy.CUSTODIAL;
+
     static final long serialVersionUID = 1623022255585848311L;
     /**
       *   The storage class is a unique string, identifying

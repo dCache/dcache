@@ -22,8 +22,9 @@ java.io.Serializable {
      * to simulate the 'classic' behavior : new files go to tape and, after
      * flushing, removed by sweeper if space needed.
      */
-    private AccessLatency _accessLatency = AccessLatency.NEARLINE;
-    private RetentionPolicy _retentionPolicy = RetentionPolicy.CUSTODIAL;
+    private AccessLatency _accessLatency = StorageInfo.DEFAULT_ACCESS_LATENCY;
+    private RetentionPolicy _retentionPolicy = StorageInfo.DEFAULT_RETENTION_POLICY;
+
     private Map<String, String> _keyHash = new HashMap<String, String>();
     private List<URI> _locations = new ArrayList<URI>();
     private boolean _setHsm = false;
