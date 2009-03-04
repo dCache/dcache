@@ -15,11 +15,8 @@ import org.dcache.srm.util.Permissions;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMTooManyResultsException;
-
-
-
-import java.text.DateFormat;
-
+import org.dcache.srm.SRMPermissionDeniedException;
+import org.dcache.srm.util.Configuration;
 
 /**
  *
@@ -27,14 +24,15 @@ import java.text.DateFormat;
  */
 public class SrmLs {
     private final static String SFN_STRING="?SFN=";
-    private int maxNumOfLevels ;
+    private int maxNumOfLevels=100;
     AbstractStorageElement storage;
     SrmLsRequest request;
     SrmLsResponse response;
     SRMUser user;
-    private int results_num;
-    private int max_results_num;
+    private int results_num=0;
+    private int max_results_num=1000;
     int numOfLevels =1;
+    Configuration configuration;
 
     /** Creates a new instance of SrmLs */
     public SrmLs(SRMUser user,
@@ -43,30 +41,18 @@ public class SrmLs {
 		 AbstractStorageElement storage,
 		 org.dcache.srm.SRM srm,
 		 String client_host) {
-        this(user,request,storage,1000);
-    }
-
-    public SrmLs(SRMUser user,
-		 SrmLsRequest request, 
-		 AbstractStorageElement storage,
-		 int max_results_num) {
-        this(user,request,storage,max_results_num,100);
-    }
-    
-    public SrmLs(SRMUser user,SrmLsRequest request, 
-		 AbstractStorageElement storage,
-		 int max_results_num,int maxNumOfLevels) {
+        this.configuration = srm.getConfiguration();
         this.request = request;
         this.user    = user;
         this.storage = storage;
-        this.max_results_num = max_results_num;
-        this.maxNumOfLevels  = maxNumOfLevels;
+        this.max_results_num = configuration.getMaxNumberOfLsEntries();
+        this.maxNumOfLevels  = configuration.getMaxNumberOfLsLevels();
     }
-    
+
     public static final SrmLsResponse getFailedResponse(String error) {
         return getFailedResponse(error,null);
     }
-    
+
     public static final  SrmLsResponse getFailedResponse(String error,
 							 TStatusCode statusCode) {
         if(statusCode == null) {
@@ -92,7 +78,7 @@ public class SrmLs {
             storage.log("SrmLs "+words_of_wisdom);
         }
     }
-    
+
     private void esay(String words_of_despare) {
         if(storage!=null) {
             storage.elog("SrmLs "+words_of_despare);
@@ -120,7 +106,7 @@ public class SrmLs {
             returnStatus.setExplanation(e.toString());
             response.setReturnStatus(returnStatus);
         }
-        
+
         return response;
     }
     /**
@@ -128,12 +114,12 @@ public class SrmLs {
      */
     public SrmLsResponse srmLs()
     throws SRMException,org.apache.axis.types.URI.MalformedURIException{
-        
-        
+
+
         say("Entering srmLs");
-        
-        SrmLsResponse srmLsResponse = new SrmLsResponse();
-        
+
+        response = new SrmLsResponse();
+
         // The SRM specification is not clear, but
         // probably intends that zero (0) means "no
         // recursion", one (1) means "current
@@ -141,7 +127,7 @@ public class SrmLs {
         // cetera.
         // Internally, we'll set this value to -1
         // to indicate "no limit".
-        
+
         if (request.getAllLevelRecursive() != null &&
 	    request.getAllLevelRecursive().booleanValue()) {
             numOfLevels= maxNumOfLevels;
@@ -151,12 +137,12 @@ public class SrmLs {
                 numOfLevels = request.getNumOfLevels().intValue();
                 // The spec doesn't say what to do in case of negative
                 // values, so filter 'em out...
-                
+
                 if (numOfLevels < 0) {
                     return getFailedResponse("numOfLevels < 0",
 					     TStatusCode.SRM_INVALID_REQUEST);
                 }
-            } 
+            }
 	    else {
                 numOfLevels = 1;
             }
@@ -169,27 +155,27 @@ public class SrmLs {
 	    return getFailedResponse("numOfLevels>1 together with offset and/or count is not supported",
 				     TStatusCode.SRM_INVALID_REQUEST);
 	}
-	if (offset<0) { 
+	if (offset<0) {
 	    return getFailedResponse(" offset value less than 0, disallowed ",
 				     TStatusCode.SRM_INVALID_REQUEST);
 	}
 
-	if (count<0) { 
+	if (count<0) {
             return getFailedResponse(" count value less than 0, disallowed",
 				     TStatusCode.SRM_INVALID_REQUEST);
         }
-        
+
         // SrmLsResponse consists of two parts - a TReturnStatus
         // and a ArrayOfTMetaDataPathDetail.
-        
+
         // First set the TReturnStatus
         TReturnStatus returnStatus = new TReturnStatus();
         returnStatus.setStatusCode(TStatusCode.SRM_SUCCESS);
         returnStatus.setExplanation("srm-ls completed normally");
-        srmLsResponse.setReturnStatus(returnStatus);
+        response.setReturnStatus(returnStatus);
         // Now get the information from dCache and fill in
         // the above stub.
-        
+
         if(request.getFullDetailedList() != null) {
             longFormat = request.getFullDetailedList().booleanValue();
         }
@@ -199,70 +185,72 @@ public class SrmLs {
         }
         org.apache.axis.types.URI [] surlInfos = request.getArrayOfSURLs().getUrlArray();
 	
-	if (request.getOffset()!=null) { 
-	    if (request.getOffset().intValue()<0) { 
+	if (request.getOffset()!=null) {
+	    if (request.getOffset().intValue()<0) {
 		return getFailedResponse(" offset value less than 0, diallowed ",
 					 TStatusCode.SRM_INVALID_REQUEST);
 	    }
 	}
 
-        
+
         TMetaDataPathDetail[] metaDataPathDetails =
                 new TMetaDataPathDetail[surlInfos.length];
-        
+
         // Now, iterate one by one through the URIs/filespecs
         // passed in from the request.
         for (int i = 0; i < surlInfos.length; i++) {
-            
+
             org.apache.axis.types.URI surl = surlInfos[i];
-            
+
             say("SURL["+i+"]="+surl);
             port = surl.getPort();
             host = surl.getHost();
-            
+
             String path = surl.getPath(true,true);
             int indx=path.indexOf(SFN_STRING);
             if( indx != -1) {
                 servicePathAndSFNPart = path.substring(0,indx+SFN_STRING.length());
                 path=path.substring(indx+SFN_STRING.length());
             }
-            
-            
+
+
             say("Path: " + path);
-            // List itemlist = fspath.getPathItemsList();
 
             TMetaDataPathDetail metaDataPathDetail=null;
-            try 
-	    { 
+            try
+	    {
 		metaDataPathDetail =
 		    getMetaDataPathDetail( path,
 					   0,
-					   offset, 
-					   count, 
+					   offset,
+					   count,
 					   null);
 	    }
-	    catch (SRMException srme) 
+	    catch (SRMException srme)
 	    { 	
-
 		TReturnStatus status=null;
-		    
-		
-		if (srme instanceof SRMInternalErrorException) { 
+		if (srme instanceof SRMInternalErrorException) {
 		    status = new TReturnStatus(TStatusCode.SRM_FAILURE, srme.getMessage());
-		    srmLsResponse.getReturnStatus().setStatusCode(TStatusCode.SRM_INTERNAL_ERROR);
-		    srmLsResponse.getReturnStatus().setExplanation(srme.getMessage());
+		    response.getReturnStatus().setStatusCode(TStatusCode.SRM_INTERNAL_ERROR);
+		    response.getReturnStatus().setExplanation(srme.getMessage());
 		}
-		else if ( srme instanceof SRMTooManyResultsException) { 
+		else if ( srme instanceof SRMTooManyResultsException) {
 		    status = new TReturnStatus(TStatusCode.SRM_FAILURE, srme.getMessage());
-		    srmLsResponse.getReturnStatus().setStatusCode(TStatusCode.SRM_TOO_MANY_RESULTS);
-		    srmLsResponse.getReturnStatus().setExplanation(srme.getMessage());
+		    response.getReturnStatus().setStatusCode(TStatusCode.SRM_TOO_MANY_RESULTS);
+		    response.getReturnStatus().setExplanation(srme.getMessage());
 		}
-		else { 
+		else if ( srme instanceof SRMPermissionDeniedException) {
+                    status = srme.getReturnStatus();
+                    response.setReturnStatus(srme.getReturnStatus());
+// 		    status = new TReturnStatus(TStatusCode.SRM_AUTHORIZATION_FAILURE, srme.getMessage());
+// 		    response.getReturnStatus().setStatusCode(TStatusCode.SRM_AUTHORIZATION_FAILURE);
+// 		    response.getReturnStatus().setExplanation(srme.getMessage());
+		}
+		else {
 		    status = new TReturnStatus(TStatusCode.SRM_INVALID_PATH, srme.getMessage());
-		    srmLsResponse.getReturnStatus().setStatusCode(TStatusCode.SRM_FAILURE);
-		    srmLsResponse.getReturnStatus().setExplanation("path does not exist for one or more files specified, check individual statuses \n");
+		    response.getReturnStatus().setStatusCode(TStatusCode.SRM_FAILURE);
+		    response.getReturnStatus().setExplanation("path does not exist for one or more files specified, check individual statuses \n");
 		}
-
 		metaDataPathDetail =  new TMetaDataPathDetail(path,
 							      status,
 							      null,
@@ -281,20 +269,19 @@ public class SrmLs {
 							      null,
 							      null,
 							      null);
-
 	    }
 	    finally
 	    {
 		metaDataPathDetails[i] = metaDataPathDetail;
 	    }
         }
-        srmLsResponse.setDetails(new ArrayOfTMetaDataPathDetail(metaDataPathDetails));
-        return srmLsResponse;
-        
-        
+        response.setDetails(new ArrayOfTMetaDataPathDetail(metaDataPathDetails));
+        return response;
+
+
     }
-    
-    
+
+
     public TMetaDataPathDetail getMetaDataPathDetail(
             String path,
             int depth,
@@ -306,9 +293,6 @@ public class SrmLs {
             throw new SRMTooManyResultsException("max results number of "+max_results_num+" exceeded. Try to narrow down with offset and count \n");
         }
         FileMetaData fmd = storage.getFileMetaData(user, path,parent_fmd);
-        if(!canRead(user,fmd)) {
-            return null;
-        }
         TMetaDataPathDetail metaDataPathDetail =
                 new TMetaDataPathDetail();
         metaDataPathDetail.setLifetimeAssigned(new Integer(-1));
@@ -343,8 +327,8 @@ public class SrmLs {
             metaDataPathDetail.setCheckSumValue(fmd.checksumValue);
         }
         metaDataPathDetail.setFileStorageType(TFileStorageType.PERMANENT);
-	if (!fmd.isPermanent) { 
-	    if (fmd.isPinned) { 
+	if (!fmd.isPermanent) {
+	    if (fmd.isPinned) {
 		metaDataPathDetail.setFileStorageType(TFileStorageType.DURABLE);
 	    }
 	    else {
@@ -353,27 +337,27 @@ public class SrmLs {
 	}
         if(fmd.isDirectory) {
             metaDataPathDetail.setType(TFileType.DIRECTORY);
-        } 
+        }
 	else if(fmd.isLink) {
             metaDataPathDetail.setType(TFileType.LINK);
-        } 
+        }
 	else if(fmd.isRegular) {
             metaDataPathDetail.setType(TFileType.FILE);
-        } 
+        }
 	else {
             say("file type is Unknown");
         }
 	TFileLocality fileLocality = TFileLocality.NONE;
-	if (fmd.isCached) { 
-	    if (fmd.isStored) { 
+	if (fmd.isCached) {
+	    if (fmd.isStored) {
 		fileLocality = TFileLocality.ONLINE_AND_NEARLINE;
 	    }
-	    else { 
+	    else {
 		fileLocality = TFileLocality.ONLINE;
 	    }
 	}
-	else { 
-	    if (fmd.isStored) { 
+	else {
+	    if (fmd.isStored) {
                 fileLocality = TFileLocality.NEARLINE;
             }
             else {
@@ -384,13 +368,13 @@ public class SrmLs {
 		fileLocality = TFileLocality.NONE;	
 	}
 	metaDataPathDetail.setFileLocality(fileLocality);
-	if (fmd.retentionPolicyInfo!=null) { 
+	if (fmd.retentionPolicyInfo!=null) {
 	    metaDataPathDetail.setRetentionPolicyInfo(new TRetentionPolicyInfo(fmd.retentionPolicyInfo.getRetentionPolicy(),
 									       fmd.retentionPolicyInfo.getAccessLatency()));
 	}
         metaDataPathDetail.setSize(new org.apache.axis.types.UnsignedLong(fmd.size));
-	if (fmd.spaceTokens!=null) { 
-	    if (fmd.spaceTokens.length > 0) { 
+	if (fmd.spaceTokens!=null) {
+	    if (fmd.spaceTokens.length > 0) {
 		ArrayOfString arrayOfSpaceTokens = new ArrayOfString(new String[fmd.spaceTokens.length]);
 		for (int st=0;st<fmd.spaceTokens.length;st++) {
 		    StringBuffer spaceToken = new StringBuffer();
@@ -403,7 +387,34 @@ public class SrmLs {
         TReturnStatus returnStatus = new TReturnStatus();
         returnStatus.setStatusCode(TStatusCode.SRM_SUCCESS);
         metaDataPathDetail.setStatus(returnStatus);
-	
+        //
+        // behavior below is equivalent to this:
+        // supose we have file and dirtectory:
+        //
+        //drw-------   2 root     root      4096 Feb 25 13:49 blah
+        //-rw-------   1 root     root         0 Feb 25 13:49 blah.txt
+        // the code below should behave like this:
+        //   [litvinse@uqbar Desktop]$ ls blah.txt
+        //   blah.txt
+        //   [litvinse@uqbar Desktop]$ ls blah
+        //   ls: blah: Permission denied
+        //
+
+        if(!canRead(user,fmd)) {
+            if (depth>0) {
+                    if (fmd.isDirectory) {
+                            returnStatus.setStatusCode(TStatusCode.SRM_AUTHORIZATION_FAILURE);
+                            returnStatus.setExplanation("Permission mask does not allow directory listing");
+                            metaDataPathDetail.setStatus(returnStatus);
+                    }
+                    return metaDataPathDetail;
+            }
+            else {
+                    if (fmd.isDirectory) {
+                            throw new SRMPermissionDeniedException("Permission denied");
+                    }
+            }
+        }
         say("depth = "+depth+" and numOfLevels = "+numOfLevels);
         if (metaDataPathDetail.getType() == TFileType.DIRECTORY && depth<numOfLevels ) {
             say("depth < numOfLevels => get listing for this directory");
@@ -412,23 +423,23 @@ public class SrmLs {
 		if(dirFiles != null && dirFiles.length >0) {
 		    int end   = dirFiles.length;
 		    int start = offset;
-		    if ( count != 0 &&  offset + count <= dirFiles.length) { 
+		    if ( count != 0 &&  offset + count <= dirFiles.length) {
 			    end = offset + count;
 		    }
 		    int len = end - start;
-		    if ( offset <  dirFiles.length ) { 
+		    if ( offset <  dirFiles.length ) {
 			dirMetaDataPathDetails = new TMetaDataPathDetail[len];
 			for (int j = start; j< end; j++) {
 				String subpath = path+'/'+dirFiles[j].getName();
+                                TMetaDataPathDetail dirMetaDataPathDetail=null;
 				try {
-					TMetaDataPathDetail dirMetaDataPathDetail;
-					if (longFormat) { 
+					if (longFormat) {
 						dirMetaDataPathDetail = getMetaDataPathDetail(subpath, depth+1,offset,count,fmd);
 					}
-					else { 
+					else {
 						if((depth+1>=numOfLevels)||dirFiles[j].isFile()) {
 							dirMetaDataPathDetail =  getMinimalMetaDataPathDetail(subpath,dirFiles[j]);
-						} 
+						}
 						else {
 							dirMetaDataPathDetail = getMetaDataPathDetail(subpath, depth+1,offset,count,fmd);
 						}
@@ -436,7 +447,34 @@ public class SrmLs {
 					dirMetaDataPathDetails[j-start] = dirMetaDataPathDetail;
 				}
 				catch (SRMException srme) {
-					dirMetaDataPathDetails[j-start] = null;
+                                        returnStatus.setStatusCode(TStatusCode.SRM_FAILURE);
+                                        returnStatus.setExplanation(srme.getMessage());
+					dirMetaDataPathDetails[j-start] = new TMetaDataPathDetail(subpath,
+                                                                                                  returnStatus,
+                                                                                                  null,
+                                                                                                  null,
+                                                                                                  null,
+                                                                                                  null,
+                                                                                                  null,
+                                                                                                  null,
+                                                                                                  null,
+                                                                                                  null,
+                                                                                                  null,
+                                                                                                  null,
+                                                                                                  null,
+                                                                                                  null,
+                                                                                                  null,
+                                                                                                  null,
+                                                                                                  null,
+                                                                                                  null);
+                                        if ( srme instanceof SRMTooManyResultsException) {
+                                                response.getReturnStatus().setStatusCode(TStatusCode.SRM_TOO_MANY_RESULTS);
+                                                response.getReturnStatus().setExplanation(srme.getMessage());
+                                                metaDataPathDetail.setArrayOfSubPaths(new ArrayOfTMetaDataPathDetail(dirMetaDataPathDetails));
+                                                metaDataPathDetail.setStatus(returnStatus);
+                                                return metaDataPathDetail;
+                                        }
+
 				}
 			}
 		    }
@@ -445,7 +483,7 @@ public class SrmLs {
 	}
 	return metaDataPathDetail;
     }
-    
+
     public TMetaDataPathDetail getMinimalMetaDataPathDetail(
             String path,
             java.io.File file
@@ -454,35 +492,35 @@ public class SrmLs {
         if(!increaseResultsNumAndContinue()) {
             throw new SRMTooManyResultsException("max results number of "+max_results_num+" exceeded. Try to be narrow down with offset and count");
         }
-        
+
         TMetaDataPathDetail metaDataPathDetail =
                 new TMetaDataPathDetail();
         metaDataPathDetail.setLifetimeAssigned(new Integer(-1));
         metaDataPathDetail.setLifetimeLeft(new Integer(-1));
-        
+
         org.apache.axis.types.URI turi =
                 new org.apache.axis.types.URI();
         // new org.apache.axis.types.URI(inPath);
-        
+
         turi.setScheme("srm");
-        
+
         // To do:  replace the below dummy values
         //turi.setHost(host);
         //turi.setPort(port);
-        
+
         //turi.setPath(servicePathAndSFNPart+path);
-        
+
         //org.apache.axis.types.URI tsurl = new org.apache.axis.types.URI(turi);
         metaDataPathDetail.setPath(path);
-        
-        
+
+
         java.util.GregorianCalendar td =
                 new java.util.GregorianCalendar();
         td.setTimeInMillis(file.lastModified());
         metaDataPathDetail.setCreatedAtTime(td);
         metaDataPathDetail.setLastModificationTime(td);
-        
-        
+
+
         metaDataPathDetail.setFileStorageType(TFileStorageType.PERMANENT);
         if(file.isDirectory()) {
             metaDataPathDetail.setType(TFileType.DIRECTORY);
@@ -496,7 +534,7 @@ public class SrmLs {
 		FileMetaData fmd = storage.getFileMetaData(user, path, null);
 		 metaDataPathDetail.setSize(new org.apache.axis.types.UnsignedLong(fmd.size));
 	}
-	else { 
+	else {
 		metaDataPathDetail.setSize(new org.apache.axis.types.UnsignedLong(file.length()));
 	}
         TReturnStatus returnStatus = new TReturnStatus();
@@ -504,39 +542,39 @@ public class SrmLs {
         metaDataPathDetail.setStatus(returnStatus);
         return metaDataPathDetail;
     }
-    
+
     public boolean canRead(SRMUser user, FileMetaData fmd) {
         int uid = Integer.parseInt(fmd.owner);
         int gid = Integer.parseInt(fmd.group);
         int permissions = fmd.permMode;
-        
+
         if(permissions == 0 ) {
             return false;
         }
-        
+
         if(Permissions.worldCanRead(permissions)) {
             return true;
         }
-        
+
         if(uid == -1 || gid == -1) {
             return false;
         }
-        
+
         if(user == null ) {
             return false;
         }
-        
+
         if(fmd.isGroupMember(user) && Permissions.groupCanRead(permissions)) {
             return true;
         }
-        
+
         if(fmd.isOwner(user) && Permissions.userCanRead(permissions)) {
             return true;
         }
-        
+
         return false;
     }
-    
+
     public TPermissionMode maskToTPermissionMode(int permMask) {
         switch(permMask) {
             case 0: return TPermissionMode.NONE;
@@ -551,191 +589,5 @@ public class SrmLs {
                 throw new IllegalArgumentException("illegal perm mask: "+permMask);
         }
     }
-    
-    public static void printResults(StringBuffer sb,
-				    TMetaDataPathDetail[] ta,
-				    int depth, 
-				    String depthPrefix, 
-				    boolean longFormat) {
-        if  (ta != null) {
-            for (int i = 0; i < ta.length; i++) {
-                TMetaDataPathDetail metaDataPathDetail = ta[i];
-                if(metaDataPathDetail != null){
-		    //sb.append(metaDataPathDetail.getStatus().getStatusCode()+" "+metaDataPathDetail.getStatus().getExplanation());
-                    if (metaDataPathDetail.getStatus().getStatusCode() ==
-			TStatusCode.fromString(TStatusCode._SRM_INVALID_PATH)) {
-                        
-			    sb.append(TStatusCode._SRM_INVALID_PATH).append(" ").append(depthPrefix).append(" File/directory " + i + " " +
-						      metaDataPathDetail.getPath() + " does not exist. \n" );
-                    } 
-		    else {                        
-                        sb.append(depthPrefix);
-                        org.apache.axis.types.UnsignedLong size =metaDataPathDetail.getSize();
-                        if(size != null) {
-                            sb.append(" ").append( size.longValue());
-                        }
-                        sb.append(" ").append( metaDataPathDetail.getPath());
-			if (metaDataPathDetail.getType()==TFileType.DIRECTORY) { 
-			    sb.append("/");
-			}
-                        sb.append('\n');
-                        if(longFormat) {
-			    sb.append(" space token(s) :");
-			    if (metaDataPathDetail.getArrayOfSpaceTokens()!=null) { 
-				for (int j=0;j<metaDataPathDetail.getArrayOfSpaceTokens().getStringArray().length;j++) {
-				    if (j==metaDataPathDetail.getArrayOfSpaceTokens().getStringArray().length-1) {
-					sb.append(metaDataPathDetail.getArrayOfSpaceTokens().getStringArray()[j]);
-				    }
-				    else { 
-					sb.append(metaDataPathDetail.getArrayOfSpaceTokens().getStringArray()[j]+",");
-				    }
-				}
-			    }
-			    else {
-				sb.append("none found");
-			    }
-			    sb.append('\n');
-                            TFileStorageType stortype= metaDataPathDetail.getFileStorageType();			    
-                            if(stortype != null) {
-                                sb.append(depthPrefix);
-                                sb.append(" storage type:").append(stortype.getValue());
-                                sb.append('\n');
-                            }
-			    else { 
-				sb.append(" type: null");
-				sb.append('\n');
-			    }
-			    TRetentionPolicyInfo rpi = metaDataPathDetail.getRetentionPolicyInfo();
-			    if (rpi != null) { 
-				TRetentionPolicy rt = rpi.getRetentionPolicy();
-				if (rt != null) { 
-				    sb.append(depthPrefix);
-				    sb.append(" retention policy:").append(rt.getValue());
-				    sb.append('\n');
-				}
-				else { 
-				    sb.append(" retention policy: null");
-				    sb.append('\n');
-				}
-				TAccessLatency al = rpi.getAccessLatency();
-				if (al != null) { 
-				    sb.append(depthPrefix);
-				    sb.append(" access latency:").append(al.getValue());
-				    sb.append('\n');
-				}
-				else { 
-				    sb.append(" access latency: null");
-				    sb.append('\n');
-				}
-			    }
-			    else { 
-				sb.append(" retentionpolicyinfo : null");
-				sb.append('\n');
-			    }
-                            TFileLocality locality =  metaDataPathDetail.getFileLocality();
-                            if(locality != null) {
-                                sb.append(depthPrefix);
-                                sb.append(" locality:").append(locality.getValue());
-                                sb.append('\n');
-                            }
-			    else { 
-				sb.append(" locality: null");
-				sb.append('\n');
-			    }
-                            if (metaDataPathDetail.getCheckSumValue() != null) {
-                                sb.append(depthPrefix).append( " - Checksum value:  " +
-                                        metaDataPathDetail.getCheckSumValue() + '\n');
-                            }
-                            
-                            if (metaDataPathDetail.getCheckSumType() != null) {
-                                sb.append(depthPrefix).append( " - Checksum type:  " +
-                                        metaDataPathDetail.getCheckSumType() + '\n');
-                            }
-                            java.text.SimpleDateFormat df =
-                                    new java.text.SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-                            java.text.FieldPosition tfp =
-                                    new java.text.FieldPosition(DateFormat.FULL);
-                            
-                            
-                           if (metaDataPathDetail.getOwnerPermission() != null) {
-                                 TUserPermission up =
-                                    metaDataPathDetail.getOwnerPermission();
-                                    sb.append(depthPrefix).append("  UserPermission:");
-                                    sb.append(" uid=").append( up.getUserID() );
-                                    sb.append(" Permissions");
-                                    sb.append(up.getMode().getValue());
-                                    sb.append('\n');
-                           }
-                            
-                            
-                           if (metaDataPathDetail.getGroupPermission() != null) {
-                                TGroupPermission gp =
-                                metaDataPathDetail.getGroupPermission();
-                                    sb.append(depthPrefix).append("  GroupPermission:");
-                                    sb.append(" gid=").append( gp.getGroupID() );
-                                    sb.append(" Permissions");
-                                    sb.append(gp.getMode().getValue());
-                                    sb.append('\n');
-                           }
-                          if(metaDataPathDetail.getOtherPermission() != null)
-                          {
-                                sb.append(depthPrefix).append(" WorldPermission: ");
-                                sb.append(metaDataPathDetail.getOtherPermission().getValue());
-                                sb.append('\n');
-                          }
-                            
-                            
-                            if (metaDataPathDetail.getCreatedAtTime() != null) {
-                                java.util.Date tdate = metaDataPathDetail.getCreatedAtTime().getTime();
-                                if (tdate != null) {
-                                    StringBuffer dsb = new StringBuffer();
-                                    df.format(tdate, dsb, tfp);
-                                    sb.append(depthPrefix).append("created at:").append(dsb);
-                                    sb.append('\n');
-                                }
-                            }
-                            if (metaDataPathDetail.getLastModificationTime() != null) {
-                                java.util.Date tdate =
-                                        metaDataPathDetail.getLastModificationTime().getTime();
-                                if (tdate != null)  {
-                                    StringBuffer dsb = new StringBuffer();
-                                    df.format(tdate, dsb, tfp);
-                                    sb.append(depthPrefix);
-                                    sb.append("modified at:").append(dsb);
-                                    sb.append('\n');
-                                }
-                            }
-                            
-                            
-                            if(metaDataPathDetail.getLifetimeAssigned()!= null)
-                                sb.append(depthPrefix).append("  - Assigned lifetime (in seconds):  " +
-                                        metaDataPathDetail.getLifetimeAssigned() + '\n');
-                            
-                            if(metaDataPathDetail.getLifetimeLeft()!= null)
-                                sb.append(depthPrefix).append( " - Lifetime left (in seconds):  " +
-                                        metaDataPathDetail.getLifetimeLeft() + '\n');
-                            
-                            sb.append(depthPrefix).append(
-                                    " - Original SURL:  " +
-                                    metaDataPathDetail.getPath() + '\n' +
-                                    " - Status:  " + metaDataPathDetail.getStatus().getExplanation() +
-                                    '\n' +
-                                    " - Type:  " + metaDataPathDetail.getType() + '\n');
-                        }
-                        
-                        
-                        if (metaDataPathDetail.getArrayOfSubPaths() != null) {
-                            TMetaDataPathDetail subpaths[] =metaDataPathDetail.getArrayOfSubPaths().getPathDetailArray();
-                            if(subpaths ==ta) {
-                                sb.append(depthPrefix).append( " circular subpath reference !!!");
-                                
-                            } else {
-                                printResults(sb,subpaths,depth+1,depthPrefix+"    ",longFormat);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+
 }

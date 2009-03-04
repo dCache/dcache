@@ -149,6 +149,7 @@ import org.dcache.srm.SRMDuplicationException;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.SRMAuthorizationException;
+import org.dcache.srm.SRMPermissionDeniedException;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.GetFileInfoCallbacks;
 import org.dcache.srm.PrepareToPutCallbacks;
@@ -369,7 +370,7 @@ public class Storage
         permissionHandler = new PermissionHandler(this,_pnfsPath);
         InetAddress[] addresses = InetAddress.getAllByName(
                 InetAddress.getLocalHost().getHostName());
-        
+
         _hosts = new String[addresses.length];
 
         /**
@@ -378,18 +379,18 @@ public class Storage
          */
         int nextExternalIfIndex = 0;
         int nextInternalIfIndex = addresses.length-1;
-        
+
         for( int i = 0; i < addresses.length; i++) {
     		InetAddress addr = addresses[i];
         	
-        	if( !addr.isLinkLocalAddress() && !addr.isLoopbackAddress() && 
+        	if( !addr.isLinkLocalAddress() && !addr.isLoopbackAddress() &&
         			!addr.isSiteLocalAddress() && !addr.isMulticastAddress()) {
         		_hosts [nextExternalIfIndex++] = addr.getHostName();
         	} else {
         		_hosts [nextInternalIfIndex--] = addr.getHostName();
         	}
         }
-        
+
         String tmpstr = _args.getOpt("config");
         if(tmpstr != null) {
             try {
@@ -408,6 +409,9 @@ public class Storage
         config.setPort(getIntOption("srmport",config.getPort()));
         config.setSizeOfSingleRemoveBatch(getIntOption("size-of-single-remove-batch",config.getSizeOfSingleRemoveBatch()));
 	config.setGlue_mapfile(getOption("srmmap",config.getGlue_mapfile()));
+
+        config.setMaxNumberOfLsEntries(getIntOption("max-number-of-ls-entries",config.getMaxNumberOfLsEntries()));
+        config.setMaxNumberOfLsLevels(getIntOption("max-number-of-ls-levels",config.getMaxNumberOfLsLevels()));
 
         config.setKpwdfile( getOption("kpwd-file",config.getKpwdfile()) );
         config.setUseGplazmaAuthzCellFlag(isOptionSetToTrueOrYes(
@@ -578,8 +582,8 @@ public class Storage
         config.setBringOnlineMaxRunningBySameOwner(
             getIntOption("bring-online-req-max-num-of-running-by-same-owner",
             config.getBringOnlineMaxRunningBySameOwner()));
-        
-        
+
+
         config.setPutReqTQueueSize(getIntOption("put-req-thread-queue-size",
             config.getPutReqTQueueSize()));
         config.setPutThreadPoolSize(getIntOption("put-req-thread-pool-size",
@@ -658,13 +662,13 @@ public class Storage
 
         config.setJdbcMonitoringEnabled(isOptionSetToTrueOrYes("jdbc-monitoring-log",
             config.isJdbcMonitoringEnabled())); // false by default
-        
+
         config.setJdbcMonitoringDebugLevel(isOptionSetToTrueOrYes("jdbc-monitoring-debug",
             config.isJdbcMonitoringDebugLevel())); // false by default
 
         config.setCleanPendingRequestsOnRestart(isOptionSetToTrueOrYes("clean-pending-requests-on-restart",
             config.isCleanPendingRequestsOnRestart())); // false by default
-        
+
         config.setOverwrite(isOptionSetToTrueOrYes("overwrite",
             config.isOverwrite())); //false by default
 
@@ -700,7 +704,7 @@ public class Storage
             new AuthRecordPersistenceManager(
                 config.getJdbcUrl(),
                 config.getJdbcClass(),
-                config.getJdbcUser(), 
+                config.getJdbcUser(),
                 config.getJdbcPass());
         config.setSrmUserPersistenceManager(authRecordPersistenceManager);
 
@@ -2560,8 +2564,8 @@ public class Storage
                     absolute_path, parent_util_fmd, util_fmd)) {
                     esay("getFileMetaData have no read permission " +
                         "(or file does not exists) ");
-                    throw new SRMException("getFileMetaData have no read " +
-                        "permission (or file does not exists) ");
+                    throw new SRMPermissionDeniedException("getFileMetaData have no read " +
+                                                           "permission (or file does not exists) ");
                 }
             }
         }
@@ -2628,7 +2632,7 @@ public class Storage
     {
         return getFileMetaData(user,absolute_path, pnfsId,storage_info, util_fmd, null);
     }
-    
+
     public static FileMetaData
         getFileMetaData(SRMUser user,
                         String absolute_path,
@@ -2655,8 +2659,8 @@ public class Storage
         DcacheFileMetaData fmd = new DcacheFileMetaData(pnfsId);
 
         if (util_fmd != null) {
-            
-            
+
+
             if(checksums != null) {
                 //first try to find the adler32 checksum
                 for(Checksum checksum:checksums) {
@@ -2665,7 +2669,7 @@ public class Storage
                         checksum_value = checksum.getValue();
                     }
                 }
-                //if this failed, but there are other types 
+                //if this failed, but there are other types
                 // use the first one found
                 if(checksum_type == null && !checksums.isEmpty() ) {
                      Checksum cksum = checksums.iterator().next();
@@ -3743,7 +3747,7 @@ public class Storage
     }
 
     /**
-     * @param user 
+     * @param user
      * @param filePath
      * @param remoteTURL
      * @param remoteUser
@@ -4093,7 +4097,7 @@ public class Storage
      * various actions performed to release space in the storage
      */
     public void releaseSpace( SRMUser user,
-        long spaceSize, 
+        long spaceSize,
         String spaceToken,
         ReleaseSpaceCallbacks callbacks){
         AuthorizationRecord duser = (AuthorizationRecord) user;
