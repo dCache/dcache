@@ -193,21 +193,38 @@ import java.util.concurrent.*;
     return executor;
   }
 
-  public static void execute(FutureTimedTask task) {
-    try {
-      ThreadManager.getExecutor().execute(task);
-    } catch (NullPointerException npe) {
-      new Thread(task.getRunnable()).start();
-    }
-  }
+      public static void execute(FutureTimedTask task)
+      {
+          ThreadPoolExecutor executor = ThreadManager.getExecutor();
+          if (executor == null) {
+              new Thread(task).start();
+          } else {
+              executor.execute(task);
+          }
+      }
 
-  public static void execute(Runnable runnable) {
-    try {
-      ThreadManager.getExecutor().execute(runnable);
-    } catch (NullPointerException npe) {
-      new Thread(runnable).start();
-    }
-  }
+      public static void execute(final Runnable runnable)
+      {
+          final CDC cdc = new CDC();
+          Runnable wrapper = new Runnable() {
+                  public void run()
+                  {
+                      cdc.apply();
+                      try {
+                          runnable.run();
+                      } finally {
+                          CDC.clear();
+                      }
+                  }
+              };
+
+          ThreadPoolExecutor executor = ThreadManager.getExecutor();
+          if (executor == null) {
+              new Thread(wrapper).start();
+          } else {
+              executor.execute(wrapper);
+          }
+      }
 
   /** Set a parameter according to option specified in .batch config file **/
   private String setParam(String name, String target) {

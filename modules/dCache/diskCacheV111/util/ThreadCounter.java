@@ -1,27 +1,33 @@
-// $Id: ThreadCounter.java,v 1.2 2004-06-04 14:36:18 patrick Exp $ 
+// $Id: ThreadCounter.java,v 1.2 2004-06-04 14:36:18 patrick Exp $
 
 package diskCacheV111.util ;
 
 import java.util.* ;
 import dmg.cells.nucleus.CellAdapter ;
+import dmg.cells.nucleus.CDC ;
 import dmg.util.Args ;
 
 public class ThreadCounter implements ThreadPool, Runnable {
-    
+
     private CellAdapter _cell          = null ;
     private int    _currentThreadCount = 0 ;
     private int    _maxThreadCount     = 0 ;
     private LinkedList _fifo           = new LinkedList() ;
 
-    private class Runner {
-       private Runnable runner = null ;
-       private String   name   = null ;
-       private Runner( Runnable runner , String runnerName ){
-         this.runner = runner ;
-         this.name   = runnerName ;
+    private class Runner
+    {
+        public final Runnable runner;
+        public final String name;
+        public CDC cdc;
 
-       }
+        private Runner(Runnable runner, String name)
+        {
+            this.runner = runner;
+            this.name = name;
+            this.cdc = new CDC();
+        }
     }
+
     public ThreadCounter( CellAdapter cell ){
        _cell = cell ;
        _cell.getNucleus().newThread(this,"ThreadCounter").start() ;
@@ -65,23 +71,27 @@ public class ThreadCounter implements ThreadPool, Runnable {
        synchronized( _fifo ){
           _fifo.addFirst( new Runner( runner , runnerName ) ) ;
           _fifo.notifyAll();
-//          say("ThreadCounter : thread added "+_currentThreadCount); 
+//          say("ThreadCounter : thread added "+_currentThreadCount);
        }
     }
     private class ClientRunner implements Runnable {
        private Runnable _runner = null ;
-       private ClientRunner( Runnable runner ){
+       private CDC _cdc;
+       private ClientRunner( Runnable runner, CDC cdc ){
           _runner = runner ;
+          _cdc = cdc;
        }
        public void run(){
+          _cdc.apply();
           try{
              _runner.run();
           }catch(Throwable t ){
              esay(t);
           }finally{
+             CDC.clear();
              synchronized( _fifo ){
                 _currentThreadCount-- ;
-//                say("ThreadCounter : thread finished "+_currentThreadCount); 
+//                say("ThreadCounter : thread finished "+_currentThreadCount);
                 _fifo.notifyAll();
              }
           }
@@ -95,9 +105,9 @@ public class ThreadCounter implements ThreadPool, Runnable {
 
 
              synchronized( _fifo ){
-                while( ( _fifo.size() == 0 ) || 
+                while( ( _fifo.size() == 0 ) ||
                        ( ( _maxThreadCount > 0 ) &&
-                         ( _currentThreadCount >= _maxThreadCount ) 
+                         ( _currentThreadCount >= _maxThreadCount )
                        )
                                                                    ){
 
@@ -107,8 +117,8 @@ public class ThreadCounter implements ThreadPool, Runnable {
 
                 final Runner r = (Runner)_fifo.removeLast();
                 try{
-                   _cell.getNucleus().newThread( new ClientRunner(r.runner) , r.name ).start() ;
-//                   say("ThreadCounter : thread started "+_currentThreadCount); 
+                    _cell.getNucleus().newThread( new ClientRunner(r.runner, r.cdc) , r.name ).start() ;
+//                   say("ThreadCounter : thread started "+_currentThreadCount);
                    _currentThreadCount ++ ;
                 }catch(Throwable tt ){
                     esay(tt);
@@ -140,5 +150,5 @@ public class ThreadCounter implements ThreadPool, Runnable {
           }
        }
        return sb.toString();
-    }      
+    }
 }
