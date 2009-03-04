@@ -1161,38 +1161,63 @@ public class Manager
         }
 
     private static final Object fixMissingSizeLock = new Object();
-
     private static final String SELECT_RECORDS_WITH_MISSING_SIZE =
             String.format("select f.* from srmspacefile f, srmspace s where f.state=%d and f.sizeinbytes=0 and f.spacereservationid=s.id and s.state=%d", FileState.STORED.getStateId(), SpaceState.RESERVED.getStateId());
+    private void fixMissingSize()
+    {
+        synchronized (fixMissingSizeLock) {
+            try {
+                PnfsHandler pnfs =
+                    new PnfsHandler(Manager.this,
+                                    new CellPath("PnfsManager"));
+                logger.info("fix missing size: Searching for files...");
+                HashSet<File> files =
+                    manager.select(new FileIO(), SELECT_RECORDS_WITH_MISSING_SIZE);
+                int counter = 0;
+                for (File file: files) {
+                    if (counter % 1000 == 0) {
+                        logger.info(String.format("fix missing size: Processed %d of %d files.", counter, files.size()));
+                    }
+
+                    PnfsGetFileMetaDataMessage msg =
+                        pnfs.getFileMetaDataById(file.getPnfsId());
+                    long size = msg.getMetaData().getFileSize();
+                    updateSpaceFile(file.getId(),
+                                    null,
+                                    null,
+                                    null,
+                                    size,
+                                    null,
+                                    null);
+                    counter++;
+                }
+                logger.info("fix missing size: Done");
+            } catch (SQLException e) {
+                logger.error("Failure in 'fix missing size': " + e.getMessage());
+            } catch (CacheException e) {
+                logger.error("Failure in 'fix missing size': " + e.getMessage());
+            }
+        }
+    }
+
     public static final String hh_fix_missing_size =
         "# See full help for details";
     public static final String fh_fix_missing_size =
         "Cleans up after a bug that was present in dCache 1.9.1-1 to 1.9.1-3. That \n" +
-        "bug caused files to be registered with a wrong size in the space manager.";
+        "bug caused files to be registered with a wrong size in the space manager.\n" +
+        "Warning: This command may take a long time to complete and may consume a\n" +
+        "         lot of memory. Progress information can be found in the log file.";
     public String ac_fix_missing_size(Args args)
-        throws SQLException, CacheException
     {
-        synchronized (fixMissingSizeLock) {
-            PnfsHandler pnfs =
-                new PnfsHandler(this, new CellPath("PnfsManager"));
-            HashSet<File> files =
-                manager.select(new FileIO(), SELECT_RECORDS_WITH_MISSING_SIZE);
-            for (File file: files) {
-                PnfsGetFileMetaDataMessage msg =
-                    pnfs.getFileMetaDataById(file.getPnfsId());
-                long size = msg.getMetaData().getFileSize();
-                updateSpaceFile(file.getId(),
-                                null,
-                                null,
-                                null,
-                                size,
-                                null,
-                                null);
+        new Thread()
+        {
+            public void run()
+            {
+                fixMissingSize();
             }
-            return String.format("Updated %d records", files.size());
-        }
+        }.start();
+        return "Command is executed in a background thread.";
     }
-
 
 	private static final String selectNextToken = "SELECT nexttoken  FROM "+ManagerSchemaConstants.SpaceManagerNextIdTableName;
 	private static final String insertNextToken = "INSERT INTO "+ManagerSchemaConstants.SpaceManagerNextIdTableName+
