@@ -701,6 +701,8 @@
 			</manifest>
 		</jar>
 
+	    <!-- Saxon, for info-provider -->
+	    <copy file="${libDir}/Saxon/saxon.jar" todir="${binDir}/classes" />
 	</target>
 
 
@@ -981,6 +983,8 @@
 			</fileset>
 		</copy>
 
+	        <!-- Saxon, for info-provider -->
+	        <copy file="${libDir}/Saxon/saxon.jar" todir="${binDir}/classes" />
 	</target>
 	<target name="xrootd-tokenauthz-bin" depends="xrootd-tokenauthz.jar">
 
