@@ -843,6 +843,8 @@
 	    <copy file="${libDir}/dbcp/commons-dbcp.jar" todir="${binDir}/classes/jdbc-drivers" />
 	    <copy file="${libDir}/dbcp/commons-pool.jar" todir="${binDir}/classes/jdbc-drivers" />
 
+	    <!-- Saxon, for info-provider -->
+	    <copy file="${libDir}/Saxon/saxon.jar" todir="${binDir}/classes" />
 	</target>
 
 
@@ -929,6 +931,8 @@
 			</fileset>
 		</copy>
 
+	        <!-- Saxon, for info-provider -->
+	        <copy file="${libDir}/Saxon/saxon.jar" todir="${binDir}/classes" />
 	</target>
 	<target name="xrootd-tokenauthz-bin" depends="xrootd-tokenauthz.jar">
 
