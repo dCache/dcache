@@ -10,9 +10,8 @@
 #  The general documentation for the format of this is in
 #  /opt/d-cache/share/doc/xylophone/Guide.txt
 
-ourHomeDir=${ourHomeDir:-/opt/d-cache}
 
-# Utility function for printing to stdout with a line width
+# Utility function for printing to stderr with a line width
 # maximum of 75 characters. Longer lines are broken into several
 # lines. Each argument is interpreted as a separate paragraph.
 printp() # $* = list of paragraphs
@@ -30,7 +29,7 @@ printp() # $* = list of paragraphs
         for word in $1; do
             line2="$line $word"
             if [ ${#line2} -gt 75 ]; then
-                echo $line
+                echo $line >&2
                 line=$word
             else
                 line=$line2
@@ -42,37 +41,91 @@ printp() # $* = list of paragraphs
 }
 
 
+#  Read in the dCacheSetup file
 readSetup()
 {
-    if [ -r ${ourHomeDir}/config/dCacheSetup ]; then
-        . ${ourHomeDir}/config/dCacheSetup
+    if [ -r $dCacheSetupFile ]; then
+        . $dCacheSetupFile
     else
-        printp "${ourHomeDir}/config/dCacheSetup does not exist. You have
-            to install and setup dCache before you can use this
-            script." 1>&2
+        printp "[WARNING] The dCacheSetup file (expected in $dCacheSetupDir) could not be read."
+    fi
+}
+
+#  Apply any sanity checks before launching the XSLT processor
+sanityCheck()
+{
+    if [ ! -r "$xylophoneXMLFile" ]; then
+        printp "[ERROR] Unable to read $xylophoneXMLFile.  Try creating this file or editing the variable 'xylophoneConfigurationDir' (currently \"$xylophoneConfigurationDir\") or 'xylophoneConfigurationFile' (currently \"$xylophoneConfigurationFile\") in $dCacheSetupFile"
         exit 1
     fi
 
-    # Sanity check for xylophoneConfigurationFile variable.
-    if [ -z "$xylophoneConfigurationFile" ]; then
-        printp "[ERROR] The variable 'xylophoneConfigurationFile' in
-            ${ourHomeDir}/config/dCacheSetup has to be set properly. Exiting."
+    if [ ! -r "$xylophoneXSLTFile" ]; then
+        printp "[ERROR] Unable to read ${xylophoneXSLTFile}.  If the file exists, try editing the variable 'xylophoneXSLTDir' (currently \"$xylophoneXSLTDir\") in $dCacheSetupFile"
         exit 1
     fi
 }
 
 
+#  Default value for ourHomeDir
+if [ -z "$ourHomeDir" ]; then
+    ourHomeDir=/opt/d-cache
+fi
+
+#  Default values: don't edit these values; instead, change them in dCacheSetup
+dCacheSetupDir=$ourHomeDir/config
+dCacheSetupFile=$dCacheSetupDir/dCacheSetup
+xsltProcessor=saxon
+xylophoneConfigurationFile=glue-1.3.xml
+xylophoneConfigurationDir=$ourHomeDir/etc
+httpHost=localhost
+httpPort=2288
+xylophoneXSLTDir=$ourHomeDir/share/xml/xylophone
+
+
 #  Import the dCacheSetup configuration.
 readSetup
 
-#  Include our default values.
-httpHost=${httpHost:-localhost}
-xylophoneConfigurationDir=${xylophoneConfigurationDir:-${ourHomeDir}/etc}
 
-#  Build derived variables.
-xylophoneDir=${ourHomeDir}/share/xml/xylophone
+#  Apply any environment overrides
+if [ -n "$XSLT_PROCESSOR" ]; then
+    xsltProcessor=$XSLT_PROCESSOR
+fi
+
+if [ -n "$XYLOPHONE_CONFIG_DIR" ]; then
+    xylophoneConfigurationDir=$XYLOPHONE_CONFIG_DIR
+fi
+
+if [ -n "$HTTP_HOST" ]; then
+    httpHost=$HTTP_HOST
+fi
+
+if [ -n "$HTTP_PORT" ]; then
+    httpPort=$HTTP_PORT
+fi
+
+
+#  Build derived variables after allowing changes from default values
+xylophoneXSLTFile=$xylophoneXSLTDir/xsl/xylophone.xsl
 xylophoneXMLFile=$xylophoneConfigurationDir/$xylophoneConfigurationFile
-dCacheInfoUri=http://${httpHost}:2288/info
+dCacheInfoUri=http://${httpHost}:${httpPort}/info
+
+
+sanityCheck
+
 
 #  Generate LDIF
-xsltproc -stringparam xml-src-uri $dCacheInfoUri $xylophoneDir/xsl/xylophone.xsl $xylophoneXMLFile
+case $xsltProcessor in
+  xsltproc)
+	xsltproc -stringparam xml-src-uri "$dCacheInfoUri" "$xylophoneXSLTFile" "$xylophoneXMLFile"
+	;;
+
+  saxon)
+	${java} -classpath ${ourHomeDir}/classes/saxon.jar com.icl.saxon.StyleSheet "$xylophoneXMLFile" "$xylophoneXSLTFile" xml-src-uri="$dCacheInfoUri"
+	;;
+    
+  *)
+	printp "[ERROR] Unknown type of XSLT processor (\"$xsltProcessor\")"
+	printp "Please use either \"xsltproc\" or \"saxon\"" >&2
+	exit 1
+	;;
+esac
