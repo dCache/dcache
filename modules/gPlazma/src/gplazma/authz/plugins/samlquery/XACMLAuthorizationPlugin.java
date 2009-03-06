@@ -68,7 +68,6 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
         }
 
         VOMSAttribute vomsAttr=null;
-        try {
             if (chain !=null && fqan !=null) {
                 vomsAttr = X509CertUtil.getVOMSAttribute(chain, fqan);
             }
@@ -77,21 +76,6 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
                 String X500IssuerName = vomsAttr.getAC().getIssuer().toString();
                 VOMSSigningSubject = X509CertUtil.toGlobusDN(X500IssuerName);
             }
-        } catch (GSSException e) {
-            getLogger().warn("Could not find attribute certificate for fqan : " + fqan + "\n" + e.getMessage());
-        }catch(IOException e) {
-            getLogger().error("Problems while initializing the attribute certificate verifier: " + e.getMessage());
-            throw new IllegalArgumentException("Problems with the passed store: " + e.getMessage());
-        }
-        catch (CertificateException e) {
-            getLogger().error("Problems while initializing the attribute certificate verifier: " + e.getMessage());
-            throw new IllegalArgumentException("Problems with the passed store: " + e.getMessage());
-        }
-        catch (CRLException e) {
-            getLogger().error("Problems while initializing the attribute certificate verifier: " + e.getMessage());
-            throw new IllegalArgumentException("Problems with the passed store: " + e.getMessage());
-        }
-
 
         try {
             resourceX509ID = getTargetServiceName();

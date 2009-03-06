@@ -110,6 +110,7 @@ import org.glite.voms.BasicVOMSTrustStore;
 import org.glite.voms.VOMSValidator;
 import org.glite.voms.VOMSAttribute;
 import gplazma.authz.util.X509CertUtil;
+import gplazma.authz.AuthorizationException;
 
 // The following imports are needed to extract the user's credential
 // from the servlet context
@@ -278,100 +279,14 @@ public class SrmAuthorizer {
       }
    }
    
-  public static Collection <String> getFQANsFromContext(ExtendedGSSContext gssContext, boolean validate) throws Exception {
-        X509Certificate[] chain = (X509Certificate[]) gssContext.inquireByOid(GSSConstants.X509_CERT_CHAIN);
-        return getFQANsFromX509Chain(chain, validate);
-    }
-    
-    public static Collection <String> getFQANsFromContext(ExtendedGSSContext gssContext) throws SRMAuthorizationException {
-      try {
-            X509Certificate[] chain = (X509Certificate[]) gssContext.inquireByOid(GSSConstants.X509_CERT_CHAIN);
-            return getFQANsFromX509Chain(chain, false);
-      } catch (Exception e) {
-         throw new SRMAuthorizationException("getFQANsFromContext failed", e);
+   public static Collection<String> getFQANsFromContext(ExtendedGSSContext gssContext) throws SRMAuthorizationException {
+    try {
+        return X509CertUtil.getFQANsFromContext(gssContext);
+    } catch (AuthorizationException ae) {
+         throw new SRMAuthorizationException("Could not extract FQANs from context " + ae.getMessage());
       }
-    }
-    
-    public static Collection <String> getValidatedFQANsFromX509Chain(X509Certificate[] chain) throws Exception {
-        return getFQANsFromX509Chain(chain, true);
-    }
-    
-    public static Collection <String> getFQANsFromX509Chain(X509Certificate[] chain) throws Exception {
-        return getFQANsFromX509Chain(chain, false);
-    }
-    
-    public static Collection <String> getFQANsFromX509Chain(X509Certificate[] chain, boolean validate) throws Exception {
-        VOMSValidator validator = X509CertUtil.getVOMSValidatorInstance();
-        validator.setClientChain(chain);
-        return getFQANsFromX509Chain(validator, validate);
-    }
-    
-    public static Collection <String> getFQANsFromX509Chain(VOMSValidator validator, boolean validate) throws Exception {
-        
-        if(!validate) return getFQANs(validator);
-        Collection <String> validatedroles;
-        
-        try {
-            validatedroles = getValidatedFQANs(validator);
-            //if(!role.equals(validatedrole))
-            //hrow new AuthorizationServiceException("role "  + role + " did not match validated role " + validatedrole);
-        } catch(org.ietf.jgss.GSSException gsse ) {
-            throw new SRMAuthorizationException(gsse.toString());
-        } catch(Exception e) {
-            throw new SRMAuthorizationException("Could not validate role.");
-        }
-        
-        return validatedroles;
-    }
-    
-    public static Collection <String> getFQANs(X509Certificate[] chain) throws IOException, CertificateException, CRLException, GSSException {
-        VOMSValidator validator = X509CertUtil.getVOMSValidatorInstance();
-        validator.setClientChain(chain);
-        return getFQANs(validator);
-    }
-    
-    public static Collection <String> getFQANs(VOMSValidator validator) throws GSSException {
-        LinkedHashSet <String> fqans = new LinkedHashSet <String> ();
-        validator.parse();
-        List listOfAttributes = validator.getVOMSAttributes();
-        
-        Iterator i = listOfAttributes.iterator();
-        while (i.hasNext()) {
-            VOMSAttribute vomsAttribute = (VOMSAttribute) i.next();
-            List listOfFqans = vomsAttribute.getFullyQualifiedAttributes();
-            Iterator j = listOfFqans.iterator();
-            if (j.hasNext()) {
-                fqans.add((String) j.next());
-            }
-        }
-        
-        return fqans;
-    }
-    
-    public static Collection <String> getValidatedFQANArray(X509Certificate[] chain) throws IOException, CertificateException, CRLException, GSSException {
-        VOMSValidator validator = X509CertUtil.getVOMSValidatorInstance();
-        validator.setClientChain(chain);
-        return getValidatedFQANs(validator);
-    }
-    
-    public static Collection <String> getValidatedFQANs(VOMSValidator validator) throws GSSException {
-        LinkedHashSet <String> fqans = new LinkedHashSet <String> ();
-        validator.validate();
-        List listOfAttributes = validator.getVOMSAttributes();
-        
-        Iterator i = listOfAttributes.iterator();
-        while (i.hasNext()) {
-            VOMSAttribute vomsAttribute = (VOMSAttribute) i.next();
-            List listOfFqans = vomsAttribute.getFullyQualifiedAttributes();
-            Iterator j = listOfFqans.iterator();
-            if (j.hasNext()) {
-                fqans.add((String) j.next());
-            }
-        }
-        
-        return fqans;
-    }
-    
+   }
+
     public static class NullIterator<String> implements Iterator {
         private boolean hasnext = true;
         public boolean hasNext() { return hasnext; }
