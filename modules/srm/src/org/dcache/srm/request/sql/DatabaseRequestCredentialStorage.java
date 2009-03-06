@@ -562,7 +562,10 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
                }catch(IOException ioe1) {
                }
            }
-           esay(ioe);
+           // this is not an error, as the file will
+           // written if it is not found
+           // so we just make a debug log
+           say("fileNameToGSSCredentilal("+fileName+") failed with "+ioe);
        }
        return null;
    }
