@@ -10,63 +10,111 @@ import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.util.Enumeration;
 
+import org.apache.log4j.Logger;
+
 import org.dcache.pool.movers.MoverProtocol;
+import org.dcache.pool.movers.ManualMover;
 import org.dcache.pool.repository.Allocator;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
-import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
-import dmg.util.Args;
 
-public class NFSv41ProtocolMover implements MoverProtocol {
+public class NFSv41ProtocolMover implements ManualMover {
 
-    private static final int INC_SPACE = (50 * 1024 * 1024);
     private static final int DEFAULT_PORT = 2052;
-    //
-    // <init>( CellAdapter cell ) ;
-    //
-    private Args _args = null;
-    private CellAdapter _cell = null;
 
-    private final static NFSv4MoverHandler _nfsIO = new NFSv4MoverHandler(DEFAULT_PORT);
+    private final CellEndpoint _cell;
+    private long _bytesTransferred = 0;
+    private long _lastAccessTime = 0;
+    private long _started = 0;
+    private long _ended = 0;
 
-    public NFSv41ProtocolMover(CellAdapter cell) {
-        // forced by mover contract
+    private int _ioMode = MoverProtocol.READ;
+    private static final Logger _log = Logger.getLogger(NFSv41ProtocolMover.class.getName());
 
-        _cell = cell;
-        _args = _cell.getArgs();
-
+    private static NFSv4MoverHandler _nfsIO;
+    static {
+        try {
+            _nfsIO = new NFSv4MoverHandler(DEFAULT_PORT);
+        }catch(Exception e) {
+            _nfsIO = null;
+            _log.fatal("Failed to initialize NFS mover", e);
+        }
     }
 
+
+    public NFSv41ProtocolMover(CellEndpoint cell) {
+        _cell = cell;
+    }
+
+    /*
+     * (non-Javadoc)
+     *
+     * @see org.dcache.pool.movers.MoverProtocol#getAttribute()
+     */
+	@Override
     public Object getAttribute(String name) {
-        // TODO Auto-generated method stub
+        // forced by MoverProtocol interface
         return null;
     }
 
+    /*
+     * (non-Javadoc)
+     *
+     * @see org.dcache.pool.movers.MoverProtocol#getBytesTransferred()
+     */
+	@Override
     public long getBytesTransferred() {
-        // TODO Auto-generated method stub
-        return 0;
+        return _bytesTransferred;
     }
 
+    /*
+     * (non-Javadoc)
+     *
+     * @see org.dcache.pool.movers.MoverProtocol#getLastTransferred()
+     */
+	@Override
     public long getLastTransferred() {
-        // TODO Auto-generated method stub
-        return 0;
+        return _lastAccessTime;
     }
 
+    /*
+     * (non-Javadoc)
+     *
+     * @see org.dcache.pool.movers.MoverProtocol#getTransferTime()
+     */
+	@Override
     public long getTransferTime() {
-        // TODO Auto-generated method stub
-        return 0;
+
+        if (_ended < _started) {
+            return System.currentTimeMillis() - _started;
+        } else {
+            return _ended - _started;
+        }
     }
 
-    public void runIO(RandomAccessFile fileChannel, ProtocolInfo protocol,
+    /*
+     * (non-Javadoc)
+     *
+     * @see org.dcache.pool.movers.MoverProtocol#runIO(RandomAccessFile raf, ProtocolInfo protocol,
+     *      StorageInfo storage, PnfsId pnfsId,
+     *      SpaceMonitor spaceMonitor, int access)
+     */
+	@Override
+    public void runIO(RandomAccessFile raf, ProtocolInfo protocol,
             StorageInfo storage, PnfsId pnfsId,
             Allocator allocator, int access)
             throws Exception {
 
+        _log.debug("new IO request for " + pnfsId + " access: " + (access == MoverProtocol.READ ? "r" : "w"));
 
+        if( _nfsIO == null ) {
+            throw new IllegalStateException("NFS mover not ready");
+        }
 
         /*
          * FIXME:
@@ -89,34 +137,83 @@ public class NFSv41ProtocolMover implements MoverProtocol {
 
         }
 
-        _nfsIO.addHandler(pnfsId, fileChannel.getChannel());
+        _log.debug("using local interface: " + localIp);
 
-        PoolPassiveIoFileMessage msg = new PoolPassiveIoFileMessage(_cell.getCellName(),
-                new InetSocketAddress(localIp, DEFAULT_PORT), "".getBytes());
+        _ioMode = access;
+        MoverBridge moverBridge = new MoverBridge(this, pnfsId, raf.getChannel(), access, allocator );
 
+        _nfsIO.addHandler(moverBridge);
+        try {
+            
+            _started = System.currentTimeMillis();
+    
+            PoolPassiveIoFileMessage msg = new PoolPassiveIoFileMessage(_cell.getCellInfo().getCellName(),
+                    new InetSocketAddress(localIp, DEFAULT_PORT), "".getBytes());
+    
+    
+            CellPath cellpath = ((NFS4ProtocolInfo) protocol).door();
+            msg.setId( ((NFS4ProtocolInfo) protocol).stateId() );
+            _cell.sendMessage(new CellMessage(cellpath, msg));
+    
+    
+            /*
+             * hang forever, until thread is not stopped( interrupted )
+             */
+            boolean done = false;
+            while( !done ) {
+                try {
+                    Thread.sleep(Long.MAX_VALUE);
+                }catch(InterruptedException ie) {
+                    done = true;
+                }
+            }
 
-        CellPath cellpath = ((NFS4ProtocolInfo) protocol).door();
-        msg.setId( ((NFS4ProtocolInfo) protocol).stateId() );
-        _cell.sendMessage(new CellMessage(cellpath, msg), true, true);
-
-
-        /*
-         * hang forever, until thread is not stopped( interrupted )
-         */
-        while( !Thread.interrupted() ) {
-            Thread.sleep(5000);
+        }finally{
+            /*
+             * tell nfs engine that IO for this file not allowed any more.
+             */
+            _nfsIO.removeHandler(moverBridge);
         }
 
+        _ended = System.currentTimeMillis();
+        _log.debug("IO request for " + pnfsId + " done.");
     }
 
+    /*
+     * (non-Javadoc)
+     *
+     * @see diskCacheV111.movers.MoverProtocol#setAttribute(String name, Object attribute)
+     */
+	@Override
     public void setAttribute(String name, Object attribute) {
-        // TODO Auto-generated method stub
-
+        // forced by MoverProtocol interface
     }
 
+
+    /*
+     * (non-Javadoc)
+     *
+     * @see diskCacheV111.movers.MoverProtocol#wasChanged()
+     */
+	@Override
     public boolean wasChanged() {
-        // TODO Auto-generated method stub
-        return false;
+        return  ((_ioMode & MoverProtocol.WRITE) == MoverProtocol.WRITE) &&  (getBytesTransferred() > 0);
+    }
+
+
+    /**
+     * Set number of transfered bytes. The total transfered bytes count will
+     * be increased. All negative values  ignored. The last access time is updated.
+     *
+     * @param bytesTransferred
+     */
+	@Override
+    public void setBytesTransferred(long bytesTransferred) {
+
+        if( bytesTransferred  < 0 ) return;
+
+        _bytesTransferred += bytesTransferred;
+        _lastAccessTime = System.currentTimeMillis();
     }
 
 }

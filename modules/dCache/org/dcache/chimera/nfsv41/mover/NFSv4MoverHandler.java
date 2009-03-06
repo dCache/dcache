@@ -1,8 +1,6 @@
 package org.dcache.chimera.nfsv41.mover;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -14,9 +12,8 @@ import org.acplt.oncrpc.server.OncRpcCallInformation;
 import org.acplt.oncrpc.server.OncRpcDispatchable;
 import org.acplt.oncrpc.server.OncRpcTcpServerTransport;
 import org.apache.log4j.Logger;
+import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FsInode;
-import org.dcache.chimera.JdbcFs;
-import org.dcache.chimera.XMLconfig;
 import org.dcache.chimera.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.chimera.nfs.v4.COMPOUND4args;
 import org.dcache.chimera.nfs.v4.COMPOUND4res;
@@ -39,8 +36,6 @@ import org.dcache.chimera.nfs.v4.nfs_opnum4;
 import org.dcache.chimera.nfs.v4.nfs_resop4;
 import org.dcache.chimera.nfs.v4.nfsstat4;
 
-import diskCacheV111.util.PnfsId;
-
 /**
  *
  * Pool embedded NFSv4.1 data server
@@ -50,29 +45,17 @@ public class NFSv4MoverHandler implements OncRpcDispatchable {
 
     private static final Logger _log = Logger.getLogger(NFSv4MoverHandler.class.getName());
 
-    private JdbcFs _fs = null;
+    private final FileSystemProvider _fs = new DummyFileSystemProvider();
 
-    private final Map<FsInode, FileChannel> _activeIO = new HashMap<FsInode, FileChannel>();
+    private final Map<FsInode, MoverBridge> _activeIO = new HashMap<FsInode, MoverBridge>();
     private final EDSNFSv4OperationFactory _operationFactory = new EDSNFSv4OperationFactory(_activeIO);
 
-    public NFSv4MoverHandler(int port)  {
+    public NFSv4MoverHandler(int port) throws OncRpcException, IOException {
 
-        try {
-
-            XMLconfig config = new XMLconfig( new File("/home/tigran/allInOne/config/chimera-config.xml") );
-
-           _fs = new JdbcFs( config );
-
-           final OncRpcTcpServerTransport tcpTrans = new OncRpcTcpServerTransport(
-                   this, port, 100003, 4, 8192);
-
-           tcpTrans.listen();
-
-
-        }catch(Exception e){
-            _log.error("jdbcfs:", e);
-        }
-
+        final OncRpcTcpServerTransport tcpTrans = new OncRpcTcpServerTransport(
+                this, port, 100003, 4, 8192);
+        tcpTrans.listen();
+        _log.debug("NFSv4MoverHandler created on port:" + tcpTrans.getPort());
     }
 
     public void dispatchOncRpcCall(OncRpcCallInformation call, int program,
@@ -102,6 +85,9 @@ public class NFSv4MoverHandler implements OncRpcDispatchable {
 
     }
 
+    /*
+     * AKA RPC ping
+     */
     public void NFSPROC4_NULL_4(OncRpcCallInformation call$) {
         _log.debug("MOVER: PING from client: " + call$.peerAddress.getHostAddress() );
     }
@@ -160,23 +146,45 @@ public class NFSv4MoverHandler implements OncRpcDispatchable {
 
     }
 
+    /*
+     * FIXME:
+     * 
+     * current implementation has a limitation which allow only single transfer
+     * per file and IO {@link FsInode} used for access control. The correct ( NFSv4.1)
+     * way to do it is to use open_stateid. The stateid is actually a part of
+     * {@link NFS4ProtocolInfo} and will be used in the next iteration. 
+     * 
+     */
 
-    public void addHandler(PnfsId id, FileChannel fileChannel) {
-        _activeIO.put( new FsInode(_fs, id.toString()), fileChannel );
+    /**
+     * Add specified mover into list of allowed transfers.
+     * 
+     * @param moverBridge
+     */
+    public void addHandler(MoverBridge moverBridge) {
+        _log.debug("added io handler: " + moverBridge);
+        _activeIO.put( new FsInode(_fs, moverBridge.getPnfsId().toString()), moverBridge );
     }
 
-
+    /**
+     * Removes specified mover into list of allowed transfers.
+     * 
+     * @param moverBridge
+     */
+    public void removeHandler(MoverBridge moverBridge) {
+        _log.debug("removing io handler: " + moverBridge);
+        _activeIO.remove( new FsInode(_fs, moverBridge.getPnfsId().toString())  );
+    }
 
     private static class EDSNFSv4OperationFactory {
 
-        private final Map<FsInode, FileChannel> _activeIO;
+        private final Map<FsInode, MoverBridge> _activeIO;
 
-        EDSNFSv4OperationFactory(Map<FsInode, FileChannel> activeIO) {
+        EDSNFSv4OperationFactory(Map<FsInode, MoverBridge> activeIO) {
             _activeIO = activeIO;
         }
 
-
-       AbstractNFSv4Operation getOperation(JdbcFs fs, OncRpcCallInformation call$, CompoundArgs fh, nfs_argop4 op) {
+       AbstractNFSv4Operation getOperation(FileSystemProvider fs, OncRpcCallInformation call$, CompoundArgs fh, nfs_argop4 op) {
 
                switch ( op.argop ) {
                    case nfs_opnum4.OP_COMMIT:
@@ -203,10 +211,8 @@ public class NFSv4MoverHandler implements OncRpcDispatchable {
 
                    }
 
-
                return new OperationILLEGAL(fs, call$, fh, op, null);
            }
-
 
    }
 }

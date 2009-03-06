@@ -49,6 +49,7 @@ define context MoverMap endDefine
    movermap define DCap-3  org.dcache.pool.movers.DCapProtocol_3_nio
    movermap define GFtp-1  org.dcache.pool.movers.GFtpProtocol_2_nio
    movermap define GFtp-2  org.dcache.pool.movers.GFtpProtocol_2_nio
+   movermap define NFS4-4  org.dcache.chimera.nfsv41.mover.NFSv41ProtocolMover
 endDefine
 
 # This defines how to instantiate the pool code.
