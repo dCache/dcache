@@ -61,7 +61,7 @@ public class X509CertUtil {
     private static ACValidator acValidator=null;
     private static PKIVerifier pkiVerifier=null;
 
-    public static int REFRESH_TIME_MS=20000;
+    private static int REFRESH_TIME_MS=20000;
 
     public static GSSContext getUserContext(String proxy_cert) throws GSSException {
        return getUserContext(proxy_cert, default_trusted_cacerts);
@@ -263,52 +263,46 @@ public class X509CertUtil {
        return toGlobusDN(cert.getIssuerDN().toString());
     }
 
-    public static Collection<String> getFQANsFromContext(ExtendedGSSContext gssContext, boolean validate) throws Exception {
-        X509Certificate[] chain = (X509Certificate[]) gssContext.inquireByOid(GSSConstants.X509_CERT_CHAIN);
+    public static Collection<String> getFQANsFromContext(ExtendedGSSContext gssContext, boolean validate) throws AuthorizationException {
+        X509Certificate[] chain;
+        try {
+            chain = (X509Certificate[]) gssContext.inquireByOid(GSSConstants.X509_CERT_CHAIN);
+        } catch (GSSException gsse) {
+            throw new AuthorizationException("Could not extract certificate chain from context " + gsse.getMessage() + "\n" + gsse.getCause());
+        }
         return getFQANsFromX509Chain(chain, validate);
     }
 
-    public static Collection <String> getFQANsFromContext(ExtendedGSSContext gssContext) throws Exception {
-        X509Certificate[] chain = (X509Certificate[]) gssContext.inquireByOid(GSSConstants.X509_CERT_CHAIN);
+    public static Collection <String> getFQANsFromContext(ExtendedGSSContext gssContext) throws AuthorizationException {
+        X509Certificate[] chain;
+        try {
+            chain = (X509Certificate[]) gssContext.inquireByOid(GSSConstants.X509_CERT_CHAIN);
+        } catch (GSSException gsse) {
+            throw new AuthorizationException("Could not extract certificate chain from context " + gsse.getMessage() + "\n" + gsse.getCause());
+        }
         return getFQANsFromX509Chain(chain, false);
     }
 
-    public static Collection <String> getValidatedFQANsFromX509Chain(X509Certificate[] chain) throws Exception {
+    public static Collection <String> getValidatedFQANsFromX509Chain(X509Certificate[] chain) throws AuthorizationException {
         return getFQANsFromX509Chain(chain, true);
     }
 
-    public static Collection <String> getFQANsFromX509Chain(X509Certificate[] chain) throws Exception {
+    public static Collection <String> getFQANsFromX509Chain(X509Certificate[] chain) throws AuthorizationException {
         return getFQANsFromX509Chain(chain, false);
     }
 
-    public static Collection <String> getFQANsFromX509Chain(X509Certificate[] chain, boolean validate) throws Exception {
-        VOMSValidator validator = getVOMSValidatorInstance();
-        validator.setClientChain(chain);
-        return getFQANsFromX509Chain(validator, validate);
-    }
-
-    public static Collection <String> getFQANsFromX509Chain(VOMSValidator validator, boolean validate) throws Exception {
-
-        if(!validate) return getFQANs(validator);
-        Collection <String> validatedroles;
-
+    public static Collection <String> getFQANsFromX509Chain(X509Certificate[] chain, boolean validate) throws AuthorizationException {
+        Collection <String> fqans=null;
         try {
-            validatedroles = getValidatedFQANs(validator);
-            //if(!role.equals(validatedrole))
-            //hrow new AuthorizationException("role "  + role + " did not match validated role " + validatedrole);
-        } catch(GSSException gsse ) {
-            throw new AuthorizationException(gsse.toString());
+            List listOfAttributes = getVOMSAttributes(chain, validate);
+            fqans = getFQANSfromVOMSAttributes(listOfAttributes);
+        } catch(AuthorizationException ae ) {
+            throw new AuthorizationException(ae.toString());
         } catch(Exception e) {
             throw new AuthorizationException("Could not validate role.");
         }
 
-        return validatedroles;
-    }
-
-    public static Collection <String> getFQANs(X509Certificate[] chain) throws IOException, CertificateException, CRLException, GSSException {
-        VOMSValidator validator = getVOMSValidatorInstance();
-        validator.setClientChain(chain);
-        return getFQANs(validator);
+        return fqans;
     }
 
     /**
@@ -322,17 +316,7 @@ attribute : /cms/uscms/Role=cmsprod/Capability=NULL
 
    /cms/uscms/Role=cmssoft/Capability=NULL
    /cms/uscms/Role=cmsprod/Capability=NULL
-
-   * @param validator
-   * @return
-   * @throws org.ietf.jgss.GSSException
-   */
-    public static Collection <String> getFQANs(VOMSValidator validator) throws GSSException {
-        validator.parse();
-        List listOfAttributes = validator.getVOMSAttributes();
-        LinkedHashSet<String> fqans = getFQANSfromVOMSAttributes(listOfAttributes);
-        return fqans;
-    }
+*/
 
     public static LinkedHashSet<String> getFQANSfromVOMSAttributes(List listOfAttributes) {
         LinkedHashSet<String> fqans = new LinkedHashSet <String> ();
@@ -361,34 +345,18 @@ attribute : /cms/uscms/Role=cmsprod/Capability=NULL
         return fqans;
     }
 
-    public static Collection <String> getValidatedFQANArray(X509Certificate[] chain) throws IOException, CertificateException, CRLException, GSSException {
-        VOMSValidator validator = getVOMSValidatorInstance();
-        validator.setClientChain(chain);
-        return getValidatedFQANs(validator);
-    }
-
-    public static Collection <String> getValidatedFQANs(VOMSValidator validator) throws GSSException {
-        validator.validate();
-        List listOfAttributes = validator.getVOMSAttributes();
-        LinkedHashSet<String> fqans = getFQANSfromVOMSAttributes(listOfAttributes);
-        return fqans;
-    }
-
-    public static AttributeCertificate getAttributeCertificate(X509Certificate[] chain, String fqan) throws IOException, CertificateException, CRLException, GSSException {
+    public static AttributeCertificate getAttributeCertificate(X509Certificate[] chain, String fqan) throws AuthorizationException {
         return getVOMSAttribute(chain, fqan).getAC();
     }
 
-    public static VOMSAttribute getVOMSAttribute(X509Certificate[] chain, String fqan) throws IOException, CertificateException, CRLException, GSSException {
+    public static VOMSAttribute getVOMSAttribute(X509Certificate[] chain, String fqan) throws AuthorizationException {
 
         if(fqan.endsWith(AuthorizationController.capnull))
                 fqan = fqan.substring(0, fqan.length() - AuthorizationController.capnulllen);
         if(fqan.endsWith(AuthorizationController.rolenull))
                 fqan = fqan.substring(0, fqan.length() - AuthorizationController.rolenulllen);
 
-        VOMSValidator validator = getVOMSValidatorInstance();
-        validator.setClientChain(chain);
-        validator.parse(chain);
-        List listOfAttributes = validator.getVOMSAttributes();
+        List listOfAttributes = getVOMSAttributes(chain, false);
 
         Iterator i = listOfAttributes.iterator();
         while (i.hasNext()) {
@@ -413,6 +381,25 @@ attribute : /cms/uscms/Role=cmsprod/Capability=NULL
         }
 
         return null;
+    }
+
+    public static synchronized List getVOMSAttributes(X509Certificate[] chain, boolean validate) throws AuthorizationException {
+        try {
+            VOMSValidator validator = getVOMSValidatorInstance();
+            validator.setClientChain(chain);
+            if(validate) {
+                validator.validate();
+            } else {
+                validator.parse();
+            }
+            return validator.getVOMSAttributes();
+        } catch (IOException ioe) {
+            throw new AuthorizationException("Could not read trust stores " + ioe.getMessage() + "\n" + ioe.getCause());
+        } catch (CertificateException ce) {
+            throw new AuthorizationException("Could not read certificate " + ce.getMessage() + "\n" + ce.getCause());
+        } catch (CRLException crle) {
+            throw new AuthorizationException("Could not read CRL " + crle.getMessage() + "\n" + crle.getCause());
+        }
     }
 
     public static String parseGroupFromFQAN(String fqan) {
@@ -462,7 +449,7 @@ attribute : /cms/uscms/Role=cmsprod/Capability=NULL
 	  return buf.toString();
     }
 
-    public static VOMSValidator getVOMSValidatorInstance() throws IOException, CertificateException, CRLException {
+    private static synchronized VOMSValidator getVOMSValidatorInstance() throws IOException, CertificateException, CRLException {
         if(vomsValidator!=null) return vomsValidator;
         File theDir = new File(PKIStore.DEFAULT_VOMSDIR);
         if (!theDir.exists() || !theDir.isDirectory() || theDir.list().length == 0) {
@@ -475,7 +462,7 @@ attribute : /cms/uscms/Role=cmsprod/Capability=NULL
         return vomsValidator;
     }
     
-    public static ACTrustStore getACTrustStoreInstance() throws IOException, CertificateException, CRLException {
+    private static synchronized ACTrustStore getACTrustStoreInstance() throws IOException, CertificateException, CRLException {
         if(acTrustStore!=null) return acTrustStore;
         acTrustStore = new BasicVOMSTrustStore(PKIStore.DEFAULT_CADIR, 12*3600*1000);
         ((BasicVOMSTrustStore)acTrustStore).stopRefresh();
