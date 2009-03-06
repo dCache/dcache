@@ -157,35 +157,35 @@ public class AuthorizationConfig {
         Vector pluginPriorityConfig = new Vector(MAX_PLUGINS, 1);
         pluginPriorityConfig.setSize(MAX_PLUGINS);
 
-        if (switchOfGPLiteVORoleMapping != null && switchOfGPLiteVORoleMapping != "" && switchOfGPLiteVORoleMapping.equals("ON")) {
+        if (switchOfGPLiteVORoleMapping != null && !switchOfGPLiteVORoleMapping.isEmpty()  && switchOfGPLiteVORoleMapping.equals("ON")) {
             int priorityOfGPLiteVORoleMapping = getGPLiteVORoleMappingPriority();
             //log.trace("priorityOfGPLiteVORoleMapping is: " +priorityOfGPLiteVORoleMapping);
             if (priorityOfGPLiteVORoleMapping > 0 && priorityOfGPLiteVORoleMapping < MAX_PLUGINS+1) {
                 pluginPriorityConfig.setElementAt(GPLAZMA_LITE_VOROLE_MAPPING_SIGNAL, priorityOfGPLiteVORoleMapping-1);
             }
         }
-        if (switchOfGridMapFile != null && switchOfGridMapFile != "" && switchOfGridMapFile.equals("ON")) {
+        if (switchOfGridMapFile != null && !switchOfGridMapFile.isEmpty()  && switchOfGridMapFile.equals("ON")) {
             int priorityOfGridMapFile = getGridMapFilePriority();
             //log.trace("priorityOfGridMapFile is: " +priorityOfGridMapFile);
             if (priorityOfGridMapFile > 0 && priorityOfGridMapFile < MAX_PLUGINS+1) {
                 pluginPriorityConfig.setElementAt(GRIDMAPFILE_SIGNAL, priorityOfGridMapFile-1);
             }
         }
-        if (switchOfVOMapping != null && switchOfVOMapping != "" && switchOfVOMapping.equals("ON")) {
+        if (switchOfVOMapping != null && !switchOfVOMapping.isEmpty()  && switchOfVOMapping.equals("ON")) {
             int priorityOfVOMapping = getVOMappingPriority();
             //log.trace("priorityOfVOMapping is: " +priorityOfVOMapping);
             if (priorityOfVOMapping > 0 && priorityOfVOMapping < MAX_PLUGINS+1) {
                 pluginPriorityConfig.setElementAt(VO_MAPPING_SIGNAL, priorityOfVOMapping-1);
             }
         }
-        if (switchOfXACMLMapping != null && switchOfXACMLMapping != "" && switchOfXACMLMapping.equals("ON")) {
+        if (switchOfXACMLMapping != null && !switchOfXACMLMapping.isEmpty()  && switchOfXACMLMapping.equals("ON")) {
             int priorityOfXACMLeMapping = getXACMLMappingPriority();
             //log.trace("priorityOfXACMLeMapping is: " +priorityOfXACMLeMapping);
             if (priorityOfXACMLeMapping > 0 && priorityOfXACMLeMapping < MAX_PLUGINS+1) {
                 pluginPriorityConfig.setElementAt(XACML_MAPPING_SIGNAL, priorityOfXACMLeMapping-1);
             }
         }
-        if (switchOfKpwd != null && switchOfKpwd != "" && switchOfKpwd.equals("ON")) {
+        if (switchOfKpwd != null && !switchOfKpwd.isEmpty()  && switchOfKpwd.equals("ON")) {
             int priorityOfKpwd = getKpwdPriority();
             //log.trace("priorityOfKpwd is: " +priorityOfKpwd);
             if (priorityOfKpwd > 0 && priorityOfKpwd < MAX_PLUGINS+1) {
