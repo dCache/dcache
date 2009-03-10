@@ -9,28 +9,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -43,10 +43,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -56,10 +56,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -118,28 +118,28 @@ public class Configuration {
     public static final String ON_RESTART_FAIL_REQUEST="fail";
     public static final String ON_RESTART_RESTORE_REQUEST="restore";
     public static final String ON_RESTART_WAIT_FOR_UPDATE_REQUEST="wait-update";
-    
+
     private boolean debug = false;
-    
+
     private String urlcopy="../scripts/urlcopy.sh";
-    
+
     private String gsiftpclinet = "globus-url-copy";
-    
+
     private boolean gsissl = true;
-    
+
     private String glue_mapfile=null;
-    
+
     private String webservice_path = "srm/managerv1.wsdl";
-    
+
     private String webservice_protocol="https";
-    
+
     private int buffer_size=2048;
     private int tcp_buffer_size;
     private int parallel_streams=10;
-    
+
     private String[] protocols = new String[]
     {"http","dcap","ftp","gsiftp"};
-    
+
     private int port=8443;
     private String kpwdfile="../conf/dcache.kpwd";
     private boolean use_gplazmaAuthzCellFlag=false;
@@ -155,9 +155,9 @@ public class Configuration {
     private AbstractStorageElement storage;
     private SRMAuthorization authorization;
     private SRM localSRM;
-    
+
     // scheduler parameters
-    
+
     private int getReqTQueueSize=1000;
     private int getThreadPoolSize=30;
     private int getMaxWaitingRequests=1000;
@@ -167,6 +167,16 @@ public class Configuration {
     private long getRetryTimeout=60000;
     private int getMaxRunningBySameOwner=10;
     private String getRequestRestorePolicy=ON_RESTART_WAIT_FOR_UPDATE_REQUEST;
+
+    private int lsReqTQueueSize=1000;
+    private int lsThreadPoolSize=30;
+    private int lsMaxWaitingRequests=1000;
+    private int lsReadyQueueSize=1000;
+    private int lsMaxReadyJobs=60;
+    private int lsMaxNumOfRetries=10;
+    private long lsRetryTimeout=60000;
+    private int lsMaxRunningBySameOwner=10;
+    private String lsRequestRestorePolicy=ON_RESTART_WAIT_FOR_UPDATE_REQUEST;
 
     private int bringOnlineReqTQueueSize=1000;
     private int bringOnlineThreadPoolSize=30;
@@ -187,7 +197,7 @@ public class Configuration {
     private long putRetryTimeout=60000;
     private int putMaxRunningBySameOwner=10;
     private String putRequestRestorePolicy=ON_RESTART_WAIT_FOR_UPDATE_REQUEST;
-    
+
     private int copyReqTQueueSize=1000;
     private int copyThreadPoolSize=30;
     private int copyMaxWaitingRequests=1000;
@@ -195,14 +205,15 @@ public class Configuration {
     private long copyRetryTimeout=60000;
     private int copyMaxRunningBySameOwner=10;
     private String copyRequestRestorePolicy=ON_RESTART_WAIT_FOR_UPDATE_REQUEST;
-    
-    
+
+
+    private long lsLifetime = 60*60*1000;
     private long getLifetime = 24*60*60*1000;
     private long bringOnlineLifetime = 24*60*60*1000;
     private long putLifetime = 24*60*60*1000;
     private long copyLifetime = 24*60*60*1000;
     private long defaultSpaceLifetime = 24*60*60*1000;
-    
+
     private String x509ServiceKey="/etc/grid-security/hostkey.pem";
     private String x509ServiceCert="/etc/grid-security/hostcert.pem";
     private String x509TrastedCACerts="/etc/grid-security/certificates";
@@ -231,12 +242,13 @@ public class Configuration {
     private long vacuum_period_sec=60*60;
     private boolean vacuum = true;
     private boolean start_server=true;
-    private String qosPluginClass = null; 
+    private String qosPluginClass = null;
     private String qosConfigFile = null;
     private String getPriorityPolicyPlugin="DefaultJobAppraiser";
     private String bringOnlinePriorityPolicyPlugin="DefaultJobAppraiser";
     private String putPriorityPolicyPlugin="DefaultJobAppraiser";
     private String copyPriorityPolicyPlugin="DefaultJobAppraiser";
+    private String lsPriorityPolicyPlugin="DefaultJobAppraiser";
     private int numDaysHistory = 30;
     private long oldRequestRemovePeriodSecs = 3600;
     private Integer maxQueuedJdbcTasksNum ; //null by default
@@ -247,14 +259,16 @@ public class Configuration {
     private boolean cleanPendingRequestsOnRestart = false;
     private boolean overwrite = false;
     private boolean overwrite_by_default = false;
-	private int sizeOfSingleRemoveBatch = 100;
+    private int sizeOfSingleRemoveBatch = 100;
     private SRMUserPersistenceManager srmUserPersistenceManager;
-    
+    private int maxNumberOfLsEntries = 1000;
+    private int maxNumberOfLsLevels = 100;
+
     /** Creates a new instance of Configuration */
     public Configuration() {
-        
+
     }
-    
+
     public Configuration(String configuration_file) {
         try {
             read(configuration_file);
@@ -262,8 +276,8 @@ public class Configuration {
             e.printStackTrace();
         }
     }
-    
-    
+
+
     public void read(String file) throws Exception {
         DocumentBuilderFactory factory =
                 DocumentBuilderFactory.newInstance();
@@ -277,16 +291,16 @@ public class Configuration {
             System.err.println(" error, root element \"srm-configuration\" is not found");
             throw new IOException();
         }
-        
-        
+
+
         if(root != null && root.getNodeName().equals("srm-configuration")) {
-            
+
             Node node = root.getFirstChild();
             for(;node != null; node = node.getNextSibling()) {
                 if(node.getNodeType()!= Node.ELEMENT_NODE) {
                     continue;
                 }
-                
+
                 Node child = node.getFirstChild();
                 for(;child != null; child = node.getNextSibling()) {
                     if(child.getNodeType() == Node.TEXT_NODE) {
@@ -313,9 +327,9 @@ public class Configuration {
                 srmhost = "localhost";
             }
         }
-        
+
     }
-    
+
     private static void put(Document document,Node root,String elem_name,String value, String comment_str) {
         //System.out.println("put elem_name="+elem_name+" value="+value+" comment="+comment_str);
         Text t = document.createTextNode("\n\n\t");
@@ -329,14 +343,14 @@ public class Configuration {
         element.appendChild(t);
         root.appendChild(element);
     }
-    
+
     public void write(String file) throws Exception {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         DocumentBuilder db = dbf.newDocumentBuilder();
         Document document = db.newDocument();
         //System.out.println("document is instanceof "+document.getClass().getName());
         Element root = document.createElement("srm-configuration");
-        
+
         put(document,root,"debug",new Boolean(debug).toString()," true or false");
         put(document,root,"urlcopy",urlcopy," path to the urlcopy script ");
         put(document,root,"gsiftpclient",gsiftpclinet," \"globus-url-copy\" or \"kftp\"");
@@ -370,10 +384,10 @@ public class Configuration {
                 "timeout in seconds, how long to wait for the completeon of the transfer via external client, should the external client be used for the MSS to MSS transfers");
         put(document,root,"timeout_script",timeout_script ,
                 "location of the timeout script");
-        
+
         put(document,root,"srmhost",srmhost ,
                 "hostname of the server, will be detected automatically if it is null");
-        
+
         put(document,root,"getReqTQueueSize",Integer.toString(getReqTQueueSize),
                 "getReqTQueueSize");
         put(document,root,"getThreadPoolSize",Integer.toString(getThreadPoolSize),
@@ -388,7 +402,7 @@ public class Configuration {
                 "Maximum Number Of Retries for get file request");
         put(document,root,"getRetryTimeout",Long.toString(getRetryTimeout),
                 "get request Retry Timeout in milliseconds");
-        
+
         put(document,root,"getMaxRunningBySameOwner",Integer.toString(getMaxRunningBySameOwner),
                 "getMaxRunningBySameOwner");
         put(document,root,"getRequestRestorePolicy",getRequestRestorePolicy ,
@@ -400,7 +414,7 @@ public class Configuration {
                 "       \""+ON_RESTART_RESTORE_REQUEST+"\" - will cause the execution of the restored get requests\n"+
                 "       \""+ON_RESTART_WAIT_FOR_UPDATE_REQUEST+"\" - will cause the system not to execute the restored requests\n"+
                 "                         unless srmcp client attempts to update the status of the request");
-        
+
 
         put(document,root,"bringOnlineReqTQueueSize",Integer.toString(bringOnlineReqTQueueSize),
                 "bringOnlineReqTQueueSize");
@@ -416,7 +430,7 @@ public class Configuration {
                 "Maximum Number Of Retries for bringOnline file request");
         put(document,root,"bringOnlineRetryTimeout",Long.toString(bringOnlineRetryTimeout),
                 "bringOnline request Retry Timeout in milliseconds");
-        
+
         put(document,root,"bringOnlineMaxRunningBySameOwner",Integer.toString(bringOnlineMaxRunningBySameOwner),
                 "bringOnlineMaxRunningBySameOwner");
         put(document,root,"bringOnlineRequestRestorePolicy",bringOnlineRequestRestorePolicy ,
@@ -428,8 +442,35 @@ public class Configuration {
                 "       \""+ON_RESTART_RESTORE_REQUEST+"\" - will cause the execution of the restored bringOnline requests\n"+
                 "       \""+ON_RESTART_WAIT_FOR_UPDATE_REQUEST+"\" - will cause the system not to execute the restored requests\n"+
                 "                         unless srmcp client attempts to update the status of the request");
-        
-        
+
+        put(document,root,"lsReqTQueueSize",Integer.toString(lsReqTQueueSize),
+                "lsReqTQueueSize");
+        put(document,root,"lsThreadPoolSize",Integer.toString(lsThreadPoolSize),
+                "lsThreadPoolSize");
+        put(document,root,"lsMaxWaitingRequests",Integer.toString(lsMaxWaitingRequests),
+                "lsMaxWaitingRequests");
+        put(document,root,"lsReadyQueueSize",Integer.toString(lsReadyQueueSize),
+                "lsReadyQueueSize");
+        put(document,root,"lsMaxReadyJobs",Integer.toString(lsMaxReadyJobs),
+                "lsMaxReadyJobs");
+        put(document,root,"lsMaxNumOfRetries",Integer.toString(lsMaxNumOfRetries),
+                "Maximum Number Of Retries for ls file request");
+        put(document,root,"lsRetryTimeout",Long.toString(lsRetryTimeout),
+                "ls request Retry Timeout in milliseconds");
+
+        put(document,root,"lsMaxRunningBySameOwner",Integer.toString(lsMaxRunningBySameOwner),
+                "lsMaxRunningBySameOwner");
+        put(document,root,"lsRequestRestorePolicy",lsRequestRestorePolicy ,
+                "lsRequestRestorePolicy determines what happens with the pending/runnig ls request\n"+
+                "       request, when srm is restarted, the possble values are:\n"+
+                "       \""+ON_RESTART_FAIL_REQUEST+"\", \""+ON_RESTART_RESTORE_REQUEST+"\" and \""+
+                ON_RESTART_WAIT_FOR_UPDATE_REQUEST+"\\n"+
+                "       \""+ON_RESTART_FAIL_REQUEST+"\"  will lead to the failure of the restored ls requests\n"+
+                "       \""+ON_RESTART_RESTORE_REQUEST+"\" - will cause the execution of the restored ls requests\n"+
+                "       \""+ON_RESTART_WAIT_FOR_UPDATE_REQUEST+"\" - will cause the system not to execute the restored requests\n"+
+                "                         unless srmcp client attempts to update the status of the request");
+
+
         put(document,root,"putReqTQueueSize",Integer.toString(putReqTQueueSize),
                 "putReqTQueueSize");
         put(document,root,"putThreadPoolSize",Integer.toString(putThreadPoolSize),
@@ -444,7 +485,7 @@ public class Configuration {
                 "Maximum Number Of Retries for put file request");
         put(document,root,"putRetryTimeout",Long.toString(putRetryTimeout),
                 "put request Retry Timeout in milliseconds");
-        
+
         put(document,root,"putMaxRunningBySameOwner",Integer.toString(putMaxRunningBySameOwner),
                 "putMaxRunningBySameOwner");
         put(document,root,"putRequestRestorePolicy",putRequestRestorePolicy ,
@@ -456,8 +497,8 @@ public class Configuration {
                 "       \""+ON_RESTART_RESTORE_REQUEST+"\" - will cause the execution of the restored put requests\n"+
                 "       \""+ON_RESTART_WAIT_FOR_UPDATE_REQUEST+"\" - will cause the system not to execute the restored requests\n"+
                 "                         unless srmcp client attempts to update the status of the request");
-        
-        
+
+
         put(document,root,"copyReqTQueueSize",Integer.toString(copyReqTQueueSize),
                 "copyReqTQueueSize");
         put(document,root,"copyThreadPoolSize",Integer.toString(copyThreadPoolSize),
@@ -468,7 +509,7 @@ public class Configuration {
                 "Maximum Number Of Retries for copy file request");
         put(document,root,"copyRetryTimeout",Long.toString(copyRetryTimeout),
                 "copy request Retry Timeout in milliseconds");
-        
+
         put(document,root,"copyMaxRunningBySameOwner",Integer.toString(copyMaxRunningBySameOwner),
                 "copyMaxRunningBySameOwner");
         put(document,root,"copyRequestRestorePolicy",copyRequestRestorePolicy ,
@@ -480,12 +521,14 @@ public class Configuration {
                 "       \""+ON_RESTART_RESTORE_REQUEST+"\" - will cause the execution of the restored copy requests\n"+
                 "       \""+ON_RESTART_WAIT_FOR_UPDATE_REQUEST+"\" - will cause the system not to execute the restored requests\n"+
                 "                         unless srmcp client attempts to update the status of the request");
-        
-        
+
+
         put(document,root,"getLifetime",Long.toString(getLifetime),
                 "getLifetime");
         put(document,root,"bringOnlineLifetime",Long.toString(bringOnlineLifetime),
                 "bringOnlineLifetime");
+        put(document,root,"lsLifetime",Long.toString(lsLifetime),
+                "lsLifetime");
         put(document,root,"putLifetime",Long.toString(putLifetime),
                 "putLifetime");
         put(document,root,"copyLifetime",Long.toString(copyLifetime),
@@ -498,7 +541,7 @@ public class Configuration {
                 "x509ServiceCert");
         put(document,root,"x509TrastedCACerts",x509TrastedCACerts ,
                 "x509TrastedCACerts");
-        
+
         put(document,root,"useUrlcopyScript",new Boolean(useUrlcopyScript).toString(),
                 "useUrlcopyScript");
         put(document,root,"useDcapForSrmCopy",new Boolean(useDcapForSrmCopy).toString(),
@@ -536,7 +579,7 @@ public class Configuration {
         put(document,root,"nextRequestIdStorageTable", nextRequestIdStorageTable,
                 "nextRequestIdStorageTable");
         put(document,root,"connect_to_wsdl",new Boolean(connect_to_wsdl).toString()," true or false");
-        
+
         put(document,root,"reserve_space_implicitely",new Boolean(reserve_space_implicitely).toString()," true or false");
         put(document,root,
                 "space_reservation_strict",
@@ -552,13 +595,13 @@ public class Configuration {
                 "vacuum_period_sec",
                 Long.toString(vacuum_period_sec),
                 "period between invocation of vacuum operations in seconds");
-        
+
         Text t = document.createTextNode("\n");
         root.appendChild(t);
         document.appendChild(root);
-        
-        
-        
+
+
+
         //System.out.println("using Transformer!!!");
         TransformerFactory tFactory = TransformerFactory.newInstance();
         Transformer transformer = tFactory.newTransformer();
@@ -566,8 +609,8 @@ public class Configuration {
         StreamResult result = new StreamResult(new FileWriter(file));
         transformer.transform(source, result);
     }
-    
-    
+
+
     private void set(String name, String value) {
         //if(value == null)
         //{
@@ -672,6 +715,33 @@ public class Configuration {
                         ON_RESTART_WAIT_FOR_UPDATE_REQUEST+"\" "+
                         " but received value="+value);
             }
+        } else if(name.equals("lsReqTQueueSize")) {
+            lsReqTQueueSize= Integer.parseInt(value);
+        } else if(name.equals("lsThreadPoolSize")) {
+            lsThreadPoolSize = Integer.parseInt(value);
+        } else if(name.equals("lsMaxWaitingRequests")) {
+            lsMaxWaitingRequests= Integer.parseInt(value);
+        } else if(name.equals("lsReadyQueueSize")) {
+            lsReadyQueueSize= Integer.parseInt(value);
+        } else if(name.equals("lsMaxReadyJobs")) {
+            lsMaxReadyJobs= Integer.parseInt(value);
+        } else if(name.equals("lsMaxNumOfRetries")) {
+            lsMaxNumOfRetries= Integer.parseInt(value);
+        } else if(name.equals("lsRetryTimeout")) {
+            lsRetryTimeout= Long.parseLong(value);
+        } else if(name.equals("lsMaxRunningBySameOwner")) {
+            lsMaxRunningBySameOwner= Integer.parseInt(value);
+        } else if(name.equals("lsRequestRestorePolicy")) {
+            if(value.equalsIgnoreCase(ON_RESTART_FAIL_REQUEST) ||
+                    value.equalsIgnoreCase(ON_RESTART_RESTORE_REQUEST) ||
+                    value.equalsIgnoreCase(ON_RESTART_RESTORE_REQUEST) ) {
+                lsRequestRestorePolicy = value;
+            } else {
+                throw new IllegalArgumentException("lsRequestRestorePolicy value must be one of "+
+                        "\""+ON_RESTART_FAIL_REQUEST+"\", \""+ON_RESTART_RESTORE_REQUEST+"\" or \""+
+                        ON_RESTART_WAIT_FOR_UPDATE_REQUEST+"\" "+
+                        " but received value="+value);
+            }
         } else if(name.equals("putReqTQueueSize")) {
             putReqTQueueSize= Integer.parseInt(value);
         } else if(name.equals("putThreadPoolSize")) {
@@ -726,6 +796,8 @@ public class Configuration {
             getLifetime=Long.parseLong(value);
         } else if(name.equals("bringOnlineLifetime")) {
             bringOnlineLifetime=Long.parseLong(value);
+        } else if(name.equals("lsLifetime")) {
+            lsLifetime=Long.parseLong(value);
         } else if(name.equals("putLifetime")) {
             putLifetime=Long.parseLong(value);
         } else if(name.equals("copyLifetime")) {
@@ -786,201 +858,201 @@ public class Configuration {
             vacuum= Boolean.valueOf(value).booleanValue();
         } else if(name.equals("vacuum_period_sec")) {
             vacuum_period_sec = Long.parseLong(value);
-        } else if(name.equals("qosPluginClass")) { 
+        } else if(name.equals("qosPluginClass")) {
         	qosPluginClass = value;
-        } else if(name.equals("qosConfigFile")) { 
+        } else if(name.equals("qosConfigFile")) {
         	qosConfigFile = value;
-        }  
-        
-        
+        }
+
+
     }
-    
-    
-    
+
+
+
     /** Getter for property urlcopy.
      * @return Value of property urlcopy.
      */
     public String getUrlcopy() {
         return urlcopy;
     }
-    
+
     /** Setter for property urlcopy.
      * @param urlcopy New value of property urlcopy.
      */
     public void setUrlcopy(String urlcopy) {
         this.urlcopy = urlcopy;
     }
-    
+
     /** Getter for property gsiftpclinet.
      * @return Value of property gsiftpclinet.
      */
     public String getGsiftpclinet() {
         return gsiftpclinet;
     }
-    
+
     /** Setter for property gsiftpclinet.
      * @param gsiftpclinet New value of property gsiftpclinet.
      */
     public void setGsiftpclinet(String gsiftpclinet) {
         this.gsiftpclinet = gsiftpclinet;
     }
-    
+
     /** Getter for property gsissl.
      * @return Value of property gsissl.
      */
     public boolean isGsissl() {
         return gsissl;
     }
-    
+
     /** Setter for property gsissl.
      * @param gsissl New value of property gsissl.
      */
     public void setGsissl(boolean gsissl) {
         this.gsissl = gsissl;
     }
-    
+
     /** Getter for property glue_mapfile.
      * @return Value of property glue_mapfile.
      */
     public String getGlue_mapfile() {
         return glue_mapfile;
     }
-    
+
     /** Setter for property glue_mapfile.
      * @param glue_mapfile New value of property glue_mapfile.
      */
     public void setGlue_mapfile(String glue_mapfile) {
         this.glue_mapfile = glue_mapfile;
     }
-    
+
     /** Getter for property webservice_path.
      * @return Value of property webservice_path.
      */
     public String getWebservice_path() {
         return webservice_path;
     }
-    
+
     /** Setter for property webservice_path.
      * @param webservice_path New value of property webservice_path.
      */
     public void setWebservice_path(String webservice_path) {
         this.webservice_path = webservice_path;
     }
-    
-    
+
+
     /** Getter for property debug.
      * @return Value of property debug.
      */
     public boolean isDebug() {
         return debug;
     }
-    
+
     /** Setter for property debug.
      * @param debug New value of property debug.
      */
     public void setDebug(boolean debug) {
         this.debug = debug;
     }
-    
-    
+
+
     /** Getter for property webservice_protocol.
      * @return Value of property webservice_protocol.
      */
     public java.lang.String getwebservice_protocol() {
         return webservice_protocol;
     }
-    
+
     /** Setter for property webservice_protocol.
      * @param webservice_protocol New value of property webservice_protocol.
      */
     public void setwebservice_protocol(java.lang.String webservice_protocol) {
         this.webservice_protocol = webservice_protocol;
     }
-    
+
     /** Getter for property buffer_size.
      * @return Value of property buffer_size.
      */
     public int getBuffer_size() {
         return buffer_size;
     }
-    
+
     /** Setter for property buffer_size.
      * @param buffer_size New value of property buffer_size.
      */
     public void setBuffer_size(int buffer_size) {
         this.buffer_size = buffer_size;
     }
-    
+
     /** Getter for property tcp_buffer_size.
      * @return Value of property tcp_buffer_size.
      */
     public int getTcp_buffer_size() {
         return tcp_buffer_size;
     }
-    
+
     /** Setter for property tcp_buffer_size.
      * @param tcp_buffer_size New value of property tcp_buffer_size.
      */
     public void setTcp_buffer_size(int tcp_buffer_size) {
         this.tcp_buffer_size = tcp_buffer_size;
     }
-    
+
     /** Getter for property webservice_protocol.
      * @return Value of property webservice_protocol.
      */
     public java.lang.String getWebservice_protocol() {
         return webservice_protocol;
     }
-    
+
     /** Setter for property webservice_protocol.
      * @param webservice_protocol New value of property webservice_protocol.
      */
     public void setWebservice_protocol(java.lang.String webservice_protocol) {
         this.webservice_protocol = webservice_protocol;
     }
-    
+
     /** Getter for property protocols.
      * @return Value of property protocols.
      */
     public java.lang.String[] getProtocols() {
         return this.protocols;
     }
-    
+
     /** Setter for property protocols.
      * @param protocols New value of property protocols.
      */
     public void setProtocols(java.lang.String[] protocols) {
         this.protocols = protocols;
     }
-    
+
     /** Getter for property port.
      * @return Value of property port.
      */
     public int getPort() {
         return port;
     }
-    
+
     /** Setter for property port.
      * @param port New value of property port.
      */
     public void setPort(int port) {
         this.port = port;
     }
-    
+
     /** Getter for property kpwdFile.
      * @return Value of property kpwdFile.
      */
     public java.lang.String getKpwdfile() {
         return kpwdfile;
     }
-    
+
     /** Setter for property kpwdFile.
      * @param kpwdfile New value of property kpwdFile.
      */
     public void setKpwdfile(String kpwdfile) {
         this.kpwdfile = kpwdfile;
     }
-    
+
     /**
      * Getter for property use_gplazmaAuthzCellFlag.
      * @return Value of property use_gplazmaAuthzCellFlag.
@@ -988,7 +1060,7 @@ public class Configuration {
     public boolean getUseGplazmaAuthzCellFlag() {
         return use_gplazmaAuthzCellFlag;
     }
-    
+
     /**
      * Setter for property use_gplazmaAuthzCellFlag.
      * @param use_gplazmaAuthzCellFlag New value of property use_gplazmaAuthzCellFlag.
@@ -996,7 +1068,7 @@ public class Configuration {
     public void setUseGplazmaAuthzCellFlag(boolean use_gplazmaAuthzCellFlag) {
         this.use_gplazmaAuthzCellFlag = use_gplazmaAuthzCellFlag;
     }
-    
+
     /**
      * Getter for property delegateToGplazmaFlag.
      * @return Value of property delegateToGplazmaFlag.
@@ -1004,7 +1076,7 @@ public class Configuration {
     public boolean getDelegateToGplazmaFlag() {
         return delegateToGplazmaFlag;
     }
-    
+
     /**
      * Setter for property delegateToGplazmaFlag.
      * @param delegateToGplazmaFlag New value of property delegateToGplazmaFlag.
@@ -1012,7 +1084,7 @@ public class Configuration {
     public void setDelegateToGplazmaFlag(boolean delegateToGplazmaFlag) {
         this.delegateToGplazmaFlag = delegateToGplazmaFlag;
     }
-    
+
     /**
      * Getter for property use_gplazmaAuthzModuleFlag.
      * @return Value of property use_gplazmaAuthzModuleFlag.
@@ -1028,7 +1100,7 @@ public class Configuration {
     public void setUseGplazmaAuthzModuleFlag(boolean use_gplazmaAuthzModuleFlag) {
         this.use_gplazmaAuthzModuleFlag = use_gplazmaAuthzModuleFlag;
     }
-    
+
 
     /**
      * Getter for property authzCacheLifetime.
@@ -1051,140 +1123,141 @@ public class Configuration {
     public java.lang.String getGplazmaPolicy() {
         return gplazmaPolicy;
     }
-    
+
     /** Setter for property gplazmaPolicy.
      * @param gplazmaPolicy New value of property gplazmaPolicy.
      */
     public void setGplazmaPolicy(java.lang.String gplazmaPolicy) {
         this.gplazmaPolicy = gplazmaPolicy;
     }
-    
+
     /** Setter for property srm_url_path_prefix.
      * @param srm_root New value of property srm_root.
      */
     public void setSrm_root(String srm_root) {
         this.srm_root = srm_root;
     }
-    
+
     /** Getter for property proxies_directory.
      * @return Value of property proxies_directory.
      */
     public java.lang.String getProxies_directory() {
         return proxies_directory;
     }
-    
+
     /** Setter for property proxies_directory.
      * @param proxies_directory New value of property proxies_directory.
      */
     public void setProxies_directory(java.lang.String proxies_directory) {
         this.proxies_directory = proxies_directory;
     }
-    
+
     /** Getter for property timeout.
      * @return Value of property timeout.
      */
     public int getTimeout() {
         return timeout;
     }
-    
+
     /** Setter for property timeout.
      * @param timeout New value of property timeout.
      */
     public void setTimeout(int timeout) {
         this.timeout = timeout;
     }
-    
+
     /** Getter for property timeout_script.
      * @return Value of property timeout_script.
      */
     public java.lang.String getTimeout_script() {
         return timeout_script;
     }
-    
+
     /** Setter for property timeout_script.
      * @param timeout_script New value of property timeout_script.
      */
     public void setTimeout_script(java.lang.String timeout_script) {
         this.timeout_script = timeout_script;
     }
-    
+
     /** Getter for property srmhost.
      * @return Value of property srmhost.
      */
     public java.lang.String getSrmhost() {
         return srmhost;
     }
-    
+
     /** Setter for property srmhost.
      * @param srmhost New value of property srmhost.
      */
     public void setSrmhost(java.lang.String srmhost) {
         this.srmhost = srmhost;
     }
-    
+
     /** Getter for property storage.
      * @return Value of property storage.
      */
     public org.dcache.srm.AbstractStorageElement getStorage() {
         return storage;
     }
-    
+
     /** Setter for property storage.
      * @param storage New value of property storage.
      */
     public void setStorage(org.dcache.srm.AbstractStorageElement storage) {
         this.storage = storage;
     }
-    
+
     /** Getter for property authorization.
      * @return Value of property authorization.
      */
     public SRMAuthorization getAuthorization() {
         return authorization;
     }
-    
+
     /** Setter for property authorization.
      * @param authorization New value of property authorization.
      */
     public void setAuthorization(SRMAuthorization authorization) {
         this.authorization = authorization;
     }
-    
+
     /** Getter for property localSRM.
      * @return Value of property localSRM.
      */
     public org.dcache.srm.SRM getLocalSRM() {
         return localSRM;
     }
-    
+
     /** Setter for property localSRM.
      * @param localSRM New value of property localSRM.
      */
     public void setLocalSRM(org.dcache.srm.SRM localSRM) {
         this.localSRM = localSRM;
     }
-    
+
     /** Getter for property connect_to_wsdl.
      * @return Value of property connect_to_wsdl.
      */
     public boolean isConnect_to_wsdl() {
         return connect_to_wsdl;
     }
-    
+
     /** Setter for property connect_to_wsdl.
      * @param connect_to_wsdl New value of property connect_to_wsdl.
      */
     public void setConnect_to_wsdl(boolean connect_to_wsdl) {
         this.connect_to_wsdl = connect_to_wsdl;
     }
-    
-    
+
+
     public String toString() {
         StringBuffer sb = new StringBuffer();
         sb.append("SRM Configuration:");
         sb.append("\n\t\"defaultSpaceLifetime\"  request lifetime: ").append(this.defaultSpaceLifetime );
         sb.append("\n\t\"get\"  request lifetime: ").append(this.getLifetime );
         sb.append("\n\t\"bringOnline\"  request lifetime: ").append(this.bringOnlineLifetime );
+        sb.append("\n\t\"lsOnline\"  request lifetime: ").append(this.lsLifetime );
         sb.append("\n\t\"put\"  request lifetime: ").append(this.putLifetime );
         sb.append("\n\t\"copy\" request lifetime: ").append(this.copyLifetime);
         sb.append("\n\tdebug=").append(this.debug);
@@ -1236,8 +1309,8 @@ public class Configuration {
         sb.append("\n\t\t maximum number of jobs running created");
         sb.append("\n\t\t by the same owner if other jobs are queued =").append(this.getMaxRunningBySameOwner);
         sb.append("\n\t\t getRequestRestorePolicy=").append(this.getRequestRestorePolicy);
-        
-        
+
+
         sb.append("\n\t\t *** BringOnlineRequests Scheduler  Parameters **");
         sb.append("\n\t\t request Lifetime in miliseconds =").append(this.bringOnlineLifetime);
         sb.append("\n\t\t max thread queue size =").append(this.bringOnlineReqTQueueSize);
@@ -1250,8 +1323,21 @@ public class Configuration {
         sb.append("\n\t\t maximum number of jobs running created");
         sb.append("\n\t\t by the same owner if other jobs are queued =").append(this.bringOnlineMaxRunningBySameOwner);
         sb.append("\n\t\t bringOnlineRequestRestorePolicy=").append(this.bringOnlineRequestRestorePolicy);
-        
-        
+
+        sb.append("\n\t\t *** LsRequests Scheduler  Parameters **");
+        sb.append("\n\t\t request Lifetime in miliseconds =").append(this.lsLifetime);
+        sb.append("\n\t\t max thread queue size =").append(this.lsReqTQueueSize);
+        sb.append("\n\t\t max number of threads =").append(this.lsThreadPoolSize);
+        sb.append("\n\t\t max number of waiting file requests =").append(this.lsMaxWaitingRequests);
+        sb.append("\n\t\t max ready queue size =").append(this.lsReadyQueueSize);
+        sb.append("\n\t\t max number of ready file requests =").append(this.lsMaxReadyJobs);
+        sb.append("\n\t\t maximum number of retries = ").append(this.lsMaxNumOfRetries);
+        sb.append("\n\t\t retry timeout in miliseconds =").append(this.lsRetryTimeout);
+        sb.append("\n\t\t maximum number of jobs running created");
+        sb.append("\n\t\t by the same owner if other jobs are queued =").append(this.lsMaxRunningBySameOwner);
+        sb.append("\n\t\t lsRequestRestorePolicy=").append(this.lsRequestRestorePolicy);
+
+
         sb.append("\n\t\t *** PuRequests Scheduler  Parameters **");
         sb.append("\n\t\t request Lifetime in miliseconds =").append(this.putLifetime);
         sb.append("\n\t\t max thread queue size =").append(this.putReqTQueueSize);
@@ -1264,7 +1350,7 @@ public class Configuration {
         sb.append("\n\t\t maximum number of jobs running created");
         sb.append("\n\t\t by the same owner if other jobs are queued =").append(this.putMaxRunningBySameOwner);
         sb.append("\n\t\t putRequestRestorePolicy=").append(this.putRequestRestorePolicy);
-        
+
         sb.append("\n\t\t *** CopyRequests Scheduler  Parameters **");
         sb.append("\n\t\t request Lifetime in miliseconds =").append(this.copyLifetime);
         sb.append("\n\t\t max thread queue size =").append(this.copyReqTQueueSize);
@@ -1275,7 +1361,7 @@ public class Configuration {
         sb.append("\n\t\t maximum number of jobs running created");
         sb.append("\n\t\t by the same owner if other jobs are queued =").append(this.copyMaxRunningBySameOwner);
         sb.append("\n\t\t copyRequestRestorePolicy=").append(this.copyRequestRestorePolicy);
-        
+
         sb.append("\n\tconnect_to_wsdl=").append(this.connect_to_wsdl);
         sb.append("\n\treserve_space_implicitely=").append(this.reserve_space_implicitely);
         sb.append("\n\tspace_reservation_strict=").append(this.space_reservation_strict);
@@ -1287,68 +1373,68 @@ public class Configuration {
         sb.append("\n\tjdbcMonitoringEnabled=").append(this.jdbcMonitoringEnabled);
         sb.append("\n\tjdbcMonitoringDebugLevel=").append(this.jdbcMonitoringDebugLevel);
         sb.append("\n\tcleanPendingRequestsOnRestart=").append(this.cleanPendingRequestsOnRestart);
-        
+
         return sb.toString();
     }
-    
+
     /** Getter for property parallel_streams.
      * @return Value of property parallel_streams.
      */
     public int getParallel_streams() {
         return parallel_streams;
     }
-    
+
     /** Setter for property parallel_streams.
      * @param parallel_streams New value of property parallel_streams.
      */
     public void setParallel_streams(int parallel_streams) {
         this.parallel_streams = parallel_streams;
     }
-    
-    
+
+
     /** Getter for property x509ServiceKey.
      * @return Value of property x509ServiceKey.
      */
     public java.lang.String getX509ServiceKey() {
         return x509ServiceKey;
     }
-    
+
     /** Setter for property x509ServiceKey.
      * @param x509ServiceKey New value of property x509ServiceKey.
      */
     public void setX509ServiceKey(java.lang.String x509ServiceKey) {
         this.x509ServiceKey = x509ServiceKey;
     }
-    
+
     /** Getter for property x509ServiceCert.
      * @return Value of property x509ServiceCert.
      */
     public java.lang.String getX509ServiceCert() {
         return x509ServiceCert;
     }
-    
+
     /** Setter for property x509ServiceCert.
      * @param x509ServiceCert New value of property x509ServiceCert.
      */
     public void setX509ServiceCert(java.lang.String x509ServiceCert) {
         this.x509ServiceCert = x509ServiceCert;
     }
-    
+
     /** Getter for property x509TrastedCACerts.
      * @return Value of property x509TrastedCACerts.
      */
     public java.lang.String getX509TrastedCACerts() {
         return x509TrastedCACerts;
     }
-    
+
     /** Setter for property x509TrastedCACerts.
      * @param x509TrastedCACerts New value of property x509TrastedCACerts.
      */
     public void setX509TrastedCACerts(java.lang.String x509TrastedCACerts) {
         this.x509TrastedCACerts = x509TrastedCACerts;
     }
-    
-    
+
+
     /** Getter for property getLifetime.
      * @return Value of property getLifetime.
      *
@@ -1356,7 +1442,7 @@ public class Configuration {
     public long getGetLifetime() {
         return getLifetime;
     }
-    
+
     /** Setter for property getLifetime.
      * @param getLifetime New value of property getLifetime.
      *
@@ -1364,7 +1450,7 @@ public class Configuration {
     public void setGetLifetime(long getLifetime) {
         this.getLifetime = getLifetime;
     }
-    
+
     /** Getter for property putLifetime.
      * @return Value of property putLifetime.
      *
@@ -1372,7 +1458,7 @@ public class Configuration {
     public long getPutLifetime() {
         return putLifetime;
     }
-    
+
     /** Setter for property putLifetime.
      * @param putLifetime New value of property putLifetime.
      *
@@ -1380,7 +1466,7 @@ public class Configuration {
     public void setPutLifetime(long putLifetime) {
         this.putLifetime = putLifetime;
     }
-    
+
     /** Getter for property copyLifetime.
      * @return Value of property copyLifetime.
      *
@@ -1388,7 +1474,7 @@ public class Configuration {
     public long getCopyLifetime() {
         return copyLifetime;
     }
-    
+
     /** Setter for property copyLifetime.
      * @param copyLifetime New value of property copyLifetime.
      *
@@ -1396,7 +1482,7 @@ public class Configuration {
     public void setCopyLifetime(long copyLifetime) {
         this.copyLifetime = copyLifetime;
     }
-    
+
     /** Getter for property useUrlcopyScript.
      * @return Value of property useUrlcopyScript.
      *
@@ -1404,7 +1490,7 @@ public class Configuration {
     public boolean isUseUrlcopyScript() {
         return useUrlcopyScript;
     }
-    
+
     /** Setter for property useUrlcopyScript.
      * @param useUrlcopyScript New value of property useUrlcopyScript.
      *
@@ -1412,7 +1498,7 @@ public class Configuration {
     public void setUseUrlcopyScript(boolean useUrlcopyScript) {
         this.useUrlcopyScript = useUrlcopyScript;
     }
-    
+
     /** Getter for property useDcapForSrmCopy.
      * @return Value of property useDcapForSrmCopy.
      *
@@ -1420,7 +1506,7 @@ public class Configuration {
     public boolean isUseDcapForSrmCopy() {
         return useDcapForSrmCopy;
     }
-    
+
     /** Setter for property useDcapForSrmCopy.
      * @param useDcapForSrmCopy New value of property useDcapForSrmCopy.
      *
@@ -1428,7 +1514,7 @@ public class Configuration {
     public void setUseDcapForSrmCopy(boolean useDcapForSrmCopy) {
         this.useDcapForSrmCopy = useDcapForSrmCopy;
     }
-    
+
     /** Getter for property useGsiftpForSrmCopy.
      * @return Value of property useGsiftpForSrmCopy.
      *
@@ -1436,7 +1522,7 @@ public class Configuration {
     public boolean isUseGsiftpForSrmCopy() {
         return useGsiftpForSrmCopy;
     }
-    
+
     /** Setter for property useGsiftpForSrmCopy.
      * @param useGsiftpForSrmCopy New value of property useGsiftpForSrmCopy.
      *
@@ -1444,7 +1530,7 @@ public class Configuration {
     public void setUseGsiftpForSrmCopy(boolean useGsiftpForSrmCopy) {
         this.useGsiftpForSrmCopy = useGsiftpForSrmCopy;
     }
-    
+
     /** Getter for property useHttpForSrmCopy.
      * @return Value of property useHttpForSrmCopy.
      *
@@ -1452,7 +1538,7 @@ public class Configuration {
     public boolean isUseHttpForSrmCopy() {
         return useHttpForSrmCopy;
     }
-    
+
     /** Setter for property useHttpForSrmCopy.
      * @param useHttpForSrmCopy New value of property useHttpForSrmCopy.
      *
@@ -1460,7 +1546,7 @@ public class Configuration {
     public void setUseHttpForSrmCopy(boolean useHttpForSrmCopy) {
         this.useHttpForSrmCopy = useHttpForSrmCopy;
     }
-    
+
     /** Getter for property useFtpForSrmCopy.
      * @return Value of property useFtpForSrmCopy.
      *
@@ -1468,7 +1554,7 @@ public class Configuration {
     public boolean isUseFtpForSrmCopy() {
         return useFtpForSrmCopy;
     }
-    
+
     /** Setter for property useFtpForSrmCopy.
      * @param useFtpForSrmCopy New value of property useFtpForSrmCopy.
      *
@@ -1476,7 +1562,7 @@ public class Configuration {
     public void setUseFtpForSrmCopy(boolean useFtpForSrmCopy) {
         this.useFtpForSrmCopy = useFtpForSrmCopy;
     }
-    
+
     /** Getter for property recursiveDirectoryCreation.
      * @return Value of property recursiveDirectoryCreation.
      *
@@ -1484,7 +1570,7 @@ public class Configuration {
     public boolean isRecursiveDirectoryCreation() {
         return recursiveDirectoryCreation;
     }
-    
+
     /** Setter for property recursiveDirectoryCreation.
      * @param recursiveDirectoryCreation New value of property recursiveDirectoryCreation.
      *
@@ -1492,7 +1578,7 @@ public class Configuration {
     public void setRecursiveDirectoryCreation(boolean recursiveDirectoryCreation) {
         this.recursiveDirectoryCreation = recursiveDirectoryCreation;
     }
-    
+
     /** Getter for property advisoryDelete.
      * @return Value of property advisoryDelete.
      *
@@ -1500,7 +1586,7 @@ public class Configuration {
     public boolean isAdvisoryDelete() {
         return advisoryDelete;
     }
-    
+
     /** Setter for property advisoryDelete.
      * @param advisoryDelete New value of property advisoryDelete.
      *
@@ -1508,7 +1594,7 @@ public class Configuration {
     public void setAdvisoryDelete(boolean advisoryDelete) {
         this.advisoryDelete = advisoryDelete;
     }
-    
+
     /** Getter for property removeFile
      * @return Value of property removeFile.
      *
@@ -1516,7 +1602,7 @@ public class Configuration {
     public boolean isRemoveFile() {
         return removeFile;
     }
-    
+
     /** Setter for property removeFile.
      * @param removeFile New value of property removefile.
      *
@@ -1524,8 +1610,8 @@ public class Configuration {
     public void setRemoveFile(boolean removeFile) {
         this.removeFile = removeFile;
     }
-    
-    
+
+
     /** Getter for property removeDirectory
      * @return Value of property removeDirectory.
      *
@@ -1533,7 +1619,7 @@ public class Configuration {
     public boolean isRemoveDirectory() {
         return removeDirectory;
     }
-    
+
     /** Setter for property removeDirectory.
      * @param removeDirectory New value of property removeDirectory.
      *
@@ -1541,7 +1627,7 @@ public class Configuration {
     public void setRemoveDirectory(boolean removeDirectory) {
         this.removeDirectory = removeDirectory;
     }
-    
+
     /** Getter for property createDirectory
      * @return Value of property createDirectory.
      *
@@ -1549,7 +1635,7 @@ public class Configuration {
     public boolean isCreateDirectory() {
         return createDirectory;
     }
-    
+
     /** Setter for property createDirectory.
      * @param createDirectory New value of property createDirectory.
      *
@@ -1557,8 +1643,8 @@ public class Configuration {
     public void setCreateDirectory(boolean createDirectory) {
         this.createDirectory = createDirectory;
     }
-    
-    
+
+
     /** Getter for property moveEntry
      * @return Value of property moveEntry
      *
@@ -1566,7 +1652,7 @@ public class Configuration {
     public boolean isMoveEntry() {
         return moveEntry;
     }
-    
+
     /** Setter for property moveEntry.
      * @param moveEntry New value of property createDirectory.
      *
@@ -1574,7 +1660,7 @@ public class Configuration {
     public void setMoveEntry(boolean moveEntry) {
         this.moveEntry = moveEntry;
     }
-    
+
     /** Getter for property saveMemory.
      * @return Value of property saveMemory.
      *
@@ -1582,7 +1668,7 @@ public class Configuration {
     public boolean isSaveMemory() {
         return saveMemory;
     }
-    
+
     /** Setter for property saveMemory.
      * @param saveMemory New value of property saveMemory.
      *
@@ -1590,7 +1676,7 @@ public class Configuration {
     public void setSaveMemory(boolean saveMemory) {
         this.saveMemory = saveMemory;
     }
-    
+
     /**
      * Getter for property jdbcUrl.
      * @return Value of property jdbcUrl.
@@ -1598,7 +1684,7 @@ public class Configuration {
     public java.lang.String getJdbcUrl() {
         return jdbcUrl;
     }
-    
+
     /**
      * Setter for property jdbcUrl.
      * @param jdbcUrl New value of property jdbcUrl.
@@ -1606,7 +1692,7 @@ public class Configuration {
     public void setJdbcUrl(java.lang.String jdbcUrl) {
         this.jdbcUrl = jdbcUrl;
     }
-    
+
     /**
      * Getter for property jdbcClass.
      * @return Value of property jdbcClass.
@@ -1614,7 +1700,7 @@ public class Configuration {
     public java.lang.String getJdbcClass() {
         return jdbcClass;
     }
-    
+
     /**
      * Setter for property jdbcClass.
      * @param jdbcClass New value of property jdbcClass.
@@ -1622,7 +1708,7 @@ public class Configuration {
     public void setJdbcClass(java.lang.String jdbcClass) {
         this.jdbcClass = jdbcClass;
     }
-    
+
     /**
      * Getter for property user.
      * @return Value of property user.
@@ -1630,7 +1716,7 @@ public class Configuration {
     public java.lang.String getJdbcUser() {
         return jdbcUser;
     }
-    
+
     /**
      * Setter for property user.
      * @param user New value of property user.
@@ -1638,7 +1724,7 @@ public class Configuration {
     public void setJdbcUser(java.lang.String user) {
         this.jdbcUser = user;
     }
-    
+
     /**
      * Getter for property pass.
      * @return Value of property pass.
@@ -1653,7 +1739,7 @@ public class Configuration {
             return pgpass.getPgpass(jdbcUrl, jdbcUser);   //VP
         }
     }
-    
+
     /**
      * Setter for property pass.
      * @param pass New value of property pass.
@@ -1661,7 +1747,7 @@ public class Configuration {
     public void setJdbcPass(java.lang.String pass) {
         this.jdbcPass = pass;
     }
-    
+
     /**
      * Getter for property pwdfile.
      * @return Value of property pwdfile.
@@ -1669,7 +1755,7 @@ public class Configuration {
     public java.lang.String getJdbcPwdfile() {
         return jdbcPwdfile;
     }
-    
+
     /**
      * Setter for property pwdfile.
      * @param name New value of property pwdfile.
@@ -1677,7 +1763,7 @@ public class Configuration {
     public void setJdbcPwdfile(java.lang.String name) {
         this.jdbcPwdfile = name;
     }
-    
+
     /**
      * Getter for property nextRequestIdStorageTable.
      * @return Value of property nextRequestIdStorageTable.
@@ -1685,7 +1771,7 @@ public class Configuration {
     public java.lang.String getNextRequestIdStorageTable() {
         return nextRequestIdStorageTable;
     }
-    
+
     /**
      * Setter for property nextRequestIdStorageTable.
      * @param nextRequestIdStorageTable New value of property nextRequestIdStorageTable.
@@ -1693,7 +1779,7 @@ public class Configuration {
     public void setNextRequestIdStorageTable(java.lang.String nextRequestIdStorageTable) {
         this.nextRequestIdStorageTable = nextRequestIdStorageTable;
     }
-    
+
     /**
      * Getter for property getReqTQueueSize.
      * @return Value of property getReqTQueueSize.
@@ -1701,7 +1787,7 @@ public class Configuration {
     public int getGetReqTQueueSize() {
         return getReqTQueueSize;
     }
-    
+
     /**
      * Setter for property getReqTQueueSize.
      * @param getReqTQueueSize New value of property getReqTQueueSize.
@@ -1709,7 +1795,7 @@ public class Configuration {
     public void setGetReqTQueueSize(int getReqTQueueSize) {
         this.getReqTQueueSize = getReqTQueueSize;
     }
-    
+
     /**
      * Getter for property getThreadPoolSize.
      * @return Value of property getThreadPoolSize.
@@ -1717,7 +1803,7 @@ public class Configuration {
     public int getGetThreadPoolSize() {
         return getThreadPoolSize;
     }
-    
+
     /**
      * Setter for property getThreadPoolSize.
      * @param getThreadPoolSize New value of property getThreadPoolSize.
@@ -1725,7 +1811,7 @@ public class Configuration {
     public void setGetThreadPoolSize(int getThreadPoolSize) {
         this.getThreadPoolSize = getThreadPoolSize;
     }
-    
+
     /**
      * Getter for property getMaxWaitingRequests.
      * @return Value of property getMaxWaitingRequests.
@@ -1733,7 +1819,7 @@ public class Configuration {
     public int getGetMaxWaitingRequests() {
         return getMaxWaitingRequests;
     }
-    
+
     /**
      * Setter for property getMaxWaitingRequests.
      * @param getMaxWaitingRequests New value of property getMaxWaitingRequests.
@@ -1741,7 +1827,7 @@ public class Configuration {
     public void setGetMaxWaitingRequests(int getMaxWaitingRequests) {
         this.getMaxWaitingRequests = getMaxWaitingRequests;
     }
-    
+
     /**
      * Getter for property getReadyQueueSize.
      * @return Value of property getReadyQueueSize.
@@ -1749,7 +1835,7 @@ public class Configuration {
     public int getGetReadyQueueSize() {
         return getReadyQueueSize;
     }
-    
+
     /**
      * Setter for property getReadyQueueSize.
      * @param getReadyQueueSize New value of property getReadyQueueSize.
@@ -1757,7 +1843,7 @@ public class Configuration {
     public void setGetReadyQueueSize(int getReadyQueueSize) {
         this.getReadyQueueSize = getReadyQueueSize;
     }
-    
+
     /**
      * Getter for property getMaxReadyJobs.
      * @return Value of property getMaxReadyJobs.
@@ -1765,7 +1851,7 @@ public class Configuration {
     public int getGetMaxReadyJobs() {
         return getMaxReadyJobs;
     }
-    
+
     /**
      * Setter for property getMaxReadyJobs.
      * @param getMaxReadyJobs New value of property getMaxReadyJobs.
@@ -1773,7 +1859,7 @@ public class Configuration {
     public void setGetMaxReadyJobs(int getMaxReadyJobs) {
         this.getMaxReadyJobs = getMaxReadyJobs;
     }
-    
+
     /**
      * Getter for property getMaxNumOfRetries.
      * @return Value of property getMaxNumOfRetries.
@@ -1781,7 +1867,7 @@ public class Configuration {
     public int getGetMaxNumOfRetries() {
         return getMaxNumOfRetries;
     }
-    
+
     /**
      * Setter for property getMaxNumOfRetries.
      * @param getMaxNumOfRetries New value of property getMaxNumOfRetries.
@@ -1789,7 +1875,7 @@ public class Configuration {
     public void setGetMaxNumOfRetries(int getMaxNumOfRetries) {
         this.getMaxNumOfRetries = getMaxNumOfRetries;
     }
-    
+
     /**
      * Getter for property getRetryTimeout.
      * @return Value of property getRetryTimeout.
@@ -1797,7 +1883,7 @@ public class Configuration {
     public long getGetRetryTimeout() {
         return getRetryTimeout;
     }
-    
+
     /**
      * Setter for property getRetryTimeout.
      * @param getRetryTimeout New value of property getRetryTimeout.
@@ -1805,7 +1891,7 @@ public class Configuration {
     public void setGetRetryTimeout(long getRetryTimeout) {
         this.getRetryTimeout = getRetryTimeout;
     }
-    
+
     /**
      * Getter for property getMaxRunningBySameOwner.
      * @return Value of property getMaxRunningBySameOwner.
@@ -1813,7 +1899,7 @@ public class Configuration {
     public int getGetMaxRunningBySameOwner() {
         return getMaxRunningBySameOwner;
     }
-    
+
     /**
      * Setter for property getMaxRunningBySameOwner.
      * @param getMaxRunningBySameOwner New value of property getMaxRunningBySameOwner.
@@ -1821,7 +1907,7 @@ public class Configuration {
     public void setGetMaxRunningBySameOwner(int getMaxRunningBySameOwner) {
         this.getMaxRunningBySameOwner = getMaxRunningBySameOwner;
     }
-    
+
     /**
      * Getter for property putReqTQueueSize.
      * @return Value of property putReqTQueueSize.
@@ -1829,7 +1915,7 @@ public class Configuration {
     public int getPutReqTQueueSize() {
         return putReqTQueueSize;
     }
-    
+
     /**
      * Setter for property putReqTQueueSize.
      * @param putReqTQueueSize New value of property putReqTQueueSize.
@@ -1837,7 +1923,7 @@ public class Configuration {
     public void setPutReqTQueueSize(int putReqTQueueSize) {
         this.putReqTQueueSize = putReqTQueueSize;
     }
-    
+
     /**
      * Getter for property putThreadPoolSize.
      * @return Value of property putThreadPoolSize.
@@ -1845,7 +1931,7 @@ public class Configuration {
     public int getPutThreadPoolSize() {
         return putThreadPoolSize;
     }
-    
+
     /**
      * Setter for property putThreadPoolSize.
      * @param putThreadPoolSize New value of property putThreadPoolSize.
@@ -1853,7 +1939,7 @@ public class Configuration {
     public void setPutThreadPoolSize(int putThreadPoolSize) {
         this.putThreadPoolSize = putThreadPoolSize;
     }
-    
+
     /**
      * Getter for property putMaxWaitingRequests.
      * @return Value of property putMaxWaitingRequests.
@@ -1861,7 +1947,7 @@ public class Configuration {
     public int getPutMaxWaitingRequests() {
         return putMaxWaitingRequests;
     }
-    
+
     /**
      * Setter for property putMaxWaitingRequests.
      * @param putMaxWaitingRequests New value of property putMaxWaitingRequests.
@@ -1869,7 +1955,7 @@ public class Configuration {
     public void setPutMaxWaitingRequests(int putMaxWaitingRequests) {
         this.putMaxWaitingRequests = putMaxWaitingRequests;
     }
-    
+
     /**
      * Getter for property putReadyQueueSize.
      * @return Value of property putReadyQueueSize.
@@ -1877,7 +1963,7 @@ public class Configuration {
     public int getPutReadyQueueSize() {
         return putReadyQueueSize;
     }
-    
+
     /**
      * Setter for property putReadyQueueSize.
      * @param putReadyQueueSize New value of property putReadyQueueSize.
@@ -1885,7 +1971,7 @@ public class Configuration {
     public void setPutReadyQueueSize(int putReadyQueueSize) {
         this.putReadyQueueSize = putReadyQueueSize;
     }
-    
+
     /**
      * Getter for property putMaxReadyJobs.
      * @return Value of property putMaxReadyJobs.
@@ -1893,7 +1979,7 @@ public class Configuration {
     public int getPutMaxReadyJobs() {
         return putMaxReadyJobs;
     }
-    
+
     /**
      * Setter for property putMaxReadyJobs.
      * @param putMaxReadyJobs New value of property putMaxReadyJobs.
@@ -1901,7 +1987,7 @@ public class Configuration {
     public void setPutMaxReadyJobs(int putMaxReadyJobs) {
         this.putMaxReadyJobs = putMaxReadyJobs;
     }
-    
+
     /**
      * Getter for property putMaxNumOfRetries.
      * @return Value of property putMaxNumOfRetries.
@@ -1909,7 +1995,7 @@ public class Configuration {
     public int getPutMaxNumOfRetries() {
         return putMaxNumOfRetries;
     }
-    
+
     /**
      * Setter for property putMaxNumOfRetries.
      * @param putMaxNumOfRetries New value of property putMaxNumOfRetries.
@@ -1917,7 +2003,7 @@ public class Configuration {
     public void setPutMaxNumOfRetries(int putMaxNumOfRetries) {
         this.putMaxNumOfRetries = putMaxNumOfRetries;
     }
-    
+
     /**
      * Getter for property putRetryTimeout.
      * @return Value of property putRetryTimeout.
@@ -1925,7 +2011,7 @@ public class Configuration {
     public long getPutRetryTimeout() {
         return putRetryTimeout;
     }
-    
+
     /**
      * Setter for property putRetryTimeout.
      * @param putRetryTimeout New value of property putRetryTimeout.
@@ -1933,7 +2019,7 @@ public class Configuration {
     public void setPutRetryTimeout(long putRetryTimeout) {
         this.putRetryTimeout = putRetryTimeout;
     }
-    
+
     /**
      * Getter for property putMaxRunningBySameOwner.
      * @return Value of property putMaxRunningBySameOwner.
@@ -1941,7 +2027,7 @@ public class Configuration {
     public int getPutMaxRunningBySameOwner() {
         return putMaxRunningBySameOwner;
     }
-    
+
     /**
      * Setter for property putMaxRunningBySameOwner.
      * @param putMaxRunningBySameOwner New value of property putMaxRunningBySameOwner.
@@ -1949,7 +2035,7 @@ public class Configuration {
     public void setPutMaxRunningBySameOwner(int putMaxRunningBySameOwner) {
         this.putMaxRunningBySameOwner = putMaxRunningBySameOwner;
     }
-    
+
     /**
      * Getter for property copyReqTQueueSize.
      * @return Value of property copyReqTQueueSize.
@@ -1957,7 +2043,7 @@ public class Configuration {
     public int getCopyReqTQueueSize() {
         return copyReqTQueueSize;
     }
-    
+
     /**
      * Setter for property copyReqTQueueSize.
      * @param copyReqTQueueSize New value of property copyReqTQueueSize.
@@ -1965,7 +2051,7 @@ public class Configuration {
     public void setCopyReqTQueueSize(int copyReqTQueueSize) {
         this.copyReqTQueueSize = copyReqTQueueSize;
     }
-    
+
     /**
      * Getter for property copyThreadPoolSize.
      * @return Value of property copyThreadPoolSize.
@@ -1973,7 +2059,7 @@ public class Configuration {
     public int getCopyThreadPoolSize() {
         return copyThreadPoolSize;
     }
-    
+
     /**
      * Setter for property copyThreadPoolSize.
      * @param copyThreadPoolSize New value of property copyThreadPoolSize.
@@ -1981,7 +2067,7 @@ public class Configuration {
     public void setCopyThreadPoolSize(int copyThreadPoolSize) {
         this.copyThreadPoolSize = copyThreadPoolSize;
     }
-    
+
     /**
      * Getter for property copyMaxWaitingRequests.
      * @return Value of property copyMaxWaitingRequests.
@@ -1989,7 +2075,7 @@ public class Configuration {
     public int getCopyMaxWaitingRequests() {
         return copyMaxWaitingRequests;
     }
-    
+
     /**
      * Setter for property copyMaxWaitingRequests.
      * @param copyMaxWaitingRequests New value of property copyMaxWaitingRequests.
@@ -1997,7 +2083,7 @@ public class Configuration {
     public void setCopyMaxWaitingRequests(int copyMaxWaitingRequests) {
         this.copyMaxWaitingRequests = copyMaxWaitingRequests;
     }
-    
+
     /**
      * Getter for property copyMaxNumOfRetries.
      * @return Value of property copyMaxNumOfRetries.
@@ -2005,7 +2091,7 @@ public class Configuration {
     public int getCopyMaxNumOfRetries() {
         return copyMaxNumOfRetries;
     }
-    
+
     /**
      * Setter for property copyMaxNumOfRetries.
      * @param copyMaxNumOfRetries New value of property copyMaxNumOfRetries.
@@ -2013,7 +2099,7 @@ public class Configuration {
     public void setCopyMaxNumOfRetries(int copyMaxNumOfRetries) {
         this.copyMaxNumOfRetries = copyMaxNumOfRetries;
     }
-    
+
     /**
      * Getter for property copyRetryTimeout.
      * @return Value of property copyRetryTimeout.
@@ -2021,7 +2107,7 @@ public class Configuration {
     public long getCopyRetryTimeout() {
         return copyRetryTimeout;
     }
-    
+
     /**
      * Setter for property copyRetryTimeout.
      * @param copyRetryTimeout New value of property copyRetryTimeout.
@@ -2029,7 +2115,7 @@ public class Configuration {
     public void setCopyRetryTimeout(long copyRetryTimeout) {
         this.copyRetryTimeout = copyRetryTimeout;
     }
-    
+
     /**
      * Getter for property copyMaxRunningBySameOwner.
      * @return Value of property copyMaxRunningBySameOwner.
@@ -2037,7 +2123,7 @@ public class Configuration {
     public int getCopyMaxRunningBySameOwner() {
         return copyMaxRunningBySameOwner;
     }
-    
+
     /**
      * Setter for property copyMaxRunningBySameOwner.
      * @param copyMaxRunningBySameOwner New value of property copyMaxRunningBySameOwner.
@@ -2045,8 +2131,8 @@ public class Configuration {
     public void setCopyMaxRunningBySameOwner(int copyMaxRunningBySameOwner) {
         this.copyMaxRunningBySameOwner = copyMaxRunningBySameOwner;
     }
-    
-    
+
+
     public static final void main( String[] args) throws Exception {
         if(args == null || args.length !=2 ||
                 args[0].equalsIgnoreCase("-h")  ||
@@ -2057,10 +2143,10 @@ public class Configuration {
             System.err.println("Usage: Configuration load <file>\n or Configuration save <file>");
             return;
         }
-        
+
         String command = args[0];
         String file = args[1];
-        
+
         if(command.equals("load")) {
             System.out.println("reading configuration from file "+file);
             Configuration config = new Configuration(file);
@@ -2075,28 +2161,28 @@ public class Configuration {
         } else {
             System.err.println("Usage: Co<nfiguration load <file>\n or Configuration save <file>");
             return;
-            
+
         }
     }
-    
+
     /**
      * Getter for property reserve_space_implicitely.
-     * 
+     *
      * @return Value of property reserve_space_implicitely.
      */
     public boolean isReserve_space_implicitely() {
         return reserve_space_implicitely;
     }
-    
+
     /**
      * Setter for property reserve_space_implicitely.
-     * 
+     *
      * @param reserve_space_implicitely New value of property reserve_space_implicitely.
      */
     public void setReserve_space_implicitely(boolean reserve_space_implicitely) {
         this.reserve_space_implicitely = reserve_space_implicitely;
     }
-    
+
     /**
      * Getter for property space_reservation_strict.
      * @return Value of property space_reservation_strict.
@@ -2104,7 +2190,7 @@ public class Configuration {
     public boolean isSpace_reservation_strict() {
         return space_reservation_strict;
     }
-    
+
     /**
      * Setter for property space_reservation_strict.
      * @param space_reservation_strict New value of property space_reservation_strict.
@@ -2112,7 +2198,7 @@ public class Configuration {
     public void setSpace_reservation_strict(boolean space_reservation_strict) {
         this.space_reservation_strict = space_reservation_strict;
     }
-    
+
     /**
      * Getter for property storage_info_update_period.
      * @return Value of property storage_info_update_period.
@@ -2120,7 +2206,7 @@ public class Configuration {
     public long getStorage_info_update_period() {
         return storage_info_update_period;
     }
-    
+
     /**
      * Setter for property storage_info_update_period.
      * @param storage_info_update_period New value of property storage_info_update_period.
@@ -2128,7 +2214,7 @@ public class Configuration {
     public void setStorage_info_update_period(long storage_info_update_period) {
         this.storage_info_update_period = storage_info_update_period;
     }
-    
+
     /**
      * Getter for property vacuum_period_sec.
      * @return Value of property vacuum_period_sec.
@@ -2136,7 +2222,7 @@ public class Configuration {
     public long getVacuum_period_sec() {
         return vacuum_period_sec;
     }
-    
+
     /**
      * Setter for property vacuum_period_sec.
      * @param vacuum_period_sec New value of property vacuum_period_sec.
@@ -2144,7 +2230,7 @@ public class Configuration {
     public void setVacuum_period_sec(long vacuum_period_sec) {
         this.vacuum_period_sec = vacuum_period_sec;
     }
-    
+
     /**
      * Getter for property vacuum.
      * @return Value of property vacuum.
@@ -2152,7 +2238,7 @@ public class Configuration {
     public boolean isVacuum() {
         return vacuum;
     }
-    
+
     /**
      * Setter for property vacuum.
      * @param vacuum New value of property vacuum.
@@ -2160,7 +2246,7 @@ public class Configuration {
     public void setVacuum(boolean vacuum) {
         this.vacuum = vacuum;
     }
-    
+
     /**
      * Getter for property putRequestRestorePolicy.
      * @return Value of property putRequestRestorePolicy.
@@ -2168,7 +2254,7 @@ public class Configuration {
     public java.lang.String getPutRequestRestorePolicy() {
         return putRequestRestorePolicy;
     }
-    
+
     /**
      * Setter for property putRequestRestorePolicy.
      * @param putRequestRestorePolicy New value of property putRequestRestorePolicy.
@@ -2184,9 +2270,9 @@ public class Configuration {
                     ON_RESTART_WAIT_FOR_UPDATE_REQUEST+"\" "+
                     " but received value="+putRequestRestorePolicy);
         }
-        
+
     }
-    
+
     /**
      * Getter for property getRequestRestorePolicy.
      * @return Value of property getRequestRestorePolicy.
@@ -2194,7 +2280,7 @@ public class Configuration {
     public java.lang.String getGetRequestRestorePolicy() {
         return getRequestRestorePolicy;
     }
-    
+
     /**
      * Setter for property getRequestRestorePolicy.
      * @param getRequestRestorePolicy New value of property getRequestRestorePolicy.
@@ -2210,9 +2296,9 @@ public class Configuration {
                     ON_RESTART_WAIT_FOR_UPDATE_REQUEST+"\" "+
                     " but received value="+getRequestRestorePolicy);
         }
-        
+
     }
-    
+
     /**
      * Getter for property copyRequestRestorePolicy.
      * @return Value of property copyRequestRestorePolicy.
@@ -2220,7 +2306,7 @@ public class Configuration {
     public java.lang.String getCopyRequestRestorePolicy() {
         return copyRequestRestorePolicy;
     }
-    
+
     /**
      * Setter for property copyRequestRestorePolicy.
      * @param copyRequestRestorePolicy New value of property copyRequestRestorePolicy.
@@ -2237,7 +2323,7 @@ public class Configuration {
                     " but received value="+copyRequestRestorePolicy);
         }
     }
-    
+
     /**
      * Getter for property start_server.
      * @return Value of property start_server.
@@ -2245,7 +2331,7 @@ public class Configuration {
     public boolean isStart_server() {
         return start_server;
     }
-    
+
     /**
      * Setter for property start_server.
      * @param start_server New value of property start_server.
@@ -2253,7 +2339,7 @@ public class Configuration {
     public void setStart_server(boolean start_server) {
         this.start_server = start_server;
     }
-    
+
 
     public String getQosPluginClass() {
     	return qosPluginClass;
@@ -2283,36 +2369,36 @@ public class Configuration {
     public void setOldRequestRemovePeriodSecs(long oldRequestRemovePeriodSecs) {
         this.oldRequestRemovePeriodSecs = oldRequestRemovePeriodSecs;
     }
-    
+
     public long getDefaultSpaceLifetime() {
         return defaultSpaceLifetime;
     }
-    
+
     public void setDefaultSpaceLifetime(long defaultSpaceLifetime) {
         this.defaultSpaceLifetime = defaultSpaceLifetime;
     }
-    
+
     public void setGetPriorityPolicyPlugin(String txt) {
         getPriorityPolicyPlugin=txt;
     }
-    
+
     public String getGetPriorityPolicyPlugin() {
         return getPriorityPolicyPlugin;
     }
-    
-    
+
+
     public void setPutPriorityPolicyPlugin(String txt) {
         putPriorityPolicyPlugin=txt;
     }
-    
+
     public String getPutPriorityPolicyPlugin() {
         return putPriorityPolicyPlugin;
     }
-    
+
     public void setCopyPriorityPolicyPlugin(String txt) {
         putPriorityPolicyPlugin=txt;
     }
-    
+
     public String getCopyPriorityPolicyPlugin() {
         return putPriorityPolicyPlugin;
     }
@@ -2324,7 +2410,7 @@ public class Configuration {
     public void setJdbcExecutionThreadNum(Integer jdbcExecutionThreadNum) {
         this.jdbcExecutionThreadNum = jdbcExecutionThreadNum;
     }
-    
+
      public Integer getMaxQueuedJdbcTasksNum() {
         return maxQueuedJdbcTasksNum;
     }
@@ -2348,7 +2434,7 @@ public class Configuration {
     public void setJdbcMonitoringEnabled(boolean jdbcMonitoringEnabled) {
         this.jdbcMonitoringEnabled = jdbcMonitoringEnabled;
     }
-    
+
     public boolean isOverwrite() {
         return overwrite;
     }
@@ -2363,6 +2449,22 @@ public class Configuration {
 
     public void setSizeOfSingleRemoveBatch(int size) {
 	    sizeOfSingleRemoveBatch=size;
+    }
+
+    public int getMaxNumberOfLsLevels() {
+	    return maxNumberOfLsLevels;
+    }
+
+    public void setMaxNumberOfLsLevels(int max_ls_levels) {
+	    maxNumberOfLsLevels=max_ls_levels;
+    }
+
+    public int getMaxNumberOfLsEntries() {
+	    return maxNumberOfLsEntries;
+    }
+
+    public void setMaxNumberOfLsEntries(int max_ls_entries) {
+	   maxNumberOfLsEntries=max_ls_entries;
     }
 
     public boolean isOverwrite_by_default() {
@@ -2484,5 +2586,94 @@ public class Configuration {
     public void setBringOnlinePriorityPolicyPlugin(String bringOnlinePriorityPolicyPlugin) {
         this.bringOnlinePriorityPolicyPlugin = bringOnlinePriorityPolicyPlugin;
     }
-    
+
+    public int getLsReqTQueueSize() {
+        return lsReqTQueueSize;
+    }
+
+    public void setLsReqTQueueSize(int lsReqTQueueSize) {
+        this.lsReqTQueueSize = lsReqTQueueSize;
+    }
+
+    public int getLsThreadPoolSize() {
+        return lsThreadPoolSize;
+    }
+
+    public void setLsThreadPoolSize(int lsThreadPoolSize) {
+        this.lsThreadPoolSize = lsThreadPoolSize;
+    }
+
+    public int getLsMaxWaitingRequests() {
+        return lsMaxWaitingRequests;
+    }
+
+    public void setLsMaxWaitingRequests(int lsMaxWaitingRequests) {
+        this.lsMaxWaitingRequests = lsMaxWaitingRequests;
+    }
+
+    public int getLsReadyQueueSize() {
+        return lsReadyQueueSize;
+    }
+
+    public void setLsReadyQueueSize(int lsReadyQueueSize) {
+        this.lsReadyQueueSize = lsReadyQueueSize;
+    }
+
+    public int getLsMaxReadyJobs() {
+        return lsMaxReadyJobs;
+    }
+
+    public void setLsMaxReadyJobs(int lsMaxReadyJobs) {
+        this.lsMaxReadyJobs = lsMaxReadyJobs;
+    }
+
+    public int getLsMaxNumOfRetries() {
+        return lsMaxNumOfRetries;
+    }
+
+    public void setLsMaxNumOfRetries(int lsMaxNumOfRetries) {
+        this.lsMaxNumOfRetries = lsMaxNumOfRetries;
+    }
+
+    public long getLsRetryTimeout() {
+        return lsRetryTimeout;
+    }
+
+    public void setLsRetryTimeout(long lsRetryTimeout) {
+        this.lsRetryTimeout = lsRetryTimeout;
+    }
+
+    public int getLsMaxRunningBySameOwner() {
+        return lsMaxRunningBySameOwner;
+    }
+
+    public void setLsMaxRunningBySameOwner(int lsMaxRunningBySameOwner) {
+        this.lsMaxRunningBySameOwner = lsMaxRunningBySameOwner;
+    }
+
+    public String getLsRequestRestorePolicy() {
+        return lsRequestRestorePolicy;
+    }
+
+    public void setLsRequestRestorePolicy(String lsRequestRestorePolicy) {
+        this.lsRequestRestorePolicy = lsRequestRestorePolicy;
+    }
+
+    public long getLsLifetime() {
+        return lsLifetime;
+    }
+
+    public void setLsLifetime(long lsLifetime) {
+        this.lsLifetime = lsLifetime;
+    }
+
+    public String getLsPriorityPolicyPlugin() {
+        return lsPriorityPolicyPlugin;
+    }
+
+    public void setLsPriorityPolicyPlugin(String lsPriorityPolicyPlugin) {
+        this.lsPriorityPolicyPlugin = lsPriorityPolicyPlugin;
+    }
+
+
 }

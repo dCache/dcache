@@ -369,7 +369,7 @@ public class Storage
         permissionHandler = new PermissionHandler(this,_pnfsPath);
         InetAddress[] addresses = InetAddress.getAllByName(
                 InetAddress.getLocalHost().getHostName());
-        
+
         _hosts = new String[addresses.length];
 
         /**
@@ -378,18 +378,18 @@ public class Storage
          */
         int nextExternalIfIndex = 0;
         int nextInternalIfIndex = addresses.length-1;
-        
+
         for( int i = 0; i < addresses.length; i++) {
     		InetAddress addr = addresses[i];
         	
-        	if( !addr.isLinkLocalAddress() && !addr.isLoopbackAddress() && 
+        	if( !addr.isLinkLocalAddress() && !addr.isLoopbackAddress() &&
         			!addr.isSiteLocalAddress() && !addr.isMulticastAddress()) {
         		_hosts [nextExternalIfIndex++] = addr.getHostName();
         	} else {
         		_hosts [nextInternalIfIndex--] = addr.getHostName();
         	}
         }
-        
+
         String tmpstr = _args.getOpt("config");
         if(tmpstr != null) {
             try {
@@ -408,6 +408,9 @@ public class Storage
         config.setPort(getIntOption("srmport",config.getPort()));
         config.setSizeOfSingleRemoveBatch(getIntOption("size-of-single-remove-batch",config.getSizeOfSingleRemoveBatch()));
 	config.setGlue_mapfile(getOption("srmmap",config.getGlue_mapfile()));
+
+        config.setMaxNumberOfLsEntries(getIntOption("max-number-of-ls-entries",config.getMaxNumberOfLsEntries()));
+        config.setMaxNumberOfLsLevels(getIntOption("max-number-of-ls-levels",config.getMaxNumberOfLsLevels()));
 
         config.setKpwdfile( getOption("kpwd-file",config.getKpwdfile()) );
         config.setUseGplazmaAuthzCellFlag(isOptionSetToTrueOrYes(
@@ -484,6 +487,8 @@ public class Storage
             "get-lifetime",config.getGetLifetime()));
         config.setBringOnlineLifetime(getLongOption(
             "bring-online-lifetime",config.getBringOnlineLifetime()));
+        config.setLsLifetime(getLongOption(
+                                     "ls-request-lifetime",config.getLsLifetime()));
         config.setPutLifetime(getLongOption(
             "put-lifetime",config.getPutLifetime()));
         config.setCopyLifetime(getLongOption("copy-lifetime",
@@ -519,6 +524,8 @@ public class Storage
             config.getGetPriorityPolicyPlugin()));
         config.setBringOnlinePriorityPolicyPlugin(getOption("bring-online-priority-policy",
             config.getBringOnlinePriorityPolicyPlugin()));
+        config.setLsPriorityPolicyPlugin(getOption("ls-request-priority-policy",
+                                                   config.getLsPriorityPolicyPlugin()));
         config.setPutPriorityPolicyPlugin(getOption("put-priority-policy",
             config.getPutPriorityPolicyPlugin()));
         config.setCopyPriorityPolicyPlugin(getOption("copy-priority-policy",
@@ -578,8 +585,27 @@ public class Storage
         config.setBringOnlineMaxRunningBySameOwner(
             getIntOption("bring-online-req-max-num-of-running-by-same-owner",
             config.getBringOnlineMaxRunningBySameOwner()));
-        
-        
+
+
+        config.setLsReqTQueueSize( getIntOption("ls-request-thread-queue-size",
+            config.getLsReqTQueueSize()));
+        config.setLsThreadPoolSize(getIntOption("ls-request-thread-pool-size",
+            config.getLsThreadPoolSize()));
+        config.setLsMaxWaitingRequests(getIntOption("ls-request-max-waiting-requests",
+            config.getLsMaxWaitingRequests()));
+        config.setLsReadyQueueSize(getIntOption("ls-request-ready-queue-size",
+            config.getLsReadyQueueSize()));
+        config.setLsMaxReadyJobs(getIntOption("ls-request-max-ready-requests",
+            config.getLsMaxReadyJobs()));
+        config.setLsMaxNumOfRetries(getIntOption("ls-request-max-number-of-retries",
+            config.getLsMaxNumOfRetries()));
+        config.setLsRetryTimeout(getLongOption("ls-request-retry-timeout",
+            config.getLsRetryTimeout()));
+        config.setLsMaxRunningBySameOwner(
+            getIntOption("ls-request-max-num-of-running-by-same-owner",
+            config.getLsMaxRunningBySameOwner()));
+
+
         config.setPutReqTQueueSize(getIntOption("put-req-thread-queue-size",
             config.getPutReqTQueueSize()));
         config.setPutThreadPoolSize(getIntOption("put-req-thread-pool-size",
@@ -626,6 +652,8 @@ public class Storage
             config.getGetRequestRestorePolicy()));
         config.setBringOnlineRequestRestorePolicy(getOption("bring-online-request-restore-policy",
             config.getBringOnlineRequestRestorePolicy()));
+        config.setLsRequestRestorePolicy(getOption("ls-request-restore-policy",
+            config.getLsRequestRestorePolicy()));
         config.setPutRequestRestorePolicy(getOption("put-request-restore-policy",
             config.getPutRequestRestorePolicy()));
         config.setCopyRequestRestorePolicy(getOption("copy-request-restore-policy",
@@ -658,13 +686,13 @@ public class Storage
 
         config.setJdbcMonitoringEnabled(isOptionSetToTrueOrYes("jdbc-monitoring-log",
             config.isJdbcMonitoringEnabled())); // false by default
-        
+
         config.setJdbcMonitoringDebugLevel(isOptionSetToTrueOrYes("jdbc-monitoring-debug",
             config.isJdbcMonitoringDebugLevel())); // false by default
 
         config.setCleanPendingRequestsOnRestart(isOptionSetToTrueOrYes("clean-pending-requests-on-restart",
             config.isCleanPendingRequestsOnRestart())); // false by default
-        
+
         config.setOverwrite(isOptionSetToTrueOrYes("overwrite",
             config.isOverwrite())); //false by default
 
@@ -700,7 +728,7 @@ public class Storage
             new AuthRecordPersistenceManager(
                 config.getJdbcUrl(),
                 config.getJdbcClass(),
-                config.getJdbcUser(), 
+                config.getJdbcUser(),
                 config.getJdbcPass());
         config.setSrmUserPersistenceManager(authRecordPersistenceManager);
 
@@ -960,12 +988,14 @@ public class Storage
             boolean copy=args.getOpt("copy") != null;
             boolean bring=args.getOpt("bring") != null;
             boolean reserve=args.getOpt("reserve") != null;
-            if( !get && !put && !copy && !bring && !reserve) {
+            boolean ls=args.getOpt("ls") != null;
+            if( !get && !put && !copy && !bring && !reserve && !ls ) {
                 get=true;
                 put=true;
                 copy=true;
                 bring=true;
                 reserve=true;
+                ls=true;
             }
             String pattern = args.argv(0);
             StringBuffer sb = new StringBuffer();
@@ -989,15 +1019,19 @@ public class Storage
                 say("calling srm.cancelAllReserveSpaceRequest(\""+pattern+"\")");
                 srm.cancelAllReserveSpaceRequest(sb, pattern);
             }
+            if(ls) {
+                say("calling srm.cancelAllLsRequests(\""+pattern+"\")");
+                srm.cancelAllLsRequests(sb, pattern);
+            }
             return sb.toString();
         }catch (Exception e) {
             esay(e);
             return e.toString();
         }
     }
-    public String fh_ls= " Syntax: ls [-get] [-put] [-copy] [-bring] [-reserve] [-l] [<id>] "+
+    public String fh_ls= " Syntax: ls [-get] [-put] [-copy] [-bring] [-reserve] [-ls] [-l] [<id>] "+
             "#will list all requests";
-    public String hh_ls= " [-get] [-put] [-copy] [-bring] [-reserve] [-l] [<id>]";
+    public String hh_ls= " [-get] [-put] [-copy] [-bring] [-reserve] [-ls] [-l] [<id>]";
     public String ac_ls_$_0_1(Args args) {
         try {
             boolean get=args.getOpt("get") != null;
@@ -1005,6 +1039,7 @@ public class Storage
             boolean copy=args.getOpt("copy") != null;
             boolean bring=args.getOpt("bring") != null;
             boolean reserve=args.getOpt("reserve") != null;
+            boolean ls=args.getOpt("ls") != null;
             boolean longformat = args.getOpt("l") != null;
             StringBuffer sb = new StringBuffer();
             if(args.argc() == 1) {
@@ -1015,12 +1050,13 @@ public class Storage
                     return "id must be an integer, you gave id="+args.argv(0);
                 }
             } else {
-                if( !get && !put && !copy && !bring && !reserve) {
+                if( !get && !put && !copy && !bring && !reserve && !ls) {
                     get=true;
                     put=true;
                     copy=true;
                     bring=true;
                     reserve=true;
+                    ls=true;
                 }
                 if(get) {
                     sb.append("Get Requests:\n");
@@ -1047,6 +1083,11 @@ public class Storage
                     srm.listReserveSpaceRequests(sb);
                     sb.append('\n');
                 }
+                if(ls) {
+                    sb.append("Ls Requests:\n");
+                    srm.listLsRequests(sb);
+                    sb.append('\n');
+                }
             }
             return sb.toString();
         } catch(Throwable t) {
@@ -1055,24 +1096,25 @@ public class Storage
         }
     }
     public String fh_ls_queues= " Syntax: ls queues " +
-        "[-get] [-put] [-copy] [-bring] [-l]  "+
+        "[-get] [-put] [-copy] [-bring] [-ls] [-l]  "+
             "#will list schedule queues";
-    public String hh_ls_queues= " [-get] [-put] [-copy] [-bring] [-l] ";
+    public String hh_ls_queues= " [-get] [-put] [-copy] [-bring] [-ls] [-l] ";
     public String ac_ls_queues_$_0(Args args) {
         try {
             boolean get=args.getOpt("get") != null;
             boolean put=args.getOpt("put") != null;
+            boolean ls=args.getOpt("ls") != null;
             boolean copy=args.getOpt("copy") != null;
             boolean bring=args.getOpt("bring") != null;
             boolean longformat = args.getOpt("l") != null;
             StringBuffer sb = new StringBuffer();
 
-            if( !get && !put && !copy && !bring ) {
+            if( !get && !put && !copy && !bring && !ls ) {
                 get=true;
                 put=true;
                 copy=true;
                 bring=true;
-
+                ls=true;
             }
             if(get) {
                 sb.append("Get Request Scheduler:\n");
@@ -1100,6 +1142,13 @@ public class Storage
                 srm.printBringOnlineSchedulerThreadQueue(sb);
                 srm.printBringOnlineSchedulerPriorityThreadQueue(sb);
                 srm.printBringOnlineSchedulerReadyThreadQueue(sb);
+                sb.append('\n');
+            }
+            if(ls) {
+                sb.append("Ls Request Scheduler:\n");
+                srm.printLsSchedulerThreadQueue(sb);
+                srm.printLsSchedulerPriorityThreadQueue(sb);
+                srm.printLsSchedulerReadyThreadQueue(sb);
                 sb.append('\n');
             }
             return sb.toString();
@@ -1265,6 +1314,20 @@ public class Storage
         srm.getBringOnlineRequestScheduler().setMaxReadyJobs(value);
         say("bring-online-req-max-ready-requests="+value);
         return "bring-online-req-max-ready-requests="+value;
+    }
+
+    public String fh_set_max_ready_ls= " Syntax: set max ready ls <count>"+
+            " #will set a maximum number of ls requests in the ready state";
+    public String hh_set_max_ready_ls= " <count>";
+    public String ac_set_max_read_ls_$_1(Args args) throws Exception{
+        if(args.argc() != 1) {
+            throw new IllegalArgumentException("count is not specified");
+        }
+        int value = Integer.parseInt(args.argv(0));
+        config.setLsMaxReadyJobs(value);
+        srm.getLsRequestScheduler().setMaxReadyJobs(value);
+        say("ls-request-max-ready-requests="+value);
+        return "ls-request-max-ready-requests="+value;
     }
 
       public String fh_dir_creators_ls= " Syntax: dir creators ls [-l]  "+
@@ -2560,8 +2623,8 @@ public class Storage
                     absolute_path, parent_util_fmd, util_fmd)) {
                     esay("getFileMetaData have no read permission " +
                         "(or file does not exists) ");
-                    throw new SRMException("getFileMetaData have no read " +
-                        "permission (or file does not exists) ");
+                    throw new SRMAuthorizationException("getFileMetaData have no read " +
+                                                           "permission (or file does not exists) ");
                 }
             }
         }
@@ -2628,7 +2691,7 @@ public class Storage
     {
         return getFileMetaData(user,absolute_path, pnfsId,storage_info, util_fmd, null);
     }
-    
+
     public static FileMetaData
         getFileMetaData(SRMUser user,
                         String absolute_path,
@@ -2655,8 +2718,8 @@ public class Storage
         DcacheFileMetaData fmd = new DcacheFileMetaData(pnfsId);
 
         if (util_fmd != null) {
-            
-            
+
+
             if(checksums != null) {
                 //first try to find the adler32 checksum
                 for(Checksum checksum:checksums) {
@@ -2665,7 +2728,7 @@ public class Storage
                         checksum_value = checksum.getValue();
                     }
                 }
-                //if this failed, but there are other types 
+                //if this failed, but there are other types
                 // use the first one found
                 if(checksum_type == null && !checksums.isEmpty() ) {
                      Checksum cksum = checksums.iterator().next();
@@ -3743,7 +3806,7 @@ public class Storage
     }
 
     /**
-     * @param user 
+     * @param user
      * @param filePath
      * @param remoteTURL
      * @param remoteUser
@@ -4093,7 +4156,7 @@ public class Storage
      * various actions performed to release space in the storage
      */
     public void releaseSpace( SRMUser user,
-        long spaceSize, 
+        long spaceSize,
         String spaceToken,
         ReleaseSpaceCallbacks callbacks){
         AuthorizationRecord duser = (AuthorizationRecord) user;
@@ -4770,6 +4833,8 @@ public class Storage
             tokens.addAll(srm.getPutRequestIds((SRMUser) user,
                     description));
             tokens.addAll(srm.getCopyRequestIds((SRMUser) user,
+                    description));
+            tokens.addAll(srm.getLsRequestIds((SRMUser) user,
                     description));
             Long[] tokenLongs = (Long[]) tokens.toArray(new Long[0]);
             String[] tokenStrings = new String[tokenLongs.length];

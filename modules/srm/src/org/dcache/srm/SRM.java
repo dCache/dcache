@@ -1,211 +1,5 @@
-
 // $Id$
 // $Log: not supported by cvs2svn $
-// Revision 1.50  2007/03/08 23:36:54  timur
-// merging changes from the 1-7 branch related to database performance and reduced usage of database when monitoring is not used
-//
-// Revision 1.49  2007/03/06 23:12:53  timur
-// limit queue of jdbc requests, allow multiple threads for sql request execution
-//
-// Revision 1.48  2007/01/10 23:00:22  timur
-// implemented srmGetRequestTokens, store request description in database, fixed several srmv2 issues
-//
-// Revision 1.47  2006/11/11 01:16:32  timur
-// propagate the StorageType from copy to srmPrepareToPut
-//
-// Revision 1.46  2006/10/24 07:44:32  litvinse
-// moved JobAppraiser interface into separate package
-// added handles to select scheduler priority policies
-//
-// Revision 1.45  2006/10/16 19:50:03  litvinse
-// add casting to calls to ContainerRequest.getRequest() where necessary
-//
-// Revision 1.44  2006/10/02 23:29:15  timur
-// implemented srmPing and srmBringOnline (not tested yet), refactored Request.java
-//
-// Revision 1.43  2006/09/15 22:39:15  timur
-// work to make srmCopy  use new type of SpaceReservation
-//
-// Revision 1.42  2006/08/18 22:05:31  timur
-// srm usage of space by srmPrepareToPut implemented
-//
-// Revision 1.41  2006/07/29 18:10:40  timur
-// added schedulable requests for execution reserve space requests
-//
-// Revision 1.40  2006/06/30 15:32:13  timur
-// reduced and generalized srm v2 server java code, using reflection
-//
-// Revision 1.39  2006/06/20 15:42:15  timur
-// initial v2.2 commit, code is based on a week old wsdl, will update the wsdl and code next
-//
-// Revision 1.38  2006/04/18 00:53:46  timur
-// added the job execution history storage for better diagnostics and profiling
-//
-// Revision 1.37  2006/03/30 23:17:19  timur
-// added srmAbortRequest
-//
-// Revision 1.36  2006/03/28 00:20:47  timur
-// added srmAbortFiles support
-//
-// Revision 1.35  2006/01/12 23:38:09  timur
-// first working version of srmCopy
-//
-// Revision 1.34  2005/12/21 22:29:54  litvinse
-// implemented srmCopy V2
-//
-// Revision 1.33  2005/12/14 01:49:14  litvinse
-// moving towards working srmCopy
-//
-// Revision 1.32  2005/12/13 22:17:40  litvinse
-// working on srmCopy implementation for SRM V2
-//
-// Revision 1.31  2005/12/12 22:35:46  timur
-// more work on srmPrepareToGet and related srm v2 functions
-//
-// Revision 1.30  2005/12/10 00:04:01  timur
-// working on srmPrepareToPut
-//
-// Revision 1.29  2005/12/08 01:01:12  timur
-// working on srmPrepereToGet
-//
-// Revision 1.28  2005/12/05 23:53:18  litvinse
-// minor change - override filemetadata SURL with original SURL, hence
-// the "original" SURL is returned
-//
-// Revision 1.27  2005/12/02 22:20:51  timur
-// working on srmReleaseFiles
-//
-// Revision 1.26  2005/11/20 02:40:10  timur
-// SRM PrepareToGet and srmStatusOfPrepareToGet functions
-//
-// Revision 1.25  2005/11/18 20:28:18  timur
-// use correct parameter for put request timeout
-//
-// Revision 1.24  2005/11/17 20:45:55  timur
-// started work on srmPrepareToGet functions
-//
-// Revision 1.23  2005/11/16 22:13:37  litvinse
-// implemented Mv
-//
-// Revision 1.22  2005/11/15 01:10:42  litvinse
-// implemented SrmMkdir function
-//
-// Revision 1.21  2005/11/12 22:15:35  litvinse
-// implemented SrmRmDir
-//
-// WARNING: if directory is sym-link or recursion level is specified an
-// 	 a subdirectory contains sym-link - it will follow it. Do not
-// 	 use if there are symbolic link.
-//
-// Revision 1.20  2005/11/01 17:07:16  litvinse
-// implemented SrmRm
-//
-// Revision 1.19  2005/10/26 20:30:18  litvinse
-// make sure it compiles
-//
-// Revision 1.18  2005/10/26 20:12:15  litvinse
-// changes related to srRm
-//
-// Revision 1.17  2005/10/25 00:47:25  timur
-// make startup of glue http server optional
-//
-// Revision 1.16  2005/10/18 21:03:55  timur
-// modified how axis server passes credentials to srm
-//
-// Revision 1.15  2005/10/11 18:00:08  timur
-// added load calculation
-//
-// Revision 1.14  2005/10/07 22:57:15  timur
-// work for srm v2
-//
-// Revision 1.9  2005/06/02 20:48:04  timur
-// better error propagation in case of advisory delete, less error printing in client
-//
-// Revision 1.8  2005/06/02 06:15:57  timur
-// some changes to advisory delete
-//
-// Revision 1.7  2005/04/28 13:23:07  timur
-// actually start the vacuum thread
-//
-// Revision 1.6  2005/04/28 13:09:58  timur
-// added postgres vacuum thread
-//
-// Revision 1.5  2005/03/23 18:10:37  timur
-// more space reservation related changes, need to support it in case of "copy"
-//
-// Revision 1.4  2005/03/13 21:56:28  timur
-// more changes to restore compatibility
-//
-// Revision 1.3  2005/03/11 21:16:24  timur
-// making srm compatible with cern tools again
-//
-// Revision 1.2  2005/03/01 23:10:38  timur
-// Modified the database scema to increase database operations performance and to account for reserved space"and to account for reserved space
-//
-// Revision 1.1  2005/01/14 23:07:13  timur
-// moving general srm code in a separate repository
-//
-// Revision 1.36  2004/12/14 19:37:56  timur
-// fixed advisory delete permissions and client issues
-//
-// Revision 1.35  2004/12/10 22:14:37  timur
-// fixed the cancelall commands
-//
-// Revision 1.34  2004/12/09 19:26:23  timur
-// added new updated jglobus libraries, new group commands for canceling srm requests
-//
-// Revision 1.33  2004/11/17 21:56:48  timur
-// adding the option which allows to store the pending or running requests in memory, fixed a restore from database bug
-//
-// Revision 1.32  2004/10/30 04:19:07  timur
-// Fixed a problem related to the restoration of the job from database
-//
-// Revision 1.31  2004/10/28 02:41:30  timur
-// changed the database scema a little bit, fixed various synchronization bugs in the scheduler, added interactive shell to the File System srm
-//
-// Revision 1.30  2004/08/10 17:03:47  timur
-// more monitoring, change file request state, when request is complete
-//
-// Revision 1.29  2004/08/06 19:35:21  timur
-// merging branch srm-branch-12_May_2004 into the trunk
-//
-// Revision 1.28.2.19  2004/07/29 22:17:29  timur
-// Some functionality for disk srm is working
-//
-// Revision 1.28.2.18  2004/07/12 21:52:05  timur
-// remote srm error handling is improved, minor issues fixed
-//
-// Revision 1.28.2.17  2004/07/02 20:10:23  timur
-// fixed the leak of sql connections, added propogation of srm errors
-//
-// Revision 1.28.2.16  2004/06/30 20:37:22  timur
-// added more monitoring functions, added retries to the srm client part, adapted the srmclientv1 for usage in srmcp
-//
-// Revision 1.28.2.15  2004/06/28 21:54:10  timur
-// added configuration options for the schedulers
-//
-// Revision 1.28.2.14  2004/06/25 21:39:58  timur
-// first version where everything works, need much more thorough testing and ability to configure scheduler better
-//
-// Revision 1.28.2.13  2004/06/24 23:03:07  timur
-// put requests, put file requests and copy file requests are now stored in database, copy requests need more work
-//
-// Revision 1.28.2.12  2004/06/23 21:55:59  timur
-// Get Requests are now stored in database, ContainerRequest Credentials are now stored in database too
-//
-// Revision 1.28.2.11  2004/06/22 01:38:06  timur
-// working on the database part, created persistent storage for getFileRequests, for the next requestId
-//
-// Revision 1.28.2.10  2004/06/18 22:20:51  timur
-// adding sql database storage for requests
-//
-// Revision 1.28.2.9  2004/06/16 22:14:31  timur
-// copy works for mulfile request
-//
-// Revision 1.28.2.8  2004/06/15 22:15:41  timur
-// added cvs logging tags and fermi copyright headers at the top
-//
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -215,28 +9,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -249,10 +43,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -262,10 +56,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -310,6 +104,8 @@ import org.dcache.srm.request.sql.PutRequestStorage;
 import org.dcache.srm.request.sql.ReserveSpaceRequestStorage;
 import org.dcache.srm.request.sql.CopyFileRequestStorage;
 import org.dcache.srm.request.sql.CopyRequestStorage;
+import org.dcache.srm.request.sql.LsRequestStorage;
+import org.dcache.srm.request.sql.LsFileRequestStorage;
 import org.dcache.srm.request.sql.DatabaseRequestCredentialStorage;
 import org.dcache.srm.util.Tools;
 import java.util.Set;
@@ -393,10 +189,11 @@ public class SRM {
     private Scheduler putRequestScheduler;
     private Scheduler copyRequestScheduler;
     private Scheduler reserveSpaceScheduler;
+    private Scheduler lsRequestScheduler;
     private RequestCredentialStorage requestCredentialStorage;
     //    private RequestScheduler putRequestScheduler;
     //    private RequestScheduler copyRequestScheduler;
-    
+
     /** Creates a new instance of SRM
      *
      * @param  srcSURLS
@@ -418,7 +215,7 @@ public class SRM {
      *         array of boolean values indicating if permonent copies are
      *         desired
      */
-    
+
     /** Creates a new instance of SRM
      *
      * @param  config
@@ -434,10 +231,12 @@ public class SRM {
     private CopyFileRequestStorage copyFileRequestStorage;
     private ReserveSpaceRequestStorage reserveSpaceRequestStorage;
     private AbstractStorageElement storage;
+    private LsRequestStorage lsRequestStorage;
+    private LsFileRequestStorage lsFileRequestStorage;
     /**
      * if multiple srm installations live within same storage, they should have different names
      */
-    public SRM(Configuration config,String name) 
+    public SRM(Configuration config,String name)
         throws java.io.IOException,
         java.sql.SQLException,
         InterruptedException,
@@ -448,24 +247,24 @@ public class SRM {
         this.storage  = config.getStorage();
         this.name = name;
 
-        // these jdbc parameters need to be set before the 
+        // these jdbc parameters need to be set before the
         // first jdbc instance is created
         // so we do it before everything else
-        
+
         if(configuration.getMaxQueuedJdbcTasksNum() != null ) {
             say("setMaxJdbcTasksNum to "+
                     configuration.getMaxQueuedJdbcTasksNum().intValue());
             org.dcache.srm.request.sql.JdbcConnectionPool.setMaxQueuedJdbcTasksNum(
                     configuration.getMaxQueuedJdbcTasksNum().intValue());
         }
-        
+
         if(configuration.getJdbcExecutionThreadNum() != null ) {
             say("set JDBC ExecutionThreadNum to "+
                     configuration.getJdbcExecutionThreadNum().intValue());
             org.dcache.srm.request.sql.JdbcConnectionPool.setExecutionThreadNum(
                     configuration.getJdbcExecutionThreadNum().intValue());
         }
-        
+
         if(config.isGsissl()) {
             String protocol_property=System.getProperty("java.protocol.handler.pkgs");
             if(protocol_property == null) {
@@ -476,11 +275,25 @@ public class SRM {
             }
             System.setProperty("java.protocol.handler.pkgs",protocol_property);
         }
-        
+
         //config.setLocalSRM(this);
         requestCredentialStorage = new DatabaseRequestCredentialStorage(config);
         RequestCredential.registerRequestCredentialStorage(requestCredentialStorage);
-        
+
+        lsRequestScheduler = new Scheduler("ls_"+name,storage);
+        // scheduler parameters
+        lsRequestScheduler.setMaxThreadQueueSize(config.getLsReqTQueueSize());
+        lsRequestScheduler.setThreadPoolSize(config.getLsThreadPoolSize());
+        lsRequestScheduler.setMaxWaitingJobNum(config.getLsMaxWaitingRequests());
+        lsRequestScheduler.setMaxReadyQueueSize(config.getLsReadyQueueSize());
+        lsRequestScheduler.setMaxReadyJobs(config.getLsMaxReadyJobs());
+        lsRequestScheduler.setMaxNumberOfRetries(config.getLsMaxNumOfRetries());
+        lsRequestScheduler.setRetryTimeout(config.getLsRetryTimeout());
+        lsRequestScheduler.setMaxRunningByOwner(config.getLsMaxRunningBySameOwner());
+	lsRequestScheduler.setPriorityPolicyPlugin(config.getLsPriorityPolicyPlugin());
+        lsRequestScheduler.start();
+
+
         getRequestScheduler = new Scheduler("get_"+name,storage);
         // scheduler parameters
         getRequestScheduler.setMaxThreadQueueSize(config.getGetReqTQueueSize());
@@ -494,7 +307,7 @@ public class SRM {
 	getRequestScheduler.setPriorityPolicyPlugin(config.getGetPriorityPolicyPlugin());
         getRequestScheduler.start();
 
-        
+
         bringOnlineRequestScheduler = new Scheduler("bring_online_"+name,storage);
         // scheduler parameters
         bringOnlineRequestScheduler.setMaxThreadQueueSize(config.getBringOnlineReqTQueueSize());
@@ -507,8 +320,8 @@ public class SRM {
         bringOnlineRequestScheduler.setMaxRunningByOwner(config.getBringOnlineMaxRunningBySameOwner());
         bringOnlineRequestScheduler.setPriorityPolicyPlugin(config.getBringOnlinePriorityPolicyPlugin());
         bringOnlineRequestScheduler.start();
-        
-        
+
+
         putRequestScheduler = new Scheduler("put_"+name,storage);
         // scheduler parameters
         putRequestScheduler.setMaxThreadQueueSize(config.getPutReqTQueueSize());
@@ -521,7 +334,7 @@ public class SRM {
         putRequestScheduler.setMaxRunningByOwner(config.getPutMaxRunningBySameOwner());
         putRequestScheduler.setPriorityPolicyPlugin(config.getPutPriorityPolicyPlugin());
         putRequestScheduler.start();
-        
+
         copyRequestScheduler = new Scheduler("copy_"+name,storage);
         // scheduler parameters
         copyRequestScheduler.setMaxThreadQueueSize(config.getCopyReqTQueueSize());
@@ -532,7 +345,7 @@ public class SRM {
         copyRequestScheduler.setMaxRunningByOwner(config.getCopyMaxRunningBySameOwner());
         copyRequestScheduler.setPriorityPolicyPlugin(config.getCopyPriorityPolicyPlugin());
         copyRequestScheduler.start();
-        
+
         reserveSpaceScheduler = new Scheduler("reserve_space"+name,storage);
         reserveSpaceScheduler.start();
         //config.getMaxActiveGet(),config.getMaxDoneGet(),config.getGetLifetime(),config);
@@ -540,7 +353,7 @@ public class SRM {
         config.getMaxActivePut(),config.getMaxDonePut(),config.getPutLifetime(),config);
         copyRequestScheduler = new RequestScheduler("copy ContainerRequest Scheduler",
         config.getMaxActiveCopy(),config.getMaxDoneCopy(),config.getCopyLifetime(),config);
-        
+
         */
         bringOnlineStorage = new BringOnlineRequestStorage(configuration);
         getStorage = new GetRequestStorage(configuration);
@@ -551,6 +364,9 @@ public class SRM {
         putFileRequestStorage = new PutFileRequestStorage(configuration);
         copyFileRequestStorage = new CopyFileRequestStorage(configuration);
         reserveSpaceRequestStorage = new ReserveSpaceRequestStorage(configuration);
+        lsRequestStorage=new LsRequestStorage(configuration);
+        lsFileRequestStorage=new LsFileRequestStorage(configuration);
+
         bringOnlineStorage.saveMemory(config.isSaveMemory());
         getStorage.saveMemory(config.isSaveMemory());
         putStorage.saveMemory(config.isSaveMemory());
@@ -560,6 +376,8 @@ public class SRM {
         putFileRequestStorage.saveMemory(config.isSaveMemory());
         copyFileRequestStorage.saveMemory(config.isSaveMemory());
         reserveSpaceRequestStorage.saveMemory(config.isSaveMemory());
+        lsRequestStorage.saveMemory(config.isSaveMemory());
+        lsFileRequestStorage.saveMemory(config.isSaveMemory());
         Job.registerJobStorage(bringOnlineFileRequestStorage);
         Job.registerJobStorage(getFileRequestStorage);
         Job.registerJobStorage(putFileRequestStorage);
@@ -569,7 +387,9 @@ public class SRM {
         Job.registerJobStorage(putStorage);
         Job.registerJobStorage(copyStorage);
         Job.registerJobStorage(reserveSpaceRequestStorage);
-        
+        Job.registerJobStorage(lsRequestStorage);
+        Job.registerJobStorage(lsFileRequestStorage);
+
         bringOnlineStorage.updatePendingJobs();
         getStorage.updatePendingJobs();
         copyStorage.updatePendingJobs();
@@ -579,27 +399,42 @@ public class SRM {
         putFileRequestStorage.updatePendingJobs();
         copyFileRequestStorage.updatePendingJobs();
         reserveSpaceRequestStorage.updatePendingJobs();
-        
+
+        lsRequestStorage.updatePendingJobs();
+        lsFileRequestStorage.updatePendingJobs();
+
+
+        lsRequestScheduler.jobStorageAdded(lsFileRequestStorage);
+        lsFileRequestStorage.schedulePendingJobs(lsRequestScheduler);
+
+
+//        lsRequestStorage.schedulePendingJobs(lsRequestScheduler);
+//        lsRequestScheduler.jobStorageAdded(lsRequestStorage);
+
         bringOnlineRequestScheduler.jobStorageAdded(bringOnlineFileRequestStorage);
         bringOnlineFileRequestStorage.schedulePendingJobs(getRequestScheduler);
+
         getRequestScheduler.jobStorageAdded(getFileRequestStorage);
         getFileRequestStorage.schedulePendingJobs(getRequestScheduler);
+
         putRequestScheduler.jobStorageAdded(putFileRequestStorage);
         putFileRequestStorage.schedulePendingJobs(putRequestScheduler);
+
         copyRequestScheduler.jobStorageAdded(copyFileRequestStorage);
         copyRequestScheduler.jobStorageAdded(copyStorage);
         copyStorage.schedulePendingJobs(copyRequestScheduler);
+
         reserveSpaceScheduler.jobStorageAdded(reserveSpaceRequestStorage);
         reserveSpaceRequestStorage.schedulePendingJobs(reserveSpaceScheduler);
-        reserveSpaceScheduler.jobStorageAdded(reserveSpaceRequestStorage);
+
         if(configuration.isVacuum()) {
            say("starting vacuum thread");
-           org.dcache.srm.request.sql.JdbcConnectionPool pool = org.dcache.srm.request.sql.JdbcConnectionPool.getPool(configuration.getJdbcUrl(), 
+           org.dcache.srm.request.sql.JdbcConnectionPool pool = org.dcache.srm.request.sql.JdbcConnectionPool.getPool(configuration.getJdbcUrl(),
             configuration.getJdbcClass(),configuration.getJdbcUser(),
             configuration.getJdbcPass());
             pool.startVacuumThread(configuration.getVacuum_period_sec()*1000);
         }
-                
+
         if( config.isStart_server() ) {
             say("starting http server from the GLUE Soap toolkit");
             say("if you are ranning srm under Tomcat/Axis, this should be disabled");
@@ -620,9 +455,9 @@ public class SRM {
         }
         catch(InterruptedException ie) {
         }
-        
+
         this.say("srm started :\n\t"+configuration.toString());
-        
+
     }
     /**
      * @return this host InetAddress
@@ -630,29 +465,29 @@ public class SRM {
     public InetAddress getHost() {
         return host;
     }
-    
+
     /**
      * @return this srm Web Servises Interface port
      */
     public int  getPort() {
         return configuration.getPort();
     }
-    
-    
+
+
     /**
      * logs a message
      */
     public void say(String words) {
         storage.log("srm: "+words);
     }
-    
+
     /**
      * logs an error message
      */
     public void esay(String words) {
         storage.elog("srm: "+words);
     }
-    
+
     /**
      * logs an exception
      */
@@ -732,9 +567,9 @@ public class SRM {
 
         public java.lang.String getError() {
             return error;
-        }        
+        }
 
-        
+
     };
 
 
@@ -749,7 +584,7 @@ public class SRM {
             esay(error);
             throw new IllegalArgumentException(error);
         }
-        
+
         for(int i = 0 ; i<SURLS.length; ++i) {
             try {
                 GlobusURL gurl = new GlobusURL(SURLS[i]);
@@ -768,9 +603,9 @@ public class SRM {
                 esay(e);
             }
         }
-        
+
         final StringBuffer sb = new StringBuffer();
-        TheAdvisoryDeleteCallbacks callabacks_array[] = 
+        TheAdvisoryDeleteCallbacks callabacks_array[] =
         new TheAdvisoryDeleteCallbacks[SURLS.length];
         for(int i = 0 ; i<SURLS.length; ++i) {
             try {
@@ -778,15 +613,15 @@ public class SRM {
                 String surlpath = gurl.getPath();
                 int indx=surlpath.indexOf(SFN_STRING);
                 if( indx != -1) {
-                    
+
                     surlpath=surlpath.substring(indx+SFN_STRING.length());
                 }
-                
+
                 callabacks_array[i] = new TheAdvisoryDeleteCallbacks(user, surlpath);
                 storage.advisoryDelete(user, surlpath,callabacks_array[i]
                 );
-                
-                
+
+
             }
             catch(RuntimeException re) {
                 esay(re);
@@ -805,23 +640,23 @@ public class SRM {
                     failed = true;
                     errorsb.append(callabacks_array[i].getError()).append('\n');
                 }
-                
+
             }
         }catch(InterruptedException ie) {
                 throw new RuntimeException(ie);
-            
+
         }
-        
+
         if(failed) {
              throw new RuntimeException(errorsb.toString());
         }
     }
-    
 
-    
+
+
     /**
      * The implementation of SRM Copy method.
-     * 
+     *
      * @param user
      *         an instance of the ReSRMUserr null if unknown
      * @param srcSURLS
@@ -841,19 +676,19 @@ public class SRM {
     String client_host) {
         try {
             //require at least 10 minutes
-            long cred_lifetime = 
-                credential.getDelegatedCredentialRemainingLifetime()-600000;  
+            long cred_lifetime =
+                credential.getDelegatedCredentialRemainingLifetime()-600000;
             if(cred_lifetime <0) {
                 return createFailedRequestStatus(
                 "delegated credentials lifetime is too short:"+ credential.getDelegatedCredentialRemainingLifetime()+" ms");
-                
+
             }
             if(srcSURLS == null || srcSURLS.length == 0 ||
                destSURLS == null || destSURLS.length ==0 ) {
                    String error = " number of source or destination SURLs is zero";
                    esay(error);
                    return createFailedRequestStatus(error);
-      
+
             }
             String[] from_urls = srcSURLS;
             String[] to_urls = destSURLS;
@@ -871,12 +706,12 @@ public class SRM {
             }
             sb.append(")");
             say(sb.toString());
-            
+
             if(src_num != dst_num) {
                 return createFailedRequestStatus(
                 "number of from and to urls do not match");
             }
-            
+
             for(int i = 0; i<dst_num; ++i) {
                 for(int j = 0;j<dst_num; ++j) {
                     if(i != j) {
@@ -918,7 +753,7 @@ public class SRM {
             say(" Copy Request = "+r);
             // RequesScheduler will take care of the rest
             r.schedule(copyRequestScheduler);
-            
+
             // Return the request status
             RequestStatus rs = r.getRequestStatus();
             say(" copy returns RequestStatus = "+rs);
@@ -929,13 +764,13 @@ public class SRM {
             return createFailedRequestStatus("copy request generated error : "+e);
         }
     }
-    
+
    /**
      * The implementation of SRM get method.
      * Checks the protocols, if it contains at least one supported then it
      * creates the request and places it in a request repository
      * and starts request handler
-     * 
+     *
      * @param user
      *         an instance of the ReSRMUserr null if unknown
      * @param surls
@@ -944,8 +779,8 @@ public class SRM {
      *         array of protocols understood by SRM client
      * @return request status assosiated with this request
      */
-    
-    
+
+
     public RequestStatus get(SRMUser user,
     RequestCredential credential,
     String[] surls,
@@ -967,7 +802,7 @@ public class SRM {
                  }
             }
             if(!foundMatchedProtocol) {
-                StringBuffer errorsb = 
+                StringBuffer errorsb =
                     new StringBuffer("Protocol(s) specified not supported: [ ");
                 for(String protocol:protocols) {
                     errorsb.append(protocol).append(' ');
@@ -986,7 +821,7 @@ public class SRM {
             null,
             client_host);
             r.setScheduler(getRequestScheduler.getId(),0);
-            
+
             r.schedule(getRequestScheduler);
             // RequestScheduler will take care of the rest
             //getRequestScheduler.add(r);
@@ -999,16 +834,16 @@ public class SRM {
             esay(e);
             return  createFailedRequestStatus("get error "+e);
         }
-        
+
     }
-    
+
     /**
      * this srm method is not implemented
      */
     public RequestStatus getEstGetTime(SRMUser user,RequestCredential credential,String[] SURLS, String[] protocols) {
         return createFailedRequestStatus("time is unknown");
     }
-    
+
     /**
      * this srm method is not implemented
      */
@@ -1020,11 +855,11 @@ public class SRM {
     String[] protocols) {
         return  createFailedRequestStatus("time is unknown");
     }
-    
+
     /**
      * The implementation of SRM getFileMetaData method.
      * Not really used by anyone.
-     * 
+     *
      * @param user
      *         an instance of the ReSRMUserr null if unknown
      * @param SURLS
@@ -1040,14 +875,14 @@ public class SRM {
             say(sb.toString());
             throw new IllegalArgumentException(sb.toString());
         }
-        
+
         int len = SURLS.length;
         for(int i =0; i<len; ++ i) {
             sb.append(SURLS[i]+",");
         }
         sb.append(")");
         say(sb.toString());
-        
+
         FileMetaData[] fmds = new FileMetaData[len];
         // call getFileMetaData(String path) for each SURL in array
         for(int i =0; i<len; ++ i) {
@@ -1059,16 +894,16 @@ public class SRM {
                     esay(error);
                     throw new IllegalArgumentException(error);
                 }
-                
+
                 String surlpath = url.getPath();
                 int indx=surlpath.indexOf(SFN_STRING);
                 if( indx != -1) {
-                    
+
                     surlpath=surlpath.substring(indx+SFN_STRING.length());
                 }
-                
+
                 say("getFileMetaData(String[]) calling FileMetaData("+surlpath+")");
-                
+
                  FileMetaData fmd = storage.getFileMetaData(user,surlpath);
 		 fmd.SURL = SURLS[i];
                  fmds[i] = new FileMetaData(fmd);
@@ -1079,10 +914,10 @@ public class SRM {
                 throw new IllegalArgumentException("getFileMetaData failed to parse SURL: " +e);
             }
         }
-        
+
         return fmds;
     }
-    
+
     /**
      * not implemented
      */
@@ -1094,18 +929,18 @@ public class SRM {
             return new String[0];
         }
     }
-    
-    
+
+
     /**
      * The implementation of SRM getRequestStatus method.
-     * 
+     *
      * @param user
      *         an instance of the ReSRMUserr null if unknown
      * @param requestId
      *         the id of the previously issued request
      * @return request status assosiated with this request
      */
-    
+
     public RequestStatus getRequestStatus(SRMUser user,RequestCredential credential,int requestId) {
         say(" getRequestStatus("+user+","+requestId+")");
         try {
@@ -1137,39 +972,39 @@ public class SRM {
             " generated error : "+e,requestId);
         }
     }
-    
+
     public RequestStatus mkPermanent(SRMUser user,RequestCredential credential,String[] SURLS) {
         return  createFailedRequestStatus("not supported, all files are already permanent");
     }
-    
-    
+
+
     /**
      * The implementation of SRM pin method.
      * Currenly Not Implemented
-     * 
+     *
      * @param user
      *         an instance of the ReSRMUserr null if unknown
      * @param turls
      *         array of TURL (Transfer URL) strings
      * @return request status assosiated with this request
      */
-    
+
     public RequestStatus pin(SRMUser user,RequestCredential credential, String[] TURLS) {
         return createFailedRequestStatus("pins by users are not supported, use get instead");
     }
     /**
      * used for testing only
-     * 
+     *
      * @param user
      *         an instance of the RSRMUseror null if unknown
      */
     public boolean ping(SRMUser user,RequestCredential credential) {
         return true;
     }
-    
+
     /**
      * The implementation of SRM put method.
-     * 
+     *
      * @param user
      *         an instance of the ReSRMUserr null if unknown
      * @param requestId
@@ -1180,7 +1015,7 @@ public class SRM {
      *         the new state of the request
      * @return request status assosiated with this request
      */
-    
+
     public RequestStatus put(SRMUser user,
     RequestCredential credential,
     String[] sources,
@@ -1192,12 +1027,12 @@ public class SRM {
     ) {
         int len = dests.length;
         String[] dests_urls = new String[len];
-        
+
         String srmprefix;
         // we do this to support implementations that
         // supply paths instead of the whole urls
         // this is not part of the spec
-        
+
         for(int i = 0; i<len; ++i) {
             for(int j = 0;j<len; ++j) {
                 if(i != j) {
@@ -1210,10 +1045,10 @@ public class SRM {
                 }
             }
         }
-        
+
         srmprefix = "srm://"+configuration.getSrmhost()+
         ":"+configuration.getPort()+"/";
-        
+
         for(int i=0;i<len;++i) {
             if(dests[i].startsWith("srm://")) {
                 dests_urls[i] = dests[i];
@@ -1223,7 +1058,7 @@ public class SRM {
             }
         }
         try {
-            
+
             String[] supportedProtocols = storage.supportedPutProtocols();
             boolean foundMatchedProtocol=false;
             for(String supportedProtocol: supportedProtocols){
@@ -1235,7 +1070,7 @@ public class SRM {
                  }
             }
             if(!foundMatchedProtocol) {
-                StringBuffer errorsb = 
+                StringBuffer errorsb =
                     new StringBuffer("Protocol(s) specified not supported: [ ");
                 for(String protocol:protocols) {
                     errorsb.append(protocol).append(' ');
@@ -1274,7 +1109,7 @@ public class SRM {
      * The implementation of SRM setFileStatus method.
      *  the only status that user can set file request into
      *  is "Done" status
-     * 
+     *
      * @param user
      *         an instance of the ReSRMUserr null if unknown
      * @param requestId
@@ -1285,7 +1120,7 @@ public class SRM {
      *         the new state of the request
      * @return request status assosiated with this request
      */
-    
+
     public RequestStatus setFileStatus(SRMUser user,RequestCredential credential,
     int requestId, int fileRequestId, String state) {
         try {
@@ -1293,7 +1128,7 @@ public class SRM {
             if(!state.equalsIgnoreCase("done") && !state.equalsIgnoreCase("running") ) {
                 return createFailedRequestStatus("setFileStatus(): incorrect state "+state);
             }
-            
+
             //try to get the request
             ContainerRequest r =(ContainerRequest) ContainerRequest.getRequest(requestId);
             if(r == null) {
@@ -1323,8 +1158,8 @@ public class SRM {
                     if(state.equalsIgnoreCase("done") && fr instanceof PutFileRequest &&
                         (fr.getState() == State.READY || fr.getState() ==State.RUNNING )) {
                         PutFileRequest pfr = (PutFileRequest) fr;
-                        if ( pfr.getTurlString()!=null) { 
-                            try { 
+                        if ( pfr.getTurlString()!=null) {
+                            try {
                                 FileMetaData fmd= storage.getFileMetaData(user,pfr.getPath());
                                 if(fmd == null) {
                                     pfr.setState(State.FAILED,"file transfer was not performed on SURL");
@@ -1332,33 +1167,33 @@ public class SRM {
                                     fr.setStatus(state);
                                 }
                             }
-                            catch (Exception srme) { 
+                            catch (Exception srme) {
                              pfr.setState(State.FAILED,"file transfer was not performed on SURL");
                            }
                         }
-                        
+
                     } else {
-                        
+
                         // process request
                         say(" calling fr.setStatus(\""+state+"\")");
                         fr.setStatus(state);
                     }
                 }
             }
-            
+
             // return request status
             return r.getRequestStatus();
         }catch(Exception e) {
             throw new RuntimeException(e);
         }
-        
+
     }
-    
-    
+
+
     /**
      * The implementation of SRM unPin method.
      * Currently unimplemented
-     * 
+     *
      * @param user
      *         an instance of the ReSRMUserr null if unknown
      * @param turls
@@ -1367,20 +1202,20 @@ public class SRM {
      *         the id of the previously issued pin request
      * @return request status assosiated with this request
      */
-    
+
     public RequestStatus unPin(SRMUser user,RequestCredential credential,
     String[] TURLS, int requestId) {
         return createFailedRequestStatus("pins by users are not supported, use get instead");
     }
-    
-    
+
+
     /**
      * @return iterator for set of ids of all current srm requests
      */
     public Iterator getRequestIds() {
         return null;//RequestScheduler.getRequestIds();
     }
-    
+
     /**
      * @return request corresponding ot id
      */
@@ -1390,10 +1225,10 @@ public class SRM {
         }catch(Exception e) {
             throw new RuntimeException(e);
         }
-        
+
     }
-    
-    
+
+
     private RequestStatus createFailedRequestStatus(String error) {
         esay("creating a failed request status with a message: "+error);
         RequestStatus rs = new RequestStatus();
@@ -1410,23 +1245,28 @@ public class SRM {
         rs.state = "Failed";
         return rs;
     }
-    
-    
+
+
     public StorageElementInfo getStorageElementInfo(
     SRMUser user,
     RequestCredential credential) throws SRMException {
         return storage.getStorageElementInfo(user);
     }
-    
+
     public void listGetRequests(StringBuffer sb)  throws java.sql.SQLException {
         listRequests(sb,getRequestScheduler,getStorage);
     }
-    
+
     public Set getGetRequestIds(SRMUser user, String description)  throws java.sql.SQLException {
-        return 
+        return
             getStorage.getActiveRequestIds(getRequestScheduler.getId(),user,description);
     }
-    
+
+    public Set getLsRequestIds(SRMUser user, String description)  throws java.sql.SQLException {
+        return
+            lsRequestStorage.getActiveRequestIds(getRequestScheduler.getId(),user,description);
+    }
+
     public void listLatestCompletedGetRequests(StringBuffer sb,int maxCount)  throws java.sql.SQLException {
         Set activeRequestIds = getStorage.getLatestCompletedRequestIds(maxCount);
         for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
@@ -1434,9 +1274,9 @@ public class SRM {
             GetRequest gr = (GetRequest)ContainerRequest.getRequest(requestId);
             sb.append(gr).append('\n');
         }
-        
+
     }
-    
+
     public void listLatestFailedGetRequests(StringBuffer sb,int maxCount)  throws java.sql.SQLException {
         Set activeRequestIds = getStorage.getLatestFailedRequestIds(maxCount);
         for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
@@ -1444,9 +1284,9 @@ public class SRM {
             GetRequest gr = (GetRequest)ContainerRequest.getRequest(requestId);
             sb.append(gr).append('\n');
         }
-        
+
     }
-    
+
     public void listLatestDoneGetRequests(StringBuffer sb,int maxCount)  throws java.sql.SQLException {
         Set activeRequestIds = getStorage.getLatestDoneRequestIds(maxCount);
         for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
@@ -1454,9 +1294,9 @@ public class SRM {
             GetRequest gr = (GetRequest)ContainerRequest.getRequest(requestId);
             sb.append(gr).append('\n');
         }
-        
+
     }
-    
+
     public void listLatestCanceledGetRequests(StringBuffer sb,int maxCount)  throws java.sql.SQLException {
         Set activeRequestIds = getStorage.getLatestCanceledRequestIds(maxCount);
         for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
@@ -1469,28 +1309,42 @@ public class SRM {
     public void printGetSchedulerInfo(StringBuffer sb) throws java.sql.SQLException {
         getRequestScheduler.getInfo(sb);
     }
-    
+
+    public void printLsSchedulerInfo(StringBuffer sb) throws java.sql.SQLException {
+        lsRequestScheduler.getInfo(sb);
+    }
     public void printGetSchedulerThreadQueue(StringBuffer sb) throws java.sql.SQLException {
         getRequestScheduler.printThreadQueue(sb);
-        
+
     }
     public void printGetSchedulerPriorityThreadQueue(StringBuffer sb) throws java.sql.SQLException {
         getRequestScheduler.printPriorityThreadQueue(sb);
     }
     public void printGetSchedulerReadyThreadQueue(StringBuffer sb) throws java.sql.SQLException {
         getRequestScheduler.printReadyQueue(sb);
-        
+
     }
-    
+    public void printLsSchedulerThreadQueue(StringBuffer sb) throws java.sql.SQLException {
+        lsRequestScheduler.printThreadQueue(sb);
+
+    }
+    public void printLsSchedulerPriorityThreadQueue(StringBuffer sb) throws java.sql.SQLException {
+        lsRequestScheduler.printPriorityThreadQueue(sb);
+    }
+    public void printLsSchedulerReadyThreadQueue(StringBuffer sb) throws java.sql.SQLException {
+        lsRequestScheduler.printReadyQueue(sb);
+
+    }
+
     public void listPutRequests(StringBuffer sb)  throws java.sql.SQLException {
         listRequests(sb,putRequestScheduler,putStorage);
     }
-    
+
     public Set getPutRequestIds(SRMUser user, String description)  throws java.sql.SQLException {
-        return 
+        return
             putStorage.getActiveRequestIds(putRequestScheduler.getId(),user,description);
     }
-     
+
    public void listLatestCompletedPutRequests(StringBuffer sb,int maxCount)  throws java.sql.SQLException {
         Set activeRequestIds = putStorage.getLatestCompletedRequestIds(maxCount);
         for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
@@ -1499,7 +1353,7 @@ public class SRM {
             sb.append(pr).append('\n');
         }
     }
-    
+
     public void listLatestFailedPutRequests(StringBuffer sb,int maxCount)  throws java.sql.SQLException {
         Set activeRequestIds = putStorage.getLatestFailedRequestIds(maxCount);
         for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
@@ -1508,7 +1362,7 @@ public class SRM {
             sb.append(pr).append('\n');
         }
     }
-    
+
     public void listLatestCanceledPutRequests(StringBuffer sb,int maxCount)  throws java.sql.SQLException {
         Set activeRequestIds = putStorage.getLatestCanceledRequestIds(maxCount);
         for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
@@ -1517,7 +1371,7 @@ public class SRM {
             sb.append(pr).append('\n');
         }
     }
-    
+
     public void listLatestDonePutRequests(StringBuffer sb,int maxCount)  throws java.sql.SQLException {
         Set activeRequestIds = putStorage.getLatestDoneRequestIds(maxCount);
         for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
@@ -1526,31 +1380,31 @@ public class SRM {
             sb.append(pr).append('\n');
         }
     }
-    
+
     public void printPutSchedulerInfo(StringBuffer sb) throws java.sql.SQLException {
         putRequestScheduler.getInfo(sb);
     }
-    
+
     public void printPutSchedulerThreadQueue(StringBuffer sb) throws java.sql.SQLException {
         putRequestScheduler.printThreadQueue(sb);
-        
+
     }
     public void printPutSchedulerPriorityThreadQueue(StringBuffer sb) throws java.sql.SQLException {
         putRequestScheduler.printPriorityThreadQueue(sb);
     }
     public void printPutSchedulerReadyThreadQueue(StringBuffer sb) throws java.sql.SQLException {
         putRequestScheduler.printReadyQueue(sb);
-        
+
     }
     public void listCopyRequests(StringBuffer sb)  throws java.sql.SQLException {
         listRequests(sb,copyRequestScheduler,copyStorage);
     }
 
     public Set getCopyRequestIds(SRMUser user, String description)  throws java.sql.SQLException {
-        return 
+        return
             copyStorage.getActiveRequestIds(copyRequestScheduler.getId(),user,description);
     }
-    
+
     public void listLatestCompletedCopyRequests(StringBuffer sb,int maxCount)  throws java.sql.SQLException {
         Set activeRequestIds = copyStorage.getLatestCompletedRequestIds(maxCount);
         for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
@@ -1559,7 +1413,7 @@ public class SRM {
             sb.append(cr).append('\n');
         }
     }
-    
+
     public void listLatestFailedCopyRequests(StringBuffer sb,int maxCount)  throws java.sql.SQLException {
         Set activeRequestIds = copyStorage.getLatestFailedRequestIds(maxCount);
         for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
@@ -1584,33 +1438,33 @@ public class SRM {
             sb.append(cr).append('\n');
         }
     }
-    
+
     public void printCopySchedulerInfo(StringBuffer sb) throws java.sql.SQLException {
         copyRequestScheduler.getInfo(sb);
     }
-    
+
     public void printCopySchedulerThreadQueue(StringBuffer sb) throws java.sql.SQLException {
         copyRequestScheduler.printThreadQueue(sb);
-        
+
     }
     public void printCopySchedulerPriorityThreadQueue(StringBuffer sb) throws java.sql.SQLException {
         copyRequestScheduler.printPriorityThreadQueue(sb);
     }
     public void printCopySchedulerReadyThreadQueue(StringBuffer sb) throws java.sql.SQLException {
         copyRequestScheduler.printReadyQueue(sb);
-        
+
     }
-    
+
     public void listBringOnlineRequests(StringBuffer sb)  throws java.sql.SQLException {
         listRequests(sb,bringOnlineRequestScheduler,bringOnlineStorage);
     }
-    
-    
+
+
     public Set getBringOnlineRequestIds(SRMUser user, String description)  throws java.sql.SQLException {
-        return 
+        return
             bringOnlineStorage.getActiveRequestIds(bringOnlineRequestScheduler.getId(),user,description);
     }
-    
+
     public void listLatestCompletedBringOnlineRequests(StringBuffer sb,int maxCount)  throws java.sql.SQLException {
         Set activeRequestIds = bringOnlineStorage.getLatestCompletedRequestIds(maxCount);
         for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
@@ -1619,7 +1473,7 @@ public class SRM {
             sb.append(pr).append('\n');
         }
     }
-    
+
     public void listLatestFailedBringOnlineRequests(StringBuffer sb,int maxCount)  throws java.sql.SQLException {
         Set activeRequestIds = bringOnlineStorage.getLatestFailedRequestIds(maxCount);
         for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
@@ -1628,7 +1482,7 @@ public class SRM {
             sb.append(pr).append('\n');
         }
     }
-    
+
     public void listLatestCanceledBringOnlineRequests(StringBuffer sb,int maxCount)  throws java.sql.SQLException {
         Set activeRequestIds = bringOnlineStorage.getLatestCanceledRequestIds(maxCount);
         for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
@@ -1637,7 +1491,7 @@ public class SRM {
             sb.append(pr).append('\n');
         }
     }
-    
+
     public void listLatestDoneBringOnlineRequests(StringBuffer sb,int maxCount)  throws java.sql.SQLException {
         Set activeRequestIds = bringOnlineStorage.getLatestDoneRequestIds(maxCount);
         for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
@@ -1646,32 +1500,36 @@ public class SRM {
             sb.append(pr).append('\n');
         }
     }
-    
+
     public void printBringOnlineSchedulerInfo(StringBuffer sb) throws java.sql.SQLException {
         bringOnlineRequestScheduler.getInfo(sb);
     }
-    
+
     public void printBringOnlineSchedulerThreadQueue(StringBuffer sb) throws java.sql.SQLException {
         bringOnlineRequestScheduler.printThreadQueue(sb);
-        
+
     }
     public void printBringOnlineSchedulerPriorityThreadQueue(StringBuffer sb) throws java.sql.SQLException {
         bringOnlineRequestScheduler.printPriorityThreadQueue(sb);
     }
     public void printBringOnlineSchedulerReadyThreadQueue(StringBuffer sb) throws java.sql.SQLException {
         bringOnlineRequestScheduler.printReadyQueue(sb);
-        
+
     }
-    
+
     public void listReserveSpaceRequests(StringBuffer sb)  throws java.sql.SQLException {
         listRequests(sb,reserveSpaceScheduler,reserveSpaceRequestStorage);
     }
-    
-            
+
+    public void listLsRequests(StringBuffer sb)  throws java.sql.SQLException {
+        listRequests(sb,lsRequestScheduler,lsRequestStorage);
+    }
+
+
     private void listRequests(StringBuffer sb,
             Scheduler scheduler,
             DatabaseRequestStorage storage)  throws java.sql.SQLException {
-        Set activeRequestIds = 
+        Set activeRequestIds =
             storage.getActiveRequestIds(scheduler.getId());
         for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long)i.next();
@@ -1687,7 +1545,7 @@ public class SRM {
         int maxGetRunning = getRequestScheduler.getThreadPoolSize();
         int putRunning = putRequestScheduler.getTotalRunningThreads();
         int maxPutRunning = putRequestScheduler.getThreadPoolSize();
-        
+
         double load = (double)copyRunning/(double)maxCopyRunning/3.0d +
         (double)getRunning/(double)maxGetRunning/3.0d +
         (double)putRunning/(double)maxPutRunning/3.0d ;
@@ -1716,7 +1574,7 @@ public class SRM {
             }
         }
     }
-    
+
     public void cancelRequest(StringBuffer sb,Long requestId)  throws java.sql.SQLException {
         Job job = Job.getJob(requestId);
         if(job == null || !(job instanceof ContainerRequest)) {
@@ -1746,37 +1604,43 @@ public class SRM {
     }
 
     public void cancelAllGetRequest(StringBuffer sb,String pattern)  throws java.sql.SQLException {
-        
+
         cancelAllRequest(sb,pattern,getRequestScheduler,getStorage);
     }
 
     public void cancelAllBringOnlineRequest(StringBuffer sb,String pattern)  throws java.sql.SQLException {
-        
+
         cancelAllRequest(sb,pattern,bringOnlineRequestScheduler,bringOnlineStorage);
     }
+
     public void cancelAllPutRequest(StringBuffer sb,String pattern)  throws java.sql.SQLException {
-        
+
         cancelAllRequest(sb,pattern,putRequestScheduler,putStorage);
     }
-    
+
     public void cancelAllCopyRequest(StringBuffer sb,String pattern)  throws java.sql.SQLException {
-        
+
         cancelAllRequest(sb,pattern,copyRequestScheduler,copyStorage);
     }
-    
+
     public void cancelAllReserveSpaceRequest(StringBuffer sb,String pattern)  throws java.sql.SQLException {
-        
+
         cancelAllRequest(sb,pattern,reserveSpaceScheduler,reserveSpaceRequestStorage);
     }
-    
+
+    public void cancelAllLsRequests(StringBuffer sb,String pattern)  throws java.sql.SQLException {
+
+        cancelAllRequest(sb,pattern,lsRequestScheduler,lsRequestStorage);
+    }
+
     private void cancelAllRequest(StringBuffer sb,
             String pattern,
             Scheduler scheduler,
             DatabaseRequestStorage storage)  throws java.sql.SQLException {
-        
+
         java.util.Set<Long> jobsToKill = new java.util.HashSet<Long>();
         java.util.regex.Pattern p = java.util.regex.Pattern.compile(pattern);
-        Set activeRequestIds = 
+        Set activeRequestIds =
         storage.getActiveRequestIds(scheduler.getId());
         for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long)i.next();
@@ -1818,15 +1682,15 @@ public class SRM {
             }).start();
         }
     }
-    
+
    /**
     * Getter for property configuration.
     * @return Value of property configuration.
     */
    public org.dcache.srm.util.Configuration getConfiguration() {
        return configuration;
-   }   
-   
+   }
+
    /**
     * Getter for property requestCredentialStorage.
     * @return Value of property requestCredentialStorage.
@@ -1838,7 +1702,7 @@ public class SRM {
     public Scheduler getGetRequestScheduler() {
         return getRequestScheduler;
     }
-    
+
     public Scheduler getBringOnlineRequestScheduler() {
         return bringOnlineRequestScheduler;
     }
@@ -1850,15 +1714,23 @@ public class SRM {
     public Scheduler getCopyRequestScheduler() {
         return copyRequestScheduler;
     }
-    
+
     public ReserveSpaceRequestStorage getReserveSpaceRequestStorage() {
         return reserveSpaceRequestStorage;
     }
-    
+
+    public LsRequestStorage getLsRequestStorage() {
+        return lsRequestStorage;
+    }
+
+    public LsFileRequestStorage getLsFileRequestStorage() {
+        return lsFileRequestStorage;
+    }
+
     public BringOnlineRequestStorage getBringOnlineStorage() {
         return bringOnlineStorage;
     }
-    
+
     public GetRequestStorage getGetStorage() {
         return getStorage;
     }
@@ -1889,6 +1761,10 @@ public class SRM {
 
     public Scheduler getReserveSpaceScheduler() {
         return reserveSpaceScheduler;
-    }   
-     
+    }
+
+    public Scheduler getLsRequestScheduler(){
+        return lsRequestScheduler;
+    }
+
 }

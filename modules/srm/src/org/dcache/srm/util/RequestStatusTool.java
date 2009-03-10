@@ -65,5 +65,20 @@ public class RequestStatusTool {
                statusCode != TStatusCode.SRM_DONE;
     }
     
+
+    public static final boolean isTransientStateStatus(TReturnStatus returnStatus) 
+       throws SRMException {
+           if(returnStatus == null) {
+                throw new SRMException(" null return status");
+           }
+           TStatusCode statusCode = returnStatus.getStatusCode();
+           if(statusCode == null) {
+                throw new SRMException(" null status code");
+           }
+           return 
+               statusCode == TStatusCode.SRM_REQUEST_QUEUED ||
+                   statusCode == TStatusCode.SRM_REQUEST_INPROGRESS;
+    }
+    
     
 }

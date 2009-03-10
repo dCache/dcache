@@ -183,28 +183,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -217,10 +217,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -230,10 +230,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -282,7 +282,7 @@ import org.dcache.srm.SRMException;
  * each ContainerRequest is identified by its requestId
  * and each FileRequest within ContainerRequest is identified by its fileRequestId
  * The actual FileRequest arrays are in subclasses too.
- * 
+ *
  * @author timur
  * @version 1.0
  */
@@ -292,10 +292,10 @@ public abstract class ContainerRequest extends Request {
     // it uses the same door to make all following dcap transfers
     // therefore we need to synchronize the recept of dcap turls
     private String firstDcapTurl;
-    
+
      protected FileRequest[] fileRequests;
-   
-    
+
+
     /*
      * public constructors
      */
@@ -339,14 +339,14 @@ public abstract class ContainerRequest extends Request {
          client_host);
 
     }
-    
-    
+
+
     /**
      * this constructor is used for restoring the previously
      * saved ContainerRequest from persitance storage
      */
-    
-    
+
+
     protected ContainerRequest(
     Long id,
     Long nextJobId,
@@ -395,8 +395,8 @@ public abstract class ContainerRequest extends Request {
      );
         this.fileRequests = fileRequests;
     }
-    
-    
+
+
     public  FileRequest getFileRequest(int fileRequestId){
         if(fileRequests == null) {
             throw new NullPointerException("fileRequestId is null");
@@ -407,9 +407,9 @@ public abstract class ContainerRequest extends Request {
             }
         }
         throw new IllegalArgumentException("FileRequest fileRequestId ="+fileRequestId+"does not belong to this Request" );
-        
+
     }
-    
+
     public FileRequest getFileRequest(Long fileRequestId)  throws java.sql.SQLException{
         if(fileRequestId == null) {
             return null;
@@ -421,21 +421,21 @@ public abstract class ContainerRequest extends Request {
         }
         return null;
     }
-    
-   
+
+
     public abstract void schedule(Scheduler scheduler) throws InterruptedException,IllegalStateTransition, java.sql.SQLException;
-    
+
     /*
      * public abstract instance methods
      */
-    
+
     /**
      *  gets a number of file requests  in this request
      * @return
      * a number of file requests
      */
     public abstract int getNumOfFileRequest();
-    
+
     /**
      * get file request by the file request id
      * @param fileRequestNum
@@ -444,9 +444,9 @@ public abstract class ContainerRequest extends Request {
      * file request
      */
     //public abstract FileRequest getFileRequest(int fileRequestId);
-    
-    
-    
+
+
+
     /**
      * gets first dcap turl
      * <p>
@@ -474,17 +474,17 @@ public abstract class ContainerRequest extends Request {
     public void setFirstDcapTurl(String s) {
         firstDcapTurl = s;
     }
-    
+
     public abstract String getMethod();
-    
+
     /**
-     * 
-     * we need this methid to send notifications to the concrete instances of 
-     *  ContainerRequest that the client creating this request is still alive 
-     *  and if the request was in the RESTORED state, this will cause the 
+     *
+     * we need this methid to send notifications to the concrete instances of
+     *  ContainerRequest that the client creating this request is still alive
+     *  and if the request was in the RESTORED state, this will cause the
      * scheduling of the request
      */
-    
+
     private void getRequestStatusCalled() {
         scheduleIfRestored();
         int len = getNumOfFileRequest();
@@ -493,8 +493,8 @@ public abstract class ContainerRequest extends Request {
             fr.scheduleIfRestored();
         }
         updateRetryDeltaTime();
-    }    
-    
+    }
+
     public synchronized final RequestStatus getRequestStatus() {
         getRequestStatusCalled();
         //say("getRequestStatus()");
@@ -550,15 +550,15 @@ public abstract class ContainerRequest extends Request {
                 esay("fr is "+fr);
             }
         }
-        
+
         if(failed_req){
             rs.errorMessage += "\n"+fr_error;
         }
-            
+
         if (pending_req) {
             rs.state = "Pending";
         } else if(failed_req) {
-            
+
             if(!running_req && !ready_req ){
                 rs.state = "Failed";
                 synchronized(this) {
@@ -566,7 +566,7 @@ public abstract class ContainerRequest extends Request {
                     if(!State.isFinalState(state)) {
                         stopUpdating();
                         try
-                        { 
+                        {
                             setState(State.FAILED,
 			    rs.errorMessage);
                         }
@@ -578,17 +578,17 @@ public abstract class ContainerRequest extends Request {
                 }
             }
 
-            
+
         } else if (running_req || ready_req) {
             rs.state = "Active";
         } else if (done_req) {
            synchronized(this) {
-           
+
             State state = getState();
             if(!State.isFinalState(state)) {
                 stopUpdating();
                 try
-                { 
+                {
                     setState(State.DONE,"All files are done");
                 }
                 catch(IllegalStateTransition ist)
@@ -601,12 +601,12 @@ public abstract class ContainerRequest extends Request {
         } else {
             esay("request state is unknown or no files in request!!!");
            synchronized(this) {
-           
+
             State state = getState();
             if(!State.isFinalState(state)) {
                 stopUpdating();
                 try
-                { 
+                {
                     setState(State.FAILED,"request state is unknown or no files in request!!!");
                 }
                 catch(IllegalStateTransition ist)
@@ -617,14 +617,14 @@ public abstract class ContainerRequest extends Request {
            }
             rs.state = "Failed";
         }
-        
+
         // the following it the hack to make FTS happy
         //FTS expects the errorMessage to be "" if the state is not Failed
         if(!rs.state.equals("Failed")) {
             rs.errorMessage="";
         }
-        
-        
+
+
         rs.type = getMethod();
         //say("getRequestStatus() rs.type = "+rs.type);
         rs.retryDeltaTime = retryDeltaTime;
@@ -636,16 +636,16 @@ public abstract class ContainerRequest extends Request {
         //say("getRequestStatus() returning");
         return rs;
     }
-    
-    public synchronized final TReturnStatus getTReturnStatus()  {
+
+    public synchronized TReturnStatus getTReturnStatus()  {
         //
         // We want everthing that getRequestStatus does to happen
         //
         getRequestStatus();
-        
+
         //say("getTRequestStatus() " );
         TReturnStatus status = new TReturnStatus();
-        
+
        if(getStatusCode() != null) {
             status.setStatusCode(getStatusCode());
             say("getTReturnStatus() assigned status.statusCode : "+status.getStatusCode());
@@ -655,22 +655,22 @@ public abstract class ContainerRequest extends Request {
        }
 
         int len = getNumOfFileRequest();
-        
+
         if (len == 0) {
-            //no single failure - we should not get to this piece if code 
+            //no single failure - we should not get to this piece if code
             status.setStatusCode(TStatusCode.SRM_INTERNAL_ERROR);
             status.setExplanation("Could not find (deserialize) files in the request," +
                 " NumOfFileRequest is 0");
             say("assigned status.statusCode : "+status.getStatusCode());
             say("assigned status.explanation : "+status.getExplanation());
             return status;
-            
+
         }
 
 
         int failed_req           = 0;
         int failed_space_expired = 0;
-        int failed_no_free_space = 0; 
+        int failed_no_free_space = 0;
         int canceled_req         = 0;
         int pending_req          = 0;
         int running_req          = 0;
@@ -690,11 +690,11 @@ public abstract class ContainerRequest extends Request {
                 else if(fileReqSC == TStatusCode.SRM_REQUEST_INPROGRESS) {
                     running_req++;
                 }
-                else if(fileReqSC == TStatusCode.SRM_FILE_PINNED || 
+                else if(fileReqSC == TStatusCode.SRM_FILE_PINNED ||
                         fileReqSC == TStatusCode.SRM_SPACE_AVAILABLE) {
                     ready_req++;
                 }
-                else if(fileReqSC == TStatusCode.SRM_SUCCESS || 
+                else if(fileReqSC == TStatusCode.SRM_SUCCESS ||
                         fileReqSC == TStatusCode.SRM_RELEASED) {
                     done_req++;
                 }
@@ -703,7 +703,7 @@ public abstract class ContainerRequest extends Request {
 		     failure=true;
                 }
                 else if(fileReqSC == TStatusCode.SRM_NO_FREE_SPACE) {
-                    failed_no_free_space++;    
+                    failed_no_free_space++;
 		    failure=true;
 		}
                 else if(fileReqSC == TStatusCode.SRM_SPACE_LIFETIME_EXPIRED) {
@@ -727,48 +727,48 @@ public abstract class ContainerRequest extends Request {
 
         status.setExplanation(getErrorMessage());
 
-	if (canceled_req == len ) { 
+	if (canceled_req == len ) {
 	    status.setStatusCode(TStatusCode.SRM_ABORTED);
 	    say("assigned status.statusCode : "+status.getStatusCode());
 	    say("assigned status.explanation : "+status.getExplanation());
 	    return status;
 	}
 
-	if (failed_req==len || got_exception==len) { 
+	if (failed_req==len || got_exception==len) {
 	    status.setStatusCode(TStatusCode.SRM_FAILURE);
 	    say("assigned status.statusCode : "+status.getStatusCode());
 	    say("assigned status.explanation : "+status.getExplanation());
 	    return status;
 	}
 	if (ready_req==len || done_req==len || ready_req+done_req==len ) {
-	    if (failure) { 
+	    if (failure) {
 		status.setStatusCode(TStatusCode.SRM_PARTIAL_SUCCESS);
 		say("assigned status.statusCode : "+status.getStatusCode());
 		say("assigned status.explanation : "+status.getExplanation());
 		return status;
 	    }
-	    else { 
+	    else {
 		status.setStatusCode(TStatusCode.SRM_SUCCESS);
 		say("assigned status.statusCode : "+status.getStatusCode());
 		say("assigned status.explanation : "+status.getExplanation());
 		return status;
 	    }
 	}
-	if (pending_req==len) { 
+	if (pending_req==len) {
 	    status.setStatusCode(TStatusCode.SRM_REQUEST_QUEUED);
 	    say("assigned status.statusCode : "+status.getStatusCode());
 	    say("assigned status.explanation : "+status.getExplanation());
 	    return status;
 	}
 	// SRM space is not enough to hold all requested SURLs for free. (so me thinks one fails - all fail)
-	if (failed_no_free_space>0) { 
+	if (failed_no_free_space>0) {
 	    status.setStatusCode(TStatusCode.SRM_NO_FREE_SPACE);
 	    say("assigned status.statusCode : "+status.getStatusCode());
 	    say("assigned status.explanation : "+status.getExplanation());
 	    return status;
 	}
 	// space associated with the targetSpaceToken is expired. (so me thinks one fails - all fail)
-	if (failed_space_expired>0) { 
+	if (failed_space_expired>0) {
 	    status.setStatusCode(TStatusCode.SRM_SPACE_LIFETIME_EXPIRED);
 	    say("assigned status.statusCode : "+status.getStatusCode());
 	    say("assigned status.explanation : "+status.getExplanation());
@@ -782,16 +782,16 @@ public abstract class ContainerRequest extends Request {
 	    return status;
 	}
 	else {
-	    // all are done here 
-	    if (failure) { 
-		if (ready_req > 0 || done_req > 0 ) { 
+	    // all are done here
+	    if (failure) {
+		if (ready_req > 0 || done_req > 0 ) {
 		    //some succeeded some not
 		    status.setStatusCode(TStatusCode.SRM_PARTIAL_SUCCESS);
 		    say("assigned status.statusCode : "+status.getStatusCode());
 		    say("assigned status.explanation : "+status.getExplanation());
 		    return status;
 		}
-		else { 
+		else {
 		    //none succeeded
 		    status.setStatusCode(TStatusCode.SRM_FAILURE);
 		    say("assigned status.statusCode : "+status.getStatusCode());
@@ -799,8 +799,8 @@ public abstract class ContainerRequest extends Request {
 		    return status;
 		}
 	    }
-	    else { 
-		    //no single failure - we should not get to this piece if code 
+	    else {
+		    //no single failure - we should not get to this piece if code
 		    status.setStatusCode(TStatusCode.SRM_SUCCESS);
 		    say("assigned status.statusCode : "+status.getStatusCode());
 		    say("assigned status.explanation : "+status.getExplanation());
@@ -809,7 +809,7 @@ public abstract class ContainerRequest extends Request {
 	}
     }
 	
-    
+
     public TRequestSummary getRequestSummary() {
         TRequestSummary summary = new TRequestSummary();
         summary.setStatus(getTReturnStatus());
@@ -817,7 +817,7 @@ public abstract class ContainerRequest extends Request {
         summary.setRequestToken(getId().toString());
         int total_num = getNumOfFileRequest();
         summary.setTotalNumFilesInRequest(Integer.valueOf(total_num));
-        
+
         int num_of_failed=0;
         int num_of_completed = 0;
         int num_of_waiting = 0;
@@ -830,18 +830,18 @@ public abstract class ContainerRequest extends Request {
                     num_of_waiting++;
                 }
                 /*
-                    //not counted 
+                    //not counted
                     // but if we do it the way Jean-Philippe does it
                     // then uncomment this code
                 else if(fileReqSC == TStatusCode.SRM_REQUEST_INPROGRESS) {
                     then num_of_waiting++;
                 }
-                else if(fileReqSC == TStatusCode.SRM_FILE_PINNED || 
+                else if(fileReqSC == TStatusCode.SRM_FILE_PINNED ||
                         fileReqSC == TStatusCode.SRM_SPACE_AVAILABLE) {
                     num_of_waiting++;
                 }
                  */
-                else if(fileReqSC == TStatusCode.SRM_SUCCESS || 
+                else if(fileReqSC == TStatusCode.SRM_SUCCESS ||
                         fileReqSC == TStatusCode.SRM_RELEASED) {
                     num_of_completed ++;
                 }
@@ -856,16 +856,16 @@ public abstract class ContainerRequest extends Request {
         summary.setNumOfFailedFiles(Integer.valueOf(num_of_failed));
         summary.setNumOfCompletedFiles(Integer.valueOf(num_of_completed));
         summary.setNumOfWaitingFiles(Integer.valueOf(num_of_waiting));
-        
+
         return summary;
-    
+
     }
-    
+
     public abstract TRequestType getRequestType();
-    
+
     private static final long serialVersionUID = -5497111637295541321L;
-    
-    
+
+
     /**
      * check the object for the equality with this request
      * <p>
@@ -879,14 +879,14 @@ public abstract class ContainerRequest extends Request {
         if(o == this) {
             return true;
         }
-        
+
         return false;
     }
-    
+
     public int hashCode() {
         return getId().hashCode();
     }
-    
+
     /**
      * log a message
      * @param words
@@ -895,8 +895,8 @@ public abstract class ContainerRequest extends Request {
     public void say(String words) {
         storage.log("Request id="+getId()+": "+words);
     }
-    
-    
+
+
     /**
      * log an error message
      * @param words
@@ -905,7 +905,7 @@ public abstract class ContainerRequest extends Request {
     public void esay(String words) {
         storage.elog("Request id="+getId()+": "+words);
     }
-    
+
     /**
      * log an instance of throwable
      * @param t
@@ -915,7 +915,7 @@ public abstract class ContainerRequest extends Request {
         storage.elog("Request id="+getId()+" error: ");
         storage.elog(t);
     }
-    
+
     /**
      * Getter for property fileRequestsIds.
      * @return Value of property fileRequestsIds.
@@ -926,18 +926,18 @@ public abstract class ContainerRequest extends Request {
         return copy;
     }
      */
-    
-    
+
+
     public String toString() {
         return toString(false);
     }
-    
+
     public String toString(boolean longformat) {
         try {
             String s = getMethod()+"Request #"+getId()+" created by "+getUser()+
             " with credentials : "+getCredential()+
             " state = "+getState();
-            
+
             if(longformat) {
                 s += '\n'+ getRequestStatus().toString();
                 s += '\n'+"status code = "+ getStatusCode();
@@ -954,22 +954,21 @@ public abstract class ContainerRequest extends Request {
                     fr.getId()+": \n";
                     s += fr.getHistory();
                 }
-                
+
             }
             return s;
         }catch(Exception e) {
             esay(e);
             return e.toString();
         }
-        
-    }
-    
-    
-    public abstract FileRequest getFileRequestBySurl(String surl)  throws java.sql.SQLException, SRMException ;
-    public abstract TSURLReturnStatus[] getArrayOfTSURLReturnStatus(String[] surls) throws SRMException,java.sql.SQLException ;
-        
 
-    public FileRequest[] getFileRequests()  { 
+    }
+
+
+    public abstract FileRequest getFileRequestBySurl(String surl)  throws java.sql.SQLException, SRMException ;
+    public abstract TSURLReturnStatus[] getArrayOfTSURLReturnStatus(String[] surls) throws SRMException,java.sql.SQLException;
+
+    public FileRequest[] getFileRequests()  {
 	return fileRequests;
     }
 

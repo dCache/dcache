@@ -248,7 +248,7 @@ public abstract class Job  {
     private static PropertyChangeSupport jobsSupport = new PropertyChangeSupport(Job.class);
     
     private volatile State state = State.PENDING;
-    private StringBuffer errorMessage=new StringBuffer();
+    protected StringBuffer errorMessage=new StringBuffer();
     
     protected int priority =0;
     protected String schedulerId;
