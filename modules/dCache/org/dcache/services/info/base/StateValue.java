@@ -8,21 +8,21 @@ import java.util.Date;
 /**
  * A base-type for all metric values within the dCache state.  The different metrics types
  * all extend this base Class.
- * <p> 
- * 
+ * <p>
+ *
  * @author Paul Millar <paul.millar@desy.de>
  */
 abstract public class StateValue implements StateComponent {
-	
+
 	private static final boolean DUMMY_ISEPHEMERAL_VALUE = false;
-	
-	/** The granularity of expiryTime, in milliseconds */ 
+
+	/** The granularity of expiryTime, in milliseconds */
 	private static final int _granularity = 500;
 	private static final int _millisecondsInSecond = 1000;
-	
+
 	private final Date _expiryTime;
 	private final boolean _isEphemeral;
-	
+
 	/**
 	 *  Create a StateValue that is either Immortal or Ephemeral
 	 *  @param isImmortal true if the StateValue is immortal
@@ -31,7 +31,7 @@ abstract public class StateValue implements StateComponent {
 		_expiryTime = null;
 		_isEphemeral = !isImmortal;
 	}
-	
+
 	/**
 	 * Create a StateValue that will expire some point in
 	 * the future.  This allows "soft state" registration of
@@ -39,12 +39,12 @@ abstract public class StateValue implements StateComponent {
 	 * @param duration the length of time, in seconds, this information will be held.
 	 */
 	protected StateValue( long duration) {
-		
+
 		if( duration < 0)
 			duration = 0;
-		
+
 		long tim = System.currentTimeMillis();
-		
+
 		if( duration > 0) {
 			tim += duration * _millisecondsInSecond;
 
@@ -55,11 +55,11 @@ abstract public class StateValue implements StateComponent {
 			tim = Math.round( (double)tim / _granularity) * _granularity;
 		}
 
-		
+
 		_expiryTime = new Date(tim);
 		_isEphemeral = DUMMY_ISEPHEMERAL_VALUE;
 	}
-	
+
 
 	/**
 	 * Make the actual data/time this value will expire available.
@@ -68,7 +68,7 @@ abstract public class StateValue implements StateComponent {
 	public Date getExpiryDate() {
 		return _expiryTime != null ? new Date( _expiryTime.getTime()) : null;
 	}
-	
+
 	/**
 	 * Discover whether the expiry time has elapsed.  For static StateValues
 	 * (those without an expiry date), this will always return false.
@@ -78,37 +78,37 @@ abstract public class StateValue implements StateComponent {
 	public boolean hasExpired() {
 		if( _expiryTime == null)
 			return false;
-		
+
 		Date now = new Date();
 		return !now.before(_expiryTime);
 	}
-	
+
 	/** Provide a generic name for subclasses of StateValue */
 	public abstract String getTypeName();
-	
+
 	/** Sub-classes must provide a leaf-node's visitor support */
 	public abstract void acceptVisitor( StatePath path, StateVisitor visitor);
-	
-	
+
+
 	/** Force subclasses to override equals and hashCode */
 	@Override
 	public abstract boolean equals( Object other);
 	@Override
 	public abstract int hashCode();
-	
-	
+
+
 	/**
 	 * A simple wrapper to check for non-null start values.
 	 */
 	public void acceptVisitor( StatePath path, StatePath start, StateVisitor visitor) {
 		if( start != null)
 			return;
-		
+
 		/** Call leaf-node specific visitor method. */
 		acceptVisitor( path, visitor);
 	}
-	
-	
+
+
 	/**
 	 * Sub-classes of StateValue all ignore the transition when being visited: the StateComposite takes
 	 * care of all effects from processing the transition.
@@ -117,25 +117,25 @@ abstract public class StateValue implements StateComponent {
 		acceptVisitor( path, start, visitor);
 	}
 
-	
+
 	public void applyTransition( StatePath ourPath, StateTransition transition) {
 		// Simply do nothing. All activity takes place in StateComposite.
 	}
-	
-	
+
+
 	public void buildTransition( StatePath ourPath, StatePath childPath, StateComponent newChild, StateTransition transition) throws MetricStatePathException {
 		// If we're here, the user has specified a path with a metric in it.
 		throw new MetricStatePathException( ourPath.toString());
 	}
-		
+
 	public void buildRemovalTransition( StatePath ourPath, StateTransition transition, boolean forced) {
 		// Simply do nothing, all activity takes place in StateComposites
 	}
-	
+
 	public boolean predicateHasBeenTriggered( StatePath ourPath, StatePathPredicate predicate, StateTransition transition) throws MetricStatePathException {
-		throw new MetricStatePathException( ourPath.toString());
+               throw new MetricStatePathException( ourPath.toString());
 	}
-	
+
 	public boolean isMortal() {
 		return _expiryTime != null;
 	}
@@ -143,7 +143,7 @@ abstract public class StateValue implements StateComponent {
 	public boolean isEphemeral() {
 		return _expiryTime == null && _isEphemeral;
 	}
-	
+
 	public boolean isImmortal() {
 		return _expiryTime == null && !_isEphemeral;
 	}
