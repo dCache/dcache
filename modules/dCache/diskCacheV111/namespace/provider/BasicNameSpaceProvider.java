@@ -324,7 +324,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
     public void deleteEntry(String path) throws Exception {
 
         boolean rc;
-        
+
         _logNameSpace.debug("delete PNFS entry for  path " + path);
 
         PnfsFile pf =  new PnfsFile(path);
@@ -352,7 +352,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
             }
         }
     }
-    
+
     public List<String> getCacheLocation(PnfsId pnfsId) throws Exception{
 
         PnfsFile pf = _pathManager.getFileByPnfsId( pnfsId );
@@ -613,11 +613,11 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
     {
         return _attChecksumImpl.getChecksum(pnfsId,type);
     }
-    
+
     public Set<Checksum> getChecksums(PnfsId pnfsId) throws Exception {
         return _attChecksumImpl.getChecksums(pnfsId);
     }
-    
+
     public void removeChecksum(PnfsId pnfsId, int type) throws Exception
     {
         _attChecksumImpl.removeChecksum(pnfsId,type);
@@ -998,14 +998,14 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
        }
        return sb.toString() ;
     }
-   
+
     private String nameOf( File mp , String pnfsId ) throws Exception {
        File file = new File( mp , ".(nameof)("+pnfsId+")" ) ;
-       
-       if (_logNameSpace.isInfoEnabled() ) { 
+
+       if (_logNameSpace.isInfoEnabled() ) {
            _logNameSpace.info("nameof for pnfsid " + pnfsId);
        }
-       
+
        BufferedReader br = null;
        try{
     	   br = new BufferedReader(new FileReader( file ) ) ;
@@ -1015,11 +1015,11 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
        }
     }
     private String parentOf( File mp , String pnfsId ) throws Exception {
-        
-        if (_logNameSpace.isInfoEnabled() ) { 
+
+        if (_logNameSpace.isInfoEnabled() ) {
             _logNameSpace.info("parent for pnfsid " + pnfsId);
         }
-        
+
        File file = new File( mp , ".(parent)("+pnfsId+")" ) ;
        BufferedReader br = null;
        try{
@@ -1030,7 +1030,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
        }
     }
 
-    public PnfsId getParentOf(PnfsId pnfsId) throws Exception 
+    public PnfsId getParentOf(PnfsId pnfsId) throws Exception
     {
         File mp = _pathManager.getMountPointByPnfsId(pnfsId);
         return new PnfsId(parentOf(mp, pnfsId.toString()));
