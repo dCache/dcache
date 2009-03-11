@@ -24,6 +24,7 @@ import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.cells.services.multicaster.BroadcastRegisterMessage;
 import dmg.util.Args;
 
 import org.dcache.chimera.DbConnectionInfo;
@@ -585,6 +586,8 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
             if ( poolManagerPoolUpMessage.getPoolMode().isDisabled() && !_poolsBlackList.containsKey(poolName) ) {
                 _poolsBlackList.put(poolName, Long.valueOf(System.currentTimeMillis()));
                 }
+            return;
+        } else if (obj instanceof BroadcastRegisterMessage) {
             return;
         }
         _logNamespace.error("Unexpected message arrived from : " + message.getSourcePath()
