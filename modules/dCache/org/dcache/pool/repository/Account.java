@@ -17,7 +17,6 @@ public class Account
     private long _precious;
     private long _removable;
     private long _requested;
-    private long _lru;
 
     public synchronized long getTotal()
     {
@@ -145,18 +144,9 @@ public class Account
         notifyAll();
     }
 
-    public synchronized void setLRU(long lru)
-    {
-        if (_lru != lru) {
-            _lru = lru;
-            notifyAll();
-        }
-    }
-
     public synchronized SpaceRecord getSpaceRecord()
     {
-        long lru = (System.currentTimeMillis() - _lru) / 1000L;
-        return new SpaceRecord(_total, getFree(), _precious, _removable, lru);
+        return new SpaceRecord(_total, getFree(), _precious, _removable, 0);
     }
 
 

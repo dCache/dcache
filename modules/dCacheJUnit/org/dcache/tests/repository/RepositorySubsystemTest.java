@@ -195,17 +195,18 @@ public class RepositorySubsystemTest
         rep.setFileStore(fileStore);
 
         SpaceSweeper2 sweeper = new SpaceSweeper2();
-        sweeper.setAccount(account);
-        sweeper.setRepository(rep);
         FairQueueAllocation allocator = new FairQueueAllocation();
-        allocator.setAccount(account);
         repository = new CacheRepositoryV5();
+        allocator.setAccount(account);
         repository.setAccount(account);
         repository.setAllocator(allocator);
         repository.setPnfsHandler(pnfs);
         repository.setLegacyRepository(rep);
         repository.addListener(this);
         repository.setSynchronousNotification(true);
+        repository.setSpaceSweeperPolicy(sweeper);
+        sweeper.setRepository(repository);
+        sweeper.setAccount(account);
         repository.init(0);
 
         /* Remove scan notifications from queue.
@@ -656,6 +657,28 @@ public class RepositorySubsystemTest
         assertTrue(repository.getEntry(id2).isSticky());
         repository.setSticky(id2, "system", 0, true);
         assertFalse(repository.getEntry(id2).isSticky());
+    }
+
+    @Test
+    public void testDoubleAccountingOnCache()
+        throws IllegalTransitionException
+    {
+        assertSpaceRecord(5120, 2048, 1024, 1024);
+        repository.setState(id1, CACHED);
+        assertSpaceRecord(5120, 2048, 0, 2048);
+        repository.setState(id1, CACHED);
+        assertSpaceRecord(5120, 2048, 0, 2048);
+    }
+
+    @Test
+    public void testDoubleAccountingOnPrecious()
+        throws IllegalTransitionException
+    {
+        assertSpaceRecord(5120, 2048, 1024, 1024);
+        repository.setState(id2, PRECIOUS);
+        assertSpaceRecord(5120, 2048, 2048, 0);
+        repository.setState(id2, PRECIOUS);
+        assertSpaceRecord(5120, 2048, 2048, 0);
     }
 }
 

@@ -2,41 +2,81 @@ package org.dcache.pool.classic;
 
 import org.apache.log4j.Logger;
 
-import diskCacheV111.repository.CacheRepository;
+import diskCacheV111.util.FileNotInCacheException;
+import diskCacheV111.util.PnfsId;
 import diskCacheV111.repository.CacheRepositoryEntry;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.event.CacheRepositoryEvent;
-import diskCacheV111.util.event.AbstractCacheRepositoryListener;
+
+import org.dcache.pool.repository.Account;
+import org.dcache.pool.repository.Repository;
+import org.dcache.pool.repository.AbstractStateChangeListener;
+import org.dcache.pool.repository.StateChangeEvent;
+import org.dcache.pool.repository.IllegalTransitionException;
+import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.CacheEntry;
+import org.dcache.pool.repository.SpaceSweeperPolicy;
 
 /**
  *
- * SpaceSweeped which removes files as soon as they become 'CACHED' and not 'STICKY'.
+ * SpaceSweeper which removes files as soon as they become 'CACHED'
+ * and not 'STICKY'.
  *
  * @since 1.8.0-16
  *
  */
 public class NoCachedFilesSpaceSweeper
-    extends AbstractCacheRepositoryListener
+    extends AbstractStateChangeListener
+    implements SpaceSweeperPolicy
 {
-    private final static Logger _log = 
+    private final static Logger _log =
         Logger.getLogger(NoCachedFilesSpaceSweeper.class);
 
-    private final CacheRepository _repository;
+    private Repository _repository;
 
-    public NoCachedFilesSpaceSweeper(CacheRepository repository)
+    public NoCachedFilesSpaceSweeper()
     {
-        _repository = repository;
-        _repository.addCacheRepositoryListener(this);
     }
 
-    public void cached(CacheRepositoryEvent event) {
+    public void setRepository(Repository repository)
+    {
+        _repository = repository;
+        _repository.addListener(this);
+    }
 
-        CacheRepositoryEntry entry = event.getRepositoryEntry() ;
+    public void setAccount(Account account)
+    {
+    }
+
+    /**
+     * Returns true if this file is removable. This is the case if the
+     * file is not sticky and is cached (which under normal
+     * circumstances implies that it is ready and not precious).
+     */
+    @Override
+    public boolean isRemovable(CacheRepositoryEntry entry)
+    {
+        return false;
+    }
+
+    @Override
+    public long getLru()
+    {
+        return 0;
+    }
+
+    @Override
+    public void stateChanged(StateChangeEvent event)
+    {
         try {
-            _repository.removeEntry(entry);
-            _log.debug(entry.getPnfsId() + " : removed.");
-        } catch (CacheException e) {
-            _log.error("Failed to remove entry from repository: " + e.getMessage() );
+            if (event.getNewState() == EntryState.CACHED) {
+                PnfsId id = event.getPnfsId();
+                CacheEntry entry = event.getEntry();
+                if (!entry.isSticky()) {
+                    _repository.setState(id, EntryState.REMOVED);
+                    _log.debug(entry.getPnfsId() + " : removed.");
+                }
+            }
+        } catch (IllegalTransitionException e) {
+            _log.warn("Failed to remove entry from repository: " + e.getMessage() );
         }
     }
 }

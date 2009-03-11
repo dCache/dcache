@@ -53,7 +53,6 @@ import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.cells.AbstractCellComponent;
 import diskCacheV111.pools.PoolV2Mode;
-import diskCacheV111.pools.SpaceSweeper;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolCellInfo;
 import diskCacheV111.repository.CacheRepositoryEntryInfo;

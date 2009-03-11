@@ -1,6 +1,7 @@
 package org.dcache.pool.repository;
 
-/* Immutable class containing information about the allocation in a
+/**
+ * Immutable class containing information about the allocation in a
  * cache repository.
  */
 public class SpaceRecord
@@ -44,5 +45,11 @@ public class SpaceRecord
     public long getLRU()
     {
         return _lru;
+    }
+
+    @Override
+    public String toString()
+    {
+        return String.format("[total=%d;free=%d;precious=%d;removable=%d;lru=%d]", _totalSize, _freeSpace, _preciousSpace, _removableSpace, _lru);
     }
 }

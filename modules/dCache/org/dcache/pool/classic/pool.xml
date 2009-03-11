@@ -117,7 +117,7 @@
 
   <bean id="sweeper" class="${sweeper}">
     <description>Pool garbage collector</description>
-    <property name="repository" ref="legacy-repository"/>
+    <property name="repository" ref="rep"/>
     <property name="account" ref="account"/>
   </bean>
 
@@ -130,6 +130,7 @@
     <property name="legacyRepository" ref="legacy-repository"/>
     <property name="account" ref="account"/>
     <property name="allocator" ref="allocator"/>
+    <property name="spaceSweeperPolicy" ref="sweeper"/>
   </bean>
   
   <bean id="repository-interpreter" class="org.dcache.pool.repository.RepositoryInterpreter">

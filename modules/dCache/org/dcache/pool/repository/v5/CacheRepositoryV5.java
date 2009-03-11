@@ -28,6 +28,7 @@ import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.Account;
 import org.dcache.pool.repository.Allocator;
+import org.dcache.pool.repository.SpaceSweeperPolicy;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
 import org.dcache.pool.FaultAction;
@@ -45,6 +46,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Set;
+import java.util.HashSet;
 
 import org.apache.log4j.Logger;
 
@@ -81,6 +84,11 @@ public class CacheRepositoryV5
     private boolean _initialised = false;
 
     /**
+     * Collection of removable entries.
+     */
+    private final Set<PnfsId> _removable = new HashSet();
+
+    /**
      * Shared repository account object for tracking space.
      */
     private Account _account;
@@ -89,6 +97,11 @@ public class CacheRepositoryV5
      * Allocator used for when allocating space for new entries.
      */
     private Allocator _allocator;
+
+    /**
+     * Policy defining which files may be garbage collected.
+     */
+    private SpaceSweeperPolicy _sweeper;
 
     private PnfsHandler _pnfs;
     private boolean _checkRepository = true;
@@ -168,6 +181,12 @@ public class CacheRepositoryV5
     {
         assertNotInitialised();
         _allocator = allocator;
+    }
+
+    public synchronized void setSpaceSweeperPolicy(SpaceSweeperPolicy sweeper)
+    {
+        assertNotInitialised();
+        _sweeper = sweeper;
     }
 
     /**
@@ -394,7 +413,13 @@ public class CacheRepositoryV5
      */
     public SpaceRecord getSpaceRecord()
     {
-        return _account.getSpaceRecord();
+        SpaceRecord space = _account.getSpaceRecord();
+        long lru = (System.currentTimeMillis() - _sweeper.getLru()) / 1000L;
+        return new SpaceRecord(space.getTotalSpace(),
+                               space.getFreeSpace(),
+                               space.getPreciousSpace(),
+                               space.getRemovableSpace(),
+                               lru);
     }
 
     /**
@@ -518,6 +543,8 @@ public class CacheRepositoryV5
                                 EntryState oldState, EntryState newState)
     {
         try {
+            updateRemovable(entry);
+
             StateChangeEvent event =
                 new StateChangeEvent(new CacheEntryImpl(entry, newState),
                                      oldState, newState);
@@ -534,6 +561,8 @@ public class CacheRepositoryV5
     protected void accessTimeChanged(CacheRepositoryEntry entry)
     {
         try {
+            updateRemovable(entry);
+
             PnfsId id = entry.getPnfsId();
             EntryChangeEvent event =
                 new EntryChangeEvent(new CacheEntryImpl(entry, getState(id)));
@@ -552,6 +581,8 @@ public class CacheRepositoryV5
                                  StickyRecord record)
     {
         try {
+            updateRemovable(entry);
+
             PnfsId id = entry.getPnfsId();
             StickyChangeEvent event =
                 new StickyChangeEvent(new CacheEntryImpl(entry, getState(id)),
@@ -803,4 +834,22 @@ public class CacheRepositoryV5
         return _repository.isRepositoryOk();
     }
 
+    protected void updateRemovable(CacheRepositoryEntry entry)
+    {
+        try {
+            PnfsId id = entry.getPnfsId();
+            if (_sweeper.isRemovable(entry) && !entry.isRemoved() && !entry.isDestroyed()) {
+                if (_removable.add(id)) {
+                    _account.adjustRemovable(entry.getSize());
+                }
+            } else {
+                if (_removable.remove(id)) {
+                    _account.adjustRemovable(-entry.getSize());
+                }
+            }
+        } catch (CacheException e) {
+            fail(FaultAction.READONLY, "Internal repository error", e);
+            throw new RuntimeException("Internal repository error", e);
+        }
+    }
 }

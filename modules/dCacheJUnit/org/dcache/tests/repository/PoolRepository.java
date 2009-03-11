@@ -409,50 +409,6 @@ public class PoolRepository {
         assertEquals(17, entry.getSize());
     }
 
-    @Test
-    public void testDoubleAccountingOnCachedSpaceSweeper2()throws Exception {
-
-        String id = generateNewID();
-        PnfsId pnfsId = new PnfsId(id);
-
-        SpaceSweeper2 sweeper2 = new SpaceSweeper2();
-        sweeper2.setRepository(_repository);
-        sweeper2.setAccount(_account);
-
-        CacheRepositoryEntry entry = _repository.createEntry(pnfsId);
-
-        entry.setSize(17);
-        entry.setCached();
-
-        long cachedSize2 = _account.getRemovable();
-
-        entry.setCached();
-
-        assertEquals("SpaceSweeper2 on set cached two times calculates file size twice",
-                     cachedSize2,  _account.getRemovable() );
-    }
-
-    @Test
-    public void testDoubleAccountingOnPrecious()throws Exception {
-
-        String id = generateNewID();
-        PnfsId pnfsId = new PnfsId(id);
-
-
-        CacheRepositoryEntry entry = _repository.createEntry(pnfsId);
-
-        entry.setSize(17);
-
-        entry.setPrecious();
-
-        long preciousSize = _account.getPrecious();
-        entry.setPrecious();
-
-        assertEquals("set precious two times calculates file size twice",
-                     preciousSize,  _account.getPrecious() );
-
-    }
-
     @Test(timeout = 500)
     public void testSpaceAllocation() {
 
