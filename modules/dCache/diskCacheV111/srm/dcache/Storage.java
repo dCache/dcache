@@ -4505,10 +4505,11 @@ public class Storage
 
         AuthorizationRecord duser = (AuthorizationRecord) user;
         String actualFilePath = srm_root+"/"+fileName;
+        FsPath fsPath           = new FsPath(actualFilePath);
         SrmMarkSpaceAsBeingUsedCompanion.markSpace(
                 duser,
                 longSpaceToken,
-                actualFilePath,
+                fsPath.toString(),
                 sizeInBytes,
                 useLifetime,
                 overwrite,
@@ -4530,10 +4531,11 @@ public class Storage
         }
         AuthorizationRecord duser = (AuthorizationRecord) user;
         String actualFilePath = srm_root+"/"+fileName;
+        FsPath fsPath           = new FsPath(actualFilePath);
         SrmUnmarkSpaceAsBeingUsedCompanion.unmarkSpace(
                 duser,
                 longSpaceToken,
-                actualFilePath,
+                fsPath.toString(),
                 callbacks,
                 this);
     }
