@@ -12,8 +12,25 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
 import java.io.PrintWriter;
+import java.util.HashSet;
+import java.util.Set;
 
 public class OptionParser { 
+
+        public static Set<String> getOptions(Object o){ 
+                Set<String> set = new HashSet<String>();
+                Class c = o.getClass();
+                while(c!=null) { 
+                        for (Field field : c.getDeclaredFields()) {
+                                Option option = field.getAnnotation(Option.class);
+                                if (option != null) { 
+                                        set.add(option.name());
+                                }
+                        }
+                        c = c.getSuperclass();
+                }
+                return set;
+        }
 
         /**
          * Returns string value of option argument 
