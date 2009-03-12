@@ -325,6 +325,24 @@ public class FileMetaData implements Serializable {
                 + _user + _group + _world;
     }
 
+    /**
+     * Compares the permissions flags of this FileMetaData to another
+     * FileMetaData. They are considered equal if both group, user and
+     * world permissions are equal.
+     *
+     * @return true if the argument is not null and the its
+     *         permissions are equals to this FileMetaData; false
+     *         otherwise
+     */
+    public boolean equalsPermissions(FileMetaData other)
+    {
+        return other != null
+            && getGroupPermissions().equals(other.getGroupPermissions())
+            && getUserPermissions().equals(other.getUserPermissions())
+            && getWorldPermissions().equals(other.getWorldPermissions());
+    }
+
+    @Override
     public String toString() {
         return "["
                 + (_isDirectory ? "d" : _isLink ? "l" : _isRegular ? "-" : "x")

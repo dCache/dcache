@@ -879,16 +879,21 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
              */
 
             FileMetaData actualMetaData = getFileMetaData(mp, pnfsId);
-            if( ! (
-                    actualMetaData.getGroupPermissions().equals( newMetaData.getGroupPermissions() )
-                    && actualMetaData.getUserPermissions().equals( newMetaData.getUserPermissions() )
-                    && actualMetaData.getWorldPermissions().equals(newMetaData.getWorldPermissions() )
-                                                                          ) ) {
+            if (!actualMetaData.equalsPermissions(newMetaData)) {
+                /* There is a race condition in PNFS somewhere. This
+                 * race sometimes means that the new permissions are
+                 * not always vissible right away.
+                 */
+                Thread.sleep(1000);
+
+                actualMetaData = getFileMetaData(mp, pnfsId);
+                if (!actualMetaData.equalsPermissions(newMetaData)) {
                     _logNameSpace.error("failed to apply new attributes to " + pnfsId);
                     _logNameSpace.error("    expected: " + newMetaData);
                     _logNameSpace.error("    actual  : " + actualMetaData);
-                throw ioe;
-           }
+                    throw ioe;
+                }
+            }
         }
 
     }
