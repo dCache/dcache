@@ -4209,14 +4209,17 @@ public abstract class AbstractFtpDoorV1
                           "received unexcepted status from mover: " + status);
                 }
             } else if (msg instanceof Exception) {
-                error("FTP Door: performance marker engine: " +
-                      "reply is exception " + ((Exception)msg).getMessage());
+                warn("FTP Door: performance marker engine: "
+                     + ((Exception)msg).getMessage());
             } else if (msg instanceof String) {
-                error("FTP Door: performance marker engine: " +
-                      "reply is error message '" + msg.toString() + "'");
+                /* Typically this is just an error message saying the
+                 * mover is gone.
+                 */
+                info("FTP Door: performance marker engine: "
+                     + msg.toString());
             } else {
-                error("FTP Door: performance marker engine: " +
-                      "reply is unexpected class : " + msg.getClass().getName());
+                error("FTP Door: performance marker engine: "
+                      + msg.getClass().getName());
             }
         }
     }
