@@ -529,12 +529,33 @@ public class UniversalSpringCell
         return s.toString();
     }
 
+    /**
+     * If given a simple bean name, returns that bean (equivalent to
+     * calling getBean). If given a compound name using the syntax of
+     * BeanWrapper, then the respective property value is
+     * returned. E.g., getBeanProperty("foo") returns the bean named
+     * "foo", whereas getBeanProperty("foo.bar") returns the value of
+     * the "bar" property of bean "foo".
+     */
+    private Object getBeanProperty(String s)
+    {
+        String[] a = s.split("\\.", 2);
+        Object o = getBean(a[0]);
+        if (o != null && a.length == 2) {
+            BeanWrapper bean = new BeanWrapperImpl(o);
+            o = bean.isReadableProperty(a[1])
+                ? bean.getPropertyValue(a[1])
+                : null;
+        }
+        return o;
+    }
+
     public static final String hh_bean_properties =
         "<bean> # shows properties of a bean";
     public String ac_bean_properties_$_1(Args args)
     {
         String name = args.argv(0);
-        Object o = _context.getBean(name);
+        Object o = getBeanProperty(name);
         if (o != null) {
             StringBuilder s = new StringBuilder();
             BeanWrapper bean = new BeanWrapperImpl(o);
@@ -554,6 +575,15 @@ public class UniversalSpringCell
             return s.toString();
         }
         return "No such bean: " + name;
+    }
+
+    public static final String hh_bean_property =
+        "<property-name> # shows property of a bean";
+    public String ac_bean_property_$_1(Args args)
+    {
+        String name = args.argv(0);
+        Object o = getBeanProperty(name);
+        return (o != null) ? o.toString() : "No such bean: " + name;
     }
 
     /** Returns a formated name of a message class. */
