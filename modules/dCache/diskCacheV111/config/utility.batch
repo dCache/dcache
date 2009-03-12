@@ -13,16 +13,13 @@ import context -c setupContext
 #
 #   Make sure we got what we need.
 #
-check -strong serviceLocatorPort serviceLocatorHost 
 # check -strong dCapPort sshPort ftpPort srmPort
 
 #
-create dmg.cells.services.RoutingManager  RoutingMgr
+#  Cell communication
 #
-#   The LocationManagerc Part
-#
-create dmg.cells.services.LocationManager lm \
-       "${serviceLocatorHost} ${serviceLocatorPort}"
+exec -run -shell file:${ourHomeDir}/config/tunnel.fragment 
+
 #
 #
 #

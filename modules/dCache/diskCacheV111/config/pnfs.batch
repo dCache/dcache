@@ -10,18 +10,12 @@ copy file:${setupFile} context:setupContext
 #  don't overwrite already existing variables.
 #
 import context -c setupContext
-#
-#   Make sure we got what we need.
-#
-check -strong serviceLocatorPort serviceLocatorHost
 
 #
-create dmg.cells.services.RoutingManager  RoutingMgr
+#  Cell communication
 #
-#   The LocationManager Part
-#
-create dmg.cells.services.LocationManager lm \
-       "${serviceLocatorHost} ${serviceLocatorPort}"
+exec -run -shell file:${ourHomeDir}/config/tunnel.fragment 
+
 #
 #   The PnfsManager Part
 #

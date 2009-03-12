@@ -65,6 +65,7 @@
         <pathelement location="${libDir}/dbcp/c3p0-0.9.1.2.jar" />
         <pathelement location="${libDir}/berkeleyDB/je-3.2.76.jar" />
         <fileset dir="${libDir}/spring/" includes="spring-*.jar" />
+        <fileset dir="${libDir}/activemq/" includes="*.jar" />
         <pathelement location="${libDir}/smc/statemap.jar" />
         <pathelement location="${libDir}/persistence/persistence-api-1.0.jar" />
         <pathelement location="${libDir}/dbcp/commons-pool.jar" />
@@ -376,6 +377,10 @@
         <copy file="${dcache.src}/diskCacheV111/config/nfsv41.batch" todir="${server.bin.dir}/config" />
         <copy file="${dcache.src}/diskCacheV111/config/info.batch" todir="${server.bin.dir}/config" />
         <!--<copy file="${dcache.src}/diskCacheV111/config/aclcell.batch" todir="${server.bin.dir}/config" /> -->
+
+        <!-- batch file fragments  -->
+        <copy file="${dcache.src}/diskCacheV111/config/tunnel.fragment" todir="${server.bin.dir}/config" />
+
         <!-- configs  -->
         <copy file="${dcache.src}/diskCacheV111/config/PoolManager.conf" todir="${server.bin.dir}/config" />
         <copy file="${dcache.src}/diskCacheV111/config/lm.config" todir="${server.bin.dir}/config" />
@@ -461,6 +466,14 @@
         <!-- BerkeleyDB -->
         <mkdir dir="${server.bin.dir}/classes/berkeleyDB/" />
         <copy file="${libDir}/berkeleyDB/je-3.2.76.jar" todir="${server.bin.dir}/classes/berkeleyDB/" />
+
+        <!-- ActiveMQ -->
+        <mkdir dir="${server.bin.dir}/classes/activemq/" />
+        <copy todir="${server.bin.dir}/classes/activemq">
+          <fileset dir="${libDir}/activemq/">
+            <include name="*.jar" />
+          </fileset>
+        </copy>
 
         <!-- Spring -->
         <mkdir dir="${server.bin.dir}/classes/spring/" />

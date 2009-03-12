@@ -13,8 +13,8 @@ import context -c setupContext
 #
 #   Make sure we got what we need.
 #
-check -strong serviceLocatorPort serviceLocatorHost 
 check -strong  adminPort
+
 #
 set context knownUsersFile    ${keyBase}/authorized_keys
 set context serverKeyFile     ${keyBase}/server_key
@@ -22,13 +22,11 @@ set context hostKeyFile       ${keyBase}/host_key
 set env     AccessControlCell acm
 #set context userPasswordFile  cell:pam
 set context userPasswordFile  cell:${AccessControlCell}
+
 #
-create dmg.cells.services.RoutingManager  RoutingMgr
+#  Cell communication
 #
-#   The LocationManager Part
-#
-create dmg.cells.services.LocationManager lm \
-       "${serviceLocatorHost} ${serviceLocatorPort}"
+exec -run -shell file:${ourHomeDir}/config/tunnel.fragment 
 
 #   the rest is the ssh control path.
 #   The current setup allows localhost login

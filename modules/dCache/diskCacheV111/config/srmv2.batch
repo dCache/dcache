@@ -13,19 +13,12 @@ import context -c setupContext
 #
 #   Make sure we got what we need.
 #
-check -strong serviceLocatorPort serviceLocatorHost 
 check -strong srmPort0 
 
-#set context callback async
-
 #
-create dmg.cells.services.RoutingManager  RoutingMgr
+#  Cell communication
 #
-#   The LocationManagerc Part
-#
-create dmg.cells.services.LocationManager lm \
-       "${serviceLocatorHost} ${serviceLocatorPort}"
-#
+exec -run -shell file:${ourHomeDir}/config/tunnel.fragment 
 
 #create dmg.cells.services.login.LoginBroker LoginBroker  "default -export"
 

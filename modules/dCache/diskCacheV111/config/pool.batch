@@ -12,17 +12,18 @@ copy file:${setupFile} context:setupContext
 #  don't overwrite already existing variables.
 #
 import context -c setupContext
+
 #
-#   Make sure we got what we need.
+#  Don't continue if the pool list file is not known
 #
-check -strong pool serviceLocatorHost serviceLocatorPort
+check -strong pool
 
-copy file:${pool} context:poolList
+#
+#  Cell communication
+#
+exec -run -shell file:${ourHomeDir}/config/tunnel.fragment 
 
-create dmg.cells.services.RoutingManager  RoutingMgr
 
-create dmg.cells.services.LocationManager lm \
-     "${serviceLocatorHost} ${serviceLocatorPort}"
 #
 onerror continue
 
@@ -78,6 +79,7 @@ define context startPools endDefine
     -${2} -${3} -${4} -${5} -${6} -${7} -${8}"
 endDefine
 
+copy file:${pool} context:poolList
 exec -run -loop=poolList context startPools
 
 

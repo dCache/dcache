@@ -23,13 +23,12 @@ import context -c setupContext
 #
 #   Make sure we got what we need.
 #
-check -strong serviceLocatorHost serviceLocatorPort
 check -strong statisticsLocation
 
-create dmg.cells.services.RoutingManager  RoutingMgr
-
-create dmg.cells.services.LocationManager lm \
-     "${serviceLocatorHost} ${serviceLocatorPort}"
+#
+#  Cell communication
+#
+exec -run -shell file:${ourHomeDir}/config/tunnel.fragment 
 
 #
 define context maintenanceSetup endDefine

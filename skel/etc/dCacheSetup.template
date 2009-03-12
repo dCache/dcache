@@ -25,9 +25,31 @@
 #   the documentation.
 #
 
+
 #  -----------------------------------------------------------------------
-#          Service Location
+#          Cell Communication
 #  -----------------------------------------------------------------------
+
+#  ---- Which message broker implementation to use
+#
+#   Valid values are: cells, embedded-jms, jms
+#   The default is: cells
+#
+#   Selects between various message brokers. The message broker
+#   determines how dCache cells communicate with each other. 
+#
+#   'cells' is the classic cells location manager based system. The
+#   serviceLocatorHost and serviceLocatorPort settings determine the
+#   location service.
+#
+#   'embedded-jms' starts an embedded Apache ActiveMQ broker 
+#   in dCacheDomain and instructs other domains to connect to it.
+#
+#   'jms' uses an external Apache ActiveMQ broker. That broker is
+#   configured outside of dCache.
+#
+#   
+#messageBroker=cells
 
 #  ---- Service Locater Host and Port
 #
@@ -37,6 +59,34 @@
 #
 serviceLocatorHost=SERVER
 serviceLocatorPort=11111
+
+#  ---- Port and host used for ActiveMQ broker 
+#
+#   Determines the host and port used for the ActiveMQ broker. The
+#   host defaults to the value of serviceLocatorHost. Only used if
+#   messageBroker is set to either jms or embedded-jms.
+#
+#amqPort=11112
+#amqHost=SERVER
+
+#  ---- Connection URL for ActiveMQ
+#
+#   By default, the ActiveMQ connection URL is formed from amqPort and
+#   amqHost. amqUrl may be used to configure more advanced broker
+#   topologies. Consult the ActiveMQ documentation for possible values.
+#   The default is 'failover:tcp://${amqHost}:${amqPort}'
+#
+#amqUrl=failover:tcp://${amqHost}:${amqPort}
+
+#  ---- ActiveMQ spool directory
+#
+#   Determines the spool directory used by the embedded ActiveMQ
+#   broker. Only used when messageBroker is set to embedded-jms and
+#   only used by dCacheDomain.
+#
+#amqSpool=/var/spool/d-cache/amq
+
+
 
 #  -----------------------------------------------------------------------
 #          Components

@@ -162,7 +162,7 @@ public class AbstractCell extends CellAdapter
      * Helper object used to dispatch messages to forward to message
      * listeners.
      */
-    protected final CellMessageDispatcher _forwardDispatcher = 
+    protected final CellMessageDispatcher _forwardDispatcher =
         new CellMessageDispatcher("messageToForward");
 
     /**
@@ -199,10 +199,43 @@ public class AbstractCell extends CellAdapter
         }
     }
 
+    /**
+     * Returns the cell type specified as option 'cellType', or
+     * "Generic" if the option was not given.
+     */
+    static private String getCellType(Args args)
+    {
+        String type = args.getOpt("cellType");
+        return (type == null) ? "Generic" : type;
+    }
+
     public AbstractCell(String cellName, String arguments)
         throws InterruptedException, ExecutionException
     {
         this(cellName, new Args(arguments));
+    }
+
+    public AbstractCell(String cellName, Args arguments)
+    {
+        this(cellName, getCellType(arguments), arguments);
+    }
+
+    /**
+     * Constructs an AbstractCell.
+     *
+     * @param cellName the name of the cell
+     * @param cellType the type of the cell
+     * @param arguments the cell arguments
+     */
+    public AbstractCell(String cellName, String cellType, Args arguments)
+    {
+        super(cellName, cellType, stripDefinedSetup(arguments), false);
+
+        _logger = Logger.getLogger(getClass());
+        _definedSetup = getDefinedSetup(arguments);
+
+        parseOptions();
+        addMessageListener(this);
     }
 
     public void cleanUp()
@@ -214,22 +247,6 @@ public class AbstractCell extends CellAdapter
         }
     }
 
-    /**
-     * Constructs an AbstractCell.
-     *
-     * @param cellName the name of the cell
-     * @param arguments the cell arguments
-     */
-    public AbstractCell(String cellName, Args arguments)
-    {
-        super(cellName, stripDefinedSetup(arguments), false);
-
-        _logger = Logger.getLogger(getClass());
-        _definedSetup = getDefinedSetup(arguments);
-
-        parseOptions();
-        addMessageListener(this);
-    }
 
     /**
      * Performs cell initialisation and starts cell message delivery.
@@ -808,7 +825,7 @@ public class AbstractCell extends CellAdapter
             sendReply(envelope, result);
         } else if (uoid.equals(envelope.getUOID())) {
             super.messageToForward(envelope);
-        }    
+        }
     }
 
     private boolean isReply(CellMessage envelope)
