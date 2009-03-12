@@ -90,6 +90,7 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
 import org.dcache.srm.Logger;
+import java.util.Set;
 import java.util.Map;
 import java.util.HashMap;
 import javax.xml.transform.Transformer;
@@ -2244,7 +2245,156 @@ public class Configuration {
 	}
     
 	public void parseArguments(String args[]) throws Exception {
-                Args _args = new Args(args);
+                //
+                // This is nasty kludge to make Jon Bakken happy, 
+                // namely handle case when option and option value
+                // are separated by blank space. The kludge attempts
+                // to insert "=" instead of " " and concatenates 
+                // input argument list into a String which is passed 
+                // to Args constructor. So nothing gets modified 
+                // elsewhere. In addition attempt has been made to
+                // handle arbitrary space paddings between "=" 
+                //
+                Set<String> optionMap=OptionParser.getOptions(this);
+                StringBuilder sb = new StringBuilder();
+                {
+                        int i=0;
+                        while(i<args.length) { 
+                                // 
+                                // follow Gerd's suggestion and strip "-" to 
+                                // expose possible option name 
+                                //
+                                String name = args[i];
+                                while(name.startsWith("-")) {
+                                        name=name.substring(1);
+                                }
+                                if (optionMap.contains(name)) {
+                                        //
+                                        // we have space separated option value
+                                        // that is "-option "
+                                        //
+                                        sb.append(args[i]);
+                                        String key = args[i];
+                                        i++;
+                                        //
+                                        // if this was last string on command line we are done
+                                        // a case "-option" is already handled by OptionParser
+                                        // (it assumes boolean option with true value and 
+                                        // checks if option is boolean, of not we will get 
+                                        // exception later)
+                                        //
+                                        if (i>=args.length) break;
+                                        String value=args[i];
+                                        //
+                                        // Option value must be :
+                                        // 1) string that does not start with "-"
+                                        //    (otherwise this is another option)
+                                        //
+                                        // 2) string that does not start with "="
+                                        // 
+                                        if(value.startsWith("-")) { 
+                                                //
+                                                //"-1" and "-2" are magic numbers, nothing I can do 
+                                                // here but:
+                                                // 
+                                                if (value.equals("-1")||value.equals("-2")) { 
+                                                        sb.append(" ");
+                                                        continue;
+                                                }
+                                                try {
+                                                        //
+                                                        // check that this is not negative request number,
+                                                        // if it is, "replace" space with "=", so
+                                                        // "-option -123" turns into "-option=-123"
+                                                        // make sure we append space in the end, 
+                                                        // advance counter and continue to the next option
+                                                        Integer.parseInt(value);
+                                                        sb.append("=").append(value).append(" ");
+                                                        i++;
+                                                        continue;
+                                                }
+                                                catch (NumberFormatException nfe) { 
+                                                        // if we got here, we found another option
+                                                        // so our input looked like "-option1 -option2"
+                                                        // this is what we know how to process, just add 
+                                                        // space and continue to next option
+                                                        sb.append(" ");
+                                                        continue;
+                                                }
+                                        }
+                                        else if (!value.startsWith("=")) {
+                                                //
+                                                // if value does not start with "=" and 
+                                                // it is not an argument, and here we 
+                                                // rely on the fact that srm command line arguments 
+                                                // are always SURLS, so we can tell what is option
+                                                // value and what is argument by checking this:
+                                                // 
+                                                if (!value.startsWith("file:") && 
+                                                    !value.startsWith("srm:") && 
+                                                    !value.startsWith("gsiftp:") && 
+                                                    !value.startsWith("http")) { 
+                                                        sb.append("=").append(value).append(" ");
+                                                        i++;
+                                                        continue;
+                                                }
+                                                else { 
+                                                        //
+                                                        // we got here if we had "-option srm:/..."
+                                                        // just append space and proceed to attach SURL at the next 
+                                                        // iteration
+                                                        sb.append(" ");
+                                                        continue;
+                                                }
+                                        }
+                                        else { 
+                                                // we got here if 
+                                                // value of the option looks like :
+                                                // "=123" "="
+                                                // do nothing, we will append it at the next iteration
+                                                continue;
+                                        }
+                                }
+                                else { 
+                                        //
+                                        // we do not have space separator, or 
+                                        // we got here on the next iteration, after 
+                                        // we found space separated option.
+                                        // We have the following cases to handle here:
+                                        // 1) normal case "-option=value"
+                                        // 2) "-option="
+                                        // 3) "="
+                                        // 4) "=123"
+                                        // 5) any string , e.g. argument list
+                                        // 
+                                        if (!args[i].endsWith("=")) { 
+                                                //
+                                                // if we do not have "=" at the end, append space,
+                                                // this is "complete" case ((1) (4) (5))
+                                                //
+                                                sb.append(args[i]).append(" ");
+                                        }
+                                        else { 
+                                                //
+                                                // if we have "exposed" "=" then we 
+                                                // have incomplete case ((2) (3))
+                                                // 
+                                                sb.append(args[i]);
+                                        }
+                                }
+                                i++;
+                        }
+                }
+                //
+                // we concatenated argument list into String 
+                // having (hopefully) converted things like:
+                // "-option 123 -option=123 -option= 123 -option =123 -option = 123"
+                // into 
+                // "-option=123 -option=123 -option=123 -option=123 -option=123"
+                // and use another convenient constructor 
+                // of Args to continue business as usual 
+                //
+                Args _args = new Args(sb.toString());
                 //
                 // Set all fields to default values 
                 //
