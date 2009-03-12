@@ -8,22 +8,28 @@ import dmg.util.Args;
 import  java.util.* ;
 import  java.io.* ;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 
 import java.util.HashMap;
-
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.RetentionPolicy;
 
 public class       GenericInfoExtractor
-       implements  StorageInfoExtractable {
+       implements  StorageInfoExtractable
+{
+    private final static String SUFFIX = "StorageInfo";
 
     /**
      * default access latency for newly created files
      */
-    private final diskCacheV111.util.AccessLatency _defaultAccessLatency;
+    private final AccessLatency _defaultAccessLatency;
 
     /**
      * default retention policy for newly created files
      */
-    private final diskCacheV111.util.RetentionPolicy _defaultRetentionPolicy;
+    private final RetentionPolicy _defaultRetentionPolicy;
+
+    private Map<String, StorageInfoExtractable> _extractors = new HashMap();
 
     public GenericInfoExtractor(AccessLatency defaultAL, RetentionPolicy defaultRP) {
 
@@ -31,44 +37,80 @@ public class       GenericInfoExtractor
         _defaultRetentionPolicy = defaultRP;
     }
 
+    /**
+     * Returns an info extractor for the given HSM.
+     */
+    private synchronized StorageInfoExtractable getExtractor(String hsm)
+        throws CacheException
+    {
+        if ((hsm == null) || (hsm.length() == 0) || hsm.equalsIgnoreCase("generic"))
+            throw new IllegalArgumentException("Invalid HSM type");
 
-   private Map<String, StorageInfoExtractable> _extractors = new HashMap();
+        StorageInfoExtractable extr = _extractors.get(hsm);
+        if (extr == null) {
+            String className;
 
+            if (hsm.endsWith("InfoExtractor")) {
+                /* be more flexible
+                 */
+                className = hsm;
+            } else {
+                /* be backward compatible
+                 */
+                StringBuffer sb = new StringBuffer(hsm.toLowerCase());
+                sb.setCharAt(0, Character.toUpperCase(sb.charAt(0)));
+                className = "diskCacheV111.util." + sb + "InfoExtractor";
+            }
+            try {
+                Constructor constructor = Class.forName(className)
+                    .getConstructor(AccessLatency.class, RetentionPolicy.class);
+                extr = (StorageInfoExtractable)
+                    constructor.newInstance(_defaultAccessLatency,
+                                            _defaultRetentionPolicy);
+                _extractors.put(hsm, extr);
+            } catch (ClassNotFoundException e) {
+                throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                         className + " not found");
+            } catch (NoSuchMethodException e) {
+                throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                         "Cannot instantiate " + className + ": " + e.getMessage());
+            } catch (InvocationTargetException e) {
+                throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                         "Cannot instantiate " + className + ": " + e.getMessage());
+            } catch (IllegalAccessException e) {
+                throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                         "Cannot instantiate " + className + ": " + e.getMessage());
+            } catch (InstantiationException e) {
+                throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                         "Cannot instantiate " + className + ": " + e.getMessage());
+            }
+        }
+        return extr;
+    }
 
-   public void setStorageInfo(String pnfsMountpoint, PnfsId pnfsId, StorageInfo storageInfo, int accessMode) throws CacheException {
+    public void setStorageInfo(String pnfsMountpoint, PnfsId pnfsId,
+                               StorageInfo storageInfo, int accessMode)
+        throws CacheException
+    {
 
-      StorageInfoExtractable extr = null ;
+        StorageInfoExtractable extr;
 
-      if( storageInfo instanceof OSMStorageInfo ){
-          extr = new OsmInfoExtractor(_defaultAccessLatency, _defaultRetentionPolicy) ;
-      }else if( storageInfo instanceof EnstoreStorageInfo ){
-          extr = new EnstoreInfoExtractor(_defaultAccessLatency, _defaultRetentionPolicy) ;
-      }else{
-          try{
+        if (storageInfo instanceof OSMStorageInfo) {
+            extr = new OsmInfoExtractor(_defaultAccessLatency,
+                                        _defaultRetentionPolicy);
+        } else if (storageInfo instanceof EnstoreStorageInfo) {
+            extr = new EnstoreInfoExtractor(_defaultAccessLatency,
+                                            _defaultRetentionPolicy);
+        } else {
+            String hsmName = storageInfo.getClass().getSimpleName();
+            if (!hsmName.endsWith(SUFFIX)) {
+                throw new IllegalArgumentException("Wrong StorageInfo name format : " + hsmName);
+            }
+            hsmName = hsmName.substring(0, hsmName.length() - SUFFIX.length());
+            extr = getExtractor(hsmName);
+        }
 
-              String hsmName = storageInfo.getClass().getName() ;
-              int    postFix = hsmName.lastIndexOf("StorageInfo") ;
-              if( postFix < 0 )
-                  throw new
-                  NumberFormatException("Wrong StorageInfo name format : "+hsmName);
-
-              String className = hsmName.substring(0,postFix) + "InfoExtractor" ;
-
-              extr = (StorageInfoExtractable)Class.forName(className).newInstance();
-
-          }catch(Exception ee ){
-
-             throw new
-             CacheException(104,"Can't init info extractor for "+
-                                storageInfo.getClass().getName()+
-                                " "+ee.getMessage());
-
-          }
-
-      }
-
-      extr.setStorageInfo( pnfsMountpoint , pnfsId , storageInfo , accessMode ) ;
-
+        extr.setStorageInfo(pnfsMountpoint, pnfsId, storageInfo, accessMode);
     }
 
     public StorageInfo getStorageInfo(String mp, PnfsId pnfsId) throws CacheException {
@@ -90,51 +132,9 @@ public class       GenericInfoExtractor
              dir = PnfsFile.getFileByPnfsId( mp , parent ) ;
           }
 
-
-          String className = null ;
-          String hsmType   = getHsmType( mp , dir ) ;
-
-          if( ( hsmType == null ) || ( hsmType.length() < 1 ) )
-             throw new
-             CacheException( 37 , "Couldn't determine hsmType" ) ;
-
-          if( hsmType.endsWith("InfoExtractor" ) ){
-             //
-             // be more flexible
-             //
-             className = hsmType ;
-             //
-          }else{
-             // and backward compatible
-             //
-             // prepare for appropriate extractor class
-             //
-             StringBuffer sb = new StringBuffer( hsmType.toLowerCase()  ) ;
-             sb.setCharAt( 0 , Character.toUpperCase( sb.charAt(0) ) ) ;
-
-             className = "diskCacheV111.util."+sb.toString()+"InfoExtractor" ;
-          }
-
-          StorageInfo            info = null ;
-          StorageInfoExtractable extr = null ;
-
-
-          extr = _extractors.get(className);
-
-          if( extr == null ) {
-              try{
-                 Class<StorageInfoExtractable> extractorClass = (Class<StorageInfoExtractable>)Class.forName(className);
-                 Constructor<StorageInfoExtractable>  extractorInit = 
-                     extractorClass.getConstructor(AccessLatency.class, RetentionPolicy.class);
-                 extr =  extractorInit.newInstance(_defaultAccessLatency, _defaultRetentionPolicy);
-                 _extractors.put(className, extr);
-              }catch(Exception ee ){
-                 throw new
-                CacheException( 38 , "Can't instantiate : "+className+" "+ee ) ;
-              }
-          }
-
-          info = extr.getStorageInfo( mp , pnfsId ) ;
+          String hsmType = getHsmType(mp, dir);
+          StorageInfoExtractable extr = getExtractor(hsmType);
+          StorageInfo info = extr.getStorageInfo(mp, pnfsId);
 
           if( info instanceof GenericStorageInfo ){
             GenericStorageInfo gi = (GenericStorageInfo)info ;
