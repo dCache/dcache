@@ -4,7 +4,6 @@ package org.dcache.pool.classic;
 
 import diskCacheV111.vehicles.*;
 import diskCacheV111.util.*;
-import diskCacheV111.util.event.*;
 
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.Repository;

@@ -4,7 +4,6 @@ import org.apache.log4j.Logger;
 
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.repository.CacheRepositoryEntry;
 
 import org.dcache.pool.repository.Account;
 import org.dcache.pool.repository.Repository;
@@ -14,6 +13,7 @@ import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.SpaceSweeperPolicy;
+import org.dcache.pool.repository.MetaDataRecord;
 
 /**
  *
@@ -52,7 +52,7 @@ public class NoCachedFilesSpaceSweeper
      * circumstances implies that it is ready and not precious).
      */
     @Override
-    public boolean isRemovable(CacheRepositoryEntry entry)
+    public boolean isRemovable(MetaDataRecord entry)
     {
         return false;
     }

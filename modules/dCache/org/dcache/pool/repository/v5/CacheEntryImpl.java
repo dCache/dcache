@@ -4,8 +4,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
 
-import diskCacheV111.repository.CacheRepositoryEntry;
-
+import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.StickyRecord;
@@ -24,7 +23,7 @@ public class CacheEntryImpl implements CacheEntry
     private final boolean _isSticky;
     private final Collection<StickyRecord> _sticky;
 
-    public CacheEntryImpl(CacheRepositoryEntry entry, EntryState state)
+    public CacheEntryImpl(MetaDataRecord entry)
         throws CacheException
     {
         _id = entry.getPnfsId();
@@ -35,7 +34,7 @@ public class CacheEntryImpl implements CacheEntry
         _linkCount = entry.getLinkCount();
         _isSticky = entry.isSticky();
         _sticky = entry.stickyRecords();
-        _state = state;
+        _state = entry.getState();
     }
 
     /**

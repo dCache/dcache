@@ -75,25 +75,6 @@
     <constructor-arg value="${poolname}"/>
   </bean>
 
-  <bean id="legacy-repository" 
-        class="org.dcache.pool.repository.v4.CacheRepositoryV4"
-        destroy-method="close">
-    <description>Legacy repository manager</description>
-    <constructor-arg value="${pooldir}"/>
-    <property name="metaDataStore" ref="meta-store"/>
-    <property name="fileStore" ref="file-store"/>
-    <property name="repositoryEntryHealer">
-      <bean class="org.dcache.pool.repository.RepositoryEntryHealer">
-        <constructor-arg ref="csm"/>
-        <constructor-arg ref="pnfs"/>
-        <constructor-arg ref="file-store"/>
-        <constructor-arg ref="meta-store"/>
-        <constructor-arg ref="import-store"/>
-       </bean>
-    </property>
-    <property name="account" ref="account"/>
-  </bean>
-
   <bean id="file-store" class="org.dcache.pool.repository.FlatFileStore">
     <description>Store for pool files</description>
     <constructor-arg value="${pooldir}"/>
@@ -103,7 +84,6 @@
         destroy-method="close">
     <description>Store for pool meta data</description>
     <constructor-arg ref="file-store"/>
-    <constructor-arg ref="legacy-repository"/>
     <constructor-arg value="${pooldir}"/>
   </bean>
 
@@ -111,7 +91,6 @@
         destroy-method="close">
     <description>Store for imported pool meta data</description>
     <constructor-arg ref="file-store"/>
-    <constructor-arg ref="legacy-repository"/>
     <constructor-arg value="${pooldir}"/>
    </bean>
 
@@ -125,12 +104,22 @@
         class="org.dcache.pool.repository.v5.CacheRepositoryV5"
         destroy-method="shutdown">
     <description>Repository manager</description>
+    <property name="executor" ref="threadPool"/>
     <property name="pnfsHandler" ref="pnfs"/>
     <property name="periodicChecks" value="${checkRepository}"/>
-    <property name="legacyRepository" ref="legacy-repository"/>
     <property name="account" ref="account"/>
     <property name="allocator" ref="allocator"/>
     <property name="spaceSweeperPolicy" ref="sweeper"/>
+    <property name="fileStore" ref="file-store"/>
+    <property name="metaDataStore">
+      <bean class="org.dcache.pool.repository.RepositoryEntryHealer">
+        <constructor-arg ref="csm"/>
+        <constructor-arg ref="pnfs"/>
+        <constructor-arg ref="file-store"/>
+        <constructor-arg ref="meta-store"/>
+        <constructor-arg ref="import-store"/>
+       </bean>
+    </property>
   </bean>
   
   <bean id="repository-interpreter" class="org.dcache.pool.repository.RepositoryInterpreter">
@@ -203,6 +192,10 @@
         factory-method="newScheduledThreadPool"
         destroy-method="shutdown">
     <constructor-arg value="${workerThreads}"/>
+    <property name="executeExistingDelayedTasksAfterShutdownPolicy" 
+              value="false"/>
+    <property name="continueExistingPeriodicTasksAfterShutdownPolicy"
+              value="false"/>
   </bean>
 
   <bean id="pinManagerStub" class="org.dcache.cells.CellStub">

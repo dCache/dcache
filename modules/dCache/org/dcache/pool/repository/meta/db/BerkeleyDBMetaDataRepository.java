@@ -12,11 +12,8 @@ import com.sleepycat.collections.StoredMap;
 
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.MetaDataStore;
-import org.dcache.pool.repository.EventType;
-import org.dcache.pool.repository.EventProcessor;
 import org.dcache.pool.repository.DuplicateEntryException;
-import diskCacheV111.repository.CacheRepositoryEntry;
-import diskCacheV111.util.event.CacheRepositoryEvent;
+import org.dcache.pool.repository.MetaDataRecord;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 
@@ -35,7 +32,7 @@ import diskCacheV111.util.CacheException;
  * of the synchronisation.
  */
 public class BerkeleyDBMetaDataRepository
-    implements MetaDataStore, EventProcessor
+    implements MetaDataStore
 {
     private static Logger _log =
         Logger.getLogger(BerkeleyDBMetaDataRepository.class);
@@ -46,11 +43,6 @@ public class BerkeleyDBMetaDataRepository
      * The file store for which we hold the meta data.
      */
     private final FileStore _fileStore;
-
-    /**
-     * Event processor to which to deliver events from the entries.
-     */
-    private final EventProcessor _eventProcessor;
 
     /**
      * The BerkeleyDB database to use.
@@ -73,12 +65,10 @@ public class BerkeleyDBMetaDataRepository
      * does not exist, it is created.
      */
     public BerkeleyDBMetaDataRepository(FileStore fileStore,
-                                        EventProcessor eventProcessor,
                                         File directory)
         throws FileNotFoundException, DatabaseException
     {
         _fileStore = fileStore;
-        _eventProcessor = eventProcessor;
         _dir = new File(directory, DIRECTORY_NAME);
 
         if (!_dir.exists()) {
@@ -89,7 +79,7 @@ public class BerkeleyDBMetaDataRepository
         _views = new MetaDataRepositoryViews(_database);
     }
 
-    public CacheRepositoryEntry get(PnfsId id)
+    public MetaDataRecord get(PnfsId id)
     {
         return CacheRepositoryEntryImpl.load(this, id);
     }
@@ -97,7 +87,7 @@ public class BerkeleyDBMetaDataRepository
     /**
      * TODO: The entry is not persistent yet!
      */
-    public CacheRepositoryEntry create(PnfsId id)
+    public MetaDataRecord create(PnfsId id)
         throws DuplicateEntryException
     {
         /* CacheRepositoryEntryImpl.load silently drops incomplete
@@ -114,7 +104,7 @@ public class BerkeleyDBMetaDataRepository
     /**
      * TODO: The entry is not persistent yet!
      */
-    public CacheRepositoryEntry create(CacheRepositoryEntry entry)
+    public MetaDataRecord create(MetaDataRecord entry)
         throws DuplicateEntryException, CacheException
     {
         /* CacheRepositoryEntryImpl.load silently drops incomplete
@@ -165,15 +155,6 @@ public class BerkeleyDBMetaDataRepository
     File getDataFile(PnfsId id)
     {
         return _fileStore.get(id);
-    }
-
-    /**
-     * Forwards an event to the CacheRepository. Used by the entries
-     * for event notification.
-     */
-    public void processEvent(EventType type, CacheRepositoryEvent event)
-    {
-        _eventProcessor.processEvent(type, event);
     }
 
     /**

@@ -11,19 +11,17 @@ import org.apache.log4j.Logger;
 import com.sleepycat.util.RuntimeExceptionWrapper;
 
 import org.dcache.pool.repository.StickyRecord;
-import org.dcache.pool.repository.EventType;
+import org.dcache.pool.repository.MetaDataRecord;
+import org.dcache.pool.repository.EntryState;
 
-import diskCacheV111.repository.CacheRepositoryEntry;
-import diskCacheV111.repository.CacheRepositoryStatistics;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.event.CacheRepositoryEvent;
 import diskCacheV111.vehicles.StorageInfo;
 
 /**
  * Berkeley DB aware implementation of CacheRepositoryEntry interface.
  */
-public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
+public class CacheRepositoryEntryImpl implements MetaDataRecord
 {
     private static Logger _log =
         Logger.getLogger("logger.org.dcache.repository");
@@ -37,10 +35,6 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
     private long _lastAccess = _creationTime;
 
     private int  _linkCount = 0;
-
-    private boolean _isLocked = false;
-
-    private long _lockUntil = 0;
 
     private long _size;
 
@@ -56,7 +50,7 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
     }
 
     public CacheRepositoryEntryImpl(BerkeleyDBMetaDataRepository repository,
-                                    CacheRepositoryEntry entry)
+                                    MetaDataRecord entry)
         throws CacheException
     {
         _repository   = repository;
@@ -82,60 +76,24 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
         _size = file.length();
     }
 
-    private void destroy()
-    {
-        generateEvent(EventType.DESTROY);
-        _repository.remove(_pnfsId);
-    }
-
-    public CacheRepositoryStatistics getCacheRepositoryStatistics()
-        throws CacheException
-    {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /**
-     * Atomically decrements link count by one. Returns true if and
-     * only if the link count has reached zero and the entry is marked
-     * REMOVED.
-     *
-     * @see internalRemove
-     */
-    private synchronized boolean internalDecrementLinkCount()
+    public synchronized void decrementLinkCount()
     {
         if (_linkCount <= 0)
             throw new IllegalStateException("Link count is already zero");
         _linkCount--;
-        return (_linkCount == 0 && isRemoved());
-    }
-
-    /**
-     * Atomically marks the entry as REMOVED. Returns true if and only
-     * if the link count has reached zero. The method does not
-     * generate a removal event.
-     *
-     * @see internalDecrementLinkCount
-     */
-    private synchronized boolean internalRemove()
-    {
-        _state.setRemoved();
-        storeStateIfDirty();
-        return (getLinkCount() == 0);
-    }
-
-    public void decrementLinkCount()
-    {
-        if (internalDecrementLinkCount()) {
-            destroy();
-        }
     }
 
     public synchronized void incrementLinkCount()
     {
-        if (isRemoved())
+        EntryState state = getState();
+        if (state == EntryState.REMOVED || state == EntryState.DESTROYED)
             throw new IllegalStateException("Entry is marked as removed");
         _linkCount++;
+    }
+
+    public synchronized int getLinkCount()
+    {
+        return _linkCount;
     }
 
     public synchronized void setCreationTime(long time)
@@ -151,11 +109,6 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
     public synchronized long getLastAccessTime()
     {
         return _lastAccess;
-    }
-
-    public synchronized int getLinkCount()
-    {
-        return _linkCount;
     }
 
     public synchronized void setSize(long size)
@@ -177,230 +130,49 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
         return (StorageInfo)_repository.getStorageInfoMap().get(id);
     }
 
-    private synchronized long getLastAccess()
-    {
-        return _lastAccess;
-    }
-
-    private synchronized void setLastAccess(long time)
-    {
-        _lastAccess = time;
-    }
-
-    public synchronized void lock(boolean locked)
-    {
-        _isLocked = locked;
-    }
-
-    public synchronized void lock(long millisSeconds)
-    {
-        long now = System.currentTimeMillis();
-
-        if (now + millisSeconds > _lockUntil) {
-            _lockUntil = now + millisSeconds;
-        }
-    }
-
-    public synchronized boolean isLocked()
-    {
-        return _isLocked || _lockUntil > System.currentTimeMillis();
-    }
-
-    public PnfsId getPnfsId()
+    public synchronized PnfsId getPnfsId()
     {
         return _pnfsId;
     }
 
-    public String getState()
+    public synchronized EntryState getState()
     {
-        return _state.toString();
+        return _state.getState();
     }
 
-    public boolean isBad()
+    public synchronized void setState(EntryState state)
     {
-        return _state.isError();
+        _state.setState(state);
+        storeStateIfDirty();
     }
 
-    public boolean isCached()
-    {
-        return _state.isCached();
-    }
-
-    public boolean isRemoved()
-    {
-        return _state.isRemoved();
-    }
-
-    public boolean isDestroyed()
-    {
-        return _linkCount == 0 && isRemoved();
-    }
-
-    public boolean isPrecious()
-    {
-        return _state.isPrecious();
-    }
-
-    public boolean isReceivingFromClient()
-    {
-        return _state.isReceivingFromClient();
-    }
-
-    public boolean isReceivingFromStore()
-    {
-        return _state.isReceivingFromStore();
-    }
-
-    public boolean isSendingToStore()
-    {
-        return _state.isSendingToStore();
-    }
-
-    public boolean isSticky()
+    public synchronized boolean isSticky()
     {
         return _state.isSticky();
     }
 
-    public File getDataFile()
+    public synchronized File getDataFile()
     {
         return _repository.getDataFile(_pnfsId);
     }
 
-    /**
-     * Generates an event and sends it to the repository for
-     * processing.
-     *
-     * FIXME: We should actually generate a copy of the entry provided
-     * in the event.
-     */
-    private void generateEvent(EventType type)
-    {
-        CacheRepositoryEvent event =
-            new CacheRepositoryEvent(_repository, this);
-        _repository.processEvent(type, event);
-    }
-
-    private void generateStickyEvent(StickyRecord record)
-    {
-        CacheRepositoryEvent event =
-            new CacheRepositoryEvent(_repository, this, record);
-        _repository.processEvent(EventType.STICKY, event);
-    }
-
-    public void setBad(boolean bad)
-    {
-        try {
-            if (bad) {
-                _state.setError();
-            } else {
-                _state.cleanBad();
-            }
-            storeStateIfDirty();
-        } catch (IllegalStateException e) {
-            // TODO: throw Cache exception
-        }
-    }
-
-    public void setCached() throws CacheException
-    {
-        try {
-            if (_state.isReceivingFromClient() || _state.isReceivingFromStore()) {
-                generateEvent(EventType.AVAILABLE);
-            }
-
-            _state.setCached();
-
-            generateEvent(EventType.CACHED);
-
-            storeStateIfDirty();
-        } catch (IllegalStateException e) {
-            throw new CacheException(e.getMessage());
-        }
-    }
-
-    public void setPrecious() throws CacheException
-    {
-        try {
-            if (_state.isReceivingFromClient()) {
-                generateEvent(EventType.AVAILABLE);
-            }
-
-            _state.setPrecious();
-            storeStateIfDirty();
-
-            generateEvent(EventType.PRECIOUS);
-        } catch (IllegalStateException e) {
-            throw new CacheException(e.getMessage());
-        }
-    }
-
-    public void setReceivingFromClient() throws CacheException
-    {
-        try {
-            _state.setFromClient();
-            storeStateIfDirty();
-            generateEvent(EventType.CREATE);
-        } catch (IllegalStateException e) {
-            throw new CacheException(e.getMessage());
-        }
-    }
-
-    public void setReceivingFromStore() throws CacheException
-    {
-        try {
-            _state.setFromStore();
-            storeStateIfDirty();
-            generateEvent(EventType.CREATE);
-        } catch (IllegalStateException e) {
-            throw new CacheException(e.getMessage());
-        }
-    }
-
-    public void setSendingToStore(boolean sending) throws CacheException
-    {
-        try {
-            if (sending) {
-                _state.setToStore();
-            }else{
-                _state.cleanToStore();
-            }
-            storeStateIfDirty();
-        } catch (IllegalStateException e) {
-            throw new CacheException(e.getMessage());
-        }
-    }
-
-    public void removeExpiredStickyFlags()
+    public synchronized List<StickyRecord> removeExpiredStickyFlags()
     {
         List<StickyRecord> removed = _state.removeExpiredStickyFlags();
         if (!removed.isEmpty()) {
             storeStateIfDirty();
-            for (StickyRecord record: removed) {
-                generateStickyEvent(record);
-            }
         }
+        return removed;
     }
 
-    public void setSticky(boolean sticky) throws CacheException
-    {
-        try {
-            if (_state.setSticky("system", sticky ? -1 : 0, true)) {
-                storeStateIfDirty();
-                generateStickyEvent(new StickyRecord("system", sticky ? -1 : 0));
-            }
-        } catch (IllegalStateException e) {
-            throw new CacheException(e.getMessage());
-        }
-    }
-
-    public void setSticky(String owner, long expire, boolean overwrite) throws CacheException
+    public synchronized boolean setSticky(String owner, long expire, boolean overwrite) throws CacheException
     {
         try {
             if (_state.setSticky(owner, expire, overwrite)) {
                 storeStateIfDirty();
-                generateStickyEvent(new StickyRecord(owner, expire));
+                return true;
             }
-
+            return false;
         } catch (IllegalStateException e) {
             throw new CacheException(e.getMessage());
         }
@@ -416,20 +188,7 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
         }
     }
 
-    public void setRemoved() throws CacheException
-    {
-        try {
-            boolean isDead = internalRemove();
-            generateEvent(EventType.REMOVE);
-            if (isDead) {
-                destroy();
-            }
-        } catch (IllegalStateException e) {
-            throw new CacheException(e.getMessage());
-        }
-    }
-
-    public void touch() throws CacheException
+    public synchronized void touch() throws CacheException
     {
         File file = getDataFile();
 
@@ -443,33 +202,30 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
 
         long now = System.currentTimeMillis();
         file.setLastModified(now);
-        setLastAccess(now);
-
-        generateEvent(EventType.TOUCH);
+        _lastAccess = now;
     }
 
-    public List<StickyRecord> stickyRecords()
+    public synchronized List<StickyRecord> stickyRecords()
     {
         return _state.stickyRecords();
     }
 
+    @Override
     public synchronized String toString()
     {
         StorageInfo info = getStorageInfo();
         return _pnfsId.toString()+
-            " <"+_state.toString()+(_isLocked ? "L":"-")+
-            "(" + _lockUntil +")"+
+            " <"+_state.toString()+"-"+
+            "(0)"+
             "["+getLinkCount()+"]> "+
             getSize()+
             " si={"+(info==null?"<unknown>":info.getStorageClass())+"}" ;
     }
 
-    private void storeStateIfDirty()
+    private synchronized void storeStateIfDirty()
     {
-        synchronized (_state) {
-            if (_state.dirty()) {
-                _repository.getStateMap().put(_pnfsId.toString(), _state);
-            }
+        if (_state.dirty()) {
+            _repository.getStateMap().put(_pnfsId.toString(), _state);
         }
     }
 

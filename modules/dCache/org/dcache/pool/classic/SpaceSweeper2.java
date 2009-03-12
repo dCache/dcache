@@ -5,7 +5,6 @@ package org.dcache.pool.classic;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotInCacheException;
-import diskCacheV111.repository.CacheRepositoryEntry;
 import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellSetupProvider;
@@ -19,6 +18,7 @@ import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.SpaceSweeperPolicy;
+import org.dcache.pool.repository.MetaDataRecord;
 
 import dmg.util.*;
 import dmg.cells.nucleus.*;
@@ -70,21 +70,9 @@ public class SpaceSweeper2
      * circumstances implies that it is ready and not precious).
      */
     @Override
-    public boolean isRemovable(CacheRepositoryEntry entry)
+    public boolean isRemovable(MetaDataRecord entry)
     {
-        try {
-            synchronized (entry) {
-                return !entry.isReceivingFromClient()
-                    && !entry.isReceivingFromStore()
-                    && !entry.isPrecious()
-                    && !entry.isSticky()
-                    && entry.isCached();
-            }
-        } catch (CacheException e) {
-            /* Returning false is the safe option.
-             */
-            return false;
-        }
+        return entry.getState() == EntryState.CACHED && !entry.isSticky();
     }
 
     /**

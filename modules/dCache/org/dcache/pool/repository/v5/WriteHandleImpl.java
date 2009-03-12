@@ -2,7 +2,6 @@ package org.dcache.pool.repository.v5;
 
 import org.apache.log4j.Logger;
 
-import diskCacheV111.repository.CacheRepositoryEntry;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.CacheException;
@@ -14,6 +13,7 @@ import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.WriteHandle;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.Allocator;
+import org.dcache.pool.repository.MetaDataRecord;
 
 import java.util.List;
 import java.util.concurrent.TimeoutException;
@@ -42,7 +42,7 @@ class WriteHandleImpl implements WriteHandle
     private final Allocator _allocator;
 
     /** The handler provides access to this entry. */
-    private final CacheRepositoryEntry _entry;
+    private final MetaDataRecord _entry;
 
     /** Stub for talking to the PNFS manager. */
     private final PnfsHandler _pnfs;
@@ -65,48 +65,19 @@ class WriteHandleImpl implements WriteHandle
     WriteHandleImpl(CacheRepositoryV5 repository,
                     Allocator allocator,
                     PnfsHandler pnfs,
-                    CacheRepositoryEntry entry,
-                    StorageInfo info,
-                    EntryState initialState,
+                    MetaDataRecord entry,
                     EntryState targetState,
                     List<StickyRecord> stickyRecords)
-        throws CacheException, IOException
     {
-        switch (initialState) {
-        case FROM_CLIENT:
-        case FROM_STORE:
-        case FROM_POOL:
-            break;
-        default:
-            throw new IllegalArgumentException("Invalid initial state");
-        }
-
-        switch (targetState) {
-        case PRECIOUS:
-        case CACHED:
-            break;
-        default:
-            throw new IllegalArgumentException("Invalid target state");
-        }
-
         _repository = repository;
         _allocator = allocator;
         _pnfs = pnfs;
         _entry = entry;
-        _initialState = initialState;
+        _initialState = entry.getState();;
         _targetState = targetState;
         _stickyRecords = stickyRecords;
         _state = HandleState.OPEN;
         _allocated = 0;
-
-        if (getFile().exists())
-            throw new CacheException(CacheException.PANIC,
-                                     "File exists, although we didn't expect it to");
-
-        _entry.lock(true);
-        _entry.setStorageInfo(info);
-
-        _repository.setState(_entry, initialState);
     }
 
 
@@ -123,7 +94,7 @@ class WriteHandleImpl implements WriteHandle
     public void allocate(long size)
         throws IllegalStateException, IllegalArgumentException, InterruptedException
     {
-        if (size <0)
+        if (size < 0)
             throw new IllegalArgumentException("Size is negative");
         if (_state != HandleState.OPEN)
             throw new IllegalStateException("Handle is closed");
@@ -226,13 +197,13 @@ class WriteHandleImpl implements WriteHandle
          */
         if (_targetState == EntryState.CACHED && _stickyRecords.isEmpty()) {
             long now = System.currentTimeMillis();
-            _entry.setSticky("self", now + HOLD_TIME, false);
+            _repository.setSticky(_entry, "self", now + HOLD_TIME, false);
         }
 
         /* Move entry to target state.
          */
         for (StickyRecord record: _stickyRecords) {
-            _entry.setSticky(record.owner(), record.expire(), false);
+            _repository.setSticky(_entry, record.owner(), record.expire(), false);
         }
         _repository.setState(_entry, _targetState);
     }
@@ -315,15 +286,10 @@ class WriteHandleImpl implements WriteHandle
         }
 
         if (_targetState == EntryState.REMOVED) {
-            /* A locked entry cannot be removed, thus we need to
-             * unlock it before setting the state.
-             */
-            _entry.lock(false);
             _repository.setState(_entry, EntryState.REMOVED);
         } else {
             _log.warn("Marking pool entry as BROKEN");
             _repository.setState(_entry, EntryState.BROKEN);
-            _entry.lock(false);
         }
     }
 
@@ -341,9 +307,9 @@ class WriteHandleImpl implements WriteHandle
 
         case COMMITTED:
             _state = HandleState.CLOSED;
-            _entry.lock(false);
             break;
         }
+        _repository.destroyWhenRemovedAndUnused(_entry);
     }
 
     /**
@@ -374,7 +340,7 @@ class WriteHandleImpl implements WriteHandle
             throw new IllegalStateException("Handle is closed");
 
         try {
-            return new CacheEntryImpl(_entry, _repository.getState(_entry.getPnfsId()));
+            return new CacheEntryImpl(_entry);
         } catch (CacheException e) {
             throw new RuntimeException("Internal repository error: "
                                        + e.getMessage());

@@ -44,24 +44,6 @@ public class CacheRepositoryEntryInfo implements java.io.Serializable {
     public CacheRepositoryEntryInfo() {
     }
 
-    public CacheRepositoryEntryInfo(CacheRepositoryEntry cacheRepositoryEntry)
-    throws CacheException {
-        pnfsId = cacheRepositoryEntry.getPnfsId();
-        lastAccessTime = cacheRepositoryEntry.getLastAccessTime();
-        creationTime = cacheRepositoryEntry.getCreationTime();
-        storageInfo = cacheRepositoryEntry.getStorageInfo();
-        size = cacheRepositoryEntry.getSize();
-        setBit(PRECIOUS_BIT,cacheRepositoryEntry.isPrecious());
-        setBit(CACHED_BIT,cacheRepositoryEntry.isCached());
-        setBit(RECEIVINGFROMCLIENT_BIT,cacheRepositoryEntry.isReceivingFromClient());
-        setBit(RECEIVINGFROMSTORE_BIT,cacheRepositoryEntry.isReceivingFromStore());
-        setBit(SENDINGTOSTORE_BIT,cacheRepositoryEntry.isSendingToStore());
-        setBit(BAD_BIT,cacheRepositoryEntry.isBad());
-        setBit(REMOVED_BIT,cacheRepositoryEntry.isRemoved());
-        setBit(DESTROYED_BIT,cacheRepositoryEntry.isDestroyed());
-        setBit(STICKY_BIT,cacheRepositoryEntry.isSticky());
-    }
-
     public CacheRepositoryEntryInfo(CacheEntry entry)
     {
         pnfsId = entry.getPnfsId();

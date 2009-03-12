@@ -3,6 +3,9 @@ package org.dcache.pool.repository.v5;
 import org.apache.log4j.Logger;
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.repository.SpaceRecord;
+import org.dcache.pool.repository.FileStore;
+import org.dcache.pool.repository.MetaDataStore;
+import org.dcache.pool.repository.Account;
 
 class CheckHealthTask implements Runnable
 {
@@ -10,14 +13,44 @@ class CheckHealthTask implements Runnable
 
     private final CacheRepositoryV5 _repository;
 
+    /**
+     * Shared repository account object for tracking space.
+     */
+    private Account _account;
+
+    /**
+     * File layout within pool.
+     */
+    private FileStore _fileStore;
+
+    /**
+     * Meta data about files in the pool.
+     */
+    private MetaDataStore _metaDataStore;
+
     CheckHealthTask(CacheRepositoryV5 repository)
     {
         _repository = repository;
     }
 
+    public void setAccount(Account account)
+    {
+        _account = account;
+    }
+
+    public void setMetaDataStore(MetaDataStore store)
+    {
+        _metaDataStore = store;
+    }
+
+    public void setFileStore(FileStore store)
+    {
+        _fileStore = store;
+    }
+
     public void run()
     {
-        if (!_repository.isRepositoryOk()) {
+        if (!_metaDataStore.isOk() || !_fileStore.isOk()) {
             _repository.fail(FaultAction.DISABLED, "I/O test failed");
         }
 
@@ -29,7 +62,7 @@ class CheckHealthTask implements Runnable
 
     private boolean checkSpaceAccounting()
     {
-        SpaceRecord record = _repository.getSpaceRecord();
+        SpaceRecord record = _account.getSpaceRecord();
         long removable = record.getRemovableSpace();
         long total = record.getTotalSpace();
         long free = record.getFreeSpace();

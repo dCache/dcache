@@ -4,11 +4,10 @@ import org.dcache.pool.repository.v3.RepositoryException;
 
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.repository.CacheRepositoryEntry;
 
 /**
  * The MetaDataStore interface provides an abstraction of how
- * CacheRepositoryEntry objects are created, retrieved and removed.
+ * MetaDataRecord objects are created, retrieved and removed.
  */
 public interface MetaDataStore
 {
@@ -18,8 +17,10 @@ public interface MetaDataStore
      *
      * @param id PNFS id for which to retrieve the entry.
      * @return The entry or null if the entry does not exist.
+     * @throws CacheException if looking up the entry failed.
      */
-    CacheRepositoryEntry get(PnfsId id);
+    MetaDataRecord get(PnfsId id)
+        throws CacheException;
 
     /**
      * Creates a new entry. The entry must not exist prior to this
@@ -28,10 +29,10 @@ public interface MetaDataStore
      * @param id PNFS id for which to create the entry
      * @return The new entry
      * @throws DuplicateEntryException if entry already exists
-     * @throws RepositoryException if entry creation fails
+     * @throws CacheException if entry creation fails
      */
-    CacheRepositoryEntry create(PnfsId id)
-        throws DuplicateEntryException, RepositoryException;
+    MetaDataRecord create(PnfsId id)
+        throws DuplicateEntryException, CacheException;
 
     /**
      * Creates a new entry from an existing entry. The new entry will
@@ -59,7 +60,7 @@ public interface MetaDataStore
      * @throws DuplicateEntryException if entry already exists
      * @throws CacheException if reading from <i>entry</i> fails
      */
-    CacheRepositoryEntry create(CacheRepositoryEntry entry)
+    MetaDataRecord create(MetaDataRecord entry)
         throws DuplicateEntryException, CacheException;
 
     /**

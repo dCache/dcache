@@ -5,16 +5,17 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
 
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.DuplicateEntryException;
 import org.dcache.pool.repository.MetaDataStore;
 import org.dcache.pool.repository.StickyRecord;
+import org.dcache.pool.repository.MetaDataRecord;
+import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.meta.db.CacheRepositoryEntryState;
 import org.dcache.pool.repository.v3.RepositoryException;
 
-import diskCacheV111.repository.CacheRepositoryEntry;
-import diskCacheV111.repository.CacheRepositoryStatistics;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
@@ -23,7 +24,7 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
 
 
 
-    public static class CacheRepositoryEntryImpl implements CacheRepositoryEntry {
+    public static class CacheRepositoryEntryImpl implements MetaDataRecord {
         private final CacheRepositoryEntryState _state;
         private final PnfsId _pnfsId;
 
@@ -33,11 +34,8 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
 
         private int  _linkCount = 0;
 
-        private boolean _isLocked = false;
-
         private long _size;
 
-        private long _lockUntil = 0;
         private StorageInfo _storageInfo;
         private final FileStore _repository;
 
@@ -51,7 +49,7 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
         }
 
         public CacheRepositoryEntryImpl(FileStore repository,
-                                        CacheRepositoryEntry entry)
+                                        MetaDataRecord entry)
             throws CacheException
         {
             _repository   = repository;
@@ -63,18 +61,11 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
             setStorageInfo(entry.getStorageInfo());
         }
 
-        public CacheRepositoryStatistics getCacheRepositoryStatistics()
-            throws CacheException
-        {
-            // TODO Auto-generated method stub
-            return null;
-        }
-
         public synchronized void decrementLinkCount() throws CacheException
         {
             assert _linkCount > 0;
             _linkCount--;
-            if (_linkCount == 0 && isRemoved()) {
+            if (_linkCount == 0 && getState() == EntryState.REMOVED) {
                 //_repository.remove(_pnfsId);
             }
         }
@@ -82,7 +73,6 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
 
         public synchronized void incrementLinkCount()
         {
-            assert !isRemoved();
             _linkCount++;
         }
 
@@ -126,169 +116,36 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
             _lastAccess = time;
         }
 
-        public synchronized void lock(boolean locked)
-        {
-            _isLocked = locked;
-        }
-
-        public synchronized void lock(long millisSeconds)
-        {
-            long now = System.currentTimeMillis();
-
-            if (now + millisSeconds > _lockUntil) {
-                _lockUntil = now + millisSeconds;
-            }
-        }
-
-        public synchronized boolean isLocked()
-        {
-            return _isLocked || _lockUntil > System.currentTimeMillis();
-        }
-
-        public PnfsId getPnfsId()
+        public synchronized PnfsId getPnfsId()
         {
             return _pnfsId;
         }
 
-        public String getState()
+        public synchronized EntryState getState()
         {
-            return _state.toString();
+            return _state.getState();
         }
 
-        public boolean isBad()
+        public synchronized void setState(EntryState state)
         {
-            return _state.isError();
+            _state.setState(state);
         }
 
-        public boolean isCached()
-        {
-            return _state.isCached();
-        }
-
-        public boolean isRemoved()
-        {
-            return _state.isRemoved();
-        }
-
-        public boolean isDestroyed()
-        {
-            return _linkCount == 0 && isRemoved();
-        }
-
-        public boolean isPrecious()
-        {
-            return _state.isPrecious();
-        }
-
-        public boolean isReceivingFromClient()
-        {
-            return _state.isReceivingFromClient();
-        }
-
-        public boolean isReceivingFromStore()
-        {
-            return _state.isReceivingFromStore();
-        }
-
-        public boolean isSendingToStore()
-        {
-            return _state.isSendingToStore();
-        }
-
-        public boolean isSticky()
+        public synchronized boolean isSticky()
         {
             return _state.isSticky();
         }
 
-        public File getDataFile()
+        public synchronized File getDataFile()
         {
             return _repository.get(_pnfsId);
         }
 
-        public void setBad(boolean bad)
-        {
-            try {
-                if (bad) {
-                    _state.setError();
-                } else {
-                    _state.cleanBad();
-                }
-
-            } catch (IllegalStateException e) {
-                // TODO: throw Cache exception
-            }
-        }
-
-        public void setCached() throws CacheException
-        {
-            try {
-                _state.setCached();
-
-            } catch (IllegalStateException e) {
-                throw new CacheException(e.getMessage());
-            }
-        }
-
-        public void setPrecious() throws CacheException
-        {
-            try {
-                _state.setPrecious();
-
-            } catch (IllegalStateException e) {
-                throw new CacheException(e.getMessage());
-            }
-        }
-
-        public void setReceivingFromClient() throws CacheException
-        {
-            try {
-                _state.setFromClient();
-            } catch (IllegalStateException e) {
-                throw new CacheException(e.getMessage());
-            }
-        }
-
-        public void setReceivingFromStore() throws CacheException
-        {
-            try {
-                _state.setFromStore();
-            } catch (IllegalStateException e) {
-                throw new CacheException(e.getMessage());
-            }
-        }
-
-        public void setSendingToStore(boolean sending) throws CacheException
-        {
-            try {
-                if (sending) {
-                    _state.setToStore();
-                }else{
-                    _state.cleanToStore();
-                }
-            } catch (IllegalStateException e) {
-                throw new CacheException(e.getMessage());
-            }
-        }
-
-        public void setSticky(boolean sticky) throws CacheException
-        {
-            try {
-                if (sticky) {
-                    _state.setSticky("system", -1, true);
-                } else {
-                    _state.setSticky("system", 0, true);
-                }
-
-            } catch (IllegalStateException e) {
-                throw new CacheException(e.getMessage());
-            }
-        }
-
-        public void setSticky(String owner, long lifetime, boolean overwrite)
+        public synchronized boolean setSticky(String owner, long lifetime, boolean overwrite)
             throws CacheException
         {
             try {
-                _state.setSticky(owner, lifetime, overwrite);
+                return _state.setSticky(owner, lifetime, overwrite);
             } catch (IllegalStateException e) {
                 throw new CacheException(e.getMessage());
             }
@@ -299,17 +156,7 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
             _storageInfo = info;
         }
 
-        public synchronized void setRemoved() throws CacheException
-        {
-            try {
-                _state.setRemoved();
-
-            } catch (IllegalStateException e) {
-                throw new CacheException(e.getMessage());
-            }
-        }
-
-        public void touch() throws CacheException
+        public synchronized void touch() throws CacheException
         {
             File file = getDataFile();
 
@@ -326,13 +173,14 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
             setLastAccess(now);
         }
 
-        public List<StickyRecord> stickyRecords()
+        public synchronized List<StickyRecord> stickyRecords()
         {
             return _state.stickyRecords();
         }
 
-        public void removeExpiredStickyFlags()
+        public synchronized List<StickyRecord> removeExpiredStickyFlags()
         {
+            return new ArrayList();
         }
 
         @Override
@@ -340,8 +188,8 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
         {
             StorageInfo info = getStorageInfo();
             return _pnfsId.toString()+
-                " <"+_state.toString()+(_isLocked ? "L":"-")+
-                "(" + _lockUntil +")"+
+                " <"+_state.toString()+"-"+
+                "(0)"+
                 "["+getLinkCount()+"]> "+
                 getSize()+
                 " si={"+(info==null?"<unknown>":info.getStorageClass())+"}" ;
@@ -350,27 +198,27 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
     }
 
 
-    private final Map<PnfsId, CacheRepositoryEntry> _entryList = new HashMap<PnfsId, CacheRepositoryEntry>();
+    private final Map<PnfsId, MetaDataRecord> _entryList = new HashMap();
     private final FileStore _repository;
     public MetaDataRepositoryHelper(FileStore repository) {
         _repository = repository;
     }
 
-    public CacheRepositoryEntry create(PnfsId id) throws DuplicateEntryException, RepositoryException {
-        CacheRepositoryEntry   entry = new CacheRepositoryEntryImpl(_repository, id);
+    public MetaDataRecord create(PnfsId id) throws DuplicateEntryException, RepositoryException {
+        MetaDataRecord entry = new CacheRepositoryEntryImpl(_repository, id);
 
         _entryList.put(id, entry);
         return entry;
     }
 
-    public CacheRepositoryEntry create(CacheRepositoryEntry entry) throws DuplicateEntryException, CacheException {
+    public MetaDataRecord create(MetaDataRecord entry) throws DuplicateEntryException, CacheException {
 
         _entryList.put(entry.getPnfsId(), entry);
 
         return entry;
     }
 
-    public CacheRepositoryEntry get(PnfsId id) {
+    public MetaDataRecord get(PnfsId id) {
         return _entryList.get(id);
     }
 

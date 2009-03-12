@@ -13,7 +13,8 @@ import java.io.IOException;
 import org.apache.log4j.Logger;
 
 import org.dcache.pool.repository.StickyRecord;
-import diskCacheV111.repository.CacheRepositoryEntry;
+import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.MetaDataRecord;
 import diskCacheV111.util.CacheException;
 
 /**
@@ -42,24 +43,93 @@ public class CacheRepositoryEntryState implements Serializable
      */
     private transient boolean _dirty = false;
 
+    /**
+     * This is the state exposed to the pool. The other bits are
+     * simply a legacy representation of this state.
+     */
+    private transient EntryState _state;
+
     public CacheRepositoryEntryState()
     {
+        _state = EntryState.NEW;
     }
 
-    public CacheRepositoryEntryState(CacheRepositoryEntry entry)
+    public CacheRepositoryEntryState(MetaDataRecord entry)
         throws CacheException
     {
-        _precious   = entry.isPrecious();
-        _cached     = entry.isCached();
-        _toStore    = entry.isSendingToStore();
-        _fromClient = entry.isReceivingFromClient();
-        _fromStore  = entry.isReceivingFromStore();
-        _error      = entry.isBad();
-        _removed    = entry.isRemoved();
+        setState(entry.getState());
         for (StickyRecord r : entry.stickyRecords()) {
             _sticky.add(new StickyRecord(r.owner(), r.expire()));
         }
         _dirty      = true;
+    }
+
+    public EntryState getState()
+    {
+        return _state;
+    }
+
+    public void setState(EntryState state)
+    {
+        if (state == _state)
+            return;
+
+        switch (state) {
+        case NEW:
+            throw new IllegalStateException("Entry is " + _state);
+        case FROM_CLIENT:
+            if (_state != EntryState.NEW)
+                throw new IllegalStateException("Entry is " + _state);
+            _precious = _cached = _fromStore = _error = _removed = false;
+            _fromClient = true;
+            break;
+        case FROM_STORE:
+            if (_state != EntryState.NEW)
+                throw new IllegalStateException("Entry is " + _state);
+            _precious = _cached = _fromClient = _error = _removed = false;
+            _fromStore = true;
+            break;
+        case FROM_POOL:
+            if (_state != EntryState.NEW)
+                throw new IllegalStateException("Entry is " + _state);
+            _precious = _cached = _fromClient = _error = _removed = false;
+            _fromStore = true;
+            break;
+        case CACHED:
+            if (_state == EntryState.REMOVED ||
+                _state == EntryState.DESTROYED)
+                throw new IllegalStateException("Entry is " + _state);
+            _precious = _fromClient = _fromStore = _error = _removed = false;
+            _cached = true;
+            break;
+        case PRECIOUS:
+            if (_state == EntryState.REMOVED ||
+                _state == EntryState.DESTROYED)
+                throw new IllegalStateException("Entry is " + _state);
+            _cached = _fromClient = _fromStore = _error = _removed = false;
+            _precious = true;
+            break;
+        case BROKEN:
+            if (_state == EntryState.REMOVED ||
+                _state == EntryState.DESTROYED)
+                throw new IllegalStateException("Entry is " + _state);
+            _precious = _cached = _fromClient = _fromStore = _removed = false;
+            _error = true;
+            break;
+        case REMOVED:
+            if (_state == EntryState.DESTROYED)
+                throw new IllegalStateException("Entry is " + _state);
+            _precious = _cached = _fromClient = _fromStore = _error = false;
+            _removed = true;
+            break;
+        case DESTROYED:
+            if (_state != EntryState.REMOVED)
+                throw new IllegalStateException("Entry is " + _state);
+            break;
+        }
+
+        _state = state;
+        markDirty();
     }
 
     /**
@@ -68,7 +138,7 @@ public class CacheRepositoryEntryState implements Serializable
      * will always return false, unless the state was made dirty
      * inbetween the two calls.
      */
-    public synchronized boolean dirty()
+    public boolean dirty()
     {
         if (_dirty) {
             _dirty = false;
@@ -81,63 +151,12 @@ public class CacheRepositoryEntryState implements Serializable
     /**
      * Marks the state as dirty, i.e., it needs to be made persistent.
      */
-    private synchronized void markDirty()
+    private void markDirty()
     {
         _dirty = true;
     }
 
-    /**
-     * file is busy if there is a transfer in progress
-     * @return
-     */
-    public synchronized boolean isBusy()
-    {
-        return _toStore || _toClient || _fromClient || _fromStore;
-    }
-
-    /*
-     * State getters
-     */
-    public synchronized boolean isError()
-    {
-        return _error;
-    }
-
-    public synchronized boolean isCached()
-    {
-        return _cached;
-    }
-
-    public synchronized boolean isPrecious()
-    {
-        return _precious;
-    }
-
-    /**
-     *
-     * @return true if file ready for clients (CACHED or PRECIOUS)
-     */
-    public synchronized boolean isReady()
-    {
-        return _precious | _cached;
-    }
-
-    public synchronized boolean isReceivingFromClient()
-    {
-        return _fromClient;
-    }
-
-    public synchronized boolean isReceivingFromStore()
-    {
-        return _fromStore;
-    }
-
-    public synchronized boolean isSendingToStore()
-    {
-        return _toStore;
-    }
-
-    public synchronized boolean isSticky()
+    public boolean isSticky()
     {
         long now = System.currentTimeMillis();
         for (StickyRecord record : _sticky) {
@@ -148,17 +167,12 @@ public class CacheRepositoryEntryState implements Serializable
         return false;
     }
 
-    public synchronized boolean isRemoved()
-    {
-        return _removed;
-    }
-
-    public synchronized List<StickyRecord> stickyRecords()
+    public List<StickyRecord> stickyRecords()
     {
         return new ArrayList<StickyRecord>(_sticky);
     }
 
-    public synchronized List<StickyRecord> removeExpiredStickyFlags()
+    public List<StickyRecord> removeExpiredStickyFlags()
     {
         List<StickyRecord> removed = new ArrayList();
         long now = System.currentTimeMillis();
@@ -174,12 +188,7 @@ public class CacheRepositoryEntryState implements Serializable
         return removed;
     }
 
-    /*
-     *
-     *  State transitions
-     *
-     */
-    public synchronized boolean setSticky(String owner, long expire, boolean overwrite)
+    public boolean setSticky(String owner, long expire, boolean overwrite)
         throws IllegalStateException
     {
         // too late
@@ -204,7 +213,7 @@ public class CacheRepositoryEntryState implements Serializable
      * Returns true if all flags owned by <code>owner</code> have been
      * removed, false otherwise.
      */
-    private synchronized boolean cleanSticky(String owner, long time)
+    private boolean cleanSticky(String owner, long time)
         throws IllegalStateException
     {
         Iterator<StickyRecord> i = _sticky.iterator();
@@ -220,142 +229,7 @@ public class CacheRepositoryEntryState implements Serializable
         return true;
     }
 
-    public synchronized void cleanBad()
-    {
-        // too late
-        if (_removed) {
-            throw new IllegalStateException("Entry in removed state");
-        }
-
-        _error = false;
-        markDirty();
-    }
-
-    public synchronized void setPrecious()
-        throws IllegalStateException
-    {
-        // too late
-        if (_removed) {
-            throw new IllegalStateException("Entry in removed state");
-        }
-
-        // precious file can't be in receiving state
-        _fromClient = false;
-        _fromStore = false;
-        _precious = true;
-        _cached = false;
-
-        markDirty();
-    }
-
-    public synchronized void setCached() throws IllegalStateException
-    {
-        // too late
-        if (_removed) {
-            throw new IllegalStateException("Entry in removed state");
-        }
-
-        // cached file can't be in receiving state
-        _fromClient = false;
-        _fromStore = false;
-        _cached = true;
-        _precious = false;
-
-        markDirty();
-    }
-
-    public synchronized void setFromClient() throws IllegalStateException
-    {
-        // too late
-        if (_removed) {
-            throw new IllegalStateException("Entry in removed state");
-        }
-
-        // only 'clean' file allowed to be received
-        if (_precious || _cached || _fromStore) {
-            throw new IllegalStateException("File still transient");
-        }
-
-        _fromClient = true;
-        markDirty();
-    }
-
-    public synchronized void setFromStore() throws IllegalStateException
-    {
-        // too late
-        if (_removed) {
-            throw new IllegalStateException("Entry in removed state");
-        }
-
-        // only 'clean' file allowed to be received
-        if (_precious || _cached || _fromClient) {
-            throw new IllegalStateException("File still transient");
-        }
-
-        _fromStore = true;
-        markDirty();
-    }
-
-    public synchronized void setToClient() throws IllegalStateException
-    {
-        // too late
-        if (_removed) {
-            throw new IllegalStateException("Entry in removed state");
-        }
-
-        // only received files can be delivered to a client
-        if (!(_precious || _cached)) {
-            throw new IllegalStateException("File still transient");
-        }
-
-        _toClient = true;
-        markDirty();
-    }
-
-    public synchronized void setToStore() throws IllegalStateException
-    {
-        // too late
-        if (_removed) {
-            throw new IllegalStateException("Entry in removed state");
-        }
-
-        // only received precious files can be flushed to store
-        if (!_precious) {
-            throw new IllegalStateException("File still transient");
-        }
-
-        _toStore = true;
-        markDirty();
-    }
-
-    public synchronized void cleanToStore() throws IllegalStateException
-    {
-        // too late
-        if (_removed) {
-            throw new IllegalStateException("Entry in removed state");
-        }
-
-        _toStore = false;
-        markDirty();
-    }
-
-    public synchronized void setError() throws IllegalStateException
-    {
-        if (_removed) {
-            throw new IllegalStateException("Entry in removed state");
-        }
-
-        _error = true;
-        markDirty();
-    }
-
-    public synchronized void setRemoved() throws IllegalStateException
-    {
-        _removed = true;
-        markDirty();
-    }
-
-    public synchronized String toString()
+    public String toString()
     {
         StringBuilder sb = new StringBuilder();
         sb.append(_cached && !_precious ? "C" : "-" );
@@ -376,5 +250,25 @@ public class CacheRepositoryEntryState implements Serializable
     {
         in.defaultReadObject();
         _dirty = false;
+
+        _state = EntryState.BROKEN;
+        if (_fromClient) {
+            _state = EntryState.FROM_CLIENT;
+        }
+        if (_fromStore) {
+            _state = EntryState.FROM_STORE;
+        }
+        if (_cached) {
+            _state = EntryState.CACHED;
+        }
+        if (_precious) {
+            _state = EntryState.PRECIOUS;
+        }
+        if (_removed) {
+            _state = EntryState.REMOVED;
+        }
+        if (_error) {
+            _state = EntryState.BROKEN;
+        }
     }
 }

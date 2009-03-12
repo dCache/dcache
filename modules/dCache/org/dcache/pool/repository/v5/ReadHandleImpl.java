@@ -1,6 +1,5 @@
 package org.dcache.pool.repository.v5;
 
-import diskCacheV111.repository.CacheRepositoryEntry;
 import diskCacheV111.util.CacheException;
 import java.util.concurrent.TimeoutException;
 import java.io.File;
@@ -8,14 +7,15 @@ import java.io.File;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.ReadHandle;
 import org.dcache.pool.repository.CacheEntry;
+import org.dcache.pool.repository.MetaDataRecord;
 
 class ReadHandleImpl implements ReadHandle
 {
     private final CacheRepositoryV5 _repository;
-    private final CacheRepositoryEntry _entry;
+    private final MetaDataRecord _entry;
     private boolean _open;
 
-    ReadHandleImpl(CacheRepositoryV5 repository, CacheRepositoryEntry entry)
+    ReadHandleImpl(CacheRepositoryV5 repository, MetaDataRecord entry)
     {
         try {
             _repository = repository;
@@ -40,6 +40,7 @@ class ReadHandleImpl implements ReadHandle
         try {
             _entry.decrementLinkCount();
             _open = false;
+            _repository.destroyWhenRemovedAndUnused(_entry);
         } catch (CacheException e) {
             throw new RuntimeException("Internal repository error: "
                                        + e.getMessage());
@@ -75,7 +76,7 @@ class ReadHandleImpl implements ReadHandle
             throw new IllegalStateException("Handle is closed");
 
         try {
-            return new CacheEntryImpl(_entry, _repository.getState(_entry.getPnfsId()));
+            return new CacheEntryImpl(_entry);
         } catch (CacheException e) {
             throw new RuntimeException("Internal repository error: "
                                        + e.getMessage());

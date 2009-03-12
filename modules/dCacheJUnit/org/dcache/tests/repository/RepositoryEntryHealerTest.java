@@ -14,10 +14,11 @@ import java.net.URI;
 import org.dcache.chimera.FsInode;
 import org.dcache.pool.repository.MetaDataStore;
 import org.dcache.pool.repository.RepositoryEntryHealer;
+import org.dcache.pool.repository.MetaDataRecord;
+import org.dcache.pool.repository.EntryState;
 import org.dcache.tests.cells.CellAdapterHelper;
 import org.dcache.tests.cells.GenericMockCellHelper;
 
-import diskCacheV111.repository.CacheRepositoryEntry;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
@@ -33,7 +34,7 @@ public class RepositoryEntryHealerTest {
 
     private static GenericMockCellHelper _cell = new GenericMockCellHelper("RepositoryEntryHealerTestCell", "");
     private PnfsHandler      _pnfsHandler;
-    private RepositoryEntryHealer _repositoryEntryHealer;
+    private MetaDataStore _repositoryEntryHealer;
     private RepositoryHealerTestChimeraHelper _repositoryHealerTestChimeraHelper;
     private MetaDataStore _metaDataRepository;
 
@@ -64,8 +65,8 @@ public class RepositoryEntryHealerTest {
         inode.setSize(17);
 
 
-        CacheRepositoryEntry e =  _metaDataRepository.create(pnfsId);
-        e.setCached();
+        MetaDataRecord e =  _metaDataRepository.create(pnfsId);
+        e.setState(EntryState.CACHED);
 
 
        StorageInfo info = new OSMStorageInfo("h1", "rawd");
@@ -83,8 +84,8 @@ public class RepositoryEntryHealerTest {
        /*
         * CacheException(TIMEOUT) will indicate that we tried to modify file size in Pnfs
         */
-       CacheRepositoryEntry repositoryEntry = _repositoryEntryHealer.entryOf(pnfsId);
-       assertTrue("Bad flag not set", repositoryEntry.isBad() );
+       MetaDataRecord repositoryEntry = _repositoryEntryHealer.get(pnfsId);
+       assertEquals("Bad flag not set", repositoryEntry.getState(), EntryState.BROKEN );
     }
 
     @Test
@@ -96,9 +97,8 @@ public class RepositoryEntryHealerTest {
         inode.setSize(17);
 
 
-        CacheRepositoryEntry e =  _metaDataRepository.create(pnfsId);
-        e.setReceivingFromClient();
-
+        MetaDataRecord e =  _metaDataRepository.create(pnfsId);
+        e.setState(EntryState.FROM_CLIENT);
 
        StorageInfo info = new OSMStorageInfo("h1", "rawd");
        e.setStorageInfo(info);
@@ -123,9 +123,10 @@ public class RepositoryEntryHealerTest {
         };
 
        GenericMockCellHelper.registerAction("PnfsManager", PnfsSetLengthMessage.class,action );
-       CacheRepositoryEntry repositoryEntry = _repositoryEntryHealer.entryOf(pnfsId);
+       MetaDataRecord repositoryEntry = _repositoryEntryHealer.get(pnfsId);
 
-       assertFalse("Entry not recovered", e.isReceivingFromClient() );
+       assertFalse("Entry not recovered", repositoryEntry.getState() ==
+                   EntryState.FROM_CLIENT);
        assertTrue("Size not set", messageSent.get() );
 
     }
@@ -139,8 +140,8 @@ public class RepositoryEntryHealerTest {
         inode.setSize(17);
 
 
-        CacheRepositoryEntry e =  _metaDataRepository.create(pnfsId);
-        e.setReceivingFromClient();
+        MetaDataRecord e =  _metaDataRepository.create(pnfsId);
+        e.setState(EntryState.FROM_CLIENT);
 
         StorageInfo info = new OSMStorageInfo("h1", "rawd");
         e.setStorageInfo(info);
@@ -156,7 +157,7 @@ public class RepositoryEntryHealerTest {
        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), addCacheLocationMessage);
 
 
-       CacheRepositoryEntry repositoryEntry = _repositoryEntryHealer.entryOf(pnfsId);
+       MetaDataRecord repositoryEntry = _repositoryEntryHealer.get(pnfsId);
 
        assertNull("Missing entry not recognized", repositoryEntry );
     }
@@ -181,7 +182,7 @@ public class RepositoryEntryHealerTest {
        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), getStorageInfoMessage);
        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), addCacheLocationMessage);
 
-       CacheRepositoryEntry repositoryEntry = _repositoryEntryHealer.entryOf(pnfsId);
+       MetaDataRecord repositoryEntry = _repositoryEntryHealer.get(pnfsId);
 
     }
 
@@ -194,8 +195,8 @@ public class RepositoryEntryHealerTest {
         inode.setSize(17);
 
 
-        CacheRepositoryEntry e =  _metaDataRepository.create(pnfsId);
-        e.setReceivingFromStore();
+        MetaDataRecord e =  _metaDataRepository.create(pnfsId);
+        e.setState(EntryState.FROM_STORE);
 
        StorageInfo info = new OSMStorageInfo("h1", "rawd");
        e.setStorageInfo(info);
@@ -209,7 +210,7 @@ public class RepositoryEntryHealerTest {
        /*
         * CacheException(TIMEOUT) will indicate that we tried to modify file size in Pnfs
         */
-       CacheRepositoryEntry repositoryEntry = _repositoryEntryHealer.entryOf(pnfsId);
+       MetaDataRecord repositoryEntry = _repositoryEntryHealer.get(pnfsId);
 
     }
 
@@ -222,7 +223,7 @@ public class RepositoryEntryHealerTest {
         inode.setSize(17);
 
 
-        CacheRepositoryEntry e =  _metaDataRepository.create(pnfsId);
+        MetaDataRecord e =  _metaDataRepository.create(pnfsId);
 
 
        StorageInfo info = new OSMStorageInfo("h1", "rawd");
@@ -241,7 +242,7 @@ public class RepositoryEntryHealerTest {
        /*
         * CacheException(TIMEOUT) will indicate that we tried to modify file size in Pnfs
         */
-       CacheRepositoryEntry repositoryEntry = _repositoryEntryHealer.entryOf(pnfsId);
+       MetaDataRecord repositoryEntry = _repositoryEntryHealer.get(pnfsId);
 
     }
     @Test
@@ -253,8 +254,8 @@ public class RepositoryEntryHealerTest {
         inode.setSize(17);
 
 
-        CacheRepositoryEntry e =  _metaDataRepository.create(pnfsId);
-        e.setCached();
+        MetaDataRecord e =  _metaDataRepository.create(pnfsId);
+        e.setState(EntryState.CACHED);
 
 
        StorageInfo info = new OSMStorageInfo("h1", "rawd");
@@ -271,7 +272,7 @@ public class RepositoryEntryHealerTest {
        /*
         * CacheException(TIMEOUT) will indicate that we tried to modify file size in Pnfs
         */
-       CacheRepositoryEntry repositoryEntry = _repositoryEntryHealer.entryOf(pnfsId);
+       MetaDataRecord repositoryEntry = _repositoryEntryHealer.get(pnfsId);
 
     }
 

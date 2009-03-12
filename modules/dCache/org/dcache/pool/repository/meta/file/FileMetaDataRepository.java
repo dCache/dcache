@@ -6,15 +6,12 @@ import org.apache.log4j.Logger;
 
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.DuplicateEntryException;
-import org.dcache.pool.repository.EventProcessor;
-import org.dcache.pool.repository.EventType;
 import org.dcache.pool.repository.MetaDataStore;
+import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.v3.RepositoryException;
 
-import diskCacheV111.repository.CacheRepositoryEntry;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.event.CacheRepositoryEvent;
 
 /**
  *
@@ -22,7 +19,7 @@ import diskCacheV111.util.event.CacheRepositoryEvent;
  * access method.
  */
 public class FileMetaDataRepository
-    implements MetaDataStore, EventProcessor
+    implements MetaDataStore
 {
     private static Logger _log =
         Logger.getLogger("logger.org.dcache.repository");
@@ -30,21 +27,21 @@ public class FileMetaDataRepository
     private static final String DIRECTORY_NAME = "control";
 
     private FileStore _fileStore;
-    private EventProcessor _eventProcessor;
     private File _metadir;
 
     public FileMetaDataRepository(FileStore fileStore,
-                                  EventProcessor eventProcessor,
                                   File baseDir)
 
     {
     	_fileStore = fileStore;
-    	_eventProcessor = eventProcessor;
     	_metadir = new File(baseDir, DIRECTORY_NAME);
+        if (!_metadir.exists()) {
+            _metadir.mkdir();
+        }
     }
 
-    public CacheRepositoryEntry create(PnfsId id)
-        throws DuplicateEntryException, RepositoryException
+    public MetaDataRecord create(PnfsId id)
+        throws DuplicateEntryException, CacheException
     {
         try {
             File controlFile = new File(_metadir, id.toString());
@@ -69,8 +66,8 @@ public class FileMetaDataRepository
                 siFile.delete();
             }
 
-            return new CacheRepositoryEntryImpl(_eventProcessor, id,
-                                                controlFile, dataFile, siFile);
+            return
+                new CacheRepositoryEntryImpl(id, controlFile, dataFile, siFile);
         } catch (IOException e) {
             throw new RepositoryException("Failed to create new entry: "
                                           + e.getMessage());
@@ -78,26 +75,26 @@ public class FileMetaDataRepository
     }
 
     // todo
-    public CacheRepositoryEntry create(CacheRepositoryEntry entry)
+    public MetaDataRecord create(MetaDataRecord entry)
         throws DuplicateEntryException, CacheException {
 
         return null;
     }
 
-    public CacheRepositoryEntry get(PnfsId id) {
-
+    public MetaDataRecord get(PnfsId id)
+        throws CacheException
+    {
         try {
             File siFile = new File(_metadir, "SI-"+id.toString());
             if (siFile.exists()) {
                 File controlFile = new File(_metadir, id.toString());
                 File dataFile = _fileStore.get(id);
 
-                return new CacheRepositoryEntryImpl(_eventProcessor, id, controlFile, dataFile, siFile);
+                return new CacheRepositoryEntryImpl(id, controlFile, dataFile, siFile);
             }
-        } catch (RepositoryException e) {
-
         } catch (IOException e) {
-
+            throw new CacheException(CacheException.ERROR_IO_DISK,
+                                     "Failed to read meta data for " + id);
         }
         return null;
     }
@@ -134,16 +131,6 @@ public class FileMetaDataRepository
     {
 
     }
-
-    /**
-     * Forwards an event to the CacheRepository. Used by the entries
-     * for event notification.
-     */
-    public void processEvent(EventType type, CacheRepositoryEvent event)
-    {
-        _eventProcessor.processEvent(type, event);
-    }
-
 
     /**
      * Returns the path
