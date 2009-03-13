@@ -171,7 +171,7 @@ public class Comparator {
 
 		String file = args[0];
 
-		String pnfsArgs = "diskCacheV111.util.OsmInfoExtractor "
+		String pnfsArgs = "diskCacheV111.util.GenericInfoExtractor "
 				+ "-delete-registration=dummyLocation -delete-registration-jdbcDrv=foo "
 				+ "-delete-registration-dbUser=dummyUser -delete-registration-dbPass=dummyPass ";
 		String chimeraArgs = "org.dcache.chimera.namespace.ChimeraOsmStorageInfoExtractor "
