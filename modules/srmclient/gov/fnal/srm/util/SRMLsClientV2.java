@@ -162,18 +162,17 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
                                 throw new IOException(" null TReturnStatus ");
                         }
                         StringBuffer sb = new StringBuffer();
-                        sb.append("token = "+requestToken+" "+response.getReturnStatus().getStatusCode() + " explanation "+ response.getReturnStatus().getExplanation()+"\n");
+                        String statusText="Return status:\n" +
+                                " - Status code:  " +
+                                response.getReturnStatus().getStatusCode().getValue() + '\n' +
+                                " - Explanation:  " + response.getReturnStatus().getExplanation();
+                        logger.log(statusText);
                         if (RequestStatusTool.isFailedRequestStatus(rs)) {
-                                sb.append(
-                                        "Return status:\n" +
-                                        " - Status code:  " +
-                                        response.getReturnStatus().getStatusCode().getValue() + '\n' +
-                                        " - Explanation:  " + response.getReturnStatus().getExplanation() );
+                                sb.append(statusText+'\n');
                         }
                         if (requestToken==null) {
                                 if(response.getDetails() == null){
-                                        System.out.println(sb.toString());
-                                throw new Exception("srm ls response path details array is null!");
+                                        throw new IOException(sb.toString()+"srm ls response path details array is null!");
                                 }
                                 else {
                                         if (response.getDetails().getPathDetailArray()!=null) {
@@ -181,9 +180,15 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
                                                 printResults(sb,details,0," ",configuration.isLongLsFormat());
                                         }
                                 }
+                                if (RequestStatusTool.isFailedRequestStatus(rs)){
+                                        throw new IOException(sb.toString());
+                                }                                
                                 System.out.println(sb.toString());
                         }
                         else {
+                                if (RequestStatusTool.isFailedRequestStatus(rs)){
+                                        throw new IOException(sb.toString());
+                                }                                
                                 // we assume this is asynchronous call
                                 SrmStatusOfLsRequestRequest statusRequest = new SrmStatusOfLsRequestRequest();
                                 statusRequest.setRequestToken(requestToken);
@@ -200,7 +205,7 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
                                                 Thread.sleep(estimatedWaitInSeconds * 1000);
                                         }
                                         catch(InterruptedException ie) {
-                                                System.out.println("Interrupted, quitting");
+                                                esay("Interrupted, quitting");
                                                 if ( requestToken != null  ) {
                                                         abortRequest();
                                                 }
@@ -209,7 +214,7 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
                                         estimatedWaitInSeconds*=2;
                                         SrmStatusOfLsRequestResponse statusResponse = srm.srmStatusOfLsRequest(statusRequest);
                                         if (statusResponse==null) {
-                                                throw new IOException("SrmStatusOfLsRequestResponse is null for request %s"+requestToken);
+                                                throw new IOException("SrmStatusOfLsRequestResponse is null for request "+requestToken);
                                         }
                                         TReturnStatus status = statusResponse.getReturnStatus();
                                         if ( status == null ) {
@@ -218,34 +223,36 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
                                         if ( status.getStatusCode() == null ) {
                                                 throw new IOException(" null status code");
                                         }
-                                        logger.log("status: code="+status.getStatusCode()+
-                                                   " explanantion="+status.getExplanation());
                                         if (!RequestStatusTool.isTransientStateStatus(status)) {
-                                                sb.append("status: code="+status.getStatusCode() +  
-                                                          " explanantion="+status.getExplanation()+" \n");
+                                                statusText="Return status:\n" +
+                                                        " - Status code:  " +
+                                                        status.getStatusCode().getValue() + '\n' +
+                                                        " - Explanation:  " + status.getExplanation() + '\n' + 
+                                                        " - request token: " +requestToken;
+                                                logger.log(statusText);
+                                                if (RequestStatusTool.isFailedRequestStatus(status)){
+                                                        sb.append(statusText+'\n');
+                                                }
                                                 if(statusResponse.getDetails() == null){
-                                                        System.out.println(sb.toString());
-                                                        throw new Exception("srm ls response path details array is null!");
+                                                        throw new IOException(sb.toString()+"srm ls response path details array is null!");
                                                 }
                                                 else {
                                                         if (statusResponse.getDetails().getPathDetailArray()!=null) {
                                                                 TMetaDataPathDetail[] details = statusResponse.getDetails().getPathDetailArray();
                                                                 printResults(sb,details,0," ",configuration.isLongLsFormat());
-                                                                System.out.println(sb.toString());
                                                                 if (RequestStatusTool.isFailedRequestStatus(status)){
-                                                                        throw new IOException("SrmStatusOfLsRequestResponse unexpected or failed status : "+
-                                                                                              status.getStatusCode() +" explanation="+status.getExplanation());
+                                                                        throw new IOException(sb.toString());
                                                                 }
-                                                                break;
+                                                                System.out.println(sb.toString());
                                                         }
                                                 }
-                                                
+                                                break;
                                         }
                                 }
                         }
                 }
                 catch (Exception e) {
-                        esay(e.toString());
+                        esay(e.getMessage());
                         try {
                                 if ( requestToken != null ) {
                                         abortRequest();
