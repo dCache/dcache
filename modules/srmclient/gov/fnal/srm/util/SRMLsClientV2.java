@@ -240,7 +240,6 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
                                                         if (statusResponse.getDetails().getPathDetailArray()!=null) {
                                                                 TMetaDataPathDetail[] details = statusResponse.getDetails().getPathDetailArray();
                                                                 printResults(sb,details,0," ",configuration.isLongLsFormat());
-                                                                System.out.println(sb.toString());
                                                                 if (RequestStatusTool.isFailedRequestStatus(status)){
                                                                         throw new IOException(sb.toString());
                                                                 }
