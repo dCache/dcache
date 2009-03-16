@@ -171,8 +171,10 @@ public class PoolManagerV5
     @Override
     public CellInfo getCellInfo(CellInfo info)
     {
-        info.setCellVersion(new CellVersion(Version.getVersion(),"$Revision$" ));
-        return info;
+        PoolManagerCellInfo pminfo = new PoolManagerCellInfo(info);
+        pminfo.setCellVersion(new CellVersion(Version.getVersion(),"$Revision$"));
+        pminfo.setPoolList(_selectionUnit.getActivePools());
+        return pminfo;
     }
 
     @Override
@@ -324,12 +326,6 @@ public class PoolManagerV5
         }else{
              pw.println("         Watchdog : "+_watchdog ) ;
         }
-    }
-    @Override
-    public CellInfo getCellInfo(){
-        PoolManagerCellInfo info = new PoolManagerCellInfo(  super.getCellInfo() ) ;
-        info.setPoolList( _selectionUnit.getActivePools() ) ;
-        return info ;
     }
     public String hh_set_max_threads = " # DEPRICATED 	" ;
     public String ac_set_max_threads_$_1( Args args )throws CommandException{
