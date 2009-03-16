@@ -81,6 +81,13 @@ public class ThreadPoolNG implements ThreadPool {
 
 	public void setMaxThreadCount(int maxThreadCount)
 			throws IllegalArgumentException {
+
+        /*
+         * Be backward compatible with
+         */
+         if(maxThreadCount == 0)
+             maxThreadCount = MAX_SIZE;
+
 		_executor.setMaximumPoolSize(maxThreadCount);
 	}
 
