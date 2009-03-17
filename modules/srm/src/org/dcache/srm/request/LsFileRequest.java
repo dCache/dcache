@@ -6,7 +6,6 @@ import java.net.MalformedURLException;
 import diskCacheV111.srm.RequestFileStatus;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.AbstractStorageElement;
-import org.globus.util.GlobusURL;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMAuthorizationException;
@@ -44,10 +43,11 @@ import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.v2_2.*;
 import org.dcache.srm.request.Request;
 import org.dcache.srm.request.LsRequest;
+import org.apache.axis.types.URI.MalformedURIException;
 
 public class LsFileRequest extends FileRequest {
         public static final String SFN_STRING="?SFN=";
-        private GlobusURL surl;
+        private org.apache.axis.types.URI surl;
         TMetaDataPathDetail metaDataPathDetail=null;
         SRMUser user;
         LsRequest request;
@@ -55,7 +55,7 @@ public class LsFileRequest extends FileRequest {
         public LsFileRequest(LsRequest request,
                              Long  requestCredentalId,
                              Configuration configuration,
-                             String url,
+                             org.apache.axis.types.URI url,
                              long lifetime,
                              JobStorage jobStorage,
                              AbstractStorageElement storage,
@@ -68,12 +68,7 @@ public class LsFileRequest extends FileRequest {
                       jobStorage,
                       maxNumberOfRetries);
                 this.request=request;
-                try {
-                        surl = new GlobusURL(url);
-                }
-                catch(MalformedURLException murle) {
-                        throw new IllegalArgumentException(murle.toString());
-                }
+                this.surl=url;
                 user=getUser();
         }
 
@@ -115,9 +110,9 @@ public class LsFileRequest extends FileRequest {
                       statusCodeString,
                       configuration);
                 try {
-                        this.surl = new GlobusURL(SURL);
+                        this.surl = new org.apache.axis.types.URI(SURL);
                 }
-                catch(MalformedURLException murle) {
+                catch(org.apache.axis.types.URI.MalformedURIException murle) {
                         throw new IllegalArgumentException(murle.toString());
                 }
                 this.request=null;
@@ -142,7 +137,7 @@ public class LsFileRequest extends FileRequest {
         }
 
         public String getPath() {
-                String path = surl.getPath();
+                String path = surl.getPath(true,true);
                 int indx=path.indexOf(SFN_STRING);
                 if( indx != -1) {
                         path=path.substring(indx+SFN_STRING.length());
@@ -153,12 +148,12 @@ public class LsFileRequest extends FileRequest {
                 return path;
         }
 
-        public GlobusURL getSurl() {
+        public org.apache.axis.types.URI getSurl() {
                 return surl;
-        }
-
+         }
+        
         public String getSurlString() {
-                return surl.getURL();
+                return surl.toString();
         }
 
         public RequestFileStatus getRequestFileStatus(){

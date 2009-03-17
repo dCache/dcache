@@ -78,7 +78,7 @@ public class LsRequest extends ContainerRequest {
                                 new LsFileRequest(this,
                                                   requestCredentialId,
                                                   configuration,
-                                                  request.getArrayOfSURLs().getUrlArray()[i].toString(),
+                                                  request.getArrayOfSURLs().getUrlArray()[i],
                                                   lifetime,
                                                   jobFileRequestStorage,
                                                   storage,max_number_of_retries);
@@ -409,7 +409,7 @@ public class LsRequest extends ContainerRequest {
                 else {
                         if (done_req>0) {
                                 status.setStatusCode(TStatusCode.SRM_PARTIAL_SUCCESS);
-                                status.setExplanation("Some SURL request is successfully completed, and some SURL request is failed. Details are on the files status");
+                                status.setExplanation("Some SURL requests successfully completed, and some SURL requests failed. Details are on the files status");
                                  if (!State.isFinalState(getState())) { 
                                          try { 
                                                  setState(State.DONE,State.DONE.toString());
