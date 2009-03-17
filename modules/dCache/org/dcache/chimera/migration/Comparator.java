@@ -200,12 +200,17 @@ public class Comparator {
         }
 
 		try {
-			String line;
+			String rawLine;
 
-			while ((line = br.readLine().trim()) != null) {
+			while( (rawLine = br.readLine()) != null) {
 
-				if (line.startsWith("#"))
-					continue;
+			    String trimmedLine = rawLine.trim();
+
+                if( trimmedLine.startsWith( "#"))
+                    continue;
+
+                if( trimmedLine.length() == 0)
+                    continue;
 
 				if (idCount % 1000 == 0)
 					System.out.print("\nChecked " + idCount + " files: ");
@@ -215,7 +220,7 @@ public class Comparator {
 
 				idCount++;
 
-				PnfsId pnfsid = new PnfsId(line);
+				PnfsId pnfsid = new PnfsId(trimmedLine);
 
 				FileMetaData chimeraMetaData = chimeraNamespace.getFileMetaData(pnfsid);
 				FileMetaData pnfsFileMetaData = pnfsNamespace.getFileMetaData(pnfsid);
