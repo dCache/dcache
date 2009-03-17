@@ -630,7 +630,12 @@ public class CopyManager extends CellAdapter {
             String dstPnfsFilePath)
             throws Exception
         {
+                // if source and dest pools are the same,
+                // the second message with the same id will
+                // ignored as DUP, so we might need two ids
+
                 long id = getNextMessageID();
+                long srcId =id;
                 synchronized(activeTransfersIDs)
                 {
                     Long longId = Long.valueOf(id);
@@ -721,12 +726,24 @@ public class CopyManager extends CellAdapter {
                         srcStorageInfo,
                         src_protocol_info,
                         false);
+                    if(srcPool.equals(dstPool ) )
+                    {
+                         // if source and dest pools are the same,
+                        // the second message with the same id will
+                        // ignored as DUP, so we might need two ids
+
+                        srcId = getNextMessageID();
+                        Long longId = srcId;
+                        activeTransfersIDs.add(longId);
+                        activeTransfersIDsToHandlerMap.put(longId,this);
+
+                    }
 
                     askForFile(srcPool,
-                        srcPnfsId,
-                        srcStorageInfo,
-                        src_protocol_info,
-                        false,id);
+                    srcPnfsId,
+                    srcStorageInfo,
+                    src_protocol_info,
+                    false,srcId);
 
                     boolean srcDone = false;
                     boolean dstDone = false;
@@ -814,6 +831,12 @@ public class CopyManager extends CellAdapter {
                         Long longId = Long.valueOf(id);
                         activeTransfersIDs.remove(longId);
                         activeTransfersIDsToHandlerMap.remove(longId);
+                        if(srcPool.equals(dstPool ) ) {
+                            longId = srcId;
+                            activeTransfersIDs.remove(longId);
+                            activeTransfersIDsToHandlerMap.remove(longId);
+
+                        }
                     }
                 }
         }

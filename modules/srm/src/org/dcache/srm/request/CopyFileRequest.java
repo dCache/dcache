@@ -483,6 +483,150 @@ public class CopyFileRequest extends FileRequest {
 		scriptCopy(from,to,credential.getDelegatedCredential());
 		setStateToDone();
 	}
+
+	private void runLocalToLocalCopy() throws Exception {
+		say("copying from local to local ");
+        FileMetaData fmd ;
+        try {
+            fmd = storage.getFileMetaData(getUser(), local_from_path);
+        } catch (SRMException srme) {
+            try {
+                synchronized (this) {
+                    State state = getState();
+                    if (!State.isFinalState(state)) {
+                        setStatusCode(TStatusCode.SRM_INVALID_PATH);
+                        setState(State.FAILED, srme.getMessage());
+                    }
+                }
+            } catch (IllegalStateTransition ist) {
+                esay("can not fail state:" + ist);
+            }
+            return;
+
+        }
+        size = fmd.size;
+
+		RequestCredential credential = getCredential();
+		if(toFileId == null && toParentFileId == null) {
+			synchronized(this) {
+				State state = getState();
+				if(!State.isFinalState(state)) {
+					setState(State.ASYNCWAIT,"calling storage.prepareToPut");
+				}
+				else {
+					throw new org.dcache.srm.scheduler.FatalJobFailure("request state is a final state");
+				}
+			}
+			PutCallbacks callbacks = new PutCallbacks(this.getId());
+			say("calling storage.prepareToPut("+local_to_path+")");
+			storage.prepareToPut(getUser(),
+					     local_to_path,
+					     callbacks,
+					     ((CopyRequest)getRequest()).isOverwrite());
+			say("callbacks.waitResult()");
+			return;
+		}
+		say("known source size is "+size);
+		//reserve space even if the size is not known (0) as
+		// if only in order to select the pool corectly
+		// use 1 instead of 0, since this will cause faulure if there is no space
+		// available at all
+		// Space manager will account for used size correctly
+		// once it becomes available from the pool
+		// and space is not reserved
+		// or if the space is reserved and we already tried to use this
+		// space reservation and failed
+		// (releasing previous space reservation)
+		//
+
+
+        // Use pnfs tag for the default space token
+        // if the conditions are right
+		TAccessLatency accessLatency =
+			((CopyRequest)getRequest()).getTargetAccessLatency();
+		TRetentionPolicy retentionPolicy =
+			((CopyRequest)getRequest()).getTargetRetentionPolicy();
+		if (spaceReservationId==null &&
+            retentionPolicy==null&&
+            accessLatency==null &&
+            toParentFmd.spaceTokens!=null &&
+            toParentFmd.spaceTokens.length>0 ) {
+                spaceReservationId=Long.toString(toParentFmd.spaceTokens[0]);
+		}
+
+		if (configuration.isReserve_space_implicitely() &&
+                spaceReservationId == null) {
+			synchronized(this) {
+				State state = getState();
+				if(!State.isFinalState(state)) {
+					setState(State.ASYNCWAIT,"reserving space");
+				}
+				else {
+					throw new org.dcache.srm.scheduler.FatalJobFailure("request state is a final state");
+				}
+			}
+
+			long remaining_lifetime =
+                    lifetime - ( System.currentTimeMillis() -creationTime);
+			say("reserving space, size="+(size==0?1L:size));
+			//
+			//the following code allows the inheritance of the
+			// retention policy from the directory metatada
+			//
+			if(retentionPolicy == null && 
+               toParentFmd!= null &&
+               toParentFmd.retentionPolicyInfo != null ) {
+				retentionPolicy = toParentFmd.retentionPolicyInfo.getRetentionPolicy();
+			}
+
+			//
+			//the following code allows the inheritance of the
+			// access latency from the directory metatada
+			//
+			if(accessLatency == null && 
+               toParentFmd != null &&
+               toParentFmd.retentionPolicyInfo != null ) {
+				accessLatency = toParentFmd.retentionPolicyInfo.getAccessLatency();
+			}
+
+			SrmReserveSpaceCallbacks callbacks =
+                    new TheReserveSpaceCallbacks (getId());
+			storage.srmReserveSpace(
+				getUser(),
+				size==0?1L:size,
+				remaining_lifetime,
+				retentionPolicy == null ? null : retentionPolicy.getValue(),
+				accessLatency == null ? null : accessLatency.getValue(),
+				null,
+				callbacks);
+			return;
+		}
+
+		if( spaceReservationId != null &&
+		    !spaceMarkedAsBeingUsed) {
+			synchronized(this) {
+				State state = getState();
+				if(!State.isFinalState(state)) {
+					setState(State.ASYNCWAIT,"marking space as being used");
+				}
+			}
+			long remaining_lifetime =
+                    lifetime - ( System.currentTimeMillis() -creationTime);
+			SrmUseSpaceCallbacks  callbacks = new CopyUseSpaceCallbacks(getId());
+			storage.srmMarkSpaceAsBeingUsed(getUser(),
+							spaceReservationId,
+							local_to_path,
+							size==0?1:size,
+							remaining_lifetime,
+							((CopyRequest)getRequest()).isOverwrite(),
+							callbacks );
+			return;
+		}
+
+        storage.localCopy(getUser(),local_from_path,local_to_path);
+        setStateToDone();
+        return;
+	}
     
 	private void runRemoteToLocalCopy() throws Exception {
 		say("copying from remote to local ");
@@ -518,27 +662,21 @@ public class CopyFileRequest extends FileRequest {
 		// space reservation and failed 
 		// (releasing previous space reservation)
 		//
-		// defaultSpaceReservationId is a tag in PNFS directory
-		//
-		long defaultSpaceReservationId=0;
-		if (toParentFmd.spaceTokens!=null) { 
-			if (toParentFmd.spaceTokens.length>0) { 
-				defaultSpaceReservationId=toParentFmd.spaceTokens[0];
-		    }
-		}
+
+        // Use pnfs tag for the default space token
+        // if the conditions are right
 		TAccessLatency accessLatency =
 			((CopyRequest)getRequest()).getTargetAccessLatency();
 		TRetentionPolicy retentionPolicy =
 			((CopyRequest)getRequest()).getTargetRetentionPolicy();
-		if (spaceReservationId==null) { 
-			if (defaultSpaceReservationId!=0) {
-				if(retentionPolicy==null&&accessLatency==null) { 
-					StringBuffer sb = new StringBuffer();
-					sb.append(defaultSpaceReservationId);
-					spaceReservationId=sb.toString();
-				}
-			}
+		if (spaceReservationId==null &&
+            retentionPolicy==null&&
+            accessLatency==null &&
+            toParentFmd.spaceTokens!=null &&
+            toParentFmd.spaceTokens.length>0 ) {
+                spaceReservationId=Long.toString(toParentFmd.spaceTokens[0]);
 		}
+
 		if (configuration.isReserve_space_implicitely()&&spaceReservationId == null) { 
 			synchronized(this) {
 				State state = getState();
@@ -714,9 +852,7 @@ public class CopyFileRequest extends FileRequest {
 				}
 			}
 			if(local_to_path != null && local_from_path != null) {
-				say("local copy");
-				storage.localCopy(getUser(),local_from_path,local_to_path);
-				setStateToDone();
+                runLocalToLocalCopy();
 				return;
 			}
 			if(local_to_path != null && from_turl != null) {
