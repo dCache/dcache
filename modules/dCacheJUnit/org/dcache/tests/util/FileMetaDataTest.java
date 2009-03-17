@@ -1,7 +1,9 @@
 package org.dcache.tests.util;
 
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import org.junit.Test;
 
@@ -29,6 +31,17 @@ public class FileMetaDataTest {
         FileMetaData m2 =  new FileMetaData(false, 3750, 1000, 0755);
 
         assertFalse("Directory cant be equal to a file even with the same uid, gid, and mode", m1.equals( m2 ));
+    }
+
+    @Test
+    public void testEqualsDirectoriesWithDifferentSizes() {
+        FileMetaData m1 = new FileMetaData( true, 3750, 1000, 0755);
+        FileMetaData m2 = new FileMetaData( true, 3750, 1000, 0755);
+
+        m1.setSize( 42);
+        m2.setSize( 23);
+
+        assertTrue( "Directories differing only in size should be equal", m1.equals( m2));
     }
 
     @Test

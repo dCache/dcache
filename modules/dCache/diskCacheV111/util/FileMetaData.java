@@ -99,6 +99,7 @@ public class FileMetaData implements Serializable {
             return canExecute();
         }
 
+        @Override
         public String toString() {
             return (_canRead ? "r" : "-") + (_canWrite ? "w" : "-")
                     + (_canExecute ? "x" : "-");
@@ -353,8 +354,14 @@ public class FileMetaData implements Serializable {
             && other._isLink == this._isLink
             && other._isRegular == this._isRegular
 
-            // size
-            && other._size == this._size
+            /**
+             *  size.
+             *
+             *  NB if both are directories we ignore the size.  This
+             *  is because both PNFS and Chimera return dummy values.
+             */
+            && (other._size == this._size || this._isDirectory)
+
             // permissions
             && other._user.equals(this._user)
             && other._group.equals(this._group)
