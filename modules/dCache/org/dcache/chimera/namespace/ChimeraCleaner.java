@@ -258,7 +258,6 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
 
             } catch (Exception ee) {
             	_logNamespace.error("ChimeraCleaners: runDelete :" + ee);
-                ee.printStackTrace();
             }
 
             //wait... _refreshInterval ... after each run
@@ -377,17 +376,17 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
      */
 
     void removeFiles(Connection dbConnection, String poolname, String[] filelist) throws SQLException {
-
+    	/*
+         * FIXME: we send remove to the broadcaster even if we failed to
+         * remove a record from the DB.
+         */
         informBroadcaster(filelist);
 
-        String filename = null;
         PreparedStatement stRemoveFiles = null;
 
-        for (int i = 0; i < filelist.length; i++) {
+        for (String filename: filelist) {
 
             try {
-                filename = filelist[i];
-
                 stRemoveFiles = dbConnection.prepareStatement(sqlRemoveFiles);
 
                 stRemoveFiles.setString(1, poolname);
@@ -628,28 +627,19 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
 
                         }
                         removeFiles(dbConnection, poolName, okRemoved);
-                    }
-
-                    if(_logNamespace.isDebugEnabled()) {
-                    	if (okRemoved == null){
-                    		 _logNamespace.debug("***okRemoved == null***  all submitted files could NOT be deleted from pool "+poolName);
+                    } else if (okRemoved == null) {
+                        _poolsBlackList.put(poolName, Long.valueOf(System.currentTimeMillis()));
+                        if(_logNamespace.isDebugEnabled()) {
+                            _logNamespace.debug("cleanPoolComplete: pool "+ poolName + "added into black list");
                     	}
-
+                        /*
+                         * we can't remove files from this pool. Stop processing.
+                         */
+                        break;
                     }
 
                     counter = 0;
                     filePartList.clear();
-
-
-                    // if poolName is in the black list, stop processing
-                    if (_poolsBlackList.containsKey(poolName)) {
-                        if(_logNamespace.isDebugEnabled()) {
-                            _logNamespace.debug(poolName+" - this pool is in the black list now. Stop processing. ");
-                        }
-                        tryToClose(rs);
-                        tryToClose(stGetFileListForPool);
-                        return;
-                    }
 
                 }
 
