@@ -72,6 +72,7 @@ package diskCacheV111.srm.dcache;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import dmg.cells.nucleus.CellAdapter;
+import org.dcache.cells.AbstractCell;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.ExceptionEvent;
@@ -212,7 +213,7 @@ import javax.naming.directory.InitialDirContext;
  */
 
 public class Storage
-        extends CellAdapter
+        extends AbstractCell
         implements AbstractStorageElement, Runnable {
     protected int poolTimeout        = 5 * 60 ;
     public static final int TIMEOUT = 112 ;
@@ -347,7 +348,7 @@ public class Storage
 
     public Storage(final String name, String argString) throws Exception {
 
-        super(name , Storage.class.getName(), argString , false );
+        super(name , argString );
 
         String tmsg = "";
 
@@ -2198,10 +2199,6 @@ public class Storage
                     if(answered) {
                         return;
                     }
-                }
-                getNucleus().updateWaitQueue();
-                if(answered) {
-                    return;
                 }
             }
         }
