@@ -142,6 +142,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Timer;
+import java.util.TimerTask;
+
 import diskCacheV111.services.PermissionHandler;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
@@ -215,6 +218,17 @@ import javax.naming.directory.InitialDirContext;
 public class Storage
         extends CellAdapter
         implements AbstractStorageElement, Runnable {
+    /**
+     * Timer for running cell messages timout trigger
+     * and other tasks in the future
+     */
+    protected final static Timer _timer = new Timer(true);
+
+    /**
+     * Task for running cell messages timout trigger
+     */
+    private TimerTask _timeoutTask;
+
     protected int poolTimeout        = 5 * 60 ;
     public static final int TIMEOUT = 112 ;
     public static String srm_root = "";
@@ -769,6 +783,8 @@ public class Storage
 
         storageInfoUpdateThread = getNucleus().newThread(this);
         storageInfoUpdateThread.start();
+
+        startTimeoutTask();
 
         tmsg = "In Storage constructor, about to get/set srmInstance.";
         say(tmsg);
@@ -2139,10 +2155,6 @@ public class Storage
                     if(answered) {
                         return;
                     }
-                }
-                getNucleus().updateWaitQueue();
-                if(answered) {
-                    return;
                 }
             }
         }
@@ -4937,6 +4949,38 @@ public class Storage
     public String getStorageBackendVersion() {
         return diskCacheV111.util.Version.getVersion();
     }
+
+    /**
+     * Start the timeout task.
+     *
+     * Cells relies on periodic calls to updateWaitQueue to implement
+     * message timeouts. This method starts a task which calls
+     * updateWaitQueue every 30 seconds.
+     */
+    protected void startTimeoutTask()
+    {
+        if (_timeoutTask != null)
+            throw new IllegalStateException("Timeout task is already running");
+
+        _timeoutTask = new TimerTask() {
+                public void run()
+                {
+                        getNucleus().updateWaitQueue();
+                }
+            };
+        _timer.schedule(_timeoutTask, 30000, 30000);
+    }
+
+
+    public void cleanUp()
+    {
+        super.cleanUp();
+
+        if (_timeoutTask != null) {
+            _timeoutTask.cancel();
+        }
+    }
+   
 }
 
 // $Log: not supported by cvs2svn $
