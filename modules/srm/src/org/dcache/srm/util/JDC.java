@@ -38,60 +38,62 @@ import org.dcache.srm.scheduler.Job;
 	    public final static String MDC_SESSION = "srm.session";
 	    public final static String MDC_SCHEDULER = "srm.scheduler";
 	    public final static String MDC_DCACHE_SESSION = "cells.session";
-	    
-		private static long _last;
-        private final static long ThreeYears = 3*365*24*3600*1000;
+
+	    private static long _last;
+            private final static long ThreeYears = 3*365*24*3600*1000;
 
 	    private final Stack _ndc;
 	    private final Object _session;
-		private final Object _scheduler;
-        private final DCacheSessionStack _dcacheSessionHelper;        
+            private final Object _scheduler;
+            private final String _dcacheSession;
 
-        static class DCacheSessionStack extends Stack<String>{        	
-    	    
-    	    private final static String MDC_DCACHE_SESSION_HELPER = "srm.session.helper";
-    	        	    
-        	public String toString(){
-                StringBuffer result = new StringBuffer();
-                String delim = "";
-                for(String comp : this ){        			
-                    result.append(delim).append(comp);
-                    delim = ":";
+            static class DCacheSessionHelper {
+
+                private static final String DELIM = ":";
+
+                public static void push(String sessionComp){
+                   String currentValue = get();
+                   if ( currentValue == null )
+                       set(sessionComp);
+                   else {
+                       set(currentValue +DELIM+sessionComp);
+                   }
                 }
-                return result.toString();
-        	}
-        	
-        	public void apply()
-        	{
-        	   MDC.put(MDC_DCACHE_SESSION,toString());
-        	}
-        	
-        	public static DCacheSessionStack getInstance(){
-        		DCacheSessionStack dCacheSessionHelper = (DCacheSessionStack)MDC.get(MDC_DCACHE_SESSION_HELPER);
 
-                if ( dCacheSessionHelper == null ){
-                	dCacheSessionHelper = new DCacheSessionStack();
-                	MDC.put(MDC_DCACHE_SESSION_HELPER,dCacheSessionHelper);
+                public static void pop(){
+                   String currentValue = get();
+                   if ( currentValue != null ){
+                      int pos = currentValue.lastIndexOf(DELIM);
+                      if ( pos == -1 ){
+                         currentValue = null;
+                      }else{
+                         currentValue = currentValue.substring(0,pos);
+                      }
+                      set(currentValue);
+                   }
                 }
-    	        return dCacheSessionHelper;
-        	}
 
-        	public static void setInstance(DCacheSessionStack dcacheSessionHelper){
-        		setMdc(MDC_DCACHE_SESSION_HELPER,dcacheSessionHelper);
-        		if ( dcacheSessionHelper != null )
-        		  dcacheSessionHelper.apply();
-        	}
-        }
+                public static void set(String session)
+                {
+                   setMdc(MDC_DCACHE_SESSION,session);
+                }
 
-	    /**    
+                public static String get(){
+                   String dCacheSession = (String)MDC.get(MDC_DCACHE_SESSION);
+                   return dCacheSession;
+                }
+
+            }
+
+	    /**
 	     * Captures the cells diagnostic context of the calling thread.
 	     */
 	    public JDC()
 	    {
-            _session = MDC.get(MDC_SESSION);
-            _scheduler = MDC.get(MDC_SCHEDULER);
-            _dcacheSessionHelper = (DCacheSessionStack)DCacheSessionStack.getInstance().clone();	        
-	        _ndc = NDC.cloneStack();
+               _session = MDC.get(MDC_SESSION);
+               _scheduler = MDC.get(MDC_SCHEDULER);
+               _dcacheSession = DCacheSessionHelper.get();
+	       _ndc = NDC.cloneStack();
 	    }
 
 	    /**
@@ -127,13 +129,13 @@ import org.dcache.srm.scheduler.Job;
 	     * @param clone whether to apply a clone of the NDC stack
 	     */
 	    public void apply(boolean clone)
-	    {	    
+	    {
 	        setMdc(MDC_SESSION, _session);
-	        setMdc(MDC_SCHEDULER,_scheduler);	        
+	        setMdc(MDC_SCHEDULER,_scheduler);
 	        NDC.clear();
 	        if ( _ndc != null )
 	           NDC.inherit(clone ? (Stack) _ndc.clone() : _ndc);
-	        DCacheSessionStack.setInstance(_dcacheSessionHelper);	       
+	        DCacheSessionHelper.set(_dcacheSession);
 	    }
 
 	    /**
@@ -152,23 +154,20 @@ import org.dcache.srm.scheduler.Job;
 	     */
 	    static public void setSession(Object session)
 	    {
-            setMdc(MDC_SESSION, session);
-            DCacheSessionStack dcacheSessionHelper = DCacheSessionStack.getInstance();
-            dcacheSessionHelper.clear();
-            dcacheSessionHelper.push(session.toString());	        
-            dcacheSessionHelper.apply();
+              setMdc(MDC_SESSION, session);
+              DCacheSessionHelper.set(session.toString());
 	    }
-	    
+
 	    /**
          * Creates the session in the JDC for the calling thread.
          *
          * @param prefix Prefix for the newly created session identifier.
-         */	    
+         */
 	    static public void createSession(String prefix)
 	    {
 	        setSession(prefix+createUniq());
 	    }
-	    
+
 
 	    /**
 	     * Returns the message description added to the NDC as part of the
@@ -180,19 +179,17 @@ import org.dcache.srm.scheduler.Job;
 
 	        Object jid = job.getId();
 	        if (jid != null) {
-	            s.append("jid=").append(jid.toString());	            
+	            s.append("jid=").append(jid.toString());
 	        }
-	         
+
 	        return s.toString();
 	    }
-	    
+
 
 	    static public void setJobContext(Job job)
 	    {
 	        NDC.push(getJobContext(job));
-	        DCacheSessionStack dCacheSessionHelper = DCacheSessionStack.getInstance();	        
-	        dCacheSessionHelper.push(job.getId().toString());
-	        dCacheSessionHelper.apply();
+	        DCacheSessionHelper.push(job.getId().toString());
 	    }
 
 	    /**
@@ -206,17 +203,15 @@ import org.dcache.srm.scheduler.Job;
 	    static public void clearJobContext()
 	    {
 	        NDC.pop();
-	        DCacheSessionStack dCacheSessionHelper = DCacheSessionStack.getInstance();
-	        dCacheSessionHelper.pop();
-	        dCacheSessionHelper.apply();
+	        DCacheSessionHelper.pop();
 	    }
 
-		public static void setSchedulerContext(Object schedulerContext) {
-		      MDC.put(MDC_SCHEDULER, schedulerContext);
-		}
+            public static void setSchedulerContext(Object schedulerContext) {
+	        MDC.put(MDC_SCHEDULER, schedulerContext);
+            }
 
-		public static String createUniq() {
-            _last = Math.max(_last + 1, System.currentTimeMillis());
-            return Long.toString(_last % ThreeYears );
-		}
+            public static String createUniq() {
+                _last = Math.max(_last + 1, System.currentTimeMillis());
+                return Long.toString(_last % ThreeYears );
+            }
 }
