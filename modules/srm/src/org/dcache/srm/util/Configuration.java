@@ -263,6 +263,7 @@ public class Configuration {
     private SRMUserPersistenceManager srmUserPersistenceManager;
     private int maxNumberOfLsEntries = 1000;
     private int maxNumberOfLsLevels = 100;
+    private boolean clientDNSLookup=false;
 
     /** Creates a new instance of Configuration */
     public Configuration() {
@@ -1373,6 +1374,7 @@ public class Configuration {
         sb.append("\n\tjdbcMonitoringEnabled=").append(this.jdbcMonitoringEnabled);
         sb.append("\n\tjdbcMonitoringDebugLevel=").append(this.jdbcMonitoringDebugLevel);
         sb.append("\n\tcleanPendingRequestsOnRestart=").append(this.cleanPendingRequestsOnRestart);
+        sb.append("\n\tclientDNSLookup=").append(this.clientDNSLookup);
 
         return sb.toString();
     }
@@ -2673,6 +2675,20 @@ public class Configuration {
 
     public void setLsPriorityPolicyPlugin(String lsPriorityPolicyPlugin) {
         this.lsPriorityPolicyPlugin = lsPriorityPolicyPlugin;
+    }
+
+    /**
+     * @return the clientDNSLookup
+     */
+    public boolean isClientDNSLookup() {
+        return clientDNSLookup;
+    }
+
+    /**
+     * @param clientDNSLookup the clientDNSLookup to set
+     */
+    public void setClientDNSLookup(boolean clientDNSLookup) {
+        this.clientDNSLookup = clientDNSLookup;
     }
 
 
