@@ -887,6 +887,14 @@ cacheInfo=companion
 #
 # srmCustomGetHostByAddr=false
 
+# --srmClientDNSLookup
+# perform the lookup of the client hostname on basis of client ip
+# the result is used in pool pool selection
+# if srmClientDNSLookup is set to false (default)
+# client ip is used
+# srmClientDNSLookup=false
+
+
 #  ---- Enable automatic creation of directories.
 #
 #  Allow automatic creation of directories via SRM

@@ -105,6 +105,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.CRLException;
 
 import org.dcache.srm.SRMAuthorizationException;
+import org.dcache.srm.util.Configuration;
 import org.glite.security.util.DirectoryList;
 import org.glite.voms.BasicVOMSTrustStore;
 import org.glite.voms.VOMSValidator;
@@ -128,7 +129,7 @@ public class SrmAuthorizer {
    public org.apache.log4j.Logger log;
    private static boolean initialized = false;
    private String logConfigFile;
-   
+   private Configuration config;
    public SrmAuthorizer(SrmDCacheConnector srmConn) {
       initialize(srmConn);
    }
@@ -143,18 +144,18 @@ public class SrmAuthorizer {
          org.apache.log4j.xml.DOMConfigurator.configure(logConfigFile);
          // Below re-checks config file periodically; default 60 seconds
          // DOMConfigurator.configureAndWatch(logConfigFile);
-         
+         config = srmConn.configuration;
          authorization =
-            srmConn.configuration.getAuthorization();
+            config.getAuthorization();
          credential_storage =
             srmConn.getSrm().getRequestCredentialStorage();
          propertyStorage = RequestsPropertyStorage.getPropertyStorage(
-            srmConn.configuration.getJdbcUrl(),
-            srmConn.configuration.getJdbcClass(),
-            srmConn.configuration.getJdbcUser(),
-            srmConn.configuration.getJdbcPass(),
-            srmConn.configuration.getNextRequestIdStorageTable(),
-            srmConn.configuration.getStorage()
+            config.getJdbcUrl(),
+            config.getJdbcClass(),
+            config.getJdbcUser(),
+            config.getJdbcPass(),
+            config.getNextRequestIdStorageTable(),
+            config.getStorage()
             );
             
             initialized = true;
@@ -197,8 +198,12 @@ public class SrmAuthorizer {
          userCredential.context = gsscontext;
          userCredential.credential = delegcred;
          String remote_addr = (String) mctx.getProperty(REMOTE_ADDR);
-         userCredential.clientHost =
+         if( config.isClientDNSLookup()) {
+           userCredential.clientHost =
              Inet4Address.getByName(remote_addr).getCanonicalHostName();
+         } else {
+             userCredential.clientHost = remote_addr;
+         }
 
          return userCredential;
       }catch (SRMAuthorizationException srme){

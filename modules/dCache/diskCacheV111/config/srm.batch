@@ -193,6 +193,13 @@ set context -c SpaceManagerReserveSpaceForNonSRMTransfers false
 # if srmCleanPendingRequestsOnRestart is true
 set context -c srmCleanPendingRequestsOnRestart false
 
+# perform the lookup of the client hostname on basis of client ip
+# the result is used in pool pool selection
+# if srmClientDNSLookup is set to false
+# client ip is used
+set context -c srmClientDNSLookup false
+
+
 #
 #  ----  Usage of Srm Space Manager
 #
@@ -421,4 +428,5 @@ create diskCacheV111.srm.dcache.Storage  SRM-${thisHostname} \
         -ignore-client-protocol-order=${srmIgnoreClientProtocolOrder}\
         -size-of-single-remove-batch=${srmSizeOfSingleRemoveBatch}\
         -clean-pending-requests-on-restart=${srmCleanPendingRequestsOnRestart}\
+        -client-dns-lookup=${srmClientDNSLookup}\
        "

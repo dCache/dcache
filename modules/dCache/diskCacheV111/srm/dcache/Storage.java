@@ -702,6 +702,9 @@ public class Storage
 		config.setQosPluginClass(getOption("qosPluginClass",config.getQosPluginClass()));
 		config.setQosConfigFile(getOption("qosConfigFile",config.getQosConfigFile()));
 
+        config.setClientDNSLookup(isOptionSetToTrueOrYes("client-dns-lookup",
+        config.isClientDNSLookup())); // false by default
+
         say("scheduler parameter read, starting");
         this.useInterpreter(true);
         this.getNucleus().export();
@@ -2279,6 +2282,66 @@ public class Storage
 
     int numDoorInRanSelection=3;
 
+   /**
+     *  HostnameCacheRecord TTL in millis
+     */
+    private static final long doorToHostnameCacheTTL = 600000L; // ten minutes
+
+    private static final class HostnameCacheRecord {
+        private String hostname;
+        /**
+         *  in millis
+         */
+        private long  creationTime;
+        public HostnameCacheRecord( String hostname ) {
+            this.hostname = hostname;
+            this.creationTime = System.currentTimeMillis();
+        }
+        /**
+         * @return the hostname
+         */
+        public String getHostname() {
+            return hostname;
+        }
+
+        public boolean expired() {
+            return
+                System.currentTimeMillis() - creationTime >
+                doorToHostnameCacheTTL;
+        }
+
+    }
+     private Map<String,HostnameCacheRecord> doorToHostnameMap =
+            new HashMap<String,HostnameCacheRecord>();
+    private String lbiToDoor(LoginBrokerInfo lbi) throws SRMException {
+
+            String thehost =lbi.getHost();
+            String resolvedHost;
+            HostnameCacheRecord resolvedHostRecord = doorToHostnameMap.get(thehost);
+            if(resolvedHostRecord == null || resolvedHostRecord.expired() ) {
+                try {
+
+                    InetAddress address = InetAddress.getByName(thehost);
+                    resolvedHost = address.getHostName();
+                    if ( customGetHostByAddr && resolvedHost.toUpperCase().equals(
+                        resolvedHost.toLowerCase() )  ) {// must be an IP address
+                            resolvedHost = getHostByAddr( address.getAddress() );
+                    }
+                } catch(IOException ioe) {
+                    esay("lbiToDoor "+ioe);
+                    throw new SRMException("selectHost "+ioe);
+                }
+                // cache record
+                doorToHostnameMap.put(thehost, 
+                        new HostnameCacheRecord(resolvedHost));
+            } else {
+                resolvedHost = resolvedHostRecord.getHostname();
+            }
+
+
+            return resolvedHost+":"+ lbi.getPort();
+
+    }
     public String selectHost(LoginBrokerInfo[]loginBrokerInfos)
     throws SRMException {
         java.util.Arrays.sort(loginBrokerInfos,new java.util.Comparator(){
@@ -2299,24 +2362,10 @@ public class Storage
 
             int selected_indx = rand.nextInt(java.lang.Math.min(len,
                 numDoorInRanSelection));
-            LoginBrokerInfo selectedDoor = loginBrokerInfos[selected_indx];
-            String thehost =selectedDoor.getHost();
-            try {
-                InetAddress address = InetAddress.getByName(thehost);
-                thehost = address.getHostName();
-                if ( customGetHostByAddr && thehost.toUpperCase().equals(
-                    thehost.toLowerCase() )  ) {// must be an IP address
-                        thehost = getHostByAddr( address.getAddress() );
-                }
+            String doorHostPort = lbiToDoor(loginBrokerInfos[selected_indx]);
 
-            } catch(IOException ioe) {
-                esay("selectHost "+ioe);
-                throw new SRMException("selectHost "+ioe);
-            }
-
-            say("selectHost returns "+
-                    thehost+":"+ selectedDoor.getPort());
-            return thehost+":"+ selectedDoor.getPort();
+            say("selectHost returns "+doorHostPort);
+            return doorHostPort;
     }
 
 
