@@ -181,7 +181,7 @@ public class ChimeraOsmStorageInfoExtractor implements
 
             String[] cacheClass = getTag(dirInode, "cacheClass");
             if( cacheClass != null ) {
-                info.setCacheClass( cacheClass[0].toLowerCase().trim());
+                info.setCacheClass( cacheClass[0].trim());
             }
 
             si = info;
