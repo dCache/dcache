@@ -180,7 +180,7 @@ public class AclCell extends CellAdapter {
             " USER:<who_id> : user identified by the virtual user ID <who_id> \n" +
             "GROUP:<who_id> : group identified by the virtual group ID <who_id> \n" +
             "        OWNER@ : user who owns the resource\n" +
-            "  OWNER_GROUP@ : group that owns the resource \n" +
+            "        GROUP@ : group that owns the resource \n" +
             "     EVERYONE@ : world, including the owner and owning group\n" +
             "    ANONYMOUS@ : accessed without any authentication \n" +
             "AUTHENTICATED@ : any authenticated user (opposite of ANONYMOUS) \n" +
