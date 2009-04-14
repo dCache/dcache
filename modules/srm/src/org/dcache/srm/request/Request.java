@@ -409,7 +409,7 @@ public abstract class Request extends Job {
     private String description;
     
     public void addDebugHistoryEvent(String description) {
-        if(configuration.isJdbcMonitoringDebugLevel()) {
+        if(configuration.isJdbcLogRequestHistoryInDBEnabled()) {
             addHistoryEvent( description);
         }
     }

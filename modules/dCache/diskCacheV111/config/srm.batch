@@ -401,7 +401,7 @@ create diskCacheV111.srm.dcache.Storage  SRM-${thisHostname} \
         -dbUser=${srmDbUser} \
         -dbPass=${srmDbPassword} \
         -pgPass=${srmPasswordFile}   \
-        -jdbc-monitoring-log=${srmJdbcMonitoringLogEnabled} \
+        -log-request-history-in-db-enabled=${srmJdbcMonitoringLogEnabled} \
         -num-days-history=${srmNumberOfDaysInDatabaseHistory} \
         -old-request-remove-period-secs=${srmOldRequestRemovalPeriodSeconds} \
         -jdbc-execution-thread-num=${srmJdbcExecutionThreadNum} \

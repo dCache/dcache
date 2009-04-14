@@ -123,7 +123,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
         this.user = configuration.getJdbcUser();
         this.pass = configuration.getJdbcPass();
         this.logger = configuration.getStorage();
-        this.logHistory = configuration.isJdbcMonitoringEnabled();
+        this.logHistory = configuration.isJdbcLogRequestHistoryInDBEnabled();
         
         dbInit(configuration.isCleanPendingRequestsOnRestart());
         //updatePendingJobs();

@@ -674,11 +674,8 @@ public class Storage
         config.setCredentialsDirectory(getOption("credentials-dir",
             config.getCredentialsDirectory()));
 
-        config.setJdbcMonitoringEnabled(isOptionSetToTrueOrYes("jdbc-monitoring-log",
-            config.isJdbcMonitoringEnabled())); // false by default
-
-        config.setJdbcMonitoringDebugLevel(isOptionSetToTrueOrYes("jdbc-monitoring-debug",
-            config.isJdbcMonitoringDebugLevel())); // false by default
+        config.setJdbcLogRequestHistoryInDBEnabled(isOptionSetToTrueOrYes("log-request-history-in-db-enabled",
+            config.isJdbcLogRequestHistoryInDBEnabled())); // false by default
 
         config.setCleanPendingRequestsOnRestart(isOptionSetToTrueOrYes("clean-pending-requests-on-restart",
             config.isCleanPendingRequestsOnRestart())); // false by default
@@ -919,7 +916,7 @@ public class Storage
     public String ac_db_history_log_$_0_1(Args args) {
         if(args.argc() == 0) {
             return "db history logging is " +(
-                config.isJdbcMonitoringEnabled()?
+                config.isJdbcLogRequestHistoryInDBEnabled()?
                     " enabled":
                     " disabled");
         }
@@ -929,9 +926,9 @@ public class Storage
             return "syntax error";
         }
 
-        config.setJdbcMonitoringEnabled(on_off.equals("on"));
+        config.setJdbcLogRequestHistoryInDBEnabled(on_off.equals("on"));
         return "db history logging is " +(
-                config.isJdbcMonitoringEnabled()?
+                config.isJdbcLogRequestHistoryInDBEnabled()?
                     " enabled":
                     " disabled");
     }
@@ -943,7 +940,7 @@ public class Storage
     public String ac_db_debug_history_log_$_0_1(Args args) {
         if(args.argc() == 0) {
             return "db debug history logging is " +(
-                config.isJdbcMonitoringDebugLevel()?
+                config.isJdbcLogRequestHistoryInDBEnabled()?
                     " enabled":
                     " disabled");
         }
@@ -953,9 +950,9 @@ public class Storage
             return "syntax error";
         }
 
-        config.setJdbcMonitoringDebugLevel(on_off.equals("on"));
+        config.setJdbcLogRequestHistoryInDBEnabled(on_off.equals("on"));
         return "db debug history logging is " +(
-                config.isJdbcMonitoringDebugLevel()?
+                config.isJdbcLogRequestHistoryInDBEnabled()?
                     " enabled":
                     " disabled");
     }
