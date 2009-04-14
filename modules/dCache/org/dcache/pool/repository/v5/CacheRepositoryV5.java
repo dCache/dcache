@@ -23,7 +23,6 @@ import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.Account;
 import org.dcache.pool.repository.Allocator;
-import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.MetaDataStore;
 import org.dcache.pool.repository.MetaDataLRUOrder;
 import org.dcache.pool.repository.DuplicateEntryException;
@@ -93,14 +92,9 @@ public class CacheRepositoryV5
     private ScheduledExecutorService _executor;
 
     /**
-     * File layout within pool.
-     */
-    private FileStore _fileStore;
-
-    /**
      * Meta data about files in the pool.
      */
-    private MetaDataStore _metaDataStore;
+    private MetaDataStore _store;
 
     /**
      * True while an inventory is build. During this period we block
@@ -215,13 +209,7 @@ public class CacheRepositoryV5
     public synchronized void setMetaDataStore(MetaDataStore store)
     {
         assertNotInitialised();
-        _metaDataStore = store;
-    }
-
-    public synchronized void setFileStore(FileStore store)
-    {
-        assertNotInitialised();
-        _fileStore = store;
+        _store = store;
     }
 
     public synchronized void setSpaceSweeperPolicy(SpaceSweeperPolicy sweeper)
@@ -251,9 +239,9 @@ public class CacheRepositoryV5
             _initialised = true;
 
 
-            _log.warn("Reading inventory from " + _fileStore);
+            _log.warn("Reading inventory from " + _store);
 
-            List<PnfsId> ids = _fileStore.list();
+            List<PnfsId> ids = new ArrayList(_store.list());
             long usedDataSpace = 0L;
             long removableSpace = 0L;
 
@@ -267,8 +255,6 @@ public class CacheRepositoryV5
 
             try {
                 _runningInventory = true;
-
-                _log.warn("Reading meta data from " + _metaDataStore);
 
                 /* Collect all entries.
                  */
@@ -365,8 +351,7 @@ public class CacheRepositoryV5
             if (_checkRepository) {
                 CheckHealthTask task = new CheckHealthTask(this);
                 task.setAccount(_account);
-                task.setMetaDataStore(_metaDataStore);
-                task.setFileStore(_fileStore);
+                task.setMetaDataStore(_store);
                 _executor.scheduleWithFixedDelay(task, 30, 30, TimeUnit.SECONDS);
             }
         } catch (CacheException e) {
@@ -894,35 +879,16 @@ public class CacheRepositoryV5
         throws FileInCacheException
     {
         try {
-            if (_log.isInfoEnabled()) {
-                _log.info("Creating new entry for " + id);
-            }
-
             /* Fail if file already exists.
              */
-            File dataFile = _fileStore.get(id);
-            if (_allEntries.containsKey(id) || dataFile.exists()) {
+            if (_allEntries.containsKey(id)) {
                 _log.warn("Entry already exists: " + id);
                 throw new FileInCacheException("Entry already exists: " + id);
             }
 
-            /* Create meta data record. Recreate if it already exists.
+            /* Create meta data record.
              */
-            MetaDataRecord entry;
-            try {
-                entry = _metaDataStore.create(id);
-            } catch (DuplicateEntryException e) {
-                _log.warn("Deleting orphaned meta data entry for " + id);
-                _metaDataStore.remove(id);
-                try {
-                    entry = _metaDataStore.create(id);
-                } catch (DuplicateEntryException f) {
-                    throw
-                        new RuntimeException("Unexpected repository error", e);
-                }
-            }
-
-            return entry;
+            return _store.create(id);
         } catch (FileInCacheException e) {
             throw e;
         } catch (CacheException e) {
@@ -961,7 +927,7 @@ public class CacheRepositoryV5
          */
         while (!Thread.interrupted()) {
             try {
-                return _metaDataStore.get(id);
+                return _store.get(id);
             } catch (CacheException e) {
                 if (e.getRc() != CacheException.TIMEOUT)
                     throw e;
@@ -984,9 +950,8 @@ public class CacheRepositoryV5
             PnfsId id = entry.getPnfsId();
             _account.free(entry.getSize());
             stateChanged(entry, state, DESTROYED);
-            _fileStore.get(id).delete();
             _allEntries.remove(id);
-            _metaDataStore.remove(id);
+            _store.remove(id);
         }
     }
 

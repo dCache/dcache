@@ -2,6 +2,7 @@ package org.dcache.pool.repository;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 
 import org.apache.log4j.Logger;
 import org.dcache.pool.classic.ChecksumModuleV1;
@@ -18,6 +19,7 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.Checksum;
 import diskCacheV111.util.ChecksumFactory;
+import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.GenericStorageInfo;
 
@@ -28,11 +30,10 @@ import dmg.cells.nucleus.NoRouteToCellException;
  * recovering MetaDataRecord objects from PnfsManager in case they are
  * missing or broken in a MetaDataStore.
  */
-public class RepositoryEntryHealer
+public class ConsistentStore
     implements MetaDataStore
 {
-    private final static Logger _log =
-        Logger.getLogger(RepositoryEntryHealer.class);
+    private final static Logger _log = Logger.getLogger(ConsistentStore.class);
 
     private final static String RECOVERING_MSG =
         "Recovering %1$s...";
@@ -62,20 +63,20 @@ public class RepositoryEntryHealer
     private final MetaDataStore _importStore;
     private final ChecksumModuleV1 _checksumModule;
 
-    public RepositoryEntryHealer(PnfsHandler pnfsHandler,
-                                 ChecksumModuleV1 checksumModule,
-                                 FileStore fileStore,
-                                 MetaDataStore metaDataStore)
+    public ConsistentStore(PnfsHandler pnfsHandler,
+                           ChecksumModuleV1 checksumModule,
+                           FileStore fileStore,
+                           MetaDataStore metaDataStore)
     {
         this(pnfsHandler,checksumModule, fileStore, metaDataStore,
              new EmptyMetaDataStore());
     }
 
-    public RepositoryEntryHealer(PnfsHandler pnfsHandler,
-                                 ChecksumModuleV1 checksumModule,
-                                 FileStore fileStore,
-                                 MetaDataStore metaDataStore,
-                                 MetaDataStore importStore)
+    public ConsistentStore(PnfsHandler pnfsHandler,
+                           ChecksumModuleV1 checksumModule,
+                           FileStore fileStore,
+                           MetaDataStore metaDataStore,
+                           MetaDataStore importStore)
     {
         _pnfsHandler = pnfsHandler;
         _checksumModule = checksumModule;
@@ -89,16 +90,28 @@ public class RepositoryEntryHealer
     }
 
     /**
+     * Returns a collection of IDs of cached entries. The collection
+     * is a live view of the store and will be updated as entries are
+     * added or removed.
+     */
+    @Override
+    public Collection<PnfsId> list()
+    {
+        return _fileStore.list();
+    }
+
+    /**
      * Retrieves a CacheRepositoryEntry from the wrapped meta data
      * store. If the entry is missing or fails consistency checks, the
      * entry is reconstructed with information from PNFS.
      */
+    @Override
     public MetaDataRecord get(PnfsId id)
         throws IllegalArgumentException, CacheException
     {
         File file = _fileStore.get(id);
         if (!file.isFile()) {
-            throw new IllegalArgumentException("File not does exist: " + id);
+            return null;
         }
 
         long length = file.length();
@@ -255,17 +268,49 @@ public class RepositoryEntryHealer
     }
 
     /**
-     * Calls through to the wrapped meta data store.
+     * Creates a new entry. Fails if file already exists in the file
+     * store. If the entry already exists in the meta data store, then
+     * it is overwritten.
      */
+    @Override
     public MetaDataRecord create(PnfsId id)
         throws DuplicateEntryException, CacheException
     {
-        return _metaDataStore.create(id);
+        if (_log.isInfoEnabled()) {
+            _log.info("Creating new entry for " + id);
+        }
+
+        /* Fail if file already exists.
+         */
+        File dataFile = _fileStore.get(id);
+        if (dataFile.exists()) {
+            _log.warn("Entry already exists: " + id);
+            throw new FileInCacheException("Entry already exists: " + id);
+        }
+
+        /* Create meta data record. Recreate if it already exists.
+         */
+        MetaDataRecord entry;
+        try {
+            entry = _metaDataStore.create(id);
+        } catch (DuplicateEntryException e) {
+            _log.warn("Deleting orphaned meta data entry for " + id);
+            _metaDataStore.remove(id);
+            try {
+                entry = _metaDataStore.create(id);
+            } catch (DuplicateEntryException f) {
+                throw
+                    new RuntimeException("Unexpected repository error", e);
+            }
+        }
+
+        return entry;
     }
 
     /**
      * Calls through to the wrapped meta data store.
      */
+    @Override
     public MetaDataRecord create(MetaDataRecord entry)
         throws DuplicateEntryException, CacheException
     {
@@ -275,20 +320,31 @@ public class RepositoryEntryHealer
     /**
      * Calls through to the wrapped meta data store.
      */
+    @Override
     public void remove(PnfsId id)
     {
+        _fileStore.get(id).delete();
         _metaDataStore.remove(id);
     }
 
     /**
      * Calls through to the wrapped meta data store.
      */
+    @Override
     public boolean isOk()
     {
-        return _metaDataStore.isOk();
+        return _fileStore.isOk() && _metaDataStore.isOk();
     }
 
+    @Override
     public void close()
     {
+        _metaDataStore.close();
+    }
+
+    @Override
+    public String toString()
+    {
+        return String.format("[data=%s;meta=%s]", _fileStore, _metaDataStore);
     }
 }

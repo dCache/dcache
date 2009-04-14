@@ -110,9 +110,8 @@
     <property name="account" ref="account"/>
     <property name="allocator" ref="allocator"/>
     <property name="spaceSweeperPolicy" ref="sweeper"/>
-    <property name="fileStore" ref="file-store"/>
     <property name="metaDataStore">
-      <bean class="org.dcache.pool.repository.RepositoryEntryHealer">
+      <bean class="org.dcache.pool.repository.ConsistentStore">
         <constructor-arg ref="csm"/>
         <constructor-arg ref="pnfs"/>
         <constructor-arg ref="file-store"/>

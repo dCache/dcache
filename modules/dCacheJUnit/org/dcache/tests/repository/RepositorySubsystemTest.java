@@ -180,8 +180,8 @@ public class RepositorySubsystemTest
         repository.setPnfsHandler(pnfs);
         repository.setAccount(account);
         repository.setMetaDataStore(metaDataStore);
-        repository.setFileStore(fileStore);
         repository.setExecutor(Executors.newSingleThreadScheduledExecutor());
+        repository.setSynchronousNotification(true);
         repository.addListener(this);
         repository.setSpaceSweeperPolicy(sweeper);
 

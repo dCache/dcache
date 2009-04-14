@@ -1,6 +1,8 @@
 package org.dcache.pool.repository.meta;
 
 import java.io.File;
+import java.util.Collection;
+import java.util.Collections;
 
 import org.dcache.pool.repository.v3.RepositoryException;
 import org.dcache.pool.repository.FileStore;
@@ -21,6 +23,11 @@ public class EmptyMetaDataStore
     public EmptyMetaDataStore(FileStore dataRepository,
                               File directory)
     {
+    }
+
+    public Collection<PnfsId> list()
+    {
+        return Collections.emptyList();
     }
 
     public MetaDataRecord get(PnfsId id)

@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.ArrayList;
 
 import org.dcache.pool.repository.FileStore;
@@ -220,6 +222,10 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
 
     public MetaDataRecord get(PnfsId id) {
         return _entryList.get(id);
+    }
+
+    public Collection<PnfsId> list() {
+        return Collections.unmodifiableCollection(_entryList.keySet());
     }
 
     public boolean isOk() {

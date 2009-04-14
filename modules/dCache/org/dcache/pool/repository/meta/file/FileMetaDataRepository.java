@@ -2,6 +2,9 @@ package org.dcache.pool.repository.meta.file;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Set;
+import java.util.HashSet;
 import org.apache.log4j.Logger;
 
 import org.dcache.pool.repository.FileStore;
@@ -38,6 +41,22 @@ public class FileMetaDataRepository
         if (!_metadir.exists()) {
             _metadir.mkdir();
         }
+    }
+
+    public Collection<PnfsId> list()
+    {
+        String[] files = _metadir.list();
+        Set<PnfsId> ids = new HashSet<PnfsId>(files.length);
+        for (String name: files) {
+            try {
+                if (name.startsWith("SI-"))
+                    name = name.substring(3);
+                ids.add(new PnfsId(name));
+            } catch (IllegalArgumentException e) {
+                // data file contains foreign key
+            }
+        }
+        return ids;
     }
 
     public MetaDataRecord create(PnfsId id)

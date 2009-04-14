@@ -13,7 +13,7 @@ import java.net.URI;
 
 import org.dcache.chimera.FsInode;
 import org.dcache.pool.repository.MetaDataStore;
-import org.dcache.pool.repository.RepositoryEntryHealer;
+import org.dcache.pool.repository.ConsistentStore;
 import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.tests.cells.CellAdapterHelper;
@@ -29,10 +29,10 @@ import diskCacheV111.vehicles.PnfsSetLengthMessage;
 import diskCacheV111.vehicles.StorageInfo;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class RepositoryEntryHealerTest {
+public class ConsistentStoreTest {
 
 
-    private static GenericMockCellHelper _cell = new GenericMockCellHelper("RepositoryEntryHealerTestCell", "");
+    private static GenericMockCellHelper _cell = new GenericMockCellHelper("ConsistentStoreTestCell", "");
     private PnfsHandler      _pnfsHandler;
     private MetaDataStore _repositoryEntryHealer;
     private RepositoryHealerTestChimeraHelper _repositoryHealerTestChimeraHelper;
@@ -47,7 +47,7 @@ public class RepositoryEntryHealerTest {
         _metaDataRepository = new MetaDataRepositoryHelper(_repositoryHealerTestChimeraHelper);
 
 
-        _repositoryEntryHealer = new RepositoryEntryHealer(_pnfsHandler, null, _repositoryHealerTestChimeraHelper, _metaDataRepository);
+        _repositoryEntryHealer = new ConsistentStore(_pnfsHandler, null, _repositoryHealerTestChimeraHelper, _metaDataRepository);
 
     }
 
@@ -75,7 +75,7 @@ public class RepositoryEntryHealerTest {
 
        PnfsGetStorageInfoMessage getStorageInfoMessage = new PnfsGetStorageInfoMessage(pnfsId);
        getStorageInfoMessage.setStorageInfo(info);
-       PnfsAddCacheLocationMessage addCacheLocationMessage = new PnfsAddCacheLocationMessage(pnfsId, "RepositoryEntryHealerTestCell");
+       PnfsAddCacheLocationMessage addCacheLocationMessage = new PnfsAddCacheLocationMessage(pnfsId, "ConsistentStoreTestCell");
 
 
        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), getStorageInfoMessage);
@@ -106,7 +106,7 @@ public class RepositoryEntryHealerTest {
        PnfsGetStorageInfoMessage getStorageInfoMessage = new PnfsGetStorageInfoMessage(pnfsId);
        getStorageInfoMessage.setStorageInfo(info);
 
-       PnfsAddCacheLocationMessage addCacheLocationMessage = new PnfsAddCacheLocationMessage(pnfsId, "RepositoryEntryHealerTestCell");
+       PnfsAddCacheLocationMessage addCacheLocationMessage = new PnfsAddCacheLocationMessage(pnfsId, "ConsistentStoreTestCell");
        PnfsSetLengthMessage setSize = new PnfsSetLengthMessage(pnfsId, inode.stat().getSize());
 
        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), getStorageInfoMessage);
@@ -149,7 +149,7 @@ public class RepositoryEntryHealerTest {
         PnfsGetStorageInfoMessage getStorageInfoMessage = new PnfsGetStorageInfoMessage(pnfsId);
         getStorageInfoMessage.setReply(CacheException.FILE_NOT_FOUND, "file not found");
 
-        PnfsAddCacheLocationMessage addCacheLocationMessage = new PnfsAddCacheLocationMessage(pnfsId, "RepositoryEntryHealerTestCell");
+        PnfsAddCacheLocationMessage addCacheLocationMessage = new PnfsAddCacheLocationMessage(pnfsId, "ConsistentStoreTestCell");
 
         addCacheLocationMessage.setReply(CacheException.FILE_NOT_FOUND, "file not found");
 
@@ -175,7 +175,7 @@ public class RepositoryEntryHealerTest {
        PnfsGetStorageInfoMessage getStorageInfoMessage = new PnfsGetStorageInfoMessage(pnfsId);
        getStorageInfoMessage.setReply(CacheException.FILE_NOT_FOUND, "file not found");
 
-       PnfsAddCacheLocationMessage addCacheLocationMessage = new PnfsAddCacheLocationMessage(pnfsId, "RepositoryEntryHealerTestCell");
+       PnfsAddCacheLocationMessage addCacheLocationMessage = new PnfsAddCacheLocationMessage(pnfsId, "ConsistentStoreTestCell");
 
        addCacheLocationMessage.setReply(CacheException.FILE_NOT_FOUND, "file not found");
 
@@ -235,7 +235,7 @@ public class RepositoryEntryHealerTest {
 
        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), getStorageInfoMessage);
 
-       PnfsAddCacheLocationMessage addCacheLocationMessage = new PnfsAddCacheLocationMessage(pnfsId, "RepositoryEntryHealerTestCell");
+       PnfsAddCacheLocationMessage addCacheLocationMessage = new PnfsAddCacheLocationMessage(pnfsId, "ConsistentStoreTestCell");
        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), addCacheLocationMessage);
 
 

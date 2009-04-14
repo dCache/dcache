@@ -1,5 +1,7 @@
 package org.dcache.pool.repository;
 
+import java.util.Collection;
+
 import org.dcache.pool.repository.v3.RepositoryException;
 
 import diskCacheV111.util.PnfsId;
@@ -11,6 +13,11 @@ import diskCacheV111.util.CacheException;
  */
 public interface MetaDataStore
 {
+    /**
+     * Returns a collection of PNFS ids of available entries.
+     */
+    Collection<PnfsId> list();
+
     /**
      * Retrieves an existing entry previously created with
      * <i>create</i>.

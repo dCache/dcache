@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Collection;
 
 import org.apache.log4j.Logger;
 
@@ -77,6 +78,11 @@ public class BerkeleyDBMetaDataRepository
 
         _database = new MetaDataRepositoryDatabase(_dir, false);
         _views = new MetaDataRepositoryViews(_database);
+    }
+
+    public Collection<PnfsId> list()
+    {
+        throw new RuntimeException("Not implemented");
     }
 
     public MetaDataRecord get(PnfsId id)

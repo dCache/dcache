@@ -19,11 +19,6 @@ class CheckHealthTask implements Runnable
     private Account _account;
 
     /**
-     * File layout within pool.
-     */
-    private FileStore _fileStore;
-
-    /**
      * Meta data about files in the pool.
      */
     private MetaDataStore _metaDataStore;
@@ -43,14 +38,9 @@ class CheckHealthTask implements Runnable
         _metaDataStore = store;
     }
 
-    public void setFileStore(FileStore store)
-    {
-        _fileStore = store;
-    }
-
     public void run()
     {
-        if (!_metaDataStore.isOk() || !_fileStore.isOk()) {
+        if (!_metaDataStore.isOk()) {
             _repository.fail(FaultAction.DISABLED, "I/O test failed");
         }
 
