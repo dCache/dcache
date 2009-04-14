@@ -314,7 +314,7 @@ public abstract class FileRequest extends Job {
     }
     
     public void addDebugHistoryEvent(String description) {
-        if(configuration.isJdbcMonitoringDebugLevel()) {
+        if(configuration.isJdbcLogRequestHistoryInDBEnabled()) {
             addHistoryEvent( description);
         }
     }

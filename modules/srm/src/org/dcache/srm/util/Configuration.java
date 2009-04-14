@@ -254,8 +254,7 @@ public class Configuration {
     private Integer maxQueuedJdbcTasksNum ; //null by default
     private Integer jdbcExecutionThreadNum;//null by default
     private String credentialsDirectory="/opt/d-cache/credentials";
-    private boolean jdbcMonitoringEnabled=false;
-    private boolean jdbcMonitoringDebugLevel = false;
+    private boolean jdbcLogRequestHistoryInDBEnabled = false;
     private boolean cleanPendingRequestsOnRestart = false;
     private boolean overwrite = false;
     private boolean overwrite_by_default = false;
@@ -1372,8 +1371,7 @@ public class Configuration {
         sb.append("\n\tvacuum_period_sec=").append(this.vacuum_period_sec);
         sb.append("\n\tqosPluginClass=").append(this.qosPluginClass);
         sb.append("\n\tqosConfigFile=").append(this.qosConfigFile);
-        sb.append("\n\tjdbcMonitoringEnabled=").append(this.jdbcMonitoringEnabled);
-        sb.append("\n\tjdbcMonitoringDebugLevel=").append(this.jdbcMonitoringDebugLevel);
+        sb.append("\n\tjdbcLogRequestHistoryInDBEnabled=").append(this.jdbcLogRequestHistoryInDBEnabled);
         sb.append("\n\tcleanPendingRequestsOnRestart=").append(this.cleanPendingRequestsOnRestart);
         sb.append("\n\tclientDNSLookup=").append(this.clientDNSLookup);
 
@@ -2430,14 +2428,6 @@ public class Configuration {
         this.credentialsDirectory = credentialsDirectory;
     }
 
-    public boolean isJdbcMonitoringEnabled() {
-        return jdbcMonitoringEnabled;
-    }
-
-    public void setJdbcMonitoringEnabled(boolean jdbcMonitoringEnabled) {
-        this.jdbcMonitoringEnabled = jdbcMonitoringEnabled;
-    }
-
     public boolean isOverwrite() {
         return overwrite;
     }
@@ -2486,12 +2476,12 @@ public class Configuration {
         this.overwrite_by_default = overwrite_by_default;
     }
 
-    public boolean isJdbcMonitoringDebugLevel() {
-        return jdbcMonitoringDebugLevel;
+    public boolean isJdbcLogRequestHistoryInDBEnabled() {
+        return jdbcLogRequestHistoryInDBEnabled;
     }
 
-    public void setJdbcMonitoringDebugLevel(boolean jdbcMonitoringDebugLevel) {
-        this.jdbcMonitoringDebugLevel = jdbcMonitoringDebugLevel;
+    public void setJdbcLogRequestHistoryInDBEnabled(boolean jdbcMonitoringDebugLevel) {
+        this.jdbcLogRequestHistoryInDBEnabled = jdbcMonitoringDebugLevel;
     }
 
     public SRMUserPersistenceManager getSrmUserPersistenceManager() {
