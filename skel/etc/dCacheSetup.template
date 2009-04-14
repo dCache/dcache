@@ -902,6 +902,7 @@ cacheInfo=companion
 #srmDbUser=srmdcache
 #srmDbPassword=srmdcache
 #srmDbLogEnabled=false
+#srmAsynchronousLs=true
 #
 #   The following variable enables logging of the history of the SRM
 #   request transitions in the database so that it can be examined

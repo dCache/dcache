@@ -260,6 +260,7 @@ public class Configuration {
     private boolean overwrite = false;
     private boolean overwrite_by_default = false;
     private int sizeOfSingleRemoveBatch = 100;
+    private boolean asynchronousLs = true;
     private SRMUserPersistenceManager srmUserPersistenceManager;
     private int maxNumberOfLsEntries = 1000;
     private int maxNumberOfLsLevels = 100;
@@ -2451,6 +2452,14 @@ public class Configuration {
 
     public void setSizeOfSingleRemoveBatch(int size) {
 	    sizeOfSingleRemoveBatch=size;
+    }
+
+    public boolean isAsynchronousLs() {
+	    return asynchronousLs;
+    }
+
+    public void setAsynchronousLs(boolean  yes) { 
+	    asynchronousLs=yes;
     }
 
     public int getMaxNumberOfLsLevels() {

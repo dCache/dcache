@@ -17,8 +17,10 @@ import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMTooManyResultsException;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.scheduler.Scheduler;
+import org.dcache.srm.scheduler.State;
 import org.dcache.srm.request.LsRequest;
 import org.dcache.srm.request.LsFileRequest;
+import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.request.sql.LsFileRequestStorage;
 import org.dcache.srm.request.sql.LsRequestStorage;
 /**
@@ -199,9 +201,25 @@ public class SrmLs {
                         r.setNumOfLevels(numOfLevels);
                         r.setLongFormat(longFormat);
                         r.setMaxNumOfResults(max_results_num);
-                        r.setScheduler(scheduler.getId(),0);
-                        r.schedule(scheduler);
-                        return r.getSrmLsResponse();
+                        if (configuration.isAsynchronousLs()) { 
+                                r.setScheduler(scheduler.getId(),0);
+                                r.schedule(scheduler);
+                                return r.getSrmLsResponse();
+                        }
+                        else { 
+                                for (FileRequest fr : r.getFileRequests()) { 
+                                        fr.run();
+                                        if (fr.getState()==State.PENDING) { 
+                                                fr.setState(State.DONE,State.DONE.toString());
+                                        }
+                                }
+                                SrmLsResponse response = new SrmLsResponse();
+                                response.setReturnStatus(r.getTReturnStatus());
+                                ArrayOfTMetaDataPathDetail details = new ArrayOfTMetaDataPathDetail();
+                                details.setPathDetailArray(r.getPathDetailArray());
+                                response.setDetails(details);
+                                return response;
+                        }
                 }
                 catch (Exception e) {
                         e.printStackTrace();

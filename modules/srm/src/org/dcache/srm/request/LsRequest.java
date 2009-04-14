@@ -228,7 +228,7 @@ public class LsRequest extends ContainerRequest {
                 return getId().toString();
         }
 
-        private TMetaDataPathDetail[] getPathDetailArray()
+        public TMetaDataPathDetail[] getPathDetailArray()
                 throws SRMException,java.sql.SQLException {
                 int len = fileRequests.length;
                 TMetaDataPathDetail detail[] = new TMetaDataPathDetail[len];
