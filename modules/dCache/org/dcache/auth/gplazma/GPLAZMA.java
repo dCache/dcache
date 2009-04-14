@@ -351,7 +351,8 @@ public class GPLAZMA extends CellAdapter {
       StringBuilder sb = new StringBuilder();
       for( gPlazmaAuthorizationRecord record : mappedRecords) {
           sb.append("mapped as: ").append(record.getUsername()).append(" ").
-          append(record.getUID()).append(" ").append(record.getGIDs()).append(" ").append(record.getRoot());
+          append(record.getUID()).append(" ").append(Arrays.toString( record.getGIDs()))
+              .append(" ").append(record.getRoot());
       }
       
       return sb.toString();
