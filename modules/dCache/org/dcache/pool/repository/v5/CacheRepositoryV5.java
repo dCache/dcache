@@ -435,7 +435,11 @@ public class CacheRepositoryV5
                 entry.setPrecious();
                 break;
             case REMOVED:
-                _repository.removeEntry(entry);
+                try {
+                    _repository.removeEntry(entry);
+                } catch (FileNotInCacheException e) {
+                    // It's gone already. Never mind...
+                }
                 break;
             case DESTROYED:
                 throw new IllegalArgumentException("Cannot mark entry destroyed");
