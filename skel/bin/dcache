@@ -951,6 +951,7 @@ removePool() # $1 = pool name
 {
     local pool
     local pl
+    local dl
 
     pool=$1
 
@@ -968,24 +969,28 @@ removePool() # $1 = pool name
 		
 	        # Remove pool from pool list file
 		pl=$(getPoolListFile $domain)
-		sed -i -e "/^${pool}.*/ d" ${pl} || exit 1
+		sed -e "/^${pool}.*/ d" ${pl} > ${pl}.$$ || exit
+                mv -f ${pl}.$$ ${pl} || exit
 		
 	        # Disable domain if empty
 		if isFileEmpty $pl; then
-		    rm $pl || exit 1
-		    sed -i -e "/^${domain%Domain}\$/ d" ${config}/${hostname}.domains || exit 1
+		    rm $pl || exit
+                    dl="${config}/${hostname}.domains"
+		    sed -e "/^${domain%Domain}\$/ d" ${dl} > ${dl}.$$ || exit
+                    mv -f ${dl}.$$ ${dl} || exit
 		    printp "Removed pool ${pool} from ${domain}. ${domain}
                             is now empty and has been removed."
 		else
 		    printp "Removed pool ${pool} from ${domain}."
 		fi
 
-		exit 0
+                # Since this runs in a subshell, we return with a a
+                # non-zero return code to signal that removePool
+                # should return too.
+		exit 1
 	    fi
-	done	
-	if [ $? -eq 1 ]; then 
-	    exit 1
-	fi
+	done
+        [ $? -eq 0 ] || return
     done
 
     fail 1 "No pool named ${pool} could be found. Operation aborted." 
@@ -1119,7 +1124,7 @@ if [ $# -eq 0 ]; then
 fi
 
 # Check prerequisites
-require awk df egrep grep sed cat hostname wc dirname basename mount
+require awk df egrep grep sed cat hostname wc dirname basename mount mv
 
 checkNodeType
 readSetup
