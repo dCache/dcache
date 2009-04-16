@@ -473,6 +473,18 @@ public class PoolSelectionUnitV2
         {
             return isEnabled() &&
                 _mode.getMode() != PoolV2Mode.DISABLED &&
+                !_mode.isDisabled(PoolV2Mode.DISABLED_P2P_SERVER) &&
+                !_mode.isDisabled(PoolV2Mode.DISABLED_DEAD);
+        }
+
+        /**
+         * Returns true if the pool can receive files for P2P
+         * operations.
+         */
+        public boolean canWriteForP2P()
+        {
+            return isEnabled() && !isReadOnly() &&
+                _mode.getMode() != PoolV2Mode.DISABLED &&
                 !_mode.isDisabled(PoolV2Mode.DISABLED_P2P_CLIENT) &&
                 !_mode.isDisabled(PoolV2Mode.DISABLED_DEAD);
         }
@@ -1416,7 +1428,7 @@ public class PoolSelectionUnitV2
                                  || (type == DirectionType.CACHE && pool.canReadFromTape()
                                      && poolCanStageFile(pool, storageInfo))
                                  || (type == DirectionType.WRITE && pool.canWrite())
-                                 || (type == DirectionType.P2P && pool.canReadForP2P()))
+                                 || (type == DirectionType.P2P && pool.canWriteForP2P()))
                                 && (_allPoolsActive || pool.isActive())) {
                                 resultList.add(pool.getName());
                             }
@@ -1429,7 +1441,7 @@ public class PoolSelectionUnitV2
                                      || (type == DirectionType.CACHE && pool.canReadFromTape()
                                          && poolCanStageFile(pool, storageInfo))
                                      || (type == DirectionType.WRITE && pool.canWrite())
-                                     || (type == DirectionType.P2P && pool.canReadForP2P()))
+                                     || (type == DirectionType.P2P && pool.canWriteForP2P()))
                                     && (_allPoolsActive || pool.isActive())) {
                                     resultList.add(pool.getName());
                                 }
