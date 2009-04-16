@@ -10,6 +10,7 @@ import java.net.UnknownHostException;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.SyncFailedException;
 import java.io.File;
 import java.io.RandomAccessFile;
 import java.net.UnknownHostException;
@@ -397,6 +398,16 @@ class Companion
                 throw new IOException("Amount of received data does not match expected file size");
             }
         } finally {
+            try {
+                dataFile.getFD().sync();
+            } catch (SyncFailedException e) {
+                /* Data is not guaranteed to be on disk. Not a fatal
+                 * problem, but better generate a warning.
+                 */
+                _log.warn("Failed to synchronize file with storage device: "
+                          + e.getMessage());
+            }
+
             dataFile.close();
         }
 

@@ -23,8 +23,11 @@ import java.io.File;
 import java.io.RandomAccessFile;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.SyncFailedException;
 import java.util.List;
 import java.util.Collections;
+
+import org.apache.log4j.Logger;
 
 /**
  * Encapsulates a write transfer, that is, receiving a file. It acts
@@ -33,6 +36,9 @@ import java.util.Collections;
 public class PoolIOWriteTransfer
     extends PoolIOTransfer
 {
+    private final static Logger _log =
+        Logger.getLogger(PoolIOWriteTransfer.class);
+
     private final WriteHandle _handle;
     private final File _file;
     private final ChecksumModuleV1 _checksumModule;
@@ -137,6 +143,16 @@ public class PoolIOWriteTransfer
                     runMover(raf);
                 }
             } finally {
+                try {
+                    raf.getFD().sync();
+                } catch (SyncFailedException e) {
+                    /* Data is not guaranteed to be on disk. Not a fatal
+                     * problem, but better generate a warning.
+                     */
+                    _log.warn("Failed to synchronize file with storage device: "
+                              + e.getMessage());
+                }
+
                 /* This may throw an IOException, although it is not
                  * clear when this would happen. If it does, we are
                  * probably better off propagating the exception,
