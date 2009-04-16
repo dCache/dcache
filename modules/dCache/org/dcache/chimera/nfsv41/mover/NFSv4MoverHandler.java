@@ -13,12 +13,11 @@ import org.acplt.oncrpc.server.OncRpcDispatchable;
 import org.acplt.oncrpc.server.OncRpcTcpServerTransport;
 import org.apache.log4j.Logger;
 import org.dcache.chimera.FileSystemProvider;
-import org.dcache.chimera.FsInode;
 import org.dcache.chimera.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.chimera.nfs.v4.COMPOUND4args;
 import org.dcache.chimera.nfs.v4.COMPOUND4res;
 import org.dcache.chimera.nfs.v4.CompoundArgs;
-import org.dcache.chimera.nfs.v4.HimeraNFS4Exception;
+import org.dcache.chimera.nfs.ChimeraNFSException;
 import org.dcache.chimera.nfs.v4.NFSv4Call;
 import org.dcache.chimera.nfs.v4.NFSv4OperationResult;
 import org.dcache.chimera.nfs.v4.OperationCOMMIT;
@@ -35,6 +34,7 @@ import org.dcache.chimera.nfs.v4.nfs_argop4;
 import org.dcache.chimera.nfs.v4.nfs_opnum4;
 import org.dcache.chimera.nfs.v4.nfs_resop4;
 import org.dcache.chimera.nfs.v4.nfsstat4;
+import org.dcache.chimera.nfsv41.door.NFSv41Door.StateidAsKey;
 
 /**
  *
@@ -47,7 +47,7 @@ public class NFSv4MoverHandler implements OncRpcDispatchable {
 
     private final FileSystemProvider _fs = new DummyFileSystemProvider();
 
-    private final Map<FsInode, MoverBridge> _activeIO = new HashMap<FsInode, MoverBridge>();
+    private final Map<StateidAsKey, MoverBridge> _activeIO = new HashMap<StateidAsKey, MoverBridge>();
     private final EDSNFSv4OperationFactory _operationFactory = new EDSNFSv4OperationFactory(_activeIO);
 
     public NFSv4MoverHandler(int port) throws OncRpcException, IOException {
@@ -117,7 +117,7 @@ public class NFSv4MoverHandler implements OncRpcDispatchable {
             NFSv4OperationResult opRes = _operationFactory.getOperation(_fs, call$, fh, op[i]).process();
             try {
                 _log.debug("MOVER: CURFH: " + fh.currentInode().toFullString());
-            } catch (HimeraNFS4Exception he) {
+            } catch (ChimeraNFSException he) {
                 _log.debug("MOVER: CURFH: NULL");
             }
 
@@ -134,7 +134,7 @@ public class NFSv4MoverHandler implements OncRpcDispatchable {
         res.resarray = v.toArray(new nfs_resop4[v.size()]);
         try {
             _log.debug("MOVER: CURFH: " + fh.currentInode().toFullString());
-        } catch (HimeraNFS4Exception he) {
+        } catch (ChimeraNFSException he) {
             _log.debug("MOVER: CURFH: NULL");
         }
 
@@ -146,16 +146,6 @@ public class NFSv4MoverHandler implements OncRpcDispatchable {
 
     }
 
-    /*
-     * FIXME:
-     * 
-     * current implementation has a limitation which allow only single transfer
-     * per file and IO {@link FsInode} used for access control. The correct ( NFSv4.1)
-     * way to do it is to use open_stateid. The stateid is actually a part of
-     * {@link NFS4ProtocolInfo} and will be used in the next iteration. 
-     * 
-     */
-
     /**
      * Add specified mover into list of allowed transfers.
      * 
@@ -163,7 +153,7 @@ public class NFSv4MoverHandler implements OncRpcDispatchable {
      */
     public void addHandler(MoverBridge moverBridge) {
         _log.debug("added io handler: " + moverBridge);
-        _activeIO.put( new FsInode(_fs, moverBridge.getPnfsId().toString()), moverBridge );
+        _activeIO.put( new StateidAsKey(moverBridge.getStateid())  , moverBridge );
     }
 
     /**
@@ -173,14 +163,14 @@ public class NFSv4MoverHandler implements OncRpcDispatchable {
      */
     public void removeHandler(MoverBridge moverBridge) {
         _log.debug("removing io handler: " + moverBridge);
-        _activeIO.remove( new FsInode(_fs, moverBridge.getPnfsId().toString())  );
+        _activeIO.remove( new StateidAsKey(moverBridge.getStateid()) );
     }
 
     private static class EDSNFSv4OperationFactory {
 
-        private final Map<FsInode, MoverBridge> _activeIO;
+        private final Map<StateidAsKey, MoverBridge> _activeIO;
 
-        EDSNFSv4OperationFactory(Map<FsInode, MoverBridge> activeIO) {
+        EDSNFSv4OperationFactory(Map<StateidAsKey, MoverBridge> activeIO) {
             _activeIO = activeIO;
         }
 

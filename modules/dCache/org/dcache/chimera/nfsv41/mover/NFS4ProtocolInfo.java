@@ -8,6 +8,8 @@ package org.dcache.chimera.nfsv41.mover;
  */
 import java.net.InetAddress;
 
+import org.dcache.chimera.nfs.v4.stateid4;
+
 import diskCacheV111.vehicles.IpProtocolInfo;
 import dmg.cells.nucleus.CellPath;
 
@@ -20,14 +22,14 @@ public class NFS4ProtocolInfo implements IpProtocolInfo {
 	private static final int _minor = 1;
 	private static final int _major = 4;
 	private final InetAddress _clientIp;
-	private final long _stateId;
+	private final stateid4 _stateId;
 
 	private String[] _knownNames = null;
 
 	private CellPath _door = null;
 
 
-	public NFS4ProtocolInfo(InetAddress clientIp, long stateId) {
+	public NFS4ProtocolInfo(InetAddress clientIp, stateid4 stateId) {
 		_clientIp = clientIp;
 		_stateId = stateId;
 	}
@@ -76,7 +78,7 @@ public class NFS4ProtocolInfo implements IpProtocolInfo {
         _door = door;
     }
 
-    public long stateId() {
+    public stateid4 stateId() {
         return _stateId;
     }
 

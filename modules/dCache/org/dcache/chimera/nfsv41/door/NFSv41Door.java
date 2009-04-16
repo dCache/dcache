@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.acplt.oncrpc.OncRpcException;
 import org.acplt.oncrpc.apps.jportmap.OncRpcEmbeddedPortmap;
@@ -32,7 +31,7 @@ import org.dcache.chimera.namespace.ChimeraStorageInfoExtractable;
 import org.dcache.chimera.nfs.ExportFile;
 import org.dcache.chimera.nfs.v4.DeviceID;
 import org.dcache.chimera.nfs.v4.DeviceManager;
-import org.dcache.chimera.nfs.v4.HimeraNFS4Exception;
+import org.dcache.chimera.nfs.ChimeraNFSException;
 import org.dcache.chimera.nfs.v4.HimeraNFS4Server;
 import org.dcache.chimera.nfs.v4.NFS4IoDevice;
 import org.dcache.chimera.nfs.v4.NFSv41DeviceManager;
@@ -41,13 +40,13 @@ import org.dcache.chimera.nfs.v4.layoutiomode4;
 import org.dcache.chimera.nfs.v4.nfs4_prot;
 import org.dcache.chimera.nfs.v4.nfsstat4;
 import org.dcache.chimera.nfs.v4.stateid4;
-import org.dcache.chimera.nfs.v4.uint32_t;
 import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
+import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.PoolDeliverFileMessage;
 import diskCacheV111.vehicles.PoolIoFileMessage;
@@ -60,6 +59,7 @@ import diskCacheV111.vehicles.StorageInfo;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
+import org.acplt.oncrpc.XdrBufferDecodingStream;
 
 public class NFSv41Door extends AbstractCell implements NFSv41DeviceManager {
 
@@ -76,7 +76,13 @@ public class NFSv41Door extends AbstractCell implements NFSv41DeviceManager {
     /** next device id, 0 reserved for MDS */
     private final AtomicInteger _nextDeviceID = new AtomicInteger(1);
 
-    private final Map<Long, PoolIoFileMessage> _ioMessages = new ConcurrentHashMap<Long, PoolIoFileMessage>();
+    private final Map<StateidAsKey, PoolIoFileMessage> _ioMessages = new ConcurrentHashMap<StateidAsKey, PoolIoFileMessage>();
+
+    /**
+     * The usual timeout for NFS ops. is 30s.
+     * We will use a bit shorter (27s) one to avoid retries.
+     */
+    private final static int NFS_REPLY_TIMEOUT = 27000; 
 
     /**
      * nfsv4 server engine
@@ -107,8 +113,7 @@ public class NFSv41Door extends AbstractCell implements NFSv41DeviceManager {
     private File _exports;
 
     /** request/reply mapping */
-    private final Map<Long, RequestReply> _requestReplyMap = new HashMap<Long, RequestReply>();
-    private final AtomicLong _requestCounter = new AtomicLong(0);
+    private final Map<StateidAsKey, NFS4IoDevice> _requestReplyMap = new HashMap<StateidAsKey, NFS4IoDevice>();
 
     public NFSv41Door(String cellName, String args) throws Exception {
         super(cellName, args);
@@ -222,107 +227,24 @@ public class NFSv41Door extends AbstractCell implements NFSv41DeviceManager {
                     " inet: " + poolAddress);
         }
 
+        XdrBufferDecodingStream xdr = new XdrBufferDecodingStream(message.challange());
+        stateid4 stateid = new stateid4();
+
+        try {
+            xdr.beginDecoding();
+            stateid.xdrDecode(xdr);
+            xdr.endDecoding();
+        }catch(IOException e) {
+            // forced by XDR interface, never happen
+        }catch(OncRpcException e) {
+            // forced by XDR interface, never happen
+        }
+
         synchronized (_requestReplyMap) {
-            _requestReplyMap.put(message.getId(), new RequestReply(device) );
+            _requestReplyMap.put(new StateidAsKey(stateid), device );
             _requestReplyMap.notifyAll();
         }
 
-    }
-
-    /*
-     * Handle reply from PoolManager.
-     * 
-     * After getting a pool name send IO request to the pool.
-     * Notify client in case of error ( GRACE or LAYOUTTRYLATER )
-     * 
-     */
-    public void messageArrived(PoolMgrSelectPoolMsg message) {
-
-        if (message.getReturnCode() == 0) {
-
-            _log.debug("pool received. Requesting the file: " + message.getPoolName());
-
-            PoolIoFileMessage poolMessage ;
-
-            /*
-             * TODO:
-             * 
-             * This part can be split into two messageArrived(XX,YY).
-             * 
-             */
-            if( message instanceof PoolMgrSelectReadPoolMsg ) {
-
-                poolMessage = new PoolDeliverFileMessage(
-                        message.getPoolName(), message.getPnfsId(),
-                        message.getProtocolInfo(), message
-                            .getStorageInfo());
-            }else{
-                poolMessage = new PoolAcceptFileMessage(
-                        message.getPoolName(), message.getPnfsId(),
-                        message.getProtocolInfo(), message
-                                .getStorageInfo());
-            }
-
-            /*
-             * connect pass message id to the new request.
-             * id used to identify device id
-             */
-            poolMessage.setId(message.getId());
-
-            try {
-                sendMessage(new CellMessage(new CellPath(message
-                        .getPoolName()), poolMessage));
-            } catch (NoRouteToCellException e) {
-                /* 
-                 * FIXME:
-                 * 
-                 * It's absolutely valid situation when pool went down before
-                 * we have send IO request to it ( we should be happy about it ).
-                 * 
-                 * Simple add retry mechanism here. To make life easier for now
-                 * I just skip it and will wait till Tatjana implements new
-                 * door framework. 
-                 */
-            }
-        } else {
-            _log.error("pool error: " + message.getReturnCode() + " "
-                    + message.getErrorObject());
-            synchronized (_requestReplyMap) {
-                _requestReplyMap.put(message.getId(), 
-                        new RequestReply(
-                                message.getReturnCode(),
-                                message.getErrorObject())
-                );
-                _requestReplyMap.notifyAll();
-            }
-        }
-    }
-
-    public void messageArrived(PoolIoFileMessage message) {
-        
-        if( message.getReturnCode() != 0 ) {
-            // failed to start a mover
-            _log.error("pool error: " + message.getReturnCode() + " "
-                    + message.getErrorObject());
-            synchronized (_requestReplyMap) {
-                _requestReplyMap.put(message.getId(),
-                        new RequestReply(message.getReturnCode(),
-                                message.getErrorObject())
-                );
-                _requestReplyMap.notifyAll();
-            }
-        }else{
-
-            // keep mover id to stop(kill) it later
-            try {
-                _log.debug("mover ready: pool=" + message.getPoolName() + " moverid=" + message.getMoverId());
-                NFS4ProtocolInfo protocolInfo =  (NFS4ProtocolInfo)message.getProtocolInfo();
-                _ioMessages.put(protocolInfo.stateId(), message);
-            }catch (ClassCastException e) {
-                _log.error("unexpected protocol type received: " + message.getProtocolInfo().getClass());
-            }
-
-        }
     }
 
     @Override
@@ -369,102 +291,130 @@ public class NFSv41Door extends AbstractCell implements NFSv41DeviceManager {
      * On successful reply from pool manager corresponding O request will be sent
      * to the pool to start a NFS mover.
      * 
-     * @throws HimeraNFS4Exception in case of NFS friendly errors ( like ACCESS ) 
+     * @throws ChimeraNFSException in case of NFS friendly errors ( like ACCESS )
      * @throws IOException in case of any other errors
      */
     @Override
-    public IoDevice getIoDevice(FsInode inode, int ioMode, InetAddress clientIp)
+    public NFS4IoDevice getIoDevice(FsInode inode, int ioMode, InetAddress clientIp, stateid4 stateid)
             throws IOException {
 
-        long myRequstId;
-        NFS4IoDevice device;
-
         try {
-
-            myRequstId = _requestCounter.incrementAndGet();
-
-            PoolMgrSelectPoolMsg getPoolMessage = null;
 
             StorageInfo storageInfo = _storageInfoExctractor.getStorageInfo(inode);
 
             PnfsId pnfsId = new PnfsId(inode.toString());
 
-            NFS4ProtocolInfo protocolInfo = new NFS4ProtocolInfo(clientIp, myRequstId);
+            NFS4ProtocolInfo protocolInfo = new NFS4ProtocolInfo(clientIp, stateid);
             protocolInfo.door(new CellPath(this.getCellName(), this
                     .getCellDomainName()));
 
+            return getNFSMover(pnfsId, storageInfo, protocolInfo, ioMode);
 
-            /*
-             * some how I always get a  LAYOUTIOMODE4_RW from solaris client.
-             * let guess what client really wants.
-             */
-            if ( (ioMode == layoutiomode4.LAYOUTIOMODE4_READ) || !storageInfo.isCreatedOnly() ) {
-                _log.debug("looking for read pool for " + inode.toString());
-                getPoolMessage = new PoolMgrSelectReadPoolMsg(pnfsId,
-                        storageInfo, protocolInfo, inode.statCache().getSize());
-            } else {
-                _log.debug("looking for write pool for " + inode.toString());
-                getPoolMessage = new PoolMgrSelectWritePoolMsg(pnfsId,
-                        storageInfo, protocolInfo, 0);
-            }
-
-            try {
-
-                getPoolMessage.setId(myRequstId);
-
-                sendMessage(new CellMessage(_poolManagerPath, getPoolMessage));
-            } catch (NoRouteToCellException e) {
-                throw new IOException(e.getMessage());
-            }
-
-            synchronized (_requestReplyMap) {
-
-                /*
-                 * FIXME;
-                 * 
-                 * usually RPC request will timeout in 30s.
-                 * We have to handle this cases and return LAYOUTTRYLATER
-                 * or GRACE.
-                 * 
-                 */
-                while (!_requestReplyMap.containsKey(myRequstId)) {
-
-                    try {
-                        _requestReplyMap.wait();
-                    } catch (InterruptedException e) {
-                        throw new IOException(e.getMessage());
-                    }
-                }
-
-                RequestReply reply = _requestReplyMap.remove(myRequstId);
-                if( reply.getStatus() != 0 ) {
-                    _log.debug("failed to get layout: " + reply.getError());
-                    throw new HimeraNFS4Exception(nfsstat4.NFS4ERR_LAYOUTTRYLATER, "failed to get layout: " + reply.getError());
-                }
-                device = reply.getDevice();
-                _log.debug("request: " + myRequstId + " : received device: " + Arrays.toString(device.getDeviceId()));
-
-            }
-
-            /*
-             * put you request id as state id.
-             * as soon as LAYOUTRETURN comes with this state id we can kill the mover
-             */
-            stateid4 stateid = new stateid4();
-            stateid.seqid = new uint32_t(0);
-            stateid.other = requestId2State(myRequstId);
-
-            return new IoDevice(device, stateid);
-
-        }catch(ChimeraFsException ce) {
-            // java6 way,  throw new IOException(ce.getMessage(), ce);
-            throw new IOException(ce.getMessage());
+        } catch (InterruptedException e) {
+            throw new IOException(e.getMessage());
         } catch (CacheException ce) {
             // java6 way, throw new IOException(ce.getMessage(), ce);
             throw new IOException(ce.getMessage());
         }
 
+    }
 
+    private NFS4IoDevice getNFSMover(PnfsId pnfsId, StorageInfo storageInfo,
+            NFS4ProtocolInfo protocolInfo, int iomode) throws InterruptedException, IOException {
+
+        PoolMgrSelectPoolMsg getPoolMessage;
+
+        if ( (iomode == layoutiomode4.LAYOUTIOMODE4_READ) || !storageInfo.isCreatedOnly() ) {
+            _log.debug("looking for read pool for " + pnfsId.toString());
+            getPoolMessage = new PoolMgrSelectReadPoolMsg(pnfsId,
+                    storageInfo, protocolInfo, storageInfo.getFileSize() );
+        } else {
+            _log.debug("looking for write pool for " + pnfsId.toString());
+            getPoolMessage = new PoolMgrSelectWritePoolMsg(pnfsId,
+                    storageInfo, protocolInfo, 0);
+        }
+
+        _log.debug("requesting pool for IO: " + pnfsId );
+        getPoolMessage = sendMessageXXX(_poolManagerPath, getPoolMessage, nfsstat4.NFS4ERR_LAYOUTTRYLATER);
+        _log.debug("pool received. Requesting the file: " + getPoolMessage.getPoolName());
+
+        PoolIoFileMessage poolIOMessage ;
+        if ( (iomode == layoutiomode4.LAYOUTIOMODE4_READ) || !storageInfo.isCreatedOnly() ) {
+            poolIOMessage = new PoolDeliverFileMessage(
+                    getPoolMessage.getPoolName(), pnfsId,
+                    protocolInfo, storageInfo);
+        }else{
+            poolIOMessage = new PoolAcceptFileMessage(
+                    getPoolMessage.getPoolName(), pnfsId,
+                    protocolInfo, storageInfo);
+        }
+
+        poolIOMessage = sendMessageXXX( new CellPath(getPoolMessage.getPoolName()),  poolIOMessage, nfsstat4.NFS4ERR_LAYOUTTRYLATER);
+        _log.debug("mover ready: pool=" + getPoolMessage.getPoolName() + " moverid=" +
+                poolIOMessage.getMoverId());
+        _ioMessages.put( new StateidAsKey(protocolInfo.stateId()), poolIOMessage);
+
+            /*
+             * FIXME;
+             * 
+             * usually RPC request will timeout in 30s.
+             * We have to handle this cases and return LAYOUTTRYLATER
+             * or GRACE.
+             * 
+             */
+        NFS4IoDevice device;
+        stateid4 stateid = protocolInfo.stateId();
+        int timeToWait = NFS_REPLY_TIMEOUT;
+        synchronized (_requestReplyMap) {
+            StateidAsKey stateidAsKey = new StateidAsKey(stateid);
+            while (!_requestReplyMap.containsKey(stateidAsKey) && timeToWait > 0) {
+
+                long s = System.currentTimeMillis();
+                _requestReplyMap.wait(NFS_REPLY_TIMEOUT);
+                timeToWait -= System.currentTimeMillis() - s;
+            }
+            if( timeToWait <= 0 ) {
+                throw new ChimeraNFSException(nfsstat4.NFS4ERR_LAYOUTTRYLATER,
+                        "Mover did not started in time");
+            }
+
+            device = _requestReplyMap.remove(stateidAsKey);
+        }
+
+        _log.debug("request: " + Arrays.toString(stateid.other) + " : received device: " + Arrays.toString(device.getDeviceId()));
+
+        return device;
+    }
+
+    
+    private <T extends Message> T sendMessageXXX(CellPath destination, T message, int error_state)
+            throws InterruptedException, IOException {
+
+        CellMessage reply;
+        try {
+            reply = sendAndWait(new CellMessage(destination, message),
+                    NFS_REPLY_TIMEOUT);
+        }catch (NoRouteToCellException e) {
+            // FIXME: in some cases we simply can retry
+            throw new ChimeraNFSException(nfsstat4.NFS4ERR_SERVERFAULT, e.getMessage());
+        }
+
+        if( reply == null ) {
+            throw new ChimeraNFSException(error_state, message.getClass() + " not available in time");
+        }
+
+        if( reply.getMessageObject().getClass().isInstance(Exception.class) ) {
+                Exception e = (Exception)reply.getMessageObject();
+                throw new ChimeraNFSException(nfsstat4.NFS4ERR_SERVERFAULT, e.getMessage());
+        }
+
+        T poolReply = (T)reply.getMessageObject();
+        if( poolReply.getReturnCode() != 0 ) {
+            throw new ChimeraNFSException(error_state,
+                    "pool not available: " + poolReply.getReturnCode() );
+        }
+
+        return poolReply;        
     }
 
     @Override
@@ -490,20 +440,6 @@ public class NFSv41Door extends AbstractCell implements NFSv41DeviceManager {
 
     }
 
-
-    private static byte[] requestId2State(long id) {
-
-
-        byte[] buffer = Long.toHexString(id).getBytes();
-        byte[] devData = new byte[12];
-
-        int len = Math.min(buffer.length, devData.length );
-        System.arraycopy(buffer, 0, devData, 0, len);
-
-        return devData;
-
-    }
-
     /*
      * (non-Javadoc)
      *
@@ -520,17 +456,11 @@ public class NFSv41Door extends AbstractCell implements NFSv41DeviceManager {
      * @see org.dcache.chimera.nfsv4.NFSv41DeviceManager#releaseDevice(IoDevice ioDevice)
      */
     @Override
-    public void releaseDevice(IoDevice ioDevice) {
-        /*
-         * here we have to connect find pool+mover by stateid and kill it
-         */
-
-        stateid4 stateid = ioDevice.getStateid();
+    public void releaseDevice(stateid4 stateid) {
 
         try {
 
-            Long requestId = Long.valueOf( new String(stateid.other).trim(), 16 );
-            PoolIoFileMessage poolIoFileMessage = _ioMessages.remove(requestId);
+            PoolIoFileMessage poolIoFileMessage = _ioMessages.remove(new StateidAsKey(stateid));
             if( poolIoFileMessage != null ) {
 
                 PoolMoverKillMessage message =
@@ -549,42 +479,41 @@ public class NFSv41Door extends AbstractCell implements NFSv41DeviceManager {
         }catch(NumberFormatException nfe) {
             _log.warn("invalid state id: " + new String(stateid.other));
         }
-
-
     }
 
 
     /*
-     * just a dummy class to pass to requester reply or error code
+     * wrapper class to make equals works on stateid4 objects.
+     * The autogeberated code do not provide them,
+     *
+     * TODO: while spec is stabilized, i cann commit all autogenerated files into
+     * source tree and fix classes to natively support equals.
      */
-    private static class RequestReply {
+    public static class StateidAsKey {
 
-        private final int _status;
-        private final NFS4IoDevice _device;
-        private final Object _error;
+        private final stateid4 _stateid;
 
-        RequestReply(NFS4IoDevice device) {
-            _status = 0;
-            _device = device;
-            _error = null;
+        public StateidAsKey(stateid4 stateid) {
+            _stateid = stateid;
         }
 
-        RequestReply(int status, Object error) {
-            _status = status;
-            _device = null;
-            _error = error;
+        @Override
+        public boolean equals(Object obj) {
+
+            if (obj == this) return true;
+
+            if ( !(obj instanceof StateidAsKey))  return false;
+
+            final stateid4 other = ((StateidAsKey) obj)._stateid;
+
+            return other.seqid.value == _stateid.seqid.value && Arrays.equals(_stateid.other, other.other);
         }
 
-        NFS4IoDevice getDevice() {
-            return _device;
+        @Override
+        public int hashCode() {
+            return _stateid.seqid.value;
         }
 
-        Object getError() {
-            return _error;
-        }
-
-        int getStatus() {
-            return _status;
-        }
     }
+
 }

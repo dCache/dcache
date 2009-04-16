@@ -8,26 +8,26 @@ import java.util.Map;
 import org.acplt.oncrpc.server.OncRpcCallInformation;
 import org.apache.log4j.Logger;
 import org.dcache.chimera.FileSystemProvider;
-import org.dcache.chimera.FsInode;
 import org.dcache.chimera.IOHimeraFsException;
 import org.dcache.chimera.nfs.ExportFile;
 import org.dcache.chimera.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.chimera.nfs.v4.CompoundArgs;
-import org.dcache.chimera.nfs.v4.HimeraNFS4Exception;
+import org.dcache.chimera.nfs.ChimeraNFSException;
 import org.dcache.chimera.nfs.v4.NFSv4OperationResult;
 import org.dcache.chimera.nfs.v4.READ4res;
 import org.dcache.chimera.nfs.v4.READ4resok;
 import org.dcache.chimera.nfs.v4.nfs_argop4;
 import org.dcache.chimera.nfs.v4.nfs_opnum4;
 import org.dcache.chimera.nfs.v4.nfsstat4;
+import org.dcache.chimera.nfsv41.door.NFSv41Door.StateidAsKey;
 
 public class EDSOperationREAD extends AbstractNFSv4Operation {
 
     private static final Logger _log = Logger.getLogger(EDSOperationREAD.class.getName());
 
-     private final Map<FsInode, MoverBridge> _activeIO;
+     private final Map<StateidAsKey, MoverBridge> _activeIO;
 
-    public EDSOperationREAD(FileSystemProvider fs, OncRpcCallInformation call$, CompoundArgs fh, nfs_argop4 args,  Map<FsInode, MoverBridge> activeIO, ExportFile exports) {
+    public EDSOperationREAD(FileSystemProvider fs, OncRpcCallInformation call$, CompoundArgs fh, nfs_argop4 args,  Map<StateidAsKey, MoverBridge> activeIO, ExportFile exports) {
         super(fs, exports, call$, fh, args, nfs_opnum4.OP_READ);
         _activeIO = activeIO;
         if(_log.isDebugEnabled() ) {
@@ -44,7 +44,7 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
             long offset = _args.opread.offset.value.value;
             int count = _args.opread.count.value.value;
 
-            MoverBridge moverBridge = _activeIO.get(_fh.currentInode());
+            MoverBridge moverBridge = _activeIO.get(new StateidAsKey(_args.opread.stateid));
 
             byte[] buf = new byte[count];
 
@@ -72,7 +72,7 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
 
         }catch(IOHimeraFsException hioe) {
             res.status = nfsstat4.NFS4ERR_IO;
-        }catch(HimeraNFS4Exception he) {
+        }catch(ChimeraNFSException he) {
             res.status = he.getStatus();
             _log.debug(he.getMessage());
         }catch(IOException ioe) {

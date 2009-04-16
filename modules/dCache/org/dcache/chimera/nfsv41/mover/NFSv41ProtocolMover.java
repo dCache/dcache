@@ -22,6 +22,8 @@ import diskCacheV111.vehicles.StorageInfo;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
+import org.acplt.oncrpc.XdrBufferEncodingStream;
+import org.dcache.chimera.nfs.v4.stateid4;
 
 public class NFSv41ProtocolMover implements ManualMover {
 
@@ -140,19 +142,36 @@ public class NFSv41ProtocolMover implements ManualMover {
         _log.debug("using local interface: " + localIp);
 
         _ioMode = access;
-        MoverBridge moverBridge = new MoverBridge(this, pnfsId, raf.getChannel(), access, allocator );
+        stateid4 stateid = ((NFS4ProtocolInfo) protocol).stateId();
+
+        MoverBridge moverBridge = new MoverBridge(this, pnfsId, stateid, raf.getChannel(), access, allocator );
 
         _nfsIO.addHandler(moverBridge);
         try {
-            
+
             _started = System.currentTimeMillis();
-    
+
+            /*
+             * FIXME:
+             * we need to change someting in PoolPassiveIoFileMessage. Probably
+             * include some protocol specific information, like ProtocolInfo.
+             *
+             * While such change will brake intercomponent and inter version compatibility
+             * let prosponde it till final sollution.
+             *
+             */
+
+            XdrBufferEncodingStream xdr = new XdrBufferEncodingStream(128);
+            xdr.beginEncoding(null, 0);
+            stateid.xdrEncode(xdr);
+            xdr.endEncoding();
+            byte[] d = xdr.getXdrData();
+
             PoolPassiveIoFileMessage msg = new PoolPassiveIoFileMessage(_cell.getCellInfo().getCellName(),
-                    new InetSocketAddress(localIp, DEFAULT_PORT), "".getBytes());
+                    new InetSocketAddress(localIp, DEFAULT_PORT), d);
     
     
             CellPath cellpath = ((NFS4ProtocolInfo) protocol).door();
-            msg.setId( ((NFS4ProtocolInfo) protocol).stateId() );
             _cell.sendMessage(new CellMessage(cellpath, msg));
     
     

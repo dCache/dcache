@@ -12,7 +12,9 @@
         <pathelement location="${classesDir}/gplazma.jar" />
         <pathelement location="${classesDir}/xrootd-tokenauthz.jar" />
         <pathelement location="${libDir}/Chimera/chimera-core.jar" />
+        <pathelement location="${libDir}/Chimera/chimera-nfs.jar" />
         <pathelement location="${libDir}/Chimera/chimera-acl.jar" />
+        <pathelement location="${libDir}/Chimera/oncrpc.jar" />
         <pathelement location="${libDir}/Chimera/hsqldb.jar" />
         <pathelement location="${libDir}/dbcp/c3p0-0.9.1.2.jar" />
         <pathelement location="${libDir}/junit/junit-4.3.1.jar" />
