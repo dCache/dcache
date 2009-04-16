@@ -23,6 +23,9 @@ import dmg.util.Args;
 import dmg.util.CommandException;
 import dmg.util.CommandExitException;
 import dmg.util.CommandInterpreter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 
 public class PoolSelectionUnit {
@@ -490,6 +493,35 @@ public class PoolSelectionUnit {
         assertEquals("Only h1 cache pool with attracion 0", 1, preference[0].getPoolList().size());
         assertEquals("Only h1 cache pool with attracion 0 (h1-read)", "h1-read", preference[0].getPoolList().get(0));
     }
+
+
+    /*
+     * test case: check that we do not select read-only pools as p2p
+     * destinations.
+     */
+	@Test
+    public void testSelectForP2P() throws CommandException {
+
+        _ci.command("psu set allpoolsactive on");
+        _ci.command("psu set pool h1-read rdonly");
+
+        PoolPreferenceLevel[] preference =
+            _psu.match(DirectionType.P2P,  // operation
+                       "h1:u1@osm",   // storage unit
+                       null,    // dCache unit
+                       "131.169.214.149", // net unit
+                       null,  // protocol
+                       null,  // map
+                       null); // linkGroup
+
+        List<String> pools = new ArrayList<String>();
+        for(PoolPreferenceLevel level: preference) {
+            pools.addAll( level.getPoolList() );
+        }
+        assertEquals("More than expected pools selected", 1, pools.size());
+        assertEquals("Unexpected pool selected", "default-read", pools.get(0));
+    }
+
 
 	@Test
 	public void testActive() throws CommandException {
