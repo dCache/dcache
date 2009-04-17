@@ -25,10 +25,12 @@ import org.dcache.chimera.posix.Stat;
 import org.dcache.tests.cells.CellAdapterHelper;
 
 import diskCacheV111.namespace.PnfsManagerV3;
+import diskCacheV111.namespace.StorageInfoProvider;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
+import diskCacheV111.util.StorageInfoExtractable;
 import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsCreateDirectoryMessage;
@@ -39,7 +41,9 @@ import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
 //import diskCacheV111.vehicles.PnfsGetParentMessage;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PnfsRenameMessage;
+import diskCacheV111.vehicles.PnfsSetStorageInfoMessage;
 import diskCacheV111.vehicles.StorageInfo;
+import java.net.URI;
 
 public class PnfsManagerTest {
 
@@ -359,6 +363,57 @@ public class PnfsManagerTest {
 
         _pnfsManager.addCacheLocation(pnfsAddCacheLocationMessage);
         assertTrue("add cache location of non existing file should return FILE_NOT_FOUND", pnfsAddCacheLocationMessage.getReturnCode() == CacheException.FILE_NOT_FOUND );
+    }
+
+    @Test
+    public void testGetStorageInfoForFlushedFiles() throws Exception {
+
+        PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/tapeFile");
+        _pnfsManager.createEntry(pnfsCreateEntryMessage);
+        
+        StorageInfo si = pnfsCreateEntryMessage.getStorageInfo();
+
+        si.addLocation(new URI("osm://osm?tape"));
+        si.isSetAddLocation(true);
+
+        PnfsSetStorageInfoMessage setStorageInfoMessage =
+            new PnfsSetStorageInfoMessage(pnfsCreateEntryMessage.getPnfsId(), si, StorageInfoProvider.SI_APPEND);
+
+        _pnfsManager.setStorageInfo(setStorageInfoMessage);
+
+        PnfsGetStorageInfoMessage pnfsGetStorageInfoMessage =
+            new PnfsGetStorageInfoMessage(pnfsCreateEntryMessage.getPnfsId());
+        _pnfsManager.getStorageInfo(pnfsGetStorageInfoMessage);
+
+        assertEquals("failed to get storageInfo for flushed files", 0,pnfsGetStorageInfoMessage.getReturnCode() );
+
+    }
+
+    @Test
+    public void testStorageInfoDup() throws Exception {
+
+        PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/tapeFileDup");
+        _pnfsManager.createEntry(pnfsCreateEntryMessage);
+
+        StorageInfo si = pnfsCreateEntryMessage.getStorageInfo();
+
+        si.addLocation(new URI("osm://osm?tape"));
+        si.isSetAddLocation(true);
+
+        PnfsSetStorageInfoMessage setStorageInfoMessage =
+            new PnfsSetStorageInfoMessage(pnfsCreateEntryMessage.getPnfsId(), si, StorageInfoProvider.SI_APPEND);
+
+        _pnfsManager.setStorageInfo(setStorageInfoMessage);
+
+        si.addLocation(new URI("osm://osm?tape2"));
+        si.isSetAddLocation(true);
+
+        setStorageInfoMessage =
+            new PnfsSetStorageInfoMessage(pnfsCreateEntryMessage.getPnfsId(), si, StorageInfoProvider.SI_APPEND);
+
+        _pnfsManager.setStorageInfo(setStorageInfoMessage);
+        assertEquals("failed to add second tape locatgion", 0,setStorageInfoMessage.getReturnCode() );
+
     }
 
     @AfterClass

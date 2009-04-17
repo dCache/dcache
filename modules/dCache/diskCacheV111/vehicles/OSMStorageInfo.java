@@ -1,9 +1,4 @@
-package diskCacheV111.vehicles ;
-
-/*
- * @Immutable
- */
-
+package diskCacheV111.vehicles;
 
 public class OSMStorageInfo extends GenericStorageInfo {
  

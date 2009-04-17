@@ -269,6 +269,15 @@ public class ChimeraOsmStorageInfoExtractor implements
 
             if(dCacheStorageInfo.isSetAddLocation() ) {
                 List<URI> locationURIs = dCacheStorageInfo.locations();
+
+                if( !locationURIs.isEmpty() ) {
+                    InodeStorageInformation storageInfo = new InodeStorageInformation(inode,
+                    dCacheStorageInfo.getHsm(),
+                    dCacheStorageInfo.getKey("store"),
+                    dCacheStorageInfo.getKey("group"));
+                    inode.getFs().setStorageInfo(inode, storageInfo);
+                }
+
                 for(URI location : locationURIs) {
                     HsmLocation hsmLocation = HsmLocationExtractorFactory.extractorOf(location);
                     inode.getFs().addInodeLocation(inode, StorageGenericLocation.TAPE, hsmLocation.location().toString());
