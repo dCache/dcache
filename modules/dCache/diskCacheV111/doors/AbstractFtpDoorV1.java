@@ -3800,52 +3800,47 @@ public abstract class AbstractFtpDoorV1
 
         boolean isPattern = arg.indexOf('*') != -1 || arg.indexOf('?') != -1 ||
             (arg.indexOf('[') != -1 && arg.indexOf(']') != -1);
-        PnfsFile f = null;
+        File f;
 
-        try {
-            if (isPattern) {
-                // Convert relative paths to full paths relative to base path
-                if (!arg.startsWith("/")) {
-                    arg = _curDirV + "/" + arg;
-                }
-                FsPath parent_path = new FsPath(arg);
-                List<String> l = parent_path.getPathItemsList();
-                String pattern = l.get(l.size() - 1);
-                parent_path.add("..");
-                String parent = parent_path.toString();
-                if (parent.indexOf('*') != -1 || parent.indexOf('?') != -1 ||
-                    (parent.indexOf('[') != -1 && parent.indexOf(']') != -1)) {
-                    reply("504 Parent Path Pattern Matching is not supported");
-                    return;
-                }
-                String absolute_parent_path = absolutePath(parent_path.toString());
-                if (absolute_parent_path == null) {
-                    FsPath relativeToRootPath = new FsPath(_curDirV);
-                    relativeToRootPath.add(parent_path.toString());
-                    reply("550 " + relativeToRootPath + " not found.");
-                    return;
-                }
-                f = new PnfsFile(absolute_parent_path);
-                if (!f.isDirectory()) {
-                    reply("550 Not a directory");
-                    return;
-                }
-
-                filenameMatcher = new FilenameMatcher(pattern);
-
-            } else {
-                String absolutepath = absolutePath(arg);
-                if (absolutepath == null) {
-                    FsPath relativeToRootPath = new FsPath(_curDirV);
-                    relativeToRootPath.add(arg);
-                    reply("550 " + relativeToRootPath + " not found.");
-                    return;
-                }
-                f = new PnfsFile(absolutepath);
+        if (isPattern) {
+            // Convert relative paths to full paths relative to base path
+            if (!arg.startsWith("/")) {
+                arg = _curDirV + "/" + arg;
             }
-        } catch (CacheException e) {
-            reply("451 Cannot resolve name");
-            return;
+
+            FsPath parent_path = new FsPath(arg);
+            List<String> l = parent_path.getPathItemsList();
+            String pattern = l.get(l.size() - 1);
+            parent_path.add("..");
+            String parent = parent_path.toString();
+            if (parent.indexOf('*') != -1 || parent.indexOf('?') != -1 ||
+                (parent.indexOf('[') != -1 && parent.indexOf(']') != -1)) {
+                reply("504 Parent Path Pattern Matching is not supported");
+                return;
+            }
+            String absolute_parent_path = absolutePath(parent_path.toString());
+            if (absolute_parent_path == null) {
+                FsPath relativeToRootPath = new FsPath(_curDirV);
+                relativeToRootPath.add(parent_path.toString());
+                reply("550 " + relativeToRootPath + " not found.");
+                return;
+            }
+            f = new File(absolute_parent_path);
+            if (!f.isDirectory()) {
+                reply("550 Not a directory");
+                return;
+            }
+
+            filenameMatcher = new FilenameMatcher(pattern);
+        } else {
+            String absolutepath = absolutePath(arg);
+            if (absolutepath == null) {
+                FsPath relativeToRootPath = new FsPath(_curDirV);
+                relativeToRootPath.add(arg);
+                reply("550 " + relativeToRootPath + " not found.");
+                return;
+            }
+            f = new File(absolutepath);
         }
 
         if (!f.exists()) {
@@ -3853,7 +3848,12 @@ public abstract class AbstractFtpDoorV1
             return;
         }
 
-        if (!f.isPnfs()) {
+        try {
+            if (!(new PnfsFile(f.toString())).isPnfs()) {
+                reply("550 Not in PNFS. Access denied.");
+                return;
+            }
+        } catch (CacheException e) {
             reply("550 Not in PNFS. Access denied.");
             return;
         }
