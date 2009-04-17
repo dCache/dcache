@@ -10,6 +10,7 @@
     <property name="location" value="domaincontext:"/>
     <property name="properties">
       <value>
+        replicateOnArrival=off
         poolIoQueue=
         checkRepository=true
         waitForRepositoryReady=false
@@ -46,6 +47,8 @@
               value="${allowCleaningPreciousFiles}"/>
     <property name="LFSMode" 
               value="${lfs}"/>
+    <property name="replicateOnArrival" 
+              value="${replicateOnArrival}"/>
 
     <property name="pnfsHandler" ref="pnfs"/>
     <property name="repository" ref="rep"/>
