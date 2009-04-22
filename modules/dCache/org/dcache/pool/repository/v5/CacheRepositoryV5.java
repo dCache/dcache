@@ -946,8 +946,9 @@ public class CacheRepositoryV5
     synchronized void destroyWhenRemovedAndUnused(MetaDataRecord entry)
     {
         EntryState state = entry.getState();
-        if (entry.getLinkCount() == 0 && state == EntryState.REMOVED) {
-            PnfsId id = entry.getPnfsId();
+        PnfsId id = entry.getPnfsId();
+        if (entry.getLinkCount() == 0 && state == EntryState.REMOVED
+            && _allEntries.containsKey(id)) {
             _account.free(entry.getSize());
             stateChanged(entry, state, DESTROYED);
             _allEntries.remove(id);
