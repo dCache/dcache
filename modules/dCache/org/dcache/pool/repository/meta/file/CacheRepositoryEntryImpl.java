@@ -41,7 +41,7 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry {
     private long _lockUntil = 0;
     private StorageInfo _storageInfo = null;
     private long _creationTime = System.currentTimeMillis();
-    private long _lastAccess = _creationTime;
+    private long _lastAccess;
     private long _size;
 
     private final EventProcessor _eventProcessor;
@@ -89,6 +89,10 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry {
 
         _lastAccess = _dataFile.lastModified();
         _size = _dataFile.length();
+
+        if (_lastAccess == 0) {
+            _lastAccess = _creationTime;
+        }
     }
 
     private void destroy()
