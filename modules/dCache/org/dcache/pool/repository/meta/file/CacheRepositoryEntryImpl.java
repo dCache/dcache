@@ -35,7 +35,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     private int _linkCount = 0;
     private StorageInfo _storageInfo = null;
     private long _creationTime = System.currentTimeMillis();
-    private long _lastAccess = _creationTime;
+    private long _lastAccess;
     private long _size;
 
     /**
@@ -79,6 +79,10 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
 
         _lastAccess = _dataFile.lastModified();
         _size = _dataFile.length();
+
+        if (_lastAccess == 0) {
+            _lastAccess = _creationTime;
+        }
     }
 
     public synchronized void incrementLinkCount() throws CacheException {
