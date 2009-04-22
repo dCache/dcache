@@ -255,6 +255,8 @@ class WriteHandleImpl implements WriteHandle
             throw new IllegalStateException("Handle is closed");
 
         try {
+            _entry.touch();
+
             long length = getFile().length();
             adjustReservation(length);
 

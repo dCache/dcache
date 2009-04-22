@@ -34,7 +34,7 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
 
     private long _creationTime = System.currentTimeMillis();
 
-    private long _lastAccess = _creationTime;
+    private long _lastAccess;
 
     private int  _linkCount = 0;
 
@@ -53,6 +53,9 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
         File file = getDataFile();
         _lastAccess = file.lastModified();
         _size = file.length();
+        if (_lastAccess == 0) {
+            _lastAccess = _creationTime;
+        }
     }
 
     public CacheRepositoryEntryImpl(BerkeleyDBMetaDataRepository repository,
@@ -68,6 +71,9 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
         _state        = new CacheRepositoryEntryState(entry);
         storeStateIfDirty();
         setStorageInfo(entry.getStorageInfo());
+        if (_lastAccess == 0) {
+            _lastAccess = _creationTime;
+        }
     }
 
     private CacheRepositoryEntryImpl(BerkeleyDBMetaDataRepository repository,
@@ -80,6 +86,9 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
         File file = getDataFile();
         _lastAccess = file.lastModified();
         _size = file.length();
+        if (_lastAccess == 0) {
+            _lastAccess = _creationTime;
+        }
     }
 
     private void destroy()
