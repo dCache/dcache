@@ -6,6 +6,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.net.InetSocketAddress;
+import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -147,7 +148,17 @@ class Companion
         }
 
         _id = _acceptor.register(this);
-        _address = _acceptor.getSocketAddress();
+
+        /* Determine address that source pool should connect to. If
+         * the acceptor listens on a wildcard address, then we use the
+         * local host name to select an address.
+         */
+        InetSocketAddress address = _acceptor.getSocketAddress();
+        if (address.getAddress().isAnyLocalAddress()) {
+            address = new InetSocketAddress(InetAddress.getLocalHost(),
+                                            address.getPort());
+        }
+        _address = address;
 
         synchronized (this) {
             _fsm.start();

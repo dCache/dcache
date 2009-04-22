@@ -7,12 +7,14 @@ import java.net.InetSocketAddress;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.net.BindException;
 import java.io.IOException;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicInteger;
+
+import org.dcache.util.PortRange;
 
 import org.apache.log4j.Logger;
 
@@ -26,15 +28,32 @@ class Acceptor implements Runnable
 
     private final Map<Integer, Companion> _sessions =
         new HashMap<Integer, Companion>();
-    private final AtomicInteger _nextId = new AtomicInteger(100);
+    private int _nextId = 100;
     private Thread _worker;
 
     private ServerSocketChannel _serverChannel;
-    private int _port = 0;
+
+    /**
+     * The socket address the acceptor will listen to for incomming
+     * connections.
+     */
+    private InetSocketAddress _address;
+
+    /**
+     * Port range as defined by the org.dcache.net.tcp.portrange
+     * property.
+     */
+    private final PortRange _portRange;
+
     private String _error;
 
     Acceptor()
     {
+        String range = System.getProperty("org.dcache.net.tcp.portrange");
+        if (range == null || range.equals(""))
+            _portRange = new PortRange(0);
+        else
+            _portRange = PortRange.valueOf(range);
     }
 
     /**
@@ -46,7 +65,7 @@ class Acceptor implements Runnable
             start();
         }
 
-        int id = _nextId.getAndIncrement();
+        int id = _nextId++;
         _sessions.put(id, companion);
         return id;
     }
@@ -67,22 +86,25 @@ class Acceptor implements Runnable
     }
 
     /**
-     * Sets the port on which the acceptor is to listen.
+     * Sets the address the Acceptor will listen on. If the port is
+     * zero, a free port is selected within the range defined by
+     * org.dcache.net.tcp.portrange, or a free port is selected by the
+     * OS if the range is not defined.
      */
-    synchronized void setPort(int port)
+    synchronized void setAddress(InetSocketAddress address)
     {
-        if (_serverChannel != null)
-            throw new IllegalStateException("Acceptor already running");
-        _port = port;
+        if (address.isUnresolved())
+            throw new IllegalArgumentException("Address must be resolved");
+
+        _address = address;
     }
 
     /**
-     * Returns the port on which the acceptor is configured to listen.
-     * May return zero, in which a free port is automatically chosen.
+     * Returns the address set with the setAddress method.
      */
-    synchronized int getPort()
+    synchronized InetSocketAddress getAddress()
     {
-        return _port;
+        return _address;
     }
 
     /**
@@ -94,8 +116,8 @@ class Acceptor implements Runnable
         if (_serverChannel == null)
             throw new IllegalStateException("Acceptor not running");
 
-        return new InetSocketAddress(InetAddress.getLocalHost(),
-                                     _serverChannel.socket().getLocalPort());
+        return (InetSocketAddress)
+            _serverChannel.socket().getLocalSocketAddress();
     }
 
     /**
@@ -106,8 +128,7 @@ class Acceptor implements Runnable
         if (_worker == null) {
             try {
                 _serverChannel = ServerSocketChannel.open();
-                _serverChannel.socket().bind(new InetSocketAddress(_port));
-
+                _portRange.bind(_serverChannel.socket(), _address);
                 _worker = new Thread(this, "Acceptor");
                 _worker.start();
             } catch (IOException e) {
@@ -192,10 +213,12 @@ class Acceptor implements Runnable
 
     synchronized public String toString()
     {
+        assert _worker == null || _serverChannel != null;
+
         if (_error != null)
-            return "Error: " + _error;
-        if (_serverChannel == null)
-            return "Port: " + _port;
-        return "Port: " + _serverChannel.socket().getLocalPort();
+            return _error;
+        if (_worker == null)
+            return _address.toString();
+        return _serverChannel.socket().getLocalSocketAddress().toString();
     }
 }

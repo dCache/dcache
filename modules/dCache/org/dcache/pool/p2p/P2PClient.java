@@ -4,6 +4,7 @@ package org.dcache.pool.p2p;
 
 import java.io.PrintWriter;
 import java.net.UnknownHostException;
+import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Collections;
 import java.util.List;
@@ -257,20 +258,26 @@ public class P2PClient
 
     public synchronized void getInfo(PrintWriter pw)
     {
-        pw.println("  Listener   : " + _acceptor);
+        pw.println("  Listen     : " + _acceptor);
         pw.println("  Max Active : " + _maxActive);
         pw.println("Pnfs Timeout : " + (_pnfs.getTimeout() / 1000L) + " seconds ");
     }
 
     public synchronized void printSetup(PrintWriter pw)
     {
-        pw.println("#\n#  Pool to Pool (P2P) [$Id: P2PClient.java,v 1.21 2007-10-31 17:27:11 radicke Exp $]\n#");
-        pw.println("pp set port " + _acceptor.getPort());
+        pw.println("#\n#  Pool to Pool (P2P) [$Revision$]\n#");
+        InetSocketAddress address = _acceptor.getAddress();
+        if (address.getAddress().isAnyLocalAddress()) {
+            pw.println("pp set port " + address.getPort());
+        } else {
+            pw.println("pp set listen " +
+                       address.getHostName() + " " + address.getPort());
+        }
         pw.println("pp set max active " + _maxActive);
         pw.println("pp set pnfs timeout " + (_pnfs.getTimeout() / 1000L));
     }
 
-    public final String hh_pp_set_pnfs_timeout = "<Timeout/sec>";
+    public static final String hh_pp_set_pnfs_timeout = "<Timeout/sec>";
     public synchronized String ac_pp_set_pnfs_timeout_$_1(Args args)
     {
         long timeout = Long.parseLong(args.argv(0));
@@ -278,21 +285,43 @@ public class P2PClient
         return "Pnfs timeout set to " + timeout + " seconds";
     }
 
-    public final String hh_pp_set_max_active = "<normalization>";
+    public static final String hh_pp_set_max_active = "<normalization>";
     public synchronized String ac_pp_set_max_active_$_1(Args args)
     {
         _maxActive = Integer.parseInt(args.argv(0));
         return "";
     }
 
-    public final String hh_pp_set_port = "<listenPort>";
+    public static final String fh_pp_set_port =
+        "Equivalent to calling 'pp set listen * <listenPort>'";
+    public static final String hh_pp_set_port = "<listenPort>";
     public synchronized String ac_pp_set_port_$_1(Args args)
     {
-        _acceptor.setPort(Integer.parseInt(args.argv(0)));
+        _acceptor.setAddress(new InetSocketAddress(Integer.parseInt(args.argv(0))));
         return "";
     }
 
-    public final String hh_pp_get_file = "<pnfsId> <pool>";
+    public static final String fh_pp_set_listen =
+        "Specifies the interface and port on which to listen for connections\n"+
+        "from other pools. Use * to select the wildcard address. If port is\n"+
+        "ommitted or set to 0, then a free port is selected from the range\n"+
+        "defined by org.dcache.net.tcp.portrange. If the range is not\n"+
+        "defined then a free port is selected by the OS.\n\n"+
+        "Changes will not have any effect until the pool is idle.";
+    public static final String hh_pp_set_listen = "<address> [<port>]";
+    public synchronized String ac_pp_set_listen_$_1_2(Args args)
+        throws UnknownHostException
+    {
+        String host = args.argv(0);
+        int port = (args.argc() == 2) ? Integer.parseInt(args.argv(1)) : 0;
+        InetSocketAddress address = host.equals("*")
+            ? new InetSocketAddress(port)
+            : new InetSocketAddress(host, port);
+        _acceptor.setAddress(address);
+        return "";
+    }
+
+    public static final String hh_pp_get_file = "<pnfsId> <pool>";
     public synchronized String ac_pp_get_file_$_2(Args args)
         throws CacheException, UnknownHostException
     {
@@ -303,7 +332,7 @@ public class P2PClient
         return "Transfer Initiated";
     }
 
-    public final String hh_pp_remove = "<id>";
+    public static final String hh_pp_remove = "<id>";
     public synchronized String ac_pp_remove_$_1(Args args)
         throws NumberFormatException
     {
@@ -313,7 +342,7 @@ public class P2PClient
         return "";
     }
 
-    public final String hh_pp_ls = " # get the list of companions";
+    public static final String hh_pp_ls = " # get the list of companions";
     public synchronized String ac_pp_ls(Args args)
     {
         StringBuilder sb = new StringBuilder();

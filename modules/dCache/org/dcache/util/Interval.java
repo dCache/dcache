@@ -19,6 +19,16 @@ public class Interval
         return lower <= value && value <= upper;
     }
 
+    public long getLower()
+    {
+        return lower;
+    }
+
+    public long getUpper()
+    {
+        return upper;
+    }
+
     /**
      * Parse an interval in the format N..M. If N or M is omitted,
      * then the interval will be open-ended (represented by
