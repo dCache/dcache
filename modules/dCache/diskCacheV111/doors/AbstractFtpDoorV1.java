@@ -3727,6 +3727,52 @@ public abstract class AbstractFtpDoorV1
         list(args,long_format);
     }
 
+    private String ftpListLong(File file, Subject subject)
+        throws CacheException
+    {
+        StringBuilder mode = new StringBuilder();
+        String path = file.getAbsolutePath();
+
+        if (file.isDirectory()) {
+            boolean canListDir =
+                _permissionHandler.canListDir(subject, path, _origin);
+            boolean canCreateFile =
+                _permissionHandler.canCreateFile(subject, path, _origin);
+            boolean canCreateDir =
+                _permissionHandler.canCreateDir(subject, path, _origin);
+            mode.append('d');
+            mode.append(canListDir ? 'r' : '-');
+            mode.append(canCreateFile || canCreateDir ? 'w' : '-');
+            mode.append(canListDir ? 'x' : '-');
+            mode.append("------");
+        } else {
+            boolean canReadFile =
+                _permissionHandler.canReadFile(subject, path, _origin);
+            mode.append('-');
+            mode.append(canReadFile ? 'r' : '-');
+            mode.append('-');
+            mode.append('-');
+            mode.append("------");
+        }
+
+        long modified = file.lastModified();
+        long age = System.currentTimeMillis() - modified;
+        String format;
+        if (age > (182L * 24 * 60 * 60 * 1000)) {
+            format = "%1$s  1 %2$-10s %3$-10s %4$12d %5$tb %5$2te %5$5tY %6$s";
+        } else {
+            format = "%1$s  1 %2$-10s %3$-10s %4$12d %5$tb %5$2te %5$5tR %6$s";
+        }
+
+        return String.format(format,
+                             mode,
+                             _pwdRecord.Username,
+                             _pwdRecord.Username,
+                             file.length(),
+                             modified,
+                             file.getName());
+    }
+
     public void list(Args args,boolean listLong)
     {
         debug("FTP Door: list args = \"" +
@@ -3813,36 +3859,21 @@ public abstract class AbstractFtpDoorV1
         }
 
         StringBuffer result = new StringBuffer();
-        for (int i = 0; i < files.length; ++i){
-            File nextf = files[i];
-            int line_length=0;
-            if (listLong){
-                try {
-                    Subject subject = new Subject(_pwdRecord.UID, _pwdRecord.GID);
-                    result.append(nextf.isDirectory()?'d':'-');
-                    line_length++;
-                    result.append( _permissionHandler.canReadFile(subject, nextf.getAbsolutePath(), _origin) ?'r':'-');
-                    line_length++;
-                    result.append( _permissionHandler.canWriteFile(subject, nextf.getAbsolutePath(), _origin) ?'w':'-');
-                    line_length++;
-
-                    result.append("               ");
-                    line_length+= 15;
-                    long length =  nextf.length();
-                    String length_str = Long.toString(length);
-                    result.append(length_str);
-                    line_length +=length_str.length();
-                } catch (CacheException e){
-                    result.append('?');
+        try {
+            Subject subject = new Subject(_pwdRecord.UID, _pwdRecord.GID);
+            for (int i = 0; i < files.length; ++i){
+                File nextf = files[i];
+                int line_length=0;
+                if (listLong){
+                    result.append(ftpListLong(nextf, subject));
+                } else {
+                    result.append(nextf.getName());
                 }
-
-                while (line_length<30){
-                    line_length++;
-                    result.append(' ');
-                }
+                result.append('\r').append('\n');
             }
-            result.append(nextf.getName());
-            result.append('\r').append('\n');
+        } catch (CacheException e) {
+            reply("451 Internal lookup failure: " + e);
+            return;
         }
 
         OutputStream ostream = null;
@@ -4523,14 +4554,14 @@ public abstract class AbstractFtpDoorV1
 
     private void sendRemoveInfoToBilling(String pathInPnfs) {
  	    try {
-    	    DoorRequestInfoMessage infoRemove = 
+    	    DoorRequestInfoMessage infoRemove =
         	    new DoorRequestInfoMessage(getNucleus().getCellName()+"@"+
                                            getNucleus().getCellDomainName(), "remove");
     	    infoRemove.setOwner(_dnUser == null? _user : _dnUser);
             infoRemove.setGid(_pwdRecord.GID);
             infoRemove.setUid(_pwdRecord.UID);
             infoRemove.setPath(pathInPnfs);
-            infoRemove.setClient(_client_data_host);  
+            infoRemove.setClient(_client_data_host);
 
     	    sendMessage(new CellMessage(_billingCellPath, infoRemove));
     	    } catch (NoRouteToCellException e) {
