@@ -1374,6 +1374,7 @@ public class Configuration {
         sb.append("\n\tjdbcLogRequestHistoryInDBEnabled=").append(this.jdbcLogRequestHistoryInDBEnabled);
         sb.append("\n\tcleanPendingRequestsOnRestart=").append(this.cleanPendingRequestsOnRestart);
         sb.append("\n\tclientDNSLookup=").append(this.clientDNSLookup);
+        sb.append("\n\tasync-ls=").append(this.asynchronousLs);
 
         return sb.toString();
     }

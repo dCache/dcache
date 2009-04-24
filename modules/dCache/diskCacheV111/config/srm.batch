@@ -429,6 +429,6 @@ create diskCacheV111.srm.dcache.Storage  SRM-${thisHostname} \
         -ignore-client-protocol-order=${srmIgnoreClientProtocolOrder}\
         -size-of-single-remove-batch=${srmSizeOfSingleRemoveBatch}\
         -clean-pending-requests-on-restart=${srmCleanPendingRequestsOnRestart}\
-        -use-asynchronous-ls={srmAsynchronousLs}\
+        -use-asynchronous-ls=${srmAsynchronousLs}\
         -client-dns-lookup=${srmClientDNSLookup}\
        "
