@@ -20,24 +20,24 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import org.dcache.chimera.acl.ACE;
-import org.dcache.chimera.acl.ACL;
-import org.dcache.chimera.acl.Origin;
-import org.dcache.chimera.acl.Owner;
-import org.dcache.chimera.acl.Permission;
-import org.dcache.chimera.acl.Subject;
-import org.dcache.chimera.acl.enums.AccessMask;
-import org.dcache.chimera.acl.enums.AceType;
-import org.dcache.chimera.acl.enums.Action;
-import org.dcache.chimera.acl.enums.AuthType;
-import org.dcache.chimera.acl.enums.FileAttribute;
-import org.dcache.chimera.acl.enums.OpenType;
-import org.dcache.chimera.acl.enums.RsType;
-import org.dcache.chimera.acl.enums.Who;
-import org.dcache.chimera.acl.handler.singleton.AclHandler;
-import org.dcache.chimera.acl.mapper.AclMapper;
-import org.dcache.chimera.acl.matcher.AclNFSv4Matcher;
-import org.dcache.chimera.acl.test.GenID;
+import org.dcache.acl.ACE;
+import org.dcache.acl.ACL;
+import org.dcache.acl.Origin;
+import org.dcache.acl.Owner;
+import org.dcache.acl.Permission;
+import org.dcache.acl.Subject;
+import org.dcache.acl.enums.AccessMask;
+import org.dcache.acl.enums.AceType;
+import org.dcache.acl.enums.Action;
+import org.dcache.acl.enums.AuthType;
+import org.dcache.acl.enums.FileAttribute;
+import org.dcache.acl.enums.OpenType;
+import org.dcache.acl.enums.RsType;
+import org.dcache.acl.enums.Who;
+import org.dcache.acl.handler.singleton.AclHandler;
+import org.dcache.acl.mapper.AclMapper;
+import org.dcache.acl.matcher.AclNFSv4Matcher;
+import org.dcache.chimera.InodeId;
 
 /**
  * @author Irina Kozlova, David Melkumyan
@@ -1432,7 +1432,7 @@ public class TestjUnitACL {
     }
 
     protected String genRsID() throws Exception {
-        String rsID = GenID.newID(0);
+        String rsID = InodeId.newID(0);
         return rsID;
     }
 

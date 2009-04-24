@@ -5,13 +5,13 @@ import java.util.List;
 import java.util.Properties;
 
 import org.apache.log4j.Logger;
-import org.dcache.chimera.acl.ACE;
-import org.dcache.chimera.acl.ACL;
-import org.dcache.chimera.acl.ACLException;
-import org.dcache.chimera.acl.config.AclConfig;
-import org.dcache.chimera.acl.enums.RsType;
-import org.dcache.chimera.acl.handler.AclHandler;
-import org.dcache.chimera.acl.parser.ACEParser;
+import org.dcache.acl.ACE;
+import org.dcache.acl.ACL;
+import org.dcache.acl.ACLException;
+import org.dcache.acl.config.AclConfig;
+import org.dcache.acl.enums.RsType;
+import org.dcache.acl.handler.AclHandler;
+import org.dcache.acl.parser.ACEParser;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileMetaData;

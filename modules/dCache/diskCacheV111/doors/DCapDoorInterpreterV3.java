@@ -26,12 +26,12 @@ import diskCacheV111.util.RetentionPolicy;
 import org.dcache.auth.UserAuthRecord;
 
 import diskCacheV111.util.PnfsHandler;
-import org.dcache.chimera.acl.ACLException;
-import org.dcache.chimera.acl.Origin;
-import org.dcache.chimera.acl.Subject;
-import org.dcache.chimera.acl.enums.AccessType;
-import org.dcache.chimera.acl.enums.AuthType;
-import org.dcache.chimera.acl.enums.FileAttribute;
+import org.dcache.acl.ACLException;
+import org.dcache.acl.Origin;
+import org.dcache.acl.Subject;
+import org.dcache.acl.enums.AccessType;
+import org.dcache.acl.enums.AuthType;
+import org.dcache.acl.enums.FileAttribute;
 
 /**
  * @author Patrick Fuhrmann

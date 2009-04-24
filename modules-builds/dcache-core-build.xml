@@ -53,7 +53,6 @@
         <pathelement location="${libDir}/Chimera/chimera-nfs.jar" />
         <pathelement location="${libDir}/Chimera/oncrpc.jar" />
         <pathelement location="${libDir}/Chimera/portmap.jar" />
-        <pathelement location="${libDir}/Chimera/chimera-acl.jar" />
     </path>
 
     <path id="dcache.classpath">
@@ -89,6 +88,7 @@
         <pathelement location="${classesDir}/srm.jar" />
         <pathelement location="${libDir}/jpox/jdo2-api-2.0.jar" />
         <pathelement location="${libDir}/jpox/jpox-core-1.2.2.jar" />
+        <pathelement location="${libDir}/Chimera/commons-cli-1.0.jar" />
     </path>
 
 
@@ -418,7 +418,6 @@
         <!-- Chimera -->
         <mkdir dir="${server.bin.dir}/classes/chimera" />
         <copy file="${libDir}/Chimera/chimera-core.jar" todir="${server.bin.dir}/classes/chimera" />
-        <copy file="${libDir}/Chimera/chimera-acl.jar" todir="${server.bin.dir}/classes/chimera" />
         <copy file="${libDir}/Chimera/chimera-config.xml" todir="${server.bin.dir}/config" />
         <copy file="${libDir}/Chimera/oncrpc.jar" todir="${server.bin.dir}/classes/chimera" />
         <copy file="${libDir}/Chimera/portmap.jar" todir="${server.bin.dir}/classes/chimera" />

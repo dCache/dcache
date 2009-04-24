@@ -2,10 +2,10 @@ package org.dcache.tests.namespace;
 
 import static org.junit.Assert.assertTrue;
 
-import org.dcache.chimera.acl.Origin;
-import org.dcache.chimera.acl.Subject;
-import org.dcache.chimera.acl.enums.AccessType;
-import org.dcache.chimera.acl.enums.AuthType;
+import org.dcache.acl.Origin;
+import org.dcache.acl.Subject;
+import org.dcache.acl.enums.AccessType;
+import org.dcache.acl.enums.AuthType;
 import org.dcache.tests.cells.CellAdapterHelper;
 import org.dcache.tests.namespace.FileMetaDataProviderHelper;
 import org.junit.Before;

@@ -154,13 +154,13 @@ import diskCacheV111.services.FileMetaDataSource;
 
 import org.dcache.cells.AbstractCell;
 import org.dcache.cells.Option;
-import org.dcache.chimera.acl.ACLException;
-import org.dcache.chimera.acl.Origin;
-import org.dcache.chimera.acl.Subject;
-import org.dcache.chimera.acl.enums.AccessType;
-import org.dcache.chimera.acl.enums.AuthType;
-import org.dcache.chimera.acl.enums.FileAttribute;
-import org.dcache.chimera.acl.enums.InetAddressType;
+import org.dcache.acl.ACLException;
+import org.dcache.acl.Origin;
+import org.dcache.acl.Subject;
+import org.dcache.acl.enums.AccessType;
+import org.dcache.acl.enums.AuthType;
+import org.dcache.acl.enums.FileAttribute;
+import org.dcache.acl.enums.InetAddressType;
 
 import dmg.cells.nucleus.CDC;
 
