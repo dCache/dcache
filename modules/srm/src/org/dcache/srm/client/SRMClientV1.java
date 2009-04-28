@@ -833,8 +833,101 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
             }
         }
     }
+
     public boolean ping() {
-        return true;
+        if(glue_isrm != null) {
+                try {
+                    if(user_cred.getRemainingLifetime() < 60) {
+                        throw new RuntimeException("credential remaining lifetime is less then a minute ");
+                    }
+                }
+                catch(org.ietf.jgss.GSSException gsse) {
+                    throw new RuntimeException(gsse);
+                }
+
+                try {
+                    socket_factory.lockCredential(user_cred);
+                }
+                catch(InterruptedException ie) {
+                    //esay(ie);
+                    throw new RuntimeException(ie);
+                }
+                int i = 0;
+                while(true) {
+                    try {
+                        return glue_isrm.ping();
+                    }
+                    catch(RuntimeException e) {
+                        esay("ping: try #"+i+" failed with error");
+                        esay(e.getMessage());
+                        if(i <retries) {
+                            i++;
+                            esay("ping: try again");
+                        }
+                        else {
+                            throw e;
+                        }
+                    }
+                    finally {
+                        socket_factory.unlockCredentialAndCloseSocket();
+                    }
+
+                    try {
+                        say("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
+                        Thread.sleep(retrytimeout*i);
+                    }
+                    catch(InterruptedException ie) {
+                    }
+                }
+
+        }
+        else {
+            if (axis_isrm == null) { throw new NullPointerException ("both isrms are null!!!!");}
+            say(" ping, contacting service "+service_url);
+            int i = 0;
+            while(true) {
+
+                try {
+                    if(user_cred.getRemainingLifetime() < 60) {
+                        throw new RuntimeException("credential remaining lifetime is less then a minute ");
+                    }
+                }
+                catch(org.ietf.jgss.GSSException gsse) {
+                    throw new RuntimeException(gsse);
+                }
+
+
+                try {
+                    try
+                    {
+                          return axis_isrm.ping();
+                    }catch(java.rmi.RemoteException re) {
+                        //esay(re);
+                        throw new RuntimeException (re.toString());
+                    }
+
+                }
+                catch(RuntimeException e) {
+                    esay("ping: try # "+i+" failed with error");
+                    esay(e.getMessage());
+                    if(i <retries) {
+                        i++;
+                        esay("ping: try again");
+                    }
+                    else {
+                        throw e;
+                    }
+                }
+                try {
+                    say("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
+                    Thread.sleep(retrytimeout*i);
+                }
+                catch(InterruptedException ie) {
+                }
+
+            }
+
+        }
     }
     
     public diskCacheV111.srm.RequestStatus mkPermanent( String[] SURLS ) {
