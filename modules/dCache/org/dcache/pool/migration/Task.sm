@@ -73,6 +73,7 @@ UpdatingExistingFile
         timeout
                 Failed
                 {
+                        fail("Remote pool failed (no response)");
                 }
         noroute
                 [ ctxt.hasMoreLocations() ]
@@ -88,6 +89,7 @@ UpdatingExistingFile
         noroute
                 Failed
                 {
+                        fail("Remote pool failed (no route to cell)");
                 }
         failure(rc: int, cause: Object)
                 [ ctxt.hasMoreLocations() ]
