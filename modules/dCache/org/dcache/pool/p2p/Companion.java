@@ -537,7 +537,7 @@ class Companion
     synchronized void ping()
     {
         _pool.send(new CellPath(_poolName),
-                   "mover ls -binary " + _moverId, IoJobInfo.class,
+                   "p2p ls -binary " + _moverId, IoJobInfo.class,
                    new Callback());
     }
 
