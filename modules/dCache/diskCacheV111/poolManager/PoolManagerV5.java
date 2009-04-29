@@ -10,6 +10,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -47,6 +48,7 @@ import diskCacheV111.vehicles.PoolStatusChangedMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.QuotaMgrCheckQuotaMessage;
 import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
@@ -734,6 +736,11 @@ public class PoolManagerV5 extends CellAdapter {
         } catch (InterruptedException e) {
             msg.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                           "Pool manager is shutting down");
+        } catch (NoSuchElementException e) {
+            Collection<PoolManagerPoolInformation> empty =
+                Collections.emptyList();
+            msg.setPools(empty);
+            msg.setReply();
         }
 
         try {
@@ -753,8 +760,11 @@ public class PoolManagerV5 extends CellAdapter {
         } catch (InterruptedException e) {
             msg.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                           "Pool manager is shutting down");
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (NoSuchElementException e) {
+            Collection<PoolManagerPoolInformation> empty =
+                Collections.emptyList();
+            msg.setPools(empty);
+            msg.setReply();
         }
 
         envelope.revertDirection();
