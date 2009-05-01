@@ -89,6 +89,9 @@ import java.io.PrintWriter;
 import java.io.BufferedReader;
 import java.io.FilenameFilter;
 import java.io.OutputStream;
+import java.io.BufferedOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.EOFException;
 import java.net.Socket;
 import java.net.InetSocketAddress;
 import java.lang.reflect.InvocationTargetException;
@@ -3933,8 +3936,85 @@ public abstract class AbstractFtpDoorV1
 
     public void ac_nlst(String arg)
     {
-        Args args = new Args(arg);
-        list(args, false);
+        if (arg.equals("")) {
+            arg = ".";
+        }
+
+        try {
+            /* 550 is now a valid reply for NLST. However other FTP
+             * servers use this return code for NLST. Gerd and Timur
+             * decided to follow their example and violate the spec.
+             */
+            String path = absolutePath(arg);
+            if (path == null) {
+                reply("550 Access denied");
+                return;
+            }
+            PnfsFile dir = new PnfsFile(path);
+            if (!dir.isPnfs() || !dir.isDirectory()) {
+                reply("550 Directory not found");
+                return;
+            }
+
+            reply("150 Opening ASCII data connection for file list", false);
+            try {
+                /* Mode being PASSIVE means the client did a PASV.
+                 * Otherwise we establish the data connection to the
+                 * client.
+                 */
+                if (_mode == Mode.PASSIVE) {
+                    _dataSocket = _adapter.acceptOnClientListener();
+                } else {
+                    _dataSocket =
+                        new Socket(_client_data_host, _client_data_port);
+                }
+            } catch (IOException e) {
+                reply("425 Cannot open port");
+                return;
+            }
+
+            int total = 0;
+            try {
+                PrintWriter writer =
+                    new PrintWriter(new OutputStreamWriter(new BufferedOutputStream(_dataSocket.getOutputStream()), "US-ASCII"));
+
+                File[] files = dir.listFiles();
+                if (files != null) {
+                    for (File file: files) {
+                        total++;
+                        writer.append(file.getName()).append("\r\n");
+                    }
+                }
+                writer.close();
+            } finally {
+                try {
+                    _dataSocket.close();
+                } catch (IOException e) {
+                    warn("FTP Door: got I/O exception closing socket: " +
+                         e.getMessage());
+                }
+                _dataSocket = null;
+                if (_mode == Mode.PASSIVE) {
+                    info("FTP door: list is waiting for passive adapter...");
+                    while (_adapter.isAlive()) {
+                        try {
+                            _adapter.join(300000);  // 5 minutes
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                    }
+                }
+            }
+            reply("226 " + total + " files");
+        } catch (CacheException e) {
+            reply("451 Local error in processing");
+            warn("Error in NLST: " + e.getMessage());
+        } catch (EOFException e) {
+            reply("426 Connection closed; transfer aborted");
+        } catch (IOException e) {
+            reply("451 Local error in processing");
+            warn("Error in NLST: " + e.getMessage());
+        }
     }
 
     //----------------------------------------------
