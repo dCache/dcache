@@ -2754,13 +2754,13 @@ public class Manager
 				       long lifetime,
 				       String pnfsPath,
 				       PnfsId pnfsId,
-				       int state) throws SQLException ,SpaceException {
+				       int state) throws SQLException, SpaceException {
 		pnfsPath =new FsPath(pnfsPath).toString();
 		HashSet files = manager.selectPrepared(new FileIO(),
 						       FileIO.SELECT_TRANSFERRING_OR_RESERVED_BY_PNFSPATH,
 						       pnfsPath);
 		if (files!=null&&files.isEmpty()==false) {
-			throw new SQLException("Already have "+files.size()+" record(s) with pnfsPath="+pnfsPath);
+			throw new SRMBusyFile("Already have "+files.size()+" record(s) with pnfsPath="+pnfsPath);
 		}
 		long creationTime=System.currentTimeMillis();
 		int rc=0;
@@ -4008,36 +4008,33 @@ public class Manager
 		String description)
 		throws SQLException,
 		java.io.IOException,
-		SpaceException
+                SpaceException 
 		{
 			say("reserveSpace(group="+voGroup+", role="+voRole+", sz="+sizeInBytes+
 			    ", latency="+latency+", policy="+policy+", lifetime="+lifetime+
 			    ", description="+description);
 			boolean needHsmBackup = policy.equals(RetentionPolicy.CUSTODIAL);
 			say("policy is "+policy+", needHsmBackup is "+needHsmBackup);
-			for(int i =0;i<10;++i) {
-				Long[] linkGroups = findLinkGroupIds(sizeInBytes,
-								     voGroup,
-								     voRole,
-								     latency,
-								     policy);
-				if(linkGroups.length == 0) {
-					esay("find LinkGroup Ids returned 0 linkGroups, no linkGroups found");
-					throw new NoFreeSpaceException(" no space available");
-				}
-				Long linkGroupId = linkGroups[0];
-				return reserveSpaceInLinkGroup(
-					linkGroupId.longValue(),
-					voGroup,
-					voRole,
-					sizeInBytes,
-					latency,
-					policy,
-					lifetime,
-					description);
-			}
-			throw new SQLException(" can not find availabe space ");
-		}
+                        Long[] linkGroups = findLinkGroupIds(sizeInBytes,
+                                                             voGroup,
+                                                             voRole,
+                                                             latency,
+                                                             policy);
+                        if(linkGroups.length == 0) {
+                            esay("find LinkGroup Ids returned 0 linkGroups, no linkGroups found");
+                            throw new NoFreeSpaceException(" no space available");
+                        }
+                        Long linkGroupId = linkGroups[0];
+                        return reserveSpaceInLinkGroup(
+                                                       linkGroupId.longValue(),
+                                                       voGroup,
+                                                       voRole,
+                                                       sizeInBytes,
+                                                       latency,
+                                                       policy,
+                                                       lifetime,
+                                                       description);
+                }
 
 
 	private long reserveSpaceInLinkGroup(
