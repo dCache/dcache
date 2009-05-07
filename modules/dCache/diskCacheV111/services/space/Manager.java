@@ -2760,7 +2760,7 @@ public class Manager
 						       FileIO.SELECT_TRANSFERRING_OR_RESERVED_BY_PNFSPATH,
 						       pnfsPath);
 		if (files!=null&&files.isEmpty()==false) {
-			throw new SRMBusyFile("Already have "+files.size()+" record(s) with pnfsPath="+pnfsPath);
+			throw new SQLException("Already have "+files.size()+" record(s) with pnfsPath="+pnfsPath);
 		}
 		long creationTime=System.currentTimeMillis();
 		int rc=0;
