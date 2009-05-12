@@ -1,0 +1,2812 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html><head><title>PMD - Rule Set: Design Rules</title><style type="text/css" media="all">
+          @import url("../style/maven-base.css");
+          
+          @import url("../style/maven-theme.css");</style><link rel="stylesheet" href="../style/print.css" type="text/css" media="print"></link><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"></meta><meta name="author" content="Tom Copeland"></meta><meta name="email" content="tom@infoether.com"></meta></head><body class="composite"><div id="banner"><a href="http://pmd.sourceforge.net/" id="organizationLogo"><img alt="InfoEther" src="http://sourceforge.net/sflogo.php?group_id=56262&amp;type=5"></img></a><a href="http://pmd.sourceforge.net/" id="projectLogo"><img alt="PMD" src="../images/pmd_logo_small.jpg"></img></a><div class="clear"><hr></hr></div></div><div id="breadcrumbs"><div class="xleft"></div><div class="xright">
+        
+        <a href="http://pmdapplied.com/" class="externalLink" title="External Link">**** Get the book! ****</a>
+      
+        
+          
+            <span class="separator">|</span>
+          
+        
+        <a href="http://sourceforge.net/projects/pmd" class="externalLink" title="External Link">SourceForge.net Project Page</a>
+      
+        
+          
+            <span class="separator">|</span>
+          
+        
+        <a href="http://sourceforge.net" class="externalLink" title="External Link">Hosted by SourceForge</a>
+      </div><div class="clear"><hr></hr></div></div><div id="leftColumn"><div id="navcolumn"><div id="menuOverview"><h5>Overview</h5><ul><li class="none"><a href="http://sourceforge.net/project/showfiles.php?group_id=56262&amp;package_id=51441&amp;release_id=632850" class="externalLink" title="External Link">Download PMD 4.2.5</a></li><li class="none"><a href="http://sourceforge.net/project/shownotes.php?release_id=632850&amp;group_id=56262" class="externalLink" title="External Link">What's new in PMD 4.2.5</a></li><li class="none"><a href="../news.html">PMD in the news</a></li><li class="none"><a href="../products.html">PMD-related products and books</a></li><li class="none"><a href="../bestpractices.html">Best practices</a></li><li class="none"><a href="../future.html">Future directions</a></li><li class="none"><a href="../similar-projects.html">Similar projects</a></li><li class="none"><a href="../credits.html">Credits</a></li><li class="none"><a href="../license.html">License</a></li><li class="none"><a href="../meaning.html">What does 'PMD' mean?</a></li></ul></div><div id="menuUsage"><h5>Usage</h5><ul><li class="none"><a href="../installing.html">Installation</a></li><li class="none"><a href="../running.html">Command line usage</a></li><li class="none"><a href="../ant-task.html">Ant task usage</a></li><li class="none"><a href="../maven-plugin.html">Maven plugin usage</a></li><li class="none"><a href="../mvn-plugin.html">Mvn plugin usage</a></li><li class="none"><a href="../integrations.html">IDE plugin usage</a></li><li class="none"><a href="../suppressing.html">Suppressing warnings</a></li><li class="none"><a href="../cpd.html">Finding duplicated code</a></li><li class="none"><a href="../jspsupport.html">JSP support</a></li></ul></div><div id="menuCustomizing_PMD"><h5>Customizing PMD</h5><ul><li class="none"><a href="../compiling.html">Compiling PMD</a></li><li class="none"><a href="../howtowritearule.html">How to write a rule</a></li><li class="none"><a href="../xpathruletutorial.html">Writing XPath rules</a></li><li class="none"><a href="../howtomakearuleset.html">How to make a rule set</a></li><li class="none"><a href="../howitworks.html">How it works</a></li><li class="none"><a href="../rule-guidelines.html">Rule guidelines</a></li></ul></div><div id="menuFor_example"><h5>For example</h5><ul><li class="none"><a href="../scoreboard.html">Run PMD on a Sourceforge project</a></li></ul></div><div id="menuRule_Sets"><h5>Rule Sets</h5><ul><li class="none"><a href="../rules/index.html">Index</a></li><li class="none"><a href="../rules/android.html">Android</a></li><li class="none"><a href="../rules/basic.html">Basic</a></li><li class="none"><a href="../rules/braces.html">Braces</a></li><li class="none"><a href="../rules/codesize.html">Code Size</a></li><li class="none"><a href="../rules/clone.html">Clone</a></li><li class="none"><a href="../rules/controversial.html">Controversial</a></li><li class="none"><a href="../rules/coupling.html">Coupling</a></li><li class="none"><strong><a href="../rules/design.html">Design</a></strong></li><li class="none"><a href="../rules/finalizers.html">Finalizers</a></li><li class="none"><a href="../rules/imports.html">Import Statements</a></li><li class="none"><a href="../rules/j2ee.html">J2EE</a></li><li class="none"><a href="../rules/javabeans.html">Javabeans</a></li><li class="none"><a href="../rules/junit.html">JUnit Tests</a></li><li class="none"><a href="../rules/logging-java.html">Logging (Java)</a></li><li class="none"><a href="../rules/logging-jakarta-commons.html">Logging (Jakarta)</a></li><li class="none"><a href="../rules/migrating.html">Migrating</a></li><li class="none"><a href="../rules/naming.html">Naming</a></li><li class="none"><a href="../rules/optimizations.html">Optimizations</a></li><li class="none"><a href="../rules/strictexception.html">Strict Exceptions</a></li><li class="none"><a href="../rules/strings.html">Strings</a></li><li class="none"><a href="../rules/sunsecure.html">Sun Security</a></li><li class="none"><a href="../rules/unusedcode.html">Unused Code</a></li><li class="none"><a href="../rules/basic-jsp.html">Java Server Pages</a></li><li class="none"><a href="../rules/basic-jsf.html">Java Server Faces</a></li></ul></div><div id="menuProject_Documentation"><h5>Project Documentation</h5><ul><li class="none"><a href="../index.html">About</a></li><li class="collapsed"><a href="../project-info.html">Project Info</a></li><li class="collapsed"><a href="../maven-reports.html">Project Reports</a></li><li class="none"><a href="../development-process.html">Development Process</a></li></ul></div><div id="legend"><h5>Legend</h5><ul><li class="externalLink">External Link</li><li class="newWindow">Opens in a new window</li></ul></div><a href="http://maven.apache.org/" title="Built by Maven" id="poweredBy"><img alt="Built by Maven" src="../images/logos/mavenlogo_builtby_w.png"></img></a></div></div><div id="bodyColumn"><div class="contentBox"><div class="section"><a name="Design_Rules"></a><h2>Design Rules</h2>
+				
+
+  
+The Design Ruleset contains a collection of rules that find questionable designs.
+  
+
+  
+	
+	<div class="subsection"><a name="UseSingleton"></a><h3>UseSingleton</h3>
+		<p>Since: PMD 0.3</p>
+		<p>
+    	
+If you have a class that has nothing but static methods, consider making it a Singleton.
+Note that this doesn't apply to abstract classes, since their subclasses may
+well include non-static methods.  Also, if you want this class to be a Singleton,
+remember to add a private constructor to prevent instantiation.
+		
+    </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/design/UseSingleton.html">net.sourceforge.pmd.rules.design.UseSingleton</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+
+public class MaybeASingleton {
+ public static void foo() {}
+ public static void bar() {}
+}
+
+    
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+
+  
+	
+	<div class="subsection"><a name="SimplifyBooleanReturns"></a><h3>SimplifyBooleanReturns</h3>
+		<p>Since: PMD 0.9</p>
+		<p>
+Avoid unnecessary if..then..else statements when returning a boolean.
+    </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/SimplifyBooleanReturns.html">net.sourceforge.pmd.rules.SimplifyBooleanReturns</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+
+public class Foo {
+  private int bar =2;
+  public boolean isBarEqualsTo(int x) {
+    // this bit of code
+    if (bar == x) {
+     return true;
+    } else {
+     return false;
+    }
+    // can be replaced with a simple
+    // return bar == x;
+  }
+}
+
+    
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="SimplifyBooleanExpressions"></a><h3>SimplifyBooleanExpressions</h3>
+		<p>Since: PMD 1.05</p>
+		<p>
+Avoid unnecessary comparisons in boolean expressions - this complicates simple code.
+      </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+
+//EqualityExpression/PrimaryExpression
+ /PrimaryPrefix/Literal/BooleanLiteral
+
+              </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+  
+public class Bar {
+ // can be simplified to
+ // bar = isFoo();
+ private boolean bar = (isFoo() == true);
+
+ public isFoo() { return false;}
+}
+  
+      
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+  
+	
+	<div class="subsection"><a name="SwitchStmtsShouldHaveDefault"></a><h3>SwitchStmtsShouldHaveDefault</h3>
+		<p>Since: PMD 1.0</p>
+		<p>
+Switch statements should have a default label.
+    </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+                  
+//SwitchStatement[not(SwitchLabel[@Default='true'])]
+                  
+              </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+
+public class Foo {
+ public void bar() {
+  int x = 2;
+  switch (x) {
+   case 2: int j = 8;
+  }
+ }
+}
+
+    
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+  
+	
+	<div class="subsection"><a name="AvoidDeeplyNestedIfStmts"></a><h3>AvoidDeeplyNestedIfStmts</h3>
+		<p>Since: PMD 1.0</p>
+		<p>
+Deeply nested if..then statements are hard to read.
+    </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/AvoidDeeplyNestedIfStmtsRule.html">net.sourceforge.pmd.rules.AvoidDeeplyNestedIfStmtsRule</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+
+public class Foo {
+ public void bar(int x, int y, int z) {
+  if (x&gt;y) {
+   if (y&gt;z) {
+    if (z==x) {
+     // whew, too deep
+    }
+   }
+  }
+ }
+}
+
+    
+            </pre></div>
+  
+        
+
+        
+        
+            
+                <p>This rule has the following properties:</p>
+                <table class="bodyTable"><th>Name</th><th>Default value</th><th>Description</th>
+                
+                
+                    <tr class="a">
+                    <td>problemDepth</td>
+                    <td>3</td>
+                    <td>The if statement depth reporting threshold</td>
+                    </tr>
+                
+                </table>
+            
+        
+
+	</div>
+
+
+
+    
+	
+	<div class="subsection"><a name="AvoidReassigningParameters"></a><h3>AvoidReassigningParameters</h3>
+		<p>Since: PMD 1.0</p>
+		<p>
+Reassigning values to parameters is a questionable practice.  Use a temporary local variable instead.
+    </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/AvoidReassigningParameters.html">net.sourceforge.pmd.rules.AvoidReassigningParameters</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+
+public class Foo {
+ private void foo(String bar) {
+  bar = "something else";
+ }
+}
+
+    
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="SwitchDensity"></a><h3>SwitchDensity</h3>
+		<p>Since: PMD 1.02</p>
+		<p>
+ A high ratio of statements to labels in a switch statement implies that the switch
+ statement is doing too much work.  Consider moving the statements into new
+ methods, or creating subclasses based on the switch variable.
+      </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/design/SwitchDensityRule.html">net.sourceforge.pmd.rules.design.SwitchDensityRule</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+ 
+public class Foo {
+ public void bar(int x) {
+   switch (x) {
+     case 1: {
+       // lots of statements
+       break;
+     } case 2: {
+       // lots of statements
+       break;
+     }
+   }
+ }
+}
+ 
+      
+            </pre></div>
+  
+        
+
+        
+        
+            
+                <p>This rule has the following properties:</p>
+                <table class="bodyTable"><th>Name</th><th>Default value</th><th>Description</th>
+                
+                
+                    <tr class="b">
+                    <td>minimum</td>
+                    <td>10</td>
+                    <td>The switch statement ratio reporting threshold</td>
+                    </tr>
+                
+                </table>
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="ConstructorCallsOverridableMethod"></a><h3>ConstructorCallsOverridableMethod</h3>
+		<p>Since: PMD 1.04</p>
+		<p>
+Calling overridable methods during construction poses a risk of invoking methods on an
+incompletely constructed object and can be difficult to discern.
+It may leave the sub-class unable to construct its superclass or forced to
+replicate the construction process completely within itself, losing the ability to call
+super().  If the default constructor contains a call to an overridable method,
+the subclass may be completely uninstantiable.   Note that this includes method calls
+throughout the control flow graph - i.e., if a constructor Foo() calls a private method
+bar() that calls a public method buz(), this denotes a problem.
+      </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/ConstructorCallsOverridableMethod.html">net.sourceforge.pmd.rules.ConstructorCallsOverridableMethod</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+  
+public class SeniorClass {
+  public SeniorClass(){
+      toString(); //may throw NullPointerException if overridden
+  }
+  public String toString(){
+    return "IAmSeniorClass";
+  }
+}
+public class JuniorClass extends SeniorClass {
+  private String name;
+  public JuniorClass(){
+    super(); //Automatic call leads to NullPointerException
+    name = "JuniorClass";
+  }
+  public String toString(){
+    return name.toUpperCase();
+  }
+}
+  
+      
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="AccessorClassGeneration"></a><h3>AccessorClassGeneration</h3>
+		<p>Since: PMD 1.04</p>
+		<p>
+Instantiation by way of private constructors from outside of the constructor's class often causes the generation of an accessor.
+A factory method, or non-privitization of the constructor can eliminate this situation.
+The generated class file is actually an interface.  It gives the accessing class the ability to invoke a new hidden package
+scope constructor that takes the interface as a supplementary parameter.  This turns a private constructor effectively into
+one with package scope, and is challenging to discern.
+      </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/AccessorClassGeneration.html">net.sourceforge.pmd.rules.AccessorClassGeneration</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+  
+public class Outer {
+ void method(){
+  Inner ic = new Inner();//Causes generation of accessor class
+ }
+ public class Inner {
+  private Inner(){}
+ }
+}
+  
+      
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="FinalFieldCouldBeStatic"></a><h3>FinalFieldCouldBeStatic</h3>
+		<p>Since: PMD 1.1</p>
+		<p>
+If a final field is assigned to a compile-time constant, it could be
+made static, thus saving overhead in each object at runtime.
+      </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+                    
+//FieldDeclaration
+ [@Final='true' and @Static='false']
+ [not (../../../../ClassOrInterfaceDeclaration[@Interface='true'])]
+   /VariableDeclarator/VariableInitializer/Expression
+    /PrimaryExpression/PrimaryPrefix/Literal
+                    
+                </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+  
+public class Foo {
+ public final int BAR = 42; // this could be static and save some space
+}
+  
+      
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+
+  
+	
+	<div class="subsection"><a name="CloseResource"></a><h3>CloseResource</h3>
+		<p>Since: PMD 1.2.2</p>
+		<p>
+Ensure that resources (like Connection, Statement, and ResultSet objects) are always closed after use.
+    </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/CloseResource.html">net.sourceforge.pmd.rules.CloseResource</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+
+public class Bar {
+ public void foo() {
+  Connection c = pool.getConnection();
+  try {
+    // do stuff
+  } catch (SQLException ex) {
+    // handle exception
+  } finally {
+    // oops, should close the connection using 'close'!
+    // c.close();
+  }
+ }
+}
+
+    
+            </pre></div>
+  
+        
+
+        
+        
+            
+                <p>This rule has the following properties:</p>
+                <table class="bodyTable"><th>Name</th><th>Default value</th><th>Description</th>
+                
+                
+                    <tr class="a">
+                    <td>types</td>
+                    <td>Connection,Statement,ResultSet</td>
+                    <td></td>
+                    </tr>
+                
+                </table>
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="NonStaticInitializer"></a><h3>NonStaticInitializer</h3>
+		<p>Since: PMD 1.5</p>
+		<p>
+A nonstatic initializer block will be called any time a constructor
+is invoked (just prior to invoking the constructor).  While this
+is a valid language construct, it is rarely used and is confusing.
+       </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+
+//Initializer[@Static='false']
+
+                 </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+   
+public class MyClass {
+ // this block gets run before any call to a constructor
+ {
+  System.out.println("I am about to construct myself");
+ }
+}
+   
+       
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="DefaultLabelNotLastInSwitchStmt"></a><h3>DefaultLabelNotLastInSwitchStmt</h3>
+		<p>Since: PMD 1.5</p>
+		<p>
+By convention, the default label should be the last label in a switch statement.
+       </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+
+//SwitchStatement
+ [not(SwitchLabel[position() = last()][@Default='true'])]
+ [SwitchLabel[@Default='true']]
+
+                 </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+   
+public class Foo {
+ void bar(int a) {
+  switch (a) {
+   case 1:  // do something
+      break;
+   default:  // the default case should be last, by convention
+      break;
+   case 2:
+      break;
+  }
+ }
+}   
+       
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="NonCaseLabelInSwitchStatement"></a><h3>NonCaseLabelInSwitchStatement</h3>
+		<p>Since: PMD 1.5</p>
+		<p>
+A non-case label (e.g. a named break/continue label) was present in a switch statement.
+This legal, but confusing. It is easy to mix up the case labels and the non-case labels.
+       </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+ 
+//SwitchStatement//BlockStatement/Statement/LabeledStatement
+ 
+                 </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+   
+public class Foo {
+ void bar(int a) {
+  switch (a) {
+   case 1:
+      // do something
+      break;
+   mylabel: // this is legal, but confusing!
+      break;
+   default:
+      break;
+  }
+ }
+}
+   
+       
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="OptimizableToArrayCall"></a><h3>OptimizableToArrayCall</h3>
+		<p>Since: PMD 1.8</p>
+		<p>
+A call to Collection.toArray can use the Collection's size vs an empty Array of the desired type.
+      </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+                  
+//PrimaryExpression
+[PrimaryPrefix/Name[ends-with(@Image, 'toArray')]]
+[
+PrimarySuffix/Arguments/ArgumentList/Expression
+ /PrimaryExpression/PrimaryPrefix/AllocationExpression
+ /ArrayDimsAndInits/Expression/PrimaryExpression/PrimaryPrefix/Literal[@Image='0']
+]
+
+                  
+              </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+  
+class Foo {
+ void bar(Collection x) {
+   // A bit inefficient
+   x.toArray(new Foo[0]);
+   // Much better; this one sizes the destination array, avoiding
+   // a reflection call in some Collection implementations
+   x.toArray(new Foo[x.size()]);
+ }
+}
+  
+      
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+
+    
+	
+	<div class="subsection"><a name="BadComparison"></a><h3>BadComparison</h3>
+		<p>Since: PMD 1.8</p>
+		<p>
+Avoid equality comparisons with Double.NaN - these are likely to be logic errors.
+      </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+                  
+//EqualityExpression[@Image='==']
+ /PrimaryExpression/PrimaryPrefix
+ /Name[@Image='Double.NaN' or @Image='Float.NaN']
+                  
+              </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+  
+public class Bar {
+ boolean x = (y == Double.NaN);
+}
+  
+      
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="EqualsNull"></a><h3>EqualsNull</h3>
+		<p>Since: PMD 1.9</p>
+		<p>
+Inexperienced programmers sometimes confuse comparison concepts
+and use equals() to compare to null.
+        </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+    
+//PrimaryExpression
+ [
+PrimaryPrefix/Name[ends-with(@Image, 'equals')]
+or
+PrimarySuffix[ends-with(@Image, 'equals')]
+]
+[PrimarySuffix/Arguments/ArgumentList[count(Expression)=1]
+  /Expression/PrimaryExpression/PrimaryPrefix
+   /Literal/NullLiteral]
+    
+                </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+       
+class Bar {
+   void foo() {
+       String x = "foo";
+       if (x.equals(null)) { // bad!
+        doSomething();
+       }
+   }
+}
+    
+        
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+      
+	
+	<div class="subsection"><a name="ConfusingTernary"></a><h3>ConfusingTernary</h3>
+		<p>Since: PMD 1.9</p>
+		<p>
+In an "if" expression with an "else" clause, avoid negation in
+the test.  For example, rephrase:
+if (x != y) diff(); else same();
+as:
+if (x == y) same(); else diff();
+Most "if (x != y)" cases without an "else" are often return
+cases, so consistent use of this rule makes the code easier
+to read.  Also, this resolves trivial ordering problems, such
+as "does the error case go first?" or "does the common case
+go first?".
+        </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/design/ConfusingTernary.html">net.sourceforge.pmd.rules.design.ConfusingTernary</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+          
+public class Foo {
+ boolean bar(int x, int y) {
+  return (x != y) ? diff : same;
+ }
+}          
+        
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="InstantiationToGetClass"></a><h3>InstantiationToGetClass</h3>
+		<p>Since: PMD 2.0</p>
+		<p>
+Avoid instantiating an object just to call getClass() on it; use the .class public member instead.
+      </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+                
+//PrimarySuffix
+ [@Image='getClass']
+ [parent::PrimaryExpression
+  [PrimaryPrefix/AllocationExpression]
+  [count(PrimarySuffix) = 2]
+ ]
+     
+            </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+    
+public class Foo {
+ // Replace this
+ Class c = new String().getClass();
+ // with this:
+ Class c = String.class;
+}
+    
+        
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="IdempotentOperations"></a><h3>IdempotentOperations</h3>
+		<p>Since: PMD 2.0</p>
+		<p>
+Avoid idempotent operations - they are have no effect.
+      </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/IdempotentOperations.html">net.sourceforge.pmd.rules.IdempotentOperations</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+      
+public class Foo {
+ public void bar() {
+  int x = 2;
+  x = x;
+ }
+}
+      
+      
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="SimpleDateFormatNeedsLocale"></a><h3>SimpleDateFormatNeedsLocale</h3>
+		<p>Since: PMD 2.0</p>
+		<p>
+Be sure to specify a Locale when creating a new instance of SimpleDateFormat.
+        </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+
+//AllocationExpression
+ [ClassOrInterfaceType[@Image='SimpleDateFormat']]
+ [Arguments[@ArgumentCount=1]]
+
+                    </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+        
+public class Foo {
+ // Should specify Locale.US (or whatever)
+ private SimpleDateFormat sdf = new SimpleDateFormat("pattern");
+}
+        
+        
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="ImmutableField"></a><h3>ImmutableField</h3>
+		<p>Since: PMD 2.0</p>
+		<p>
+Identifies private fields whose values never change once they are initialized either in the declaration of the field or by
+a constructor.  This aids in converting existing classes to immutable classes.
+      </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/design/ImmutableField.html">net.sourceforge.pmd.rules.design.ImmutableField</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+  
+public class Foo {
+  private int x; // could be final
+  public Foo() {
+      x = 7;
+  }
+  public void foo() {
+     int a = x + 2;
+  }
+}
+  
+      
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="UseLocaleWithCaseConversions"></a><h3>UseLocaleWithCaseConversions</h3>
+		<p>Since: PMD 2.0</p>
+		<p>
+When doing a String.toLowerCase()/toUpperCase() call, use a Locale.  This avoids
+problems with certain locales, i.e. Turkish.
+      </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+                
+//PrimaryExpression
+[PrimaryPrefix/Name
+ [ends-with(@Image, 'toLowerCase') or ends-with(@Image,
+'toUpperCase')]
+ ]
+[PrimarySuffix[position() = 1]/Arguments[@ArgumentCount=0]]
+     
+            </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+    
+class Foo {
+ // BAD
+ if (x.toLowerCase().equals("list"))...
+ /*
+ This will not match "LIST" when in Turkish locale
+ The above could be
+ if (x.toLowerCase(Locale.US).equals("list")) ...
+ or simply
+ if (x.equalsIgnoreCase("list")) ...
+ */
+ // GOOD
+ String z = a.toLowerCase(Locale.EN);
+}
+    
+        
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="AvoidProtectedFieldInFinalClass"></a><h3>AvoidProtectedFieldInFinalClass</h3>
+		<p>Since: PMD 2.1</p>
+		<p>
+Do not use protected fields in final classes since they cannot be subclassed.
+Clarify your intent by using private or package access modifiers instead.
+         </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+
+//ClassOrInterfaceDeclaration[@Final='true']
+/ClassOrInterfaceBody/ClassOrInterfaceBodyDeclaration
+/FieldDeclaration[@Protected='true']
+ 
+                 </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+
+public final class Bar {
+ private int x;
+ protected int y;  // &lt;-- Bar cannot be subclassed, so is y really private or package visible???
+ Bar() {}
+}
+ 
+         
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+     
+	
+	<div class="subsection"><a name="AssignmentToNonFinalStatic"></a><h3>AssignmentToNonFinalStatic</h3>
+		<p>Since: PMD 2.2</p>
+		<p>
+Identifies a possible unsafe usage of a static field.
+       </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/design/AssignmentToNonFinalStatic.html">net.sourceforge.pmd.rules.design.AssignmentToNonFinalStatic</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+   
+public class StaticField {
+   static int x;
+   public FinalFields(int y) {
+    x = y; // unsafe
+   }
+}
+   
+       
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="MissingStaticMethodInNonInstantiatableClass"></a><h3>MissingStaticMethodInNonInstantiatableClass</h3>
+		<p>Since: PMD 3.0</p>
+		<p>
+A class that has private constructors and does not have any static methods or fields cannot be used.
+      </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+    
+//ClassOrInterfaceDeclaration[@Nested='false'][
+( count(./ClassOrInterfaceBody/ClassOrInterfaceBodyDeclaration/ConstructorDeclaration)&amp;gt;0
+  and count(./ClassOrInterfaceBody/ClassOrInterfaceBodyDeclaration/ConstructorDeclaration) = count(./ClassOrInterfaceBody/ClassOrInterfaceBodyDeclaration/ConstructorDeclaration[@Private='true']) )
+and
+count(.//MethodDeclaration[@Static='true'])=0
+and
+count(.//FieldDeclaration[@Private='false'][@Static='true'])=0
+]
+    
+              </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+
+/* This class is unusable, since it cannot be
+ instantiated (private constructor),
+ and no static method can be called.
+ */
+public class Foo {
+ private Foo() {}
+ void foo() {}
+}
+
+
+      
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+
+    
+	
+	<div class="subsection"><a name="AvoidSynchronizedAtMethodLevel"></a><h3>AvoidSynchronizedAtMethodLevel</h3>
+		<p>Since: PMD 3.0</p>
+		<p>
+  Method level synchronization can backfire when new code is added to the method.  Block-level
+  synchronization helps to ensure that only the code that needs synchronization gets it.
+      </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+    
+//MethodDeclaration[@Synchronized='true']
+    
+              </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+
+public class Foo {
+ // Try to avoid this
+ synchronized void foo() {
+ }
+ // Prefer this:
+ void bar() {
+  synchronized(this) {
+  }
+ }
+}
+
+      
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="MissingBreakInSwitch"></a><h3>MissingBreakInSwitch</h3>
+		<p>Since: PMD 3.0</p>
+		<p>
+A switch statement without an enclosed break statement may be a bug.
+      </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+    
+//SwitchStatement
+[count(.//BreakStatement)=0]
+[count(SwitchLabel) &amp;gt; 0]
+[count(BlockStatement/Statement/ReturnStatement)
+ + count(BlockStatement/Statement/ThrowStatement)
+     &amp;lt; count (SwitchLabel)]
+    
+              </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+
+public class Foo {
+ public void bar(int status) {
+  switch(status) {
+   case CANCELLED:
+    doCancelled();
+    // break; hm, should this be commented out?
+   case NEW:
+    doNew();
+   case REMOVED:
+    doRemoved();
+   }
+ }
+}
+
+      
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+
+    
+	
+	<div class="subsection"><a name="UseNotifyAllInsteadOfNotify"></a><h3>UseNotifyAllInsteadOfNotify</h3>
+		<p>Since: PMD 3.0</p>
+		<p>
+Thread.notify() awakens a thread monitoring the object. If more than one thread is monitoring, then only
+one is chosen.  The thread chosen is arbitrary; thus it's usually safer to call notifyAll() instead.
+      </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+    
+//StatementExpression/PrimaryExpression
+[count(PrimarySuffix/Arguments/ArgumentList) = 0]
+[
+PrimaryPrefix[./Name[@Image='notify' or ends-with(@Image,'.notify')]
+or @Image='notify'
+or (./AllocationExpression and ../PrimarySuffix[@Image='notify'])
+]
+]
+    
+              </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+
+public class Foo {
+ void bar() {
+  x.notify();
+  // If many threads are monitoring x, only one (and you won't know which) will be notified.
+  // use instead:
+  x.notifyAll();
+ }
+}
+
+      
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="AvoidInstanceofChecksInCatchClause"></a><h3>AvoidInstanceofChecksInCatchClause</h3>
+		<p>Since: PMD 3.0</p>
+		<p>
+Each caught exception type should be handled in its own catch clause.
+      </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+    
+//CatchStatement/FormalParameter
+ /following-sibling::Block//InstanceOfExpression/PrimaryExpression/PrimaryPrefix
+  /Name[
+   @Image = ./ancestor::Block/preceding-sibling::FormalParameter
+    /VariableDeclaratorId/@Image
+  ]
+    
+              </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+
+try { // Avoid this
+ // do something
+} catch (Exception ee) {
+ if (ee instanceof IOException) {
+  cleanup();
+ }
+}
+try {  // Prefer this:
+ // do something
+} catch (IOException ee) {
+ cleanup();
+}
+
+      
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="AbstractClassWithoutAbstractMethod"></a><h3>AbstractClassWithoutAbstractMethod</h3>
+		<p>Since: PMD 3.0</p>
+		<p>
+The abstract class does not contain any abstract methods. An abstract class suggests
+an incomplete implementation, which is to be completed by subclasses implementing the
+abstract methods. If the class is intended to be used as a base class only (not to be instantiated
+direcly) a protected constructor can be provided prevent direct instantiation.
+      </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+//ClassOrInterfaceDeclaration
+ [@Abstract='true'
+  and count( .//MethodDeclaration[@Abstract='true'] )=0 ]
+  [count(ImplementsList)=0]
+  [count(.//ExtendsList)=0]
+              
+              </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+
+public abstract class Foo {
+ void int method1() { ... }
+ void int method2() { ... }
+ // consider using abstract methods or removing
+ // the abstract modifier and adding protected constructors
+}
+
+      
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="SimplifyConditional"></a><h3>SimplifyConditional</h3>
+		<p>Since: PMD 3.1</p>
+		<p>
+No need to check for null before an instanceof; the instanceof keyword returns false when given a null argument.
+          </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+                      
+//Expression
+ [ConditionalOrExpression
+ [EqualityExpression[@Image='==']
+  //NullLiteral
+  and
+  UnaryExpressionNotPlusMinus
+   [@Image='!']//InstanceOfExpression[PrimaryExpression
+     //Name/@Image = ancestor::ConditionalOrExpression/EqualityExpression
+      /PrimaryExpression/PrimaryPrefix/Name/@Image]]
+or
+ConditionalAndExpression
+ [EqualityExpression[@Image='!=']//NullLiteral
+ and
+InstanceOfExpression
+ [PrimaryExpression[count(PrimarySuffix[@ArrayDereference='true'])=0]
+  //Name/@Image = ancestor::ConditionalAndExpression
+   /EqualityExpression/PrimaryExpression/PrimaryPrefix/Name/@Image]]]
+ 
+                  </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+      
+class Foo {
+ void bar(Object x) {
+  if (x != null &amp;&amp; x instanceof Bar) {
+   // just drop the "x != null" check
+  }
+ }
+}      
+           
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+
+	
+	<div class="subsection"><a name="CompareObjectsWithEquals"></a><h3>CompareObjectsWithEquals</h3>
+		<p>Since: PMD 3.2</p>
+		<p>
+ Use equals() to compare object references; avoid comparing them with ==.
+  </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/design/CompareObjectsWithEquals.html">net.sourceforge.pmd.rules.design.CompareObjectsWithEquals</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+
+class Foo {
+ boolean bar(String a, String b) {
+  return a == b;
+ }
+}
+
+
+  
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+
+
+	
+	<div class="subsection"><a name="PositionLiteralsFirstInComparisons"></a><h3>PositionLiteralsFirstInComparisons</h3>
+		<p>Since: PMD 3.3</p>
+		<p>
+ Position literals first in String comparisons - that way if the String is null you won't get a NullPointerException, it'll just return false.
+  </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+              
+//PrimaryExpression[
+        PrimaryPrefix[Name
+                [
+	(ends-with(@Image, '.equals'))
+                ]
+        ]
+        [
+                   (../PrimarySuffix/Arguments/ArgumentList/Expression/PrimaryExpression/PrimaryPrefix/Literal)
+	and
+	( count(../PrimarySuffix/Arguments/ArgumentList/Expression) = 1 )
+        ]
+]
+[not(ancestor::Expression/ConditionalAndExpression//EqualityExpression[@Image='!=']//NullLiteral)]
+[not(ancestor::Expression/ConditionalOrExpression//EqualityExpression[@Image='==']//NullLiteral)]
+
+          
+          </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+
+class Foo {
+ boolean bar(String x) {
+  return x.equals("2"); // should be "2".equals(x)
+ }
+}
+
+
+  
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="UnnecessaryLocalBeforeReturn"></a><h3>UnnecessaryLocalBeforeReturn</h3>
+		<p>Since: PMD 3.3</p>
+		<p>
+Avoid unnecessarily creating local variables
+      </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/design/UnnecessaryLocalBeforeReturn.html">net.sourceforge.pmd.rules.design.UnnecessaryLocalBeforeReturn</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+  
+  public class Foo {
+    public int foo() {
+      int x = doSomething();
+      return x;  // instead, just 'return doSomething();'
+    }
+  }
+  
+      
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="NonThreadSafeSingleton"></a><h3>NonThreadSafeSingleton</h3>
+		<p>Since: PMD 3.4</p>
+		<p>
+Non-thread safe singletons can result in bad state changes. Eliminate
+static singletons if possible by instantiating the object directly. Static
+singletons are usually not needed as only a single instance exists anyway.
+Other possible fixes are to synchronize the entire method or to use an
+initialize-on-demand holder class (do not use the double-check idiom).
+
+See Effective Java, item 48.
+        </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/design/NonThreadSafeSingleton.html">net.sourceforge.pmd.rules.design.NonThreadSafeSingleton</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+private static Foo foo = null;
+
+//multiple simultaneous callers may see partially initialized objects
+public static Foo getFoo() {
+    if (foo==null)
+        foo = new Foo();
+    return foo;
+}
+        
+            </pre></div>
+  
+        
+
+        
+        
+            
+                <p>This rule has the following properties:</p>
+                <table class="bodyTable"><th>Name</th><th>Default value</th><th>Description</th>
+                
+                
+                    <tr class="b">
+                    <td>checkNonStaticMethods</td>
+                    <td></td>
+                    <td>Do not set this to false and checkNonStaticFields to true</td>
+                    </tr>
+                
+                    <tr class="a">
+                    <td>checkNonStaticFields</td>
+                    <td></td>
+                    <td>Do not set this to true and checkNonStaticMethods to false</td>
+                    </tr>
+                
+                </table>
+            
+        
+
+	</div>
+
+
+
+
+    
+	
+	<div class="subsection"><a name="UncommentedEmptyMethod"></a><h3>UncommentedEmptyMethod</h3>
+		<p>Since: PMD 3.4</p>
+		<p>
+Uncommented Empty Method finds instances where a method does not contain
+statements, but there is no comment. By explicitly commenting empty methods
+it is easier to distinguish between intentional (commented) and unintentional
+empty methods.
+      </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+    
+//MethodDeclaration/Block[count(BlockStatement) = 0 and @containsComment = 'false']
+ 
+             </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+  
+public void doSomething() {
+}
+ 
+      
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="UncommentedEmptyConstructor"></a><h3>UncommentedEmptyConstructor</h3>
+		<p>Since: PMD 3.4</p>
+		<p>
+Uncommented Empty Constructor finds instances where a constructor does not
+contain statements, but there is no comment. By explicitly commenting empty
+constructors it is easier to distinguish between intentional (commented)
+and unintentional empty constructors.
+      </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+    
+//ConstructorDeclaration[@Private='false'][count(BlockStatement) = 0 and ($ignoreExplicitConstructorInvocation = 'true' or not(ExplicitConstructorInvocation)) and @containsComment = 'false']
+ 
+             </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+  
+public Foo() {
+  super();
+}
+ 
+      
+            </pre></div>
+  
+        
+
+        
+        
+            
+                <p>This rule has the following properties:</p>
+                <table class="bodyTable"><th>Name</th><th>Default value</th><th>Description</th>
+                
+                
+                    <tr class="b">
+                    <td>ignoreExplicitConstructorInvocation</td>
+                    <td></td>
+                    <td>Ignore explicit constructor invocation when deciding whether constructor is empty or not</td>
+                    </tr>
+                
+                </table>
+            
+        
+
+	</div>
+
+
+
+	
+	<div class="subsection"><a name="AvoidConstantsInterface"></a><h3>AvoidConstantsInterface</h3>
+		<p>Since: PMD 3.5</p>
+		<p>
+     An interface should be used only to model a behaviour of a
+    class: using an interface as a container of constants is a poor usage pattern.
+      </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+    
+//ClassOrInterfaceDeclaration[@Interface="true"]
+    [
+     count(.//MethodDeclaration)=0
+     and
+     count(.//FieldDeclaration)&amp;gt;0
+    ]
+    
+        </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+    
+    public interface ConstantsInterface {
+     public static final int CONSTANT1=0;
+     public static final String CONSTANT2="1";
+    }
+    
+      
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+  
+	
+	<div class="subsection"><a name="UnsynchronizedStaticDateFormatter"></a><h3>UnsynchronizedStaticDateFormatter</h3>
+		<p>Since: PMD 3.6</p>
+		<p>
+SimpleDateFormat is not synchronized. Sun recomends separate format instances
+for each thread. If multiple threads must access a static formatter, the
+formatter must be synchronized either on method or block level.
+      </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/design/UnsynchronizedStaticDateFormatter.html">net.sourceforge.pmd.rules.design.UnsynchronizedStaticDateFormatter</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+    
+public class Foo {
+    private static final SimpleDateFormat sdf = new SimpleDateFormat();
+    void bar() {
+        sdf.format(); // bad
+    }
+    synchronized void foo() {
+        sdf.format(); // good
+    }
+}
+    
+      
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+  
+	
+	<div class="subsection"><a name="PreserveStackTrace"></a><h3>PreserveStackTrace</h3>
+		<p>Since: PMD 3.7</p>
+		<p>
+Throwing a new exception from a catch block without passing the original exception into the
+new exception will cause the true stack trace to be lost, and can make it difficult to
+debug effectively.
+      </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/design/PreserveStackTrace.html">net.sourceforge.pmd.rules.design.PreserveStackTrace</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+    
+public class Foo {
+    void good() {
+        try{
+            Integer.parseInt("a");
+        } catch(Exception e){
+            throw new Exception(e);
+        }
+    }
+    void bad() {
+        try{
+            Integer.parseInt("a");
+        } catch(Exception e){
+            throw new Exception(e.getMessage());
+        }
+    }
+}
+    
+      
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="UseCollectionIsEmpty"></a><h3>UseCollectionIsEmpty</h3>
+		<p>Since: PMD 3.9</p>
+		<p>
+The isEmpty() method on java.util.Collection is provided to see if a collection has any elements.
+Comparing the value of size() to 0 merely duplicates existing behavior.
+      </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/design/UseCollectionIsEmpty.html">net.sourceforge.pmd.rules.design.UseCollectionIsEmpty</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+    
+	public class Foo {
+		void good() {
+        	List foo = getList();
+			if (foo.isEmpty()) {
+				// blah
+			}
+    	}
+
+	    void bad() {
+    	    List foo = getList();
+				if (foo.size() == 0) {
+					// blah
+				}
+	    	}
+	}
+    
+      
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="ClassWithOnlyPrivateConstructorsShouldBeFinal"></a><h3>ClassWithOnlyPrivateConstructorsShouldBeFinal</h3>
+		<p>Since: PMD 4.1</p>
+		<p>
+A class with only private constructors should be final, unless the private
+constructor is called by a inner class.
+        </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+TypeDeclaration[count(../TypeDeclaration) = 1]/ClassOrInterfaceDeclaration
+[@Final = 'false']
+[count(./ClassOrInterfaceBody/ClassOrInterfaceBodyDeclaration/ConstructorDeclaration[@Private = 'true']) &amp;gt;= 1 ]
+[count(./ClassOrInterfaceBody/ClassOrInterfaceBodyDeclaration/ConstructorDeclaration[(@Public = 'true') or (@Protected = 'true') or (@PackagePrivate = 'true')]) = 0]
+[not(.//ClassOrInterfaceDeclaration)]
+             </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+public class Foo {  //Should be final
+    private Foo() { }
+}
+     
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+
+    
+	
+	<div class="subsection"><a name="EmptyMethodInAbstractClassShouldBeAbstract"></a><h3>EmptyMethodInAbstractClassShouldBeAbstract</h3>
+		<p>Since: PMD 4.1</p>
+		<p>
+An empty method in an abstract class should be abstract instead, as developer may rely on this empty implementation
+rather than code the appropriate one.
+        </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+                
+                    //ClassOrInterfaceDeclaration[@Abstract = 'true']
+                        /ClassOrInterfaceBody
+                        /ClassOrInterfaceBodyDeclaration
+                        /MethodDeclaration[@Abstract = 'false' and @Native = 'false']
+                        [
+                            ( boolean(./Block[count(./BlockStatement) =  1]/BlockStatement/Statement/ReturnStatement/Expression/PrimaryExpression/PrimaryPrefix/Literal/NullLiteral) = 'true' )
+                            or
+                            ( boolean(./Block[count(./BlockStatement) =  1]/BlockStatement/Statement/ReturnStatement/Expression/PrimaryExpression/PrimaryPrefix/Literal[@Image = '0']) = 'true' )
+                    		or
+							( boolean(./Block[count(./BlockStatement) =  1]/BlockStatement/Statement/ReturnStatement/Expression/PrimaryExpression/PrimaryPrefix/Literal[string-length(@Image) = 2]) = 'true' )
+							or
+							(
+								(
+									(boolean(./Block/BlockStatement/Statement/ReturnStatement/Expression/PrimaryExpression/PrimaryPrefix/Literal[@Image = '']) = 'true' )
+								)
+								and
+								( count (./Block/*) = 1 )
+							)
+                            or
+                            ( count (./Block/*) = 0 )
+                        ]
+                
+             </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+        	
+				public abstract class ShouldBeAbstract
+				{
+				    public Object couldBeAbstract()
+				    {
+					// Should be abstract method ?
+					return null;
+				   	}
+
+				    public void couldBeAbstract()
+				    {
+				    }
+				}
+	     	
+    	
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="SingularField"></a><h3>SingularField</h3>
+		<p>Since: PMD 3.1</p>
+		<p>
+      		
+This field is used in only one method and the first usage is assigning a value
+to the field. This probably means that the field can be changed to a local variable.
+			
+      </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/design/SingularField.html">net.sourceforge.pmd.rules.design.SingularField</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+public class Foo {
+    private int x;  //Why bother saving this?
+    public void foo(int y) {
+     x = y + 5;
+     return x;
+    }
+}
+   
+            </pre></div>
+  
+        
+
+        
+        
+            
+                <p>This rule has the following properties:</p>
+                <table class="bodyTable"><th>Name</th><th>Default value</th><th>Description</th>
+                
+                
+                    <tr class="a">
+                    <td>CheckInnerClasses</td>
+                    <td></td>
+                    <td>Check inner classes</td>
+                    </tr>
+                
+                    <tr class="b">
+                    <td>DisallowNotAssignment</td>
+                    <td></td>
+                    <td>Disallow violations where the first usage is not an assignment</td>
+                    </tr>
+                
+                </table>
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="ReturnEmptyArrayRatherThanNull"></a><h3>ReturnEmptyArrayRatherThanNull</h3>
+		<p>Since: PMD 4.2</p>
+		<p>
+            
+            For any method that returns an array, it's a better behavior to return an empty array rather than a null reference.
+            
+        </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+                    
+                        //MethodDeclaration
+                        [
+                        (./ResultType/Type[@Array='true'])
+                        and
+                        (./Block/BlockStatement/Statement/ReturnStatement/Expression/PrimaryExpression/PrimaryPrefix/Literal/NullLiteral)
+                        ]
+                    
+                </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+            
+            public class Example
+            {
+                // Not a good idea...
+                public int []badBehavior()
+                {
+                    // ...
+                    return null;
+                }
+
+                // Good behavior
+                public String[] bonnePratique()
+                {
+                    //...
+                    return new String[0];
+                }
+            }
+            
+        
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="AbstractClassWithoutAnyMethod"></a><h3>AbstractClassWithoutAnyMethod</h3>
+		<p>Since: PMD 4.2</p>
+		<p>
+            
+			If the abstract class does not provides any methods, it may be just a data container that is not to be instantiated. In this case, it's probably
+			better to use a private or a protected constructor in order to prevent instantiation than make the class misleadingly abstract.
+            
+        </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+                    
+//ClassOrInterfaceDeclaration[
+	(@Abstract = 'true')
+	and
+	(count(//MethodDeclaration) + count(//ConstructorDeclaration) = 0)
+]
+                    
+                </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+            
+public class abstract Example {
+	String field;
+	int otherField;
+}
+            
+        
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+	
+	
+	<div class="subsection"><a name="TooFewBranchesForASwitchStatement"></a><h3>TooFewBranchesForASwitchStatement</h3>
+		<p>Since: PMD 4.2</p>
+		<p>
+		    
+			     Swith are designed complex branches, and allow branches to share treatement. Using a switch for only a few 
+			     branches is ill advised, as switches are not as easy to understand as if. In this case, it's most likely
+			     is a good idea to use a if statement instead, at least to increase code readability.
+			     
+	    </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+				    
+					     //SwitchStatement[
+					     (count(.//SwitchLabel) &amp;lt; $minimumNumberCaseForASwitch)
+								      ]
+								      
+					     </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+				     
+// With a minimumNumberCaseForASwitch of 3	    
+public class Foo {
+	public void bar() {
+		switch (condition) {
+			case ONE:
+				instruction;
+				break;
+			default:
+				break; // not enough for a 'switch' stmt, a simple 'if' stmt would have been more appropriate
+		}
+	}
+}
+					      
+			     
+            </pre></div>
+  
+        
+
+        
+        
+            
+                <p>This rule has the following properties:</p>
+                <table class="bodyTable"><th>Name</th><th>Default value</th><th>Description</th>
+                
+                
+                    <tr class="a">
+                    <td>minimumNumberCaseForASwitch</td>
+                    <td>3</td>
+                    <td>Minimum number of branches for a switch</td>
+                    </tr>
+                
+                </table>
+            
+        
+
+	</div>
+
+
+
+			
+			
+			
+
+
+			</div></div></div><div class="clear"><hr></hr></div><div id="footer"><div class="xright">© 2002-2009, InfoEther</div><div class="clear"><hr></hr></div></div></body></html>

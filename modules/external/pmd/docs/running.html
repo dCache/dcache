@@ -1,0 +1,99 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html><head><title>PMD - Running PMD</title><style type="text/css" media="all">
+          @import url("./style/maven-base.css");
+          
+          @import url("./style/maven-theme.css");</style><link rel="stylesheet" href="./style/print.css" type="text/css" media="print"></link><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"></meta><meta name="author" content="Tom Copeland"></meta><meta name="email" content="tom@infoether.com"></meta></head><body class="composite"><div id="banner"><a href="http://pmd.sourceforge.net/" id="organizationLogo"><img alt="InfoEther" src="http://sourceforge.net/sflogo.php?group_id=56262&amp;type=5"></img></a><a href="http://pmd.sourceforge.net/" id="projectLogo"><img alt="PMD" src="./images/pmd_logo_small.jpg"></img></a><div class="clear"><hr></hr></div></div><div id="breadcrumbs"><div class="xleft"></div><div class="xright">
+        
+        <a href="http://pmdapplied.com/" class="externalLink" title="External Link">**** Get the book! ****</a>
+      
+        
+          
+            <span class="separator">|</span>
+          
+        
+        <a href="http://sourceforge.net/projects/pmd" class="externalLink" title="External Link">SourceForge.net Project Page</a>
+      
+        
+          
+            <span class="separator">|</span>
+          
+        
+        <a href="http://sourceforge.net" class="externalLink" title="External Link">Hosted by SourceForge</a>
+      </div><div class="clear"><hr></hr></div></div><div id="leftColumn"><div id="navcolumn"><div id="menuOverview"><h5>Overview</h5><ul><li class="none"><a href="http://sourceforge.net/project/showfiles.php?group_id=56262&amp;package_id=51441&amp;release_id=632850" class="externalLink" title="External Link">Download PMD 4.2.5</a></li><li class="none"><a href="http://sourceforge.net/project/shownotes.php?release_id=632850&amp;group_id=56262" class="externalLink" title="External Link">What's new in PMD 4.2.5</a></li><li class="none"><a href="news.html">PMD in the news</a></li><li class="none"><a href="products.html">PMD-related products and books</a></li><li class="none"><a href="bestpractices.html">Best practices</a></li><li class="none"><a href="future.html">Future directions</a></li><li class="none"><a href="similar-projects.html">Similar projects</a></li><li class="none"><a href="credits.html">Credits</a></li><li class="none"><a href="license.html">License</a></li><li class="none"><a href="meaning.html">What does 'PMD' mean?</a></li></ul></div><div id="menuUsage"><h5>Usage</h5><ul><li class="none"><a href="installing.html">Installation</a></li><li class="none"><strong><a href="running.html">Command line usage</a></strong></li><li class="none"><a href="ant-task.html">Ant task usage</a></li><li class="none"><a href="maven-plugin.html">Maven plugin usage</a></li><li class="none"><a href="mvn-plugin.html">Mvn plugin usage</a></li><li class="none"><a href="integrations.html">IDE plugin usage</a></li><li class="none"><a href="suppressing.html">Suppressing warnings</a></li><li class="none"><a href="cpd.html">Finding duplicated code</a></li><li class="none"><a href="jspsupport.html">JSP support</a></li></ul></div><div id="menuCustomizing_PMD"><h5>Customizing PMD</h5><ul><li class="none"><a href="compiling.html">Compiling PMD</a></li><li class="none"><a href="howtowritearule.html">How to write a rule</a></li><li class="none"><a href="xpathruletutorial.html">Writing XPath rules</a></li><li class="none"><a href="howtomakearuleset.html">How to make a rule set</a></li><li class="none"><a href="howitworks.html">How it works</a></li><li class="none"><a href="rule-guidelines.html">Rule guidelines</a></li></ul></div><div id="menuFor_example"><h5>For example</h5><ul><li class="none"><a href="scoreboard.html">Run PMD on a Sourceforge project</a></li></ul></div><div id="menuRule_Sets"><h5>Rule Sets</h5><ul><li class="none"><a href="rules/index.html">Index</a></li><li class="none"><a href="rules/android.html">Android</a></li><li class="none"><a href="rules/basic.html">Basic</a></li><li class="none"><a href="rules/braces.html">Braces</a></li><li class="none"><a href="rules/codesize.html">Code Size</a></li><li class="none"><a href="rules/clone.html">Clone</a></li><li class="none"><a href="rules/controversial.html">Controversial</a></li><li class="none"><a href="rules/coupling.html">Coupling</a></li><li class="none"><a href="rules/design.html">Design</a></li><li class="none"><a href="rules/finalizers.html">Finalizers</a></li><li class="none"><a href="rules/imports.html">Import Statements</a></li><li class="none"><a href="rules/j2ee.html">J2EE</a></li><li class="none"><a href="rules/javabeans.html">Javabeans</a></li><li class="none"><a href="rules/junit.html">JUnit Tests</a></li><li class="none"><a href="rules/logging-java.html">Logging (Java)</a></li><li class="none"><a href="rules/logging-jakarta-commons.html">Logging (Jakarta)</a></li><li class="none"><a href="rules/migrating.html">Migrating</a></li><li class="none"><a href="rules/naming.html">Naming</a></li><li class="none"><a href="rules/optimizations.html">Optimizations</a></li><li class="none"><a href="rules/strictexception.html">Strict Exceptions</a></li><li class="none"><a href="rules/strings.html">Strings</a></li><li class="none"><a href="rules/sunsecure.html">Sun Security</a></li><li class="none"><a href="rules/unusedcode.html">Unused Code</a></li><li class="none"><a href="rules/basic-jsp.html">Java Server Pages</a></li><li class="none"><a href="rules/basic-jsf.html">Java Server Faces</a></li></ul></div><div id="menuProject_Documentation"><h5>Project Documentation</h5><ul><li class="none"><a href="index.html">About</a></li><li class="collapsed"><a href="project-info.html">Project Info</a></li><li class="collapsed"><a href="maven-reports.html">Project Reports</a></li><li class="none"><a href="development-process.html">Development Process</a></li></ul></div><div id="legend"><h5>Legend</h5><ul><li class="externalLink">External Link</li><li class="newWindow">Opens in a new window</li></ul></div><a href="http://maven.apache.org/" title="Built by Maven" id="poweredBy"><img alt="Built by Maven" src="./images/logos/mavenlogo_builtby_w.png"></img></a></div></div><div id="bodyColumn"><div class="contentBox"><div class="section"><a name="Running_PMD_via_command_line"></a><h2>Running PMD via command line</h2>
+   	<div class="subsection"><a name="Basic_usage"></a><h3>Basic usage</h3>
+   		<ul>
+    		<li>Type pmd [filename|jar or zip file containing source code|directory] [report format] [ruleset file], i.e:</li>
+    		<br></br>
+    			
+    <div class="source"><pre>
+C:\tmp\pmd-4.2.5\pmd\bin&gt;pmd c:\data\pmd\pmd\test-data\Unused1.java xml rulesets/unusedcode.xml
+&lt;?xml version="1.0"?&gt;&lt;pmd&gt;
+&lt;file name="c:\data\pmd\pmd\test-data\Unused1.java"&gt;
+&lt;violation line="5" rule="UnusedLocalVariable"&gt;
+Avoid unused local variables such as 'fr'
+&lt;/violation&gt;
+&lt;/file&gt;&lt;/pmd&gt;
+
+C:\tmp\pmd-4.2.5\pmd\bin&gt;
+				</pre></div>
+  
+       <p>You can pass a file name, a directory name, or a jar or zip file name containing Java source code to PMD.</p>
+       <p>Also, the PMD binary distribution includes the ruleset files
+       inside the jar file - even though the "rulesets/unusedcode.xml" parameter
+ above looks like a filesystem reference, it's really being used by a getResourceAsStream() call
+ to load it out of the PMD jar file.  And the same applies to the example below.</p>
+
+       <li>If you are want to run PMD without the batch file, you can do a:</li>
+       
+    <div class="source"><pre>
+C:\data\pmd\pmd&gt;java -cp lib\pmd-4.2.5.jar;lib\jaxen-1.1.1.jar;lib\asm-3.1.jar
+                     net.sourceforge.pmd.PMD
+                     c:\j2sdk1.4.1_01\src\java\lang xml
+                     rulesets/imports.xml
+       </pre></div>
+  
+		<br></br>
+	</ul>
+	</div>
+	<div class="subsection"><a name="Other_options"></a><h3>Other options</h3>
+		<ul>
+	    	<li>Notice that in this case the output is in XML, so you can redirect it to a file and XSLT it or whatever</li>
+	        <li>You can also use shortened names to refer to the built-in rulesets, like this:</li>
+				
+    <div class="source"><pre>
+java net.sourceforge.pmd.PMD /path/to/source text basic,imports,unusedcode
+       			</pre></div>
+  
+       		<li>The command line interface also accepts the following optional arguments:</li>
+         	<ul>
+             <li><code>-debug</code> - prints a stacktrace if an error is encountered</li>
+             <li><code>-shortnames</code> - puts shortened names in the report.  This only works if the filename argument is a single directory</li>
+             <li><code>-targetjdk [1.3|1.4|1.5|1.6]</code> - selects either JDK 1.3, 1.4, 1.5 or 1.6 language compatibility; default is 1.5</li>
+             <li><code>-encoding Cp1252</code> - uses the specified encoding for reading the source code files</li>
+             <li><code>-excludemarker NOPMDFORME</code> - uses the specified string of characters as the marker for PMD to ignore.  The default string is "NOPMD".</li>
+             <li><code>-linkprefix</code> - path to HTML source, for summary html renderer only.</li>
+             <li><code>-lineprefix</code> - custom anchor to affected line in the source file, for summary html renderer only.</li>
+             <li><code>-minimumpriority</code> - The rule priority threshold; rules with lower priority than they will not be used.</li>
+             <li><code>-xslt FILENAME</code> - This option overrides the default XSL stylesheet used by nicehtml renderer.</li>
+        	</ul>
+		</ul>
+	</div>
+	<div class="subsection"><a name="Renderers"></a><h3>Renderers</h3>
+	<p>PMD comes with 4 differents type of renderers:
+	<ul>
+		<li><b>text</b>, which does a basic text ouput of pmd's report.</li>
+		<li><b>xml</b>, which format as XML the report.</li>
+		<li><b>html</b>, which format the result as a very basic HTML page.</li>
+		<li><b>nicehtml</b>, which is "better" html view of the result.
+		As this feature use an XSLT transformation, it also possible to override the default stylesheet using the -xslt parameter.</li>
+	</ul>
+	</p>
+	<p>Here is a simple example of 'nicehtml' feature usage:
+				
+    <div class="source"><pre>
+java net.sourceforge.pmd.PMD /path/to/source nicehtml basic,imports,unusedcode -xslt my-own-stylesheet.xsl
+       			</pre></div>
+  
+		<i>Note that the stylesheet should be an readable file for PMD.</i>
+	</p>
+	</div>
+   </div></div></div><div class="clear"><hr></hr></div><div id="footer"><div class="xright">© 2002-2009, InfoEther</div><div class="clear"><hr></hr></div></div></body></html>

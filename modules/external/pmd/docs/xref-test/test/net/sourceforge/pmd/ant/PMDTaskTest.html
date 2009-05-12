@@ -1,0 +1,78 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="null" lang="null">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1" /><title>PMDTaskTest xref</title>
+<link type="text/css" rel="stylesheet" href="../../../../../stylesheet.css" />
+</head>
+<body>
+<pre>
+
+<a name="1" href="#1">1</a>   <em>/**</em>
+<a name="2" href="#2">2</a>   <em> * BSD-style license; for more info see <a href="http://pmd.sourceforge.net/license.html" target="alexandria_uri">http://pmd.sourceforge.net/license.html</a></em>
+<a name="3" href="#3">3</a>   <em> */</em>
+<a name="4" href="#4">4</a>   <strong>package</strong> test.net.sourceforge.pmd.ant;
+<a name="5" href="#5">5</a>   
+<a name="6" href="#6">6</a>   <strong>import</strong> net.sourceforge.pmd.ant.Formatter;
+<a name="7" href="#7">7</a>   <strong>import</strong> net.sourceforge.pmd.ant.PMDTask;
+<a name="8" href="#8">8</a>   <strong>import</strong> net.sourceforge.pmd.ant.RuleSetWrapper;
+<a name="9" href="#9">9</a>   
+<a name="10" href="#10">10</a>  <strong>import</strong> org.apache.tools.ant.BuildException;
+<a name="11" href="#11">11</a>  <strong>import</strong> org.junit.Ignore;
+<a name="12" href="#12">12</a>  <strong>import</strong> org.junit.Test;
+<a name="13" href="#13">13</a>  
+<a name="14" href="#14">14</a>  <strong>public</strong> <strong>class</strong> <a href="../../../../../test/net/sourceforge/pmd/ant/PMDTaskTest.html">PMDTaskTest</a> {
+<a name="15" href="#15">15</a>  
+<a name="16" href="#16">16</a>      @Test(expected = BuildException.<strong>class</strong>)
+<a name="17" href="#17">17</a>      <strong>public</strong> <strong>void</strong> testNoFormattersValidation() {
+<a name="18" href="#18">18</a>          PMDTask task = <strong>new</strong> PMDTask();
+<a name="19" href="#19">19</a>          task.execute();
+<a name="20" href="#20">20</a>      }
+<a name="21" href="#21">21</a>  
+<a name="22" href="#22">22</a>      @Test(expected = BuildException.<strong>class</strong>)
+<a name="23" href="#23">23</a>      <strong>public</strong> <strong>void</strong> testFormatterWithNoToFileAttribute() {
+<a name="24" href="#24">24</a>          PMDTask task = <strong>new</strong> PMDTask();
+<a name="25" href="#25">25</a>          task.addFormatter(<strong>new</strong> Formatter());
+<a name="26" href="#26">26</a>          task.execute();
+<a name="27" href="#27">27</a>      }
+<a name="28" href="#28">28</a>  
+<a name="29" href="#29">29</a>      @Test(expected = BuildException.<strong>class</strong>)
+<a name="30" href="#30">30</a>      <strong>public</strong> <strong>void</strong> testNoRuleSets() {
+<a name="31" href="#31">31</a>          PMDTask task = <strong>new</strong> PMDTask();
+<a name="32" href="#32">32</a>          task.execute();
+<a name="33" href="#33">33</a>      }
+<a name="34" href="#34">34</a>  
+<a name="35" href="#35">35</a>      @Ignore(<span class="string">"This test has a TODO in it"</span>)
+<a name="36" href="#36">36</a>      @Test
+<a name="37" href="#37">37</a>      <strong>public</strong> <strong>void</strong> testNestedRuleset() {
+<a name="38" href="#38">38</a>          PMDTask task = <strong>new</strong> PMDTask();
+<a name="39" href="#39">39</a>          RuleSetWrapper r = <strong>new</strong> RuleSetWrapper();
+<a name="40" href="#40">40</a>          r.addText(<span class="string">"rulesets/basic.xml"</span>);
+<a name="41" href="#41">41</a>          task.addRuleset(r);
+<a name="42" href="#42">42</a>          r.addText(<span class="string">"rulesets/design.xml"</span>);
+<a name="43" href="#43">43</a>          task.addRuleset(r);
+<a name="44" href="#44">44</a>          Formatter f = <strong>new</strong> Formatter();
+<a name="45" href="#45">45</a>          task.addFormatter(f);
+<a name="46" href="#46">46</a>          
+<a name="47" href="#47">47</a>          <em class="comment">//TODO</em>
+<a name="48" href="#48">48</a>          <strong>try</strong> {
+<a name="49" href="#49">49</a>              task.execute();
+<a name="50" href="#50">50</a>          } <strong>catch</strong> (BuildException be) {
+<a name="51" href="#51">51</a>              <em class="comment">//fail(be.toString());</em>
+<a name="52" href="#52">52</a>          }
+<a name="53" href="#53">53</a>      }
+<a name="54" href="#54">54</a>  
+<a name="55" href="#55">55</a>      @Test(expected = BuildException.<strong>class</strong>)
+<a name="56" href="#56">56</a>      <strong>public</strong> <strong>void</strong> testInvalidJDK() {
+<a name="57" href="#57">57</a>          PMDTask task = <strong>new</strong> PMDTask();
+<a name="58" href="#58">58</a>          task.setTargetJDK(<span class="string">"1.7"</span>);
+<a name="59" href="#59">59</a>          task.execute();
+<a name="60" href="#60">60</a>      }
+<a name="61" href="#61">61</a>  
+<a name="62" href="#62">62</a>      <strong>public</strong> <strong>static</strong> junit.framework.Test suite() {
+<a name="63" href="#63">63</a>          <strong>return</strong> <strong>new</strong> junit.framework.JUnit4TestAdapter(PMDTaskTest.<strong>class</strong>);
+<a name="64" href="#64">64</a>      }
+<a name="65" href="#65">65</a>  }
+</pre>
+<hr/><div id="footer">This page was automatically generated by <a href="http://maven.apache.org/">Maven</a></div></body>
+</html>
+

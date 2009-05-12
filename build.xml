@@ -150,6 +150,7 @@
     -->
 
     <import file="modules-builds/findbugs-build.xml"/>
+    <import file="modules-builds/cpd-build.xml"/>
 
     <!--
           Clean Targets

@@ -1,0 +1,595 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html><head><title>PMD - Rule Set: JUnit Rules</title><style type="text/css" media="all">
+          @import url("../style/maven-base.css");
+          
+          @import url("../style/maven-theme.css");</style><link rel="stylesheet" href="../style/print.css" type="text/css" media="print"></link><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"></meta><meta name="author" content="Tom Copeland"></meta><meta name="email" content="tom@infoether.com"></meta></head><body class="composite"><div id="banner"><a href="http://pmd.sourceforge.net/" id="organizationLogo"><img alt="InfoEther" src="http://sourceforge.net/sflogo.php?group_id=56262&amp;type=5"></img></a><a href="http://pmd.sourceforge.net/" id="projectLogo"><img alt="PMD" src="../images/pmd_logo_small.jpg"></img></a><div class="clear"><hr></hr></div></div><div id="breadcrumbs"><div class="xleft"></div><div class="xright">
+        
+        <a href="http://pmdapplied.com/" class="externalLink" title="External Link">**** Get the book! ****</a>
+      
+        
+          
+            <span class="separator">|</span>
+          
+        
+        <a href="http://sourceforge.net/projects/pmd" class="externalLink" title="External Link">SourceForge.net Project Page</a>
+      
+        
+          
+            <span class="separator">|</span>
+          
+        
+        <a href="http://sourceforge.net" class="externalLink" title="External Link">Hosted by SourceForge</a>
+      </div><div class="clear"><hr></hr></div></div><div id="leftColumn"><div id="navcolumn"><div id="menuOverview"><h5>Overview</h5><ul><li class="none"><a href="http://sourceforge.net/project/showfiles.php?group_id=56262&amp;package_id=51441&amp;release_id=632850" class="externalLink" title="External Link">Download PMD 4.2.5</a></li><li class="none"><a href="http://sourceforge.net/project/shownotes.php?release_id=632850&amp;group_id=56262" class="externalLink" title="External Link">What's new in PMD 4.2.5</a></li><li class="none"><a href="../news.html">PMD in the news</a></li><li class="none"><a href="../products.html">PMD-related products and books</a></li><li class="none"><a href="../bestpractices.html">Best practices</a></li><li class="none"><a href="../future.html">Future directions</a></li><li class="none"><a href="../similar-projects.html">Similar projects</a></li><li class="none"><a href="../credits.html">Credits</a></li><li class="none"><a href="../license.html">License</a></li><li class="none"><a href="../meaning.html">What does 'PMD' mean?</a></li></ul></div><div id="menuUsage"><h5>Usage</h5><ul><li class="none"><a href="../installing.html">Installation</a></li><li class="none"><a href="../running.html">Command line usage</a></li><li class="none"><a href="../ant-task.html">Ant task usage</a></li><li class="none"><a href="../maven-plugin.html">Maven plugin usage</a></li><li class="none"><a href="../mvn-plugin.html">Mvn plugin usage</a></li><li class="none"><a href="../integrations.html">IDE plugin usage</a></li><li class="none"><a href="../suppressing.html">Suppressing warnings</a></li><li class="none"><a href="../cpd.html">Finding duplicated code</a></li><li class="none"><a href="../jspsupport.html">JSP support</a></li></ul></div><div id="menuCustomizing_PMD"><h5>Customizing PMD</h5><ul><li class="none"><a href="../compiling.html">Compiling PMD</a></li><li class="none"><a href="../howtowritearule.html">How to write a rule</a></li><li class="none"><a href="../xpathruletutorial.html">Writing XPath rules</a></li><li class="none"><a href="../howtomakearuleset.html">How to make a rule set</a></li><li class="none"><a href="../howitworks.html">How it works</a></li><li class="none"><a href="../rule-guidelines.html">Rule guidelines</a></li></ul></div><div id="menuFor_example"><h5>For example</h5><ul><li class="none"><a href="../scoreboard.html">Run PMD on a Sourceforge project</a></li></ul></div><div id="menuRule_Sets"><h5>Rule Sets</h5><ul><li class="none"><a href="../rules/index.html">Index</a></li><li class="none"><a href="../rules/android.html">Android</a></li><li class="none"><a href="../rules/basic.html">Basic</a></li><li class="none"><a href="../rules/braces.html">Braces</a></li><li class="none"><a href="../rules/codesize.html">Code Size</a></li><li class="none"><a href="../rules/clone.html">Clone</a></li><li class="none"><a href="../rules/controversial.html">Controversial</a></li><li class="none"><a href="../rules/coupling.html">Coupling</a></li><li class="none"><a href="../rules/design.html">Design</a></li><li class="none"><a href="../rules/finalizers.html">Finalizers</a></li><li class="none"><a href="../rules/imports.html">Import Statements</a></li><li class="none"><a href="../rules/j2ee.html">J2EE</a></li><li class="none"><a href="../rules/javabeans.html">Javabeans</a></li><li class="none"><strong><a href="../rules/junit.html">JUnit Tests</a></strong></li><li class="none"><a href="../rules/logging-java.html">Logging (Java)</a></li><li class="none"><a href="../rules/logging-jakarta-commons.html">Logging (Jakarta)</a></li><li class="none"><a href="../rules/migrating.html">Migrating</a></li><li class="none"><a href="../rules/naming.html">Naming</a></li><li class="none"><a href="../rules/optimizations.html">Optimizations</a></li><li class="none"><a href="../rules/strictexception.html">Strict Exceptions</a></li><li class="none"><a href="../rules/strings.html">Strings</a></li><li class="none"><a href="../rules/sunsecure.html">Sun Security</a></li><li class="none"><a href="../rules/unusedcode.html">Unused Code</a></li><li class="none"><a href="../rules/basic-jsp.html">Java Server Pages</a></li><li class="none"><a href="../rules/basic-jsf.html">Java Server Faces</a></li></ul></div><div id="menuProject_Documentation"><h5>Project Documentation</h5><ul><li class="none"><a href="../index.html">About</a></li><li class="collapsed"><a href="../project-info.html">Project Info</a></li><li class="collapsed"><a href="../maven-reports.html">Project Reports</a></li><li class="none"><a href="../development-process.html">Development Process</a></li></ul></div><div id="legend"><h5>Legend</h5><ul><li class="externalLink">External Link</li><li class="newWindow">Opens in a new window</li></ul></div><a href="http://maven.apache.org/" title="Built by Maven" id="poweredBy"><img alt="Built by Maven" src="../images/logos/mavenlogo_builtby_w.png"></img></a></div></div><div id="bodyColumn"><div class="contentBox"><div class="section"><a name="JUnit_Rules"></a><h2>JUnit Rules</h2>
+				
+  
+These rules deal with different problems that can occur with JUnit tests.
+  
+
+    
+	
+	<div class="subsection"><a name="JUnitStaticSuite"></a><h3>JUnitStaticSuite</h3>
+		<p>Since: PMD 1.0</p>
+		<p>
+The suite() method in a JUnit test needs to be both public and static.
+      </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+                
+//MethodDeclaration[not(@Static='true') or not(@Public='true')]
+[MethodDeclarator/@Image='suite']
+[MethodDeclarator/FormalParameters/@ParameterCount=0]
+[ancestor::ClassOrInterfaceDeclaration[//ClassOrInterfaceType[typeof(@Image, 'junit.framework.TestCase','TestCase')] or //MarkerAnnotation/Name[typeof(@Image, 'org.junit.Test', 'Test')]]]
+                
+            </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+  
+import junit.framework.*;
+public class Foo extends TestCase {
+ public void suite() {} // oops, should be static
+ private static void suite() {} // oops, should be public
+}
+  
+      
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+  
+	
+	<div class="subsection"><a name="JUnitSpelling"></a><h3>JUnitSpelling</h3>
+		<p>Since: PMD 1.0</p>
+		<p>
+Some JUnit framework methods are easy to misspell.
+    </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+              
+//MethodDeclarator[(not(@Image = 'setUp')
+ and translate(@Image, 'SETuP', 'setUp') = 'setUp')
+ or (not(@Image = 'tearDown')
+ and translate(@Image, 'TEARdOWN', 'tearDown') = 'tearDown')]
+ [FormalParameters[count(*) = 0]]
+[ancestor::ClassOrInterfaceDeclaration[//ClassOrInterfaceType[typeof(@Image, 'junit.framework.TestCase','TestCase')] or //MarkerAnnotation/Name[typeof(@Image, 'org.junit.Test', 'Test')]]]
+              
+          </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+
+import junit.framework.*;
+public class Foo extends TestCase {
+ public void setup() {} // oops, should be setUp
+ public void TearDown() {} // oops, should be tearDown
+}
+
+    
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="JUnitAssertionsShouldIncludeMessage"></a><h3>JUnitAssertionsShouldIncludeMessage</h3>
+		<p>Since: PMD 1.04</p>
+		<p>
+JUnit assertions should include a message - i.e., use the three argument version of
+assertEquals(), not the two argument version.
+      </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/junit/JUnitAssertionsShouldIncludeMessage.html">net.sourceforge.pmd.rules.junit.JUnitAssertionsShouldIncludeMessage</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+  
+public class Foo extends TestCase {
+ public void testSomething() {
+  assertEquals("foo", "bar");
+  // Use the form:
+  // assertEquals("Foo does not equals bar", "foo", "bar");
+  // instead
+ }
+}
+  
+      
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="JUnitTestsShouldIncludeAssert"></a><h3>JUnitTestsShouldIncludeAssert</h3>
+		<p>Since: PMD 2.0</p>
+		<p>
+JUnit tests should include at least one assertion.  This makes the tests more robust, and
+ using assert with messages provide the developer a clearer idea of what the test does.
+        </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/junit/JUnitTestsShouldContainAsserts.html">net.sourceforge.pmd.rules.junit.JUnitTestsShouldContainAsserts</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+    
+public class Foo extends TestCase {
+  public void testSomething() {
+      Bar b = findBar();
+  // This is better than having a NullPointerException
+  // assertNotNull("bar not found", b);
+  b.work();
+  }
+}
+    
+        
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="TestClassWithoutTestCases"></a><h3>TestClassWithoutTestCases</h3>
+		<p>Since: PMD 3.0</p>
+		<p>
+Test classes end with the suffix Test. Having a non-test class with that name is
+not a good practice, since most people will assume it is a test case. Test
+classes have test methods named testXXX.
+      </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/junit/TestClassWithoutTestCases.html">net.sourceforge.pmd.rules.junit.TestClassWithoutTestCases</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+
+//Consider changing the name of the class if it is not a test
+//Consider adding test methods if it is a test
+public class CarTest {
+   public static void main(String[] args) {
+    // do something
+   }
+   // code
+}
+
+      
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="UnnecessaryBooleanAssertion"></a><h3>UnnecessaryBooleanAssertion</h3>
+		<p>Since: PMD 3.0</p>
+		<p>
+A JUnit test assertion with a boolean literal is unnecessary since it always will eval to the same thing.
+Consider using flow control (in case of assertTrue(false) or similar) or simply removing
+statements like assertTrue(true) and assertFalse(false).  If you just want a test to halt, use the fail method.
+      </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+    
+//StatementExpression
+[
+.//Name[@Image='assertTrue' or  @Image='assertFalse']
+and
+PrimaryExpression/PrimarySuffix/Arguments/ArgumentList
+ /Expression/PrimaryExpression/PrimaryPrefix
+  /Literal/BooleanLiteral
+or
+(
+.//Name[@Image='assertTrue' or  @Image='assertFalse']
+and
+PrimaryExpression/PrimarySuffix/Arguments/ArgumentList
+ /Expression/UnaryExpressionNotPlusMinus[@Image='!']
+/PrimaryExpression/PrimaryPrefix[Literal/BooleanLiteral or Name[count(../../*)=1]])
+]
+[ancestor::ClassOrInterfaceDeclaration[//ClassOrInterfaceType[typeof(@Image, 'junit.framework.TestCase','TestCase')] or //MarkerAnnotation/Name[typeof(@Image, 'org.junit.Test', 'Test')]]]
+
+              </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+
+public class SimpleTest extends TestCase {
+ public void testX() {
+  // Why on earth would you write this?
+  assertTrue(true);
+ }
+}
+
+          
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="UseAssertEqualsInsteadOfAssertTrue"></a><h3>UseAssertEqualsInsteadOfAssertTrue</h3>
+		<p>Since: PMD 3.1</p>
+		<p>
+This rule detects JUnit assertions in object equality. These assertions
+should be made by more specific methods, like assertEquals.
+      </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+                
+//PrimaryExpression[
+    PrimaryPrefix/Name[@Image = 'assertTrue']
+][
+    PrimarySuffix/Arguments/ArgumentList/Expression/PrimaryExpression/PrimaryPrefix/Name
+    [ends-with(@Image, '.equals')]
+]
+[ancestor::ClassOrInterfaceDeclaration[//ClassOrInterfaceType[typeof(@Image, 'junit.framework.TestCase','TestCase')] or //MarkerAnnotation/Name[typeof(@Image, 'org.junit.Test', 'Test')]]]
+ 
+            </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+
+public class FooTest extends TestCase {
+ void testCode() {
+  Object a, b;
+  assertTrue(a.equals(b)); // bad usage
+  assertEquals(?a should equals b?, a, b); // good usage
+ }
+}
+
+      
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+   
+	
+	<div class="subsection"><a name="UseAssertSameInsteadOfAssertTrue"></a><h3>UseAssertSameInsteadOfAssertTrue</h3>
+		<p>Since: PMD 3.1</p>
+		<p>
+This rule detects JUnit assertions in object references equality. These assertions
+should be made by more specific methods, like assertSame, assertNotSame.
+      </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+                
+//PrimaryExpression[
+    PrimaryPrefix/Name
+     [@Image = 'assertTrue' or @Image = 'assertFalse']
+]
+[PrimarySuffix/Arguments
+ /ArgumentList/Expression
+ /EqualityExpression[count(.//NullLiteral) = 0]]
+[ancestor::ClassOrInterfaceDeclaration[//ClassOrInterfaceType[typeof(@Image, 'junit.framework.TestCase','TestCase')] or //MarkerAnnotation/Name[typeof(@Image, 'org.junit.Test', 'Test')]]]
+ 
+            </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+
+public class FooTest extends TestCase {
+ void testCode() {
+  Object a, b;
+  assertTrue(a==b); // bad usage
+  assertSame(a, b);  // good usage
+ }
+}
+
+      
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="UseAssertNullInsteadOfAssertTrue"></a><h3>UseAssertNullInsteadOfAssertTrue</h3>
+		<p>Since: PMD 3.5</p>
+		<p>
+ This rule detects JUnit assertions in object references equality. These assertions
+ should be made by more specific methods, like assertNull, assertNotNull.
+       </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+                 
+//PrimaryExpression[
+ PrimaryPrefix/Name[@Image = 'assertTrue' or @Image = 'assertFalse']
+][
+ PrimarySuffix/Arguments/ArgumentList[
+  Expression/EqualityExpression/PrimaryExpression/PrimaryPrefix/Literal/NullLiteral
+ ]
+]
+[ancestor::ClassOrInterfaceDeclaration[//ClassOrInterfaceType[typeof(@Image, 'junit.framework.TestCase','TestCase')] or //MarkerAnnotation/Name[typeof(@Image, 'org.junit.Test', 'Test')]]]
+  
+             </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+ 
+ public class FooTest extends TestCase {
+  void testCode() {
+   Object a = doSomething();
+   assertTrue(a==null); // bad usage
+   assertNull(a);  // good usage
+   assertTrue(a != null); // bad usage
+   assertNotNull(a);  // good usage
+  }
+ }
+ 
+       
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="SimplifyBooleanAssertion"></a><h3>SimplifyBooleanAssertion</h3>
+		<p>Since: PMD 3.6</p>
+		<p>
+Avoid negation in an assertTrue or assertFalse test.
+For example, rephrase:
+assertTrue(!expr);
+as:
+assertFalse(expr);
+      </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+    
+//StatementExpression
+[
+.//Name[@Image='assertTrue' or  @Image='assertFalse']
+and
+PrimaryExpression/PrimarySuffix/Arguments/ArgumentList
+ /Expression/UnaryExpressionNotPlusMinus[@Image='!']
+/PrimaryExpression/PrimaryPrefix
+]
+[ancestor::ClassOrInterfaceDeclaration[//ClassOrInterfaceType[typeof(@Image, 'junit.framework.TestCase','TestCase')] or //MarkerAnnotation/Name[typeof(@Image, 'org.junit.Test', 'Test')]]]
+
+              </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+
+public class SimpleTest extends TestCase {
+ public void testX() {
+  assertTrue("not empty", !r.isEmpty()); // replace with assertFalse("not empty", r.isEmpty())
+  assertFalse(!r.isEmpty()); // replace with assertTrue(r.isEmpty())
+ }
+}
+
+          
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+
+			</div></div></div><div class="clear"><hr></hr></div><div id="footer"><div class="xright">© 2002-2009, InfoEther</div><div class="clear"><hr></hr></div></div></body></html>

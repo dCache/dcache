@@ -1,0 +1,77 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="null" lang="null">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1" /><title>DataPoint xref</title>
+<link type="text/css" rel="stylesheet" href="../../../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../../../apidocs/net/sourceforge/pmd/stat/DataPoint.html">View Javadoc</a></div><pre>
+
+<a name="1" href="#1">1</a>   <em>/**</em>
+<a name="2" href="#2">2</a>   <em> * BSD-style license; for more info see <a href="http://pmd.sourceforge.net/license.html" target="alexandria_uri">http://pmd.sourceforge.net/license.html</a></em>
+<a name="3" href="#3">3</a>   <em> */</em>
+<a name="4" href="#4">4</a>   <strong>package</strong> net.sourceforge.pmd.stat;
+<a name="5" href="#5">5</a>   
+<a name="6" href="#6">6</a>   <strong>import</strong> net.sourceforge.pmd.ast.SimpleNode;
+<a name="7" href="#7">7</a>   
+<a name="8" href="#8">8</a>   <strong>import</strong> java.util.Random;
+<a name="9" href="#9">9</a>   
+<a name="10" href="#10">10</a>  <em>/**</em>
+<a name="11" href="#11">11</a>  <em> * @author David Dixon-Peugh</em>
+<a name="12" href="#12">12</a>  <em> *         Aug 8, 2002 DataPoint.java</em>
+<a name="13" href="#13">13</a>  <em> */</em>
+<a name="14" href="#14">14</a>  <strong>public</strong> <strong>class</strong> <a href="../../../../net/sourceforge/pmd/stat/DataPoint.html">DataPoint</a> implements Comparable&lt;DataPoint> {
+<a name="15" href="#15">15</a>  
+<a name="16" href="#16">16</a>      <strong>private</strong> <a href="../../../../net/sourceforge/pmd/ast/SimpleNode.html">SimpleNode</a> node;
+<a name="17" href="#17">17</a>      <strong>private</strong> <strong>int</strong> random;
+<a name="18" href="#18">18</a>      <strong>private</strong> <strong>double</strong> score;
+<a name="19" href="#19">19</a>      <strong>private</strong> String message;
+<a name="20" href="#20">20</a>  
+<a name="21" href="#21">21</a>      <em>/**</em>
+<a name="22" href="#22">22</a>  <em>     * Constructor for DataPoint.</em>
+<a name="23" href="#23">23</a>  <em>     */</em>
+<a name="24" href="#24">24</a>      <strong>public</strong> <a href="../../../../net/sourceforge/pmd/stat/DataPoint.html">DataPoint</a>() {
+<a name="25" href="#25">25</a>          <strong>super</strong>();
+<a name="26" href="#26">26</a>          <em class="comment">// Random number is so that the TreeSet doesn't</em>
+<a name="27" href="#27">27</a>          <em class="comment">// whack things with the same score.</em>
+<a name="28" href="#28">28</a>          Random rand = <strong>new</strong> Random();
+<a name="29" href="#29">29</a>          random = rand.nextInt(11061973);
+<a name="30" href="#30">30</a>      }
+<a name="31" href="#31">31</a>  
+<a name="32" href="#32">32</a>      <strong>public</strong> <strong>int</strong> compareTo(DataPo<strong>int</strong> rhs) {
+<a name="33" href="#33">33</a>          Double lhsScore = <strong>new</strong> Double(score);
+<a name="34" href="#34">34</a>          Double rhsScore = <strong>new</strong> Double(rhs.getScore());
+<a name="35" href="#35">35</a>          <strong>if</strong> (lhsScore.doubleValue() != rhsScore.doubleValue()) {
+<a name="36" href="#36">36</a>              <strong>return</strong> lhsScore.compareTo(rhsScore);
+<a name="37" href="#37">37</a>          }
+<a name="38" href="#38">38</a>          <strong>return</strong> random - rhs.random;
+<a name="39" href="#39">39</a>      }
+<a name="40" href="#40">40</a>  
+<a name="41" href="#41">41</a>      <strong>public</strong> <a href="../../../../net/sourceforge/pmd/ast/SimpleNode.html">SimpleNode</a> getNode() {
+<a name="42" href="#42">42</a>          <strong>return</strong> node;
+<a name="43" href="#43">43</a>      }
+<a name="44" href="#44">44</a>  
+<a name="45" href="#45">45</a>      <strong>public</strong> <strong>void</strong> setNode(<a href="../../../../net/sourceforge/pmd/ast/SimpleNode.html">SimpleNode</a> node) {
+<a name="46" href="#46">46</a>          <strong>this</strong>.node = node;
+<a name="47" href="#47">47</a>      }
+<a name="48" href="#48">48</a>  
+<a name="49" href="#49">49</a>      <strong>public</strong> String getMessage() {
+<a name="50" href="#50">50</a>          <strong>return</strong> message;
+<a name="51" href="#51">51</a>      }
+<a name="52" href="#52">52</a>  
+<a name="53" href="#53">53</a>      <strong>public</strong> <strong>void</strong> setMessage(String message) {
+<a name="54" href="#54">54</a>          <strong>this</strong>.message = message;
+<a name="55" href="#55">55</a>      }
+<a name="56" href="#56">56</a>  
+<a name="57" href="#57">57</a>      <strong>public</strong> <strong>double</strong> getScore() {
+<a name="58" href="#58">58</a>          <strong>return</strong> score;
+<a name="59" href="#59">59</a>      }
+<a name="60" href="#60">60</a>  
+<a name="61" href="#61">61</a>      <strong>public</strong> <strong>void</strong> setScore(<strong>double</strong> score) {
+<a name="62" href="#62">62</a>          <strong>this</strong>.score = score;
+<a name="63" href="#63">63</a>      }
+<a name="64" href="#64">64</a>  }
+</pre>
+<hr/><div id="footer">This page was automatically generated by <a href="http://maven.apache.org/">Maven</a></div></body>
+</html>
+

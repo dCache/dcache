@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="cpd">
+
+    <!--
+          Code duplication detection
+    -->
+
+    <property name="pmd.home" value="${libDir}/pmd" />
+    <target name="cpd" description="Code duplication detection">
+        <taskdef name="cpd" classname="net.sourceforge.pmd.cpd.CPDTask"
+            classpath="${pmd.home}/lib/pmd-4.2.5.jar" />
+        <cpd minimumTokenCount="100" format="xml" outputFile="${buildDir}/cpd.xml">
+            <fileset dir="modules">
+                <include name="cells/**/*.java"/>
+                <include name="dCache/**/*.java"/>
+                <include name="srm/**/*.java"/>
+                <include name="gPlazma/**/*.java"/>
+            </fileset>
+        </cpd>
+
+    </target>
+
+</project>
