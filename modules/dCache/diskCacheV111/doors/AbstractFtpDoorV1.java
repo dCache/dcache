@@ -2961,8 +2961,8 @@ public abstract class AbstractFtpDoorV1
                      "handler for path: " + _transfer.path);
                 Subject subject = new Subject(_pwdRecord.UID, _pwdRecord.GID);
                 if (!_permissionHandler.canCreateFile(subject, _transfer.path, _origin)) {
-                    setNextPwdRecord();
-                    if(_pwdRecord==null) {
+
+                    if (!setNextPwdRecord()) {
                         throw new FTPCommandException
                             (550,
                              "Permission denied",
