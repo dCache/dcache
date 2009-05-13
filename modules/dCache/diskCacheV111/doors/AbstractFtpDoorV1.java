@@ -95,6 +95,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ExecutionException;
+import java.util.Date;
 import java.util.Queue;
 import java.util.List;
 import java.util.LinkedList;
@@ -113,6 +114,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Constructor;
 import java.security.NoSuchAlgorithmException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
@@ -273,7 +276,7 @@ public abstract class AbstractFtpDoorV1
      */
     private static final String[] FEATURES = {
         "EOF", "PARALLEL", "SIZE", "SBUF",
-        "ERET", "ESTO", "GETPUT",
+        "ERET", "ESTO", "GETPUT", "MDTM",
         "CKSUM " + buildChecksumList(),  "MODEX"
         /*
          * do not publish DCAU as supported feature. This will force
@@ -281,6 +284,12 @@ public abstract class AbstractFtpDoorV1
          */
         // "DCAU"
     };
+
+    /**
+     * Time stamp format as defined in RFC 3659.
+     */
+    private static final DateFormat TIMESTAMP_FORMAT =
+        new SimpleDateFormat("yyyyMMddHHmmss");
 
     private static final String buildChecksumList(){
         String result = "";
@@ -3615,7 +3624,7 @@ public abstract class AbstractFtpDoorV1
         reply("213 " + filelength);
     }
 
-    public void ac_mdtm(String arg) throws Exception
+    public void ac_mdtm(String arg)
     {
         if (arg.equals("")) {
             reply(err("MDTM",""));
@@ -3627,64 +3636,62 @@ public abstract class AbstractFtpDoorV1
             return;
         }
 
-        String path = absolutePath(arg);
-        long modification_time = 0;
-
-        if (_useEncpScripts) {
-            File f = new File(path);
-            if (!f.exists()) {
-                reply("500 File not found");
+        try {
+            String path = absolutePath(arg);
+            if (path == null) {
+                reply("550 File not found");
                 return;
             }
 
-            String cmd = _encpPutCmd + " chkr " +
-                _pwdRecord.UID + " " +
-                _pwdRecord.GID + " " +
-                path;
-            if (spawn(cmd, 1000) != 0) {
-                reply("553 Permission denied");
-                return;
-            }
-            modification_time = f.lastModified();
-        } else {
-            try {
-                PnfsGetStorageInfoMessage info = _pnfs.getStorageInfoByPath(path);
+            long modification_time;
+            if (_useEncpScripts) {
+                File f = new File(path);
+                if (!f.exists()) {
+                    reply("550 File not found");
+                    return;
+                }
+
+                String cmd = _encpPutCmd + " chkr " +
+                    _pwdRecord.UID + " " +
+                    _pwdRecord.GID + " " +
+                    path;
+                if (spawn(cmd, 1000) != 0) {
+                    reply("550 Permission denied");
+                    return;
+                }
+                modification_time = f.lastModified();
+            } else {
+                PnfsGetFileMetaDataMessage info =
+                    _pnfs.getFileMetaDataByPath(path);
+                PnfsId pnfsId = info.getPnfsId();
                 Subject subject = new Subject(_pwdRecord.UID, _pwdRecord.GID);
-                if (_permissionHandler.canReadFile(subject, path, _origin)) {
-                    modification_time = info.getMetaData().getLastModifiedTime();
-                } else {
-                    if(!setNextPwdRecord()) {
-                        reply("553 Permission denied");
+                if (!_permissionHandler.canReadFile(subject, path, _origin)) {
+                    if (!setNextPwdRecord()) {
+                        reply("550 Permission denied");
                     } else {
                         ac_mdtm(arg);
                     }
                     return;
                 }
-            } catch (CacheException ce) {
-                reply("553 Permission denied, reason: " + ce);
-                return;
+                modification_time = info.getMetaData().getLastModifiedTime();
+            }
+            String time_val =
+                TIMESTAMP_FORMAT.format(new Date(modification_time));
+            reply("213 " + time_val);
+        } catch (CacheException e) {
+            switch (e.getRc()) {
+            case CacheException.FILE_NOT_FOUND:
+                reply("550 File not found");
+                break;
+            case CacheException.TIMEOUT:
+                reply("451 Internal timeout");
+                warn("Timeout in MDTM: " + e);
+                break;
+            default:
+                reply("451 Internal failure: " + e.getMessage());
+                error("Error in MDTM: " + e);
             }
         }
-        /*
-         *from the mdtm spec at http://www.ietf.org/internet-drafts/draft-ietf-ftpext-mlst-16.txt
-         The syntax of a time value is:
-
-         time-val       = 14DIGIT [ "." 1*DIGIT ]
-
-         The leading, mandatory, fourteen digits are to be interpreted as, in
-         order from the leftmost, four digits giving the year, with a range of
-         1000--9999, two digits giving the month of the year, with a range of
-         01--12, two digits giving the day of the month, with a range of
-         01--31, two digits giving the hour of the day, with a range of
-         00--23, two digits giving minutes past the hour, with a range of
-         00--59, and finally, two digits giving seconds past the minute, with
-         a range of 00--60 (with 60 being used only at a leap second).  Years
-         in the tenth century, and earlier, cannot be expressed.  This is not
-         considered a serious defect of the protocol.
-        */
-        java.text.DateFormat df = new java.text.SimpleDateFormat("yyyyddhhmmss");
-        String time_val = df.format(new java.util.Date(modification_time));
-        reply("213 " + time_val);
     }
 
     private class FilenameMatcher implements FilenameFilter
