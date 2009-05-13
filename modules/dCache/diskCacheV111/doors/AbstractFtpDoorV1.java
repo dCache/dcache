@@ -1631,7 +1631,7 @@ public abstract class AbstractFtpDoorV1
             return;
         }
 
-        if (_pwdRecord.isWeak() || _pwdRecord.isReadOnly()) {
+        if (_pwdRecord.isReadOnly()) {
             if(!setNextPwdRecord()) {
                 println("500 Command disabled");
                 return;
@@ -1808,7 +1808,7 @@ public abstract class AbstractFtpDoorV1
             return;
         }
 
-        if (_pwdRecord.isWeak() || _pwdRecord.isReadOnly()) {
+        if (_pwdRecord.isReadOnly()) {
             if(!setNextPwdRecord()) {
                 println("500 Command disabled");
                 return;
@@ -1893,7 +1893,7 @@ public abstract class AbstractFtpDoorV1
             return;
         }
 
-        if (_pwdRecord.isWeak() || _pwdRecord.isReadOnly()) {
+        if (_pwdRecord.isReadOnly()) {
             if(!setNextPwdRecord()) {
                 println("500 Command disabled");
                 return;
@@ -2248,7 +2248,7 @@ public abstract class AbstractFtpDoorV1
             return;
         }
 
-        if (_pwdRecord.isWeak() || _pwdRecord.isReadOnly()) {
+        if (_pwdRecord.isReadOnly()) {
             if(!setNextPwdRecord()) {
                 println("500 Command disabled");
                 return;
@@ -2872,7 +2872,7 @@ public abstract class AbstractFtpDoorV1
                 throw new FTPCommandException(530, "Not logged in.");
             }
 
-            if (_pwdRecord.isWeak() || _pwdRecord.isReadOnly()) {
+            if (_pwdRecord.isReadOnly()) {
                 if(!setNextPwdRecord()) {
                     throw new FTPCommandException(500, "Command disabled");
                 } else {
