@@ -175,6 +175,9 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
         } else if ((location != null) && location.startsWith("jdbc:")) {
             DbTrash trash = new DbTrash(location, driverName, userName, passwd);
             PnfsFile.setTrash(trash);
+        } else if ((location != null) && location.startsWith("pnfs:")) {
+            NfsTrash trash = new NfsTrash(_mountPoint);
+            PnfsFile.setTrash(trash);
         }
         else {
             _logNameSpace.info("Empty trash is selected");
