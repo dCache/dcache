@@ -23,9 +23,9 @@ import org.dcache.acl.util.sql.SQLHandler;
  *
  * @author David Melkumyan, DESY Zeuthen
  */
-public class AclHandler extends THandler implements ACLHandler {
+public class DefaultACLHandler extends THandler implements ACLHandler {
 
-    private static final Logger logger = Logger.getLogger("logger.org.dcache.authorization." + AclHandler.class.getName());
+    private static final Logger logger = Logger.getLogger("logger.org.dcache.authorization." + DefaultACLHandler.class.getName());
 
     public static final String COLUMN_RS_ID = "rs_id";
 
@@ -51,7 +51,7 @@ public class AclHandler extends THandler implements ACLHandler {
 
     private static String SQLP_DELETE_ACL;
 
-    public AclHandler() throws ACLException {
+    public DefaultACLHandler() throws ACLException {
         super(new AclConfig());
     }
 
@@ -59,7 +59,7 @@ public class AclHandler extends THandler implements ACLHandler {
      * @param configFile
      *            Configuration file
      */
-    public AclHandler(String configFile) throws ACLException {
+    public DefaultACLHandler(String configFile) throws ACLException {
         super(new AclConfig(configFile));
     }
 
@@ -67,7 +67,7 @@ public class AclHandler extends THandler implements ACLHandler {
      * @param aclConfig
      *            ACL Configuration
      */
-    public AclHandler(AclConfig aclConfig) throws ACLException {
+    public DefaultACLHandler(AclConfig aclConfig) throws ACLException {
         super(aclConfig);
     }
 

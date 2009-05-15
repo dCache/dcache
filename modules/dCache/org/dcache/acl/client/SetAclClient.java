@@ -4,7 +4,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.MissingArgumentException;
 import org.apache.log4j.Logger;
 import org.dcache.acl.ACL;
-import org.dcache.acl.handler.AclHandler;
+import org.dcache.acl.handler.DefaultACLHandler;
 import org.dcache.acl.parser.ACLParser;
 
 /**
@@ -45,7 +45,7 @@ public class SetAclClient extends AclClient {
 
             final String rsId = newACL.getRsId();
 
-            AclHandler aclHandler = new AclHandler();
+            DefaultACLHandler aclHandler = new DefaultACLHandler();
             ACL oldACL = aclHandler.getACL(rsId);
 
             if ( oldACL != null ) {

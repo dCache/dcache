@@ -25,7 +25,7 @@ public class AclHandler {
 
     private static final Logger logger = Logger.getLogger("logger.org.dcache.authorization." + AclHandler.class.getName());
 
-    private static org.dcache.acl.handler.AclHandler _aclHandler;
+    private static org.dcache.acl.handler.DefaultACLHandler _aclHandler;
     private static AclConfig _aclConfig;
 
     private static AclHandler _SINGLETON;
@@ -36,7 +36,7 @@ public class AclHandler {
     private AclHandler() {
         try {
             if (_aclConfig != null)
-                _aclHandler = new org.dcache.acl.handler.AclHandler(_aclConfig);
+                _aclHandler = new org.dcache.acl.handler.DefaultACLHandler(_aclConfig);
 
         } catch (ACLException e) {
             logger.error("Initialize ACL handler failed, reason: " + e.getMessage());

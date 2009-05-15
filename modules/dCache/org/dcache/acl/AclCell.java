@@ -10,7 +10,7 @@ import org.dcache.acl.ACL;
 import org.dcache.acl.ACLException;
 import org.dcache.acl.config.AclConfig;
 import org.dcache.acl.enums.RsType;
-import org.dcache.acl.handler.AclHandler;
+import org.dcache.acl.handler.DefaultACLHandler;
 import org.dcache.acl.parser.ACEParser;
 
 import diskCacheV111.util.CacheException;
@@ -46,7 +46,7 @@ public class AclCell extends CellAdapter {
     private final CellNucleus _nucleus;
     private final Args _args;
     private final PnfsHandler _pnfs;
-    private final AclHandler _aclHandler;
+    private final DefaultACLHandler _aclHandler;
 
     public static final String DEFAULT_ADDRESS_MSK = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
 
@@ -69,7 +69,7 @@ public class AclCell extends CellAdapter {
 
         _pnfs = new PnfsHandler(this, new CellPath("PnfsManager"));
         Properties aclProperties = getAclProperties();
-        _aclHandler = new AclHandler(new AclConfig(aclProperties));
+        _aclHandler = new DefaultACLHandler(new AclConfig(aclProperties));
         useInterpreter(true);
         start();
     }

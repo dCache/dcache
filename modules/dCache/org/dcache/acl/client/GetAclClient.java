@@ -7,7 +7,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.MissingArgumentException;
 import org.apache.log4j.Logger;
 import org.dcache.acl.ACL;
-import org.dcache.acl.handler.AclHandler;
+import org.dcache.acl.handler.DefaultACLHandler;
 
 /**
  * Get access control lists.
@@ -55,7 +55,7 @@ public class GetAclClient extends AclClient {
             if ( rsId == null || rsId.length() == 0 )
                 throw new RuntimeException("Get rsId failure.");
 
-            ACL acl = (new AclHandler()).getACL(rsId);
+            ACL acl = (new DefaultACLHandler()).getACL(rsId);
             if ( acl != null )
                 logger.info(acl.toNFSv4String());
 

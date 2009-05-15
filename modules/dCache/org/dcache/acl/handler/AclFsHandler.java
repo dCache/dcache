@@ -16,7 +16,7 @@ import org.dcache.acl.enums.RsType;
  *
  * @author David Melkumyan, DESY Zeuthen
  */
-public class AclFsHandler extends AclHandler {
+public class AclFsHandler extends DefaultACLHandler {
 
     private static final Logger logger = Logger.getLogger("logger.org.dcache.authorization." + "logger.org.dcache.authorization." + AclFsHandler.class.getName());
 
