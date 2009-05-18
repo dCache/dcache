@@ -27,7 +27,7 @@ import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.ThreadPool;
+import diskCacheV111.util.ThreadPoolNG;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.OSMStorageInfo;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
@@ -41,8 +41,7 @@ import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.util.Args;
-
-
+import org.dcache.tests.util.CurrentThreadExceutorHelper;
 
 import static org.junit.Assert.*;
 
@@ -67,12 +66,14 @@ public class HsmRestoreTest {
 
     @Before
     public void setUp() throws Exception {
-        Logger.getLogger("logger.org.dcache.poolselection").setLevel(Level.DEBUG);
+        Logger.getRootLogger().setLevel(Level.DEBUG);
 
         _partitionManager.setCellEndpoint(_cell);
         _selectionUnit = new PoolSelectionUnitV2();
         _costModule = new CostModuleV1();
         _costModule.setCellEndpoint(_cell);
+        _costModule.setCostCalculationEngine(new diskCacheV111.pools.CostCalculationEngine("diskCacheV111.pools.CostCalculationV5"));
+
         _pnfsHandler = new PnfsHandler(new CellPath("PnfsManager"));
         _pnfsHandler.setCellEndpoint(_cell);
         _poolMonitor = new PoolMonitorV5();
@@ -90,6 +91,7 @@ public class HsmRestoreTest {
         _rc.setPoolSelectionUnit(_selectionUnit);
         _rc.setPoolMonitor(_poolMonitor);
         _rc.setPartitionManager(_partitionManager);
+        _rc.setThreadPool(new CurrentThreadExceutorHelper(_cell));
         _rc.setCellEndpoint(_cell);
         _rc.ac_rc_set_retry_$_1(new Args("0"));
 
@@ -152,8 +154,7 @@ public class HsmRestoreTest {
 
             _selectionUnit.getPool(pool).setHsmInstances(connectedHSM);
 
-            CellMessage cellMessage = new CellMessage( new CellPath("CostModule"), poolUpMessage);
-            _costModule.messageArrived(cellMessage);
+            _costModule.messageArrived(poolUpMessage);
 
         }
 
@@ -233,8 +234,7 @@ public class HsmRestoreTest {
 
             _selectionUnit.getPool(pool).setHsmInstances(connectedHSM);
 
-            CellMessage cellMessage = new CellMessage( new CellPath("CostModule"), poolUpMessage);
-            _costModule.messageArrived(cellMessage);
+            _costModule.messageArrived(poolUpMessage);
 
         }
 
@@ -321,8 +321,7 @@ public class HsmRestoreTest {
 
             _selectionUnit.getPool(pool).setHsmInstances(connectedHSM);
 
-            CellMessage cellMessage = new CellMessage( new CellPath("CostModule"), poolUpMessage);
-            _costModule.messageArrived(cellMessage);
+            _costModule.messageArrived(poolUpMessage);
 
         }
 
@@ -406,8 +405,7 @@ public class HsmRestoreTest {
 
             _selectionUnit.getPool(pool).setHsmInstances(connectedHSM);
 
-            CellMessage cellMessage = new CellMessage( new CellPath("CostModule"), poolUpMessage);
-            _costModule.messageArrived(cellMessage);
+            _costModule.messageArrived(poolUpMessage);
 
         }
 
