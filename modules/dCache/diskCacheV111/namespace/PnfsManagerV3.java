@@ -9,6 +9,8 @@ import  diskCacheV111.namespace.provider.*;
 import  dmg.cells.nucleus.* ;
 import  dmg.util.* ;
 
+import org.dcache.util.PrefixMap;
+
 import  java.io.* ;
 import  java.util.*;
 import java.util.concurrent.BlockingQueue;
@@ -45,7 +47,7 @@ public class PnfsManagerV3 extends CellAdapter {
     /**
      * Cache of path prefix to database IDs mappings.
      */
-    SortedMap<String,Integer> _pathToDBCache = new TreeMap();
+    PrefixMap<Integer> _pathToDBCache = new PrefixMap();
 
     private CellPath     _cacheModificationRelay = null ;
     private boolean      _simulateLargeFiles     = false ;
@@ -734,15 +736,17 @@ public class PnfsManagerV3 extends CellAdapter {
     	return "";
     }
 
-    public String ac_dump_path_cache(Args args)
+    public final static String fh_show_path_cache =
+        "Shows cached information about mappings from path prefixes to\n" +
+        "name space database IDs. The cache is only populated if the\n" +
+        "number of thread groups is larger than 1.";
+    public String ac_show_path_cache(Args args)
     {
-        synchronized (_pathToDBCache) {
-            StringBuffer s = new StringBuffer();
-            for (Map.Entry<String,Integer> e: _pathToDBCache.entrySet()) {
-                s.append(String.format("%3d -> %s\n", e.getValue(), e.getKey()));
-            }
-            return s.toString();
+        StringBuffer s = new StringBuffer();
+        for (Map.Entry<FsPath,Integer> e: _pathToDBCache.entrySet()) {
+            s.append(String.format("%s -> %d\n", e.getKey(), e.getValue()));
         }
+        return s.toString();
     }
 
     private void dumpThreadQueue(int queueId) {
@@ -1502,18 +1506,13 @@ public class PnfsManagerV3 extends CellAdapter {
                 int index;
                 if (pnfsId != null) {
                     index =
-                        (pnfsId.getDatabaseId() % _threadGroups) * _threads +
+                        pnfsIdToThreadGroup(pnfsId) * _threads +
                         (Math.abs(pnfsId.hashCode()) % _threads);
                     say("Using thread [" + pnfsId + "] " + index);
                 } else if (path != null) {
-                    if (_threadGroups > 1) {
-                        index =
-                            (pathToDatabaseId(path) % _threadGroups) * _threads +
-                            (Math.abs(path.hashCode()) % _threads);
-                    } else {
-                        index =
-                            (Math.abs(path.hashCode()) % _threads);
-                    }
+                    index =
+                        pathToThreadGroup(path) * _threads +
+                        (Math.abs(path.hashCode()) % _threads);
                     say("Using thread [" + path + "] " + index);
                 } else {
                     index = _random.nextInt(_fifos.length);
@@ -1523,14 +1522,6 @@ public class PnfsManagerV3 extends CellAdapter {
             }
 
             fifo.put( message ) ;
-        } catch (CacheException e) {
-            pnfs.setFailed(e.getRc(), e);
-            try {
-                message.revertDirection();
-                sendMessage(message);
-            } catch (NoRouteToCellException f) {
-                esay("Requester cell disappeared: " + f.getMessage());
-            }
         } catch (InterruptedException e) {
             esay("failed to add a message into queue "+e.getMessage()) ;
         }
@@ -1736,23 +1727,19 @@ public class PnfsManagerV3 extends CellAdapter {
 
     /**
      * Adds an entry to the path to database ID cache if that entry
-     * does not already exist.
+     * does not already exist. The cache is only populated if the
+     * number of thread groups is large than 1.
      */
     private void updatePathToDatabaseIdCache(String path, int id)
     {
         try {
-            synchronized (_pathToDBCache) {
-                SortedMap<String,Integer> map = _pathToDBCache.headMap(path);
-                if (!map.isEmpty() && path.startsWith(map.lastKey()) &&
-                    map.get(map.lastKey()) == id) {
-                    return;
+            if (_threadGroups > 1) {
+                Integer db = _pathToDBCache.get(new FsPath(path));
+                if (db == null || ((int) db) != id) {
+                    String root = getDatabaseRoot(new File(path)).getPath();
+                    _pathToDBCache.put(new FsPath(root), id);
+                    say("Path cache updated: " + root + " -> " + id);
                 }
-            }
-
-            String root = getDatabaseRoot(new File(path)).getPath();
-            int db = _nameSpaceProvider.pathToPnfsid(root, true).getDatabaseId();
-            synchronized (_pathToDBCache) {
-                _pathToDBCache.put(root + File.separator, db);
             }
         } catch (Exception e) {
             /* Log it, but since it is only a cache update we don't
@@ -1810,27 +1797,33 @@ public class PnfsManagerV3 extends CellAdapter {
     }
 
     /**
-     * Returns the Database ID of a path. A cache is used to avoid
+     * Returns the thread group number for a path. The mapping is
+     * based on the database ID of the path.  A cache is used to avoid
      * lookups in the name space provider once the path prefix for a
-     * database has been determined.
+     * database has been determined. In case of a cache miss a random
+     * thread group is chosen.
      */
-    private int pathToDatabaseId(String path)
-        throws CacheException
+    private int pathToThreadGroup(String path)
     {
-        try {
-            synchronized (_pathToDBCache) {
-                SortedMap<String,Integer> map = _pathToDBCache.headMap(path);
-                if (!map.isEmpty() && path.startsWith(map.lastKey())) {
-                    return map.get(map.lastKey());
-                }
-            }
+        if (_threadGroups == 1)
+            return 0;
 
-            return pathToPnfsid(path, true).getDatabaseId();
-        } catch (Exception e) {
-            /* NameSpaceProvider throws Exception, so we have to catch it.
-             */
-            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                     e.getMessage());
+        Integer db = _pathToDBCache.get(new FsPath(path));
+        if (db != null) {
+            return db % _threadGroups;
         }
+
+        say("Path cache miss for " + path);
+
+        return _random.nextInt(_threadGroups);
+    }
+
+    /**
+     * Returns the thread group number for a PNFS id. The mapping is
+     * based on the database ID of the PNFS id.
+     */
+    private int pnfsIdToThreadGroup(PnfsId id)
+    {
+        return (id.getDatabaseId() % _threadGroups);
     }
 }
