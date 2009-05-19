@@ -92,6 +92,7 @@ import java.io.FilenameFilter;
 import java.io.OutputStream;
 import java.io.BufferedOutputStream;
 import java.io.OutputStreamWriter;
+import java.io.InputStreamReader;
 import java.io.EOFException;
 import java.net.Socket;
 import java.net.InetSocketAddress;
@@ -1179,7 +1180,8 @@ public abstract class AbstractFtpDoorV1
                  * maintain any ressources that do not get
                  * automatically freed when the socket is closed.
                  */
-                BufferedReader in = new BufferedReader(_engine.getReader());
+                BufferedReader in =
+                    new BufferedReader(new InputStreamReader(_engine.getInputStream(), "UTF-8"));
 
                 reply("220 " + ftpDoorName + " door ready");
 
@@ -4440,12 +4442,14 @@ public abstract class AbstractFtpDoorV1
      * commands. The GridFTP 2 specification is unclear on the format
      * of the keyword, the value and whether white space is
      * allowed. Here we assume keywords are limited to word
-     * characters. Values do not contain semicolons. White space is
-     * stripped from the beginning and the end. White space around
-     * the equal sign between the keyword and the value is allowed.
+     * characters. Values do not contain semicolons.
+     *
+     * Although RFC 3659 does not cover the GET and PUT commands, we
+     * use RFC 3659 as justification to consider white space to be
+     * part of the value, that is, we do not strip any white space.
      */
     private static final Pattern _parameterPattern =
-        Pattern.compile("\\s*(\\w+)\\s*(?:=\\s*([^;]+)\\s*)?;\\s*");
+        Pattern.compile("(\\w+)(?:=([^;]+))?;");
 
     /**
      * Patterns for checking the format of values to parameters of GET
