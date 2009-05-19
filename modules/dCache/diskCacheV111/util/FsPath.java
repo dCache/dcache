@@ -59,6 +59,24 @@ public class FsPath {
 		_list.add(item);
 	}
 
+        public boolean isEmpty() {
+            return _list.isEmpty();
+        }
+
+        public void pop() {
+            if (!_list.isEmpty()) {
+                _list.remove(_list.size() - 1);
+            }
+        }
+
+        public int hashCode() {
+            return _list.hashCode();
+        }
+
+        public boolean equals(Object o) {
+            return (o instanceof FsPath) && _list.equals(((FsPath) o)._list);
+        }
+
 	public static void main(String[] args) {
 		FsPath path = new FsPath("/pnfs/desy.de");
 		System.out.println(path.toString());
