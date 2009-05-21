@@ -259,7 +259,7 @@ public class Configuration {
     private boolean overwrite = false;
     private boolean overwrite_by_default = false;
     private int sizeOfSingleRemoveBatch = 100;
-    private boolean asynchronousLs = true;
+    private boolean asynchronousLs = false;
     private SRMUserPersistenceManager srmUserPersistenceManager;
     private int maxNumberOfLsEntries = 1000;
     private int maxNumberOfLsLevels = 100;
