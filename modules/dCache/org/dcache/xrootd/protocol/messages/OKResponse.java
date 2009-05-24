@@ -3,8 +3,8 @@ import org.dcache.xrootd.protocol.XrootdProtocol;
 
 public class OKResponse extends AbstractResponseMessage {
 
-	public OKResponse(int sId) {
-		super(sId, XrootdProtocol.kXR_ok, 0);
-	}
+    public OKResponse(int sId) {
+        super(sId, XrootdProtocol.kXR_ok, 0);
+    }
 
 }
