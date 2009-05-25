@@ -46,7 +46,11 @@ import dmg.cells.nucleus.CellPath;
 import dmg.util.Args;
 import dmg.util.StreamEngine;
 
+import org.apache.log4j.Logger;
+
 public class XrootdDoor extends CellAdapter {
+
+    private final static Logger _log = Logger.getLogger(XrootdDoor.class);
 
     private CellNucleus _nucleus;
 
@@ -154,14 +158,14 @@ public class XrootdDoor extends CellAdapter {
         if (_ioQueue == null  || _ioQueue.length() == 0 ) {
             _ioQueue = null;
         }
-        esay(_ioQueue != null ? "defined moverqueue: "+_ioQueue : "no moverqueue defined");
+        _log.warn(_ioQueue != null ? "defined moverqueue: "+_ioQueue : "no moverqueue defined");
 
         String maxFileOpens = args.getOpt("maxFileOpensPerLogin");
         if (maxFileOpens != null && maxFileOpens.length() > 0) {
             try {
                 _maxFileOpens = Integer.parseInt(maxFileOpens);
             } catch (NumberFormatException e) {
-                esay("invalid format of 'maxFileOpensPerLogin' parameter, defaulting to "+_maxFileOpens);
+                _log.warn("invalid format of 'maxFileOpensPerLogin' parameter, defaulting to "+_maxFileOpens);
             }
         }
 
@@ -179,7 +183,7 @@ public class XrootdDoor extends CellAdapter {
         _nucleus.newThread(new Runnable() {
 
                 public void run() {
-                    esay("starting minithread");
+                    _log.warn("starting minithread");
 
                     //				enable Xrootd message processing for this existing network connection
                     initXrootd(getDoorSocket());
@@ -191,7 +195,7 @@ public class XrootdDoor extends CellAdapter {
 
                     } catch (InterruptedException e) {}
 
-                    esay("finishing minithread");
+                    _log.warn("finishing minithread");
 
                 }
             } , "Xrootd-door-MiniThread").start();
@@ -215,7 +219,7 @@ public class XrootdDoor extends CellAdapter {
 
             if (!list.contains(path)) {
                 list.add(path);
-                esay("allowed write path: "+path);
+                _log.warn("allowed write path: "+path);
             }
         }
         Collections.sort(list);
@@ -271,8 +275,8 @@ public class XrootdDoor extends CellAdapter {
             result = _pnfs_handler.getStorageInfoByPath(path);
 
         } catch (diskCacheV111.util.CacheException ce) {
-            esay("can not find pnfsid of path : " + path);
-            esay("CacheException = " + ce);
+            _log.warn("can not find pnfsid of path : " + path);
+            _log.warn("CacheException = " + ce);
             throw new IOException("can not find pnfsid of path : " + path
                                   + " root error " + ce.getMessage());
         }
@@ -316,7 +320,7 @@ public class XrootdDoor extends CellAdapter {
         if (redirectAddress != null) {
             _redirectTable.put(reply.getXrootdFileHandle(), redirectAddress);
         } else {
-            esay("error: no valid IP-adress received from pool. Redirection not possible");
+            _log.warn("error: no valid IP-adress received from pool. Redirection not possible");
 
             //			we have to put a null address to at least notify the right xrootd thread about the failure
             _redirectTable.put(reply.getXrootdFileHandle(), "");
@@ -331,7 +335,7 @@ public class XrootdDoor extends CellAdapter {
 
 
 
-        say("Trying pool " + pool + " for " + (isWrite ? "Write" : "Read"));
+        _log.info("Trying pool " + pool + " for " + (isWrite ? "Write" : "Read"));
         PoolIoFileMessage poolMessage = isWrite ? (PoolIoFileMessage) new PoolAcceptFileMessage(
                                                                                                 pool, pnfsId.toString(), protocolInfo, storageInfo)
             : (PoolIoFileMessage) new PoolDeliverFileMessage(pool, pnfsId
@@ -377,14 +381,14 @@ public class XrootdDoor extends CellAdapter {
             }
         }
 
-        say("Pool " + pool + (isWrite ? " will accept file" : " will deliver file ") + pnfsId);
+        _log.info("Pool " + pool + (isWrite ? " will accept file" : " will deliver file ") + pnfsId);
 
         Integer key = Integer.valueOf(protocolInfo.getXrootdFileHandle());
 
         try {
             synchronized (_redirectSync) {
                 while ( !_redirectTable.containsKey(key)) {
-                    say("waiting for redirect message from pool "+pool+" (pnfsId="+pnfsId+" fileHandle="+key+")");
+                    _log.info("waiting for redirect message from pool "+pool+" (pnfsId="+pnfsId+" fileHandle="+key+")");
                     _redirectSync.wait();
                 }
             }
@@ -396,7 +400,7 @@ public class XrootdDoor extends CellAdapter {
         }
 
         InetSocketAddress newAddress = (InetSocketAddress) _redirectTable.get(key);
-        say("got redirect message from pool "+pool+" (pnfsId="+pnfsId+" fileHandle="+key+")");
+        _log.info("got redirect message from pool "+pool+" (pnfsId="+pnfsId+" fileHandle="+key+")");
 
         _redirectTable.remove(key);
         return newAddress;
@@ -405,7 +409,7 @@ public class XrootdDoor extends CellAdapter {
     public String askForPool(PnfsId pnfsId, StorageInfo storageInfo,
                              ProtocolInfo protocolInfo, boolean isWrite) throws Exception {
 
-        say("asking Poolmanager for "+ (isWrite ? "write" : "read") + "pool for PnfsId "+pnfsId);
+        _log.info("asking Poolmanager for "+ (isWrite ? "write" : "read") + "pool for PnfsId "+pnfsId);
 
         //
         // ask for a pool
@@ -436,7 +440,7 @@ public class XrootdDoor extends CellAdapter {
         }
 
         request = (PoolMgrSelectPoolMsg) replyObject;
-        say("poolManagerReply = " + request);
+        _log.info("poolManagerReply = " + request);
         if (request.getReturnCode() != 0) {
             throw new Exception("Pool manager error: "
                                 + request.getErrorObject());
@@ -444,7 +448,7 @@ public class XrootdDoor extends CellAdapter {
 
         String pool = request.getPoolName();
 
-        say("Can " + (isWrite ? "write to" : "read from") + " pool " + pool);
+        _log.info("Can " + (isWrite ? "write to" : "read from") + " pool " + pool);
 
         return pool;
     }
@@ -453,14 +457,14 @@ public class XrootdDoor extends CellAdapter {
     // handle post-transfer success/failure messages going back to the client
     public void messageArrived(CellMessage msg) {
         Object object = msg.getMessageObject();
-        say("Message messageArrived [" + object.getClass() + "]="
+        _log.info("Message messageArrived [" + object.getClass() + "]="
             + object.toString());
-        say("Message messageArrived source = " + msg.getSourceAddress());
+        _log.info("Message messageArrived source = " + msg.getSourceAddress());
         if (object instanceof XrootdDoorAdressInfoMessage) {
             XrootdDoorAdressInfoMessage reply = (XrootdDoorAdressInfoMessage) object;
-            say("received redirect msg from mover");
+            _log.info("received redirect msg from mover");
             synchronized (_redirectSync) {
-                say("got lock on _sync");
+                _log.info("got lock on _sync");
 
                 handleRedirectMessage(reply);
                 _redirectSync.notifyAll();
@@ -477,7 +481,7 @@ public class XrootdDoor extends CellAdapter {
 
                 if (_logicalStreamTable.containsKey(fileHandle)) {
 
-                    say("received DoorTransferFinished-Message from mover, cleaning up (PnfsId="
+                    _log.info("received DoorTransferFinished-Message from mover, cleaning up (PnfsId="
                         + finishedMsg.getPnfsId() + " fileHandle="+fileHandle+")");
 
                     forgetFile(fileHandle);
@@ -486,7 +490,7 @@ public class XrootdDoor extends CellAdapter {
             }
 
         } else {
-            say("Unexpected message class " + object.getClass()+" (source = " + msg.getSourceAddress()+")");
+            _log.info("Unexpected message class " + object.getClass()+" (source = " + msg.getSourceAddress()+")");
         }
 
     }
@@ -510,7 +514,7 @@ public class XrootdDoor extends CellAdapter {
                                                    fileHandle,
                                                    checksum);
 
-        say("created XrootdProtocolInfo: " + info);
+        _log.info("created XrootdProtocolInfo: " + info);
 
         return info;
     }
@@ -569,19 +573,19 @@ public class XrootdDoor extends CellAdapter {
             return;
         }
 
-        say("trying to load authz plugin");
+        _log.info("trying to load authz plugin");
 
         AbstractAuthorizationFactory newAuthzFactory = null;
         try {
             newAuthzFactory = AbstractAuthorizationFactory.getFactory(args.getOpt("authzPlugin"));
         } catch (ClassNotFoundException e) {
-            esay("Could not load authorization plugin "+args.getOpt("authzPlugin")+" cause: "+e);
+            _log.warn("Could not load authorization plugin "+args.getOpt("authzPlugin")+" cause: "+e);
             _authzPluginLoadFailed = true;
         }
 
         if (newAuthzFactory != null) {
 
-            say("trying to find all options required by the plugin");
+            _log.info("trying to find all options required by the plugin");
 
             try {
 
@@ -603,22 +607,22 @@ public class XrootdDoor extends CellAdapter {
                 newAuthzFactory.initialize(options);
 
                 _authzFactory = newAuthzFactory;
-                esay("authorization plugin initialised successfully!");
+                _log.warn("authorization plugin initialised successfully!");
 
             } catch (Exception e) {
-                esay("error initializing the authorization plugin: "+ e);
+                _log.warn("error initializing the authorization plugin: "+ e);
                 _authzPluginLoadFailed = true;
             }
         }
 
         if (_authzPluginLoadFailed) {
-            esay("Loading authorization plugin failed. All subsequent xrootd requests will fail due to this.\nPlease change batch file configuration and restart xrootd door.");
+            _log.warn("Loading authorization plugin failed. All subsequent xrootd requests will fail due to this.\nPlease change batch file configuration and restart xrootd door.");
         }
     }
 
     public void makePnfsDir(String path) throws CacheException {
 
-        say("about to create directory: "+path);
+        _log.info("about to create directory: "+path);
 
         FileMetaData metadata = null;
         try {
@@ -652,7 +656,7 @@ public class XrootdDoor extends CellAdapter {
 
             if (e.getRc() == CacheException.FILE_NOT_FOUND) {
 
-                say("creating parent directory "+parentDir+" first");
+                _log.info("creating parent directory "+parentDir+" first");
 
                 //				create parent directory recursively
                 makePnfsDir(parentDir);
@@ -676,20 +680,20 @@ public class XrootdDoor extends CellAdapter {
 
         if (message.getStorageInfo() == null) {
 
-            esay("Error creating directory "+path+" (no storage info)");
+            _log.warn("Error creating directory "+path+" (no storage info)");
 
             if (message.getPnfsId() != null) {
                 try {
                     _pnfs_handler.deletePnfsEntry(message.getPnfsId());
                 } catch (CacheException e1) {
-                    esay(e1);
+                    _log.warn(e1);
                 }
             }
 
             throw new CacheException(CacheException.FILE_NOT_FOUND, "Cannot create directory "+path+" in PNFS");
         }
 
-        say("created directory "+path);
+        _log.info("created directory "+path);
     }
 
     public boolean checkWritePermission(FileMetaData meta) {
@@ -714,7 +718,7 @@ public class XrootdDoor extends CellAdapter {
                 allMetas[i] = getFileMetaData(allPaths[i]);
             } catch (CacheException e) {
                 //we just move on in case a single path was not found
-                say("statx: path "+allPaths[i]+" no found");
+                _log.info("statx: path "+allPaths[i]+" no found");
             }
         }
         return allMetas;
@@ -757,10 +761,10 @@ public class XrootdDoor extends CellAdapter {
         try{
             sendMessage( new CellMessage( new CellPath("billing") ,  msg ) ) ;
         }catch(Exception ee){
-            esay("Couldn't send billing info : "+ee );
+            _log.warn("Couldn't send billing info : "+ee );
         }
 
-        say( msg.toString() );
+        _log.info( msg.toString() );
     }
 
     public int getMaxFileOpens() {

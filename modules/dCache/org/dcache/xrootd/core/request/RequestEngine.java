@@ -8,7 +8,11 @@ import org.dcache.xrootd.core.ProtocolHandler;
 import org.dcache.xrootd.core.connection.PhysicalXrootdConnection;
 import org.dcache.xrootd.network.NetworkConnection;
 
+import org.apache.log4j.Logger;
+
 public class RequestEngine extends Thread {
+
+    private final static Logger _log = Logger.getLogger(RequestEngine.class);
 
     public static final String THREADNAME = "Request-Thread";
 
@@ -33,7 +37,7 @@ public class RequestEngine extends Thread {
 
     public void run() {
 
-        System.out.println(getName()+" started");
+        _log.debug(getName()+" started");
 
         ProtocolHandler protocol = physicalConnection.getProtocolHandler();
         NetworkConnection networkConnection = physicalConnection.getNetworkConnection();
@@ -47,13 +51,13 @@ public class RequestEngine extends Thread {
                 handshakeRequest = receiveData(protocol.getHandshakeLength());
 
             } catch (IOException e1) {
-                System.err.println(e1.getMessage());
+                _log.error(e1.getMessage());
                 return;
             }
 
             //			receiving handshake request failed, close connection
             if (handshakeRequest == null) {
-                System.err.println("received handshake request incomplete");
+                _log.error("received handshake request incomplete");
 
                 physicalConnection.closeConnection();
                 //				networkConnection.close();
@@ -66,7 +70,7 @@ public class RequestEngine extends Thread {
             //			handshake failed, close connection
             if (handshakeResponse == null) {
 
-                System.err.println("Received corrupt handshake message ("+ handshakeRequest.length+" bytes).");
+                _log.error("Received corrupt handshake message ("+ handshakeRequest.length+" bytes).");
 
                 //				close request thread du to critical error
                 physicalConnection.closeConnection();
@@ -84,7 +88,7 @@ public class RequestEngine extends Thread {
 
             } catch (IOException e) {
 
-                System.err.println("Error sending handshake response ("+ handshakeResponse.length+" bytes).");
+                _log.error("Error sending handshake response ("+ handshakeResponse.length+" bytes).");
 
                 //				close request thread du to critical error
                 physicalConnection.closeConnection();
@@ -107,7 +111,7 @@ public class RequestEngine extends Thread {
             try {
                 rawRequest = receive(expectedMsgLength);
             } catch (IOException e) {
-                System.err.println(e);
+                _log.error(e);
 
                 //				close request thread due to critical error
                 isInterrupted = true;
@@ -117,7 +121,7 @@ public class RequestEngine extends Thread {
             if (rawRequest == null) {
 
                 //				ignore incomplete message and move on with next message
-                System.err.println("incomplete Request Message, ignored");
+                _log.error("incomplete Request Message, ignored");
                 continue;
 
             } else {
@@ -126,7 +130,7 @@ public class RequestEngine extends Thread {
                 try {
                     protocol.handleRequest(rawRequest);
                 } catch (IOException e) {
-                    System.err.println(e);
+                    _log.error(e);
                     //					close request thread du to critical error
                     isInterrupted = true;
                     break;
@@ -134,7 +138,7 @@ public class RequestEngine extends Thread {
             }
         }
 
-        System.out.println(getName() + " finished.");
+        _log.error(getName() + " finished.");
     }
 
     public int[] receive(int msgLength) throws IOException {
@@ -157,7 +161,7 @@ public class RequestEngine extends Thread {
 
                 handleCriticalException(e);
 
-            } else { System.err.println(e); }
+            } else { _log.error(e); }
 
         } catch (IOException e) {
 
@@ -190,7 +194,7 @@ public class RequestEngine extends Thread {
 
                 handleCriticalException(e);
 
-            } else { System.err.println(e); }
+            } else { _log.error(e); }
 
         } catch (IOException e) {
 
@@ -199,7 +203,7 @@ public class RequestEngine extends Thread {
 
         if (bytesRead != dataLength) {
 
-            System.err.println("received datalength="+bytesRead+" expected="+dataLength);
+            _log.error("received datalength="+bytesRead+" expected="+dataLength);
             return null;
         }
 
@@ -211,7 +215,7 @@ public class RequestEngine extends Thread {
 
         NetworkConnection networkConnection = physicalConnection.getNetworkConnection();
 
-        System.err.println("Closing physical connection to "+networkConnection.getSocket().getInetAddress() + " ("+e+")");
+        _log.error("Closing physical connection to "+networkConnection.getSocket().getInetAddress() + " ("+e+")");
 
         physicalConnection.closeConnection();
         //		networkConnection.close();

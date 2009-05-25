@@ -11,7 +11,12 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 
+import org.apache.log4j.Logger;
+
 public class NetworkConnection {
+
+    private final static Logger _log =
+        Logger.getLogger(NetworkConnection.class);
 
     /**
      * maximum amount of time between two received bytes that form together a message
@@ -178,14 +183,14 @@ public class NetworkConnection {
                 out.close();
                 in.close();
             } catch (IOException e) {
-                System.err.println("Error flushing or closing socket streams: "
-                                   + e.getMessage());
+                _log.error("Error flushing or closing socket streams: "
+                           + e.getMessage());
             }
 
             try {
                 socket.close();
             } catch (IOException e) {
-                System.err.println("Error closing Socket: " + e.getMessage());
+                _log.error("Error closing Socket: " + e.getMessage());
             }
 
             ConnectionManager connMgr = ConnectionManager.getInstance();

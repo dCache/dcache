@@ -6,7 +6,12 @@ import java.util.Iterator;
 import org.dcache.xrootd.core.connection.PhysicalXrootdConnection;
 import org.dcache.xrootd.protocol.messages.AbstractRequestMessage;
 
+import org.apache.log4j.Logger;
+
 public class LogicalStreamManager {
+
+    private final static Logger _log =
+        Logger.getLogger(LogicalStreamManager.class);
 
     protected HashMap streams = new HashMap();
     protected int maxLogicalStreams = 100;
@@ -70,13 +75,13 @@ public class LogicalStreamManager {
     public void destroyAllStreams() {
 
         if (streams.isEmpty()) {
-            System.out.println("no open streams to close");
+            _log.debug("no open streams to close");
         } else {
             for (Iterator it = streams.values().iterator(); it.hasNext(); ) {
                 ((LogicalStream)it.next()).close();
             }
 
-            System.out.println(streams.size()+" streams closed");
+            _log.debug(streams.size()+" streams closed");
             streams.clear();
         }
     }
