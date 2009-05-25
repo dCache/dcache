@@ -8,23 +8,23 @@ import org.dcache.xrootd.protocol.messages.LoginRequest;
 import org.dcache.xrootd.protocol.messages.OKResponse;
 
 public class GenericConnectionListener implements
-		PhysicalConnectionListener {
+                                           PhysicalConnectionListener {
 
-	public void handshakeRequest() {}
+    public void handshakeRequest() {}
 
-	public AbstractResponseMessage loginRequest(LoginRequest login) 
-	{
-		return new OKResponse(login.getStreamID());
-	}
+    public AbstractResponseMessage loginRequest(LoginRequest login)
+    {
+        return new OKResponse(login.getStreamID());
+    }
 
-	public AbstractResponseMessage authRequest(AuthentiticationRequest auth) {
-		return new OKResponse(auth.getStreamID());
-	}
-	
-	public StreamListener newStreamForked(int streamID) {
-		return new GenericStreamListener();
-	}
+    public AbstractResponseMessage authRequest(AuthentiticationRequest auth) {
+        return new OKResponse(auth.getStreamID());
+    }
 
-	public void closeConnection() {}
+    public StreamListener newStreamForked(int streamID) {
+        return new GenericStreamListener();
+    }
+
+    public void closeConnection() {}
 
 }

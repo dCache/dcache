@@ -4,70 +4,70 @@ import diskCacheV111.util.PnfsId;
 
 public class DoorRequestMsgWrapper {
 
-	private int _errorCode;
-	private String _errMsg;
-	private String _path;
-	private PnfsId _pnfsID;
-	private int _gid;
-	private int _uid;
-	private String _user;
-	private int _fileHandle;
+    private int _errorCode;
+    private String _errMsg;
+    private String _path;
+    private PnfsId _pnfsID;
+    private int _gid;
+    private int _uid;
+    private String _user;
+    private int _fileHandle;
 
-	public void fileOpenFailed(int errorCode, String errMsg) {
-		_errorCode = errorCode;
-		_errMsg = errMsg;		
-	}
+    public void fileOpenFailed(int errorCode, String errMsg) {
+        _errorCode = errorCode;
+        _errMsg = errMsg;
+    }
 
-	public void setpath(String pathToOpen) {
-		_path =  pathToOpen;
-	}
+    public void setpath(String pathToOpen) {
+        _path =  pathToOpen;
+    }
 
-	public void setMappedIds(int gid, int uid) {
-		_gid = gid;
-		_uid = uid;
-	}
+    public void setMappedIds(int gid, int uid) {
+        _gid = gid;
+        _uid = uid;
+    }
 
-	public void setPnfsId(PnfsId pnfsId) {
-		_pnfsID = pnfsId;
-	}
+    public void setPnfsId(PnfsId pnfsId) {
+        _pnfsID = pnfsId;
+    }
 
-	public void setUser(String user) {
-		_user = user;
-	}
-	
-	public void setFileHandle(int fileHandle) {
-		this._fileHandle = fileHandle;
-	}
-	
-	public int getErrorCode() {
-		return _errorCode;
-	}
+    public void setUser(String user) {
+        _user = user;
+    }
 
-	public String getErrorMsg() {
-		return _errMsg;
-	}
+    public void setFileHandle(int fileHandle) {
+        this._fileHandle = fileHandle;
+    }
 
-	public String getPath() {
-		return _path;
-	}
+    public int getErrorCode() {
+        return _errorCode;
+    }
 
-	public PnfsId getPnfsId() {
-		return _pnfsID;
-	}
+    public String getErrorMsg() {
+        return _errMsg;
+    }
 
-	public int getGid() {
-		return _gid;
-	}
+    public String getPath() {
+        return _path;
+    }
 
-	public int getUid() {
-		return _uid;
-	}
+    public PnfsId getPnfsId() {
+        return _pnfsID;
+    }
 
-	public String getUser() {
-		return _user;
-	}
+    public int getGid() {
+        return _gid;
+    }
 
-	public int getFileHandle() {
-		return _fileHandle;
-	}
+    public int getUid() {
+        return _uid;
+    }
+
+    public String getUser() {
+        return _user;
+    }
+
+    public int getFileHandle() {
+        return _fileHandle;
+    }
 }

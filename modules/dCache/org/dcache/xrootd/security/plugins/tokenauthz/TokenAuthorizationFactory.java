@@ -26,142 +26,142 @@ import org.dcache.xrootd.util.ParseException;
 
 public class TokenAuthorizationFactory extends AbstractAuthorizationFactory {
 
-	private static Map keystore = null;
-	
-	public AuthorizationHandler getAuthzHandler() {
-		return new TokenAuthzHandler(keystore);
-	}
+    private static Map keystore = null;
 
-	private void loadKeyStore(String fileName) throws ParseException,  IOException {
-		
-		if (keystore != null) {
-			return;
-		}
-		
-		File keystoreFile = new File(fileName);
-		
-		LineNumberReader in = new LineNumberReader(new FileReader(keystoreFile));
-			
-//		reset keystore
-		keystore = new Hashtable();
-			
-//		the RSA keyfactory
-		KeyFactory keyFactory = null;
-		
-		try {
-//			initialise RSA key factory
-			keyFactory = KeyFactory.getInstance("RSA");
-		} catch (NoSuchAlgorithmException e1) {}
-			
-		String line = null;
-		while ((line = in.readLine()) != null) {
-			
-			StringTokenizer tokenizer = new StringTokenizer(line, " \t");
-				
-			String voToken = null;
-			String privKeyToken = null;
-			String pubKeyToken = null;
+    public AuthorizationHandler getAuthzHandler() {
+        return new TokenAuthzHandler(keystore);
+    }
 
-			try {
-				
-//				ignore comment lines and any lines not starting with the keyword 'KEY'				
-				String firstToken = tokenizer.nextToken();
-				if (firstToken.startsWith("#") || !firstToken.equals("KEY")) {
-					continue;
-				}
-							
-				voToken = tokenizer.nextToken();
-				privKeyToken = tokenizer.nextToken();
-				pubKeyToken = tokenizer.nextToken();
-					
-			} catch (NoSuchElementException e) {
-				throw new ParseException("line no "+(in.getLineNumber())+" : invalid format");
-			}
-			
-			if (	!(	voToken.startsWith("VO:") && 
-						privKeyToken.startsWith("PRIVKEY:") && 
-						pubKeyToken.startsWith("PUBKEY:"))) {
-						
-				throw new ParseException("line no "+(in.getLineNumber())+" : invalid format");
-			}
-				
-				
-			keystore.put(
-				voToken.substring(voToken.indexOf(':') + 1),
-				loadKeyPair(privKeyToken.substring(privKeyToken.indexOf(':') + 1),
-							pubKeyToken.substring(pubKeyToken.indexOf(':') + 1),keyFactory));
-				
-		}
-		
-	}
+    private void loadKeyStore(String fileName) throws ParseException,  IOException {
 
-	private KeyPair loadKeyPair(String privKeyFileName, String pubKeyFileName, KeyFactory keyFactory) throws IOException {
-		
-		File privKeyFile = new File(privKeyFileName);
-		File pubKeyFile = new File(pubKeyFileName);
-		
-		byte[] privKeyArray = readKeyfile(privKeyFile);
-//		logger.debug("read private keyfile "+privKeyFile+" ("+privKeyArray.length+" bytes)");
-//		store private key (DER-encoded) in PKCS8-representation object
-		PKCS8EncodedKeySpec privKeySpec = new PKCS8EncodedKeySpec(privKeyArray);
-//		parse unencrypted private key into java private key object
-		RSAPrivateKey privKey;
-		try {
-			privKey = (RSAPrivateKey) keyFactory.generatePrivate(privKeySpec);
-		} catch (InvalidKeySpecException e) {
-			throw new IOException("error loading private key "+privKeyFileName+": "+e.getMessage());
-		}
-		
-		byte[] pubKeyArray = readKeyfile(pubKeyFile);
-//		logger.debug("Read public keyfile "+pubKeyFile+" ("+pubKeyArray.length+" bytes)");
-//		store the public key (DER-encodedn ot PEM) into a X.509 certificate object
-		X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(pubKeyArray);
-		RSAPublicKey pubKey;
-		try {
-			pubKey = (RSAPublicKey) keyFactory.generatePublic(pubKeySpec);
-		} catch (InvalidKeySpecException e) {
-			throw new IOException("error loading public key "+pubKeyFileName+": "+e.getMessage());
-		}
-		
-		return new KeyPair(pubKey, privKey);		
-	}
-	
-	
-	/**
-	 * Helper method thats reads a file.
-	 * @param file the File which is going to be read
-	 * @return an array which holds the file content
-	 * @throws IOException if reading the file fails
-	 */
-	private static byte[] readKeyfile(File file) throws IOException {
-	
-		InputStream in = new FileInputStream(file);
-			
-		byte[] result = new byte[(int) file.length()];
-		int bytesRead = 0;
-			
-		while ((bytesRead += in.read(result,bytesRead,(int) file.length()-bytesRead)) < file.length());
-			
-		if (bytesRead != file.length()) {
-			throw new IOException("Keyfile "+file.getName()+" corrupt.");
-		}
-		
-		in.close();
-			
-		return result;
-			
-	}
+        if (keystore != null) {
+            return;
+        }
 
-	public void initialize(Map options) throws GeneralSecurityException {
-		try {
-			loadKeyStore((String) options.get("keystore"));
-		} catch (Exception e) {
-			throw new GeneralSecurityException("unable to load keystore: "+e.getMessage());
-		}
-	}
+        File keystoreFile = new File(fileName);
 
-	public String[] getRequiredOptions() {
-		return new String[] {"keystore"};
-	}
+        LineNumberReader in = new LineNumberReader(new FileReader(keystoreFile));
+
+        //		reset keystore
+        keystore = new Hashtable();
+
+        //		the RSA keyfactory
+        KeyFactory keyFactory = null;
+
+        try {
+            //			initialise RSA key factory
+            keyFactory = KeyFactory.getInstance("RSA");
+        } catch (NoSuchAlgorithmException e1) {}
+
+        String line = null;
+        while ((line = in.readLine()) != null) {
+
+            StringTokenizer tokenizer = new StringTokenizer(line, " \t");
+
+            String voToken = null;
+            String privKeyToken = null;
+            String pubKeyToken = null;
+
+            try {
+
+                //				ignore comment lines and any lines not starting with the keyword 'KEY'
+                String firstToken = tokenizer.nextToken();
+                if (firstToken.startsWith("#") || !firstToken.equals("KEY")) {
+                    continue;
+                }
+
+                voToken = tokenizer.nextToken();
+                privKeyToken = tokenizer.nextToken();
+                pubKeyToken = tokenizer.nextToken();
+
+            } catch (NoSuchElementException e) {
+                throw new ParseException("line no "+(in.getLineNumber())+" : invalid format");
+            }
+
+            if (	!(	voToken.startsWith("VO:") &&
+                                privKeyToken.startsWith("PRIVKEY:") &&
+                                pubKeyToken.startsWith("PUBKEY:"))) {
+
+                throw new ParseException("line no "+(in.getLineNumber())+" : invalid format");
+            }
+
+
+            keystore.put(
+                         voToken.substring(voToken.indexOf(':') + 1),
+                         loadKeyPair(privKeyToken.substring(privKeyToken.indexOf(':') + 1),
+                                     pubKeyToken.substring(pubKeyToken.indexOf(':') + 1),keyFactory));
+
+        }
+
+    }
+
+    private KeyPair loadKeyPair(String privKeyFileName, String pubKeyFileName, KeyFactory keyFactory) throws IOException {
+
+        File privKeyFile = new File(privKeyFileName);
+        File pubKeyFile = new File(pubKeyFileName);
+
+        byte[] privKeyArray = readKeyfile(privKeyFile);
+        //		logger.debug("read private keyfile "+privKeyFile+" ("+privKeyArray.length+" bytes)");
+        //		store private key (DER-encoded) in PKCS8-representation object
+        PKCS8EncodedKeySpec privKeySpec = new PKCS8EncodedKeySpec(privKeyArray);
+        //		parse unencrypted private key into java private key object
+        RSAPrivateKey privKey;
+        try {
+            privKey = (RSAPrivateKey) keyFactory.generatePrivate(privKeySpec);
+        } catch (InvalidKeySpecException e) {
+            throw new IOException("error loading private key "+privKeyFileName+": "+e.getMessage());
+        }
+
+        byte[] pubKeyArray = readKeyfile(pubKeyFile);
+        //		logger.debug("Read public keyfile "+pubKeyFile+" ("+pubKeyArray.length+" bytes)");
+        //		store the public key (DER-encodedn ot PEM) into a X.509 certificate object
+        X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(pubKeyArray);
+        RSAPublicKey pubKey;
+        try {
+            pubKey = (RSAPublicKey) keyFactory.generatePublic(pubKeySpec);
+        } catch (InvalidKeySpecException e) {
+            throw new IOException("error loading public key "+pubKeyFileName+": "+e.getMessage());
+        }
+
+        return new KeyPair(pubKey, privKey);
+    }
+
+
+    /**
+     * Helper method thats reads a file.
+     * @param file the File which is going to be read
+     * @return an array which holds the file content
+     * @throws IOException if reading the file fails
+     */
+    private static byte[] readKeyfile(File file) throws IOException {
+
+        InputStream in = new FileInputStream(file);
+
+        byte[] result = new byte[(int) file.length()];
+        int bytesRead = 0;
+
+        while ((bytesRead += in.read(result,bytesRead,(int) file.length()-bytesRead)) < file.length());
+
+        if (bytesRead != file.length()) {
+            throw new IOException("Keyfile "+file.getName()+" corrupt.");
+        }
+
+        in.close();
+
+        return result;
+
+    }
+
+    public void initialize(Map options) throws GeneralSecurityException {
+        try {
+            loadKeyStore((String) options.get("keystore"));
+        } catch (Exception e) {
+            throw new GeneralSecurityException("unable to load keystore: "+e.getMessage());
+        }
+    }
+
+    public String[] getRequiredOptions() {
+        return new String[] {"keystore"};
+    }
 
 }
