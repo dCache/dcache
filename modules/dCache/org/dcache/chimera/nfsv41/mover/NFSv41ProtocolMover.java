@@ -24,6 +24,7 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import org.acplt.oncrpc.XdrBufferEncodingStream;
 import org.dcache.chimera.nfs.v4.stateid4;
+import org.dcache.util.PortRange;
 
 public class NFSv41ProtocolMover implements ManualMover {
 
@@ -41,7 +42,14 @@ public class NFSv41ProtocolMover implements ManualMover {
     private static NFSv4MoverHandler _nfsIO;
     static {
         try {
-            _nfsIO = new NFSv4MoverHandler(DEFAULT_PORT);
+            String dcachePorts = System.getProperty("org.dcache.net.tcp.portrange");
+            PortRange portRange;
+            if( dcachePorts != null) {
+                portRange = PortRange.valueOf(dcachePorts);
+            }else{
+                portRange = new PortRange(DEFAULT_PORT);
+            }
+            _nfsIO = new NFSv4MoverHandler(portRange);
         }catch(Exception e) {
             _nfsIO = null;
             _log.fatal("Failed to initialize NFS mover", e);
@@ -168,7 +176,7 @@ public class NFSv41ProtocolMover implements ManualMover {
             byte[] d = xdr.getXdrData();
 
             PoolPassiveIoFileMessage msg = new PoolPassiveIoFileMessage(_cell.getCellInfo().getCellName(),
-                    new InetSocketAddress(localIp, DEFAULT_PORT), d);
+                    new InetSocketAddress(localIp, _nfsIO.getLocalPort()), d);
     
     
             CellPath cellpath = ((NFS4ProtocolInfo) protocol).door();

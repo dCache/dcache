@@ -1,6 +1,7 @@
 package org.dcache.chimera.nfsv41.mover;
 
 import java.io.IOException;
+import java.nio.channels.ServerSocketChannel;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,6 +36,7 @@ import org.dcache.chimera.nfs.v4.nfs_opnum4;
 import org.dcache.chimera.nfs.v4.nfs_resop4;
 import org.dcache.chimera.nfs.v4.nfsstat4;
 import org.dcache.chimera.nfsv41.door.NFSv41Door.StateidAsKey;
+import org.dcache.util.PortRange;
 
 /**
  *
@@ -47,13 +49,22 @@ public class NFSv4MoverHandler implements OncRpcDispatchable {
 
     private final FileSystemProvider _fs = new DummyFileSystemProvider();
 
+    /*
+     * TCP port number used by Handler
+     */
+    private final int _localPort;
+
     private final Map<StateidAsKey, MoverBridge> _activeIO = new HashMap<StateidAsKey, MoverBridge>();
     private final EDSNFSv4OperationFactory _operationFactory = new EDSNFSv4OperationFactory(_activeIO);
 
-    public NFSv4MoverHandler(int port) throws OncRpcException, IOException {
+    public NFSv4MoverHandler(PortRange portRange) throws OncRpcException, IOException {
+
+         ServerSocketChannel serverSocket = ServerSocketChannel.open();
+         portRange.bind(serverSocket.socket());
 
         final OncRpcTcpServerTransport tcpTrans = new OncRpcTcpServerTransport(
-                this, port, 100003, 4, 8192);
+                this, serverSocket, 100003, 4, 8192);
+        _localPort = serverSocket.socket().getLocalPort();
         tcpTrans.listen();
         _log.debug("NFSv4MoverHandler created on port:" + tcpTrans.getPort());
     }
@@ -205,4 +216,12 @@ public class NFSv4MoverHandler implements OncRpcDispatchable {
            }
 
    }
+
+    /**
+     * Get TCP port number used by handler.
+     * @return port number.
+     */
+    public int getLocalPort(){
+        return _localPort;
+    }
 }
