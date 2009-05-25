@@ -69,15 +69,18 @@ public class AclNFSv4Matcher extends AclMatcher {
                 throw new IllegalArgumentException("Argument isDir is NULL, action: " + action);
 
             allowed = isAllowed(perm1.getDefMsk(), perm1.getAllowMsk(), AccessMask.DELETE_CHILD.getValue());
-            if ( allowed != null && allowed == Boolean.TRUE )
-                allowed = isAllowed(perm2.getDefMsk(), perm2.getAllowMsk(), isDir ? AccessMask.ADD_SUBDIRECTORY.getValue() : AccessMask.ADD_FILE.getValue());
+            if ( allowed == null || allowed.equals( Boolean.TRUE ) ) {
+                Boolean allowed_destination = isAllowed(perm2.getDefMsk(), perm2.getAllowMsk(), isDir ? AccessMask.ADD_SUBDIRECTORY.getValue() : AccessMask.ADD_FILE.getValue());
+                if ( allowed_destination == null || allowed_destination.equals( Boolean.FALSE ) )
+                    allowed = allowed_destination;
+            }
             break;
 
         case REMOVE:
             allowed = isAllowed(perm1.getDefMsk(), perm1.getAllowMsk(), AccessMask.DELETE_CHILD.getValue());
-            if ( allowed.equals( Boolean.FALSE ) ) {
+            if ( allowed == null || allowed.equals( Boolean.TRUE ) ) {
                 Boolean allowed_child = isAllowed(perm2.getDefMsk(), perm2.getAllowMsk(), AccessMask.DELETE.getValue());
-                if ( allowed_child.equals( Boolean.TRUE ) )
+                if ( allowed_child == null || allowed_child.equals( Boolean.FALSE ) )
                     allowed = allowed_child;
             }
             break;
@@ -135,16 +138,16 @@ public class AclNFSv4Matcher extends AclMatcher {
             accessMask = AccessMask.EXECUTE.getValue();
             break;
 
-//			accessMask = AccessMask.WRITE_DATA.getValue(); // TODO: check specification for WRITE_DATA on OPEN.OPEN4_NONCREATE
-//			if ( allowed == null ) {
-//				accessMask |= AccessMask.EXECUTE.getValue();
+//            accessMask = AccessMask.WRITE_DATA.getValue(); // TODO: check specification for WRITE_DATA on OPEN.OPEN4_NONCREATE
+//            if ( allowed == null ) {
+//                accessMask |= AccessMask.EXECUTE.getValue();
 //
-//			} else if ( allowed == Boolean.FALSE ) {
-//				if ( logger.isDebugEnabled() )
-//					logResult(action, opentype.toString(), isDir, allowed);
-//				return allowed;
-//			}
-//			break;
+//            } else if ( allowed == Boolean.FALSE ) {
+//                if ( logger.isDebugEnabled() )
+//                    logResult(action, opentype.toString(), isDir, allowed);
+//                return allowed;
+//            }
+//            break;
 
         default:
             throw new IllegalArgumentException("Illegal open type: " + opentype);
