@@ -23,7 +23,11 @@ import org.dcache.xrootd.protocol.messages.StatxRequest;
 import org.dcache.xrootd.protocol.messages.SyncRequest;
 import org.dcache.xrootd.protocol.messages.WriteRequest;
 
+import org.apache.log4j.Logger;
+
 public class ProtocolHandler {
+
+    private final static Logger _log = Logger.getLogger(ProtocolHandler.class);
 
     private PhysicalXrootdConnection physicalConnection;
 
@@ -81,7 +85,7 @@ public class ProtocolHandler {
             physicalConnection.getStreamManager().dispatchMessage(requestMsg);
 
         } catch (TooMuchLogicalStreamsException e) {
-            System.err.println("discarding request: "+e.getMessage());
+            _log.error("discarding request: "+e.getMessage());
             physicalConnection.getResponseEngine().sendResponseMessage(new ErrorResponse(requestMsg.getStreamID(), XrootdProtocol.kXR_noserver, e.getMessage()));
         }
     }
@@ -111,7 +115,7 @@ public class ProtocolHandler {
             data = physicalConnection.getRequestEngine().receiveData(dlength);
 
             if (data == null) {
-                System.err.println("data part of received request incomplete or corrupt");
+                _log.error("data part of received request incomplete or corrupt");
                 return null;
             }
 
@@ -151,7 +155,7 @@ public class ProtocolHandler {
             result = new ProtocolRequest(header, data);
             break;
         default:
-            System.err.println("invalid or unsupported message request code: " + requestID);
+            _log.warn("invalid or unsupported message request code: " + requestID);
             break;
         }
 

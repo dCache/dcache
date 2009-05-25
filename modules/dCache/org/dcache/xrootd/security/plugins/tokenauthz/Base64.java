@@ -49,8 +49,13 @@ package org.dcache.xrootd.security.plugins.tokenauthz;
  * @author Martin Radicke
  * @version 2.2
  */
+
+import org.apache.log4j.Logger;
+
 public class Base64
 {
+
+    private final static Logger _log = Logger.getLogger(Base64.class);
 
     /* ********  P U B L I C   F I E L D S  ******** */
 
@@ -621,10 +626,10 @@ public class Base64
 
                     return 3;
                 }catch( Exception e){
-                    System.out.println(""+source[srcOffset]+ ": " + ( DECODABET[ source[ srcOffset     ] ]  ) );
-                    System.out.println(""+source[srcOffset+1]+  ": " + ( DECODABET[ source[ srcOffset + 1 ] ]  ) );
-                    System.out.println(""+source[srcOffset+2]+  ": " + ( DECODABET[ source[ srcOffset + 2 ] ]  ) );
-                    System.out.println(""+source[srcOffset+3]+  ": " + ( DECODABET[ source[ srcOffset + 3 ] ]  ) );
+                    _log.error(""+source[srcOffset]+ ": " + ( DECODABET[ source[ srcOffset     ] ]  ) );
+                    _log.error(""+source[srcOffset+1]+  ": " + ( DECODABET[ source[ srcOffset + 1 ] ]  ) );
+                    _log.error(""+source[srcOffset+2]+  ": " + ( DECODABET[ source[ srcOffset + 2 ] ]  ) );
+                    _log.error(""+source[srcOffset+3]+  ": " + ( DECODABET[ source[ srcOffset + 3 ] ]  ) );
                     return -1;
                 }   //e nd catch
             }
@@ -680,7 +685,7 @@ public class Base64
                     }   // end if: white space, equals sign or better
                 else
                     {
-                        System.err.println( "Bad Base64 input character at " + i + ": " + source[i] + "(decimal)" );
+                        _log.error( "Bad Base64 input character at " + i + ": " + source[i] + "(decimal)" );
                         return null;
                     }   // end else:
             }   // each input character
@@ -905,7 +910,7 @@ public class Base64
                 // Check for size of file
                 if( file.length() > Integer.MAX_VALUE )
                     {
-                        System.err.println( "File is too big for this convenience method (" + file.length() + " bytes)." );
+                        _log.error( "File is too big for this convenience method (" + file.length() + " bytes)." );
                         return null;
                     }   // end if: file too big for int index
                 buffer = new byte[ (int)file.length() ];
@@ -926,7 +931,7 @@ public class Base64
             }   // end try
         catch( java.io.IOException e )
             {
-                System.err.println( "Error decoding from file " + filename );
+                _log.warn( "Error decoding from file " + filename );
             }   // end catch: IOException
         finally
             {
@@ -974,7 +979,7 @@ public class Base64
             }   // end try
         catch( java.io.IOException e )
             {
-                System.err.println( "Error encoding from file " + filename );
+                _log.warn( "Error encoding from file " + filename );
             }   // end catch: IOException
         finally
             {

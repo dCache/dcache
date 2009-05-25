@@ -9,8 +9,12 @@ import org.dcache.xrootd.protocol.messages.AuthentiticationRequest;
 import org.dcache.xrootd.protocol.messages.LoginRequest;
 import org.dcache.xrootd.protocol.messages.OKResponse;
 
+import org.apache.log4j.Logger;
 
 public class XrootdDoorController implements PhysicalConnectionListener {
+
+    private final static Logger _log =
+        Logger.getLogger(XrootdDoorController.class);
 
     private XrootdDoor door;
     private PhysicalXrootdConnection physicalXrootdConnection;
@@ -29,13 +33,13 @@ public class XrootdDoorController implements PhysicalConnectionListener {
     }
 
     public void handshakeRequest() {
-        door.say("handshake attempt coming from "+physicalXrootdConnection.getNetworkConnection().getSocket().getRemoteSocketAddress().toString());
+        _log.info("handshake attempt coming from "+physicalXrootdConnection.getNetworkConnection().getSocket().getRemoteSocketAddress().toString());
     }
 
     public AbstractResponseMessage loginRequest(LoginRequest login) {
 
         //		plug login module method here
-        door.say("login attempt, access granted");
+        _log.info("login attempt, access granted");
 
         return new OKResponse(login.getStreamID());
     }
@@ -44,7 +48,7 @@ public class XrootdDoorController implements PhysicalConnectionListener {
 
         //		plug authentitication module here
 
-        door.say("authentitication passed");
+        _log.info("authentitication passed");
 
         return new OKResponse(auth.getStreamID());
     }

@@ -6,7 +6,12 @@ import org.dcache.xrootd.core.connection.PhysicalXrootdConnection;
 import org.dcache.xrootd.protocol.messages.AbstractResponseMessage;
 import org.dcache.xrootd.util.Queue;
 
+import org.apache.log4j.Logger;
+
 public class ThreadedResponseEngine extends AbstractResponseEngine implements Runnable{
+
+    public final static Logger _log =
+        Logger.getLogger(ThreadedResponseEngine.class);
 
     public static final String THREADNAME = "Xrootd-Response-Thread";
 
@@ -47,7 +52,7 @@ public class ThreadedResponseEngine extends AbstractResponseEngine implements Ru
         try {
             responses.push(msg);
         } catch (InterruptedException e) {
-            System.out.println(responseThread.getName() + " got InterruptedException.");
+            _log.info(responseThread.getName() + " got InterruptedException.");
             isInterrupted = true;
             return;
         }
@@ -65,7 +70,7 @@ public class ThreadedResponseEngine extends AbstractResponseEngine implements Ru
                 return;
 
             } catch (IOException e) {
-                System.err.println("error sending response "+e+"\nretries: "+retries);
+                _log.warn("error sending response "+e+"\nretries: "+retries);
 
                 try {
 
@@ -81,7 +86,7 @@ public class ThreadedResponseEngine extends AbstractResponseEngine implements Ru
 
     public void run() {
 
-        System.out.println(responseThread.getName() + " started");
+        _log.debug(responseThread.getName() + " started");
 
         //		NewProtocolHandler protocol = physicalConnection.getProtocolHandler();
 
@@ -92,7 +97,7 @@ public class ThreadedResponseEngine extends AbstractResponseEngine implements Ru
             try {
                 response = (AbstractResponseMessage) responses.pop();
             } catch (InterruptedException e) {
-                System.out.println(responseThread.getName() + " got InterruptedException.");
+                _log.info(responseThread.getName() + " got InterruptedException.");
                 isInterrupted = true;
                 continue;
             }
@@ -106,9 +111,9 @@ public class ThreadedResponseEngine extends AbstractResponseEngine implements Ru
             //			sendRawMessage(response.getHeader());
             //			sendRawMessage(response.getData());
 
-            System.out.println(Thread.currentThread().getName()+": sending response "+ response.getClass().getName()+"(SID="+response.getStreamID()+")");
+            _log.debug(Thread.currentThread().getName()+": sending response "+ response.getClass().getName()+"(SID="+response.getStreamID()+")");
         }
 
-        System.out.println(responseThread.getName() + " finished.");
+        _log.debug(responseThread.getName() + " finished.");
     }
 }

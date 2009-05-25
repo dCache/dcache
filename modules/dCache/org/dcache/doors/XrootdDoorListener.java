@@ -39,6 +39,8 @@ import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
 
+import org.apache.log4j.Logger;
+
 public class XrootdDoorListener implements StreamListener {
 
     private class PnfsFileStatus extends FileStatus {
@@ -55,6 +57,9 @@ public class XrootdDoorListener implements StreamListener {
         }
 
     }
+
+    private final static Logger _log =
+        Logger.getLogger(XrootdDoorListener.class);
 
     private XrootdDoor door;
     private PhysicalXrootdConnection physicalXrootdConnection;
@@ -83,10 +88,10 @@ public class XrootdDoorListener implements StreamListener {
         ///////////////////////////////////////////////////////////////
         //		debug section: print open flags and mode
         ///////////////////////////////////////////////////////////////
-        door.say("data size of open request: "
+        _log.info("data size of open request: "
                  + req.getDataLength() + " bytes");
 
-        door.say("request path to open: " + req.getPath());
+        _log.info("request path to open: " + req.getPath());
 
         int options =req.getOptions();
         String openFlags = "options to apply for open path (raw="+options+" ):";
@@ -115,9 +120,9 @@ public class XrootdDoorListener implements StreamListener {
             openFlags += " kXR_retstat";
 
 
-        door.say("open flags: "+openFlags);
+        _log.info("open flags: "+openFlags);
 
-        door.say("mode to apply to open path: ");
+        _log.info("mode to apply to open path: ");
 
         int mode = req.getUMask();
         String s = "";
@@ -165,7 +170,7 @@ public class XrootdDoorListener implements StreamListener {
         else
             s += "-";
 
-        door.say(s);
+        _log.info(s);
 
         ///////////////////////////////////////////////////////////////
         //		end of debug section
@@ -182,7 +187,7 @@ public class XrootdDoorListener implements StreamListener {
         if (req.isNew() || req.isReadWrite()) {
 
             if (door.isReadOnly()) {
-                door.esay("Permission denied. Access is read only.");
+                _log.warn("Permission denied. Access is read only.");
 
                 respondWithError( req.getStreamID(), XrootdProtocol.kXR_FileLockedr, "Permission denied. Access is read only." );
 
@@ -198,14 +203,14 @@ public class XrootdDoorListener implements StreamListener {
 
             if (door.getAuthzFactory() == null) {
                 String msg = "Authorization required but appropriate handler is not initialised. Server probably misconfigured.";
-                door.esay( msg );
+                _log.warn( msg );
                 respondWithError( req.getStreamID(), XrootdProtocol.kXR_ServerError, msg);
                 return;
             }
 
 
 
-            door.say("checking authorization for "+pathToOpen);
+            _log.info("checking authorization for "+pathToOpen);
 
 
             //			all information neccessary for checking authorization is found in opaque
@@ -250,7 +255,7 @@ public class XrootdDoorListener implements StreamListener {
             //			In case of enabled authorization, the path in the open request can refer to the lfn.
             //			In this case the real path is delivered by the authz plugin
             if (authzHandler.providesPFN()) {
-                door.say("access granted for LFN="+pathToOpen+" PFN="+authzHandler.getPFN());
+                _log.info("access granted for LFN="+pathToOpen+" PFN="+authzHandler.getPFN());
 
                 //				get the real path (pfn) which we will open
                 pathToOpen = authzHandler.getPFN();
@@ -278,7 +283,7 @@ public class XrootdDoorListener implements StreamListener {
             storageInfoMsg = door.getStorageInfo(pathToOpen);
 
         } catch (IOException e) {
-            door.say("No PnfsId found for path: " + pathToOpen);
+            _log.info("No PnfsId found for path: " + pathToOpen);
         }
 
         if (storageInfoMsg == null) {
@@ -301,7 +306,7 @@ public class XrootdDoorListener implements StreamListener {
                     // parent directory does not exist
 
                     if (e.getRc() != CacheException.FILE_NOT_FOUND) {
-                        door.esay("unknown PNFS error: "+ e.getMessage());
+                        _log.warn("unknown PNFS error: "+ e.getMessage());
                         respondWithError( req.getStreamID(),
                                           XrootdProtocol.kXR_ServerError,
                                           "Cannot create Pnfs entry : unknown PNFS error with code " + e.getRc() );
@@ -343,7 +348,7 @@ public class XrootdDoorListener implements StreamListener {
 
                 //				create the actual PNFS entry with parent uid:gid
 
-                door.esay("open request (write mode): trying to create new PNFS entry");
+                _log.warn("open request (write mode): trying to create new PNFS entry");
                 try {
 
                     storageInfoMsg = door.createNewPnfsEntry(pathToOpen, parentMD.getUid(), parentMD.getGid());
@@ -388,10 +393,10 @@ public class XrootdDoorListener implements StreamListener {
         //		storageinfo must be available for the newly created PNFS entry
         if (storageInfo == null) {
             try {
-                door.esay("Cannot create file, deleting PNFS entry");
+                _log.warn("Cannot create file, deleting PNFS entry");
                 door.deletePnfsEntry(storageInfoMsg.getPnfsId());
             } catch (CacheException e1) {
-                door.esay(e1);
+                _log.warn(e1);
             }
 
             respondWithError( req.getStreamID(),
@@ -407,7 +412,7 @@ public class XrootdDoorListener implements StreamListener {
         this.info.setFileHandle( fileHandle );
 
         long checksum = req.calcChecksum();
-        door.say("checksum of openrequest: "+checksum);
+        _log.info("checksum of openrequest: "+checksum);
 
         ProtocolInfo protocolInfo = door.createProtocolInfo(storageInfoMsg.getPnfsId(), fileHandle, checksum, physicalXrootdConnection.getNetworkConnection().getClientSocketAddress());
 
@@ -443,19 +448,19 @@ public class XrootdDoorListener implements StreamListener {
                     //					itself, so this	exception return code can be used to recover, because PoolManager
                     //					will return another pool when asked again.
                     requestDone = false;
-                    door.say("pool says FILE_NOT_IN_REPOSITORY, will ask PoolManager for another pool");
+                    _log.info("pool says FILE_NOT_IN_REPOSITORY, will ask PoolManager for another pool");
                 }
             }
         } catch (Exception e) {
 
-            door.esay(e.getMessage());
+            _log.warn(e.getMessage());
 
             //			remove created pnfs entry
             if (isWrite) {
                 try {
                     door.deletePnfsEntry(fileStatus.getPnfsId());
                 } catch (CacheException e1) {
-                    door.esay(e1);
+                    _log.warn(e1);
                 }
             }
             respondWithError( req.getStreamID(),
@@ -498,7 +503,7 @@ public class XrootdDoorListener implements StreamListener {
                 meta = door.getFileMetaData(req.getPath());
 
             } catch (CacheException e) {
-                door.say("No PnfsId found for path: " + req.getPath());
+                _log.info("No PnfsId found for path: " + req.getPath());
                 response = new StatResponse(req.getStreamID(), null);
             }
 
@@ -568,7 +573,7 @@ public class XrootdDoorListener implements StreamListener {
 
         //		clean up something?
 
-        door.say("closing logical stream (streamID="+streamId+")");
+        _log.info("closing logical stream (streamID="+streamId+")");
     }
 
     /**

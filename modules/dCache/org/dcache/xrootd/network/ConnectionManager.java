@@ -5,9 +5,12 @@ import java.net.Socket;
 import java.util.Iterator;
 import java.util.Vector;
 
-
+import org.apache.log4j.Logger;
 
 public class ConnectionManager {
+
+    private final static Logger _log =
+        Logger.getLogger(ConnectionManager.class);
 
     private static ConnectionManager instance = null;
 
@@ -28,7 +31,7 @@ public class ConnectionManager {
             try {
                 socket.close();
             } catch (IOException e) {
-                System.err.println(e.getMessage());
+                _log.error(e.getMessage());
             }
             return;
         }
@@ -38,7 +41,7 @@ public class ConnectionManager {
         try {
             channel = new NetworkConnection(socket);
         } catch (IOException e) {
-            System.err.println("Error establishing channel:"+ e.getMessage());
+            _log.error("Error establishing channel:"+ e.getMessage());
             return;
         }
 

@@ -1,6 +1,6 @@
 package org.dcache.xrootd.protocol.messages;
 
-
+import org.apache.log4j.Logger;
 
 public abstract class GenericReadRequestMessage extends AbstractRequestMessage {
 
@@ -33,6 +33,9 @@ public abstract class GenericReadRequestMessage extends AbstractRequestMessage {
 
     }
 
+    private final static Logger _log =
+        Logger.getLogger(GenericReadRequestMessage.class);
+
     private EmbeddedReadRequest[] readList;
 
     public GenericReadRequestMessage(int[] h, byte[] d) {
@@ -60,7 +63,7 @@ public abstract class GenericReadRequestMessage extends AbstractRequestMessage {
             int prefix = 0;
             if (data.length % 16 != 0) {
                 if (data.length % 16 != 8) {
-                    System.err.println("invalid readv request: data doesn't start with 8 byte prefix (pathid)");
+                    _log.warn("invalid readv request: data doesn't start with 8 byte prefix (pathid)");
                 } else {
                     prefix = 8;
                 }

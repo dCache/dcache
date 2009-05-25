@@ -21,7 +21,11 @@ import org.dcache.xrootd.protocol.messages.WriteRequest;
 import org.dcache.xrootd.protocol.messages.GenericReadRequestMessage.EmbeddedReadRequest;
 import org.dcache.xrootd.util.Queue;
 
+import org.apache.log4j.Logger;
+
 public class LogicalStream extends Thread {
+
+    private final static Logger _log = Logger.getLogger(LogicalStream.class);
 
     private PhysicalXrootdConnection physicalConnection;
 
@@ -72,12 +76,12 @@ public class LogicalStream extends Thread {
 
     public void putRequest(AbstractRequestMessage msg) {
 
-        System.out.println(this.getName() + " got new request from dispatcher "+msg.getClass().getName());
+        _log.debug(this.getName() + " got new request from dispatcher "+msg.getClass().getName());
 
         try {
             requests.push(msg);
         } catch (InterruptedException e) {
-            System.out.println(getName() + " got InterruptedException.");
+            _log.info(getName() + " got InterruptedException.");
             isInterrupted = true;
             return;
         }
@@ -92,7 +96,7 @@ public class LogicalStream extends Thread {
             try {
                 request =  (AbstractRequestMessage) requests.pop();
             } catch (InterruptedException e) {
-                System.out.println(getName()+" : got InterruptedException");;
+                _log.info(getName()+" : got InterruptedException");;
                 isInterrupted = true;
                 continue;
             }
@@ -128,7 +132,7 @@ public class LogicalStream extends Thread {
 
         }
 
-        System.out.println(getName()+" finished.");
+        _log.debug(getName()+" finished.");
 
     }
 
@@ -278,7 +282,7 @@ public class LogicalStream extends Thread {
         this.openFlags.put(fh,  Integer.valueOf(openFlags));
 
         if (!checkOpenFileListConsistency()) {
-            System.err.println("Error: open file list inconsistent");
+            _log.error("Error: open file list inconsistent");
         }
     }
 
@@ -300,9 +304,9 @@ public class LogicalStream extends Thread {
 
         } else {
             if (requests.size() == 0) {
-                System.err.println("Error: open file list inconsistent");
+                _log.error("Error: open file list inconsistent");
             } else {
-                System.err.println("Error: still requests in the queue");
+                _log.error("Error: still requests in the queue");
             }
         }
 

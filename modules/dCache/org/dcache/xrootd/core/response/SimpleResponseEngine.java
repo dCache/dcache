@@ -6,7 +6,12 @@ import org.dcache.xrootd.core.connection.PhysicalXrootdConnection;
 import org.dcache.xrootd.network.NetworkConnection;
 import org.dcache.xrootd.protocol.messages.AbstractResponseMessage;
 
+import org.apache.log4j.Logger;
+
 public class SimpleResponseEngine extends AbstractResponseEngine {
+
+    private final static Logger _log =
+        Logger.getLogger(SimpleResponseEngine.class);
 
     private NetworkConnection network;
 
@@ -26,12 +31,12 @@ public class SimpleResponseEngine extends AbstractResponseEngine {
                 //				synchronized (this) {
                 network.sendBuffer(msg.getHeader());
                 network.sendBuffer(msg.getData(), 0, msg.getDataLength());
-                System.out.println("finished sending response "+msg.getClass());
+                _log.debug("finished sending response "+msg.getClass());
                 //				}
                 return;
 
             } catch (IOException e) {
-                System.err.println("error sending response "+e+"\nretries: "+retries);
+                _log.warn("error sending response "+e+"\nretries: "+retries);
 
                 try {
 

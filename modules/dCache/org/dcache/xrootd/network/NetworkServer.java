@@ -5,8 +5,11 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 
+import org.apache.log4j.Logger;
+
 public class NetworkServer extends Thread {
 
+    private final static Logger _log = Logger.getLogger(NetworkServer.class);
 
     ConnectionManager chMgr;
     int listenPort;
@@ -31,10 +34,10 @@ public class NetworkServer extends Thread {
 
             sSocket = new ServerSocket(listenPort);
 
-            System.out.println("Listening on TCP port " + listenPort);
+            _log.info("Listening on TCP port " + listenPort);
 
         } catch (IOException e) {
-            System.err.println(e.getMessage());
+            _log.error(e.getMessage());
         }
 
         while (true) {
@@ -44,10 +47,10 @@ public class NetworkServer extends Thread {
                 channel  = sSocket.accept();
 
             } catch (SocketException e) {
-                System.err.println("error disabling Nagle's algorithm: "+e.getMessage());
+                _log.warn("error disabling Nagle's algorithm: "+e.getMessage());
                 continue;
             } catch (IOException e) {
-                System.err.println(e.getMessage());
+                _log.error(e.getMessage());
                 continue;
             }
 
