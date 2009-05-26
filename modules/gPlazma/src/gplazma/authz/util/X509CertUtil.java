@@ -449,7 +449,7 @@ attribute : /cms/uscms/Role=cmsprod/Capability=NULL
 	  return buf.toString();
     }
 
-    private static synchronized VOMSValidator getVOMSValidatorInstance() throws IOException, CertificateException, CRLException {
+    public static synchronized VOMSValidator getVOMSValidatorInstance() throws IOException, CertificateException, CRLException {
         if(vomsValidator!=null) return vomsValidator;
         File theDir = new File(PKIStore.DEFAULT_VOMSDIR);
         if (!theDir.exists() || !theDir.isDirectory() || theDir.list().length == 0) {
@@ -462,7 +462,7 @@ attribute : /cms/uscms/Role=cmsprod/Capability=NULL
         return vomsValidator;
     }
     
-    private static synchronized ACTrustStore getACTrustStoreInstance() throws IOException, CertificateException, CRLException {
+    public static synchronized ACTrustStore getACTrustStoreInstance() throws IOException, CertificateException, CRLException {
         if(acTrustStore!=null) return acTrustStore;
         acTrustStore = new BasicVOMSTrustStore(PKIStore.DEFAULT_CADIR, 12*3600*1000);
         ((BasicVOMSTrustStore)acTrustStore).stopRefresh();
