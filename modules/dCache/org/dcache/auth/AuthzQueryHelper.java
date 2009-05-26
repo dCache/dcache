@@ -40,20 +40,36 @@ public class AuthzQueryHelper {
     private static final Random random = new Random();
     private CellAdapter caller;
     private boolean delegate_to_gplazma=false;
+    private long cell_message_timeout;
+    private int delegation_timeout=60000;
 
     public AuthzQueryHelper(CellAdapter caller)
     throws AuthorizationException {
-        this(random.nextInt(Integer.MAX_VALUE), caller);
+        this(caller, 180000L);
     }
 
-    public AuthzQueryHelper(long authRequestID, CellAdapter caller)
+    public AuthzQueryHelper(CellAdapter caller, long msg_timeout)
+    throws AuthorizationException {
+        this(random.nextInt(Integer.MAX_VALUE), caller, msg_timeout);
+    }
+
+    public AuthzQueryHelper(long authRequestID, CellAdapter caller, long msg_timeout)
     throws AuthorizationException {
         this.authRequestID=authRequestID;
         this.caller = caller;
+        this.cell_message_timeout = msg_timeout;
     }
 
     public void setDelegateToGplazma(boolean boolarg) {
         delegate_to_gplazma = boolarg;
+    }
+
+    public void setDelegationTimeout(int deleg_t) {
+        delegation_timeout = deleg_t;
+    }
+
+    public int getDelegationTimeout() {
+        return delegation_timeout;
     }
 
     // Called on requesting cell
@@ -115,7 +131,7 @@ public class AuthzQueryHelper {
         try {
             GSSName GSSIdentity = serviceContext.getSrcName();
             CellMessage m = new CellMessage(cellpath, deleginfo);
-            m = caller.getNucleus().sendAndWait(m, 60000L) ;
+            m = caller.getNucleus().sendAndWait(m, cell_message_timeout) ;
             if(m==null) {
                 throw new AuthorizationException("authRequestID " + authRequestID + " Message to " + authcellname + " timed out for authentification of " + GSSIdentity);
             }
@@ -146,7 +162,7 @@ public class AuthzQueryHelper {
                 Object authobj=null;
                 if(authsock!=null) {
                     try {
-                        authsock.setSoTimeout(30000);
+                        authsock.setSoTimeout(delegation_timeout);
                         InputStream authin = authsock.getInputStream();
                         ObjectInputStream authstrm = new ObjectInputStream(authin);
                         authobj = authstrm.readObject();
@@ -224,7 +240,7 @@ public class AuthzQueryHelper {
         String authcellname = cellpath.getCellName();
         try {
             CellMessage m = new CellMessage(cellpath, dnInfo);
-            m = caller.getNucleus().sendAndWait(m, 60000L) ;
+            m = caller.getNucleus().sendAndWait(m, cell_message_timeout) ;
             if(m==null) {
                 throw new AuthorizationException("authRequestID " + authRequestID + " Message to " + authcellname + " timed out for authentification of " + dnInfo.getDN() + " and roles " + dnInfo.getFQANs());
             }
@@ -281,7 +297,7 @@ public class AuthzQueryHelper {
         String authcellname = cellpath.getCellName();
         try {
             CellMessage m = new CellMessage(cellpath, x509info);
-            m = caller.getNucleus().sendAndWait(m, 60000L);
+            m = caller.getNucleus().sendAndWait(m, cell_message_timeout);
             if(m==null) {
                 String subjectDN = X509CertUtil.getSubjectFromX509Chain(chain, false);
                 throw new AuthorizationException("authRequestID " + authRequestID + " Message to " + authcellname + " timed out for authorization of " + subjectDN);
