@@ -2509,7 +2509,7 @@ public abstract class AbstractFtpDoorV1
             retrieve(arg, prm_offset, prm_size, mode,
                      _xferMode, _parallelStart, _parallelMin, _parallelMax,
                      new InetSocketAddress(clientHost, clientPort),
-                     _bufSize, false);
+                     _bufSize, false, 1);
         } finally {
             prm_offset=-1;
             prm_size=-1;
@@ -2589,13 +2589,14 @@ public abstract class AbstractFtpDoorV1
      *                      or auto scaling when -1.
      * @param reply127      GridFTP v2 127 reply is generated when true
      *                      and client is active.
+     * @param version       The mover version to use for the transfer
      */
     private
         void retrieve(String file, long offset, long size,
                       Mode mode, String xferMode,
                       int parallelStart, int parallelMin, int parallelMax,
                       InetSocketAddress client, int bufSize,
-                      boolean reply127)
+                      boolean reply127, int version)
     {
         /* Close incomplete log.
          */
@@ -2671,7 +2672,7 @@ public abstract class AbstractFtpDoorV1
                             retrieve(file, offset, size,
                                      mode, xferMode,
                                      parallelStart, parallelMin, parallelMax,
-                                     client, bufSize, reply127);
+                                     client, bufSize, reply127, version);
                             return;
                         }
                         throw new FTPCommandException(550, "Permission denied");
@@ -2746,7 +2747,7 @@ public abstract class AbstractFtpDoorV1
                         transfer(mode, xferMode,
                                  parallelStart, parallelMin, parallelMax,
                                  client, bufSize, offset, size,
-                                 storageInfo, reply127, false);
+                                 storageInfo, reply127, false, version);
                         break;
                     } catch (TimeoutException e){
                         error("FTP Door got timeout: while retrieving: " +
@@ -2833,8 +2834,7 @@ public abstract class AbstractFtpDoorV1
         store(arg, _mode, _xferMode,
               _parallelStart, _parallelMin, _parallelMax,
               new InetSocketAddress(_client_data_host, _client_data_port),
-              _bufSize,
-              false);
+              _bufSize, false, 1);
     }
 
     /**
@@ -2852,11 +2852,12 @@ public abstract class AbstractFtpDoorV1
      *                      or auto scaling when -1.
      * @param reply127      GridFTP v2 127 reply is generated when true
      *                      and client is active.
+     * @param version       The mover version to use for the transfer
      */
     private void store(String file, Mode mode, String xferMode,
                        int parallelStart, int parallelMin, int parallelMax,
                        InetSocketAddress client, int bufSize,
-                       boolean reply127)
+                       boolean reply127, int version)
     {
         _transfer = new Transfer(absolutePath(file));
         try {
@@ -2877,7 +2878,7 @@ public abstract class AbstractFtpDoorV1
                 } else {
                     store(file, mode, xferMode,
                           parallelStart, parallelMin, parallelMax,
-                          client, bufSize, reply127);
+                          client, bufSize, reply127, version);
                     return;
                 }
             }
@@ -2888,7 +2889,7 @@ public abstract class AbstractFtpDoorV1
                 } else {
                     store(file, mode, xferMode,
                           parallelStart, parallelMin, parallelMax,
-                          client, bufSize, reply127);
+                          client, bufSize, reply127, version);
                     return;
                 }
             }
@@ -2981,7 +2982,7 @@ public abstract class AbstractFtpDoorV1
                     } else {
                         store(file, mode, xferMode,
                               parallelStart, parallelMin, parallelMax,
-                              client, bufSize, reply127);
+                                  client, bufSize, reply127, version);
                         return;
                     }
                 }
@@ -3082,7 +3083,7 @@ public abstract class AbstractFtpDoorV1
                 transfer(mode, xferMode, parallelStart,
                          parallelMin, parallelMax,
                          client, bufSize, 0, 0, storageInfo,
-                         reply127, true);
+                         reply127, true, version);
             } finally {
                 _commandQueue.disableInterrupt();
             }
@@ -3177,6 +3178,7 @@ public abstract class AbstractFtpDoorV1
      * @param reply127      GridFTP v2 127 reply is generated when true.
      *                      Requires mode to be PASSIVE.
      * @param isWrite       True writing to pool, false when reading.
+     * @param version       The mover version to use for the transfer
      */
     private synchronized void transfer(Mode              mode,
                                        String            xferMode,
@@ -3189,7 +3191,8 @@ public abstract class AbstractFtpDoorV1
                                        long              size,
                                        StorageInfo       storageInfo,
                                        boolean           reply127,
-                                       boolean           isWrite)
+                                       boolean           isWrite,
+                                       int               version)
         throws InterruptedException,
                TimeoutException,
                SendAndWaitException,
@@ -3205,12 +3208,6 @@ public abstract class AbstractFtpDoorV1
          * using a 127 response.
          */
         boolean usePassivePool = _allowPassivePool && reply127;
-
-        /* Which protocol to use for communicating with the
-         * mover. Notice that this is unrelated to the GridFTP
-         * version.
-         */
-        int version = (usePassivePool || xferMode.equals("X") ? 2 : 1);
 
         /*
          *
@@ -4497,7 +4494,7 @@ public abstract class AbstractFtpDoorV1
             retrieve(parameters.get("path"), prm_offset, prm_size, mode,
                      xferMode, _parallelStart, _parallelMin, _parallelMax,
                      new InetSocketAddress(clientHost, clientPort),
-                     _bufSize, reply127);
+                     _bufSize, reply127, 2);
         } catch (FTPCommandException e) {
             reply(String.valueOf(e.getCode()) + " " + e.getReply());
         } finally {
@@ -4553,7 +4550,7 @@ public abstract class AbstractFtpDoorV1
             store(parameters.get("path"), mode, xferMode,
                   _parallelStart, _parallelMin, _parallelMax,
                   new InetSocketAddress(clientHost, clientPort),
-                  _bufSize, reply127);
+                  _bufSize, reply127, 2);
         } catch (FTPCommandException e) {
             reply(String.valueOf(e.getCode()) + " " + e.getReply());
         }
