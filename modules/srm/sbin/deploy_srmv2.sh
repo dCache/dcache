@@ -566,21 +566,26 @@ else
 maxSpareThreads=${TOMCAT_MAX_SPARE_THREADS}
 fi
 
+if [ "${TOMCAT_ACCEPT_COUNT}" = "" ] ; then
+  acceptCount=1024
+else
+  acceptCount=${TOMCAT_ACCEPT_COUNT}
+fi
+
 echo  "               maxThreads=\"${maxThreads}\" minSpareThreads=\"${minSpareThreads}\" maxSpareThreads=\"${maxSpareThreads}\" ">> ${tmp2}
 echo  "               maxProcessors=\"${maxThreads}\" minProcessors=\"${minSpareThreads}\" maxSpareProcessors=\"${maxSpareThreads}\" ">> ${tmp2}
 
-cat >>${tmp2} <<EOF
-               enableLookups="true" disableUploadTimeout="true"
-               acceptCount="10" debug="1" scheme="https" autoFlush="true"
-               protocolHandlerClassName="org.apache.coyote.http11.Http11Protocol"
-               socketFactory="org.globus.tomcat.catalina.net.BaseHTTPSServerSocketFactory"
-EOF
+echo "               enableLookups=\"false\" disableUploadTimeout=\"true\"" >> ${tmp2}
+echo "               acceptCount=\"${acceptCount}\"" >> ${tmp2}
+echo "               debug=\"1\" scheme=\"https\" autoFlush=\"true\"" >> ${tmp2}
+echo "               protocolHandlerClassName=\"org.apache.coyote.http11.Http11Protocol\"" >> ${tmp2}
+echo "               socketFactory=\"org.globus.tomcat.catalina.net.BaseHTTPSServerSocketFactory\"" >> ${tmp2}
 
 echo "               cert=\"${X509_CERT}\"" >> ${tmp2}
 echo "               key=\"${X509_KEY}\"" >> ${tmp2}
 echo "               cacertdir=\"${X509_CA_CERT_DIR}\"" >> ${tmp2}
 echo "               mode=\"gsi\"/>" >> ${tmp2}
-echo "tmp2:${tmp2}"
+logmessage DEBUG "tmp2:${tmp2}"
 
 #now put it all together
 cat ${tmp1} ${tmp2} ${tmp3} > ${TOMCAT_CONFIG}
