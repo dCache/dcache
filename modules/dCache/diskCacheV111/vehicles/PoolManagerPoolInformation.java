@@ -38,4 +38,11 @@ public class PoolManagerPoolInformation
     {
         return _cpuCost;
     }
+
+    @Override
+    public String toString()
+    {
+        return String.format("[name=%s;space=%f;cpu=%f]",
+                             _name, _spaceCost, _cpuCost);
+    }
 }

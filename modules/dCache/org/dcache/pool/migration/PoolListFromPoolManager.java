@@ -15,7 +15,7 @@ import dmg.cells.nucleus.CellPath;
 
 import org.apache.log4j.Logger;
 
-abstract class PoolListFromPoolManager
+public abstract class PoolListFromPoolManager
     implements RefreshablePoolList,
                MessageCallback<PoolManagerGetPoolsMessage>
 {
@@ -53,9 +53,12 @@ abstract class PoolListFromPoolManager
         for (PoolManagerPoolInformation pool: msg.getPools()) {
             String name = pool.getName();
             if (!_exclude.contains(name)) {
+                double space =
+                    (_spaceFactor > 0 ? pool.getSpaceCost() * _spaceFactor : 0);
+                double cpu =
+                    (_cpuFactor > 0 ? pool.getCpuCost() * _cpuFactor : 0);
                 pools.add(new PoolCostPair(new CellPath(pool.getName()),
-                                           pool.getSpaceCost() * _spaceFactor +
-                                           pool.getCpuCost() * _cpuFactor));
+                                           space + cpu));
             }
         }
         setPools(pools);
