@@ -273,7 +273,7 @@ public abstract class AbstractFtpDoorV1
      * command.
      */
     private static final String[] FEATURES = {
-        "EOF", "PARALLEL", "SIZE", "SBUF",
+        "EOF", "PARALLEL", "MODE-E-PERF", "SIZE", "SBUF",
         "ERET", "ESTO", "GETPUT", "MDTM",
         "CKSUM " + buildChecksumList(),  "MODEX"
         /*
