@@ -46,6 +46,7 @@
       <filename name="**/cog-jglobus.jar"/>
       <filename name="**/glite/**/*.jar" />
       <filename name="**/cells.jar"/>
+      <filename name="**/gplazma.jar"/>
     </or>
   </selector>
 
