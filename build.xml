@@ -90,7 +90,7 @@
     <target name="infoprovider" depends="dcache,-infoProvider.bin"
                   description="Compile infoProvider package and create infoProvider.jar" />
 
-    <target name="javatunnel" depends="-prepare,-javatunnel.bin"
+    <target name="javatunnel" depends="gplazma,-javatunnel.bin"
                   description="Compile javatunnel package and create javatunnel.jar" />
 
     <target name="srmclient" depends="srm,-srmclient.bin"

@@ -4,10 +4,10 @@
 
 package javatunnel;
 
+import gplazma.authz.AuthorizationException;
+import gplazma.authz.util.X509CertUtil;
 import java.io.*;
-import java.security.cert.X509Certificate;
 import java.util.Iterator;
-import java.util.List;
 
 //jgss
 import org.ietf.jgss.*;
@@ -15,10 +15,6 @@ import org.ietf.jgss.*;
 // globus gsi
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.glite.security.util.DirectoryList;
-import org.glite.voms.BasicVOMSTrustStore;
-import org.glite.voms.VOMSValidator;
-import org.glite.voms.VOMSAttribute;
 import org.glite.voms.FQAN;
 import org.globus.gsi.GSIConstants;
 import org.globus.gsi.GlobusCredential;
@@ -31,6 +27,8 @@ import org.gridforum.jgss.ExtendedGSSManager;
 
 class GsiTunnel extends GssTunnel  {
 
+    private static Logger _log = Logger.getLogger(GsiTunnel.class);
+
     private ExtendedGSSContext _e_context = null;
 
     MessageProp _prop =  new MessageProp(true);
@@ -38,17 +36,6 @@ class GsiTunnel extends GssTunnel  {
     private static final String service_key           = "/etc/grid-security/hostkey.pem";
     private static final String service_cert          = "/etc/grid-security/hostcert.pem";
     private static final String service_trusted_certs = "/etc/grid-security/certificates";
-    private static String vomsdir = "/etc/grid-security/vomsdir";
-
-
-    static {
-        //try {
-        //    new DirectoryList(vomsdir).getListing();
-        //} catch (IOException e) {
-            vomsdir = service_trusted_certs;
-        //} workaround so the constructor doesn't fail
-        VOMSValidator.setTrustStore(new BasicVOMSTrustStore(vomsdir, 12*3600*1000));
-    }
 
     // Creates a new instance of GssTunnel
     public GsiTunnel(String dummy) {
@@ -75,7 +62,7 @@ class GsiTunnel extends GssTunnel  {
                 super.useChannelBinding(false);
 
             }catch( Exception e ) {
-                e.printStackTrace();
+                _log.error("Failed to initialize GSI context", e);
             }
 
         }
@@ -99,42 +86,22 @@ class GsiTunnel extends GssTunnel  {
         return new GsiTunnel( null, true  );
     }
 
-    private void scanExtendedAttributes(ExtendedGSSContext gssContext)  {
+    private void scanExtendedAttributes(ExtendedGSSContext gssContext) {
 
+        try {
 
-		String fqanValue = null;
-		try {
+            Iterator<String> fqans = X509CertUtil.getFQANsFromContext(gssContext).iterator();
+            if (fqans.hasNext()) {
+                String fqanValue = fqans.next();
+                FQAN fqan = new FQAN(fqanValue);
+                _role = fqan.getRole();
+                _group = fqan.getGroup();
+            }
 
-			X509Certificate[] chain = (X509Certificate[]) gssContext
-					.inquireByOid(GSSConstants.X509_CERT_CHAIN);
+        } catch (AuthorizationException e) {
+            _log.error("Failed to get users group and role context", e);
+        }
 
-			VOMSValidator validator = new VOMSValidator(chain);
-			validator.parse();
-
-			List listOfAttributes = validator.getVOMSAttributes();
-
-			Iterator i = listOfAttributes.iterator();
-
-			// currently take first one only
-
-			if (i.hasNext()) {
-
-				VOMSAttribute vomsAttribute = (VOMSAttribute) i.next();
-				List listOfFqans = vomsAttribute.getFullyQualifiedAttributes();
-				Iterator j = listOfFqans.iterator();
-
-				_group = vomsAttribute.getVO();
-				if (j.hasNext()) {
-					fqanValue = (String) j.next();
-					FQAN fqan = new FQAN(fqanValue);
-					_role = fqanValue;
-				}
-			}
-
-		}catch(Exception e) {
-			e.printStackTrace();
-		}
-
-	}
+    }
 
 }

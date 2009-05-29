@@ -22,6 +22,7 @@
         <fileset dir="${glite.untarred}" includes="**/*.jar" />
         <fileset dir="${libDir}/gplazma" includes="**/*.jar" />
         <pathelement location="${classesDir}/cells.jar" />
+        <pathelement location="${classesDir}/gplazma.jar" />
     </path>
 
     <!--       =======
