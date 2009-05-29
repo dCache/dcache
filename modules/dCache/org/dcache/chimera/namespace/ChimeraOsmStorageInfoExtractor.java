@@ -50,11 +50,35 @@ public class ChimeraOsmStorageInfoExtractor implements
         }
 
         StorageInfo info;
+        FsInode dirInode;
 
         if (inode.isDirectory()) {
             info =  getDirStorageInfo(inode);
+            dirInode = inode;
         } else {
             info =  getFileStorageInfo(inode);
+            dirInode = inode.getParent();
+        }
+
+        try {
+            // overwrite hsm type with hsmInstance tag
+            String[] hsmInstance;
+            hsmInstance = getTag(dirInode, "hsmInstance");
+            if( hsmInstance != null ) {
+                info.setHsm( hsmInstance[0].toLowerCase().trim());
+            }
+
+            String[] cacheClass = getTag(dirInode, "cacheClass");
+            if( cacheClass != null ) {
+                info.setCacheClass( cacheClass[0].trim());
+            }
+
+            String [] spaceToken = getTag(dirInode, "WriteToken");
+            if( spaceToken != null ) {
+                info.setKey("writeToken", spaceToken[0].trim());
+            }
+        } catch (IOException e) {
+            throw new CacheException( 37, "Unable to fetch tags: " + e.getMessage());
         }
 
         return info;
@@ -172,24 +196,11 @@ public class ChimeraOsmStorageInfoExtractor implements
             OSMStorageInfo info = new OSMStorageInfo(store, gr);
             info.addKeys(hash);
 
-            // overwrite hsm type with hsmInstance tag
-
-            String[] hsmInstance = getTag(dirInode, "hsmInstance");
-            if( hsmInstance != null ) {
-                info.setHsm( hsmInstance[0].toLowerCase().trim());
-            }
-
-            String[] cacheClass = getTag(dirInode, "cacheClass");
-            if( cacheClass != null ) {
-                info.setCacheClass( cacheClass[0].trim());
-            }
-
             si = info;
 
 
             String[] accessLatency = getTag(dirInode, "AccessLatency");
             String[] retentionPolicy = getTag(dirInode, "RetentionPolicy");
-            String [] spaceToken = getTag(dirInode, "WriteToken");
 
             /*
              * if Access latency and/or retention policy is defined for a directory
@@ -214,10 +225,6 @@ public class ChimeraOsmStorageInfoExtractor implements
                 }
             }
 
-
-            if( spaceToken != null ) {
-                info.setKey("writeToken", spaceToken[0].trim());
-            }
         } catch (IOException e) {
             throw new CacheException(e.getMessage());
         }
