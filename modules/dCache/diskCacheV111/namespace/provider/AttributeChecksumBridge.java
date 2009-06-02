@@ -35,17 +35,17 @@ class MyFakeNameSpaceProvider implements NameSpaceProvider {
 
     public String[] getFileAttributeList(PnfsId pnfsId) { return null; }
 
-    public Object getFileAttribute( PnfsId pnfsId, String attribute) { 
-      Object result = _map.get(attribute); 
-      System.out.println("Retrieved atttributed "+attribute+" result "+result); 
+    public Object getFileAttribute( PnfsId pnfsId, String attribute) {
+      Object result = _map.get(attribute);
+      System.out.println("Retrieved atttributed "+attribute+" result "+result);
       return result;
     }
 
     public void removeFileAttribute( PnfsId pnfsId, String attribute) {  }
 
-    public void setFileAttribute( PnfsId pnfsId, String attribute, Object data) { 
-      System.out.println("Setting attribute "+attribute+" to "+data); 
-      _map.put(attribute,data); 
+    public void setFileAttribute( PnfsId pnfsId, String attribute, Object data) {
+      System.out.println("Setting attribute "+attribute+" to "+data);
+      _map.put(attribute,data);
     }
 
     public void setLevelData( PnfsId pnfsId, Map<Integer, String> levelData) throws Exception { }
@@ -54,7 +54,7 @@ class MyFakeNameSpaceProvider implements NameSpaceProvider {
     public String getChecksum(PnfsId pnfsId, int type) throws Exception { return null; }
     public void removeChecksum(PnfsId pnfsId, int type) throws Exception {}
    public int[] listChecksumTypes(PnfsId pnfsId) throws Exception { return null;}
-    public Set<org.dcache.util.Checksum> 
+    public Set<org.dcache.util.Checksum>
        getChecksums(PnfsId pnfsId) throws Exception { return null; }
 
     public PnfsId getParentOf(PnfsId pnfsId) { return null; }
@@ -114,21 +114,21 @@ public class AttributeChecksumBridge {
    }
 
    public String getChecksum(PnfsId pnfsId,int checksumType) throws Exception {
- 
+
       if ( checksumType == Checksum.MD5 || checksumType == Checksum.ADLER32 ){
-        // look into "c" flag 
+        // look into "c" flag
         String flagValue = (String)_nameSpaceProvider.getFileAttribute(pnfsId, "c");
         ChecksumCollection collection = new ChecksumCollection(flagValue);
         String candidate = collection.get(checksumType);
         if ( candidate != null )
           return candidate;
-      } 
+      }
 
       return new ChecksumCollection((String)_nameSpaceProvider.getFileAttribute(pnfsId, CHECKSUM_COLLECTION_FLAG),true).get(checksumType);
    }
-   
+
    public Set<org.dcache.util.Checksum> getChecksums(PnfsId pnfsId) throws Exception {
- 
+
         String flagValue = (String)_nameSpaceProvider.getFileAttribute(pnfsId, "c");
         ChecksumCollection collection = new ChecksumCollection(flagValue);
         flagValue = (String)_nameSpaceProvider.getFileAttribute(pnfsId,
@@ -137,7 +137,7 @@ public class AttributeChecksumBridge {
         collection.add(collection1);
         return collection.getChecksums();
    }
-   
+
 
    public void setChecksum(PnfsId pnfsId,String value,int checksumType) throws Exception {
 
@@ -163,7 +163,7 @@ public class AttributeChecksumBridge {
         }
       }
 
-      ChecksumCollection collection = 
+      ChecksumCollection collection =
           new ChecksumCollection((String)_nameSpaceProvider.getFileAttribute(pnfsId, CHECKSUM_COLLECTION_FLAG),true);
 
       collection.put(checksumType,value);
