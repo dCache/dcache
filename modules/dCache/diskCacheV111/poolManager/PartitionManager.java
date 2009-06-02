@@ -314,11 +314,12 @@ public class PartitionManager
       *
       * COSTCUTS
       *
-      *   idle      boolean
-      *   p2p       boolean
-      *   alert     boolean
-      *   panic     boolean
-      *   fallback  boolean
+      *   idle      double
+      *   p2p       double
+      *   alert     double
+      *   panic     double
+      *   slope     double
+      *   fallback  double
       *
       * P2P
       *
@@ -334,109 +335,161 @@ public class PartitionManager
       * OTHER
       *   max-copies     int
       *
-      *    DOUBLE
-      *      -doublevalue=<value>
-      *      -doublevalue=off
-      *
-      *    BOOLEAN
-      *      -booleanvalue   (==yes)
-      *      -booleanvalue=yes
-      *      -booleanvalue=no
-      *      -booleanvalue=off
-      *
       */
     private void scanParameter( Args args , PoolManagerParameter parameter ){
 
+       PoolManagerParameter paramDefault = _defaultPartitionInfo._parameter;
+
        String tmp = args.getOpt("spacecostfactor") ;
        if( tmp != null ){
-          if( parameter._spaceCostFactorSet = ! tmp.equals("off") ){
-             parameter._spaceCostFactor = Double.parseDouble(tmp) ;
+          if( tmp.equals("off") ){
+            parameter.unsetSpaceCostFactor();
+            parameter._spaceCostFactor = paramDefault._spaceCostFactor;
+          } else {
+             parameter.setSpaceCostFactor(Double.parseDouble(tmp));
           }
        }
        if( ( tmp = args.getOpt("cpucostfactor") ) != null ){
-          if( parameter._performanceCostFactorSet = ! tmp.equals("off") ){
-             parameter._performanceCostFactor = Double.parseDouble(tmp) ;
+          if( tmp.equals("off") ){
+            parameter.unsetPerformanceCostFactor();
+            parameter._performanceCostFactor = paramDefault._performanceCostFactor;
+          } else {
+             parameter.setPerformanceCostFactor(Double.parseDouble(tmp));
           }
        }
 
        if( ( tmp = args.getOpt("idle") ) != null ){
-          if( parameter._minCostCutSet = ! tmp.equals("off") ){
-             parameter._minCostCut = Double.parseDouble(tmp) ;
+          if( tmp.equals("off") ){
+            parameter.unsetMinCostCut();
+            parameter._minCostCut = paramDefault._minCostCut;
+          } else {
+             parameter.setMinCostCut(Double.parseDouble(tmp));
           }
        }
        if( ( tmp = args.getOpt("p2p") ) != null ){
-          if( parameter._costCutSet = ! tmp.equals("off") ){
-             parameter._costCut = Double.parseDouble(tmp) ;
+          if( tmp.equals("off") ){
+            parameter.unsetCostCut();
+            parameter._costCut = paramDefault._costCut;
+          } else {
+             parameter.setCostCut(Double.parseDouble(tmp));
           }
        }
        if( ( tmp = args.getOpt("alert") ) != null ){
-          if( parameter._alertCostCutSet = ! tmp.equals("off") ){
-             parameter._alertCostCut = Double.parseDouble(tmp) ;
+          if( tmp.equals("off") ){
+            parameter.unsetAlertCostCut();
+                parameter._alertCostCut = paramDefault._alertCostCut;
+          } else {
+            parameter.setAlertCostCut(Double.parseDouble(tmp));
           }
        }
        if( ( tmp = args.getOpt("panic") ) != null ){
-          if( parameter._panicCostCutSet = ! tmp.equals("off") ){
-             parameter._panicCostCut = Double.parseDouble(tmp) ;
+          if( tmp.equals("off") ){
+            parameter.unsetPanicCostCut();
+            parameter._panicCostCut = paramDefault._panicCostCut;
+          } else {
+            parameter.setPanicCostCut(Double.parseDouble(tmp));
           }
        }
        if( ( tmp = args.getOpt("slope") ) != null ){
-          if( parameter._slopeSet = ! tmp.equals("off") ){
-             parameter._slope = Double.parseDouble(tmp) ;
+          if( tmp.equals("off") ){
+            parameter.unsetSlope();
+            parameter._slope = paramDefault._slope;
+          } else {
+            parameter.setSlope(Double.parseDouble(tmp));
           }
        }
+
        if( ( tmp = args.getOpt("fallback") ) != null ){
-          if( parameter._fallbackCostCutSet = ! tmp.equals("off") ){
-             parameter._fallbackCostCut = Double.parseDouble(tmp) ;
+          if( tmp.equals("off") ){
+            parameter.unsetFallbackCostCut();
+            parameter._fallbackCostCut = paramDefault._fallbackCostCut;
+          } else {
+            parameter.setFallbackCostCut(Double.parseDouble(tmp));
           }
        }
+
        if( ( tmp = args.getOpt("max-copies") ) != null ){
-          if( parameter._maxPnfsFileCopiesSet = ! tmp.equals("off") ){
-             parameter._maxPnfsFileCopies = Integer.parseInt(tmp) ;
+          if( tmp.equals("off") ){
+            parameter.unsetMaxPnfsFileCopies();
+            parameter._maxPnfsFileCopies = paramDefault._maxPnfsFileCopies;
+          } else {
+            parameter.setMaxPnfsFileCopies(Integer.parseInt(tmp));
           }
        }
 
        if( ( tmp = args.getOpt("p2p-allowed") ) != null ){
-          if( parameter._p2pAllowedSet = ! tmp.equals("off") ){
-             if( ! ( parameter._p2pAllowed = tmp.equals("yes") ) ){
-                  parameter._p2pOnCost      = false ;
-                  parameter._p2pForTransfer = false ;
-             }
-          }
-       }
+           if( tmp.equals("off") ){
+               parameter.unsetP2pAllowed();
+               parameter._p2pAllowed = paramDefault._p2pAllowed;
+
+               parameter.unsetP2pOnCost();
+               parameter._p2pOnCost = paramDefault._p2pOnCost;
+
+               parameter.unsetP2pForTransfer();
+               parameter._p2pForTransfer = paramDefault._p2pForTransfer;
+            } else if( tmp.equals("yes") ){
+               parameter.setP2pAllowed(true);
+            } else if( tmp.equals("no") ) {
+               parameter.setP2pAllowed(false);
+               parameter.setP2pOnCost(false);
+               parameter.setP2pForTransfer(false);
+            } else throw new
+               IllegalArgumentException("Usage: ... -p2p-allowed=yes|no|off");
+        }
 
        if( ( tmp = args.getOpt("p2p-oncost") ) != null ){
-          if( parameter._p2pOnCostSet = ! tmp.equals("off") ){
-             if( parameter._p2pOnCost = tmp.equals("yes")){
-                  parameter._p2pAllowed      = true ;
-                  parameter._p2pAllowedSet   = true ;
-             }
-          }
+          if( tmp.equals("off") ){
+            parameter.unsetP2pOnCost();
+            parameter._p2pOnCost = paramDefault._p2pOnCost;
+          } else if( tmp.equals("yes")){
+            parameter.setP2pOnCost(true);
+            parameter.setP2pAllowed(true);
+          } else if( tmp.equals("no")){
+            parameter.setP2pOnCost(false);
+          } else throw new
+              IllegalArgumentException("Usage: ... -p2p-oncost=yes|no|off");
        }
+
        if( ( tmp = args.getOpt("p2p-fortransfer") ) != null ){
-          if( parameter._p2pForTransferSet = ! tmp.equals("off") ){
-             if( parameter._p2pForTransfer = tmp.equals("yes")){
-                  parameter._p2pAllowed      = true ;
-                  parameter._p2pAllowedSet   = true ;
-             }
-          }
+          if( tmp.equals("off") ){
+            parameter.unsetP2pForTransfer();
+            parameter._p2pForTransfer = paramDefault._p2pForTransfer;
+          } else if( tmp.equals("yes") ){
+            parameter.setP2pForTransfer(true);
+            parameter.setP2pAllowed(true);
+          } else if( tmp.equals("no") ){
+            parameter.setP2pForTransfer(false);
+          } else throw new
+              IllegalArgumentException("Usage: ... -p2p-fortransfer=yes|no|off");
        }
 
        if( ( tmp = args.getOpt("stage-allowed") ) != null ){
-          if( parameter._hasHsmBackendSet = ! tmp.equals("off") ){
-             if( ! ( parameter._hasHsmBackend = tmp.equals("yes") ) ){
-                  parameter._stageOnCost      = false ;
-                  parameter._stageOnCostSet   = true ;
-             }
-          }
+          if( tmp.equals("off") ){
+            parameter.unsetHasHsmBackend();
+            parameter._hasHsmBackend = paramDefault._hasHsmBackend;
+
+            parameter.unsetStageOnCost();
+            parameter._stageOnCost = paramDefault._stageOnCost;
+          } else if( tmp.equals("yes") ){
+            parameter.setHasHsmBackend(true);
+          } else if( tmp.equals("no") ){
+            parameter.setHasHsmBackend(false);
+            parameter.setStageOnCost(false);
+          } else throw new
+              IllegalArgumentException("Usage: ... -stage-allowed=yes|no|off");
        }
 
        if( ( tmp = args.getOpt("stage-oncost") ) != null ){
-          if( parameter._stageOnCostSet = ! tmp.equals("off") ){
-             if( parameter._stageOnCost = tmp.equals("yes") ){
-                  parameter._hasHsmBackend    = true ;
-                  parameter._hasHsmBackendSet = true ;
-             }
-          }
+          if( tmp.equals("off") ){
+            parameter.unsetStageOnCost();
+            parameter._stageOnCost = paramDefault._stageOnCost;
+          } else if( tmp.equals("yes") ){
+            parameter.setStageOnCost(true);
+            parameter.setHasHsmBackend(true);
+          } else if( tmp.equals("no") ){
+            parameter.setStageOnCost(false);
+          } else throw new
+              IllegalArgumentException("Usage: ... -stage-oncost=yes|no|off") ;
        }
 
     }
@@ -507,24 +560,21 @@ public class PartitionManager
     private void dumpP2pOptions(PrintWriter pw, PoolManagerParameter para)
     {
         if (!para._p2pAllowed) {
-            pw.append(" -p2p-allowed=false");
+            pw.append(" -p2p-allowed=no");
         } else {
-            pw.append(" -p2p-allowed");
-            if (para._p2pOnCost)
-                pw.append(" -p2p-oncost");
-            if (para._p2pForTransfer)
-                pw.append(" -p2p-fortransfer");
+            pw.append(" -p2p-allowed=yes");
+            pw.append(" -p2p-oncost=").print(para._p2pOnCost ? "yes":"no");
+            pw.append(" -p2p-fortransfer=").print(para._p2pForTransfer ? "yes":"no");
         }
     }
 
     private void dumpStageOptions(PrintWriter pw, PoolManagerParameter para)
     {
         if (!para._hasHsmBackend) {
-            pw.append(" -stage-allowed=false");
+            pw.append(" -stage-allowed=no");
         } else {
-            pw.append(" -stage-allowed");
-            if (para._stageOnCost)
-                pw.append(" -stage-oncost");
+            pw.append(" -stage-allowed=yes");
+            pw.append(" -stage-oncost=").print(para._stageOnCost ? "yes":"no");
         }
     }
 
