@@ -550,6 +550,12 @@ public class RemoteGsiftpTransferProtocol_1
             _last_transfer_time    = System.currentTimeMillis();
         }
 
+        /** Specified in org.globus.ftp.DataSource. */
+        public long totalSize() throws IOException
+        {
+            return _source ? _raDiskFile.length() : -1;
+        }
+
         /** Getter for property last_transfer_time.
          * @return Value of property last_transfer_time.
          *
