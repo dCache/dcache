@@ -44,8 +44,6 @@ public class PoolIOWriteTransfer
     private final ChecksumModuleV1 _checksumModule;
 
     private ChecksumFactory _checksumFactory;
-    private Checksum _clientChecksum;
-    private Checksum _transferChecksum;
     private long _size;
 
     public static List<StickyRecord> getStickyRecords(StorageInfo info)
@@ -136,12 +134,8 @@ public class PoolIOWriteTransfer
                             _checksumModule.getDefaultChecksumFactory();
                     }
                     cm.setDigest(_checksumFactory.create());
-                    runMover(raf);
-                    _clientChecksum = cm.getClientChecksum();
-                    _transferChecksum = cm.getTransferChecksum();
-                } else {
-                    runMover(raf);
                 }
+                runMover(raf);
             } finally {
                 try {
                     raf.getFD().sync();
@@ -172,16 +166,30 @@ public class PoolIOWriteTransfer
                IOException, NoRouteToCellException
     {
         try {
+            Checksum clientChecksum = null;
+            Checksum transferChecksum = null;
+            if (_mover instanceof ChecksumMover) {
+                ChecksumMover cm = (ChecksumMover)_mover;
+                clientChecksum = cm.getClientChecksum();
+
+                if (_checksumModule.checkOnTransfer()) {
+                    transferChecksum = cm.getTransferChecksum();
+                }
+
+                if (_checksumFactory == null) {
+                    _checksumFactory = cm.getChecksumFactory(_protocolInfo);
+                }
+            }
+
             if (_checksumFactory == null) {
-                _checksumFactory =
-                    _checksumModule.getDefaultChecksumFactory();
+                _checksumFactory = _checksumModule.getDefaultChecksumFactory();
             }
 
             _checksumModule.setMoverChecksums(_pnfsId,
                                               _file,
                                               _checksumFactory,
-                                              _clientChecksum,
-                                              _transferChecksum);
+                                              clientChecksum,
+                                              transferChecksum);
             _handle.commit(null);
         } finally {
             _handle.close();
