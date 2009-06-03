@@ -2,111 +2,16 @@
 
 package diskCacheV111.namespace.provider;
 
-import  diskCacheV111.vehicles.*;
 import  diskCacheV111.util.*;
-import  diskCacheV111.namespace.provider.*;
 import  diskCacheV111.namespace.NameSpaceProvider;
 
-import  dmg.cells.nucleus.* ;
-import  dmg.util.* ;
-
-import  java.io.* ;
 import  java.util.*;
-import  diskCacheV111.util.ChecksumFactory;
-import diskCacheV111.namespace.provider.ChecksumCollection;
-import java.security.NoSuchAlgorithmException;
-
-
-class MyFakeNameSpaceProvider implements NameSpaceProvider {
-
-    private Map<String,Object> _map = new HashMap<String,Object>();
-
-    public void setFileMetaData(PnfsId pnfsId, FileMetaData metaData){}
-    public FileMetaData getFileMetaData(PnfsId pnfsId) throws Exception { return null; }
-
-
-    public PnfsId createEntry(String name, FileMetaData metaData, boolean checksumType) throws Exception { return null; }
-    public void deleteEntry( PnfsId pnfsId) throws Exception {}
-    public void deleteEntry( String path) throws Exception {}
-    public void renameEntry( PnfsId pnfsId, String newName) throws Exception {}
-
-    public String pnfsidToPath( PnfsId pnfsId) throws Exception { return null; }
-    public PnfsId pathToPnfsid( String path, boolean followLinks) throws Exception { return null; }
-
-    public String[] getFileAttributeList(PnfsId pnfsId) { return null; }
-
-    public Object getFileAttribute( PnfsId pnfsId, String attribute) {
-      Object result = _map.get(attribute);
-      System.out.println("Retrieved atttributed "+attribute+" result "+result);
-      return result;
-    }
-
-    public void removeFileAttribute( PnfsId pnfsId, String attribute) {  }
-
-    public void setFileAttribute( PnfsId pnfsId, String attribute, Object data) {
-      System.out.println("Setting attribute "+attribute+" to "+data);
-      _map.put(attribute,data);
-    }
-
-    public void setLevelData( PnfsId pnfsId, Map<Integer, String> levelData) throws Exception { }
-
-    public void addChecksum(PnfsId pnfsId, int type, String value) throws Exception {}
-    public String getChecksum(PnfsId pnfsId, int type) throws Exception { return null; }
-    public void removeChecksum(PnfsId pnfsId, int type) throws Exception {}
-   public int[] listChecksumTypes(PnfsId pnfsId) throws Exception { return null;}
-    public Set<org.dcache.util.Checksum>
-       getChecksums(PnfsId pnfsId) throws Exception { return null; }
-
-    public PnfsId getParentOf(PnfsId pnfsId) { return null; }
-
-}
-
 
 public class AttributeChecksumBridge {
 
    private static  final String CHECKSUM_COLLECTION_FLAG="uc";
 
-   private NameSpaceProvider _nameSpaceProvider;
-
-   private static void print(String atr){
-      System.out.println(atr);
-   }
-
-   public static void main( String [] args ) throws Exception {
-
-      print("Getting checksum type MD5");
-
-      AttributeChecksumBridge mgr = new AttributeChecksumBridge(new MyFakeNameSpaceProvider());
-      print(mgr.getChecksum(null,Checksum.MD5));
-
-      mgr.setChecksum(null,"MD5 value",Checksum.MD5);
-
-      print("Newly set checksum "+mgr.getChecksum(null,Checksum.MD5));
-
-      mgr.setChecksum(null,"Adler value",Checksum.ADLER32);
-
-      print("Newly set adler checksum "+mgr.getChecksum(null,Checksum.ADLER32));
-
-      print("Old MD5 checksum "+mgr.getChecksum(null,Checksum.MD5));
-
-      mgr.setChecksum(null,"Other checksum value",3);
-
-      print("Newly set outher checksum "+mgr.getChecksum(null,3));
-
-      print("Old Adler checksum "+mgr.getChecksum(null,Checksum.ADLER32));
-
-      print("Clearing checksum value");
-      mgr.removeChecksum(null,Checksum.MD5);
-      print("MD5 should be now null "+mgr.getChecksum(null,Checksum.MD5));
-
-     AttributeChecksumBridge mgr1 = new AttributeChecksumBridge(new MyFakeNameSpaceProvider());
-
-     mgr1.setChecksum(null,"MD5 value",Checksum.MD5);
-     mgr1.setChecksum(null,"MD4 value",Checksum.MD4);
-     int tps[] = mgr1.types(null);
-     for ( int i = 0; i < tps.length; ++i)
-        print(Integer.toString(tps[i]));
-   }
+   private final NameSpaceProvider _nameSpaceProvider;
 
    public AttributeChecksumBridge(NameSpaceProvider nameSpaceProvider)
    {
