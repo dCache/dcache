@@ -859,18 +859,6 @@ public class PnfsManagerV3 extends CellAdapter {
         int type         = msg.getType();
 
         try{
-            if (value != null) {
-                String old = _nameSpaceProvider.getChecksum(pnfsId, type);
-                if (old != null) {
-                    byte[] oldSum = Checksum.stringToBytes(old);
-                    byte[] newSum = Checksum.stringToBytes(value);
-                    if (!oldSum.equals(newSum)) {
-                        throw new CacheException(CacheException.INVALID_ARGS,
-                                                 "Checksum mismatch");
-                    }
-                }
-            }
-
            _nameSpaceProvider.addChecksum(pnfsId,type,value);
         }catch( CacheException e ){
             esay(e);

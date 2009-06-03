@@ -407,7 +407,16 @@ public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoP
 
     public void addChecksum(PnfsId pnfsId, int type, String value) throws Exception
     {
-        _fs.setInodeChecksum(new FsInode(_fs, pnfsId.toString()), type, value);
+        FsInode inode = new FsInode(_fs, pnfsId.toString());
+    	String existingValue = _fs.getInodeChecksum(inode, type);
+        if (existingValue != null) {
+            if (!existingValue.equals(value)) {
+                throw new CacheException(CacheException.INVALID_ARGS,
+                                         "Checksum mismatch");
+            }
+            return;
+        }
+        _fs.setInodeChecksum(inode, type, value);
     }
 
     public String getChecksum(PnfsId pnfsId, int type) throws Exception
