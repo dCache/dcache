@@ -1,8 +1,10 @@
 package dmg.cells.nucleus ;
-import  dmg.util.* ;
-import  java.io.* ;
-import  java.util.List;
-import  java.util.ArrayList;
+import dmg.util.*;
+import java.io.*;
+import java.util.List;
+import java.util.ArrayList;
+import org.apache.log4j.Logger;
+
 /**
   *
   *
@@ -13,6 +15,7 @@ public class      SystemCell
     extends    CellAdapter
     implements Runnable, Thread.UncaughtExceptionHandler
 {
+    private final static Logger _log = Logger.getLogger(SystemCell.class);
 
    private final CellShell   _cellShell ;
    private final CellNucleus _nucleus ;
@@ -255,8 +258,19 @@ public class      SystemCell
 
     public void uncaughtException(Thread t, Throwable e)
     {
-        _nucleus.esay("Uncaught exception in thread " + t.getName() + " ("
-                      + e.getMessage() + ")");
-        _nucleus.esay(e);
+        /* In case of fatal errors we shut down. The wrapper script
+         * will restart the domain. Notice that there is no guarantee
+         * that the fatal error will not reoccur during shutdown and
+         * in that case the shutdown may fail. We may want to consider
+         * refining the shutdown logic such that in recovers if the
+         * fatal error reoccurs.
+         */
+        if (e instanceof VirtualMachineError) {
+            _log.fatal("Fatal JVM error", e);
+            _log.fatal("Shutting down...");
+            kill();
+        }
+
+        _log.error("Uncaught exception in thread " + t.getName(), e);
     }
 }

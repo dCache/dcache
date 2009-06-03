@@ -107,12 +107,8 @@ public class CellNucleus implements Runnable, ThreadFactory {
         //
         try {
 
-            //        _threads = new ThreadGroup(__cellGlue.getMasterThreadGroup(),
-            //                                    _cellName+"-threads");
-            _threads = new CellThreadGroup(
-                                           this,
-                                           __cellGlue.getMasterThreadGroup(),
-                                           _cellName+"-threads");
+            _threads = new ThreadGroup(__cellGlue.getMasterThreadGroup(),
+                                       _cellName+"-threads");
 
         } catch(SecurityException se) {
             _threads = null;
