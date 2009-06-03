@@ -148,23 +148,37 @@ public class AttributeChecksumBridge {
         String flagValue = (String)_nameSpaceProvider.getFileAttribute(pnfsId, "c");
         ChecksumCollection collection = new ChecksumCollection(flagValue);
 
-        if ( flagValue != null ){
+        if (flagValue == null || value == null) {
+            collection.put(checksumType,value);
+            setFileAttribute(pnfsId, "c", collection.serialize());
+            return;
+        }
 
-          // if its a same checksumType - replace. otherwise (i.e. legacy stored MD5) - fall back to using CHECKSUM_COLLECTION_FLAG
-          if ( collection.get(checksumType) != null ){
-             collection.put(checksumType,value);
-             setFileAttribute(pnfsId, "c",collection.serialize());
-             return;
-          }
-        } else {
-          collection.put(checksumType,value);
-          setFileAttribute(pnfsId, "c",collection.serialize());
-          return;
+        // if its a same checksumType, then check that it is the same
+        // value as before. If it is a different type (i.e. legacy
+        // stored MD5), then fall back to using
+        // CHECKSUM_COLLECTION_FLAG
+        String existingValue = collection.get(checksumType);
+        if (existingValue != null) {
+            if (!existingValue.equals(value)) {
+                throw new CacheException(CacheException.INVALID_ARGS,
+                                         "Checksum mismatch");
+            }
+            return;
         }
       }
 
       ChecksumCollection collection =
           new ChecksumCollection((String)_nameSpaceProvider.getFileAttribute(pnfsId, CHECKSUM_COLLECTION_FLAG),true);
+
+      String existingValue = collection.get(checksumType);
+      if (existingValue != null && value != null) {
+          if (!existingValue.equals(value)) {
+              throw new CacheException(CacheException.INVALID_ARGS,
+                                       "Checksum mismatch");
+          }
+          return;
+      }
 
       collection.put(checksumType,value);
       String flagValue = collection.serialize();
