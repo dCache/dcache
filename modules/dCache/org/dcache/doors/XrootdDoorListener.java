@@ -582,10 +582,10 @@ public class XrootdDoorListener implements StreamListener {
      * @param authorizedWritePathList the list of allowed paths
      * @return
      */
-    private boolean matchWritePath(String pathToOpen, List authorizedWritePathList) {
-
-        for (Iterator it = authorizedWritePathList.iterator(); it.hasNext();) {
-            if (pathToOpen.startsWith((String) it.next())) {
+    private boolean matchWritePath(String pathToOpen, List<String> authorizedWritePathList)
+    {
+        for (String prefix: authorizedWritePathList) {
+            if (pathToOpen.startsWith(prefix)) {
                 return true;
             }
         }

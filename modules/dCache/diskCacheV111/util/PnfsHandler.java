@@ -333,7 +333,7 @@ public class PnfsHandler
       return pnfsRequest( sInfo ) ;
 
    }
-   
+
    public PnfsGetFileMetaDataMessage getFileMetaDataByPath( String pnfsPath )
           throws CacheException                {
 
@@ -348,8 +348,8 @@ public class PnfsHandler
         return getFileMetaDataByPath(pnfsPath, followLinks, false);
     }
 
-      public PnfsGetFileMetaDataMessage getFileMetaDataByPath( String pnfsPath , 
-          boolean followLinks, 
+      public PnfsGetFileMetaDataMessage getFileMetaDataByPath( String pnfsPath ,
+          boolean followLinks,
           boolean requestChecksum)
        throws CacheException                {
 
@@ -370,7 +370,7 @@ public class PnfsHandler
 }
 
 
-    public PnfsId getParentOf(PnfsId pnfsId) 
+    public PnfsId getParentOf(PnfsId pnfsId)
         throws CacheException
     {
             return pnfsRequest(new PnfsGetParentMessage(pnfsId)).getParent();
@@ -400,6 +400,11 @@ public class PnfsHandler
    }
 
 
+    public void deletePnfsEntry(PnfsId pnfsid, String path)
+        throws CacheException
+    {
+        pnfsRequest(new PnfsDeleteEntryMessage(pnfsid, path));
+    }
 
    public void renameEntryToUnique(PnfsId pnfsId) {
 

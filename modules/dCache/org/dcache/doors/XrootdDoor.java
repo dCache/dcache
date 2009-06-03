@@ -7,12 +7,14 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.Collections;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.concurrent.ExecutionException;
+import java.security.GeneralSecurityException;
 
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
 import org.dcache.vehicles.XrootdProtocolInfo;
@@ -21,8 +23,13 @@ import org.dcache.xrootd.protocol.XrootdProtocol;
 import org.dcache.xrootd.security.AbstractAuthorizationFactory;
 import org.dcache.xrootd.util.DoorRequestMsgWrapper;
 
+import org.dcache.cells.AbstractCell;
+import org.dcache.cells.Option;
+
 import diskCacheV111.movers.NetIFContainer;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileNotInCacheException;
+import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
@@ -39,512 +46,511 @@ import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
-import dmg.cells.nucleus.CellAdapter;
+import diskCacheV111.vehicles.Message;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 import dmg.util.StreamEngine;
 
 import org.apache.log4j.Logger;
 
-public class XrootdDoor extends CellAdapter {
-
+public class XrootdDoor extends AbstractCell
+{
     private final static Logger _log = Logger.getLogger(XrootdDoor.class);
 
-    private CellNucleus _nucleus;
+    private final static String POOL_MANAGER = "PoolManager";
 
-    private PnfsHandler _pnfs_handler;
+    private final static String PNFS_MANAGER = "PnfsManager";
+
+    private final static String XROOTD_PROTOCOL_STRING = "Xrootd";
+    private final static int XROOTD_PROTOCOL_MAJOR_VERSION = 2;
+    private final static int XROOTD_PROTOCOL_MINOR_VERSION = 7;
+
+    /**
+     * The list of paths which are authorized for xrootd write access
+     * (via dCacheSetup)
+     */
+    private static List<String> _authorizedWritePaths;
+
+    /**
+     * Holds the factory for the specific plugin. the plugin is loaded
+     * only once.
+     */
+    private static AbstractAuthorizationFactory _authzFactory;
+
+    /**
+     * Is set true only once (when plugin loading didn't succeed) to
+     * avoid multiple trials.
+     */
+    private static boolean _authzPluginLoadFailed = false;
+
+    private static long _cellMessageTimeout = 3000;
+
+    private PnfsHandler _pnfs;
 
     private Socket _doorSocket;
 
-    private final static String _poolManagerName = "PoolManager";
+    /**
+     * File handle to port address mapping. Access is protected by
+     * synchronization on the map.
+     */
+    private Map<Integer,InetSocketAddress> _redirectTable = new HashMap();
 
-    private final static String _pnfsManagerName = "PnfsManager";
-
-    private Object _redirectSync = new Object();
-
-    //	fileHandle -> InetSocketAddress
-    private Hashtable _redirectTable = new Hashtable();
-
-    //	fileHandle -> Xrootd logicalStreamID
-    private Hashtable<Integer, Integer> _logicalStreamTable = new Hashtable<Integer, Integer>();
+    /**
+     * File handle to Xrootd logical stream ID mapping.
+     */
+    private Map<Integer, Integer> _logicalStreamTable
+        = Collections.synchronizedMap(new HashMap());
 
     private int _fileHandleCounter = 0;
 
-    XrootdDoorController _controller;
+    private XrootdDoorController _controller;
 
     private PhysicalXrootdConnection _physicalXrootdConnection;
 
     private boolean _closeInProgress = false;
 
-    //	forbid write access by default
-    private boolean _isReadOnly = false;
-
-    //	indicates for this xrootd connection whether authorization is required
+    /**
+     * Indicates for this xrootd connection whether authorization is
+     * required.
+     */
     private boolean _authzRequired = false;
 
-    //	dirty hack: will be deprecated soon
+    /**
+     * Dirty hack: will be deprecated soon
+     */
     private String _noStrongAuthz;
 
-    //	the actual mover queue on the pool onto which this request gets scheduled
-    private String _ioQueue = null;
-
-    //	the prefix of the transaction string used for billing
+    /**
+     * The prefix of the transaction string used for billing.
+     */
     private String _transactionPrefix;
 
-    //  the number of max open files per physical xrootd connection
-    private int _maxFileOpens = 5000;
+    /**
+     * Forbid write access by default.
+     */
+    @Option(
+        name = "isReadOnly",
+        defaultValue = "false",
+        description = "Whether to only allow read access"
+    )
+    private boolean _isReadOnly;
 
-    //	the list of paths which are authorized for xrootd write access (via dCacheSetup)
-    private static List _authorizedWritePaths = null;
+    /**
+     * The actual mover queue on the pool onto which this request gets
+     * scheduled.
+     */
+    @Option(
+        name = "io-queue"
+    )
+    private String _ioQueue;
 
-    //	holds the factory for the specific plugin. the plugin is loaded only once
-    private static AbstractAuthorizationFactory _authzFactory = null;
+    /**
+     * The number of max open files per physical xrootd connection.
+     */
+    @Option(
+        name = "maxFileOpensPerLogin",
+        description = "The maximum of open files per physical xrootd connection",
+        defaultValue = "5000"
+    )
+    private int _maxFileOpens;
 
-    //	is set true only once (when plugin loading didn't succeed) to avoid multiple trials
-    private static boolean _authzPluginLoadFailed = false;
+    public XrootdDoor(String name, StreamEngine engine, Args args)
+    {
+        super(name, args);
 
-    private static long _CellMessageTimeout = 3000;
-
-    private final static String XROOTD_PROTOCOL_STRING = "Xrootd";
-    private final static int XROOTD_PROTOCOL_MAJOR_VERSION = 2;
-    private final static int XROOD_PROTOCOL_MINOR_VERSION = 7;
-
-    public XrootdDoor(String name, StreamEngine engine, Args args)	throws Exception {
-
-        // the cell stuff
-        super(name, args, false);
-
-        _nucleus = getNucleus();
-
-        _pnfs_handler = new PnfsHandler(this, new CellPath(_pnfsManagerName));
-
-        _doorSocket = engine.getSocket();
-
-        //		forbid write access if configured in batchfile
-        if (args.getOpt("isReadOnly").equals("true")) {
-            _isReadOnly = true;
+        try {
+            _doorSocket = engine.getSocket();
+            doInit();
+        } catch (InterruptedException e) {
+            // Super class has logged the incident
+        } catch (ExecutionException e) {
+            // Super class has logged the incident
         }
+    }
 
-        //		look for colon-seperated path list, which, if present, is used to allow write access to these paths only
+    @Override
+    protected void init()
+        throws IOException
+    {
+        Args args = getArgs();
+
+        _pnfs = new PnfsHandler(this, new CellPath(PNFS_MANAGER));
+
+        // look for colon-seperated path list, which, if present, is
+        // used to allow write access to these paths only
         String pathListString = args.getOpt("allowedPaths");
-        if ( !(pathListString == null || pathListString.length() == 0)
-             && _authorizedWritePaths == null)	{
+        if (!(pathListString == null || pathListString.length() == 0)
+            && _authorizedWritePaths == null) {
 
             parseAllowedWritePaths(pathListString);
         }
 
-        //		try to load authorization plugin if required by batch file
-        if ( !(args.getOpt("authzPlugin") == null
-               || args.getOpt("authzPlugin").length() == 0
-               || "none".equals(args.getOpt("authzPlugin"))))	{
+        // try to load authorization plugin if required by batch file
+        if (!(args.getOpt("authzPlugin") == null
+              || args.getOpt("authzPlugin").length() == 0
+              || "none".equals(args.getOpt("authzPlugin")))) {
 
             _authzRequired = true;
             loadAuthzPlugin(args);
 
-            //			dirty hack (about to be deprecated soon) for ALICE
-            //			set the authz logic during file open being less strict
+            // dirty hack (about to be deprecated soon) for ALICE set
+            // the authz logic during file open being less strict
             String noStrongAuthzString = args.getOpt("nostrongauthorization");
-            if (	"read".equalsIgnoreCase(noStrongAuthzString)
-                        || 	"write".equalsIgnoreCase(noStrongAuthzString)
-                        || 	"always".equalsIgnoreCase(noStrongAuthzString)) {
+            if ("read".equalsIgnoreCase(noStrongAuthzString)
+                || "write".equalsIgnoreCase(noStrongAuthzString)
+                || "always".equalsIgnoreCase(noStrongAuthzString)) {
 
                 _noStrongAuthz = noStrongAuthzString;
             }
         }
 
-        _ioQueue = args.getOpt("io-queue");
-        if (_ioQueue == null  || _ioQueue.length() == 0 ) {
-            _ioQueue = null;
-        }
-        _log.warn(_ioQueue != null ? "defined moverqueue: "+_ioQueue : "no moverqueue defined");
+        _transactionPrefix =
+            String.format("door:%s@%s:",
+                          getNucleus().getCellName(),
+                          getNucleus().getCellDomainName());
 
-        String maxFileOpens = args.getOpt("maxFileOpensPerLogin");
-        if (maxFileOpens != null && maxFileOpens.length() > 0) {
-            try {
-                _maxFileOpens = Integer.parseInt(maxFileOpens);
-            } catch (NumberFormatException e) {
-                _log.warn("invalid format of 'maxFileOpensPerLogin' parameter, defaulting to "+_maxFileOpens);
-            }
-        }
+        // Create new XrootdConnection based on existing socket
+        _physicalXrootdConnection =
+            new PhysicalXrootdConnection(_doorSocket,
+                                         XrootdProtocol.LOAD_BALANCER);
 
-        //		// we have to use 'CellAdapapter.newThread()' instead of
-        //		// 'new Thread()' because we want to have the worker
-        //		// thread to be a member of the cell ThreadGroup.
-
-        StringBuffer sb = new StringBuffer("door:");
-        sb.append(getNucleus().getCellName());
-        sb.append("@");
-        sb.append(getNucleus().getCellDomainName());
-        sb.append(":");
-        _transactionPrefix = sb.toString();
-
-        _nucleus.newThread(new Runnable() {
-
-                public void run() {
-                    _log.warn("starting minithread");
-
-                    //				enable Xrootd message processing for this existing network connection
-                    initXrootd(getDoorSocket());
-
-                    try {
-                        synchronized (this) {
-                            this.wait();
-                        }
-
-                    } catch (InterruptedException e) {}
-
-                    _log.warn("finishing minithread");
-
-                }
-            } , "Xrootd-door-MiniThread").start();
-
-        //		start cell message receiving (important!!!)
-        start();
-
+        // set controller for this connection to handle login, auth
+        // and connection-specific settings
+        _controller = new XrootdDoorController(this, _physicalXrootdConnection);
+        _physicalXrootdConnection.setConnectionListener(_controller);
     }
 
-    private void parseAllowedWritePaths(String pathListString) {
-
-        LinkedList list = new LinkedList();
+    private void parseAllowedWritePaths(String pathListString)
+    {
         String[] paths = pathListString.split(":");
+        List<String> list = new ArrayList(paths.length);
 
-
-        for (int i = 0; i < paths.length; i++) {
-            String path = paths[i];
+        for (String path: paths) {
             if (!path.endsWith("/")) {
                 path += "/";
             }
 
-            if (!list.contains(path)) {
-                list.add(path);
-                _log.warn("allowed write path: "+path);
-            }
+            list.add(path);
+            _log.warn("allowed write path: "+path);
         }
         Collections.sort(list);
         _authorizedWritePaths = list;
     }
 
-    private void initXrootd(Socket socket) {
-
-        //		create new XrootdConnection based on existing socket
-        try {
-            _physicalXrootdConnection = new PhysicalXrootdConnection(socket, XrootdProtocol.LOAD_BALANCER);
-        } catch (IOException e) {
-            _physicalXrootdConnection.closeConnection();
-            return;
-        }
-
-        //		set controller for this connection to handle login, auth and connection-specific settings
-        _controller = new XrootdDoorController(this, _physicalXrootdConnection);
-        _physicalXrootdConnection.setConnectionListener(_controller);
-
-
-
-    }
-
-
-    public void cleanUp() {
-
+    public void cleanUp()
+    {
         if (!isCloseInProgress()) {
             _controller.shutdownXrootd();
         }
     }
 
-    public void getInfo(PrintWriter pw) {
+    public void getInfo(PrintWriter pw)
+    {
         pw.println("Xrootd Door");
-        pw.println("Protocol Version 2.54");
+        pw.println(String.format("Protocol Version %d.%d",
+                                 XROOTD_PROTOCOL_MAJOR_VERSION,
+                                 XROOTD_PROTOCOL_MINOR_VERSION));
 
         if (_physicalXrootdConnection.getStatus().isConnected()) {
             pw.println("Connected with "+_physicalXrootdConnection.getNetworkConnection().getSocket().getInetAddress());
-        } else
+        } else {
             pw.println("Not connected");
+        }
 
         pw.println("number of open files: "+_logicalStreamTable.size());
         pw.println("number of logical streams: " + _physicalXrootdConnection.getStreamManager().getNumberOfStreams());
     }
 
 
-    PnfsGetStorageInfoMessage getStorageInfo(String path) throws IOException {
-
-        PnfsGetStorageInfoMessage result = null;
-
+    PnfsGetStorageInfoMessage getStorageInfo(String path) throws IOException
+    {
         try {
-
-            result = _pnfs_handler.getStorageInfoByPath(path);
-
-        } catch (diskCacheV111.util.CacheException ce) {
-            _log.warn("can not find pnfsid of path : " + path);
-            _log.warn("CacheException = " + ce);
-            throw new IOException("can not find pnfsid of path : " + path
-                                  + " root error " + ce.getMessage());
-        }
-
-        return result;
-    }
-
-    public PnfsGetStorageInfoMessage createNewPnfsEntry(String pnfsPath, int uid, int gid) throws CacheException {
-
-        return _pnfs_handler.createPnfsEntry(pnfsPath, uid, gid, 0644);
-
-    }
-
-    public void deletePnfsEntry(PnfsId pnfsId) throws CacheException {
-        _pnfs_handler.deletePnfsEntry(pnfsId);
-    }
-
-
-    private synchronized void handleRedirectMessage(XrootdDoorAdressInfoMessage reply) {
-
-
-        InetSocketAddress redirectAddress = null;
-
-        //		pick the first IPv4 address from the collection
-        //		at this point, we can't determine, which of the pool IP-addresses is the right one, so we select the first
-        for (Iterator it = reply.getNetworkInterfaces().iterator(); it.hasNext(); ) {
-            NetIFContainer container = (NetIFContainer) it.next();
-
-            for (Iterator it2 = container.getInetAddresses().iterator(); it2.hasNext();) {
-                Object ip = it2.next();
-
-                if (ip instanceof Inet4Address) {
-                    redirectAddress = new InetSocketAddress((Inet4Address) ip, reply.getServerPort());
-                    break;
-                }
-            }
-        }
-
-
-
-        if (redirectAddress != null) {
-            _redirectTable.put(reply.getXrootdFileHandle(), redirectAddress);
-        } else {
-            _log.warn("error: no valid IP-adress received from pool. Redirection not possible");
-
-            //			we have to put a null address to at least notify the right xrootd thread about the failure
-            _redirectTable.put(reply.getXrootdFileHandle(), "");
+            return _pnfs.getStorageInfoByPath(path);
+        } catch (CacheException e) {
+            throw new IOException("Failed to lookup storage info: " +
+                                  e.getMessage());
         }
     }
 
-    // these were taken almost without changes from other doors
+    public PnfsGetStorageInfoMessage createNewPnfsEntry(String pnfsPath,
+                                                        int uid, int gid)
+        throws CacheException
+    {
+        return _pnfs.createPnfsEntry(pnfsPath, uid, gid, 0644);
+    }
 
-    InetSocketAddress askForFile(String pool, PnfsId pnfsId,
-                                 StorageInfo storageInfo, XrootdProtocolInfo protocolInfo, boolean isWrite)
-        throws CacheException, Exception {
+    public void deletePnfsEntry(PnfsId pnfsId)
+        throws CacheException
+    {
+        _pnfs.deletePnfsEntry(pnfsId);
+    }
 
+    /**
+     * Sends a message to a cell and waits for the reply. The reply is
+     * expected to contain a message object of the same type as the
+     * message object that was sent, and the return code of that
+     * message is expected to be zero. If either is not the case,
+     * Exception is thrown.
+     *
+     * @param  path    the path to the cell to which to send the message
+     * @param  msg     the message object to send
+     * @param  timeout timeout in milliseconds
+     * @return         the message object from the reply
+     * @throws InterruptedException If the thread is interrupted
+     * @throws CacheException If the message could not be sent, a
+     *       timeout occured, the object in the reply was of the wrong
+     *       type, or the return code was non-zero.
+     */
+    private <T extends Message> T sendAndWait(CellPath path, T msg, long timeout)
+        throws CacheException, InterruptedException
+    {
+        CellMessage replyMessage = null;
+        try {
+            replyMessage = sendAndWait(new CellMessage(path, msg), timeout);
+        } catch (NoRouteToCellException e) {
+            String errmsg =
+                String.format("Cannot send message to %s. Got error: %s",
+                              path, e.getMessage());
+            _log.warn(errmsg);
 
+            /* We report this as a timeout, since from the callers
+             * point of view a timeout due to a lost message or a
+             * missing routing entry is pretty much the same.
+             */
+            throw new CacheException(CacheException.TIMEOUT, errmsg);
+        }
 
+        if (replyMessage == null) {
+            String errmsg = String.format("Request to %s timed out.", path);
+            throw new CacheException(CacheException.TIMEOUT, errmsg);
+        }
+
+        Object replyObject = replyMessage.getMessageObject();
+        if (!(msg.getClass().isInstance(replyObject))) {
+            String errmsg = "Got unexpected message of class " +
+                            replyObject.getClass() + " from " +
+                            replyMessage.getSourceAddress();
+            _log.error(errmsg);
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     errmsg);
+        }
+
+        T reply = (T)replyObject;
+        if (reply.getReturnCode() != 0) {
+            throw new CacheException(reply.getReturnCode(),
+                                     String.format("Got error from %s: %s",
+                                                   path,
+                                                   reply.getErrorObject()));
+        }
+
+        return reply;
+    }
+
+    public InetSocketAddress askForFile(String pool, PnfsId pnfsId,
+                                        StorageInfo storageInfo,
+                                        XrootdProtocolInfo protocolInfo,
+                                        boolean isWrite)
+        throws CacheException, InterruptedException
+    {
         _log.info("Trying pool " + pool + " for " + (isWrite ? "Write" : "Read"));
-        PoolIoFileMessage poolMessage = isWrite ? (PoolIoFileMessage) new PoolAcceptFileMessage(
-                                                                                                pool, pnfsId.toString(), protocolInfo, storageInfo)
-            : (PoolIoFileMessage) new PoolDeliverFileMessage(pool, pnfsId
-                                                             .toString(), protocolInfo, storageInfo);
+        PoolIoFileMessage poolMessage =
+            isWrite
+            ? (PoolIoFileMessage) new PoolAcceptFileMessage(pool, pnfsId.toString(), protocolInfo, storageInfo)
+            : (PoolIoFileMessage) new PoolDeliverFileMessage(pool, pnfsId.toString(), protocolInfo, storageInfo);
 
 
         // specify the desired mover queue
         poolMessage.setIoQueueName(_ioQueue);
 
-        // the transaction string will be used by the pool as initiator (-> table join in Billing DB)
-        poolMessage.setInitiator( _transactionPrefix + protocolInfo.getXrootdFileHandle());
+        // the transaction string will be used by the pool as
+        // initiator (-> table join in Billing DB)
+        poolMessage.setInitiator(_transactionPrefix + protocolInfo.getXrootdFileHandle());
 
-        //		PoolManager must be on the path for return message (DoorTransferFinished)
-        CellPath path = new CellPath(_poolManagerName);
+        // PoolManager must be on the path for return message
+        // (DoorTransferFinished)
+        CellPath path = new CellPath(POOL_MANAGER);
         path.add(pool);
 
-        CellMessage reply = sendAndWait(new CellMessage(path,
-                                                        poolMessage), _CellMessageTimeout );
-        if (reply == null) {
-            throw new Exception("Pool request timed out : " + pool);
-        }
+        PoolIoFileMessage poolReply =
+            sendAndWait(path, poolMessage, _cellMessageTimeout);
 
-        Object replyObject = reply.getMessageObject();
+        _log.info("Pool " + pool +
+                  (isWrite ? " will accept file" : " will deliver file ") +
+                  pnfsId);
 
-        if (!(replyObject instanceof PoolIoFileMessage)) {
-            throw new Exception("Illegal Object received : "
-                                + replyObject.getClass().getName());
-        }
+        Integer key = protocolInfo.getXrootdFileHandle();
 
-        PoolIoFileMessage poolReply = (PoolIoFileMessage) replyObject;
-
-        if (poolReply.getReturnCode() != 0) {
-
-            if (poolReply.getReturnCode() == CacheException.FILE_NOT_IN_REPOSITORY) {
-                //				file not in pool, but is supposed to be there.
-                //				the pool will delete cacheentry in pnfs by itself, so this
-                //				information can be used to recover, because PoolManager will return another pool
-                //				when asked again or will raise an exception
-                throw new CacheException(CacheException.FILE_NOT_IN_REPOSITORY, "File not in repository");
-            } else {
-                //				general error in pool, cannot recover (request must fail)
-                throw new Exception("Pool error: " + poolReply.getErrorObject());
+        synchronized (_redirectTable) {
+            while (!_redirectTable.containsKey(key)) {
+                _log.info("waiting for redirect message from pool "+pool+
+                          " (pnfsId="+pnfsId+" fileHandle="+key+")");
+                _redirectTable.wait();
             }
-        }
 
-        _log.info("Pool " + pool + (isWrite ? " will accept file" : " will deliver file ") + pnfsId);
-
-        Integer key = Integer.valueOf(protocolInfo.getXrootdFileHandle());
-
-        try {
-            synchronized (_redirectSync) {
-                while ( !_redirectTable.containsKey(key)) {
-                    _log.info("waiting for redirect message from pool "+pool+" (pnfsId="+pnfsId+" fileHandle="+key+")");
-                    _redirectSync.wait();
-                }
+            /* null is a special value we added to the map when no valid
+             * interface was returned by the pool.
+             */
+            InetSocketAddress newAddress = _redirectTable.remove(key);
+            if (newAddress == null) {
+                throw new CacheException("Pool responded with invalid redirection address, transfer failed");
             }
-        } catch (InterruptedException ie) {}
 
-        if (!(_redirectTable.get(key) instanceof InetSocketAddress)) {
-            _redirectTable.remove(key);
-            throw new CacheException("Pool responded with invalid redirection address, transfer failed");
+            _log.info("got redirect message from pool "+pool+" (pnfsId="+
+                      pnfsId+" fileHandle="+key+")");
+            return newAddress;
         }
-
-        InetSocketAddress newAddress = (InetSocketAddress) _redirectTable.get(key);
-        _log.info("got redirect message from pool "+pool+" (pnfsId="+pnfsId+" fileHandle="+key+")");
-
-        _redirectTable.remove(key);
-        return newAddress;
     }
 
     public String askForPool(PnfsId pnfsId, StorageInfo storageInfo,
-                             ProtocolInfo protocolInfo, boolean isWrite) throws Exception {
-
-        _log.info("asking Poolmanager for "+ (isWrite ? "write" : "read") + "pool for PnfsId "+pnfsId);
+                             ProtocolInfo protocolInfo, boolean isWrite)
+        throws CacheException, InterruptedException
+    {
+        _log.info("asking Poolmanager for "+ (isWrite ? "write" : "read") +
+                  "pool for PnfsId " + pnfsId);
 
         //
         // ask for a pool
         //
-        PoolMgrSelectPoolMsg request = null;
+        PoolMgrSelectPoolMsg request;
 
-        if (isWrite)
-            request = new PoolMgrSelectWritePoolMsg(
-                                                    pnfsId, storageInfo, protocolInfo, 0L);
-        else
-            request =  new PoolMgrSelectReadPoolMsg(pnfsId,
-                                                    storageInfo, protocolInfo, 0L);
+        if (isWrite) {
+            request = new PoolMgrSelectWritePoolMsg(pnfsId, storageInfo, protocolInfo, 0L);
+        } else {
+            request = new PoolMgrSelectReadPoolMsg(pnfsId, storageInfo, protocolInfo, 0L);
+        }
 
-        //		Wait almost forever. Taking the PoolMgrSelectPoolMsg very long could be caused by a restage
-        //		from tape to pool OR the request is suspended in PoolManager (can be checked by 'rc ls' in admin interface)
+        // Wait almost forever. Taking the PoolMgrSelectPoolMsg very
+        // long could be caused by a restage from tape to pool OR the
+        // request is suspended in PoolManager (can be checked by 'rc
+        // ls' in admin interface)
         long poolMgrTimeout = Long.MAX_VALUE;	// timeout in ms
-        CellMessage reply = sendAndWait(new CellMessage(new CellPath(_poolManagerName),	request), poolMgrTimeout);
+        request =
+            sendAndWait(new CellPath(POOL_MANAGER), request, poolMgrTimeout);
 
-        if (reply == null) {
-            throw new Exception("PoolMgrSelectReadPoolMsg timed out after "+poolMgrTimeout/1000+" s. Request suspended on server side (PoolManager)?");
-        }
-
-        Object replyObject = reply.getMessageObject();
-
-        if (!(replyObject instanceof PoolMgrSelectPoolMsg)) {
-            throw new Exception("Not a PoolMgrSelectPoolMsg : "
-                                + replyObject.getClass().getName());
-        }
-
-        request = (PoolMgrSelectPoolMsg) replyObject;
-        _log.info("poolManagerReply = " + request);
-        if (request.getReturnCode() != 0) {
-            throw new Exception("Pool manager error: "
-                                + request.getErrorObject());
-        }
-
-        String pool = request.getPoolName();
-
-        _log.info("Can " + (isWrite ? "write to" : "read from") + " pool " + pool);
-
-        return pool;
+        return request.getPoolName();
     }
 
-
-    // handle post-transfer success/failure messages going back to the client
-    public void messageArrived(CellMessage msg) {
-        Object object = msg.getMessageObject();
-        _log.info("Message messageArrived [" + object.getClass() + "]="
-            + object.toString());
-        _log.info("Message messageArrived source = " + msg.getSourceAddress());
-        if (object instanceof XrootdDoorAdressInfoMessage) {
-            XrootdDoorAdressInfoMessage reply = (XrootdDoorAdressInfoMessage) object;
-            _log.info("received redirect msg from mover");
-            synchronized (_redirectSync) {
-                _log.info("got lock on _sync");
-
-                handleRedirectMessage(reply);
-                _redirectSync.notifyAll();
-            }
-        } else if (object instanceof DoorTransferFinishedMessage) {
-
-            DoorTransferFinishedMessage finishedMsg = (DoorTransferFinishedMessage) object;
-
-            if ( (finishedMsg.getProtocolInfo() instanceof XrootdProtocolInfo)) {
-
-                XrootdProtocolInfo protoInfo = (XrootdProtocolInfo) finishedMsg.getProtocolInfo();
-                int fileHandle = protoInfo.getXrootdFileHandle();
-
-
-                if (_logicalStreamTable.containsKey(fileHandle)) {
-
-                    _log.info("received DoorTransferFinished-Message from mover, cleaning up (PnfsId="
-                        + finishedMsg.getPnfsId() + " fileHandle="+fileHandle+")");
-
-                    forgetFile(fileHandle);
-
+    private Inet4Address getFirstIpv4(Collection<NetIFContainer> interfaces)
+    {
+        for (NetIFContainer container: interfaces) {
+            for (Object ip: container.getInetAddresses()) {
+                if (ip instanceof Inet4Address) {
+                    return (Inet4Address) ip;
                 }
             }
-
-        } else {
-            _log.info("Unexpected message class " + object.getClass()+" (source = " + msg.getSourceAddress()+")");
         }
-
+        return null;
     }
 
-    public void forgetFile(int fileHandle) {
+    public void messageArrived(XrootdDoorAdressInfoMessage msg)
+    {
+        _log.info("received redirect msg from mover");
+        synchronized (_redirectTable) {
+            _log.debug("got lock on _sync");
+
+            // pick the first IPv4 address from the collection at this
+            // point, we can't determine, which of the pool
+            // IP-addresses is the right one, so we select the first
+            Collection<NetIFContainer> interfaces =
+                Collections.checkedCollection(msg.getNetworkInterfaces(),
+                                              NetIFContainer.class);
+            Inet4Address ip = getFirstIpv4(interfaces);
+
+            if (ip != null) {
+                InetSocketAddress address =
+                    new InetSocketAddress(ip, msg.getServerPort());
+                _redirectTable.put(msg.getXrootdFileHandle(), address);
+            } else {
+                _log.warn("error: no valid IP-adress received from pool. Redirection not possible");
+
+                // we have to put a null address to at least notify the
+                // right xrootd thread about the failure
+                _redirectTable.put(msg.getXrootdFileHandle(), null);
+            }
+
+            _redirectTable.notifyAll();
+        }
+    }
+
+    public void messageArrived(DoorTransferFinishedMessage msg)
+    {
+        if ((msg.getProtocolInfo() instanceof XrootdProtocolInfo)) {
+            XrootdProtocolInfo protoInfo =
+                (XrootdProtocolInfo) msg.getProtocolInfo();
+            int fileHandle = protoInfo.getXrootdFileHandle();
+
+            if (_logicalStreamTable.containsKey(fileHandle)) {
+
+                _log.info("received DoorTransferFinished-Message from mover, cleaning up (PnfsId="
+                          + msg.getPnfsId() + " fileHandle="+fileHandle+")");
+
+                forgetFile(fileHandle);
+
+            }
+        }
+    }
+
+    public void forgetFile(int fileHandle)
+    {
         int streamID = _logicalStreamTable.remove(fileHandle);
         _physicalXrootdConnection.getStreamManager().
             getStreamByID(streamID).removeFile(fileHandle);
     }
 
-    public synchronized ProtocolInfo createProtocolInfo(PnfsId pnfsId, int fileHandle, long checksum, InetSocketAddress client) {
-
-        ProtocolInfo info = new XrootdProtocolInfo(
-                                                   XROOTD_PROTOCOL_STRING ,
-                                                   XROOTD_PROTOCOL_MAJOR_VERSION,
-                                                   XROOD_PROTOCOL_MINOR_VERSION,
-                                                   client.getAddress().getHostName(),
-                                                   client.getPort(),
-                                                   new CellPath(getCellName(), getCellDomainName()),
-                                                   pnfsId,
-                                                   fileHandle,
-                                                   checksum);
+    public synchronized ProtocolInfo createProtocolInfo(PnfsId pnfsId, int fileHandle, long checksum, InetSocketAddress client)
+    {
+        ProtocolInfo info =
+            new XrootdProtocolInfo(XROOTD_PROTOCOL_STRING ,
+                                   XROOTD_PROTOCOL_MAJOR_VERSION,
+                                   XROOTD_PROTOCOL_MINOR_VERSION,
+                                   client.getAddress().getHostName(),
+                                   client.getPort(),
+                                   new CellPath(getCellName(), getCellDomainName()),
+                                   pnfsId,
+                                   fileHandle,
+                                   checksum);
 
         _log.info("created XrootdProtocolInfo: " + info);
 
         return info;
     }
 
-    public void newFileOpen(int fileHandle, int streamID) {
+    public void newFileOpen(int fileHandle, int streamID)
+    {
         _logicalStreamTable.put(fileHandle, streamID);
     }
 
-    public void clearOpenFiles() {
+    public void clearOpenFiles()
+    {
         _logicalStreamTable.clear();
     }
 
-    public InetAddress getDoorHost() {
+    public InetAddress getDoorHost()
+    {
         return _doorSocket.getLocalAddress();
     }
 
-    public int getDoorPort() {
+    public int getDoorPort()
+    {
         return _doorSocket.getLocalPort();
     }
 
     //	returns a filehandle unique within this Xrootd-Door instance
-    public synchronized int getNewFileHandle() {
+    public synchronized int getNewFileHandle()
+    {
         return ++_fileHandleCounter;
     }
 
-    public Socket getDoorSocket() {
+    public Socket getDoorSocket()
+    {
         return _doorSocket;
     }
 
-    public synchronized boolean isCloseInProgress() {
+    public synchronized boolean isCloseInProgress()
+    {
         if (_closeInProgress == false) {
             _closeInProgress = true;
             return false;
@@ -553,221 +559,220 @@ public class XrootdDoor extends CellAdapter {
         return true;
     }
 
-    public boolean isReadOnly() {
-        return _isReadOnly ;
+    public boolean isReadOnly()
+    {
+        return _isReadOnly;
     }
 
-    public boolean authzRequired() {
+    public boolean authzRequired()
+    {
         return _authzRequired;
     }
 
-    public AbstractAuthorizationFactory getAuthzFactory() {
+    public AbstractAuthorizationFactory getAuthzFactory()
+    {
         return _authzFactory;
     }
 
-    private void loadAuthzPlugin(Args args) {
-
-        if (getAuthzFactory() != null ||	// authorization plugin (static factory) already loaded ?
-            _authzPluginLoadFailed) {		// don't try again to load if it failed once
-
+    private void loadAuthzPlugin(Args args)
+    {
+        if (getAuthzFactory() != null || // authorization plugin (static factory) already loaded ?
+            _authzPluginLoadFailed) {	 // don't try again to load if it failed once
             return;
         }
 
         _log.info("trying to load authz plugin");
 
-        AbstractAuthorizationFactory newAuthzFactory = null;
         try {
-            newAuthzFactory = AbstractAuthorizationFactory.getFactory(args.getOpt("authzPlugin"));
-        } catch (ClassNotFoundException e) {
-            _log.warn("Could not load authorization plugin "+args.getOpt("authzPlugin")+" cause: "+e);
-            _authzPluginLoadFailed = true;
-        }
-
-        if (newAuthzFactory != null) {
+            AbstractAuthorizationFactory newAuthzFactory =
+                AbstractAuthorizationFactory.getFactory(args.getOpt("authzPlugin"));
 
             _log.info("trying to find all options required by the plugin");
 
-            try {
+            // get names of all options required by the plugin
+            String[] names = newAuthzFactory.getRequiredOptions();
+            Map<String,String> options = new HashMap();
 
-                //				get names of all options required by the plugin
-                String[] names = newAuthzFactory.getRequiredOptions();
-                Map options = new HashMap();
-
-                //				try to load that options from the batchfile
-                for (int i = 0; i < names.length; i++) {
-                    String value = args.getOpt(names[i]);
-
-                    if (value == null || value.equals("")) {
-                        throw new Exception("required option '"+names[i]+"' not found in batchfile");
-                    } else {
-                        options.put(names[i], value);
-                    }
+            // try to load that options from the batchfile
+            for (String name: names) {
+                String value = args.getOpt(name);
+                if (value == null || value.equals("")) {
+                    /* Maybe not the right exception. Logic should be
+                     * restructured.
+                     */
+                    throw new NoSuchElementException("required option '"+name+
+                                                     "' not found in batchfile");
+                } else {
+                    options.put(name, value);
                 }
-
-                newAuthzFactory.initialize(options);
-
-                _authzFactory = newAuthzFactory;
-                _log.warn("authorization plugin initialised successfully!");
-
-            } catch (Exception e) {
-                _log.warn("error initializing the authorization plugin: "+ e);
-                _authzPluginLoadFailed = true;
             }
+
+            newAuthzFactory.initialize(options);
+
+            _authzFactory = newAuthzFactory;
+            _log.info("authorization plugin initialised successfully!");
+        } catch (NoSuchElementException e) {
+            _log.warn(e.getMessage());
+            _authzPluginLoadFailed = true;
+        } catch (GeneralSecurityException e) {
+            _log.warn("error initializing the authorization plugin: "+ e);
+            _authzPluginLoadFailed = true;
+        } catch (ClassNotFoundException e) {
+            _log.warn("Could not load authorization plugin " +
+                      args.getOpt("authzPlugin")+" cause: "+e);
+            _authzPluginLoadFailed = true;
         }
 
         if (_authzPluginLoadFailed) {
-            _log.warn("Loading authorization plugin failed. All subsequent xrootd requests will fail due to this.\nPlease change batch file configuration and restart xrootd door.");
+            _log.warn("Loading authorization plugin failed. All subsequent xrootd requests will fail due to this. Please change batch file configuration and restart xrootd door.");
         }
     }
 
-    public void makePnfsDir(String path) throws CacheException {
+    public void makePnfsDir(String path) throws CacheException
+    {
+        _log.info("about to create directory: " + path);
 
-        _log.info("about to create directory: "+path);
-
-        FileMetaData metadata = null;
-        try {
-            //			check if directory already exists
-            metadata = _pnfs_handler.getFileMetaDataByPath(path).getMetaData();
-        } catch (CacheException e) {
-            //			ok, no pnfs id found, we can proceed to create the directory
-        }
-
-        if (metadata != null) {
-            throw new CacheException(CacheException.FILE_EXISTS, "Cannot create directory "+path+": File exists");
-        }
-
-        //		get parent directory String
-
+        /* Get parent directory.
+         */
         String parentDir = path;
-        //		truncate '/'-suffix, if present
         if (parentDir.endsWith("/")) {
-            parentDir = parentDir.substring(0, parentDir.length() -1);
+            parentDir = parentDir.substring(0, parentDir.length() - 1);
         }
-        //		truncate last segment to get the parent (cd ..)
         parentDir = parentDir.substring(0, parentDir.lastIndexOf("/"));
 
+        /* Check whether parent is a directory and has write permissions.
+         *
+         * FIXME: Use permission handler.
+         */
+        FileMetaData metadata;
         try {
-            //			check whether parent is a directory and has write permissions
-
             metadata = getFileMetaData(parentDir);
-
         } catch (CacheException e) {
-            //			check if parent directory does not exist
+            switch (e.getRc()) {
+            case CacheException.FILE_NOT_FOUND:
+                _log.info("creating parent directory " + parentDir + " first");
 
-            if (e.getRc() == CacheException.FILE_NOT_FOUND) {
-
-                _log.info("creating parent directory "+parentDir+" first");
-
-                //				create parent directory recursively
+                // create parent directory recursively
                 makePnfsDir(parentDir);
                 metadata = getFileMetaData(parentDir);
+                break;
 
-            } else {
-                //				critical PNFS problem
+            default:
                 throw e;
             }
         }
 
-        if (! checkWritePermission(metadata)) {
+        if (!checkWritePermission(metadata)) {
             throw new CacheException("No permission to create directory "+path);
         }
 
-        //		at this point we assume that the parent directory exists and has all necessary permissions
+        // at this point we assume that the parent directory exists
+        // and has all necessary permissions
 
-        //		create the directory via PNFS Handler
-        PnfsCreateEntryMessage message = _pnfs_handler.createPnfsDirectory(path, metadata.getUid(), metadata.getGid(), 0755);
-        //		_pnfs_handler.createPnfsDirectory(path, 0, 0, 0755);
+        /* Create the directory via PNFS.
+         */
+        PnfsCreateEntryMessage message =
+            _pnfs.createPnfsDirectory(path,
+                                      metadata.getUid(),
+                                      metadata.getGid(),
+                                      0755);
 
+        /* In case of incomplete create, delete the directory right
+         * away.
+         */
         if (message.getStorageInfo() == null) {
-
-            _log.warn("Error creating directory "+path+" (no storage info)");
-
+            _log.error("Error creating directory " + path +
+                       " (no storage info)");
             if (message.getPnfsId() != null) {
                 try {
-                    _pnfs_handler.deletePnfsEntry(message.getPnfsId());
-                } catch (CacheException e1) {
-                    _log.warn(e1);
+                    _pnfs.deletePnfsEntry(message.getPnfsId(), path);
+                } catch (CacheException e) {
+                    _log.error(e);
                 }
             }
 
-            throw new CacheException(CacheException.FILE_NOT_FOUND, "Cannot create directory "+path+" in PNFS");
+            throw new CacheException("Cannot create directory " + path +
+                                     " in PNFS");
         }
 
         _log.info("created directory "+path);
     }
 
-    public boolean checkWritePermission(FileMetaData meta) {
+    public boolean checkWritePermission(FileMetaData meta)
+    {
         Permissions user = meta.getUserPermissions();
-        //		Permissions group = meta.getGroupPermissions();
+        // Permissions group = meta.getGroupPermissions();
 
         return meta.isDirectory() && user.canWrite() && user.canExecute();
-        //		return meta.isDirectory() && user.canWrite() && user.canExecute() && group.canWrite() && group.canExecute();
+        // return meta.isDirectory() && user.canWrite() && user.canExecute() && group.canWrite() && group.canExecute();
     }
 
-    public FileMetaData getFileMetaData(String path) throws CacheException {
-        return _pnfs_handler.getFileMetaDataByPath(path).getMetaData();
-
+    public FileMetaData getFileMetaData(String path) throws CacheException
+    {
+        return _pnfs.getFileMetaDataByPath(path).getMetaData();
     }
 
-    public FileMetaData[] getMultipleFileMetaData (String[] allPaths) {
-
+    public FileMetaData[] getMultipleFileMetaData (String[] allPaths)
+    {
         FileMetaData[] allMetas = new FileMetaData[allPaths.length];
 
+        // TODO: Use SpreadAndWait
         for (int i = 0; i < allPaths.length; i++) {
             try {
                 allMetas[i] = getFileMetaData(allPaths[i]);
             } catch (CacheException e) {
-                //we just move on in case a single path was not found
-                _log.info("statx: path "+allPaths[i]+" no found");
+                // we just move on in case a single path was not found
+                _log.info("failed to get meta data of " + allPaths[i]);
             }
         }
         return allMetas;
     }
 
-    public String noStrongAuthorization() {
+    public String noStrongAuthorization()
+    {
         return _noStrongAuthz;
     }
 
-    public List getAuthorizedWritePaths() {
-        return _authorizedWritePaths ;
+    public List<String> getAuthorizedWritePaths()
+    {
+        return _authorizedWritePaths;
     }
 
+    public void sendBillingInfo(DoorRequestMsgWrapper wrapper)
+    {
+        DoorRequestInfoMessage msg =
+            new DoorRequestInfoMessage(getNucleus().getCellName()+"@"+
+                                       getNucleus().getCellDomainName());
+        msg.setClient(getDoorSocket().getInetAddress().getHostName());
+        msg.setTransactionTime(System.currentTimeMillis());
 
-    public void sendBillingInfo(DoorRequestMsgWrapper wrapper) {
+        msg.setPath(wrapper.getPath());
 
-        DoorRequestInfoMessage msg = new DoorRequestInfoMessage(
-                                                                this.getNucleus().getCellName()+"@"+
-                                                                this.getNucleus().getCellDomainName() ) ;
-        msg.setClient( getDoorSocket().getInetAddress().getHostName() );
-        msg.setTransactionTime( System.currentTimeMillis()  );
-
-
-        msg.setPath( wrapper.getPath() );
-
-        if ( wrapper.getUser() != null) {
-            msg.setOwner( wrapper.getUser() );
+        if (wrapper.getUser() != null) {
+            msg.setOwner(wrapper.getUser());
         }
-        if ( wrapper.getPnfsId() != null) {
-            msg.setPnfsId( wrapper.getPnfsId() );
+        if (wrapper.getPnfsId() != null) {
+            msg.setPnfsId(wrapper.getPnfsId());
         } else
-            msg.setPnfsId( new PnfsId("000000000000000000000000") );
+            msg.setPnfsId(new PnfsId("000000000000000000000000"));
 
-        if ( wrapper.getErrorCode() != 0 ) {
-            msg.setResult( wrapper.getErrorCode(), wrapper.getErrorMsg() );
+        if (wrapper.getErrorCode() != 0) {
+            msg.setResult(wrapper.getErrorCode(), wrapper.getErrorMsg());
         }
 
-        msg.setTrasaction( _transactionPrefix + wrapper.getFileHandle() );
+        msg.setTrasaction(_transactionPrefix + wrapper.getFileHandle());
 
-        try{
-            sendMessage( new CellMessage( new CellPath("billing") ,  msg ) ) ;
-        }catch(Exception ee){
-            _log.warn("Couldn't send billing info : "+ee );
+        try {
+            sendMessage(new CellMessage(new CellPath("billing"), msg));
+        } catch (NoRouteToCellException e){
+            _log.warn("Could not send billing info: " + e);
         }
 
-        _log.info( msg.toString() );
+        _log.info(msg.toString());
     }
 
-    public int getMaxFileOpens() {
+    public int getMaxFileOpens()
+    {
         return _maxFileOpens;
     }
 }

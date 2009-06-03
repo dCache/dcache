@@ -63,11 +63,6 @@ public class XrootdDoorController implements PhysicalConnectionListener {
         //		set flag to prevent endless shutdown loop (important for door.cleanUp() )
         if (!door.isCloseInProgress()) {
 
-            //			end door mini thread
-            synchronized (door) {
-                door.notify();
-            }
-
             //			end cell, caused door.cleanUp() to be called
             door.getNucleus().kill();
 
