@@ -161,15 +161,20 @@ public class Comparator {
 
 	public static void main(String args[]) throws Exception {
 
-		if (args.length != 1) {
+	    Args parsedArgs = new Args( args);
+
+        if( parsedArgs.argc() != 1 || parsedArgs.optc() > 1 ||
+	            (parsedArgs.optc() == 1 && !parsedArgs.optv( 0).equals( "k"))) {
 			System.err.println("");
-			System.err.println("    Usage Comparator <file>");
+			System.err.println("    Usage Comparator [-k] <file>");
 			System.err.println("");
 			System.err.println("where <file> contains a list of PNFS IDs of files to verify.");
+                        System.err.println( "-k continue when an inconsistency is discovered.\n");
 			System.exit(2);
 		}
 
-		String file = args[0];
+		String file = parsedArgs.argv( 0);
+		boolean showAllErrors = parsedArgs.isOneCharOption( 'k');
 
 		String pnfsArgs = "diskCacheV111.util.GenericInfoExtractor "
 				+ "-delete-registration=dummyLocation -delete-registration-jdbcDrv=foo "
@@ -187,7 +192,7 @@ public class Comparator {
 		StorageInfoProvider pnfsStorageInfoProvider = new BasicNameSpaceProvider(
 				new Args(pnfsArgs), null);
 
-		int idCount = 0;
+		int idCount = 0, idErrCount = 0;
 
 
 		BufferedReader br = null;
@@ -222,13 +227,28 @@ public class Comparator {
 
 				PnfsId pnfsid = new PnfsId(trimmedLine);
 
-				FileMetaData chimeraMetaData = chimeraNamespace.getFileMetaData(pnfsid);
-				FileMetaData pnfsFileMetaData = pnfsNamespace.getFileMetaData(pnfsid);
-				assertEquals(pnfsid.toString(), chimeraMetaData, pnfsFileMetaData);
+                try {
+                    FileMetaData chimeraMetaData = chimeraNamespace.getFileMetaData( pnfsid);
+                    FileMetaData pnfsFileMetaData = pnfsNamespace.getFileMetaData( pnfsid);
+                    assertEquals( pnfsid.toString(), chimeraMetaData, pnfsFileMetaData);
+                } catch (MismatchException e) {
+                    idErrCount++;
+                    if( showAllErrors)
+                        System.out.println( "\n" + e.getMessage());
+                    else
+                        throw e;
+                }
 
-				StorageInfo chimeraStorageInfo = chimeraStorageInfoProvider.getStorageInfo(pnfsid);
-				StorageInfo pnfsStorageInfo = pnfsStorageInfoProvider.getStorageInfo(pnfsid);
-				assertEquals(pnfsid.toString(), chimeraStorageInfo,	pnfsStorageInfo);
+                try {
+                    StorageInfo chimeraStorageInfo = chimeraStorageInfoProvider.getStorageInfo( pnfsid);
+                    StorageInfo pnfsStorageInfo = pnfsStorageInfoProvider.getStorageInfo( pnfsid);
+                    assertEquals( pnfsid.toString(), chimeraStorageInfo, pnfsStorageInfo);
+                } catch (MismatchException e) {
+                    if( showAllErrors)
+                        System.out.println( "\n" + e.getMessage());
+                    else
+                        throw e;
+                }
 			}
 		} catch (IOException e) {
 			System.out.println("\nCannot read file: " + e.getMessage());
@@ -244,10 +264,11 @@ public class Comparator {
 			try {
 			    br.close();
 			} catch (IOException e) {
-				// Ignore this one: it doesn't really matter and shouldn't happen with local files (right?)
+				// Ignore this one: it doesn't really matter and shouldn't happen with local files, right?
 			}
 		}
 
-		System.out.println("\n\nAll " + idCount + " IDs passed OK");
+		System.out.println("\n\n" + idCount + " IDs verified, " +
+		                   (idErrCount == 0 ? "all OK." : (idErrCount + " failures.")));
 	}
 }
