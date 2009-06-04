@@ -715,6 +715,12 @@ public class RequestContainerV5
         private PoolMonitorV5.PnfsFileLocation _pnfsFileLocation  = null ;
         private PoolManagerParameter           _parameter         = _partitionManager.getParameterCopyOf() ;
 
+        /**
+         * Indicates the next time a TTL of a request message will be
+         * exceeded.
+         */
+        private long _nextTtlTimeout = Long.MAX_VALUE;
+
         private class CheckFilePingHandler {
             private long _timeInterval = 0;
             private long _timer = 0;
@@ -830,7 +836,13 @@ public class RequestContainerV5
 
            _messages.add(message);
 
-           if( _messages.size() > 1 )return ;
+           long ttl = message.getTtl();
+           if (ttl < Long.MAX_VALUE) {
+               long timeout = System.currentTimeMillis() + ttl;
+               _nextTtlTimeout = Math.min(_nextTtlTimeout, timeout);
+           }
+
+           if (_pnfsFileLocation != null)return ;
 
            PoolMgrSelectReadPoolMsg request =
                 (PoolMgrSelectReadPoolMsg)message.getMessageObject() ;
@@ -1002,6 +1014,38 @@ public class RequestContainerV5
                 _state = "[P2P "+_formatter.format(new Date())+"]" ;
             }
 	}
+
+        /**
+         * Removes request messages whos time to live has been
+         * exceeded. Messages are dropped; no reply is sent to the
+         * requestor, as we assume it is no longer waiting for the
+         * reply.
+         */
+        private void expireRequests()
+        {
+            /* Access to _messages is controlled by a lock on
+             * _handlerHash.
+             */
+            synchronized (_handlerHash) {
+                long now = System.currentTimeMillis();
+                _nextTtlTimeout = Long.MAX_VALUE;
+
+                Iterator<CellMessage> i = _messages.iterator();
+                while (i.hasNext()) {
+                    CellMessage message = i.next();
+                    long ttl = message.getTtl();
+                    if (message.getLocalAge() >= ttl) {
+                        _log.info("Discarding request from "
+                                  + message.getSourceAddress().getCellName()
+                                  + " because its time to live has been exceeded.");
+                        i.remove();
+                    } else if (ttl < Long.MAX_VALUE) {
+                        _nextTtlTimeout = Math.min(_nextTtlTimeout, now + ttl);
+                    }
+                }
+            }
+        }
+
         private boolean answerRequest(int count) {
             //
             // if there is an error we won't continue ;
@@ -1009,6 +1053,7 @@ public class RequestContainerV5
             if (_currentRc != 0)
                 count = 100000;
             //
+
             Iterator<CellMessage> messages = _messages.iterator();
             for (int i = 0; (i < count) && messages.hasNext(); i++) {
                 CellMessage m =  messages.next();
@@ -1635,6 +1680,11 @@ public class RequestContainerV5
            }else if( command.equals("alive") ){
 
               long now = System.currentTimeMillis() ;
+
+              if (now > _nextTtlTimeout) {
+                  expireRequests();
+              }
+
               if( ( _waitUntil > 0L ) && ( now > _waitUntil ) ){
                  nextStep(ST_INIT,CONTINUE);
                  clearSteering() ;
