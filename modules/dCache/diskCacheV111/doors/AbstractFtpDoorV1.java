@@ -3739,67 +3739,93 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
+    private String ftpListLong(File file, Subject subject)
+        throws ACLException, CacheException
+    {
+        StringBuilder mode = new StringBuilder();
+        String path = file.getAbsolutePath();
+        PnfsId pnfsId = _pnfs.getPnfsIdByPath(path);
+
+        if (file.isDirectory()) {
+            boolean canListDir =
+                _permissionHandler.canListDir(pnfsId, subject, _origin) == AccessType.ACCESS_ALLOWED;
+            boolean canCreateFile =
+                _permissionHandler.canCreateFile(pnfsId, subject, _origin) == AccessType.ACCESS_ALLOWED;
+            boolean canCreateDir =
+                _permissionHandler.canCreateDir(pnfsId, subject, _origin) == AccessType.ACCESS_ALLOWED;
+            mode.append('d');
+            mode.append(canListDir ? 'r' : '-');
+            mode.append(canCreateFile || canCreateDir ? 'w' : '-');
+            mode.append(canListDir ? 'x' : '-');
+            mode.append("------");
+        } else {
+            boolean canReadFile =
+                _permissionHandler.canReadFile(pnfsId, subject, _origin)== AccessType.ACCESS_ALLOWED;
+            mode.append('-');
+            mode.append(canReadFile ? 'r' : '-');
+            mode.append('-');
+            mode.append('-');
+            mode.append("------");
+        }
+
+        long modified = file.lastModified();
+        long age = System.currentTimeMillis() - modified;
+        String format;
+        if (age > (182L * 24 * 60 * 60 * 1000)) {
+            format = "%1$s  1 %2$-10s %3$-10s %4$12d %5$tb %5$2te %5$5tY %6$s";
+        } else {
+            format = "%1$s  1 %2$-10s %3$-10s %4$12d %5$tb %5$2te %5$5tR %6$s";
+        }
+
+        return String.format(format,
+                             mode,
+                             _pwdRecord.Username,
+                             _pwdRecord.Username,
+                             file.length(),
+                             modified,
+                             file.getName());
+    }
+
+    private void openDataSocket()
+        throws IOException
+    {
+        /* Mode being PASSIVE means the client did a PASV.  Otherwise
+         * we establish the data connection to the client.
+         */
+        if (_mode == Mode.PASSIVE) {
+            _dataSocket = _adapter.acceptOnClientListener();
+        } else {
+            _dataSocket = new Socket(_client_data_host, _client_data_port);
+        }
+    }
+
+    private void closeDataSocket()
+    {
+        try {
+            _dataSocket.close();
+        } catch (IOException e) {
+            warn("FTP Door: got I/O exception closing socket: " +
+                 e.getMessage());
+        }
+        _dataSocket = null;
+        if (_mode == Mode.PASSIVE) {
+            info("FTP door: list is waiting for passive adapter...");
+            while (_adapter.isAlive()) {
+                try {
+                    _adapter.join(300000);  // 5 minutes
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+    }
+
     public void ac_list(String arg)
     {
         Args args = new Args(arg);
-        boolean long_format =
+        boolean listLong =
             args.options().isEmpty() || (args.getOpt("l") != null);
-        list(args,long_format);
-    }
 
-    private String ftpListLong(File file, Subject subject)
-    throws ACLException, CacheException
-    {
-    StringBuilder mode = new StringBuilder();
-    String path = file.getAbsolutePath();
-    PnfsId pnfsId = _pnfs.getPnfsIdByPath(path);
-
-    if (file.isDirectory()) {
-        boolean canListDir =
-            _permissionHandler.canListDir(pnfsId, subject, _origin) == AccessType.ACCESS_ALLOWED;
-        boolean canCreateFile =
-            _permissionHandler.canCreateFile(pnfsId, subject, _origin) == AccessType.ACCESS_ALLOWED;
-        boolean canCreateDir =
-            _permissionHandler.canCreateDir(pnfsId, subject, _origin) == AccessType.ACCESS_ALLOWED;
-        mode.append('d');
-        mode.append(canListDir ? 'r' : '-');
-        mode.append(canCreateFile || canCreateDir ? 'w' : '-');
-        mode.append(canListDir ? 'x' : '-');
-        mode.append("------");
-    } else {
-        boolean canReadFile =
-            _permissionHandler.canReadFile(pnfsId, subject, _origin)== AccessType.ACCESS_ALLOWED;
-        mode.append('-');
-        mode.append(canReadFile ? 'r' : '-');
-        mode.append('-');
-        mode.append('-');
-        mode.append("------");
-    }
-
-    long modified = file.lastModified();
-    long age = System.currentTimeMillis() - modified;
-    String format;
-    if (age > (182L * 24 * 60 * 60 * 1000)) {
-        format = "%1$s  1 %2$-10s %3$-10s %4$12d %5$tb %5$2te %5$5tY %6$s";
-    } else {
-        format = "%1$s  1 %2$-10s %3$-10s %4$12d %5$tb %5$2te %5$5tR %6$s";
-    }
-
-    return String.format(format,
-                         mode,
-                         _pwdRecord.Username,
-                         _pwdRecord.Username,
-                         file.length(),
-                         modified,
-                         file.getName());
-    }
-
-    public void list(Args args,boolean listLong)
-    {
-        debug("FTP Door: list args = \"" +
-             args + "\"; Long format ? " + listLong);
-        FilenameMatcher filenameMatcher = null;
-        String arg;
         if (args.argc() == 0) {
             arg = ".";
         } else {
@@ -3808,8 +3834,9 @@ public abstract class AbstractFtpDoorV1
 
         boolean isPattern = arg.indexOf('*') != -1 || arg.indexOf('?') != -1 ||
             (arg.indexOf('[') != -1 && arg.indexOf(']') != -1);
-        File f;
 
+        File f;
+        FilenameMatcher filenameMatcher;
         if (isPattern) {
             // Convert relative paths to full paths relative to base path
             if (!arg.startsWith("/")) {
@@ -3849,93 +3876,70 @@ public abstract class AbstractFtpDoorV1
                 return;
             }
             f = new File(absolutepath);
+            filenameMatcher = null;
         }
 
-        if (!f.exists()) {
-            reply("550 " + arg + " not found");
-            return;
-        }
 
         try {
-            if (!(new PnfsFile(f.toString())).isPnfs()) {
-                reply("550 Not in PNFS. Access denied.");
+            PnfsFile pnfsFile = new PnfsFile(f.toString());
+            if (!pnfsFile.exists() || !pnfsFile.isPnfs()) {
+                reply("550 File not found");
                 return;
             }
-        } catch (CacheException e) {
-            reply("550 Not in PNFS. Access denied.");
-            return;
-        }
 
-        boolean isDirectory = f.isDirectory();
-        File files[];
-        if (isDirectory) {
-            if (filenameMatcher != null) {
-                files = f.listFiles(filenameMatcher);
-            } else {
-                files = f.listFiles();
+            reply("150 Opening ASCII data connection for file list", false);
+            try {
+                openDataSocket();
+            } catch (IOException e) {
+                reply("425 Cannot open connection");
+                return;
             }
-        } else {
-            files = new File[1];
-            files[0]= f;
-        }
 
-        StringBuffer result = new StringBuffer();
-        try {
-            for (int i = 0; i < files.length; ++i){
-                File nextf = files[i];
+            File files[];
+            try {
+                PrintWriter writer =
+                    new PrintWriter(new OutputStreamWriter(new BufferedOutputStream(_dataSocket.getOutputStream()), "US-ASCII"));
+
+                boolean isDirectory = f.isDirectory();
+                if (filenameMatcher != null) {
+                    files = f.listFiles(filenameMatcher);
+                } else if (isDirectory) {
+                    files = f.listFiles();
+                } else {
+                    files = new File[] { f };
+                }
+
+                if (files == null) {
+                    throw new IOException("I/O failure listing directory");
+                }
+
                 if (listLong){
-                    result.append(ftpListLong(nextf, getSubject()));
-                 } else {
-                    result.append(nextf.getName());
-                 }
-                result.append("\r\n");
-            }
-          } catch(ACLException e) {
-            reply("451 Internal lookup failure: " + e);
-            return;
-          } catch (CacheException e){
-            reply("451 Internal lookup failure: " + e);
-              return;
-          }
-
-        OutputStream ostream = null;
-        reply("150 Opening ASCII data connection for file list", false);
-        try {
-            /* Mode being PASSIVE means the client did a PASV.
-             * Otherwise we establish the data connection to the
-             * client.
-             */
-            if (_mode == Mode.PASSIVE) {
-                _dataSocket = _adapter.acceptOnClientListener();
-            } else {
-                _dataSocket = new Socket(_client_data_host, _client_data_port);
-            }
-        } catch (IOException e) {
-            reply("425 Cannot open port");
-            return;
-        }
-        try {
-            ostream = _dataSocket.getOutputStream();
-            ostream.write(result.toString().getBytes());
-            _dataSocket.close();
-            if (_mode == Mode.PASSIVE) {
-                info("FTP door: list is waiting for passive adapter...");
-                while( _adapter.isAlive() ) {
-                    try {
-                        _adapter.join(300000);  // 5 minutes
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
+                    Subject subject = getSubject();
+                    for (File file: files) {
+                        writer.append(ftpListLong(file, subject));
+                        writer.append("\r\n");
+                    }
+                } else {
+                    for (File file: files) {
+                        writer.append(file.getName()).append("\r\n");
                     }
                 }
+                writer.close();
+            } finally {
+                closeDataSocket();
             }
-            _dataSocket=null;
-            reply("226 ASCII transfer complete");
+            reply("226 " + files.length + " files");
+        } catch (ACLException e) {
+            reply("451 Internal permission check failure: " + e);
+            warn("Error in LIST: " + e.getMessage());
+        } catch (CacheException e){
+            reply("451 Local error in processing");
+            warn("Error in LIST: " + e.getMessage());
+        } catch (EOFException e) {
+            reply("426 Connection closed; transfer aborted");
         } catch (IOException e) {
-            try {
-                _dataSocket.close();
-            } catch (IOException  ex) {}
-            _dataSocket = null;
-            reply("426 Transfer aborted, closing connection");
+            reply("451 Local error in processing");
+            warn("Error in LIST: " + e.getMessage());
         }
     }
 
@@ -3963,54 +3967,28 @@ public abstract class AbstractFtpDoorV1
 
             reply("150 Opening ASCII data connection for file list", false);
             try {
-                /* Mode being PASSIVE means the client did a PASV.
-                 * Otherwise we establish the data connection to the
-                 * client.
-                 */
-                if (_mode == Mode.PASSIVE) {
-                    _dataSocket = _adapter.acceptOnClientListener();
-                } else {
-                    _dataSocket =
-                        new Socket(_client_data_host, _client_data_port);
-                }
+                openDataSocket();
             } catch (IOException e) {
-                reply("425 Cannot open port");
+                reply("425 Cannot open connection");
                 return;
             }
 
-            int total = 0;
+            File[] files;
             try {
                 PrintWriter writer =
                     new PrintWriter(new OutputStreamWriter(new BufferedOutputStream(_dataSocket.getOutputStream()), "US-ASCII"));
 
-                File[] files = dir.listFiles();
+                files = dir.listFiles();
                 if (files != null) {
                     for (File file: files) {
-                        total++;
                         writer.append(file.getName()).append("\r\n");
                     }
                 }
                 writer.close();
             } finally {
-                try {
-                    _dataSocket.close();
-                } catch (IOException e) {
-                    warn("FTP Door: got I/O exception closing socket: " +
-                         e.getMessage());
-                }
-                _dataSocket = null;
-                if (_mode == Mode.PASSIVE) {
-                    info("FTP door: list is waiting for passive adapter...");
-                    while (_adapter.isAlive()) {
-                        try {
-                            _adapter.join(300000);  // 5 minutes
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                        }
-                    }
-                }
+                closeDataSocket();
             }
-            reply("226 " + total + " files");
+            reply("226 " + files.length + " files");
         } catch (CacheException e) {
             reply("451 Local error in processing");
             warn("Error in NLST: " + e.getMessage());
