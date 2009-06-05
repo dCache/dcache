@@ -9,14 +9,18 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: dcap_checksum.c,v 1.4 2004-11-01 19:33:29 tigran Exp $
  */
 
 #include "dcap_shared.h"
 
+/*
+ * reserved for future
+ */
+#if 0
 typedef struct {
 	int sumType;
 	unsigned long initialValue;
@@ -27,7 +31,7 @@ static sumInitialValueTable csm[] = {
 	{ 1, 1}, /* ADLER32 */
 	{ -1, 0}
 };
-
+#endif
 
 extern unsigned long update_adler32(unsigned long, unsigned char *, size_t);
 
@@ -40,7 +44,7 @@ void update_checkSum(checkSum *sum, unsigned char *buf, size_t len)
 unsigned long initialSum( int sumType )
 {
 
-	/* 
+	/*
 	 *  in reality, we have to look for proper check sum type,
 	 *  but up to now, we use only one alogorithm - adler32.
 	 */
@@ -53,19 +57,19 @@ unsigned long initialSum( int sumType )
 void dc_noCheckSum( int fd )
 {
 	struct vsp_node *node;
-	
+
 	node = get_vsp_node(fd);
 	if (node == NULL) {
 		return ;
 	}
-	
+
 	if( node->sum != NULL ) {
 		free( node->sum );
 		node->sum = NULL;
 		dc_debug(DC_INFO, "[%d] Checksum calculation disabled.", node->dataFd );
 	}
-	
+
 	m_unlock(&node->mux);
-	
-	return;	
+
+	return;
 }
