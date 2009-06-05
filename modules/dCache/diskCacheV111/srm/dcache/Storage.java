@@ -919,12 +919,43 @@ public class Storage
         diskCacheV111.util.Version.getVersion(),"$Revision$" );
     }
 
+    public String fh_set_async_ls= " Syntax : set async ls [on|off]  # turn on/off asynchronous srmls execution ";
+    public String hh_set_async_ls= " [on|off]  # turn on/off asynchronous srmls execution ";
+
+    public String ac_set_async_ls_$_0_1(Args args) { 
+        boolean yes = false;
+        boolean no  = false;
+        for (String s : new String[] { "on", "true", "t", "yes"}) { 
+            if (s.equalsIgnoreCase(args.argv(0))) { 
+                yes = true;
+                break;
+            }
+        }
+        if (yes == false) {
+            for (String s : new String[] { "off", "false", "f", "no"}) { 
+                if (s.equalsIgnoreCase(args.argv(0))) { 
+                    no = true;
+                    break;
+                }
+            }
+        }
+        if (no==false && yes==false) { 
+            if (args.argc()==0) { 
+                yes = true;
+            }
+            else { 
+                return "Syntax error : "+args.argv(0)+" is unsupported value";
+            }
+        }
+        config.setAsynchronousLs(yes);
+        return "asynchronous ls is "+(config.isAsynchronousLs()?"enabled":"disabled");
+    }
     public String fh_db_history_log= " Syntax: db history log [on|off] "+
         "# show status or enable db history log ";
     public String hh_db_history_log= " [on|off] " +
         "# show status or enable db history log ";
     public String ac_db_history_log_$_0_1(Args args) {
-        if(args.argc() == 0) {
+        if (args.argc()==0) { 
             return "db history logging is " +(
                 config.isJdbcLogRequestHistoryInDBEnabled()?
                     " enabled":
@@ -1230,7 +1261,7 @@ public class Storage
         }
         return sb.toString();
     }
-
+    
     public String fh_set_job_priority= " Syntax: set priority <requestId> <priority>"+
             "will set priority for the requestid";
     public String hh_set_job_priority=" <requestId> <priority>";

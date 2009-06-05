@@ -200,7 +200,7 @@ set context -c srmClientDNSLookup false
 #
 # use asynchronous srmls
 #
-set context -c srmAsynchronousLs true
+set context -c srmAsynchronousLs false
 #
 #  ----  Usage of Srm Space Manager
 #
