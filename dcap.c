@@ -1484,36 +1484,14 @@ get_fin(struct vsp_node * node)
 #endif
 
 int64_t
-ntohll(int64_t arg)
+ntohll(int64_t x)
 {
-
-	int64_t         all;
-	int32_t        *part;
-	
 #ifdef I_AM_LITTLE_ENDIAN
-	int32_t swap;
+    return  ((((int64_t)htonl(x)) << 32) + htonl(x >> 32));
+#else
+    return x;
 #endif /* I_AM_LITTLE_ENDIAN */
-
-	all = arg;
-
-	part =  (int32_t *)&all;
-
-	part[0] = ntohl(part[0]);
-	part[1] = ntohl(part[1]);
-
-#ifdef I_AM_LITTLE_ENDIAN
-
-	swap = part[1];
-	part[1] = part[0];
-	part[0] = swap;
-
-	part = NULL;
-
-#endif /* I_AM_LITTLE_ENDIAN */
-
-	return all;
 }
-
 
 int64_t
 htonll(int64_t arg)
