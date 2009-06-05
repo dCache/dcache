@@ -562,7 +562,7 @@ int dc_readv2(int fd, iovec2 *vector, int count) {
 
 	int rc;
 	struct vsp_node *node;
-	int32_t  *readvmsg;
+	int32_t  *readvmsg = NULL;
 	size_t totalToRead = 0;
 	size_t totalRecieved = 0;
 	int msglen;
