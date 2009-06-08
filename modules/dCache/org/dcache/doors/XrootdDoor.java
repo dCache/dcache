@@ -242,8 +242,12 @@ public class XrootdDoor extends AbstractCell
 
     public void cleanUp()
     {
-        if (!isCloseInProgress()) {
-            _controller.shutdownXrootd();
+        try {
+            if (!isCloseInProgress()) {
+                _controller.shutdownXrootd();
+            }
+        } finally {
+            super.cleanUp();
         }
     }
 
