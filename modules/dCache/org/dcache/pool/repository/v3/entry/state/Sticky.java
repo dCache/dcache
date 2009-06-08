@@ -21,17 +21,7 @@ public class Sticky {
 
 
     synchronized public boolean isSticky() {
-
-        if( !_records.isEmpty() ) {
-            long now = System.currentTimeMillis();
-
-            for( StickyRecord stickyRecord: _records.values() ) {
-                if( stickyRecord.isValidAt(now) ) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        return !_records.isEmpty();
     }
 
     public boolean isSet() {

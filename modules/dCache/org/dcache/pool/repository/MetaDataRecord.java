@@ -61,11 +61,20 @@ public interface MetaDataRecord
 
     public int getLinkCount();
 
+    /**
+     * Returns true if and only if the entry has one or more sticky
+     * flags. Whether the sticky flags have expired or not MUST not
+     * influence the return value.
+     *
+     * @return true if the stickyRecords methods would return a non
+     * empty collection, false otherwise.
+     */
     public boolean isSticky();
 
     /**
-     * Removes expired sticky from the entry. Triggers a notification
-     * if this causes the entry to become non-sticky.
+     * Removes expired sticky from the entry.
+     *
+     * @return The expired sticky flags removed from the record.
      */
     public List<StickyRecord> removeExpiredStickyFlags();
 
@@ -83,6 +92,8 @@ public interface MetaDataRecord
      * @param validTill time milliseconds since 00:00:00 1 Jan. 1970.
      * @param overwrite replace existing flag when true.
      * @throws CacheException
+     * @return true if the collection returned by the stickyRecords
+     * method has changed due to this call.
      */
     public boolean setSticky(String owner, long validTill, boolean overwrite)
         throws CacheException;

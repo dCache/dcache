@@ -158,13 +158,7 @@ public class CacheRepositoryEntryState implements Serializable
 
     public boolean isSticky()
     {
-        long now = System.currentTimeMillis();
-        for (StickyRecord record : _sticky) {
-            if (record.isValidAt(now)) {
-                return true;
-            }
-        }
-        return false;
+        return !_sticky.isEmpty();
     }
 
     public List<StickyRecord> stickyRecords()

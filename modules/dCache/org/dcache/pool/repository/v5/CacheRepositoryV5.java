@@ -331,7 +331,7 @@ public class CacheRepositoryV5
                 }
 
                 for (MetaDataRecord entry: _allEntries.values())
-                    if (!entry.stickyRecords().isEmpty())
+                    if (entry.isSticky())
                         scheduleExpirationTask(entry);
 
                 _log.info(String.format("Inventory contains %d files; total size is %d; used space is %d; free space is %d.",
