@@ -264,22 +264,116 @@ public class XrootdDoor extends AbstractCell
         pw.println("number of logical streams: " + _physicalXrootdConnection.getStreamManager().getNumberOfStreams());
     }
 
-
-    PnfsGetStorageInfoMessage getStorageInfo(String path) throws IOException
+    /**
+     * Selects a pool and asks it to transfer a file.
+     *
+     * @param pnfsid      PNFS ID of file to transfer
+     * @param storageInfo Storage info of file to transfer
+     * @param fileHandle  xrootd file handle of file to transfer
+     * @param checksum    checksum of open request
+     * @param isWrite     true for uploads, false for downloads
+     * @return The address on which the mover will accept the data connection
+     */
+    public InetSocketAddress
+        transfer(PnfsId pnfsid, StorageInfo storageInfo,
+                 int fileHandle, long checksum, boolean isWrite)
+        throws CacheException, InterruptedException
     {
-        try {
-            return _pnfs.getStorageInfoByPath(path);
-        } catch (CacheException e) {
-            throw new IOException("Failed to lookup storage info: " +
-                                  e.getMessage());
-        }
+        InetSocketAddress client =
+            _physicalXrootdConnection.getNetworkConnection().getClientSocketAddress();
+        XrootdProtocolInfo protocolInfo =
+            new XrootdProtocolInfo(XROOTD_PROTOCOL_STRING ,
+                                   XROOTD_PROTOCOL_MAJOR_VERSION,
+                                   XROOTD_PROTOCOL_MINOR_VERSION,
+                                   client.getAddress().getHostName(),
+                                   client.getPort(),
+                                   new CellPath(getCellName(), getCellDomainName()),
+                                   pnfsid,
+                                   fileHandle,
+                                   checksum);
+
+        InetSocketAddress redirectAddress = null;
+        do {
+            // ask the Poolmanager for a pool
+            String pool = askForPool(pnfsid,
+                                     storageInfo,
+                                     protocolInfo,
+                                     isWrite);
+            try {
+                // ask the pool to prepare the transfer
+                redirectAddress =
+                    askForFile(pool,
+                               pnfsid,
+                               storageInfo,
+                               protocolInfo,
+                               isWrite);
+            } catch (CacheException e) {
+                _log.warn("Pool error: " + e.getMessage());
+            }
+        } while (redirectAddress == null);
+
+        return redirectAddress;
     }
 
-    public PnfsGetStorageInfoMessage createNewPnfsEntry(String pnfsPath,
-                                                        int uid, int gid)
+    public PnfsGetStorageInfoMessage getStorageInfo(String path)
         throws CacheException
     {
-        return _pnfs.createPnfsEntry(pnfsPath, uid, gid, 0644);
+        return _pnfs.getStorageInfoByPath(path);
+    }
+
+    public PnfsCreateEntryMessage
+        createNewPnfsEntry(String path, boolean createDir)
+        throws CacheException
+    {
+        // get parent directory path by truncating filename
+        String parentDir = path.substring(0, path.lastIndexOf("/"));
+        FileMetaData parentMD;
+
+        try {
+            parentMD = getFileMetaData(parentDir);
+        } catch (CacheException e) {
+            switch (e.getRc()) {
+            case CacheException.FILE_NOT_FOUND:
+            case CacheException.DIR_NOT_EXISTS:
+                if (!createDir) {
+                    throw new CacheException(CacheException.DIR_NOT_EXISTS,
+                                             "Directory does not exist");
+                }
+                parentMD = makePnfsDir(parentDir);
+                break;
+
+            default:
+                throw e;
+            }
+        }
+
+        // at this point the parent directory exists, now we check
+        // permissions
+        if (!checkWritePermission(parentMD)) {
+            throw new CacheException(CacheException.PERMISSION_DENIED,
+                                     "No permission to create file");
+        }
+
+        // create the actual PNFS entry with parent uid:gid
+        PnfsCreateEntryMessage msg =
+            _pnfs.createPnfsEntry(path,
+                                  parentMD.getUid(),
+                                  parentMD.getGid(),
+                                  0644);
+
+        // storageinfo must be available for the newly created PNFS entry
+        if (msg.getStorageInfo() == null) {
+            try {
+                _log.error(String.format("Storage info is missing after create [%s].", path));
+                _pnfs.deletePnfsEntry(msg.getPnfsId(), path);
+            } catch (CacheException e) {
+                _log.error(String.format("Failed to delete partial entry [%s].", path));
+            }
+
+            throw new CacheException("Failed to create file (failed to extract storage info)");
+        }
+
+        return msg;
     }
 
     public void deletePnfsEntry(PnfsId pnfsId)
@@ -482,40 +576,15 @@ public class XrootdDoor extends AbstractCell
                 (XrootdProtocolInfo) msg.getProtocolInfo();
             int fileHandle = protoInfo.getXrootdFileHandle();
 
-            if (_logicalStreamTable.containsKey(fileHandle)) {
-
+            Integer streamID = _logicalStreamTable.remove(fileHandle);
+            if (streamID != null) {
                 _log.info("received DoorTransferFinished-Message from mover, cleaning up (PnfsId="
                           + msg.getPnfsId() + " fileHandle="+fileHandle+")");
 
-                forgetFile(fileHandle);
-
+                _physicalXrootdConnection.getStreamManager().
+                    getStreamByID(streamID).removeFile(fileHandle);
             }
         }
-    }
-
-    public void forgetFile(int fileHandle)
-    {
-        int streamID = _logicalStreamTable.remove(fileHandle);
-        _physicalXrootdConnection.getStreamManager().
-            getStreamByID(streamID).removeFile(fileHandle);
-    }
-
-    public synchronized ProtocolInfo createProtocolInfo(PnfsId pnfsId, int fileHandle, long checksum, InetSocketAddress client)
-    {
-        ProtocolInfo info =
-            new XrootdProtocolInfo(XROOTD_PROTOCOL_STRING ,
-                                   XROOTD_PROTOCOL_MAJOR_VERSION,
-                                   XROOTD_PROTOCOL_MINOR_VERSION,
-                                   client.getAddress().getHostName(),
-                                   client.getPort(),
-                                   new CellPath(getCellName(), getCellDomainName()),
-                                   pnfsId,
-                                   fileHandle,
-                                   checksum);
-
-        _log.info("created XrootdProtocolInfo: " + info);
-
-        return info;
     }
 
     public void newFileOpen(int fileHandle, int streamID)
@@ -628,7 +697,7 @@ public class XrootdDoor extends AbstractCell
         }
     }
 
-    public void makePnfsDir(String path) throws CacheException
+    public FileMetaData makePnfsDir(String path) throws CacheException
     {
         _log.info("about to create directory: " + path);
 
@@ -653,8 +722,7 @@ public class XrootdDoor extends AbstractCell
                 _log.info("creating parent directory " + parentDir + " first");
 
                 // create parent directory recursively
-                makePnfsDir(parentDir);
-                metadata = getFileMetaData(parentDir);
+                metadata = makePnfsDir(parentDir);
                 break;
 
             default:
@@ -695,7 +763,9 @@ public class XrootdDoor extends AbstractCell
                                      " in PNFS");
         }
 
-        _log.info("created directory "+path);
+        _log.info("created directory " + path);
+
+        return message.getMetaData();
     }
 
     public boolean checkWritePermission(FileMetaData meta)

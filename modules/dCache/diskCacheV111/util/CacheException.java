@@ -96,11 +96,16 @@ public class CacheException extends Exception {
      */
     public final static int NOT_IN_TRASH = 10016;
 
-	/**
-	 * There are no sufficient resources to process current request.
-	 * Typically returned if some limits excided.
-	 */
-	public final static int RESOURCE = 10017;
+    /**
+     * There are no sufficient resources to process current request.
+     * Typically returned if some limits excided.
+     */
+    public final static int RESOURCE = 10017;
+
+    /**
+     * The user is not authorized to perform the action requested.
+     */
+    public final static int PERMISSION_DENIED = 10018;
 
     /**
      * default error code.
