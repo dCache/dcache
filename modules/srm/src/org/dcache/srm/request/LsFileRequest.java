@@ -497,6 +497,17 @@ public class LsFileRequest extends FileRequest {
                                                         dirMetaDataPathDetails[j-start] = dirMetaDataPathDetail;
                                                 }
                                                 catch (SRMException srme) {
+                                                        if (srme instanceof SRMTooManyResultsException) {
+                                                                returnStatus.setStatusCode(TStatusCode.SRM_FAILURE);
+                                                                returnStatus.setExplanation(srme.getMessage());
+                                                                synchronized(request) {
+                                                                        request.setStatusCode(TStatusCode.SRM_TOO_MANY_RESULTS);
+                                                                        request.setExplanation(srme.getMessage());
+                                                                }
+                                                                metaDataPathDetail.setArrayOfSubPaths(new ArrayOfTMetaDataPathDetail(dirMetaDataPathDetails));
+                                                                metaDataPathDetail.setStatus(returnStatus);
+                                                                return metaDataPathDetail;
+                                                        }
                                                         returnStatus.setStatusCode(TStatusCode.SRM_FAILURE);
                                                         returnStatus.setExplanation(srme.getMessage());
                                                         dirMetaDataPathDetails[j-start] = new TMetaDataPathDetail(subpath,
@@ -517,15 +528,6 @@ public class LsFileRequest extends FileRequest {
                                                                                                                   null,
                                                                                                                   null,
                                                                                                                   null);
-                                                        if (srme instanceof SRMTooManyResultsException) {
-                                                                synchronized(request) {
-                                                                        request.setStatusCode(TStatusCode.SRM_TOO_MANY_RESULTS);
-                                                                        request.setExplanation(srme.getMessage());
-                                                                        metaDataPathDetail.setArrayOfSubPaths(new ArrayOfTMetaDataPathDetail(dirMetaDataPathDetails));
-                                                                        metaDataPathDetail.setStatus(returnStatus);
-                                                                        return metaDataPathDetail;
-                                                                }
-                                                        }
                                                 }
                                         }
                                 }
@@ -534,7 +536,7 @@ public class LsFileRequest extends FileRequest {
                 }
                 return metaDataPathDetail;
         }
-
+        
         public TMetaDataPathDetail getMinimalMetaDataPathDetail(String path,
                                                                 java.io.File file)
                 throws SRMException,org.apache.axis.types.URI.MalformedURIException {

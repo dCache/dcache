@@ -240,7 +240,7 @@ public class LsRequest extends ContainerRequest {
         }
 
         public synchronized boolean increaseResultsNumAndContinue(){
-                if(numberOfResults >= maxNumOfResults) {
+                if(numberOfResults > maxNumOfResults) {
                         return false;
                 }
                 numberOfResults++;
