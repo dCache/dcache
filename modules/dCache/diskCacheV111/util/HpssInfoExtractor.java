@@ -4,26 +4,15 @@ import  diskCacheV111.vehicles.* ;
 
 import  java.util.* ;
 import  java.io.* ;
-public class       HpssInfoExtractor
-       implements StorageInfoExtractable {
+import org.dcache.util.AbstractPnfsExtractor;
 
-    /**
-     * default access latency for newly created files
-     */
-    private final diskCacheV111.util.AccessLatency _defaultAccessLatency;
-
-    /**
-     * default retention policy for newly created files
-     */
-    private final diskCacheV111.util.RetentionPolicy _defaultRetentionPolicy;
-
+public class HpssInfoExtractor extends AbstractPnfsExtractor {
 
     public HpssInfoExtractor(AccessLatency defaultAL, RetentionPolicy defaultRP) {
-
-        _defaultAccessLatency = defaultAL;
-        _defaultRetentionPolicy = defaultRP;
+       super(defaultAL, defaultRP);
     }
 
+    @Override
     public void setStorageInfo( String pnfsMountpoint , PnfsId pnfsId ,
                                 StorageInfo storageInfo , int accessMode )
            throws CacheException {
@@ -39,27 +28,7 @@ public class       HpssInfoExtractor
           throw new
           CacheException( 37 , "Not a valid PnfsId "+pnfsId ) ;
 
-
-       // FIXME: HACK -  AccessLatency and RetentionPolicy stored as a flags
-       try {
-	       CacheInfo info   = new CacheInfo( x ) ;
-	       CacheInfo.CacheFlags flags = info.getFlags() ;
-
-	       if( storageInfo.isSetAccessLatency() ) {
-	           flags.put( "al" , storageInfo.getAccessLatency().toString() ) ;
-	       }
-
-	       if(storageInfo.isSetRetentionPolicy() ) {
-	    	   flags.put( "rp" , storageInfo.getRetentionPolicy().toString() ) ;
-	       }
-
-           info.writeCacheInfo( x ) ;
-
-       }catch(IOException ee ){
-           throw new
-           CacheException(107,"Problem in set(OSM)StorageInfo : "+ee ) ;
-        }
-
+          super.storeAlRpInLevel2(storageInfo, x);
 
        if( storageInfo.isSetBitFileId() ) {
 
@@ -98,31 +67,10 @@ public class       HpssInfoExtractor
        }
        return ;
     }
-    public StorageInfo getStorageInfo( String mp , PnfsId pnfsId )
-           throws CacheException {
-       try{
-          PnfsFile x = PnfsFile.getFileByPnfsId( mp , pnfsId ) ;
-          if( x == null ){
-             throw new
-             CacheException( 37 , "Not a valid PnfsId "+pnfsId ) ;
-          }else if( x.isDirectory() ){
-              return extractDirectory( mp , x ) ;
-          }else if( x.isFile() ){
-              return extractFile( mp , x ) ;
-          }else
-             throw new
-             CacheException( 34 , "Can't find file "+pnfsId ) ;
-       }catch(CacheException ce ){
-          throw ce ;
-       }catch(Exception e ){
-          e.printStackTrace();
-          throw new
-          CacheException( 33 , "unexpected : "+e ) ;
-       }
 
-    }
-    private HpssStorageInfo extractDirectory( String mp , PnfsFile x )
-            throws Exception {
+    @Override
+    protected StorageInfo extractDirectory( String mp , PnfsFile x )
+            throws CacheException {
 
            PnfsFile parentDir = null ;
            if( x.isDirectory() ){
@@ -203,10 +151,11 @@ public class       HpssInfoExtractor
            return info ;
     }
 
-    private StorageInfo extractFile( String mp , PnfsFile x )
-            throws Exception {
+    @Override
+    protected StorageInfo extractFile( String mp , PnfsFile x )
+            throws CacheException {
 
-        HpssStorageInfo info = null ;
+        StorageInfo info = null ;
         File level = x.getLevelFile(1) ;
         if( level.length() == 0 ){
            //
@@ -215,54 +164,20 @@ public class       HpssInfoExtractor
            //
            info = extractDirectory( mp , x ) ;
         }else{
-           BufferedReader br = null ;
-           try{
-              br = new BufferedReader(
-                      new FileReader( level ) ) ;
-              String line = br.readLine() ;
-              if( ( line == null ) ||  ( line.length() == 0 ) )
-                throw new
-                CacheException( 37 ,
-                "Level 1 content of "+x.getPnfsId()+" is invalid" ) ;
+             List<String> levelContent = super.readLines(level);
 
-              StringTokenizer st = new StringTokenizer( line ) ;
-              if( st.countTokens() < 3 )
-                throw new
-                CacheException( 38 ,
-                "Level 1 content of "+x.getPnfsId()+" is invalid(2)=["+line+"]" ) ;
+            assert !levelContent.isEmpty();
+
+            StringTokenizer st = new StringTokenizer( levelContent.get(0) ) ;
+            if (st.countTokens() < 3) {
+                throw new CacheException(38,
+                        "Level 1 content of " + x.getPnfsId() + " is invalid [" + levelContent.get(0) + "]");
+            }
 
               info =
                new HpssStorageInfo( st.nextToken() ,
                                    st.nextToken() ,
                                    st.nextToken()   ) ;
-
-           }finally{
-             try{ br.close() ; }catch(Exception ie ){}
-           }
-        }
-        info.setFileSize( x.length() ) ;
-        info.setIsNew( ( x.length() == 0 ) && ( x.getLevelFile(2).length() == 0 ) );
-        info.setIsStored( level.length() > 0 ) ;
-
-        // FIXME: HACK -  AccessLatency and RetentionPolicy stored as a flags
-        try {
- 	       CacheInfo cacheInfo   = new CacheInfo( x ) ;
- 	       CacheInfo.CacheFlags flags = cacheInfo.getFlags() ;
-
- 	       String al = flags.get("al");
- 	       if( al != null ) {
- 	    	  info.setAccessLatency( AccessLatency.getAccessLatency(al) );
- 	       }
-
- 	       String rp = flags.get("rp");
- 	       if(rp != null ) {
- 	    	  info.setRetentionPolicy(RetentionPolicy.getRetentionPolicy(rp) );
- 	       }
-
-
-        }catch(IOException ee ){
-            throw new
-            CacheException(107,"Problem in get(OSM)StorageInfo : "+ee ) ;
         }
 
         return info ;

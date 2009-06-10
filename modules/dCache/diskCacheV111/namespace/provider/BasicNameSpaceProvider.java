@@ -469,6 +469,29 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
         return ;
     }
 
+    /**
+     * HACK -  AccessLatency and RetentionPolicy stored as a flags
+     * FIXME: this information shouldn't be stored here.
+     * @param storageInfo
+     * @param pnfsFile
+     * @throws diskCacheV111.util.CacheException
+     */
+    private void getAlRp(StorageInfo storageInfo, CacheInfo cacheInfo)
+            throws CacheException {
+
+        CacheInfo.CacheFlags flags = cacheInfo.getFlags();
+
+        String al = flags.get("al");
+        if (al != null) {
+            storageInfo.setAccessLatency(AccessLatency.getAccessLatency(al));
+        }
+
+        String rp = flags.get("rp");
+        if (rp != null) {
+            storageInfo.setRetentionPolicy(RetentionPolicy.getRetentionPolicy(rp));
+        }
+    }
+
     public StorageInfo getStorageInfo(PnfsId pnfsId) throws Exception {
 
         _logNameSpace.debug("getStorageInfo : " + pnfsId);
@@ -489,8 +512,15 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
                     info.setKey("flag-" + entry.getKey(), entry.getValue());
                 }
 
-            } catch (Exception eee) {
-                _logNameSpace.error("Error adding bits (stickybit) to storageinfo : " + eee);
+                /*
+                 * new files do not have level2
+                 */
+                if( !info.isCreatedOnly() ) {
+                    getAlRp(info, cinfo);
+                }
+
+            } catch (IOException eee) {
+                _logNameSpace.error("Failed to read CacheInfo : " + eee.getMessage());
             }
 
             //

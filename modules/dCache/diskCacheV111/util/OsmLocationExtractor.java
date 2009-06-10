@@ -4,7 +4,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.StringTokenizer;
 
 
 public class OsmLocationExtractor implements HsmLocation {
@@ -22,56 +21,52 @@ public class OsmLocationExtractor implements HsmLocation {
 	}
 
 	/**
-	 *
-	 * @param location
+	 * Extract location {@link URI} from level map.
+	 * @param level map
 	 * @throws IllegalArgumentException if location is not an OSM location
 	 */
 	public OsmLocationExtractor(Map<Integer, String> levels) throws IllegalArgumentException {
 
 		String storageInfo = levels.get(1);
-		boolean isLegacy = false;
 		if(storageInfo == null ) {
 			throw new IllegalArgumentException("OSM uses level 1 only");
 		}
-
-
-        StringTokenizer st = new StringTokenizer( storageInfo ) ;
-        if( st.countTokens() < 3 ) {
-          throw new
-          IllegalArgumentException("Invalid content of Level 1 (3/4 fields expected):"  + storageInfo) ;
-        }
-
-        if( st.countTokens() > 4 ) {
-            //legacy staff in level-1
-            isLegacy = true;
-        }
-
-
-        StringBuilder sb = new StringBuilder("osm://");
-
-
-        String store = st.nextToken();
-        String group = st.nextToken();
-        String bfid = st.nextToken();
-        String instance  = st.hasMoreTokens() && !isLegacy ? st.nextToken() : "osm";
-
-        sb.append(instance).append("/?");
-        sb.append("store=").append(store).append("&");
-        sb.append("group=").append(group).append("&");
-        sb.append("bfid=").append(bfid);
-
-		try {
-			_uri = new URI(sb.toString());
-		} catch (URISyntaxException e) {
-			//should never happen, but nevertheless
-			throw new IllegalArgumentException("failed to generate URI from level: "  + storageInfo) ;
-		}
+                _uri = parseLevel(storageInfo);
 
 	}
 
 	public URI location() {
 		return _uri;
 	}
+
+    public static URI parseLevel(String storageInfo) throws IllegalArgumentException {
+
+        boolean isLegacy = false;
+        String[] st =  storageInfo.split(" \t");
+        if (st.length < 3) {
+            throw new IllegalArgumentException("Invalid content of Level 1 (3/4 fields expected):" + storageInfo);
+        }
+        if (st.length > 4) {
+            //legacy staff in level-1
+            isLegacy = true;
+        }
+        StringBuilder sb = new StringBuilder("osm://");
+        String store = st[0];
+        String group = st[1];
+        String bfid = st[2];
+        String instance = st.length > 3 && !isLegacy ? st[3] : "osm";
+        sb.append(instance).append("/?");
+        sb.append("store=").append(store).append("&");
+        sb.append("group=").append(group).append("&");
+        sb.append("bfid=").append(bfid);
+
+        try {
+            return new URI(sb.toString());
+        } catch (URISyntaxException e) {
+            //should never happen, but nevertheless
+            throw new IllegalArgumentException("failed to generate URI from level: " + storageInfo);
+        }
+    }
 
 	public Map<Integer, String> toLevels() {
 
