@@ -1687,7 +1687,8 @@ public abstract class AbstractFtpDoorV1
         } else {
             try {
 
-                if (_permissionHandler.canDeleteFile(_pnfs.getPnfsIdByPath(pnfsPath), getSubject(), _origin) != AccessType.ACCESS_ALLOWED) {
+                //if (_permissionHandler.canDeleteFile(_pnfs.getPnfsIdByPath(pnfsPath), getSubject(), _origin) != AccessType.ACCESS_ALLOWED) {
+                if (_permissionHandler.canDeleteFile(pnfsPath, getSubject(), _origin) != AccessType.ACCESS_ALLOWED) {
                     if(!setNextPwdRecord()) {
                         reply("553 Permission denied");
                         return;
@@ -2673,9 +2674,9 @@ public abstract class AbstractFtpDoorV1
                 }
             } else {
 
-                PnfsId pnfsId = _pnfs.getPnfsIdByPath(_transfer.path);
+                //PnfsId pnfsId = _pnfs.getPnfsIdByPath(_transfer.path);
                 try {
-                    if (_permissionHandler.canReadFile(pnfsId, getSubject(), _origin) != AccessType.ACCESS_ALLOWED) {
+                    if (_permissionHandler.canReadFile(_transfer.path, getSubject(), _origin) != AccessType.ACCESS_ALLOWED) {
                         if(setNextPwdRecord()) {
                             retrieve(file, offset, size,
                                      mode, xferMode,
@@ -3744,23 +3745,27 @@ public abstract class AbstractFtpDoorV1
     {
         StringBuilder mode = new StringBuilder();
         String path = file.getAbsolutePath();
-        PnfsId pnfsId = _pnfs.getPnfsIdByPath(path);
+        //PnfsId pnfsId = _pnfs.getPnfsIdByPath(path);
 
         if (file.isDirectory()) {
+        	long startTimeDir = System.currentTimeMillis(); //TIMING
             boolean canListDir =
-                _permissionHandler.canListDir(pnfsId, subject, _origin) == AccessType.ACCESS_ALLOWED;
+                _permissionHandler.canListDir(path, subject, _origin) == AccessType.ACCESS_ALLOWED;
             boolean canCreateFile =
-                _permissionHandler.canCreateFile(pnfsId, subject, _origin) == AccessType.ACCESS_ALLOWED;
+                _permissionHandler.canCreateFile(path, subject, _origin) == AccessType.ACCESS_ALLOWED;
             boolean canCreateDir =
-                _permissionHandler.canCreateDir(pnfsId, subject, _origin) == AccessType.ACCESS_ALLOWED;
+                _permissionHandler.canCreateDir(path, subject, _origin) == AccessType.ACCESS_ALLOWED;
+            debug("TIMING startTimeDir: (canListDir,canCreateFile, canCreateDir) done in (msec):"+(System.currentTimeMillis()-startTimeDir));//TIMING
             mode.append('d');
             mode.append(canListDir ? 'r' : '-');
             mode.append(canCreateFile || canCreateDir ? 'w' : '-');
             mode.append(canListDir ? 'x' : '-');
             mode.append("------");
         } else {
+        	long startTimeFile = System.currentTimeMillis(); //TIMING
             boolean canReadFile =
-                _permissionHandler.canReadFile(pnfsId, subject, _origin)== AccessType.ACCESS_ALLOWED;
+                _permissionHandler.canReadFile(path, subject, _origin)== AccessType.ACCESS_ALLOWED;
+            debug("TIMING startTimeFile: (canReadFile) done in (msec):"+(System.currentTimeMillis() - startTimeFile)); //TIMING
             mode.append('-');
             mode.append(canReadFile ? 'r' : '-');
             mode.append('-');
@@ -3914,11 +3919,14 @@ public abstract class AbstractFtpDoorV1
                 }
 
                 if (listLong){
+                	long startTime = System.currentTimeMillis(); //TIMING
                     Subject subject = getSubject();
                     for (File file: files) {
                         writer.append(ftpListLong(file, subject));
                         writer.append("\r\n");
                     }
+                    debug("TIMING: complete LIST done in (msec): " + (System.currentTimeMillis() - startTime)); //TIMING
+                    debug("TIMING: objects (files, dirs) listed: " + files.length); //TIMING
                 } else {
                     for (File file: files) {
                         writer.append(file.getName()).append("\r\n");

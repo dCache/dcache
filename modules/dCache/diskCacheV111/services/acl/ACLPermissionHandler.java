@@ -1,5 +1,6 @@
 package diskCacheV111.services.acl;
 
+import java.util.Arrays;
 import java.util.Properties;
 
 import org.apache.log4j.Logger;
@@ -18,6 +19,7 @@ import org.dcache.acl.matcher.AclNFSv4Matcher;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileMetaData;
+import diskCacheV111.util.FsPath;
 import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PnfsId;
@@ -70,24 +72,81 @@ public class ACLPermissionHandler extends AbstractPermissionHandler {
         return canReadWriteFile(pnfsId, subject, origin, false);
     }
 
+    public AccessType canReadFile(String pnfsPath, Subject subject, Origin origin) throws CacheException, ACLException {
+        PnfsId pnfsId = _pnfsHandler.getPnfsIdByPath(pnfsPath);
+        return canReadWriteFile(pnfsId, subject, origin, false);
+    }
+
     public AccessType canWriteFile(PnfsId pnfsId, Subject subject, Origin origin) throws CacheException, ACLException {
         return canReadWriteFile(pnfsId, subject, origin, true);
     }
 
+    public AccessType canWriteFile(String pnfsPath, Subject subject, Origin origin) throws CacheException, ACLException {
+        PnfsId pnfsId = _pnfsHandler.getPnfsIdByPath(pnfsPath);
+        return canReadWriteFile(pnfsId, subject, origin, true);
+    }
+
+   /**
+    * checks whether the user can create a sub-directory
+    * in this directory (given by its pnfsId: pnfsParentId)
+    */
     public AccessType canCreateDir(PnfsId pnfsParentId, Subject subject, Origin origin) throws CacheException, ACLException {
         return canCreate(pnfsParentId, subject, origin, Boolean.TRUE);
     }
 
+   /**
+    * checks whether the user can create a sub-directory
+    * in this directory (given by its pnfsPath, like /pnfs/sample.com/data/directory)
+    */
+    public AccessType canCreateDir(String pnfsPath, Subject subject, Origin origin) throws CacheException, ACLException {
+        PnfsId pnfsId = _pnfsHandler.getPnfsIdByPath(pnfsPath);
+        return canCreate(pnfsId, subject, origin, Boolean.TRUE);
+    }
+
+   /**
+    * checks whether the user can create a file
+    * in this directory (given by its pnfsId: pnfsParentId)
+    */
     public AccessType canCreateFile(PnfsId pnfsParentId, Subject subject, Origin origin) throws CacheException, ACLException {
         return canCreate(pnfsParentId, subject, origin, Boolean.FALSE);
     }
 
+    /**
+    * checks whether the user can create a file
+    * in this directory (given by its pnfsPath, like /pnfs/sample.com/data/directory)
+    */
+    public AccessType canCreateFile(String pnfsPath, Subject subject, Origin origin) throws CacheException, ACLException {
+        PnfsId pnfsId = _pnfsHandler.getPnfsIdByPath(pnfsPath);
+        return canCreate(pnfsId, subject, origin, Boolean.FALSE);
+    }
+
+    /**
+    * checks whether the user can delete directory given by its pnfsId
+    */
     public AccessType canDeleteDir(PnfsId pnfsId, Subject subject, Origin origin) throws CacheException, ACLException {
         return canDelete(pnfsId, subject, origin, Boolean.TRUE);
     }
 
+    /**
+     * checks whether the user can delete directory given by its pnfsPath
+     */
+     public AccessType canDeleteDir(String pnfsPath, Subject subject, Origin origin) throws CacheException, ACLException {
+        return canDelete(pnfsPath, subject, origin, Boolean.TRUE);
+     }
+
+    /**
+    * checks whether the user can delete file given by its pnfsId
+    */
     public AccessType canDeleteFile(PnfsId pnfsId, Subject subject, Origin origin) throws CacheException, ACLException {
         return canDelete(pnfsId, subject, origin, Boolean.FALSE);
+    }
+
+    /**
+    * checks whether the user can delete this file
+    * given by its pnfsPath (like /pnfs/sample.com/data/file)
+    */
+    public AccessType canDeleteFile(String pnfsPath, Subject subject, Origin origin) throws CacheException, ACLException {
+        return canDelete(pnfsPath, subject, origin, Boolean.FALSE);
     }
 
     public AccessType canListDir(PnfsId pnfsId, Subject subject, Origin origin) throws CacheException, ACLException {
@@ -112,11 +171,44 @@ public class ACLPermissionHandler extends AbstractPermissionHandler {
         return res;
     }
 
+    /**
+    * checks whether the user can list this directory (given by its pnfsPath,
+    * like /pnfs/sample.com/data/directory)
+    */
+    public AccessType canListDir(String pnfsPath, Subject subject, Origin origin) throws CacheException, ACLException {
+        final String OPERATION = "ACLPermissionHandler.canListDir ";
+        if ( _logger.isDebugEnabled() )
+            _logger.debug(OPERATION + args2String(pnfsPath, subject, origin));
+
+        final FileMetaData metadata = _metadataSource.getMetaData(pnfsPath);
+        if ( _logger.isDebugEnabled() )
+            _logger.debug("Directory Metadata: " + metadata.toString());
+
+        if ( metadata.isDirectory() == false )
+            throw new NotDirCacheException(pnfsPath);
+
+        PnfsId pnfsId = _pnfsHandler.getPnfsIdByPath(pnfsPath);
+
+        Boolean allowed = AclNFSv4Matcher.isAllowed(AclMapper.getPermission(subject, origin,
+                new Owner(metadata.getUid(), metadata.getGid()), AclHandler.getACL(pnfsId.toString())), Action.READDIR);
+
+        AccessType res = allowed == null ? AccessType.ACCESS_UNDEFINED : (allowed ? AccessType.ACCESS_ALLOWED : AccessType.ACCESS_DENIED);
+        if ( _logger.isDebugEnabled() )
+            _logger.debug(OPERATION + res);
+
+        return res;
+    }
+
     public AccessType canGetAttributes(PnfsId pnfsId, Subject subject, Origin origin, FileAttribute attribute) throws CacheException, ACLException {
         return canGetSetAttributes(pnfsId, subject, origin, attribute, true);
     }
 
     public AccessType canSetAttributes(PnfsId pnfsId, Subject subject, Origin origin, FileAttribute attribute) throws CacheException, ACLException {
+        return canGetSetAttributes(pnfsId, subject, origin, attribute, false);
+    }
+
+    public AccessType canSetAttributes(String pnfsPath, Subject subject, Origin origin, FileAttribute attribute) throws CacheException, ACLException {
+        PnfsId pnfsId = _pnfsHandler.getPnfsIdByPath(pnfsPath);
         return canGetSetAttributes(pnfsId, subject, origin, attribute, false);
     }
 
@@ -147,12 +239,14 @@ public class ACLPermissionHandler extends AbstractPermissionHandler {
     }
 
     /**
+    * This method asks for permission to create an object (file or sub-directory)
+    * in this directory (given by its pnfsId: pnfsParentId).
     * @param pnfsParentId
     *            PNFS ID of parent directory
     * @param subject
     * @param origin
     * @param isDir
-    *            TRUE if created directory, otherwise FALSE
+    *            TRUE if object to be created is a sub-directory, otherwise FALSE
     * @return AccessType
     * @throws CacheException
     * @throws ACLException
@@ -179,6 +273,19 @@ public class ACLPermissionHandler extends AbstractPermissionHandler {
         return res;
     }
 
+    /**
+    * This method asks for permission to delete this object (file or sub-directory)
+    * given by its pnfsId
+    * @param pnfsId
+    *            PNFS ID of the object to be deleted
+    * @param subject
+    * @param origin
+    * @param isDir
+    *            TRUE if the object to be deleted is a directory, otherwise FALSE
+    * @return AccessType
+    * @throws CacheException
+    * @throws ACLException
+    */
     private AccessType canDelete(PnfsId pnfsId, Subject subject, Origin origin, Boolean isDir) throws CacheException, ACLException {
         final String OPERATION = "ACLPermissionHandler.canDelete" + (isDir ? "Dir " : "File ");
         if ( _logger.isDebugEnabled() )
@@ -203,6 +310,61 @@ public class ACLPermissionHandler extends AbstractPermissionHandler {
 
         } else if ( metadata.isRegularFile() == false )
             throw new NotFileCacheException(pnfsId.toString());
+
+        Boolean allowed = AclNFSv4Matcher.isAllowed(AclMapper.getPermission(subject, origin, new Owner(metadataParent.getUid(), metadataParent.getGid()),
+                AclHandler.getACL(pnfsParentId.toString())), AclMapper.getPermission(subject, origin, new Owner(metadata.getUid(), metadata.getGid()),
+                AclHandler.getACL(pnfsId.toString())), Action.REMOVE, isDir);
+
+        AccessType res = allowed == null ? AccessType.ACCESS_UNDEFINED : (allowed ? AccessType.ACCESS_ALLOWED : AccessType.ACCESS_DENIED);
+        if ( _logger.isDebugEnabled() )
+            _logger.debug(OPERATION + res);
+
+        return res;
+    }
+
+   /**
+    * This method asks for permission to delete this object (file or sub-directory)
+    * given by its pnfsPath
+    * @param pnfsPath
+    *            PNFS PATH of the object to be deleted
+    * @param subject
+    * @param origin
+    * @param isDir
+    *            TRUE if the object to be deleted is a directory, otherwise FALSE
+    * @return AccessType
+    * @throws CacheException
+    * @throws ACLException
+    */
+    private AccessType canDelete(String pnfsPath, Subject subject, Origin origin, Boolean isDir) throws CacheException, ACLException {
+        final String OPERATION = "ACLPermissionHandler.canDelete" + (isDir ? "Dir " : "File ");
+        if ( _logger.isDebugEnabled() )
+            _logger.debug(OPERATION + args2String(pnfsPath, subject, origin));
+
+        FsPath parent_path = new FsPath(pnfsPath);
+        // go one level up
+        parent_path.add("..");
+
+        String parent = parent_path.toString();
+        final FileMetaData metadataParent = _metadataSource.getMetaData(parent);
+        if ( _logger.isDebugEnabled() )
+            _logger.debug("Parent Metadata: " + metadataParent.toString());
+
+        if ( metadataParent.isDirectory() == false )
+            throw new NotDirCacheException(parent);
+
+        final FileMetaData metadata = _metadataSource.getMetaData(pnfsPath);
+        if ( _logger.isDebugEnabled() )
+            _logger.debug("File Metadata: " + metadata.toString());
+
+        if ( isDir ) {
+            if ( metadata.isDirectory() == false )
+                throw new NotDirCacheException(pnfsPath);
+
+        } else if ( metadata.isRegularFile() == false )
+            throw new NotFileCacheException(pnfsPath);
+
+        PnfsId pnfsParentId = _pnfsHandler.getPnfsIdByPath(parent);
+        PnfsId pnfsId = _pnfsHandler.getPnfsIdByPath(pnfsPath);
 
         Boolean allowed = AclNFSv4Matcher.isAllowed(AclMapper.getPermission(subject, origin, new Owner(metadataParent.getUid(), metadataParent.getGid()),
                 AclHandler.getACL(pnfsParentId.toString())), AclMapper.getPermission(subject, origin, new Owner(metadata.getUid(), metadata.getGid()),

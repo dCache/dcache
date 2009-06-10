@@ -1550,8 +1550,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             FileMetaData meta = _getFileMetaData.getMetaData() ;
 
             try {
-                if (_permissionHandler.canSetAttributes(_pnfsId, _subject, _origin, FileAttribute.FATTR4_MODE) == AccessType.ACCESS_ALLOWED) {
-
+                //if (_permissionHandler.canSetAttributes(_pnfsId, _subject, _origin, FileAttribute.FATTR4_MODE) == AccessType.ACCESS_ALLOWED) {
+                if (_permissionHandler.canSetAttributes(_path, _subject, _origin, FileAttribute.FATTR4_MODE) == AccessType.ACCESS_ALLOWED) {
                 meta.setUserPermissions( new FileMetaData.Permissions ( (_permission >> 6 ) & 0x7 ) ) ;
                 meta.setGroupPermissions(new FileMetaData.Permissions ( (_permission >> 3 ) & 0x7 )) ;
                 meta.setWorldPermissions( new FileMetaData.Permissions( _permission  & 0x7 ) ) ;
@@ -1609,7 +1609,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             FileMetaData meta = _getFileMetaData.getMetaData() ;
 
             try {
-                if (_permissionHandler.canSetAttributes(_pnfsId, _subject, _origin, FileAttribute.FATTR4_OWNER) == AccessType.ACCESS_ALLOWED) {
+                //if (_permissionHandler.canSetAttributes(_pnfsId, _subject, _origin, FileAttribute.FATTR4_OWNER) == AccessType.ACCESS_ALLOWED) {
+                if (_permissionHandler.canSetAttributes(_path, _subject, _origin, FileAttribute.FATTR4_OWNER) == AccessType.ACCESS_ALLOWED) {
                 if( _owner >= 0 ) {
                     meta.setUid( _owner );
                 }
@@ -1666,7 +1667,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             FileMetaData meta = _getFileMetaData.getMetaData() ;
 
             try {
-                if (_permissionHandler.canSetAttributes(_pnfsId, _subject, _origin, FileAttribute.FATTR4_OWNER_GROUP) == AccessType.ACCESS_ALLOWED) {
+                //if (_permissionHandler.canSetAttributes(_pnfsId, _subject, _origin, FileAttribute.FATTR4_OWNER_GROUP) == AccessType.ACCESS_ALLOWED) {
+                if (_permissionHandler.canSetAttributes(_path, _subject, _origin, FileAttribute.FATTR4_OWNER_GROUP) == AccessType.ACCESS_ALLOWED) {
                 if( _group >= 0 ) {
                     meta.setGid( _group );
                 }
@@ -2341,7 +2343,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
                if ( _isUrl || _authorizationRequired ) {
 
                     try {
-                        if (!_ioMode.equals("r") || _permissionHandler.canReadFile(_pnfsId, _subject, _origin) != AccessType.ACCESS_ALLOWED) {
+                        if (!_ioMode.equals("r") || _permissionHandler.canReadFile(_path, _subject, _origin) != AccessType.ACCESS_ALLOWED) {
                     sendReply( "pnfsGetStorageInfoArrived", 2 ,
                     "Permission denied" ) ;
                     removeUs() ;

@@ -31,7 +31,7 @@ public abstract class AbstractPermissionHandler implements PermissionHandler {
 
     protected FileMetaDataSource _metadataSource;
 
-    private PnfsHandler _pnfsHandler;
+    protected final PnfsHandler _pnfsHandler;
 
     protected AbstractPermissionHandler(CellAdapter cell) throws ACLException {
         if (cell == null)
@@ -117,10 +117,23 @@ public abstract class AbstractPermissionHandler implements PermissionHandler {
         return sb.toString();
     }
 
+    protected String args2String(String pnfsPath, Subject subject, Origin origin) {
+        StringBuilder sb = new StringBuilder("Args:\n");
+        sb.append("pnfsPath: ").append(pnfsPath).append("\n");
+        sb.append("subject: ").append(subject).append("\n");
+        sb.append("origin: ").append(origin).append("\n");
+        return sb.toString();
+    }
+
     protected String args2String(PnfsId pnfsId, Subject subject, Origin origin, FileAttribute attribute) {
         StringBuilder sb = new StringBuilder(args2String(pnfsId, subject, origin));
         sb.append("attributes: ").append(attribute.toString()).append("\n");
         return sb.toString();
     }
 
+    protected String args2String(String pnfsPath, Subject subject, Origin origin, FileAttribute attribute) {
+        StringBuilder sb = new StringBuilder(args2String(pnfsPath, subject, origin));
+        sb.append("attributes: ").append(attribute.toString()).append("\n");
+        return sb.toString();
+    }
 }

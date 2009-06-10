@@ -28,7 +28,7 @@ import dmg.cells.nucleus.CellAdapter;
  * an operation is allowed or denied then UNIX permissions are used.
  *
  *
- * @author David Melkumyan
+ * @author David Melkumyan. Modified by Irina Kozlova
  *
  */
 public class DelegatingPermissionHandler implements PermissionHandler {
@@ -88,12 +88,44 @@ public class DelegatingPermissionHandler implements PermissionHandler {
         return AccessType.ACCESS_UNDEFINED;
     }
 
+   /**
+    * checks whether the user can create sub-directory
+    * in this directory (given by its pnfsPath, like /pnfs/sample.com/data/directory)
+    */
+   public AccessType canCreateDir(String pnfsPath, Subject subject, Origin origin) throws CacheException, ACLException {
+        for (PermissionHandler permhandler : permHandlers) {
+            if (_logger.isDebugEnabled())
+                _logger.debug("Using permission handler: " + permhandler.getClass().getSimpleName());
+
+            AccessType res = permhandler.canCreateDir(pnfsPath, subject, origin);
+            if (res != null && res != AccessType.ACCESS_UNDEFINED)
+                return res;
+        }
+        return AccessType.ACCESS_UNDEFINED;
+    }
+
     public AccessType canCreateFile(PnfsId parentPnfsId, Subject subject, Origin origin) throws CacheException, ACLException {
         for (PermissionHandler permhandler : permHandlers) {
             if (_logger.isDebugEnabled())
                 _logger.debug("Using permission handler: " + permhandler.getClass().getSimpleName());
 
             AccessType res = permhandler.canCreateFile(parentPnfsId, subject, origin);
+            if (res != null && res != AccessType.ACCESS_UNDEFINED)
+                return res;
+        }
+        return AccessType.ACCESS_UNDEFINED;
+    }
+
+    /**
+    * checks whether the user can create file
+    * in this directory (given by its pnfsPath, like /pnfs/sample.com/data/directory)
+    */
+    public AccessType canCreateFile(String pnfsPath, Subject subject, Origin origin) throws CacheException, ACLException {
+        for (PermissionHandler permhandler : permHandlers) {
+            if (_logger.isDebugEnabled())
+                _logger.debug("Using permission handler: " + permhandler.getClass().getSimpleName());
+
+            AccessType res = permhandler.canCreateFile(pnfsPath, subject, origin);
             if (res != null && res != AccessType.ACCESS_UNDEFINED)
                 return res;
         }
@@ -112,12 +144,40 @@ public class DelegatingPermissionHandler implements PermissionHandler {
         return AccessType.ACCESS_UNDEFINED;
     }
 
+    public AccessType canDeleteDir(String pnfsPath, Subject subject, Origin origin) throws CacheException, ACLException {
+        for (PermissionHandler permhandler : permHandlers) {
+            if (_logger.isDebugEnabled())
+                _logger.debug("Using permission handler: " + permhandler.getClass().getSimpleName());
+
+            AccessType res = permhandler.canDeleteDir(pnfsPath, subject, origin);
+            if (res != null && res != AccessType.ACCESS_UNDEFINED)
+                return res;
+        }
+        return AccessType.ACCESS_UNDEFINED;
+    }
+
     public AccessType canDeleteFile(PnfsId pnfsId, Subject subject, Origin origin) throws CacheException, ACLException {
         for (PermissionHandler permhandler : permHandlers) {
             if (_logger.isDebugEnabled())
                 _logger.debug("Using permission handler: " + permhandler.getClass().getSimpleName());
 
             AccessType res = permhandler.canDeleteFile(pnfsId, subject, origin);
+            if (res != null && res != AccessType.ACCESS_UNDEFINED)
+                return res;
+        }
+        return AccessType.ACCESS_UNDEFINED;
+    }
+
+   /**
+    * checks whether the user can delete this file
+    * given by its pnfsPath (like /pnfs/sample.com/data/file)
+    */
+    public AccessType canDeleteFile(String pnfsPath, Subject subject, Origin origin) throws CacheException, ACLException {
+        for (PermissionHandler permhandler : permHandlers) {
+            if (_logger.isDebugEnabled())
+                _logger.debug("Using permission handler: " + permhandler.getClass().getSimpleName());
+
+            AccessType res = permhandler.canDeleteFile(pnfsPath, subject, origin);
             if (res != null && res != AccessType.ACCESS_UNDEFINED)
                 return res;
         }
@@ -148,12 +208,44 @@ public class DelegatingPermissionHandler implements PermissionHandler {
         return AccessType.ACCESS_UNDEFINED;
     }
 
+   /**
+    * checks whether the user can list this directory (given by its pnfsPath,
+    * like /pnfs/sample.com/data/directory)
+    */
+    public AccessType canListDir(String pnfsPath, Subject subject, Origin origin) throws CacheException, ACLException {
+        for (PermissionHandler permhandler : permHandlers) {
+            if (_logger.isDebugEnabled())
+                _logger.debug("Using permission handler: " + permhandler.getClass().getSimpleName());
+
+            AccessType res = permhandler.canListDir(pnfsPath, subject, origin);
+            if (res != null && res != AccessType.ACCESS_UNDEFINED)
+                return res;
+        }
+        return AccessType.ACCESS_UNDEFINED;
+    }
+
     public AccessType canReadFile(PnfsId pnfsId, Subject subject, Origin origin) throws CacheException, ACLException {
         for (PermissionHandler permhandler : permHandlers) {
             if (_logger.isDebugEnabled())
                 _logger.debug("Using permission handler: " + permhandler.getClass().getSimpleName());
 
             AccessType res = permhandler.canReadFile(pnfsId, subject, origin);
+            if (res != null && res != AccessType.ACCESS_UNDEFINED)
+                return res;
+        }
+        return AccessType.ACCESS_UNDEFINED;
+    }
+
+   /**
+    * checks whether the user can read this file (given by its pnfsPath,
+    * like /pnfs/sample.com/data/file)
+    */
+    public AccessType canReadFile(String pnfsPath, Subject subject, Origin origin) throws CacheException, ACLException {
+        for (PermissionHandler permhandler : permHandlers) {
+            if (_logger.isDebugEnabled())
+                _logger.debug("Using permission handler: " + permhandler.getClass().getSimpleName());
+
+            AccessType res = permhandler.canReadFile(pnfsPath, subject, origin);
             if (res != null && res != AccessType.ACCESS_UNDEFINED)
                 return res;
         }
@@ -172,12 +264,39 @@ public class DelegatingPermissionHandler implements PermissionHandler {
         return AccessType.ACCESS_UNDEFINED;
     }
 
+    public AccessType canSetAttributes(String pnfsPath, Subject subject, Origin userOrigin, FileAttribute attribute) throws CacheException, ACLException {
+        for (PermissionHandler permhandler : permHandlers) {
+            if (_logger.isDebugEnabled())
+                _logger.debug("Using permission handler: " + permhandler.getClass().getSimpleName());
+
+            AccessType res = permhandler.canSetAttributes(pnfsPath, subject, userOrigin, attribute);
+            if (res != null && res != AccessType.ACCESS_UNDEFINED)
+                return res;
+        }
+        return AccessType.ACCESS_UNDEFINED;
+    }
+
     public AccessType canWriteFile(PnfsId pnfsId, Subject subject, Origin origin) throws CacheException, ACLException {
         for (PermissionHandler permhandler : permHandlers) {
             if (_logger.isDebugEnabled())
                 _logger.debug("Using permission handler: " + permhandler.getClass().getSimpleName());
 
             AccessType res = permhandler.canWriteFile(pnfsId, subject, origin);
+            if (res != null && res != AccessType.ACCESS_UNDEFINED)
+                return res;
+        }
+        return AccessType.ACCESS_UNDEFINED;
+    }
+
+   /**
+    * checks whether the user can write this file (pnfsPath)
+    */
+    public AccessType canWriteFile(String pnfsPath, Subject subject, Origin origin) throws CacheException, ACLException {
+        for (PermissionHandler permhandler : permHandlers) {
+            if (_logger.isDebugEnabled())
+                _logger.debug("Using permission handler: " + permhandler.getClass().getSimpleName());
+
+            AccessType res = permhandler.canWriteFile(pnfsPath, subject, origin);
             if (res != null && res != AccessType.ACCESS_UNDEFINED)
                 return res;
         }
