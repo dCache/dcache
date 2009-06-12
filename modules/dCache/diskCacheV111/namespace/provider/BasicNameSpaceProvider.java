@@ -907,28 +907,14 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
             metaFile.createNewFile() ;
         }catch(IOException ioe) {
             /*
-             *  check for new permissions and re-throw exception
-             *        if it not set.
+             *  check for new permissions and log if not set.
              */
 
             FileMetaData actualMetaData = getFileMetaData(mp, pnfsId);
             if (!actualMetaData.equalsPermissions(newMetaData)) {
-                /* There is a race condition in PNFS somewhere. This
-                 * race sometimes means that the new permissions are
-                 * not always vissible right away.
-                 */
-                Thread.sleep(1000);
-
-                actualMetaData = getFileMetaData(mp, pnfsId);
-                if (!actualMetaData.equalsPermissions(newMetaData)) {
-                    _logNameSpace.error("failed to apply new attributes to " + pnfsId);
-                    _logNameSpace.error("    expected: " + newMetaData);
-                    _logNameSpace.error("    actual  : " + actualMetaData);
-                    throw ioe;
-                }
+                _logNameSpace.warn("IO exception [" + ioe.getMessage() + "] in setFileMetaData [" + pnfsId + "]. This is likely due to a known race condition in PNFS.");
             }
         }
-
     }
 
     /*
