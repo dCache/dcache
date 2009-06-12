@@ -459,9 +459,13 @@ public class CellNucleus implements Runnable, ThreadFactory {
         for (Thread thread: threads) {
             if (thread.isAlive()) {
                 long wait = deadline - System.currentTimeMillis();
-                if (wait <= 0)
+                if (wait <= 0) {
                     return false;
+                }
                 thread.join(wait);
+                if (thread.isAlive()) {
+                    return false;
+                }
             }
         }
         return true;
