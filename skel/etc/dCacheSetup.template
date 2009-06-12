@@ -902,7 +902,38 @@ cacheInfo=companion
 #srmDbUser=srmdcache
 #srmDbPassword=srmdcache
 #srmDbLogEnabled=false
+#
+# srmls settings follow 
+#
+# The following variable turnes of asynchronous srmls 
+# behavior. SrmLs is executed in non-blocking mode on a  
+# thread queue in the server and client is given request token. 
+# Client can query status  of request using this token. Async.
+# srmls avoids holding connections to the server while srmls is 
+# executed.
+#
 #srmAsynchronousLs=false
+#
+# Number of entries allowed to be returnes in a single srmls request
+# (e.g. number of files in directory)
+#
+#srmLsMaxNumberOfEntries=1000
+#
+# Maximum recursion depth
+#
+#srmLsMaxNumberOfLevels=100
+#
+# Srmls schedule parameters:
+#
+#srmLsRequestThreadQueueSize=1000
+#srmLsRequestThreadPoolSize=30
+#srmLsRequestMaxWaitingRequests=1000
+#srmLsRequestReadyQueueSize= 1000
+#srmLsRequestMaxReadyRequests=60
+#srmLsRequestMaxNumberOfRetries=10 
+#srmLsRequestRetryTimeout=60000
+#srmLsRequestMaxNumberOfRunningBySameOwner=100
+#srmLsRequestLifetime=3600000
 #
 #   The following variable enables logging of the history of the SRM
 #   request transitions in the database so that it can be examined
