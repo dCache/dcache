@@ -63,6 +63,7 @@
     <!--=======================================================================
             import component specific build modules here
     -=======================================================================-->
+    <import file="modules-builds/common-build.xml"/>
     <import file="modules-builds/cells-build.xml"/>
     <import file="modules-builds/gplazma-build.xml"/>
     <import file="modules-builds/dcache-core-build.xml"/>
@@ -72,13 +73,16 @@
     <import file="modules-builds/srmclient-build.xml" />
     <import file="modules-builds/junit-build.xml" />
 
+    <target name="common" depends="-prepare,-dcache-common.bin"
+                  description="Compile common package and create dcache-common.jar"/>
+
     <target name="cells" depends="-prepare,-cells.bin"
                   description="Compile cells package and create cells.jar"/>
 
     <target name="gplazma" depends="cells,-gplazma.bin"
                   description="Compile gPlazma package and create gplazma.jar"/>
 
-    <target name="srm" depends="gplazma,-srm.bin"
+    <target name="srm" depends="common,gplazma,-srm.bin"
                   description="Compile srm package and create srm.jar and srm-tomcat.jar" />
 
     <target name="dcache" depends="srm,-dcache.bin,-gen.bg.image,-xrootd-tokenauthz.bin,-compile.junit"
@@ -224,6 +228,8 @@
        <echo message="     clean             : Remove intermidiet files (.class )" />
        <echo message="" />
        <echo message="     cleanall          : Remove all generated files." />
+       <echo message="" />
+       <echo message="     common            : Compile common package" />
        <echo message="" />
        <echo message="     cells             : Compile cells package" />
        <echo message="" />

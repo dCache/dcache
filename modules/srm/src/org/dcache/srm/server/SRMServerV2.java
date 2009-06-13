@@ -165,6 +165,7 @@ import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.request.RequestCredential;
 import java.util.Collection;
 import org.gridforum.jgss.ExtendedGSSContext;
+import org.dcache.commons.stats.RequestCounters;
 
 
 public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
@@ -175,6 +176,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
     private SrmAuthorizer srmAuth = null;
     org.dcache.srm.util.Configuration configuration;
     private AbstractStorageElement storage;
+    private final RequestCounters<Class> srmServerCounters;
     
     public SRMServerV2() throws java.rmi.RemoteException{
     	JDC.setSchedulerContext("SRMServerV2");
@@ -210,18 +212,22 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
             // Set up the authorization service
             srmAuth = new SrmAuthorizer(srmConn);
             storage = srmConn.getSrm().getConfiguration().getStorage();
+            srmServerCounters = srmConn.getSrm().getSrmServerV2Counters();
+
         } catch ( java.rmi.RemoteException re) { throw re; } catch ( Exception e) {
             throw new java.rmi.RemoteException("exception",e);
         }
     }
     
     private Object handleRequest(String requestName, Object request)  throws RemoteException {
+        Class requestClass = request.getClass();
+        //count requests of each type
+        srmServerCounters.incrementRequests(requestClass);
         String capitalizedRequestName =
                 Character.toUpperCase(requestName.charAt(0))+
                 requestName.substring(1);
         try {
             JDC.createSession("v2:"+requestName+":");
-            Class requestClass = request.getClass();
             log.debug("Entering SRMServerV2."+requestName+"()");
             String authorizationID  = null;
             try {

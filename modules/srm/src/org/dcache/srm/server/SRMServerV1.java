@@ -15,12 +15,13 @@ import java.util.*;
 
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMUser;
-import org.dcache.srm.server.*;
+import org.dcache.commons.stats.*;
 import org.dcache.srm.util.JDC;
 import org.dcache.srm.client.ConvertUtil;
 import org.dcache.srm.client.axis.*;
 import java.util.Collection;
 import org.gridforum.jgss.ExtendedGSSContext;
+import org.dcache.commons.stats.RequestCounters;
 
 
 public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
@@ -28,6 +29,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
    public Logger log;
    private SrmDCacheConnector srmConn;
    private SrmAuthorizer srmAuth = null;
+   private final RequestCounters<String> srmServerCounters;
     
     public SRMServerV1() throws java.rmi.RemoteException {
        try
@@ -62,6 +64,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
              log.info(" initialize() got connector ="+srmConn);
              // Set up the authorization service
              srmAuth = new SrmAuthorizer(srmConn);   
+             srmServerCounters = srmConn.getSrm().getSrmServerV1Counters();
        }
        catch ( java.rmi.RemoteException re) { throw re; }
        catch ( Exception e) {
@@ -69,10 +72,19 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
        }
         
     }
+
+      /**
+       * increment particular request type count
+       */
+
+    private void incrementRequest(String operation) {
+      srmServerCounters.incrementRequests(operation);
+    }
         
     public org.dcache.srm.client.axis.RequestStatus put(java.lang.String[] arg0, 
             java.lang.String[] arg1, long[] arg2, boolean[] arg3, java.lang.String[] arg4)
             throws java.rmi.RemoteException {
+      incrementRequest("put");
       org.dcache.srm.server.UserCredential userCred = null;
       SRMUser user = null;
       org.dcache.srm.request.RequestCredential requestCredential = null;
@@ -106,6 +118,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
     }
 
     public org.dcache.srm.client.axis.RequestStatus get(java.lang.String[] arg0, java.lang.String[] arg1) throws java.rmi.RemoteException {
+      incrementRequest("get");
       org.dcache.srm.server.UserCredential userCred = null;
       SRMUser user = null;
       org.dcache.srm.request.RequestCredential requestCredential = null;
@@ -142,6 +155,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
     }
 
     public org.dcache.srm.client.axis.RequestStatus copy(java.lang.String[] arg0, java.lang.String[] arg1, boolean[] arg2) throws java.rmi.RemoteException {
+      incrementRequest("copy");
       org.dcache.srm.server.UserCredential userCred = null;
       SRMUser user = null;
       org.dcache.srm.request.RequestCredential requestCredential = null;
@@ -179,6 +193,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
     }
 
     public boolean ping() throws java.rmi.RemoteException {
+      incrementRequest("ping");
       org.dcache.srm.server.UserCredential userCred = null;
       SRMUser user = null;
       org.dcache.srm.request.RequestCredential requestCredential = null;
@@ -200,6 +215,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
     }
 
     public org.dcache.srm.client.axis.RequestStatus pin(java.lang.String[] arg0) throws java.rmi.RemoteException {
+      incrementRequest("pin");
       org.dcache.srm.server.UserCredential userCred = null;
       SRMUser user = null;
       org.dcache.srm.request.RequestCredential requestCredential = null;
@@ -222,6 +238,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
     }
 
     public org.dcache.srm.client.axis.RequestStatus unPin(java.lang.String[] arg0, int arg1) throws java.rmi.RemoteException {
+      incrementRequest("unPin");
       org.dcache.srm.server.UserCredential userCred = null;
       SRMUser user = null;
       org.dcache.srm.request.RequestCredential requestCredential = null;
@@ -244,6 +261,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
     }
 
     public org.dcache.srm.client.axis.RequestStatus setFileStatus(int arg0, int arg1, java.lang.String arg2) throws java.rmi.RemoteException {
+      incrementRequest("setFileStatus");
       org.dcache.srm.server.UserCredential userCred = null;
       SRMUser user = null;
       org.dcache.srm.request.RequestCredential requestCredential = null;
@@ -276,6 +294,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
     }
 
     public org.dcache.srm.client.axis.RequestStatus getRequestStatus(int arg0) throws java.rmi.RemoteException {
+      incrementRequest("getRequestStatus");
       org.dcache.srm.server.UserCredential userCred = null;
       SRMUser user = null;
       org.dcache.srm.request.RequestCredential requestCredential = null;
@@ -310,6 +329,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
     public org.dcache.srm.client.axis.FileMetaData[] getFileMetaData(
     java.lang.String[] arg0) throws java.rmi.RemoteException {
               log.debug("Entering ISRMImpl.getFileMetaData");
+      incrementRequest("getFileMetaData");
       
       org.dcache.srm.server.UserCredential userCred = null;
       SRMUser user = null;
@@ -346,6 +366,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
     }
 
     public org.dcache.srm.client.axis.RequestStatus mkPermanent(java.lang.String[] arg0) throws java.rmi.RemoteException {
+      incrementRequest("mkPermanent");
       org.dcache.srm.server.UserCredential userCred = null;
       SRMUser user = null;
       org.dcache.srm.request.RequestCredential requestCredential = null;
@@ -378,6 +399,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
     }
 
     public org.dcache.srm.client.axis.RequestStatus getEstGetTime(java.lang.String[] arg0, java.lang.String[] arg1) throws java.rmi.RemoteException {
+      incrementRequest("getEstGetTime");
       org.dcache.srm.server.UserCredential userCred = null;
       SRMUser user = null;
       org.dcache.srm.request.RequestCredential requestCredential = null;
@@ -410,6 +432,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
     }
 
     public org.dcache.srm.client.axis.RequestStatus getEstPutTime(java.lang.String[] arg0, java.lang.String[] arg1, long[] arg2, boolean[] arg3, java.lang.String[] arg4) throws java.rmi.RemoteException {
+      incrementRequest("getEstPutTime");
       org.dcache.srm.server.UserCredential userCred = null;
       SRMUser user = null;
       org.dcache.srm.request.RequestCredential requestCredential = null;
@@ -442,6 +465,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
     }
 
     public void advisoryDelete(java.lang.String[] arg0) throws java.rmi.RemoteException {
+      incrementRequest("advisoryDelete");
       org.dcache.srm.server.UserCredential userCred = null;
       SRMUser user = null;
       org.dcache.srm.request.RequestCredential requestCredential = null;
@@ -470,6 +494,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
     }
 
     public java.lang.String[] getProtocols() throws java.rmi.RemoteException {
+      incrementRequest("getProtocols");
       org.dcache.srm.server.UserCredential userCred = null;
       SRMUser user = null;
       org.dcache.srm.request.RequestCredential requestCredential = null;

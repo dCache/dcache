@@ -183,6 +183,7 @@ import diskCacheV111.util.AccessLatency;
 import diskCacheV111.services.space.message.GetSpaceMetaData;
 import diskCacheV111.services.space.message.GetSpaceTokens;
 import org.dcache.auth.persistence.AuthRecordPersistenceManager;
+import org.dcache.commons.stats.RequestCounters;
 
 
 import org.ietf.jgss.GSSCredential;
@@ -714,6 +715,8 @@ public class Storage
         config.setClientDNSLookup(isOptionSetToTrueOrYes("client-dns-lookup",
         config.isClientDNSLookup())); // false by default
 
+        config.setRrdDirectory(getOption("rrdDirectory",config.getRrdDirectory()));
+        
         say("scheduler parameter read, starting");
         this.useInterpreter(true);
         this.getNucleus().export();
@@ -810,6 +813,7 @@ public class Storage
                 "srmInstance was set, about to exit Storage constructor.";
         say(tmsg);
         System.out.println(new java.util.Date() + " " + tmsg);
+
     }
 
     private String getOption(String value) {
@@ -1391,6 +1395,14 @@ public class Storage
             return t.toString();
          }
       }
+
+      public String hh_print_srm_counters= "# prints the counters for all srm operations";
+      public String ac_print_srm_counters_$_0(Args args) {
+            return srm.getSrmServerV1Counters().toString()+
+                    '\n'+
+                   srm.getSrmServerV2Counters().toString();
+      }
+
         /*
         public String fh_rc_running_ls= " Syntax: rc running ls "+
          "[-get] [-put] [-copy] [-l]"+

@@ -18,6 +18,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.log4j.Logger;
 
+import org.dcache.commons.stats.RequestCounters;
+
 public class PnfsManagerV3 extends CellAdapter {
 
 
@@ -61,31 +63,32 @@ public class PnfsManagerV3 extends CellAdapter {
     private final static String defaultCacheLocationProvider  = "diskCacheV111.namespace.provider.BasicNameSpaceProviderFactory";
     private final static String defaultStorageInfoProvider    = "diskCacheV111.namespace.provider.BasicNameSpaceProviderFactory";
 
-    private final Map<Class,StatItem> _requestMap = new HashMap();
+    private final  RequestCounters<Class> _counters = new RequestCounters<Class> ("PnfsManagerV3");
+    private final  RequestCounters<Class> _foldedCounters = new RequestCounters<Class> ("PnfsManagerV3.Folded");
 
     private void populateRequestMap()
     {
-        _requestMap.put(PnfsAddCacheLocationMessage.class, _xaddCacheLocation);
-        _requestMap.put(PnfsClearCacheLocationMessage.class, _xclearCacheLocation);
-        _requestMap.put(PnfsGetCacheLocationsMessage.class, _xgetCacheLocations);
-        _requestMap.put(PnfsCreateDirectoryMessage.class, _xcreateDirectory);
-        _requestMap.put(PnfsCreateEntryMessage.class, _xcreateEntry);
-        _requestMap.put(PnfsDeleteEntryMessage.class, _xdeleteEntry);
-        _requestMap.put(PnfsGetStorageInfoMessage.class, _xgetStorageInfo);
-        _requestMap.put(PnfsSetStorageInfoMessage.class, _xsetStorageInfo);
-        _requestMap.put(PnfsGetFileMetaDataMessage.class, _xgetMetadataInfo);
-        _requestMap.put(PnfsSetFileMetaDataMessage.class, _xsetMetadataInfo);
-        _requestMap.put(PnfsSetLengthMessage.class, _xsetLength);
-        _requestMap.put(PnfsGetCacheStatisticsMessage.class, _xgetCacheStatistics);
-        _requestMap.put(PnfsUpdateCacheStatisticsMessage.class, _xupdateCacheStatistics);
-        _requestMap.put(PnfsMapPathMessage.class, _xmapPath2Id);
-        _requestMap.put(PnfsRenameMessage.class, _xrename);
-        _requestMap.put(PnfsFlagMessage.class, _xflag);
-        _requestMap.put(PnfsSetChecksumMessage.class, _xsetChecksum);
-        _requestMap.put(PnfsGetChecksumMessage.class, _xgetChecksum);
-        _requestMap.put(PoolFileFlushedMessage.class, _xfileFlushed);
-        _requestMap.put(PnfsGetChecksumAllMessage.class, _xlistChecksumTypes);
-        _requestMap.put(PnfsGetParentMessage.class, _xgetParent);
+        _counters.addCounter(PnfsAddCacheLocationMessage.class);
+        _counters.addCounter(PnfsClearCacheLocationMessage.class);
+        _counters.addCounter(PnfsGetCacheLocationsMessage.class);
+        _counters.addCounter(PnfsCreateDirectoryMessage.class);
+        _counters.addCounter(PnfsCreateEntryMessage.class);
+        _counters.addCounter(PnfsDeleteEntryMessage.class);
+        _counters.addCounter(PnfsGetStorageInfoMessage.class);
+        _counters.addCounter(PnfsSetStorageInfoMessage.class);
+        _counters.addCounter(PnfsGetFileMetaDataMessage.class);
+        _counters.addCounter(PnfsSetFileMetaDataMessage.class);
+        _counters.addCounter(PnfsSetLengthMessage.class);
+        _counters.addCounter(PnfsGetCacheStatisticsMessage.class);
+        _counters.addCounter(PnfsUpdateCacheStatisticsMessage.class);
+        _counters.addCounter(PnfsMapPathMessage.class);
+        _counters.addCounter(PnfsRenameMessage.class);
+        _counters.addCounter(PnfsFlagMessage.class);
+        _counters.addCounter(PnfsSetChecksumMessage.class);
+        _counters.addCounter(PnfsGetChecksumMessage.class);
+        _counters.addCounter(PoolFileFlushedMessage.class);
+        _counters.addCounter(PnfsGetChecksumAllMessage.class);
+        _counters.addCounter(PnfsGetParentMessage.class);
     }
 
     /**
@@ -116,53 +119,8 @@ public class PnfsManagerV3 extends CellAdapter {
             return sb.toString();
         }
     }
-    private final StatItem _xaddCacheLocation      = new StatItem("addCacheLocation");
-    private final StatItem _xclearCacheLocation    = new StatItem("clearCacheLocation");
-    private final StatItem _xgetCacheLocations     = new StatItem("getCacheLocations");
-    private final StatItem _xcreateDirectory       = new StatItem("createDirectory");
-    private final StatItem _xcreateEntry           = new StatItem("createEntry");
-    private final StatItem _xdeleteEntry           = new StatItem("deleteEntry");
-    private final StatItem _xgetStorageInfo        = new StatItem("getStorageInfo");
-    private final StatItem _xsetStorageInfo        = new StatItem("setStorageInfo");
-    private final StatItem _xgetMetadataInfo       = new StatItem("getMetadataInfo");
-    private final StatItem _xsetMetadataInfo       = new StatItem("setMetadataInfo");
-    private final StatItem _xsetLength             = new StatItem("setLength");
-    private final StatItem _xgetCacheStatistics    = new StatItem("getCacheStatistics");
-    private final StatItem _xupdateCacheStatistics = new StatItem("updateCacheStatistics");
-    private final StatItem _xrename                = new StatItem("rename");
-    private final StatItem _xsetLevelData          = new StatItem("setLevelData");
-    private final StatItem _xfileFlushed           = new StatItem("fileFlushed");
-    private final StatItem _xmapPath2Id            = new StatItem("mapPath2Id");
-    private final StatItem _xmapId2Path            = new StatItem("mapId2Path");
-    private final StatItem _xflag                  = new StatItem("flag");
-    private final StatItem _xgetChecksum           = new StatItem("getChecksum");
-    private final StatItem _xsetChecksum           = new StatItem("setChecksum");
-    private final StatItem _xlistChecksumTypes     = new StatItem("listChecksumTypes");
-    private final StatItem _xgetParent             = new StatItem("getParent");
 
     private int _logSlowThreshold;
-
-    private final StatItem [] _requestSet = {
-            _xaddCacheLocation ,
-            _xclearCacheLocation ,
-            _xgetCacheLocations ,
-            _xcreateDirectory ,
-            _xcreateEntry ,
-            _xdeleteEntry ,
-            _xgetStorageInfo ,
-            _xsetStorageInfo ,
-            _xsetLength ,
-            _xgetCacheStatistics ,
-            _xupdateCacheStatistics ,
-            _xrename,
-            _xsetLevelData,
-            _xfileFlushed,
-            _xmapPath2Id,
-            _xmapId2Path,
-            _xgetMetadataInfo,
-            _xsetMetadataInfo,
-            _xgetParent
-    } ;
 
     /**
      * These messages are subject to being discarded if their time to
@@ -361,9 +319,8 @@ public class PnfsManagerV3 extends CellAdapter {
         }
 
         pw.println( "Statistics:" ) ;
-        for( int i = 0 , n = _requestSet.length ; i < n ; i++ ){
-            pw.println("  " + _requestSet[i].toString());
-        }
+        pw.println(_counters.toString());
+        pw.println(_foldedCounters.toString());
         return ;
     }
 
@@ -839,9 +796,6 @@ public class PnfsManagerV3 extends CellAdapter {
             esay(e) ;
             msg.setFailed( CacheException.UNEXPECTED_SYSTEM_EXCEPTION , e.getMessage() ) ;
         }
-        if( msg.getReturnCode() != 0 ) {
-            _xgetChecksum.failed();
-        }
     }
 
     private void listChecksumTypes(PnfsGetChecksumAllMessage msg){
@@ -857,9 +811,6 @@ public class PnfsManagerV3 extends CellAdapter {
         }catch ( Exception e){
             esay(e) ;
             msg.setFailed( CacheException.UNEXPECTED_SYSTEM_EXCEPTION , e.getMessage() ) ;
-        }
-        if( msg.getReturnCode() != 0 ) {
-            _xlistChecksumTypes.failed();
         }
     }
 
@@ -879,9 +830,6 @@ public class PnfsManagerV3 extends CellAdapter {
             msg.setFailed( CacheException.UNEXPECTED_SYSTEM_EXCEPTION , e.getMessage() ) ;
         }
 
-        if( msg.getReturnCode() != 0 ) {
-            _xsetChecksum.failed();
-        }
 
     }
 
@@ -907,10 +855,6 @@ public class PnfsManagerV3 extends CellAdapter {
             esay("Exception in updateFlag "+e);
             esay(e) ;
             pnfsMessage.setFailed( CacheException.UNEXPECTED_SYSTEM_EXCEPTION , e.getMessage() ) ;
-        }
-
-        if( pnfsMessage.getReturnCode() != 0 ) {
-            _xflag.failed();
         }
 
     }
@@ -975,9 +919,6 @@ public class PnfsManagerV3 extends CellAdapter {
             pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,"Exception in addCacheLocation");
         }
 
-        if( pnfsMessage.getReturnCode() != 0 ) {
-            _xaddCacheLocation.failed() ;
-        }
 
     }
 
@@ -994,9 +935,6 @@ public class PnfsManagerV3 extends CellAdapter {
             pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage() );
         }
 
-        if( pnfsMessage.getReturnCode() != 0 ) {
-            _xclearCacheLocation.failed() ;
-        }
 
     }
 
@@ -1036,9 +974,6 @@ public class PnfsManagerV3 extends CellAdapter {
             pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,"Pnfs lookup failed");
         }
 
-        if( pnfsMessage.getReturnCode() != 0 ) {
-            _xgetCacheLocations.failed() ;
-        }
 
     }
 
@@ -1077,9 +1012,6 @@ public class PnfsManagerV3 extends CellAdapter {
             pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, ia.getMessage());
         }
 
-        if( pnfsMessage.getReturnCode() != 0 ) {
-            _xcreateDirectory.failed() ;
-        }
 
     }
 
@@ -1140,10 +1072,6 @@ public class PnfsManagerV3 extends CellAdapter {
             esay(ia);
         }
 
-        if( pnfsMessage.getReturnCode() != 0 ) {
-            _xcreateEntry.failed() ;
-        }
-
     }
 
     public void setStorageInfo( PnfsSetStorageInfoMessage pnfsMessage ){
@@ -1181,10 +1109,6 @@ public class PnfsManagerV3 extends CellAdapter {
             esay( "Failed : "+iee ) ;
             esay(iee);
             pnfsMessage.setFailed( CacheException.UNEXPECTED_SYSTEM_EXCEPTION , iee.getMessage() ) ;
-        }
-
-        if( pnfsMessage.getReturnCode() != 0 ) {
-            _xsetStorageInfo.failed() ;
         }
 
     }
@@ -1240,10 +1164,6 @@ public class PnfsManagerV3 extends CellAdapter {
             pnfsMessage.setFailed( CacheException.UNEXPECTED_SYSTEM_EXCEPTION , iee.getMessage() ) ;
         }
 
-        if( pnfsMessage.getReturnCode() != 0 ) {
-            _xgetStorageInfo.failed() ;
-        }
-
     }
 
     public void getFileMetaData( PnfsGetFileMetaDataMessage pnfsMessage ){
@@ -1291,10 +1211,6 @@ public class PnfsManagerV3 extends CellAdapter {
             pnfsMessage.setFailed( CacheException.UNEXPECTED_SYSTEM_EXCEPTION , iee.getMessage() ) ;
         }
 
-        if( pnfsMessage.getReturnCode() != 0 ) {
-            _xgetMetadataInfo.failed();
-        }
-
     }
 
     public void setFileMetaData( PnfsSetFileMetaDataMessage pnfsMessage ) {
@@ -1308,10 +1224,6 @@ public class PnfsManagerV3 extends CellAdapter {
             esay(e);
             pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                   e.getMessage());
-        }
-
-        if (pnfsMessage.getReturnCode() != 0) {
-            _xsetMetadataInfo.failed();
         }
 
         return ;
@@ -1369,9 +1281,8 @@ public class PnfsManagerV3 extends CellAdapter {
             pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
         }
 
-        if( pnfsMessage.getReturnCode() != 0 ) {
-            _xdeleteEntry.failed() ;
-        } else if( _pnfsDeleteNotificationRelay != null ) {
+        if( pnfsMessage.getReturnCode() == 0 &&
+            _pnfsDeleteNotificationRelay != null ) {
             PnfsDeleteEntryNotificationMessage deleteNotification =
                 new PnfsDeleteEntryNotificationMessage(pnfsId,path);
             try{
@@ -1416,9 +1327,6 @@ public class PnfsManagerV3 extends CellAdapter {
             pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,"Pnfs lookup failed");
         }
 
-        if( pnfsMessage.getReturnCode() != 0 ) {
-            _xsetLength.failed();
-        }
     }
 
 
@@ -1432,7 +1340,6 @@ public class PnfsManagerV3 extends CellAdapter {
         }catch( Exception exc){
             esay("Exception in rename "+exc);
             esay(exc);
-            _xrename.failed() ;
             pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,"Pnfs rename failed");
         }
 
@@ -1494,9 +1401,6 @@ public class PnfsManagerV3 extends CellAdapter {
             pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, eee);
         }
 
-        if( pnfsMessage.getReturnCode() != 0 ) {
-            _xmapPath2Id.failed();
-        }
     }
 
     private void getParent(PnfsGetParentMessage msg)
@@ -1514,9 +1418,6 @@ public class PnfsManagerV3 extends CellAdapter {
             esay(e);
             msg.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                           e.getMessage());
-        }
-        if (msg.getReturnCode() != 0) {
-            _xgetChecksum.failed();
         }
     }
 
@@ -1595,9 +1496,7 @@ public class PnfsManagerV3 extends CellAdapter {
 
                     if (other.isSubsumedBy(message)) {
                         say("Collapsing " + message.getClass().getSimpleName());
-                        StatItem stat = _requestMap.get(message.getClass());
-                        if (stat != null)
-                            stat.folded();
+                        _foldedCounters.incrementRequests(message.getClass());
 
                         i.remove();
                         envelope.revertDirection();
@@ -1701,89 +1600,68 @@ public class PnfsManagerV3 extends CellAdapter {
     public void processPnfsMessage( CellMessage message , PnfsMessage pnfsMessage ){
 
         long ctime = System.currentTimeMillis();
-
+         _counters.incrementRequests(pnfsMessage.getClass());
         if (pnfsMessage instanceof PnfsAddCacheLocationMessage){
-            _xaddCacheLocation.request() ;
             addCacheLocation((PnfsAddCacheLocationMessage)pnfsMessage);
         }
         else if (pnfsMessage instanceof PnfsClearCacheLocationMessage){
-            _xclearCacheLocation.request() ;
             clearCacheLocation((PnfsClearCacheLocationMessage)pnfsMessage);
         }
         else if (pnfsMessage instanceof PnfsGetCacheLocationsMessage){
-            _xgetCacheLocations.request() ;
             getCacheLocations((PnfsGetCacheLocationsMessage)pnfsMessage);
         }
         else if (pnfsMessage instanceof PnfsCreateDirectoryMessage){
-            _xcreateDirectory.request() ;
             createDirectory((PnfsCreateDirectoryMessage)pnfsMessage);
         }
         else if (pnfsMessage instanceof PnfsCreateEntryMessage){
-            _xcreateEntry.request() ;
             createEntry((PnfsCreateEntryMessage)pnfsMessage);
         }
         else if (pnfsMessage instanceof PnfsDeleteEntryMessage){
-            _xdeleteEntry.request() ;
             deleteEntry((PnfsDeleteEntryMessage)pnfsMessage);
         }
         else if (pnfsMessage instanceof PnfsGetStorageInfoMessage){
-            _xgetStorageInfo.request() ;
             getStorageInfo((PnfsGetStorageInfoMessage)pnfsMessage);
         }
         else if (pnfsMessage instanceof PnfsSetStorageInfoMessage){
-            _xsetStorageInfo.request() ;
             setStorageInfo((PnfsSetStorageInfoMessage)pnfsMessage);
         }
         else if (pnfsMessage instanceof PnfsGetFileMetaDataMessage){
-            _xgetMetadataInfo.request() ;
             getFileMetaData((PnfsGetFileMetaDataMessage)pnfsMessage);
         }
         else if (pnfsMessage instanceof PnfsSetFileMetaDataMessage){
-            _xsetMetadataInfo.request() ;
             setFileMetaData((PnfsSetFileMetaDataMessage)pnfsMessage);
         }
         else if (pnfsMessage instanceof PnfsSetLengthMessage){
-            _xsetLength.request() ;
             setLength((PnfsSetLengthMessage)pnfsMessage);
         }
         else if (pnfsMessage instanceof PnfsGetCacheStatisticsMessage){
-            _xgetCacheStatistics.request() ;
             getCacheStatistics((PnfsGetCacheStatisticsMessage)pnfsMessage);
         }
         else if (pnfsMessage instanceof PnfsUpdateCacheStatisticsMessage){
-            _xupdateCacheStatistics.request() ;
             updateCacheStatistics((PnfsUpdateCacheStatisticsMessage)pnfsMessage);
         }
         else if (pnfsMessage instanceof PnfsMapPathMessage){
-            _xmapPath2Id.request();
             mapPath((PnfsMapPathMessage)pnfsMessage);
         }
         else if (pnfsMessage instanceof PnfsRenameMessage){
-            _xrename.request();
             rename((PnfsRenameMessage)pnfsMessage);
         }
         else if (pnfsMessage instanceof PnfsFlagMessage){
-            _xflag.request();
             updateFlag((PnfsFlagMessage)pnfsMessage);
         }
         else if ( pnfsMessage instanceof PnfsSetChecksumMessage){
-            _xsetChecksum.request();
             setChecksum((PnfsSetChecksumMessage)pnfsMessage);
         }
         else if ( pnfsMessage instanceof PnfsGetChecksumMessage){
-            _xgetChecksum.request();
             getChecksum((PnfsGetChecksumMessage)pnfsMessage);
         }
         else if( pnfsMessage instanceof PoolFileFlushedMessage ) {
-        	_xfileFlushed.request();
         	processFlushMessage((PoolFileFlushedMessage) pnfsMessage );
         }
         else if ( pnfsMessage instanceof PnfsGetChecksumAllMessage ){
-            _xlistChecksumTypes.request();
             listChecksumTypes((PnfsGetChecksumAllMessage)pnfsMessage);
         }
         else if (pnfsMessage instanceof PnfsGetParentMessage){
-            _xgetParent.request();
             getParent((PnfsGetParentMessage)pnfsMessage);
         }
 
@@ -1792,7 +1670,9 @@ public class PnfsManagerV3 extends CellAdapter {
             say("source = "+message.getSourceAddress());
             return;
         }
-
+        if(pnfsMessage.getReturnCode() != 0) {
+            _counters.incrementFailed(pnfsMessage.getClass());
+        }
         if( pnfsMessage.getReturnCode() == CacheException.INVALID_ARGS ) {
             _logDeveloper.error("Inconsistent message " + pnfsMessage.getClass() + " received form " + message.getSourceAddress() );
         }
@@ -1830,9 +1710,6 @@ public class PnfsManagerV3 extends CellAdapter {
 			esay(e);
 		}
 
-                if (pnfsMessage.getReturnCode() != 0) {
-                    _xfileFlushed.failed();
-                }
 	}
 
 	public static int fileMetaDataToUnixMode( FileMetaData meta){

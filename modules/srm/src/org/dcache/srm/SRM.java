@@ -171,6 +171,8 @@ import org.dcache.srm.v2_2.SrmAbortFilesResponse;
 
 import org.dcache.srm.v2_2.SrmAbortRequestRequest;
 import org.dcache.srm.v2_2.SrmAbortRequestResponse;
+import org.dcache.commons.stats.RequestCounters;
+import org.dcache.commons.stats.rrd.RrdRequestCounters;
 
 /**
  * SRM class creates an instance of SRM client class and publishes it on a
@@ -233,6 +235,11 @@ public class SRM {
     private AbstractStorageElement storage;
     private LsRequestStorage lsRequestStorage;
     private LsFileRequestStorage lsFileRequestStorage;
+    private RequestCounters<Class> srmServerV2Counters;
+    private RequestCounters<String> srmServerV1Counters;
+    private RrdRequestCounters rrdSrmServerV2Counters;
+    private RrdRequestCounters rrdSrmServerV1Counters;
+
     /**
      * if multiple srm installations live within same storage, they should have different names
      */
@@ -246,7 +253,22 @@ public class SRM {
         this.configuration = config;
         this.storage  = config.getStorage();
         this.name = name;
-
+        srmServerV2Counters = new RequestCounters<Class>("SRMServerV2");
+        srmServerV1Counters = new RequestCounters<String>("SRMServerV1");
+        if(configuration.getRrdDirectory() != null) {
+            String rrddir = configuration.getRrdDirectory() +
+                    java.io.File.separatorChar+"srmv1";
+            rrdSrmServerV1Counters =
+                    new RrdRequestCounters(srmServerV1Counters,rrddir);
+            rrdSrmServerV1Counters.startRrdUpdates();
+            rrdSrmServerV1Counters.startRrdGraphPlots();
+            rrddir = configuration.getRrdDirectory() +
+                    java.io.File.separatorChar+"srmv2";
+            rrdSrmServerV2Counters =
+                    new RrdRequestCounters(srmServerV2Counters,rrddir);
+            rrdSrmServerV2Counters.startRrdUpdates();
+            rrdSrmServerV2Counters.startRrdGraphPlots();
+        }
         // these jdbc parameters need to be set before the
         // first jdbc instance is created
         // so we do it before everything else
@@ -494,6 +516,20 @@ public class SRM {
     public void esay(Throwable t) {
         storage.elog("srm exception:");
         storage.elog(t);
+    }
+
+    /**
+     * @return the srmServerCounters
+     */
+    public RequestCounters<Class> getSrmServerV2Counters() {
+        return srmServerV2Counters;
+    }
+
+    /**
+     * @return the srmServerV1Counters
+     */
+    public RequestCounters<String> getSrmServerV1Counters() {
+        return srmServerV1Counters;
     }
     private class TheAdvisoryDeleteCallbacks implements AdvisoryDeleteCallbacks {
 

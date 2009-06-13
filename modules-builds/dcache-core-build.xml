@@ -58,6 +58,7 @@
     <path id="dcache.classpath">
         <path refid="cells.classpath" />
         <path refid="chimera.classpath" />
+        <pathelement location="${classesDir}/dcache-common.jar" />
         <pathelement location="${classesDir}/cells.jar" />
         <pathelement location="${classesDir}/srm.jar" />
         <pathelement location="${classesDir}/gplazma.jar" />
@@ -591,6 +592,14 @@
         <mkdir dir="${server.bin.dir}/classes/terapaths" />
         <copy todir="${server.bin.dir}/classes/terapaths">
             <fileset dir="${libDir}/terapaths">
+                <include name="*.jar" />
+            </fileset>
+        </copy>
+
+         <!-- rrd4j -->
+        <mkdir dir="${server.bin.dir}/classes/rrd4j" />
+        <copy todir="${server.bin.dir}/classes/rrd4j">
+            <fileset dir="${libDir}/rrd4j">
                 <include name="*.jar" />
             </fileset>
         </copy>

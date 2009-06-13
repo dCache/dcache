@@ -264,6 +264,7 @@ public class Configuration {
     private int maxNumberOfLsEntries = 1000;
     private int maxNumberOfLsLevels = 100;
     private boolean clientDNSLookup=false;
+    private String rrdDirectory = null;
 
     /** Creates a new instance of Configuration */
     public Configuration() {
@@ -1375,6 +1376,7 @@ public class Configuration {
         sb.append("\n\tcleanPendingRequestsOnRestart=").append(this.cleanPendingRequestsOnRestart);
         sb.append("\n\tclientDNSLookup=").append(this.clientDNSLookup);
         sb.append("\n\tasync-ls=").append(this.asynchronousLs);
+        sb.append("\n\rrdDirectory=").append(this.getRrdDirectory());
 
         return sb.toString();
     }
@@ -2689,6 +2691,20 @@ public class Configuration {
      */
     public void setClientDNSLookup(boolean clientDNSLookup) {
         this.clientDNSLookup = clientDNSLookup;
+    }
+
+    /**
+     * @return the rrdDirectory
+     */
+    public String getRrdDirectory() {
+        return rrdDirectory;
+    }
+
+    /**
+     * @param rrdDirectory the rrdDirectory to set
+     */
+    public void setRrdDirectory(String rrdDirectory) {
+        this.rrdDirectory = rrdDirectory;
     }
 
 
