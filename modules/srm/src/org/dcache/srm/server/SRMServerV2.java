@@ -166,6 +166,7 @@ import org.dcache.srm.request.RequestCredential;
 import java.util.Collection;
 import org.gridforum.jgss.ExtendedGSSContext;
 import org.dcache.commons.stats.RequestCounters;
+import org.dcache.commons.stats.RequestExecutionTimeGauges;
 
 
 public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
@@ -177,6 +178,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
     org.dcache.srm.util.Configuration configuration;
     private AbstractStorageElement storage;
     private final RequestCounters<Class> srmServerCounters;
+    private final RequestExecutionTimeGauges<Class> srmServerGauges;
     
     public SRMServerV2() throws java.rmi.RemoteException{
     	JDC.setSchedulerContext("SRMServerV2");
@@ -213,6 +215,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
             srmAuth = new SrmAuthorizer(srmConn);
             storage = srmConn.getSrm().getConfiguration().getStorage();
             srmServerCounters = srmConn.getSrm().getSrmServerV2Counters();
+            srmServerGauges = srmConn.getSrm().getSrmServerV2Gauges();
 
         } catch ( java.rmi.RemoteException re) { throw re; } catch ( Exception e) {
             throw new java.rmi.RemoteException("exception",e);
@@ -220,97 +223,105 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
     }
     
     private Object handleRequest(String requestName, Object request)  throws RemoteException {
+        long startTimeStamp = System.currentTimeMillis();
+
         Class requestClass = request.getClass();
         //count requests of each type
-        srmServerCounters.incrementRequests(requestClass);
-        String capitalizedRequestName =
-                Character.toUpperCase(requestName.charAt(0))+
-                requestName.substring(1);
         try {
-            JDC.createSession("v2:"+requestName+":");
-            log.debug("Entering SRMServerV2."+requestName+"()");
-            String authorizationID  = null;
+            srmServerCounters.incrementRequests(requestClass);
+            String capitalizedRequestName =
+                    Character.toUpperCase(requestName.charAt(0))+
+                    requestName.substring(1);
             try {
-                Method getAuthorizationID =
-                        requestClass.getMethod("getAuthorizationID",(Class[])null);
-                if(getAuthorizationID !=null) {
-                    authorizationID = (String)getAuthorizationID.invoke(request,(Object[])null);
-                    log.debug("SRMServerV2."+requestName+"() : authorization id"+authorizationID);
+                JDC.createSession("v2:"+requestName+":");
+                log.debug("Entering SRMServerV2."+requestName+"()");
+                String authorizationID  = null;
+                try {
+                    Method getAuthorizationID =
+                            requestClass.getMethod("getAuthorizationID",(Class[])null);
+                    if(getAuthorizationID !=null) {
+                        authorizationID = (String)getAuthorizationID.invoke(request,(Object[])null);
+                        log.debug("SRMServerV2."+requestName+"() : authorization id"+authorizationID);
+                    }
+                } catch(Exception e){
+                    log.error("getting authorization id failed",e);
+                    //do nothing here, just do not use authorizattion id in the following code
                 }
-            } catch(Exception e){
-                log.error("getting authorization id failed",e);
-                //do nothing here, just do not use authorizattion id in the following code
-            }
-            
-            
-            
-            SRMUser user = null;
-            UserCredential userCred  = null;
-            RequestCredential requestCredential = null;
-            try {
-                userCred          = srmAuth.getUserCredentials();
-                Collection roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);                
-                String role = roles.isEmpty() ? null : (String) roles.toArray()[0];
-                log.debug("SRMServerV2."+requestName+"() : role is "+role);
-                requestCredential = srmAuth.getRequestCredential(userCred,role);
-                user              = srmAuth.getRequestUser(
-                    requestCredential,
-                    (String) null,
-                    userCred.context);
-            } catch (SRMAuthorizationException sae) {
-                log.error("SRM Authorization failed", sae);
-                return getFailedResponse(capitalizedRequestName,
-                        TStatusCode.SRM_AUTHENTICATION_FAILURE,
-                        "SRM Authentication failed");
-            }
-            log.debug("About to call SRMServerV2"+requestName+"()");
-            Class handlerClass;
-            Constructor handlerConstructor;
-            Object handler;
-            Method handleGetResponseMethod;
-            try {
-                handlerClass = Class.forName("org.dcache.srm.handler."+
-                        capitalizedRequestName);
-                handlerConstructor =
-                        handlerClass.getConstructor(new Class[]{SRMUser.class,
-                        RequestCredential.class,
-                        requestClass,
-                        AbstractStorageElement.class,
-                        SRM.class,
-                        String.class});
-                handler = handlerConstructor.newInstance(new Object[] {
-                    user,
-                    requestCredential,
-                    request,
-                    storage,
-                    srmConn.getSrm(),
-                    userCred.clientHost });
-                handleGetResponseMethod = handlerClass.getMethod("getResponse",(Class[])null);
+
+
+
+                SRMUser user = null;
+                UserCredential userCred  = null;
+                RequestCredential requestCredential = null;
+                try {
+                    userCred          = srmAuth.getUserCredentials();
+                    Collection roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);
+                    String role = roles.isEmpty() ? null : (String) roles.toArray()[0];
+                    log.debug("SRMServerV2."+requestName+"() : role is "+role);
+                    requestCredential = srmAuth.getRequestCredential(userCred,role);
+                    user              = srmAuth.getRequestUser(
+                        requestCredential,
+                        (String) null,
+                        userCred.context);
+                } catch (SRMAuthorizationException sae) {
+                    log.error("SRM Authorization failed", sae);
+                    return getFailedResponse(capitalizedRequestName,
+                            TStatusCode.SRM_AUTHENTICATION_FAILURE,
+                            "SRM Authentication failed");
+                }
+                log.debug("About to call SRMServerV2"+requestName+"()");
+                Class handlerClass;
+                Constructor handlerConstructor;
+                Object handler;
+                Method handleGetResponseMethod;
+                try {
+                    handlerClass = Class.forName("org.dcache.srm.handler."+
+                            capitalizedRequestName);
+                    handlerConstructor =
+                            handlerClass.getConstructor(new Class[]{SRMUser.class,
+                            RequestCredential.class,
+                            requestClass,
+                            AbstractStorageElement.class,
+                            SRM.class,
+                            String.class});
+                    handler = handlerConstructor.newInstance(new Object[] {
+                        user,
+                        requestCredential,
+                        request,
+                        storage,
+                        srmConn.getSrm(),
+                        userCred.clientHost });
+                    handleGetResponseMethod = handlerClass.getMethod("getResponse",(Class[])null);
+                } catch(Exception e) {
+                    log.error("handler discovery and dinamic load failed", e);
+                    return getFailedResponse(capitalizedRequestName,
+                            TStatusCode.SRM_NOT_SUPPORTED,
+                            "can not find a handler, not implemented");
+                }
+                try {
+                    Object response = handleGetResponseMethod.invoke(handler,(Object[])null);
+                    return response;
+                } catch(Exception e) {
+                    log.fatal("handler invocation failed",e);
+                    return getFailedResponse(capitalizedRequestName,
+                            TStatusCode.SRM_FAILURE,
+                         "handler invocation failed"+ e.getMessage());
+                }
             } catch(Exception e) {
-                log.error("handler discovery and dinamic load failed", e);
-                return getFailedResponse(capitalizedRequestName,
-                        TStatusCode.SRM_NOT_SUPPORTED,
-                        "can not find a handler, not implemented");
+                log.fatal(" handleRequest: ",e);
+                try{
+                    return getFailedResponse(capitalizedRequestName,
+                            TStatusCode.SRM_INTERNAL_ERROR,
+                         "internal error: "+ e.getMessage());
+                } catch(Exception ee){
+                    throw new RemoteException("SRMServerV2."+requestName+"() exception",e);
+                }
+
             }
-            try {
-                Object response = handleGetResponseMethod.invoke(handler,(Object[])null);
-                return response;
-            } catch(Exception e) {
-                log.fatal("handler invocation failed",e);
-                return getFailedResponse(capitalizedRequestName,
-                        TStatusCode.SRM_FAILURE,
-					 "handler invocation failed"+ e.getMessage());
-            }
-        } catch(Exception e) {
-            log.fatal(" handleRequest: ",e);
-            try{
-                return getFailedResponse(capitalizedRequestName,
-                        TStatusCode.SRM_INTERNAL_ERROR,
-					 "internal error: "+ e.getMessage());
-            } catch(Exception ee){
-                throw new RemoteException("SRMServerV2."+requestName+"() exception",e);
-            }
-            
+        } finally {
+            srmServerGauges.update(requestClass,
+                    System.currentTimeMillis() - startTimeStamp);
+
         }
     }
     

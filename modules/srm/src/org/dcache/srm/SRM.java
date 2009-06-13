@@ -2,68 +2,68 @@
 // $Log: not supported by cvs2svn $
 /*
 COPYRIGHT STATUS:
-  Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
-  software are sponsored by the U.S. Department of Energy under Contract No.
-  DE-AC02-76CH03000. Therefore, the U.S. Government retains a  world-wide
-  non-exclusive, royalty-free license to publish or reproduce these documents
-  and software for U.S. Government purposes.  All documents and software
-  available from this server are protected under the U.S. and Foreign
-  Copyright Laws, and FNAL reserves all rights.
+Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
+software are sponsored by the U.S. Department of Energy under Contract No.
+DE-AC02-76CH03000. Therefore, the U.S. Government retains a  world-wide
+non-exclusive, royalty-free license to publish or reproduce these documents
+and software for U.S. Government purposes.  All documents and software
+available from this server are protected under the U.S. and Foreign
+Copyright Laws, and FNAL reserves all rights.
 
 
- Distribution of the software available from this server is free of
- charge subject to the user following the terms of the Fermitools
- Software Legal Information.
+Distribution of the software available from this server is free of
+charge subject to the user following the terms of the Fermitools
+Software Legal Information.
 
- Redistribution and/or modification of the software shall be accompanied
- by the Fermitools Software Legal Information  (including the copyright
- notice).
+Redistribution and/or modification of the software shall be accompanied
+by the Fermitools Software Legal Information  (including the copyright
+notice).
 
- The user is asked to feed back problems, benefits, and/or suggestions
- about the software to the Fermilab Software Providers.
-
-
- Neither the name of Fermilab, the  URA, nor the names of the contributors
- may be used to endorse or promote products derived from this software
- without specific prior written permission.
+The user is asked to feed back problems, benefits, and/or suggestions
+about the software to the Fermilab Software Providers.
 
 
-
-  DISCLAIMER OF LIABILITY (BSD):
-
-  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-  "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
-  LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
-  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL FERMILAB,
-  OR THE URA, OR THE U.S. DEPARTMENT of ENERGY, OR CONTRIBUTORS BE LIABLE
-  FOR  ANY  DIRECT, INDIRECT,  INCIDENTAL, SPECIAL, EXEMPLARY, OR
-  CONSEQUENTIAL DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
-  OF SUBSTITUTE  GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-  BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY  OF
-  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
-  SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
+Neither the name of Fermilab, the  URA, nor the names of the contributors
+may be used to endorse or promote products derived from this software
+without specific prior written permission.
 
 
-  Liabilities of the Government:
 
-  This software is provided by URA, independent from its Prime Contract
-  with the U.S. Department of Energy. URA is acting independently from
-  the Government and in its own private capacity and is not acting on
-  behalf of the U.S. Government, nor as its contractor nor its agent.
-  Correspondingly, it is understood and agreed that the U.S. Government
-  has no connection to this software and in no manner whatsoever shall
-  be liable for nor assume any responsibility or obligation for any claim,
-  cost, or damages arising out of or resulting from the use of the software
-  available from this server.
+DISCLAIMER OF LIABILITY (BSD):
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
+FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL FERMILAB,
+OR THE URA, OR THE U.S. DEPARTMENT of ENERGY, OR CONTRIBUTORS BE LIABLE
+FOR  ANY  DIRECT, INDIRECT,  INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+OF SUBSTITUTE  GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY  OF
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
 
 
-  Export Control:
+Liabilities of the Government:
 
-  All documents and software available from this server are subject to U.S.
-  export control laws.  Anyone downloading information from this server is
-  obligated to secure any necessary Government licenses before exporting
-  documents or software obtained from this server.
+This software is provided by URA, independent from its Prime Contract
+with the U.S. Department of Energy. URA is acting independently from
+the Government and in its own private capacity and is not acting on
+behalf of the U.S. Government, nor as its contractor nor its agent.
+Correspondingly, it is understood and agreed that the U.S. Government
+has no connection to this software and in no manner whatsoever shall
+be liable for nor assume any responsibility or obligation for any claim,
+cost, or damages arising out of or resulting from the use of the software
+available from this server.
+
+
+Export Control:
+
+All documents and software available from this server are subject to U.S.
+export control laws.  Anyone downloading information from this server is
+obligated to secure any necessary Government licenses before exporting
+documents or software obtained from this server.
  */
 
 /*
@@ -71,7 +71,6 @@ COPYRIGHT STATUS:
  *
  * Created on January 10, 2003, 12:34 PM
  */
-
 package org.dcache.srm;
 
 import electric.registry.Registry;
@@ -172,6 +171,7 @@ import org.dcache.srm.v2_2.SrmAbortFilesResponse;
 import org.dcache.srm.v2_2.SrmAbortRequestRequest;
 import org.dcache.srm.v2_2.SrmAbortRequestResponse;
 import org.dcache.commons.stats.RequestCounters;
+import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.commons.stats.rrd.RrdRequestCounters;
 
 /**
@@ -181,8 +181,9 @@ import org.dcache.commons.stats.rrd.RrdRequestCounters;
  * @author  timur
  */
 public class SRM {
+
     private String name;
-    private InetAddress  host;
+    private InetAddress host;
     private SRMAuthorization authorization;
     private SRMServerV1 server;
     private Configuration configuration;
@@ -195,7 +196,6 @@ public class SRM {
     private RequestCredentialStorage requestCredentialStorage;
     //    private RequestScheduler putRequestScheduler;
     //    private RequestScheduler copyRequestScheduler;
-
     /** Creates a new instance of SRM
      *
      * @param  srcSURLS
@@ -217,7 +217,6 @@ public class SRM {
      *         array of boolean values indicating if permonent copies are
      *         desired
      */
-
     /** Creates a new instance of SRM
      *
      * @param  config
@@ -239,70 +238,72 @@ public class SRM {
     private RequestCounters<String> srmServerV1Counters;
     private RrdRequestCounters rrdSrmServerV2Counters;
     private RrdRequestCounters rrdSrmServerV1Counters;
+    private RequestExecutionTimeGauges<Class> srmServerV2Gauges;
+    private RequestExecutionTimeGauges<String> srmServerV1Gauges;
 
     /**
      * if multiple srm installations live within same storage, they should have different names
      */
-    public SRM(Configuration config,String name)
-        throws java.io.IOException,
-        java.sql.SQLException,
-        InterruptedException,
-        org.dcache.srm.scheduler.IllegalStateTransition,
-        electric.xml.ParseException
-    {
+    public SRM(Configuration config, String name)
+            throws java.io.IOException,
+            java.sql.SQLException,
+            InterruptedException,
+            org.dcache.srm.scheduler.IllegalStateTransition,
+            electric.xml.ParseException {
         this.configuration = config;
-        this.storage  = config.getStorage();
+        this.storage = config.getStorage();
         this.name = name;
         srmServerV2Counters = new RequestCounters<Class>("SRMServerV2");
         srmServerV1Counters = new RequestCounters<String>("SRMServerV1");
-        if(configuration.getRrdDirectory() != null) {
+        if (configuration.getRrdDirectory() != null) {
             String rrddir = configuration.getRrdDirectory() +
-                    java.io.File.separatorChar+"srmv1";
+                    java.io.File.separatorChar + "srmv1";
             rrdSrmServerV1Counters =
-                    new RrdRequestCounters(srmServerV1Counters,rrddir);
+                    new RrdRequestCounters(srmServerV1Counters, rrddir);
             rrdSrmServerV1Counters.startRrdUpdates();
             rrdSrmServerV1Counters.startRrdGraphPlots();
             rrddir = configuration.getRrdDirectory() +
-                    java.io.File.separatorChar+"srmv2";
+                    java.io.File.separatorChar + "srmv2";
             rrdSrmServerV2Counters =
-                    new RrdRequestCounters(srmServerV2Counters,rrddir);
+                    new RrdRequestCounters(srmServerV2Counters, rrddir);
             rrdSrmServerV2Counters.startRrdUpdates();
             rrdSrmServerV2Counters.startRrdGraphPlots();
         }
+        srmServerV2Gauges = new RequestExecutionTimeGauges<Class> ("SRMServerV2");
+        srmServerV1Gauges = new RequestExecutionTimeGauges<String> ("SRMServerV1");
         // these jdbc parameters need to be set before the
         // first jdbc instance is created
         // so we do it before everything else
 
-        if(configuration.getMaxQueuedJdbcTasksNum() != null ) {
-            say("setMaxJdbcTasksNum to "+
+        if (configuration.getMaxQueuedJdbcTasksNum() != null) {
+            say("setMaxJdbcTasksNum to " +
                     configuration.getMaxQueuedJdbcTasksNum().intValue());
             org.dcache.srm.request.sql.JdbcConnectionPool.setMaxQueuedJdbcTasksNum(
                     configuration.getMaxQueuedJdbcTasksNum().intValue());
         }
 
-        if(configuration.getJdbcExecutionThreadNum() != null ) {
-            say("set JDBC ExecutionThreadNum to "+
+        if (configuration.getJdbcExecutionThreadNum() != null) {
+            say("set JDBC ExecutionThreadNum to " +
                     configuration.getJdbcExecutionThreadNum().intValue());
             org.dcache.srm.request.sql.JdbcConnectionPool.setExecutionThreadNum(
                     configuration.getJdbcExecutionThreadNum().intValue());
         }
 
-        if(config.isGsissl()) {
-            String protocol_property=System.getProperty("java.protocol.handler.pkgs");
-            if(protocol_property == null) {
+        if (config.isGsissl()) {
+            String protocol_property = System.getProperty("java.protocol.handler.pkgs");
+            if (protocol_property == null) {
                 protocol_property = "org.globus.net.protocol";
+            } else {
+                protocol_property = protocol_property + "|org.globus.net.protocol";
             }
-            else {
-                protocol_property = protocol_property+"|org.globus.net.protocol";
-            }
-            System.setProperty("java.protocol.handler.pkgs",protocol_property);
+            System.setProperty("java.protocol.handler.pkgs", protocol_property);
         }
 
         //config.setLocalSRM(this);
         requestCredentialStorage = new DatabaseRequestCredentialStorage(config);
         RequestCredential.registerRequestCredentialStorage(requestCredentialStorage);
 
-        lsRequestScheduler = new Scheduler("ls_"+name,storage);
+        lsRequestScheduler = new Scheduler("ls_" + name, storage);
         // scheduler parameters
         lsRequestScheduler.setMaxThreadQueueSize(config.getLsReqTQueueSize());
         lsRequestScheduler.setThreadPoolSize(config.getLsThreadPoolSize());
@@ -312,11 +313,11 @@ public class SRM {
         lsRequestScheduler.setMaxNumberOfRetries(config.getLsMaxNumOfRetries());
         lsRequestScheduler.setRetryTimeout(config.getLsRetryTimeout());
         lsRequestScheduler.setMaxRunningByOwner(config.getLsMaxRunningBySameOwner());
-	lsRequestScheduler.setPriorityPolicyPlugin(config.getLsPriorityPolicyPlugin());
+        lsRequestScheduler.setPriorityPolicyPlugin(config.getLsPriorityPolicyPlugin());
         lsRequestScheduler.start();
 
 
-        getRequestScheduler = new Scheduler("get_"+name,storage);
+        getRequestScheduler = new Scheduler("get_" + name, storage);
         // scheduler parameters
         getRequestScheduler.setMaxThreadQueueSize(config.getGetReqTQueueSize());
         getRequestScheduler.setThreadPoolSize(config.getGetThreadPoolSize());
@@ -326,11 +327,11 @@ public class SRM {
         getRequestScheduler.setMaxNumberOfRetries(config.getGetMaxNumOfRetries());
         getRequestScheduler.setRetryTimeout(config.getGetRetryTimeout());
         getRequestScheduler.setMaxRunningByOwner(config.getGetMaxRunningBySameOwner());
-	getRequestScheduler.setPriorityPolicyPlugin(config.getGetPriorityPolicyPlugin());
+        getRequestScheduler.setPriorityPolicyPlugin(config.getGetPriorityPolicyPlugin());
         getRequestScheduler.start();
 
 
-        bringOnlineRequestScheduler = new Scheduler("bring_online_"+name,storage);
+        bringOnlineRequestScheduler = new Scheduler("bring_online_" + name, storage);
         // scheduler parameters
         bringOnlineRequestScheduler.setMaxThreadQueueSize(config.getBringOnlineReqTQueueSize());
         bringOnlineRequestScheduler.setThreadPoolSize(config.getBringOnlineThreadPoolSize());
@@ -344,7 +345,7 @@ public class SRM {
         bringOnlineRequestScheduler.start();
 
 
-        putRequestScheduler = new Scheduler("put_"+name,storage);
+        putRequestScheduler = new Scheduler("put_" + name, storage);
         // scheduler parameters
         putRequestScheduler.setMaxThreadQueueSize(config.getPutReqTQueueSize());
         putRequestScheduler.setThreadPoolSize(config.getPutThreadPoolSize());
@@ -357,7 +358,7 @@ public class SRM {
         putRequestScheduler.setPriorityPolicyPlugin(config.getPutPriorityPolicyPlugin());
         putRequestScheduler.start();
 
-        copyRequestScheduler = new Scheduler("copy_"+name,storage);
+        copyRequestScheduler = new Scheduler("copy_" + name, storage);
         // scheduler parameters
         copyRequestScheduler.setMaxThreadQueueSize(config.getCopyReqTQueueSize());
         copyRequestScheduler.setThreadPoolSize(config.getCopyThreadPoolSize());
@@ -368,7 +369,7 @@ public class SRM {
         copyRequestScheduler.setPriorityPolicyPlugin(config.getCopyPriorityPolicyPlugin());
         copyRequestScheduler.start();
 
-        reserveSpaceScheduler = new Scheduler("reserve_space"+name,storage);
+        reserveSpaceScheduler = new Scheduler("reserve_space" + name, storage);
         reserveSpaceScheduler.start();
         //config.getMaxActiveGet(),config.getMaxDoneGet(),config.getGetLifetime(),config);
        /* putRequestScheduler = new RequestScheduler("put ContainerRequest Scheduler",
@@ -376,7 +377,7 @@ public class SRM {
         copyRequestScheduler = new RequestScheduler("copy ContainerRequest Scheduler",
         config.getMaxActiveCopy(),config.getMaxDoneCopy(),config.getCopyLifetime(),config);
 
-        */
+         */
         bringOnlineStorage = new BringOnlineRequestStorage(configuration);
         getStorage = new GetRequestStorage(configuration);
         putStorage = new PutRequestStorage(configuration);
@@ -386,8 +387,8 @@ public class SRM {
         putFileRequestStorage = new PutFileRequestStorage(configuration);
         copyFileRequestStorage = new CopyFileRequestStorage(configuration);
         reserveSpaceRequestStorage = new ReserveSpaceRequestStorage(configuration);
-        lsRequestStorage=new LsRequestStorage(configuration);
-        lsFileRequestStorage=new LsFileRequestStorage(configuration);
+        lsRequestStorage = new LsRequestStorage(configuration);
+        lsFileRequestStorage = new LsFileRequestStorage(configuration);
 
         bringOnlineStorage.saveMemory(config.isSaveMemory());
         getStorage.saveMemory(config.isSaveMemory());
@@ -449,38 +450,38 @@ public class SRM {
         reserveSpaceScheduler.jobStorageAdded(reserveSpaceRequestStorage);
         reserveSpaceRequestStorage.schedulePendingJobs(reserveSpaceScheduler);
 
-        if(configuration.isVacuum()) {
-           say("starting vacuum thread");
-           org.dcache.srm.request.sql.JdbcConnectionPool pool = org.dcache.srm.request.sql.JdbcConnectionPool.getPool(configuration.getJdbcUrl(),
-            configuration.getJdbcClass(),configuration.getJdbcUser(),
-            configuration.getJdbcPass());
-            pool.startVacuumThread(configuration.getVacuum_period_sec()*1000);
+        if (configuration.isVacuum()) {
+            say("starting vacuum thread");
+            org.dcache.srm.request.sql.JdbcConnectionPool pool = org.dcache.srm.request.sql.JdbcConnectionPool.getPool(configuration.getJdbcUrl(),
+                    configuration.getJdbcClass(), configuration.getJdbcUser(),
+                    configuration.getJdbcPass());
+            pool.startVacuumThread(configuration.getVacuum_period_sec() * 1000);
         }
 
-        if( config.isStart_server() ) {
+        if (config.isStart_server()) {
             say("starting http server from the GLUE Soap toolkit");
             say("if you are ranning srm under Tomcat/Axis, this should be disabled");
             say("by specification of -start_server=false in srm batch");
-            this.server = new SRMServerV1(this,config.getPort(),
-            config.getAuthorization(), config,requestCredentialStorage);
+            this.server = new SRMServerV1(this, config.getPort(),
+                    config.getAuthorization(), config, requestCredentialStorage);
             host = server.getHost();
         } else {
             say("option -start_server=false is specified");
             say("it is assumed srm soap server is running under Tomcat/Axis");
             host = java.net.InetAddress.getLocalHost();
         }
-        if(configuration.getSrmhost() == null) {
+        if (configuration.getSrmhost() == null) {
             configuration.setSrmhost(host.getHostName());
         }
         try {
             Thread.sleep(5);
-        }
-        catch(InterruptedException ie) {
+        } catch (InterruptedException ie) {
         }
 
-        this.say("srm started :\n\t"+configuration.toString());
+        this.say("srm started :\n\t" + configuration.toString());
 
     }
+
     /**
      * @return this host InetAddress
      */
@@ -491,23 +492,22 @@ public class SRM {
     /**
      * @return this srm Web Servises Interface port
      */
-    public int  getPort() {
+    public int getPort() {
         return configuration.getPort();
     }
-
 
     /**
      * logs a message
      */
     public void say(String words) {
-        storage.log("srm: "+words);
+        storage.log("srm: " + words);
     }
 
     /**
      * logs an error message
      */
     public void esay(String words) {
-        storage.elog("srm: "+words);
+        storage.elog("srm: " + words);
     }
 
     /**
@@ -531,64 +531,78 @@ public class SRM {
     public RequestCounters<String> getSrmServerV1Counters() {
         return srmServerV1Counters;
     }
+
+    /**
+     * @return the srmServerV2Gauges
+     */
+    public RequestExecutionTimeGauges<Class> getSrmServerV2Gauges() {
+        return srmServerV2Gauges;
+    }
+
+    /**
+     * @return the srmServerV1Gauges
+     */
+    public RequestExecutionTimeGauges<String> getSrmServerV1Gauges() {
+        return srmServerV1Gauges;
+    }
+
     private class TheAdvisoryDeleteCallbacks implements AdvisoryDeleteCallbacks {
 
         private boolean done = false;
-        private boolean success  = true;
+        private boolean success = true;
         SRMUser user;
         String path;
         String error;
+
         public TheAdvisoryDeleteCallbacks(SRMUser user,
-        String path) {
+                String path) {
             this.user = user;
             this.path = path;
         }
+
         public void AdvisoryDeleteFailed(String reason) {
-            error=" advisoryDelete("+user+","+path+") AdvisoryDeleteFailed: "+reason;
+            error = " advisoryDelete(" + user + "," + path + ") AdvisoryDeleteFailed: " + reason;
             success = false;
             esay(error);
             done();
         }
 
-
-        public void AdvisoryDeleteSuccesseded(){
-            say(" advisoryDelete("+user+","+path+") AdvisoryDeleteSuccesseded");
+        public void AdvisoryDeleteSuccesseded() {
+            say(" advisoryDelete(" + user + "," + path + ") AdvisoryDeleteSuccesseded");
             done();
         }
 
-        public void Exception(Exception e){
-            error = " advisoryDelete("+user+","+path+") Exception :"+e;
+        public void Exception(Exception e) {
+            error = " advisoryDelete(" + user + "," + path + ") Exception :" + e;
             esay(error);
             success = false;
             done();
         }
 
-        public void Timeout(){
-            error = " advisoryDelete("+user+","+path+") Timeout ";
+        public void Timeout() {
+            error = " advisoryDelete(" + user + "," + path + ") Timeout ";
             esay(error);
             success = false;
             done();
         }
 
-        public void Error(String error){
-            this.error = " advisoryDelete("+user+","+path+") Error "+ error;
+        public void Error(String error) {
+            this.error = " advisoryDelete(" + user + "," + path + ") Error " + error;
             esay(this.error);
             success = false;
             done();
         }
 
-       public  boolean waitCompleteion(long timeout) throws InterruptedException {
-           long starttime = System.currentTimeMillis();
-            while(true) {
-                synchronized(this) {
+        public boolean waitCompleteion(long timeout) throws InterruptedException {
+            long starttime = System.currentTimeMillis();
+            while (true) {
+                synchronized (this) {
                     wait(1000);
-                    if(done) {
+                    if (done) {
                         return success;
-                    }
-                    else
-                    {
-                        if((System.currentTimeMillis() - starttime)>timeout) {
-                            error = " advisoryDelete("+user+","+path+") Timeout";
+                    } else {
+                        if ((System.currentTimeMillis() - starttime) > timeout) {
+                            error = " advisoryDelete(" + user + "," + path + ") Timeout";
                             return false;
                         }
                     }
@@ -596,7 +610,7 @@ public class SRM {
             }
         }
 
-        public  synchronized void done() {
+        public synchronized void done() {
             done = true;
             notifyAll();
         }
@@ -604,91 +618,80 @@ public class SRM {
         public java.lang.String getError() {
             return error;
         }
-
-
     };
-
 
     /**
      * this srm method is not implemented
      */
-    public void advisoryDelete(final SRMUser user,RequestCredential credential,String[] SURLS)  {
+    public void advisoryDelete(final SRMUser user, RequestCredential credential, String[] SURLS) {
         say("SRM.advisoryDelete");
-        if(user == null) {
-            String error ="advisoryDelete: user is unknown,"+
-            " user needs authorization to delete ";
+        if (user == null) {
+            String error = "advisoryDelete: user is unknown," +
+                    " user needs authorization to delete ";
             esay(error);
             throw new IllegalArgumentException(error);
         }
 
-        for(int i = 0 ; i<SURLS.length; ++i) {
+        for (int i = 0; i < SURLS.length; ++i) {
             try {
                 GlobusURL gurl = new GlobusURL(SURLS[i]);
-                if(!Tools.sameHost(configuration.getSrmhost(),
-                gurl.getHost())) {
-                    String error ="advisoryDelete: surl is not local : "+gurl.getURL();
+                if (!Tools.sameHost(configuration.getSrmhost(),
+                        gurl.getHost())) {
+                    String error = "advisoryDelete: surl is not local : " + gurl.getURL();
                     esay(error);
                     throw new IllegalArgumentException(error);
                 }
-            }
-            catch(RuntimeException re) {
+            } catch (RuntimeException re) {
                 esay(re);
                 throw re;
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 esay(e);
             }
         }
 
         final StringBuffer sb = new StringBuffer();
         TheAdvisoryDeleteCallbacks callabacks_array[] =
-        new TheAdvisoryDeleteCallbacks[SURLS.length];
-        for(int i = 0 ; i<SURLS.length; ++i) {
+                new TheAdvisoryDeleteCallbacks[SURLS.length];
+        for (int i = 0; i < SURLS.length; ++i) {
             try {
                 GlobusURL gurl = new GlobusURL(SURLS[i]);
                 String surlpath = gurl.getPath();
-                int indx=surlpath.indexOf(SFN_STRING);
-                if( indx != -1) {
+                int indx = surlpath.indexOf(SFN_STRING);
+                if (indx != -1) {
 
-                    surlpath=surlpath.substring(indx+SFN_STRING.length());
+                    surlpath = surlpath.substring(indx + SFN_STRING.length());
                 }
 
                 callabacks_array[i] = new TheAdvisoryDeleteCallbacks(user, surlpath);
-                storage.advisoryDelete(user, surlpath,callabacks_array[i]
-                );
+                storage.advisoryDelete(user, surlpath, callabacks_array[i]);
 
 
-            }
-            catch(RuntimeException re) {
+            } catch (RuntimeException re) {
                 esay(re);
                 throw re;
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         }
         boolean failed = false;
-        StringBuffer errorsb= new StringBuffer();
-        try
-        {
-            for(int i = 0 ; i<SURLS.length; ++i) {
-                if(!callabacks_array[i].waitCompleteion(3*60*1000)) {
+        StringBuffer errorsb = new StringBuffer();
+        try {
+            for (int i = 0; i < SURLS.length; ++i) {
+                if (!callabacks_array[i].waitCompleteion(3 * 60 * 1000)) {
                     failed = true;
                     errorsb.append(callabacks_array[i].getError()).append('\n');
                 }
 
             }
-        }catch(InterruptedException ie) {
-                throw new RuntimeException(ie);
+        } catch (InterruptedException ie) {
+            throw new RuntimeException(ie);
 
         }
 
-        if(failed) {
-             throw new RuntimeException(errorsb.toString());
+        if (failed) {
+            throw new RuntimeException(errorsb.toString());
         }
     }
-
-
 
     /**
      * The implementation of SRM Copy method.
@@ -705,25 +708,25 @@ public class SRM {
      * @return request status assosiated with this request
      */
     public RequestStatus copy(SRMUser user,
-    RequestCredential credential,
-    String[] srcSURLS,
-    String[] destSURLS,
-    boolean[] wantPerm,
-    String client_host) {
+            RequestCredential credential,
+            String[] srcSURLS,
+            String[] destSURLS,
+            boolean[] wantPerm,
+            String client_host) {
         try {
             //require at least 10 minutes
             long cred_lifetime =
-                credential.getDelegatedCredentialRemainingLifetime()-600000;
-            if(cred_lifetime <0) {
+                    credential.getDelegatedCredentialRemainingLifetime() - 600000;
+            if (cred_lifetime < 0) {
                 return createFailedRequestStatus(
-                "delegated credentials lifetime is too short:"+ credential.getDelegatedCredentialRemainingLifetime()+" ms");
+                        "delegated credentials lifetime is too short:" + credential.getDelegatedCredentialRemainingLifetime() + " ms");
 
             }
-            if(srcSURLS == null || srcSURLS.length == 0 ||
-               destSURLS == null || destSURLS.length ==0 ) {
-                   String error = " number of source or destination SURLs is zero";
-                   esay(error);
-                   return createFailedRequestStatus(error);
+            if (srcSURLS == null || srcSURLS.length == 0 ||
+                    destSURLS == null || destSURLS.length == 0) {
+                String error = " number of source or destination SURLs is zero";
+                esay(error);
+                return createFailedRequestStatus(error);
 
             }
             String[] from_urls = srcSURLS;
@@ -732,76 +735,72 @@ public class SRM {
             int dst_num = to_urls.length;
             // this is for loggin
             StringBuffer sb = new StringBuffer(" copy (");
-            for(int j=0; j<src_num;j++) {
-                sb.append("from_urls[").append(j).append("]=")
-                .append(from_urls[j]).append(",");
+            for (int j = 0; j < src_num; j++) {
+                sb.append("from_urls[").append(j).append("]=").append(from_urls[j]).append(",");
             }
-            for(int j=0; j<dst_num;j++) {
-                sb.append("to_urls[").append(j).append("]=")
-                .append(to_urls[j]).append(",");
+            for (int j = 0; j < dst_num; j++) {
+                sb.append("to_urls[").append(j).append("]=").append(to_urls[j]).append(",");
             }
             sb.append(")");
             say(sb.toString());
 
-            if(src_num != dst_num) {
+            if (src_num != dst_num) {
                 return createFailedRequestStatus(
-                "number of from and to urls do not match");
+                        "number of from and to urls do not match");
             }
 
-            for(int i = 0; i<dst_num; ++i) {
-                for(int j = 0;j<dst_num; ++j) {
-                    if(i != j) {
-                        if(to_urls[i].equals(to_urls[j])) {
+            for (int i = 0; i < dst_num; ++i) {
+                for (int j = 0; j < dst_num; ++j) {
+                    if (i != j) {
+                        if (to_urls[i].equals(to_urls[j])) {
                             return createFailedRequestStatus(
-                            "list of sources contains the same url twice "+
-                            "url#"+i+" is "+to_urls[i] +
-                            " and url#"+j+" is "+to_urls[j]);
+                                    "list of sources contains the same url twice " +
+                                    "url#" + i + " is " + to_urls[i] +
+                                    " and url#" + j + " is " + to_urls[j]);
                         }
                     }
                 }
             }
             long lifetime = configuration.getCopyLifetime();
-            if(cred_lifetime < lifetime  )
-            {
-                say("credential lifetime is less than default lifetime, using credential lifetime ="+cred_lifetime);
+            if (cred_lifetime < lifetime) {
+                say("credential lifetime is less than default lifetime, using credential lifetime =" + cred_lifetime);
                 lifetime = cred_lifetime;
             }
             // create a request object
             say("calling Request.createCopyRequest()");
             ContainerRequest r = new CopyRequest(
-            user,
-            credential.getId(),
-            copyStorage,
-            from_urls,
-            to_urls,
-            null, // no space reservation in v1
-            configuration,
-            lifetime,
-            copyFileRequestStorage,
-            configuration.getCopyRetryTimeout(),
-            configuration.getCopyMaxNumOfRetries(),
-            SRMProtocol.V1_1,
-            org.dcache.srm.v2_2.TFileStorageType.PERMANENT,
-            null,
-            null,null,
-            client_host,
-            null);
-            say(" Copy Request = "+r);
+                    user,
+                    credential.getId(),
+                    copyStorage,
+                    from_urls,
+                    to_urls,
+                    null, // no space reservation in v1
+                    configuration,
+                    lifetime,
+                    copyFileRequestStorage,
+                    configuration.getCopyRetryTimeout(),
+                    configuration.getCopyMaxNumOfRetries(),
+                    SRMProtocol.V1_1,
+                    org.dcache.srm.v2_2.TFileStorageType.PERMANENT,
+                    null,
+                    null, null,
+                    client_host,
+                    null);
+            say(" Copy Request = " + r);
             // RequesScheduler will take care of the rest
             r.schedule(copyRequestScheduler);
 
             // Return the request status
             RequestStatus rs = r.getRequestStatus();
-            say(" copy returns RequestStatus = "+rs);
+            say(" copy returns RequestStatus = " + rs);
             return rs;
-        }
-        catch(Exception e) {
+        } catch (Exception e) {
             esay(e);
-            return createFailedRequestStatus("copy request generated error : "+e);
+            return createFailedRequestStatus("copy request generated error : " + e);
         }
     }
 
-   /**
+    /**
      * The implementation of SRM get method.
      * Checks the protocols, if it contains at least one supported then it
      * creates the request and places it in a request repository
@@ -815,60 +814,57 @@ public class SRM {
      *         array of protocols understood by SRM client
      * @return request status assosiated with this request
      */
-
-
     public RequestStatus get(SRMUser user,
-    RequestCredential credential,
-    String[] surls,
-    String[] protocols,
-    String client_host) {
+            RequestCredential credential,
+            String[] surls,
+            String[] protocols,
+            String client_host) {
         int len = protocols.length;
         int i = 0;
         // create a request object
         try {
-            say("get(): user = "+user);
+            say("get(): user = " + user);
             String[] supportedProtocols = storage.supportedPutProtocols();
-            boolean foundMatchedProtocol=false;
-            for(String supportedProtocol: supportedProtocols){
-                 for(String protocol:protocols) {
-                     if(supportedProtocol.equals(protocol)){
-                         foundMatchedProtocol=true;
-                         break;
-                     }
-                 }
+            boolean foundMatchedProtocol = false;
+            for (String supportedProtocol : supportedProtocols) {
+                for (String protocol : protocols) {
+                    if (supportedProtocol.equals(protocol)) {
+                        foundMatchedProtocol = true;
+                        break;
+                    }
+                }
             }
-            if(!foundMatchedProtocol) {
+            if (!foundMatchedProtocol) {
                 StringBuffer errorsb =
-                    new StringBuffer("Protocol(s) specified not supported: [ ");
-                for(String protocol:protocols) {
+                        new StringBuffer("Protocol(s) specified not supported: [ ");
+                for (String protocol : protocols) {
                     errorsb.append(protocol).append(' ');
                 }
                 errorsb.append(']');
-                return  createFailedRequestStatus(errorsb.toString());
+                return createFailedRequestStatus(errorsb.toString());
             }
             ContainerRequest r =
-            new  GetRequest(user,credential.getId(),
-            getStorage,
-            surls,protocols,configuration,
-            configuration.getGetLifetime(),
-            getFileRequestStorage,
-            configuration.getGetRetryTimeout(),
-            configuration.getGetMaxNumOfRetries(),
-            null,
-            client_host);
-            r.setScheduler(getRequestScheduler.getId(),0);
+                    new GetRequest(user, credential.getId(),
+                    getStorage,
+                    surls, protocols, configuration,
+                    configuration.getGetLifetime(),
+                    getFileRequestStorage,
+                    configuration.getGetRetryTimeout(),
+                    configuration.getGetMaxNumOfRetries(),
+                    null,
+                    client_host);
+            r.setScheduler(getRequestScheduler.getId(), 0);
 
             r.schedule(getRequestScheduler);
             // RequestScheduler will take care of the rest
             //getRequestScheduler.add(r);
             // Return the request status
             RequestStatus rs = r.getRequestStatus();
-            say("get() initial RequestStatus = "+rs);
+            say("get() initial RequestStatus = " + rs);
             return rs;
-        }
-        catch(Exception e) {
+        } catch (Exception e) {
             esay(e);
-            return  createFailedRequestStatus("get error "+e);
+            return createFailedRequestStatus("get error " + e);
         }
 
     }
@@ -876,22 +872,21 @@ public class SRM {
     /**
      * this srm method is not implemented
      */
-    public RequestStatus getEstGetTime(SRMUser user,RequestCredential credential,String[] SURLS, String[] protocols) {
+    public RequestStatus getEstGetTime(SRMUser user, RequestCredential credential, String[] SURLS, String[] protocols) {
         return createFailedRequestStatus("time is unknown");
     }
 
     /**
      * this srm method is not implemented
      */
-    public RequestStatus getEstPutTime(SRMUser user,RequestCredential credential,
-    String[] src_names,
-    String[] dest_names,
-    long[] sizes,
-    boolean[] wantPermanent,
-    String[] protocols) {
-        return  createFailedRequestStatus("time is unknown");
+    public RequestStatus getEstPutTime(SRMUser user, RequestCredential credential,
+            String[] src_names,
+            String[] dest_names,
+            long[] sizes,
+            boolean[] wantPermanent,
+            String[] protocols) {
+        return createFailedRequestStatus("time is unknown");
     }
-
     /**
      * The implementation of SRM getFileMetaData method.
      * Not really used by anyone.
@@ -902,52 +897,52 @@ public class SRM {
      *         the array of SURLs of files of interest
      * @return FileMetaData array assosiated with these SURLs
      */
-    private final static String SFN_STRING="?SFN=";
-    public FileMetaData[] getFileMetaData(SRMUser user,RequestCredential credential,String[] SURLS) {
+    private final static String SFN_STRING = "?SFN=";
+
+    public FileMetaData[] getFileMetaData(SRMUser user, RequestCredential credential, String[] SURLS) {
         StringBuffer sb = new StringBuffer();
         sb.append("getFileMetaData(");
-        if(SURLS == null) {
+        if (SURLS == null) {
             sb.append("SURLS are null)");
             say(sb.toString());
             throw new IllegalArgumentException(sb.toString());
         }
 
         int len = SURLS.length;
-        for(int i =0; i<len; ++ i) {
-            sb.append(SURLS[i]+",");
+        for (int i = 0; i < len; ++i) {
+            sb.append(SURLS[i] + ",");
         }
         sb.append(")");
         say(sb.toString());
 
         FileMetaData[] fmds = new FileMetaData[len];
         // call getFileMetaData(String path) for each SURL in array
-        for(int i =0; i<len; ++ i) {
+        for (int i = 0; i < len; ++i) {
             try {
                 GlobusURL url = new GlobusURL(SURLS[i]);
-                if(!Tools.sameHost(configuration.getSrmhost(),
-                url.getHost())) {
-                    String error ="getFileMetaData: surl is not local : "+url.getURL();
+                if (!Tools.sameHost(configuration.getSrmhost(),
+                        url.getHost())) {
+                    String error = "getFileMetaData: surl is not local : " + url.getURL();
                     esay(error);
                     throw new IllegalArgumentException(error);
                 }
 
                 String surlpath = url.getPath();
-                int indx=surlpath.indexOf(SFN_STRING);
-                if( indx != -1) {
+                int indx = surlpath.indexOf(SFN_STRING);
+                if (indx != -1) {
 
-                    surlpath=surlpath.substring(indx+SFN_STRING.length());
+                    surlpath = surlpath.substring(indx + SFN_STRING.length());
                 }
 
-                say("getFileMetaData(String[]) calling FileMetaData("+surlpath+")");
+                say("getFileMetaData(String[]) calling FileMetaData(" + surlpath + ")");
 
-                 FileMetaData fmd = storage.getFileMetaData(user,surlpath);
-		 fmd.SURL = SURLS[i];
-                 fmds[i] = new FileMetaData(fmd);
-                say("FileMetaData["+i+"]="+fmds[i]);
-            }
-            catch(Exception e) {
-                esay("getFileMetaData failed to parse SURL: " +e);
-                throw new IllegalArgumentException("getFileMetaData failed to parse SURL: " +e);
+                FileMetaData fmd = storage.getFileMetaData(user, surlpath);
+                fmd.SURL = SURLS[i];
+                fmds[i] = new FileMetaData(fmd);
+                say("FileMetaData[" + i + "]=" + fmds[i]);
+            } catch (Exception e) {
+                esay("getFileMetaData failed to parse SURL: " + e);
+                throw new IllegalArgumentException("getFileMetaData failed to parse SURL: " + e);
             }
         }
 
@@ -957,15 +952,13 @@ public class SRM {
     /**
      * not implemented
      */
-    public String[] getProtocols(SRMUser user,RequestCredential credential) {
+    public String[] getProtocols(SRMUser user, RequestCredential credential) {
         try {
             return storage.supportedGetProtocols();
-        }
-        catch( SRMException srme) {
+        } catch (SRMException srme) {
             return new String[0];
         }
     }
-
 
     /**
      * The implementation of SRM getRequestStatus method.
@@ -976,43 +969,39 @@ public class SRM {
      *         the id of the previously issued request
      * @return request status assosiated with this request
      */
-
-    public RequestStatus getRequestStatus(SRMUser user,RequestCredential credential,int requestId) {
-        say(" getRequestStatus("+user+","+requestId+")");
+    public RequestStatus getRequestStatus(SRMUser user, RequestCredential credential, int requestId) {
+        say(" getRequestStatus(" + user + "," + requestId + ")");
         try {
             // Try to get the request with such id
-            say("getRequestStatus() Request.getRequest("+requestId+");");
-            ContainerRequest r =(ContainerRequest) ContainerRequest.getRequest(requestId);
+            say("getRequestStatus() Request.getRequest(" + requestId + ");");
+            ContainerRequest r = (ContainerRequest) ContainerRequest.getRequest(requestId);
             say("getRequestStatus() received Request  ");
-            if(r != null) {
+            if (r != null) {
                 // we found one make sure it is the same  user
                 SRMUser req_user = r.getSRMUser();
-                if(req_user == null || req_user.equals(user)) {
+                if (req_user == null || req_user.equals(user)) {
                     // say(" getRequestStatus() request found, returns request file status");
                     // and return the request status
                     RequestStatus rs = r.getRequestStatus();
-                    say("obtained request status, returning rs for request id="+requestId);
+                    say("obtained request status, returning rs for request id=" + requestId);
                     return rs;
-                }
-                else {
-                    return createFailedRequestStatus("getRequestStatus(): request #"+requestId+
-                    " does not belong to user "+user,requestId);
+                } else {
+                    return createFailedRequestStatus("getRequestStatus(): request #" + requestId +
+                            " does not belong to user " + user, requestId);
                 }
             }
-            return  createFailedRequestStatus("getRequestStatus() request #"+requestId+
-            " was not found",requestId);
-        }
-        catch(Exception e) {
+            return createFailedRequestStatus("getRequestStatus() request #" + requestId +
+                    " was not found", requestId);
+        } catch (Exception e) {
             esay(e);
-            return createFailedRequestStatus("getting request #"+requestId+
-            " generated error : "+e,requestId);
+            return createFailedRequestStatus("getting request #" + requestId +
+                    " generated error : " + e, requestId);
         }
     }
 
-    public RequestStatus mkPermanent(SRMUser user,RequestCredential credential,String[] SURLS) {
-        return  createFailedRequestStatus("not supported, all files are already permanent");
+    public RequestStatus mkPermanent(SRMUser user, RequestCredential credential, String[] SURLS) {
+        return createFailedRequestStatus("not supported, all files are already permanent");
     }
-
 
     /**
      * The implementation of SRM pin method.
@@ -1024,17 +1013,17 @@ public class SRM {
      *         array of TURL (Transfer URL) strings
      * @return request status assosiated with this request
      */
-
-    public RequestStatus pin(SRMUser user,RequestCredential credential, String[] TURLS) {
+    public RequestStatus pin(SRMUser user, RequestCredential credential, String[] TURLS) {
         return createFailedRequestStatus("pins by users are not supported, use get instead");
     }
+
     /**
      * used for testing only
      *
      * @param user
      *         an instance of the RSRMUseror null if unknown
      */
-    public boolean ping(SRMUser user,RequestCredential credential) {
+    public boolean ping(SRMUser user, RequestCredential credential) {
         return true;
     }
 
@@ -1051,16 +1040,14 @@ public class SRM {
      *         the new state of the request
      * @return request status assosiated with this request
      */
-
     public RequestStatus put(SRMUser user,
-    RequestCredential credential,
-    String[] sources,
-    String[] dests,
-    long[] sizes,
-    boolean[] wantPerm,
-    String[] protocols,
-    String clientHost
-    ) {
+            RequestCredential credential,
+            String[] sources,
+            String[] dests,
+            long[] sizes,
+            boolean[] wantPerm,
+            String[] protocols,
+            String clientHost) {
         int len = dests.length;
         String[] dests_urls = new String[len];
 
@@ -1069,79 +1056,76 @@ public class SRM {
         // supply paths instead of the whole urls
         // this is not part of the spec
 
-        for(int i = 0; i<len; ++i) {
-            for(int j = 0;j<len; ++j) {
-                if(i != j) {
-                    if(dests[i].equals(dests[j])) {
+        for (int i = 0; i < len; ++i) {
+            for (int j = 0; j < len; ++j) {
+                if (i != j) {
+                    if (dests[i].equals(dests[j])) {
                         return createFailedRequestStatus(
-                        "put(): list of sources contains the same url twice "+
-                        "url#"+i+" is "+dests[i] +
-                        " and url#"+j+" is "+dests[j]);
+                                "put(): list of sources contains the same url twice " +
+                                "url#" + i + " is " + dests[i] +
+                                " and url#" + j + " is " + dests[j]);
                     }
                 }
             }
         }
 
-        srmprefix = "srm://"+configuration.getSrmhost()+
-        ":"+configuration.getPort()+"/";
+        srmprefix = "srm://" + configuration.getSrmhost() +
+                ":" + configuration.getPort() + "/";
 
-        for(int i=0;i<len;++i) {
-            if(dests[i].startsWith("srm://")) {
+        for (int i = 0; i < len; ++i) {
+            if (dests[i].startsWith("srm://")) {
                 dests_urls[i] = dests[i];
-            }
-            else {
-                dests_urls[i] = srmprefix+dests[i];
+            } else {
+                dests_urls[i] = srmprefix + dests[i];
             }
         }
         try {
 
             String[] supportedProtocols = storage.supportedPutProtocols();
-            boolean foundMatchedProtocol=false;
-            for(String supportedProtocol: supportedProtocols){
-                 for(String protocol:protocols) {
-                     if(supportedProtocol.equals(protocol)){
-                         foundMatchedProtocol=true;
-                         break;
-                     }
-                 }
+            boolean foundMatchedProtocol = false;
+            for (String supportedProtocol : supportedProtocols) {
+                for (String protocol : protocols) {
+                    if (supportedProtocol.equals(protocol)) {
+                        foundMatchedProtocol = true;
+                        break;
+                    }
+                }
             }
-            if(!foundMatchedProtocol) {
+            if (!foundMatchedProtocol) {
                 StringBuffer errorsb =
-                    new StringBuffer("Protocol(s) specified not supported: [ ");
-                for(String protocol:protocols) {
+                        new StringBuffer("Protocol(s) specified not supported: [ ");
+                for (String protocol : protocols) {
                     errorsb.append(protocol).append(' ');
                 }
                 errorsb.append(']');
-                return  createFailedRequestStatus(errorsb.toString());
+                return createFailedRequestStatus(errorsb.toString());
             }
             // create a new put request
             ContainerRequest r = new PutRequest(user,
-            credential.getId(),
-            putStorage,
-            sources, dests_urls, sizes,
-            wantPerm, protocols,configuration,configuration.getPutLifetime(),
-            putFileRequestStorage,
-            configuration.getPutRetryTimeout(),
-            configuration.getPutMaxNumOfRetries(),
-            clientHost,
-            null,
-            null,
-            null,
-            null
-            );
-            r.setScheduler(putRequestScheduler.getId(),0);
+                    credential.getId(),
+                    putStorage,
+                    sources, dests_urls, sizes,
+                    wantPerm, protocols, configuration, configuration.getPutLifetime(),
+                    putFileRequestStorage,
+                    configuration.getPutRetryTimeout(),
+                    configuration.getPutMaxNumOfRetries(),
+                    clientHost,
+                    null,
+                    null,
+                    null,
+                    null);
+            r.setScheduler(putRequestScheduler.getId(), 0);
             //requestScheduler will pick up from here
             r.schedule(putRequestScheduler);
             // return status
             return r.getRequestStatus();
-        }
-        catch(Exception e) {
+        } catch (Exception e) {
             esay(e);
-            return  createFailedRequestStatus("put(): error "+e);
+            return createFailedRequestStatus("put(): error " + e);
         }
     }
 
-     /**
+    /**
      * The implementation of SRM setFileStatus method.
      *  the only status that user can set file request into
      *  is "Done" status
@@ -1156,62 +1140,56 @@ public class SRM {
      *         the new state of the request
      * @return request status assosiated with this request
      */
-
-    public RequestStatus setFileStatus(SRMUser user,RequestCredential credential,
-    int requestId, int fileRequestId, String state) {
+    public RequestStatus setFileStatus(SRMUser user, RequestCredential credential,
+            int requestId, int fileRequestId, String state) {
         try {
-            say(" setFileStatus("+requestId+","+fileRequestId+","+state+");");
-            if(!state.equalsIgnoreCase("done") && !state.equalsIgnoreCase("running") ) {
-                return createFailedRequestStatus("setFileStatus(): incorrect state "+state);
+            say(" setFileStatus(" + requestId + "," + fileRequestId + "," + state + ");");
+            if (!state.equalsIgnoreCase("done") && !state.equalsIgnoreCase("running")) {
+                return createFailedRequestStatus("setFileStatus(): incorrect state " + state);
             }
 
             //try to get the request
-            ContainerRequest r =(ContainerRequest) ContainerRequest.getRequest(requestId);
-            if(r == null) {
-                return createFailedRequestStatus("setFileStatus(): request #"+requestId+" was not found");
+            ContainerRequest r = (ContainerRequest) ContainerRequest.getRequest(requestId);
+            if (r == null) {
+                return createFailedRequestStatus("setFileStatus(): request #" + requestId + " was not found");
             }
             // check that user is the same
             SRMUser req_user = r.getUser();
-            if(req_user != null && !req_user.equals(user)) {
+            if (req_user != null && !req_user.equals(user)) {
                 return createFailedRequestStatus(
-                "request #"+requestId+" does not belong to user "+user);
+                        "request #" + requestId + " does not belong to user " + user);
             }
             // get file request from request
             FileRequest fr = r.getFileRequest(fileRequestId);
-            if(fr == null) {
-                return createFailedRequestStatus("request #"+requestId+
-                " does not contain file request #"+fileRequestId);
+            if (fr == null) {
+                return createFailedRequestStatus("request #" + requestId +
+                        " does not contain file request #" + fileRequestId);
             }
-            synchronized(fr)
-            {
+            synchronized (fr) {
                 State s = fr.getState();
-                if(s == State.CANCELED || s == State.DONE || s == State.FAILED)
-                {
-                    say("can not set status, the file status is already "+s);
-                }
-                else
-                {
-                    if(state.equalsIgnoreCase("done") && fr instanceof PutFileRequest &&
-                        (fr.getState() == State.READY || fr.getState() ==State.RUNNING )) {
+                if (s == State.CANCELED || s == State.DONE || s == State.FAILED) {
+                    say("can not set status, the file status is already " + s);
+                } else {
+                    if (state.equalsIgnoreCase("done") && fr instanceof PutFileRequest &&
+                            (fr.getState() == State.READY || fr.getState() == State.RUNNING)) {
                         PutFileRequest pfr = (PutFileRequest) fr;
-                        if ( pfr.getTurlString()!=null) {
+                        if (pfr.getTurlString() != null) {
                             try {
-                                FileMetaData fmd= storage.getFileMetaData(user,pfr.getPath());
-                                if(fmd == null) {
-                                    pfr.setState(State.FAILED,"file transfer was not performed on SURL");
+                                FileMetaData fmd = storage.getFileMetaData(user, pfr.getPath());
+                                if (fmd == null) {
+                                    pfr.setState(State.FAILED, "file transfer was not performed on SURL");
                                 } else {
                                     fr.setStatus(state);
                                 }
+                            } catch (Exception srme) {
+                                pfr.setState(State.FAILED, "file transfer was not performed on SURL");
                             }
-                            catch (Exception srme) {
-                             pfr.setState(State.FAILED,"file transfer was not performed on SURL");
-                           }
                         }
 
                     } else {
 
                         // process request
-                        say(" calling fr.setStatus(\""+state+"\")");
+                        say(" calling fr.setStatus(\"" + state + "\")");
                         fr.setStatus(state);
                     }
                 }
@@ -1219,12 +1197,11 @@ public class SRM {
 
             // return request status
             return r.getRequestStatus();
-        }catch(Exception e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
 
     }
-
 
     /**
      * The implementation of SRM unPin method.
@@ -1238,12 +1215,10 @@ public class SRM {
      *         the id of the previously issued pin request
      * @return request status assosiated with this request
      */
-
-    public RequestStatus unPin(SRMUser user,RequestCredential credential,
-    String[] TURLS, int requestId) {
+    public RequestStatus unPin(SRMUser user, RequestCredential credential,
+            String[] TURLS, int requestId) {
         return createFailedRequestStatus("pins by users are not supported, use get instead");
     }
-
 
     /**
      * @return iterator for set of ids of all current srm requests
@@ -1258,23 +1233,23 @@ public class SRM {
     public ContainerRequest getRequest(Integer id) {
         try {
             return (ContainerRequest) ContainerRequest.getRequest(id.intValue());
-        }catch(Exception e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
 
     }
 
-
     private RequestStatus createFailedRequestStatus(String error) {
-        esay("creating a failed request status with a message: "+error);
+        esay("creating a failed request status with a message: " + error);
         RequestStatus rs = new RequestStatus();
         rs.requestId = -1;
         rs.errorMessage = error;
         rs.state = "Failed";
         return rs;
     }
-    private RequestStatus createFailedRequestStatus(String error,int  requestId) {
-        esay("creating a failed request status with a message: "+error);
+
+    private RequestStatus createFailedRequestStatus(String error, int requestId) {
+        esay("creating a failed request status with a message: " + error);
         RequestStatus rs = new RequestStatus();
         rs.requestId = requestId;
         rs.errorMessage = error;
@@ -1282,62 +1257,59 @@ public class SRM {
         return rs;
     }
 
-
     public StorageElementInfo getStorageElementInfo(
-    SRMUser user,
-    RequestCredential credential) throws SRMException {
+            SRMUser user,
+            RequestCredential credential) throws SRMException {
         return storage.getStorageElementInfo(user);
     }
 
-    public void listGetRequests(StringBuffer sb)  throws java.sql.SQLException {
-        listRequests(sb,getRequestScheduler,getStorage);
+    public void listGetRequests(StringBuffer sb) throws java.sql.SQLException {
+        listRequests(sb, getRequestScheduler, getStorage);
     }
 
-    public Set getGetRequestIds(SRMUser user, String description)  throws java.sql.SQLException {
-        return
-            getStorage.getActiveRequestIds(getRequestScheduler.getId(),user,description);
+    public Set getGetRequestIds(SRMUser user, String description) throws java.sql.SQLException {
+        return getStorage.getActiveRequestIds(getRequestScheduler.getId(), user, description);
     }
 
-    public Set getLsRequestIds(SRMUser user, String description)  throws java.sql.SQLException {
-        return
-            lsRequestStorage.getActiveRequestIds(getRequestScheduler.getId(),user,description);
+    public Set getLsRequestIds(SRMUser user, String description) throws java.sql.SQLException {
+        return lsRequestStorage.getActiveRequestIds(getRequestScheduler.getId(), user, description);
     }
 
-    public void listLatestCompletedGetRequests(StringBuffer sb,int maxCount)  throws java.sql.SQLException {
+    public void listLatestCompletedGetRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
         Set activeRequestIds = getStorage.getLatestCompletedRequestIds(maxCount);
-        for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long)i.next();
-            GetRequest gr = (GetRequest)ContainerRequest.getRequest(requestId);
+        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
+            Long requestId = (Long) i.next();
+            GetRequest gr = (GetRequest) ContainerRequest.getRequest(requestId);
             sb.append(gr).append('\n');
         }
 
     }
 
-    public void listLatestFailedGetRequests(StringBuffer sb,int maxCount)  throws java.sql.SQLException {
+    public void listLatestFailedGetRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
         Set activeRequestIds = getStorage.getLatestFailedRequestIds(maxCount);
-        for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long)i.next();
-            GetRequest gr = (GetRequest)ContainerRequest.getRequest(requestId);
+        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
+            Long requestId = (Long) i.next();
+            GetRequest gr = (GetRequest) ContainerRequest.getRequest(requestId);
             sb.append(gr).append('\n');
         }
 
     }
 
-    public void listLatestDoneGetRequests(StringBuffer sb,int maxCount)  throws java.sql.SQLException {
+    public void listLatestDoneGetRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
         Set activeRequestIds = getStorage.getLatestDoneRequestIds(maxCount);
-        for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long)i.next();
-            GetRequest gr = (GetRequest)ContainerRequest.getRequest(requestId);
+        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
+            Long requestId = (Long) i.next();
+            GetRequest gr = (GetRequest) ContainerRequest.getRequest(requestId);
             sb.append(gr).append('\n');
         }
 
     }
 
-    public void listLatestCanceledGetRequests(StringBuffer sb,int maxCount)  throws java.sql.SQLException {
+    public void listLatestCanceledGetRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
         Set activeRequestIds = getStorage.getLatestCanceledRequestIds(maxCount);
-        for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long)i.next();
-            GetRequest gr = (GetRequest)ContainerRequest.getRequest(requestId);
+        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
+            Long requestId = (Long) i.next();
+            GetRequest gr = (GetRequest) ContainerRequest.getRequest(requestId);
             sb.append(gr).append('\n');
         }
     }
@@ -1349,70 +1321,75 @@ public class SRM {
     public void printLsSchedulerInfo(StringBuffer sb) throws java.sql.SQLException {
         lsRequestScheduler.getInfo(sb);
     }
+
     public void printGetSchedulerThreadQueue(StringBuffer sb) throws java.sql.SQLException {
         getRequestScheduler.printThreadQueue(sb);
 
     }
+
     public void printGetSchedulerPriorityThreadQueue(StringBuffer sb) throws java.sql.SQLException {
         getRequestScheduler.printPriorityThreadQueue(sb);
     }
+
     public void printGetSchedulerReadyThreadQueue(StringBuffer sb) throws java.sql.SQLException {
         getRequestScheduler.printReadyQueue(sb);
 
     }
+
     public void printLsSchedulerThreadQueue(StringBuffer sb) throws java.sql.SQLException {
         lsRequestScheduler.printThreadQueue(sb);
 
     }
+
     public void printLsSchedulerPriorityThreadQueue(StringBuffer sb) throws java.sql.SQLException {
         lsRequestScheduler.printPriorityThreadQueue(sb);
     }
+
     public void printLsSchedulerReadyThreadQueue(StringBuffer sb) throws java.sql.SQLException {
         lsRequestScheduler.printReadyQueue(sb);
 
     }
 
-    public void listPutRequests(StringBuffer sb)  throws java.sql.SQLException {
-        listRequests(sb,putRequestScheduler,putStorage);
+    public void listPutRequests(StringBuffer sb) throws java.sql.SQLException {
+        listRequests(sb, putRequestScheduler, putStorage);
     }
 
-    public Set getPutRequestIds(SRMUser user, String description)  throws java.sql.SQLException {
-        return
-            putStorage.getActiveRequestIds(putRequestScheduler.getId(),user,description);
+    public Set getPutRequestIds(SRMUser user, String description) throws java.sql.SQLException {
+        return putStorage.getActiveRequestIds(putRequestScheduler.getId(), user, description);
     }
 
-   public void listLatestCompletedPutRequests(StringBuffer sb,int maxCount)  throws java.sql.SQLException {
+    public void listLatestCompletedPutRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
         Set activeRequestIds = putStorage.getLatestCompletedRequestIds(maxCount);
-        for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long)i.next();
-            PutRequest pr = (PutRequest)ContainerRequest.getRequest(requestId);
+        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
+            Long requestId = (Long) i.next();
+            PutRequest pr = (PutRequest) ContainerRequest.getRequest(requestId);
             sb.append(pr).append('\n');
         }
     }
 
-    public void listLatestFailedPutRequests(StringBuffer sb,int maxCount)  throws java.sql.SQLException {
+    public void listLatestFailedPutRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
         Set activeRequestIds = putStorage.getLatestFailedRequestIds(maxCount);
-        for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long)i.next();
-            PutRequest pr = (PutRequest)ContainerRequest.getRequest(requestId);
+        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
+            Long requestId = (Long) i.next();
+            PutRequest pr = (PutRequest) ContainerRequest.getRequest(requestId);
             sb.append(pr).append('\n');
         }
     }
 
-    public void listLatestCanceledPutRequests(StringBuffer sb,int maxCount)  throws java.sql.SQLException {
+    public void listLatestCanceledPutRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
         Set activeRequestIds = putStorage.getLatestCanceledRequestIds(maxCount);
-        for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-             Long requestId = (Long)i.next();
-            PutRequest pr = (PutRequest)ContainerRequest.getRequest(requestId);
+        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
+            Long requestId = (Long) i.next();
+            PutRequest pr = (PutRequest) ContainerRequest.getRequest(requestId);
             sb.append(pr).append('\n');
         }
     }
 
-    public void listLatestDonePutRequests(StringBuffer sb,int maxCount)  throws java.sql.SQLException {
+    public void listLatestDonePutRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
         Set activeRequestIds = putStorage.getLatestDoneRequestIds(maxCount);
-        for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long)i.next();
-            PutRequest pr = (PutRequest)ContainerRequest.getRequest(requestId);
+        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
+            Long requestId = (Long) i.next();
+            PutRequest pr = (PutRequest) ContainerRequest.getRequest(requestId);
             sb.append(pr).append('\n');
         }
     }
@@ -1425,52 +1402,56 @@ public class SRM {
         putRequestScheduler.printThreadQueue(sb);
 
     }
+
     public void printPutSchedulerPriorityThreadQueue(StringBuffer sb) throws java.sql.SQLException {
         putRequestScheduler.printPriorityThreadQueue(sb);
     }
+
     public void printPutSchedulerReadyThreadQueue(StringBuffer sb) throws java.sql.SQLException {
         putRequestScheduler.printReadyQueue(sb);
 
     }
-    public void listCopyRequests(StringBuffer sb)  throws java.sql.SQLException {
-        listRequests(sb,copyRequestScheduler,copyStorage);
+
+    public void listCopyRequests(StringBuffer sb) throws java.sql.SQLException {
+        listRequests(sb, copyRequestScheduler, copyStorage);
     }
 
-    public Set getCopyRequestIds(SRMUser user, String description)  throws java.sql.SQLException {
-        return
-            copyStorage.getActiveRequestIds(copyRequestScheduler.getId(),user,description);
+    public Set getCopyRequestIds(SRMUser user, String description) throws java.sql.SQLException {
+        return copyStorage.getActiveRequestIds(copyRequestScheduler.getId(), user, description);
     }
 
-    public void listLatestCompletedCopyRequests(StringBuffer sb,int maxCount)  throws java.sql.SQLException {
+    public void listLatestCompletedCopyRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
         Set activeRequestIds = copyStorage.getLatestCompletedRequestIds(maxCount);
-        for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long)i.next();
-            CopyRequest cr = (CopyRequest)ContainerRequest.getRequest(requestId);
+        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
+            Long requestId = (Long) i.next();
+            CopyRequest cr = (CopyRequest) ContainerRequest.getRequest(requestId);
             sb.append(cr).append('\n');
         }
     }
 
-    public void listLatestFailedCopyRequests(StringBuffer sb,int maxCount)  throws java.sql.SQLException {
+    public void listLatestFailedCopyRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
         Set activeRequestIds = copyStorage.getLatestFailedRequestIds(maxCount);
-        for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long)i.next();
-            CopyRequest cr = (CopyRequest)ContainerRequest.getRequest(requestId);
+        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
+            Long requestId = (Long) i.next();
+            CopyRequest cr = (CopyRequest) ContainerRequest.getRequest(requestId);
             sb.append(cr).append('\n');
         }
     }
-    public void listLatestCanceledCopyRequests(StringBuffer sb,int maxCount)  throws java.sql.SQLException {
+
+    public void listLatestCanceledCopyRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
         Set activeRequestIds = copyStorage.getLatestCanceledRequestIds(maxCount);
-        for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long)i.next();
-            CopyRequest cr = (CopyRequest)ContainerRequest.getRequest(requestId);
+        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
+            Long requestId = (Long) i.next();
+            CopyRequest cr = (CopyRequest) ContainerRequest.getRequest(requestId);
             sb.append(cr).append('\n');
         }
     }
-    public void listLatestDoneCopyRequests(StringBuffer sb,int maxCount)  throws java.sql.SQLException {
+
+    public void listLatestDoneCopyRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
         Set activeRequestIds = copyStorage.getLatestDoneRequestIds(maxCount);
-        for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long)i.next();
-            CopyRequest cr = (CopyRequest)ContainerRequest.getRequest(requestId);
+        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
+            Long requestId = (Long) i.next();
+            CopyRequest cr = (CopyRequest) ContainerRequest.getRequest(requestId);
             sb.append(cr).append('\n');
         }
     }
@@ -1483,56 +1464,56 @@ public class SRM {
         copyRequestScheduler.printThreadQueue(sb);
 
     }
+
     public void printCopySchedulerPriorityThreadQueue(StringBuffer sb) throws java.sql.SQLException {
         copyRequestScheduler.printPriorityThreadQueue(sb);
     }
+
     public void printCopySchedulerReadyThreadQueue(StringBuffer sb) throws java.sql.SQLException {
         copyRequestScheduler.printReadyQueue(sb);
 
     }
 
-    public void listBringOnlineRequests(StringBuffer sb)  throws java.sql.SQLException {
-        listRequests(sb,bringOnlineRequestScheduler,bringOnlineStorage);
+    public void listBringOnlineRequests(StringBuffer sb) throws java.sql.SQLException {
+        listRequests(sb, bringOnlineRequestScheduler, bringOnlineStorage);
     }
 
-
-    public Set getBringOnlineRequestIds(SRMUser user, String description)  throws java.sql.SQLException {
-        return
-            bringOnlineStorage.getActiveRequestIds(bringOnlineRequestScheduler.getId(),user,description);
+    public Set getBringOnlineRequestIds(SRMUser user, String description) throws java.sql.SQLException {
+        return bringOnlineStorage.getActiveRequestIds(bringOnlineRequestScheduler.getId(), user, description);
     }
 
-    public void listLatestCompletedBringOnlineRequests(StringBuffer sb,int maxCount)  throws java.sql.SQLException {
+    public void listLatestCompletedBringOnlineRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
         Set activeRequestIds = bringOnlineStorage.getLatestCompletedRequestIds(maxCount);
-        for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long)i.next();
-            BringOnlineRequest pr = (BringOnlineRequest)ContainerRequest.getRequest(requestId);
+        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
+            Long requestId = (Long) i.next();
+            BringOnlineRequest pr = (BringOnlineRequest) ContainerRequest.getRequest(requestId);
             sb.append(pr).append('\n');
         }
     }
 
-    public void listLatestFailedBringOnlineRequests(StringBuffer sb,int maxCount)  throws java.sql.SQLException {
+    public void listLatestFailedBringOnlineRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
         Set activeRequestIds = bringOnlineStorage.getLatestFailedRequestIds(maxCount);
-        for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long)i.next();
-            BringOnlineRequest pr = (BringOnlineRequest)ContainerRequest.getRequest(requestId);
+        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
+            Long requestId = (Long) i.next();
+            BringOnlineRequest pr = (BringOnlineRequest) ContainerRequest.getRequest(requestId);
             sb.append(pr).append('\n');
         }
     }
 
-    public void listLatestCanceledBringOnlineRequests(StringBuffer sb,int maxCount)  throws java.sql.SQLException {
+    public void listLatestCanceledBringOnlineRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
         Set activeRequestIds = bringOnlineStorage.getLatestCanceledRequestIds(maxCount);
-        for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-             Long requestId = (Long)i.next();
-            BringOnlineRequest pr = (BringOnlineRequest)ContainerRequest.getRequest(requestId);
+        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
+            Long requestId = (Long) i.next();
+            BringOnlineRequest pr = (BringOnlineRequest) ContainerRequest.getRequest(requestId);
             sb.append(pr).append('\n');
         }
     }
 
-    public void listLatestDoneBringOnlineRequests(StringBuffer sb,int maxCount)  throws java.sql.SQLException {
+    public void listLatestDoneBringOnlineRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
         Set activeRequestIds = bringOnlineStorage.getLatestDoneRequestIds(maxCount);
-        for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long)i.next();
-            BringOnlineRequest pr = (BringOnlineRequest)ContainerRequest.getRequest(requestId);
+        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
+            Long requestId = (Long) i.next();
+            BringOnlineRequest pr = (BringOnlineRequest) ContainerRequest.getRequest(requestId);
             sb.append(pr).append('\n');
         }
     }
@@ -1545,31 +1526,32 @@ public class SRM {
         bringOnlineRequestScheduler.printThreadQueue(sb);
 
     }
+
     public void printBringOnlineSchedulerPriorityThreadQueue(StringBuffer sb) throws java.sql.SQLException {
         bringOnlineRequestScheduler.printPriorityThreadQueue(sb);
     }
+
     public void printBringOnlineSchedulerReadyThreadQueue(StringBuffer sb) throws java.sql.SQLException {
         bringOnlineRequestScheduler.printReadyQueue(sb);
 
     }
 
-    public void listReserveSpaceRequests(StringBuffer sb)  throws java.sql.SQLException {
-        listRequests(sb,reserveSpaceScheduler,reserveSpaceRequestStorage);
+    public void listReserveSpaceRequests(StringBuffer sb) throws java.sql.SQLException {
+        listRequests(sb, reserveSpaceScheduler, reserveSpaceRequestStorage);
     }
 
-    public void listLsRequests(StringBuffer sb)  throws java.sql.SQLException {
-        listRequests(sb,lsRequestScheduler,lsRequestStorage);
+    public void listLsRequests(StringBuffer sb) throws java.sql.SQLException {
+        listRequests(sb, lsRequestScheduler, lsRequestStorage);
     }
-
 
     private void listRequests(StringBuffer sb,
             Scheduler scheduler,
-            DatabaseRequestStorage storage)  throws java.sql.SQLException {
+            DatabaseRequestStorage storage) throws java.sql.SQLException {
         Set activeRequestIds =
-            storage.getActiveRequestIds(scheduler.getId());
-        for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long)i.next();
-            Request r = (Request)Request.getRequest(requestId);
+                storage.getActiveRequestIds(scheduler.getId());
+        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
+            Long requestId = (Long) i.next();
+            Request r = (Request) Request.getRequest(requestId);
             sb.append(r).append('\n');
         }
     }
@@ -1582,135 +1564,125 @@ public class SRM {
         int putRunning = putRequestScheduler.getTotalRunningThreads();
         int maxPutRunning = putRequestScheduler.getThreadPoolSize();
 
-        double load = (double)copyRunning/(double)maxCopyRunning/3.0d +
-        (double)getRunning/(double)maxGetRunning/3.0d +
-        (double)putRunning/(double)maxPutRunning/3.0d ;
+        double load = (double) copyRunning / (double) maxCopyRunning / 3.0d +
+                (double) getRunning / (double) maxGetRunning / 3.0d +
+                (double) putRunning / (double) maxPutRunning / 3.0d;
         return load;
     }
-    public void listRequest(StringBuffer sb,Long requestId,boolean longformat)  throws java.sql.SQLException {
+
+    public void listRequest(StringBuffer sb, Long requestId, boolean longformat) throws java.sql.SQLException {
         Job job = Job.getJob(requestId);
-        if(job == null ) {
-            sb.append("request with reqiest id "+requestId+" is not found\n");
+        if (job == null) {
+            sb.append("request with reqiest id " + requestId + " is not found\n");
             return;
-        }
-        else
-        {
-           sb.append("Job # "+requestId + " is in the state "+job.getState()+"\n");
-            if (job instanceof ContainerRequest)
-            {
-               sb.append("Job is a Request:\n");
-                ContainerRequest r = (ContainerRequest)job;
+        } else {
+            sb.append("Job # " + requestId + " is in the state " + job.getState() + "\n");
+            if (job instanceof ContainerRequest) {
+                sb.append("Job is a Request:\n");
+                ContainerRequest r = (ContainerRequest) job;
                 sb.append(r.toString(longformat)).append('\n');
-            }
-            else if(job instanceof FileRequest)
-            {
-               FileRequest fr = (FileRequest) job;
-               sb.append("Job is a FileRequest from Request #"+fr.getRequestId()+" \n");
-               sb.append(fr.toString(longformat));
+            } else if (job instanceof FileRequest) {
+                FileRequest fr = (FileRequest) job;
+                sb.append("Job is a FileRequest from Request #" + fr.getRequestId() + " \n");
+                sb.append(fr.toString(longformat));
             }
         }
     }
 
-    public void cancelRequest(StringBuffer sb,Long requestId)  throws java.sql.SQLException {
+    public void cancelRequest(StringBuffer sb, Long requestId) throws java.sql.SQLException {
         Job job = Job.getJob(requestId);
-        if(job == null || !(job instanceof ContainerRequest)) {
-            sb.append("request with reqiest id "+requestId+" is not found\n");
+        if (job == null || !(job instanceof ContainerRequest)) {
+            sb.append("request with reqiest id " + requestId + " is not found\n");
             return;
         }
-        ContainerRequest r = (ContainerRequest)job;
+        ContainerRequest r = (ContainerRequest) job;
         try {
-            synchronized(job)
-            {
+            synchronized (job) {
                 State s = job.getState();
-                if(State.isFinalState(s))
-                {
-                    sb.append("job state is already "+s+" can not cancel\n");
-                }
-                else {
-                    r.setState(State.CANCELED,"Canceled by admin through cancel command");
+                if (State.isFinalState(s)) {
+                    sb.append("job state is already " + s + " can not cancel\n");
+                } else {
+                    r.setState(State.CANCELED, "Canceled by admin through cancel command");
                     sb.append("state changed, no warranty that the proccess will end immediately\n");
                     sb.append(r.toString(false)).append('\n');
                 }
             }
-        }
-        catch(IllegalStateTransition ist) {
+        } catch (IllegalStateTransition ist) {
             sb.append(ist);
             esay(ist);
         }
     }
 
-    public void cancelAllGetRequest(StringBuffer sb,String pattern)  throws java.sql.SQLException {
+    public void cancelAllGetRequest(StringBuffer sb, String pattern) throws java.sql.SQLException {
 
-        cancelAllRequest(sb,pattern,getRequestScheduler,getStorage);
+        cancelAllRequest(sb, pattern, getRequestScheduler, getStorage);
     }
 
-    public void cancelAllBringOnlineRequest(StringBuffer sb,String pattern)  throws java.sql.SQLException {
+    public void cancelAllBringOnlineRequest(StringBuffer sb, String pattern) throws java.sql.SQLException {
 
-        cancelAllRequest(sb,pattern,bringOnlineRequestScheduler,bringOnlineStorage);
+        cancelAllRequest(sb, pattern, bringOnlineRequestScheduler, bringOnlineStorage);
     }
 
-    public void cancelAllPutRequest(StringBuffer sb,String pattern)  throws java.sql.SQLException {
+    public void cancelAllPutRequest(StringBuffer sb, String pattern) throws java.sql.SQLException {
 
-        cancelAllRequest(sb,pattern,putRequestScheduler,putStorage);
+        cancelAllRequest(sb, pattern, putRequestScheduler, putStorage);
     }
 
-    public void cancelAllCopyRequest(StringBuffer sb,String pattern)  throws java.sql.SQLException {
+    public void cancelAllCopyRequest(StringBuffer sb, String pattern) throws java.sql.SQLException {
 
-        cancelAllRequest(sb,pattern,copyRequestScheduler,copyStorage);
+        cancelAllRequest(sb, pattern, copyRequestScheduler, copyStorage);
     }
 
-    public void cancelAllReserveSpaceRequest(StringBuffer sb,String pattern)  throws java.sql.SQLException {
+    public void cancelAllReserveSpaceRequest(StringBuffer sb, String pattern) throws java.sql.SQLException {
 
-        cancelAllRequest(sb,pattern,reserveSpaceScheduler,reserveSpaceRequestStorage);
+        cancelAllRequest(sb, pattern, reserveSpaceScheduler, reserveSpaceRequestStorage);
     }
 
-    public void cancelAllLsRequests(StringBuffer sb,String pattern)  throws java.sql.SQLException {
+    public void cancelAllLsRequests(StringBuffer sb, String pattern) throws java.sql.SQLException {
 
-        cancelAllRequest(sb,pattern,lsRequestScheduler,lsRequestStorage);
+        cancelAllRequest(sb, pattern, lsRequestScheduler, lsRequestStorage);
     }
 
     private void cancelAllRequest(StringBuffer sb,
             String pattern,
             Scheduler scheduler,
-            DatabaseRequestStorage storage)  throws java.sql.SQLException {
+            DatabaseRequestStorage storage) throws java.sql.SQLException {
 
         java.util.Set<Long> jobsToKill = new java.util.HashSet<Long>();
         java.util.regex.Pattern p = java.util.regex.Pattern.compile(pattern);
         Set activeRequestIds =
-        storage.getActiveRequestIds(scheduler.getId());
-        for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long)i.next();
+                storage.getActiveRequestIds(scheduler.getId());
+        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
+            Long requestId = (Long) i.next();
             java.util.regex.Matcher m = p.matcher(requestId.toString());
-            if( m.matches()) {
-                say("cancelAllRequest: request Id #"+requestId+" in "+scheduler+" matches pattern!");
+            if (m.matches()) {
+                say("cancelAllRequest: request Id #" + requestId + " in " + scheduler + " matches pattern!");
                 jobsToKill.add(requestId);
             }
         }
-        if(jobsToKill.isEmpty()) {
-            sb.append("no requests match the pattern=\""+pattern+" in scheduler "+
-                    scheduler+"\n");
+        if (jobsToKill.isEmpty()) {
+            sb.append("no requests match the pattern=\"" + pattern + " in scheduler " +
+                    scheduler + "\n");
             return;
         }
-        for(Long requestId:jobsToKill){
+        for (Long requestId : jobsToKill) {
             Job job = Job.getJob(requestId);
-            if(job == null || !(job instanceof ContainerRequest)) {
-                esay(" request with reqiest id "+requestId+" is not found\n");
+            if (job == null || !(job instanceof ContainerRequest)) {
+                esay(" request with reqiest id " + requestId + " is not found\n");
                 continue;
             }
-            final ContainerRequest r = (ContainerRequest)job;
-            sb.append("request #"+requestId+" matches pattern=\""+pattern+"\"; canceling request \n");
-            new Thread (new Runnable() {
+            final ContainerRequest r = (ContainerRequest) job;
+            sb.append("request #" + requestId + " matches pattern=\"" + pattern + "\"; canceling request \n");
+            new Thread(new Runnable() {
+
                 public void run() {
-                    synchronized(r)
-                    {
+                    synchronized (r) {
                         try {
                             State s = r.getState();
-                            if(!State.isFinalState(s ))
-                            {
-                                r.setState(State.CANCELED,"Canceled by admin through cancelall command");
+                            if (!State.isFinalState(s)) {
+                                r.setState(State.CANCELED, "Canceled by admin through cancelall command");
                             }
-                        }
-                        catch(IllegalStateTransition ist) {
+                        } catch (IllegalStateTransition ist) {
                             esay(ist);
                         }
                     }
@@ -1719,21 +1691,21 @@ public class SRM {
         }
     }
 
-   /**
-    * Getter for property configuration.
-    * @return Value of property configuration.
-    */
-   public org.dcache.srm.util.Configuration getConfiguration() {
-       return configuration;
-   }
+    /**
+     * Getter for property configuration.
+     * @return Value of property configuration.
+     */
+    public org.dcache.srm.util.Configuration getConfiguration() {
+        return configuration;
+    }
 
-   /**
-    * Getter for property requestCredentialStorage.
-    * @return Value of property requestCredentialStorage.
-    */
-   public org.dcache.srm.request.RequestCredentialStorage getRequestCredentialStorage() {
-       return requestCredentialStorage;
-   }
+    /**
+     * Getter for property requestCredentialStorage.
+     * @return Value of property requestCredentialStorage.
+     */
+    public org.dcache.srm.request.RequestCredentialStorage getRequestCredentialStorage() {
+        return requestCredentialStorage;
+    }
 
     public Scheduler getGetRequestScheduler() {
         return getRequestScheduler;
@@ -1799,8 +1771,7 @@ public class SRM {
         return reserveSpaceScheduler;
     }
 
-    public Scheduler getLsRequestScheduler(){
+    public Scheduler getLsRequestScheduler() {
         return lsRequestScheduler;
     }
-
 }

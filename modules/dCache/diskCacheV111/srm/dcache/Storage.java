@@ -1400,7 +1400,11 @@ public class Storage
       public String ac_print_srm_counters_$_0(Args args) {
             return srm.getSrmServerV1Counters().toString()+
                     '\n'+
-                   srm.getSrmServerV2Counters().toString();
+                   srm.getSrmServerV2Counters().toString()+
+                   '\n'+
+                   srm.getSrmServerV1Gauges().toString()+
+                   '\n'+
+                   srm.getSrmServerV2Gauges().toString();
       }
 
         /*
