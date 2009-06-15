@@ -231,7 +231,7 @@ public class GPLAZMA extends CellAdapter {
   public static int DELAY_CANCEL_TIME = 15;
 
   /** Cancel time in milliseconds **/
-  private static long toolong = 1000*DELAY_CANCEL_TIME;
+  private long toolong = 1000*DELAY_CANCEL_TIME;
 
   /** Reads input parametes from batch file and initializes thread pools. **/
   public GPLAZMA( String name , String args )  throws Exception {
@@ -273,6 +273,7 @@ public class GPLAZMA extends CellAdapter {
 
       THREAD_COUNT = setParam("num-simultaneous-requests", THREAD_COUNT);
       DELAY_CANCEL_TIME = setParam("request-timeout", DELAY_CANCEL_TIME);
+      toolong = 1000*DELAY_CANCEL_TIME;
 
       say(this.toString() + " starting with policy file " + gplazmaPolicyFilePath);
 
