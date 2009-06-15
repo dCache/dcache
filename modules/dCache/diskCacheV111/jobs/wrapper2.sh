@@ -4,7 +4,7 @@
 #     were are we ? who are we ?
 #
 #
-if [ -z "$initDone" ] ; then 
+if [ -z "$initDone" ] ; then
 #echo "DEBUG : running <init>"
 initDone=true
 irixFix=$0
@@ -15,22 +15,22 @@ irixFix=$0
       tp=`uname -s`
       if [ $tp = "SunOS" ] ; then XXAWK=nawk ; fi
       echo $1 | $XXAWK '{
-         split($1,a,"/") 
+         split($1,a,"/")
          res=0
          for(n=1; n in a ; n++){
             if( ( a[n] == "." ) || ( a[n] == "" ) ){
             }else if( a[n] == ".." ){
                res--
             }else{
-              st[res++]= "/" a[n] 
+              st[res++]= "/" a[n]
             }
-          
+
          }
          for( n = 0 ; n < res ; n++ )
              m=m st[n] ;
          print m
       }'
-     
+
       return 0
    }
    weAreSolaris() {
@@ -59,7 +59,7 @@ irixFix=$0
    weAreLinux() {
    #--------------
       #
-      #         get our location 
+      #         get our location
       #
       PRG=`which $0` >/dev/null 2>&1
       while [ -L "$PRG" ]
@@ -113,6 +113,8 @@ irixFix=$0
    info=${thisDir}/../info
    ourHomeDir=${thisDir}/..
    config=${thisDir}/../config
+   pidDir=/var/run
+
    #
    #  run some needful things
    #
@@ -120,10 +122,10 @@ irixFix=$0
       needFulThings=loaded
       export needFulThings
       if [ ! -f "$jobs/needFulThings.sh" ] ; then
-         $ECHO "Panic, not found : $jobs/needFulThings.sh" 
+         $ECHO "Panic, not found : $jobs/needFulThings.sh"
          exit 4
-      fi    
-      . $jobs/needFulThings.sh 
+      fi
+      . $jobs/needFulThings.sh
    fi
 
 
@@ -146,7 +148,7 @@ irixFix=$0
    if [ -z "${setupFileName}" ] ; then
       echo "Cannot determine setupFileName" 1>&2
       exit 4
-   fi 
+   fi
    if [ -f ${config}/${setupFileName} ] ; then
       setupFilePath=${config}/${setupFileName}
    elif [ -f ${config}/${setupFileName}-`uname -n` ] ; then
@@ -160,12 +162,19 @@ irixFix=$0
    setupFilePath=`getFull $setupFilePath`
    setupFilePath=`makeRealPath $setupFilePath`
    ourHomeDir=`makeRealPath ${thisDir}/..`
+   logArea="${ourHomeDir}/log"
 #   echo "Using setupfile : $setupFilePath"
 #   echo "ourHomeDir : ${ourHomeDir}"
    . ${setupFilePath}
+
+   # Sanitycheck for serviceLocatorHost
+   if [ -z "${serviceLocatorHost}" ] || [ "${serviceLocatorHost}" = "SERVER" ]; then
+       echo "serviceLocatorHost in ${setupFilePath} has to be set."
+       exit 4
+   fi
 #
 #
-# split the arguments into the options -<key>=<value> and the 
+# split the arguments into the options -<key>=<value> and the
 # positional arguments.
 #
    args=""
@@ -207,10 +216,10 @@ if [ -f ${SITE_LOCAL} ]  ; then
    fi
 
    ${SITE_LOCAL} $*
-   rc=$? 
+   rc=$?
    if [ $rc -ne 0 ] ; then
-      echo "Site local script (${SITE_LOCAL}) failed : errno = $rc" 
-      exit $rc 
+      echo "Site local script (${SITE_LOCAL}) failed : errno = $rc"
+      exit $rc
    fi
 
 fi

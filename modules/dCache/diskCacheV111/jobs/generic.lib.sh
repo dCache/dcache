@@ -5,6 +5,7 @@
 #     thisDir
 #     ourHomeDir
 #     config
+#     pidDir
 #
 if [ ! -z "${pool}" ] ; then
      poolFile=${config}/${pool}
@@ -19,20 +20,16 @@ if [ ! -z "${pool}" ] ; then
      POOL="pool=${poolFile}"
      x=`echo ${pool} | awk -F. '{print $1}'`
      domainName=${x}Domain
-     pidFile=${config}/lastPid.${x}
 elif [ -f ${config}/${ourBaseName}.poollist ] ; then
      POOL="pool=${poolFile}"
      domainName=${ourBaseName}Domain
-     pidFile=${config}/lastPid.${ourBaseName}
 else
      domainName=${ourBaseName}Domain
-     pidFile=${config}/lastPid.${ourBaseName}
 fi
 if [ ! -z "${domain}" ] ; then
     domainName=${domain}
     base=`expr "${domainName}" : "\(.*\)Domain"`
     if [ -z "$base" ] ; then base=${domainName} ; fi
-    pidFile=${config}/lastPid.${base}
 fi
 if [ -z  "${logfile}" ] ; then
    if [ -z "${logArea}" ] ; then
@@ -46,6 +43,8 @@ if [ $? -ne 0 ] ; then
   echo "Could not write to logfile ${logfile}; using /dev/null" 1>&2
   logfile=/dev/null
 fi
+
+pidFile=${pidDir}/dcache.${domainName}.pid
 
 #
 #

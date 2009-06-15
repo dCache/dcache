@@ -15,11 +15,13 @@ fi
 
 hostname=`hostname | awk -F. '{print $1}'`
 
+PID_DIR=${PID_DIR:-/var/run}
+
 export JAVA_HOME
 export JAVA_OPTS
 export CATALINA_HOME=${TOMCAT_BASE_PATH}/apache-tomcat-5.5.20
 export config=${ourHomeDir}/config
-export CATALINA_PID=${config}/lastPid.srm-${hostname}
+export CATALINA_PID=${PID_DIR}/dcache.srm-${hostname}Domain.pid
 
 export X509_CERT
 export X509_KEY

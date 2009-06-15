@@ -201,6 +201,12 @@ keyBase=${ourHomeDir}/config
 #
 kpwdFile=${ourHomeDir}/etc/dcache.kpwd
 
+#  ---- Location of PID files
+# 
+#   Do not change unless you know what you are doing.
+#
+pidDir=/var/run
+
 
 
 #  -----------------------------------------------------------------------
