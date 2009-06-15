@@ -221,17 +221,17 @@ public class GPLAZMA extends CellAdapter {
   private ThreadPoolTimedExecutor authpool;
 
   /** Number of simultaneous requests to be handled. **/
-  public static int THREAD_COUNT = 10;
+  public static int threadcount = 10;
 
   /** Starts a timing thread for each executing request and cancels it upon timeout. **/
   ScheduledExecutorService delaychecker;
 
   /** Elapsed time in seconds after which an authentication request is canceled.
    *  Includes both the time on the queue and the time for actual request processing. **/
-  public static int DELAY_CANCEL_TIME = 15;
+  public static int delay_cancel_time = 15;
 
   /** Cancel time in milliseconds **/
-  private static long toolong = 1000*DELAY_CANCEL_TIME;
+  private long toolong = 1000*delay_cancel_time;
 
   /** Reads input parametes from batch file and initializes thread pools. **/
   public GPLAZMA( String name , String args )  throws Exception {
@@ -271,19 +271,20 @@ public class GPLAZMA extends CellAdapter {
               _opt.getOpt("dbUser"),
               _opt.getOpt("dbPass"));
 
-      THREAD_COUNT = setParam("num-simultaneous-requests", THREAD_COUNT);
-      DELAY_CANCEL_TIME = setParam("request-timeout", DELAY_CANCEL_TIME);
+      threadcount = setParam("num-simultaneous-requests", threadcount);
+      delay_cancel_time = setParam("request-timeout", delay_cancel_time);
+      toolong = 1000*delay_cancel_time;
 
       say(this.toString() + " starting with policy file " + gplazmaPolicyFilePath);
 
       authpool =
-        new ThreadPoolTimedExecutor(  THREAD_COUNT,
-              THREAD_COUNT,
+        new ThreadPoolTimedExecutor(threadcount,
+            threadcount,
               60,
               TimeUnit.SECONDS,
               new LinkedBlockingQueue());
 
-      delaychecker = Executors.newScheduledThreadPool(THREAD_COUNT);
+      delaychecker = Executors.newScheduledThreadPool(threadcount);
 
       say(this.toString() + " started");
 
@@ -456,7 +457,7 @@ public class GPLAZMA extends CellAdapter {
       java.net.ServerSocket ss= null;
       try {
         ss = new java.net.ServerSocket(0,1);
-        ss.setSoTimeout(DELAY_CANCEL_TIME*1000);
+        ss.setSoTimeout(delay_cancel_time *1000);
       }
       catch(IOException ioe) {
         log.error("exception while trying to create a server socket for delegation: " + ioe);
