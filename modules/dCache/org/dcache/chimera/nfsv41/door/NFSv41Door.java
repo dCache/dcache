@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -60,6 +61,10 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import org.acplt.oncrpc.XdrBufferDecodingStream;
+import org.dcache.chimera.nfs.v4.client.GetDeviceListStub;
+import org.dcache.chimera.nfs.v4.client.NFSv41Client;
+import org.dcache.chimera.nfs.v4.layouttype4;
+import org.dcache.chimera.nfs.v4.nfsv4_1_file_layout_ds_addr4;
 
 public class NFSv41Door extends AbstractCell implements NFSv41DeviceManager {
 
@@ -198,51 +203,55 @@ public class NFSv41Door extends AbstractCell implements NFSv41DeviceManager {
 
         _log.debug("NFS mover ready: " + poolName);
 
+        InetSocketAddress poolAddress = message.socketAddress();
         NFS4IoDevice device = _poolNameToIpMap.get(poolName);
-        if (device == null) {
-
-            /* pool is unknown yet, so create new device and device-id */
-
-            InetSocketAddress poolAddress = message.socketAddress();
-
-            int id = this.nextDeviceID();
-
-            /*
-             * TODO: the PoolPassiveIoFileMessage have to be adopted to send list
-             * of all interfaces
-             */
-            InetSocketAddress[] addresses = new InetSocketAddress[1];
-            addresses[0] = poolAddress;
-            device_addr4 deviceAddr = DeviceManager.deviceAddrOf( addresses );
-
-            DeviceID deviceID = new DeviceID(id2deviceid(id));
-
-            device = new NFS4IoDevice(id2deviceid(id) , deviceAddr);
-
-            _poolNameToIpMap.put(poolName, device);
-            _deviceMap.put(deviceID, device);
-
-            _log.debug("pool " + poolName + " mapped to deviceid "
-                    + Arrays.toString(deviceID.getId()) + " " + message.getId() +
-                    " inet: " + poolAddress);
-        }
-
-        XdrBufferDecodingStream xdr = new XdrBufferDecodingStream(message.challange());
-        stateid4 stateid = new stateid4();
 
         try {
+            if (device == null || !getSocketAddress(device).equals(poolAddress)) {
+                /* pool is unknown yet or has been restarted so create new device and device-id */
+                int id = this.nextDeviceID();
+
+                if( device != null ) {
+                    /*
+                     * clean stale entry
+                     */
+                    DeviceID oldId = new DeviceID(device.getDeviceId());
+                    _deviceMap.remove(oldId);
+                }
+                /*
+                 * TODO: the PoolPassiveIoFileMessage have to be adopted to send list
+                 * of all interfaces
+                 */
+                InetSocketAddress[] addresses = new InetSocketAddress[1];
+                addresses[0] = poolAddress;
+                device_addr4 deviceAddr = DeviceManager.deviceAddrOf(addresses);
+                DeviceID deviceID = new DeviceID(id2deviceid(id));
+                device = new NFS4IoDevice(id2deviceid(id), deviceAddr);
+                _poolNameToIpMap.put(poolName, device);
+                _deviceMap.put(deviceID, device);
+                _log.debug("pool " + poolName + " mapped to deviceid " + Arrays.toString(deviceID.getId()) + " " + message.getId() + " inet: " + poolAddress);
+            }
+
+            XdrBufferDecodingStream xdr = new XdrBufferDecodingStream(message.challange());
+            stateid4 stateid = new stateid4();
+
             xdr.beginDecoding();
             stateid.xdrDecode(xdr);
             xdr.endDecoding();
-        }catch(IOException e) {
-            // forced by XDR interface, never happen
-        }catch(OncRpcException e) {
-            // forced by XDR interface, never happen
-        }
 
-        synchronized (_requestReplyMap) {
-            _requestReplyMap.put(new StateidAsKey(stateid), device );
-            _requestReplyMap.notifyAll();
+            synchronized (_requestReplyMap) {
+                _requestReplyMap.put(new StateidAsKey(stateid), device);
+                _requestReplyMap.notifyAll();
+            }
+
+        } catch (UnknownHostException ex) {
+            _log.error("Invald address returned by " + poolName + " : " + ex.getMessage() );
+        } catch (OncRpcException ex) {
+           // forced by interface
+            throw new RuntimeException(ex);
+        } catch (IOException ex) {
+            // forced by interface
+            throw new RuntimeException(ex);
         }
 
     }
@@ -516,4 +525,25 @@ public class NFSv41Door extends AbstractCell implements NFSv41DeviceManager {
 
     }
 
+    /**
+     * Get {@link InetSocketAddress} connected to particular device.
+     * TODO: this code have to go back into NFSv4.1 server code
+     * @param device
+     * @return address of the device
+     * @throws UnknownHostException
+     * @throws OncRpcException
+     * @throws IOException
+     * @throws IllegalArgumentException if device type is not NfsFileLyaout type
+     */
+    InetSocketAddress getSocketAddress(NFS4IoDevice device) throws UnknownHostException, OncRpcException, IOException {
+
+        device_addr4 addr = device.getDeviceAddr();
+        if( addr.da_layout_type != layouttype4.LAYOUT4_NFSV4_1_FILES ) {
+            throw new IllegalArgumentException("Unsupported layout type: " +addr.da_layout_type );
+        }
+
+        nfsv4_1_file_layout_ds_addr4 file_layout = GetDeviceListStub.decodeFileDevice(device.getDeviceAddr().da_addr_body);
+        return NFSv41Client.device2Address(file_layout.nflda_multipath_ds_list[0].value[0].na_r_addr);
+
+    }
 }
