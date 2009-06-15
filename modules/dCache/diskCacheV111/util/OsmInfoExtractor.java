@@ -233,7 +233,7 @@ public class OsmInfoExtractor extends AbstractPnfsExtractor {
 
             assert !levelContent.isEmpty();
 
-            String[] fields = levelContent.get(0).split(" \t") ;
+            String[] fields = levelContent.get(0).split("[ \t]") ;
             if (fields.length < 3) {
                 throw new CacheException(38,
                         "Level 1 content of " + pnfsFile.getPnfsId() + " is invalid [" + levelContent.get(0) + "]");

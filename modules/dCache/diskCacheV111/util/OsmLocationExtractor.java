@@ -42,7 +42,7 @@ public class OsmLocationExtractor implements HsmLocation {
     public static URI parseLevel(String storageInfo) throws IllegalArgumentException {
 
         boolean isLegacy = false;
-        String[] st =  storageInfo.split(" \t");
+        String[] st =  storageInfo.split("[ \t]");
         if (st.length < 3) {
             throw new IllegalArgumentException("Invalid content of Level 1 (3/4 fields expected):" + storageInfo);
         }
