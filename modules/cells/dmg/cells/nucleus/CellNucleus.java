@@ -619,19 +619,22 @@ public class CellNucleus implements Runnable, ThreadFactory {
                     } else {
                         CellMessageAnswerable callback = lock.getCallback();
                         nsay("addToEventQueue : is asynchronized : "+msg);
-                        CellMessage answer = null;
-                        Object      obj;
-                        try {
-                            answer = new CellMessage(msg);
-                            obj    = answer.getMessageObject();
-                        } catch(SerializationException nse) {
-                            obj = nse;
-                        }
 
                         CDC oldCdc = new CDC();
-                        CDC.setCellsContext(this);
-                        CDC.setMessageContext(answer);
                         try {
+                            CDC.setCellsContext(this);
+
+                            CellMessage answer = null;
+                            Object      obj;
+                            try {
+                                answer = new CellMessage(msg);
+                                CDC.setMessageContext(answer);
+                                obj    = answer.getMessageObject();
+                            } catch(SerializationException nse) {
+                                nesay(nse.getMessage());
+                                obj = nse;
+                            }
+
                             if (_runAsyncCallback) {
                                 final Object                asyncObj      = obj;
                                 final CellLock              asyncLock     = lock;
