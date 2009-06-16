@@ -84,8 +84,13 @@ import java.util.LinkedList;
 import java.util.TimerTask;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Set;
+import java.util.HashSet;
 import java.io.File;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.io.PrintWriter;
 import java.io.BufferedReader;
 import java.io.FilenameFilter;
@@ -126,6 +131,7 @@ import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.GFtpProtocolInfo;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
+import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
 import diskCacheV111.vehicles.PnfsSetLengthMessage;
 import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
 import diskCacheV111.vehicles.PoolMgrSelectPoolMsg;
@@ -259,6 +265,25 @@ public abstract class AbstractFtpDoorV1
     protected enum Mode
     {
         PASSIVE, ACTIVE;
+    }
+
+
+    /**
+     * Enumeration type for representing RFC 3659 facts.
+     */
+    protected enum Fact
+    {
+        SIZE, MODIFY, TYPE, UNIQUE, PERM;
+
+        public static Fact find(String s)
+        {
+            for (Fact fact: values()) {
+                if (s.equalsIgnoreCase(fact.name())) {
+                    return fact;
+                }
+            }
+            return null;
+        }
     }
 
     private FileMetaDataSource _metadataSource = null;
@@ -693,6 +718,11 @@ public abstract class AbstractFtpDoorV1
     protected Checksum _checkSum;
     protected ChecksumFactory _checkSumFactory;
     protected ChecksumFactory _optCheckSumFactory;
+
+    /** List of selected RFC 3659 facts. */
+    protected Set<Fact> _currentFacts =
+        new HashSet(Arrays.asList(new Fact[] {
+                    Fact.SIZE, Fact.MODIFY, Fact.TYPE, Fact.UNIQUE }));
 
     /**
      * Configuration parameters related to performance markers.
@@ -1553,8 +1583,24 @@ public abstract class AbstractFtpDoorV1
     {
         StringBuilder builder = new StringBuilder();
         builder.append("211-OK\r\n");
-        for (String feature : FEATURES)
-            builder.append(" ").append(feature).append("\r\n");
+        for (String feature: FEATURES) {
+            builder.append(' ').append(feature).append("\r\n");
+        }
+
+        /* RFC 3659 specifies the MLST feature. It is followed by the
+         * list of supported facts. Currently active facts are
+         * suffixed by an asterix.
+         */
+        builder.append(" MLST ");
+        for (Fact fact: Fact.values()) {
+            builder.append(fact);
+            if (_currentFacts.contains(fact)) {
+                builder.append('*');
+            }
+            builder.append(';');
+        }
+        builder.append("\r\n");
+
         builder.append("211 End");
         reply(builder.toString());
     }
@@ -1621,6 +1667,29 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
+    private void opts_mlst(String facts)
+    {
+        Set<Fact> newFacts = new HashSet();
+        for (String s: facts.split(";")) {
+            Fact fact = Fact.find(s);
+            if (fact != null) {
+                newFacts.add(fact);
+            }
+        }
+
+        _currentFacts = newFacts;
+
+        if (_currentFacts.isEmpty()) {
+            reply("200 MLST");
+        } else {
+            StringBuffer s = new StringBuffer("200 MLST ");
+            for (Fact fact: _currentFacts) {
+                s.append(fact).append(';');
+            }
+            reply(s.toString());
+        }
+    }
+
     public void ac_opts(String arg)
     {
         String[] st = arg.split("\\s+");
@@ -1630,6 +1699,10 @@ public abstract class AbstractFtpDoorV1
             opts_stor(st[1], st[2]);
         } else if (st.length == 2 && st[0].equalsIgnoreCase("CKSM")) {
             opts_cksm(st[1]);
+        } else if (st.length == 1 && st[0].equalsIgnoreCase("MLST")) {
+            opts_mlst("");
+        } else if (st.length == 2 && st[0].equalsIgnoreCase("MLST")) {
+            opts_mlst(st[1]);
         } else {
             reply("501 Unrecognized option: " + st[0] + " (" + arg + ")");
         }
@@ -4005,6 +4078,236 @@ public abstract class AbstractFtpDoorV1
         } catch (IOException e) {
             reply("451 Local error in processing");
             warn("Error in NLST: " + e.getMessage());
+        }
+    }
+
+    /** Writes an RFC 3659 fact to a writer. */
+    private void printFact(PrintWriter writer, Fact fact, Object value)
+    {
+        writer.print(fact);
+        writer.print('=');
+        writer.print(value);
+        writer.print(';');
+    }
+
+    /** Writes a RFC 3659 modify fact to a writer. */
+    private void printModifyFact(PrintWriter writer, FileMetaData meta)
+    {
+        long time = meta.getLastModifiedTime();
+        printFact(writer, Fact.MODIFY, TIMESTAMP_FORMAT.format(new Date(time)));
+    }
+
+    /** Writes a RFC 3659 size fact to a writer. */
+    private void printSizeFact(PrintWriter writer, FileMetaData meta)
+    {
+        printFact(writer, Fact.SIZE, meta.getFileSize());
+    }
+
+    /** Writes a RFC 3659 type fact to a writer. */
+    private void printTypeFact(PrintWriter writer, FileMetaData meta)
+    {
+        if (meta.isDirectory()) {
+            printFact(writer, Fact.TYPE, "dir");
+        } else if (meta.isRegularFile()) {
+            printFact(writer, Fact.TYPE, "file");
+        }
+    }
+
+    /**
+     * Writes a RFC 3659 unique fact to a writer. The value of the
+     * unique fact is the PNFS ID.
+     */
+    private void printUniqueFact(PrintWriter writer, PnfsId id)
+    {
+        printFact(writer, Fact.UNIQUE, id);
+    }
+
+    /**
+     * Writes a RFC 3659 perm fact to a writer. This operation is
+     * rather expensive as the permission information must be
+     * retrieved.
+     */
+    private void printPermFact(PrintWriter writer, String path, FileMetaData meta)
+        throws CacheException, ACLException
+    {
+        Subject subject = getSubject();
+        StringBuffer s = new StringBuffer();
+        if (meta.isDirectory()) {
+            if (_permissionHandler.canCreateFile(path, subject, _origin) == AccessType.ACCESS_ALLOWED) {
+                s.append('c');
+            }
+            if (_permissionHandler.canDeleteDir(path, subject, _origin) == AccessType.ACCESS_ALLOWED) {
+                s.append('d');
+            }
+            s.append('e');
+            if (_permissionHandler.canListDir(path, subject, _origin) == AccessType.ACCESS_ALLOWED) {
+                s.append('l');
+            }
+            if (_permissionHandler.canCreateDir(path, subject, _origin) == AccessType.ACCESS_ALLOWED) {
+                s.append('m');
+            }
+        } else {
+            if (_permissionHandler.canDeleteFile(path, subject, _origin) == AccessType.ACCESS_ALLOWED) {
+                s.append('d');
+            }
+            if (_permissionHandler.canReadFile(path, subject, _origin) == AccessType.ACCESS_ALLOWED) {
+                s.append('r');
+            }
+        }
+        printFact(writer, Fact.PERM, s);
+    }
+
+    /**
+     * Writes a RFC 3659 fact line to a writer.
+     *
+     * @param writer the writer to which to write the facts
+     * @param path the fully qualified path
+     * @param filename the string written after the fact list
+     */
+    private void printFacts(PrintWriter writer, String path, String filename)
+        throws CacheException, ACLException
+    {
+        if (!_currentFacts.isEmpty()) {
+            PnfsGetFileMetaDataMessage msg = _pnfs.getFileMetaDataByPath(path);
+            PnfsId id = msg.getPnfsId();
+            FileMetaData meta = msg.getMetaData();
+
+            AccessType access =
+                _permissionHandler.canGetAttributes(id,
+                                                    getSubject(),
+                                                    _origin,
+                                                    FileAttribute.FATTR4_SUPPORTED_ATTRS);
+
+            for (Fact fact: _currentFacts) {
+                switch (fact) {
+                case SIZE:
+                    if (access == AccessType.ACCESS_ALLOWED) {
+                        printSizeFact(writer, meta);
+                    }
+                    break;
+                case MODIFY:
+                    if (access == AccessType.ACCESS_ALLOWED) {
+                        printModifyFact(writer, meta);
+                    }
+                    break;
+                case TYPE:
+                    printTypeFact(writer, meta);
+                    break;
+                case UNIQUE:
+                    printUniqueFact(writer, id);
+                    break;
+                case PERM:
+                    printPermFact(writer, path, meta);
+                    break;
+                }
+            }
+        }
+        writer.print(' ');
+        writer.print(filename);
+        writer.print("\r\n");
+    }
+
+    public void ac_mlst(String arg)
+    {
+        if (_pwdRecord == null) {
+            reply("530 Not logged in.");
+            return;
+        }
+
+        String path;
+        if (arg.length() == 0) {
+            path = absolutePath(".");
+        } else {
+            path = absolutePath(arg);
+        }
+
+        if (path == null) {
+            reply("550 Access denied");
+            return;
+        }
+
+        FsPath tvfsPath = new FsPath(_curDirV == null ? "/" : _curDirV);
+        tvfsPath.add(arg);
+
+        try {
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            pw.println("250- Listing " + arg + "\r\n");
+            pw.print(' ');
+            printFacts(pw, path, tvfsPath.toString());
+            pw.print("250 End");
+            reply(sw.toString());
+        } catch (ACLException e) {
+            reply("451 Internal permission check failure: " + e);
+            warn("Error in MLST: " + e.getMessage());
+        } catch (CacheException e) {
+            reply("451 Local error in processing");
+            warn("Error in MLST: " + e.getMessage());
+        }
+    }
+
+    public void ac_mlsd(String arg)
+    {
+        if (_pwdRecord == null) {
+            reply("530 Not logged in.");
+            return;
+        }
+
+        try {
+            String path;
+            if (arg.length() == 0) {
+                path = absolutePath(".") + "/";
+            } else {
+                path = absolutePath(arg) + "/";
+            }
+
+            if (path == null) {
+                reply("501 Directory not found");
+                return;
+            }
+
+            PnfsFile pnfsFile = new PnfsFile(path);
+            if (!pnfsFile.isPnfs() || !pnfsFile.isDirectory()) {
+                reply("501 Directory not found");
+                return;
+            }
+
+            reply("150 Openening ASCII mode data connection for MLSD", false);
+            try {
+                openDataSocket();
+            } catch (IOException e) {
+                reply("425 Cannot open connection");
+                return;
+            }
+
+            File[] files;
+            try {
+                PrintWriter writer =
+                    new PrintWriter(new OutputStreamWriter(new BufferedOutputStream(_dataSocket.getOutputStream()), "UTF-8"));
+
+                File dir = new File(path);
+                files = dir.listFiles();
+                if (files != null) {
+                    for (File file: files) {
+                        printFacts(writer, file.getPath(), file.getName());
+                    }
+                }
+                writer.close();
+            } finally {
+                closeDataSocket();
+            }
+            reply("226 MLSD completed for " + files.length + " files");
+        } catch (ACLException e) {
+            reply("451 Internal permission check failure: " + e);
+            warn("Error in MLSD: " + e.getMessage());
+        } catch (CacheException e) {
+            reply("451 Local error in processing");
+            warn("Error in MLSD: " + e.getMessage());
+        } catch (EOFException e) {
+            reply("426 Connection closed; transfer aborted");
+        } catch (IOException e) {
+            reply("451 Local error in processing");
+            warn("Error in MLSD: " + e.getMessage());
         }
     }
 
