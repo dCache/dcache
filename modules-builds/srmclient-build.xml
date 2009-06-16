@@ -310,7 +310,7 @@
         <mkdir dir="${srmclient.bin.dir}/lib/security" />
         <copy todir="${srmclient.bin.dir}/lib/security">
             <fileset dir="${libDir}/security">
-                <include name="bcprov-jdk15-133.jar" />
+                <include name="bcprov-jdk15-143.jar" />
             </fileset>
         </copy>
 

@@ -99,7 +99,7 @@
     <path id="authz.classpath">
         <pathelement location="${classesDir}/gplazma.jar" />
         <fileset dir="${libDir}/gplazma" includes="**/*.jar" />
-        <pathelement location="${libDir}/security/bcprov-jdk15-133.jar" />
+        <pathelement location="${libDir}/security/bcprov-jdk15-143.jar" />
         <fileset dir="${libDir}/cog" includes="**/*.jar" />
     </path>
 
@@ -117,7 +117,7 @@
     <!-- Classpath for xrootd-tokenauthz.jar -->
 
     <path id="xrootd-tokenauthz.classpath">
-        <pathelement location="${libDir}/security/bcprov-jdk15-133.jar" />
+        <pathelement location="${libDir}/security/bcprov-jdk15-143.jar" />
     </path>
 
     <!--
@@ -584,7 +584,7 @@
         <mkdir dir="${server.bin.dir}/classes/security" />
         <copy todir="${server.bin.dir}/classes/security">
             <fileset dir="${libDir}/security">
-                <include name="bcprov-jdk15-133.jar" />
+                <include name="bcprov-jdk15-143.jar" />
             </fileset>
         </copy>
 
