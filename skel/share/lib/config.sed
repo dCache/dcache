@@ -10,37 +10,52 @@
 # Does not handle multi-line quoted strings or multible quoted values.
 #
 
-/^#/ d                                      # Delete pure comment lines
-/^$/ d                                      # Delete empty lines 
+# Delete pure comment lines
+/^#/ d
+
+# Delete empty lines 
+/^$/ d
 
 :repeat
 
-s/\([^\#]*[ 	]\)\#.*/\1/                 # Strip trailing comments
+# Strip trailing comments
+s/\([^\#]*[ 	]\)\#.*/\1/
 
-/\\$/ {                                     # Repeat on line continuation
+# Repeat on line continuation
+/\\$/ {
     N
     s/\\\n//
     b repeat
 }
 
-s/^[ 	]*//                                # Strip leading white space
-s/[ 	]*$//                               # Strip trailing white space
-
-s/\([^=]*\)[ 	]*=[ 	]*\(.*\)/\1=\2/     # Strip space around assignment
+# Strip leading white space
+s/^[ 	]*//
+# Strip trailing white space
+s/[ 	]*$//
+# Strip space around assignment
+s/\([^=]*\)[ 	]*=[ 	]*\(.*\)/\1=\2/
 
 /[^=]*='.*'/ {
-    s/\([^=]*\)='\(.*\)'/\1=\2/             # Unquote value
-    b was_quoted                            # Skip second quoting style
+    # Unquote value
+    s/\([^=]*\)='\(.*\)'/\1=\2/
+    # Skip second quoting style
+    b quoted
 }
-s/\([^=]*\)="\(.*\)"/\1=\2/                 # Unquote value
-:was_quoted
+# Unquote value
+s/\([^=]*\)="\(.*\)"/\1=\2/
+:quoted
 
-s/\\/\\\\/g                                 # Escape backslash
-s/'/\\'/g                                   # Escape quotes
-s/`/\\`/g                                   # Escape backtick
-s/\$\([^a-zA-Z_{]\)/\\$\1/g                 # Escape most $
-s/\$$/\\\$/g                                # Escape trailing $
-
-s/\([^=]*\)=\(.*\)/\1="\2"/                 # Quote value
-
-/[a-zA-Z0-9_]*=".*"/ !d                     # Delete if not an assignment
+# Escape backslash
+s/\\/\\\\/g
+# Escape quotes
+s/'/\\'/g
+# Escape backtick
+s/`/\\`/g
+# Escape most $
+s/\$\([^a-zA-Z_{]\)/\\$\1/g
+# Escape trailing $
+s/\$$/\\\$/g
+# Quote value
+s/\([^=]*\)=\(.*\)/\1="\2"/
+# Delete if not an assignment
+/[a-zA-Z0-9_]*=".*"/ !d
