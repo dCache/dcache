@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.zip.Adler32;
 
+import diskCacheV111.util.FsPath;
 
 import org.dcache.xrootd.protocol.XrootdProtocol;
 import org.dcache.xrootd.util.ParseException;
@@ -45,7 +46,7 @@ public class OpenRequest extends AbstractRequestMessage {
 			sb.append((char) getUnsignedChar(i));
 		}
 
-		return sb.toString();
+        return new FsPath(sb.toString()).toString();
 	}
 	
 	public Map getOpaque() throws ParseException {

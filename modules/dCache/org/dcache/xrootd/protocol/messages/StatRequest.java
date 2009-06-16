@@ -1,6 +1,8 @@
 package org.dcache.xrootd.protocol.messages;
 import org.dcache.xrootd.protocol.XrootdProtocol;
 
+import diskCacheV111.util.FsPath;
+
 public class StatRequest extends AbstractRequestMessage {
 
 	public StatRequest(int[] h, byte[] d) {
@@ -25,7 +27,7 @@ public class StatRequest extends AbstractRequestMessage {
 			sb.append((char) getUnsignedChar(i));
 		}
 
-		return sb.toString();
+        return new FsPath(sb.toString()).toString();
 	}
 	
 	public boolean isVfsSet() {
