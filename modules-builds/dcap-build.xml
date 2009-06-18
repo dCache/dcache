@@ -223,8 +223,8 @@
 
         </exec>
 
-        <copy file="${dcap.src}/security_plugins/gssapi/libgsiTunnel.so" todir="${distDir}/lib" />
-        <copy file="${dcap.src}/security_plugins/telnet/libtelnetTunnel.so" todir="${distDir}/lib" />
+        <copy file="${dcap.src}/security_plugins/gssapi/libgsiTunnel.so" todir="${dcapclient.bin.dir}/lib" />
+        <copy file="${dcap.src}/security_plugins/telnet/libtelnetTunnel.so" todir="${dcapclient.bin.dir}/lib" />
 
     </target>
 
