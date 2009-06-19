@@ -36,11 +36,16 @@ public class RequestCounterImpl implements RequestCounter {
 
     @Override
     public synchronized String toString() {
+        String aName = name;
+        if(name.length() >34) {
+             aName = aName.substring(0,34);
+        }
         StringBuilder sb = new StringBuilder();
 
         Formatter formatter = new Formatter(sb);
+         
 
-        formatter.format("%-32s %9d %9d", name, requests,  failed);
+        formatter.format("%-34s %9d %9d", aName, requests,  failed);
         formatter.flush();
         formatter.close();
 

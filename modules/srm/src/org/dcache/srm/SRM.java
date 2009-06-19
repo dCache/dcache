@@ -173,6 +173,8 @@ import org.dcache.srm.v2_2.SrmAbortRequestResponse;
 import org.dcache.commons.stats.RequestCounters;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.commons.stats.rrd.RrdRequestCounters;
+import org.dcache.commons.stats.MonitoringProxy;
+import java.lang.reflect.Method;
 
 /**
  * SRM class creates an instance of SRM client class and publishes it on a
@@ -236,10 +238,13 @@ public class SRM {
     private LsFileRequestStorage lsFileRequestStorage;
     private RequestCounters<Class> srmServerV2Counters;
     private RequestCounters<String> srmServerV1Counters;
+    private RequestCounters<Method> abstractStorageElementCounters;
     private RrdRequestCounters rrdSrmServerV2Counters;
     private RrdRequestCounters rrdSrmServerV1Counters;
+    private RrdRequestCounters rrdAstractStorageElementCounters;
     private RequestExecutionTimeGauges<Class> srmServerV2Gauges;
     private RequestExecutionTimeGauges<String> srmServerV1Gauges;
+    private RequestExecutionTimeGauges<Method> abstractStorageElementGauges;
 
     /**
      * if multiple srm installations live within same storage, they should have different names
@@ -251,7 +256,22 @@ public class SRM {
             org.dcache.srm.scheduler.IllegalStateTransition,
             electric.xml.ParseException {
         this.configuration = config;
+        //First of all decorate the storage with counters and
+        // gauges to measure the performace of storage operations
         this.storage = config.getStorage();
+        abstractStorageElementCounters=
+            new RequestCounters<Method> (
+            this.storage.getClass().getName());
+        abstractStorageElementGauges =
+            new RequestExecutionTimeGauges<Method> (
+                this.storage.getClass().getName());
+        this.storage = MonitoringProxy.decorateWithMonitoringProxy(
+                new Class[]{AbstractStorageElement.class},
+                this.storage,
+                abstractStorageElementCounters,
+                abstractStorageElementGauges);
+         config.setStorage(this.storage);
+
         this.name = name;
         srmServerV2Counters = new RequestCounters<Class>("SRMServerV2");
         srmServerV1Counters = new RequestCounters<String>("SRMServerV1");
@@ -268,6 +288,15 @@ public class SRM {
                     new RrdRequestCounters(srmServerV2Counters, rrddir);
             rrdSrmServerV2Counters.startRrdUpdates();
             rrdSrmServerV2Counters.startRrdGraphPlots();
+            rrddir =  configuration.getRrdDirectory() +
+                    java.io.File.separatorChar + "storage";
+
+            rrdAstractStorageElementCounters =
+                    new RrdRequestCounters(abstractStorageElementCounters, rrddir);
+            rrdAstractStorageElementCounters.startRrdUpdates();
+            rrdAstractStorageElementCounters.startRrdGraphPlots();
+
+
         }
         srmServerV2Gauges = new RequestExecutionTimeGauges<Class> ("SRMServerV2");
         srmServerV1Gauges = new RequestExecutionTimeGauges<String> ("SRMServerV1");
@@ -544,6 +573,20 @@ public class SRM {
      */
     public RequestExecutionTimeGauges<String> getSrmServerV1Gauges() {
         return srmServerV1Gauges;
+    }
+
+    /**
+     * @return the abstractStorageElementCounters
+     */
+    public RequestCounters<Method> getAbstractStorageElementCounters() {
+        return abstractStorageElementCounters;
+    }
+
+    /**
+     * @return the abstractStorageElementGauges
+     */
+    public RequestExecutionTimeGauges<Method> getAbstractStorageElementGauges() {
+        return abstractStorageElementGauges;
     }
 
     private class TheAdvisoryDeleteCallbacks implements AdvisoryDeleteCallbacks {

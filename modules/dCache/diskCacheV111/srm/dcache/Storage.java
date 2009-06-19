@@ -1402,9 +1402,13 @@ public class Storage
                     '\n'+
                    srm.getSrmServerV2Counters().toString()+
                    '\n'+
+                   srm.getAbstractStorageElementCounters().toString()+
+                   '\n'+
                    srm.getSrmServerV1Gauges().toString()+
                    '\n'+
-                   srm.getSrmServerV2Gauges().toString();
+                   srm.getSrmServerV2Gauges().toString()+
+                   '\n'+
+                   srm.getAbstractStorageElementGauges().toString();
       }
 
         /*

@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Collections;
 import java.util.Formatter;
 import java.util.NoSuchElementException;
+import java.lang.reflect.Method;
 
 
 /**
@@ -57,6 +58,18 @@ public class RequestExecutionTimeGauges<T> {
         if(key instanceof Class) {
             Class ckey = (Class)key;
             gaugeName = ckey.getSimpleName();
+        } else if(key instanceof Method){
+            Method mkey = (Method)key;
+            StringBuilder sb = new StringBuilder();
+            sb.append(mkey.getName());
+            sb.append("( ");
+            for(Class mParmType:mkey.getParameterTypes() ) {
+               sb.append(mParmType.getSimpleName());
+               sb.append(',');
+            }
+            sb.setCharAt(sb.length()-1, ')');
+            gaugeName=sb.toString();
+
         } else {
             gaugeName = key.toString();
         }
@@ -87,7 +100,7 @@ public class RequestExecutionTimeGauges<T> {
     public String  toString() {
        StringBuilder sb = new StringBuilder();
         Formatter formatter = new Formatter(sb);
-        formatter.format("%-34s %23s %12s %12s %12s %12s %12s", name,"average±stderr(ms)",
+        formatter.format("%-36s %23s %12s %12s %12s %12s %12s", name,"average±stderr(ms)",
                 "min(ms)", "max(ms)","STD(ms)", "Sampes","SampingPeriod(ms)");
         formatter.flush();
         formatter.close();

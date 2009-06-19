@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Collections;
 import java.util.Formatter;
 import java.util.NoSuchElementException;
+import java.lang.reflect.Method;
 
 /**
  * This class provides a convinient way to collect statistics about 
@@ -70,6 +71,18 @@ public class RequestCounters<T> {
         if(key instanceof Class) {
             Class ckey = (Class)key;
             counterName = ckey.getSimpleName();
+        } else if(key instanceof Method){
+            Method mkey = (Method)key;
+            StringBuilder sb = new StringBuilder();
+            sb.append(mkey.getName());
+            sb.append("( ");
+            for(Class mParmType:mkey.getParameterTypes() ) {
+               sb.append(mParmType.getSimpleName());
+               sb.append(',');
+            }
+            sb.setCharAt(sb.length()-1, ')');
+            counterName=sb.toString();
+
         } else {
             counterName = key.toString();
         }
@@ -100,7 +113,7 @@ public class RequestCounters<T> {
     public String  toString() {
        StringBuilder sb = new StringBuilder();
         Formatter formatter = new Formatter(sb);
-        formatter.format("%-34s %9s %9s", name,"requests", "failed");
+        formatter.format("%-36s %9s %9s", name,"requests", "failed");
         formatter.flush();
         formatter.close();
         int totalRequests=0;
@@ -114,7 +127,7 @@ public class RequestCounters<T> {
             }
         }
         formatter = new Formatter(sb);
-        formatter.format("\n%-34s %9s %9s","  Total",totalRequests, totalFailed);
+        formatter.format("\n%-36s %9s %9s","  Total",totalRequests, totalFailed);
         formatter.flush();
         formatter.close();
         return sb.toString();

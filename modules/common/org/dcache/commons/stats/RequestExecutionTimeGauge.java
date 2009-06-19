@@ -136,14 +136,19 @@ public class RequestExecutionTimeGauge {
      */
         @Override
     public synchronized String toString() {
+
+        String aName = name;
+        if(name.length() >34) {
+             aName = aName.substring(0,34);
+        }
         long updatePeriod= System.currentTimeMillis() -
                 startTime;
         StringBuilder sb = new StringBuilder();
 
         Formatter formatter = new Formatter(sb);
 
-        formatter.format("%-32s %12d±%10f %12d %12d %12d %12d %12d",
-                name, averageExecutionTime,getStandardError(),
+        formatter.format("%-34s %12d±%10f %12d %12d %12d %12d %12d",
+                aName, averageExecutionTime,getStandardError(),
                 minExecutionTime,maxExecutionTime, 
                 getStandardDeviation(), updateNum, updatePeriod);
         formatter.flush();
