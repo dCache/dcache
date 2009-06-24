@@ -1,7 +1,5 @@
 package org.dcache.xrootd.protocol.messages;
 
-import diskCacheV111.util.FsPath;
-
 import org.dcache.xrootd.protocol.XrootdProtocol;
 
 public class StatxRequest extends AbstractRequestMessage {
@@ -17,10 +15,6 @@ public class StatxRequest extends AbstractRequestMessage {
 
         readFromHeader(false);
 
-        String[] paths = new String(data).split("\n");
-        for (int i = 0; i < paths.length; i++) {
-            paths[i] =  new FsPath(paths[i]).toString();
-        }
-        return paths;
+        return new String(data).split("\n");
     }
 }

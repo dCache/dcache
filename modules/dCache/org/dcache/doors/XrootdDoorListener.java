@@ -34,6 +34,7 @@ import org.dcache.xrootd.util.ParseException;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.FsPath;
 import diskCacheV111.util.FileMetaData.Permissions;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -259,6 +260,7 @@ public class XrootdDoorListener implements StreamListener {
 
 		}
 
+                pathToOpen = new FsPath(pathToOpen).toString();
 
 //		check if write access is restricted in general and whether the path to open
 //		matches the whitelist
@@ -411,13 +413,13 @@ public class XrootdDoorListener implements StreamListener {
 
 		ProtocolInfo protocolInfo = door.createProtocolInfo(storageInfoMsg.getPnfsId(), fileHandle, checksum, physicalXrootdConnection.getNetworkConnection().getClientSocketAddress());
 
-		
-		fileStatus = 
+
+		fileStatus =
 		    (PnfsFileStatus) convertToFileStatus(storageInfoMsg.getMetaData(), storageInfoMsg.getPnfsId());
-        
+
 		fileStatus.setWrite(isWrite);
         fileStatus.setID(fileHandle);
-        
+
 //		at this point we have the storageinfo and can ask the PoolManager for a pool to handle this transfer
 
 		String pool = null;
@@ -488,61 +490,67 @@ public class XrootdDoorListener implements StreamListener {
 
 	public void doOnStatus(StatRequest req) {
 		AbstractResponseMessage response = null;
-	    
+
 	    if (fileStatus == null) {
-		        
+
+                String path = new FsPath(req.getPath()).toString();
+
 	            // no OPEN occured before, so we need to ask the for the metadata
 		        FileMetaData meta = null;
 		        try {
 
-		            meta = door.getFileMetaData(req.getPath());		            
-		            
+		            meta = door.getFileMetaData(path);
+
 		        } catch (CacheException e) {
-		            door.say("No PnfsId found for path: " + req.getPath());
+		            door.say("No PnfsId found for path: " + path);
 		            response = new StatResponse(req.getStreamID(), null);
 		        }
-		    
+
 		        if (meta != null) {
-		            
+
 		            FileStatus fs = convertToFileStatus(meta, null);
-		            
+
 		            // we finally got the stat result
 		            response = new StatResponse(req.getStreamID(), fs);
-		            
+
 		        } else {
 		            response = new ErrorResponse(req.getStreamID(), XrootdProtocol.kXR_FSError, "Internal server error: no metadata");
 		        }
-		        
+
 		} else {
-		    
+
 		    // there was an OPEN happening before, so we already have the status info
 		    response = new StatResponse(req.getStreamID(), fileStatus);
 		}
-	    
+
 	    physicalXrootdConnection.getResponseEngine().sendResponseMessage(response);
 	}
 
-    public void doOnStatusX(StatxRequest req) {
-        
-        if (req.getPaths().length == 0) {
+    public void doOnStatusX(StatxRequest req)
+    {
+        String[] paths = req.getPaths();
+        if (paths.length == 0) {
             physicalXrootdConnection.getResponseEngine().sendResponseMessage(new ErrorResponse(req.getStreamID(), XrootdProtocol.kXR_ArgMissing, "no paths specified"));
         }
-        
-        FileMetaData[] allMetas = door.getMultipleFileMetaData(req.getPaths());
-        
+
+        for (int i = 0; i < paths.length; i++) {
+            paths[i] = new FsPath(paths[i]).toString();
+        }
+        FileMetaData[] allMetas = door.getMultipleFileMetaData(paths);
+
         int[] flags = new int[allMetas.length];
         Arrays.fill(flags, -1);
-        
+
         for (int i =0; i < allMetas.length; i++) {
             if (allMetas[i] == null) {
                 continue;
             }
-            
+
             flags[i] = convertToFileStatus(allMetas[i], null).getFlags();
         }
-        
+
         physicalXrootdConnection.getResponseEngine().sendResponseMessage(new StatxResponse(req.getStreamID(), flags));
-        
+
     }
 	public void doOnRead(ReadRequest req) {
 		physicalXrootdConnection.getResponseEngine().sendResponseMessage(new ErrorResponse(req.getStreamID(), XrootdProtocol.kXR_FileNotOpen, " File not open, send a kXR_open Request first."));
@@ -588,17 +596,17 @@ public class XrootdDoorListener implements StreamListener {
 	}
 
 	private FileStatus convertToFileStatus(FileMetaData meta, PnfsId pnfsid) {
-        
+
 	    if (meta == null) {
 	        return null;
 	    }
-	    
-	    FileStatus fs = 
+
+	    FileStatus fs =
 	           pnfsid == null ? new FileStatus() : new PnfsFileStatus(pnfsid);
-        
+
         fs.setSize(meta.getFileSize());
         fs.setModtime(meta.getLastModifiedTime());
-        
+
         // set flags
         if (meta.isDirectory()) fs.addToFlags(kXR_isDir);
         if (!meta.isRegularFile() && !meta.isDirectory()) fs.addToFlags(kXR_other);
@@ -606,7 +614,7 @@ public class XrootdDoorListener implements StreamListener {
         if (pm.canExecute()) fs.addToFlags(kXR_xset);
         if (pm.canRead()) fs.addToFlags(kXR_readable);
         if (pm.canWrite()) fs.addToFlags(kXR_writable);
-        
+
         return fs;
 	}
 
