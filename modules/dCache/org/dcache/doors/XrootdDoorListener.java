@@ -34,6 +34,7 @@ import org.dcache.xrootd.util.ParseException;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.FsPath;
 import diskCacheV111.util.FileMetaData.Permissions;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -264,6 +265,7 @@ public class XrootdDoorListener implements StreamListener {
 
         }
 
+        pathToOpen = new FsPath(pathToOpen).toString();
 
         //		check if write access is restricted in general and whether the path to open
         //		matches the whitelist
@@ -496,14 +498,16 @@ public class XrootdDoorListener implements StreamListener {
 
         if (fileStatus == null) {
 
+            String path = new FsPath(req.getPath()).toString();
+
             // no OPEN occured before, so we need to ask the for the metadata
             FileMetaData meta = null;
             try {
 
-                meta = door.getFileMetaData(req.getPath());
+                meta = door.getFileMetaData(path);
 
             } catch (CacheException e) {
-                _log.info("No PnfsId found for path: " + req.getPath());
+                _log.info("No PnfsId found for path: " + path);
                 response = new StatResponse(req.getStreamID(), null);
             }
 
@@ -527,13 +531,17 @@ public class XrootdDoorListener implements StreamListener {
         physicalXrootdConnection.getResponseEngine().sendResponseMessage(response);
     }
 
-    public void doOnStatusX(StatxRequest req) {
-
-        if (req.getPaths().length == 0) {
+    public void doOnStatusX(StatxRequest req)
+    {
+        String[] paths = req.getPaths();
+        if (paths.length == 0) {
             physicalXrootdConnection.getResponseEngine().sendResponseMessage(new ErrorResponse(req.getStreamID(), XrootdProtocol.kXR_ArgMissing, "no paths specified"));
         }
 
-        FileMetaData[] allMetas = door.getMultipleFileMetaData(req.getPaths());
+        for (int i = 0; i < paths.length; i++) {
+            paths[i] = new FsPath(paths[i]).toString();
+        }
+        FileMetaData[] allMetas = door.getMultipleFileMetaData(paths);
 
         int[] flags = new int[allMetas.length];
         Arrays.fill(flags, -1);
