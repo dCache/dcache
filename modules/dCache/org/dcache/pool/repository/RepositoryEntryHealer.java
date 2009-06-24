@@ -113,9 +113,9 @@ public class RepositoryEntryHealer
             (entry == null) ||
             (entry.getStorageInfo() == null) ||
             (entry.getStorageInfo().getFileSize() != entry.getSize()) ||
-            (!entry.isPrecious() && !entry.isCached()) || 
+            (!entry.isPrecious() && !entry.isCached()) ||
             entry.isBad();
-        
+
 
         if (isBroken) {
             if (entry == null) {
@@ -126,10 +126,14 @@ public class RepositoryEntryHealer
             try {
                 _log.warn(String.format(RECOVERING_MSG, id));
 
-                /* It is safe to remove FROM_STORE files: We have a copy
-                 * on HSM anyway.
+                /* It is safe to remove FROM_STORE files: We have a
+                 * copy on HSM anyway. Files in REMOVED or DESTROYED
+                 * where about to be deleted, so we can finish the
+                 * job.
                  */
-                if (entry.isReceivingFromStore()) {
+                if (entry.isReceivingFromStore() ||
+                    entry.isRemoved() ||
+                    entry.isDestroyed()) {
                     _metaRepository.remove(id);
                     file.delete();
                     _pnfsHandler.clearCacheLocation(id);
@@ -173,15 +177,15 @@ public class RepositoryEntryHealer
                 }
 
                 /* Compute and update checksum. May fail if there is a
-                 * mismatch. 
+                 * mismatch.
                  */
                 if (_checksumModule != null) {
-                    ChecksumFactory factory = 
+                    ChecksumFactory factory =
                         _checksumModule.getDefaultChecksumFactory();
-                    _checksumModule.setMoverChecksums(id, file, factory, 
+                    _checksumModule.setMoverChecksums(id, file, factory,
                                                       null, null);
                 }
-            
+
                 /* Update the size in the storage info and in PNFS if
                  * file size is unknown.
                  */
@@ -199,7 +203,7 @@ public class RepositoryEntryHealer
                     for (StickyRecord record: PoolIOWriteTransfer.getStickyRecords(info)) {
                         entry.setSticky(record.owner(), record.expire(), false);
                     }
-            
+
                     if (PoolIOWriteTransfer.getTargetState(info) == EntryState.PRECIOUS && !info.isStored()) {
                         entry.setPrecious();
                         _log.warn(String.format(PRECIOUS_MSG, id));
@@ -232,8 +236,8 @@ public class RepositoryEntryHealer
                  * is no difference between the PnfsManager being down
                  * and it timing out. We therefore masquerade the
                  * exception as a timeout.
-                 */ 
-                throw new CacheException(CacheException.TIMEOUT, 
+                 */
+                throw new CacheException(CacheException.TIMEOUT,
                                          "Timeout talking to PnfsManager");
             }
         }
