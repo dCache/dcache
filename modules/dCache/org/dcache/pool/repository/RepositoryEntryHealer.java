@@ -126,10 +126,14 @@ public class RepositoryEntryHealer
             try {
                 _log.warn(String.format(RECOVERING_MSG, id));
 
-                /* It is safe to remove FROM_STORE files: We have a copy
-                 * on HSM anyway.
+                /* It is safe to remove FROM_STORE files: We have a
+                 * copy on HSM anyway. Files in REMOVED or DESTROYED
+                 * where about to be deleted, so we can finish the
+                 * job.
                  */
-                if (entry.isReceivingFromStore()) {
+                if (entry.isReceivingFromStore() ||
+                    entry.isRemoved() ||
+                    entry.isDestroyed()) {
                     _metaRepository.remove(id);
                     file.delete();
                     _pnfsHandler.clearCacheLocation(id);
