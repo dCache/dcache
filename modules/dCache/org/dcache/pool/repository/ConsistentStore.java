@@ -146,10 +146,14 @@ public class ConsistentStore
 
                 EntryState state = entry.getState();
 
-                /* It is safe to remove FROM_STORE files: We have a copy
-                 * on HSM anyway.
+                /* It is safe to remove FROM_STORE files: We have a
+                 * copy on HSM anyway. Files in REMOVED or DESTROYED
+                 * where about to be deleted, so we can finish the
+                 * job.
                  */
-                if (state == EntryState.FROM_STORE) {
+                if (state == EntryState.FROM_STORE ||
+                    state == EntryState.REMOVED ||
+                    state == EntryState.DESTROYED) {
                     _metaDataStore.remove(id);
                     file.delete();
                     _pnfsHandler.clearCacheLocation(id);
