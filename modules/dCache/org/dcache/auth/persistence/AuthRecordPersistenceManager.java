@@ -74,11 +74,9 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
         throw new IllegalArgumentException("illegal user type: "+user.getClass());
     }
     
-    public AuthorizationRecord persist(AuthorizationRecord rec) {
-        synchronized(authRecCache) {
-            if(authRecCache.containsKey(rec.getId())) {
-                return authRecCache.get(rec.getId());
-            }
+    public synchronized AuthorizationRecord persist(AuthorizationRecord rec) {
+        if(authRecCache.containsKey(rec.getId())) {
+            return authRecCache.get(rec.getId());
         }
         EntityTransaction t = em.getTransaction();
         try{
@@ -107,22 +105,18 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
             }
             //em.close();
         }
-        synchronized(authRecCache) {
-            if(authRecCache.containsKey(rec.getId())) {
-                return authRecCache.get(rec.getId());
-            } else {
-                authRecCache.put(rec.getId(),rec);
-                return rec;   
-            }
-            
+        if(authRecCache.containsKey(rec.getId())) {
+            return authRecCache.get(rec.getId());
+        } else {
+            authRecCache.put(rec.getId(),rec);
+            return rec;   
         }
+            
     }
     
-    public AuthorizationRecord find(long id) {
-        synchronized(authRecCache) {
-            if(authRecCache.containsKey(id)) {
-                return authRecCache.get(id);
-            }
+    public synchronized AuthorizationRecord find(long id) {
+        if(authRecCache.containsKey(id)) {
+            return authRecCache.get(id);
         }
         AuthorizationRecord ar = null;
         EntityTransaction t = em.getTransaction();
@@ -143,14 +137,11 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
             //em.close();
         }
         if( ar == null) return null;
-        synchronized(authRecCache) {
-            if(authRecCache.containsKey(id)) {
-                return authRecCache.get(id);
-            } else {
-                authRecCache.put(id,ar);
-                return ar;   
-            }
-            
+        if(authRecCache.containsKey(id)) {
+            return authRecCache.get(id);
+        } else {
+            authRecCache.put(id,ar);
+            return ar;   
         }
     }
     
