@@ -22,7 +22,7 @@ isNameSpaceMountNeeded() # $* = domains
 }
 
 # Mount name server export $2 on local directory $1
-mountNameSpace() # $1 = mount point, $2 = server export
+mountNameSpace() # $1 = mount point, $2 = server export, $3 = nfs protocol version
 {
     local mountpoint
     local export
@@ -31,6 +31,7 @@ mountNameSpace() # $1 = mount point, $2 = server export
 
     mountpoint="$1"
     export="$2"
+    nfsversion=$3
 
     # Check if already mounted
     if [ -f "${mountpoint}/.(tags)()" ]; then
@@ -58,9 +59,9 @@ mountNameSpace() # $1 = mount point, $2 = server export
 
     # Mount name space
     printp "Mounting ${mountpoint}"
-    if ! mount -o intr,rw,noac,hard,${version}=2 ${server}:${export} ${mountpoint}; then
+    if ! mount -o intr,rw,noac,hard,${version}=${nfsversion} ${server}:${export} ${mountpoint}; then
         fail 1 "Failed to mount name space. The following command failed:" \
-               "mount -o intr,rw,noac,hard,${version}=2 ${server}:${export}
+               "mount -o intr,rw,noac,hard,${version}=${nfsversion} ${server}:${export}
                 ${mountpoint}"
     fi
 
@@ -84,19 +85,19 @@ autoMountNameSpace()
 
     case "$namespace" in
         chimera)
-            mountNameSpace "${root}" "/pnfs"
+            mountNameSpace "${root}" "/pnfs" 3
             ;;
         pnfs)
             if contains pnfsDomain $(printAllDomains); then
                 loadServiceConfigurationFile pnfs
                 if [ -z "$pnfs_pnfs" ]; then
-                    mountNameSpace "${root}/fs" "/fs"
+                    mountNameSpace "${root}/fs" "/fs" 2
                 else
-                    mountNameSpace "${pnfs_pnfs}" "/fs"
+                    mountNameSpace "${pnfs_pnfs}" "/fs" 2
                 fi
             else
                 getServerId; serverId="$RET"
-                mountNameSpace "${root}/${serverId}" "/pnfsdoors"
+                mountNameSpace "${root}/${serverId}" "/pnfsdoors" 2
             fi
             ;;
     esac
