@@ -451,42 +451,23 @@ attribute : /cms/uscms/Role=cmsprod/Capability=NULL
 
     public static synchronized VOMSValidator getVOMSValidatorInstance() throws IOException, CertificateException, CRLException {
         if(vomsValidator!=null) return vomsValidator;
-        FriendlyVOMSValidator friendlyValidator;
-        File theDir = new File(PKIStore.DEFAULT_VOMSDIR);
-        if (!theDir.exists() || !theDir.isDirectory() || theDir.list().length == 0) {
-            VOMSValidator.setTrustStore(getACTrustStoreInstance());
-            friendlyValidator = new FriendlyVOMSValidator(null, null);
-            friendlyValidator.cleanup();
-        } else {
-            friendlyValidator = new FriendlyVOMSValidator(null, null);
+        PKIStore vomsStore=null;
+        String vomsDir = System.getProperty( "VOMSDIR" );
+        vomsDir = (vomsDir == null ) ? PKIStore.DEFAULT_VOMSDIR : vomsDir;
+        File theDir = new File(vomsDir);
+        if (theDir.exists() && theDir.isDirectory() && theDir.list().length > 0) {
+            vomsStore = new PKIStore(vomsDir, PKIStore.TYPE_VOMSDIR, true);
+            vomsStore.rescheduleRefresh(900000);
         }
-        friendlyValidator.getACValidator().cleanup();
-        friendlyValidator.getVomsStore().rescheduleRefresh(900000);
+
         PKIStore caStore;
         String caDir = System.getProperty( "CADIR" );
-        if (caDir == null)
-            caStore = new PKIStore( PKIStore.DEFAULT_CADIR, PKIStore.TYPE_CADIR, true );
-        else
-            caStore = new PKIStore( caDir, PKIStore.TYPE_CADIR, true );
+        caDir = (caDir == null) ? PKIStore.DEFAULT_CADIR : caDir;
+        caStore = new PKIStore( caDir, PKIStore.TYPE_CADIR, true );
         caStore.rescheduleRefresh(900000);
-        vomsValidator = new VOMSValidator(null, new ACValidator(new PKIVerifier(friendlyValidator.getVomsStore(), caStore)));
+
+        vomsValidator = new VOMSValidator(null, new ACValidator(new PKIVerifier(vomsStore, caStore)));
         return vomsValidator;
-    }
-    
-    public static class FriendlyVOMSValidator extends VOMSValidator {
-        public FriendlyVOMSValidator(X509Certificate[] validatedChain, ACValidator acValidator) throws IOException, CertificateException, CRLException {
-            super(validatedChain, acValidator);
-        }
-
-        // No getter for ACValidator, so extend here.
-        protected ACValidator getACValidator() {
-            return myValidator;
-        }
-
-        // No getter for vomsStore, so extend here.
-        protected PKIStore getVomsStore() {
-            return (PKIStore) vomsStore;
-        }
     }
 
     public static synchronized ACTrustStore getACTrustStoreInstance() throws IOException, CertificateException, CRLException {
