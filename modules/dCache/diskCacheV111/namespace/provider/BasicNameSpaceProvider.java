@@ -20,6 +20,7 @@ import java.util.Stack;
 import java.util.StringTokenizer;
 
 import org.apache.log4j.Logger;
+import org.dcache.util.Checksum;
 
 import diskCacheV111.namespace.CacheLocationProvider;
 import diskCacheV111.namespace.NameSpaceProvider;
@@ -37,8 +38,6 @@ import diskCacheV111.util.StorageInfoExtractable;
 import diskCacheV111.util.PnfsFile.VirtualMountPoint;
 import diskCacheV111.vehicles.CacheInfo;
 import diskCacheV111.vehicles.StorageInfo;
-
-import org.dcache.util.Checksum;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.util.Args;
 
@@ -761,14 +760,11 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
 
 
     private FileMetaData getFileMetaData( File mp , PnfsId pnfsId )throws Exception{
-        File metafile = new File( mp , ".(getattr)("+pnfsId.getId()+")" ) ;
-        File orgfile  = new File( mp , ".(access)("+pnfsId.getId()+")" ) ;
-
-        long filesize = orgfile.length() ;
-
         BufferedReader br = null;
+
         try{
 
+            File metafile = new File( mp , ".(getattr)("+pnfsId.getId()+")" ) ;
         	br = new BufferedReader(
         	        new FileReader( metafile ) ) ;
 
@@ -791,9 +787,21 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
 
                 FileMetaData meta = new FileMetaData( uid , gid , perm ) ;
 
-                long simFilesize = getSimulatedFilesize( pnfsId ) ;
+                File orgfile  = new File( mp , ".(access)("+pnfsId.getId()+")" ) ;
+                long filesize = orgfile.length() ;
 
-                meta.setSize( ( simFilesize < 0L ) || ( filesize > 1L ) ? filesize : simFilesize ) ;
+                /**
+                 *  1 is the magic number indicating that a file is >= 2GiB, so we need
+                 *  to look up the filesize in level-2 metadata.   NB. We also lookup when
+                 *  filesize is zero. This is deliberate.  It is needed to work around
+                 *  potential failure to write filesize in PNFS.
+                 */
+                if( filesize <= 1L) {
+                    long simFilesize = getSimulatedFilesize( pnfsId ) ;
+                    filesize = (simFilesize < 0L) ? filesize : simFilesize;
+                }
+
+                meta.setSize(  filesize);
 
                 int filetype = perm & ST_FILE_FMT ;
 
