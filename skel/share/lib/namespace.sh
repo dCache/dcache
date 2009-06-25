@@ -28,6 +28,7 @@ mountNameSpace() # $1 = mount point, $2 = server export, $3 = nfs protocol versi
     local export
     local server
     local version
+    local nfsversion
 
     mountpoint="$1"
     export="$2"
