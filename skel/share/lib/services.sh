@@ -271,6 +271,16 @@ getService() # $1 = domain name
     return 0
 }
 
+# Given a list of domains, prints a list of corresponding service
+# names.
+printServices() # $* = list of domains
+{
+    for domain in $*; do
+        getService $domain
+        printf "${RET} "
+    done
+}
+
 # If domain runs, RET is set to its PID.  Returns 0 if domain is
 # running, 1 otherwise.
 getPidOfDomain() # $1 = Domain name

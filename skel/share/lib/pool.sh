@@ -56,7 +56,7 @@ getSizeOfPool() # $1 = pool path
     stringToGiB "$RET"
 }
 
-createPool() # $1 = size in GiB, $2 = path
+createPool() # $1 = size, $2 = path
 {
     local size
     local path
