@@ -226,6 +226,7 @@ import java.net.InetAddress;
 import java.net.MalformedURLException;
 
 import diskCacheV111.srm.RequestFileStatus;
+import java.sql.SQLException;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.AbstractStorageElement;
 import org.globus.util.GlobusURL;
@@ -256,6 +257,7 @@ import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TBringOnlineRequestFileStatus;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.apache.axis.types.URI;
+import org.apache.log4j.Logger;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
 /**
  *
@@ -263,6 +265,8 @@ import org.dcache.srm.v2_2.TSURLReturnStatus;
  * @version
  */
 public class BringOnlineFileRequest extends FileRequest {
+
+    private final static Logger _log = Logger.getLogger(BringOnlineFileRequest.class);
     
     // the globus url class created from surl_string
     private GlobusURL surl;
@@ -1087,8 +1091,11 @@ public class BringOnlineFileRequest extends FileRequest {
                     fr.setState(State.DONE," file is pinned, pinId="+pinId);
                 }
             }
-            catch(Exception e) {
-                e.printStackTrace();
+            catch(SQLException e) {
+                _log.error("BringOnlineFileRequest failed: " + e.getMessage());
+            }
+            catch(IllegalStateTransition e) {
+                _log.error("BringOnlineFileRequest failed: " + e.getMessage());
             }
         }
         

@@ -292,8 +292,12 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                         srmConn.getSrm(),
                         userCred.clientHost });
                     handleGetResponseMethod = handlerClass.getMethod("getResponse",(Class[])null);
-                } catch(Exception e) {
-                    log.error("handler discovery and dinamic load failed", e);
+                } catch(ClassNotFoundException e) {
+                    if( log.isDebugEnabled() ) {
+                        log.debug("handler discovery and dinamic load failed", e);
+                    }else{
+                        log.info("handler discovery and dinamic load failed");
+                    }
                     return getFailedResponse(capitalizedRequestName,
                             TStatusCode.SRM_NOT_SUPPORTED,
                             "can not find a handler, not implemented");

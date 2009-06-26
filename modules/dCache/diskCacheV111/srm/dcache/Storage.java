@@ -182,6 +182,7 @@ import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.services.space.message.GetSpaceMetaData;
 import diskCacheV111.services.space.message.GetSpaceTokens;
+import diskCacheV111.util.FileNotFoundCacheException;
 import org.dcache.auth.persistence.AuthRecordPersistenceManager;
 import org.dcache.commons.stats.RequestCounters;
 
@@ -4384,7 +4385,14 @@ public class Storage
 
         try {
             storageInfoMessage = _pnfs.getStorageInfoByPath(actualPath);
+        } catch (FileNotFoundCacheException e) {
+            throw new SRMInvalidPathException("path does not exists: " + pnfsPath );
         } catch ( CacheException ce1 ) {
+            if( ce1.getRc() == CacheException.FILE_NOT_FOUND || ce1.getRc() == CacheException.NOT_IN_TRASH ) {
+                throw new SRMInvalidPathException("path does not exists: " + pnfsPath );
+            }
+
+            // FIXME: cleanup required
             try {
                 metadataMessage  = _pnfs.getFileMetaDataByPath(actualPath);
             } catch (CacheException ce) {

@@ -100,7 +100,7 @@ public class SrmRmdir {
 		} 
                 catch(SRMAuthorizationException srmae) {
                     
-			esay(srmae);
+			esay("Can't authorize user: " + srmae.getMessage());
 			response.getReturnStatus().setStatusCode(
                                 TStatusCode.SRM_AUTHORIZATION_FAILURE);
 			response.getReturnStatus().setExplanation(
@@ -108,25 +108,23 @@ public class SrmRmdir {
 			return;
                 }
 		catch (SRMInvalidPathException srmipe) {
+                    esay("Invalid path: " + srmipe.getMessage());
                     if(topdir) {
-			esay(srmipe);
 			response.getReturnStatus().setStatusCode(
                                 TStatusCode.SRM_INVALID_PATH);
 			response.getReturnStatus().setExplanation(
                                 directory +" : "+srmipe.getMessage());
 			return;
                     } else {
-			esay(srmipe);
 			response.getReturnStatus().setStatusCode(
                                 TStatusCode.SRM_NON_EMPTY_DIRECTORY);
 			response.getReturnStatus().setExplanation(
                                 directory +" : "+srmipe.getMessage());
 			return;
-                        
                     }
 		} 
 		catch (SRMException srme) {
-			esay(srme);
+			esay("unhandles SRM exception: " + srme.getMessage());
 			response.getReturnStatus().setStatusCode(
                                 TStatusCode.SRM_FAILURE);
 			response.getReturnStatus().setExplanation(
