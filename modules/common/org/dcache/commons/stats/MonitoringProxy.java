@@ -46,7 +46,6 @@ public class MonitoringProxy  <T> implements InvocationHandler {
             if(counter != null) {
                 counter.incrementFailed(method);
             }
-            logger.error("invocation of "+method+" failed",e);
             throw e.getTargetException();
         } finally {
             long execTime = System.currentTimeMillis() - startTimeStamp;
