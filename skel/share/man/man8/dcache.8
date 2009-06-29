@@ -123,6 +123,27 @@ the user to ensure that the name is indeed unique for the whole
 installation.
 
 .TP
+.B pool reconstruct POOL DESTINATION
+Reconstructs the Berkeley DB database containing pool meta data. POOL
+is the name of a pool. DESTINATION is the directory in which the
+reconstructed database will be stored. DESTINATION must not exist
+prior to calling this command.
+
+The operation is only relevant for pools using the Berkeley DB meta
+data backend. Pools using the classic control directory cannot be
+reconstructed.
+
+Although the Berkeley DB backend deploys a log structured database, it
+can break in case the files get corrupted. This could happen due to OS
+failures or hardware failures. In such cases reconstructing the
+database is often able to recover most if not all data.
+
+Notice that the command creates the database in a new directory. One
+has to manually replace the content of the meta directory of the pool
+with the reconstructed database. It is recommended to keep a copy of
+the old database.
+
+.TP
 .B pool remove NAME
 Removes the pool with the given name from the dCache
 configuration. The pool is \fBnot\fR physically deleted from the file

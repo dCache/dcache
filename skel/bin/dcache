@@ -9,29 +9,30 @@ if [ "$1" = "%" ]; then
     shift
 elif [ "`uname`" = "SunOS" ]; then
     if [ -x /usr/xpg4/bin/sh ]; then
-	exec /usr/xpg4/bin/sh $0 % $*
+        exec /usr/xpg4/bin/sh $0 % $*
     elif [ -x /bin/bash ]; then
-	exec /bin/bash $0 % $*
+        exec /bin/bash $0 % $*
     else
-	echo "Cannot find POSIX compliant shell. This script will"
-	echo "probably break, but we attempt to execute it anyway."
+        echo "Cannot find POSIX compliant shell. This script will"
+        echo "probably break, but we attempt to execute it anyway."
     fi
 fi
 
 # Prints help screen and exits with error status 2
-usage() 
+usage()
 {
     echo "Usage: $(basename $0) [OPTION]... COMMAND"
-    echo 
+    echo
     echo "Valid options are:"
     echo "   -d=<path to dcache installation>   default is /opt/d-cache"
-    echo    
+    echo
     echo "Valid commands are:"
     echo "   dump heap <domain> <file>"
     echo "   dump threads [<domain or service> ...]"
     echo "   pool create <size> <directory>"
     echo "   pool add [--fqdn] [--domain=<domain>] [--lfs=<mode>] <pool name> <directory>"
     echo "   pool ls"
+    echo "   pool reconstruct <pool name> <target dir>"
     echo "   pool remove <pool name>"
     echo "   restart [<domain or service> ...]"
     echo "   services"
@@ -76,9 +77,9 @@ contains() # $1 = word, $2+ = list
     word=$1
     shift
     for i in "$@"; do
-	if [ "$word" = "$i" ]; then
-	    return 0
-	fi
+        if [ "$word" = "$i" ]; then
+            return 0
+        fi
     done
     return 1
 }
@@ -88,19 +89,19 @@ contains() # $1 = word, $2+ = list
 # multi character options with a double dash. Single character options
 # can be combined, e.g. rather than -a -b -c one can use -abc.
 #
-# The first argument is a list of valid options. Remaining arguments 
+# The first argument is a list of valid options. Remaining arguments
 # are the options to be parsed. When finding an option not in the list
 # of valid options, the usage() is called.
 #
-# Parsing stops when no arguments are left or a non-option argument 
+# Parsing stops when no arguments are left or a non-option argument
 # is found.
 #
-# Options can have an optional value. 
+# Options can have an optional value.
 #
-# For each option found the variable opt_X, where X is the 
-# option, is defined. If a value is provided for the option, then 
+# For each option found the variable opt_X, where X is the
+# option, is defined. If a value is provided for the option, then
 # opt_X is set to that value, otherwise to 1.
-# 
+#
 # The return value is the number of words of $1 that were processed.
 #
 parseOptions() # $1 = list of valid options
@@ -118,55 +119,55 @@ parseOptions() # $1 = list of valid options
     shift
     while [ $# -gt 0 ]; do
         option=$1
-	case $option in
-	    --*=*)
-		option=${option#--}    # Strip leading double dash
-		name=${option%%=*}
-		value=${option#*=}
-		;;
+        case $option in
+            --*=*)
+                option=${option#--}    # Strip leading double dash
+                name=${option%%=*}
+                value=${option#*=}
+                ;;
 
-	    -?=*)
-	        option=${option#-}     # Strip leading dash
-		name=${option%%=*}
-		value=${option#*=}
-		;;
+            -?=*)
+                option=${option#-}     # Strip leading dash
+                name=${option%%=*}
+                value=${option#*=}
+                ;;
 
-	    --?*)
-		name=${option#--}      # Strip leading double dash
-		value=1
-		;;
+            --?*)
+                name=${option#--}      # Strip leading double dash
+                value=1
+                ;;
 
-	    -?*)
-		option=${option#-}     # Strip leading dash
-		while [ -n "$option" ]; do
-		    rest=${option#?}       # Strip leading character
-		    name=${option%${rest}} # Strip the rest to get name
-		    if ! contains $name $valid; then
-			usage
-		    fi
+            -?*)
+                option=${option#-}     # Strip leading dash
+                while [ -n "$option" ]; do
+                    rest=${option#?}       # Strip leading character
+                    name=${option%${rest}} # Strip the rest to get name
+                    if ! contains $name $valid; then
+                        usage
+                    fi
 
-		    option=${rest}
+                    option=${rest}
 
-		    eval "opt_${name}=1"
-		done
-		count=$((${count}+1))
-		shift
-		continue
-		;;
-		
-	    *)
-		break
-		;;
-	esac
+                    eval "opt_${name}=1"
+                done
+                count=$((${count}+1))
+                shift
+                continue
+                ;;
 
-	if ! contains $name $valid; then
-	    usage
-	fi
+            *)
+                break
+                ;;
+        esac
 
-	eval "opt_${name}=${value}"
+        if ! contains $name $valid; then
+            usage
+        fi
 
-	shift
-	count=$((${count}+1))
+        eval "opt_${name}=${value}"
+
+        shift
+        count=$((${count}+1))
     done
 
     return $count
@@ -193,7 +194,7 @@ requireJmap()
             fi
         fi
     fi
-    
+
     fail 1 "Could not find the jmap command, part of the Java 6 JDK.
             This command is required for producing a heap dump. Please
             ensure that either jmap is in the path or update
@@ -222,7 +223,7 @@ elif [ -z "$DCACHE_HOME" ]; then
     DCACHE_HOME=${RET%/bin/dcache}
 fi
 
-if [ ! -d "$DCACHE_HOME" ]; then 
+if [ ! -d "$DCACHE_HOME" ]; then
     echo "$DCACHE_HOME is not a directory"
     exit 2
 fi
@@ -240,7 +241,7 @@ require awk df egrep grep sed cat hostname wc dirname basename mount mv
 
 # Read configuration files
 readconf ${DCACHE_HOME}/etc/node_config NODE_CONFIG_ ||
-readconf ${DCACHE_HOME}/etc/door_config NODE_CONFIG_ 
+readconf ${DCACHE_HOME}/etc/door_config NODE_CONFIG_
 loadServiceConfigurationFile dCache
 loadServiceConfigurationFile pool
 
@@ -322,7 +323,7 @@ case "$1" in
                 service=""
             fi
 
-            printf "$format" "$domain" "$service" "$status" "$pid" 
+            printf "$format" "$domain" "$service" "$status" "$pid"
         done
         ;;
 
@@ -339,11 +340,11 @@ case "$1" in
             fi
 
             if getLogOfDomain ${domain} && [ -f "$RET" ]; then
-		log="$RET"
+                log="$RET"
             else
                 log=""
-	    fi
-            
+            fi
+
             printf "$format" "$domain" "$service" "$log"
         done
         ;;
@@ -359,8 +360,8 @@ case "$1" in
             usage
         fi
 
-	command=$1
-	shift
+        command=$1
+        shift
 
         case "$command" in
             ls)
@@ -375,51 +376,99 @@ case "$1" in
                 for domain in $domains; do
                     printPoolsInDomain $domain | while read pool path param; do
                         lfs=$(echo $param | sed -n -e 's/.*lfs=\([^ ]*\).*/\1/p')
-			if [ -f "${path}/setup" ]; then
+                        if [ -f "${path}/setup" ]; then
                             getSizeOfPool $path; size="$RET"
-			    getFreeSpace $path; free="$RET"
+                            getFreeSpace $path; free="$RET"
                             printf "$format" "$pool" "$domain" "$lfs" "$size" "$free" "$path"
-			else
+                        else
                             printf "$format" "$pool" "$domain" "$lfs" "-" "-" "$path (missing)"
-			fi
+                        fi
                     done
                 done
-                
+
                 echo
-                printp "Disk space is measured in GiB. Free space is 
-                        reported for the partition containing the pool, 
+                printp "Disk space is measured in GiB. Free space is
+                        reported for the partition containing the pool,
                         not for the pool itself."
                 ;;
 
-	    create)
+            create)
                 [ $# -ne 2 ] && usage
 
-		size=$1
-		path=$2
+                size=$1
+                path=$2
 
-		createPool ${size} ${path}
-		;;
+                createPool ${size} ${path}
+                ;;
 
             add)
-		parseOptions "domain fqdn lfs" $*
-		shift $?
+                parseOptions "domain fqdn lfs" $*
+                shift $?
 
                 [ $# -ne 2 ] && usage
-		pool=$1
-		path=$2
+                pool=$1
+                path=$2
 
-		addPool ${pool} ${path} ${opt_domain:-"${hostname}Domain"} ${opt_fqdn:-0} ${opt_lfs:-precious}
-		;;
+                addPool ${pool} ${path} ${opt_domain:-"${hostname}Domain"} ${opt_fqdn:-0} ${opt_lfs:-precious}
+                ;;
 
             remove)
                 [ $# -ne 1 ] && usage
-		pool=$1
-		removePool ${pool}
+                pool=$1
+                removePool ${pool}
                 ;;
 
-	    *)
-		usage
-		;;
+            reconstruct)
+                [ $# -ne 2 ] && usage
+                pool="$1"
+                dst="$2"
+
+                # First find the domain containing the pool
+                domains=$(printAllPoolDomains)
+                if ! getDomainOfPool "$pool" $domains; then
+                    fail 2 "Cannot find a pool named $pool."
+                fi
+                domain="$RET"
+
+                # Make sure the pool is not running right now
+                if getPidOfDomain "$domain"; then
+                    fail 1 "$domain contains $pool, however the domain is
+                            still running. Please stop the domain before
+                            attempting to reconstruct the meta data. The
+                            domain can be stopped using the command
+                            '$0 stop $domain'."
+                fi
+
+                # Find the path to the pool
+                getPoolPath "$pool" "$domain" || fail 1 "Failed to locate pool"
+                path="$RET"
+
+                # Check that we have a meta directory
+                if [ ! -d "$path/meta" ]; then
+                    fail 2 "$pool appears to be stored in $path, however the
+                            pool appears not to have a Berkeley DB holding the
+                            meta data, as there is no $path/meta directory."
+                fi
+
+                # Make sure the destination does not exist
+                if [ -e "$dst" ]; then
+                    fail 2 "$dst already exists. The target directory must"
+                           "not exist prior to recovering a pool."
+                fi
+
+                # Reconstruct the DB
+                mkdir -p "$dst" || fail 1 "Failed to create $dst"
+                reconstructMeta "${path}/meta" "${dst}" || fail 1 "Operation aborted"
+
+                printp "The pool meta data database of $pool was reconstructed
+                        and stored in $dst. You have to manually replace
+                        $path/meta with the content of $dst."
+                ;;
+
+
+            *)
+                usage
+                ;;
         esac
 
         ;;
@@ -428,18 +477,18 @@ case "$1" in
         shift
 
         if [ $# -eq 0 ]; then
-            usage 
+            usage
         fi
 
-	command=$1
-	shift
+        command=$1
+        shift
 
         case "$command" in
             heap)
                 [ $# -ne 2 ] && usage
 
-		domain=$1
-		file=$2
+                domain=$1
+                file=$2
 
                 requireJmap
 
@@ -451,7 +500,7 @@ case "$1" in
                     fail 1 "Domain ${domain} is not running."
                 fi
                 pid="$RET"
-                
+
                 if ! $jmap -dump:live,format=b,file=${file} ${pid}; then
                     fail 1 "Failed to dump the heap; please consult
                             the previous error message for possible
@@ -464,8 +513,8 @@ case "$1" in
                             reasons."
                 fi
 
-                printp "The heap of domain ${domain} has been written to 
-                        ${file}. Notice that the file might contain 
+                printp "The heap of domain ${domain} has been written to
+                        ${file}. Notice that the file might contain
                         confidential information."
                 ;;
 
@@ -484,9 +533,9 @@ case "$1" in
                 printp "Stack traces have been written to the log files."
                 ;;
 
-	    *)
-		usage
-		;;
+            *)
+                usage
+                ;;
         esac
         ;;
 
