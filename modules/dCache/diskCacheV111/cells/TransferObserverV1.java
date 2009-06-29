@@ -577,6 +577,10 @@ public class TransferObserverV1
         for (DoorHandler.Entry entry : _doors.entries()) {
             LoginManagerChildrenInfo info = entry.getChildInfo();
 
+            if (info == null) {
+                continue;
+            }
+
             for ( String child: info.getChildren()) {
                 String childDoor = child+"@"+info.getCellDomainName() ;
 
