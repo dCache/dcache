@@ -40,18 +40,18 @@ printDomains() # $1 = service
             printf "%s" "gsidcap-${hostname}Domain "
             ;;
 
-	srm)
-	    printf "%s" "srm-${hostname}Domain "
-	    ;;
+        srm)
+            printf "%s" "srm-${hostname}Domain "
+            ;;
 
-	pool)
-	    for i in $(printAllPoolDomains); do
+        pool)
+            for i in $(printAllPoolDomains); do
                 getPoolListFile $i
                 if ! isFileEmpty "$RET"; then
                     printf "%s" "$i "
                 fi
             done
-	    ;;
+            ;;
 
         admin)
             printf "adminDoorDomain "
@@ -131,6 +131,9 @@ printLegacyCustomDomains()
     if isNodeConfigEnabled gPlazmaService; then
         printDomains gPlazma
     fi
+    if isNodeConfigEnabled pnfsManager; then
+        printNameSpaceDomains
+    fi
 }
 
 # Prints domain hosting PnfsManager
@@ -166,7 +169,6 @@ printAllDomains()
 
         custom)
             printLegacyCustomDomains
-            printNameSpaceDomains
             printDomains pool
             printLegacyAdminDomains
             printLegacyDomains
@@ -192,14 +194,14 @@ printAllPoolDomains()
 {
     if [ -f ${pool_config}/${hostname}.domains ]; then
 
-	while read domain; do
+        while read domain; do
             if [ ! -f ${pool_config}/${domain}.poollist ]; then
                 printp "Requested pool list file not found (skipped):
                         ${domain}.poollist" 1>&2
             else
                 printf "%s" "${domain}Domain "
             fi
-	done < ${pool_config}/${hostname}.domains
+        done < ${pool_config}/${hostname}.domains
 
     elif [ -f ${pool_config}/${hostname}.poollist ]; then
         printf "%s" "${hostname}Domain "
@@ -228,45 +230,45 @@ printExpandedServiceAndDomainList() # $* = list of services and domains
 getService() # $1 = domain name
 {
     if contains $1 $(printAllPoolDomains); then
-	RET="pool"
+        RET="pool"
     else
-	case "$1" in
+        case "$1" in
             dcap*-*Domain)
-		RET="dcap"
-		;;
+                RET="dcap"
+                ;;
 
             gPlazma-*Domain)
-		RET="gPlazma"
-		;;
+                RET="gPlazma"
+                ;;
 
             xrootd-*Domain)
-		RET="xrootd"
-		;;
+                RET="xrootd"
+                ;;
 
             gridftp-*Domain)
-		RET="gridftp"
-		;;
+                RET="gridftp"
+                ;;
 
             gsidcap-*Domain)
-		RET="gsidcap"
-		;;
+                RET="gsidcap"
+                ;;
 
-	    srm-*Domain)
-		RET="srm"
-		;;
+            srm-*Domain)
+                RET="srm"
+                ;;
 
             adminDoorDomain)
                 RET="admin"
                 ;;
 
             *Domain)
-	        RET="${1%Domain}"
-		;;
+                RET="${1%Domain}"
+                ;;
 
             *)
                 return 1
-		;;
-	esac
+                ;;
+        esac
     fi
     return 0
 }
@@ -314,19 +316,19 @@ getLogOfDomain() # $1 = Domain name
     getService ${domain} || return; service="$RET"
 
     case "$service" in
-	srm)
-	    # Getting the location of the SRM stuff is unfortunately
+        srm)
+            # Getting the location of the SRM stuff is unfortunately
             # somewhat messy...
-	    if [ -r ${DCACHE_ETC}/srm_setup.env ] && [ -r ${DCACHE_HOME}/bin/dcache-srm ]; then
-		. ${DCACHE_ETC}/srm_setup.env
-		eval $(grep "export CATALINA_HOME" ${DCACHE_BIN}/dcache-srm)
-		RET="${CATALINA_HOME}/logs/catalina.out"
-	    fi
-	    ;;
-	*)
+            if [ -r ${DCACHE_ETC}/srm_setup.env ] && [ -r ${DCACHE_HOME}/bin/dcache-srm ]; then
+                . ${DCACHE_ETC}/srm_setup.env
+                eval $(grep "export CATALINA_HOME" ${DCACHE_BIN}/dcache-srm)
+                RET="${CATALINA_HOME}/logs/catalina.out"
+            fi
+            ;;
+        *)
             getServiceConfigurationValue $service logArea
-	    RET="${RET:-$DCACHE_LOG}/${domain}.log"
-	    ;;
+            RET="${RET:-$DCACHE_LOG}/${domain}.log"
+            ;;
     esac
 
     return 0
@@ -357,17 +359,17 @@ getServiceConfigurationFile() # $1 = service
         xrootd)
             filename="xrootdSetup"
             ;;
-	gridftp)
+        gridftp)
             filename="gridftpdoorSetup"
             ;;
-	gsidcap)
+        gsidcap)
             filename="gsidcapdoorSetup"
             ;;
-	admin)
+        admin)
             filename="adminDoorSetup"
             ;;
         *)
-	    filename="${service}Setup"
+            filename="${service}Setup"
             ;;
     esac
 
@@ -408,25 +410,25 @@ getJob() # $1 = service
             RET="${DCACHE_BIN}/dcache-srm"
             ;;
         dcap)
-	    # $domain has the format 'dcap${door}-${host}Domain'
-	    door=${domain#dcap}
-	    door=${door%-${hostname}Domain}
+            # $domain has the format 'dcap${door}-${host}Domain'
+            door=${domain#dcap}
+            door=${door%-${hostname}Domain}
             RET="${DCACHE_JOBS}/door${door}"
             ;;
         xrootd)
             RET="${DCACHE_JOBS}/xrootdDoor"
             ;;
-	gridftp)
+        gridftp)
             RET="${DCACHE_JOBS}/gridftpdoor"
             ;;
-	gsidcap)
+        gsidcap)
             RET="${DCACHE_JOBS}/gsidcapdoor"
             ;;
-	admin)
+        admin)
             RET="${DCACHE_JOBS}/adminDoor"
             ;;
         *)
-	    RET="${DCACHE_JOBS}/${service}"
+            RET="${DCACHE_JOBS}/${service}"
             ;;
     esac
 }
@@ -450,21 +452,21 @@ runDomain() # $1 = domain, $2 = action
     program="$RET"
 
     if [ ! -x $program ]; then
-	fail 1 "$program not found. The dCache domain $domain is
+        fail 1 "$program not found. The dCache domain $domain is
                 probably not configured on this host. If you recently
                 configured it, then you may need to rerun the
                 install.sh script to enable it."
     fi
 
     case "${service}" in
-	pool)
-	    ${program} -pool=${domain%Domain} ${action}
-	    ;;
-	srm)
-	    ${program} ${action}
-	    ;;
-	*)
-	    ${program} -domain=${domain} ${action}
-	    ;;
+        pool)
+            ${program} -pool=${domain%Domain} ${action}
+            ;;
+        srm)
+            ${program} ${action}
+            ;;
+        *)
+            ${program} -domain=${domain} ${action}
+            ;;
     esac
 }
