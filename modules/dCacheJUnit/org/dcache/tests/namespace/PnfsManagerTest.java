@@ -41,6 +41,7 @@ import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
 //import diskCacheV111.vehicles.PnfsGetParentMessage;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PnfsRenameMessage;
+import diskCacheV111.vehicles.PnfsSetChecksumMessage;
 import diskCacheV111.vehicles.PnfsSetStorageInfoMessage;
 import diskCacheV111.vehicles.StorageInfo;
 import java.net.URI;
@@ -413,6 +414,17 @@ public class PnfsManagerTest {
 
         _pnfsManager.setStorageInfo(setStorageInfoMessage);
         assertEquals("failed to add second tape locatgion", 0,setStorageInfoMessage.getReturnCode() );
+
+    }
+
+    @Test
+    public void testAddChecksumNonExist() {
+
+        PnfsSetChecksumMessage pnfsSetChecksumMessage = new PnfsSetChecksumMessage(new PnfsId("000000000000000000000000000000000001"), 1, "12345678");
+        pnfsSetChecksumMessage.setReplyRequired(false);
+        _pnfsManager.processPnfsMessage(null, pnfsSetChecksumMessage);
+
+        assertEquals("Set checksum for non existing file must return FILE_NOT_FOUND",  CacheException.FILE_NOT_FOUND, pnfsSetChecksumMessage.getReturnCode());
 
     }
 

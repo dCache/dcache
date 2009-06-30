@@ -822,14 +822,15 @@ public class PnfsManagerV3 extends CellAdapter {
 
         try{
            _nameSpaceProvider.addChecksum(pnfsId,type,value);
+        }catch(FileNotFoundCacheException e) {
+            msg.setFailed(CacheException.FILE_NOT_FOUND, e.getMessage() );
         }catch( CacheException e ){
-            esay(e);
+            esay("Unxpected CacheException: " + e);
             msg.setFailed( e.getRc() , e.getMessage() ) ;
         }catch ( Exception e){
             esay(e) ;
             msg.setFailed( CacheException.UNEXPECTED_SYSTEM_EXCEPTION , e.getMessage() ) ;
         }
-
 
     }
 
