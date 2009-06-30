@@ -405,7 +405,7 @@
       <attr name="GlueSEControlProtocolEndpoint">httpg://<lookup path="interfaces/interface[0]/metric[name=FQDN]"/>:<lookup path="metric[name=port]"/>/srm/managerv2</attr>
  
       <!-- For now we hard-code this, which is wrong -->
-      <attr name="GlueSEControlProtocolVersion">2.2</attr>
+      <attr name="GlueSEControlProtocolVersion">2.2.0</attr>
 
       <!-- This should depend in whether it is SRM v1.1 or SRM v2.2 -->
       <attr name="GlueSEControlProtocolCapability">space allocation</attr>
