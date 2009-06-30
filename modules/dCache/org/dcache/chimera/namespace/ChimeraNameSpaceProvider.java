@@ -417,7 +417,11 @@ public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoP
             }
             return;
         }
-        _fs.setInodeChecksum(inode, type, value);
+        try {
+            _fs.setInodeChecksum(inode, type, value);
+        }catch(FileNotFoundHimeraFsException e) {
+            throw new FileNotFoundCacheException(e.getMessage());
+        }
     }
 
     public String getChecksum(PnfsId pnfsId, int type) throws Exception
