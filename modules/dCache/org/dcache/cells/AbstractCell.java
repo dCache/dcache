@@ -815,7 +815,7 @@ public class AbstractCell extends CellAdapter
     {
         UOID uoid = envelope.getUOID();
         boolean isReply = isReply(envelope);
-        Object result = _messageDispatcher.call(envelope);
+        Object result = _forwardDispatcher.call(envelope);
 
         if (result != null && !isReply) {
             if (!uoid.equals(envelope.getUOID())) {
