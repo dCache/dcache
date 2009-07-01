@@ -24,7 +24,7 @@ public class PnfsManagerFileMetaDataSource implements FileMetaDataSource {
 		}
 
 		_handler = new PnfsHandler(  _cell ,  new CellPath( pnfsManager )  ) ;
-		_handler.setPnfsTimeout(__pnfsTimeout*1000L);
+		_handler.setPnfsTimeout(__pnfsTimeout);
 	}
 
 	public FileMetaData getMetaData(String path) throws CacheException {
