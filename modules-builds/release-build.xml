@@ -13,7 +13,14 @@
 
     <taskdef resource="svntask.properties" classpathref="antlib.classpath" />
 
-
+    <!-- =====================================================================
+       Get current revision number from VCS
+    ========================================================================-->
+    <target name="-get.current.revision">
+        <svn>
+            <status path="." revisionProperty="current.revision" />
+        </svn>
+    </target>
     <!-- =======================================================================
         Bump patch number and commit into VCS
     =========================================================================-->
@@ -62,11 +69,11 @@
     <!-- =======================================================================
         meta target
     =========================================================================-->
-    <target name="commit-release" depends="-bump.version.number,-create.tag,-create.branch"
+    <target name="commit-release" depends="-get.current.revision,-bump.version.number,-create.tag,-create.branch"
         description="Bump version number, create a branch and a tag."
     />
 
-    <target name="commit-patch" depends="-bump.patch.number,-create.tag"
+    <target name="commit-patch" depends="-get.current.revision,-create.tag,-bump.patch.number"
         description="Bump patch number, create a tag."
     />
 
