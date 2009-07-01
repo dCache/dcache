@@ -96,30 +96,6 @@ public class PnfsManagerV3 extends CellAdapter {
      */
     PrefixMap<Integer> _pathToDBCache = new PrefixMap();
 
-    private static class StatItem {
-
-        private final String _name ;
-        int    _requests = 0 ;
-        int    _failed   = 0 ;
-        int    _folded   = 0;
-        private  StatItem( String name ){ _name = name ; }
-        private  void request(){ _requests ++ ; }
-        private  void failed(){ _failed ++ ; }
-        private  void folded() { _folded++; }
-        @Override
-        public String toString(){
-        	StringBuilder sb = new StringBuilder();
-
-        	Formatter formatter = new Formatter(sb);
-
-                formatter.format("%-32s %9d %9d %9d", new Object[]{_name,_requests,  _failed, _folded});
-        	formatter.flush();
-        	formatter.close();
-
-            return sb.toString();
-        }
-    }
-
     private int _logSlowThreshold;
 
     /**
