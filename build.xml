@@ -72,6 +72,7 @@
     <import file="modules-builds/dcap-build.xml"/>
     <import file="modules-builds/srmclient-build.xml" />
     <import file="modules-builds/junit-build.xml" />
+    <import file="modules-builds/release-build.xml" />
 
     <target name="common" depends="-prepare,-dcache-common.bin"
                   description="Compile common package and create dcache-common.jar"/>
