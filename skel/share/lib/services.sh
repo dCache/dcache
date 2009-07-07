@@ -357,7 +357,7 @@ getServiceConfigurationFile() # $1 = service
             filename="doorSetup"
             ;;
         xrootd)
-            filename="xrootdSetup"
+            filename="xrootdDoorSetup"
             ;;
         gridftp)
             filename="gridftpdoorSetup"
