@@ -440,22 +440,7 @@ public class XrootdMoverListener implements StreamListener {
     }
 
     private void closeFile() {
-
-        if (!fileIsClosed) {
-
-            try {
-                mover.getDiskFile().close();
-                _log.error("File closed on Disk");
-            } catch (IOException e) {
-                _log.error(e.getMessage());
-            } finally {
-                fileIsClosed = true;
-            }
-
-        }
-
-
-
+        fileIsClosed = true;
     }
 
 
