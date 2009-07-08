@@ -27,11 +27,13 @@ PNFS_OVERWRITE=no
 
 #  ----  Name Space Node
 #
-#  The name space node is the node that runs the name space
-#  implementation: either Chimera or PNFS.
+#  The name space node is the node that exports the name space 
+#  through NFS. For PNFS this will be the node running the PNFS 
+#  daemons. For Chimera this will be any node running the Chimera 
+#  NFSv3 daemon.
 #    
-#  This node was formally known as the "ADMIN_NODE" and now has been
-#  renamed.
+#  This variable was formally known as the "ADMIN_NODE" and now 
+#  has been renamed.
 #
 #NAMESPACE_NODE=myNameSpaceNode
 
@@ -53,7 +55,7 @@ NODE_TYPE=
 #  White space separated list of services or domains to start on this
 #  host.  Legitimate service names are
 #
-#    dcap, gPlazma, xrootd, gridftp, gsidcap, srm, admin, pool,
+#    dcap, gPlazma, xrootd, gridftp, gsidcap, srm, admin, 
 #    infoProvider, chimera, pnfs, httpd, utility, dir, info,
 #    statistics, lm, dCache, replica
 #
