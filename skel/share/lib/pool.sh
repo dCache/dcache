@@ -99,18 +99,24 @@ createPool() # $1 = size, $2 = path
     local movers
     local set_size
     local set_movers
+    local parent
 
-    stringToGiB $1; size="$RET"
-    path=$2
+    stringToGiB "$1"; size="$RET"
+    path="$2"
 
     # Path must not exist
-    if [ -e ${path} ]; then
+    if [ -e "${path}" ]; then
         fail 1 "${path} already exists. Operation aborted."
     fi
 
+    # Make sure the parent path exists
+    parent=$(dirname ${path})
+    if [ ! -d "${parent}" ]; then
+        mkdir -p "${parent}" || fail 1 "Failed to create $parent"
+    fi
+
     # We need to have enough free space
-    getFreeSpace ${path}
-    ds="$RET"
+    getFreeSpace "${parent}"; ds="$RET"
 
     if [ "${ds}" -lt "${size}" ]; then
         fail 1 "Pool size exceeds available space. ${path} only
@@ -123,7 +129,8 @@ createPool() # $1 = size, $2 = path
     # which is not the case!
     movers="$NODE_CONFIG_NUMBER_OF_MOVERS"
 
-    mkdir -p ${path} ${path}/data ${path}/control || exit 1
+    mkdir -p "${path}" "${path}/data" "${path}/control" || 
+    fail 1 "Failed to create directory tree"
 
     set_size="s:set max diskspace 100g:set max diskspace ${size}g:g"
     set_movers="s:mover set max active 10:mover set max active ${movers}:g"

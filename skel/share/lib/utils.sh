@@ -186,9 +186,9 @@ stringToGiB() # $1 = size
 # Extracts the amount of free space in GiB.
 getFreeSpace() # $1 = path
 {
-    local parent
-    parent=$(dirname ${1})
-    RET=$(df -k "${parent}" | awk 'NR == 2 { if (NF < 4) { getline; x = $3 } else { x = $4 }; printf "%d", x / (1024 * 1024)}')
+    [ -d "$1" ] || return 1
+
+    RET=$(df -k "${1}" | awk 'NR == 2 { if (NF < 4) { getline; x = $3 } else { x = $4 }; printf "%d", x / (1024 * 1024)}')
 }
 
 # Reads configuration file into shell variables. The shell variable
