@@ -64,7 +64,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
     private int     _sessionId       = -1;
     private boolean _wasChanged      = false;
 
-    private  MessageDigest _transferMessageDigest = null;
     private  Checksum  _clientChecksum        = null;
     private  Checksum  _transferChecksum      = null;
 
@@ -556,7 +555,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                 case DCapConstants.IOCMD_READ :
                     //
                     //
-                    _transferMessageDigest = null;
+                    _transferChecksum= null;
 
                     long blockSize = requestBlock.nextLong();
 
@@ -594,7 +593,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                     //
                 case DCapConstants.IOCMD_SEEK :
 
-                    _transferMessageDigest = null;
+                    _transferChecksum = null;
 
                     long offset = requestBlock.nextLong();
                     int  whence = requestBlock.nextInt();
@@ -623,7 +622,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                     //
                 case DCapConstants.IOCMD_SEEK_AND_READ :
 
-                    _transferMessageDigest = null;
+                    _transferChecksum = null;
 
                     offset    = requestBlock.nextLong();
                     whence    = requestBlock.nextInt();
@@ -662,7 +661,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                     //
                 case DCapConstants.IOCMD_SEEK_AND_WRITE :
 
-                    _transferMessageDigest = null;
+                    _transferChecksum = null;
                     offset    = requestBlock.nextLong();
                     whence    = requestBlock.nextInt();
 
@@ -1114,9 +1113,9 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
     }
     private void updateChecksum(ByteBuffer buffer){
-        if(_transferMessageDigest == null)return;
+        if(_transferChecksum == null)return;
         buffer.rewind();
-        _transferMessageDigest.update(buffer);
+        _transferChecksum.getMessageDigest().update(buffer);
     }
 
     private void doTheRead(FileChannel           fileChannel,
@@ -1200,7 +1199,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
     public void  setDigest(Checksum checksum){
         _transferChecksum      =  checksum;
-        _transferMessageDigest = (checksum != null) ? checksum.getMessageDigest() : null;
     }
     public Checksum getClientChecksum(){
         return  _clientChecksum ;
