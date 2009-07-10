@@ -63,7 +63,7 @@ public class XrootdProtocol_2 implements MoverProtocol {
 
     public XrootdProtocol_2(CellEndpoint cell) {
         this.cell = cell;
-        _log.info("Xrootd mover is started.");
+        _log.debug("Xrootd mover created.");
     }
 
 
@@ -123,7 +123,7 @@ public class XrootdProtocol_2 implements MoverProtocol {
             Collection col = new ArrayList(1);
             col.add(localIP);
             netifsCol.add(new NetIFContainer("", col));
-            _log.error("sending ip-address derived from hostname to Xrootd-door: "+localIP+" port: "+serverPort);
+            _log.debug("sending ip-address derived from hostname to Xrootd-door: "+localIP+" port: "+serverPort);
         } else {
             //			the ip we got from the hostname seems to be bad, let's loop through the network interfaces
             Enumeration ifList = NetworkInterface.getNetworkInterfaces();
@@ -144,7 +144,7 @@ public class XrootdProtocol_2 implements MoverProtocol {
                     if (addr instanceof Inet4Address
                         && !addr.isLoopbackAddress()) {
                         ipsCol.add(addr);
-                        _log.error("sending ip-address derived from network-if to Xrootd-door: "+addr+" port: "+serverPort);
+                        _log.debug("sending ip-address derived from network-if to Xrootd-door: "+addr+" port: "+serverPort);
                     }
                 }
 
@@ -163,7 +163,7 @@ public class XrootdProtocol_2 implements MoverProtocol {
         XrootdDoorAdressInfoMessage doorMsg = new XrootdDoorAdressInfoMessage(getXrootdFileHandle(), serverPort, netifsCol);
         cell.sendMessage (new CellMessage(cellpath, doorMsg));
 
-        _log.info("sending redirect message to Xrootd-door "+ cellpath);
+        _log.debug("sending redirect message to Xrootd-door "+ cellpath);
         _log.info("Xrootd mover listening on port: " + serverPort);
 
         //
@@ -202,8 +202,7 @@ public class XrootdProtocol_2 implements MoverProtocol {
             throw new CacheException("xrootd transfer failed");
         }
 
-        _log.error("normal end of xrootd mover process, transfer successful");
-
+        _log.info("normal end of xrootd mover process, transfer successful");
     }
 
     public void setAttribute(String name, Object attribute) {}
