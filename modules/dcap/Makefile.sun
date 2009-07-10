@@ -23,7 +23,7 @@ IO_SYM = -DOPEN_SYM=\"open\" -DCLOSE_SYM=\"close\" \
 	-DTELLDIR_SYM=\"_telldir\" -DSEEKDIR_SYM=\"_seekdir\" \
 	-DUNLINK_SYM=\"unlink\" -DRMDIR_SYM=\"rmdir\" -DMKDIR_SYM=\"mkdir\" \
 	-DCHMOD_SYM=\"chmod\" -DACCESS_SYM=\"access\" -DRENAME_SYM=\"rename\" \
-	-DCHOWN_SYM=\"chown\"
+	-DCHOWN_SYM=\"chown\" -DWRITEV_SYM=\"writev\"  -DREADV_SYM=\"readv\"
 
 
 CC = /opt/SUNWspro/bin/cc
