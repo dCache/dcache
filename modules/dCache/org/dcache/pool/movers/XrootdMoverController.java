@@ -40,7 +40,7 @@ public class XrootdMoverController implements PhysicalConnectionListener {
 
 //		plug login module here
 
-		_log.info("login attempt, access granted");
+        _log.debug("login attempt, access granted");
 
 		return new OKResponse(login.getStreamID());
 	}
@@ -49,7 +49,7 @@ public class XrootdMoverController implements PhysicalConnectionListener {
 
 //		plug authentitication module here
 
-		_log.info("authentitication passed");
+        _log.debug("authentitication passed");
 
 		return new OKResponse(auth.getStreamID());
 	}
