@@ -108,6 +108,11 @@ public class CacheException extends Exception {
     public final static int PERMISSION_DENIED = 10018;
 
     /**
+     * file not online and user has no permission to perform STAGING
+     */
+    public final static int FILE_NOT_ONLINE = 10019 ;
+
+    /**
      * default error code.
      * <b>It's recommended to use more specific error codes</b>
      */

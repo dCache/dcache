@@ -3,6 +3,7 @@
 package diskCacheV111.poolManager ;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
 import java.text.SimpleDateFormat;
@@ -108,6 +109,42 @@ public class RequestContainerV5
      * define host selection behavior on restore retry
      */
     private int _sameHostRetry = SAME_HOST_RETRY_NOTCHECKED ;
+
+    /**
+     * Tape Protection.
+     * allStates defines that all states are allowed.
+     * allStatesExceptStage defines that all states except STAGE are allowed.
+     */
+    public static final int allStates = PoolRequestHandler.ST_STAGE | PoolRequestHandler.ST_INIT | PoolRequestHandler.ST_DONE
+            | PoolRequestHandler.ST_POOL_2_POOL | PoolRequestHandler.ST_WAITING | PoolRequestHandler.ST_WAITING_FOR_STAGING
+            | PoolRequestHandler.ST_WAITING_FOR_POOL_2_POOL | PoolRequestHandler.ST_SUSPENDED;
+
+    public static final int allStatesExceptStage = PoolRequestHandler.ST_INIT | PoolRequestHandler.ST_DONE | PoolRequestHandler.ST_POOL_2_POOL
+            | PoolRequestHandler.ST_WAITING | PoolRequestHandler.ST_WAITING_FOR_STAGING | PoolRequestHandler.ST_WAITING_FOR_POOL_2_POOL
+            | PoolRequestHandler.ST_SUSPENDED;
+
+    private static String modeToString(int mode){
+        switch (mode) {
+        case 1:
+            return "ST_INIT";
+        case 2:
+            return "ST_DONE";
+        case 4:
+            return "ST_POOL_2_POOL";
+        case 8:
+            return "ST_STAGE";
+        case 16:
+            return "ST_WAITING";
+        case 32:
+            return "ST_WAITING_FOR_STAGING";
+        case 64:
+            return "ST_WAITING_FOR_POOL_2_POOL";
+        case 128:
+            return "ST_SUSPENDED";
+       default:
+            throw new IllegalArgumentException("Invalid mode : " + mode);
+       }
+    }
 
     public RequestContainerV5()
     {
@@ -589,6 +626,7 @@ public class RequestContainerV5
 
         PnfsId       pnfsId       = request.getPnfsId() ;
         ProtocolInfo protocolInfo = request.getProtocolInfo() ;
+        int allowedStates = request.getAllowedStates();
         String  hostName    =
                protocolInfo instanceof IpProtocolInfo ?
                ((IpProtocolInfo)protocolInfo).getHosts()[0] :
@@ -622,7 +660,7 @@ public class RequestContainerV5
            if( handler == null ){
               _handlerHash.put(
                      canonicalName ,
-                     handler = new PoolRequestHandler( pnfsId , canonicalName) ) ;
+                     handler = new PoolRequestHandler( pnfsId , canonicalName, allowedStates ) ) ;
            }
            handler.addRequest(message) ;
         }
@@ -693,6 +731,7 @@ public class RequestContainerV5
 
         private   String       _state         = "[<idle>]";
         private   int          _mode          = ST_INIT ;
+        private   final int    _allowedStates;
         private   int          _currentRc     = 0 ;
         private   String       _currentRm     = "" ;
 
@@ -818,11 +857,11 @@ public class RequestContainerV5
             }
         }
 
-        public PoolRequestHandler( PnfsId pnfsId , String canonicalName ){
-
+        public PoolRequestHandler( PnfsId pnfsId , String canonicalName, int allowedStates ){
 
 	    _pnfsId  = pnfsId ;
 	    _name    = canonicalName ;
+	    _allowedStates = allowedStates ;
 	}
         //...........................................................
         //
@@ -1091,14 +1130,14 @@ public class RequestContainerV5
         private static final int RT_S_COST_EXCEEDED  = 9 ;
         private static final int RT_DELAY  = 10 ;
 
-        private static final int ST_INIT        = 0 ;
-        private static final int ST_DONE        = 1 ;
-        private static final int ST_POOL_2_POOL = 2 ;
-        private static final int ST_STAGE       = 3 ;
-        private static final int ST_WAITING     = 4 ;
-        private static final int ST_WAITING_FOR_STAGING     = 5 ;
-        private static final int ST_WAITING_FOR_POOL_2_POOL = 6 ;
-        private static final int ST_SUSPENDED   = 7 ;
+        private static final int ST_INIT        = 1 ;
+        private static final int ST_DONE        = 2 ;
+        private static final int ST_POOL_2_POOL = 4 ;
+        private static final int ST_STAGE       = 8 ;
+        private static final int ST_WAITING     = 16 ;
+        private static final int ST_WAITING_FOR_STAGING     = 32 ;
+        private static final int ST_WAITING_FOR_POOL_2_POOL = 64 ;
+        private static final int ST_SUSPENDED   = 128 ;
 
         private static final int CONTINUE        = 0 ;
         private static final int WAIT            = 1 ;
@@ -1164,7 +1203,7 @@ public class RequestContainerV5
               _forceContinue = false ;
               try{
                  _log.info("StageEngine called in mode "+
-                     ST_STRINGS[_mode]+
+                   modeToString(_mode)+
                      " with object "+
                         (  inputObject == null ?
                              "(NULL)":
@@ -1177,8 +1216,8 @@ public class RequestContainerV5
 
                  stateEngine( inputObject ) ;
 
-                 _log.info("StageEngine left with   : "+ST_STRINGS[_mode]+
-                     "  ("+ ( _forceContinue?"Continue":"Wait")+")");
+                 _log.info("StageEngine left with   : " + modeToString(_mode)+
+                            "  ("+ ( _forceContinue?"Continue":"Wait")+")");
 
               }catch(Exception ee ){
                  _log.warn("Unexpected Exception in state loop for "+_pnfsId+" : "+ee) ;
@@ -1196,12 +1235,27 @@ public class RequestContainerV5
                 sendInfoMessage(_pnfsId , _storageInfo ,
                                 _currentRc , "Failed "+_currentRm);
             } else {
+                 if( (mode & _allowedStates) == 0 ) { //'mode' is not an allowed state
+                     _mode = ST_DONE;
+                     _forceContinue = true;
+                     _state = "Failed";
+                     _log.debug("RequestContainerV5.nextStep() : No permission to perform " + modeToString(mode));
+                     _currentRc = CacheException.FILE_NOT_ONLINE;
+                     _currentRm = "File not online. Staging not allowed.";
+                     sendInfoMessage(_pnfsId , _storageInfo ,
+                                     _currentRc , "No permission to perform staging." + _currentRm);
+                 } else if ((mode & _allowedStates) == mode){ //'mode' is allowed state
                 _mode = mode ;
                 _forceContinue = shouldContinue == CONTINUE ;
                 if( _mode != ST_DONE ){
                     _currentRc = 0 ;
                     _currentRm = "" ;
                 }
+              } else {
+                _log.error("Value of (mode & _allowedStates) is neither equal to '0' nor to 'mode'." +
+                            " Current value of mode = " + Integer.toString(mode));
+                    throw new IllegalStateException("Illegal value of 'mode'.");
+              }
             }
         }
         //
@@ -1318,7 +1372,7 @@ public class RequestContainerV5
            switch( _mode ){
 
               case ST_INIT :
-
+                 _log.debug( "stateEngine: case ST_INIT");
                  synchronized( _selections ){
 
                     CacheException ce = _selections.get(_pnfsId) ;
@@ -1338,6 +1392,7 @@ public class RequestContainerV5
                           _state = "Suspended (forced) "+_formatter.format(new Date()) ;
                           _currentRc = 1005 ;
                           _currentRm = "Suspend enforced";
+                          _log.debug( " stateEngine: SUSPENDED/WAIT ");
                          nextStep( ST_SUSPENDED , WAIT ) ;
                          sendInfoMessage( _pnfsId , _storageInfo ,
                                           _currentRc , "Suspended (forced) "+_currentRm );
@@ -1363,9 +1418,12 @@ public class RequestContainerV5
                     }else if( rc == RT_NOT_FOUND ){
                        //
                        //
+                        _log.debug(" stateEngine: RT_NOT_FOUND ");
                        if( _parameter._hasHsmBackend ){
+                           _log.debug(" stateEngine: parameter has HSM backend ");
                           nextStep( ST_STAGE , CONTINUE ) ;
                        }else{
+                          _log.debug(" stateEngine: parameter has NO HSM backend ");
                           _state = "Suspended (pool unavailable) "+_formatter.format(new Date()) ;
                           _currentRc = 1010 ;
                           _currentRm = "Suspend";
@@ -1406,7 +1464,7 @@ public class RequestContainerV5
 
                        }
                     }else if( rc == RT_ERROR ){
-
+                       _log.debug( " stateEngine: RT_ERROR");
                        nextStep( ST_STAGE , CONTINUE ) ;
                        _log.info("AskIfAvailable returned an error, will continue with Staging");
 
@@ -1422,7 +1480,7 @@ public class RequestContainerV5
 
               case ST_POOL_2_POOL :
               {
-
+                  _log.debug( "stateEngine: case ST_POOL_2_POOL");
                  if( inputObject == null ){
 
                     if( ( rc = askForPoolToPool( _overwriteCost ) ) == RT_FOUND ){
@@ -1535,7 +1593,7 @@ public class RequestContainerV5
               break ;
 
               case ST_STAGE :
-
+                 _log.debug( "stateEngine: case ST_STAGE");
                  if( inputObject == null ){
 
                     if( _suspendStaging ){
@@ -1571,7 +1629,7 @@ public class RequestContainerV5
 
               break ;
               case ST_WAITING_FOR_POOL_2_POOL :
-
+                 _log.debug( "stateEngine: case ST_WAITING_FOR_POOL_2_POOL");
                  if( inputObject instanceof Message ){
 
                     if( ( rc =  exercisePool2PoolReply((Message)inputObject) ) == RT_OK ){
@@ -1604,7 +1662,7 @@ public class RequestContainerV5
 
               break ;
               case ST_WAITING_FOR_STAGING :
-
+                 _log.debug( "stateEngine: case ST_WAITING_FOR_STAGING" );
                  if( inputObject instanceof Message ){
 
                     if( ( rc =  exerciseStageReply( (Message)inputObject ) ) == RT_OK ){
@@ -1630,6 +1688,7 @@ public class RequestContainerV5
                  }
               break ;
               case ST_SUSPENDED :
+                 _log.debug( "stateEngine: case ST_SUSPENDED" );
                  if( inputObject instanceof Object [] ){
 
                     handleCommandObject( (Object []) inputObject ) ;
@@ -1638,7 +1697,7 @@ public class RequestContainerV5
               return ;
 
               case ST_DONE :
-
+                 _log.debug( "stateEngine: case ST_DONE" );
                  if( inputObject == null ){
 
                     clearSteering();
