@@ -72,7 +72,9 @@ public class PoolIOReadTransfer
 
         } catch (FileNotFoundException e) {
             throw new CacheException(CacheException.ERROR_IO_DISK,
-                                     "File could not be opened; please check the file system");
+                                     "File could not be opened  [" +
+                                     e.getMessage() +
+                                     "]; please check the file system");
         } finally {
             transferTimer = System.currentTimeMillis() - transferTimer;
         }
