@@ -67,6 +67,85 @@ public class CellStub
     }
 
     /**
+     * Sends a message and waits for the reply. The reply is expected
+     * to contain a message object of the same type as the message
+     * object that was sent, and the return code of that message is
+     * expected to be zero. If either is not the case, an exception is
+     * thrown.
+     *
+     * @param  msg     the message object to send
+     * @return         the message object from the reply
+     * @throws InterruptedException If the thread is interrupted
+     * @throws CacheException If the message could not be sent, a
+     *       timeout occured, the object in the reply was of the wrong
+     *       type, or the return code was non-zero.
+     */
+    public <T extends Message> T sendAndWait(T msg)
+        throws CacheException, InterruptedException
+    {
+        return sendAndWait(_destination, msg);
+    }
+
+    /**
+     * Sends a message and waits for the reply. The reply is expected
+     * to contain a message object of the same type as the message
+     * object that was sent, and the return code of that message is
+     * expected to be zero. If either is not the case, an exception is
+     * thrown.
+     *
+     * @param  path    the destination cell
+     * @param  msg     the message object to send
+     * @return         the message object from the reply
+     * @throws InterruptedException If the thread is interrupted
+     * @throws CacheException If the message could not be sent, a
+     *       timeout occured, the object in the reply was of the wrong
+     *       type, or the return code was non-zero.
+     */
+    public <T extends Message> T sendAndWait(CellPath path, T msg)
+        throws CacheException, InterruptedException
+    {
+        CellMessage replyMessage;
+        try {
+            replyMessage =
+                _endpoint.sendAndWait(new CellMessage(path, msg), _timeout);
+        } catch (NoRouteToCellException e) {
+            /* From callers point of view a timeout due to a lost
+             * message or a missing route to the destination is pretty
+             * much the same, so we report this as a timeout. The
+             * error message gives the details.
+             */
+            throw new CacheException(CacheException.TIMEOUT, e.getMessage());
+        }
+
+        if (replyMessage == null) {
+            String errmsg = String.format("Request to %s timed out.", path);
+            throw new CacheException(CacheException.TIMEOUT, errmsg);
+        }
+
+        Object replyObject = replyMessage.getMessageObject();
+        if (!(msg.getClass().isInstance(replyObject))) {
+            String errmsg = "Got unexpected message of class " +
+                replyObject.getClass() + " from " +
+                replyMessage.getSourceAddress();
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     errmsg);
+        }
+
+        T reply = (T)replyObject;
+        if (reply.getReturnCode() != 0) {
+            Object error = reply.getErrorObject();
+            if (error instanceof CacheException) {
+                throw (CacheException) error;
+            }
+            throw new CacheException(reply.getReturnCode(),
+                                     String.format("Got error from %s: %s",
+                                                   path, error));
+        }
+
+        return reply;
+    }
+
+    /**
      * Sends <code>message</code> asynchronously, expecting a result
      * of type <code>type</code>. The result is delivered to
      * <code>callback</code>.

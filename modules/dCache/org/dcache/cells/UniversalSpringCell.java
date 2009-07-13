@@ -778,6 +778,8 @@ public class UniversalSpringCell
             String arguments =
                 args.toString().replaceAll("-?\\$\\{.*\\}", "");
             properties.setProperty("arguments", arguments);
+            properties.setProperty("thisCell", getCellName());
+            properties.setProperty("thisDomain", getCellDomainName());
             mergeDictionary(properties, getDomainContext());
             mergeDictionary(properties, args.options());
 

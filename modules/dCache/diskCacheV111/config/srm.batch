@@ -115,6 +115,8 @@ set context -c srmVacuum          true
 set context -c srmVacuumPeriod   21600
 
 set context -c pnfsSrmPath                      /
+set context -c xrootdRootPath                   /
+set context -c httpRootPath                     /
 
 set context -c srmPoolManagerTimeout   300
 set context -c srmPoolTimeout          300
@@ -365,6 +367,8 @@ create diskCacheV111.srm.dcache.Storage  SRM-${thisHostname} \
         -vacuum=${srmVacuum} \
         -vacuum-period=${srmVacuumPeriod} \
         -pnfs-srm-path=${pnfsSrmPath} \
+        -xrootdRootPath=${xrootdRootPath} \
+        -httpRootPath=${httpRootPath} \
         -gsissl=true \
         -reserve-space-implicitly=${srmImplicitSpaceManagerEnabled} \
         -space-reservation-strict=${srmSpaceReservationStrict} \

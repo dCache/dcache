@@ -258,6 +258,8 @@ public class Storage
     private boolean ignoreClientProtocolOrder; //falseByDefault
     private boolean customGetHostByAddr; //falseByDefault
 
+    private final FsPath _xrootdRootPath;
+    private final FsPath _httpRootPath;
 
     private LoginBrokerHandler _loginBrokerHandler = null ;
 
@@ -375,6 +377,9 @@ public class Storage
 
         _hosts = new String[addresses.length];
 
+        _httpRootPath = new FsPath(getOption("httpRootPath", "/"));
+        _xrootdRootPath = new FsPath(getOption("xrootdRootPath", "/"));
+
         /**
          *  Add addresses ensuring preferred ordering: external addresses are before any
          *  internal interface addresses.
@@ -384,7 +389,7 @@ public class Storage
 
         for( int i = 0; i < addresses.length; i++) {
     		InetAddress addr = addresses[i];
-        	
+
         	if( !addr.isLinkLocalAddress() && !addr.isLoopbackAddress() &&
         			!addr.isSiteLocalAddress() && !addr.isMulticastAddress()) {
         		_hosts [nextExternalIfIndex++] = addr.getHostName();
@@ -717,7 +722,7 @@ public class Storage
         config.isClientDNSLookup())); // false by default
 
         config.setRrdDirectory(getOption("rrdDirectory",config.getRrdDirectory()));
-        
+
         say("scheduler parameter read, starting");
         this.useInterpreter(true);
         this.getNucleus().export();
@@ -927,28 +932,28 @@ public class Storage
     public String fh_set_async_ls= " Syntax : set async ls [on|off]  # turn on/off asynchronous srmls execution ";
     public String hh_set_async_ls= " [on|off]  # turn on/off asynchronous srmls execution ";
 
-    public String ac_set_async_ls_$_0_1(Args args) { 
+    public String ac_set_async_ls_$_0_1(Args args) {
         boolean yes = false;
         boolean no  = false;
-        for (String s : new String[] { "on", "true", "t", "yes"}) { 
-            if (s.equalsIgnoreCase(args.argv(0))) { 
+        for (String s : new String[] { "on", "true", "t", "yes"}) {
+            if (s.equalsIgnoreCase(args.argv(0))) {
                 yes = true;
                 break;
             }
         }
         if (yes == false) {
-            for (String s : new String[] { "off", "false", "f", "no"}) { 
-                if (s.equalsIgnoreCase(args.argv(0))) { 
+            for (String s : new String[] { "off", "false", "f", "no"}) {
+                if (s.equalsIgnoreCase(args.argv(0))) {
                     no = true;
                     break;
                 }
             }
         }
-        if (no==false && yes==false) { 
-            if (args.argc()==0) { 
+        if (no==false && yes==false) {
+            if (args.argc()==0) {
                 yes = true;
             }
-            else { 
+            else {
                 return "Syntax error : "+args.argv(0)+" is unsupported value";
             }
         }
@@ -960,7 +965,7 @@ public class Storage
     public String hh_db_history_log= " [on|off] " +
         "# show status or enable db history log ";
     public String ac_db_history_log_$_0_1(Args args) {
-        if (args.argc()==0) { 
+        if (args.argc()==0) {
             return "db history logging is " +(
                 config.isJdbcLogRequestHistoryInDBEnabled()?
                     " enabled":
@@ -1266,7 +1271,7 @@ public class Storage
         }
         return sb.toString();
     }
-    
+
     public String fh_set_job_priority= " Syntax: set priority <requestId> <priority>"+
             "will set priority for the requestid";
     public String hh_set_job_priority=" <requestId> <priority>";
@@ -2160,31 +2165,50 @@ public class Storage
         return true;
     }
 
-    private String getTurlPath(String path,String protocol,SRMUser user)
-    throws SRMException {
-
-        say("getTurlPath(path="+path+",protocol="+protocol+",user="+user);
-        if(!verifyUserPathIsRootSubpath(path,user)) {
-            throw new SRMAuthorizationException("user's path "+path+
-                    " is not subpath of the user's root");
+    private String stripRootPath(FsPath root, FsPath path)
+        throws SRMAuthorizationException
+    {
+        if (!path.startsWith(root)) {
+            throw new SRMAuthorizationException(String.format("Access denied for path [%s]", path));
         }
-        String user_root = null;
-        if(user != null) {
+
+        List<String> l = path.getPathItemsList();
+        return FsPath.toString(l.subList(root.getPathItemsList().size(),
+                                         l.size()));
+    }
+
+    private String getTurlPath(String path, String protocol, SRMUser user)
+        throws SRMException
+    {
+        FsPath fullPath = new FsPath(path);
+        FsPath userRoot = new FsPath();
+        if (user != null) {
             AuthorizationRecord duser = (AuthorizationRecord) user;
-            user_root = duser.getRoot();
-            if(user_root != null) {
-                user_root =new FsPath(user_root).toString();
+            String root = duser.getRoot();
+            if (root != null) {
+                userRoot = new FsPath(root);
             }
         }
 
-        String transfer_path = new FsPath(path).toString();
-        if(protocol.equals("gsiftp") && user_root != null) {
-            transfer_path = "/".concat(
-                    transfer_path.substring(user_root.length()));
+        if (!verifyUserPathIsRootSubpath(path, user)) {
+            throw new SRMAuthorizationException(String.format("Access denied: Path [%s] is outside user's root [%s]", path, userRoot));
         }
 
-        log("getTurl()  transfer_path = "+transfer_path);
-        return transfer_path;
+        String transferPath;
+        if (protocol.equals("gsiftp")) {
+            transferPath = stripRootPath(userRoot, fullPath);
+        } else if (protocol.equals("http")) {
+            transferPath = stripRootPath(_httpRootPath, fullPath);
+        } else if (protocol.equals("root")) {
+            transferPath = stripRootPath(_xrootdRootPath, fullPath);
+        } else {
+            transferPath = fullPath.toString();
+        }
+
+        log("getTurlPath(path=" + path + ",protocol=" + protocol +
+            ",user=" + user + ") = " + transferPath);
+
+        return transferPath;
     }
 
     public LoginBrokerInfo[] getLoginBrokerInfos()
@@ -2426,7 +2450,7 @@ public class Storage
                     throw new SRMException("selectHost "+ioe);
                 }
                 // cache record
-                doorToHostnameMap.put(thehost, 
+                doorToHostnameMap.put(thehost,
                         new HostnameCacheRecord(resolvedHost));
             } else {
                 resolvedHost = resolvedHostRecord.getHostname();

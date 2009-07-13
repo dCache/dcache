@@ -65,6 +65,7 @@
         <pathelement location="${libDir}/dbcp/c3p0-0.9.1.2.jar" />
         <pathelement location="${libDir}/berkeleyDB/je-3.2.76.jar" />
         <fileset dir="${libDir}/spring/" includes="spring-*.jar" />
+        <fileset dir="${libDir}/netty/" includes="*.jar" />
         <fileset dir="${libDir}/activemq/" includes="*.jar" />
         <pathelement location="${libDir}/smc/statemap.jar" />
         <pathelement location="${libDir}/persistence/persistence-api-1.0.jar" />
@@ -477,6 +478,14 @@
         <mkdir dir="${server.bin.dir}/classes/spring/" />
         <copy todir="${server.bin.dir}/classes/spring">
             <fileset dir="${libDir}/spring/">
+                <include name="*.jar" />
+            </fileset>
+        </copy>
+
+        <!-- Netty -->
+        <mkdir dir="${server.bin.dir}/classes/netty/" />
+        <copy todir="${server.bin.dir}/classes/netty">
+            <fileset dir="${libDir}/netty/">
                 <include name="*.jar" />
             </fileset>
         </copy>

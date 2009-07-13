@@ -26,33 +26,17 @@ exec -run -shell file:${ourHomeDir}/config/tunnel.fragment
 #
 #
 onerror continue
-#  set context -c xrootdAuthzPlugin org.dcache.xrootd.security.plugins.tokenauthz.TokenAuthorizationFactory
+#  set context -c xrootdAuthzPlugin org.dcache.xrootd2.security.plugins.tokenauthz.TokenAuthorizationFactory
   set context -c xrootdIsReadOnly true
   set context -c xrootdAllowedPaths ""
   set context -c xrootdIoQueue ""
-  set context -c xrootdAuthzPlugin none
+  set context -c xrootdAuthzPlugin org.dcache.xrootd2.security.plugins.tokenauthz.NoAuthorizationFactory
   set context -c xrootdAuthzKeystore /opt/d-cache/etc/keystore
   set context -c xrootdMaxLogin 50
   set context -c xrootdMaxOpenFilesPerConnection 5000
 onerror shutdown
 #
 #
-create dmg.cells.services.login.LoginManager Xrootd-${thisHostname} \
-           "${xrootdPort}                \
-             org.dcache.doors.XrootdDoor \
-             -export                     \
-             -prot=telnet -localOk       \
-             -maxLogin=${xrootdMaxLogin} \
-             -clientVersion=0.0          \
-             -brokerUpdateTime=30        \
-             -protocolFamily=root        \
-             -protocolVersion=2.4	     \
-             -loginBroker=LoginBroker    \
-             -isReadOnly=${xrootdIsReadOnly}	\
-             -authzPlugin=${xrootdAuthzPlugin}       \
-             -keystore=${xrootdAuthzKeystore} \
-             -io-queue=${xrootdIoQueue} \
-             -allowedPaths=${xrootdAllowedPaths} \
-             -maxFileOpensPerLogin=${xrootdMaxOpenFilesPerConnection} \
-"
+create org.dcache.cells.UniversalSpringCell Xrootd-${thisHostname} \
+       "classpath:org/dcache/xrootd2/door/xrootd.xml -export"
 

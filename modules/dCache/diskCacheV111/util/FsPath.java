@@ -10,13 +10,34 @@ public class FsPath {
         return new ArrayList<String>(_list);
     }
 
-    public FsPath(FsPath path) {
-        _list = new ArrayList<String>(path._list);
+    public FsPath(String path) {
+        this();
+        add(path);
     }
 
-    public FsPath(String path) {
+    public FsPath()
+    {
         _list = new ArrayList<String>();
-        add(path);
+    }
+
+    public FsPath(FsPath path) {
+        this(path._list);
+    }
+
+    public FsPath(List<String> list)
+    {
+        _list = new ArrayList(list);
+    }
+
+    public FsPath(FsPath... paths) {
+        int length = 0;
+        for (FsPath path: paths) {
+            length += path._list.size();
+        }
+        _list = new ArrayList(length);
+        for (FsPath path: paths) {
+            _list.addAll(path._list);
+        }
     }
 
     public String toString() {
@@ -75,6 +96,28 @@ public class FsPath {
 
     public boolean equals(Object o) {
         return (o instanceof FsPath) && _list.equals(((FsPath) o)._list);
+    }
+
+    public FsPath getParent()
+    {
+        if (isEmpty()) {
+            throw new IllegalStateException("Root does not have a parent");
+        }
+        return new FsPath(_list.subList(0, _list.size() - 1));
+    }
+
+    public boolean startsWith(FsPath prefix)
+    {
+        if (prefix._list.size() > _list.size()) {
+            return false;
+        }
+
+        for (int i = 0; i < prefix._list.size(); i++) {
+            if (!prefix._list.get(i).equals(_list.get(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public static void main(String[] args) {
