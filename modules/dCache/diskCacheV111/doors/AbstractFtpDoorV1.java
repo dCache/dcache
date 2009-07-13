@@ -145,7 +145,9 @@ import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.movers.GFtpPerfMarkersBlock;
 import diskCacheV111.movers.GFtpPerfMarker;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.util.FileExistsCacheException;
+import diskCacheV111.util.FileNotOnlineCacheException;
 import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FileMetaData;
@@ -178,6 +180,7 @@ import org.dcache.acl.enums.InetAddressType;
 import dmg.cells.nucleus.CDC;
 
 import org.apache.log4j.NDC;
+import diskCacheV111.poolManager.RequestContainerV5;
 
 /**
  * Exception indicating an error during processing of an FTP command.
@@ -573,6 +576,19 @@ public abstract class AbstractFtpDoorV1
     )
     protected String _gplazmaPolicyFilePath;
 
+     /**
+     * File (StageConfiguration.conf) containing DNs and FQANs whose owner are allowed to STAGE files
+     * (i.e. allowed to copy file from dCache in case file is stored on tape but not on disk).
+     * /opt/d-cache/config/StageConfiguration.conf
+     * By default, such file does not exist, so that tape protection feature is not in use.
+     */
+    @Option(
+        name = "stageConfigurationFilePath",
+        description = "File containing DNs and FQANs for which STAGING is allowed",
+        defaultValue = ""
+    )
+    protected String _stageConfigurationFilePath;
+
     /**
      * transferTimeout (in seconds)
      *
@@ -692,6 +708,9 @@ public abstract class AbstractFtpDoorV1
     protected String _curDirV;
     protected String _xferMode = "S";
     protected final CellPath _billingCellPath = new CellPath("billing");
+
+    /** Tape Protection */
+    protected CheckStagePermission _checkStagePermission;
 
     /**
      *   NEW
@@ -1008,6 +1027,8 @@ public abstract class AbstractFtpDoorV1
 
         adminCommandListener = new AdminCommandListener();
         addCommandListener(adminCommandListener);
+
+        _checkStagePermission = new CheckStagePermission(_stageConfigurationFilePath);
 
         useInterpreter(true);
 
@@ -2613,9 +2634,10 @@ public abstract class AbstractFtpDoorV1
      * @throws SendAndWaitException If the message could not be sent,
      *       the object in the reply was of the wrong type, or the
      *       return code was non-zero.
+     * @throws FileNotOnlineException If file is not online and STAGING is NOT allowed for this user
      */
     private <T extends Message> T sendAndWait(CellPath path, T msg, int timeout)
-        throws TimeoutException, SendAndWaitException, InterruptedException
+        throws TimeoutException, SendAndWaitException, InterruptedException, FileNotOnlineCacheException
     {
         CellMessage replyMessage = null;
         try {
@@ -2643,11 +2665,15 @@ public abstract class AbstractFtpDoorV1
 
         T reply = (T)replyObject;
         if (reply.getReturnCode() != 0) {
-            String errmsg = "FTP Door: got response from '" +
+            if (reply.getReturnCode() == CacheException.FILE_NOT_ONLINE) {
+               throw new FileNotOnlineCacheException(reply.getErrorObject().toString());
+            } else {
+              String errmsg = "FTP Door: got response from '" +
                             replyMessage.getSourceAddress() + "' with error " +
                             reply.getErrorObject();
-            warn(errmsg);
-            throw new SendAndWaitException(errmsg);
+              warn(errmsg);
+              throw new SendAndWaitException(errmsg);
+            }
         }
 
         return reply;
@@ -3267,6 +3293,7 @@ public abstract class AbstractFtpDoorV1
      *                      Requires mode to be PASSIVE.
      * @param isWrite       True writing to pool, false when reading.
      * @param version       The mover version to use for the transfer
+     * @throws FileNotOnlineCacheException If file is not online and STAGING is NOT allowed for this user
      */
     private synchronized void transfer(Mode              mode,
                                        String            xferMode,
@@ -3285,7 +3312,8 @@ public abstract class AbstractFtpDoorV1
                TimeoutException,
                SendAndWaitException,
                IOException,
-               FTPCommandException
+               FTPCommandException,
+               FileNotOnlineCacheException
     {
         /* reply127 implies passive mode.
          */
@@ -3385,11 +3413,16 @@ public abstract class AbstractFtpDoorV1
                                                         storageInfo,
                                                         protocolInfo,
                                                         0L);
-            } else {
+            } else {   //transfer: 'retrieve'
+                int allowedStates = _checkStagePermission.canPerformStaging(_pwdRecord.DN, _pwdRecord.getFqan()) ?
+                            RequestContainerV5.allStates :
+                            RequestContainerV5.allStatesExceptStage;
+
                 request = new PoolMgrSelectReadPoolMsg(_transfer.pnfsId,
                                                        storageInfo,
                                                        protocolInfo,
-                                                       0L);
+                                                       0L,
+                                                       allowedStates);
             }
             request.setPnfsPath(_transfer.path);
             request = sendAndWait(new CellPath(_poolManager), request,
@@ -3821,7 +3854,7 @@ public abstract class AbstractFtpDoorV1
         //PnfsId pnfsId = _pnfs.getPnfsIdByPath(path);
 
         if (file.isDirectory()) {
-        	long startTimeDir = System.currentTimeMillis(); //TIMING
+            long startTimeDir = System.currentTimeMillis(); //TIMING
             boolean canListDir =
                 _permissionHandler.canListDir(path, subject, _origin) == AccessType.ACCESS_ALLOWED;
             boolean canCreateFile =
@@ -3835,7 +3868,7 @@ public abstract class AbstractFtpDoorV1
             mode.append(canListDir ? 'x' : '-');
             mode.append("------");
         } else {
-        	long startTimeFile = System.currentTimeMillis(); //TIMING
+            long startTimeFile = System.currentTimeMillis(); //TIMING
             boolean canReadFile =
                 _permissionHandler.canReadFile(path, subject, _origin)== AccessType.ACCESS_ALLOWED;
             debug("TIMING startTimeFile: (canReadFile) done in (msec):"+(System.currentTimeMillis() - startTimeFile)); //TIMING
@@ -3992,7 +4025,7 @@ public abstract class AbstractFtpDoorV1
                 }
 
                 if (listLong){
-                	long startTime = System.currentTimeMillis(); //TIMING
+                    long startTime = System.currentTimeMillis(); //TIMING
                     Subject subject = getSubject();
                     for (File file: files) {
                         writer.append(ftpListLong(file, subject));
@@ -4395,12 +4428,13 @@ public abstract class AbstractFtpDoorV1
      * @param storageInfo  Storage information of the file to transfer
      * @param protocolInfo Protocol information for the transfer
      * @param isWrite      True when transfer is to the pool, otherwise false
+     * @throws FileNotOnlineCacheException If file is not online and STAGING is NOT allowed for this user
      */
     private void askForFile(Transfer     transfer,
                             StorageInfo  storageInfo,
                             ProtocolInfo protocolInfo,
                             boolean      isWrite)
-        throws SendAndWaitException, TimeoutException, InterruptedException
+        throws SendAndWaitException, TimeoutException, InterruptedException, FileNotOnlineCacheException
     {
         info("FTP Door: trying pool " + transfer.pool +
              " for " + (isWrite ? "write" : "read"));

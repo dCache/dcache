@@ -36,19 +36,19 @@
 #   The default is: cells
 #
 #   Selects between various message brokers. The message broker
-#   determines how dCache cells communicate with each other. 
+#   determines how dCache cells communicate with each other.
 #
 #   'cells' is the classic cells location manager based system. The
 #   serviceLocatorHost and serviceLocatorPort settings determine the
 #   location service.
 #
-#   'embedded-jms' starts an embedded Apache ActiveMQ broker 
+#   'embedded-jms' starts an embedded Apache ActiveMQ broker
 #   in dCacheDomain and instructs other domains to connect to it.
 #
 #   'jms' uses an external Apache ActiveMQ broker. That broker is
 #   configured outside of dCache.
 #
-#   
+#
 #messageBroker=cells
 
 #  ---- Service Locater Host and Port
@@ -60,7 +60,7 @@
 serviceLocatorHost=SERVER
 serviceLocatorPort=11111
 
-#  ---- Port and host used for ActiveMQ broker 
+#  ---- Port and host used for ActiveMQ broker
 #
 #   Determines the host and port used for the ActiveMQ broker. The
 #   host defaults to the value of serviceLocatorHost. Only used if
@@ -909,13 +909,13 @@ cacheInfo=companion
 #srmDbPassword=srmdcache
 #srmDbLogEnabled=false
 #
-# srmls settings follow 
+# srmls settings follow
 #
-# The following variable turnes of asynchronous srmls 
-# behavior. SrmLs is executed in non-blocking mode on a  
-# thread queue in the server and client is given request token. 
+# The following variable turnes of asynchronous srmls
+# behavior. SrmLs is executed in non-blocking mode on a
+# thread queue in the server and client is given request token.
 # Client can query status  of request using this token. Async.
-# srmls avoids holding connections to the server while srmls is 
+# srmls avoids holding connections to the server while srmls is
 # executed.
 #
 #srmAsynchronousLs=false
@@ -936,7 +936,7 @@ cacheInfo=companion
 #srmLsRequestMaxWaitingRequests=1000
 #srmLsRequestReadyQueueSize= 1000
 #srmLsRequestMaxReadyRequests=60
-#srmLsRequestMaxNumberOfRetries=10 
+#srmLsRequestMaxNumberOfRetries=10
 #srmLsRequestRetryTimeout=60000
 #srmLsRequestMaxNumberOfRunningBySameOwner=100
 #srmLsRequestLifetime=3600000
@@ -1286,3 +1286,11 @@ statisticsLocation=${ourHomeDir}/statistics
 #aclConnUser=postgres
 #aclConnPswd=
 
+#  -----------------------------------------------------------------------
+#       Tape protection
+#  -----------------------------------------------------------------------
+#   Tape protection feature is only available if stageConfigurationFilePath line is uncommented,
+#   and there is a similarly named file containing a list of FQANs and DNs whose owners
+#   are allowed to stage files (i.e., to read files from dCache that are stored only on tape).
+#
+#stageConfigurationFilePath=${ourHomeDir}/config/StageConfiguration.conf

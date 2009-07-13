@@ -12,15 +12,18 @@ import dmg.security.CellUser;
 import diskCacheV111.services.acl.DelegatingPermissionHandler;
 import gplazma.authz.AuthorizationException;
 import diskCacheV111.services.authorization.GplazmaService;
+import diskCacheV111.poolManager.RequestContainerV5;
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 
 import java.util.*;
+import java.util.regex.PatternSyntaxException;
 import java.io.*;
 import java.net.*;
 
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.RetentionPolicy;
 import org.dcache.auth.UserAuthRecord;
@@ -72,6 +75,12 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
     private final DelegatingPermissionHandler _permissionHandler;
 
     /**
+     * Tape Protection
+     */
+    private String _stageConfigurationFilePath;
+    private CheckStagePermission _checkStagePermission;
+
+    /**
      * user record to use.
      */
     private UserAuthRecord _userAuthRecord = null;
@@ -106,7 +115,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
     private boolean _isAccessLatencyOverwriteAllowed = false;
     private boolean _isRetentionPolicyOverwriteAllowed = false;
 
-    public DCapDoorInterpreterV3( CellAdapter cell , PrintWriter pw , CellUser user ) throws ACLException, UnknownHostException {
+    public DCapDoorInterpreterV3( CellAdapter cell , PrintWriter pw , CellUser user ) throws ACLException, UnknownHostException, IOException {
 
         _out  = pw ;
         _cell = cell ;
@@ -220,6 +229,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
         _cell.say("Door is configured as read-only");
         else
         _cell.say("Door is configured as read/write");
+
+        _stageConfigurationFilePath = _args.getOpt("stageConfigurationFilePath");
+        _checkStagePermission = new CheckStagePermission(_stageConfigurationFilePath);
 
         _cell.say("Check : "+(_checkStrict?"Strict":"Fuzzy"));
         _cell.say("Constructor Done" ) ;
@@ -2363,8 +2375,17 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
                 //
                 // try to get some space to store the file.
                 //
-                getPoolMessage = new PoolMgrSelectReadPoolMsg(_pnfsId,_storageInfo,_protocolInfo,0) ;
-                getPoolMessage.setIoQueueName(_ioQueueName );
+               int allowedStates = RequestContainerV5.allStatesExceptStage;
+			   try {
+				   allowedStates = _checkStagePermission.canPerformStaging(_userAuthRecord.DN, _userAuthRecord.getFqan()) ?
+                            RequestContainerV5.allStates :
+                            RequestContainerV5.allStatesExceptStage;
+			   } catch (IOException e) {
+				  _cell.esay("Error while reading data from StageConfiguration.conf file : " + e.getMessage());
+			   }
+
+               getPoolMessage = new PoolMgrSelectReadPoolMsg(_pnfsId,_storageInfo,_protocolInfo,0, allowedStates);
+               getPoolMessage.setIoQueueName(_ioQueueName );
             }
 
             if( _verbose )sendComment("opened");

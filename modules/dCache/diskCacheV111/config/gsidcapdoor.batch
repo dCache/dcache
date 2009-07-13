@@ -18,7 +18,7 @@ check -strong dCapGsiPort
 #
 #  Cell communication
 #
-exec -run -shell file:${ourHomeDir}/config/tunnel.fragment 
+exec -run -shell file:${ourHomeDir}/config/tunnel.fragment
 
 #
 #
@@ -30,6 +30,8 @@ onerror continue
    set context -c gsidcapIoQueueOverwrite     denied
    set context -c gsidcapMaxLogin             1500
    set context -c permissionHandler           diskCacheV111.services.acl.UnixPermissionHandler
+#  ----- Tape Protection
+   set context -c stageConfigurationFilePath   ""
 #  ----- ACL-variables
    set context -c aclTable      t_acl
    set context -c aclConnDriver org.postgresql.Driver
@@ -76,6 +78,7 @@ create dmg.cells.services.login.LoginManager DCap-gsi-${thisHostname} \
               -aclConnUrl=${aclConnUrl} \
               -aclConnUser=${aclConnUser} \
               -aclConnPswd=${aclConnPswd} \
+              -stageConfigurationFilePath=${stageConfigurationFilePath} \
               -io-queue=${gsidcapIoQueue} \
               -io-queue-overwrite=${gsidcapIoQueueOverwrite} \
               -use-gplazma-authorization-module=${useGPlazmaAuthorizationModule} \

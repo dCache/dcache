@@ -14,7 +14,7 @@ import context -c setupContext
 #
 #  Cell communication
 #
-exec -run -shell file:${ourHomeDir}/config/tunnel.fragment 
+exec -run -shell file:${ourHomeDir}/config/tunnel.fragment
 
 #
 #      GridFTP Door
@@ -47,6 +47,8 @@ set context -c gsiftpAllowPassivePool false
 set context -c PermissionHandlerDataSource diskCacheV111.services.PnfsManagerFileMetaDataSource
 set context -c FtpTLogDir ""
 set context -c permissionHandler diskCacheV111.services.acl.UnixPermissionHandler
+#  ----- Tape Protection
+set context -c stageConfigurationFilePath   ""
 #  ----- ACL-variables
 set context -c aclTable      t_acl
 set context -c aclConnDriver org.postgresql.Driver
@@ -111,6 +113,7 @@ create dmg.cells.services.login.LoginManager GFTP-${thisHostname} \
              -aclConnUrl=${aclConnUrl} \
              -aclConnUser=${aclConnUser} \
              -aclConnPswd=${aclConnPswd} \
+             -stageConfigurationFilePath=${stageConfigurationFilePath} \
              -ftp-adapter-internal-interface=${gsiftpAdapterInternalInterface} \
              -meta-data-provider=${PermissionHandlerDataSource} \
              -overwrite=${overwriteEnabled} \
