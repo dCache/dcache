@@ -169,7 +169,7 @@ public class HsmRestoreTest {
         PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(pnfsId, _storageInfo, _protocolInfo, _storageInfo.getFileSize());
         CellMessage cellMessage = new CellMessage( new CellPath("PoolManager"), selectReadPool);
 
-        _rc.addRequest(cellMessage);
+        _rc.messageArrived(cellMessage, selectReadPool);
 
 
         assertEquals("No stage request sent to pools", 1, stageRequests.get());
@@ -250,13 +250,13 @@ public class HsmRestoreTest {
         PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(pnfsId, _storageInfo, _protocolInfo, _storageInfo.getFileSize());
         CellMessage cellMessage = new CellMessage( new CellPath("PoolManager"), selectReadPool);
 
-        _rc.addRequest(cellMessage);
+        _rc.messageArrived(cellMessage, selectReadPool);
 
         // first pool replays an  error
         CellMessage m = __messages.get(0);
         PoolFetchFileMessage ff = (PoolFetchFileMessage)m.getMessageObject();
         ff.setFailed(17, "pech");
-        _rc.messageArrived(m);
+        _rc.messageArrived(m, m.getMessageObject());
 
 
         assertEquals("No stage request sent to pools1", 1, stageRequests1.get());
@@ -334,13 +334,13 @@ public class HsmRestoreTest {
         PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(pnfsId, _storageInfo, _protocolInfo, _storageInfo.getFileSize());
         CellMessage cellMessage = new CellMessage( new CellPath("PoolManager"), selectReadPool);
 
-        _rc.addRequest(cellMessage);
+        _rc.messageArrived(cellMessage, selectReadPool);
 
         // first pool replays an  error
         CellMessage m = __messages.get(0);
         PoolFetchFileMessage ff = (PoolFetchFileMessage)m.getMessageObject();
         ff.setFailed(17, "pech");
-        _rc.messageArrived(m);
+        _rc.messageArrived(m, m.getMessageObject());
 
 
         assertEquals("Single Pool excluded on second shot", 2, stageRequests1.get());
@@ -421,20 +421,20 @@ public class HsmRestoreTest {
         PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(pnfsId, _storageInfo, _protocolInfo, _storageInfo.getFileSize());
         CellMessage cellMessage = new CellMessage( new CellPath("PoolManager"), selectReadPool);
 
-        _rc.addRequest(cellMessage);
+        _rc.messageArrived(cellMessage, selectReadPool);
 
         // first pool replays an error
         CellMessage m = __messages.remove(0);
         PoolFetchFileMessage ff = (PoolFetchFileMessage)m.getMessageObject();
 
         ff.setFailed(17, "pech");
-        _rc.messageArrived(m);
+        _rc.messageArrived(m, m.getMessageObject());
 
         // second pool replays an error
         m = __messages.remove(0);
         ff = (PoolFetchFileMessage)m.getMessageObject();
         ff.setFailed(17, "pech");
-        _rc.messageArrived(m);
+        _rc.messageArrived(m, m.getMessageObject());
 
         /*
          * request container retry timeout

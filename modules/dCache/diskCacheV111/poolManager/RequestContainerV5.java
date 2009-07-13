@@ -52,13 +52,14 @@ import diskCacheV111.vehicles.WarningPnfsFileInfoMessage;
 
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
+import org.dcache.cells.CellMessageReceiver;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
 public class RequestContainerV5
     extends AbstractCellComponent
-    implements Runnable, CellCommandListener
+    implements Runnable, CellCommandListener, CellMessageReceiver
 {
     private static final Logger _log =
         Logger.getLogger(RequestContainerV5.class);
@@ -176,28 +177,21 @@ public class RequestContainerV5
         _sendHitInfo = sendHitInfo;
     }
 
-    public void messageArrived( CellMessage cellMessage ){
+    public void messageArrived(CellMessage envelope, Object message)
+    {
+        UOID uoid = envelope.getLastUOID();
+        PoolRequestHandler handler;
 
-       UOID   uoid    = cellMessage.getLastUOID() ;
-       Object message = cellMessage.getMessageObject() ;
+        synchronized (_messageHash) {
+            handler = _messageHash.remove(uoid);
+            if (handler == null) {
+                return;
+            }
+        }
 
-       PoolRequestHandler handler = null ;
-
-       synchronized( _messageHash ){
-
-           handler = _messageHash.remove( uoid ) ;
-
-           if( handler == null ){
-              _log.warn("Unexpected message class 9 "+
-                  message.getClass()+" from source = "+
-                  cellMessage.getSourceAddress() );
-              return;
-           }
-
-       }
-
-       handler.mailForYou( message ) ;
+        handler.mailForYou(message);
     }
+
     public void run(){
        try{
           while( ! Thread.interrupted() ){
@@ -617,12 +611,10 @@ public class RequestContainerV5
        return list.toArray( new RestoreHandlerInfo[list.size()] ) ;
     }
 
-    public void addRequest( CellMessage message ){
-
+    public void messageArrived(CellMessage envelope,
+                               PoolMgrSelectReadPoolMsg request)
+    {
         boolean enforceP2P = false ;
-
-        PoolMgrSelectPoolMsg request =
-           (PoolMgrSelectPoolMsg)message.getMessageObject() ;
 
         PnfsId       pnfsId       = request.getPnfsId() ;
         ProtocolInfo protocolInfo = request.getProtocolInfo() ;
@@ -662,7 +654,7 @@ public class RequestContainerV5
                      canonicalName ,
                      handler = new PoolRequestHandler( pnfsId , canonicalName, allowedStates ) ) ;
            }
-           handler.addRequest(message) ;
+           handler.addRequest(envelope) ;
         }
     }
 

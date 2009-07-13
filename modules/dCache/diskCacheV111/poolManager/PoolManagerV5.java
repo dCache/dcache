@@ -57,6 +57,7 @@ import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.cells.nucleus.DelayedReply;
 import dmg.util.Args;
 import dmg.util.CommandException;
 
@@ -262,9 +263,9 @@ public class PoolManagerV5
         }
     }
 
-    private void handlePoolMode(PoolManagerPoolModeMessage msg,
-            CellMessage message) {
-
+    public PoolManagerPoolModeMessage
+        messageArrived(PoolManagerPoolModeMessage msg)
+    {
         PoolSelectionUnit.SelectionPool pool = _selectionUnit.getPool(msg
                 .getPoolName());
         if (pool == null) {
@@ -281,16 +282,8 @@ public class PoolManagerV5
             pool.setReadOnly((msg.getPoolMode() & PoolManagerPoolModeMessage.WRITE) == 0);
         }
 
-        if (!msg.getReplyRequired())
-            return;
-        try {
-            _log.info("Sending reply " + message);
-            message.revertDirection();
-            sendMessage(message);
-        } catch (Exception e) {
-            _log.warn("Can't reply message : " + e);
-        }
-
+        msg.setSucceeded();
+        return msg;
     }
 
     private void runWatchdogSequence(long deathDetectedTimer)
@@ -375,10 +368,11 @@ public class PoolManagerV5
        return sb.toString() ;
     }
 
-    private synchronized
-       void poolUp(PoolManagerPoolUpMessage poolMessage, CellPath poolPath)
+    public synchronized
+        void messageArrived(PoolManagerPoolUpMessage poolMessage)
     {
-        poolPath.revert();
+        _counterPoolUp++;
+
         String poolName = poolMessage.getPoolName();
         PoolSelectionUnit.SelectionPool pool =
             _selectionUnit.getPool(poolName, true);
@@ -471,196 +465,101 @@ public class PoolManagerV5
        }
     }
 
-    public void messageArrived(CellMessage cellMessage, Object message)
+    public PoolMgrGetPoolLinkGroups
+        messageArrived(PoolMgrGetPoolLinkGroups msg)
     {
-           if( message instanceof PoolManagerPoolUpMessage ){
-
-               _counterPoolUp ++ ;
-               poolUp(  (PoolManagerPoolUpMessage)message ,
-                        cellMessage.getSourcePath() ) ;
-
-	   }else if (message instanceof PoolMgrSelectPoolMsg){
-
-
-                 if( message instanceof PoolMgrSelectReadPoolMsg ){
-                     _counterSelectReadPool ++ ;
-
-                     _requestContainer.addRequest( cellMessage ) ;
-                 }else{
-                     _counterSelectWritePool ++ ;
-
-                     choseWritePool( cellMessage ) ;
-                 }
-
-	   }else if( message instanceof PoolMgrQueryPoolsMsg ){
-
-                  queryPools( (PoolMgrQueryPoolsMsg)message ,
-                               cellMessage ) ;
-
-	   }else if( message instanceof PoolManagerGetPoolListMessage ){
-
-                  getPoolList( (PoolManagerGetPoolListMessage)message ,
-                               cellMessage ) ;
-
-	   }else if( message instanceof PoolManagerPoolModeMessage ){
-
-                  handlePoolMode( (PoolManagerPoolModeMessage)message ,
-                                  cellMessage ) ;
-	   }else if( message instanceof PoolMgrGetPoolLinkGroups ){
-		   	      getLinkGroups( (PoolMgrGetPoolLinkGroups)message ,
-				                  cellMessage);
-	   }else if( message instanceof PoolMgrGetPoolByLink ){
-
-                  getPoolByLink( (PoolMgrGetPoolByLink)message ,
-                                  cellMessage ) ;
-
-           } else if (message instanceof PoolManagerGetPoolsByLinkMessage) {
-               getPoolsByLink((PoolManagerGetPoolsByLinkMessage) message,
-                              cellMessage);
-           } else if (message instanceof PoolManagerGetPoolsByPoolGroupMessage) {
-               getPoolsByPoolGroup((PoolManagerGetPoolsByPoolGroupMessage) message,
-                                   cellMessage);
-           } else {
-               _requestContainer.messageArrived( cellMessage ) ;
-	   }
-    }
-
-    private void getLinkGroups(PoolMgrGetPoolLinkGroups poolMessage,CellMessage cellMessage ){
-
         Collection<PoolLinkGroupInfo> linkGroupInfos = Utils.linkGroupInfos(_selectionUnit, _costModule).values();
 
     	PoolLinkGroupInfo[] poolLinkGroupInfos = linkGroupInfos.toArray(new PoolLinkGroupInfo[linkGroupInfos.size()]);
-    	poolMessage.setPoolLinkGroupInfos(poolLinkGroupInfos);
-        poolMessage.setReply();
-
-        cellMessage.revertDirection() ;
-        try{
-           sendMessage( cellMessage ) ;
-        }catch(Exception ee ){
-           _log.warn( "Problem replying to getLinkGroups Request : "+ee ) ;
-        }
+    	msg.setPoolLinkGroupInfos(poolLinkGroupInfos);
+        msg.setSucceeded();
+        return msg;
     }
 
-    private void getPoolList( PoolManagerGetPoolListMessage poolMessage ,
-                              CellMessage cellMessage ){
-
+    public PoolManagerGetPoolListMessage
+        messageArrived(PoolManagerGetPoolListMessage msg)
+    {
        String [] pools = _selectionUnit.getActivePools() ;
-
-       poolMessage.setPoolList(Arrays.asList(pools)) ;
-       poolMessage.setReply();
-
-       cellMessage.revertDirection() ;
-       try{
-          sendMessage( cellMessage ) ;
-       }catch(Exception ee ){
-          _log.warn( "Problem replying to getPoolList Request : "+ee ) ;
-       }
-    }
-    private void getPoolByLink( PoolMgrGetPoolByLink poolMessage ,
-                                CellMessage cellMessage ){
-
-       try{
-          String linkName = poolMessage.getLinkName() ;
-          long   filesize = poolMessage.getFilesize() ;
-
-          List<PoolCostCheckable> pools = _poolMonitor.queryPoolsByLinkName( linkName , filesize ) ;
-
-          if( ( pools == null ) ||  pools.isEmpty() )
-             throw new
-             NoSuchElementException("No appropriate pools found for link : "+linkName ) ;
-
-          poolMessage.setPoolName( pools.get(0).getPoolName() ) ;
-
-       }catch(Exception ee ){
-          poolMessage.setFailed( 57 , ee.getMessage() ) ;
-       }
-
-       poolMessage.setReply();
-
-       cellMessage.revertDirection() ;
-       try{
-          sendMessage( cellMessage ) ;
-       }catch(Exception ee ){
-          _log.warn( "Problem replying to getPoolByLink Request : "+ee ) ;
-       }
+       msg.setPoolList(Arrays.asList(pools)) ;
+       msg.setSucceeded();
+       return msg;
     }
 
-    private void getPoolsByLink(PoolManagerGetPoolsByLinkMessage msg,
-                                CellMessage envelope)
+    public PoolMgrGetPoolByLink
+        messageArrived(PoolMgrGetPoolByLink msg)
+        throws CacheException
+    {
+        String linkName = msg.getLinkName();
+        long   filesize = msg.getFilesize();
+
+        try {
+            List<PoolCostCheckable> pools =
+                _poolMonitor.queryPoolsByLinkName( linkName , filesize ) ;
+            if ((pools == null) || pools.isEmpty())
+                throw new CacheException(57, "No appropriate pools found for link: "+linkName);
+            msg.setPoolName(pools.get(0).getPoolName());
+            msg.setSucceeded();
+        } catch (InterruptedException e) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     "Pool manager is shutting down");
+        }
+        return msg;
+    }
+
+    public PoolManagerGetPoolsByLinkMessage
+        messageArrived(PoolManagerGetPoolsByLinkMessage msg)
+        throws CacheException
     {
         try {
             msg.setPools(_poolMonitor.getPoolsByLink(msg.getLink()));
-            msg.setReply();
+            msg.setSucceeded();
         } catch (InterruptedException e) {
-            msg.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                          "Pool manager is shutting down");
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     "Pool manager is shutting down");
         } catch (NoSuchElementException e) {
             Collection<PoolManagerPoolInformation> empty =
                 Collections.emptyList();
             msg.setPools(empty);
-            msg.setReply();
+            msg.setSucceeded();
         }
-
-        try {
-            envelope.revertDirection();
-            sendMessage(envelope);
-        } catch (NoRouteToCellException e) {
-            _log.warn("Problem replying to getPoolsByLink request: " + e);
-        }
+        return msg;
     }
 
-    private void getPoolsByPoolGroup(PoolManagerGetPoolsByPoolGroupMessage msg,
-                                     CellMessage envelope)
+    public PoolManagerGetPoolsByPoolGroupMessage
+        messageArrived(PoolManagerGetPoolsByPoolGroupMessage msg)
+        throws CacheException
     {
         try {
             msg.setPools(_poolMonitor.getPoolsByPoolGroup(msg.getPoolGroup()));
-            msg.setReply();
+            msg.setSucceeded();
         } catch (InterruptedException e) {
-            msg.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                          "Pool manager is shutting down");
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     "Pool manager is shutting down");
         } catch (NoSuchElementException e) {
             Collection<PoolManagerPoolInformation> empty =
                 Collections.emptyList();
             msg.setPools(empty);
-            msg.setReply();
+            msg.setSucceeded();
         }
-
-        envelope.revertDirection();
-        try {
-            sendMessage(envelope);
-        } catch (NoRouteToCellException e) {
-            _log.warn("Problem replying to getPoolsByPoolGroup request: " + e);
-        }
+        return msg;
     }
 
-    private void queryPools( PoolMgrQueryPoolsMsg poolQueryMessage ,
-                             CellMessage cellMessage ){
-       DirectionType accessType = poolQueryMessage.getAccessType() ;
-
-          try{
-             poolQueryMessage.setPoolList(
-               PoolPreferenceLevel.fromPoolPreferenceLevelToList(
-                 _selectionUnit.match(
-                        accessType ,
-                        poolQueryMessage.getStoreUnitName() ,
-                        poolQueryMessage.getDCacheUnitName() ,
-                        poolQueryMessage.getNetUnitName() ,
-                        poolQueryMessage.getProtocolUnitName() ,
-                        poolQueryMessage.getStorageInfo(),
-                        null             )
-                )
-              ) ;
-          }catch(Exception ee){
-             poolQueryMessage.setReply( 102 , ee ) ;
-          }
-
-       cellMessage.revertDirection() ;
-       try{
-          sendMessage( cellMessage ) ;
-       }catch(Exception ee ){
-          _log.warn( "Problem replying to queryPool Request : "+ee ) ;
-       }
+    public PoolMgrQueryPoolsMsg
+        messageArrived(PoolMgrQueryPoolsMsg msg)
+    {
+        DirectionType accessType = msg.getAccessType();
+        msg.setPoolList(PoolPreferenceLevel.fromPoolPreferenceLevelToList(
+           _selectionUnit.match(accessType,
+                                msg.getStoreUnitName(),
+                                msg.getDCacheUnitName(),
+                                msg.getNetUnitName(),
+                                msg.getProtocolUnitName(),
+                                msg.getStorageInfo(),
+                                null)));
+        msg.setSucceeded();
+        return msg;
     }
+
     private static class XProtocolInfo implements IpProtocolInfo {
        private String [] _host = new String[1] ;
 
@@ -793,22 +692,27 @@ public class PoolManagerV5
     //
     // the write io request handler
     //
-    private void choseWritePool( CellMessage cellMessage ){
-       new WriteRequestHandler( cellMessage ) ;
+    public DelayedReply messageArrived(CellMessage envelope,
+                                       PoolMgrSelectWritePoolMsg msg)
+    {
+        return new WriteRequestHandler(envelope, msg);
     }
-    public class WriteRequestHandler implements Runnable {
 
-       private CellMessage               _cellMessage = null ;
-       private PoolMgrSelectWritePoolMsg _request     = null ;
-       private PnfsId                    _pnfsId      = null ;
+    public class WriteRequestHandler extends DelayedReply implements Runnable
+    {
+        private CellMessage _envelope;
+        private PoolMgrSelectWritePoolMsg _request;
+        private PnfsId _pnfsId;
 
-       public WriteRequestHandler( CellMessage cellMessage ){
+        public WriteRequestHandler(CellMessage envelope,
+                                   PoolMgrSelectWritePoolMsg msg)
+        {
+            _envelope = envelope;
+            _request = msg;
+            _pnfsId = _request.getPnfsId();
+            new Thread(this, "writeHandler").start();
+        }
 
-           _cellMessage = cellMessage ;
-           _request     =  (PoolMgrSelectWritePoolMsg)_cellMessage.getMessageObject() ;
-           _pnfsId      = _request.getPnfsId();
-           new Thread( this , "writeHandler" ).start() ;
-       }
        public void run(){
 
            StorageInfo  storageInfo  = _request.getStorageInfo() ;
@@ -865,28 +769,28 @@ public class PoolManagerV5
               requestFailed( 17 , ee.getMessage() ) ;
            }
        }
-       protected void requestFailed(int errorCode, String errorMessage){
-	   _request.setFailed(errorCode, errorMessage);
-	   try {
-	       _cellMessage.revertDirection();
-	       sendMessage(_cellMessage);
-	   } catch (Exception e){
-	       _log.warn("Exception requestFailed : "+e);
-               _log.warn(e);
-	   }
-       }
-       protected void requestSucceeded(String poolName){
-	   _request.setPoolName(poolName);
-	   _request.setSucceeded();
-	   try{
-	       _cellMessage.revertDirection();
-	       sendMessage(_cellMessage);
-               _costModule.messageArrived(_cellMessage);
-	   }catch (Exception e){
-	       _log.warn("Exception in requestSucceeded : "+e);
-	       _log.warn(e);
-	   }
-       }
+
+        protected void requestFailed(int errorCode, String errorMessage)
+        {
+            _request.setFailed(errorCode, errorMessage);
+            try {
+                send(_request);
+            } catch (Exception e) {
+                _log.warn("Exception requestFailed : " + e, e);
+            }
+        }
+
+        protected void requestSucceeded(String poolName)
+        {
+            _request.setPoolName(poolName);
+            _request.setSucceeded();
+            try {
+                send(_request);
+                _costModule.messageArrived(_envelope);
+            } catch (Exception e) {
+                _log.warn("Exception in requestSucceeded : " + e, e);
+            }
+        }
     }
 
     public String ac_free_$_0(Args args) {
