@@ -25,8 +25,7 @@ END;
 $$
 LANGUAGE 'plpgsql';
 
-CREATE OR REPLACE FUNCTION path2inode(root varchar, path varchar) RETURNS varcha
-r AS $$
+CREATE OR REPLACE FUNCTION path2inode(root varchar, path varchar) RETURNS varchar AS $$
 DECLARE
     id varchar := root;
     elements varchar[] := string_to_array(path, '/');
@@ -35,9 +34,7 @@ DECLARE
     link varchar;
 BEGIN
     FOR i IN 1..array_upper(elements,1) LOOP
-        SELECT dir.ipnfsid, inode.itype INTO STRICT child, itype FROM t_dirs dir
-, t_inodes inode WHERE dir.ipnfsid = inode.ipnfsid AND dir.iparent=id AND dir.in
-ame=elements[i];
+        SELECT dir.ipnfsid, inode.itype INTO STRICT child, itype FROM t_dirs dir, t_inodes inode WHERE dir.ipnfsid = inode.ipnfsid AND dir.iparent=id AND dir.iname=elements[i];
         IF itype=40960 THEN
            SELECT ifiledata INTO link FROM t_inodes_data WHERE ipnfsid=child;
            IF link LIKE '/%' THEN
