@@ -25,6 +25,36 @@ END;
 $$
 LANGUAGE 'plpgsql';
 
+CREATE OR REPLACE FUNCTION path2inode(root varchar, path varchar) RETURNS varcha
+r AS $$
+DECLARE
+    id varchar := root;
+    elements varchar[] := string_to_array(path, '/');
+    child varchar;
+    itype integer;
+    link varchar;
+BEGIN
+    FOR i IN 1..array_upper(elements,1) LOOP
+        SELECT dir.ipnfsid, inode.itype INTO STRICT child, itype FROM t_dirs dir
+, t_inodes inode WHERE dir.ipnfsid = inode.ipnfsid AND dir.iparent=id AND dir.in
+ame=elements[i];
+        IF itype=40960 THEN
+           SELECT ifiledata INTO link FROM t_inodes_data WHERE ipnfsid=child;
+           IF link LIKE '/%' THEN
+              child := path2inode('000000000000000000000000000000000000', 
+                                   substring(link from 2));
+           ELSE
+              child := path2inode(id, link);
+           END IF;
+        END IF;
+        id := child;
+    END LOOP;
+    RETURN id;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RETURN NULL;
+END;
+$$ LANGUAGE plpgsql; 
 
 --
 --  store location of deleted  inodes in trash table
