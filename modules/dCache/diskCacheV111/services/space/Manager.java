@@ -3975,7 +3975,7 @@ public class Manager
                         }
                         catch(SQLException sqle) {
                                 //
-                                // this is not an error: we are here in too cases
+                                // this is not an error: we are here in two cases
                                 //   1) no transient file found - OK 
                                 //   2) more than one transient file found, less OK, but
                                 //      remaining transient files will be garbage colllected after timeout
@@ -3992,14 +3992,14 @@ public class Manager
 				removeFileFromSpace(connection,f);
 				connection_pool.returnConnection(connection);
 				connection = null;
-			}
+                                }
                                 finally {
-			if (connection!=null) {
+                                        if (connection!=null) {
                                                 esay("Failed to remove file "+pnfsPath);
-				connection_pool.returnFailedConnection(connection);
-				connection = null;
-			}
-		}
+                                                connection_pool.returnFailedConnection(connection);
+                                                connection = null;
+                                        }
+                                }
                         }
                 }
 		finally {
