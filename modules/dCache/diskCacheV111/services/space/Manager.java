@@ -3969,30 +3969,42 @@ public class Manager
 		try {
 			connection = connection_pool.getConnection();
 			connection.setAutoCommit(false);
-                        File f=selectFileFromSpaceForUpdate(connection,pnfsPath,reservationId);
-                        //
-                        // no NPE below as we get exception if file is not found
-                        //
+                        File f = null;
+                        try {
+                                f=selectFileFromSpaceForUpdate(connection,pnfsPath,reservationId);
+                        }
+                        catch(SQLException sqle) {
+                                //
+                                // this is not an error: we are here in too cases
+                                //   1) no transient file found - OK 
+                                //   2) more than one transient file found, less OK, but
+                                //      remaining transient files will be garbage colllected after timeout
+                                //
+                                if(connection != null) {
+                                        connection_pool.returnConnection(connection);
+                                        connection = null;
+                                }
+                                return;
+                        }
 			if(f.getState() == FileState.RESERVED ||
 			   f.getState() == FileState.TRANSFERRING) {
+                                try {
 				removeFileFromSpace(connection,f);
-				connection.commit();
 				connection_pool.returnConnection(connection);
 				connection = null;
 			}
-
-		}
-		catch(SQLException sqle) {
-			esay("cancelUseSpace for path "+ pnfsPath + " failed with "+sqle);
+                                finally {
 			if (connection!=null) {
-				connection.rollback();
+                                                esay("Failed to remove file "+pnfsPath);
 				connection_pool.returnFailedConnection(connection);
 				connection = null;
 			}
 		}
+                        }
+                }
 		finally {
 			if(connection != null) {
-				connection_pool.returnConnection(connection);
+				connection_pool.returnFailedConnection(connection);
                                 connection = null;
 			}
 		}
