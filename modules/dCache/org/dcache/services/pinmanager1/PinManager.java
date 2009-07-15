@@ -94,6 +94,7 @@
 
 package org.dcache.services.pinmanager1;
 
+import diskCacheV111.poolManager.RequestContainerV5;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.util.Args;
@@ -108,12 +109,15 @@ import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.CheckStagePermission;
+import java.io.IOException;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.regex.PatternSyntaxException;
 import org.dcache.cells.Option;
 import org.dcache.cells.AbstractCell;
 import org.dcache.auth.AuthorizationRecord;
@@ -242,6 +246,19 @@ public class PinManager extends AbstractCell implements Runnable  {
     )
     protected String pinManagerPolicyClass;
 
+     /**
+     * File (StageConfiguration.conf) containing DNs and FQANs whose owner are allowed to STAGE files
+     * (i.e. allowed to copy file from dCache in case file is stored on tape but not on disk).
+     * /opt/d-cache/config/StageConfiguration.conf
+     * By default, such file does not exist, so that tape protection feature is not in use.
+     */
+    @Option(
+        name = "stageConfigurationFilePath",
+        description = "File containing DNs and FQANs for which staging is allowed",
+        defaultValue = ""
+    )
+    protected String _stageConfigurationFilePath;
+
     // all database oprations will be done in the lazy
     // fassion in a low priority thread
     private Thread expireRequests;
@@ -261,6 +278,9 @@ public class PinManager extends AbstractCell implements Runnable  {
 
     private Map<Long, CellMessage> pinRequestToUnpinRequestsMap =
         new ConcurrentHashMap<Long, CellMessage>();
+
+    /** Tape Protection */
+    protected CheckStagePermission _checkStagePermission;
 
     /** Creates a new instance of PinManager */
     public PinManager(String name , String argString)
@@ -297,6 +317,8 @@ public class PinManager extends AbstractCell implements Runnable  {
         runInventoryBeforeStartPart();
         start();
         runInventoryAfterStartPart();
+
+        _checkStagePermission = new CheckStagePermission(_stageConfigurationFilePath);
     }
 
     public void stop() {
@@ -688,8 +710,16 @@ public class PinManager extends AbstractCell implements Runnable  {
                 // if processing succeeds before the commit is executed
                 // (a race condition )
 
+                int allowedStates = RequestContainerV5.allStatesExceptStage;
+                try {
+                    allowedStates = _checkStagePermission.canPerformStaging(authRec.getName(), authRec.getVoRole()) ? RequestContainerV5.allStates : RequestContainerV5.allStatesExceptStage;
+                } catch (PatternSyntaxException ex) {
+                    error("failed to get allowed pool manager states: " + ex);
+                } catch (IOException ex) {
+                    error("failed to get allowed pool manager states: " + ex);
+                }
                 new Pinner(this, pnfsId,clientHost, storageInfo, pin,
-                   lifetime, pinRequest.getId());
+                   lifetime, pinRequest.getId(), allowedStates);
             } else {
                 info("pin returned is in the wrong state");
                 if(pinRequestMessage != null) {

@@ -44,15 +44,29 @@ public class CheckStagePermission {
     */
     public boolean canPerformStaging(String dn, FQAN fqan) throws PatternSyntaxException, IOException {
 
-        if ( !_isEnabled )
-            return true;
-
         String fqanStr;
         if ( fqan != null ) {
             fqanStr = fqan.toString();
         } else {
             fqanStr = "";
         }
+
+        return canPerformStaging(dn, fqanStr);
+    }
+
+    /**
+    * Check whether staging is allowed for the user with given DN and FQAN.
+    *
+    * @param  dn user's Distinguished Name
+    * @param  fqan user's Fully Qualified Attribute Name
+    * @return true if the user is allowed to perform staging
+    * @throws PatternSyntaxException
+    * @throws IOException
+    */
+    public boolean canPerformStaging(String dn, String fqan) throws PatternSyntaxException, IOException {
+
+        if ( !_isEnabled )
+            return true;
 
         if ( !_stageConfigFile.exists() ) {
             //if file does not exist, staging is denied for all users
@@ -62,7 +76,7 @@ public class CheckStagePermission {
         if ( fileNeedsRereading() )
             rereadConfig();
 
-        return userMatchesPredicates(dn, fqanStr);
+        return userMatchesPredicates(dn, fqan);
     }
 
     /**

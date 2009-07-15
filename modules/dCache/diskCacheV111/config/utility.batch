@@ -47,6 +47,9 @@ onerror continue
    set context -c pinManagerDbUser ${srmDbUser}
    set context -c pinManagerDbPassword ${srmDbPassword}
 
+#  ----- Tape Protection
+   set context -c stageConfigurationFilePath   ""
+
    set context -c pinManagerPasswordFile "${srmPasswordFile}"
 
 # in seconds, -1 for infinite 
@@ -86,6 +89,7 @@ create org.dcache.services.pinmanager1.PinManager PinManager \
         -maxActiveJdbcConnections=${pinManagerMaxActiveJdbcConnections} \
         -maxJdbcConnectionsWaitSec=${pinManagerMaxJdbcConnectionsWaitSec} \
         -maxIdleJdbcConnections=${pinManagerMaxIdleJdbcConnections} \
+        -stageConfigurationFilePath=${stageConfigurationFilePath} \
        "
 #
 #

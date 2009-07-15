@@ -24,6 +24,11 @@ class Pinner extends SMCTask
     private String _readPoolName;
     private long _lifetime;
     private long _expiration;
+
+    /**
+     * Pool manager allowed stated for this request.
+     */
+    private final int _allowedStates;
     // We record this now in Pinner, since upon success
     // we need to change the original pin expiration time
     // which will be calcuated only after the file was
@@ -36,7 +41,8 @@ class Pinner extends SMCTask
         String clientHost,
         StorageInfo storageInfo, Pin pin,
         long lifetime,
-        long orginalPinRequestId)
+        long orginalPinRequestId,
+        int allowedStates)
     {
         super(manager);
 
@@ -48,6 +54,7 @@ class Pinner extends SMCTask
         _pin = pin;
         _lifetime = lifetime;
         _orginalPinRequestId = orginalPinRequestId;
+        _allowedStates = allowedStates;
         _fsm = new PinnerContext(this);
         setContext(_fsm);
         _fsm.go();
@@ -112,7 +119,8 @@ class Pinner extends SMCTask
             new PoolMgrSelectReadPoolMsg(_pnfsId,
                                          _storageInfo,
                                          pinfo,
-                                         0);
+                                         0,
+                                         _allowedStates);
 
         sendMessage(_poolManager, request, 60*60*1000);
     }
