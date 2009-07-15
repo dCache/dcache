@@ -1136,41 +1136,48 @@ public class Manager
 		return sb.toString();
 	}
 
-	public String hh_remove_file = " <id> " +
-		"# remove file by file id";
+	public String hh_remove_file = " -id=<file id> | -pnfsId=<pnfsId>  " +
+		"# remove file by spacefile id or pnfsid";
 
-	public String ac_remove_file_$_1( Args args )
+	public String ac_remove_file( Args args )
 		throws Exception {
-		long id = Long.parseLong(args.argv(0));
-		try {
-			removeFileFromSpace(id);
-		}
-		catch (SQLException e) {
-			esay(e);
-			return e.getMessage();
-		}
-		return "removed file with id="+id;
-	}
+                String sid     = args.getOpt("id");
+                String sPnfsId = args.getOpt("pnfsId");
+                if (sid!=null&&sPnfsId!=null) { 
+                        return "do not handle \"-id\" and \"-pnfsId\" options simultaneously";
+                }
+                if (sid!=null) {
+                        long id = Long.parseLong(sid);
+                        removeFileFromSpace(id);
+                        return "removed file with id="+id;
+                }
+                if (sPnfsId!=null) { 
+                        PnfsId pnfsId = new PnfsId(sPnfsId);
+                        File f = getFile(pnfsId);
+                        removeFileFromSpace(f.getId());
+                        return "removed file with pnfsId="+pnfsId;
+                }
+                return "please specify  \"-id=\" or \"-pnfsId=\" option";
+        }
 
     private static final Object fixMissingSizeLock = new Object();
+
     private static final String SELECT_RECORDS_WITH_MISSING_SIZE =
-        String.format("select f.* from srmspacefile f, srmspace s where f.state=%d and f.sizeinbytes=0 and f.spacereservationid=s.id and s.state=%d", FileState.STORED.getStateId(), SpaceState.RESERVED.getStateId());
-     private void fixMissingSize()
+            String.format("select f.* from srmspacefile f, srmspace s where f.state=%d and f.sizeinbytes=0 and f.spacereservationid=s.id and s.state=%d", FileState.STORED.getStateId(), SpaceState.RESERVED.getStateId());
+    public static final String hh_fix_missing_size =
+        "# See full help for details";
+    public static final String fh_fix_missing_size =
+        "Cleans up after a bug that was present in dCache 1.9.1-1 to 1.9.1-3. That \n" +
+        "bug caused files to be registered with a wrong size in the space manager.";
+    public String ac_fix_missing_size(Args args)
+        throws SQLException, CacheException
     {
         synchronized (fixMissingSizeLock) {
-             try {
             PnfsHandler pnfs =
-                     new PnfsHandler(Manager.this,
-                                     new CellPath("PnfsManager"));
-                 logger.info("fix missing size: Searching for files...");
+                new PnfsHandler(this, new CellPath("PnfsManager"));
             HashSet<File> files =
                 manager.select(new FileIO(), SELECT_RECORDS_WITH_MISSING_SIZE);
-                 int counter = 0;
             for (File file: files) {
-                     if (counter % 1000 == 0) {
-                         logger.info(String.format("fix missing size: Processed %d of %d files.", counter, files.size()));
-                     }
-
                 PnfsGetFileMetaDataMessage msg =
                     pnfs.getFileMetaDataById(file.getPnfsId());
                 long size = msg.getMetaData().getFileSize();
@@ -1181,35 +1188,11 @@ public class Manager
                                 size,
                                 null,
                                 null);
-                     counter++;
             }
-                 logger.info("fix missing size: Done");
-             } catch (SQLException e) {
-                 logger.error("Failure in 'fix missing size': " + e.getMessage());
-             } catch (CacheException e) {
-                 logger.error("Failure in 'fix missing size': " + e.getMessage());
+            return String.format("Updated %d records", files.size());
         }
     }
-     }
 
-     public static final String hh_fix_missing_size =
-         "# See full help for details";
-     public static final String fh_fix_missing_size =
-         "Cleans up after a bug that was present in dCache 1.9.1-1 to 1.9.1-3. That \n" +
-         "bug caused files to be registered with a wrong size in the space manager.\n" +
-         "Warning: This command may take a long time to complete and may consume a\n" +
-         "         lot of memory. Progress information can be found in the log file.";
-     public String ac_fix_missing_size(Args args)
-     {
-         new Thread()
-         {
-             public void run()
-             {
-                 fixMissingSize();
-             }
-         }.start();
-         return "Command is executed in a background thread.";
-     }
 
 	private static final String selectNextToken = "SELECT nexttoken  FROM "+ManagerSchemaConstants.SpaceManagerNextIdTableName;
 	private static final String insertNextToken = "INSERT INTO "+ManagerSchemaConstants.SpaceManagerNextIdTableName+
@@ -1854,6 +1837,19 @@ public class Manager
 		}
 		return (File)o;
 	}
+
+	public File selectFileFromSpaceForUpdate(Connection connection,
+                                                String pnfsPath,
+                                                long reservationId) throws SQLException{
+		say("executing statement: "+
+                    FileIO.SELECT_TRANSIENT_FILES_BY_PNFSPATH_AND_RESERVATIONID+
+                    ",?="+pnfsPath+","+reservationId);
+		return (File)manager.selectForUpdate(connection,
+                                                     new FileIO(),
+                                                     FileIO.SELECT_TRANSIENT_FILES_BY_PNFSPATH_AND_RESERVATIONID,
+                                                     pnfsPath, reservationId);
+	}
+
 
 	public void removeFileFromSpace(long id) throws SQLException {
 		boolean found = false;
@@ -2863,6 +2859,17 @@ public class Manager
 		return (File)files.toArray()[0];
 	}
 
+	public Set getFiles(String pnfsPath)  throws SQLException{
+		pnfsPath =new FsPath(pnfsPath).toString();
+		HashSet files = manager.selectPrepared(new FileIO(),
+						       FileIO.SELECT_BY_PNFSPATH,
+						       pnfsPath);
+		if (files.isEmpty()==true) {
+			throw new SQLException("file with pnfsPath="+pnfsPath+" is not found");
+		}
+		return files;
+	}
+
 	public File getFile(long id)  throws SQLException{
 		HashSet files = manager.selectPrepared(new FileIO(),
 						       FileIO.SELECT_BY_ID,
@@ -3496,6 +3503,7 @@ public class Manager
 		long spaceToken = release.getSpaceToken();
 		Long spaceToReleaseInBytes = release.getReleaseSizeInBytes();
                 Space space = getSpace(spaceToken);
+
                  if((space.getVoGroup()!=null&&!space.getVoGroup().equals(release.getVoGroup()))||
                     (space.getVoRole()!=null&&!space.getVoRole().equals(release.getVoRole()))) {
                          throw new SpaceAuthorizationException(
@@ -3934,29 +3942,43 @@ public class Manager
 		try {
 			connection = connection_pool.getConnection();
 			connection.setAutoCommit(false);
-			File f = selectFileForUpdate(connection,pnfsPath);
+                        File f = null;
+                        try {
+                                f=selectFileFromSpaceForUpdate(connection,pnfsPath,reservationId);
+                        }
+                        catch(SQLException sqle) {
+                                //
+                                // this is not an error: we are here in two cases
+                                //   1) no transient file found - OK 
+                                //   2) more than one transient file found, less OK, but
+                                //      remaining transient files will be garbage colllected after timeout
+                                //
+                                if(connection != null) {
+                                        connection_pool.returnConnection(connection);
+                                        connection = null;
+                                }
+                                return;
+                        }
 			if(f.getState() == FileState.RESERVED ||
 			   f.getState() == FileState.TRANSFERRING) {
+                                try {
 				removeFileFromSpace(connection,f);
-				connection.commit();
 				connection_pool.returnConnection(connection);
 				connection = null;
-			}
-
-		}
-		catch(SQLException sqle) {
-			esay("cancelUseSpace failed with ");
-			esay(sqle);
-			if (connection!=null) {
-				connection.rollback();
-				connection_pool.returnFailedConnection(connection);
-				connection = null;
-			}
-			throw sqle;
-		}
+                                }
+                                finally {
+                                        if (connection!=null) {
+                                                esay("Failed to remove file "+pnfsPath);
+                                                connection_pool.returnFailedConnection(connection);
+                                                connection = null;
+                                        }
+                                }
+                        }
+                }
 		finally {
 			if(connection != null) {
-				connection_pool.returnConnection(connection);
+				connection_pool.returnFailedConnection(connection);
+                                connection = null;
 			}
 		}
 	}
@@ -4145,26 +4167,26 @@ public class Manager
 		}
 		File file = null;
 		try {
-			say("selectPool: getFile("+pnfsPath+")");
-			file = getFile(pnfsPath);
+			say("selectPool: getFiles("+pnfsPath+")");
+                        Set<File> files = getFiles(pnfsPath);
+                        for (File f: files) { 
+                                if (f.getPnfsId()==null) { 
+                                        file=f;
+                                        break;
+                                }
+                        }
 		}
 		catch (Exception e) {
 			esay(e);
 		}
 		if(file==null) {
                         StorageInfo storageInfo = selectPool.getStorageInfo();
-                        AccessLatency al = defaultLatency;
-                        RetentionPolicy rp = defaultPolicy;
+                        AccessLatency al = null;
+                        RetentionPolicy rp = null;
                         String defaultSpaceToken=null;
-                        if(storageInfo != null) {
-                                if(storageInfo.isSetAccessLatency()){
-                                        al  = storageInfo.getAccessLatency();
-                                }
-                                if(storageInfo.isSetRetentionPolicy()){
-                                        rp  = storageInfo.getRetentionPolicy();
-                                }
-                                defaultSpaceToken=storageInfo.getMap().get("writeToken");
-                        }
+                        al  = storageInfo.getAccessLatency();
+                        rp  = storageInfo.getRetentionPolicy();
+                        defaultSpaceToken=storageInfo.getMap().get("writeToken");
                         ProtocolInfo protocolInfo = selectPool.getProtocolInfo();
                         VOInfo voinfo = null;
                         if(protocolInfo instanceof GridProtocolInfo) {
