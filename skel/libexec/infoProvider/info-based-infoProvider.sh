@@ -80,6 +80,7 @@ xylophoneConfigurationDir=$ourHomeDir/etc
 httpHost=localhost
 httpPort=2288
 xylophoneXSLTDir=$ourHomeDir/share/xml/xylophone
+saxonDir=$ourHomeDir/classes/saxon
 
 
 #  Import the dCacheSetup configuration.
@@ -120,7 +121,7 @@ case $xsltProcessor in
 	;;
 
   saxon)
-	${java} -classpath ${ourHomeDir}/classes/saxon.jar com.icl.saxon.StyleSheet "$xylophoneXMLFile" "$xylophoneXSLTFile" xml-src-uri="$dCacheInfoUri"
+	${java} -classpath ${saxonDir}/saxon.jar com.icl.saxon.StyleSheet "$xylophoneXMLFile" "$xylophoneXSLTFile" xml-src-uri="$dCacheInfoUri"
 	;;
     
   *)
