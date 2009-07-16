@@ -604,6 +604,14 @@
             </fileset>
         </copy>
 
+	<!-- Saxon (needed as XSLT for Xylophone) -->
+	<mkdir dir="${server.bin.dir}/classes/saxon" />
+	<copy todir="${server.bin.dir}/classes/saxon">
+	  <fileset dir="${libDir}/saxon">
+	    <include name="*.jar" />
+	  </fileset>
+	</copy>
+
     </target>
 
     <target name="-xrootd-tokenauthz.bin" depends="-xrootd-tokenauthz.jar">
