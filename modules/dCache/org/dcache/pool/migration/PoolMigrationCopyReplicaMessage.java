@@ -1,6 +1,7 @@
 package org.dcache.pool.migration;
 
 import java.util.List;
+import java.util.UUID;
 
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
@@ -19,16 +20,20 @@ public class PoolMigrationCopyReplicaMessage extends PoolMigrationMessage
     private final StorageInfo _storageInfo;
     private final EntryState _state;
     private final List<StickyRecord> _stickyRecords;
+    private final boolean _computeChecksumOnUpdate;
 
-    public PoolMigrationCopyReplicaMessage(String pool, PnfsId pnfsId, long taskId,
+    public PoolMigrationCopyReplicaMessage(UUID uuid, String pool,
+                                           PnfsId pnfsId, long taskId,
                                            StorageInfo storageInfo,
                                            EntryState state,
-                                           List<StickyRecord> stickyRecords)
+                                           List<StickyRecord> stickyRecords,
+                                           boolean computeChecksumOnUpdate)
     {
-        super(pool, pnfsId, taskId);
+        super(uuid, pool, pnfsId, taskId);
         _storageInfo = storageInfo;
         _state = state;
         _stickyRecords = stickyRecords;
+        _computeChecksumOnUpdate = computeChecksumOnUpdate;
     }
 
     public StorageInfo getStorageInfo()
@@ -44,5 +49,10 @@ public class PoolMigrationCopyReplicaMessage extends PoolMigrationMessage
     public List<StickyRecord> getStickyRecords()
     {
         return _stickyRecords;
+    }
+
+    public boolean getComputeChecksumOnUpdate()
+    {
+        return _computeChecksumOnUpdate;
     }
 }

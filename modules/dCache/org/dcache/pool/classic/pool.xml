@@ -4,7 +4,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
            http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
 
-  
+
   <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
     <description>Imported configuration data</description>
     <property name="location" value="domaincontext:"/>
@@ -41,26 +41,26 @@
     <constructor-arg value="${pooldir}/lock"/>
   </bean>
 
-  <bean id="pool" class="org.dcache.pool.classic.PoolV4" 
+  <bean id="pool" class="org.dcache.pool.classic.PoolV4"
         init-method="init"
         destroy-method="cleanUp">
     <description>Main pool component</description>
     <constructor-arg index="0" value="${poolname}"/>
     <constructor-arg index="1" value="
-        -io-queues=${poolIoQueue} 
+        -io-queues=${poolIoQueue}
         ${arguments}"/>
 
     <property name="baseDir"
               value="${pooldir}"/>
-    <property name="version" 
+    <property name="version"
               value="4"/>
-    <property name="poolUpDestination" 
+    <property name="poolUpDestination"
               value="${poolupDestination}"/>
-    <property name="allowCleaningPreciousFiles" 
+    <property name="allowCleaningPreciousFiles"
               value="${allowCleaningPreciousFiles}"/>
-    <property name="LFSMode" 
+    <property name="LFSMode"
               value="${lfs}"/>
-    <property name="replicateOnArrival" 
+    <property name="replicateOnArrival"
               value="${replicateOnArrival}"/>
 
     <property name="pnfsHandler" ref="pnfs"/>
@@ -115,7 +115,7 @@
     <property name="account" ref="account"/>
   </bean>
 
-  <bean id="rep" 
+  <bean id="rep"
         class="org.dcache.pool.repository.v5.CacheRepositoryV5"
         destroy-method="shutdown">
     <description>Repository manager</description>
@@ -135,7 +135,7 @@
        </bean>
     </property>
   </bean>
-  
+
   <bean id="repository-interpreter" class="org.dcache.pool.repository.RepositoryInterpreter">
     <description>Repository user interface</description>
     <property name="repository" ref="rep"/>
@@ -206,7 +206,7 @@
         factory-method="newScheduledThreadPool"
         destroy-method="shutdown">
     <constructor-arg value="${workerThreads}"/>
-    <property name="executeExistingDelayedTasksAfterShutdownPolicy" 
+    <property name="executeExistingDelayedTasksAfterShutdownPolicy"
               value="false"/>
     <property name="continueExistingPeriodicTasksAfterShutdownPolicy"
               value="false"/>
@@ -217,8 +217,8 @@
     <property name="timeout" value="120000"/>
     <property name="destination" value="PinManager"/>
   </bean>
-  
-  
+
+
   <bean id="pp" class="org.dcache.pool.p2p.P2PClient"
         destroy-method="shutdown">
     <description>Pool to pool transfer manager</description>
@@ -239,19 +239,21 @@
     <property name="poolManagerStub" ref="poolManagerStub"/>
     <property name="pinManagerStub" ref="pinManagerStub"/>
   </bean>
-  
-  <bean id="migration-server" 
+
+  <bean id="migration-server"
         class="org.dcache.pool.migration.MigrationModuleServer">
     <description>Replica migration module backend</description>
     <property name="repository" ref="rep"/>
-    <property name="PPClient" ref="pp"/>    
+    <property name="PPClient" ref="pp"/>
+    <property name="executor" ref="threadPool"/>
+    <property name="checksumModule" ref="csm"/>
   </bean>
 
   <bean id="account"
         class="org.dcache.pool.repository.Account">
     <description>Repository space accounting</description>
   </bean>
-  
+
   <bean id="allocator"
         class="org.dcache.pool.classic.FairQueueAllocation">
     <description>Space allocation policy</description>

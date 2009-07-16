@@ -125,8 +125,7 @@ public class ChecksumModuleV1
     }
 
     public Checksum calculateFileChecksum(File file, Checksum checksum)
-        throws IOException, CacheException, InterruptedException,
-               FileNotInCacheException
+        throws IOException, InterruptedException
     {
         MessageDigest digest = checksum.getMessageDigest();
 

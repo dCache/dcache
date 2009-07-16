@@ -1,5 +1,6 @@
 package org.dcache.pool.migration;
 
+import java.util.UUID;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
 
@@ -13,12 +14,19 @@ public class PoolMigrationMessage extends Message
     private final String _pool;
     private final PnfsId _pnfsId;
     private final long _taskId;
+    private final UUID _uuid;
 
-    public PoolMigrationMessage(String pool, PnfsId pnfsId, long taskId)
+    public PoolMigrationMessage(UUID uuid, String pool, PnfsId pnfsId, long taskId)
     {
+        _uuid = uuid;
         _pool = pool;
         _pnfsId = pnfsId;
         _taskId = taskId;
+    }
+
+    public UUID getUUID()
+    {
+        return _uuid;
     }
 
     public String getPool()

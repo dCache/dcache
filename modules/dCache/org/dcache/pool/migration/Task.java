@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.NoSuchElementException;
+import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ScheduledFuture;
@@ -49,6 +50,7 @@ public class Task
     private final boolean _mustMovePins;
 
     private final long _id;
+    private final UUID _uuid;
 
     private final CacheEntry _entry;
 
@@ -69,6 +71,7 @@ public class Task
                 boolean mustMovePins)
     {
         _id = _counter.getAndIncrement();
+        _uuid = UUID.randomUUID();
         _fsm = new TaskContext(this);
         _job = job;
         _pool = pool;
@@ -205,7 +208,7 @@ public class Task
     synchronized public void
         messageArrived(PoolMigrationCopyFinishedMessage message)
     {
-        if (message.getTaskId() == _id) {
+        if (message.getTaskId() == _id || _uuid.equals(message.getUUID())) {
             _fsm.messageArrived(message);
         }
     }
@@ -273,12 +276,14 @@ public class Task
 
             _target = _job.selectPool();
             _pool.send(_target,
-                       new PoolMigrationCopyReplicaMessage(_source,
+                       new PoolMigrationCopyReplicaMessage(_uuid,
+                                                           _source,
                                                            pnfsId,
                                                            _id,
                                                            storageInfo,
                                                            getTargetState(),
-                                                           getTargetStickyRecords()),
+                                                           getTargetStickyRecords(),
+                                                           false),
                        PoolMigrationCopyReplicaMessage.class,
                        new Callback());
         } catch (NoSuchElementException e) {
@@ -297,7 +302,10 @@ public class Task
     synchronized void cancelCopy()
     {
         _pool.send(_target,
-                   new PoolMigrationCancelMessage(_source, getPnfsId(), _id),
+                   new PoolMigrationCancelMessage(_uuid,
+                                                  _source,
+                                                  getPnfsId(),
+                                                  _id),
                    PoolMigrationCancelMessage.class,
                    new Callback());
     }
@@ -393,7 +401,10 @@ public class Task
     synchronized void ping()
     {
         _pool.send(_target,
-                   new PoolMigrationPingMessage(_source, getPnfsId(), _id),
+                   new PoolMigrationPingMessage(_uuid,
+                                                _source,
+                                                getPnfsId(),
+                                                _id),
                    PoolMigrationPingMessage.class, new Callback());
     }
 
