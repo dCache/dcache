@@ -13,7 +13,6 @@
             <auxClasspath path="" />
             <class location="${classesDir}/cells.jar" />
             <class location="${classesDir}/dcache.jar" />
-            <class location="${classesDir}/dcache-srm.jar" />
             <class location="${classesDir}/srm.jar" />
             <class location="${classesDir}/srm-tomcat.jar" />
             <class location="${classesDir}/javatunnel.jar" />
