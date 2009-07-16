@@ -768,7 +768,7 @@ dcacheInstallSrm()
   
   #
   # check java:
-  #     jdk >= 1.5 , ( javac needed by tomcat/SRM )
+  #     jdk >= 1.6 , ( javac needed by tomcat/SRM )
   #
 
   if [ -z "${java}" ]; then
@@ -785,9 +785,9 @@ dcacheInstallSrm()
     exit 7
   fi
 
-  ${java} -version 2>&1 | grep version | egrep "1\.[56]\." >/dev/null 2>&1
+  ${java} -version 2>&1 | grep version | egrep "1\.[6]\." >/dev/null 2>&1
   if [ $? -ne 0 ]; then
-    logmessage ABORT "java variable in ${DCACHE_HOME}/config/dCacheSetup do not point to java version 1.5.x or 1.6.x"
+    logmessage ABORT "java variable in ${DCACHE_HOME}/config/dCacheSetup do not point to java version 1.6.x"
     exit 6
   fi
   # standard javac location $JAVA_HOME/bin/java

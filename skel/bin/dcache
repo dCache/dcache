@@ -250,9 +250,9 @@ java="${dCache_java}"
 classesDir="${dCache_classesDir}"
 
 # Sanitycheck for java
-if [ -z "${java}" ] || [ ! -x "${java}" ] || ! ${java} -version 2>&1 | egrep -e 'version "1\.[56]' >/dev/null ; then
+if [ -z "${java}" ] || [ ! -x "${java}" ] || ! ${java} -version 2>&1 | egrep -e 'version "1\.[6]' >/dev/null ; then
     fail 1 "The variable 'java' in ${ourHomeDir}/config/dCacheSetup
-            has to be set to a Java VM version 5 or 6."
+            has to be set to a Java VM version 6."
 fi
 
 determineHostName
