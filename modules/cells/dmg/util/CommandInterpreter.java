@@ -109,7 +109,7 @@ public class CommandInterpreter implements Interpretable {
     public String toString(){
          if( _hash == null )return " --> no hash yet : "+getName() ;
 
-         StringBuffer sb = new StringBuffer() ;
+         StringBuilder sb = new StringBuilder() ;
          sb.append( "Entry : "+getName() ) ;
 
          for( String key: _hash.keySet() )
@@ -262,7 +262,7 @@ public class CommandInterpreter implements Interpretable {
        printCommandEntry( _rootEntry , 0 ) ;
    }
    private void printCommandEntry( _CommandEntry h , int n ){
-     StringBuffer spb = new StringBuffer() ;
+     StringBuilder spb = new StringBuilder() ;
      for( int i = 0 ; i < n ; i++ )spb.append("     ") ;
      String space = spb.toString() ;
      System.out.println(   space+"-> "+h.getName() ) ;
@@ -283,14 +283,18 @@ public class CommandInterpreter implements Interpretable {
      try{
          str = f.getName()+" : "+
                (String)f.get(h.getListener(CommandInterpreter.HELP_HINT))  ;
-     }catch( Exception se ){ str = f.getName()+" : "+se.toString() ; }
+     } catch (IllegalAccessException se) {
+         str = f.getName()+" : "+se.toString();
+     }
      System.out.println( space +"   Hint : "+str ) ;
      str = "None" ;
      if( ( f = h.getFullHelp() ) != null )
      try{
          str = f.getName()+" : "+
          (String) f.get(h.getListener(CommandInterpreter.FULL_HELP))  ;
-     }catch( Exception se ){ str =f.getName()+" : "+ se.toString() ; }
+     } catch (IllegalAccessException se) {
+         str = f.getName()+" : "+ se.toString();
+     }
      System.out.println( space +"   Help : "+str ) ;
 
      Enumeration<_CommandEntry> e = h.elements() ;
@@ -301,23 +305,23 @@ public class CommandInterpreter implements Interpretable {
         }
      }
    }
-   private void dumpHelpHint( _CommandEntry [] path , _CommandEntry e , StringBuffer sb ){
-      StringBuffer sbx = new StringBuffer() ;
+   private void dumpHelpHint( _CommandEntry [] path , _CommandEntry e , StringBuilder sb ){
+      StringBuilder sbx = new StringBuilder() ;
       for( int i = 0 ; path[i+1] != null ; i++ )
         sbx.append( path[i].getName()+" " ) ;
       String top = sbx.toString() ;
       dumpHelpHint( top , e , sb ) ;
    }
-   private void dumpHelpHint( String top , _CommandEntry e , StringBuffer sb ){
+   private void dumpHelpHint( String top , _CommandEntry e , StringBuilder sb ){
      top += e.getName()+" " ;
      Field helpHint = e.getHelpHint() ;
      int mt = CommandInterpreter.ASCII ;
      Method m = e.getMethod(mt) ;
      if( helpHint != null ){
-       try{
-         String helpString = (String)helpHint.get( e.getListener(mt) ) ;
-         sb.append( top+helpString+"\n" ) ;
-       }catch( Exception eee ){}
+         try {
+             sb.append(top + helpHint.get(e.getListener(mt)) + "\n");
+         } catch (IllegalAccessException ee) {
+         }
      }else if( m != null ){
          sb.append( top ) ;
          for( int i = 0 ; i < e.getMinArgs(mt) ; i++ )
@@ -346,16 +350,15 @@ public class CommandInterpreter implements Interpretable {
           e = ce ;
        }
        Field        f  = e.getFullHelp() ;
-       StringBuffer sb = new StringBuffer();
+       StringBuilder sb = new StringBuilder();
        if( f == null ){
           dumpHelpHint( path , e , sb ) ;
        }else{
-          try{
-             sb.append( (String)f.get(e.getListener(0)) ) ;
-          }catch( Exception ex ){
-             dumpHelpHint( path , e , sb ) ;
-          }
-
+           try {
+               sb.append(f.get(e.getListener(0)));
+           } catch (IllegalAccessException ee) {
+               dumpHelpHint( path , e , sb ) ;
+           }
        }
        return sb.toString() ;
 
@@ -417,7 +420,7 @@ public class CommandInterpreter implements Interpretable {
          if( o == null )return "" ;
          return (String)o ;
       }catch( CommandSyntaxException cse ){
-         StringBuffer sb = new StringBuffer() ;
+         StringBuilder sb = new StringBuilder() ;
          sb.append( "Syntax Error : "+cse.getMessage()+"\n" ) ;
          String help  = cse.getHelpText() ;
          if( help != null ){
@@ -428,13 +431,13 @@ public class CommandInterpreter implements Interpretable {
       }catch( CommandExitException cee ){
          throw cee ;
       }catch( CommandThrowableException cte ){
-         StringBuffer sb = new StringBuffer() ;
+         StringBuilder sb = new StringBuilder() ;
          sb.append( cte.getMessage()+"\n" ) ;
          Throwable t = cte.getTargetException() ;
          sb.append( t.getClass().getName()+" : "+t.getMessage()+"\n" ) ;
          return sb.toString() ;
       }catch( CommandPanicException cpe ){
-         StringBuffer sb = new StringBuffer() ;
+         StringBuilder sb = new StringBuilder() ;
          sb.append( "Panic : "+cpe.getMessage()+"\n" ) ;
          Throwable t = cpe.getTargetException() ;
          sb.append( t.getClass().getName()+" : "+t.getMessage()+"\n" ) ;
@@ -532,7 +535,7 @@ public class CommandInterpreter implements Interpretable {
        m  = e.getMethod(methodType) ;
        ce = e ;
        if(  m == null ){
-          StringBuffer sb = new StringBuffer() ;
+          StringBuilder sb = new StringBuilder() ;
           if( methodType == CommandInterpreter.ASCII )
               dumpHelpHint( path , e , sb ) ;
           throw new CommandSyntaxException(
@@ -549,7 +552,7 @@ public class CommandInterpreter implements Interpretable {
        if( ( ce.getMinArgs(methodType) > params ) ||
            ( ce.getMaxArgs(methodType) < params )    ){
 
-          StringBuffer sb = new StringBuffer() ;
+          StringBuilder sb = new StringBuilder() ;
           if( methodType == CommandInterpreter.ASCII )
               dumpHelpHint( path , ce , sb ) ;
           throw new CommandSyntaxException(
@@ -580,7 +583,7 @@ public class CommandInterpreter implements Interpretable {
        // everything seems to be fine right now.
        // so we invoke the selected function.
        //
-       StringBuffer sb = new StringBuffer() ;
+       StringBuilder sb = new StringBuilder() ;
        try{
 
           Object [] o = new Object[1] ;
@@ -613,17 +616,13 @@ public class CommandInterpreter implements Interpretable {
                          te.toString()+" from "+m.getName() ,
                          te ) ;
           }
-       }catch( Throwable ee ){
-          //
-          // This can be IllegalAccess , IllegalArgument or
-          // nullPointerException. All of those Exceptions
-          // are triggered by a bug in our software,
-          // so we throws the PANIC.
-          //
-          throw new CommandPanicException(
-             "Exception while invoking "+m.getName() , ee ) ;
+       } catch (IllegalAccessException ee) {
+           throw new CommandPanicException("Exception while invoking " +
+                                           m.getName(), ee);
+       } catch (RuntimeException ee) {
+           throw new CommandPanicException("Exception while invoking " +
+                                           m.getName(), ee);
        }
-
    }
    protected void checkAclPermission( Authorizable values , Object command , String [] acls ) throws CommandException {
 //       String principal = values.getAuthorizedPrincipal() ;
