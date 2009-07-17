@@ -532,6 +532,7 @@
 
         <!-- .batch file - e.g. domains  -->
         <copy file="${dcache.src}/diskCacheV111/config/srm.batch" todir="${server.bin.dir}/config" />
+        <copy file="${dcache.src}/diskCacheV111/config/httpdoor.batch" todir="${server.bin.dir}/config" />
         <copy file="${dcache.src}/diskCacheV111/config/gridftpdoor.batch" todir="${server.bin.dir}/config" />
         <copy file="${dcache.src}/diskCacheV111/config/gsidcapdoor.batch" todir="${server.bin.dir}/config" />
         <copy file="${dcache.src}/diskCacheV111/config/gPlazma.batch" todir="${server.bin.dir}/config" />

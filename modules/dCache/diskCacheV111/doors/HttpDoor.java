@@ -27,7 +27,7 @@ import java.lang.reflect.*;
  * @author Timur Perelmutov. timur@fnal.gov
  * @version 0.0, 28 Jun 2002
  */
-public class HttpDoor extends CellAdapter  implements Runnable  
+public class HttpDoor extends CellAdapter  implements Runnable
 {
   /* synchronization object */
   private Object sync = new Object();
@@ -41,7 +41,10 @@ public class HttpDoor extends CellAdapter  implements Runnable
   private Reader  engine_reader;
   private OutputStream engine_output;
   private Writer engine_writer;
-  
+
+  private List<FsPath> _allowedPaths = Collections.emptyList();
+  private FsPath _rootPath = new FsPath();
+
   private synchronized String getRedirectionUrl()
   {
     return redirection_url;
@@ -73,22 +76,22 @@ public class HttpDoor extends CellAdapter  implements Runnable
 
 
   protected synchronized static long next()
-  { 
-    return counter++ ; 
+  {
+    return counter++ ;
   }
-  
+
     /**
      * Creates an instance of HttpDoor </p>
      *
      * @param  name
      *         String containing cell name
      * @param  engine
-     *         StreamEngine incapsulating socket connected 
+     *         StreamEngine incapsulating socket connected
      *         to the http client
      * @param  args
      *         arguments
      */
-  public HttpDoor (String name, StreamEngine engine, Args args) 
+  public HttpDoor (String name, StreamEngine engine, Args args)
   {
     super( name , args , false );
 
@@ -96,10 +99,10 @@ public class HttpDoor extends CellAdapter  implements Runnable
     say("$Id: HttpDoor.java,v 1.12 2003-07-03 23:39:45 cvs Exp $");
 
     __init( args ) ;
- 
+
     host     = engine.getInetAddress().getHostName();
     pnfs_handler = new PnfsHandler( this, pnfsManagerPath ) ;
-    // HttpConnectionHandler will read the http request header and 
+    // HttpConnectionHandler will read the http request header and
     // generate a redirection or error response for us
     try
     {
@@ -125,8 +128,21 @@ public class HttpDoor extends CellAdapter  implements Runnable
            throw new IllegalArgumentException("bad engine:"+
            "engine.getWriter() returned null");
        }
-      
-      new Thread(this).start(); 
+
+       String allowedPaths = args.getOpt("allowedPaths");
+       if (allowedPaths != null) {
+           _allowedPaths = new ArrayList();
+           for (String path: allowedPaths.split(":")) {
+               _allowedPaths.add(new FsPath(path));
+           }
+       }
+
+       String rootPath = args.getOpt("rootPath");
+       if (rootPath != null) {
+           _rootPath = new FsPath(rootPath);
+       }
+
+      new Thread(this).start();
       useInterpreter(true);
       start() ;
     }
@@ -138,13 +154,43 @@ public class HttpDoor extends CellAdapter  implements Runnable
         throw iae;
     }
   }
- 
+
+
+    /**
+     * Forms a full PNFS path. The path is created by concatenating
+     * the root path and path. The root path is guaranteed to be a
+     * prefix of the path returned.
+     */
+    private FsPath createFullPath(String path)
+    {
+        return new FsPath(_rootPath, new FsPath(path));
+    }
+
+    /**
+     * check wether the given path matches against a list of allowed paths
+     * @param pathToOpen the path which is going to be checked
+     * @param authorizedWritePathList the list of allowed paths
+     * @return
+     */
+    private boolean isAllowedPath(FsPath path)
+    {
+        if (_allowedPaths.isEmpty()) {
+            return true;
+        }
+        for (FsPath prefix: _allowedPaths) {
+            if (path.startsWith(prefix)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
   public void run()
   {
      HttpConnectionHandler connectionHandler = null;
       try
       {
-          connectionHandler = 
+          connectionHandler =
             new HttpConnectionHandler(
                new BufferedReader(engine_reader ),
                engine_output,
@@ -171,13 +217,21 @@ public class HttpDoor extends CellAdapter  implements Runnable
           URL url = connectionHandler.getUrl ();
           String path = url.getPath();
           say("url returned path : "+path);
+
+          FsPath fullPath = createFullPath(path);
+          if (!isAllowedPath(fullPath)) {
+            String error_string = "Access denied";
+            connectionHandler.returnErrorHeader(error_string);
+            return;
+          }
+
           // the path in url should corresponf to the pnfs path
-          // process request will try boolean bring the file to the pool 
+          // process request will try boolean bring the file to the pool
           // and get the http url of the pool
-          String newURL= processGetRequest(path);
+          String newURL= processGetRequest(fullPath.toString());
           if(newURL != null)
           {
-            // redirect client to the pool url, 
+            // redirect client to the pool url,
             // our mission is completed by now
             say("redirecting to : "+newURL);
             connectionHandler.returnRedirectHeader(newURL);
@@ -228,7 +282,7 @@ public class HttpDoor extends CellAdapter  implements Runnable
          kill();
       }
   }
-   
+
     /**
      * gets the pnsf id of the file from pnfs manager
      * contacts pool manager and gets the pool that will handle
@@ -243,12 +297,12 @@ public class HttpDoor extends CellAdapter  implements Runnable
      *
      * @return  the url of the pool http server
      *
-     * @throws  IOException 
+     * @throws  IOException
      *          If file does not exist or anything goes wrong
      */
   private String processGetRequest(String path) throws Exception
   {
-    
+
      PnfsGetStorageInfoMessage storage_info_msg =null;
      try
      {
@@ -268,20 +322,20 @@ public class HttpDoor extends CellAdapter  implements Runnable
      {
        throw new IOException("have no permissions to read this file : "+path);
      }
-       
-     HttpProtocolInfo protocol_info = 
+
+     HttpProtocolInfo protocol_info =
        new HttpProtocolInfo("Http",1,1,host,0,this.getCellName(),
          this.getCellDomainName(),path);
      say("created HttpProtocolInfo = "+protocol_info);
    say("processGetRequest ,asking for read pool");
-   String pool = askForReadPool(pnfs_id, 
+   String pool = askForReadPool(pnfs_id,
                                 storage_info,
                                 protocol_info,
                                 false); /* false for read */
    say("processGetRequest, read pool is "+pool+"asking for file");
    askForFile( pool ,
-               pnfs_id , 
-               storage_info , 
+               pnfs_id ,
+               storage_info ,
                protocol_info ,
                false      );/* false for read */
    say("processGetRequest, asked for file");
@@ -301,12 +355,12 @@ public class HttpDoor extends CellAdapter  implements Runnable
      }
      return this.redirection_url;
   }
-    
+
     //
-    // the cell implemetation 
+    // the cell implemetation
     //
     public String toString(){ return "HttpDoor@"+host; }
-    
+
     public void getInfo( PrintWriter pw )
     {
      	pw.println( "            HTTPDoor" );
@@ -331,53 +385,53 @@ public class HttpDoor extends CellAdapter  implements Runnable
        }
        else if (object instanceof DoorTransferFinishedMessage)
         {
-        
-            DoorTransferFinishedMessage reply = 
+
+            DoorTransferFinishedMessage reply =
                  (DoorTransferFinishedMessage)object ;
-                 
-            
-            HttpProtocolInfo      info   = 
+
+
+            HttpProtocolInfo      info   =
                      (HttpProtocolInfo)reply.getProtocolInfo() ;
-                     
-        } 
-        else 
+
+        }
+        else
         {
             say ("Unexpected message class "+object.getClass());
             say ("source = "+msg.getSourceAddress());
         }
     }
-    
- // these were taken almost without changes from other doors    
-    
+
+ // these were taken almost without changes from other doors
+
   private void   askForFile( String       pool ,
-                             PnfsId       pnfsId , 
-                             StorageInfo  storageInfo , 
+                             PnfsId       pnfsId ,
+                             StorageInfo  storageInfo ,
                              ProtocolInfo protocolInfo ,
-                             boolean      isWrite      ) throws Exception 
+                             boolean      isWrite      ) throws Exception
   {
     say("Trying pool "+pool+" for "+(isWrite?"Write":"Read"));
     PoolIoFileMessage poolMessage  =  isWrite ?
          (PoolIoFileMessage)
          new PoolAcceptFileMessage(
                               pool,
-                              pnfsId.toString() , 
+                              pnfsId.toString() ,
                               protocolInfo ,
                   storageInfo     )
          :
          (PoolIoFileMessage)
          new PoolDeliverFileMessage(
                               pool,
-                              pnfsId.toString() , 
+                              pnfsId.toString() ,
                               protocolInfo ,
                   storageInfo     );
 
-      poolMessage.setId( next() ) ; 
+      poolMessage.setId( next() ) ;
 
-    CellMessage reply = sendAndWait(  
-                               new CellMessage( 
-                                    new CellPath(pool) , 
-                                    poolMessage    
-                                               )  , 
+    CellMessage reply = sendAndWait(
+                               new CellMessage(
+                                    new CellPath(pool) ,
+                                    poolMessage
+                                               )  ,
                               poolTimeout*1000
                                       ) ;
     if( reply == null)
@@ -405,10 +459,10 @@ public class HttpDoor extends CellAdapter  implements Runnable
   }
 
 
-  private String askForReadPool( PnfsId       pnfsId , 
-                                 StorageInfo  storageInfo , 
+  private String askForReadPool( PnfsId       pnfsId ,
+                                 StorageInfo  storageInfo ,
                                  ProtocolInfo protocolInfo ,
-                                 boolean      isWrite       ) throws Exception 
+                                 boolean      isWrite       ) throws Exception
   {
 
       //
@@ -429,8 +483,8 @@ public class HttpDoor extends CellAdapter  implements Runnable
                     protocolInfo ,
                     0L                 );
 
-    CellMessage reply = 
-             sendAndWait(          
+    CellMessage reply =
+             sendAndWait(
                 new CellMessage(  poolManagerPath, request ) ,
                 poolManagerTimeout*1000
                          );
@@ -447,7 +501,7 @@ public class HttpDoor extends CellAdapter  implements Runnable
        throw new Exception( "Not a PoolMgrSelectPoolMsg : "+
                      replyObject.getClass().getName() ) ;
     }
-    
+
     request =  (PoolMgrSelectPoolMsg)replyObject;
     say("poolManagerReply = "+request);
     if( request.getReturnCode() != 0 )
