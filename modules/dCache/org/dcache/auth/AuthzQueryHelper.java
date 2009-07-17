@@ -38,22 +38,22 @@ public class AuthzQueryHelper {
 
     long authRequestID;
     private static final Random random = new Random();
-    private CellAdapter caller;
+    private CellEndpoint caller;
     private boolean delegate_to_gplazma=false;
     private long cell_message_timeout;
     private int delegation_timeout=60000;
 
-    public AuthzQueryHelper(CellAdapter caller)
+    public AuthzQueryHelper(CellEndpoint caller)
     throws AuthorizationException {
         this(caller, 180000L);
     }
 
-    public AuthzQueryHelper(CellAdapter caller, long msg_timeout)
+    public AuthzQueryHelper(CellEndpoint caller, long msg_timeout)
     throws AuthorizationException {
         this(random.nextInt(Integer.MAX_VALUE), caller, msg_timeout);
     }
 
-    public AuthzQueryHelper(long authRequestID, CellAdapter caller, long msg_timeout)
+    public AuthzQueryHelper(long authRequestID, CellEndpoint caller, long msg_timeout)
     throws AuthorizationException {
         this.authRequestID=authRequestID;
         this.caller = caller;
@@ -74,21 +74,21 @@ public class AuthzQueryHelper {
 
     // Called on requesting cell
     //
-    public AuthenticationMessage authorize(GSSContext serviceContext, String user, CellPath cellpath, CellAdapter caller) throws AuthorizationException {
+    public AuthenticationMessage authorize(GSSContext serviceContext, String user, CellPath cellpath, CellEndpoint caller) throws AuthorizationException {
 
         gPlazmaDelegationInfo deleginfo = new gPlazmaDelegationInfo(authRequestID, user, new Long(0));
 
         return  authorize(serviceContext, deleginfo, cellpath, caller);
     }
 
-    public AuthenticationMessage authorize(GSSContext serviceContext, CellPath cellpath, CellAdapter caller) throws AuthorizationException {
+    public AuthenticationMessage authorize(GSSContext serviceContext, CellPath cellpath, CellEndpoint caller) throws AuthorizationException {
 
         gPlazmaDelegationInfo deleginfo = new gPlazmaDelegationInfo(authRequestID, null, new Long(0));
 
         return  authorize(serviceContext, deleginfo, cellpath, caller);
     }
 
-    public AuthorizationMessage getAuthorization(GSSContext serviceContext, CellPath cellpath, CellAdapter caller) throws AuthorizationException {
+    public AuthorizationMessage getAuthorization(GSSContext serviceContext, CellPath cellpath, CellEndpoint caller) throws AuthorizationException {
 
         gPlazmaDelegationInfo deleginfo = new gPlazmaDelegationInfo(authRequestID, null, new Long(0));
 
@@ -97,7 +97,7 @@ public class AuthzQueryHelper {
         return new AuthorizationMessage(authmessage);
     }
 
-    public AuthenticationMessage authorize(GSSContext serviceContext, gPlazmaDelegationInfo deleginfo, CellPath cellpath, CellAdapter caller) throws AuthorizationException {
+    public AuthenticationMessage authorize(GSSContext serviceContext, gPlazmaDelegationInfo deleginfo, CellPath cellpath, CellEndpoint caller) throws AuthorizationException {
 
         if(!delegate_to_gplazma) {
             //if (do_saz) {
@@ -131,7 +131,7 @@ public class AuthzQueryHelper {
         try {
             GSSName GSSIdentity = serviceContext.getSrcName();
             CellMessage m = new CellMessage(cellpath, deleginfo);
-            m = caller.getNucleus().sendAndWait(m, cell_message_timeout) ;
+            m = caller.sendAndWait(m, cell_message_timeout) ;
             if(m==null) {
                 throw new AuthorizationException("authRequestID " + authRequestID + " Message to " + authcellname + " timed out for authentification of " + GSSIdentity);
             }
@@ -213,34 +213,34 @@ public class AuthzQueryHelper {
         return authmessage;
     }
 
-    public AuthenticationMessage authorize(String subjectDN, List<String> roles, CellPath cellpath, CellAdapter caller) throws AuthorizationException {
+    public AuthenticationMessage authorize(String subjectDN, List<String> roles, CellPath cellpath, CellEndpoint caller) throws AuthorizationException {
         DNInfo dnInfo = new DNInfo(subjectDN, roles, authRequestID);
         return authorize(dnInfo, cellpath, caller);
     }
 
-    public AuthenticationMessage authorize(String subjectDN, String role, CellPath cellpath, CellAdapter caller) throws AuthorizationException {
+    public AuthenticationMessage authorize(String subjectDN, String role, CellPath cellpath, CellEndpoint caller) throws AuthorizationException {
         DNInfo dnInfo = new DNInfo(subjectDN, role, authRequestID);
         return authorize(dnInfo, cellpath, caller);
     }
 
-    public AuthenticationMessage authorize(String subjectDN, List<String> roles, String user, CellPath cellpath, CellAdapter caller) throws AuthorizationException {
+    public AuthenticationMessage authorize(String subjectDN, List<String> roles, String user, CellPath cellpath, CellEndpoint caller) throws AuthorizationException {
         DNInfo dnInfo = new DNInfo(subjectDN, roles, user, authRequestID);
         return authorize(dnInfo, cellpath, caller);
     }
 
-    public AuthenticationMessage authorize(String subjectDN, String role, String user, CellPath cellpath, CellAdapter caller) throws AuthorizationException {
+    public AuthenticationMessage authorize(String subjectDN, String role, String user, CellPath cellpath, CellEndpoint caller) throws AuthorizationException {
         DNInfo dnInfo = new DNInfo(subjectDN, role, user, authRequestID);
         return authorize(dnInfo, cellpath, caller);
     }
 
-    public AuthenticationMessage authorize(DNInfo dnInfo, CellPath cellpath, CellAdapter caller) throws AuthorizationException {
+    public AuthenticationMessage authorize(DNInfo dnInfo, CellPath cellpath, CellEndpoint caller) throws AuthorizationException {
 
         AuthenticationMessage authmessage = null;
 
         String authcellname = cellpath.getCellName();
         try {
             CellMessage m = new CellMessage(cellpath, dnInfo);
-            m = caller.getNucleus().sendAndWait(m, cell_message_timeout) ;
+            m = caller.sendAndWait(m, cell_message_timeout) ;
             if(m==null) {
                 throw new AuthorizationException("authRequestID " + authRequestID + " Message to " + authcellname + " timed out for authentification of " + dnInfo.getDN() + " and roles " + dnInfo.getFQANs());
             }
@@ -289,7 +289,7 @@ public class AuthzQueryHelper {
         return authmessage;
     }
 
-    public AuthenticationMessage authorize(X509Certificate[] chain, String user, CellPath cellpath, CellAdapter caller) throws AuthorizationException {
+    public AuthenticationMessage authorize(X509Certificate[] chain, String user, CellPath cellpath, CellEndpoint caller) throws AuthorizationException {
 
         AuthenticationMessage authmessage = null;
         X509Info x509info = new X509Info(chain, user, authRequestID);
@@ -297,7 +297,7 @@ public class AuthzQueryHelper {
         String authcellname = cellpath.getCellName();
         try {
             CellMessage m = new CellMessage(cellpath, x509info);
-            m = caller.getNucleus().sendAndWait(m, cell_message_timeout);
+            m = caller.sendAndWait(m, cell_message_timeout);
             if(m==null) {
                 String subjectDN = X509CertUtil.getSubjectFromX509Chain(chain, false);
                 throw new AuthorizationException("authRequestID " + authRequestID + " Message to " + authcellname + " timed out for authorization of " + subjectDN);
