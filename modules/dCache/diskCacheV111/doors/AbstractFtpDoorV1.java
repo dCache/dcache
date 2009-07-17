@@ -311,7 +311,7 @@ public abstract class AbstractFtpDoorV1
     /**
      * Time stamp format as defined in RFC 3659.
      */
-    private static final DateFormat TIMESTAMP_FORMAT =
+    private final DateFormat TIMESTAMP_FORMAT =
         new SimpleDateFormat("yyyyMMddHHmmss");
 
     private static final String buildChecksumList(){
