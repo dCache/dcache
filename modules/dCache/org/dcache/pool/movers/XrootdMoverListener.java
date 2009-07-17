@@ -327,13 +327,13 @@ public class XrootdMoverListener implements StreamListener {
 
             if (newFilePointer > currentFileSize) {
 
-                int usedBlocks = (int) (currentFileSize / BLOCK_SIZE);
+                long usedBlocks = (currentFileSize / BLOCK_SIZE);
 
                 if (currentFileSize % BLOCK_SIZE != 0) {
                     usedBlocks++;
                 }
 
-                int expectedBlocks = (int) (newFilePointer / BLOCK_SIZE);
+                long expectedBlocks = (newFilePointer / BLOCK_SIZE);
 
                 if (newFilePointer % BLOCK_SIZE != 0) {
                     expectedBlocks++;
