@@ -326,7 +326,9 @@ class Companion
             : null;
 
         int challengeSize = in.readInt();
-        in.skipBytes(challengeSize);
+        while (challengeSize > 0) {
+            challengeSize -= in.skipBytes(challengeSize);
+        }
 
         if (filesize != getFileSize(out, in)) {
             throw new IOException("Remote file has incorrect size");
