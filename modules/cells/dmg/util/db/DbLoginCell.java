@@ -11,12 +11,12 @@ import java.net.* ;
 
 
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
   */
-public class      DbLoginCell 
+public class      DbLoginCell
        extends    CellAdapter
        implements Runnable  {
 
@@ -26,7 +26,7 @@ public class      DbLoginCell
   private InetAddress    _host ;
   private String         _user ;
   private Thread         _workerThread ;
-  private CellShell      _shell ; 
+  private CellShell      _shell ;
   private String         _destination = null ;
   private boolean        _syncMode    = true ;
   private Gate           _readyGate   = new Gate(false) ;
@@ -34,30 +34,30 @@ public class      DbLoginCell
   private int            _commandCounter = 0 ;
   private String         _lastCommand    = "<init>" ;
   private Reader         _reader = null ;
-  
+
   private DbResourceHandler _handler   = null ;
   private String            _container = "/home/patrick/cells/dmg/util/db/container" ;
   private DbResourceHandle  _handle    = null ;
   private XClass            _xobject   = null ;
-  
+
   public DbLoginCell( String name , StreamEngine engine ){
      super( name ) ;
      _engine  = engine ;
-     
+
      _reader = engine.getReader() ;
      _in   = new BufferedReader( _reader ) ;
      _out  = new PrintWriter( engine.getWriter() ) ;
      _user = engine.getUserName().getName() ;
      _host = engine.getInetAddress() ;
-      
+
      _destination  = getCellName() ;
-     _workerThread = new Thread( this ) ;         
-     
+     _workerThread = new Thread( this ) ;
+
      _workerThread.start() ;
      setPrintoutLevel( 11 ) ;
      useInterpreter(false) ;
      //
-     // 
+     //
      // create the database if not yet done
      //
      Dictionary dict = getDomainContext() ;
@@ -86,10 +86,10 @@ public class      DbLoginCell
                   // have to go back to readLine to
                   // finish the ssh protocol gracefully.
                   //
-                  try{ _out.close() ; }catch(Exception ee){} 
+                  try{ _out.close() ; }catch(Exception ee){}
                }else{
                   print( prompt() ) ;
-               }       
+               }
            }catch( IOException e ){
               esay("EOF Exception in read line : "+e ) ;
               break ;
@@ -97,18 +97,18 @@ public class      DbLoginCell
               esay("I/O Error in read line : "+e ) ;
               break ;
            }
-        
+
         }
         say( "EOS encountered" ) ;
         _readyGate.open() ;
         kill() ;
-    
+
     }
   }
   public String ac_setp_$_2( Args args )throws CommandException{
      if( _handle == null )throw new CommandException("No Handle assigned" ) ;
      try{
-        _handle.setAttribute( args.argv(0) , args.argv(1) ) ;      
+        _handle.setAttribute( args.argv(0) , args.argv(1) ) ;
      }catch( Exception dbe ){
         throw new CommandException( dbe.toString()) ;
      }
@@ -118,7 +118,7 @@ public class      DbLoginCell
      if( _handle == null )throw new CommandException("No Handle assigned" ) ;
      String par = null ;
      try{
-        par = (String)_handle.getAttribute( args.argv(0) ) ;      
+        par = (String)_handle.getAttribute( args.argv(0) ) ;
      }catch( Exception dbe ){
         throw new CommandException( dbe.toString()) ;
      }
@@ -136,10 +136,10 @@ public class      DbLoginCell
   }
   public String hh_mxcreate  = " <interval> <numberOfIntevals>" ;
   public String ac_mxcreate_$_2( Args args ) throws CommandException {
-  
+
      int inter = Integer.parseInt( args.argv(0) ) ;
      int count = Integer.parseInt( args.argv(1) ) ;
-     
+
      _handle = null ;
      long start , now ;
      try{
@@ -148,17 +148,17 @@ public class      DbLoginCell
         for( int j = 0 ; j < count ; j++ ){
            start = System.currentTimeMillis() ;
            for(  int i = 0 ; i < inter ; i++ , position++ , positionName++ ){
-               _handler.createResource( "X"+positionName ) ; 
-           }   
+               _handler.createResource( "X"+positionName ) ;
+           }
            now = System.currentTimeMillis() ;
            System.out.println( ""+( position-inter/2 ) +
-                               "  "+( (double)(now-start) / (double)inter ) ) ; 
+                               "  "+( (double)(now-start) / (double)inter ) ) ;
         }
         return "Done" ;
      }catch( Exception dbe ){
         throw new CommandException( dbe.toString()) ;
      }
-  
+
   }
   public String hh_mcreate  = " <startNumber>  <last-1 Number>" ;
   public String ac_mcreate_$_2( Args args ) throws CommandException {
@@ -168,20 +168,20 @@ public class      DbLoginCell
      try{
         long start = System.currentTimeMillis() ;
         for( int i = from ; i < to ; i++ ){
-            _handler.createResource( "X"+i ) ;   
-        }   
+            _handler.createResource( "X"+i ) ;
+        }
         long now = System.currentTimeMillis() ;
         return "Needed "+(now-start)+" millis to create "+
                             (to-from)+" Entries" ;
      }catch( Exception dbe ){
         throw new CommandException( dbe.toString()) ;
      }
-  
+
   }
   public String hh_create  = " <resourceName>" ;
   public String ac_create_$_1( Args args ) throws CommandException {
      try{
-        _handle = _handler.createResource( args.argv(0) ) ;      
+        _handle = _handler.createResource( args.argv(0) ) ;
      }catch( Exception dbe ){
         throw new CommandException( dbe.toString()) ;
      }
@@ -191,7 +191,7 @@ public class      DbLoginCell
   public String ac_get_$_1( Args args ) throws CommandException {
      try{
       _handle = _handler.getResourceByName( args.argv(0) ) ;
-      
+
      }catch( Exception dbe ){
         throw new CommandException( dbe.toString()) ;
      }
@@ -202,11 +202,11 @@ public class      DbLoginCell
      if( _handle == null )throw new CommandException("No Handle assigned" ) ;
      try{
         int mode = args.argv(0).equals("read") ?
-                   DbGLock.READ_LOCK : 
+                   DbGLock.READ_LOCK :
                    DbGLock.WRITE_LOCK  ;
-                   
+
         _handle.open( mode ) ;
-      
+
      }catch( Exception dbe ){
         throw new CommandException( dbe.toString()) ;
      }
@@ -216,7 +216,7 @@ public class      DbLoginCell
      if( _handle == null )throw new CommandException("No Handle assigned" ) ;
      try{
         _handle.close() ;
-      
+
      }catch( Exception dbe ){
         throw new CommandException( dbe.toString()) ;
      }
@@ -226,7 +226,7 @@ public class      DbLoginCell
      if( _handle == null )throw new CommandException("No Handle assigned" ) ;
      try{
         _handle.remove() ;
-      
+
      }catch( Exception dbe ){
         throw new CommandException( dbe.toString()) ;
      }
@@ -247,15 +247,15 @@ public class      DbLoginCell
   //    this and that
   //
    public void   cleanUp(){
-   
+
      say( "Clean up called" ) ;
      println("");
-     try{ _out.close() ; }catch(Exception ee){} 
+     try{ _out.close() ; }catch(Exception ee){}
      _readyGate.check() ;
      say( "finished" ) ;
 
    }
-  public void println( String str ){ 
+  public void println( String str ){
      _out.print( str ) ;
      if( ( str.length() > 0 ) &&
          ( str.charAt(str.length()-1) != '\n' ) )_out.print("\n") ;
@@ -265,34 +265,34 @@ public class      DbLoginCell
      _out.print( str ) ;
      _out.flush() ;
   }
-   public String prompt(){ 
-      return _destination == null ? " .. > " : (_destination+" > ")  ; 
+   public String prompt(){
+      return _destination == null ? " .. > " : (_destination+" > ")  ;
    }
    public int execute( String command ) throws Exception {
       if( command.equals("") )return 0 ;
-      
+
          try{
              println( command( command ) ) ;
              return 0 ;
          }catch( CommandExitException cee ){
              return 1 ;
          }
-   
+
    }
    private void printObject( Object obj ){
       if( obj == null ){
          println( "Received 'null' Object" ) ;
          return ;
-      }  
-      String output = null ;    
+      }
+      String output = null ;
       if( obj instanceof Object [] ){
          Object [] ar = (Object []) obj ;
          for( int i = 0 ; i < ar.length ; i++ ){
             if( ar[i] == null )continue ;
-             
+
             print( output = ar[i].toString() ) ;
             if(  ( output.length() > 0 ) &&
-                 ( output.charAt(output.length()-1) != '\n' ) 
+                 ( output.charAt(output.length()-1) != '\n' )
 
                )print("\n") ;
          }
@@ -301,10 +301,10 @@ public class      DbLoginCell
          if( ( output.length() > 0 ) &&
              ( output.charAt(output.length()-1) != '\n' ) )print("\n") ;
       }
-   
+
    }
   //
-  // the cell implemetation 
+  // the cell implemetation
   //
    public String toString(){ return _user+"@"+_host ; }
    public void getInfo( PrintWriter pw ){
@@ -315,14 +315,14 @@ public class      DbLoginCell
      pw.println( " Command Count : "+_commandCounter ) ;
    }
    public void   messageArrived( CellMessage msg ){
-   
+
         Object obj = msg.getMessageObject() ;
         println("");
-        println( " CellMessage From   : "+msg.getSourceAddress() ) ; 
-        println( " CellMessage To     : "+msg.getDestinationAddress() ) ; 
+        println( " CellMessage From   : "+msg.getSourceAddress() ) ;
+        println( " CellMessage To     : "+msg.getDestinationAddress() ) ;
         println( " CellMessage Object : "+obj.getClass().getName() ) ;
         printObject( obj ) ;
-     
+
    }
    ///////////////////////////////////////////////////////////////////////////
    //                                                                       //
@@ -335,7 +335,7 @@ public class      DbLoginCell
    public String ac_exit( Args args ) throws CommandExitException {
       throw new CommandExitException( "" , 0 ) ;
    }
-      
+
 
 
 }

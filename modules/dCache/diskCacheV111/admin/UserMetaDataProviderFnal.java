@@ -12,7 +12,7 @@ import org.dcache.auth.UserAuthRecord;
 /**
  * Author : Patrick Fuhrmann, Vladimir Podstavkov
  * Based on the UserMetaDataProviderExample
- * 
+ *
  */
 public class UserMetaDataProviderFnal implements UserMetaDataProvider {
 
@@ -20,7 +20,7 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
     private final Dictionary  _context ;
     private final Args        _args    ;
     private final String      _ourName ;
-        
+
     private int     _requestCount      = 0 ;
     private final HashMap<String, Integer> _userStatistics    = new HashMap<String, Integer>();
 
@@ -31,7 +31,7 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
      * We are assumed to provide the following constructor signature.
      */
     public UserMetaDataProviderFnal(CellAdapter cell) {
-    
+
         _cell    =  cell ;
         _context = _cell.getDomainContext() ;
         _args    = _cell.getArgs() ;
@@ -43,7 +43,7 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
         //
         _kpwdFilePath = (String)_context.get("kpwd-file") ;
         _kpwdFilePath = _kpwdFilePath == null ? _args.getOpt("kpwd-file") : _kpwdFilePath;
-        
+
         if (_kpwdFilePath == null)
             throw new IllegalArgumentException(_ourName+" : -kpwd-file not specified");
     }
@@ -52,7 +52,7 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
      * just for the fun of it
      */
     public String hh_ls = "" ;
-    
+
     public String ac_ls( Args args ) {
         StringBuffer sb = new StringBuffer() ;
         Iterator i = _userStatistics.entrySet().iterator() ;
@@ -78,18 +78,18 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
      */
     public synchronized Map getUserMetaData( String userName, String userRole, List attributes )
         throws Exception {
-         
+
         //
         // 'attributes' is a list of keys somebody (door)
-        // needs from us. We are assumed to prepare 
-        // a map containing the 'key' and the 
+        // needs from us. We are assumed to prepare
+        // a map containing the 'key' and the
         // corresponding values.
         // we should at least be prepared to know the
         // 'uid','gid' of the user.
         // If we are not sure about the user, we should
         // throw an exception rather returning an empty
         // map.
-        //  
+        //
         updateStatistics( userName ) ;
         //
         // get the information for the user
@@ -102,13 +102,13 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
              ( result.get("gid") == null ) ||
              ( result.get("home") == null )  )
             throw new IllegalArgumentException(_ourName+" : insufficient info for user : "+userName+"->"+userRole);
-           
+
         return result;
-         
+
     }
 
 
-    private HashMap getUserMD(String userPrincipal, String userRole) 
+    private HashMap getUserMD(String userPrincipal, String userRole)
     {
         KAuthFile authf;
         UserAuthBase pwdRecord = null;
@@ -116,8 +116,8 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
         int uid, gid;
         String home;
 
-        try { 
-            authf = new KAuthFile(_kpwdFilePath); 
+        try {
+            authf = new KAuthFile(_kpwdFilePath);
         }
         catch ( Exception e ) {
             _cell.esay("User authentication file not found: " + e);
@@ -138,7 +138,7 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
             _cell.esay("User " + userRole + " not found.");
             return answer;
         }
-        
+
         if( !((UserAuthRecord)pwdRecord).hasSecureIdentity(userPrincipal) ) {
             pwdRecord = null;
             _cell.esay(userPrincipal+": Permission denied");
@@ -147,15 +147,15 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
         uid  = pwdRecord.UID;
         gid  = pwdRecord.GID;
         home = pwdRecord.Home;
-        
+
         answer.put("uid", String.valueOf(uid));
         answer.put("gid", String.valueOf(gid));
         answer.put("home", home);
-        
+
         _cell.say("User "+userRole+" logged in");
         return answer;
     }
-    
+
 
     /**
      * and of course the interface definition

@@ -4,22 +4,22 @@ import java.lang.reflect.* ;
 import java.net.* ;
 import java.io.* ;
 import java.util.*;
-import dmg.cells.nucleus.*; 
+import dmg.cells.nucleus.*;
 import dmg.util.*;
 import dmg.protocols.ssh.* ;
 
 /**
  **
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
-  * 
+  *
  */
-public class       SshSAuth_A 
+public class       SshSAuth_A
        implements  SshServerAuthentication  {
 
-  
+
   private  SshRsaKey          _hostKey  , _serverKey ;
   private  SshRsaKeyContainer _userKeys , _hostKeys ;
   private  CellNucleus        _nucleus ;
@@ -33,55 +33,55 @@ public class       SshSAuth_A
   public void say( String str ){ _nucleus.say( str ) ; }
   public void esay( String str ){ _nucleus.esay( str ) ; }
   //
-  // ssh server authentication 
+  // ssh server authentication
   //
   private SshRsaKey getIdentity( String keyName ){
 
-     Dictionary sshContext = 
+     Dictionary sshContext =
            (Dictionary)_nucleus.getDomainContext().get( "Ssh" ) ;
-     
+
      if( sshContext == null ){
         esay( "Auth ("+keyName+") : Ssh Context unavailable" ) ;
         return null ;
      }
-     
+
      SshRsaKey   key =  (SshRsaKey)sshContext.get( keyName ) ;
-      
+
      say( "Auth : Request for "+keyName+(key==null?" Failed":" o.k.") ) ;
      return key ;
   }
-  public SshRsaKey  getHostRsaKey(){ 
-      return getIdentity("hostIdentity" ) ; 
+  public SshRsaKey  getHostRsaKey(){
+      return getIdentity("hostIdentity" ) ;
   }
   public SshRsaKey  getServerRsaKey(){
-      return getIdentity("serverIdentity" ) ; 
+      return getIdentity("serverIdentity" ) ;
   }
   public SshSharedKey  getSharedKey( InetAddress host , String keyName ){
      say( "Auth : Request for Shared Key denied" ) ;
-     return null ; 
+     return null ;
   }
 
-  public boolean   authUser( InetAddress addr, String user ){ 
+  public boolean   authUser( InetAddress addr, String user ){
      say( "Auth : User Request for user "+user+" host "+addr+" denied" ) ;
-     return false ; 
+     return false ;
   }
   public boolean   authRhosts( InetAddress addr, String user ){
      say( "Auth : Rhost Request for user "+user+" host "+addr+" denied" ) ;
-     return false ; 
+     return false ;
   }
-  
-  public boolean authPassword(  InetAddress addr, 
-                                String user, 
+
+  public boolean authPassword(  InetAddress addr,
+                                String user,
                                 String password             ){
-                                
+
      say( "Auth : Password Request for user "+user+" host "+addr ) ;
-     Dictionary sshContext = 
+     Dictionary sshContext =
           (Dictionary)_nucleus.getDomainContext().get( "Ssh" ) ;
      if( sshContext == null ){
         esay( "Auth authPassword : Ssh Context unavailable for request from User "+
                        user+" Host "+addr ) ;
         return false ;
-     } 
+     }
      Object userObject = sshContext.get( "userPasswords" ) ;
      if( userObject == null ){
         esay( "Auth authPassword : userPasswords not available" ) ;
@@ -130,7 +130,7 @@ public class       SshSAuth_A
            return false ;
         }else{
            request = (Object[])obj ;
-           if( request.length < 6 ){ 
+           if( request.length < 6 ){
               esay( "Response length < 6") ;
               return false ;
            }
@@ -141,12 +141,12 @@ public class       SshSAuth_A
                return false ;
            }
            say( "Response for >"+user+"< : "+request[5] ) ;
-           return ((Boolean)request[5]).booleanValue() ;  
-        } 
-        
+           return ((Boolean)request[5]).booleanValue() ;
+        }
+
      }
-        
-     return false ; 
+
+     return false ;
   }
   private SshRsaKey getPublicKey( String domain , SshRsaKey modulusKey ,
                                   InetAddress addr, String user){
@@ -158,8 +158,8 @@ public class       SshSAuth_A
               ") : Ssh Context unavailable for request from User "+user+
               " Host "+addr ) ;
         return null ;
-     } 
-     SshRsaKeyContainer container = 
+     }
+     SshRsaKeyContainer container =
                   (SshRsaKeyContainer)sshContext.get( domain ) ;
      if( container == null ){
         esay( "Auth ("+domain+") : Ssh "+domain+
@@ -178,15 +178,15 @@ public class       SshSAuth_A
         esay( "Auth ("+domain+") : Ssh key not found from User "+
                        user+" Host "+addr ) ;
         return null ;
-     } 
-     
-     return key ;      
-  
+     }
+
+     return key ;
+
   }
-  public SshRsaKey authRsa( InetAddress addr, 
-                            String user , 
+  public SshRsaKey authRsa( InetAddress addr,
+                            String user ,
                             SshRsaKey userKey         ){
-                            
+
      SshRsaKey key = getPublicKey( "knownUsers" , userKey , addr , user  ) ;
      String    domain = "knownUsers" ;
      if( key == null )return null ;
@@ -205,7 +205,7 @@ public class       SshSAuth_A
         return null ;
      }
   }
-  public SshRsaKey authRhostsRsa( InetAddress addr, String user , 
+  public SshRsaKey authRhostsRsa( InetAddress addr, String user ,
                                   String reqUser , SshRsaKey hostKey ){
      say( "Auth (authRhostsRsa) : host="+addr+
                    " user="+user+" reqUser="+reqUser ) ;
@@ -216,4 +216,4 @@ public class       SshSAuth_A
      return getPublicKey( "knownHosts"  , hostKey , addr , user ) ;
   }
 }
- 
+

@@ -9,53 +9,53 @@ import java.net.* ;
 import java.text.*;
 import java.lang.reflect.* ;
 
-public class      HttpServiceCell 
-       extends    CellAdapter 
+public class      HttpServiceCell
+       extends    CellAdapter
        implements Runnable      {
-       
-   private ServerSocket _listener ; 
+
+   private ServerSocket _listener ;
    private CellNucleus  _nucleus ;
    private Args         _args ;
-   private int          _listenPort ; 
+   private int          _listenPort ;
    private Thread       _listenThread ;
-   private int          _serial    = 0 ; 
+   private int          _serial    = 0 ;
    private Map<String, AliasEntry>      _aliasHash = new HashMap<String, AliasEntry>() ;
    private Dictionary   _context   = null ;
-   private SimpleDateFormat _dateFormat = 
+   private SimpleDateFormat _dateFormat =
                 new SimpleDateFormat( "EEE, dd MMM yyyy hh:mm:ss z");
-                
+
    private static final FileNameMap __mimeTypeMap = URLConnection.getFileNameMap();
-   
+
    public HttpServiceCell( String name , String args ) throws Exception {
        super( name , args , false ) ;
-    
+
        _args    = getArgs() ;
        _nucleus = getNucleus() ;
        _context = getDomainContext() ;
-       
+
        // The time *must* be in GMT
        _dateFormat.setTimeZone( TimeZone.getTimeZone("GMT"));
-       
+
        try{
           if( _args.argc() < 1 )
-              throw new 
+              throw new
               IllegalArgumentException( "USAGE : ... <listenPort>" ) ;
-          
+
           _listenPort   = Integer.parseInt( _args.argv(0) ) ;
           _listener     = new ServerSocket( _listenPort ) ;
-          _listenThread = _nucleus.newThread( this , "Listener" ) ; 
+          _listenThread = _nucleus.newThread( this , "Listener" ) ;
           _listenThread.start() ;
-          
+
        }catch(Exception e ){
           start();
           kill() ;
           throw e ;
        }
-       
+
        start() ;
-       
-    
-   }  
+
+
+   }
    private static class AliasEntry {
 	  private String _intFailureMsg = null;
       private String _type ;
@@ -65,7 +65,7 @@ public class      HttpServiceCell
       private String _overwrite = null ;
       private Method _getInfo   = null ;
       public AliasEntry( String type  , Object obj , String spec ){
-         Class [] argClasses = { java.io.PrintWriter.class } ; 
+         Class [] argClasses = { java.io.PrintWriter.class } ;
          _type = type ;
          _obj  = obj ;
          _spec = spec ;
@@ -74,7 +74,7 @@ public class      HttpServiceCell
               _getInfo = obj.getClass().getMethod("getInfo",argClasses);
             }catch(Exception ee){}
          }
-      } 
+      }
       public void getInfo( PrintWriter pw ){
          if( _getInfo == null ){
             pw.println(toString());
@@ -96,19 +96,19 @@ public class      HttpServiceCell
       public String getType(){ return _type ; }
       public Object getSpecific(){ return _obj ; }
       public String getSpecificString(){ return _spec ; }
-      
+
       @Override
-      public String toString(){ 
+      public String toString(){
          StringBuffer sb = new StringBuffer() ;
          sb.append( _type ).append("(").append(_spec).append(")") ;
-         if( _onError != null )  
+         if( _onError != null )
                sb.append(  " [onError=" ).append(_onError).append("]");
          if( _overwrite != null )
                sb.append( " [overwrite " ).append(_overwrite).append("]");
          return sb.toString();
       }
    }
-   
+
    @Override
    public void getInfo( PrintWriter pw ){
 
@@ -121,7 +121,7 @@ public class      HttpServiceCell
    public String hh_ls_alias = "[<alias>]" ;
    public String ac_ls_alias_$_0_1( Args args )throws Exception{
       AliasEntry entry = null ;
-      if( args.argc() == 0 ){      
+      if( args.argc() == 0 ){
           StringBuffer sb     = new StringBuffer() ;
           for( Map.Entry<String, AliasEntry> aliasEntry : _aliasHash.entrySet()  ){
               sb.append( aliasEntry.getKey() ).append( " -> " ).
@@ -137,14 +137,14 @@ public class      HttpServiceCell
    }
    public String hh_unset_alias = "<aliasName>" ;
    public String ac_unset_alias_$_1( Args args ){
-   
+
       _aliasHash.remove( args.argv(0) ) ;
       return "Done" ;
    }
-   public String hh_set_alias = 
+   public String hh_set_alias =
         "<aliasName> directory|class|context <specification>" ;
-   
-   public String fh_set_alias = 
+
+   public String fh_set_alias =
       "set alias <alias>  <type> [<typeSpecific> <...>]\n"+
       "    <type>         <specific> \n"+
       "   directory    <fullDirectoryPath>\n"+
@@ -152,50 +152,50 @@ public class      HttpServiceCell
       "   class        <fullClassName>\n"+
       "   context      [options] <context> or  <contextNameStart>*\n" +
       "                  options : -overwrite=<alias> -onError=<alias>\n" +
-      "       predefined alias : <home>     =  default for http://host:port/ \n" + 
+      "       predefined alias : <home>     =  default for http://host:port/ \n" +
       "                          <default>  =  default for any type or error \n" ;
-      
+
    public String ac_set_alias_$_3_16( Args args )throws Exception{
-   
+
       String alias = args.argv(0) ;
       String type  = args.argv(1) ;
       String spec  = args.argv(2) ;
 
-      
+
       if( type.equals("directory") ||
           type.equals("file")         ){
-      
+
          File dir = new File( spec ) ;
          if( ( ! dir.isDirectory() ) &&
              ( ! dir.isFile()      )    )
             throw new
             Exception( "Directory/File not found : "+spec ) ;
-            
-         _aliasHash.put(  alias ,  
-                          new AliasEntry( "directory" , 
+
+         _aliasHash.put(  alias ,
+                          new AliasEntry( "directory" ,
                                           dir ,
                                           spec          ) ) ;
          return alias+" -> directory("+spec+")" ;
-         
+
       }else if( type.equals( "context" ) ){
-      
+
          int pos = spec.indexOf("*") ;
          if( pos > -1 )spec = spec.substring(0,pos) ;
-        
+
          AliasEntry entry = new AliasEntry( type , spec , spec ) ;
-         
+
          String     tmp  = args.getOpt( "onError" ) ;
          if( tmp != null )entry.setOnError( tmp ) ;
-       
+
          tmp  = args.getOpt( "overwrite" ) ;
          if( tmp != null )entry.setOverwrite( tmp ) ;
-   
-         
+
+
          _aliasHash.put( alias , entry ) ;
          return alias+" -> context("+spec+")" ;
-         
+
       }else if( type.equals( "class" ) ){
-      
+
          int    argcount = args.argc() - 3 ;
          String []   arg = new String[argcount] ;
          StringBuffer sb = new StringBuffer() ;
@@ -204,10 +204,10 @@ public class      HttpServiceCell
              arg[i] = args.argv(3+i) ;
              sb.append( ";" ).append(arg[i]) ;
          }
-         
+
          HttpResponseEngine engine=null;
          String intFailureMsg=null, retMsg;
-         
+
          try {
         	 engine  = invokeHttpEngine( spec , arg ) ;
         	 retMsg = alias+" -> class("+sb.toString()+")";
@@ -219,31 +219,31 @@ public class      HttpServiceCell
 
          AliasEntry aliasEntry = new AliasEntry( type , engine , sb.toString());
          _aliasHash.put( alias , aliasEntry) ;
-         
+
          if( engine == null)
         	 aliasEntry.setIntFailureMsg( intFailureMsg);
-         
+
          return retMsg;
-         
+
       }else if( type.equals( "cell" ) ){
-      
+
          _aliasHash.put( alias , new AliasEntry( type , spec , spec ) ) ;
          return "" ;
-         
+
       }
       throw new Exception( "Unknown type : "+type ) ;
    }
    private HttpResponseEngine invokeHttpEngine( String className , String [] a )
            throws Exception {
-    
+
        Class     c         = Class.forName( className ) ;
        Class  [] argsClass = null ;
        Object [] args      = null ;
        Constructor constr  = null ;
        //
        // trying to find a contructor
-       //   <init>( CellNucleus nucleus , String [] args ) 
-       //   <init>( String [] args ) 
+       //   <init>( CellNucleus nucleus , String [] args )
+       //   <init>( String [] args )
        //   <init>( )
        //
        HttpResponseEngine engine = null ;
@@ -275,44 +275,44 @@ public class      HttpServiceCell
        return engine ;
    }
    public void run(){
-       Socket         socket =null ; 
+       Socket         socket =null ;
        while( true ){
           _serial ++ ;
           try{
              socket = _listener.accept() ;
              say( "Connection ("+_serial+") from : "+socket ) ;
-                         
-             new Thread( 
+
+             new Thread(
                      new HtmlService( _serial , socket ) ,
-                     socket.getInetAddress().toString() 
+                     socket.getInetAddress().toString()
                  ).start() ;
           }catch( Exception ee ){
              esay( "Problem in connection from "+socket+" : "+ee ) ;
              break  ;
           }
-          
+
        }
        say("Listener Done" );
    }
-   
+
    @Override
    public void say( String msg ){
       super.say("(" + _serial + ") " + msg);
    }
-   
+
    @Override
    public void esay( String msg ){
       super.esay("(" + _serial + ") " + msg);
    }
-   
-   private class HtmlService 
+
+   private class HtmlService
            implements Runnable, HttpRequest {
-       
-       private InputStream    _in ; 
-       private OutputStream   _out ;    
+
+       private InputStream    _in ;
+       private OutputStream   _out ;
        private BufferedReader _br ;
-       private PrintWriter    _pw ; 
-       private Socket         _socket  ; 
+       private PrintWriter    _pw ;
+       private Socket         _socket  ;
        private int            _serial ;
        private HashMap        _map = new HashMap() ;
        private String    []   _tokens ;
@@ -356,15 +356,15 @@ public class      HttpServiceCell
        //
        //
        private HtmlService( int serial , Socket socket ) throws Exception {
-                           
+
           _socket = socket ;
-          _serial = serial ;   
+          _serial = serial ;
           _in  = socket.getInputStream() ;
           _out = socket.getOutputStream() ;
-          _br  = new BufferedReader( 
+          _br  = new BufferedReader(
                       new InputStreamReader( _in ) ) ;
-          _pw  = new PrintWriter( 
-                      new OutputStreamWriter( _out ) ) ;  
+          _pw  = new PrintWriter(
+                      new OutputStreamWriter( _out ) ) ;
        }
        public void run(){
           try{
@@ -386,39 +386,39 @@ public class      HttpServiceCell
                 String key = x.substring(0,n) ;
                 String value = n == x.length() - 1 ? "" : x.substring(n+1).trim() ;
                 _map.put(key,value);
-             } 
-            
+             }
+
              StringTokenizer st = new StringTokenizer( request ) ;
              String direction   = st.nextToken() ;
-             
+
              if( ! direction.equals( "GET" ) )
-                  throw new 
+                  throw new
                   HttpException( HttpStatus.NOT_IMPLEMENTED, "Not Implemented : "+direction ) ;
-             
+
              String destination = st.nextToken() ;
-             
+
              splitUrl( destination  ) ;
-             
+
              AliasEntry  entry  = null ;
              String      alias  = null ;
-             
+
              alias = _tokens.length == 0 ? "<home>" : _tokens[0] ;
              _tokenOffset = 1 ;
              try{
                 entry = _aliasHash.get( alias ) ;
                 if( entry == null )
-                    throw new 
+                    throw new
                     HttpException( HttpStatus.NOT_FOUND , "Alias not found : "+alias ) ;
-                
+
                 switchHttpType( entry ) ;
-                
+
              }catch(HttpException ee){
                 if( ee.getErrorCode() != HttpStatus.NOT_FOUND )throw ee ;
                 entry = _aliasHash.get( "<default>" ) ;
                 if( entry == null )throw ee ;
                 switchHttpType( entry ) ;
              }
-            
+
              _pw.flush() ;
           }catch( HttpException e ){
              printHttpException( e ) ;
@@ -427,25 +427,25 @@ public class      HttpServiceCell
              printHttpException( new HttpException( HttpStatus.BAD_REQUEST , "Bad Request : "+ee ) ) ;
              esay( "Problem in HtmlService : "+ee ) ;
           }finally{
-            try{ _out.close() ; }catch( IOException eeee ){}             
+            try{ _out.close() ; }catch( IOException eeee ){}
           }
           say( "Finished" ) ;
-       
+
        }
        private void switchHttpType( AliasEntry entry ) throws Exception {
-               
+
           String type = entry.getType() ;
-          
+
           if( type.equals( "badconfig")) {
         	  StringBuilder sb = new StringBuilder();
-        	  
+
         	  sb.append( "HTTP Server badly configured");
         	  if( entry.getIntFailureMsg() != null) {
         		  sb.append( ": ");
         		  sb.append( entry.getIntFailureMsg());
         	  }
         	  sb.append( ".");
-        	  
+
         	  throw new HttpException(  HttpStatus.INTERNAL_SERVER_ERROR , sb.toString());
 
           } else if( type.equals( "directory" ) ){
@@ -453,7 +453,7 @@ public class      HttpServiceCell
              sendFile( (File)entry.getSpecific() , _tokens ) ;
 
           }else if( type.equals( "context" ) ){
-          
+
              String     aliasString = null ;
              AliasEntry aliasEntry  = null ;
              //
@@ -461,10 +461,10 @@ public class      HttpServiceCell
              //
              if( ( ( aliasString = entry.getOverwrite() ) != null ) &&
                  ( ( aliasEntry = _aliasHash.get( aliasString ) ) != null )){
-                 
+
                  switchHttpType( aliasEntry ) ;
                  return ;
-                 
+
              }
              String html = null ;
              String specificName = (String)entry.getSpecific() ;
@@ -475,7 +475,7 @@ public class      HttpServiceCell
 
                     String contextName = _tokens[1] ;
                     if( ! contextName.startsWith( specificName ) )
-                       throw new 
+                       throw new
                        HttpException( HttpStatus.FORBIDDEN , "Forbidden" ) ;
 
                     specificName = contextName ;
@@ -485,20 +485,20 @@ public class      HttpServiceCell
              if( html == null ){
                 if( ( ( aliasString = entry.getOnError() ) == null ) ||
                     ( ( aliasEntry = _aliasHash.get( aliasString ) ) == null ) )
-                 throw new 
+                 throw new
                  HttpException( HttpStatus.NOT_FOUND , "Not found : "+specificName);
-                 
+
                 switchHttpType( aliasEntry ) ;
                 return ;
              }
-       
+
              printHttpHeader(0) ;
              _pw.println( html ) ;
 
           }else if( type.equals( "class" ) ){
 
              HttpResponseEngine engine =  (HttpResponseEngine)entry.getSpecific() ;
-             
+
              try {
             	 engine.queryUrl( this ) ;
              } catch( HttpException e) {
@@ -506,7 +506,7 @@ public class      HttpServiceCell
              } catch( Exception e) {
             	 throw new HttpException( HttpStatus.INTERNAL_SERVER_ERROR, "HttpResponseEngine ("+engine.getClass().getCanonicalName()+") is broken, please report this to sysadmin.");
              }
-  
+
           }
           return ;
        }
@@ -560,9 +560,9 @@ public class      HttpServiceCell
            return sb.toString();
        }
        private void sendFile( File base , String [] tokens )throws Exception{
-       
+
            File f = null ;
-           
+
            String filename = null ;
            if(  tokens.length < 2 ){
               filename = "index.html" ;
@@ -572,21 +572,21 @@ public class      HttpServiceCell
               for( int i = 2 ; i < tokens.length ; i++ )
                  sb.append( "/" ).append( tokens[i] ) ;
               filename = sb.toString() ;
-           } 
+           }
            f = base.isFile() ? base : new File( base , filename ) ;
            if( ! f.isFile() )
               throw new Exception( "Url Not found : "+f ) ;
-           
+
            if( filename.endsWith( ".html" ) ){
               BufferedReader br = new BufferedReader(
                                   new FileReader( f )   ) ;
-                                  
-                                  
+
+
               printHttpHeader( 0 ) ;
               String line = null ;
               while( ( line = br.readLine() ) != null )
                   _pw.println( line ) ;
-                  
+
               try{ br.close() ; }catch(IOException iii){}
            } else {
               FileInputStream binary = new FileInputStream( f ) ;
@@ -596,7 +596,7 @@ public class      HttpServiceCell
               try{
 
                  while( ( rc = binary.read( buffer , 0 , buffer.length ) ) > 0 ){
-                    _out.write( buffer , 0 , rc ) ;              
+                    _out.write( buffer , 0 , rc ) ;
                  }
               }finally{
                  _out.flush() ;
@@ -604,7 +604,7 @@ public class      HttpServiceCell
 
               }
            }
-       
+
        }
        public void printHttpHeader( int size ){
           printHttpHeader( size , _contentType ) ;
@@ -667,7 +667,7 @@ public class      HttpServiceCell
             c = pos == url.length() ? '\0' : url.charAt(pos) ;
             switch( state ){
 
-               case S_IDLE : 
+               case S_IDLE :
                   if( c == '/' ){
                     state = S_COPY ;
                   }else if( c == '%' ){
@@ -675,19 +675,19 @@ public class      HttpServiceCell
                     hex_count = 0 ;
                   }else if( c == '\0' ){
                     isDirectory = true ;
-                    // nothing 
+                    // nothing
                   }else {
                     sb.append( c ) ;
                     state = S_COPY ;
                   }
                break ;
-               case S_COPY : 
+               case S_COPY :
                   if( c == '/' ){
                     if( sb.length() > 0 ){
                        v.add( sb.toString() ) ;
                     }
                     sb.setLength(0) ;
-                    state = S_IDLE ;                          
+                    state = S_IDLE ;
                   }else if( c == '%' ){
                     state = S_HEX ;
                     hex_count = 0 ;
@@ -696,12 +696,12 @@ public class      HttpServiceCell
                        v.add( sb.toString() ) ;
                     }
                     sb.setLength(0) ;
-                    state = S_IDLE ;                          
+                    state = S_IDLE ;
                   }else{
                      sb.append( c ) ;
                   }
                break ;
-               case S_HEX : 
+               case S_HEX :
                   hexsb.append( c ) ;
                   if( hex_count++ > 0 ){
                      int value = 0 ;
@@ -752,6 +752,6 @@ public class      HttpServiceCell
       pw.println("</body></html>") ;
       pw.flush() ;
    }
-       
-       
-} 
+
+
+}

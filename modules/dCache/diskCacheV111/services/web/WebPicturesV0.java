@@ -15,9 +15,9 @@ import dmg.cells.nucleus.* ;
 import dmg.util.* ;
 import dmg.cells.network.CellDomainNode ;
 import dmg.cells.nucleus.CellTunnelInfo ;
-import dmg.cells.nucleus.CellDomainInfo ;   
-import dmg.cells.nucleus.CellInfo ;   
-import diskCacheV111.vehicles.RestoreHandlerInfo ;   
+import dmg.cells.nucleus.CellDomainInfo ;
+import dmg.cells.nucleus.CellInfo ;
+import diskCacheV111.vehicles.RestoreHandlerInfo ;
 
 
 import diskCacheV111.poolManager.* ;
@@ -41,20 +41,20 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
    private boolean          _wasStarted   = false ;
    private Date       _lastMessageArrived = null ;
    private SimpleDateFormat _simpleFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-   
+
    private RestoreHandlerInfo [] _currentInfo = null ;
-   
+
    public WebPicturesV0( String name , String args )throws Exception {
-   
+
       super( name , args , false ) ;
-      say("WebPictures started");    
+      say("WebPictures started");
       try{
          _args        = getArgs() ;
          _nucleus     = getNucleus() ;
          _started     = new Date() ;
-      
+
          _cellContext = _nucleus.getDomainContext() ;
-        
+
          System.setProperty( "java.awt.headless" , "true");
          /*
           *
@@ -62,7 +62,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
           *    -inteval=<seconds>
           *    -archive=<archiveDirectory>
           */
-      
+
          String sizeRange = _args.getOpt("imageSize") ;
          if( sizeRange != null ){
             try{
@@ -88,15 +88,15 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
              esay("Invalid 'interval' string (command ignored) : "+intervalString ) ;
          }
          say("Interval (msec) : "+_sleep);
-        
-         if( _args.getOpt("dontstart") != null ){ // debug only 
+
+         if( _args.getOpt("dontstart") != null ){ // debug only
             say("Worker Thread not started : -dontstart");
          }else{
             say("Starting worker Thread");
             _nucleus.newThread( this , "Worker" ).start() ;
             _wasStarted = true ;
          }
-        
+
       }catch(Exception ee){
          start();
          kill() ;
@@ -109,7 +109,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
    public String ac_start( Args args ){
       synchronized( this ){
          if( _wasStarted )
-            throw new 
+            throw new
             IllegalArgumentException("Thread already running");
          _wasStarted = true ;
       }
@@ -132,22 +132,22 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
        CellPath path = new CellPath("PoolManager");
        CellMessage msg = new CellMessage( path , "xrc ls");
        while( ! thread.interrupted() ){
-       
+
            try{
-           
+
                say("Sending query : "+msg);
-                   
+
                sendMessage( msg ) ;
-               
+
                createTransferPicture() ;
                createFrame();
-               
+
                synchronized( _sleeper ){
-                                  
+
                    _sleeper.wait(_sleep);
 
                }
-              
+
            }catch(InterruptedException ie ){
                esay("Worker interrupted");
                break ;
@@ -159,15 +159,15 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
 
                        _sleeper.wait((long)(60*1000));
 
-                   }                  
+                   }
                }catch(InterruptedException iee ){
                    esay("Worker interrupted2");
                    break ;
                }
            }
-       
+
        }
-   
+
    }
    public void messageArrived( CellMessage message ){
       Object obj = message.getMessageObject() ;
@@ -198,14 +198,14 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
       sb.append("<html>\n").
          append("<head><title>dCache Queue Histograms</title></head>\n").
          append("<body bgcolor=black>\n");
-      
+
       String [] histograms = { "RestoreQueueHistogram" ,
                                "TransferHistogram0" ,
                                "TransferHistogram1" ,
                                "TransferHistogram2" ,
                                "TransferHistogram3" ,
                               } ;
-      
+
       for( int i = 0 ; i < histograms.length ; i ++ ){
          String name = histograms[i] ;
          sb.append("<br><br><br><hr><br><br><br>");
@@ -222,21 +222,21 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
                append("<h3><font color=white>").append(name).append(" not yet ready</font></h3>\n").
                append("</center>");
          }
-        
-      }    
+
+      }
       sb.append("<br><br><br><hr><address><font color=white>&copy; dCache.ORG ; last updated : ").
          append((new Date()).toString()).append("</font></address>\n");
-      
+
       sb.append("</body>\n</html>\n");
-      
-      
+
+
       _cellContext.put( "QueueHistograms.html" , sb.toString() ) ;
    }
    private void createTransferPicture(){
        try{
-       
+
            java.util.List list = scanTransferTable();
-  
+
            createTransferPicture( list , "TransferHistogram0" , 0L , _dimension ) ;
            createTransferPicture( list , "TransferHistogram1" , 7L * 24L * 3600L * 1000L , _dimension ) ;
            createTransferPicture( list , "TransferHistogram2" ,      24L * 3600L * 1000L , _dimension ) ;
@@ -247,23 +247,23 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
           esay(ee);
           return ;
        }
-       
+
    }
    private void createTransferPicture( java.util.List list , String name , long maxSize , Dimension dimension ){
-   
+
        BufferedImage image = new BufferedImage( _dimension.width , _dimension.height , BufferedImage.TYPE_BYTE_INDEXED ) ;
-       
+
        Graphics graphics = image.getGraphics() ;
        ByteArrayOutputStream outStream = new ByteArrayOutputStream() ;
-       
+
        try{
-       
+
            Histogram histogram = prepareTransferHistogram( list , _binCount  , maxSize );
-           
+
            paintComponent( graphics , dimension , histogram , "Transfers "+_simpleFormat.format(new Date())) ;
-           
-       
-          ImageIO.write( image , "png",  outStream ); 
+
+
+          ImageIO.write( image , "png",  outStream );
           outStream.flush();
           outStream.close();
        }catch(Exception ee){
@@ -273,25 +273,25 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
        }
        _cellContext.put( name+".png" , outStream.toByteArray() ) ;
        _cellContext.put( name+".date" , ( new Date() ).toString() ) ;
-   
+
    }
    private void createRestorePictures(){
-   
+
        BufferedImage image = new BufferedImage( _dimension.width , _dimension.height , BufferedImage.TYPE_BYTE_INDEXED ) ;
-       
+
        Graphics graphics = image.getGraphics() ;
-       
+
        RestoreHandlerInfo [] info = _currentInfo ;
        if( info == null ){
            esay("Histogram not yet ready");
        }else{
            Histogram histogram = prepareRestoreManagerHistogram( info , _binCount );
            paintComponent( graphics , _dimension , histogram , "Restore "+_simpleFormat.format(new Date())) ;
-       }                
+       }
        ByteArrayOutputStream outStream = new ByteArrayOutputStream() ;
-       
+
        try{
-          ImageIO.write( image , "png",  outStream ); 
+          ImageIO.write( image , "png",  outStream );
           outStream.flush();
           outStream.close();
        }catch(Exception ee){
@@ -301,7 +301,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
        }
        _cellContext.put( "RestoreQueueHistogram.png" , outStream.toByteArray() ) ;
        _cellContext.put( "RestoreQueueHistogram.date" , ( new Date() ).toString() ) ;
-   
+
    }
    static private class Histogram {
       private int [] _displayErray    = null ;
@@ -345,19 +345,19 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
       }
    }
    private java.util.List scanTransferTable() throws Exception {
-   
+
       String transferTable = (String)_cellContext.get("transfers.txt") ;
       if( transferTable == null )
          throw new
          NoSuchElementException( "transfers.txt not found" ) ;
-      
+
       BufferedReader br = new BufferedReader( new StringReader( transferTable ) ) ;
-      
+
       return scanTransferTable( br ) ;
    }
    static private java.util.List scanTransferTable( BufferedReader br ) throws Exception {
-   
-     
+
+
       ArrayList list = new ArrayList() ;
       String line = null ;
       while( ( line = br.readLine() ) != null ){
@@ -380,9 +380,9 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
       return list ;
    }
    static private Histogram prepareTransferHistogram( java.util.List list , int binCount , long cut ){
-   
+
       Histogram histogram = new Histogram() ;
-      
+
       long maxTime = 0L ;
       for( Iterator it = list.iterator() ; it.hasNext() ; ){
          long [] t = (long [])it.next() ;
@@ -421,7 +421,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
       long secondsPerMasterBin = binsPerMasterBin * secPerBin ;
 
 //      say("secPerBin : "+secondsPerMasterBin);
-      
+
       int masterPos = 0 ;
       for( int n = _binDefinition.length ; masterPos < n ; masterPos++ ){
          if( _binDefinition[masterPos].secondsPerBin >= secondsPerMasterBin )break ;
@@ -431,19 +431,19 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
       histogram._secondsPerMasterBin = _binDefinition[masterPos].secondsPerBin ;
       histogram._masterBin           = _binDefinition[masterPos] ;
       histogram._secondsPerBin       = secPerBin ;
-      
+
       return histogram ;
-      
-      
+
+
    }
    private Histogram prepareRestoreManagerHistogram( RestoreHandlerInfo [] info , int binCount){
       return prepareRestoreManagerHistogram(info,binCount,0);
    }
-   private Histogram prepareRestoreManagerHistogram( RestoreHandlerInfo [] info , 
+   private Histogram prepareRestoreManagerHistogram( RestoreHandlerInfo [] info ,
                                        int binCount , int unit ){
-   
+
       Histogram histogram = new Histogram() ;
-      
+
       long now      = System.currentTimeMillis();
       long youngest = now ;
       for( int i = 0 , n = info.length ; i < n ; i++ ){
@@ -482,7 +482,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
       long secondsPerMasterBin = binsPerMasterBin * secPerBin ;
 
       say("secPerBin : "+secondsPerMasterBin);
-      
+
       int masterPos = 0 ;
       for( int n = _binDefinition.length ; masterPos < n ; masterPos++ ){
          if( _binDefinition[masterPos].secondsPerBin >= secondsPerMasterBin )break ;
@@ -492,32 +492,32 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
       histogram._secondsPerMasterBin = _binDefinition[masterPos].secondsPerBin ;
       histogram._masterBin           = _binDefinition[masterPos] ;
       histogram._secondsPerBin       = secPerBin ;
-      
+
       return histogram ;
-      
-      
+
+
    }
    static private int [] _counterDefinition = {
-      1 , 2 , 5 , 10 , 20 , 50 , 100 , 200 , 
-      500 , 1000 , 2000 , 5000 , 10000 
+      1 , 2 , 5 , 10 , 20 , 50 , 100 , 200 ,
+      500 , 1000 , 2000 , 5000 , 10000
    };
    static public void paintComponent( Graphics gin , Dimension d , Histogram histogram , String title ){
 
          Graphics2D g = (Graphics2D) gin ;
-         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, 
+         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                             RenderingHints.VALUE_ANTIALIAS_ON);
-         
+
          g.setColor( Color.black ) ;
-         g.fillRect( 0 , 0 , d.width - 1 , d.height - 1 ) ; 
-         
+         g.fillRect( 0 , 0 , d.width - 1 , d.height - 1 ) ;
+
          if( histogram == null )return ;
 
-	 int fontSize = 12 ;           
+	 int fontSize = 12 ;
          g.setFont( new Font( "Serif" , Font.PLAIN|Font.BOLD , fontSize ) );
 
          FontMetrics fm = g.getFontMetrics() ;
          int fontHeight = fm.getAscent() - fm.getDescent() ;
-         
+
          int [] erray = histogram._displayErray ;
          int [] array = histogram._displayArray ;
          int maxDisplayArray = histogram._maxDisplayArray ;
@@ -543,7 +543,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
          leftMargin += ( maxXLabelPixel + 2 + 4 ) ;
 
 //         int bottomMargin = 10 ;
-         
+
          int baseline = d.height - 10 - fontHeight - 2 - 4 ;
          int height   = baseline - topMargin ;
          //
@@ -569,19 +569,19 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
          //
          // x axis
          //
-         g.drawLine( leftMargin - tickLength , baseline , 
+         g.drawLine( leftMargin - tickLength , baseline ,
                      leftMargin + array.length * pixelsPerBin , baseline ) ;
          //
          // y axis
          //
-         g.drawLine( leftMargin , baseline + tickLength , 
-                     leftMargin , baseline - height - tickLength ) ; 
-         
-         int pixelsPerMasterBin = (int)( 
+         g.drawLine( leftMargin , baseline + tickLength ,
+                     leftMargin , baseline - height - tickLength ) ;
+
+         int pixelsPerMasterBin = (int)(
              (float)histogram._secondsPerMasterBin /
              (float)histogram._secondsPerBin  *
              (float)pixelsPerBin ) ;
-             
+
 //         say("Pixel : perBin : "+pixelsPerBin+
 //                            " , perMaster : "+pixelsPerMasterBin);
          //
@@ -589,51 +589,51 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
          //
          int xoffset = leftMargin + pixelsPerMasterBin ;
          int unitCount = histogram._masterBin.unitCount ;
-         for( int i = 0 , n = array.length * pixelsPerBin ; 
-              xoffset <= n ; 
+         for( int i = 0 , n = array.length * pixelsPerBin ;
+              xoffset <= n ;
               i++ , xoffset += pixelsPerMasterBin ){
-            g.drawLine( xoffset  , baseline-tickLength , 
+            g.drawLine( xoffset  , baseline-tickLength ,
                         xoffset  , baseline+tickLength ) ;
-          
-            String label = ""  + unitCount + 
+
+            String label = ""  + unitCount +
                            " " + histogram._masterBin.unitName ;
-                
-            unitCount += histogram._masterBin.unitCount ; 
-            int stringWidth = fm.stringWidth(label);   
-            g.drawString( label , 
-                          xoffset - stringWidth/2 , 
-                          baseline + tickLength + 2 + fm.getAscent() );   
+
+            unitCount += histogram._masterBin.unitCount ;
+            int stringWidth = fm.stringWidth(label);
+            g.drawString( label ,
+                          xoffset - stringWidth/2 ,
+                          baseline + tickLength + 2 + fm.getAscent() );
          }
-         
+
          //
          // draw y ticks
          //
          int yoff = ybin ;
          for( int i = 0 ; yoff < maxDisplayArray ; i ++ , yoff += ybin ){
             int y = (int)((float)yoff/(float)maxDisplayArray*(float)height);
-            g.drawLine( leftMargin - tickLength , baseline - y , 
-                        leftMargin + tickLength , baseline - y ) ; 
+            g.drawLine( leftMargin - tickLength , baseline - y ,
+                        leftMargin + tickLength , baseline - y ) ;
             String label = ""+yoff ;
-            g.drawString( label , 
+            g.drawString( label ,
                           leftMargin - tickLength - 2 - fm.stringWidth(label)  ,
-                          baseline - y + fontHeight/2) ; 
+                          baseline - y + fontHeight/2) ;
          }
 
-	 for( int n = topMargin - 15 ; n > 0 ; n -= 5 ){ 
+	 for( int n = topMargin - 15 ; n > 0 ; n -= 5 ){
             g.setFont( new Font( "SanSerif" , Font.BOLD|Font.ITALIC , n ) );
             fm = g.getFontMetrics() ;
 	    int length = fm.stringWidth(title) ;
 	    if( length > ( d.width - 20 ) )continue ;
-            g.drawString( title , 
+            g.drawString( title ,
                 	  ( d.width - length ) / 2  ,
-                           fm.getAscent() + 5 ) ; 
+                           fm.getAscent() + 5 ) ;
             break ;
          }
    }
    public static void main( String [] args )throws Exception {
       if( args.length < 3 ){
          System.out.println("Usage : <infile> <outfile> <title> <xsize> <ysize>");
-	 System.exit(4);    
+	 System.exit(4);
       }
       BufferedReader br = new BufferedReader( new FileReader( args[0] ) ) ;
       Dimension dimension = new Dimension(400,300);
@@ -641,17 +641,17 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
          dimension = new Dimension( Integer.parseInt(args[3]) , Integer.parseInt(args[4]) ) ;
       }
       java.util.List list = scanTransferTable(br) ;
-      
+
       Histogram histogram = prepareTransferHistogram( list , 40 , 0L ) ;
        BufferedImage image = new BufferedImage( dimension.width , dimension.height , BufferedImage.TYPE_BYTE_INDEXED ) ;
-       
+
        Graphics graphics = image.getGraphics() ;
        ByteArrayOutputStream outStream = new ByteArrayOutputStream() ;
-       
+
        paintComponent( graphics , dimension, histogram , args[2] ) ;
-           
-       
-       ImageIO.write( image , "png",  new File( args[1] ) ); 
+
+
+       ImageIO.write( image , "png",  new File( args[1] ) );
 
    }
 
