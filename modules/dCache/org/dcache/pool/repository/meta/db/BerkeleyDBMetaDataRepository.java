@@ -73,7 +73,9 @@ public class BerkeleyDBMetaDataRepository
         _dir = new File(directory, DIRECTORY_NAME);
 
         if (!_dir.exists()) {
-            _dir.mkdir();
+            if (!_dir.mkdir()) {
+                throw new FileNotFoundException("Directory does not exist and could not be created: " + _dir);
+            }
         }
 
         _database = new MetaDataRepositoryDatabase(_dir, false);

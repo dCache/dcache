@@ -80,8 +80,7 @@ class MetaDataRepositoryViews
                     out.format("  accesslatency: %s\n", info.getAccessLatency());
                 }
             } catch (Throwable e) {
-                if (error != null)
-                    error.println("Failed to read " + id + ": " + e.getMessage());
+                error.println("Failed to read " + id + ": " + e.getMessage());
             }
         }
         out.flush();

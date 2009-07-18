@@ -15,6 +15,7 @@ import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.EntryState;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
 
@@ -205,12 +206,14 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
             if (!file.exists()) {
                 file.createNewFile();
             }
-        } catch(IOException e) {
-            throw new CacheException("IO error creating: " + file);
+        } catch (IOException e) {
+            throw new DiskErrorCacheException("IO error creating: " + file);
         }
 
         long now = System.currentTimeMillis();
-        file.setLastModified(now);
+        if (!file.setLastModified(now)) {
+            throw new DiskErrorCacheException("Failed to set modification time: " + file);
+        }
         _lastAccess = now;
     }
 
