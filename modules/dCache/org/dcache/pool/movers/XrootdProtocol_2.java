@@ -13,6 +13,7 @@ import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
+import java.util.concurrent.CountDownLatch;
 
 import org.apache.log4j.Logger;
 
@@ -47,7 +48,7 @@ public class XrootdProtocol_2 implements MoverProtocol {
     private long lastTransferred;
     private long transferTime;
     private long bytesTransferred;
-    private Object transferFinishedSync = new Object();
+    private CountDownLatch transferFinishedSync = new CountDownLatch(1);
     private boolean transferSuccessful = false;
     private PhysicalXrootdConnection physicalXrootdConnection;
     private XrootdMoverController controller;
@@ -190,9 +191,7 @@ public class XrootdProtocol_2 implements MoverProtocol {
         setLastTransferred();
 
         //	    gets notfied on transfer finished by xrootd subsystem
-        synchronized (transferFinishedSync) {
-            transferFinishedSync.wait();
-        }
+        transferFinishedSync.await();
 
         //	    end of transfer
         physicalXrootdConnection.closeConnection();
@@ -265,11 +264,9 @@ public class XrootdProtocol_2 implements MoverProtocol {
     }
 
 
-    public void setTransferFinished() {
-
-        synchronized (transferFinishedSync) {
-            transferFinishedSync.notify();
-        }
+    public void setTransferFinished()
+    {
+        transferFinishedSync.countDown();
     }
 
     private void initXrootd(Socket socket) throws IOException{
