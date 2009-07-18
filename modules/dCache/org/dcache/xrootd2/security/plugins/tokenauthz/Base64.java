@@ -50,6 +50,7 @@ package org.dcache.xrootd2.security.plugins.tokenauthz;
  * @version 2.2
  */
 
+import java.io.IOException;
 import org.apache.log4j.Logger;
 
 public class Base64
@@ -352,10 +353,10 @@ public class Base64
             }   // end catch
         finally
             {
-                try{ oos.close();   } catch( Exception e ){}
-                try{ gzos.close();  } catch( Exception e ){}
-                try{ b64os.close(); } catch( Exception e ){}
-                try{ baos.close();  } catch( Exception e ){}
+                try{ if (oos != null) oos.close();     } catch(IOException e){}
+                try{ if (gzos != null) gzos.close();   } catch(IOException e){}
+                try{ if (b64os != null) b64os.close(); } catch(IOException e){}
+                try{ if (baos != null) baos.close();   } catch(IOException e){}
             }   // end finally
 
         // Return value according to relevant encoding.

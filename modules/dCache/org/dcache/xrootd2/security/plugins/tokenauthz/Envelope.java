@@ -227,10 +227,11 @@ public class Envelope {
 
                     //                                  extract xml substring
                     StringBuffer xmlBody = new StringBuffer(line);
-                    while ( !(line = input.readLine()).equals("</authz>")) {
+
+                    while (!line.equals("</authz>") &&
+                           (line = input.readLine()) != null) {
                         xmlBody.append(line);
                     }
-                    xmlBody.append(line);
 
                     parseBody(xmlBody.toString());
 

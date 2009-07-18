@@ -43,57 +43,62 @@ public class TokenAuthorizationFactory implements AbstractAuthorizationFactory
     {
         LineNumberReader in =
             new LineNumberReader(new FileReader(keystoreFile));
-
-        // reset keystore
-        keystore = new Hashtable();
-
-        // the RSA keyfactory
-        KeyFactory keyFactory = null;
-
         try {
-            // initialise RSA key factory
-            keyFactory = KeyFactory.getInstance("RSA");
-        } catch (NoSuchAlgorithmException e1) {}
+            // reset keystore
+            keystore = new Hashtable();
 
-        String line = null;
-        while ((line = in.readLine()) != null) {
-            StringTokenizer tokenizer = new StringTokenizer(line, " \t");
-
-            String voToken = null;
-            String privKeyToken = null;
-            String pubKeyToken = null;
+            // the RSA keyfactory
+            KeyFactory keyFactory = null;
 
             try {
+                // initialise RSA key factory
+                keyFactory = KeyFactory.getInstance("RSA");
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException("Failed to initialize RSA key factory" +
+                                           e.getMessage());
+            }
 
-                // ignore comment lines and any lines not starting
-                // with the keyword 'KEY'
-                String firstToken = tokenizer.nextToken();
-                if (firstToken.startsWith("#") || !firstToken.equals("KEY")) {
-                    continue;
+            String line = null;
+            while ((line = in.readLine()) != null) {
+                StringTokenizer tokenizer = new StringTokenizer(line, " \t");
+
+                String voToken = null;
+                String privKeyToken = null;
+                String pubKeyToken = null;
+
+                try {
+
+                    // ignore comment lines and any lines not starting
+                    // with the keyword 'KEY'
+                    String firstToken = tokenizer.nextToken();
+                    if (firstToken.startsWith("#") || !firstToken.equals("KEY")) {
+                        continue;
+                    }
+
+                    voToken = tokenizer.nextToken();
+                    privKeyToken = tokenizer.nextToken();
+                    pubKeyToken = tokenizer.nextToken();
+
+                } catch (NoSuchElementException e) {
+                    throw new ParseException("line no " + (in.getLineNumber()) +
+                                             " : invalid format");
                 }
 
-                voToken = tokenizer.nextToken();
-                privKeyToken = tokenizer.nextToken();
-                pubKeyToken = tokenizer.nextToken();
+                if (!(voToken.startsWith("VO:") &&
+                      privKeyToken.startsWith("PRIVKEY:") &&
+                      pubKeyToken.startsWith("PUBKEY:"))) {
+                    throw new ParseException("line no " + (in.getLineNumber()) +
+                                             " : invalid format");
+                }
 
-            } catch (NoSuchElementException e) {
-                throw new ParseException("line no " + (in.getLineNumber()) +
-                                         " : invalid format");
+
+                keystore.put(voToken.substring(voToken.indexOf(':') + 1),
+                             loadKeyPair(privKeyToken.substring(privKeyToken.indexOf(':') + 1),
+                                         pubKeyToken.substring(pubKeyToken.indexOf(':') + 1), keyFactory));
             }
-
-            if (!(voToken.startsWith("VO:") &&
-                  privKeyToken.startsWith("PRIVKEY:") &&
-                  pubKeyToken.startsWith("PUBKEY:"))) {
-                throw new ParseException("line no " + (in.getLineNumber()) +
-                                         " : invalid format");
-            }
-
-
-            keystore.put(voToken.substring(voToken.indexOf(':') + 1),
-                         loadKeyPair(privKeyToken.substring(privKeyToken.indexOf(':') + 1),
-                                     pubKeyToken.substring(pubKeyToken.indexOf(':') + 1), keyFactory));
+        } finally {
+            in.close();
         }
-
     }
 
     private KeyPair loadKeyPair(String privKeyFileName, String pubKeyFileName,
