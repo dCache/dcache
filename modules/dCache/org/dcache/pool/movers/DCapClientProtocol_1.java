@@ -190,7 +190,9 @@ public class DCapClientProtocol_1 implements MoverProtocol
 
 
          int challengeSize = in.readInt() ;
-         in.skipBytes(challengeSize) ;
+         while (challengeSize > 0) {
+             challengeSize -= in.skipBytes(challengeSize);
+         }
 
 
          say("<gettingFilesize>") ;
