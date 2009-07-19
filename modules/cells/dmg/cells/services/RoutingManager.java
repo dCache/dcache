@@ -75,7 +75,7 @@ public class RoutingManager
                                              "*@"+domain,
                                              CellRoute.WELLKNOWN));
         } catch (IllegalArgumentException e) {
-            esay("Couldn't add wellknown route : " + e);
+            esay("Couldn't add wellknown route : " + e.getMessage());
         }
     }
 
@@ -88,7 +88,7 @@ public class RoutingManager
                                                 "*@"+domain,
                                                 CellRoute.WELLKNOWN));
         } catch (IllegalArgumentException e) {
-            esay("Couldn't delete wellknown route : " + e);
+            esay("Couldn't delete wellknown route : " + e.getMessage());
         }
     }
 
@@ -228,7 +228,7 @@ public class RoutingManager
                                        CellRoute.DEFAULT);
                     _nucleus.routeAdd(defRoute);
                 } catch (IllegalArgumentException e) {
-                    esay("Couldn't add default route : " + e);
+                    esay("Couldn't add default route : " + e.getMessage());
                 }
             } else {
                 //
@@ -269,7 +269,7 @@ public class RoutingManager
         }
     }
 
-    public String ac_update(Args args) throws Exception
+    public String ac_update(Args args)
     {
         updateUpstream();
         return "Done";
