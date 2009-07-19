@@ -629,13 +629,15 @@ public class   CellAdapter
         printWriter.println(" CellClass : "+this.getClass().getName());
         printWriter.println(" Arguments : "+_args);
     }
-    public CellVersion getCellVersion() {
+    public CellVersion getCellVersion()
+    {
         String pv = null;
-        try {
-            Package p = Package.getPackage("dmg.cells.nucleus");
-            if (p != null)pv = p.getSpecificationVersion();
-        } catch (Exception ee) {}
-        return new CellVersion(pv == null ? "cells" : pv, "CA-$Revision: 1.28 $");
+        Package p = Package.getPackage("dmg.cells.nucleus");
+        if (p != null) {
+            pv = p.getSpecificationVersion();
+        }
+        return new CellVersion((pv == null) ? "cells" : pv,
+                               "CA-$Revision: 1.28 $");
     }
     public CellInfo getCellInfo() { return _nucleus.getCellInfo(); }
     /**
