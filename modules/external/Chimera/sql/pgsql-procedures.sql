@@ -34,7 +34,7 @@ DECLARE
     link varchar;
 BEGIN
     FOR i IN 1..array_upper(elements,1) LOOP
-        SELECT dir.ipnfsid, inode.itype INTO STRICT child, itype FROM t_dirs dir, t_inodes inode WHERE dir.ipnfsid = inode.ipnfsid AND dir.iparent=id AND dir.iname=elements[i];
+        SELECT dir.ipnfsid, inode.itype INTO child, itype FROM t_dirs dir, t_inodes inode WHERE dir.ipnfsid = inode.ipnfsid AND dir.iparent=id AND dir.iname=elements[i];
         IF itype=40960 THEN
            SELECT ifiledata INTO link FROM t_inodes_data WHERE ipnfsid=child;
            IF link LIKE '/%' THEN
@@ -44,12 +44,12 @@ BEGIN
               child := path2inode(id, link);
            END IF;
         END IF;
+        IF child IS NULL THEN
+           RETURN NULL;
+        END IF;
         id := child;
     END LOOP;
     RETURN id;
-EXCEPTION
-    WHEN NO_DATA_FOUND THEN
-        RETURN NULL;
 END;
 $$ LANGUAGE plpgsql; 
 
