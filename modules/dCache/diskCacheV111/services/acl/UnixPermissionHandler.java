@@ -15,7 +15,7 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PnfsId;
-import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellEndpoint;
 
 /**
  * UnixPermissionHandler
@@ -27,7 +27,7 @@ public class UnixPermissionHandler extends AbstractPermissionHandler {
 
     private static final Logger _logger = Logger.getLogger("logger.org.dcache.authorization." + UnixPermissionHandler.class.getName());
 
-    public UnixPermissionHandler(CellAdapter cell) throws ACLException {
+    public UnixPermissionHandler(CellEndpoint cell) throws ACLException {
         super(cell);
     }
 

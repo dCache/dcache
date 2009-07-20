@@ -6,17 +6,17 @@ import diskCacheV111.util.FileMetaDataX;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
-import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellPath;
 
 public class PnfsManagerFileMetaDataSource implements FileMetaDataSource {
 
 
-	private final CellAdapter _cell ;
+	private final CellEndpoint _cell ;
 	private static final int __pnfsTimeout = 5 * 60 * 1000 ;
 	private final PnfsHandler _handler;
 
-	public PnfsManagerFileMetaDataSource(CellAdapter cell) {
+	public PnfsManagerFileMetaDataSource(CellEndpoint cell) {
 		_cell = cell;
 		String pnfsManager = _cell.getArgs().getOpt("pnfsManager");
 		if(pnfsManager == null ) {

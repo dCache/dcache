@@ -13,7 +13,7 @@ import org.dcache.acl.enums.FileAttribute;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
-import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellEndpoint;
 
 /**
  * This class implements interface PermissionHandler.
@@ -39,7 +39,7 @@ public class DelegatingPermissionHandler implements PermissionHandler {
 
     private final PermissionHandler[] permHandlers;
 
-    public DelegatingPermissionHandler(CellAdapter cell) throws ACLException {
+    public DelegatingPermissionHandler(CellEndpoint cell) throws ACLException {
         String config = cell.getArgs().getOpt("permission-handler");
         if (config == null || (config = config.trim()).length() == 0)
             throw new ACLException("Initialize Permission Handler failed: Argument 'config' is " + (config == null ? "NULL" : "Empty"));
@@ -48,7 +48,7 @@ public class DelegatingPermissionHandler implements PermissionHandler {
         if (cell == null)
             throw new ACLException("Initialize Permission Handler failed: Argument 'cell' is NULL.");
 
-        Class<?>[] argClass = { CellAdapter.class };
+        Class<?>[] argClass = { CellEndpoint.class };
         Object[] initargs = { cell };
 
         String[] classNames = config.split(DELIMITER);

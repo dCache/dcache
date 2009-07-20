@@ -13,7 +13,7 @@ import diskCacheV111.services.FileMetaDataSource;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
-import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellPath;
 import dmg.util.Args;
 
@@ -33,7 +33,7 @@ public abstract class AbstractPermissionHandler implements PermissionHandler {
 
     protected final PnfsHandler _pnfsHandler;
 
-    protected AbstractPermissionHandler(CellAdapter cell) throws ACLException {
+    protected AbstractPermissionHandler(CellEndpoint cell) throws ACLException {
         if (cell == null)
             throw new ACLException("Initialize Permission Handler failed: Argument 'cell' is NULL.");
 
@@ -44,7 +44,7 @@ public abstract class AbstractPermissionHandler implements PermissionHandler {
             metadataProvider = "diskCacheV111.services.PnfsManagerFileMetaDataSource";
 
             _logger.debug("Loading metadata provider: " + metadataProvider);
-            Class<?>[] argClass = { CellAdapter.class };
+            Class<?>[] argClass = { CellEndpoint.class };
             Constructor<?> constructor = Class.forName(metadataProvider).getConstructor(argClass);
             Object[] init_args = { cell };
             _metadataSource = (FileMetaDataSource) constructor.newInstance(init_args);

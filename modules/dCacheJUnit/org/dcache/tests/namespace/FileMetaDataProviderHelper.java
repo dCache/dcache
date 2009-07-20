@@ -9,7 +9,7 @@ import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.FileMetaDataX;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PnfsId;
-import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellEndpoint;
 
 /**
 *
@@ -25,7 +25,7 @@ public class FileMetaDataProviderHelper implements FileMetaDataSource {
         private static final Map<PnfsId, FileMetaDataX> _metadataXById = new HashMap<PnfsId, FileMetaDataX>();
         private static final Map<String, FileMetaDataX> _metadataXByPath = new HashMap<String, FileMetaDataX>();
 
-        public FileMetaDataProviderHelper(CellAdapter cell) {
+        public FileMetaDataProviderHelper(CellEndpoint cell) {
         	// forced by use in dcache .batch files
         }
         

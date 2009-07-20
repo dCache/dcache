@@ -23,7 +23,7 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PnfsId;
-import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellEndpoint;
 import dmg.util.Args;
 
 /**
@@ -36,7 +36,7 @@ public class ACLPermissionHandler extends AbstractPermissionHandler {
 
     private static final Logger _logger = Logger.getLogger("logger.org.dcache.authorization." + ACLPermissionHandler.class.getName());
 
-    public ACLPermissionHandler(CellAdapter cell) throws ACLException {
+    public ACLPermissionHandler(CellEndpoint cell) throws ACLException {
         super(cell);
         if (AclHandler.getAclConfig() == null){
            Args args = cell.getArgs();
