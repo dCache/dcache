@@ -109,7 +109,7 @@ public class PerformanceTest extends Thread
             try {
                 PnfsId id = provider.pathToPnfsid(path, true);
                 if (lookupStorageInfo) {
-                    ((StorageInfoProvider)provider).getStorageInfo(id);
+                    provider.getStorageInfo(id);
                 } else if (lookupFileMetaData) {
                     provider.getFileMetaData(id);
                 }

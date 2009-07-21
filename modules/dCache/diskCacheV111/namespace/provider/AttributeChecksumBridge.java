@@ -18,8 +18,9 @@ public class AttributeChecksumBridge {
       _nameSpaceProvider = nameSpaceProvider;
    }
 
-   public String getChecksum(PnfsId pnfsId,int checksumType) throws Exception {
-
+   public String getChecksum(PnfsId pnfsId,int checksumType)
+       throws CacheException
+   {
       if ( checksumType == Checksum.MD5 || checksumType == Checksum.ADLER32 ){
         // look into "c" flag
         String flagValue = (String)_nameSpaceProvider.getFileAttribute(pnfsId, "c");
@@ -32,8 +33,9 @@ public class AttributeChecksumBridge {
       return new ChecksumCollection((String)_nameSpaceProvider.getFileAttribute(pnfsId, CHECKSUM_COLLECTION_FLAG),true).get(checksumType);
    }
 
-   public Set<org.dcache.util.Checksum> getChecksums(PnfsId pnfsId) throws Exception {
-
+   public Set<org.dcache.util.Checksum> getChecksums(PnfsId pnfsId)
+       throws CacheException
+    {
         String flagValue = (String)_nameSpaceProvider.getFileAttribute(pnfsId, "c");
         ChecksumCollection collection = new ChecksumCollection(flagValue);
         flagValue = (String)_nameSpaceProvider.getFileAttribute(pnfsId,
@@ -44,8 +46,9 @@ public class AttributeChecksumBridge {
    }
 
 
-   public void setChecksum(PnfsId pnfsId,String value,int checksumType) throws Exception {
-
+   public void setChecksum(PnfsId pnfsId,String value,int checksumType)
+       throws CacheException
+    {
       // alder32 is always stored where everyone is expecting it to - using c flag
       // the other types are packed into list which serizalized value is managed under CHECKSUM_COLLECTION_FLAG
       if ( checksumType == Checksum.ADLER32 ){
@@ -90,11 +93,13 @@ public class AttributeChecksumBridge {
       setFileAttribute(pnfsId, CHECKSUM_COLLECTION_FLAG, flagValue);
    }
 
-   public void removeChecksum(PnfsId pnfsId, int type) throws Exception {
+   public void removeChecksum(PnfsId pnfsId, int type)
+       throws CacheException
+   {
      setChecksum(pnfsId,null,type);
    }
 
-   public int[] types(PnfsId pnfsId) throws Exception {
+   public int[] types(PnfsId pnfsId) throws CacheException {
      String flagValue = (String)_nameSpaceProvider.getFileAttribute(pnfsId, "c");
      ChecksumCollection collectionA = new ChecksumCollection(flagValue);
 
@@ -106,13 +111,14 @@ public class AttributeChecksumBridge {
      return collectionA.types();
    }
 
-   private void setFileAttribute(PnfsId pnfsId, String attrName, String value ) {
-         if(value != null && value.length() >0) {
+    private void setFileAttribute(PnfsId pnfsId, String attrName, String value )
+        throws CacheException
+    {
+        if(value != null && value.length() >0) {
             _nameSpaceProvider.setFileAttribute(pnfsId, attrName, value);
-         } else {
-             _nameSpaceProvider.removeFileAttribute(pnfsId,attrName);
-         }
-   }
-
+        } else {
+            _nameSpaceProvider.removeFileAttribute(pnfsId,attrName);
+        }
+    }
 }
 

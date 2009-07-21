@@ -18,22 +18,22 @@ import java.util.*;
 import java.io.*;
 
 public class FilesystemNameSpaceProvider extends BasicNameSpaceProvider {
-    
-    
-    
+
+
+
     private File   _db       = null ;
     private CellNucleus _nucleus = null ;
-    
+
     public FilesystemNameSpaceProvider(Args args, CellNucleus nucleus) throws Exception {
         super( args, nucleus);
-        _nucleus = nucleus ;    
+        _nucleus = nucleus ;
         try{
         String dbString = args.getOpt("dbURL");
-        
+
         if( dbString == null )
              throw new
              IllegalArgumentException("dbURL not specified");
-        
+
         _db = new File( dbString );
         if( ! _db.isDirectory() )
             throw new
@@ -41,14 +41,14 @@ public class FilesystemNameSpaceProvider extends BasicNameSpaceProvider {
         }catch(Exception e){
             nucleus.say("Problem in FilesystemNameSpaceProvider : "+e);
         }
-        
+
     }
-       
+
     private Set<String> loadCacheLocations( PnfsId pnfsId ) throws IOException {
         File    pnfs = new File( _db ,  pnfsId.toString() ) ;
         HashSet<String> set  = new HashSet<String>() ;
         if( ! pnfs.exists() )return set ;
-        
+
         BufferedReader br = new BufferedReader( new FileReader( pnfs ) ) ;
         try{
              String line = null ;
@@ -67,68 +67,61 @@ public class FilesystemNameSpaceProvider extends BasicNameSpaceProvider {
         if( set.size() == 0 ){pnfs.delete() ; return ; }
         PrintWriter pw = new PrintWriter( new FileWriter( pnfs ) ) ;
         try{
-           
+
             for( String name:  set ){
 
                 pw.println(name);
                 _nucleus.say("Adding "+name+" to "+pnfs.toString());
             }
-            
-            
+
+
         }finally{
             try{ pw.close() ; }catch(Exception ee ){}
         }
     }
-    public void addCacheLocation(PnfsId pnfsId, String cacheLocation) {
-        
-        
+
+    public void addCacheLocation(PnfsId pnfsId, String cacheLocation)
+        throws CacheException
+    {
         try {
-    
            cacheLocation = cacheLocation.trim() ;
            Set<String> set = loadCacheLocations(pnfsId);
            set.add( cacheLocation);
            storeCacheLocations(pnfsId,set);
-           
-        }catch( Exception e) {
-            e.printStackTrace();
-        }
-        
-    }
-    
-    public void clearCacheLocation(PnfsId pnfsId, String cacheLocation, boolean removeIfLast) throws Exception {
-        
-        try {
-            
-           cacheLocation = cacheLocation.trim() ;
-           Set<String> set = loadCacheLocations(pnfsId);
-           set.remove( cacheLocation);
-           storeCacheLocations(pnfsId,set);
-           
-        }catch( Exception e) {
-            e.printStackTrace();
-          
+        } catch (IOException e) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     e.getMessage());
         }
     }
-    
-    public List<String> getCacheLocation(PnfsId pnfsId) throws Exception{
-        
-        
-        try {
-            
-            List<String> locations = new Vector<String>( loadCacheLocations(pnfsId) ) ;
-            return locations;
 
-        }catch( Exception e) {
-            e.printStackTrace();
-            throw e ;
+    public void clearCacheLocation(PnfsId pnfsId, String cacheLocation, boolean removeIfLast)
+        throws CacheException
+    {
+        try {
+            cacheLocation = cacheLocation.trim() ;
+            Set<String> set = loadCacheLocations(pnfsId);
+            set.remove( cacheLocation);
+            storeCacheLocations(pnfsId,set);
+        } catch (IOException e) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     e.getMessage());
         }
-        
     }
-        
+
+    public List<String> getCacheLocation(PnfsId pnfsId) throws CacheException
+    {
+        try {
+            return new Vector<String>( loadCacheLocations(pnfsId) ) ;
+        } catch (IOException e) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     e.getMessage());
+        }
+    }
+
     public String toString() {
-        
+
         return "$Id: FilesystemNameSpaceProvider.java,v 1.3 2007-05-24 13:51:13 tigran Exp $";
-        
+
     }
-   
+
 }

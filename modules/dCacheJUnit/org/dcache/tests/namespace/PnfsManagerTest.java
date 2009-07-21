@@ -25,7 +25,7 @@ import org.dcache.chimera.posix.Stat;
 import org.dcache.tests.cells.CellAdapterHelper;
 
 import diskCacheV111.namespace.PnfsManagerV3;
-import diskCacheV111.namespace.StorageInfoProvider;
+import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
@@ -371,14 +371,14 @@ public class PnfsManagerTest {
 
         PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/tapeFile");
         _pnfsManager.createEntry(pnfsCreateEntryMessage);
-        
+
         StorageInfo si = pnfsCreateEntryMessage.getStorageInfo();
 
         si.addLocation(new URI("osm://osm?tape"));
         si.isSetAddLocation(true);
 
         PnfsSetStorageInfoMessage setStorageInfoMessage =
-            new PnfsSetStorageInfoMessage(pnfsCreateEntryMessage.getPnfsId(), si, StorageInfoProvider.SI_APPEND);
+            new PnfsSetStorageInfoMessage(pnfsCreateEntryMessage.getPnfsId(), si, NameSpaceProvider.SI_APPEND);
 
         _pnfsManager.setStorageInfo(setStorageInfoMessage);
 
@@ -402,7 +402,7 @@ public class PnfsManagerTest {
         si.isSetAddLocation(true);
 
         PnfsSetStorageInfoMessage setStorageInfoMessage =
-            new PnfsSetStorageInfoMessage(pnfsCreateEntryMessage.getPnfsId(), si, StorageInfoProvider.SI_APPEND);
+            new PnfsSetStorageInfoMessage(pnfsCreateEntryMessage.getPnfsId(), si, NameSpaceProvider.SI_APPEND);
 
         _pnfsManager.setStorageInfo(setStorageInfoMessage);
 
@@ -410,7 +410,7 @@ public class PnfsManagerTest {
         si.isSetAddLocation(true);
 
         setStorageInfoMessage =
-            new PnfsSetStorageInfoMessage(pnfsCreateEntryMessage.getPnfsId(), si, StorageInfoProvider.SI_APPEND);
+            new PnfsSetStorageInfoMessage(pnfsCreateEntryMessage.getPnfsId(), si, NameSpaceProvider.SI_APPEND);
 
         _pnfsManager.setStorageInfo(setStorageInfoMessage);
         assertEquals("failed to add second tape locatgion", 0,setStorageInfoMessage.getReturnCode() );

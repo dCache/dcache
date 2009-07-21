@@ -57,8 +57,8 @@ public class PnfsManagerV3 extends CellAdapter {
     private boolean      _canFold = false;
 
     private final NameSpaceProvider     _nameSpaceProvider;
-    private final CacheLocationProvider _cacheLocationProvider;
-    private final StorageInfoProvider   _storageInfoProvider;
+    private final NameSpaceProvider _cacheLocationProvider;
+    private final NameSpaceProvider   _storageInfoProvider;
     private final static String defaultNameSpaceProvider      = "diskCacheV111.namespace.provider.BasicNameSpaceProviderFactory";
     private final static String defaultCacheLocationProvider  = "diskCacheV111.namespace.provider.BasicNameSpaceProviderFactory";
     private final static String defaultStorageInfoProvider    = "diskCacheV111.namespace.provider.BasicNameSpaceProviderFactory";
@@ -202,7 +202,7 @@ public class PnfsManagerV3 extends CellAdapter {
 
             say("CacheLocation provider: " + cacheLocation_provider);
             DcacheNameSpaceProviderFactory cacheLocationProviderFactory = (DcacheNameSpaceProviderFactory) Class.forName(cacheLocation_provider).newInstance();
-            _cacheLocationProvider = (CacheLocationProvider)cacheLocationProviderFactory.getProvider(_args, _nucleus);
+            _cacheLocationProvider = cacheLocationProviderFactory.getProvider(_args, _nucleus);
 
 
             String storageInfo_provider = _args.getOpt("storageinfo-provider") ;
@@ -212,7 +212,7 @@ public class PnfsManagerV3 extends CellAdapter {
 
             say("StorageInfo provider: " + storageInfo_provider);
             DcacheNameSpaceProviderFactory storageInfoProviderFactory = (DcacheNameSpaceProviderFactory) Class.forName(storageInfo_provider).newInstance();
-            _storageInfoProvider = (StorageInfoProvider)storageInfoProviderFactory.getProvider(_args, _nucleus);
+            _storageInfoProvider = storageInfoProviderFactory.getProvider(_args, _nucleus);
 
             String queueMaxSizeOption = _args.getOpt("queueMaxSize");
             int queueMaxSize =  queueMaxSizeOption == null ? 0 : Integer.parseInt(queueMaxSizeOption);
@@ -436,7 +436,7 @@ public class PnfsManagerV3 extends CellAdapter {
                 if( !al.equals(storageInfo.getAccessLatency()) ) {
                     storageInfo.setAccessLatency(al);
                     storageInfo.isSetAccessLatency(true);
-                    _storageInfoProvider.setStorageInfo(pnfsId, storageInfo, StorageInfoProvider.SI_OVERWRITE);
+                    _storageInfoProvider.setStorageInfo(pnfsId, storageInfo, NameSpaceProvider.SI_OVERWRITE);
 
                     // get list of known locations and modify sticky flag
                     List<String> locations = _cacheLocationProvider.getCacheLocation(pnfsId);
@@ -1021,7 +1021,7 @@ public class PnfsManagerV3 extends CellAdapter {
                  */
                 info.isSetAccessLatency(true);
                 info.isSetRetentionPolicy(true);
-                _storageInfoProvider.setStorageInfo(pnfsId, info, StorageInfoProvider.SI_OVERWRITE);
+                _storageInfoProvider.setStorageInfo(pnfsId, info, NameSpaceProvider.SI_OVERWRITE);
 
                 info.isSetAccessLatency(false);
                 info.isSetRetentionPolicy(false);
@@ -1678,7 +1678,7 @@ public class PnfsManagerV3 extends CellAdapter {
 
 		try {
 
-		    _storageInfoProvider.setStorageInfo(pnfsMessage.getPnfsId(), pnfsMessage.getStorageInfo(), StorageInfoProvider.SI_APPEND);
+		    _storageInfoProvider.setStorageInfo(pnfsMessage.getPnfsId(), pnfsMessage.getStorageInfo(), NameSpaceProvider.SI_APPEND);
 
 		}catch(CacheException ce) {
 			pnfsMessage.setFailed( ce.getRc() , ce.getMessage() ) ;

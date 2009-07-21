@@ -3,19 +3,19 @@
  */
 package diskCacheV111.namespace.provider;
 
-import diskCacheV111.namespace.DcacheNameSpaceProvider;
+import diskCacheV111.namespace.NameSpaceProvider;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.util.Args;
 
 public class BasicNameSpaceProviderFactory extends DcacheNameSpaceProviderFactory {
 
     static private BasicNameSpaceProvider provider = null;
-    
-    public synchronized DcacheNameSpaceProvider getProvider(Args args, CellNucleus nucleus) throws Exception {               
-        
+
+    public synchronized NameSpaceProvider getProvider(Args args, CellNucleus nucleus) throws Exception {
+
         if ( provider == null ) {
             provider = new BasicNameSpaceProvider(args, nucleus);
         }
         return provider;
-    }        
+    }
 }

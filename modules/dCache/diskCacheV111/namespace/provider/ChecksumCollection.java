@@ -10,19 +10,21 @@ import org.dcache.util.*;
 
 
 public class ChecksumCollection {
-    
+
     private static  final String CHECKSUM_DELIMITER=",";
     private boolean useStringKey ;
-    
-    public ChecksumCollection(String rep) throws Exception {
+
+    public ChecksumCollection(String rep) throws CacheException {
         this(rep, false);
     }
 
-    public ChecksumCollection(String rep, boolean useStringKey) throws Exception {
+    public ChecksumCollection(String rep, boolean useStringKey)
+        throws CacheException
+    {
       this.useStringKey = useStringKey;
       if ( rep != null ) parseRep(rep);
     }
-    
+
     private void parseRep(String rep) throws CacheException {
       StringTokenizer st = new StringTokenizer(rep,CHECKSUM_DELIMITER);
 
@@ -60,7 +62,7 @@ public class ChecksumCollection {
 
       int [] result =  new int[_map.size()];
 
-      int index = 0; 
+      int index = 0;
       for(Iterator<Map.Entry<Integer,String>> i = _map.entrySet().iterator();
          i.hasNext(); ){
          result[index] = i.next().getKey().intValue();
@@ -72,7 +74,7 @@ public class ChecksumCollection {
    public String serialize(){
      StringBuffer result = new StringBuffer();
      int mod = 0;
-     for(Iterator<Map.Entry<Integer,String>> i = _map.entrySet().iterator(); 
+     for(Iterator<Map.Entry<Integer,String>> i = _map.entrySet().iterator();
          i.hasNext(); ){
 
        Map.Entry<Integer,String> el = i.next();
@@ -87,14 +89,14 @@ public class ChecksumCollection {
           result.append(key).append(":").append(el.getValue()).append(CHECKSUM_DELIMITER);
           mod = CHECKSUM_DELIMITER.length();
        }
-     } 
+     }
      return result.substring(0,result.length()-mod);
    }
-   
+
    public Set<Checksum> getChecksums(){
      Set<Checksum> checksums = new HashSet<Checksum>();
      int mod = 0;
-     for(Iterator<Map.Entry<Integer,String>> i = _map.entrySet().iterator(); 
+     for(Iterator<Map.Entry<Integer,String>> i = _map.entrySet().iterator();
          i.hasNext(); ){
 
        Map.Entry<Integer,String> el = i.next();
@@ -102,11 +104,11 @@ public class ChecksumCollection {
       ChecksumType cksmtype = ChecksumType.getChecksumType(el.getKey());
       Checksum chksm = new Checksum(cksmtype,value);
       checksums.add(chksm);
-     } 
-     
+     }
+
      return checksums;
    }
-   
+
 
    private static int typeStoN(String typeName) throws CacheException {
       try {
@@ -126,8 +128,8 @@ public class ChecksumCollection {
 
 
    private Map<Integer,String> _map = new HashMap<Integer,String>();
-   
-   
+
+
   public static final Set<Checksum> extractChecksums(StorageInfo storageInfo) throws Exception{
       Map<Integer,String> cksumMap = new HashMap();
       String ckey = storageInfo.getKey("flag-c");
@@ -135,7 +137,7 @@ public class ChecksumCollection {
       ChecksumCollection collection = new ChecksumCollection(ckey);
       ChecksumCollection uccollection = new ChecksumCollection(uckey,true);
       collection.add(uccollection);
-      
+
       return collection.getChecksums();
   }
 

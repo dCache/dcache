@@ -1,6 +1,7 @@
 package org.dcache.tests.namespace;
 
 import diskCacheV111.namespace.NameSpaceProvider;
+import diskCacheV111.namespace.AbstractNameSpaceProvider;
 import diskCacheV111.namespace.provider.AttributeChecksumBridge;
 import diskCacheV111.util.Checksum;
 import diskCacheV111.util.FileMetaData;
@@ -58,41 +59,9 @@ public class AttributeChecksumBridgeTest {
         assertEquals("check sum mismatch", md5Sum, _mgr.getChecksum(null, Checksum.MD5));
     }
 
-    class MyFakeNameSpaceProvider implements NameSpaceProvider {
-
+    class MyFakeNameSpaceProvider extends AbstractNameSpaceProvider
+    {
         private Map<String, Object> _map = new HashMap<String, Object>();
-
-        public void setFileMetaData(PnfsId pnfsId, FileMetaData metaData) {
-        }
-
-        public FileMetaData getFileMetaData(PnfsId pnfsId) throws Exception {
-            return null;
-        }
-
-        public PnfsId createEntry(String name, FileMetaData metaData, boolean checksumType) throws Exception {
-            return null;
-        }
-
-        public void deleteEntry(PnfsId pnfsId) throws Exception {
-        }
-
-        public void deleteEntry(String path) throws Exception {
-        }
-
-        public void renameEntry(PnfsId pnfsId, String newName) throws Exception {
-        }
-
-        public String pnfsidToPath(PnfsId pnfsId) throws Exception {
-            return null;
-        }
-
-        public PnfsId pathToPnfsid(String path, boolean followLinks) throws Exception {
-            return null;
-        }
-
-        public String[] getFileAttributeList(PnfsId pnfsId) {
-            return null;
-        }
 
         public Object getFileAttribute(PnfsId pnfsId, String attribute) {
             Object result = _map.get(attribute);
@@ -105,31 +74,6 @@ public class AttributeChecksumBridgeTest {
 
         public void setFileAttribute(PnfsId pnfsId, String attribute, Object data) {
             _map.put(attribute, data);
-        }
-
-        public void setLevelData(PnfsId pnfsId, Map<Integer, String> levelData) throws Exception {
-        }
-
-        public void addChecksum(PnfsId pnfsId, int type, String value) throws Exception {
-        }
-
-        public String getChecksum(PnfsId pnfsId, int type) throws Exception {
-            return null;
-        }
-
-        public void removeChecksum(PnfsId pnfsId, int type) throws Exception {
-        }
-
-        public int[] listChecksumTypes(PnfsId pnfsId) throws Exception {
-            return null;
-        }
-
-        public Set<org.dcache.util.Checksum> getChecksums(PnfsId pnfsId) throws Exception {
-            return null;
-        }
-
-        public PnfsId getParentOf(PnfsId pnfsId) {
-            return null;
         }
     }
 }

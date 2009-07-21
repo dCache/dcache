@@ -7,7 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 
-import diskCacheV111.namespace.StorageInfoProvider;
+import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.vehicles.StorageInfo;
 
 /**
@@ -90,14 +90,14 @@ public class OpaqueStorageInfoExtractor extends OsmInfoExtractor {
 
         // Silently ignore attempts to store StorageInfo object, unless such access is prohibited.
         switch( accessMode ) {
-        case  StorageInfoProvider.SI_EXCLUSIVE :
+        case  NameSpaceProvider.SI_EXCLUSIVE :
             File levelFile = pnfsFile.getLevelFile( _pnfsLevel);
             if( levelFile.length() > 0 )
                 throw new CacheException( 38 , "File already exits (can't overwrite mode=0)" );
             break;
 
-        case StorageInfoProvider.SI_APPEND :
-        case StorageInfoProvider.SI_OVERWRITE :
+        case NameSpaceProvider.SI_APPEND :
+        case NameSpaceProvider.SI_OVERWRITE :
             // Silently ignore requests to write metadata.
             break;
 

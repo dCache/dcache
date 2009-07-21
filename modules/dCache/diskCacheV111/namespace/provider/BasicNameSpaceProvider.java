@@ -21,9 +21,7 @@ import java.util.StringTokenizer;
 import org.apache.log4j.Logger;
 import org.dcache.util.Checksum;
 
-import diskCacheV111.namespace.CacheLocationProvider;
 import diskCacheV111.namespace.NameSpaceProvider;
-import diskCacheV111.namespace.StorageInfoProvider;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileExistsCacheException;
@@ -40,9 +38,9 @@ import diskCacheV111.vehicles.StorageInfo;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.util.Args;
 
-public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoProvider, CacheLocationProvider {
-
-
+public class BasicNameSpaceProvider
+    implements NameSpaceProvider
+{
     private final String            _mountPoint ;
     private final CellNucleus       _nucleus;
     private final List<VirtualMountPoint>              _virtualMountPoints ;
@@ -183,8 +181,9 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
         }
     }
 
-    public void addCacheLocation(PnfsId pnfsId, String cacheLocation) {
-
+    public void addCacheLocation(PnfsId pnfsId, String cacheLocation)
+        throws CacheException
+    {
         if (_logNameSpace.isDebugEnabled()) {
             _logNameSpace.debug("add cache location " + cacheLocation + " for "
                     + pnfsId);
@@ -194,13 +193,14 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
             CacheInfo ci = new CacheInfo(pf);
             ci.addCacheLocation( cacheLocation);
             ci.writeCacheInfo(pf);
-        } catch (Exception e){
+        } catch (IOException e){
             _logNameSpace.error("Exception in addCacheLocation "+e);
-            //no reply to this message
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     e.getMessage());
         }
     }
 
-    public void clearCacheLocation(PnfsId pnfsId, String cacheLocation, boolean removeIfLast) throws Exception {
+    public void clearCacheLocation(PnfsId pnfsId, String cacheLocation, boolean removeIfLast) throws CacheException {
 
         if (_logNameSpace.isDebugEnabled()) {
             _logNameSpace.debug("clearCacheLocation : " + cacheLocation
@@ -253,7 +253,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
         }
     }
 
-    public PnfsId createEntry(String name, FileMetaData metaData, boolean isDirectory ) throws Exception {
+    public PnfsId createEntry(String name, FileMetaData metaData, boolean isDirectory ) throws CacheException {
 
 
         String globalPath = name;
@@ -315,7 +315,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
         return pf.getPnfsId() ;
     }
 
-    public void deleteEntry(PnfsId pnfsId) throws Exception {
+    public void deleteEntry(PnfsId pnfsId) throws CacheException {
 
         String  pnfsIdPath = this.pnfsidToPath(pnfsId) ;
         _logNameSpace.debug("delete PNFS entry for " + pnfsId );
@@ -323,7 +323,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
         deleteEntry(pnfsIdPath);
     }
 
-    public void deleteEntry(String path) throws Exception {
+    public void deleteEntry(String path) throws CacheException {
 
         boolean rc;
 
@@ -355,23 +355,27 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
         }
     }
 
-    public List<String> getCacheLocation(PnfsId pnfsId) throws Exception{
-
-        PnfsFile pf = _pathManager.getFileByPnfsId( pnfsId );
-        if( pf == null || ! pf.exists() ) {
+    public List<String> getCacheLocation(PnfsId pnfsId) throws CacheException
+    {
+        try {
+            PnfsFile pf = _pathManager.getFileByPnfsId( pnfsId );
+            if( pf == null || ! pf.exists() ) {
         	throw new FileNotFoundCacheException("no such file or directory" + pnfsId.toString() );
-        }
+            }
 
-        CacheInfo ci = new CacheInfo(pf);
-        if (_logNameSpace.isDebugEnabled()) {
-            _logNameSpace.debug("pnfs file = " + pf + " cache info = " + ci);
+            CacheInfo ci = new CacheInfo(pf);
+            if (_logNameSpace.isDebugEnabled()) {
+                _logNameSpace.debug("pnfs file = " + pf + " cache info = " + ci);
+            }
+            return new ArrayList<String>(ci.getCacheLocations());
+        } catch (IOException e) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     e.getMessage());
         }
-        return new ArrayList<String>(ci.getCacheLocations());
-
     }
 
 
-    public FileMetaData getFileMetaData(PnfsId pnfsId) throws Exception {
+    public FileMetaData getFileMetaData(PnfsId pnfsId) throws CacheException {
 
         FileMetaData fileMetaData;
 
@@ -386,7 +390,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
         return fileMetaData;
     }
 
-    public void setFileMetaData(PnfsId pnfsId, FileMetaData metaData) throws Exception {
+    public void setFileMetaData(PnfsId pnfsId, FileMetaData metaData) throws CacheException {
 
         if (metaData.isUserPermissionsSet()) {
 
@@ -434,7 +438,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
 
     }
 
-    public PnfsId pathToPnfsid(String path, boolean followLinks) throws Exception {
+    public PnfsId pathToPnfsid(String path, boolean followLinks) throws CacheException {
 
         PnfsFile pnfsFile = null;
         try {
@@ -454,7 +458,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
     }
 
 
-    public void setStorageInfo(PnfsId pnfsId, StorageInfo storageInfo, int mode) throws Exception {
+    public void setStorageInfo(PnfsId pnfsId, StorageInfo storageInfo, int mode) throws CacheException {
 
 
         _logNameSpace.debug( "setStorageInfo : "+pnfsId ) ;
@@ -491,7 +495,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
         }
     }
 
-    public StorageInfo getStorageInfo(PnfsId pnfsId) throws Exception {
+    public StorageInfo getStorageInfo(PnfsId pnfsId) throws CacheException {
 
         _logNameSpace.debug("getStorageInfo : " + pnfsId);
         File mountpoint = _pathManager.getMountPointByPnfsId(pnfsId);
@@ -626,7 +630,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
     }
 
 
-    public void renameEntry(PnfsId pnfsId, String newName) throws Exception {
+    public void renameEntry(PnfsId pnfsId, String newName) throws CacheException {
 
         File src = new File( _pathManager.globalToLocal( this.pnfsidToPath(pnfsId) ) );
         String localPath = _pathManager.globalToLocal(newName);
@@ -636,26 +640,26 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
         }
     }
 
-    public void addChecksum(PnfsId pnfsId, int type, String value) throws Exception
+    public void addChecksum(PnfsId pnfsId, int type, String value) throws CacheException
     {
         _attChecksumImpl.setChecksum(pnfsId,value,type);
     }
 
-    public String getChecksum(PnfsId pnfsId, int type) throws Exception
+    public String getChecksum(PnfsId pnfsId, int type) throws CacheException
     {
         return _attChecksumImpl.getChecksum(pnfsId,type);
     }
 
-    public Set<Checksum> getChecksums(PnfsId pnfsId) throws Exception {
+    public Set<Checksum> getChecksums(PnfsId pnfsId) throws CacheException {
         return _attChecksumImpl.getChecksums(pnfsId);
     }
 
-    public void removeChecksum(PnfsId pnfsId, int type) throws Exception
+    public void removeChecksum(PnfsId pnfsId, int type) throws CacheException
     {
         _attChecksumImpl.removeChecksum(pnfsId,type);
     }
 
-    public int[] listChecksumTypes(PnfsId pnfsId ) throws Exception
+    public int[] listChecksumTypes(PnfsId pnfsId ) throws CacheException
     {
         return _attChecksumImpl.types(pnfsId);
     }
@@ -785,7 +789,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
 
 
 
-    private FileMetaData getFileMetaData( File mp , PnfsId pnfsId )throws Exception{
+    private FileMetaData getFileMetaData( File mp , PnfsId pnfsId )throws CacheException{
         BufferedReader br = null;
 
         try{
@@ -858,6 +862,9 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
                 throw new FileNotFoundCacheException("no such file or directory " + pnfsId.getId() );
             else
                 throw new CacheException(CacheException.NOT_IN_TRASH, "Not in trash: " + pnfsId.toString());
+        } catch (IOException e) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     e.getMessage());
         }finally{
             if(br != null)try{ br.close() ; }catch(IOException ee){/* too late to react */}
         }
@@ -865,7 +872,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
     }
 
     private void setFileMetaData( File mp , PnfsId pnfsId , int level,  FileMetaData newMetaData)
-    throws Exception {
+    throws CacheException {
 
         String hexTime = Long.toHexString( System.currentTimeMillis() / 1000L ) ;
         int l = hexTime.length() ;
@@ -973,14 +980,18 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
         return mode;
     }
 
-    private void setFileSize( PnfsId pnfsId , long length )throws Exception {
-        PnfsFile pf = _pathManager.getFileByPnfsId( pnfsId );
-        pf.setLength(length);
-        for( int i = 0 ; i < 10 ; i++ ){
-            long size =  pf.length() ;
-            if( size == length )break ;
-            _logNameSpace.debug( "setLength : not yet ... " ) ;
-            Thread.sleep(1000);
+    private void setFileSize( PnfsId pnfsId , long length )throws CacheException {
+        try {
+            PnfsFile pf = _pathManager.getFileByPnfsId( pnfsId );
+            pf.setLength(length);
+            for( int i = 0 ; i < 10 ; i++ ){
+                long size =  pf.length() ;
+                if( size == length )break ;
+                _logNameSpace.debug( "setLength : not yet ... " ) ;
+                Thread.sleep(1000);
+            }
+        } catch (InterruptedException e) {
+            throw new CacheException("Operation interrupted");
         }
     }
 
@@ -1006,7 +1017,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
 
         return sb.toString();
     }
-   private String pathfinder( PnfsId pnfsId ) throws Exception {
+   private String pathfinder( PnfsId pnfsId ) throws CacheException {
        List<String> list = new ArrayList<String>() ;
        String    pnfs = pnfsId.getId() ;
        File mp = _pathManager.getMountPointByPnfsId( pnfsId ) ;
@@ -1031,7 +1042,9 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
        return sb.toString() ;
     }
 
-    private String nameOf( File mp , String pnfsId ) throws Exception {
+    private String nameOf( File mp , String pnfsId )
+        throws IOException
+    {
        File file = new File( mp , ".(nameof)("+pnfsId+")" ) ;
 
        if (_logNameSpace.isInfoEnabled() ) {
@@ -1046,7 +1059,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
           if( br != null) try{ br.close() ; }catch(IOException ee){ /* to late to react */}
        }
     }
-    private String parentOf( File mp , String pnfsId ) throws Exception {
+    private String parentOf( File mp , String pnfsId ) throws IOException {
 
         if (_logNameSpace.isInfoEnabled() ) {
             _logNameSpace.info("parent for pnfsid " + pnfsId);
@@ -1062,9 +1075,14 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
        }
     }
 
-    public PnfsId getParentOf(PnfsId pnfsId) throws Exception
+    public PnfsId getParentOf(PnfsId pnfsId) throws CacheException
     {
-        File mp = _pathManager.getMountPointByPnfsId(pnfsId);
-        return new PnfsId(parentOf(mp, pnfsId.toString()));
+        try {
+            File mp = _pathManager.getMountPointByPnfsId(pnfsId);
+            return new PnfsId(parentOf(mp, pnfsId.toString()));
+        } catch (IOException e) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     e.getMessage());
+        }
     }
 }

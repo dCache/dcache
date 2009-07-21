@@ -9,7 +9,6 @@ import java.io.IOException;
 import org.dcache.chimera.namespace.ChimeraNameSpaceProvider;
 
 import diskCacheV111.namespace.NameSpaceProvider;
-import diskCacheV111.namespace.StorageInfoProvider;
 import diskCacheV111.namespace.provider.BasicNameSpaceProvider;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.PnfsId;
@@ -187,9 +186,9 @@ public class Comparator {
 		NameSpaceProvider pnfsNamespace = new BasicNameSpaceProvider(new Args(
 				pnfsArgs), null);
 
-		StorageInfoProvider chimeraStorageInfoProvider = new ChimeraNameSpaceProvider(
+		NameSpaceProvider chimeraStorageInfoProvider = new ChimeraNameSpaceProvider(
 				new Args(chimeraArgs), null);
-		StorageInfoProvider pnfsStorageInfoProvider = new BasicNameSpaceProvider(
+		NameSpaceProvider pnfsStorageInfoProvider = new BasicNameSpaceProvider(
 				new Args(pnfsArgs), null);
 
 		int idCount = 0, idErrCount = 0;

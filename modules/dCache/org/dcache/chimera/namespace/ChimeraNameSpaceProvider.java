@@ -25,9 +25,7 @@ import org.dcache.chimera.UnixPermission;
 import org.dcache.chimera.XMLconfig;
 import org.dcache.chimera.posix.Stat;
 
-import diskCacheV111.namespace.CacheLocationProvider;
 import diskCacheV111.namespace.NameSpaceProvider;
-import diskCacheV111.namespace.StorageInfoProvider;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
@@ -43,8 +41,9 @@ import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 
 
-public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoProvider, CacheLocationProvider {
-
+public class ChimeraNameSpaceProvider
+    implements NameSpaceProvider
+{
     private final JdbcFs       _fs;
     private final Args         _args;
     private final ChimeraStorageInfoExtractable _extractor;
@@ -165,7 +164,7 @@ public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoP
         return ;
     }
 
-    public FileMetaData getFileMetaData(PnfsId pnfsId) throws Exception {
+    public FileMetaData getFileMetaData(PnfsId pnfsId) throws CacheException {
 
         FsInode inode = new FsInode(_fs, pnfsId.toIdString() );
         Stat stat = null;
@@ -173,6 +172,9 @@ public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoP
             stat = inode.stat();
         }catch(FileNotFoundHimeraFsException fnf) {
             throw new FileNotFoundCacheException(inode.toString());
+        }catch(ChimeraFsException e) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     e.getMessage());
         }
 
         FileMetaData fileMetaData = new FileMetaData(inode.isDirectory(), stat.getUid(), stat.getGid(), stat.getMode() );
@@ -183,7 +185,7 @@ public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoP
         return fileMetaData;
     }
 
-    public PnfsId createEntry(String path,  FileMetaData metaData, boolean isDir ) throws Exception {
+    public PnfsId createEntry(String path,  FileMetaData metaData, boolean isDir ) throws CacheException {
 
 
         FsInode inode = null;
@@ -203,43 +205,68 @@ public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoP
 
         }catch( FileExistsChimeraFsException fee) {
             throw new FileExistsCacheException(path);
+        }catch(ChimeraFsException e) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     e.getMessage());
         }
 
         return new PnfsId(inode.toString());
     }
 
-    public void deleteEntry(PnfsId pnfsId) throws Exception {
-        FsInode inode = new FsInode(_fs, pnfsId.toIdString() );
-        _fs.remove(inode);
-    }
-
-    public void deleteEntry(String path) throws Exception {
-        _fs.remove(path);
-    }
-
-    public void renameEntry(PnfsId pnfsId, String newName) throws Exception {
-
-        FsInode inode = new FsInode(_fs, pnfsId.toIdString());
-        FsInode parentDir = _fs.getParentOf( inode );
-        String path = _fs.inode2path(inode);
-
-        File pathFile = new File(path);
-        String name = pathFile.getName();
-
-
-        File dest = new File(newName);
-        FsInode destDir = null;
-
-        if( dest.getParent().equals( pathFile.getParent()) ) {
-            destDir = parentDir;
-        }else{
-            destDir = _fs.path2inode( dest.getParent() );
+    public void deleteEntry(PnfsId pnfsId) throws CacheException {
+        try {
+            FsInode inode = new FsInode(_fs, pnfsId.toIdString() );
+            _fs.remove(inode);
+        }catch(FileNotFoundHimeraFsException fnf) {
+            throw new FileNotFoundCacheException(pnfsId.toString());
+        }catch(ChimeraFsException e) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     e.getMessage());
         }
-
-        _fs.move(parentDir, name, destDir, dest.getName());
     }
 
-    public void addCacheLocation(PnfsId pnfsId, String cacheLocation) throws Exception {
+    public void deleteEntry(String path) throws CacheException {
+        try {
+            _fs.remove(path);
+        }catch(FileNotFoundHimeraFsException fnf) {
+            throw new FileNotFoundCacheException(path);
+        }catch(ChimeraFsException e) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     e.getMessage());
+        }
+    }
+
+    public void renameEntry(PnfsId pnfsId, String newName) throws CacheException {
+        try {
+            FsInode inode = new FsInode(_fs, pnfsId.toIdString());
+            FsInode parentDir = _fs.getParentOf( inode );
+            String path = _fs.inode2path(inode);
+
+            File pathFile = new File(path);
+            String name = pathFile.getName();
+
+
+            File dest = new File(newName);
+            FsInode destDir = null;
+
+            if( dest.getParent().equals( pathFile.getParent()) ) {
+                destDir = parentDir;
+            }else{
+                destDir = _fs.path2inode( dest.getParent() );
+            }
+
+            _fs.move(parentDir, name, destDir, dest.getName());
+        }catch(FileNotFoundHimeraFsException fnf) {
+            throw new FileNotFoundCacheException(pnfsId.toString());
+        }catch(FileExistsChimeraFsException fee) {
+            throw new FileExistsCacheException(newName);
+        }catch(ChimeraFsException e) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     e.getMessage());
+        }
+    }
+
+    public void addCacheLocation(PnfsId pnfsId, String cacheLocation) throws CacheException {
 
     	if(_logNameSpace.isDebugEnabled() ) {
     		_logNameSpace.debug ("add cache location "+ cacheLocation +" for "+pnfsId);
@@ -256,21 +283,25 @@ public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoP
         }
     }
 
-    public List<String> getCacheLocation(PnfsId pnfsId) throws Exception {
+    public List<String> getCacheLocation(PnfsId pnfsId) throws CacheException {
 
-        List<String> locations = new ArrayList<String>();
+        try {
+            List<String> locations = new ArrayList<String>();
 
-        FsInode inode = new FsInode(_fs, pnfsId.toIdString());
-        List<StorageLocatable> localyManagerLocations = _fs.getInodeLocations(inode, StorageGenericLocation.DISK );
+            FsInode inode = new FsInode(_fs, pnfsId.toIdString());
+            List<StorageLocatable> localyManagerLocations = _fs.getInodeLocations(inode, StorageGenericLocation.DISK );
 
-        for (StorageLocatable location: localyManagerLocations) {
-             locations.add( location.location() );
+            for (StorageLocatable location: localyManagerLocations) {
+                locations.add( location.location() );
+            }
+
+            return locations;
+        } catch (ChimeraFsException e){
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
         }
-
-        return locations;
     }
 
-    public void clearCacheLocation(PnfsId pnfsId, String cacheLocation, boolean removeIfLast) throws Exception {
+    public void clearCacheLocation(PnfsId pnfsId, String cacheLocation, boolean removeIfLast) throws CacheException {
 
     	if(_logNameSpace.isDebugEnabled() ) {
     		_logNameSpace.debug("clearCacheLocation : "+cacheLocation+" for "+pnfsId) ;
@@ -298,28 +329,34 @@ public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoP
         }
     }
 
-    public String pnfsidToPath(PnfsId pnfsId) throws Exception {
-        FsInode inode = new FsInode(_fs, pnfsId.toIdString() );
+    public String pnfsidToPath(PnfsId pnfsId) throws CacheException {
+        try {
+            FsInode inode = new FsInode(_fs, pnfsId.toIdString() );
 
-        if( ! inode.exists() ) {
+            if( ! inode.exists() ) {
         	throw new FileNotFoundCacheException(pnfsId.toIdString() + " : no such file or directory");
+            }
+            return _fs.inode2path(inode);
+        } catch (ChimeraFsException e){
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
         }
-        return _fs.inode2path(inode);
     }
 
-    public PnfsId pathToPnfsid(String path, boolean followLink) throws Exception {
+    public PnfsId pathToPnfsid(String path, boolean followLink) throws CacheException {
 
     	FsInode inode = null;
         try {
-			inode = _fs.path2inode(path);
-		} catch (FileNotFoundHimeraFsException e) {
-			throw new FileNotFoundCacheException("no such file or directory " + path);
-		}
+            inode = _fs.path2inode(path);
+        } catch (FileNotFoundHimeraFsException e) {
+            throw new FileNotFoundCacheException("no such file or directory " + path);
+        } catch (ChimeraFsException e) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
+        }
 
         return new PnfsId( inode.toString() );
     }
 
-    public StorageInfo getStorageInfo(PnfsId pnfsId) throws Exception {
+    public StorageInfo getStorageInfo(PnfsId pnfsId) throws CacheException {
 
     	if(_logNameSpace.isDebugEnabled() ) {
     		_logNameSpace.debug ("getStorageInfo for " + pnfsId);
@@ -329,7 +366,7 @@ public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoP
         return _extractor.getStorageInfo(inode);
     }
 
-    public void setStorageInfo(PnfsId pnfsId, StorageInfo storageInfo, int accessMode) throws Exception {
+    public void setStorageInfo(PnfsId pnfsId, StorageInfo storageInfo, int accessMode) throws CacheException {
 
     	if(_logNameSpace.isDebugEnabled() ) {
     		_logNameSpace.debug ("setStorageInfo for " + pnfsId);
@@ -406,35 +443,52 @@ public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoP
        }
     }
 
-    public void addChecksum(PnfsId pnfsId, int type, String value) throws Exception
+    public void addChecksum(PnfsId pnfsId, int type, String value) throws CacheException
     {
-        FsInode inode = new FsInode(_fs, pnfsId.toString());
-    	String existingValue = _fs.getInodeChecksum(inode, type);
-        if (existingValue != null) {
-            if (!existingValue.equals(value)) {
-                throw new CacheException(CacheException.INVALID_ARGS,
-                                         "Checksum mismatch");
-            }
-            return;
-        }
         try {
+            FsInode inode = new FsInode(_fs, pnfsId.toString());
+            String existingValue = _fs.getInodeChecksum(inode, type);
+            if (existingValue != null) {
+                if (!existingValue.equals(value)) {
+                    throw new CacheException(CacheException.INVALID_ARGS,
+                                             "Checksum mismatch");
+                }
+                return;
+            }
             _fs.setInodeChecksum(inode, type, value);
         }catch(FileNotFoundHimeraFsException e) {
             throw new FileNotFoundCacheException(e.getMessage());
+        }catch(ChimeraFsException e) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     e.getMessage());
         }
     }
 
-    public String getChecksum(PnfsId pnfsId, int type) throws Exception
+    public String getChecksum(PnfsId pnfsId, int type) throws CacheException
     {
-    	return _fs.getInodeChecksum(new FsInode(_fs, pnfsId.toString()), type );
+        try {
+            return _fs.getInodeChecksum(new FsInode(_fs, pnfsId.toString()), type );
+        }catch(FileNotFoundHimeraFsException e) {
+            throw new FileNotFoundCacheException(e.getMessage());
+        }catch(ChimeraFsException e) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     e.getMessage());
+        }
     }
 
-    public void removeChecksum(PnfsId pnfsId, int type) throws Exception
+    public void removeChecksum(PnfsId pnfsId, int type) throws CacheException
     {
-    	_fs.removeInodeChecksum(new FsInode(_fs, pnfsId.toString()), type);
+        try {
+            _fs.removeInodeChecksum(new FsInode(_fs, pnfsId.toString()), type);
+        }catch(FileNotFoundHimeraFsException e) {
+            throw new FileNotFoundCacheException(e.getMessage());
+        }catch(ChimeraFsException e) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     e.getMessage());
+        }
     }
 
-    public Set<Checksum> getChecksums(PnfsId pnfsId) throws Exception {
+    public Set<Checksum> getChecksums(PnfsId pnfsId) throws CacheException {
         Set<Checksum> checksums = new HashSet<Checksum>();
         for(ChecksumType type:ChecksumType.values()) {
             int int_type = type.getType();
@@ -451,7 +505,7 @@ public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoP
         return checksums;
     }
 
-    public int[] listChecksumTypes(PnfsId pnfsId ) throws Exception
+    public int[] listChecksumTypes(PnfsId pnfsId ) throws CacheException
     {
         return null;
     }

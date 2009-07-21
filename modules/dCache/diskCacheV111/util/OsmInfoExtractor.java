@@ -9,14 +9,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
-import diskCacheV111.namespace.StorageInfoProvider;
+import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.vehicles.OSMStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import java.io.File;
 import org.dcache.util.AbstractPnfsExtractor;
 
 public class OsmInfoExtractor extends AbstractPnfsExtractor {
-    
+
     public OsmInfoExtractor(AccessLatency defaultAL, RetentionPolicy defaultRP) {
         super(defaultAL, defaultRP);
     }
@@ -47,19 +47,19 @@ public class OsmInfoExtractor extends AbstractPnfsExtractor {
 	       File levelFile = pnfsFile.getLevelFile(1) ;
 
 	       switch( accessMode ){
-	          case  StorageInfoProvider.SI_EXCLUSIVE :
+	          case  NameSpaceProvider.SI_EXCLUSIVE :
 	             if( levelFile.length() > 0 ) {
 	                throw new
 	                CacheException( 38 , "File already exits (can't overwrite mode=0)" ) ;
 	             }
-	          case StorageInfoProvider.SI_APPEND :
-	          case StorageInfoProvider.SI_OVERWRITE :
+	          case NameSpaceProvider.SI_APPEND :
+	          case NameSpaceProvider.SI_OVERWRITE :
 	             try{
 	                PrintWriter pw =  null;
 	                try{
 
 	                	pw = new PrintWriter( new FileWriter( levelFile ,
-		                        accessMode == StorageInfoProvider.SI_APPEND ) ) ;
+		                        accessMode == NameSpaceProvider.SI_APPEND ) ) ;
 
 	                    pw.println( osm.getStore()+" "+
 	                                osm.getStorageGroup()+" "+
@@ -85,13 +85,13 @@ public class OsmInfoExtractor extends AbstractPnfsExtractor {
 	       File levelFile = pnfsFile.getLevelFile(1) ;
 
 	       switch( accessMode ){
-	          case  StorageInfoProvider.SI_EXCLUSIVE :
+	          case  NameSpaceProvider.SI_EXCLUSIVE :
 	             if( levelFile.length() > 0 ) {
 	                throw new
 	                CacheException( 38 , "File already exits (can't overwrite mode=0)" ) ;
 	             }
-	          case StorageInfoProvider.SI_APPEND :
-	          case StorageInfoProvider.SI_OVERWRITE :
+	          case NameSpaceProvider.SI_APPEND :
+	          case NameSpaceProvider.SI_OVERWRITE :
 	             try {
 
 					List<URI> newLocations = storageInfo.locations();
@@ -99,7 +99,7 @@ public class OsmInfoExtractor extends AbstractPnfsExtractor {
 
 					try {
 						pw = new PrintWriter(new FileWriter(levelFile,
-								accessMode == StorageInfoProvider.SI_APPEND));
+								accessMode == NameSpaceProvider.SI_APPEND));
 
 						for (URI locationURI : newLocations) {
 							pw.println(new OsmLocationExtractor(locationURI).toLevels().get(1));

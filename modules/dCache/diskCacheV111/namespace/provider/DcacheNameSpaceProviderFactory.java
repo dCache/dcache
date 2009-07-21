@@ -3,7 +3,7 @@
  */
 package diskCacheV111.namespace.provider;
 
-import diskCacheV111.namespace.DcacheNameSpaceProvider;
+import diskCacheV111.namespace.NameSpaceProvider;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.util.Args;
 
@@ -14,7 +14,7 @@ import dmg.util.Args;
  * Window - Preferences - Java - Code Style - Code Templates
  */
 abstract public class DcacheNameSpaceProviderFactory {
-    public  synchronized DcacheNameSpaceProvider getProvider(Args args, CellNucleus nucleus) throws Exception {
+    public  synchronized NameSpaceProvider getProvider(Args args, CellNucleus nucleus) throws Exception {
         return null;
     };
 }
