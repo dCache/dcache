@@ -142,6 +142,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Collections;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -396,7 +397,7 @@ public class Storage
 
         for( int i = 0; i < addresses.length; i++) {
     		InetAddress addr = addresses[i];
-        	
+
         	if( !addr.isLinkLocalAddress() && !addr.isLoopbackAddress() &&
         			!addr.isSiteLocalAddress() && !addr.isMulticastAddress()) {
         		_hosts [nextExternalIfIndex++] = addr.getHostName();
@@ -877,16 +878,11 @@ public class Storage
         StringBuffer sb = new StringBuffer();
         sb.append("SRM Cell");
         sb.append(" storage info : ");
-        try {
-            StorageElementInfo info = getStorageElementInfo();
-            if(info != null) {
-                sb.append(info.toString());
-            } else {
-                sb.append("  info is not yet available !!!");
-            }
-        } catch(SRMException srme) {
-            sb.append("cannot get storage info :");
-            sb.append(srme.getMessage());
+        StorageElementInfo info = getStorageElementInfo();
+        if(info != null) {
+            sb.append(info.toString());
+        } else {
+            sb.append("  info is not yet available !!!");
         }
         sb.append('\n');
         sb.append(config.toString()).append('\n');
@@ -2329,7 +2325,7 @@ public class Storage
                     throw new SRMException("selectHost "+ioe);
                 }
                 // cache record
-                doorToHostnameMap.put(thehost, 
+                doorToHostnameMap.put(thehost,
                         new HostnameCacheRecord(resolvedHost));
             } else {
                 resolvedHost = resolvedHostRecord.getHostname();
@@ -4182,20 +4178,20 @@ public class Storage
     }
 
 
-    private StorageElementInfo storageElementInfo= new StorageElementInfo();
+    private volatile StorageElementInfo storageElementInfo =
+        new StorageElementInfo();
 
-    public StorageElementInfo getStorageElementInfo(SRMUser user) throws SRMException {
-        synchronized (storageElementInfo) {
-            return storageElementInfo;
-        }
-    }
-    java.util.List pools = new java.util.LinkedList();
-    private StorageElementInfo getStorageElementInfo() throws SRMException      {
-        synchronized (storageElementInfo) {
-            return storageElementInfo;
-        }
+    public StorageElementInfo getStorageElementInfo(SRMUser user)
+    {
+        return storageElementInfo;
     }
 
+    private StorageElementInfo getStorageElementInfo()
+    {
+        return storageElementInfo;
+    }
+
+    private List pools = Collections.emptyList();
 
     private void updateStorageElementInfo() throws SRMException      {
         try{
@@ -4245,9 +4241,7 @@ public class Storage
             }
         }
 
-        synchronized (storageElementInfo) {
-            storageElementInfo = info;
-        }
+        storageElementInfo = info;
     }
 
 
@@ -5026,7 +5020,7 @@ public class Storage
             _timeoutTask.cancel();
         }
     }
-   
+
 }
 
 // $Log: not supported by cvs2svn $
