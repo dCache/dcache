@@ -153,11 +153,16 @@ removed from the configuration.
 .SH DEBUGGING COMMANDS
 
 .TP
-.B dump heap DOMAIN FILE
+.B dump heap [--force] DOMAIN FILE
 Dumps the Java heap of DOMAIN to FILE. The file will contain
 information about all objects and can be analysed with the Java
 \fBjhat(1)\fR utility. Notice that the file might contain confidential
 information, such as host keys.
+
+If the domain hangs, then the dump may fail. In those cases the
+\fBforce\fR option can force the dump, however the dump will not be
+quite as useful, as it will also contain objects that are no longer in
+use.
 
 This feature requires that the Java 6 JDK is installed.
 

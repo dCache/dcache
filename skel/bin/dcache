@@ -27,7 +27,7 @@ usage()
     echo "   -d=<path to dcache installation>   default is /opt/d-cache"
     echo
     echo "Valid commands are:"
-    echo "   dump heap <domain> <file>"
+    echo "   dump heap [--force] <domain> <file>"
     echo "   dump threads [<domain or service> ...]"
     echo "   pool create <size> <directory>"
     echo "   pool add [--fqdn] [--domain=<domain>] [--lfs=<mode>] <pool name> <directory>"
@@ -199,6 +199,18 @@ requireJmap()
             This command is required for producing a heap dump. Please
             ensure that either jmap is in the path or update
             dCacheSetup to point to its location."
+}
+
+# Dumps the heap. Terminates the script in case of failure.
+dumpHeap() # $1=force, $2=live, $3=file, $4=pid, $5=error
+{
+    if ! jmap ${1:+-F} -dump:${2:+live,}format=b,file=$3 $4; then
+        fail 1 "$5"
+    fi
+
+    if [ ! -f "$3" ]; then
+        fail 1 "$5"
+    fi
 }
 
 # display dCache package version
@@ -485,6 +497,9 @@ case "$1" in
 
         case "$command" in
             heap)
+                parseOptions "force" $*
+                shift $?
+
                 [ $# -ne 2 ] && usage
 
                 domain=$1
@@ -501,16 +516,17 @@ case "$1" in
                 fi
                 pid="$RET"
 
-                if ! $jmap -dump:live,format=b,file=${file} ${pid}; then
-                    fail 1 "Failed to dump the heap; please consult
-                            the previous error message for possible
-                            reasons."
-                fi
-
-                if [ ! -f ${file} ]; then
-                    fail 1 "Failed to dump the heap; please consult
-                            the previous error message for possible
-                            reasons."
+                if [ -z "$opt_force" ]; then
+                    dumpHeap "" "live" "$file" "$pid" \
+                         "Failed to dump the heap; please consult
+                          the previous error message for possible
+                          reasons. The dump might succeed when using 
+                          the --force option."
+                else
+                    dumpHeap "force" "" "$file" "$pid" \
+                         "Failed to dump the heap; please consult
+                          the previous error message for possible
+                          reasons."
                 fi
 
                 printp "The heap of domain ${domain} has been written to
