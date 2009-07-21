@@ -464,7 +464,7 @@ public class BringOnlineRequest extends ContainerRequest {
         State state = getState();
         if(State.isFinalState(state)) {
             
-            esay("get request state changed to "+state);
+            say("get request state changed to "+state);
             for(int i = 0 ; i < fileRequests.length; ++i) {
                 try {
                     FileRequest fr = fileRequests[i];
@@ -472,7 +472,7 @@ public class BringOnlineRequest extends ContainerRequest {
                     if(!State.isFinalState(fr_state ))
                     {
 
-                        esay("changing fr#"+fileRequests[i].getId()+" to "+state);
+                        say("changing fr#"+fileRequests[i].getId()+" to "+state);
                             fr.setState(state,"changing file state becase requests state changed");
                     }
                 }
