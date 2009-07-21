@@ -139,6 +139,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Collections;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -420,7 +421,7 @@ public class Storage
         config.setSizeOfSingleRemoveBatch(getIntOption("size-of-single-remove-batch",config.getSizeOfSingleRemoveBatch()));
 	config.setGlue_mapfile(getOption("srmmap",config.getGlue_mapfile()));
         config.setMaxNumberOfLsEntries(getIntOption("max-number-of-ls-entries",config.getMaxNumberOfLsEntries()));
-        config.setMaxNumberOfLsLevels(getIntOption("max-number-of-ls-levels",config.getMaxNumberOfLsLevels()));       
+        config.setMaxNumberOfLsLevels(getIntOption("max-number-of-ls-levels",config.getMaxNumberOfLsLevels()));
         config.setKpwdfile( getOption("kpwd-file",config.getKpwdfile()) );
         config.setUseGplazmaAuthzCellFlag(isOptionSetToTrueOrYes(
             "use-gplazma-authorization-cell",
@@ -590,8 +591,8 @@ public class Storage
         config.setBringOnlineMaxRunningBySameOwner(
             getIntOption("bring-online-req-max-num-of-running-by-same-owner",
             config.getBringOnlineMaxRunningBySameOwner()));
-        
-        
+
+
         config.setPutReqTQueueSize(getIntOption("put-req-thread-queue-size",
             config.getPutReqTQueueSize()));
         config.setPutThreadPoolSize(getIntOption("put-req-thread-pool-size",
@@ -880,16 +881,11 @@ public class Storage
         StringBuffer sb = new StringBuffer();
         sb.append("SRM Cell");
         sb.append(" storage info : ");
-        try {
-            StorageElementInfo info = getStorageElementInfo();
-            if(info != null) {
-                sb.append(info.toString());
-            } else {
-                sb.append("  info is not yet available !!!");
-            }
-        } catch(SRMException srme) {
-            sb.append("cannot get storage info :");
-            sb.append(srme.getMessage());
+        StorageElementInfo info = getStorageElementInfo();
+        if(info != null) {
+            sb.append(info.toString());
+        } else {
+            sb.append("  info is not yet available !!!");
         }
         sb.append('\n');
         sb.append(config.toString()).append('\n');
@@ -2669,14 +2665,14 @@ public class Storage
           return getFileMetaData(user,absolute_path, pnfsId,storage_info, util_fmd, null, ignoreIsSetflags);
     }
 
-    public static FileMetaData 
-        getFileMetaData(SRMUser user, 
+    public static FileMetaData
+        getFileMetaData(SRMUser user,
                         String absolute_path,
-                        PnfsId pnfsId, 
+                        PnfsId pnfsId,
                         StorageInfo storage_info,
                         diskCacheV111.util.FileMetaData util_fmd,
                         Set<Checksum> checksums,
-                        boolean ... ignoreIsSetflags) 
+                        boolean ... ignoreIsSetflags)
     {
         boolean ignoreIsSetFlag = false;
         if(ignoreIsSetflags != null && ignoreIsSetflags.length >=1 ) {
@@ -2708,7 +2704,7 @@ public class Storage
                     checksum_value = checksum.getValue();
                 }
             }
-            //if this failed, but there are other types 
+            //if this failed, but there are other types
             // use the first one found
             if(checksum_type == null && !checksums.isEmpty() ) {
                  Checksum cksum = checksums.iterator().next();
@@ -4163,20 +4159,20 @@ public class Storage
     }
 
 
-    private StorageElementInfo storageElementInfo= new StorageElementInfo();
+    private volatile StorageElementInfo storageElementInfo =
+        new StorageElementInfo();
 
-    public StorageElementInfo getStorageElementInfo(SRMUser user) throws SRMException {
-        synchronized (storageElementInfo) {
-            return storageElementInfo;
-        }
-    }
-    java.util.List pools = new java.util.LinkedList();
-    private StorageElementInfo getStorageElementInfo() throws SRMException      {
-        synchronized (storageElementInfo) {
-            return storageElementInfo;
-        }
+    public StorageElementInfo getStorageElementInfo(SRMUser user)
+    {
+        return storageElementInfo;
     }
 
+    private StorageElementInfo getStorageElementInfo()
+    {
+        return storageElementInfo;
+    }
+
+    private List pools = Collections.emptyList();
 
     private void updateStorageElementInfo() throws SRMException      {
         try{
@@ -4226,9 +4222,7 @@ public class Storage
             }
         }
 
-        synchronized (storageElementInfo) {
-            storageElementInfo = info;
-        }
+        storageElementInfo = info;
     }
 
 
@@ -4974,7 +4968,7 @@ public class Storage
     public String getStorageBackendVersion() {
         return diskCacheV111.util.Version.getVersion();
     }
-  
+
       /**
        * Start the timeout task.
        *
@@ -4986,7 +4980,7 @@ public class Storage
       {
           if (_timeoutTask != null)
               throw new IllegalStateException("Timeout task is already running");
-  
+
           _timeoutTask = new TimerTask() {
                   public void run()
                   {
@@ -4995,18 +4989,18 @@ public class Storage
               };
           _timer.schedule(_timeoutTask, 30000, 30000);
       }
-  
-  
+
+
       public void cleanUp()
       {
           super.cleanUp();
-  
+
           if (_timeoutTask != null) {
               _timeoutTask.cancel();
           }
       }
-  
- 
+
+
 }
 
 // $Log: not supported by cvs2svn $
