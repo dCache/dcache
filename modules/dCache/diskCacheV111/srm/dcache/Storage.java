@@ -143,6 +143,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Collections;
 import diskCacheV111.services.PermissionHandler;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
@@ -892,16 +893,11 @@ public class Storage
         StringBuffer sb = new StringBuffer();
         sb.append("SRM Cell");
         sb.append(" storage info : ");
-        try {
-            StorageElementInfo info = getStorageElementInfo();
-            if(info != null) {
-                sb.append(info.toString());
-            } else {
-                sb.append("  info is not yet available !!!");
-            }
-        } catch(SRMException srme) {
-            sb.append("cannot get storage info :");
-            sb.append(srme.getMessage());
+        StorageElementInfo info = getStorageElementInfo();
+        if(info != null) {
+            sb.append(info.toString());
+        } else {
+            sb.append("  info is not yet available !!!");
         }
         sb.append('\n');
         sb.append(config.toString()).append('\n');
@@ -4279,20 +4275,20 @@ public class Storage
     }
 
 
-    private StorageElementInfo storageElementInfo= new StorageElementInfo();
+    private volatile StorageElementInfo storageElementInfo =
+        new StorageElementInfo();
 
-    public StorageElementInfo getStorageElementInfo(SRMUser user) throws SRMException {
-        synchronized (storageElementInfo) {
-            return storageElementInfo;
-        }
-    }
-    java.util.List pools = new java.util.LinkedList();
-    private StorageElementInfo getStorageElementInfo() throws SRMException      {
-        synchronized (storageElementInfo) {
-            return storageElementInfo;
-        }
+    public StorageElementInfo getStorageElementInfo(SRMUser user)
+    {
+        return storageElementInfo;
     }
 
+    private StorageElementInfo getStorageElementInfo()
+    {
+        return storageElementInfo;
+    }
+
+    private List pools = Collections.emptyList();
 
     private void updateStorageElementInfo() throws SRMException      {
         try{
@@ -4342,9 +4338,7 @@ public class Storage
             }
         }
 
-        synchronized (storageElementInfo) {
-            storageElementInfo = info;
-        }
+        storageElementInfo = info;
     }
 
 
