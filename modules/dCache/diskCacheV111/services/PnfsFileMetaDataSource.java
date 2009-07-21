@@ -12,15 +12,15 @@ import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PnfsFile;
 import diskCacheV111.util.PnfsId;
 
-import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellEndpoint;
 import dmg.util.Args;
 
 public class PnfsFileMetaDataSource implements FileMetaDataSource {
 
-	private final CellAdapter _cell ;
+	private final CellEndpoint _cell ;
 	private final File _mp;
 
-	public PnfsFileMetaDataSource(CellAdapter cell) throws Exception {
+	public PnfsFileMetaDataSource(CellEndpoint cell) throws Exception {
 		_cell = cell;
 		Args args = _cell.getArgs();
 		String fsRoot = args.getOpt("root");

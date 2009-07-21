@@ -4992,7 +4992,7 @@ public abstract class AbstractFtpDoorV1
     */
     private FileMetaDataSource initMetadataProvider(String className) throws CacheException {
         try {
-            Class<?>[] argClass = { dmg.cells.nucleus.CellAdapter.class };
+            Class<?>[] argClass = { dmg.cells.nucleus.CellEndpoint.class };
             Object[] initargs = { this };
             Class<?> metadataProviderClass = Class.forName(className);
             Constructor<?> metadataSourceCon = metadataProviderClass.getConstructor(argClass);
