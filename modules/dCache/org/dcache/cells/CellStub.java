@@ -8,6 +8,8 @@ import dmg.cells.nucleus.NoRouteToCellException;
 
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.util.CacheException;
+import dmg.cells.nucleus.SerializationException;
+import org.dcache.util.CacheExceptionFactory;
 
 /**
  * Stub class for common cell communication patterns. An instance
@@ -29,6 +31,7 @@ public class CellStub
     {
     }
 
+    @Override
     public void setCellEndpoint(CellEndpoint endpoint)
     {
         _endpoint = endpoint;
@@ -59,7 +62,7 @@ public class CellStub
     }
 
     /**
-     * Returns the communiation timeout of the stub.
+     * Returns the communication timeout of the stub.
      */
     public long getTimeout()
     {
@@ -135,9 +138,15 @@ public class CellStub
         if (reply.getReturnCode() != 0) {
             Object error = reply.getErrorObject();
             if (error instanceof CacheException) {
-                throw (CacheException) error;
+                CacheException ce = (CacheException) error;
+                throw CacheExceptionFactory.exceptionOf(ce.getRc(), ce.getMessage());
             }
-            throw new CacheException(reply.getReturnCode(),
+            /*
+             * Some components setting correct error code, but
+             * return a string as a error object. Factroy will
+             * try to convert them into an correcponding exception as well.
+             */
+            throw CacheExceptionFactory.exceptionOf(reply.getReturnCode(),
                                      String.format("Got error from %s: %s",
                                                    path, error));
         }
@@ -177,9 +186,33 @@ public class CellStub
     }
 
     /**
+     * Sends <code>message</code> to <code>destination</code>.
+     */
+    public void send(Object message) {
+        if (_destination == null) {
+            throw new IllegalStateException("Destination must be specified");
+        }
+        send(_destination, message);
+    }
+
+
+    /**
+     * Sends <code>message</code> to <code>destination</code>.
+     */
+    public void send(CellPath destination, Object message) {
+        try {
+            _endpoint.sendMessage(new CellMessage(destination, message));
+        } catch (NoRouteToCellException e) {
+            /*
+             * caller have to be prepared that message can be lost.
+             */
+        }
+    }
+
+    /**
      * Adapter class to wrap MessageCallback in CellMessageAnswerable.
      */
-    class CellCallback<T> implements CellMessageAnswerable
+    static class CellCallback<T> implements CellMessageAnswerable
     {
         private final MessageCallback<T> _callback;
         private final Class<T> _type;
@@ -190,6 +223,7 @@ public class CellStub
             _type = type;
         }
 
+        @Override
         public void answerArrived(CellMessage request, CellMessage answer)
         {
             Object o = answer.getMessageObject();
@@ -213,18 +247,21 @@ public class CellStub
             }
         }
 
+        @Override
         public void answerTimedOut(CellMessage request)
         {
             _callback.timeout();
         }
 
+        @Override
         public void exceptionArrived(CellMessage request, Exception exception)
         {
             if (exception instanceof NoRouteToCellException) {
                 _callback.noroute();
             } else if (exception instanceof CacheException) {
                 CacheException e = (CacheException) exception;
-                _callback.failure(e.getRc(), exception);
+                _callback.failure(e.getRc(),
+                        CacheExceptionFactory.exceptionOf(e.getRc(), e.getMessage()));
             } else {
                 _callback.failure(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                   exception.toString());
