@@ -38,6 +38,8 @@ import diskCacheV111.vehicles.StorageInfo;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.util.Args;
 
+import javax.security.auth.Subject;
+
 public class BasicNameSpaceProvider
     implements NameSpaceProvider
 {
@@ -181,7 +183,7 @@ public class BasicNameSpaceProvider
         }
     }
 
-    public void addCacheLocation(PnfsId pnfsId, String cacheLocation)
+    public void addCacheLocation(Subject subject, PnfsId pnfsId, String cacheLocation)
         throws CacheException
     {
         if (_logNameSpace.isDebugEnabled()) {
@@ -200,7 +202,7 @@ public class BasicNameSpaceProvider
         }
     }
 
-    public void clearCacheLocation(PnfsId pnfsId, String cacheLocation, boolean removeIfLast) throws CacheException {
+    public void clearCacheLocation(Subject subject, PnfsId pnfsId, String cacheLocation, boolean removeIfLast) throws CacheException {
 
         if (_logNameSpace.isDebugEnabled()) {
             _logNameSpace.debug("clearCacheLocation : " + cacheLocation
@@ -243,7 +245,7 @@ public class BasicNameSpaceProvider
                         _logNameSpace.debug("clearCacheLocation : deleting "
                                 + pnfsId + " from filesystem");
                     }
-                    this.deleteEntry( pnfsId ) ;
+                    this.deleteEntry(subject, pnfsId);
 
                 }
             }
@@ -253,7 +255,7 @@ public class BasicNameSpaceProvider
         }
     }
 
-    public PnfsId createEntry(String name, FileMetaData metaData, boolean isDirectory ) throws CacheException {
+    public PnfsId createEntry(Subject subject, String name, FileMetaData metaData, boolean isDirectory ) throws CacheException {
 
 
         String globalPath = name;
@@ -302,7 +304,7 @@ public class BasicNameSpaceProvider
 
         pnfsId = pf.getPnfsId();
         try {
-        	this.setFileMetaData(pnfsId, metaData);
+            this.setFileMetaData(subject, pnfsId, metaData);
         }catch(Exception e) {
         	_logNameSpace.error("failed to set permissions for: " + globalPath, e);
         	pf.delete();
@@ -315,15 +317,15 @@ public class BasicNameSpaceProvider
         return pf.getPnfsId() ;
     }
 
-    public void deleteEntry(PnfsId pnfsId) throws CacheException {
+    public void deleteEntry(Subject subject, PnfsId pnfsId) throws CacheException {
 
-        String  pnfsIdPath = this.pnfsidToPath(pnfsId) ;
+        String  pnfsIdPath = this.pnfsidToPath(subject, pnfsId) ;
         _logNameSpace.debug("delete PNFS entry for " + pnfsId );
 
-        deleteEntry(pnfsIdPath);
+        deleteEntry(subject, pnfsIdPath);
     }
 
-    public void deleteEntry(String path) throws CacheException {
+    public void deleteEntry(Subject subject, String path) throws CacheException {
 
         boolean rc;
 
@@ -355,7 +357,7 @@ public class BasicNameSpaceProvider
         }
     }
 
-    public List<String> getCacheLocation(PnfsId pnfsId) throws CacheException
+    public List<String> getCacheLocation(Subject subject, PnfsId pnfsId) throws CacheException
     {
         try {
             PnfsFile pf = _pathManager.getFileByPnfsId( pnfsId );
@@ -375,7 +377,7 @@ public class BasicNameSpaceProvider
     }
 
 
-    public FileMetaData getFileMetaData(PnfsId pnfsId) throws CacheException {
+    public FileMetaData getFileMetaData(Subject subject, PnfsId pnfsId) throws CacheException {
 
         FileMetaData fileMetaData;
 
@@ -390,7 +392,7 @@ public class BasicNameSpaceProvider
         return fileMetaData;
     }
 
-    public void setFileMetaData(PnfsId pnfsId, FileMetaData metaData) throws CacheException {
+    public void setFileMetaData(Subject subject, PnfsId pnfsId, FileMetaData metaData) throws CacheException {
 
         if (metaData.isUserPermissionsSet()) {
 
@@ -407,7 +409,7 @@ public class BasicNameSpaceProvider
 
     }
 
-    public String pnfsidToPath(PnfsId pnfsId) throws CacheException {
+    public String pnfsidToPath(Subject subject, PnfsId pnfsId) throws CacheException {
 
      PnfsFile pnfsFile = _pathManager.getFileByPnfsId(pnfsId);
      if(pnfsFile == null) {
@@ -438,7 +440,7 @@ public class BasicNameSpaceProvider
 
     }
 
-    public PnfsId pathToPnfsid(String path, boolean followLinks) throws CacheException {
+    public PnfsId pathToPnfsid(Subject subject, String path, boolean followLinks) throws CacheException {
 
         PnfsFile pnfsFile = null;
         try {
@@ -458,7 +460,7 @@ public class BasicNameSpaceProvider
     }
 
 
-    public void setStorageInfo(PnfsId pnfsId, StorageInfo storageInfo, int mode) throws CacheException {
+    public void setStorageInfo(Subject subject, PnfsId pnfsId, StorageInfo storageInfo, int mode) throws CacheException {
 
 
         _logNameSpace.debug( "setStorageInfo : "+pnfsId ) ;
@@ -495,7 +497,7 @@ public class BasicNameSpaceProvider
         }
     }
 
-    public StorageInfo getStorageInfo(PnfsId pnfsId) throws CacheException {
+    public StorageInfo getStorageInfo(Subject subject, PnfsId pnfsId) throws CacheException {
 
         _logNameSpace.debug("getStorageInfo : " + pnfsId);
         File mountpoint = _pathManager.getMountPointByPnfsId(pnfsId);
@@ -550,7 +552,7 @@ public class BasicNameSpaceProvider
 
     }
 
-    public String[] getFileAttributeList(PnfsId pnfsId) {
+    public String[] getFileAttributeList(Subject subject, PnfsId pnfsId) {
 
         String[] keys = null;
 
@@ -574,7 +576,7 @@ public class BasicNameSpaceProvider
 
     }
 
-    public Object getFileAttribute(PnfsId pnfsId, String attribute) {
+    public Object getFileAttribute(Subject subject, PnfsId pnfsId, String attribute) {
 
         Object attr = null;
         try {
@@ -595,7 +597,7 @@ public class BasicNameSpaceProvider
         return attr;
     }
 
-    public void setFileAttribute(PnfsId pnfsId, String attribute, Object data) {
+    public void setFileAttribute(Subject subject, PnfsId pnfsId, String attribute, Object data) {
 
         try {
             PnfsFile  pf     = _pathManager.getFileByPnfsId( pnfsId );
@@ -615,7 +617,7 @@ public class BasicNameSpaceProvider
 
     }
 
-    public void removeFileAttribute(PnfsId pnfsId, String attribute) {
+    public void removeFileAttribute(Subject subject, PnfsId pnfsId, String attribute) {
         try {
             PnfsFile  pf     = _pathManager.getFileByPnfsId( pnfsId );
             CacheInfo info   = new CacheInfo( pf ) ;
@@ -630,9 +632,9 @@ public class BasicNameSpaceProvider
     }
 
 
-    public void renameEntry(PnfsId pnfsId, String newName) throws CacheException {
+    public void renameEntry(Subject subject, PnfsId pnfsId, String newName) throws CacheException {
 
-        File src = new File( _pathManager.globalToLocal( this.pnfsidToPath(pnfsId) ) );
+        File src = new File(_pathManager.globalToLocal(this.pnfsidToPath(subject, pnfsId)));
         String localPath = _pathManager.globalToLocal(newName);
 
         if( !src.renameTo( new File(localPath) ) ) {
@@ -640,28 +642,28 @@ public class BasicNameSpaceProvider
         }
     }
 
-    public void addChecksum(PnfsId pnfsId, int type, String value) throws CacheException
+    public void addChecksum(Subject subject, PnfsId pnfsId, int type, String value) throws CacheException
     {
-        _attChecksumImpl.setChecksum(pnfsId,value,type);
+        _attChecksumImpl.setChecksum(subject, pnfsId,value,type);
     }
 
-    public String getChecksum(PnfsId pnfsId, int type) throws CacheException
+    public String getChecksum(Subject subject, PnfsId pnfsId, int type) throws CacheException
     {
-        return _attChecksumImpl.getChecksum(pnfsId,type);
+        return _attChecksumImpl.getChecksum(subject, pnfsId,type);
     }
 
-    public Set<Checksum> getChecksums(PnfsId pnfsId) throws CacheException {
-        return _attChecksumImpl.getChecksums(pnfsId);
+    public Set<Checksum> getChecksums(Subject subject, PnfsId pnfsId) throws CacheException {
+        return _attChecksumImpl.getChecksums(subject, pnfsId);
     }
 
-    public void removeChecksum(PnfsId pnfsId, int type) throws CacheException
+    public void removeChecksum(Subject subject, PnfsId pnfsId, int type) throws CacheException
     {
-        _attChecksumImpl.removeChecksum(pnfsId,type);
+        _attChecksumImpl.removeChecksum(subject, pnfsId,type);
     }
 
-    public int[] listChecksumTypes(PnfsId pnfsId ) throws CacheException
+    public int[] listChecksumTypes(Subject subject, PnfsId pnfsId ) throws CacheException
     {
-        return _attChecksumImpl.types(pnfsId);
+        return _attChecksumImpl.types(subject, pnfsId);
     }
 
 
@@ -706,7 +708,7 @@ public class BasicNameSpaceProvider
 
             return vmp ;
         }
-        public File getMountPointByPnfsId( PnfsId pnfsId ){
+        public File getMountPointByPnfsId(PnfsId pnfsId){
             String domain = pnfsId.getDomain() ;
             if( ( domain == null ) || ( domain.equals("") ) )
                 return _defaultMountPoint ;
@@ -715,7 +717,7 @@ public class BasicNameSpaceProvider
 
             return vmp.getRealMountPoint() ;
         }
-        public PnfsFile getFileByPnfsId( PnfsId pnfsId ) throws CacheException {
+        public PnfsFile getFileByPnfsId(PnfsId pnfsId) throws CacheException {
             return PnfsFile.getFileByPnfsId(
             getMountPointByPnfsId(pnfsId) ,
             pnfsId ) ;
@@ -1075,7 +1077,7 @@ public class BasicNameSpaceProvider
        }
     }
 
-    public PnfsId getParentOf(PnfsId pnfsId) throws CacheException
+    public PnfsId getParentOf(Subject subject, PnfsId pnfsId) throws CacheException
     {
         try {
             File mp = _pathManager.getMountPointByPnfsId(pnfsId);

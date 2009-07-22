@@ -5,6 +5,8 @@ package diskCacheV111.vehicles;
 import dmg.cells.nucleus.HasDiagnosticContext;
 import org.dcache.util.ReflectionUtils;
 import diskCacheV111.util.PnfsId;
+import javax.security.auth.Subject;
+import org.dcache.auth.Subjects;
 
 // Base class for all Messages
 
@@ -17,6 +19,7 @@ public class Message
     private int     _returnCode    = 0;
     private Object  _errorObject   = null;
     private long    _id            = 0 ;
+    private Subject _subject;
 
     private static final long serialVersionUID = 2056896713066252504L;
 
@@ -74,6 +77,16 @@ public class Message
     }
     public void setId( long id ){ _id = id ; }
     public long getId(){ return _id ; }
+
+    public void setSubject(Subject subject)
+    {
+        _subject = subject;
+    }
+
+    public Subject getSubject()
+    {
+        return (_subject == null) ? Subjects.ROOT : _subject;
+    }
 
     /**
      * Returns a human readable name of the message class. By default

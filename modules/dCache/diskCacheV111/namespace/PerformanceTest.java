@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import org.dcache.auth.Subjects;
 
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.namespace.provider.DcacheNameSpaceProviderFactory;
@@ -107,11 +108,11 @@ public class PerformanceTest extends Thread
         String path;
         while ( (path = queue.poll()) != null) {
             try {
-                PnfsId id = provider.pathToPnfsid(path, true);
+                PnfsId id = provider.pathToPnfsid(Subjects.ROOT, path, true);
                 if (lookupStorageInfo) {
-                    provider.getStorageInfo(id);
+                    provider.getStorageInfo(Subjects.ROOT, id);
                 } else if (lookupFileMetaData) {
-                    provider.getFileMetaData(id);
+                    provider.getFileMetaData(Subjects.ROOT, id);
                 }
             } catch (Exception e) {
                 System.err.println(e.getMessage());

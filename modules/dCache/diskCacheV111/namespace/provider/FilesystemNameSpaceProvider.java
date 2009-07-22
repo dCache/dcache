@@ -16,6 +16,7 @@ import diskCacheV111.util.*;
 
 import java.util.*;
 import java.io.*;
+import javax.security.auth.Subject;
 
 public class FilesystemNameSpaceProvider extends BasicNameSpaceProvider {
 
@@ -80,7 +81,7 @@ public class FilesystemNameSpaceProvider extends BasicNameSpaceProvider {
         }
     }
 
-    public void addCacheLocation(PnfsId pnfsId, String cacheLocation)
+    public void addCacheLocation(Subject subject, PnfsId pnfsId, String cacheLocation)
         throws CacheException
     {
         try {
@@ -94,7 +95,7 @@ public class FilesystemNameSpaceProvider extends BasicNameSpaceProvider {
         }
     }
 
-    public void clearCacheLocation(PnfsId pnfsId, String cacheLocation, boolean removeIfLast)
+    public void clearCacheLocation(Subject subject, PnfsId pnfsId, String cacheLocation, boolean removeIfLast)
         throws CacheException
     {
         try {
@@ -108,7 +109,7 @@ public class FilesystemNameSpaceProvider extends BasicNameSpaceProvider {
         }
     }
 
-    public List<String> getCacheLocation(PnfsId pnfsId) throws CacheException
+    public List<String> getCacheLocation(Subject subject, PnfsId pnfsId) throws CacheException
     {
         try {
             return new Vector<String>( loadCacheLocations(pnfsId) ) ;

@@ -8,165 +8,167 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.util.Checksum;
 
+import javax.security.auth.Subject;
+
 public class AbstractNameSpaceProvider
     implements NameSpaceProvider
 {
     @Override
-    public void setFileMetaData(PnfsId pnfsId, FileMetaData metaData)
+    public void setFileMetaData(Subject subject, PnfsId pnfsId, FileMetaData metaData)
         throws CacheException
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public FileMetaData getFileMetaData(PnfsId pnfsId)
+    public FileMetaData getFileMetaData(Subject subject, PnfsId pnfsId)
         throws CacheException
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public PnfsId createEntry(String path, FileMetaData metaData, boolean isDirectory)
+    public PnfsId createEntry(Subject subject, String path, FileMetaData metaData, boolean isDirectory)
         throws CacheException
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void deleteEntry(PnfsId pnfsId)
+    public void deleteEntry(Subject subject, PnfsId pnfsId)
         throws CacheException
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void deleteEntry(String path)
+    public void deleteEntry(Subject subject, String path)
         throws CacheException
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void renameEntry(PnfsId pnfsId, String newName)
+    public void renameEntry(Subject subject, PnfsId pnfsId, String newName)
         throws CacheException
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public String pnfsidToPath(PnfsId pnfsId)
+    public String pnfsidToPath(Subject subject, PnfsId pnfsId)
         throws CacheException
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public PnfsId pathToPnfsid(String path, boolean followLinks)
+    public PnfsId pathToPnfsid(Subject subject, String path, boolean followLinks)
         throws CacheException
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public PnfsId getParentOf(PnfsId pnfsId)
+    public PnfsId getParentOf(Subject subject, PnfsId pnfsId)
         throws CacheException
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public String[] getFileAttributeList(PnfsId pnfsId)
+    public String[] getFileAttributeList(Subject subject, PnfsId pnfsId)
         throws CacheException
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Object getFileAttribute(PnfsId pnfsId, String attribute)
+    public Object getFileAttribute(Subject subject, PnfsId pnfsId, String attribute)
         throws CacheException
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void removeFileAttribute(PnfsId pnfsId, String attribute)
+    public void removeFileAttribute(Subject subject, PnfsId pnfsId, String attribute)
         throws CacheException
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void setFileAttribute(PnfsId pnfsId, String attribute, Object data)
+    public void setFileAttribute(Subject subject, PnfsId pnfsId, String attribute, Object data)
         throws CacheException
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void addChecksum(PnfsId pnfsId, int type, String value)
+    public void addChecksum(Subject subject, PnfsId pnfsId, int type, String value)
         throws CacheException
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public String getChecksum(PnfsId pnfsId, int type)
+    public String getChecksum(Subject subject, PnfsId pnfsId, int type)
         throws CacheException
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void removeChecksum(PnfsId pnfsId, int type)
+    public void removeChecksum(Subject subject, PnfsId pnfsId, int type)
         throws CacheException
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public int[] listChecksumTypes(PnfsId pnfsId)
+    public int[] listChecksumTypes(Subject subject, PnfsId pnfsId)
         throws CacheException
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Set<Checksum> getChecksums(PnfsId pnfsId)
+    public Set<Checksum> getChecksums(Subject subject, PnfsId pnfsId)
         throws CacheException
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public StorageInfo getStorageInfo(PnfsId pnfsId)
+    public StorageInfo getStorageInfo(Subject subject, PnfsId pnfsId)
         throws CacheException
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void setStorageInfo(PnfsId pnfsId, StorageInfo storageInfo, int mode)
+    public void setStorageInfo(Subject subject, PnfsId pnfsId, StorageInfo storageInfo, int mode)
         throws CacheException
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void addCacheLocation(PnfsId pnfsId, String cacheLocation)
+    public void addCacheLocation(Subject subject, PnfsId pnfsId, String cacheLocation)
         throws CacheException
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public List<String> getCacheLocation(PnfsId pnfsId)
+    public List<String> getCacheLocation(Subject subject, PnfsId pnfsId)
         throws CacheException
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void clearCacheLocation(PnfsId pnfsId, String cacheLocation, boolean removeIfLast)
+    public void clearCacheLocation(Subject subject, PnfsId pnfsId, String cacheLocation, boolean removeIfLast)
         throws CacheException
     {
         throw new UnsupportedOperationException();

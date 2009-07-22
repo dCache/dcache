@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import org.dcache.auth.Subjects;
 
 import org.dcache.chimera.namespace.ChimeraNameSpaceProvider;
 
@@ -227,8 +228,8 @@ public class Comparator {
 				PnfsId pnfsid = new PnfsId(trimmedLine);
 
                 try {
-                    FileMetaData chimeraMetaData = chimeraNamespace.getFileMetaData( pnfsid);
-                    FileMetaData pnfsFileMetaData = pnfsNamespace.getFileMetaData( pnfsid);
+                    FileMetaData chimeraMetaData = chimeraNamespace.getFileMetaData(Subjects.ROOT, pnfsid);
+                    FileMetaData pnfsFileMetaData = pnfsNamespace.getFileMetaData(Subjects.ROOT, pnfsid);
                     assertEquals( pnfsid.toString(), chimeraMetaData, pnfsFileMetaData);
                 } catch (MismatchException e) {
                     idErrCount++;
@@ -239,8 +240,8 @@ public class Comparator {
                 }
 
                 try {
-                    StorageInfo chimeraStorageInfo = chimeraStorageInfoProvider.getStorageInfo( pnfsid);
-                    StorageInfo pnfsStorageInfo = pnfsStorageInfoProvider.getStorageInfo( pnfsid);
+                    StorageInfo chimeraStorageInfo = chimeraStorageInfoProvider.getStorageInfo(Subjects.ROOT, pnfsid);
+                    StorageInfo pnfsStorageInfo = pnfsStorageInfoProvider.getStorageInfo(Subjects.ROOT, pnfsid);
                     assertEquals( pnfsid.toString(), chimeraStorageInfo, pnfsStorageInfo);
                 } catch (MismatchException e) {
                     if( showAllErrors)

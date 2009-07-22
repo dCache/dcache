@@ -8,6 +8,8 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.util.Checksum;
 
+import javax.security.auth.Subject;
+
 public interface NameSpaceProvider
 {
     /**
@@ -29,7 +31,7 @@ public interface NameSpaceProvider
      * @param metaData
      * @throws CacheException
      */
-    void setFileMetaData(PnfsId pnfsId, FileMetaData metaData) throws CacheException;
+    void setFileMetaData(Subject subject, PnfsId pnfsId, FileMetaData metaData) throws CacheException;
 
     /**
      * get file metadata - size, permissions, Owner and group
@@ -37,7 +39,7 @@ public interface NameSpaceProvider
      * @return
      * @throws CacheException
      */
-    FileMetaData getFileMetaData(PnfsId pnfsId) throws CacheException;
+    FileMetaData getFileMetaData(Subject subject, PnfsId pnfsId) throws CacheException;
 
 
     /**
@@ -48,33 +50,33 @@ public interface NameSpaceProvider
      * @return PnfsId of newly created object
      * @throws CacheException
      */
-    PnfsId createEntry(String path, FileMetaData metaData, boolean isDirectory) throws CacheException;
+    PnfsId createEntry(Subject subject, String path, FileMetaData metaData, boolean isDirectory) throws CacheException;
 
     /**
      * remove file or directory associated with given pnfsid
      * @param pnfsId
      * @throws CacheException
      */
-    void deleteEntry(PnfsId pnfsId) throws CacheException;
+    void deleteEntry(Subject subject, PnfsId pnfsId) throws CacheException;
 
     /**
      * remove file or directory
      * @param path
      * @throws CacheException
      */
-    void deleteEntry(String path) throws CacheException;
+    void deleteEntry(Subject subject, String path) throws CacheException;
 
-    void renameEntry(PnfsId pnfsId, String newName) throws CacheException;
+    void renameEntry(Subject subject, PnfsId pnfsId, String newName) throws CacheException;
 
-    String pnfsidToPath(PnfsId pnfsId) throws CacheException;
-    PnfsId pathToPnfsid(String path, boolean followLinks) throws CacheException;
+    String pnfsidToPath(Subject subject, PnfsId pnfsId) throws CacheException;
+    PnfsId pathToPnfsid(Subject subject, String path, boolean followLinks) throws CacheException;
 
-    PnfsId getParentOf(PnfsId pnfsId) throws CacheException;
+    PnfsId getParentOf(Subject subject, PnfsId pnfsId) throws CacheException;
 
-    String[] getFileAttributeList(PnfsId pnfsId) throws CacheException;
-    Object getFileAttribute(PnfsId pnfsId, String attribute) throws CacheException;
-    void removeFileAttribute(PnfsId pnfsId, String attribute) throws CacheException;
-    void setFileAttribute(PnfsId pnfsId, String attribute, Object data) throws CacheException;
+    String[] getFileAttributeList(Subject subject, PnfsId pnfsId) throws CacheException;
+    Object getFileAttribute(Subject subject, PnfsId pnfsId, String attribute) throws CacheException;
+    void removeFileAttribute(Subject subject, PnfsId pnfsId, String attribute) throws CacheException;
+    void setFileAttribute(Subject subject, PnfsId pnfsId, String attribute, Object data) throws CacheException;
 
     /**
      * Adds new or replaces existing checksum value for the specific file and checksum type.
@@ -84,7 +86,7 @@ public interface NameSpaceProvider
      * @param value HEX presentation of the digest (checksum)
      * @param pnfsId file
      */
-    void addChecksum(PnfsId pnfsId, int type, String value) throws CacheException;
+    void addChecksum(Subject subject, PnfsId pnfsId, int type, String value) throws CacheException;
 
     /**
      * Returns HEX presentation of the checksum value for the specific file and checksum type.
@@ -92,22 +94,22 @@ public interface NameSpaceProvider
      * @param type the type (or algorithm) of the checksum
      * @param pnfsId file
      */
-    String getChecksum(PnfsId pnfsId, int type) throws CacheException;
+    String getChecksum(Subject subject, PnfsId pnfsId, int type) throws CacheException;
 
     /**
      * Clears checksum value storage for the specific file and checksum type.
      * @param type the type (or algorithm) of the checksum
      * @param pnfsId file
      */
-    void removeChecksum(PnfsId pnfsId, int type) throws CacheException;
+    void removeChecksum(Subject subject, PnfsId pnfsId, int type) throws CacheException;
 
 
-    int[] listChecksumTypes(PnfsId pnfsId) throws CacheException;
+    int[] listChecksumTypes(Subject subject, PnfsId pnfsId) throws CacheException;
 
-    Set<Checksum> getChecksums(PnfsId pnfsId) throws CacheException;
+    Set<Checksum> getChecksums(Subject subject, PnfsId pnfsId) throws CacheException;
 
-    StorageInfo getStorageInfo(PnfsId pnfsId) throws CacheException;
-    void setStorageInfo(PnfsId pnfsId, StorageInfo storageInfo, int mode) throws CacheException;
+    StorageInfo getStorageInfo(Subject subject, PnfsId pnfsId) throws CacheException;
+    void setStorageInfo(Subject subject, PnfsId pnfsId, StorageInfo storageInfo, int mode) throws CacheException;
 
 
     /**
@@ -116,7 +118,7 @@ public interface NameSpaceProvider
      * @param cacheLocation the new location
      * @throws CacheException
      */
-    void addCacheLocation(PnfsId pnfsId, String cacheLocation) throws CacheException;
+    void addCacheLocation(Subject subject, PnfsId pnfsId, String cacheLocation) throws CacheException;
 
     /**
      * get all cache location of the file
@@ -124,7 +126,7 @@ public interface NameSpaceProvider
      * @return list containing locations or empty list, if locations are unknown
      * @throws CacheException
      */
-    List<String> getCacheLocation(PnfsId pnfsId) throws CacheException;
+    List<String> getCacheLocation(Subject subject, PnfsId pnfsId) throws CacheException;
 
     /**
      * clear cache locations
@@ -133,5 +135,5 @@ public interface NameSpaceProvider
      * @param removeIfLast remove entry from namespace if last known location is removed
      * @throws CacheException
      */
-    void clearCacheLocation(PnfsId pnfsId, String cacheLocation, boolean removeIfLast) throws CacheException;
+    void clearCacheLocation(Subject subject, PnfsId pnfsId, String cacheLocation, boolean removeIfLast) throws CacheException;
 }

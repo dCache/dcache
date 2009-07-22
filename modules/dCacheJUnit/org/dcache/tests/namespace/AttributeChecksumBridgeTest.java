@@ -26,24 +26,24 @@ public class AttributeChecksumBridgeTest {
     public void testSetGetRemoveMD5() throws Exception {
         String sum = "CAFE";
 
-        _mgr.setChecksum(null, sum, Checksum.MD5);
+        _mgr.setChecksum(null, null, sum, Checksum.MD5);
 
-        assertEquals("check sum mismatch", sum, _mgr.getChecksum(null, Checksum.MD5));
+        assertEquals("check sum mismatch", sum, _mgr.getChecksum(null, null, Checksum.MD5));
 
-        _mgr.removeChecksum(null,Checksum.MD5);
-        assertNull("checksum not removed", _mgr.getChecksum(null, Checksum.MD5) );
+        _mgr.removeChecksum(null,null,Checksum.MD5);
+        assertNull("checksum not removed", _mgr.getChecksum(null, null, Checksum.MD5) );
     }
 
     @Test
     public void testSetGetRemoveAdler32() throws Exception {
         String sum = "CAFE";
 
-        _mgr.setChecksum(null, sum, Checksum.ADLER32);
+        _mgr.setChecksum(null, null, sum, Checksum.ADLER32);
 
-        assertEquals("check sum mismatch", sum, _mgr.getChecksum(null, Checksum.ADLER32));
+        assertEquals("check sum mismatch", sum, _mgr.getChecksum(null,null, Checksum.ADLER32));
 
-        _mgr.removeChecksum(null,Checksum.ADLER32);
-        assertNull("checksum not removed", _mgr.getChecksum(null, Checksum.ADLER32) );
+        _mgr.removeChecksum(null,null,Checksum.ADLER32);
+        assertNull("checksum not removed", _mgr.getChecksum(null,null, Checksum.ADLER32) );
     }
 
     @Test
@@ -51,12 +51,12 @@ public class AttributeChecksumBridgeTest {
         String md5Sum = "CAFE";
         String adlerSum = "BEEF";
 
-        _mgr.setChecksum(null, adlerSum, Checksum.ADLER32);
-        _mgr.setChecksum(null, md5Sum, Checksum.MD5);
+        _mgr.setChecksum(null, null, adlerSum, Checksum.ADLER32);
+        _mgr.setChecksum(null, null, md5Sum, Checksum.MD5);
 
-        assertEquals("Incorrect number of stored checksums", 2, _mgr.getChecksums(null).size() );
-        assertEquals("check sum mismatch", adlerSum, _mgr.getChecksum(null, Checksum.ADLER32));
-        assertEquals("check sum mismatch", md5Sum, _mgr.getChecksum(null, Checksum.MD5));
+        assertEquals("Incorrect number of stored checksums", 2, _mgr.getChecksums(null, null).size() );
+        assertEquals("check sum mismatch", adlerSum, _mgr.getChecksum(null, null, Checksum.ADLER32));
+        assertEquals("check sum mismatch", md5Sum, _mgr.getChecksum(null, null, Checksum.MD5));
     }
 
     class MyFakeNameSpaceProvider extends AbstractNameSpaceProvider

@@ -14,6 +14,7 @@ import java.util.List;
 import java.sql.*;
 
 import javax.sql.DataSource;
+import javax.security.auth.Subject;
 
 import org.apache.log4j.Logger;
 
@@ -118,7 +119,7 @@ public class SQLNameSpaceProvider extends AbstractNameSpaceProvider
     }
 
 
-    public void addCacheLocation(PnfsId pnfsId, String cacheLocation) throws FileNotFoundCacheException {
+    public void addCacheLocation(Subject subject, PnfsId pnfsId, String cacheLocation) throws FileNotFoundCacheException {
 
     	Connection dbConnection = null;
     	PreparedStatement ps = null;
@@ -155,7 +156,7 @@ public class SQLNameSpaceProvider extends AbstractNameSpaceProvider
 
     }
 
-    public void clearCacheLocation(PnfsId pnfsId, String cacheLocation, boolean removeIfLast) throws CacheException
+    public void clearCacheLocation(Subject subject, PnfsId pnfsId, String cacheLocation, boolean removeIfLast) throws CacheException
     {
     	Connection dbConnection = null;
     	PreparedStatement ps = null;
@@ -179,7 +180,7 @@ public class SQLNameSpaceProvider extends AbstractNameSpaceProvider
         }
     }
 
-    public List<String> getCacheLocation(PnfsId pnfsId) throws CacheException
+    public List<String> getCacheLocation(Subject subject, PnfsId pnfsId) throws CacheException
     {
         List<String> locations = new ArrayList<String>();
 
