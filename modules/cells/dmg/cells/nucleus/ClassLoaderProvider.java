@@ -4,7 +4,7 @@ import dmg.util.* ;
 import java.util.* ;
 import java.io.* ;
 
-
+import org.apache.log4j.Logger;
 
 public class ClassLoaderProvider {
 
@@ -57,23 +57,6 @@ public class ClassLoaderProvider {
             _TreeNode node = cursor.get( nodeName ) ;
             getProviders( v , name+"."+nodeName , node ) ;
         }
-    }
-    public void display( ){
-        display( "*" , _root ) ;
-    }
-    void display( String    name , _TreeNode cursor ){
-
-        ClassDataProvider le = cursor.getDefault() ;
-        System.out.println( " "+name+"    "+
-                            (le==null?"Inherited":le.toString()) );
-        Enumeration e = cursor.keys() ;
-        if( e == null )return ;
-        for( ; e.hasMoreElements() ; ){
-            String    nodeName = (String)e.nextElement() ;
-            _TreeNode node = cursor.get( nodeName ) ;
-            display( name+"."+nodeName , node ) ;
-        }
-
     }
     public void setDefault( ClassDataProvider defEntry ){
         _root.setDefault( defEntry ) ;
@@ -171,6 +154,9 @@ class CDPDummy implements ClassDataProvider {
 }
 class ClassDataProvider0 implements ClassDataProvider {
 
+    private final static Logger _log =
+        Logger.getLogger(ClassDataProvider0.class);
+
     private CellNucleus _nucleus  = null ;
     private CellPath    _cellPath = null ;
     private File        _dir      = null ;
@@ -219,8 +205,11 @@ class ClassDataProvider0 implements ClassDataProvider {
                                                            "get class "+className
                                                            ) ,
                                           4000
-                                           ) ;
-        }catch( Exception e ){
+                                          ) ;
+        }catch( InterruptedException e ){
+            _nucleus.say( "getClassData Exception : "+e ) ;
+            throw new IOException( e.toString() ) ;
+        }catch( NoRouteToCellException e ){
             _nucleus.say( "getClassData Exception : "+e ) ;
             throw new IOException( e.toString() ) ;
         }
@@ -244,29 +233,25 @@ class ClassDataProvider0 implements ClassDataProvider {
     private byte [] loadClassDataFile( File dir , String name)
         throws IOException {
 
-        System.out.println( "loadClassData : File="+name ) ;
+        _log.info("loadClassData : File="+name ) ;
         File file = new File( dir , name ) ;
-        DataInputStream in = null ;
-        try{
-            long length = file.length() ;
-            System.out.println( "loadClassData : length="+length ) ;
-            if( length == 0 )
-                throw new IOException( "Datafile has zero size" ) ;
-            byte [] data = new byte[(int)length] ;
-            in = new DataInputStream( new FileInputStream( file ) ) ;
-            in.read( data ) ;
-            in.close() ;
-
-            return data ;
-
-        }catch( IOException eee ){
-            throw eee ;
-        }finally{
-            try{ in.close(); }catch(Exception sese){} ;
+        long length = file.length() ;
+        _log.debug( "loadClassData : length="+length ) ;
+        if( length == 0 )
+            throw new IOException( "Datafile has zero size" ) ;
+        DataInputStream in = new DataInputStream(new FileInputStream(file));
+        try {
+            byte[] data = new byte[(int)length];
+            in.read(data);
+            return data;
+        } finally {
+            try {
+                in.close();
+            } catch (IOException e) {
+                _log.error("Close failed: " + e.getMessage());
+            }
         }
-
     }
-
 }
 class ClassLoaderC extends ClassLoader {
 
