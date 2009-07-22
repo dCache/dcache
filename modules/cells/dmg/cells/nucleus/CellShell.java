@@ -14,13 +14,13 @@ import  java.lang.reflect. * ;
   */
 public class      CellShell
        extends    CommandInterpreter
-       implements Replaceable, ClassDataProvider           {
-
+       implements Replaceable, ClassDataProvider
+{
    private final CellNucleus  _nucleus ;
-   private StringBuffer _contextString  = null ;
+   private StringBuilder _contextString  = null ;
    private String       _contextName    = null ;
    private String       _contextDelimiter = null ;
-   private StringBuffer _envString      = null ;
+   private StringBuilder _envString      = null ;
    private String       _envName        = null ;
    private String       _envDelimiter   = null ;
    private int          _helpMode       = 1 ;
@@ -35,10 +35,10 @@ public class      CellShell
 
    public CellShell( CellNucleus nucleus ){
       _nucleus = nucleus ;
-      try{
+      try {
          objectCommand( "exec context shellProfile" ) ;
-      }catch( Exception eeee ){}
-
+      } catch (CommandExitException e) {
+      }
    }
    public String getReplacement( String name ){
       Object o = getDictionaryEntry( name ) ;
@@ -64,27 +64,30 @@ public class      CellShell
          try{
            String xname = InetAddress.getLocalHost().getHostName() ;
            return new StringTokenizer( xname , "." ).nextToken() ;
-         }catch(Exception ee){
+         } catch (UnknownHostException e) {
            return "UnknownHostname";
          }
       }else if( name.equals( "thisFqHostname" ) ){
          try{
            return InetAddress.getLocalHost().getCanonicalHostName() ;
-         }catch(Exception ee){
+         } catch (UnknownHostException e) {
            return "UnknownHostname";
          }
       }else {
-         try{
-            int position = Integer.parseInt( name ) ;
-            Object o = _argumentVector.get(position) ;
-            if( o == null )throw new IllegalArgumentException("") ;
-            return o ;
-         }catch( Exception e ){
-            Object o = _environment.get( name ) ;
-            if( o == null )
-                o = _nucleus.getDomainContext().get( name ) ;
-            return o ;
+         try {
+            int position = Integer.parseInt(name);
+            if (position >= 0 && position < _argumentVector.size()) {
+                Object o = _argumentVector.get(position);
+                if (o == null)
+                    throw new IllegalArgumentException("");
+                return o;
+            }
+         } catch (NumberFormatException e) {
          }
+         Object o = _environment.get(name);
+         if (o == null)
+             o = _nucleus.getDomainContext().get(name);
+         return o;
       }
    }
    private String prepareCommand( String string ){
@@ -193,7 +196,7 @@ public class      CellShell
          if( ce instanceof CommandSyntaxException ){
             CommandSyntaxException cse = (CommandSyntaxException)ce ;
 
-            StringBuffer sb = new StringBuffer() ;
+            StringBuilder sb = new StringBuilder() ;
             sb.append( "Syntax Error : " ).
                append( cse.getMessage() ) ;
             if( _helpMode == 1 ){
@@ -213,14 +216,14 @@ public class      CellShell
             }
          }else if( ce instanceof CommandThrowableException ){
             CommandThrowableException cte = (CommandThrowableException)ce ;
-            StringBuffer sb = new StringBuffer() ;
+            StringBuilder sb = new StringBuilder() ;
             sb.append( cte.getMessage()+" -> " ) ;
             Throwable t = cte.getTargetException() ;
             sb.append( t.getClass().getName()+" : "+t.getMessage()+"\n" ) ;
             return sb.toString() ;
          }else if( ce instanceof CommandPanicException ){
             CommandPanicException cpe = (CommandPanicException)ce ;
-            StringBuffer sb = new StringBuffer() ;
+            StringBuilder sb = new StringBuilder() ;
             sb.append( "Panic : "+cpe.getMessage()+"\n" ) ;
             Throwable t = cpe.getTargetException() ;
             sb.append( t.getClass().getName()+" : "+t.getMessage()+"\n" ) ;
@@ -240,7 +243,7 @@ public class      CellShell
    @Override
 public String command( String c ) throws CommandExitException {
       StringTokenizer st = new StringTokenizer( c , "\n" ) ;
-      StringBuffer    sb = new StringBuffer();
+      StringBuilder    sb = new StringBuilder();
       for( ; st.hasMoreTokens() ; ){
          sb.append( commandLine( st.nextToken() ) ) ;
       }
@@ -280,7 +283,7 @@ public String command( String c ) throws CommandExitException {
    public String hh_version = "[<package>] ; package info of dmg/cells/nucleus" ;
    public Object ac_version_$_0_1( Args args ){
       Package p = Package.getPackage( args.argc() == 0 ? "dmg.cells.nucleus" : args.argv(0) );
-      StringBuffer sb = new StringBuffer();
+      StringBuilder sb = new StringBuilder();
       if( p != null ){
           String tmp = p.getSpecificationTitle() ;
           sb.append("SpecificationTitle:   ").append(tmp==null?"(Unknown)":tmp).append("\n");
@@ -415,12 +418,12 @@ public String command( String c ) throws CommandExitException {
          try{
             noRoute = false ;
             answer = null ;
-            System.out.println( "waitForCell : Sending request" ) ;
+            _nucleus.esay( "waitForCell : Sending request" ) ;
             answer = _nucleus.sendAndWait( request , ((long)check)*1000 ) ;
-            System.out.println( "waitForCell : got "+answer ) ;
+            _nucleus.esay( "waitForCell : got "+answer ) ;
          }catch( NoRouteToCellException nrtce ){
             noRoute = true ;
-         }catch( Exception e ){
+         }catch( InterruptedException e ){
             throw new
             CommandException( 66 , "sendAndWait problem : "+e.toString() ) ;
          }
@@ -502,18 +505,24 @@ public String command( String c ) throws CommandExitException {
    }
    public String hh_route_add = "-options <source> <destination>" ;
    public String fh_route_add = fh_route ;
-   public String ac_route_add_$_1_2( Args args ) throws Exception {
+   public String ac_route_add_$_1_2(Args args)
+       throws IllegalArgumentException
+   {
        _nucleus.routeAdd( new CellRoute( args ) );
        return "Done\n" ;
    }
    public String hh_route_delete = "-options <source> <destination>" ;
    public String fh_route_delete = fh_route ;
-   public String ac_route_delete_$_1_2( Args args ) throws Exception {
+   public String ac_route_delete_$_1_2(Args args)
+       throws IllegalArgumentException
+   {
        _nucleus.routeDelete( new CellRoute( args ) );
        return "Done\n" ;
    }
    public String hh_route_find = "<address>" ;
-   public String ac_route_find_$_1( Args args ) throws Exception {
+   public String ac_route_find_$_1( Args args )
+       throws IllegalArgumentException
+   {
        CellAddressCore addr = new CellAddressCore( args.argv(0) ) ;
        CellRoute route = _nucleus.routeFind( addr );
        if( route != null )return  route.toString()+"\n" ;
@@ -533,7 +542,7 @@ public String command( String c ) throws CommandExitException {
           "                          all available informations (theads,...\n"+
           "                          will be shown\n" ;
    public String ac_ps_$_0_99( Args args ){
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder() ;
       if( args.argc() == 0 ){
          sb.append( "  Cell List\n------------------\n" ) ;
          String [] list = _nucleus.getCellNames() ;
@@ -595,7 +604,9 @@ public String command( String c ) throws CommandExitException {
           " Syntax : kill <cellName>\n"+
           "          Starts the killl mechanism on the specified cell\n"+
           "         and removes it from the cell list\n" ;
-   public String ac_kill_$_1( Args args ) throws Exception {
+   public String ac_kill_$_1( Args args )
+       throws IllegalArgumentException
+   {
       _nucleus.kill( args.argv(0) );
       return "\n" ;
    }
@@ -611,7 +622,11 @@ public String command( String c ) throws CommandExitException {
           "           -w        :  wait 10 second for the answer to arrive\n"+
           "           -nolocal  :  don't deliver locally\n"+
           "           -noremote :  don't deliver remotely\n" ;
-   public String ac_send_$_2( Args args ) throws Exception {
+   public String ac_send_$_2( Args args )
+       throws IllegalArgumentException,
+              InterruptedException,
+              NoRouteToCellException
+   {
       CellMessage msg = new CellMessage(
                                 new CellPath( args.argv(0) ) ,
                                 args.argv(1) ) ;
@@ -655,7 +670,9 @@ public String command( String c ) throws CommandExitException {
    //   ping
    //
    public String hh_ping = "<destinationCell>  [<packetSize>] [-count=numOfPackets]" ;
-   public String ac_ping_$_1_2( Args args ) throws Exception{
+   public String ac_ping_$_1_2( Args args )
+       throws NoRouteToCellException
+   {
       String countString = args.getOpt("count") ;
       int count = 1 ;
       int size  = 0 ;
@@ -679,43 +696,34 @@ public String command( String c ) throws CommandExitException {
    //
    //   create
    //
-   public String hh_create = "<cellClass> <cellName> [<Arguments>]" ;
-   public String ac_create_$_2_3( Args args ) throws Exception {
-     if( ( args.optc() > 0 ) && ( args.optv(0).equals("-c") ) ){
-        try{
-          String [] argClasses = new String[1] ;
-          Object [] argObjects = new Object[1] ;
+    public String hh_create = "<cellClass> <cellName> [<Arguments>]";
+    public String ac_create_$_2_3(Args args)
+        throws InvocationTargetException,
+               ClassNotFoundException,
+               NoSuchMethodException,
+               InstantiationException,
+               IllegalAccessException
+    {
+        if( ( args.optc() > 0 ) && ( args.optv(0).equals("-c") ) ){
+            String [] argClasses = new String[1] ;
+            Object [] argObjects = new Object[1] ;
 
-          argClasses[0] = "java.lang.String" ;
-          argObjects[0] = args.argc()>2?args.argv(2):"" ;
+            argClasses[0] = "java.lang.String" ;
+            argObjects[0] = args.argc()>2?args.argv(2):"" ;
 
-          Cell cell = (Cell)_nucleus.createNewCell(
-                         args.argv(0),
-                         args.argv(1),
-                         argClasses ,
-                         argObjects   );
-          return "created : "+cell.toString() ;
-        }catch( InvocationTargetException ite ){
-          Throwable t = ite.getTargetException() ;
-          t.printStackTrace();
-          throw new Exception( ite.getTargetException() );
+            Cell cell = (Cell)_nucleus.createNewCell(args.argv(0),
+                                                     args.argv(1),
+                                                     argClasses,
+                                                     argObjects);
+            return "created : "+cell.toString() ;
+        }else{
+            Cell cell = _nucleus.createNewCell(args.argv(0),
+                                               args.argv(1),
+                                               args.argc()>2?args.argv(2):"",
+                                               true);
+            return "created : "+cell.toString() ;
         }
-     }else{
-        try{
-          Cell cell = _nucleus.createNewCell(
-                         args.argv(0),
-                         args.argv(1),
-                         args.argc()>2?args.argv(2):"" ,
-                         true );
-          return "created : "+cell.toString() ;
-        }catch( InvocationTargetException ite ){
-            Throwable t = ite.getTargetException() ;
-            t.printStackTrace();
-          throw new Exception (ite.getTargetException() );
-        }
-     }
-
-   }
+    }
    ////////////////////////////////////////////////////////////
    //
    //   domain class loader routines
@@ -735,7 +743,7 @@ public String command( String c ) throws CommandExitException {
    }
    public String ac_show_classloader( Args args ){
       String [] [] out =  _nucleus.getClassProviders() ;
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder() ;
       for( int j = 0 ; j < out.length ; j++ )
          sb.append( Formats.field( out[j][0] , 20 , Formats.LEFT ) ).
             append( out[j][1] ).
@@ -747,7 +755,8 @@ public String command( String c ) throws CommandExitException {
    //   private class loader routines
    //
    public String hh_load_cellprinter = "<cellprinterClassName> # Obsolete" ;
-   public String ac_load_cellprinter_$_1( Args args ) throws Exception {
+   public String ac_load_cellprinter_$_1( Args args )
+   {
        return "Obsolete; use log4j instead." ;
    }
    public String hh_load_interpreter = "<interpreterClassName>" ;
@@ -797,21 +806,21 @@ public String command( String c ) throws CommandExitException {
       Object      [] paras  ;
       Constructor    con ;
       Object         interObject ;
-      StringBuffer   answer = new StringBuffer() ;
+      StringBuilder answer = new StringBuilder();
       try{
          con         = c.getConstructor( paraList2 ) ;
          paras       = new Object[2] ;
          paras[0]    = _nucleus ;
          paras[1]    = this ;
          interObject = con.newInstance( paras ) ;
-      }catch(Throwable e0 ){
+      }catch(Exception e0 ){
          answer.append( e0.toString() ).append( '\n' ) ;
          try{
             con         = c.getConstructor( paraList1 ) ;
             paras       = new Object[1] ;
             paras[0]    = _nucleus ;
             interObject = con.newInstance( paras ) ;
-         }catch(Throwable e1 ){
+         }catch(Exception e1 ){
             answer.append( e1.toString() ).append( '\n' ) ;
             try{
                interObject = c.newInstance() ;
@@ -837,7 +846,10 @@ public String command( String c ) throws CommandExitException {
                                ) ,
                            4000
                        ) ;
-      }catch( Exception e ){
+      }catch( InterruptedException e ){
+         _nucleus.say( "getClassData Exception : "+e ) ;
+         return null ;
+      }catch( NoRouteToCellException e ){
          _nucleus.say( "getClassData Exception : "+e ) ;
          return null ;
       }
@@ -884,9 +896,9 @@ public String command( String c ) throws CommandExitException {
                   "   PRINT_ERROR_NUCLEUS =    8\n" +
                   "   PRINT_FATAL         = 0x10" ;
 
-   public String ac_say_$_1_99( Args args ) throws Exception {
-
-      StringBuffer sb = new StringBuffer() ;
+   public String ac_say_$_1_99( Args args )
+   {
+      StringBuilder sb = new StringBuilder() ;
 
       for( int i = 0 ; i < args.argc() ; i++ )
           sb.append( args.argv(i) ).append(' ') ;
@@ -903,11 +915,10 @@ public String command( String c ) throws CommandExitException {
           }else if( levelString.equals("fsay") ){
              _nucleus.fsay(msg) ;
           }else{
-             try{
-                _nucleus.say( Integer.parseInt(levelString) , msg ) ;
-             }catch(Exception ee ){
-                throw new
-                Exception("Illegal Level string : "+levelString);
+             try {
+                _nucleus.say(Integer.parseInt(levelString), msg);
+             } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Illegal Level string: " + levelString);
              }
           }
        }
@@ -915,7 +926,7 @@ public String command( String c ) throws CommandExitException {
    }
    public String hh_echo = "<things to echo ...>" ;
    public String ac_echo_$_1_99( Args args ){
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder() ;
       for( int i = 0 ; i < args.argc() ; i++ )
           sb.append( args.argv(i) ).append(' ') ;
       return sb.toString() ;
@@ -1070,7 +1081,7 @@ public String command( String c ) throws CommandExitException {
                key = st.nextToken() ;
                try{
                   val = st.nextToken() ;
-               }catch(Exception ee ){
+               } catch (NoSuchElementException ee) {
                   if( checkSyntax && ( check != null && check.equals("strong") ) ){
                      throw new
                      CommandException( 1 , "Nothing assigned to : "+key ) ;
@@ -1080,7 +1091,7 @@ public String command( String c ) throws CommandExitException {
 
                }
 
-            }catch(Exception e ){
+            } catch (CommandException e) {
                if( checkSyntax ){
                   throw new
                   CommandException( 2 , "Command syntax exception : "+e ) ;
@@ -1130,7 +1141,7 @@ public String command( String c ) throws CommandExitException {
          final int I_IDLE = 0 ;
          final int I_BS   = 1 ;
          int state = I_IDLE ;
-         StringBuffer sb = new StringBuffer()  ;
+         StringBuilder sb = new StringBuilder();
          for( int i = 0 ; i < value.length() ; i++ ){
             char c = value.charAt(i) ;
             switch( state ){
@@ -1232,7 +1243,7 @@ public String command( String c ) throws CommandExitException {
     private String show_dict(Args args, Map<String,Object> dict)
         throws CommandException
     {
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder();
       if( args.argc() == 0 ){
           for (Map.Entry<String,Object> e: dict.entrySet()) {
               String name = e.getKey();
@@ -1262,7 +1273,7 @@ public String command( String c ) throws CommandExitException {
     private String ls_dict(Args args, Map<String,Object> dict)
         throws CommandException
     {
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder();
       if( args.argc() == 0 ){
           int maxLength = 0 ;
           SortedSet<String> set = CollectionFactory.newTreeSet();
@@ -1404,7 +1415,7 @@ public String command( String c ) throws CommandExitException {
 					result.append("Problem : ").append(ioe.toString()).append(
 							"\n");
 				} finally {
-					if (bRead != null) try { bRead.close(); } catch (Exception eee) {}
+					if (bRead != null) try { bRead.close(); } catch (IOException eee) {}
 				}
 
 			} catch (FileNotFoundException e) {
@@ -1438,7 +1449,7 @@ public String command( String c ) throws CommandExitException {
 
             int no = 0;
             String line;
-            StringBuffer sb = null;
+            StringBuilder sb = null;
             BufferedReader input = new BufferedReader(in);
             while ((line = input.readLine()) != null) {
                 no = no + 1;
@@ -1454,7 +1465,7 @@ public String command( String c ) throws CommandExitException {
                 int len = line.length();
                 if (line.charAt(len - 1) == '\\') {
                     if (sb == null) {
-                        sb = new StringBuffer();
+                        sb = new StringBuilder();
                     }
                     sb.append(line.substring(0, len - 1)).append(' ');
                     continue;
@@ -1617,14 +1628,14 @@ public String command( String c ) throws CommandExitException {
    public String ac_define_context_$_1_2( Args args ){
        _contextName      = args.argv(0) ;
        _contextDelimiter = args.argc() > 1 ? args.argv(1) : "." ;
-       _contextString    = new StringBuffer() ;
+       _contextString    = new StringBuilder() ;
        return "" ;
    }
    public String hh_define_env = "<environmentName>" ;
    public String ac_define_env_$_1_2( Args args ){
        _envName      = args.argv(0) ;
        _envDelimiter = args.argc() > 1 ? args.argv(1) : "." ;
-       _envString    = new StringBuffer() ;
+       _envString    = new StringBuilder();
        return "" ;
    }
    public String hh_load_context = "[-b] <contextName> <fileName>" ;
@@ -1652,7 +1663,7 @@ public String command( String c ) throws CommandExitException {
         	 if(in != null) try{in.close();}catch(IOException eeee){}
          }
       }else{
-         StringBuffer   sb     = new StringBuffer() ;
+         StringBuilder sb = new StringBuilder();
          BufferedReader reader = null ;
          String         line   = null ;
          try{
@@ -1688,60 +1699,51 @@ public String command( String c ) throws CommandExitException {
 
    public String hh_copy = "<fromCellURL> <toCellURL>" ;
    public String ac_copy_$_2( Args args ) throws CommandException {
-      URL from  ;
-      URL to    ;
-      try{
-         from = new URL( args.argv(0) ) ;
-         to   = new URL( args.argv(1) ) ;
-      }catch( Exception eee ){
-         eee.printStackTrace() ;
-         throw new CommandException( 43 , "Exception : "+eee.toString() ) ;
+      URI from;
+      URI to;
+      try {
+         from = new URI(args.argv(0));
+         to = new URI(args.argv(1));
+      } catch (URISyntaxException e) {
+         throw new CommandException(43, "Invalid URL: "+ e.toString());
       }
-      if( from.equals( to ) )
-         throw new CommandException( 43 , "<fromCellURL>==<toCellURL>" ) ;
-      //
-      // check the syntax
-      //
-      String toProtocol   = to.getProtocol() ;
-      toProtocol          = toProtocol.equals("")   ? "env" : toProtocol ;
-      String toFile       = to.getFile() ;
-
-      if (toFile.equals(""))
-         throw new CommandException( 43 , "To URL missing !!!" ) ;
+      if (from.equals(to)) {
+         throw new CommandException(43, "Source and destination URL must not be the same");
+      }
 
       String source;
       try {
-          BufferedReader in = new BufferedReader(open(from));
-          try{
-              String line ;
-              StringBuilder sb = new StringBuilder() ;
-              while( ( line = in.readLine() ) != null ){
-                  sb.append( line ).append( "\n" ) ;
+          BufferedReader in = new BufferedReader(open(from.toURL()));
+          try {
+              String line;
+              StringBuilder sb = new StringBuilder();
+              while ((line = in.readLine()) != null) {
+                  sb.append(line).append("\n");
               }
-              source = sb.toString() ;
+              source = sb.toString();
           } finally {
               in.close();
           }
-      } catch (Exception e) {
-          throw new CommandException( 43 , e.toString() ) ;
+      } catch (IOException e) {
+          throw new CommandException(43, e.toString());
       }
 
-      String toHost = to.getHost() ;
-      if( ! toHost.equals("") )throw new
-           CommandException( 43 , "[env/context] can't be set remotly !!!" ) ;
-      //
-      // IBM vm1.3 doesn't add a '/' at the beginning of the URL file part
-      // as the sun impl.does. so ...
-      //
-      if( ( toFile.length() > 1 ) && ( toFile.charAt(0) == '/' ) )
-         toFile = toFile.substring(1) ;
-      if( toProtocol.equals( "env" ) ){
-          _environment.put( toFile , source) ;
-      }else if( toProtocol.equals( "context" ) ){
-          _nucleus.getDomainContext().put( toFile , source ) ;
-      }else{
-          throw new
-          CommandException( 43 , "Destination must be [env] or [context] !!!" ) ;
+      String scheme = to.getScheme();
+      if (scheme == null) {
+          scheme = "env";
+      }
+
+      String destination = to.getSchemeSpecificPart();
+      if (destination == null) {
+         throw new CommandException( 43 , "Destination missing");
+      }
+
+      if (scheme.equals("env")) {
+          _environment.put(destination, source);
+      } else if (scheme.equals("context")) {
+          _nucleus.getDomainContext().put(destination, source);
+      } else {
+          throw new CommandException(43, "Unsupported scheme for destination:" + scheme);
       }
       return "" ;
    }
