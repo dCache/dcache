@@ -94,7 +94,7 @@ import org.apache.log4j.Logger;
  *
  * @author  timur
  */
-public class Manager
+public final class Manager
         extends CellAdapter
         implements Runnable {
 	private long spaceReservationCleanupPeriodInSeconds = 60*60;
@@ -361,7 +361,7 @@ public class Manager
 					       null,
 					       null,
 					       null,
-					       new Long(size),
+					       Long.valueOf(size),
 					       null,
 					       null,
 					       null);
@@ -921,12 +921,12 @@ public class Manager
 	public String hh_listInvalidSpaces = " [-e] [-r] <n>" +
 		" # e=expired, r=released, default is both, n=number of rows to retrieve";
 
-	public static final int RELEASED = 1;
-	public static final int EXPIRED  = 2;
+	private static final int RELEASED = 1;
+	private static final int EXPIRED  = 2;
 
-	public static String[] badSpaceType= { "released",
-						"expired",
-						"released or expired" };
+	private static final String[] badSpaceType= { "released",
+                                                     "expired",
+                                                     "released or expired" };
 	public String ac_listInvalidSpaces_$_0_3( Args args )
 		throws Exception {
 		int argCount       = args.optc();
@@ -1578,13 +1578,13 @@ public class Manager
 	public static final String custodialSelectionCondition =
 		"lg.custodialAllowed = 1 ";
 
-	public static String voGroupSelectionCondition =
+	public static final String voGroupSelectionCondition =
 		" ( lgvo.VOGroup = ? OR lgvo.VOGroup = '*' ) ";
-	public static String voRoleSelectionCondition =
+	public static final String voRoleSelectionCondition =
 		" ( lgvo.VORole = ? OR lgvo.VORole = '*' ) ";
 
-	public static String spaceCondition  = " lg.freespaceinbytes-lg.reservedspaceinbytes >= ? ";
-	public static String orderBy = " order by available desc ";
+	public static final String spaceCondition  = " lg.freespaceinbytes-lg.reservedspaceinbytes >= ? ";
+	public static final String orderBy = " order by available desc ";
 
 	public static final String selectLinkGroupInfoPart1 = "SELECT lg.*,"+
 		"lg.freespaceinbytes-lg.reservedspaceinbytes as available "+
@@ -1940,7 +1940,7 @@ public class Manager
 					       null,
 					       null,
 					       null,
-					       new Integer(spaceState.getStateId()));
+					       Integer.valueOf(spaceState.getStateId()));
 			connection.commit();
 			connection_pool.returnConnection(connection);
 			connection = null;
@@ -1973,7 +1973,7 @@ public class Manager
 				       null,
 				       null,
 				       null,
-				       new Long(newLifetime),
+				       Long.valueOf(newLifetime),
 				       null,
 				       null);
 	}
@@ -2175,7 +2175,7 @@ public class Manager
 							       null,
 							       null,
 							       null,
-							       new Integer(SpaceState.EXPIRED.getStateId()));
+							       Integer.valueOf(SpaceState.EXPIRED.getStateId()));
 				}
 				catch (SQLException e) {
 					esay("Failed to expire space resevation ="+space);
@@ -2584,7 +2584,7 @@ public class Manager
 								       null,
 								       null,
 								       null,
-								       new Long(space.getSizeInBytes()+deltaSize-space.getAvailableSpaceInBytes()),
+								       Long.valueOf(space.getSizeInBytes()+deltaSize-space.getAvailableSpaceInBytes()),
 								       null,
 								       null,
 								       null,
@@ -3397,6 +3397,12 @@ public class Manager
 		latestLinkGroupUpdateTime = currentTime;
 	}
 
+        private static final String INSERT_LINKGROUP_VO = "INSERT INTO "+ManagerSchemaConstants.LinkGroupVOsTableName +
+                " ( VOGroup, VORole, linkGroupId ) VALUES ( ? , ? , ? )";
+
+        private static final String DELETE_LINKGROUP_VO = "DELETE FROM "+ManagerSchemaConstants.LinkGroupVOsTableName +
+                " WHERE VOGroup  = ? AND VORole = ? AND linkGroupId = ? ";
+
 	private long updateLinkGroup(
 		String linkGroupName,
 		long freeSpace,
@@ -3478,30 +3484,25 @@ public class Manager
 					deleteVOs.add(nextVO);
 				}
 			}
-			sqlStatement2.close();
-			for(Iterator<VOInfo> i = insertVOs.iterator(); i.hasNext();) {
-				VOInfo nextVo=i.next();
-				String insertLinkGroupVO = "INSERT INTO "+ManagerSchemaConstants.LinkGroupVOsTableName +
-					" VALUES ( '"+nextVo.getVoGroup()+
-					"','"+nextVo.getVoRole()+
-					"',"+id+")";
-				Statement sqlStatement3 = connection.createStatement();
-				sqlStatement3.executeUpdate(insertLinkGroupVO);
-				sqlStatement3.close();
-
+                        VOsSet.close();
+                        sqlStatement2.close();
+			for(VOInfo nextVo :insertVOs ) { 
+                                manager.update(connection,
+                                               INSERT_LINKGROUP_VO,
+                                               nextVo.getVoGroup(),
+                                               nextVo.getVoRole(),
+                                               id);
 			}
-			for(Iterator<VOInfo> i = deleteVOs.iterator(); i.hasNext();) {
-				VOInfo nextVo=i.next();
-				String insertLinkGroupVO = "DELETE FROM "+ManagerSchemaConstants.LinkGroupVOsTableName +
-					" WHERE VOGroup = '"+nextVo.getVoGroup()+
-					"' AND VORole ='"+nextVo.getVoRole()+
-					"' AND linkGroupId="+id;
-				Statement sqlStatement4 = connection.createStatement();
-				sqlStatement4.executeUpdate(insertLinkGroupVO);
-				sqlStatement4.close();
+			for(VOInfo nextVo : deleteVOs ) { 
+                                manager.update(connection,
+                                               DELETE_LINKGROUP_VO,
+                                               nextVo.getVoGroup(),
+                                               nextVo.getVoRole(),
+                                               id);
 			}
 			connection.commit();
 			connection_pool.returnConnection(connection);
+                        connection=null;
 			return id;
 		}
 		catch(SQLException sqle) {
@@ -3658,7 +3659,7 @@ public class Manager
 				if(f.getState() == FileState.RESERVED ||
 				   f.getState() == FileState.TRANSFERRING) {
 					removePnfsIdOfFileInSpace(connection,f.getId(),
-								  new Integer(FileState.RESERVED.getStateId()));
+								  Integer.valueOf(FileState.RESERVED.getStateId()));
 					connection.commit();
 					connection_pool.returnConnection(connection);
 					connection = null;
@@ -3686,7 +3687,7 @@ public class Manager
 						null,
 						null,
 						null,
-						new Integer(FileState.TRANSFERRING.getStateId()),
+						Integer.valueOf(FileState.TRANSFERRING.getStateId()),
 						f);
 				connection.commit();
 				connection_pool.returnConnection(connection);
@@ -3771,9 +3772,9 @@ public class Manager
 								null,
 								null,
 								null,
-								new Long(size),
+								Long.valueOf(size),
 								null,
-								new Integer(FileState.STORED.getStateId()),
+								Integer.valueOf(FileState.STORED.getStateId()),
 								f);
 					}
 				}
@@ -3784,7 +3785,7 @@ public class Manager
 							null,
 							null,
 							null,
-							new Integer(FileState.RESERVED.getStateId()),
+							Integer.valueOf(FileState.RESERVED.getStateId()),
 							f);
 
 				}
@@ -3864,9 +3865,9 @@ public class Manager
 							null,
 							null,
 							null,
-							new Long(size),
+							Long.valueOf(size),
 							null,
-							new Integer(FileState.FLUSHED.getStateId()),
+							Integer.valueOf(FileState.FLUSHED.getStateId()),
 							f);
 					connection.commit();
 					connection_pool.returnConnection(connection);
@@ -3975,7 +3976,7 @@ public class Manager
                         }
                         catch(SQLException sqle) {
                                 //
-                                // this is not an error: we are here in too cases
+                                // this is not an error: we are here in two cases
                                 //   1) no transient file found - OK
                                 //   2) more than one transient file found, less OK, but
                                 //      remaining transient files will be garbage colllected after timeout
