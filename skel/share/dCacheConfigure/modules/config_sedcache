@@ -2064,115 +2064,75 @@ yaim_config_dcache_files_key_value_node_config()
 {
     yaimlog DEBUG "function yaim_config_dcache_files_key_value_node_config start"
     local reusevoms
+    local servicesettings
     configFile=/opt/d-cache/etc/node_config
     # Start processing
     yaim_config_file_update_prepare ${configFile}
     file2update=$RET
-
     yaim_query_conf_node_srm_door
     tmptrue=$?
     if [ "x${tmptrue}" == "x1" ] ;then
-        yaim_config_file_set_value "${file2update}" "SRM" "yes"
-    else
-        yaim_config_file_set_value "${file2update}" "SRM" "no"
+        servicesettings="${servicesettings} srm"
     fi
 
     yaim_query_conf_node_gsiftp_door
     tmptrue=$?
     if [ "x${tmptrue}" == "x1" ] ;then
-        yaim_config_file_set_value "${file2update}" "GRIDFTP" "yes"
-    else
-        yaim_config_file_set_value "${file2update}" "GRIDFTP" "no"
+        servicesettings="${servicesettings} gridftp"
     fi
 
     yaim_query_conf_node_dcap_door
     tmptrue=$?
     if [ "x${tmptrue}" == "x1" ] ;then
-        yaim_config_file_set_value "${file2update}" "DCAP" "yes"
-    else
-        yaim_config_file_set_value "${file2update}" "DCAP" "no"
+        servicesettings="${servicesettings} dcap"
     fi
  
 
     yaim_query_conf_node_gsidcap_door
     tmptrue=$?
     if [ "x${tmptrue}" == "x1" ] ;then
-        yaim_config_file_set_value "${file2update}" "GSIDCAP" "yes"
-    else
-        yaim_config_file_set_value "${file2update}" "GSIDCAP" "no"
+        servicesettings="${servicesettings} gsidcap"
     fi
     
     yaim_query_conf_node_xrootd_door
     tmptrue=$?
     if [ "x${tmptrue}" == "x1" ] ;then
-        yaim_config_file_set_value "${file2update}" "XROOTD" "yes"
-    else
-        yaim_config_file_set_value "${file2update}" "XROOTD" "no"
+        servicesettings="${servicesettings} xrootd"
     fi
     yaim_query_conf_infoprovider_system
     tmptrue=$?
     if [ "x${tmptrue}" == "x1" ] ;then
-        yaim_config_file_set_value "${file2update}" "infoProvider" "yes"
-    else
-        yaim_config_file_set_value "${file2update}" "infoProvider" "no"
+        servicesettings="${servicesettings} infoProvider"
     fi
     yaim_query_conf_info_system
     tmptrue=$?
     if [ "x${tmptrue}" == "x1" ] ;then
-        yaim_config_file_set_value "${file2update}" "info" "yes"
-    else
-        yaim_config_file_set_value "${file2update}" "info" "no"
+        servicesettings="${servicesettings} info"
     fi
     yaim_query_conf_web_system
     tmptrue=$?
     if [ "x${tmptrue}" == "x1" ] ;then
-        yaim_config_file_set_value "${file2update}" "httpDomain" "yes"
-    else
-        yaim_config_file_set_value "${file2update}" "httpDomain" "no"
+        servicesettings="${servicesettings} httpd"
     fi
-    
-    
-        
+      
     yaim_query_conf_node_dcache_admin
     admintrue=$?
     yaim_query_conf_node_dcache_name_server
     NameServerTrue=$?
     if [ "${admintrue}${NameServerTrue}" == "11" ] ;then
         yaim_config_file_set_value "${file2update}" "NODE_TYPE" "custom"
-        yaim_config_file_set_value "${file2update}" "adminDoor" "yes"
-        yaim_config_file_set_value "${file2update}" "dirDomain" "yes"
-        yaim_config_file_set_value "${file2update}" "lmDomain" "yes"
-        yaim_config_file_set_value "${file2update}" "pnfsManager" "yes"
-        yaim_config_file_set_value "${file2update}" "poolManager" "yes"
-        yaim_config_file_set_value "${file2update}" "utilityDomain" "yes"
+        servicesettings="${servicesettings} admin dir lm pnfs dCache utility"
     fi
     if [ "${admintrue}${NameServerTrue}" == "00" ] ;then
         yaim_config_file_set_value "${file2update}" "NODE_TYPE" "custom"
-        yaim_config_file_set_value "${file2update}" "adminDoor" "no"
-        yaim_config_file_set_value "${file2update}" "dirDomain" "no"
-        yaim_config_file_set_value "${file2update}" "lmDomain" "no"
-        yaim_config_file_set_value "${file2update}" "pnfsManager" "no"  
-        yaim_config_file_set_value "${file2update}" "poolManager" "no"
-        yaim_config_file_set_value "${file2update}" "utilityDomain" "no"
     fi
     if [ "${admintrue}${NameServerTrue}" == "01" ] ;then
         yaim_config_file_set_value "${file2update}" "NODE_TYPE" "custom"
-        yaim_config_file_set_value "${file2update}" "adminDoor" "no"
-        yaim_config_file_set_value "${file2update}" "dirDomain" "yes"
-        yaim_config_file_set_value "${file2update}" "infoProvider" "no"
-        yaim_config_file_set_value "${file2update}" "lmDomain" "no"
-        yaim_config_file_set_value "${file2update}" "pnfsManager" "yes"  
-        yaim_config_file_set_value "${file2update}" "poolManager" "no"
-        yaim_config_file_set_value "${file2update}" "utilityDomain" "no"
+        servicesettings="${servicesettings} dir pnfs"
     fi
     if [ "${admintrue}${NameServerTrue}" == "10" ] ;then
         yaim_config_file_set_value "${file2update}" "NODE_TYPE" "custom"
-        yaim_config_file_set_value "${file2update}" "adminDoor" "yes"
-        yaim_config_file_set_value "${file2update}" "dirDomain" "no"
-        yaim_config_file_set_value "${file2update}" "lmDomain" "yes"
-        yaim_config_file_set_value "${file2update}" "pnfsManager" "no"
-        yaim_config_file_set_value "${file2update}" "poolManager" "yes"
-        yaim_config_file_set_value "${file2update}" "utilityDomain" "yes"
+	servicesettings="${servicesettings} admin lm dCache utility"
     fi
     yaim_query_conf_node_dcache_name_server_list
     NameServerNode=$RET
@@ -2184,17 +2144,16 @@ yaim_config_dcache_files_key_value_node_config()
     yaim_query_conf_voms
     reusevoms=$?
     if [ "$reusevoms" == "1" ] ; then
-        yaim_config_file_set_value "${file2update}" "gPlazmaService" "yes"
-    else
-        yaim_config_file_set_value "${file2update}" "gPlazmaService" "no"
+        servicesettings="${servicesettings} gPlazma"
     fi
     
     yaim_query_conf_node_dcache_name_type
     nameServerType=${RET}
     if [ "${nameServerType}" == "chimera" ] ; then
         yaim_config_file_set_value "${file2update}" NAMESPACE chimera
+	servicesettings="${servicesettings} chimera"
     fi
-        
+    yaim_config_file_set_value "${file2update}" "SERVICES" "${servicesettings}"
     # Finished editng values
     yaim_config_file_update_done ${configFile}
     if [ $? == 1 ] ; then 
