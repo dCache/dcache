@@ -27,7 +27,7 @@ public class HsmSet
     implements CellCommandListener,
                CellSetupProvider
 {
-    private final Map<String,HsmInfo> _hsm = new HashMap<String,HsmInfo>();
+    private final Map<String,HsmInfo> _hsm = CollectionFactory.newHashMap();
 
     /**
      * Information about a particular HSM instance.
@@ -176,13 +176,12 @@ public class HsmSet
      */
     private void _scanOptions(HsmInfo info, Args args)
     {
-       Enumeration<String> e = args.options().keys();
-       while (e.hasMoreElements()) {
-          String optName  = e.nextElement();
-          String optValue = args.getOpt(optName);
+        for (Map.Entry<String,String> e: args.options().entrySet()) {
+            String optName  = e.getKey();
+            String optValue = e.getValue();
 
-          info.setAttribute(optName, optValue == null ? "" : optValue);
-       }
+            info.setAttribute(optName, optValue == null ? "" : optValue);
+        }
     }
 
     /**
@@ -191,11 +190,9 @@ public class HsmSet
      */
     private void _scanOptionsUnset(HsmInfo info, Args args)
     {
-       Enumeration<String> e = args.options().keys();
-       while (e.hasMoreElements()) {
-          String optName  = e.nextElement();
-          info.unsetAttribute(optName);
-       }
+        for (String optName: args.options().keySet()) {
+            info.unsetAttribute(optName);
+        }
     }
 
     public String hh_hsm_set = "<hsmType> [<hsmInstance>] [-<key>=<value>] ... ";
@@ -258,7 +255,7 @@ public class HsmSet
             }
         }
     }
-    
+
     @Override
     public void beforeSetup() {}
 

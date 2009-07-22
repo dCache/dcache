@@ -1,6 +1,6 @@
 package dmg.cells.nucleus;
 
-import java.util.Dictionary;
+import java.util.Map;
 import dmg.util.Args;
 
 /**
@@ -109,7 +109,7 @@ public interface CellEndpoint
      * Returns the domain context. The domain context is shared by all
      * cells in a domain.
      */
-    Dictionary getDomainContext();
+    Map<String,Object> getDomainContext();
 
     /**
      * Returns the cell command line arguments provided when the cell

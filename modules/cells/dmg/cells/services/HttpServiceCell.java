@@ -19,8 +19,8 @@ public class      HttpServiceCell
    private int          _listenPort ;
    private Thread       _listenThread ;
    private int          _serial    = 0 ;
-   private Map<String, AliasEntry>      _aliasHash = new HashMap<String, AliasEntry>() ;
-   private Dictionary   _context   = null ;
+   private final Map<String, AliasEntry> _aliasHash = CollectionFactory.newHashMap();
+   private final Map<String,Object> _context;
    private SimpleDateFormat _dateFormat =
                 new SimpleDateFormat( "EEE, dd MMM yyyy hh:mm:ss z");
 
@@ -314,7 +314,7 @@ public class      HttpServiceCell
        private PrintWriter    _pw ;
        private Socket         _socket  ;
        private int            _serial ;
-       private HashMap        _map = new HashMap() ;
+       private Map<String,String> _map = CollectionFactory.newHashMap();
        private String    []   _tokens ;
        private int            _tokenOffset = 1 ;
        private boolean        _isDirectory = false ;
@@ -326,7 +326,7 @@ public class      HttpServiceCell
        // the HttpRequest interface
        //
        public void    setContentType( String type ){ _contentType = type ; }
-       public HashMap getRequestAttributes(){ return _map ; }
+       public Map<String,String> getRequestAttributes(){ return _map ; }
        public OutputStream getOutputStream(){ return _out ; }
        public PrintWriter  getPrintWriter(){ return _pw ; }
        public String []    getRequestTokens(){ return _tokens ; }
@@ -519,11 +519,8 @@ public class      HttpServiceCell
            sb.append("<center>\n");
            sb.append("<table border=1 cellspacing=0 cellpadding=4 width=\"%90\">\n");
            sb.append("<tr><th>Context Name</th><th>Class</th><th>Content</th></tr>\n");
-           TreeMap map = new TreeMap() ;
-           String keystring = null ;
-           for( Enumeration e = _context.keys() ; e.hasMoreElements() ; ){
-               map.put(keystring=(String)e.nextElement(),_context.get(keystring));
-           }
+           SortedMap<String,Object> map = CollectionFactory.newTreeMap();
+           map.putAll(_context);
            for( Iterator n = map.entrySet().iterator() ; n.hasNext() ; ){
                Map.Entry e = (Map.Entry)n.next() ;
                String key  = (String)e.getKey()  ;

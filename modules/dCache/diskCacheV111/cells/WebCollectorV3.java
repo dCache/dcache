@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.TreeMap;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Dictionary;
 import java.util.Set;
 
 import dmg.cells.services.login.LoginBrokerInfo;
@@ -956,8 +955,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         say("Waiting for collector thread to be finished");
         _collectThread.interrupt();
         _senderThread.interrupt();
-        Dictionary context = _nucleus.getDomainContext();
-        context.remove("cellInfoTable.html");
+        _nucleus.getDomainContext().remove("cellInfoTable.html");
 
         say("cellInfoTable.html removed from domain context");
 

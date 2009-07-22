@@ -13,7 +13,7 @@ public class OptionShell {
        _user    = user ;
        _nucleus = nucleus ;
        _args    = args ;
-    
+
     }
     public void say( String s ){ _nucleus.say( "OptionShell:"+s ) ; }
     public void esay( String s ){ _nucleus.esay( "OptionShell:"+s ) ; }
@@ -23,16 +23,16 @@ public class OptionShell {
                              new Vehicle( "hallo" , 4 ) ) ) ;
        return "Done" ;
     }
-    public String ac_show_options( Args args ){
-        Enumeration e = _args.options().keys() ;
-        StringBuffer sb = new StringBuffer() ;
-        while( e.hasMoreElements() ){
-            String key = (String)e.nextElement() ;
-            sb.append( key ).
-               append(" -> ").
-               append( _args.getOpt(key) ).
-               append( "\n" ) ;
+
+    public String ac_show_options(Args args)
+    {
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String,String> e: _args.options().entrySet()) {
+            sb.append(e.getKey());
+            sb.append(" -> ");
+            sb.append(e.getValue());
+            sb.append("\n" );
         }
-        return sb.toString() ;
+        return sb.toString();
     }
 }

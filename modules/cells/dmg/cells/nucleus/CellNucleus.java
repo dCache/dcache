@@ -151,7 +151,12 @@ public class CellNucleus implements Runnable, ThreadFactory {
     public CellInfo getCellInfo() {
         return __cellGlue.getCellInfo(getCellName());
     }
-    public Dictionary<String, Object> getDomainContext() { return __cellGlue.getCellContext(); }
+
+    public Map<String, Object> getDomainContext()
+    {
+        return __cellGlue.getCellContext();
+    }
+
     public Reader getDomainContextReader(String contextName)
         throws FileNotFoundException  {
         Object o = __cellGlue.getCellContext(contextName);

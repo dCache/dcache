@@ -1,7 +1,7 @@
 package diskCacheV111.util;
 
 import java.util.Date;
-import java.util.Dictionary;
+import java.util.Map;
 import java.io.StringWriter;
 
 /**
@@ -19,7 +19,7 @@ public class HTMLBuilder extends HTMLWriter
      *
      * @param context Cell nucleus context
      */
-    public HTMLBuilder(Dictionary context)
+    public HTMLBuilder(Map<String,Object> context)
     {
         super(new StringWriter(), context);
     }
@@ -40,5 +40,5 @@ public class HTMLBuilder extends HTMLWriter
     public void writeToContext(String name)
     {
         _context.put(name, toString());
-    }    
+    }
 }

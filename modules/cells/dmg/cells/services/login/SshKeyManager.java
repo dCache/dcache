@@ -3,6 +3,7 @@ package  dmg.cells.services.login ;
 import java.net.* ;
 import java.io.* ;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import dmg.cells.nucleus.*;
 import dmg.util.*;
 import dmg.protocols.ssh.* ;
@@ -45,8 +46,8 @@ public class      SshKeyManager
    private Thread  _updateThread     = null ;
    private long    _updateTimeUsed   = 0 ;
 
-   private Hashtable   _sshContext  = null ;
-   private Dictionary  _cellContext = null ;
+    private final Map<String,Object> _sshContext;
+    private final Map<String,Object> _cellContext;
 
    public SshKeyManager( String name , String args ){
        super(  name , args , false ) ;
@@ -69,7 +70,7 @@ public class      SshKeyManager
        if( ( _userPasswords = (String)_cellContext.get("userPasswordFile") ) == null )
           _userPasswords = "none" ;
 
-       _sshContext    = new Hashtable() ;
+       _sshContext = CollectionFactory.newConcurrentHashMap();
 
        _cellContext.put( "Ssh" , _sshContext ) ;
 

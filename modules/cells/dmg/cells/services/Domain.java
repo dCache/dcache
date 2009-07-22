@@ -170,7 +170,7 @@ public class Domain {
 
               String [] [] p = getParameter( tmp ) ;
 
-              Dictionary dict = systemCell.getDomainContext() ;
+              Map<String,Object> dict = systemCell.getDomainContext();
 
               for( int i = 0 ; i < p.length ; i++ )
                  dict.put( p[i][0] , p[i][1] ) ;

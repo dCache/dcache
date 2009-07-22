@@ -208,7 +208,8 @@ public class       SshLoginManager
   //
   private SshRsaKey getIdentity( String keyName ){
 
-     Dictionary sshContext = (Dictionary)_nucleus.getDomainContext().get( "Ssh" ) ;
+     Map<String,Object> sshContext =
+         (Map<String,Object>) _nucleus.getDomainContext().get("Ssh");
 
      if( sshContext == null ){
         esay( "Auth ("+keyName+") : Ssh Context unavailable" ) ;
@@ -238,7 +239,8 @@ public class       SshLoginManager
 
   public boolean   authPassword(  InetAddress addr, String user, String password ) {
      say( "Auth : Password Request for user "+user+" host "+addr ) ;
-     Dictionary sshContext = (Dictionary)_nucleus.getDomainContext().get( "Ssh" ) ;
+     Map<String,Object> sshContext =
+         (Map<String,Object>) _nucleus.getDomainContext().get("Ssh");
      if( sshContext == null ){
         esay( "Auth authPassword : Ssh Context unavailable for request from User "+
                        user+" Host "+addr ) ;
@@ -312,7 +314,8 @@ public class       SshLoginManager
   }
   private SshRsaKey getPublicKey( String domain , SshRsaKey modulusKey ,
                                   InetAddress addr, String user){
-     Dictionary sshContext = (Dictionary)_nucleus.getDomainContext().get( "Ssh" ) ;
+     Map<String,Object> sshContext =
+         (Map<String,Object>)_nucleus.getDomainContext().get("Ssh");
      say( "Serching Key in "+domain ) ;
      say( ""+modulusKey ) ;
      if( sshContext == null ){

@@ -12,7 +12,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SocketChannel;
 import java.security.MessageDigest;
-import java.util.Dictionary;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 
@@ -45,7 +45,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
     private static final int INC_SPACE  =  (50*1024*1024);
 
     private final Args          _args   ;
-    private final Dictionary    _context;
+    private final Map<String,Object> _context;
     private final CellEndpoint     _cell;
 
     private long _bytesTransferred   = -1;

@@ -60,7 +60,7 @@ public class      DbLoginCell
      //
      // create the database if not yet done
      //
-     Dictionary dict = getDomainContext() ;
+     Map<String,Object> dict = getDomainContext() ;
      _handler = (DbResourceHandler)dict.get( "database" ) ;
      if( _handler == null ){
         _container = (String) dict.get( "databaseName" ) ;

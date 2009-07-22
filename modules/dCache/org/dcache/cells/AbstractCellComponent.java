@@ -1,7 +1,7 @@
 package org.dcache.cells;
 
 import java.io.PrintWriter;
-import java.util.Dictionary;
+import java.util.Map;
 
 import dmg.util.Args;
 import dmg.cells.nucleus.CellEndpoint;
@@ -171,7 +171,7 @@ public class AbstractCellComponent
      * Returns the domain context. The domain context is shared by all
      * cells in a domain.
      */
-    protected Dictionary getDomainContext()
+    protected Map<String,Object> getDomainContext()
     {
         return _endpoint.getDomainContext();
     }

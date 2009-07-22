@@ -412,7 +412,12 @@ public class   CellAdapter
                                       argsClassNames, args);
 
     }
-    public Dictionary getDomainContext() { return _nucleus.getDomainContext(); }
+
+    public Map<String,Object> getDomainContext()
+    {
+        return _nucleus.getDomainContext();
+    }
+
     /**
      *
      * Returns a reader of the specified context Object.
@@ -866,8 +871,8 @@ public class   CellAdapter
     void dumpPinboard() {
         synchronized (_pinBoardLock) {
             try {
-                Dictionary context = getDomainContext();
-                String dumpDir = (String)getDomainContext().get("dumpDirectory");
+                Map<String,Object> context = getDomainContext();
+                String dumpDir = (String)context.get("dumpDirectory");
                 if (dumpDir == null) {
                     _nucleus.say("Pinboard not dumped (dumpDirectory not sp.)");
                     return;

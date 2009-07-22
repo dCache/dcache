@@ -12,7 +12,7 @@ import dmg.util.* ;
 public class UserMetaDataProviderExample implements UserMetaDataProvider {
 
     private final CellAdapter _cell;
-    private final Dictionary  _context;
+    private final Map<String,Object> _context;
     private final Args        _args;
     private final String      _ourName;
 
@@ -20,7 +20,8 @@ public class UserMetaDataProviderExample implements UserMetaDataProvider {
     private File    _baseDir           = null ;
 
     private int     _requestCount      = 0 ;
-    private final HashMap<String, Integer> _userStatistics    = new HashMap<String, Integer>();
+    private final Map<String, Integer> _userStatistics =
+        CollectionFactory.newHashMap();
     /**
       * we are assumed to provide the folling contructor signature.
       */
@@ -102,7 +103,7 @@ public class UserMetaDataProviderExample implements UserMetaDataProvider {
               _ourName+" : user not found : "+userName);
 
        BufferedReader br = new BufferedReader( new FileReader( userData ) ) ;
-       HashMap<String, String> result = new HashMap<String, String>() ;
+       Map<String, String> result = CollectionFactory.newHashMap();
        //
        // load the hash from file
        //
@@ -135,7 +136,7 @@ public class UserMetaDataProviderExample implements UserMetaDataProvider {
        // (as a matter of fact, it would be ok to simply
        //  return 'result'.
        //
-       HashMap<String, String> answer = new HashMap<String, String>() ;
+       Map<String, String> answer = CollectionFactory.newHashMap();
        Iterator it = attributes.iterator() ;
        while( it.hasNext() ){
           String key   = (String)it.next() ;

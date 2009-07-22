@@ -27,7 +27,7 @@ public class      CellShell
    private int          _errorCode      = 0 ;
    private String       _errorMsg       = null ;
    private String       _doOnExit       = null ;
-   private final Hashtable<String, String>    _environment    = new Hashtable<String, String>() ;
+   private final Map<String, Object> _environment = CollectionFactory.newConcurrentHashMap();
    private final ClassLoaderFactory _classLoaderFactory  = new ClassLoaderFactory() ;
    private CommandInterpreter _externalInterpreter = null  ;
    private String             _classProvider       = null ;
@@ -321,13 +321,7 @@ public String command( String c ) throws CommandExitException {
    }
    public Object ac_getcontext_$_0_1( Args args ) throws CommandException {
       if( args.argc() == 0 ){
-        Dictionary dict = _nucleus.getDomainContext() ;
-        Vector v = new Vector() ;
-        for( Enumeration e = dict.keys() ;
-             e.hasMoreElements() ; )v.addElement( e.nextElement() ) ;
-        String [] list = new String[v.size()] ;
-        v.copyInto( list ) ;
-        return list ;
+          return _nucleus.getDomainContext().keySet().toArray();
       }else{
         Object o = _nucleus.getDomainContext( args.argv(0) ) ;
         if( o == null )
@@ -951,12 +945,12 @@ public String command( String c ) throws CommandExitException {
    public Object ac_set_context_$_2( CommandRequestable request )
           throws CommandException {
 
-        Dictionary dict = _nucleus.getDomainContext() ;
+        Map<String,Object> dict = _nucleus.getDomainContext() ;
         Object contextName = request.getArgv(0) ;
         if( ! ( contextName instanceof String ) )
            throw new CommandException( 67 , "ContextName not a string" ) ;
 
-        dict.put( contextName , request.getArgv(1) ) ;
+        dict.put((String) contextName , request.getArgv(1) ) ;
 
         Object o = dict.get( contextName ) ;
         if( o == null )
@@ -1031,8 +1025,9 @@ public String command( String c ) throws CommandExitException {
        return imprt_dict( args , _environment ) ;
    }
 
-   private String imprt_dict( Args args , Dictionary dict ) throws CommandException {
-
+    private String imprt_dict(Args args, Map<String,Object> dict)
+        throws CommandException
+    {
       String  varName        = args.argv(0) ;
       boolean opt_overwrite  = args.getOpt("c") == null ;
       String  check          = args.getOpt( "check" )  ;
@@ -1040,7 +1035,7 @@ public String command( String c ) throws CommandExitException {
       boolean resolve        = args.getOpt( "nr" ) == null ;
 
       String     src     = args.getOpt( "source" ) ;
-      Dictionary srcDict = src == null ? null  :
+      Map<String,Object> srcDict = src == null ? null  :
                            src.equals("env")     ? _environment :
                            src.equals("context") ? _nucleus.getDomainContext() :
                            null ;
@@ -1118,7 +1113,9 @@ public String command( String c ) throws CommandExitException {
    public String ac_set_env_$_2( Args args )throws CommandException{
       return set_dict( args , _environment ) ;
    }
-   private String set_dict( Args args , Dictionary dict ) throws CommandException {
+    private String set_dict(Args args, Map<String,Object> dict)
+        throws CommandException
+    {
       String name  = args.argv(0) ;
       String value = args.argv(1) ;
       boolean opt_overwrite   = args.getOpt("c") == null ;
@@ -1175,8 +1172,10 @@ public String command( String c ) throws CommandExitException {
    public String ac_unset_env_$_1( Args args )throws CommandException {
       return unset_dict( args , _environment ) ;
    }
-   private String unset_dict( Args args , Dictionary dict )
-           throws CommandException      {
+
+    private String unset_dict(Args args, Map<String,Object> dict)
+           throws CommandException
+    {
       String name = args.argv(0) ;
       Object o = dict.remove( name ) ;
       if( o == null ){
@@ -1221,19 +1220,23 @@ public String command( String c ) throws CommandExitException {
    public String ac_test_env_$_0_1( Args args ) throws CommandException {
       return test_dict( args , _environment ) ;
    }
-   private String test_dict( Args args , Dictionary dict ) throws CommandException {
+    private String test_dict(Args args, Map<String,Object> dict)
+        throws CommandException
+    {
       String name  = args.argv(0) ;
       if( dict.get( name ) == null ){
          throw new
          CommandException( 66 , "not found : "+name );
       }return "" ;
    }
-   private String show_dict( Args args , Dictionary dict ) throws CommandException {
+    private String show_dict(Args args, Map<String,Object> dict)
+        throws CommandException
+    {
       StringBuffer sb = new StringBuffer() ;
       if( args.argc() == 0 ){
-         for( Enumeration e = dict.keys() ; e.hasMoreElements() ; ){
-            String name = (String)e.nextElement() ;
-            Object o = dict.get(name) ;
+          for (Map.Entry<String,Object> e: dict.entrySet()) {
+              String name = e.getKey();
+              Object o = e.getValue();
             if( o instanceof String ){
                sb.append(name).append("=") ;
                String line = (String)o ;
@@ -1244,7 +1247,7 @@ public String command( String c ) throws CommandExitException {
                if( len == 40 )sb.append("...\n") ;
                else sb.append("\n") ;
             }else
-              sb.append( name+"=<"+dict.get(name).getClass().getName()+">\n" ) ;
+              sb.append( name+"=<"+o.getClass().getName()+">\n" ) ;
          }
       }else{
          String name  = args.argv(0) ;
@@ -1256,14 +1259,15 @@ public String command( String c ) throws CommandExitException {
       }
       return sb.toString() ;
    }
-   private String ls_dict(Args args, Dictionary dict) throws CommandException {
+    private String ls_dict(Args args, Map<String,Object> dict)
+        throws CommandException
+    {
       StringBuffer sb = new StringBuffer() ;
       if( args.argc() == 0 ){
           int maxLength = 0 ;
-          SortedSet set = new TreeSet() ;
+          SortedSet<String> set = CollectionFactory.newTreeSet();
 
-          for( Enumeration e = dict.keys() ; e.hasMoreElements() ; ){
-            String name = (String)e.nextElement() ;
+          for (String name: dict.keySet()) {
             maxLength = Math.max( maxLength , name.length() ) ;
             set.add(name);
           }

@@ -7,7 +7,7 @@ import java.util.* ;
   */
 public interface HttpRequest {
 
-    public HashMap getRequestAttributes() ;
+    public Map<String,String> getRequestAttributes() ;
     public OutputStream getOutputStream() ;
     public PrintWriter  getPrintWriter() ;
     public String []    getRequestTokens() ;

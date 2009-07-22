@@ -243,12 +243,11 @@ public class PoolV4
         //
         // get additional tags
         //
-        for (Enumeration<String> options = _args.options().keys(); options
-                 .hasMoreElements();) {
-            String key = options.nextElement();
+        for (Map.Entry<String,String> option: _args.options().entrySet()) {
+            String key = option.getKey();
             _log.info("Tag scanning : " + key);
             if ((key.length() > 4) && key.startsWith("tag.")) {
-                _tags.put(key.substring(4), _args.getOpt(key));
+                _tags.put(key.substring(4), option.getValue());
             }
         }
 

@@ -8,7 +8,6 @@ import java.lang.reflect.* ;
 
 public class CellUrl {
    private                CellGlue  _glue   = null ;
-   private              Dictionary _context = null ;
    private URLStreamHandlerFactory _others  = null ;
 
    public CellUrl( CellGlue glue ){
@@ -32,7 +31,7 @@ public class CellUrl {
    {
        private String      _protocol    = null ;
        private CellNucleus _nucleus     = null ;
-       private Dictionary  _environment = null ;
+       private Map<String,Object>  _environment = null ;
        public DomainUrlConnection( URL url , String protocol ){
           super( url ) ;
           _protocol = protocol ;
@@ -60,7 +59,7 @@ public class CellUrl {
           _nucleus = nucleus ;
        }
 
-       public void setEnvironment( Dictionary environment ){
+       public void setEnvironment(Map<String,Object> environment ){
           _environment = environment ;
        }
        public InputStream getInputStream() throws IOException {
@@ -160,7 +159,7 @@ public class CellUrl {
          return answer.getMessageObject() ;
 
        }
-       private Reader getDictionaryReader( Dictionary env , String name )
+       private Reader getDictionaryReader( Map<String,Object> env , String name )
                throws IOException {
           Object o ;
           if( ( o = env.get( name ) ) == null )

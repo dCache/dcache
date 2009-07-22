@@ -1,9 +1,9 @@
 package dmg.cells.nucleus ;
 import  dmg.util.Args ;
+import dmg.util.CollectionFactory;
 import  java.io.*;
 import  java.util.* ;
 import java.util.concurrent.atomic.AtomicInteger;
-import  java.lang.Class ;
 import  java.lang.reflect.* ;
 import  java.text.*;
 
@@ -20,10 +20,14 @@ import org.apache.log4j.Logger;
 class CellGlue {
 
    private final String    _cellDomainName      ;
-   private final Hashtable<String, CellNucleus> _cellList            = new Hashtable<String, CellNucleus>() ;
-   private final Hashtable<String,List<CellEventListener>> _cellEventListener   = new Hashtable<String,List<CellEventListener>>() ;
-   private final Hashtable<String, CellNucleus> _killedCellList      = new Hashtable<String, CellNucleus>() ;
-   private final Hashtable<String, Object> _cellContext         = new Hashtable<String, Object>() ;
+   private final Map<String, CellNucleus> _cellList =
+       CollectionFactory.newConcurrentHashMap();
+   private final Map<String,List<CellEventListener>> _cellEventListener =
+       CollectionFactory.newConcurrentHashMap();
+   private final Map<String, CellNucleus> _killedCellList =
+       CollectionFactory.newConcurrentHashMap();
+   private final Map<String, Object> _cellContext =
+       CollectionFactory.newConcurrentHashMap();
    private final AtomicInteger       _uniqueCounter       = new AtomicInteger(100) ;
    public  int       _printoutLevel       = 0 ;
    public  int       _defPrintoutLevel    = CellNucleus.PRINT_ERRORS ;
@@ -199,7 +203,12 @@ class CellGlue {
                        newInstance( arguments ) ;
 
    }
-   Dictionary<String, Object>       getCellContext(){ return _cellContext ;}
+
+    Map<String, Object> getCellContext()
+    {
+        return _cellContext;
+    }
+
    Object           getCellContext( String str ){
        return _cellContext.get( str ) ;
    }
@@ -673,13 +682,16 @@ class CellGlue {
             sendMessage( nucleus , ret ) ;
 
    }
-   void addCellEventListener( CellNucleus nucleus , CellEventListener listener ){
-      List<CellEventListener> v = null ;
-      if( ( v = _cellEventListener.get( nucleus.getCellName() ) ) == null ){
-         _cellEventListener.put( nucleus.getCellName() , v = new Vector<CellEventListener>() ) ;
-      }
-      v.add( listener ) ;
-   }
+
+    void addCellEventListener(CellNucleus nucleus, CellEventListener listener)
+    {
+        List<CellEventListener> v;
+        if ((v = _cellEventListener.get(nucleus.getCellName())) == null) {
+            v = CollectionFactory.newCopyOnWriteArrayList();
+            _cellEventListener.put(nucleus.getCellName(), v);
+        }
+        v.add(listener);
+    }
 
    @Override
    public String toString(){ return _cellDomainName ; }

@@ -37,7 +37,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
    private Point            _actionPoint  = null ;
    private int              _binCount     =  40 ;
    private Dimension        _dimension    = new Dimension(400,300);
-   private Dictionary       _cellContext  = null ;
+   private Map<String,Object> _cellContext;
    private boolean          _wasStarted   = false ;
    private Date       _lastMessageArrived = null ;
    private SimpleDateFormat _simpleFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");

@@ -17,12 +17,13 @@ import org.dcache.auth.UserAuthRecord;
 public class UserMetaDataProviderFnal implements UserMetaDataProvider {
 
     private final CellAdapter _cell    ;
-    private final Dictionary  _context ;
+    private final Map<String,Object>  _context;
     private final Args        _args    ;
     private final String      _ourName ;
 
     private int     _requestCount      = 0 ;
-    private final HashMap<String, Integer> _userStatistics    = new HashMap<String, Integer>();
+    private final Map<String, Integer> _userStatistics =
+        CollectionFactory.newHashMap();
 
     //generalized kpwd file path used by all flavors
     private String _kpwdFilePath = null;
@@ -94,7 +95,7 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
         //
         // get the information for the user
         //
-        HashMap result = getUserMD(userName, userRole) ;
+        Map<String,String> result = getUserMD(userName, userRole) ;
         //
         // check for minimum requirments
         //
@@ -108,11 +109,11 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
     }
 
 
-    private HashMap getUserMD(String userPrincipal, String userRole)
+    private Map<String,String> getUserMD(String userPrincipal, String userRole)
     {
         KAuthFile authf;
         UserAuthBase pwdRecord = null;
-        HashMap<String, String> answer = new HashMap<String, String>() ;
+        Map<String, String> answer = CollectionFactory.newHashMap();
         int uid, gid;
         String home;
 

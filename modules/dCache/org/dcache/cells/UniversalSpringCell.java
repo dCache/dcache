@@ -1,7 +1,6 @@
 package org.dcache.cells;
 
 import java.util.Date;
-import java.util.Dictionary;
 import java.util.Properties;
 import java.util.Enumeration;
 import java.util.Set;
@@ -758,17 +757,6 @@ public class UniversalSpringCell
             super(args.argv(0));
         }
 
-        private void mergeDictionary(Properties properties,
-                                     Dictionary dictionary)
-        {
-            Enumeration e = dictionary.keys();
-            while (e.hasMoreElements()) {
-                Object key = e.nextElement();
-                Object value = dictionary.get(key);
-                properties.setProperty(key.toString(), value.toString());
-            }
-        }
-
         private ByteArrayResource getDomainContextResource()
         {
             Args args = (Args)getArgs().clone();
@@ -780,8 +768,8 @@ public class UniversalSpringCell
             properties.setProperty("arguments", arguments);
             properties.setProperty("thisCell", getCellName());
             properties.setProperty("thisDomain", getCellDomainName());
-            mergeDictionary(properties, getDomainContext());
-            mergeDictionary(properties, args.options());
+            mergeProperties(properties, getDomainContext());
+            mergeProperties(properties, args.options());
 
             /* Convert to byte array form such that we can make it
              * available as a Spring resource.
@@ -838,6 +826,18 @@ public class UniversalSpringCell
             s.append(o);
         }
         return s.toString();
+    }
+
+    /**
+     * Merges a map into a property set.
+     */
+    private void mergeProperties(Properties properties, Map<?,?> map)
+    {
+        for (Map.Entry<?,?> e: map.entrySet()) {
+            Object key = e.getKey();
+            Object value = e.getValue();
+            properties.setProperty(key.toString(), value.toString());
+        }
     }
 
     /**

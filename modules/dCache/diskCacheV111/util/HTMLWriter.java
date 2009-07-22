@@ -1,21 +1,21 @@
 package diskCacheV111.util;
 
 import java.util.Date;
-import java.util.Dictionary;
+import java.util.Map;
 import java.io.Writer;
 import java.io.PrintWriter;
 import java.io.OutputStream;
 
 /**
- * Specialised HTML page writer for the dCache monitoring pages.  
- * 
+ * Specialised HTML page writer for the dCache monitoring pages.
+ *
  * Most of the dCache monitoring pages share a common look and
  * feel, which is encapsulated by this class.
  */
 public class HTMLWriter extends PrintWriter
 {
     protected       int           _row;
-    protected final Dictionary    _context;
+    protected final Map<String,Object> _context;
     protected final Writer        _writer;
 
     /**
@@ -26,7 +26,7 @@ public class HTMLWriter extends PrintWriter
      * @param out     An output stream to write to
      * @param context Cell nucleus context
      */
-    public HTMLWriter(OutputStream out, Dictionary context)
+    public HTMLWriter(OutputStream out, Map<String,Object> context)
     {
         super(out);
         _context = context;
@@ -41,7 +41,7 @@ public class HTMLWriter extends PrintWriter
      * @param writer  A writer to write to
      * @param context Cell nucleus context
      */
-    public HTMLWriter(Writer writer, Dictionary context)
+    public HTMLWriter(Writer writer, Map<String,Object> context)
     {
         super(writer);
         _context = context;
@@ -102,13 +102,13 @@ public class HTMLWriter extends PrintWriter
     }
 
     /**
-     * Opens a new table. 
+     * Opens a new table.
      *
      * If provided, the arguments are interpreted as a list of pairs
      * containing first the CSS class name and then the heading for
      * the column. These will be added in a THEAD section.
      */
-    public void beginTable(String c, String... columns) 
+    public void beginTable(String c, String... columns)
     {
         _row = 0;
         if (c != null) {
@@ -136,8 +136,8 @@ public class HTMLWriter extends PrintWriter
         println("</table>");
     }
 
-    /** 
-     * Opens a new table row. 
+    /**
+     * Opens a new table row.
      *
      * If one or more CSS classes are provided as arguments, the row
      * number modulo the number of classes is used to determine which
@@ -153,7 +153,7 @@ public class HTMLWriter extends PrintWriter
             println("<tbody>");
         }
         if (c.length == 0) {
-            println("<tr>");        
+            println("<tr>");
         } else {
             String s = c[_row % c.length];
             if (s != null) {
@@ -174,7 +174,7 @@ public class HTMLWriter extends PrintWriter
     }
 
     /**
-     * Closes a row opened with beginRow(). 
+     * Closes a row opened with beginRow().
      *
      * @param increment Increment row counter when true.
      */
@@ -201,7 +201,7 @@ public class HTMLWriter extends PrintWriter
     {
         println("</tr>");
         println("</thead>");
-    }    
+    }
 
     /**
      * Adds a TD cell. The content will be formed by concatenating the

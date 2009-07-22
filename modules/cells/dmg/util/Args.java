@@ -5,7 +5,7 @@ import java.util.* ;
 public class Args implements java.io.Serializable {
 
    static final long serialVersionUID = -8950082352156787965L;
-   private final Hashtable<String, String> _optHash = new Hashtable<String, String>()  ;
+   private final Map<String, String> _optHash = CollectionFactory.newHashMap();
    private final List<String>    _optv  = new Vector<String>();
    private final List<String>    _argv  = new Vector<String>();
    private String    _oneChar = null ;
@@ -59,7 +59,11 @@ public class Args implements java.io.Serializable {
       }
 
    }
-   public Dictionary<String, String>  options() { return _optHash ; }
+
+    public Map<String, String>  options()
+    {
+        return Collections.unmodifiableMap(_optHash);
+    }
 
    public Object clone(){ return new Args( this ) ; }
 
@@ -67,11 +71,9 @@ public class Args implements java.io.Serializable {
     {
         StringBuilder s = new StringBuilder();
 
-        Dictionary options = options();
-        Enumeration e = options.keys();
-        while (e.hasMoreElements()) {
-            String key = e.nextElement().toString();
-            String value = options.get(key).toString();
+        for (Map.Entry<String,String> e: _optHash.entrySet()) {
+            String key = e.getKey();
+            String value = e.getValue();
             if (value.length() > 0) {
                 s.append('-').append(key).append('=').append(value);
             } else {
