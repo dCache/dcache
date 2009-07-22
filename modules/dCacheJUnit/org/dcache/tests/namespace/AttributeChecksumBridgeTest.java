@@ -9,6 +9,7 @@ import diskCacheV111.util.PnfsId;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import javax.security.auth.Subject;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -63,16 +64,19 @@ public class AttributeChecksumBridgeTest {
     {
         private Map<String, Object> _map = new HashMap<String, Object>();
 
-        public Object getFileAttribute(PnfsId pnfsId, String attribute) {
+        @Override
+        public Object getFileAttribute(Subject subject, PnfsId pnfsId, String attribute) {
             Object result = _map.get(attribute);
             return result;
         }
 
-        public void removeFileAttribute(PnfsId pnfsId, String attribute) {
+        @Override
+        public void removeFileAttribute(Subject subject, PnfsId pnfsId, String attribute) {
             _map.remove(attribute);
         }
 
-        public void setFileAttribute(PnfsId pnfsId, String attribute, Object data) {
+        @Override
+        public void setFileAttribute(Subject subject, PnfsId pnfsId, String attribute, Object data) {
             _map.put(attribute, data);
         }
     }
