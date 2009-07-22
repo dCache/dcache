@@ -265,16 +265,15 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
     
     private void insertStates() throws  SQLException{
        Connection _con =null;
-
+        Statement sqlStatement = null;
         try {
             _con = pool.getConnection();
             State[] states = State.getAllStates();
             String countStates = "SELECT count(*) from "+srmStateTableName;
-            Statement sqlStatement = _con.createStatement();
+            sqlStatement = _con.createStatement();
             ResultSet rs = sqlStatement.executeQuery( countStates);
             if(rs.next()){
                 int count = rs.getInt(1);
-                sqlStatement.close();
                 if(count != states.length) {
                     for(int i = 0; i<states.length; ++i) {
 
@@ -283,21 +282,19 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                          states[i].getStateId()+
                          ", '"+states[i].toString()+"' )";
                         say("executing statement: "+insertState);
+                        Statement sqlStatement1 = null;
                         try{
-                            sqlStatement = _con.createStatement();
-                            int result = sqlStatement.executeUpdate( insertState );
-                            sqlStatement.close();
+                            sqlStatement1 = _con.createStatement();
+                            int result = sqlStatement1.executeUpdate( insertState );
                             _con.commit();
-                        }
-                        catch(SQLException sqle) {
+                        } catch(SQLException sqle) {
                             //ignoring, state might be already in the table
                             esay(sqle);
+                        } finally {
+                            SqlHelper.tryToClose(sqlStatement1);
                         }
                     }
                 }
-            }
-            else {
-                sqlStatement.close();
             }
         }
         catch(SQLException sqle) {
@@ -309,6 +306,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             throw sqle;
         }
         finally {
+            SqlHelper.tryToClose(sqlStatement);
             if(_con != null) {
                 pool.returnConnection(_con);
             }
@@ -367,47 +365,50 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
        if(jobId == null) {
            throw new NullPointerException ("jobId is null");
        }
-        Statement sqlStatement = _con.createStatement();
-        String sqlStatementString = "SELECT * FROM " + getTableName() +
-        " WHERE ID="+jobId;
-        say("executing statement: "+sqlStatementString);
-        ResultSet set = sqlStatement.executeQuery(sqlStatementString);
-        if(!set.next()) {
-            sqlStatement.close();
-            return null;
-        }
-        
-        Long ID = new Long(set.getLong(1));
-        Long NEXTJOBID = new Long(set.getLong(2));
-        long CREATIONTIME = set.getLong(3);
-        long LIFETIME = set.getLong(4);
-        int STATE = set.getInt(5);
-        String ERRORMESSAGE = set.getString(6);
-        String SCHEDULERID=set.getString(7);
-        long SCHEDULER_TIMESTAMP=set.getLong(8);
-        int NUMOFRETR = set.getInt(9);
-        int MAXNUMOFRETR = set.getInt(10);
-        long LASTSTATETRANSITIONTIME = set.getLong(11);
-        Job job = getJob(_con,
-        ID,
-        NEXTJOBID ,
-        CREATIONTIME,
-        LIFETIME,
-        STATE,
-        ERRORMESSAGE,
-        SCHEDULERID,
-        SCHEDULER_TIMESTAMP,
-        NUMOFRETR,
-        MAXNUMOFRETR,
-        LASTSTATETRANSITIONTIME,
-        set,
-        12 );
-        sqlStatement.close();
-        updateJobsSet(job);
-        return job;
-    }
+        say("executing statement: SELECT * FROM " + getTableName() + " WHERE ID=?" + "("+jobId +")");
+        PreparedStatement statement =null;
+        ResultSet set = null;
+        try{
+            statement = getPreparedStatement(_con,
+                    "SELECT * FROM " + getTableName() + " WHERE ID=?",
+                    jobId.longValue());
 
-    public abstract void getUpdateAssignements(Job job, StringBuffer sb);
+                set = statement.executeQuery();
+            if(!set.next()) {
+                return null;
+            }
+            Long ID = new Long(set.getLong(1));
+            Long NEXTJOBID = new Long(set.getLong(2));
+            long CREATIONTIME = set.getLong(3);
+            long LIFETIME = set.getLong(4);
+            int STATE = set.getInt(5);
+            String ERRORMESSAGE = set.getString(6);
+            String SCHEDULERID=set.getString(7);
+            long SCHEDULER_TIMESTAMP=set.getLong(8);
+            int NUMOFRETR = set.getInt(9);
+            int MAXNUMOFRETR = set.getInt(10);
+            long LASTSTATETRANSITIONTIME = set.getLong(11);
+            Job job = getJob(_con,
+            ID,
+            NEXTJOBID ,
+            CREATIONTIME,
+            LIFETIME,
+            STATE,
+            ERRORMESSAGE,
+            SCHEDULERID,
+            SCHEDULER_TIMESTAMP,
+            NUMOFRETR,
+            MAXNUMOFRETR,
+            LASTSTATETRANSITIONTIME,
+            set,
+            12 );
+            updateJobsSet(job);
+            return job;
+        } finally {
+            SqlHelper.tryToClose(set);
+            SqlHelper.tryToClose(statement);
+        }
+    }
     
     private void updateJobsSet(Job job) {
         if(job ==null) {
@@ -428,240 +429,161 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
         
     }
     
-    public String  getUpdateJobStatement(Job job) throws SQLException{
-        
-        StringBuffer sb = new StringBuffer();
-        sb.append("UPDATE ").append( getTableName());
-        sb.append(" SET ");
-        Long tmpl =job.getNextJobId();
-        if(tmpl == null) {
-            sb.append(" NEXTJOBID =NULL, ");
-        }
-        else {
-            sb.append("NEXTJOBID = ").append(tmpl).append(", ");
-        }
-
-        sb.append(" CREATIONTIME = ").append( job.getCreationTime()).append(",");
-        sb.append(" LIFETIME = ").append(job.getLifetime()).append(",");
-        sb.append(" STATE = ").append(job.getState().getStateId()).append(",");
-        String tmp =fixStringForSQL(job.getErrorMessage());
-        if(tmp == null) {
-            sb.append(" ERRORMESSAGE =NULL, ");
-        }
-        else {
-            sb.append("ERRORMESSAGE = '").append(tmp).append("', ");
-        }
-        tmp =job.getSchedulerId();
-        if(tmp == null) {
-            sb.append(" SCHEDULERID =NULL, ");
-        }
-        else {
-            sb.append("SCHEDULERID = '").append(tmp).append("', ");
-        }
-        sb.append(" SCHEDULERTIMESTAMP = ").append(job.getSchedulerTimeStamp()).append(",");
-        sb.append(" NUMOFRETR = ").append( job.getNumberOfRetries()).append(",");
-        sb.append(" MAXNUMOFRETR = ").append( job.getMaxNumberOfRetries()).append(",");
-        sb.append(" LASTSTATETRANSITIONTIME = ").append(job.getLastStateTransitionTime());
-        getUpdateAssignements(job,sb);
-
-        sb.append(" WHERE ID=").append(job.getId());
-        return sb.toString();
-    }
-    
-        
     public void saveJob(final Job job,boolean saveifmonitoringisdesabled) throws SQLException{
         // statements for the job itself
         if(!saveifmonitoringisdesabled && !logHistory) {
             return;
         }
-        
-        final String updateStatementString  = getUpdateJobStatement(job);
-        final String createStatementString  = getCreateStatement(job);
-        final String[] additionalCreateStatements = getAdditionalCreateStatements(job);
         final Semaphore lock = job.getLock(); 
         updateJobsSet(job);
         final long jobId = job.getId().longValue();
-        //statements for the history elements
-                String historyTableName = 
-                getHistoryTableName();
-        Iterator historyIterator = job.getHistoryIterator();
-        final String[] historyInserts;
-        if(logHistory) {
-            Set historyInsertSet = new HashSet();
-            while(historyIterator.hasNext()) {
-                Job.JobHistory historyElement = 
-                    (Job.JobHistory) historyIterator.next();
-                if(historyElement.isSaved()) {
-                    continue;
-                }
-                long id = historyElement.getId();
-                String insert = "INSERT INTO "+historyTableName+
-                " VALUES ("+id+", "+
-                job.getId()+", "+
-                historyElement.getState().getStateId()+", "+
-                historyElement.getTransitionTime()+", "+
-                ( historyElement.getDescription()==null?
-                    "NULL":
-                    ("'"+historyElement.getDescription()+"'"))+
-                ")";
-                historyInsertSet.add(insert);
-                historyElement.setSaved();
-            }
-            historyInserts = (String[])historyInsertSet.toArray(
-                new String[0]);
-        } else {
-            historyInserts = null;
-        }
+        final String historyTableName =  getHistoryTableName();
+        final Iterator historyIterator = job.getHistoryIterator();
         JdbcConnectionPool.JdbcTask task = 
-                new JdbcConnectionPool.JdbcTask() {
-         public String toString() {
-           return  "save Job and its history : "+ updateStatementString; 
-         }
-         
-         public void innersay(String s) {
-             say(" JdbcTask for Job "+jobId+" :"+s);
-         }
-         
-         public void execute(Connection connection) throws SQLException {
-            boolean locked = false;
-            try {
-                   lock.acquire();
-                   locked = true;
-   
-            int result = 0;
-            try {
-                innersay(" executing statement: "+updateStatementString);
-                
-                Statement sqlStatement = connection.createStatement();
-                result = sqlStatement.executeUpdate( updateStatementString );
-                innersay(" executeUpdate result is "+result);
-                sqlStatement.close();
-                connection.commit();
-            }
-            catch(SQLException sqle) {
-                esay("storage of job="+jobId+" failed with ");
-                esay(sqle);
+            new JdbcConnectionPool.JdbcTask() {
+             public String toString() {
+                            return  "save Job and its history : ";
+             }
+
+             public void innersay(String s) {
+                 say(" JdbcTask for Job "+jobId+" :"+s);
+             }
+
+             public void execute(Connection connection) throws SQLException {
+                boolean locked = false;
                 try {
-                    connection.rollback();
-                }
-                catch(SQLException sqle1) {
-                }
-            }
-            if(result == 0) {
-                innersay("update result is 0, calling createJob()");
-                Statement sqlStatement1 = connection.createStatement();
-                String sqlStatementString1 = "SELECT * FROM "  + getTableName();
-                sqlStatementString1 +=" WHERE ID='"+jobId+"'";
-                innersay("executing statement: "+sqlStatementString1);
-                ResultSet set = sqlStatement1.executeQuery(sqlStatementString1);
-                boolean shouldcreate = false;
-                if(!set.next()) {
-                    shouldcreate = true;
-                   
-                }
-                
-                set.close();
-                sqlStatement1.close();
-                if(shouldcreate)
-                {
+                       lock.acquire();
+                       locked = true;
+
+                    int result = 0;
+                     PreparedStatement sqlStatement =null;
                     try {
-                        Statement sqlStatement = connection.createStatement();
-                        innersay("executing statement: "+createStatementString);
-                        result = sqlStatement.executeUpdate( createStatementString );
-                        sqlStatement.close();
-                        if(additionalCreateStatements != null){
-                            for(int i =0 ; i<additionalCreateStatements.length; ++i) {
-                                innersay("executing statement: "+additionalCreateStatements[i]);
-                                sqlStatement = connection.createStatement();
-                                result = sqlStatement.executeUpdate( additionalCreateStatements[i] );
-                                sqlStatement.close();
-                            }
-                        }
+                        sqlStatement = getUpdateStatement(connection,job);
+                        result = sqlStatement.executeUpdate();
                         connection.commit();
-                        
                     }
                     catch(SQLException sqle) {
-                        esay("storageof job="+jobId+" failed with ");
+                        esay("storage of job="+jobId+" failed with ");
                         esay(sqle);
-                        connection.rollback();
-                        throw sqle;
+                        try {
+                            connection.rollback();
+                        }
+                        catch(SQLException sqle1) {
+                        }
+                    } finally {
+                        SqlHelper.tryToClose(sqlStatement);
+                    }
+                    PreparedStatement sqlStatement1 = null;
+                    PreparedStatement sqlStatement2 = null;
+                    try {
+                        if(result == 0) {
+                            sqlStatement1 = connection.prepareStatement("SELECT * FROM "  + getTableName() + " where ID=?");
+                            sqlStatement1.setLong(1,jobId);
+                            ResultSet set = sqlStatement1.executeQuery();
+                            boolean shouldcreate = false;
+                            if(!set.next()) {
+                                shouldcreate = true;
+
+                            }
+                            set.close();
+                            sqlStatement1.close();
+                            if(shouldcreate) {
+                                sqlStatement2 = getCreateStatement(connection, job);
+                                try {
+                                    result = sqlStatement2.executeUpdate();
+                                    sqlStatement2.close();
+                                    final PreparedStatement[] statementList = getAdditionalCreateStatements(connection,job);
+                                    if ( statementList != null ) {
+                                        for (PreparedStatement stmt: statementList) {
+                                            try {
+                                                stmt.executeUpdate();
+                                            }
+                                            finally {
+                                                try {
+                                                    stmt.close();
+                                                }
+                                                catch (SQLException e1) { }
+                                            }
+                                        }
+                                    }
+                                    connection.commit();
+                                }
+                                catch(SQLException sqle) {
+                                    esay("storageof job="+jobId+" failed with ");
+                                    esay(sqle);
+                                    try {
+                                        sqlStatement.close();
+                                    }
+                                    catch (SQLException e1) { }
+                                        connection.rollback();
+                                        throw sqle;
+                                    }
+                            }
+                                            else {
+                                esay("update result is 0, but the record exists, ignore, but the job state might not be saved correctly");
+                            }
+                        }
+                    } finally {
+                        SqlHelper.tryToClose(sqlStatement1);
+                        SqlHelper.tryToClose(sqlStatement2);
                     }
 
+                    if(logHistory) {
+                        while(historyIterator.hasNext()) {
+                            Job.JobHistory historyElement =
+                                (Job.JobHistory) historyIterator.next();
+                            if(historyElement.isSaved()) {
+                                continue;
+                            }
+                            long id = historyElement.getId();
+                            String insert = "INSERT INTO "+historyTableName+
+                                    " VALUES (?,?,?,?,?)";
+                            PreparedStatement stmt = null;
+                            try {
+                                stmt =  getPreparedStatement(connection,
+                                     insert,
+                                     id,
+                                     job.getId().longValue(),
+                                     historyElement.getState().getStateId(),
+                                     historyElement.getTransitionTime(),
+                                     historyElement.getDescription());
+                                stmt.executeUpdate();
+                                historyElement.setSaved();
+                            }
+                            catch (SQLException e) {
+                                connection.rollback();
+                            } finally {
+                                SqlHelper.tryToClose(stmt);
+                            }
+                        }
+                    }
                 }
-                else
-                {
-                    esay("update result is 0, but the record exists, ignore, but the job state might not be saved correctly");
+                catch (InterruptedException ie) {
+                    innersay("interrupted");
+                }
+                finally {
+                    if(locked) {
+                        lock.release();
+                    }
                 }
             }
-            if(historyInserts != null) {
-                for(int i =0; i< historyInserts.length; ++i) {
-                    innersay("executing statement: "+historyInserts[i]);
-                    Statement statement = connection.createStatement();
-                    statement.executeUpdate(historyInserts[i]);
-                    statement.close();
-                }
-            }
-        } catch (InterruptedException ie) {
-            innersay("interrupted");
-        } finally {
-           if(locked) {
-               lock.release();
-           }
-        }
-        }
         };
+
         try {
             pool.execute(task);
         } catch (SQLException sqle) {
             //ignore the saving errors, this will affect monitoring and
             // future status updates, but is not critical
         }
-        
     }
-    public abstract String[] getAdditionalCreateStatements(Job job) throws SQLException;
-    
-    public abstract void getCreateList(Job job, StringBuffer sb);
-    
-    private String getCreateStatement(Job job){
-            StringBuffer sb = new StringBuffer();
-            sb.append("INSERT INTO ").append( getTableName());
-            sb.append( " VALUES ( ");
-            sb.append(job.getId());
-            sb.append(", ");
-            
-            Long tmpl =job.getNextJobId();
-            if(tmpl == null) {
-                sb.append("NULL, ");
-            }
-            else {
-                sb.append(tmpl).append(", ");
-            }
-            sb.append(job.getCreationTime()).append(", ");
-            sb.append(job.getLifetime()).append(", ");
-            sb.append(job.getState().getStateId()).append(", ");
-            String tmp =fixStringForSQL(job.getErrorMessage());
-            if(tmp == null) {
-                sb.append("NULL, ");
-            }
-            else {
-                sb.append('\'').append(tmp).append("', ");
-            }
-            tmp =job.getSchedulerId();
-            if(tmp == null) {
-                sb.append("NULL, ");
-            }
-            else {
-                sb.append('\'').append(tmp).append("', ");
-            }
-            
-            sb.append(job.getSchedulerTimeStamp()).append(", ");
-            sb.append(job.getNumberOfRetries()).append(", ");
-            sb.append(job.getMaxNumberOfRetries()).append(", ");
-            sb.append(job.getLastStateTransitionTime()).append(" ");
-            getCreateList(job,sb);
-            sb.append(" ) ");
-            return sb.toString();
+
+    protected PreparedStatement[] getAdditionalCreateStatements(Connection connection,
+                                                             Job job) throws SQLException { 
+        return null;
     }
+            
+    public abstract PreparedStatement getCreateStatement(Connection connection, Job job) throws SQLException;
+    public abstract PreparedStatement getUpdateStatement(Connection connection, Job job) throws SQLException;
     
      //
     // this method should be run only once by the scheduler itself
@@ -775,7 +697,10 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
     
     private boolean updatePendingJobsRan=false;
       
-    public void schedulePendingJobs(Scheduler scheduler) throws SQLException, InterruptedException,org.dcache.srm.scheduler.IllegalStateTransition{
+    public void schedulePendingJobs(Scheduler scheduler) 
+            throws SQLException,
+            InterruptedException,
+            org.dcache.srm.scheduler.IllegalStateTransition {
         Connection _con =null;
         try {
             _con = pool.getConnection();
@@ -910,13 +835,15 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
     public java.util.Set getJobs(String schedulerId, org.dcache.srm.scheduler.State state) throws SQLException {
         Set jobs = new java.util.HashSet();
         Connection _con =null;
+        Statement sqlStatement = null;
+        ResultSet set = null;
         try {
             _con = pool.getConnection();
-            Statement sqlStatement = _con.createStatement();
+            sqlStatement = _con.createStatement();
             String sqlStatementString = "SELECT * FROM " + getTableName();
             sqlStatementString += " WHERE SCHEDULERID='"+schedulerId+"' AND STATE='"+state+"' ";
             say("executing statement: "+sqlStatementString);
-            ResultSet set = sqlStatement.executeQuery(sqlStatementString);
+            set = sqlStatement.executeQuery(sqlStatementString);
             while(set.next()) {
                 Long ID = set.getLong(1);
                 Long NEXTJOBID = set.getLong(2);
@@ -951,8 +878,6 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
                 jobs.add(job);
             }
             
-            set.close();
-            sqlStatement.close();
             pool.returnConnection(_con);
             _con = null;
             return jobs;
@@ -965,6 +890,8 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
             throw sqle1;
         }
         finally {
+            SqlHelper.tryToClose(set);
+            SqlHelper.tryToClose(sqlStatement);
             if(_con != null) {
                 pool.returnConnection(_con);
             }
@@ -1488,12 +1415,6 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
         }
     }
     
-    public static String fixStringForSQL(String s)
-    {
-        if(s == null) { return null;}
-        return s.replace('\'', '`');
-    }
-    
     public void run(){
         long update_period = configuration.getOldRequestRemovePeriodSecs()*1000L;
         long history_lifetime = configuration.getNumDaysHistory()*24*3600*1000L;
@@ -1545,4 +1466,17 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
                 }
         }
     }
+
+    public PreparedStatement getPreparedStatement(
+            Connection connection,
+          String query,
+          Object ... args)
+    throws SQLException {
+        PreparedStatement stmt = connection.prepareStatement(query);
+        for (int i = 0; i < args.length; i++)
+                stmt.setObject(i + 1, args[i]);
+        return stmt;
+    }
+ 
 }
+
