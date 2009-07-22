@@ -406,7 +406,7 @@ public class Configuration {
 
         @Option(
                 name = "globus_tcp_port_range",
-                description = "globus tcp port range",
+                description = "comma separated globus tcp port range, like MIN,MAX",
                 required=false,
                 log=true,
                 save=true
@@ -2426,6 +2426,12 @@ public class Configuration {
                 //
                 OptionParser.parseSpecifiedOptions(this,_args);
                 extraParameters.put("priority",priority.toString());
+                //
+                // take care of normal people who tend to specify range as MIN:MAX
+                //
+                if (globus_tcp_port_range!=null) { 
+                    globus_tcp_port_range=globus_tcp_port_range.replace(':',',');
+                }
                 if (is_help) { 
                         help=true;
                 }
