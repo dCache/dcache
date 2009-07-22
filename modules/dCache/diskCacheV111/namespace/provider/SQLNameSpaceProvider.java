@@ -20,7 +20,7 @@ import org.apache.log4j.Logger;
 
 import com.mchange.v2.c3p0.DataSources;
 
-import org.dcache.util.SqlHelper;
+import org.dcache.commons.util.SqlHelper;
 
 public class SQLNameSpaceProvider extends AbstractNameSpaceProvider
 {

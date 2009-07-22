@@ -279,9 +279,11 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
         Connection _con = null;
         RequestCredential credential = null;   
         ResultSet set = null;
+        PreparedStatement stmt=null;
         try {
             _con = pool.getConnection();
-            set = select(_con, query,args);
+            stmt = prepare(_con, query,args);
+            set = stmt.executeQuery();
             //
             // we expect a single record, so the loop below is fine
             //
@@ -298,6 +300,22 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
          }
         catch (SQLException e) { 
             if(_con != null) {
+                        if ( set != null ) { 
+                            try { 
+                                    set.close();
+                            }
+                            catch (SQLException e1) { 
+                                    say("Failed to close ResultSet "+e1.getMessage());
+                            }
+                    }
+                    if ( stmt != null ) { 
+                            try { 
+                                    stmt.close();
+                            }
+                            catch (SQLException e1) { 
+                                    say("Failed to close ResultSet "+e1.getMessage());
+                            }
+                    }
                 pool.returnFailedConnection(_con);
                 _con = null;
             }
@@ -306,6 +324,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
             esay(e);
         }
         finally { 
+            if (_con != null) { 
             if ( set != null ) { 
                 try { 
                     set.close();
@@ -314,7 +333,14 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
                     say("Failed to close ResultSet "+e1.getMessage());
                 }
             }
-            if (_con != null) { 
+                    if ( stmt != null ) { 
+                            try { 
+                                    stmt.close();
+                            }
+                            catch (SQLException e1) { 
+                                    say("Failed to close ResultSet "+e1.getMessage());
+                            }
+                    }
                 pool.returnConnection(_con);
                 _con=null;
             }
@@ -507,20 +533,12 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
         return update(connection, query, args);
     }
     
-    public static ResultSet select(Connection connection, 
+    public static PreparedStatement prepare(Connection connection, 
                                    String query, 
                                    Object ... args)  throws SQLException { 
-        PreparedStatement stmt = null;
-        try { 
-            stmt =  connection.prepareStatement(query);
+            PreparedStatement stmt =  connection.prepareStatement(query);
             for (int i = 0; i < args.length; i++)
                 stmt.setObject(i + 1, args[i]);
-            return  stmt.executeQuery();
-        }
-        finally { 
-            if (stmt!=null) { 
-                stmt.close();
-            }
-        }
+            return  stmt;
     }
 }

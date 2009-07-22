@@ -1,4 +1,4 @@
-package org.dcache.util;
+package org.dcache.commons.util;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

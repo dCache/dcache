@@ -24,7 +24,7 @@ import java.sql.Types;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.Pgpass;
 
-import org.dcache.util.SqlHelper;
+import org.dcache.commons.util.SqlHelper;
 import org.dcache.util.JdbcConnectionPool;
 import org.dcache.auth.AuthorizationRecord;
 import org.dcache.auth.persistence.AuthRecordPersistenceManager;

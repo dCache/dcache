@@ -10,7 +10,130 @@ import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.SRMUser;
 
 public class LsRequestStorage extends DatabaseContainerRequestStorage{
-        public static final String TABLE_NAME ="lsrequests";
+    public static final String TABLE_NAME ="lsrequests";
+    
+    private static final String UPDATE_PREFIX = "UPDATE " + TABLE_NAME + " SET "+
+        "NEXTJOBID=?, " +
+        "CREATIONTIME=?,  " +
+        "LIFETIME=?, " +
+        "STATE=?, " +
+        "ERRORMESSAGE=?, " +//5
+        "SCHEDULERID=?, " +
+        "SCHEDULERTIMESTAMP=?," +
+        "NUMOFRETR=?," +
+        "MAXNUMOFRETR=?," +
+        "LASTSTATETRANSITIONTIME=? ";//10
+
+    private static final String INSERT_SQL = "INSERT INTO "+ TABLE_NAME+ "(    " +
+        "ID ,"+
+        "NEXTJOBID ,"+
+        "CREATIONTIME ,"+
+        "LIFETIME ,"+
+        "STATE ,"+ //5
+        "ERRORMESSAGE ,"+
+        "SCHEDULERID ,"+
+        "SCHEDULERTIMESTAMP ,"+
+        "NUMOFRETR ,"+
+        "MAXNUMOFRETR ,"+ //10
+        "LASTSTATETRANSITIONTIME,"+
+         //Database Request Storage
+        "CREDENTIALID , " +
+        "RETRYDELTATIME , "+
+        "SHOULDUPDATERETRYDELTATIME ,"+
+        "DESCRIPTION ,"+ //15
+        "CLIENTHOST ,"+
+        "STATUSCODE ,"+
+        "USERID , " +
+        // LS REQUEST
+        "EXPLANATION ,"+
+        "LONGFORMAT ,"+
+        "NUMOFLEVELS ,"+
+        "COUNT ,"+
+        "LSOFFSET ) "+
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+
+    @Override
+    public PreparedStatement getCreateStatement(Connection connection, Job job) throws SQLException {
+        LsRequest lr = (LsRequest)job;
+        PreparedStatement stmt = getPreparedStatement(connection,
+                                  INSERT_SQL,
+                                  lr.getId(),
+                                  lr.getNextJobId(),
+                                  lr.getCreationTime(),
+                                  lr.getLifetime(),
+                                  lr.getState().getStateId(),//5
+                                  lr.getErrorMessage(),
+                                  lr.getSchedulerId(),
+                                  lr.getSchedulerTimeStamp(),
+                                  lr.getNumberOfRetries(),
+                                  lr.getMaxNumberOfRetries(),//10
+                                  lr.getLastStateTransitionTime(),
+                                  //Database Request Storage
+                                  lr.getCredentialId(),
+                                  lr.getRetryDeltaTime(),
+                                  lr.isShould_updateretryDeltaTime()?0:1,
+                                  lr.getDescription(),
+                                  lr.getClient_host(),
+                                  lr.getStatusCodeString(),
+                                  lr.getUser().getId(),
+                                  lr.getExplanation(),
+                                  lr.getLongFormat()==true?1:0,
+                                  lr.getNumOfLevels(),
+                                  lr.getCount(),
+                                  lr.getOffset()
+                                  );
+       return stmt;
+    }
+
+    private static final String UPDATE_REQUEST_SQL =
+            UPDATE_PREFIX + ", CREDENTIALID=?," +
+                " RETRYDELTATIME=?," +
+                " SHOULDUPDATERETRYDELTATIME=?," +
+                " DESCRIPTION=?," +
+                " CLIENTHOST=?," +
+                " STATUSCODE=?," +
+                " USERID=?," +
+                // LS REQUEST
+                " EXPLANATION=?,"+
+                " LONGFORMAT=?,"+
+                " NUMOFLEVELS=?,"+
+                " COUNT=?,"+
+                " LSOFFSET=? "+
+                " WHERE ID=?";
+    @Override
+    public PreparedStatement getUpdateStatement(Connection connection,
+            Job job) throws SQLException {
+        LsRequest lr = (LsRequest)job;
+        PreparedStatement stmt = getPreparedStatement(connection,
+                                  UPDATE_REQUEST_SQL,
+                                  lr.getNextJobId(),
+                                  lr.getCreationTime(),
+                                  lr.getLifetime(),
+                                  lr.getState().getStateId(),
+                                  lr.getErrorMessage(),//5
+                                  lr.getSchedulerId(),
+                                  lr.getSchedulerTimeStamp(),
+                                  lr.getNumberOfRetries(),
+                                  lr.getMaxNumberOfRetries(),
+                                  lr.getLastStateTransitionTime(),//10
+                                  //Database Request Storage
+                                  lr.getCredentialId(),
+                                  lr.getRetryDeltaTime(),
+                                  lr.isShould_updateretryDeltaTime()?0:1,
+                                  lr.getDescription(),
+                                  lr.getClient_host(),
+                                  lr.getStatusCodeString(),
+                                  lr.getUser().getId(),
+                                  lr.getExplanation(),
+                                  lr.getLongFormat()==true?1:0,
+                                  lr.getNumOfLevels(),
+                                  lr.getCount(),
+                                  lr.getOffset(),
+                                  lr.getId());
+
+        return stmt;
+    }
+
         private static int ADDITIONAL_FIELDS = 5;
 
         public LsRequestStorage(Configuration configuration)
@@ -143,9 +266,6 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage{
                 sb.append(",LSOFFSET=").append(lsRequest.getOffset());
         }
         
-        public String[] getAdditionalCreateRequestStatements(ContainerRequest r)  {
-                return null;
-        }
         
         public String getFileRequestsTableName() {
                 return LsFileRequestStorage.TABLE_NAME;
