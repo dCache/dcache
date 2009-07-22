@@ -3,14 +3,15 @@
 #
 
 # Top Level Makfile
-
+PACKAGE_NAME=dcachedcap
 BIN_PATH = /afs/.desy.de/products/dcache
 RPM_STAGING_DIR	= /usr/src/packages/SOURCES
-
+LIB_PATH = $(BIN_PATH)/lib
 CP    = cp
 RM    = rm -f
 LINK  = ln -s
 MV    = mv
+RPMBUILD = rpmbuild
 
 TARGET = libdcap libpdcap dccp dcap_test depend mapfile wdccp cflags
 
@@ -70,35 +71,34 @@ release:
 install: rebuild dirs
 	@VER=`./version.sh`; \
 	$(MV) libdcap.so libdcap$$VER.so; \
-	$(RM) $(BIN_PATH)/lib/libdcap.so; \
-	$(LINK) libdcap$$VER.so $(BIN_PATH)/lib/libdcap.so; \
-	$(CP) libdcap$$VER.so $(BIN_PATH)/lib/; \
+	$(RM) $(LIB_PATH)/libdcap.so; \
+	$(LINK) libdcap$$VER.so $(LIB_PATH)/libdcap.so; \
+	$(CP) libdcap$$VER.so $(LIB_PATH)/; \
 	$(MV) libpdcap.so libpdcap$$VER.so; \
-	$(RM) $(BIN_PATH)/lib/libpdcap.so; \
-	$(LINK) libpdcap$$VER.so $(BIN_PATH)/lib/libpdcap.so; \
-	$(CP) libpdcap$$VER.so $(BIN_PATH)/lib/; \
+	$(RM) $(LIB_PATH)/libpdcap.so; \
+	$(LINK) libpdcap$$VER.so $(LIB_PATH)/libpdcap.so; \
+	$(CP) libpdcap$$VER.so $(LIB_PATH)/; \
 	$(CP) dccp $(BIN_PATH)/bin/; \
 	$(CP) dcap.h $(BIN_PATH)/include/; \
 	$(CP) dcap_errno.h $(BIN_PATH)/include/; \
 	$(CP) dc_hack.h $(BIN_PATH)/include/; \
-	$(CP) dccp.c $(BIN_PATH)/sources/;
+	$(CP) dccp.c $(BIN_PATH)/sources/; \
+	$(CP) libdcap.a $(LIB_PATH)/;
 
 dirs:
 	./mkdirs.sh $(BIN_PATH)/bin/
-	./mkdirs.sh $(BIN_PATH)/lib
+	./mkdirs.sh $(LIB_PATH)
 	./mkdirs.sh $(BIN_PATH)/include/
 	./mkdirs.sh $(BIN_PATH)/sources/
 
+dist: cleanall
+	@mkdir -p build/
+	@tar --gzip --exclude='*CVS*' --exclude='*.svn*' -cf build/$(PACKAGE_NAME).src.tgz *
 
-rpm:
-	myver=`./version.sh`; \
-	myname=`basename $$PWD`; \
-	cd ..; \
-	mv "$$myname" "$$myname-$$myver"; \
-	tar cfz "$(RPM_STAGING_DIR)/$$myname-$$myver.tar.gz" "$$myname-$$myver"; \
-	mv "$$myname-$$myver" "$$myname"; \
-	cd "$$myname"; \
-	rpmbuild  -ba *.spec
+
+rpm: cleanall dist
+	@$(RPMBUILD) -ta build/$(PACKAGE_NAME).src.tgz
+	
 
 rebuild: cleanall all
 	@echo "Compilation Done."
@@ -109,3 +109,4 @@ clean:
 cleanall: clean	
 	@rm -f $(TARGET) libdcap*.so libdcap*.a libpdcap*.so dcap.h \
 	.depend debug_map.h  debug_level.h mapfile
+	@rm -fr build
