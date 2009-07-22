@@ -51,7 +51,143 @@ import org.dcache.srm.SRMUser;
  * @author  timur
  */
 public class CopyRequestStorage extends DatabaseContainerRequestStorage{
+    public static final String TABLE_NAME="copyrequests";
+    private static final String UPDATE_PREFIX = "UPDATE " + TABLE_NAME + " SET "+
+        "NEXTJOBID=?, " +
+        "CREATIONTIME=?,  " +
+        "LIFETIME=?, " +
+        "STATE=?, " +
+        "ERRORMESSAGE=?, " +//5
+        "SCHEDULERID=?, " +
+        "SCHEDULERTIMESTAMP=?," +
+        "NUMOFRETR=?," +
+        "MAXNUMOFRETR=?," +
+        "LASTSTATETRANSITIONTIME=? ";//10
+
+        private static final String INSERT_SQL = "INSERT INTO "+ TABLE_NAME+ "(    " +
+    "ID ,"+
+    "NEXTJOBID ,"+
+    "CREATIONTIME ,"+
+    "LIFETIME ,"+
+    "STATE ,"+ //5
+    "ERRORMESSAGE ,"+
+    "SCHEDULERID ,"+
+    "SCHEDULERTIMESTAMP ,"+
+    "NUMOFRETR ,"+
+    "MAXNUMOFRETR ,"+ //10
+    "LASTSTATETRANSITIONTIME,"+
+     //Database Request Storage
+    "CREDENTIALID , " +
+    "RETRYDELTATIME , "+
+    "SHOULDUPDATERETRYDELTATIME ,"+
+    "DESCRIPTION ,"+ //15
+    "CLIENTHOST ,"+
+    "STATUSCODE ,"+
+    "USERID ,"+
+    // Copy Request
+    "STORAGETYPE, " +
+    "RETENTIONPOLICY, "+
+    "ACCESSLATENCY ) " +
+    "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
     
+    @Override
+    public PreparedStatement getCreateStatement(Connection connection, Job job) throws SQLException {
+        CopyRequest cr = (CopyRequest)job;
+        String storageTypeValue=null;
+        if(cr.getStorageType() != null) {
+            storageTypeValue = cr.getStorageType().getValue();
+        }
+        String retentionPolicyValue=null;
+        if(cr.getTargetRetentionPolicy() != null) {
+            retentionPolicyValue = cr.getTargetRetentionPolicy().getValue();
+        }
+        String accessLatencyValue=null;
+        if(cr.getTargetAccessLatency() != null) {
+            accessLatencyValue = cr.getTargetAccessLatency().getValue();
+        }
+        PreparedStatement stmt = getPreparedStatement(connection,
+                                  INSERT_SQL,
+                                  cr.getId(),
+                                  cr.getNextJobId(),
+                                  cr.getCreationTime(),
+                                  cr.getLifetime(),
+                                  cr.getState().getStateId(),//5
+                                  cr.getErrorMessage(),
+                                  cr.getSchedulerId(),
+                                  cr.getSchedulerTimeStamp(),
+                                  cr.getNumberOfRetries(),
+                                  cr.getMaxNumberOfRetries(),//10
+                                  cr.getLastStateTransitionTime(),
+                                  //Database Request Storage
+                                  cr.getCredentialId(),
+                                  cr.getRetryDeltaTime(),
+                                  cr.isShould_updateretryDeltaTime()?0:1,
+                                  cr.getDescription(),
+                                  cr.getClient_host(),
+                                  cr.getStatusCodeString(),
+                                  cr.getUser().getId(),
+                                  storageTypeValue,
+                                  retentionPolicyValue,
+                                  accessLatencyValue);
+       return stmt;
+    }
+
+    private static final String UPDATE_REQUEST_SQL =
+            UPDATE_PREFIX + ", CREDENTIALID=?," +
+                " RETRYDELTATIME=?," +
+                " SHOULDUPDATERETRYDELTATIME=?," +
+                " DESCRIPTION=?," +
+                " CLIENTHOST=?," +
+                " STATUSCODE=?," +
+                " USERID=?," +
+                " STORAGETYPE=?, " +
+                " RETENTIONPOLICY=?,"+
+                " ACCESSLATENCY=?" +
+                " WHERE ID=?";
+
+    @Override
+    public PreparedStatement getUpdateStatement(Connection connection,
+            Job job) throws SQLException {
+        CopyRequest cr = (CopyRequest)job;
+        String storageTypeValue=null;
+        if(cr.getStorageType() != null) {
+            storageTypeValue = cr.getStorageType().getValue();
+        }
+        String retentionPolicyValue=null;
+        if(cr.getTargetRetentionPolicy() != null) {
+            retentionPolicyValue = cr.getTargetRetentionPolicy().getValue();
+        }
+        String accessLatencyValue=null;
+        if(cr.getTargetAccessLatency() != null) {
+            accessLatencyValue = cr.getTargetAccessLatency().getValue();
+        }
+        PreparedStatement stmt = getPreparedStatement(connection,
+                                  UPDATE_REQUEST_SQL,
+                                  cr.getNextJobId(),
+                                  cr.getCreationTime(),
+                                  cr.getLifetime(),
+                                  cr.getState().getStateId(),
+                                  cr.getErrorMessage(),//5
+                                  cr.getSchedulerId(),
+                                  cr.getSchedulerTimeStamp(),
+                                  cr.getNumberOfRetries(),
+                                  cr.getMaxNumberOfRetries(),
+                                  cr.getLastStateTransitionTime(),//10
+                                  //Database Request Storage
+                                  cr.getCredentialId(),
+                                  cr.getRetryDeltaTime(),
+                                  cr.isShould_updateretryDeltaTime()?0:1,
+                                  cr.getDescription(),
+                                  cr.getClient_host(),
+                                  cr.getStatusCodeString(),
+                                  cr.getUser().getId(),
+                                  storageTypeValue,
+                                  retentionPolicyValue,
+                                  accessLatencyValue,
+                                  cr.getId());
+
+        return stmt;
+    }
      
     /** Creates a new instance of GetRequestStorage */
      public CopyRequestStorage(Configuration configuration) throws SQLException {
@@ -186,7 +322,6 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage{
     
     private static int ADDITIONAL_FIELDS = 3;
     
-    public static final String TABLE_NAME="copyrequests";
     public String getTableName() {
         return TABLE_NAME;
     }
@@ -214,9 +349,6 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage{
         }
     }
     
-    public String[] getAdditionalCreateRequestStatements(ContainerRequest r)  {
-        return null;
-   }    
    
     public String getFileRequestsTableName() {
         return CopyFileRequestStorage.TABLE_NAME;

@@ -23,8 +23,156 @@ import org.dcache.srm.scheduler.Job;
  * @author  timur
  */
 public class CopyFileRequestStorage extends DatabaseFileRequestStorage {
+    public static final String TABLE_NAME="copyfilerequests";
+    private static final String UPDATE_PREFIX = "UPDATE " + TABLE_NAME + " SET "+
+        "NEXTJOBID=?, " +
+        "CREATIONTIME=?,  " +
+        "LIFETIME=?, " +
+        "STATE=?, " +
+        "ERRORMESSAGE=?, " +//5
+        "SCHEDULERID=?, " +
+        "SCHEDULERTIMESTAMP=?," +
+        "NUMOFRETR=?," +
+        "MAXNUMOFRETR=?," +
+        "LASTSTATETRANSITIONTIME=? ";//10
+
+    public PreparedStatement getStatement(Connection connection, 
+                                          String query, 
+                                          Job job) throws SQLException { 
+        CopyFileRequest request = (CopyFileRequest)job;
+        PreparedStatement stmt = getPreparedStatement(connection,
+                                  query,
+                                  request.getNextJobId(),
+                                  request.getCreationTime(),
+                                  request.getLifetime(),
+                                  request.getState().getStateId(),
+                                  request.getErrorMessage(),
+                                  request.getSchedulerId(),
+                                  request.getSchedulerTimeStamp(),
+                                  request.getNumberOfRetries(),
+                                  request.getMaxNumberOfRetries(),
+                                  request.getLastStateTransitionTime(),//10
+                                  request.getRequestId(),
+                                  request.getCredentialId(),
+                                  request.getStatusCodeString(),
+                                  request.getFromURL(),
+                                  request.getToURL(),
+                                  (request.getFrom_turl()!=null?request.getFrom_turl().getURL():null),
+                                  (request.getTo_turl()!=null?request.getTo_turl().getURL():null),
+                                  request.getLocal_from_path(),
+                                  request.getLocal_to_path(),
+                                  request.getSize(),//20
+                                  request.getFromFileId(),
+                                  request.getToFileId(),
+                                  request.getRemoteRequestId(),
+                                  request.getRemoteFileId(),
+                                  request.getSpaceReservationId(),
+                                  request.getTransferId(),
+                                  request.getId());
+        return stmt;
+    }
+
+    private static final String UPDATE_REQUEST_SQL = UPDATE_PREFIX + ", REQUESTID=?, "+
+            "CREDENTIALID=?, "+
+            "STATUSCODE=?, "+
+            "FROMURL=? ,"+
+            "TOURL =?,"+
+            "FROMTURL=? ,"+
+            "TOTURL=? ,"+
+            "FROMLOCALPATH=? ,"+
+            "TOLOCALPATH=? ,"+
+            "SIZE=? ,"+  //20
+            "FROMFILEID=? ,"+
+            "TOFILEID=? ,"+
+            "REMOTEREQUESTID=? ,"+
+            "REMOTEFILEID=? , "+
+            "SPACERESERVATIONID=? , "+
+            "TRANSFERID=?   "+
+            "WHERE ID=? ";//27
     
-    /** Creates a new instance of GetFileRequestStorage */
+    public PreparedStatement getUpdateStatement(Connection connection, 
+                                                Job job) 
+        throws SQLException { 
+        if(job == null || !(job instanceof CopyFileRequest)) {
+            throw new IllegalArgumentException("job is not CopyFileRequest" );
+        }
+        CopyFileRequest request = (CopyFileRequest)job;
+        return getStatement(connection,UPDATE_REQUEST_SQL, request);
+    }
+        private static final String INSERT_SQL = "INSERT INTO "+ TABLE_NAME+ "(    " +
+            "ID ,"+
+            "NEXTJOBID ,"+
+            "CREATIONTIME ,"+
+            "LIFETIME ,"+
+            "STATE ,"+ //5
+            "ERRORMESSAGE ,"+
+            "SCHEDULERID ,"+
+            "SCHEDULERTIMESTAMP ,"+
+            "NUMOFRETR ,"+
+            "MAXNUMOFRETR ,"+ //10
+            "LASTSTATETRANSITIONTIME,"+
+            //DATABASE FILE REQUEST STORAGE
+            "REQUESTID , " +
+            "CREDENTIALID , "+
+            "STATUSCODE , "+
+            "FROMURL ,"+ //15
+            "TOURL ,"+
+            "FROMTURL ,"+
+            "TOTURL ,"+
+            "FROMLOCALPATH ,"+
+            "TOLOCALPATH ,"+ //20
+            "SIZE ,"+
+            "FROMFILEID ,"+
+            "TOFILEID ,"+
+            "REMOTEREQUESTID ,"+
+            "REMOTEFILEID , "+ //25
+            "SPACERESERVATIONID , "+
+            "TRANSFERID )  "+
+            "VALUES (?,?,?,?,?,?,?,?,?,?," +
+                    "?,?,?,?,?,?,?,?,?,?," +
+                    "?,?,?,?,?,?,?)";
+    
+    public PreparedStatement getCreateStatement(Connection connection, 
+                                                Job job) 
+        throws SQLException {
+        if(job == null || !(job instanceof CopyFileRequest)) {
+            throw new IllegalArgumentException("fr is not CopyFileRequest" );
+        }
+        CopyFileRequest request = (CopyFileRequest)job;
+        PreparedStatement stmt = getPreparedStatement(connection,
+                                  INSERT_SQL,
+                                  request.getId(),
+                                  request.getNextJobId(),
+                                  request.getCreationTime(),
+                                  request.getLifetime(),
+                                  request.getState().getStateId(),
+                                  request.getErrorMessage(),
+                                  request.getSchedulerId(),
+                                  request.getSchedulerTimeStamp(),
+                                  request.getNumberOfRetries(),
+                                  request.getMaxNumberOfRetries(),
+                                  request.getLastStateTransitionTime(),
+                                  request.getRequestId(),
+                                  request.getCredentialId(),
+                                  request.getStatusCodeString(),
+                                  request.getFromURL(),
+                                  request.getToURL(),
+                                  (request.getFrom_turl()!=null?request.getFrom_turl().getURL():null),
+                                  (request.getTo_turl()!=null?request.getTo_turl().getURL():null),
+                                  request.getLocal_from_path(),
+                                  request.getLocal_to_path(),
+                                  request.getSize(),
+                                  request.getFromFileId(),
+                                  request.getToFileId(),
+                                  request.getRemoteRequestId(),
+                                  request.getRemoteFileId(),
+                                  request.getSpaceReservationId(),
+                                  request.getTransferId());
+        return stmt;
+    }
+
+    
+    /** Creates a new instance of CopyFileRequestStorage */
     public CopyFileRequestStorage(Configuration configuration) throws SQLException {
         super(configuration        );
     }
@@ -148,195 +296,10 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage {
         "TRANSFERID "+ stringType;
   }
     private static int ADDITIONAL_FIELDS = 13;
-    public static final String TABLE_NAME="copyfilerequests";
     public String getTableName() {
         return TABLE_NAME;
     }
     
-    public void getUpdateAssignements(FileRequest fr,StringBuffer sb) {
-        if(fr == null || !(fr instanceof CopyFileRequest)) {
-            throw new IllegalArgumentException("fr is not CopyFileRequest" );
-        }
-        CopyFileRequest cfr = (CopyFileRequest)fr;
-        sb.append(", FROMURL = '").append(cfr.getFromURL()).append("',");
-        sb.append(" TOURL = '").append(cfr.getToURL()).append("',");
-        GlobusURL tmpurl =cfr.getFrom_turl();
-        
-        if(tmpurl == null) {
-            sb.append(" FROMTURL =NULL, ");
-        }
-        else {
-            sb.append("FROMTURL = '").append(tmpurl.getURL()).append("', ");
-        }
-        
-        tmpurl =cfr.getTo_turl();
-        
-        if(tmpurl == null) {
-            sb.append(" TOTURL =NULL, ");
-        }
-        else {
-            sb.append("TOTURL = '").append(tmpurl.getURL()).append("', ");
-        }
-        
-        
-        String tmp =cfr.getLocal_from_path();
-        if(tmp == null) {
-            sb.append(" FROMLOCALPATH =NULL, ");
-        }
-        else {
-            sb.append("FROMLOCALPATH = '").append(tmp).append("', ");
-        }
-        
-        tmp =cfr.getLocal_to_path();
-        if(tmp == null) {
-            sb.append(" TOLOCALPATH =NULL, ");
-        }
-        else {
-            sb.append("TOLOCALPATH = '").append(tmp).append("', ");
-        }
-        
-        sb.append(" SIZE = ").append(cfr.getSize()).append(",");
-        
-        tmp =cfr.getFromFileId();
-        if(tmp == null) {
-            sb.append(" FROMFILEID =NULL, ");
-        }
-        else {
-            sb.append("FROMFILEID = '").append(tmp).append("', ");
-        }
-        
-        tmp =cfr.getToFileId();
-        if(tmp == null) {
-            sb.append(" TOFILEID =NULL, ");
-        }
-        else {
-            sb.append("TOFILEID = '").append(tmp).append("', ");
-        }
-        
-        tmp  =cfr.getRemoteRequestId();
-        if(tmp == null) {
-            sb.append(" REMOTEREQUESTID =NULL, ");
-        }
-        else {
-            sb.append("REMOTEREQUESTID = '").append(tmp).append("', ");
-        }
-        
-        tmp  =cfr.getRemoteFileId();
-        if(tmp == null) {
-            sb.append(" REMOTEFILEID =NULL, ");
-        }
-        else {
-            sb.append("REMOTEFILEID = '").append(tmp).append("', ");
-        }
-        
-        tmp =cfr.getSpaceReservationId();
-        if(tmp == null) {
-            sb.append(" SPACERESERVATIONID =NULL, ");
-        }
-        else {
-            sb.append("SPACERESERVATIONID = '").append(tmp).append("', ");
-        }
-        tmp =cfr.getTransferId();
-        if(tmp == null) {
-            sb.append(" TRANSFERID =NULL ");
-        }
-        else {
-            sb.append("TRANSFERID = '").append(tmp).append("' ");
-        }
-  }
-    
-     public void getCreateList(FileRequest fr,StringBuffer sb) {
-        if(fr == null || !(fr instanceof CopyFileRequest)) {
-            throw new IllegalArgumentException("fr is not CopyFileRequest" );
-        }
-        CopyFileRequest cfr = (CopyFileRequest)fr;
-        sb.append(", '").append(cfr.getFromURL()).append("',");
-        sb.append(" '").append(cfr.getToURL()).append("',");
-        GlobusURL tmpurl =cfr.getFrom_turl();
-        
-        if(tmpurl == null) {
-            sb.append(" NULL, ");
-        }
-        else {
-            sb.append("'").append(tmpurl.getURL()).append("', ");
-        }
-        
-        tmpurl =cfr.getTo_turl();
-        
-        if(tmpurl == null) {
-            sb.append(" NULL, ");
-        }
-        else {
-            sb.append("'").append(tmpurl.getURL()).append("', ");
-        }
-        
-        
-        String tmp =cfr.getLocal_from_path();
-        if(tmp == null) {
-            sb.append(" NULL, ");
-        }
-        else {
-            sb.append("'").append(tmp).append("', ");
-        }
-        
-        tmp =cfr.getLocal_to_path();
-        if(tmp == null) {
-            sb.append(" NULL, ");
-        }
-        else {
-            sb.append("'").append(tmp).append("', ");
-        }
-        
-        sb.append(cfr.getSize()).append(", ");
-        
-        tmp =cfr.getFromFileId();
-        if(tmp == null) {
-            sb.append(" NULL, ");
-        }
-        else {
-            sb.append("'").append(tmp).append("', ");
-        }
-        
-        tmp =cfr.getToFileId();
-        if(tmp == null) {
-            sb.append("NULL, ");
-        }
-        else {
-            sb.append("'").append(tmp).append("', ");
-        }
-        
-        tmp  =cfr.getRemoteRequestId();
-        if(tmp == null) {
-            sb.append("NULL, ");
-        }
-        else {
-            sb.append("'").append(tmp).append("', ");
-        }
-        
-        tmp  =cfr.getRemoteFileId();
-        if(tmp == null) {
-            sb.append("NULL, ");
-        }
-        else {
-            sb.append("'").append(tmp).append("', ");
-        }
-        
-        tmp = cfr.getSpaceReservationId();
-        if(tmp == null) {
-            sb.append("NULL, ");
-        }
-        else {
-            sb.append('\'').append(tmp).append("', ");
-        }
-        
-        tmp = cfr.getTransferId();
-        if(tmp == null) {
-            sb.append("NULL ");
-        }
-        else {
-            sb.append('\'').append(tmp).append("' ");
-        }
-    }
    
      public String getRequestTableName() {
           return CopyRequestStorage.TABLE_NAME;
