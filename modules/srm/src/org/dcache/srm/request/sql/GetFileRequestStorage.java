@@ -17,6 +17,118 @@ import org.dcache.srm.scheduler.Job;
  * @author  timur
  */
 public class GetFileRequestStorage extends DatabaseFileRequestStorage {
+    public static final String TABLE_NAME = "getfilerequests";
+
+    private static final String UPDATE_PREFIX = "UPDATE " + TABLE_NAME + " SET "+
+        "NEXTJOBID=?, " +
+        "CREATIONTIME=?,  " +
+        "LIFETIME=?, " +
+        "STATE=?, " +
+        "ERRORMESSAGE=?, " +//5
+        "SCHEDULERID=?, " +
+        "SCHEDULERTIMESTAMP=?," +
+        "NUMOFRETR=?," +
+        "MAXNUMOFRETR=?," +
+        "LASTSTATETRANSITIONTIME=? ";//10
+    
+    public PreparedStatement getStatement(Connection connection, 
+                                          String query, 
+                                          Job job) throws SQLException { 
+        GetFileRequest request = (GetFileRequest)job;
+        PreparedStatement stmt = getPreparedStatement(connection,
+                                                      query, 
+                                                      request.getNextJobId(),
+                                                      request.getCreationTime(),
+                                                      request.getLifetime(),
+                                                      request.getState().getStateId(),
+                                                      request.getErrorMessage(),
+                                                      request.getSchedulerId(),
+                                                      request.getSchedulerTimeStamp(),
+                                                      request.getNumberOfRetries(),
+                                                      request.getMaxNumberOfRetries(),
+                                                      request.getLastStateTransitionTime(),
+                                                      request.getRequestId(),
+                                                      request.getCredentialId(),
+                                                      request.getStatusCodeString(),
+                                                      request.getSurlString(),
+                                                      request.getTurlString(),
+                                                      request.getFileId(),
+                                                      request.getPinId(),
+                                                      request.getId());
+        return stmt;
+    }
+
+    private static final String UPDATE_REQUEST_SQL =
+            UPDATE_PREFIX +
+            ", REQUESTID=?, "+
+            "CREDENTIALID=?, "+
+            "STATUSCODE=?, "+
+            "SURL=?, "+
+            "TURL=? ,"+
+            "FILEID=? ,"+
+            "PINID=? "+
+            "WHERE ID=? ";
+    public PreparedStatement getUpdateStatement(Connection connection, 
+                                                Job job) 
+        throws SQLException { 
+        if(job == null || !(job instanceof GetFileRequest)) {
+            throw new IllegalArgumentException("fr is not GetFileRequest" );
+        }
+        GetFileRequest request = (GetFileRequest)job;
+        return getStatement(connection,UPDATE_REQUEST_SQL, request);
+    }
+
+        private static final String INSERT_SQL = "INSERT INTO "+ TABLE_NAME+ "(    " +
+            "ID ,"+
+            "NEXTJOBID ,"+
+            "CREATIONTIME ,"+
+            "LIFETIME ,"+
+            "STATE ,"+ //5
+            "ERRORMESSAGE ,"+
+            "SCHEDULERID ,"+
+            "SCHEDULERTIMESTAMP ,"+
+            "NUMOFRETR ,"+
+            "MAXNUMOFRETR ,"+ //10
+            "LASTSTATETRANSITIONTIME,"+
+            //DATABASE FILE REQUEST STORAGE
+            "REQUESTID , " +
+            "CREDENTIALID , "+
+            "STATUSCODE , "+
+            "SURL ,"+
+            "TURL ,"+
+            "FILEID ,"+
+            "PINID ) "+
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+    
+    public PreparedStatement getCreateStatement(Connection connection, 
+                                                Job job) 
+        throws SQLException {
+        if(job == null || !(job instanceof GetFileRequest)) {
+            throw new IllegalArgumentException("job is not GetFileRequest" );
+        }
+        GetFileRequest request = (GetFileRequest)job;
+        PreparedStatement stmt = getPreparedStatement(connection,
+                                                      INSERT_SQL,
+                                                      request.getId(),
+                                                      request.getNextJobId(),
+                                                      request.getCreationTime(),
+                                                      request.getLifetime(),
+                                                      request.getState().getStateId(),
+                                                      request.getErrorMessage(),
+                                                      request.getSchedulerId(),
+                                                      request.getSchedulerTimeStamp(),
+                                                      request.getNumberOfRetries(),
+                                                      request.getMaxNumberOfRetries(),
+                                                      request.getLastStateTransitionTime(),
+                                                      request.getRequestId(),
+                                                      request.getCredentialId(),
+                                                      request.getStatusCodeString(),
+                                                      request.getSurlString(),
+                                                      request.getTurlString(),
+                                                      request.getFileId(),
+                                                      request.getPinId());
+        return stmt;
+    }
     
     /** Creates a new instance of GetFileRequestStorage */
     public GetFileRequestStorage(    
@@ -107,7 +219,6 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage {
     
     private static int ADDITIONAL_FIELDS = 4;
 
-    public static final String TABLE_NAME = "getfilerequests";
     public String getTableName() {
         return TABLE_NAME;
     }

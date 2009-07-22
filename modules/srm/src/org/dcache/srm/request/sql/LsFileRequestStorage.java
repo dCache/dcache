@@ -7,7 +7,19 @@ import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.Job;
 
 public class LsFileRequestStorage extends DatabaseFileRequestStorage {
-        public static final String TABLE_NAME = "lsfilerequests";
+    public static final String TABLE_NAME = "lsfilerequests";
+    private static final String UPDATE_PREFIX = "UPDATE " + TABLE_NAME + " SET "+
+        "NEXTJOBID=?, " +
+        "CREATIONTIME=?,  " +
+        "LIFETIME=?, " +
+        "STATE=?, " +
+        "ERRORMESSAGE=?, " +//5
+        "SCHEDULERID=?, " +
+        "SCHEDULERTIMESTAMP=?," +
+        "NUMOFRETR=?," +
+        "MAXNUMOFRETR=?," +
+        "LASTSTATETRANSITIONTIME=? ";//10
+
         private static int ADDITIONAL_FIELDS = 0;
         public LsFileRequestStorage(Configuration configuration)
                 throws SQLException {
@@ -82,21 +94,92 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage {
                 return TABLE_NAME;
         }
 
-        public void getUpdateAssignements(FileRequest fr,StringBuffer sb) {
-                if(fr == null || !(fr instanceof LsFileRequest)) {
-                        throw new IllegalArgumentException("fr is not LsFileRequest" );
-                }
-                LsFileRequest lsfr = (LsFileRequest)fr;
-                sb.append(", SURL = '").append(lsfr.getSurlString()).append("' ");
+    
+        public PreparedStatement getStatement(Connection connection, 
+                                              String query, 
+                                              Job fr) throws SQLException { 
+                LsFileRequest gfr = (LsFileRequest)fr;
+                PreparedStatement stmt = getPreparedStatement(connection,
+                                          query,
+                                          gfr.getNextJobId(),
+                                          gfr.getCreationTime(),
+                                          gfr.getLifetime(),
+                                          gfr.getState().getStateId(),
+                                          gfr.getErrorMessage(),
+                                          gfr.getSchedulerId(),
+                                          gfr.getSchedulerTimeStamp(),
+                                          gfr.getNumberOfRetries(),
+                                          gfr.getMaxNumberOfRetries(),
+                                          gfr.getLastStateTransitionTime(),
+                                          gfr.getRequestId(),
+                                          gfr.getCredentialId(),
+                                          gfr.getStatusCodeString(),
+                                          gfr.getSurlString(),
+                                          gfr.getId());
+                return stmt;
         }
 
-        public void getCreateList(FileRequest fr,StringBuffer sb) {
+        private static final String UPDATE_REQUEST_SQL =
+                UPDATE_PREFIX +
+                ", REQUESTID=?" +
+                ", CREDENTIALID=?" +
+                ", STATUSCODE=?" +
+                ", SURL=? WHERE ID=?";
+        public PreparedStatement getUpdateStatement(Connection connection, 
+                                                    Job fr) 
+                throws SQLException { 
                 if(fr == null || !(fr instanceof LsFileRequest)) {
                         throw new IllegalArgumentException("fr is not LsFileRequest" );
                 }
-                LsFileRequest lsfr = (LsFileRequest)fr;
-                sb.append(", '").append(lsfr.getSurlString()).append("' ");
+                return getStatement(connection,UPDATE_REQUEST_SQL, fr);
         }
+
+        private static final String INSERT_SQL = "INSERT INTO "+ TABLE_NAME+ "(    " +
+            "ID ,"+
+            "NEXTJOBID ,"+
+            "CREATIONTIME ,"+
+            "LIFETIME ,"+
+            "STATE ,"+ //5
+            "ERRORMESSAGE ,"+
+            "SCHEDULERID ,"+
+            "SCHEDULERTIMESTAMP ,"+
+            "NUMOFRETR ,"+
+            "MAXNUMOFRETR ,"+ //10
+            "LASTSTATETRANSITIONTIME,"+
+            //DATABASE FILE REQUEST STORAGE
+            "REQUESTID , " +
+            "CREDENTIALID , "+
+            "STATUSCODE,  "+
+            "SURL )"+
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+
+        public PreparedStatement getCreateStatement(Connection connection, 
+                                                Job fr) 
+                throws SQLException { 
+                if(fr == null || !(fr instanceof LsFileRequest)) {
+                        throw new IllegalArgumentException("fr is not LsFileRequest" );
+                }
+                LsFileRequest gfr = (LsFileRequest)fr;
+                PreparedStatement stmt = getPreparedStatement(connection,
+                                          INSERT_SQL,
+                                          gfr.getId(),
+                                          gfr.getNextJobId(),
+                                          gfr.getCreationTime(),
+                                          gfr.getLifetime(),
+                                          gfr.getState().getStateId(),
+                                          gfr.getErrorMessage(),
+                                          gfr.getSchedulerId(),
+                                          gfr.getSchedulerTimeStamp(),
+                                          gfr.getNumberOfRetries(),
+                                          gfr.getMaxNumberOfRetries(),
+                                          gfr.getLastStateTransitionTime(),
+                                          gfr.getRequestId(),
+                                          gfr.getCredentialId(),
+                                          gfr.getStatusCodeString(),
+                                          gfr.getSurlString());
+                return stmt;
+        }
+
 
         public String getRequestTableName() {
                 return LsRequestStorage.TABLE_NAME;

@@ -144,47 +144,6 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
         set,
         next_index );
     }
-    public abstract void getUpdateAssignements(Request r,StringBuffer sb);
-    
-    public final void getUpdateAssignements(Job job,StringBuffer sb) {
-        if(job == null || !(job instanceof Request)) {
-            throw new IllegalArgumentException("job is not Request" );
-        }
-        Request r = (Request)job;
-        sb.append(", CREDENTIALID = ").append( r.getCredentialId()).append(" ");
-        sb.append(", RETRYDELTATIME = ").append( r.getRetryDeltaTime());
-        sb.append(", SHOULDUPDATERETRYDELTATIME = ").append( r.isShould_updateretryDeltaTime() ? 1 : 0 );
-        sb.append(", DESCRIPTION = ");
-        String DESCRIPTION = r.getDescription();
-        if(DESCRIPTION == null) {
-            sb.append( "NULL ");
-        }
-        else {
-            sb.append('\'').append(DESCRIPTION).append('\'');
-        }
-        sb.append(", CLIENTHOST = ");
-        String CLIENTHOST = r.getClient_host();
-        if(CLIENTHOST == null) {
-            sb.append( "NULL ");
-        }
-        else {
-            sb.append('\'').append(CLIENTHOST).append('\'');
-        }
-        sb.append(", STATUSCODE = ");
-        String STATUSCODE = r.getStatusCodeString();
-        if(STATUSCODE == null) {
-            sb.append( "NULL ");
-        }
-        else {
-            sb.append('\'').append(STATUSCODE).append('\'');
-        }
-        
-        sb.append(", USERID = ").append( r.getUser().getId()
-        ).append(" ");
-        
-        getUpdateAssignements(r,sb);
-        
-    }
     private static int ADDITIONAL_FIELDS_NUM=7;
     
     public abstract  void getCreateList(Request r,StringBuffer sb);
@@ -226,15 +185,7 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
         getCreateList(r,sb);
         
     }
-    public abstract String[] getAdditionalCreateRequestStatements(Request r);
     
-    public final String[] getAdditionalCreateStatements(Job job)  {
-        if(job == null || !(job instanceof Request)) {
-            throw new IllegalArgumentException("job is not a Request" );
-        }
-        Request r = (Request)job;
-        return getAdditionalCreateRequestStatements(r);
-    }
     public Set getActiveRequestIds(String schedulerid)  throws java.sql.SQLException {
         String condition = " SCHEDULERID='"+schedulerid+
         "' AND STATE !="+State.DONE.getStateId()+
