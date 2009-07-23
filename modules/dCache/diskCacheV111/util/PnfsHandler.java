@@ -224,16 +224,15 @@ public class PnfsHandler
    }
 
 
-   public void renameEntry( PnfsId pnfsId, String newName )  throws CacheException {
-
-       PnfsRenameMessage pnfsMsg = new PnfsRenameMessage(pnfsId, newName);
-       pnfsMsg.setReplyRequired(true);
-
-       PnfsMessage msg = pnfsRequest( pnfsMsg ) ;
-       if ( msg.getReturnCode() != 0 ) {
-           throw new CacheException( msg.getErrorObject().toString() );
-       }
-   }
+    public void renameEntry(PnfsId pnfsId, String newName)
+        throws CacheException
+    {
+        PnfsRenameMessage pnfsMsg = new PnfsRenameMessage(pnfsId, newName);
+        PnfsMessage msg = pnfsRequest(pnfsMsg);
+        if (msg.getReturnCode() != 0) {
+            throw new CacheException(msg.getErrorObject().toString());
+        }
+    }
 
 
    public PnfsCreateEntryMessage createPnfsEntry( String path , int uid , int gid , int mode )
@@ -351,18 +350,6 @@ public class PnfsHandler
     {
         pnfsRequest(new PnfsDeleteEntryMessage(pnfsid, path));
     }
-
-   public void renameEntryToUnique(PnfsId pnfsId) {
-
-       PnfsRenameMessage pnfsMsg = new PnfsRenameMessage(pnfsId, true);
-       pnfsMsg.setReplyRequired(false);
-
-       try {
-           PnfsMessage msg = pnfsRequest( pnfsMsg ) ;
-           send(msg);
-       }catch(Exception ingnored) {}
-   }
-
 
    public CacheStatistics getCacheStatistics( String pnfsId ) {
       try{

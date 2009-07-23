@@ -352,10 +352,9 @@ public class PnfsManagerV3 extends CellAdapter {
     }
 
     public String hh_rename = " # rename <old name> <new name>" ;
-    public String ac_rename_$_1_2( Args args ){
+    public String ac_rename_$_2( Args args ){
 
         PnfsId    pnfsId   = null ;
-        boolean isUnique = false;
         String newName = null;
         try{
 
@@ -371,12 +370,8 @@ public class PnfsManagerV3 extends CellAdapter {
 
 
         try {
-            if ( args.argc() == 1 ) {
-                isUnique = true;
-            }else{
-                newName = args.argv(1);
-            }
-            rename(ROOT, pnfsId, newName , isUnique);
+            newName = args.argv(1);
+            rename(ROOT, pnfsId, newName);
         }catch( Exception e) {
             return "rename failed: " + e.getMessage() ;
         }
@@ -1328,8 +1323,7 @@ public class PnfsManagerV3 extends CellAdapter {
         String newName = pnfsMessage.newName();
         say(" rename "+pnfsId+" to new name : "+newName);
         try {
-            rename(pnfsMessage.getSubject(), pnfsId, newName,
-                   pnfsMessage.isUnique());
+            rename(pnfsMessage.getSubject(), pnfsId, newName);
         }catch( Exception exc){
             esay("Exception in rename "+exc);
             esay(exc);
@@ -1338,16 +1332,9 @@ public class PnfsManagerV3 extends CellAdapter {
 
     }
 
-    private void rename(Subject subject, PnfsId pnfsId, String newName, boolean makeUnique)
+    private void rename(Subject subject, PnfsId pnfsId, String newName)
         throws CacheException
     {
-        if( (newName == null) && makeUnique) {
-
-            StringBuffer uniqueName = new StringBuffer(_nameSpaceProvider.pnfsidToPath(subject, pnfsId));
-            uniqueName.append(";").append( uniqueName.hashCode() ).append("_").append( new Date( System.currentTimeMillis() ) );
-            newName = uniqueName.toString();
-        }
-
         say("Renaming " + pnfsId + " to " + newName );
         _nameSpaceProvider.renameEntry(subject, pnfsId, newName);
     }
