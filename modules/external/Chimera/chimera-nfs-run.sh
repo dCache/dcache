@@ -85,9 +85,10 @@ dCacheChimeraStart()
   fi
 
   echo "Starting Chimera-NFSv3 interface"
-  ${java} ${java_options} -classpath ${externalLibsClassPath} \
-    -Xmx512M org.dcache.chimera.nfs.v3.Main2 \
-  ${ourHomeDir}/config/chimera-config.xml > ${log} 2>&1 &
+  ${java} ${java_options} \
+     -classpath ${ourHomeDir}/classes/cells.jar:${externalLibsClassPath} \
+     org.dcache.chimera.nfs.v3.Main2 \
+     ${ourHomeDir}/config/chimera-config.xml > ${log} 2>&1 &
   echo $! > ${pfile}
 
   waitForPortmap
@@ -108,11 +109,9 @@ dCacheChimeraStop()
       rm -f ${pfile}
     else
       echo "NFS process not running"
-      exit 1
     fi
   else
     echo "Pid file missing. NFS process not running?"
-    exit 1;
   fi
 }
 case $1 in
@@ -134,3 +133,4 @@ case $1 in
         exit 1;
 
 esac
+exit 0
