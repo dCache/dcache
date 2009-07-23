@@ -165,7 +165,6 @@ import org.dcache.auth.UserAuthBase;
 import org.dcache.auth.AuthorizationRecord;
 import diskCacheV111.services.acl.PermissionHandler;
 import diskCacheV111.services.acl.DelegatingPermissionHandler;
-import diskCacheV111.services.FileMetaDataSource;
 
 import org.dcache.cells.AbstractCell;
 import org.dcache.cells.Option;
@@ -289,8 +288,6 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    private FileMetaDataSource _metadataSource = null;
-
     /**
      * Used for generating session IDs unique to this domain.
      */
@@ -380,18 +377,6 @@ public abstract class AbstractFtpDoorV1
      * Permission Handler
      */
     protected PermissionHandler _permissionHandler;
-
-    @Option(
-        name = "permission-handler",
-        defaultValue = "diskCacheV111.services.acl.UnixPermissionHandler"
-    )
-    protected String _permissionHandlerName;
-
-    @Option(
-            name = "meta-data-provider",
-            defaultValue = "diskCacheV111.services.PnfsManagerFileMetaDataSource"
-    )
-    protected String _metadataProviderName;
 
     @Option(
         name = "poolManager",
@@ -637,7 +622,7 @@ public abstract class AbstractFtpDoorV1
     @Option(
         name = "defaultStreamsPerClient",
         description = "Default number of streams per client in mode E",
-        defaultValue = "5",
+        defaultValue = "1",
         unit = "streams"
     )
     protected int _defaultStreamsPerClient;
@@ -1016,7 +1001,6 @@ public abstract class AbstractFtpDoorV1
 
         /* Permission handler.
          */
-        _metadataSource = initMetadataProvider(_metadataProviderName);
         _permissionHandler = new DelegatingPermissionHandler(this);
         _origin =
             new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
@@ -4976,48 +4960,6 @@ public abstract class AbstractFtpDoorV1
                   _bufSize, reply127, 2);
         } catch (FTPCommandException e) {
             reply(String.valueOf(e.getCode()) + " " + e.getReply());
-        }
-    }
-
-
-    /**
-    * Initialize metadata provider
-    *
-    * <ul>
-    * <li>default: diskCacheV111.services.PnfsManagerFileMetaDataSource
-    * </ul>
-    *
-    * @param initargs
-    *            Array of arguments
-    */
-    private FileMetaDataSource initMetadataProvider(String className) throws CacheException {
-        try {
-            Class<?>[] argClass = { dmg.cells.nucleus.CellEndpoint.class };
-            Object[] initargs = { this };
-            Class<?> metadataProviderClass = Class.forName(className);
-            Constructor<?> metadataSourceCon = metadataProviderClass.getConstructor(argClass);
-            return (FileMetaDataSource) metadataSourceCon.newInstance(initargs);
-
-        } catch (IllegalArgumentException e) {
-            throw new CacheException("Initialize Metadata Provider failed, IllegalArgumentException: " + e.getMessage());
-
-        } catch (SecurityException e) {
-            throw new CacheException("Initialize Metadata Provider failed, SecurityException: " + e.getMessage());
-
-        } catch (ClassNotFoundException e) {
-            throw new CacheException("Initialize Metadata Provider failed, ClassNotFoundException: " + e.getMessage());
-
-        } catch (NoSuchMethodException e) {
-            throw new CacheException("Initialize Metadata Provider failed, NoSuchMethodException: " + e.getMessage());
-
-        } catch (InstantiationException e) {
-            throw new CacheException("Initialize Metadata Provider failed, SecurityException: " + e.getMessage());
-
-        } catch (IllegalAccessException e) {
-            throw new CacheException("Initialize Metadata Provider failed, InstantiationException: " + e.getMessage());
-
-        } catch (InvocationTargetException e) {
-            throw new CacheException("Initialize Metadata Provider failed, InvocationTargetException: " + e.getMessage());
         }
     }
 
