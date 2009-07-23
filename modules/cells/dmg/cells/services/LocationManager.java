@@ -15,7 +15,6 @@ public class LocationManager extends CellAdapter {
    private Client         _client  = null ;
    private Args           _args    = null ;
    private CellNucleus    _nucleus = null ;
-   private boolean        _useNio  = false ;
    //   Server Options : -strict[=yes|on|off|no]
    //                    -perm=<helpFilename>
    //                    -setupmode=write|rdonly|auto
@@ -882,7 +881,6 @@ public class LocationManager extends CellAdapter {
          String inetClass = "dmg.cells.services.login.LoginManager" ;
          String cellClass = "dmg.cells.network.LocationMgrTunnel" ;
          String protocol  = null ;
-         String nio       = _useNio ? "-niochannel=true" : "" ;
          if( ( securityContext          == null ) ||
              ( securityContext.length() == 0    ) ||
              ( securityContext.equalsIgnoreCase("none") ) ){
@@ -897,7 +895,7 @@ public class LocationManager extends CellAdapter {
          }else{
             protocol = securityContext ;
          }
-         String cellArgs  = ""+port+" "+cellClass+" "+protocol+" -lm="+getCellName()+" "+nio ;
+         String cellArgs  = ""+port+" "+cellClass+" "+protocol+" -lm="+getCellName();
          say(" LocationManager starting acceptor with "+cellArgs ) ;
          Cell c = _nucleus.createNewCell( inetClass , cellName , cellArgs , true ) ;
          say( "Created : "+c ) ;
@@ -921,8 +919,7 @@ public class LocationManager extends CellAdapter {
              "-domain=" + remoteDomain + " "
              + "-lm=" + getCellName() + " "
              + clientKey + " "
-             + clientName + " "
-             + (_useNio ? "-nio" : "");
+             + clientName;
 
          say("LocationManager starting connector with " + cellArgs);
          Cell c = _nucleus.createNewCell(cellClass, cellName, cellArgs, true);
@@ -1106,10 +1103,6 @@ public class LocationManager extends CellAdapter {
               _client = new Client( host , port , _args ) ;
               say("Client started");
            }
-           tmp = _args.getOpt("niochannel") ;
-           say("niochannel (LocationManager): "+tmp);
-           _useNio = ( tmp != null ) && ( tmp.equals("") || tmp.equals("true") ) ;
-
        }catch(Exception ee){
            esay(ee) ;
            start() ;

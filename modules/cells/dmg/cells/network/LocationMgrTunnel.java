@@ -1,5 +1,6 @@
 package dmg.cells.network;
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.EOFException;
@@ -159,14 +160,21 @@ public class LocationMgrTunnel
         try {
             _nucleus = getNucleus();
             _socket = engine.getSocket();
-            _output = new ObjectOutputStream(engine.getOutputStream());
+            _socket.setTcpNoDelay(true);
+
+            /* The constructor of ObjectOutputStream writes a header
+             * to the stream. Hence we flush the stream after
+             * creation.
+             */
+            _output = new ObjectOutputStream(new BufferedOutputStream(engine.getOutputStream()));
+            _output.flush();
             _input = new ObjectInputStream(new BufferedInputStream(engine.getInputStream()));
         } catch (IOException e) {
             start();
             kill();
             throw e;
         }
-        getNucleus().newThread(this, "Tunnel").start();            
+        getNucleus().newThread(this, "Tunnel").start();
     }
 
     private CellDomainInfo negotiateDomainInfo(ObjectOutputStream out,
@@ -174,8 +182,7 @@ public class LocationMgrTunnel
         throws IOException
     {
         try  {
-            out.writeObject(_nucleus.getCellDomainInfo());
-            out.flush();
+            send(_nucleus.getCellDomainInfo());
 
             Object obj = in.readObject();
             if (obj == null)
@@ -203,7 +210,7 @@ public class LocationMgrTunnel
             Object object = msg.getMessageObject();
             String messageObject =
                 object == null ? "NULL" : object.getClass().getName();
-            _logMessages.debug("tunnelMessageArrived src="
+            _logMessages.debug("tunnelMessageSent src="
                                + msg.getSourceAddress()
                                + " dest=" + msg.getDestinationAddress()
                                + " [" + messageObject + "] UOID="
@@ -214,12 +221,11 @@ public class LocationMgrTunnel
     private void logReceive(CellMessage msg)
     {
         if (_logMessages.isDebugEnabled()) {
+            Object object = msg.getMessageObject();
             String messageObject =
-                msg.getMessageObject() == null
-                ? "NULL"
-                : msg.getMessageObject().getClass().getName();
+                object == null ? "NULL" : object.getClass().getName();
 
-            _logMessages.debug("tunnelSendMessage src="
+            _logMessages.debug("tunnelMessageReceived src="
                                + msg.getSourceAddress()
                                + " dest=" + msg.getDestinationAddress()
                                + " [" + messageObject + "] UOID="
@@ -259,17 +265,24 @@ public class LocationMgrTunnel
         }
     }
 
-    synchronized private void send(CellMessage msg)
+    private void send(Object msg)
         throws IOException
     {
         if (isDown())
             throw new IOException("Tunnel has been shut down.");
 
-        logSend(msg);
         _output.writeObject(msg);
-        _output.flush();
+
+        /* An object output stream will only serialize an object ones
+         * and likewise the object input stream will recreate the
+         * object DAG at the other end. To avoid that the receiver
+         * needs to unnecessarily keep references to previous objects,
+         * we reset the stream. Notice that resetting the stream sends
+         * a reset messsage. Hence we reset the stream before flushing
+         * it.
+         */
         _output.reset();
-        _messagesToTunnel++;
+        _output.flush();
     }
 
     public void run()
@@ -306,6 +319,8 @@ public class LocationMgrTunnel
         if (me instanceof RoutedMessageEvent) {
             CellMessage msg = me.getMessage();
             try {
+                logSend(msg);
+                _messagesToTunnel++;
                 send(msg);
             } catch (IOException e) {
                 esay("Error while sending message: " + e.getMessage());
@@ -327,7 +342,7 @@ public class LocationMgrTunnel
 
     protected String getRemoteDomainName()
     {
-        return (_remoteDomainInfo == null) 
+        return (_remoteDomainInfo == null)
             ? ""
             : _remoteDomainInfo.getCellDomainName();
     }
@@ -345,7 +360,7 @@ public class LocationMgrTunnel
         pw.println("Peer          : " + getRemoteDomainName());
     }
 
-    public synchronized void cleanUp()
+    public void cleanUp()
     {
         say("Closing tunnel to " + getRemoteDomainName());
         setDown(true);

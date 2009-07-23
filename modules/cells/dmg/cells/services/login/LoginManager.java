@@ -364,25 +364,25 @@ public CellVersion getCellVersion(){
         if( (addresses == null) || ( addresses.length == 0 ) ) return;
 
         String[] hosts = new String[addresses.length];
-        
+
         /**
          *  Add addresses ensuring preferred ordering: external addresses are before any
          *  internal interface addresses.
          */
         int nextExternalIfIndex = 0;
         int nextInternalIfIndex = addresses.length-1;
-        
+
         for( int i = 0; i < addresses.length; i++) {
     		InetAddress addr = addresses[i];
-        	
-        	if( !addr.isLinkLocalAddress() && !addr.isLoopbackAddress() && 
+
+        	if( !addr.isLinkLocalAddress() && !addr.isLoopbackAddress() &&
         			!addr.isSiteLocalAddress() && !addr.isMulticastAddress()) {
         		hosts [nextExternalIfIndex++] = addr.getHostName();
         	} else {
         		hosts [nextInternalIfIndex--] = addr.getHostName();
         	}
         }
-                
+
         _info.setHosts(hosts);
         _info.setPort(_listenThread.getListenPort());
         _info.setLoad(_currentLoad);
@@ -637,10 +637,6 @@ public void cleanUp(){
         String local   = _args.getOpt("listen");
 
         if( ssf == null ){
-           String context = (String)getDomainContext().get("niochannel");
-           String channel = _args.getOpt("niochannel") ;
-           channel = channel != null ? channel : context ;
-
            SocketAddress socketAddress = null;
 
            if ( (local == null ) || local.equals("*") || local.equals("")  ) {
@@ -650,11 +646,7 @@ public void cleanUp(){
                _isDedicated = true;
            }
 
-           _serverSocket =
-              ( channel != null ) && ( channel.equals("") ||  channel.equals("true") )  ?
-              ServerSocketChannel.open().socket() :
-              new ServerSocket() ;
-
+           _serverSocket = ServerSocketChannel.open().socket();
            _serverSocket.bind( socketAddress );
            _listenPort   = _serverSocket.getLocalPort() ;
 

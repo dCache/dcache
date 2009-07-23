@@ -31,7 +31,6 @@ public class LocationManagerConnector
 
     private final String _domain;
     private final String _lm;
-    private final boolean _useNio;
     private final Thread _thread;
     private String _status = "disconnected";
     private int _retries;
@@ -44,7 +43,6 @@ public class LocationManagerConnector
         Args a = getArgs();
         _domain = a.getOpt("domain");
         _lm = a.getOpt("lm");
-        _useNio = a.getOpt("nio") != null;
 
         _thread = getNucleus().newThread(this, "TunnelConnector");
         _thread.start();
@@ -101,13 +99,7 @@ public class LocationManagerConnector
 
 
         setStatus("Connecting to " + address);
-        Socket socket;
-        if (_useNio) {
-            socket = SocketChannel.open(address).socket();
-        } else {
-            socket = new Socket();
-            socket.connect(address);
-        }
+        Socket socket = SocketChannel.open(address).socket();
         socket.setKeepAlive(true);
 
         String security = reply.getOpt("security");
@@ -166,7 +158,7 @@ public class LocationManagerConnector
                 } catch (IOException e) {
                     esay("Failed to connect to " + _domain + ": " + e.getMessage());
                 }
-                
+
                 setStatus("Sleeping");
                 long sleep = random.nextInt(26000) + 4000;
                 esay("Sleeping " + (sleep / 1000) + " seconds");
