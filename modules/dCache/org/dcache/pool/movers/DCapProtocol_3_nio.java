@@ -26,7 +26,6 @@ import org.dcache.net.ProtocolConnectionPoolFactory;
 import org.dcache.pool.repository.Allocator;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.Checksum;
 import diskCacheV111.util.DCapProrocolChallenge;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DCapProtocolInfo;
@@ -926,34 +925,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
         _clientChecksum = new Checksum(crcType, array);
         storage.setKey("flag-c",_clientChecksum.toString());
 
-        /*
-          StringBuffer sb = new StringBuffer(64);
-          sb.append(crcType).append(":");
-          for(int i = 0, j = array.length; i < j; i++){
-          byte   b = array[i];
-          String s = Integer.toHexString((b<0)?(256+(int)b):(int)b);
-          sb.append(s.length()==1?("0"+s):s);
-          }
-          debug("checksum : "+sb.toString()+" "+_clientChecksum);
-        */
-        /*
-          try{
-          storage.setKey("flag-c",sb.toString());
-          PnfsFlagMessage flag =
-          new PnfsFlagMessage(_pnfsId,"c","put");
-          flag.setReplyRequired(false);
-          flag.setValue(sb.toString());
-
-          _cell.sendMessage(
-          new CellMessage(
-          new CellPath("PnfsManager"),
-          flag
-         )
-         );
-          }catch(Exception eee){
-          esay("Failed to send crc to PnfsManager : "+eee);
-          }
-        */
         return;
     }
     private void doTheSeek(FileChannel fileChannel, int whence, long offset,
