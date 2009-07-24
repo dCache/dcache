@@ -3,8 +3,10 @@ package org.dcache.auth;
 import java.util.Set;
 import java.util.NoSuchElementException;
 import javax.security.auth.Subject;
+import java.security.Principal;
 import com.sun.security.auth.UnixNumericUserPrincipal;
 import com.sun.security.auth.UnixNumericGroupPrincipal;
+import com.sun.security.auth.UserPrincipal;
 
 public class Subjects
 {
@@ -13,6 +15,7 @@ public class Subjects
      * empowered to do everything.
      */
     public static final Subject ROOT;
+    public static final Subject NOBODY;
 
     static
     {
@@ -20,6 +23,9 @@ public class Subjects
         ROOT.getPrincipals().add(new UnixNumericUserPrincipal(0));
         ROOT.getPrincipals().add(new UnixNumericGroupPrincipal(0, true));
         ROOT.setReadOnly();
+
+        NOBODY = new Subject();
+        NOBODY.setReadOnly();
     }
 
     /**
@@ -113,5 +119,30 @@ public class Subjects
             }
         }
         throw new NoSuchElementException("Subject has no primary group");
+    }
+
+    /**
+     * Maps an AuthorizationRecord to a Subject. The Subject will
+     * contain the UID and GID principals of the AuthorizationRecord
+     * object.
+     *
+     * TODO: Add more principals, e.g., an X500 principal.
+     */
+    public static Subject getSubject(AuthorizationRecord record)
+    {
+        Subject subject = new Subject();
+        Set<Principal> principals = subject.getPrincipals();
+        principals.add(new UnixNumericUserPrincipal(record.getUid()));
+        principals.add(new UserPrincipal(record.getIdentity()));
+
+        boolean primary = true;
+        for (GroupList list: record.getGroupLists()) {
+            for (Group group: list.getGroups()) {
+                principals.add(new UnixNumericGroupPrincipal(group.getGid(), primary));
+            }
+            primary = false;
+        }
+
+        return subject;
     }
 }
