@@ -27,6 +27,107 @@ import org.dcache.srm.scheduler.Job;
  * @author  timur
  */
 public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
+    public static final String TABLE_NAME ="bringonlinerequests";
+    
+    private static final String UPDATE_PREFIX = "UPDATE " + TABLE_NAME + " SET "+
+        "NEXTJOBID=?, " +
+        "CREATIONTIME=?,  " +
+        "LIFETIME=?, " +
+        "STATE=?, " +
+        "ERRORMESSAGE=?, " +//5
+        "CREATORID=?,"+
+        "SCHEDULERID=?, " +
+        "SCHEDULERTIMESTAMP=?," +
+        "NUMOFRETR=?," +
+        "MAXNUMOFRETR=?," +//10
+        "LASTSTATETRANSITIONTIME=? ";
+
+            private static final String INSERT_SQL = "INSERT INTO "+ TABLE_NAME+ "(    " +
+    "ID ,"+
+    "NEXTJOBID ,"+
+    "CREATIONTIME ,"+
+    "LIFETIME ,"+
+    "STATE ,"+ //5
+    "ERRORMESSAGE ,"+
+    "CREATORID ,"+
+    "SCHEDULERID ,"+
+    "SCHEDULERTIMESTAMP ,"+
+    "NUMOFRETR ,"+
+    "MAXNUMOFRETR ,"+ //10
+    "LASTSTATETRANSITIONTIME,"+
+     //Database Request Storage
+    "CREDENTIALID , " +
+    "RETRYDELTATIME , "+
+    "SHOULDUPDATERETRYDELTATIME ,"+
+    "DESCRIPTION ,"+ //15
+    "CLIENTHOST ,"+
+    "STATUSCODE  ) " +
+    "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+
+    
+    @Override
+    public PreparedStatement getCreateStatement(Connection connection, Job job) throws SQLException {
+        BringOnlineRequest bor = (BringOnlineRequest)job;
+        PreparedStatement stmt = getPreparedStatement(connection,
+                                                      INSERT_SQL,
+                                                      bor.getId(),
+                                                      bor.getNextJobId(),
+                                                      bor.getCreationTime(),
+                                                      bor.getLifetime(),
+                                                      bor.getState().getStateId(),//5
+                                                      bor.getErrorMessage(),
+                                                      bor.getCreatorId(),
+                                                      bor.getSchedulerId(),
+                                                      bor.getSchedulerTimeStamp(),
+                                                      bor.getNumberOfRetries(),
+                                                      bor.getMaxNumberOfRetries(),//10
+                                                      bor.getLastStateTransitionTime(),
+                                                      //Database Request Storage
+                                                      bor.getCredentialId(),
+                                                      bor.getRetryDeltaTime(),
+                                                      bor.isShould_updateretryDeltaTime()?0:1,
+                                                      bor.getDescription(),
+                                                      bor.getClient_host(),
+                                                      bor.getStatusCodeString());
+       return stmt;
+    }
+
+    private static final String UPDATE_REQUEST_SQL =
+            UPDATE_PREFIX + ", CREDENTIALID=?," +
+                " RETRYDELTATIME=?," +
+                " SHOULDUPDATERETRYDELTATIME=?," +
+                " DESCRIPTION=?," +
+                " CLIENTHOST=?," +
+                " STATUSCODE=?" +
+                " WHERE ID=?";
+    @Override
+    public PreparedStatement getUpdateStatement(Connection connection,
+            Job job) throws SQLException {
+        BringOnlineRequest bor = (BringOnlineRequest)job;
+        PreparedStatement stmt = getPreparedStatement(connection,
+                                  UPDATE_REQUEST_SQL,
+                                  bor.getNextJobId(),
+                                  bor.getCreationTime(),
+                                  bor.getLifetime(),
+                                  bor.getState().getStateId(),
+                                  bor.getErrorMessage(),//5
+                                  bor.getCreatorId(),
+                                  bor.getSchedulerId(),
+                                  bor.getSchedulerTimeStamp(),
+                                  bor.getNumberOfRetries(),
+                                  bor.getMaxNumberOfRetries(),
+                                  bor.getLastStateTransitionTime(),//10
+                                  //Database Request Storage
+                                  bor.getCredentialId(),
+                                  bor.getRetryDeltaTime(),
+                                  bor.isShould_updateretryDeltaTime()?0:1,
+                                  bor.getDescription(),
+                                  bor.getClient_host(),
+                                  bor.getStatusCodeString(),
+                                  bor.getId());
+
+        return stmt;
+    }
     
       
     /** Creates a new instance of BringOnlineRequestStorage */
@@ -149,31 +250,29 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
     public String getRequestCreateTableFields() {
         return "";
     }
-    public static final String TABLE_NAME ="bringonlinerequests";
     public String getTableName() {
         return TABLE_NAME;
     }
  
-    public void getUpdateAssignements(ContainerRequest r, StringBuffer sb) {
-    }
-    
-     public String[] getAdditionalCreateRequestStatements(ContainerRequest r)  {
-        if(r == null || !(r instanceof BringOnlineRequest)) {
+    private final String insertProtocols =
+        "INSERT INTO "+getProtocolsTableName()+
+        " (PROTOCOL, RequestID) "+
+        " VALUES (?,?)";
+
+    public PreparedStatement[] getAdditionalCreateStatements(Connection connection,
+                                                             Job job) throws SQLException {
+        if(job == null || !(job instanceof BringOnlineRequest)) {
             throw new IllegalArgumentException("Request is not BringOnlineRequest" );
         }
-        BringOnlineRequest gr = (BringOnlineRequest)r;
-        String[] protocols = gr.getProtocols();
+        BringOnlineRequest bor = (BringOnlineRequest)job;
+        String[] protocols = bor.getProtocols();
         if(protocols ==null)  return null;
-        String[] statements  = new String[protocols.length];
+        PreparedStatement[] statements  = new PreparedStatement[protocols.length];
         for(int i=0; i<protocols.length ; ++i){
-               StringBuffer sb = new StringBuffer();
-                sb.append("INSERT INTO ").append(getProtocolsTableName());
-                sb.append( " VALUES ( '");
-                sb.append(protocols[i]);
-                sb.append("', '");
-                sb.append(r.getId());
-                sb.append("') ");
-                statements[i] = sb.toString();
+            statements[i] = getPreparedStatement(connection,
+                    insertProtocols,
+                    protocols[i],
+                    bor.getId());
         }
         return statements;
    }    

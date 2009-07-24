@@ -25,6 +25,21 @@ import org.dcache.srm.scheduler.Job;
  * @author  timur
  */
 public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage {
+
+    public static final String TABLE_NAME = "bringonlinefilerequests";
+    private static final String UPDATE_PREFIX = "UPDATE " + TABLE_NAME + " SET "+
+        "NEXTJOBID=?, " +
+        "CREATIONTIME=?,  " +
+        "LIFETIME=?, " +
+        "STATE=?, " +
+        "ERRORMESSAGE=?, " +//5
+        "CREATORID=?,"+
+        "SCHEDULERID=?, " +
+        "SCHEDULERTIMESTAMP=?," +
+        "NUMOFRETR=?," +
+        "MAXNUMOFRETR=?," +//10
+        "LASTSTATETRANSITIONTIME=? ";
+
     
     /** Creates a new instance of BringOnlineFileRequestStorage */
     public BringOnlineFileRequestStorage(    
@@ -113,53 +128,105 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage {
     
     private static int ADDITIONAL_FIELDS = 3;
 
-    public static final String TABLE_NAME = "bringonlinefilerequests";
     public String getTableName() {
         return TABLE_NAME;
     }
     
-    public void getUpdateAssignements(FileRequest fr,StringBuffer sb) {
-        if(fr == null || !(fr instanceof BringOnlineFileRequest)) {
-            throw new IllegalArgumentException("fr is not BringOnlineRequest" );
-        }
-        BringOnlineFileRequest gfr = (BringOnlineFileRequest)fr;
-         sb.append(", SURL = '").append(gfr.getSurlString()).append("',");
-        String tmp =gfr.getFileId();
-        if(tmp == null) {
-            sb.append(" FILEID =NULL, ");
-        }
-        else {
-            sb.append("FILEID = '").append(tmp).append("', ");
-        }
-        tmp =gfr.getPinId();
-        if(tmp == null) {
-            sb.append(" PINID =NULL ");
-        } 
-        else {
-            sb.append("PINID = '").append(tmp).append("' ");
-        }
+    public PreparedStatement[] getAdditionalCreateStatements(Connection connection,
+                                                             Job job) throws SQLException { 
+        return null;
     }
-    
-     public void getCreateList(FileRequest fr,StringBuffer sb) {
-        if(fr == null || !(fr instanceof BringOnlineFileRequest)) {
-            throw new IllegalArgumentException("fr is not BringOnlineRequest" );
-        }
+    public PreparedStatement getStatement(Connection connection, 
+                                          String query, 
+                                          Job fr) throws SQLException { 
         BringOnlineFileRequest gfr = (BringOnlineFileRequest)fr;
-        sb.append(", '").append(gfr.getSurlString()).append("', ");
-        String tmp =gfr.getFileId();
-        if(tmp == null) {
-            sb.append("NULL, ");
-        }
-        else {
-            sb.append('\'').append(tmp).append("', ");
-        }
-        tmp = gfr.getPinId();
-        if(tmp == null) {
-            sb.append("NULL ");
-        }
-        else {
-            sb.append('\'').append(tmp).append("' ");
-        }
+        PreparedStatement stmt = getPreparedStatement(connection,
+                                  query,
+                                  gfr.getNextJobId(),
+                                  gfr.getCreationTime(),
+                                  gfr.getLifetime(),
+                                  gfr.getState().getStateId(),
+                                  gfr.getErrorMessage(),//5
+                                  gfr.getCreatorId(),
+                                  gfr.getSchedulerId(),
+                                  gfr.getSchedulerTimeStamp(),
+                                  gfr.getNumberOfRetries(),
+                                  gfr.getMaxNumberOfRetries(),
+                                  gfr.getLastStateTransitionTime(),//10
+                                  gfr.getRequestId(),
+                                  gfr.getCredentialId(),
+                                  gfr.getStatusCodeString(),
+                                  gfr.getSurlString(),
+                                  gfr.getFileId(),//15
+                                  gfr.getPinId(),
+                                  gfr.getId());
+        return stmt;
+    }
+
+    private static final String UPDATE_REQUEST_SQL =
+            UPDATE_PREFIX +
+            ", REQUESTID=?" +
+            ", CREDENTIALID=?" +
+            ", STATUSCODE=?" +
+            ", SURL=?" +
+            ", FILEID=?" +
+            ", PINID=? WHERE ID=?";
+    public PreparedStatement getUpdateStatement(Connection connection, 
+                                                Job fr) 
+        throws SQLException { 
+        return getStatement(connection,UPDATE_REQUEST_SQL, fr);
+    }
+
+    private static final String INSERT_SQL = "INSERT INTO "+ TABLE_NAME+ "(    " +
+        "ID ,"+
+        "NEXTJOBID ,"+
+        "CREATIONTIME ,"+
+        "LIFETIME ,"+
+        "STATE ,"+ //5
+        "ERRORMESSAGE ,"+
+         "CREATORID ,"+
+        "SCHEDULERID ,"+
+        "SCHEDULERTIMESTAMP ,"+
+        "NUMOFRETR ,"+
+        "MAXNUMOFRETR ,"+ //10
+        "LASTSTATETRANSITIONTIME,"+
+         //DATABSE FILE REQUEST STORAGE
+        "REQUESTID , " +
+        "CREDENTIALID , "+
+        "STATUSCODE ,"+
+         // BRING ONLINE FILE REQUEST
+        "SURL ,"+ //15
+        "FILEID ,"+
+        "PINID  ) " +
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+    
+    public PreparedStatement getCreateStatement(Connection connection, 
+                                                Job fr) 
+        throws SQLException { 
+        BringOnlineFileRequest gfr = (BringOnlineFileRequest)fr;
+        PreparedStatement stmt = getPreparedStatement(connection,
+                                  INSERT_SQL,
+                                  gfr.getId(),
+                                  gfr.getNextJobId(),
+                                  gfr.getCreationTime(),
+                                  gfr.getLifetime(),
+                                  gfr.getState().getStateId(),//5
+                                  gfr.getErrorMessage(), 
+                                  gfr.getCreatorId(),
+                                  gfr.getSchedulerId(),
+                                  gfr.getSchedulerTimeStamp(),
+                                  gfr.getNumberOfRetries(),
+                                  gfr.getMaxNumberOfRetries(),//10
+                                  gfr.getLastStateTransitionTime(),
+                                 //DATABSE FILE REQUEST STORAGE
+                                  gfr.getRequestId(),
+                                  gfr.getCredentialId(),
+                                  gfr.getStatusCodeString(),
+                                 // BRING ONLINE FILE REQUEST
+                                  gfr.getSurlString(),//15
+                                  gfr.getFileId(),
+                                  gfr.getPinId());
+       return stmt;
     }
    
      public String getRequestTableName() {
@@ -167,15 +234,6 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage {
      }     
      
      protected void __verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException {
-         /*
-          *       "SURL "+  stringType+
-        ","+
-        "TURL "+  stringType+
-        ","+
-        "FILEID "+  stringType+
-        ","+
-        "PINID "+  stringType;
-         */
         if(columnIndex == nextIndex) {
             verifyStringType("SURL",columnIndex,tableName, columnName, columnType);
         }

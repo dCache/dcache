@@ -153,18 +153,6 @@ public abstract class DatabaseContainerRequestStorage extends DatabaseRequestSto
     
     public abstract String getTableName();
     
-    public abstract void getUpdateAssignements(ContainerRequest cr,StringBuffer sb);
-    
-    public void getUpdateAssignements(Request r,StringBuffer sb) {
-        if(r == null || !(r instanceof ContainerRequest)) {
-            throw new IllegalArgumentException("Request is not ContainerRequest" );
-        }
-        ContainerRequest cr = (ContainerRequest)r;
-        getUpdateAssignements(cr,sb);
-        
-    }
-    
-    private static int ADDITIONAL_FIELDS_NUM=4;
     
     public abstract  void getCreateList(ContainerRequest cr,StringBuffer sb);
     
@@ -179,17 +167,5 @@ public abstract class DatabaseContainerRequestStorage extends DatabaseRequestSto
         
     }
     
-    
-    public abstract String[] getAdditionalCreateRequestStatements(ContainerRequest r);
-    
-    public String[] getAdditionalCreateRequestStatements(Request r)  {
-        if(r == null || !(r instanceof ContainerRequest)) {
-            throw new IllegalArgumentException("Request is not a ContainerRequest" );
-        }
-        ContainerRequest cr = (ContainerRequest)r;
-        return getAdditionalCreateRequestStatements(cr);
-    }
-        
-
 }
 

@@ -1,5 +1,5 @@
 /*
- * GetFileRequestStorage.java
+ * PutFileRequestStorage.java
  *
  * Created on June 17, 2004, 4:49 PM
  */
@@ -20,8 +20,143 @@ import org.dcache.srm.v2_2.TAccessLatency;
  * @author  timur
  */
 public class PutFileRequestStorage extends DatabaseFileRequestStorage {
+    public static final String TABLE_NAME="putfilerequests";
     
-    /** Creates a new instance of GetFileRequestStorage */
+    private static final String UPDATE_PREFIX = "UPDATE " + TABLE_NAME + " SET "+
+        "NEXTJOBID=?, " +
+        "CREATIONTIME=?,  " +
+        "LIFETIME=?, " +
+        "STATE=?, " +
+        "ERRORMESSAGE=?, " +//5
+        "CREATORID=?,"+
+        "SCHEDULERID=?, " +
+        "SCHEDULERTIMESTAMP=?," +
+        "NUMOFRETR=?," +
+        "MAXNUMOFRETR=?," +
+        "LASTSTATETRANSITIONTIME=? ";//10
+    
+
+    public PreparedStatement getStatement(Connection connection, 
+                                          String query, 
+                                          Job job) throws SQLException { 
+        PutFileRequest request = (PutFileRequest)job;
+        TRetentionPolicy retentionPolicy = request.getRetentionPolicy();
+        TAccessLatency  accessLatency = request.getAccessLatency();
+        PreparedStatement stmt = getPreparedStatement(connection,
+                                                      query, 
+                                                      request.getNextJobId(),
+                                                      request.getCreationTime(),
+                                                      request.getLifetime(),
+                                                      request.getState().getStateId(),
+                                                      request.getErrorMessage(),
+                                                      request.getCreatorId(),
+                                                      request.getSchedulerId(),
+                                                      request.getSchedulerTimeStamp(),
+                                                      request.getNumberOfRetries(),
+                                                      request.getMaxNumberOfRetries(),
+                                                      request.getLastStateTransitionTime(),
+                                                      request.getRequestId(),
+                                                      request.getCredentialId(),
+                                                      request.getStatusCodeString(),
+                                                      request.getSurlString(),
+                                                      request.getTurlString(),
+                                                      request.getFileId(),
+                                                      request.getParentFileId(),
+                                                      request.getSpaceReservationId(),
+                                                      request.getSize(),
+                                                      (retentionPolicy!=null? retentionPolicy.getValue():null),
+                                                      (accessLatency!=null? accessLatency.getValue():null),
+                                                      request.getId());
+        return stmt;
+    }
+
+    private static final String UPDATE_REQUEST_SQL =
+            UPDATE_PREFIX + ", REQUESTID=?, "+
+            "CREDENTIALID=?, "+
+            "STATUSCODE=?, "+
+            "SURL=?, "+
+            "TURL=? ,"+
+            "FILEID=? ,"+
+            "PARENTFILEID=? ,"+
+            "SPACERESERVATIONID=? ,"+
+            "SIZE=? ,"+
+            "RETENTIONPOLICY=? ,"+
+            "ACCESSLATENCY=? "+
+            "WHERE ID=? ";
+    public PreparedStatement getUpdateStatement(Connection connection, 
+                                                Job job) 
+        throws SQLException { 
+        if(job == null || !(job instanceof PutFileRequest)) {
+            throw new IllegalArgumentException("job is not PutFileRequest" );
+        }
+        PutFileRequest request = (PutFileRequest)job;
+        return getStatement(connection,UPDATE_REQUEST_SQL, request);
+    }
+        private static final String INSERT_SQL = "INSERT INTO "+ TABLE_NAME+ "(    " +
+            "ID ,"+
+            "NEXTJOBID ,"+
+            "CREATIONTIME ,"+
+            "LIFETIME ,"+
+            "STATE ,"+ //5
+            "ERRORMESSAGE ,"+
+            "CREATORID ,"+
+            "SCHEDULERID ,"+
+            "SCHEDULERTIMESTAMP ,"+
+            "NUMOFRETR ,"+
+            "MAXNUMOFRETR ,"+ //10
+            "LASTSTATETRANSITIONTIME,"+
+            //DATABASE FILE REQUEST STORAGE
+            "REQUESTID , " +
+            "CREDENTIALID , "+
+            "STATUSCODE , "+
+            "SURL ,"+
+            "TURL ,"+
+            "FILEID ,"+
+            "PARENTFILEID ,"+
+            "SPACERESERVATIONID ,"+
+            "SIZE ,"+
+            "RETENTIONPOLICY ," +
+            "ACCESSLATENCY )"+
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+    
+    public PreparedStatement getCreateStatement(Connection connection, 
+                                                Job job) 
+        throws SQLException {
+        if(job == null || !(job instanceof PutFileRequest)) {
+            throw new IllegalArgumentException("fr is not PutFileRequest" );
+        }
+        PutFileRequest request = (PutFileRequest)job;
+        TRetentionPolicy retentionPolicy = request.getRetentionPolicy();
+        TAccessLatency  accessLatency = request.getAccessLatency();
+        PreparedStatement stmt = getPreparedStatement(connection,
+                                                      INSERT_SQL,
+                                                      request.getId(),
+                                                      request.getNextJobId(),
+                                                      request.getCreationTime(),
+                                                      request.getLifetime(),
+                                                      request.getState().getStateId(),
+                                                      request.getErrorMessage(),
+                                                      request.getCreatorId(),
+                                                      request.getSchedulerId(),
+                                                      request.getSchedulerTimeStamp(),
+                                                      request.getNumberOfRetries(),
+                                                      request.getMaxNumberOfRetries(),
+                                                      request.getLastStateTransitionTime(),
+                                                      request.getRequestId(),
+                                                      request.getCredentialId(),
+                                                      request.getStatusCodeString(),
+                                                      request.getSurlString(),
+                                                      request.getTurlString(),
+                                                      request.getFileId(),
+                                                      request.getParentFileId(),
+                                                      request.getSpaceReservationId(),
+                                                      request.getSize(),
+                                                      (retentionPolicy!=null? retentionPolicy.getValue():null),
+                                                      (accessLatency!=null? accessLatency.getValue():null));
+        return stmt;
+    }
+
+   /** Creates a new instance of PutFileRequestStorage */
     public PutFileRequestStorage(Configuration configuration) throws SQLException {
         super(
         configuration
@@ -136,109 +271,9 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage {
    private static int ADDITIONAL_FIELDS = 8;
 
     
-    public static final String TABLE_NAME="putfilerequests";
     public String getTableName() {
         return TABLE_NAME;
     }
-    
-    public void getUpdateAssignements(FileRequest fr,StringBuffer sb) {
-        if(fr == null || !(fr instanceof PutFileRequest)) {
-            throw new IllegalArgumentException("fr is not GetFileRequest" );
-        }
-        PutFileRequest pfr = (PutFileRequest)fr;
-        sb.append(", SURL = '").append(pfr.getSurlString()).append("',");
-        String tmp =pfr.getTurlString();
-        if(tmp == null) {
-            sb.append(" TURL =NULL, ");
-        }
-        else {
-            sb.append("TURL = '").append(tmp).append("', ");
-        }
-        
-        tmp =pfr.getFileId();
-        if(tmp == null) {
-            sb.append(" FILEID =NULL, ");
-        }
-        else {
-            sb.append("FILEID = '").append(tmp).append("', ");
-        }
-        tmp =pfr.getParentFileId();
-        if(tmp == null) {
-            sb.append(" PARENTFILEID =NULL, ");
-        }
-        else {
-            sb.append("PARENTFILEID = '").append(tmp).append("', ");
-        }
-        tmp =pfr.getSpaceReservationId();
-        if(tmp == null) {
-            sb.append(" SPACERESERVATIONID =NULL, ");
-        }
-        else {
-            sb.append("SPACERESERVATIONID = '").append(tmp).append("', ");
-        }
-        sb.append("SIZE = ").append(pfr.getSize()).append(", ");
-        TRetentionPolicy retentionPolicy = pfr.getRetentionPolicy();
-        if(retentionPolicy == null) {
-            sb.append("RETENTIONPOLICY=NULL, ");
-        } else {
-            sb.append("RETENTIONPOLICY='").append(retentionPolicy.getValue()).append("', ");
-        }
-        TAccessLatency  accessLatency = pfr.getAccessLatency();
-        if(accessLatency == null) {
-            sb.append("ACCESSLATENCY=NULL ");
-        } else {
-            sb.append("ACCESSLATENCY='").append(accessLatency.getValue()).append('\'');
-        }
-   }
-    
-    public void getCreateList(FileRequest fr,StringBuffer sb) {
-        if(fr == null || !(fr instanceof PutFileRequest)) {
-            throw new IllegalArgumentException("fr is not GetFileRequest" );
-        }
-        PutFileRequest pfr = (PutFileRequest)fr;
-        sb.append(", '").append(pfr.getSurlString()).append("', ");
-        String tmp = pfr.getTurlString();
-        if(tmp == null) {
-            sb.append("NULL, ");
-        }
-        else {
-            sb.append('\'').append(tmp).append("', ");
-        }
-        tmp =pfr.getFileId();
-        if(tmp == null) {
-            sb.append("NULL, ");
-        }
-        else {
-            sb.append('\'').append(tmp).append("', ");
-        }
-        tmp = pfr.getParentFileId();
-        if(tmp == null) {
-            sb.append("NULL, ");
-        }
-        else {
-            sb.append('\'').append(tmp).append("', ");
-        }
-        tmp = pfr.getSpaceReservationId();
-        if(tmp == null) {
-            sb.append("NULL, ");
-        }
-        else {
-            sb.append('\'').append(tmp).append("', ");
-        }
-        sb.append(pfr.getSize()).append(", ");
-        TRetentionPolicy retentionPolicy = pfr.getRetentionPolicy();
-        if(retentionPolicy == null) {
-            sb.append("NULL, ");
-        } else {
-            sb.append('\'').append(retentionPolicy.getValue()).append("', ");
-        }
-        TAccessLatency  accessLatency = pfr.getAccessLatency();
-        if(accessLatency == null) {
-            sb.append("NULL ");
-        } else {
-            sb.append('\'').append(accessLatency.getValue()).append('\'');
-        }
-   }
     
     public String getRequestTableName() {
          return PutRequestStorage.TABLE_NAME;

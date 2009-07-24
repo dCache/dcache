@@ -62,11 +62,6 @@ public abstract class DatabaseFileRequestStorage extends DatabaseJobStorage  imp
     }
     
        
-    public String[] getAdditionalCreateStatements(Job job) {
-        return null;
-    }
-    
-    
     public abstract String getFileRequestCreateTableFields();
     
     public abstract String getRequestTableName();
@@ -146,49 +141,6 @@ public abstract class DatabaseFileRequestStorage extends DatabaseJobStorage  imp
     
     public abstract String getTableName();
     
-    public abstract void getUpdateAssignements(FileRequest fr,StringBuffer sb);
-    
-    public void getUpdateAssignements(org.dcache.srm.scheduler.Job job,StringBuffer sb) {
-        if(job == null || !(job instanceof FileRequest)) {
-            throw new IllegalArgumentException("job is not FileRequest" );
-        }
-        FileRequest fr = (FileRequest)job;
-        sb.append(", REQUESTID = ").append( fr.getRequestId());
-        sb.append(", CREDENTIALID = ").append( fr.getCredentialId()).append(" ");
-        sb.append(", STATUSCODE = ");
-        String STATUSCODE = fr.getStatusCodeString();
-        if(STATUSCODE == null) {
-            sb.append( "NULL ");
-        }
-        else {
-            sb.append('\'').append(STATUSCODE).append('\'');
-        }
-        getUpdateAssignements(fr,sb);
-        
-    }
-    
-    public abstract  void getCreateList(FileRequest fr,StringBuffer sb);
-    
-    public void getCreateList(org.dcache.srm.scheduler.Job job, StringBuffer sb) {
-        
-        if(job == null || !(job instanceof FileRequest)) {
-            throw new IllegalArgumentException("job is not FileRequest" );
-        }
-        
-        FileRequest fr = (FileRequest)job;
-        
-        sb.append(", ").append(fr.getRequestId());
-        sb.append(", ").append(fr.getCredentialId()).append(" ");
-        String STATUSCODE = fr.getStatusCodeString();
-        if(STATUSCODE == null) {
-            sb.append( ", NULL ");
-        }
-        else {
-            sb.append(", '").append(STATUSCODE).append('\'');
-        }
-        getCreateList(fr,sb);
-        
-    }
     protected abstract void __verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException ;
     
     protected void _verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException {

@@ -19,7 +19,107 @@ import org.dcache.srm.scheduler.Job;
  * @author  timur
  */
 public class PutRequestStorage extends DatabaseContainerRequestStorage{
-    
+    public static final String TABLE_NAME ="putrequests";
+    private static final String UPDATE_PREFIX = "UPDATE " + TABLE_NAME + " SET "+
+        "NEXTJOBID=?, " +
+        "CREATIONTIME=?,  " +
+        "LIFETIME=?, " +
+        "STATE=?, " +
+        "ERRORMESSAGE=?, " +//5
+        "CREATORID=? ,"+
+        "SCHEDULERID=?, " +
+        "SCHEDULERTIMESTAMP=?," +
+        "NUMOFRETR=?," +
+        "MAXNUMOFRETR=?," +
+        "LASTSTATETRANSITIONTIME=? ";//10
+
+    private static final String INSERT_SQL = "INSERT INTO "+ TABLE_NAME+ "(    " +
+        "ID ,"+
+        "NEXTJOBID ,"+
+        "CREATIONTIME ,"+
+        "LIFETIME ,"+
+        "STATE ,"+ //5
+        "ERRORMESSAGE ,"+
+        "CREATORID ,"+
+        "SCHEDULERID ,"+
+        "SCHEDULERTIMESTAMP ,"+
+        "NUMOFRETR ,"+
+        "MAXNUMOFRETR ,"+ //10
+        "LASTSTATETRANSITIONTIME,"+
+         //Database Request Storage
+        "CREDENTIALID , " +
+        "RETRYDELTATIME , "+
+        "SHOULDUPDATERETRYDELTATIME ,"+
+        "DESCRIPTION ,"+ //15
+        "CLIENTHOST ,"+
+        "STATUSCODE ) " +
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+
+    @Override
+    public PreparedStatement getCreateStatement(Connection connection, Job job) throws SQLException {
+        PutRequest pr = (PutRequest)job;
+        PreparedStatement stmt = getPreparedStatement(connection,
+                                  INSERT_SQL,
+                                  pr.getId(),
+                                  pr.getNextJobId(),
+                                  pr.getCreationTime(),
+                                  pr.getLifetime(),
+                                  pr.getState().getStateId(),//5
+                                  pr.getErrorMessage(),
+                                  pr.getCreatorId(),
+                                  pr.getSchedulerId(),
+                                  pr.getSchedulerTimeStamp(),
+                                  pr.getNumberOfRetries(),
+                                  pr.getMaxNumberOfRetries(),//10
+                                  pr.getLastStateTransitionTime(),
+                                  //Database Request Storage
+                                  pr.getCredentialId(),
+                                  pr.getRetryDeltaTime(),
+                                  pr.isShould_updateretryDeltaTime()?0:1,
+                                  pr.getDescription(),
+                                  pr.getClient_host(),
+                                  pr.getStatusCodeString());
+       return stmt;
+    }
+
+    private static final String UPDATE_REQUEST_SQL =
+            UPDATE_PREFIX + ", CREDENTIALID=?," +
+                " RETRYDELTATIME=?," +
+                " SHOULDUPDATERETRYDELTATIME=?," +
+                " DESCRIPTION=?," +
+                " CLIENTHOST=?," +
+                " STATUSCODE=?" +
+                " WHERE ID=?";
+    @Override
+    public PreparedStatement getUpdateStatement(Connection connection,
+            Job job) throws SQLException {
+        PutRequest pr = (PutRequest)job;
+        PreparedStatement stmt = getPreparedStatement(
+                                  connection,
+                                  UPDATE_REQUEST_SQL,
+                                  pr.getNextJobId(),
+                                  pr.getCreationTime(),
+                                  pr.getLifetime(),
+                                  pr.getState().getStateId(),
+                                  pr.getErrorMessage(),//5
+                                  pr.getCreatorId(),
+                                  pr.getSchedulerId(),
+                                  pr.getSchedulerTimeStamp(),
+                                  pr.getNumberOfRetries(),
+                                  pr.getMaxNumberOfRetries(),
+                                  pr.getLastStateTransitionTime(),//10
+                                  //Database Request Storage
+                                  pr.getCredentialId(),
+                                  pr.getRetryDeltaTime(),
+                                  pr.isShould_updateretryDeltaTime()?0:1,
+                                  pr.getDescription(),
+                                  pr.getClient_host(),
+                                  pr.getStatusCodeString(),
+                                  pr.getId());
+
+        return stmt;
+    }
+   
     
     /** Creates a new instance of GetRequestStorage */
     public PutRequestStorage(Configuration configuration) throws SQLException {
@@ -198,7 +298,6 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage{
         return "";
     }
     
-    public static final String TABLE_NAME ="putrequests";
     public String getTableName() {
         return TABLE_NAME;
     }
@@ -206,22 +305,25 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage{
     public void getUpdateAssignements(ContainerRequest r, StringBuffer sb) {
     }
     
-    public String[] getAdditionalCreateRequestStatements(ContainerRequest r)  {
-        if(r == null || !(r instanceof PutRequest)) {
+    private final String insertProtocols =
+        "INSERT INTO "+getProtocolsTableName()+
+        " (PROTOCOL, RequestID) "+
+        " VALUES (?,?)";
+
+    public PreparedStatement[] getAdditionalCreateStatements(Connection connection,
+                                                             Job job) throws SQLException {
+        if(job == null || !(job instanceof PutRequest)) {
             throw new IllegalArgumentException("Request is not PutRequest" );
         }
-        PutRequest pr = (PutRequest)r;
+        PutRequest pr = (PutRequest)job;
         String[] protocols = pr.getProtocols();
-        String[] statements = new String[protocols.length];
+        if(protocols ==null)  return null;
+        PreparedStatement[] statements  = new PreparedStatement[protocols.length];
         for(int i=0; i<protocols.length ; ++i){
-            StringBuffer sb = new StringBuffer();
-            sb.append("INSERT INTO ").append(getProtocolsTableName());
-            sb.append( " VALUES ( '");
-            sb.append(protocols[i]);
-            sb.append("', '");
-            sb.append(r.getId());
-            sb.append("') ");
-            statements[i] = sb.toString();
+            statements[i] = getPreparedStatement(connection,
+                    insertProtocols,
+                    protocols[i],
+                    pr.getId());
         }
         return statements;
     }

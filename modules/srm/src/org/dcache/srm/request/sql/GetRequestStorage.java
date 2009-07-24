@@ -19,6 +19,105 @@ import org.dcache.srm.scheduler.Job;
  * @author  timur
  */
 public class GetRequestStorage extends DatabaseContainerRequestStorage{
+    public static final String TABLE_NAME ="getrequests";
+    private static final String UPDATE_PREFIX = "UPDATE " + TABLE_NAME + " SET "+
+        "NEXTJOBID=?, " +
+        "CREATIONTIME=?,  " +
+        "LIFETIME=?, " +
+        "STATE=?, " +
+        "ERRORMESSAGE=?, " +//5
+        "CREATORID=?,"+
+        "SCHEDULERID=?, " +
+        "SCHEDULERTIMESTAMP=?," +
+        "NUMOFRETR=?," +
+        "MAXNUMOFRETR=?," +
+        "LASTSTATETRANSITIONTIME=? ";//10
+
+    private static final String INSERT_SQL = "INSERT INTO "+ TABLE_NAME+ "(    " +
+        "ID ,"+
+        "NEXTJOBID ,"+
+        "CREATIONTIME ,"+
+        "LIFETIME ,"+
+        "STATE ,"+ //5
+        "ERRORMESSAGE ,"+
+        "CREATORID ,"+
+        "SCHEDULERID ,"+
+        "SCHEDULERTIMESTAMP ,"+
+        "NUMOFRETR ,"+
+        "MAXNUMOFRETR ,"+ //10
+        "LASTSTATETRANSITIONTIME,"+
+         //Database Request Storage
+        "CREDENTIALID , " +
+        "RETRYDELTATIME , "+
+        "SHOULDUPDATERETRYDELTATIME ,"+
+        "DESCRIPTION ,"+ //15
+        "CLIENTHOST ,"+
+        "STATUSCODE ) " +
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+    
+    @Override
+    public PreparedStatement getCreateStatement(Connection connection, Job job) throws SQLException {
+        GetRequest gr = (GetRequest)job;
+        PreparedStatement stmt = getPreparedStatement(connection,
+                                  INSERT_SQL,
+                                  gr.getId(),
+                                  gr.getNextJobId(),
+                                  gr.getCreationTime(),
+                                  gr.getLifetime(),
+                                  gr.getState().getStateId(),//5
+                                  gr.getErrorMessage(),
+                                  gr.getCreatorId(),
+                                  gr.getSchedulerId(),
+                                  gr.getSchedulerTimeStamp(),
+                                  gr.getNumberOfRetries(),
+                                  gr.getMaxNumberOfRetries(),//10
+                                  gr.getLastStateTransitionTime(),
+                                  //Database Request Storage
+                                  gr.getCredentialId(),
+                                  gr.getRetryDeltaTime(),
+                                  gr.isShould_updateretryDeltaTime()?0:1,
+                                  gr.getDescription(),
+                                  gr.getClient_host(),
+                                  gr.getStatusCodeString());
+       return stmt;
+    }
+
+    private static final String UPDATE_REQUEST_SQL =
+            UPDATE_PREFIX + ", CREDENTIALID=?," +
+                " RETRYDELTATIME=?," +
+                " SHOULDUPDATERETRYDELTATIME=?," +
+                " DESCRIPTION=?," +
+                " CLIENTHOST=?," +
+                " STATUSCODE=?" +
+                " WHERE ID=?";
+    @Override
+    public PreparedStatement getUpdateStatement(Connection connection,
+            Job job) throws SQLException {
+        GetRequest gr = (GetRequest)job;
+        PreparedStatement stmt = getPreparedStatement(connection,
+                                  UPDATE_REQUEST_SQL,
+                                  gr.getNextJobId(),
+                                  gr.getCreationTime(),
+                                  gr.getLifetime(),
+                                  gr.getState().getStateId(),
+                                  gr.getErrorMessage(),//5
+                                  gr.getCreatorId(),
+                                  gr.getSchedulerId(),
+                                  gr.getSchedulerTimeStamp(),
+                                  gr.getNumberOfRetries(),
+                                  gr.getMaxNumberOfRetries(),
+                                  gr.getLastStateTransitionTime(),//10
+                                  //Database Request Storage
+                                  gr.getCredentialId(),
+                                  gr.getRetryDeltaTime(),
+                                  gr.isShould_updateretryDeltaTime()?0:1,
+                                  gr.getDescription(),
+                                  gr.getClient_host(),
+                                  gr.getStatusCodeString(),
+                                  gr.getId());
+
+        return stmt;
+    }
     
     
     /** Creates a new instance of GetRequestStorage */
@@ -199,7 +298,6 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage{
     public String getRequestCreateTableFields() {
         return "";
     }
-    public static final String TABLE_NAME ="getrequests";
     public String getTableName() {
         return TABLE_NAME;
     }
@@ -207,27 +305,28 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage{
     public void getUpdateAssignements(ContainerRequest r, StringBuffer sb) {
     }
     
-    public String[] getAdditionalCreateRequestStatements(ContainerRequest r)  {
-        if(r == null || !(r instanceof GetRequest)) {
+    private final String insertProtocols =
+        "INSERT INTO "+getProtocolsTableName()+
+        " (PROTOCOL, RequestID) "+
+        " VALUES (?,?)";
+
+    public PreparedStatement[] getAdditionalCreateStatements(Connection connection,
+                                                             Job job) throws SQLException {
+        if(job == null || !(job instanceof GetRequest)) {
             throw new IllegalArgumentException("Request is not GetRequest" );
         }
-        GetRequest gr = (GetRequest)r;
+        GetRequest gr = (GetRequest)job;
         String[] protocols = gr.getProtocols();
-        String[] statements = new String[protocols.length];
+        if(protocols ==null)  return null;
+        PreparedStatement[] statements  = new PreparedStatement[protocols.length];
         for(int i=0; i<protocols.length ; ++i){
-            StringBuffer sb = new StringBuffer();
-            sb.append("INSERT INTO ").append(getProtocolsTableName());
-            
-            sb.append( " VALUES ( '");
-            sb.append(protocols[i]);
-            sb.append("', '");
-            sb.append(r.getId());
-            sb.append("') ");
-            statements[i] = sb.toString();
+            statements[i] = getPreparedStatement(connection,
+                    insertProtocols,
+                    protocols[i],
+                    gr.getId());
         }
         return statements;
     }
-    
     
     public String getFileRequestsTableName() {
         return GetFileRequestStorage.TABLE_NAME;

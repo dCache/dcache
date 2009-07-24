@@ -20,7 +20,146 @@ import java.util.Set;
  * @author  timur
  */
 public class ReserveSpaceRequestStorage extends DatabaseRequestStorage {
+    public static final String TABLE_NAME ="reservespacerequests";
+    private static final String UPDATE_PREFIX = "UPDATE " + TABLE_NAME + " SET "+
+        "NEXTJOBID=?, " +
+        "CREATIONTIME=?,  " +
+        "LIFETIME=?, " +
+        "STATE=?, " +
+        "ERRORMESSAGE=?, " +//5
+        "CREATORID=?,"+
+        "SCHEDULERID=?, " +
+        "SCHEDULERTIMESTAMP=?," +
+        "NUMOFRETR=?," +
+        "MAXNUMOFRETR=?," +
+        "LASTSTATETRANSITIONTIME=? ";//10
+
+        private static final String INSERT_SQL = "INSERT INTO "+ TABLE_NAME+ "(    " +
+    "ID ,"+
+    "NEXTJOBID ,"+
+    "CREATIONTIME ,"+
+    "LIFETIME ,"+
+    "STATE ,"+ //5
+    "ERRORMESSAGE ,"+
+    "CREATORID ,"+
+    "SCHEDULERID ,"+
+    "SCHEDULERTIMESTAMP ,"+
+    "NUMOFRETR ,"+
+    "MAXNUMOFRETR ,"+ //10
+    "LASTSTATETRANSITIONTIME,"+
+     //Database Request Storage
+    "CREDENTIALID , " +
+    "RETRYDELTATIME , "+
+    "SHOULDUPDATERETRYDELTATIME ,"+
+    "DESCRIPTION ,"+ //15
+    "CLIENTHOST ,"+
+    "STATUSCODE ,"+
+    // Reserve Space Request
+    "SIZEINBYTES, "+
+    "RESERVATIONLIFETIME, "+
+    "SPACETOKEN, "+
+    "RETENTIONPOLICY, "+
+    "ACCESSLATENCY ) " +
+    "VALUES (?,?,?,?,?,?,?,?,?,?,?," +//Job
+                "?,?,?,?,?,?,?," +//Request
+                "?,?,?,?,?)";
+
     
+    @Override
+    public PreparedStatement getCreateStatement(Connection connection, Job job) throws SQLException {
+        ReserveSpaceRequest rsr = (ReserveSpaceRequest)job;
+        String retentionPolicyValue=null;
+        if(rsr.getRetentionPolicy() != null) {
+            retentionPolicyValue = rsr.getRetentionPolicy().getValue();
+        }
+        String accessLatencyValue=null;
+        if(rsr.getAccessLatency() != null) {
+            accessLatencyValue = rsr.getAccessLatency().getValue();
+        }
+        PreparedStatement stmt = getPreparedStatement(connection,
+                                  INSERT_SQL,
+                                  rsr.getId(),
+                                  rsr.getNextJobId(),
+                                  rsr.getCreationTime(),
+                                  rsr.getLifetime(),
+                                  rsr.getState().getStateId(),//5
+                                  rsr.getErrorMessage(),
+                                  rsr.getCreatorId(),
+                                  rsr.getSchedulerId(),
+                                  rsr.getSchedulerTimeStamp(),
+                                  rsr.getNumberOfRetries(),
+                                  rsr.getMaxNumberOfRetries(),//10
+                                  rsr.getLastStateTransitionTime(),
+                                  //Database Request Storage
+                                  rsr.getCredentialId(),
+                                  rsr.getRetryDeltaTime(),
+                                  rsr.isShould_updateretryDeltaTime()?0:1,
+                                  rsr.getDescription(),
+                                  rsr.getClient_host(),
+                                  rsr.getStatusCodeString(),
+                                  rsr.getSizeInBytes(),
+                                  rsr.getSpaceReservationLifetime(),
+                                  rsr.getSpaceToken(),
+                                  retentionPolicyValue,
+                                  accessLatencyValue);
+       return stmt;
+    }
+
+    private static final String UPDATE_REQUEST_SQL =
+            UPDATE_PREFIX + ", CREDENTIALID=?," +
+                " RETRYDELTATIME=?," +
+                " SHOULDUPDATERETRYDELTATIME=?," +
+                " DESCRIPTION=?," +
+                " CLIENTHOST=?," +
+                " STATUSCODE=?," +
+                // Reserve Space Request
+                " SIZEINBYTES=?, "+
+                " RESERVATIONLIFETIME=?, "+
+                " SPACETOKEN=?, "+
+                " RETENTIONPOLICY=?,"+
+                " ACCESSLATENCY=?" +
+                " WHERE ID=?";
+    @Override
+    public PreparedStatement getUpdateStatement(Connection connection,
+            Job job) throws SQLException {
+        ReserveSpaceRequest rsr = (ReserveSpaceRequest)job;
+        String retentionPolicyValue=null;
+        if(rsr.getRetentionPolicy() != null) {
+            retentionPolicyValue = rsr.getRetentionPolicy().getValue();
+        }
+        String accessLatencyValue=null;
+        if(rsr.getAccessLatency() != null) {
+            accessLatencyValue = rsr.getAccessLatency().getValue();
+        }
+        PreparedStatement stmt = getPreparedStatement(connection,
+                                  UPDATE_REQUEST_SQL,
+                                  rsr.getNextJobId(),
+                                  rsr.getCreationTime(),
+                                  rsr.getLifetime(),
+                                  rsr.getState().getStateId(),
+                                  rsr.getErrorMessage(),//5
+                                  rsr.getCreatorId(),
+                                  rsr.getSchedulerId(),
+                                  rsr.getSchedulerTimeStamp(),
+                                  rsr.getNumberOfRetries(),
+                                  rsr.getMaxNumberOfRetries(),
+                                  rsr.getLastStateTransitionTime(),//10
+                                  //Database Request Storage
+                                  rsr.getCredentialId(),
+                                  rsr.getRetryDeltaTime(),
+                                  rsr.isShould_updateretryDeltaTime()?0:1,
+                                  rsr.getDescription(),
+                                  rsr.getClient_host(),
+                                  rsr.getStatusCodeString(),
+                                  rsr.getSizeInBytes(),
+                                  rsr.getSpaceReservationLifetime(),
+                                  rsr.getSpaceToken(),
+                                  retentionPolicyValue,
+                                  accessLatencyValue,
+                                  rsr.getId());
+
+        return stmt;
+    }
     
     /** Creates a new instance of FileRequestStorage */
     public ReserveSpaceRequestStorage(Configuration configuration) throws SQLException {
@@ -125,7 +264,6 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage {
                 configuration
                 );
     }
-     public static final String TABLE_NAME ="reservespacerequests";
     
     public String getTableName() {
         return TABLE_NAME;
@@ -228,12 +366,6 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage {
     }
     
     
-     public String[] getAdditionalCreateRequestStatements(Request request)  {
-        if(request == null || !(request instanceof ReserveSpaceRequest)) {
-            throw new IllegalArgumentException("request is not ReserveSpaceRequest" );
-        }
-        return null;
-    }
        
     protected void __verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException {
         /*
