@@ -12,7 +12,6 @@ import java.util.Properties;
 
 import org.dcache.acl.ACL;
 import org.dcache.acl.Origin;
-import org.dcache.acl.Subject;
 import org.dcache.acl.enums.AccessType;
 import org.dcache.acl.enums.AuthType;
 import org.dcache.acl.enums.FileAttribute;
@@ -25,6 +24,11 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import com.sun.security.auth.UnixNumericGroupPrincipal;
+import com.sun.security.auth.UnixNumericUserPrincipal;
+import javax.security.auth.Subject;
+import java.security.Principal;
 
 import diskCacheV111.services.acl.ACLPermissionHandler;
 import diskCacheV111.util.FileMetaData;
@@ -87,7 +91,15 @@ public class ACLPermissionHandlerTest {
         AclHandler.setAclConfig(aclProps);
 
         origin = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG, "127.0.0.1"); // Initialize origin
-        subject = new Subject(UID, GID); // Initialize subject
+
+        Principal user = new UnixNumericUserPrincipal( UID );
+        Principal group = new UnixNumericGroupPrincipal( GID, true );
+
+        subject = new Subject();   // Initialize subject
+
+        //Add principals to the subject:
+        subject.getPrincipals().add(user);
+        subject.getPrincipals().add(group);
 
         fileMetadata = new FileMetaData(false, UID, GID, 0600); // Initialize file metadata
         dirMetadata = new FileMetaData(true, UID, GID, 0600); // Initialize directory metadata

@@ -6,7 +6,6 @@ import java.lang.reflect.Constructor;
 import org.apache.log4j.Logger;
 import org.dcache.acl.ACLException;
 import org.dcache.acl.Origin;
-import org.dcache.acl.Subject;
 import org.dcache.acl.enums.FileAttribute;
 
 import diskCacheV111.services.FileMetaDataSource;
@@ -16,6 +15,8 @@ import diskCacheV111.util.PnfsId;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellPath;
 import dmg.util.Args;
+
+import javax.security.auth.Subject;
 
 /**
  * Abstract class that implements interface PermissionHandler.
@@ -112,7 +113,7 @@ public abstract class AbstractPermissionHandler implements PermissionHandler {
     protected String args2String(PnfsId pnfsId, Subject subject, Origin origin) {
         StringBuilder sb = new StringBuilder("Args:\n");
         sb.append("pnfsId: ").append(pnfsId).append("\n");
-        sb.append("subject: ").append(subject).append("\n");
+        sb.append("subject: ").append(subject.toString()).append("\n");
         sb.append("origin: ").append(origin).append("\n");
         return sb.toString();
     }
@@ -120,7 +121,7 @@ public abstract class AbstractPermissionHandler implements PermissionHandler {
     protected String args2String(String pnfsPath, Subject subject, Origin origin) {
         StringBuilder sb = new StringBuilder("Args:\n");
         sb.append("pnfsPath: ").append(pnfsPath).append("\n");
-        sb.append("subject: ").append(subject).append("\n");
+        sb.append("subject: ").append(subject.toString()).append("\n");
         sb.append("origin: ").append(origin).append("\n");
         return sb.toString();
     }

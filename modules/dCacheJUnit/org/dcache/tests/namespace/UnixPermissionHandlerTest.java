@@ -3,7 +3,6 @@ package org.dcache.tests.namespace;
 import static org.junit.Assert.assertTrue;
 
 import org.dcache.acl.Origin;
-import org.dcache.acl.Subject;
 import org.dcache.acl.enums.AccessType;
 import org.dcache.acl.enums.AuthType;
 import org.dcache.tests.cells.CellAdapterHelper;
@@ -12,6 +11,11 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import com.sun.security.auth.UnixNumericGroupPrincipal;
+import com.sun.security.auth.UnixNumericUserPrincipal;
+import javax.security.auth.Subject;
+import java.security.Principal;
 
 import diskCacheV111.services.acl.UnixPermissionHandler;
 import diskCacheV111.util.FileMetaData;
@@ -57,10 +61,33 @@ public class UnixPermissionHandlerTest {
 
         origin = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG, "127.0.0.1"); // Initialize origin
 
-        subject_owner = new Subject(OWNER_UID, OWNER_GID); // Initialize owner subject
-        subject_groupMember = new Subject(GROUP_MEMBER_UID, OWNER_GID); // Initialize group member subject
-        subject_other = new Subject(OTHER_UID, OTHER_GID); // Initialize other subject
-        subject_anonymouos = new Subject(ANONYMOUOS_UID, ANONYMOUOS_GID); // Initialize anonymous subject
+        // Initialize owner subject
+        subject_owner = new Subject();
+        Principal userOwner = new UnixNumericUserPrincipal( OWNER_UID );
+        Principal groupOwner = new UnixNumericGroupPrincipal( OWNER_GID, true );
+        subject_owner.getPrincipals().add(userOwner);
+        subject_owner.getPrincipals().add(groupOwner);
+
+        // Initialize group member subject
+        subject_groupMember = new Subject();
+        Principal userMember = new UnixNumericUserPrincipal( GROUP_MEMBER_UID );
+        Principal groupMember = new UnixNumericGroupPrincipal( OWNER_GID, true );
+        subject_groupMember.getPrincipals().add(userMember);
+        subject_groupMember.getPrincipals().add(groupMember);
+
+        // Initialize other subject
+        subject_other = new Subject();
+        Principal userOther = new UnixNumericUserPrincipal( OTHER_UID );
+        Principal groupOther = new UnixNumericGroupPrincipal( OTHER_GID, true );
+        subject_other.getPrincipals().add(userOther);
+        subject_other.getPrincipals().add(groupOther);
+
+        // Initialize anonymous subject
+        subject_anonymouos = new Subject();
+        Principal userAnonymouos = new UnixNumericUserPrincipal( ANONYMOUOS_UID );
+        Principal groupAnonymouos = new UnixNumericGroupPrincipal( ANONYMOUOS_GID, true );
+        subject_anonymouos.getPrincipals().add(userAnonymouos);
+        subject_anonymouos.getPrincipals().add(groupAnonymouos);
     }
 
     @Before

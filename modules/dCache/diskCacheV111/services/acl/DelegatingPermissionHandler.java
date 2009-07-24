@@ -7,13 +7,14 @@ import java.util.Arrays;
 import org.apache.log4j.Logger;
 import org.dcache.acl.ACLException;
 import org.dcache.acl.Origin;
-import org.dcache.acl.Subject;
 import org.dcache.acl.enums.AccessType;
 import org.dcache.acl.enums.FileAttribute;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import dmg.cells.nucleus.CellEndpoint;
+
+import javax.security.auth.Subject;
 
 /**
  * This class implements interface PermissionHandler.

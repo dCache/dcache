@@ -9,11 +9,13 @@ import org.dcache.acl.ACLException;
 import org.dcache.acl.Origin;
 import org.dcache.acl.Owner;
 import org.dcache.acl.Permission;
-import org.dcache.acl.Subject;
 import org.dcache.acl.enums.AceFlags;
 import org.dcache.acl.enums.AuthType;
 import org.dcache.acl.enums.RsType;
 import org.dcache.acl.util.net.InetAddressMatcher;
+
+import javax.security.auth.Subject;
+import org.dcache.auth.Subjects;
 
 /**
  * The AclMapper has the task to evaluate an ACL taking information on the subject, object and
@@ -49,7 +51,7 @@ public class AclMapper {
         Permission permACL = new Permission();
         RsType rsType = null;
         try {
-            if ( subject.isRoot() ) {
+            if ( Subjects.isRoot(subject) ) {
                 permACL.setAll();
                 if ( logger.isDebugEnabled() )
                     logger.debug("ROOT has an access to everything.");
@@ -141,12 +143,12 @@ public class AclMapper {
 
         switch (ace.getWho()) {
         case OWNER:
-            if ( subject.getUid() == owner.getUid() )
+            if ( Subjects.hasUid(subject, owner.getUid()) )
                 perm = new Permission(ace.getAccessMsk(), ace.getType().getValue());
             break;
 
         case OWNER_GROUP:
-            if ( subject.inGroup(owner.getGid()) == true )
+            if ( Subjects.hasGid(subject, owner.getGid()) )
                 perm = new Permission(ace.getAccessMsk(), ace.getType().getValue());
             break;
 
@@ -165,12 +167,12 @@ public class AclMapper {
             break;
 
         case USER:
-            if ( subject.getUid() == ace.getWhoID() )
+            if ( Subjects.hasUid(subject, ace.getWhoID()) )
                 perm = new Permission(ace.getAccessMsk(), ace.getType().getValue());
             break;
 
         case GROUP:
-            if ( subject.inGroup(ace.getWhoID()) )
+            if ( Subjects.hasGid(subject, ace.getWhoID()) )
                 perm = new Permission(ace.getAccessMsk(), ace.getType().getValue());
             break;
 

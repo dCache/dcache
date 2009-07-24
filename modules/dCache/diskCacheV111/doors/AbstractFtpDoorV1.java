@@ -105,6 +105,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Constructor;
 import java.security.NoSuchAlgorithmException;
+import java.security.Principal;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
@@ -170,7 +171,6 @@ import org.dcache.cells.AbstractCell;
 import org.dcache.cells.Option;
 import org.dcache.acl.ACLException;
 import org.dcache.acl.Origin;
-import org.dcache.acl.Subject;
 import org.dcache.acl.enums.AccessType;
 import org.dcache.acl.enums.AuthType;
 import org.dcache.acl.enums.FileAttribute;
@@ -179,6 +179,11 @@ import org.dcache.acl.enums.InetAddressType;
 import dmg.cells.nucleus.CDC;
 
 import org.apache.log4j.NDC;
+
+import com.sun.security.auth.UnixNumericGroupPrincipal;
+import com.sun.security.auth.UnixNumericUserPrincipal;
+import javax.security.auth.Subject;
+
 import diskCacheV111.poolManager.RequestContainerV5;
 
 /**
@@ -4964,7 +4969,17 @@ public abstract class AbstractFtpDoorV1
     }
 
     private final Subject getSubject() {
-        return new Subject(_pwdRecord.UID, _pwdRecord.GID);
+
+          Principal user = new UnixNumericUserPrincipal(_pwdRecord.UID);
+          Principal group = new UnixNumericGroupPrincipal(_pwdRecord.GID, true);
+
+          Subject subject = new Subject();
+
+          //Add principals to the subject:
+          subject.getPrincipals().add(user);
+          subject.getPrincipals().add(group);
+
+          return subject;
     }
 
     private void sendRemoveInfoToBilling(String pathInPnfs) {

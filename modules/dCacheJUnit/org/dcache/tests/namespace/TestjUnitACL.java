@@ -25,7 +25,6 @@ import org.dcache.acl.ACL;
 import org.dcache.acl.Origin;
 import org.dcache.acl.Owner;
 import org.dcache.acl.Permission;
-import org.dcache.acl.Subject;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.AceType;
 import org.dcache.acl.enums.Action;
@@ -39,6 +38,10 @@ import org.dcache.acl.mapper.AclMapper;
 import org.dcache.acl.matcher.AclNFSv4Matcher;
 import org.dcache.chimera.InodeId;
 
+import com.sun.security.auth.UnixNumericGroupPrincipal;
+import com.sun.security.auth.UnixNumericUserPrincipal;
+import javax.security.auth.Subject;
+
 /**
  * @author Irina Kozlova, David Melkumyan
  *
@@ -48,6 +51,10 @@ public class TestjUnitACL {
 
     private static Connection _conn;
 
+    private static final int GID = 100;
+    private static final int UID_1 = 111;
+    private static final int UID_2 = 222;
+    private static final int UID_3 = 1001;
     @BeforeClass
     public static void setUp() throws Exception {
         /*
@@ -146,7 +153,9 @@ public class TestjUnitACL {
                 newACL.toString()));
 
         // Create test user subjectNew. who_id=7 as above.
-        Subject subjectNew = new Subject(7, 100);
+        Subject subjectNew = new Subject();
+        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( 7 ));
+        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
 
         Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_WEAK, "127.0.0.1");
 
@@ -171,7 +180,10 @@ public class TestjUnitACL {
         Permission permissionNewParentDir = AclMapper.getPermission(subjectNew,
                 originNew, ownerNew, parentACL);
         //create another user (he is allowed to REMOVE file):
-        Subject subjectNewUser777 = new Subject(777, 100);
+        Subject subjectNewUser777 = new Subject();
+        subjectNewUser777.getPrincipals().add(new UnixNumericUserPrincipal( 777 ));
+        subjectNewUser777.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
+
         //permissions of user 777 on parent directory
         Permission permissionParentDirUser777 = AclMapper.getPermission(subjectNewUser777,
                 originNew, ownerNew, parentACL);
@@ -260,7 +272,9 @@ public class TestjUnitACL {
                 newACL.toString()));
 
         // Create test user subjectNew. who_id=1000 as above.
-        Subject subjectNew = new Subject(1000, 100);
+        Subject subjectNew = new Subject();
+        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( 1000 ));
+        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
 
         Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
@@ -362,7 +376,9 @@ public class TestjUnitACL {
         ACL parentACL = new ACL(parentRsID, parentRsType, parentAces);
         AclHandler.setACL(parentACL);
 
-        Subject subjectNew = new Subject(111, 100);
+        Subject subjectNew = new Subject();
+        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_1 ));
+        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
 
         Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
@@ -383,7 +399,9 @@ public class TestjUnitACL {
 
         //user 222 is NOT ALLOWED to create a new directory in this parent directory,
         //as bit ADD_SUBDIRECTORY is denied for this user on 'parent directory'
-        Subject subjectUser222 = new Subject(222, 100);
+        Subject subjectUser222 = new Subject();
+        subjectUser222.getPrincipals().add(new UnixNumericUserPrincipal( UID_2 ));
+        subjectUser222.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
 
         Permission permissionUser222 = AclMapper.getPermission(subjectUser222,
                 originNew, ownerNew, parentACL);
@@ -398,7 +416,9 @@ public class TestjUnitACL {
         //for user 333 it is UNDEFINED whether he can create a new directory in this parent directory,
         //as only bit ADD_FILE is allowed for this user on 'parent directory', and ADD_SUBDIRECTORY is not defined.
         //That is action CREATE directory is UNDEFINED for this user.
-        Subject subjectUser333 = new Subject(333, 100);
+        Subject subjectUser333 = new Subject();
+        subjectUser333.getPrincipals().add(new UnixNumericUserPrincipal( 333 ));
+        subjectUser333.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
 
         Permission permissionUser333 = AclMapper.getPermission(subjectUser333,
                 originNew, ownerNew, parentACL);
@@ -463,7 +483,9 @@ public class TestjUnitACL {
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
 
-        Subject subjectNew = new Subject(1001, 100);
+        Subject subjectNew = new Subject();
+        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_3 ));
+        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
 
         Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
@@ -512,7 +534,9 @@ public class TestjUnitACL {
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
 
-        Subject subjectNew = new Subject(1001, 100);
+        Subject subjectNew = new Subject();
+        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_3 ));
+        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
 
         Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
@@ -559,7 +583,9 @@ public class TestjUnitACL {
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
 
-        Subject subjectNew = new Subject(1001, 100);
+        Subject subjectNew = new Subject();
+        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_3 ));
+        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
 
         Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
@@ -599,7 +625,9 @@ public class TestjUnitACL {
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
 
-        Subject subjectNew = new Subject(1001, 100);
+        Subject subjectNew = new Subject();
+        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_3 ));
+        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
 
         Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
@@ -639,7 +667,9 @@ public class TestjUnitACL {
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
 
-        Subject subjectNew = new Subject(1001, 100);
+        Subject subjectNew = new Subject();
+        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_3 ));
+        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
 
         Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
@@ -676,7 +706,9 @@ public class TestjUnitACL {
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
 
-        Subject subjectNew = new Subject(111, 100);
+        Subject subjectNew = new Subject();
+        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_1 ));
+        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
 
         Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
@@ -731,8 +763,13 @@ public class TestjUnitACL {
         ACL parentACL = new ACL(parentRsID, parentRsType, parentAces);
         AclHandler.setACL(parentACL);
 
-        Subject subjectNew = new Subject(111, 100);
-        Subject subjectNextUser = new Subject(222, 100);
+        Subject subjectNew = new Subject();
+        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_1 ));
+        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
+
+        Subject subjectNextUser = new Subject();
+        subjectNextUser.getPrincipals().add(new UnixNumericUserPrincipal( UID_2 ));
+        subjectNextUser.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
 
         Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
@@ -793,7 +830,9 @@ public class TestjUnitACL {
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
 
-        Subject subjectNew = new Subject(111, 100);
+        Subject subjectNew = new Subject();
+        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_1 ));
+        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
 
         Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
@@ -851,7 +890,9 @@ public class TestjUnitACL {
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
 
-        Subject subjectNew = new Subject(111, 100);
+        Subject subjectNew = new Subject();
+        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_1 ));
+        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
 
         Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
@@ -897,7 +938,9 @@ public class TestjUnitACL {
         ACL parentACL = new ACL(parentRsID, parentRsType, parentAces);
         AclHandler.setACL(parentACL);
 
-        Subject subjectNew = new Subject(111, 100);
+        Subject subjectNew = new Subject();
+        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_1 ));
+        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
 
         Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
@@ -943,7 +986,9 @@ public class TestjUnitACL {
         ACL parentACL = new ACL(parentRsID, parentRsType, parentAces);
         AclHandler.setACL(parentACL);
 
-        Subject subjectNew = new Subject(111, 100);
+        Subject subjectNew = new Subject();
+        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_1 ));
+        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
 
         Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
@@ -985,7 +1030,9 @@ public class TestjUnitACL {
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
 
-        Subject subjectNew = new Subject(111, 100);
+        Subject subjectNew = new Subject();
+        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_1 ));
+        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
 
         Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
@@ -1027,7 +1074,9 @@ public class TestjUnitACL {
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
 
-        Subject subjectNew = new Subject(111, 100);
+        Subject subjectNew = new Subject();
+        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_1 ));
+        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
 
         Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
@@ -1069,7 +1118,9 @@ public class TestjUnitACL {
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
 
-        Subject subjectNew = new Subject(111, 100);
+        Subject subjectNew = new Subject();
+        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_1 ));
+        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
 
         Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_WEAK,
                 "127.0.0.1");
@@ -1110,7 +1161,9 @@ public class TestjUnitACL {
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
 
-        Subject subjectNew = new Subject(111, 100);
+        Subject subjectNew = new Subject();
+        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_1 ));
+        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
 
         Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_WEAK,
                 "127.0.0.1");
@@ -1128,6 +1181,45 @@ public class TestjUnitACL {
         assertFalse(
                 "For who_id=111 action RENAME file is denied: DELETE_CHILD allowed, ADD_FILE denied.",
                 checkRENAMEfile);
+
+    }
+    //////////////////////////////////////////////
+
+    @Test
+    public void testRENAMEfileUndefined() throws Exception {
+
+        String rsID = genRsID();
+        RsType rsType = RsType.FILE;
+
+        List<ACE> aces = new ArrayList<ACE>();
+
+        //this is ACE of the directory, that contains a file to be renamed
+        //For user 222: ADD_FILE is allowed, but DELETE_CHILD is undefined
+        aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 1,
+                AccessMask.ADD_FILE.getValue(), Who.USER, 222,
+                ACE.DEFAULT_ADDRESS_MSK, 2));
+
+        ACL newACL = new ACL(rsID, rsType, aces);
+        AclHandler.setACL(newACL);
+
+        Subject subjectNew = new Subject();
+        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_2 ));
+        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
+
+        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_WEAK,
+                "127.0.0.1");
+
+        Owner ownerNew = new Owner(0, 0);
+
+        Permission permissionNew = AclMapper.getPermission(subjectNew,
+                originNew, ownerNew, newACL);
+
+        // Action RENAME (file). Undefined, expected NULL.
+        //use Boolean isAllowed(Permission perm1, Permission perm2, Action action, Boolean isDir)
+        //where perm1 - for a source , perm2 - for a destination
+        Boolean checkUndef = AclNFSv4Matcher.isAllowed(permissionNew, permissionNew, Action.RENAME,
+                Boolean.FALSE);
+        assertNull("For who_id=222 action RENAME is undefined: ADD_FILE is allowed, but DELETE_CHILD is undefined", checkUndef);
 
     }
 
@@ -1152,7 +1244,9 @@ public class TestjUnitACL {
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
 
-        Subject subjectNew = new Subject(111, 100);
+        Subject subjectNew = new Subject();
+        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_1 ));
+        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
 
         Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_WEAK,
                 "127.0.0.1");
@@ -1192,7 +1286,9 @@ public class TestjUnitACL {
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
 
-        Subject subjectNew = new Subject(111, 100);
+        Subject subjectNew = new Subject();
+        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_1 ));
+        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
 
         Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
@@ -1241,7 +1337,9 @@ public class TestjUnitACL {
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
 
-        Subject subjectNew = new Subject(111, 100);
+        Subject subjectNew = new Subject();
+        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_1 ));
+        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
 
         Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
@@ -1315,7 +1413,9 @@ public class TestjUnitACL {
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
 
-        Subject subjectNew = new Subject(111, 100);
+        Subject subjectNew = new Subject();
+        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_1 ));
+        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
 
         Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
@@ -1386,7 +1486,9 @@ public class TestjUnitACL {
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
 
-        Subject subjectNew = new Subject(111, 100);
+        Subject subjectNew = new Subject();
+        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_1 ));
+        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
 
         Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");

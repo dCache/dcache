@@ -2,10 +2,11 @@
 
 package diskCacheV111.services.acl;
 
+import java.util.Arrays;
+
 import org.apache.log4j.Logger;
 import org.dcache.acl.ACLException;
 import org.dcache.acl.Origin;
-import org.dcache.acl.Subject;
 import org.dcache.acl.enums.AccessType;
 import org.dcache.acl.enums.FileAttribute;
 
@@ -16,6 +17,9 @@ import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PnfsId;
 import dmg.cells.nucleus.CellEndpoint;
+
+import javax.security.auth.Subject;
+import org.dcache.auth.Subjects;
 
 /**
  * UnixPermissionHandler
@@ -120,8 +124,9 @@ public class UnixPermissionHandler extends AbstractPermissionHandler {
         boolean parentExecuteAllowed = fileCanExecute(subject, meta);
         AccessType isAllowed = (parentWriteAllowed && parentExecuteAllowed) ? AccessType.ACCESS_ALLOWED : AccessType.ACCESS_DENIED;
 
-        _logger.debug("canCreateDir(" + subject.getUid() + ","
-                + subject.getGid() + "," + pnfsPath + "): " + isAllowed);
+        if( _logger.isDebugEnabled() )
+            _logger.debug("canCreateDir(" + Arrays.toString(Subjects.getUids(subject)) + ","
+                + Arrays.toString(Subjects.getGids(subject)) + "," + pnfsPath + "): " + isAllowed);
 
         return isAllowed;
     }
@@ -313,8 +318,9 @@ public class UnixPermissionHandler extends AbstractPermissionHandler {
 
         AccessType isAllowed = (parentWriteAllowed && parentExecuteAllowed) ? AccessType.ACCESS_ALLOWED : AccessType.ACCESS_DENIED;
 
-        _logger.debug("canCreateFile(" + subject.getUid() + ","
-                + subject.getGid() + "," + pnfsPath + ") :" + isAllowed);
+        if( _logger.isDebugEnabled() )
+            _logger.debug("canCreateFile(" + Arrays.toString(Subjects.getUids(subject)) + ","
+                + Arrays.toString(Subjects.getGids(subject)) + "," + pnfsPath + ") :" + isAllowed);
 
         return isAllowed;
     }
@@ -370,7 +376,7 @@ public class UnixPermissionHandler extends AbstractPermissionHandler {
                 attribute == FileAttribute.FATTR4_OWNER_GROUP ||
                 attribute == FileAttribute.FATTR4_MODE) { // mdavid: only owner or root can chgrp/chown/chmod
 
-            res = (_metadataSource.getMetaData(pnfsId).getUid() == subject.getUid() || subject.getUid() == 0) ? /**/
+            res = ( Subjects.hasUid(subject, _metadataSource.getMetaData(pnfsId).getUid()) || Subjects.isRoot(subject)) ? /**/
             AccessType.ACCESS_ALLOWED : AccessType.ACCESS_DENIED;
 
             if ( _logger.isDebugEnabled() )
@@ -394,7 +400,7 @@ public class UnixPermissionHandler extends AbstractPermissionHandler {
                 attribute == FileAttribute.FATTR4_OWNER_GROUP ||
                 attribute == FileAttribute.FATTR4_MODE) { // mdavid: only owner or root can chgrp/chown/chmod
 
-            res = (_metadataSource.getMetaData(pnfsPath).getUid() == subject.getUid() || subject.getUid() == 0) ? /**/
+            res = ( Subjects.hasUid(subject,_metadataSource.getMetaData(pnfsPath).getUid()) || Subjects.isRoot(subject)) ? /**/
             AccessType.ACCESS_ALLOWED : AccessType.ACCESS_DENIED;
 
             if ( _logger.isDebugEnabled() )
@@ -555,40 +561,31 @@ public class UnixPermissionHandler extends AbstractPermissionHandler {
     // ///////////////////////////////////////////////////////////////////////////////
 
     private boolean fileCanWrite(Subject subject, FileMetaData metadata) {
-        if ( metadata.getUid() == subject.getUid() )
+        if ( Subjects.hasUid(subject, metadata.getUid()) )
             return metadata.getUserPermissions().canWrite();
 
-        for( int gid : subject.getGids() ) {
-            if (metadata.getGid() ==  gid) {
-                return  metadata.getGroupPermissions().canWrite();
-            }
-        }
+        if ( Subjects.hasGid(subject, metadata.getGid()) )
+            return  metadata.getGroupPermissions().canWrite();
 
         return metadata.getWorldPermissions().canWrite();
     }
 
     private boolean fileCanExecute(Subject subject, FileMetaData metadata) {
-        if ( metadata.getUid() == subject.getUid() )
+        if ( Subjects.hasUid(subject, metadata.getUid()) )
             return metadata.getUserPermissions().canExecute();
 
-        for( int gid : subject.getGids() ) {
-            if (metadata.getGid() ==  gid) {
-                return  metadata.getGroupPermissions().canExecute();
-            }
-        }
+        if ( Subjects.hasGid(subject, metadata.getGid()) )
+            return  metadata.getGroupPermissions().canExecute();
 
         return metadata.getWorldPermissions().canExecute();
     }
 
     private boolean fileCanRead(Subject subject, FileMetaData metadata) {
-        if ( metadata.getUid() == subject.getUid() )
+        if ( Subjects.hasUid(subject, metadata.getUid()) )
             return metadata.getUserPermissions().canRead();
 
-        for( int gid : subject.getGids() ) {
-            if (metadata.getGid() ==  gid) {
-                return  metadata.getGroupPermissions().canRead();
-            }
-        }
+        if ( Subjects.hasGid(subject, metadata.getGid()) )
+            return  metadata.getGroupPermissions().canRead();
 
         return metadata.getWorldPermissions().canRead();
     }

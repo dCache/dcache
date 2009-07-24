@@ -15,6 +15,7 @@ import diskCacheV111.services.authorization.GplazmaService;
 import diskCacheV111.poolManager.RequestContainerV5;
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 
+import java.security.Principal;
 import java.util.*;
 import java.util.regex.PatternSyntaxException;
 import java.io.*;
@@ -31,10 +32,13 @@ import org.dcache.auth.UserAuthRecord;
 import diskCacheV111.util.PnfsHandler;
 import org.dcache.acl.ACLException;
 import org.dcache.acl.Origin;
-import org.dcache.acl.Subject;
 import org.dcache.acl.enums.AccessType;
 import org.dcache.acl.enums.AuthType;
 import org.dcache.acl.enums.FileAttribute;
+
+import com.sun.security.auth.UnixNumericGroupPrincipal;
+import com.sun.security.auth.UnixNumericUserPrincipal;
+import javax.security.auth.Subject;
 
 /**
  * @author Patrick Fuhrmann
@@ -2810,7 +2814,13 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
                 _user.getName()+"("+_user.getRole()+","+user.UID+","+
                 user.GID+","+_userHome+")");
 
-        _subject = new Subject(user.UID, user.GID);
+        Principal userPrincipal = new UnixNumericUserPrincipal(user.UID);
+        Principal groupPrincipal = new UnixNumericGroupPrincipal(user.GID, true);
+
+        _subject = new Subject();
+        //Add principals to the subject:
+        _subject.getPrincipals().add(userPrincipal);
+        _subject.getPrincipals().add(groupPrincipal);
 
         /*
          * this block could be part of the catch {} , but
