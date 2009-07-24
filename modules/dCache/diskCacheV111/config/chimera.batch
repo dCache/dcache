@@ -49,7 +49,6 @@ create diskCacheV111.namespace.PnfsManagerV3 PnfsManager \
         -DefaultRetentionPolicy=${DefaultRetentionPolicy} \
         -chimeraConfig=${config}/chimera-config.xml \
         -namespace-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory \
-        -storageinfo-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory \
         -cachelocation-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory \
        "
 #
