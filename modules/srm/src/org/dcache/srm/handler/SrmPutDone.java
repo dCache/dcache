@@ -20,11 +20,14 @@ import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
 import org.dcache.srm.FileMetaData;
+import org.apache.log4j.Logger;
 /**
  *
  * @author  timur
  */
 public class SrmPutDone {
+    private static Logger logger = 
+            Logger.getLogger(SrmPutDone.class);
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement storage;
     SrmPutDoneRequest srmPutDoneRequest;
@@ -53,23 +56,6 @@ public class SrmPutDone {
         this.configuration = srm.getConfiguration();
     }
     
-    private void say(String words_of_wisdom) {
-        if(storage!=null) {
-            storage.log("SrmPutDone "+words_of_wisdom);
-        }
-    }
-    
-    private void esay(String words_of_despare) {
-        if(storage!=null) {
-            storage.elog("SrmPutDone "+words_of_despare);
-        }
-    }
-    private void esay(Throwable t) {
-        if(storage!=null) {
-            storage.elog(" SrmPutDone exception : ");
-            storage.elog(t);
-        }
-    }
     boolean longFormat =false;
     String servicePathAndSFNPart = "";
     int port;
@@ -78,11 +64,16 @@ public class SrmPutDone {
         if(response != null ) return response;
         try {
             response = srmPutDone();
-        } catch(Exception e) {
-            storage.elog(e);
-            response = getFailedResponse(e.toString());
         }
-        
+        catch (Exception e) {
+            if (e instanceof RuntimeException) {
+                    logger.error("Caught RuntimeException ",e);
+            }
+            else { 
+                logger.error(e);
+            }
+            response = getFailedResponse(e.toString());
+        } 
         return response;
     }
     
@@ -107,7 +98,6 @@ public class SrmPutDone {
 	org.apache.axis.types.URI.MalformedURIException,
 	java.sql.SQLException, 
 	IllegalStateTransition {
-        say("Entering srmPutDone.");
         String requestToken = srmPutDoneRequest.getRequestToken();
         if( requestToken == null ) {
             return getFailedResponse("request contains no request token");
@@ -163,16 +153,22 @@ public class SrmPutDone {
 									fail_counter++;
 								}
 								else { 
-									try { 
-										FileMetaData fmd= storage.getFileMetaData(user,fileRequest.getPath());
-										fileRequest.setState(State.DONE,"SrmPutDone called");
+                                                                    try {
+                                                                        if (storage.exists(user,fileRequest.getPath())) {
+                                                                                fileRequest.setState(State.DONE,"SrmPutDone called");
 										success_counter++;
 									}
-									catch (Exception srme) { 
+                                                                        else { 
 										fail_counter++;
 										fileRequest.setStatusCode(TStatusCode.SRM_INVALID_PATH);
-										fileRequest.setState(State.FAILED,"SrmPutDone called "+srme.getMessage());
+										fileRequest.setState(State.FAILED,"SrmPutDone called : file does not exist");
 									}
+                                                                    }
+                                                                    catch (SRMException e) { 
+                                                                        fail_counter++;
+                                                                        fileRequest.setStatusCode(TStatusCode.SRM_FAILURE);
+                                                                        fileRequest.setState(State.FAILED,"SrmPutDone called : " + e.getMessage());
+                                                                    }
 								}
 							}
 							else { 
@@ -235,18 +231,24 @@ public class SrmPutDone {
 									fail_counter++;
 								}
 								else { 
-									try { 
-										FileMetaData fmd= storage.getFileMetaData(user,fileRequest.getPath());
-										fileRequest.setState(State.DONE,"SrmPutDone called");
+                                                                    try {
+                                                                        if (storage.exists(user,fileRequest.getPath())) {
+                                                                                fileRequest.setState(State.DONE,"SrmPutDone called");
 										success_counter++;
 									}
-									catch (Exception srme) { 
+                                                                        else { 
 										fail_counter++;
 										fileRequest.setStatusCode(TStatusCode.SRM_INVALID_PATH);
-										fileRequest.setState(State.FAILED,"SrmPutDone called "+srme.getMessage());
+										fileRequest.setState(State.FAILED,"SrmPutDone called : file does not exist");
 									}
+                                                                    }
+                                                                    catch (SRMException e) { 
+                                                                        fail_counter++;
+                                                                        fileRequest.setStatusCode(TStatusCode.SRM_FAILURE);
+                                                                        fileRequest.setState(State.FAILED,"SrmPutDone called : "+e.getMessage());
+                                                                    }
 								}
-							}
+                                                        }
 							else { 
 								if (fileRequest.getState()==State.DONE) { 
 									success_counter++;
@@ -359,8 +361,6 @@ public class SrmPutDone {
 		}
 		srmPutDoneResponse.setReturnStatus(status);
 	}
-	say("returning srmPutDoneResponse statuscode="+srmPutDoneResponse.getReturnStatus().getStatusCode()+
-	    " explanation = "+srmPutDoneResponse.getReturnStatus().getExplanation());
 	return srmPutDoneResponse;
     }
 	

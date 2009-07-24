@@ -796,4 +796,6 @@ public interface AbstractStorageElement extends Logger{
     throws SRMException;
 
     public String getStorageBackendVersion();
+
+    public boolean exists(SRMUser user, String path) throws SRMException;
 }

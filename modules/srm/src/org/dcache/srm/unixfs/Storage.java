@@ -1324,5 +1324,7 @@ public class Storage
         callbacks.Unpinned(fileId);
         
     }
-
+    public boolean exists(SRMUser user, String path)  throws SRMException { 
+            return true;
+    }
 }
