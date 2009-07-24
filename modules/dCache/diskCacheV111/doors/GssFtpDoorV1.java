@@ -322,6 +322,8 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
                 reply("530 Permission denied");
                 return;
             }
+            _pathRoot = _pwdRecord.Root;
+            _curDirV = _pwdRecord.Home;
         }
 
         if (_use_gplazmaAuthzCell) {
