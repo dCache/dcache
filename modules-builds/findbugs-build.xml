@@ -14,7 +14,8 @@
             output="html" outputFile="${distDir}/findbugs.html"
             jvmargs="${findbugs.jvmargs}"
             timeout="3600000"
-            omitVisitors="FindDeadLocalStores,UnreadFields,Naming,FindUncalledPrivateMethods">
+            omitVisitors="FindDeadLocalStores,UnreadFields,Naming,FindUncalledPrivateMethods"
+            excludeFilter="modules-builds/findbugs-exclude-filter.xml" >
             <auxClasspath path="" />
             <class location="${classesDir}/cells.jar" />
             <class location="${classesDir}/dcache.jar" />
@@ -32,7 +33,8 @@
             output="xml:withMessages"
             outputFile="${distDir}/findbugs.xml"
             jvmargs="${findbugs.jvmargs}"
-            timeout="36000000" omitVisitors="FindDeadLocalStores,UnreadFields,Naming,FindUncalledPrivateMethods">
+            timeout="36000000" omitVisitors="FindDeadLocalStores,UnreadFields,Naming,FindUncalledPrivateMethods"
+            excludeFilter="modules-builds/findbugs-exclude-filter.xml" >
             <auxClasspath path="" />
             <class location="${classesDir}/cells.jar" />
             <class location="${classesDir}/dcache.jar" />
