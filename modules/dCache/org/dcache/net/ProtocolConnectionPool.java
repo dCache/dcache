@@ -3,151 +3,135 @@
  */
 package org.dcache.net;
 
-import java.net.* ;
-import java.io.* ;
-import java.nio.channels.*;
+import java.io.IOException;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
-
+import org.dcache.util.PortRange;
 
 public class ProtocolConnectionPool extends Thread {
 
-	private static Logger _logSocketIO = Logger.getLogger("logger.dev.org.dcache.io.socket");
-	private ServerSocketChannel _serverSocketChannel = null;
-	private final Map<Object, SocketChannel> _acceptedSockets = new HashMap<Object, SocketChannel>();
-	ChallengeReader _challengeReader = null;
-	private boolean _stop = false;
+    private static Logger _logSocketIO = Logger.getLogger("logger.dev.org.dcache.io.socket");
+    private final ServerSocketChannel _serverSocketChannel;
+    private final Map<Object, SocketChannel> _acceptedSockets = new HashMap<Object, SocketChannel>();
+    private final ChallengeReader _challengeReader;
+    private boolean _stop = false;
 
-	ProtocolConnectionPool(int listenPort, ChallengeReader challengeReader) throws IOException {
-		super("ProtocolConnectionPool");
-		_challengeReader = challengeReader;
+    /**
+     * Create a new ProtocolConnectionPool on specified TCP port. If <code>listenPort</code>
+     * is zero, then random port is used unless <i>org.dcache.net.tcp.portrange</i>
+     * property is set. The {@link ChallengeReader} is used to associate connections
+     * with clients.
+     *
+     * @param listenPort
+     * @param challengeReader
+     * @throws IOException
+     */
+    ProtocolConnectionPool(int listenPort, ChallengeReader challengeReader) throws IOException {
+        super("ProtocolConnectionPool");
+        _challengeReader = challengeReader;
         _serverSocketChannel = ServerSocketChannel.open();
 
+        PortRange portRange;
+        if (listenPort != 0) {
+            portRange = new PortRange(listenPort);
+        } else {
+            String dcachePorts = System.getProperty("org.dcache.net.tcp.portrange");
 
-        /*
-         * if org.dcache.net.tcp.portrange [first:last] defined
-         * try to bind to first empty. If fist > last,
-         * then only last port (lowest) is used.
-         */
-        SocketAddress socketAddress = null;
-        if ( listenPort != 0 ) {
-             socketAddress =  new InetSocketAddress( listenPort ) ;
-            _serverSocketChannel.socket().bind(socketAddress);
-        	if( _logSocketIO.isDebugEnabled() ) {
-        		_logSocketIO.debug("Socket BIND local = " + _serverSocketChannel.socket().getInetAddress() + ":" + _serverSocketChannel.socket().getLocalPort() );
-        	}
-        }else{
-            String portRange = System.getProperty("org.dcache.net.tcp.portrange");
-            int firstPort = 0;
-            int lastPort = 0;
-            if( portRange != null ) {
-
-                String[] range = portRange.split(":");
-                try {
-                    firstPort = Integer.parseInt(range[0]);
-                    lastPort = Integer.parseInt(range[1]);
-                }catch(NumberFormatException nfe) {
-                    firstPort = lastPort = 0;
-                }
-
-                if( firstPort > lastPort ) {
-                    firstPort = lastPort;
-                }
-
+            if (dcachePorts != null) {
+                portRange = PortRange.valueOf(dcachePorts);
+            } else {
+                portRange = new PortRange(0);
             }
-
-            for( int currentPort = firstPort; currentPort <= lastPort; currentPort++) {
-                socketAddress =  new InetSocketAddress( currentPort ) ;
-                try {
-                    _serverSocketChannel.socket().bind(socketAddress);
-                   	if( _logSocketIO.isDebugEnabled() ) {
-                		_logSocketIO.debug("Socket BIND local = " + _serverSocketChannel.socket().getInetAddress() + ":" + _serverSocketChannel.socket().getLocalPort() );
-                	}
-                }catch(IOException e) {
-                    // port is busy
-                    continue;
-                }
-                break;
-            }
-
-            if( !_serverSocketChannel.socket().isBound() ) {
-            	_logSocketIO.error("Can't bind Socket");
-                throw new IOException("can't bind");
-            }
-
         }
-	}
 
+        portRange.bind(_serverSocketChannel.socket());
+        if (_logSocketIO.isDebugEnabled()) {
+            _logSocketIO.debug("Socket BIND local = " + _serverSocketChannel.socket().getInetAddress() + ":" + _serverSocketChannel.socket().getLocalPort());
+        }
 
-	public SocketChannel getSocket(Object challenge) {
+    }
+
+    /**
+     * Get a {@link SocketChannel} identified by <code>chllenge</code>. The
+     * caller will block until client is connected and challenge exchange is done.
+     *
+     * @param challenge
+     * @return {@link SocketChannel} connected to client
+     */
+    public SocketChannel getSocket(Object challenge) {
 
         SocketChannel mySocket = null;
 
-		try {
-            // System.out.println("waiting fo :  " + challenge);
-			synchronized(_acceptedSockets){
+        try {
+            synchronized (_acceptedSockets) {
 
-				while( _acceptedSockets.isEmpty() || !_acceptedSockets.containsKey(challenge) ) {
-               //     System.out.println("accepted: " + _acceptedSockets.size() );
-               //     System.out.println("contains: " + _acceptedSockets.containsKey(challenge) );
-					_acceptedSockets.wait();
-				}
-				mySocket = _acceptedSockets.remove(challenge);
-			}
+                while (_acceptedSockets.isEmpty() || !_acceptedSockets.containsKey(challenge)) {
+                    _acceptedSockets.wait();
+                }
+                mySocket = _acceptedSockets.remove(challenge);
+            }
 
-		}catch(Exception e) {
+        } catch (InterruptedException e) {
+            _logSocketIO.warn("waiting for socket interrupted");
+        }
+        return mySocket;
+    }
 
-		}
-		return mySocket;
-	}
-
+    /**
+     * Get TCP port number used by this connection pool.
+     * @return port number
+     */
     public int getLocalPort() {
         return _serverSocketChannel.socket().getLocalPort();
     }
 
-	public void run() {
+    @Override
+    public void run() {
 
-		while(!_stop) {
+        while (!_stop) {
 
-			try {
+            try {
 
                 SocketChannel newSocketChannel = _serverSocketChannel.accept();
-             	if( _logSocketIO.isDebugEnabled() ) {
-            		_logSocketIO.debug("Socket OPEN (ACCEPT) remote = " + newSocketChannel.socket().getInetAddress() + ":" + newSocketChannel.socket().getPort() +
-            					" local = " +newSocketChannel.socket().getLocalAddress() + ":" + newSocketChannel.socket().getLocalPort() );
-            	}
-				Object challenge = _challengeReader.getChallenge(newSocketChannel);
+                if (_logSocketIO.isDebugEnabled()) {
+                    _logSocketIO.debug("Socket OPEN (ACCEPT) remote = " + newSocketChannel.socket().getInetAddress() + ":" + newSocketChannel.socket().getPort() +
+                            " local = " + newSocketChannel.socket().getLocalAddress() + ":" + newSocketChannel.socket().getLocalPort());
+                }
+                Object challenge = _challengeReader.getChallenge(newSocketChannel);
 
-				if(challenge == null) {
-					// Unable to read challenge....skip connection
-	             	if( _logSocketIO.isDebugEnabled() ) {
-	            		_logSocketIO.debug("Socket CLOSE (no challenge) remote = " + newSocketChannel.socket().getInetAddress() + ":" + newSocketChannel.socket().getPort() +
-	            					" local = " +newSocketChannel.socket().getLocalAddress() + ":" + newSocketChannel.socket().getLocalPort());
-	            	}
-					newSocketChannel.close();
-					continue;
-				}
-                // System.out.println("recived:  " + challenge);
-				synchronized(_acceptedSockets){
-					_acceptedSockets.put(challenge, newSocketChannel);
-					_acceptedSockets.notifyAll();
-					Thread.yield();
-				}
+                if (challenge == null) {
+                    // Unable to read challenge....skip connection
+                    if (_logSocketIO.isDebugEnabled()) {
+                        _logSocketIO.debug("Socket CLOSE (no challenge) remote = " + newSocketChannel.socket().getInetAddress() + ":" + newSocketChannel.socket().getPort() +
+                                " local = " + newSocketChannel.socket().getLocalAddress() + ":" + newSocketChannel.socket().getLocalPort());
+                    }
+                    newSocketChannel.close();
+                    continue;
+                }
 
-			}catch(Exception e) {
-				_logSocketIO.error("Accept loop", e);
-				_stop = true;
-				try {
-		         	if( _logSocketIO.isDebugEnabled() ) {
-		        		_logSocketIO.debug("Socket SHUTDOWN local = " + _serverSocketChannel.socket().getInetAddress() + ":" + _serverSocketChannel.socket().getLocalPort() );
-		        	}
-					_serverSocketChannel.close();
-				}catch( Exception ignored) {}
-			}
-		}
-	}
+                synchronized (_acceptedSockets) {
+                    _acceptedSockets.put(challenge, newSocketChannel);
+                    _acceptedSockets.notifyAll();
+                    Thread.yield();
+                }
+
+            } catch (IOException e) {
+                _logSocketIO.error("Accept loop", e);
+                _stop = true;
+                try {
+                    if (_logSocketIO.isDebugEnabled()) {
+                        _logSocketIO.debug("Socket SHUTDOWN local = " + _serverSocketChannel.socket().getInetAddress() + ":" + _serverSocketChannel.socket().getLocalPort());
+                    }
+                    _serverSocketChannel.close();
+                } catch (IOException ignored) {
+                }
+            }
+        }
+    }
 }
 /*
  * $Log: not supported by cvs2svn $
