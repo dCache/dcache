@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 
+import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileNotFoundHimeraFsException;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.posix.Stat;
@@ -190,7 +191,7 @@ public class ChimeraCacheInfo implements Serializable {
 		_cacheStatistics = cs;
 	}
 
-	public ChimeraCacheInfo(FsInode inode) throws Exception {
+        public ChimeraCacheInfo(FsInode inode) throws ChimeraFsException, IOException {
 
 		byte[] buff = null;
 		int len = 0;

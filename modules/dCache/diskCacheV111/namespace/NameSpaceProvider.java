@@ -9,6 +9,8 @@ import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.util.Checksum;
 
 import javax.security.auth.Subject;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.vehicles.FileAttributes;
 
 public interface NameSpaceProvider
 {
@@ -136,4 +138,23 @@ public interface NameSpaceProvider
      * @throws CacheException
      */
     void clearCacheLocation(Subject subject, PnfsId pnfsId, String cacheLocation, boolean removeIfLast) throws CacheException;
+
+    /**
+     * Get files attributes defined by <code>attr</code>. It's allowed to return less
+     * attributes than requested. Empty <code>attr</code> equals to file existence check.
+     *
+     * @param pnfsId of the file
+     * @param attr array of requested attributes
+     * @return
+     */
+    FileAttributes getFileAttributes(Subject subject, PnfsId pnfsId, FileAttribute ... attr) throws CacheException;
+
+    /**
+     * Set files attributes defined by <code>attr</code>.
+     *
+     * @param pnfsId of the file
+     * @param attr array of requested attributes
+     */
+    void setFileAttributes(Subject subject, PnfsId pnfsId, FileAttributes attr) throws CacheException;
+
 }

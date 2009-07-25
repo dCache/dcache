@@ -1,14 +1,11 @@
 package org.dcache.tests.namespace;
 
-import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.namespace.AbstractNameSpaceProvider;
 import diskCacheV111.namespace.provider.AttributeChecksumBridge;
 import diskCacheV111.util.Checksum;
-import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.PnfsId;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import javax.security.auth.Subject;
 import org.junit.Before;
 import org.junit.Test;

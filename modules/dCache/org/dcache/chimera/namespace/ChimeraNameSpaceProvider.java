@@ -38,8 +38,12 @@ import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.util.FileNotFoundCacheException;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.util.Args;
+import java.io.IOException;
+import java.util.Arrays;
+import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
+import org.dcache.vehicles.FileAttributes;
 
 
 public class ChimeraNameSpaceProvider
@@ -51,38 +55,39 @@ public class ChimeraNameSpaceProvider
 
     private static final Logger _logNameSpace =  Logger.getLogger("logger.org.dcache.namespace");
 
+    private final diskCacheV111.util.AccessLatency _defaultAccessLatency;
+    private final diskCacheV111.util.RetentionPolicy _defaultRetentionPolicy;
+
     public ChimeraNameSpaceProvider( Args args, CellNucleus nucleus) throws Exception {
 
 	    XMLconfig config = new XMLconfig( new File( args.getOpt("chimeraConfig") ) );
 	    _fs = new JdbcFs(  config );
 	    _args = args;
 
-        diskCacheV111.util.AccessLatency defaultAccessLatency;
         String accessLatensyOption = args.getOpt("DefaultAccessLatency");
             if( accessLatensyOption != null && accessLatensyOption.length() > 0) {
                 /*
                  * IllegalArgumentException thrown if option is invalid
                  */
-                defaultAccessLatency = diskCacheV111.util.AccessLatency.getAccessLatency(accessLatensyOption);
+                _defaultAccessLatency = diskCacheV111.util.AccessLatency.getAccessLatency(accessLatensyOption);
             }else{
-                defaultAccessLatency = StorageInfo.DEFAULT_ACCESS_LATENCY;
+                _defaultAccessLatency = StorageInfo.DEFAULT_ACCESS_LATENCY;
             }
 
-            diskCacheV111.util.RetentionPolicy defaultRetentionPolicy;
             String retentionPolicyOption = args.getOpt("DefaultRetentionPolicy");
             if( retentionPolicyOption != null && retentionPolicyOption.length() > 0) {
                 /*
                  * IllegalArgumentException thrown if option is invalid
                  */
-                defaultRetentionPolicy = diskCacheV111.util.RetentionPolicy.getRetentionPolicy(retentionPolicyOption);
+                _defaultRetentionPolicy = diskCacheV111.util.RetentionPolicy.getRetentionPolicy(retentionPolicyOption);
             }else{
-                defaultRetentionPolicy = StorageInfo.DEFAULT_RETENTION_POLICY;
+                _defaultRetentionPolicy = StorageInfo.DEFAULT_RETENTION_POLICY;
             }
 
         Class<ChimeraStorageInfoExtractable> exClass = (Class<ChimeraStorageInfoExtractable>) Class.forName( _args.argv(0)) ;
         Constructor<ChimeraStorageInfoExtractable>  extractorInit =
             exClass.getConstructor(AccessLatency.class, RetentionPolicy.class);
-        _extractor =  extractorInit.newInstance(defaultAccessLatency, defaultRetentionPolicy);
+        _extractor =  extractorInit.newInstance(_defaultAccessLatency, _defaultRetentionPolicy);
 
     }
 
@@ -538,4 +543,83 @@ public class ChimeraNameSpaceProvider
 
         return new PnfsId( inodeParent.toString() );
     }
+    @Override
+    public FileAttributes getFileAttributes(Subject subject, PnfsId pnfsId, FileAttribute ... attr) throws CacheException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setFileAttributes(Subject subject, PnfsId pnfsId, FileAttributes attr) throws CacheException {
+        _logNameSpace.debug("File attributes update: " + Arrays.toString(attr.getDefinedAttributes()));
+
+        FsInode inode = new FsInode(_fs, pnfsId.toIdString());
+        try {
+
+            for (FileAttribute attribute : attr.getDefinedAttributes()) {
+
+                switch (attribute) {
+
+                    case LOCATION:
+                        _fs.addInodeLocation(inode, StorageGenericLocation.DISK, attr.getLocation());
+                        break;
+                    case SIZE:
+                        _fs.setFileSize(inode, attr.getSize());
+                        break;
+                    case CHECKSUM:
+                        for(Checksum sum: attr.getChecksums() ) {
+                            _fs.setInodeChecksum(inode, sum.getType().getType() , sum.getValue());
+                        }
+                        break;
+                    case ACCESS_LATENCY:
+                        _fs.setAccessLatency(inode,  org.dcache.chimera.store.AccessLatency.valueOf(attr.getAccessLatency().getId()));
+                        break;
+                    case RETENTION_POLICY:
+                        _fs.setRetentionPolicy(inode, org.dcache.chimera.store.RetentionPolicy.valueOf(attr.getRetentionPolicy().getId()));
+                        break;
+                    case DEFAULT_ACCESS_LATENCY:
+                        /*
+                         * update the value only if some one did not updated it yet
+                         *
+                         * FIXME: this is a quick hack and have to go into Chimera code
+                         */
+                        if( _fs.getAccessLatency(inode) == null ) {
+                            _fs.setAccessLatency(inode,
+                                    org.dcache.chimera.store.AccessLatency.valueOf(_defaultAccessLatency.getId()));
+                        }
+                        break;
+                    case DEFAULT_RETENTION_POLICY:
+                        /*
+                         * update the value only if some one did not updated it yet
+                         *
+                         * FIXME: this is a quick hack and have to go into Chimera code
+                         */
+                        if(_fs.getRetentionPolicy(inode) == null) {
+                            _fs.setRetentionPolicy(inode,
+                                    org.dcache.chimera.store.RetentionPolicy.valueOf(_defaultRetentionPolicy.getId()));
+                        }
+                        break;
+                    case FLAGS:
+                        ChimeraCacheInfo cacheInfo = new ChimeraCacheInfo(inode);
+                        for (Map.Entry<String, String> flag : attr.getFlags().entrySet()) {
+                            cacheInfo.getFlags().put(flag.getKey(), flag.getValue());
+                        }
+                        cacheInfo.writeCacheInfo(inode);
+                        break;
+                    default:
+                        throw new UnsupportedOperationException("Attribute " + attribute + " not supported yet.");
+                }
+
+            }
+        } catch (FileNotFoundHimeraFsException e) {
+            throw new FileNotFoundCacheException(e.getMessage());
+        } catch (ChimeraFsException e) {
+            _logNameSpace.error("Exception in setFileAttributes: " + e);
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
+        } catch (IOException e) {
+            _logNameSpace.error("Exception in setFileAttributes: " + e);
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
+        }
+
+    }
+
 }

@@ -33,6 +33,10 @@ import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.cells.CellMessageSender;
 import org.dcache.cells.CellStub;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.vehicles.FileAttributes;
+import org.dcache.vehicles.PnfsGetFileAttributes;
+import org.dcache.vehicles.PnfsSetFileAttributes;
 
 public class PnfsHandler
     implements CellMessageSender
@@ -429,5 +433,31 @@ public class PnfsHandler
 	public PnfsId getPnfsIdByPath(String path) throws CacheException {
 		return pnfsRequest(new PnfsMapPathMessage(path)).getPnfsId();
 	}
+
+    /**
+     * Get file attributes. The PnfsManager is free to return less attributes
+     * than requested. If <code>attr</code> is an empty array, file existence
+     * if checked.
+     *
+     * @param pnfsid
+     * @param attr array of requested attributes.
+     * @return requested attributes
+     */
+    public FileAttributes getFileAttributes(PnfsId pnfsid, FileAttribute ... attr) throws CacheException {
+        return pnfsRequest(new PnfsGetFileAttributes(pnfsid, attr)).getFileAttributes();
+    }
+
+    /**
+     * Set file attributes. If <code>attr</code> is an empty array, file existence
+     * if checked.
+     *
+     * @param pnfsid
+     * @param attr array of requested attributes.
+     * @return requested attributes
+     */
+    public void setFileAttributes(PnfsId pnfsid, FileAttributes attr) throws CacheException {
+        pnfsRequest(new PnfsSetFileAttributes(pnfsid, attr));
+    }
+
 
 }

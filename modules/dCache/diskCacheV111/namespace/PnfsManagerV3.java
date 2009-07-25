@@ -2,6 +2,8 @@
 
 package diskCacheV111.namespace;
 
+import org.dcache.vehicles.PnfsGetFileAttributes;
+import org.dcache.vehicles.PnfsSetFileAttributes;
 import  diskCacheV111.vehicles.*;
 import  diskCacheV111.util.*;
 import  diskCacheV111.namespace.provider.*;
@@ -17,6 +19,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.log4j.Logger;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.vehicles.FileAttributes;
 
 import org.dcache.commons.stats.RequestCounters;
 import javax.security.auth.Subject;
@@ -89,6 +93,8 @@ public class PnfsManagerV3 extends CellAdapter {
         _counters.addCounter(PoolFileFlushedMessage.class);
         _counters.addCounter(PnfsGetChecksumAllMessage.class);
         _counters.addCounter(PnfsGetParentMessage.class);
+        _counters.addCounter(PnfsSetFileAttributes.class);
+        _counters.addCounter(PnfsGetFileAttributes.class);
     }
 
     /**
@@ -112,7 +118,8 @@ public class PnfsManagerV3 extends CellAdapter {
         PnfsGetChecksumAllMessage.class,
         PnfsGetChecksumMessage.class,
         PnfsCreateEntryMessage.class,
-        PnfsCreateDirectoryMessage.class
+        PnfsCreateDirectoryMessage.class,
+        PnfsGetFileAttributes.class
     };
 
     public PnfsManagerV3( String cellName , String args ) throws Exception {
@@ -1278,16 +1285,25 @@ public class PnfsManagerV3 extends CellAdapter {
         Subject subject = pnfsMessage.getSubject();
 
         say("Set length of "+pnfsId+" to "+length+" (Simulate Large = "+_simulateLargeFiles+"; store size = "+_storeFilesize+")");
-        try {
-            if( _storeFilesize )updateFlag(subject, pnfsId , PnfsFlagMessage.FlagOperation.SET , "l" , ""+length ) ;
 
-            FileMetaData metadata = _nameSpaceProvider.getFileMetaData(subject, pnfsId);
-            if( _simulateLargeFiles ){
-                metadata.setSize( length > 0x7fffffffL ? 1L : length );
-            }else{
-                metadata.setSize( length );
-            }
-            _nameSpaceProvider.setFileMetaData(subject, pnfsId, metadata);
+        /*
+         * While new pools will send PnfsSetFileAttributes old pools
+         * will send setLength. This is will happen only during a transition
+         * period when old pools combined with new PnfsManager.
+         *
+         * Let use this to update default AccessLatency and RetentionPloicy as well.
+         *
+         */
+        try {
+            FileAttributes fileAttributes = new FileAttributes();
+
+            fileAttributes.setSize(length);
+            fileAttributes.setDefinedAttributes(FileAttribute.SIZE,
+                    FileAttribute.DEFAULT_ACCESS_LATENCY,
+                    FileAttribute.DEFAULT_RETENTION_POLICY);
+
+            _nameSpaceProvider.setFileAttributes(subject, pnfsId, fileAttributes);
+
         }catch(FileNotFoundCacheException fnf) {
         	// file is gone.....
         	pnfsMessage.setFailed( CacheException.FILE_NOT_FOUND , fnf.getMessage() ) ;
@@ -1632,7 +1648,12 @@ public class PnfsManagerV3 extends CellAdapter {
         else if (pnfsMessage instanceof PnfsGetParentMessage){
             getParent((PnfsGetParentMessage)pnfsMessage);
         }
-
+        else if (pnfsMessage instanceof PnfsGetFileAttributes) {
+            getFileAttributes((PnfsGetFileAttributes)pnfsMessage);
+        }
+        else if (pnfsMessage instanceof PnfsSetFileAttributes) {
+            setFileAttributes((PnfsSetFileAttributes)pnfsMessage);
+        }
         else {
             say("Unexpected message class "+pnfsMessage.getClass());
             say("source = "+message.getSourceAddress());
@@ -1864,6 +1885,26 @@ public class PnfsManagerV3 extends CellAdapter {
             } catch (NoRouteToCellException e) {
                 esay("Failed to send reply: " + e.getMessage());
             }
+        }
+    }
+
+    public void getFileAttributes(PnfsGetFileAttributes message) {
+        throw new UnsupportedOperationException();
+    }
+
+    public void setFileAttributes(PnfsSetFileAttributes message) {
+
+        FileAttributes attr = message.getFileAttributes();
+        try {
+            _nameSpaceProvider.setFileAttributes(message.getSubject(), message.getPnfsId(), attr);
+        }catch(FileNotFoundCacheException e){
+            message.setFailed(e.getRc(), e);
+        }catch(CacheException e) {
+            esay("Error while updating file attributes: " + e.getMessage());
+            message.setFailed(e.getRc(), e.getMessage());
+        }catch(Exception e) {
+            esay("Error while updating file attributes: " + e.getMessage());
+            message.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
         }
     }
 }

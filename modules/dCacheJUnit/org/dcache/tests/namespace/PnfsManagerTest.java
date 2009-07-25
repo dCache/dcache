@@ -45,6 +45,7 @@ import diskCacheV111.vehicles.PnfsSetChecksumMessage;
 import diskCacheV111.vehicles.PnfsSetStorageInfoMessage;
 import diskCacheV111.vehicles.StorageInfo;
 import java.net.URI;
+import org.dcache.vehicles.PnfsGetFileAttributes;
 
 public class PnfsManagerTest {
 
@@ -426,6 +427,16 @@ public class PnfsManagerTest {
 
         assertEquals("Set checksum for non existing file must return FILE_NOT_FOUND",  CacheException.FILE_NOT_FOUND, pnfsSetChecksumMessage.getReturnCode());
 
+    }
+
+    @Test
+    public void testGetCombinedAttrbutesNonExist() {
+
+        PnfsGetFileAttributes message = new PnfsGetFileAttributes(
+            new PnfsId("000000000000000000000000000000000001") );
+        _pnfsManager.getFileAttributes(message);
+        assertEquals("Get attributes for non existing file have to return FILE_NOT_FOUND",
+            CacheException.FILE_NOT_FOUND, message.getReturnCode() );
     }
 
     @AfterClass

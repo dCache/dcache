@@ -1037,4 +1037,13 @@ public class CacheRepositoryV5
             removeExpiredStickyFlags(_entry);
         }
     }
+
+    /**
+     * Get pool name to which repository belongs.
+     * @return pool name.
+     */
+    public String getPoolName()
+    {
+         return getCellName();
+    }
 }

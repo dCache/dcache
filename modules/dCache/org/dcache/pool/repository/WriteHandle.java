@@ -17,7 +17,7 @@ import java.io.File;
  *
  * The write handle provides methods for allocating space for the
  * entry. Space must be allocated before it is consumed on the
- * disk. It is the reponsibility of the write handle to release any
+ * disk. It is the responsibility of the write handle to release any
  * over allocation after the transfer has completed.
  */
 public interface WriteHandle extends Allocator
@@ -34,7 +34,7 @@ public interface WriteHandle extends Allocator
      * target state.
      *
      * The checksum provided is compared to a known checksum, if
-     * possible. If a mismatch is detetected CacheException is
+     * possible. If a mismatch is detected CacheException is
      * thrown. If no checksum was known, the checksum is stored in the
      * storage info and in PNFS.
      *

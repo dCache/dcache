@@ -13,7 +13,7 @@ public class PnfsMessage extends Message {
     private static final long serialVersionUID = -3686370854772807059L;
 
     public PnfsMessage(String pnfsId){
-	_pnfsId = new PnfsId( pnfsId );
+        this( new PnfsId( pnfsId ) );
     }
     public PnfsMessage(PnfsId pnfsId){
 	_pnfsId = pnfsId ;

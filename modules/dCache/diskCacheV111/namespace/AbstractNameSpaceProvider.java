@@ -6,9 +6,11 @@ import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.StorageInfo;
+import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Checksum;
 
 import javax.security.auth.Subject;
+import org.dcache.vehicles.FileAttributes;
 
 public class AbstractNameSpaceProvider
     implements NameSpaceProvider
@@ -171,6 +173,18 @@ public class AbstractNameSpaceProvider
     public void clearCacheLocation(Subject subject, PnfsId pnfsId, String cacheLocation, boolean removeIfLast)
         throws CacheException
     {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public FileAttributes getFileAttributes(Subject subject, PnfsId pnfsId, FileAttribute... attr)
+            throws CacheException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setFileAttributes(Subject subject, PnfsId pnfsId, FileAttributes attr)
+            throws CacheException {
         throw new UnsupportedOperationException();
     }
 }

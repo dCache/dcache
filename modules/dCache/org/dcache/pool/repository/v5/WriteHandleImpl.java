@@ -19,6 +19,11 @@ import java.util.List;
 import java.util.concurrent.TimeoutException;
 import java.io.File;
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.util.ChecksumType;
+import org.dcache.vehicles.FileAttributes;
 
 class WriteHandleImpl implements WriteHandle
 {
@@ -173,7 +178,6 @@ class WriteHandleImpl implements WriteHandle
             info.getFileSize() == 0) {
             info.setFileSize(length);
             _entry.setStorageInfo(info);
-            _pnfs.setFileSize(_entry.getPnfsId(), length);
         } else if (info.getFileSize() != length) {
             throw new CacheException("File does not have expected length");
         }
@@ -183,6 +187,12 @@ class WriteHandleImpl implements WriteHandle
         throws CacheException
     {
         _pnfs.addCacheLocation(_entry.getPnfsId());
+    }
+
+    private void setFileAttributes(FileAttributes attr)
+            throws CacheException
+    {
+        _pnfs.setFileAttributes(_entry.getPnfsId(), attr);
     }
 
 
@@ -221,21 +231,29 @@ class WriteHandleImpl implements WriteHandle
             adjustReservation(length);
 
             StorageInfo info = _entry.getStorageInfo();
-
+            setFileSize(info, length);
             if (checksum != null) {
                 setChecksum(info, checksum);
             }
 
-            setFileSize(info, length);
+            FileAttributes fileAttributes = new FileAttributes();
+            fileAttributes.setSize(length);
+            fileAttributes.setLocation(_repository.getPoolName());
+            fileAttributes.setAccessLatency(info.getAccessLatency());
+            fileAttributes.setRetentionPolicy(info.getRetentionPolicy());
 
-            /* Register cache location. Should this fail due to
-             * FILE_NOT_FOUND, then the catch below will cause the
-             * replica to be removed. Should it fail for any other
-             * reason, then the file will be marked broken and the
-             * pool will repeat the registration step at the next
-             * start.
+            fileAttributes.setDefinedAttributes(
+                        FileAttribute.SIZE,
+                        FileAttribute.LOCATION,
+                        FileAttribute.ACCESS_LATENCY,
+                        FileAttribute.RETENTION_POLICY
+                    );
+
+            /*
+             * Update file size, checksum, location, access_latency and
+             * retention_policy with in namespace (pnfs or chimera).
              */
-            registerCacheLocation();
+            setFileAttributes(fileAttributes);
 
             setToTargetState();
 
@@ -253,7 +271,7 @@ class WriteHandleImpl implements WriteHandle
     }
 
     /**
-     * Fails the operation. Called by close without a successfulc
+     * Fails the operation. Called by close without a successful
      * commit. The file is either removed or marked bad, depending on
      * its state.
      */

@@ -37,6 +37,9 @@ import diskCacheV111.vehicles.CacheInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.util.Args;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.util.ChecksumType;
+import org.dcache.vehicles.FileAttributes;
 
 import javax.security.auth.Subject;
 
@@ -52,6 +55,15 @@ public class BasicNameSpaceProvider
     private final AttributeChecksumBridge _attChecksumImpl;
 
     private static final Logger _logNameSpace =  Logger.getLogger("logger.org.dcache.namespace." + BasicNameSpaceProvider.class.getName());
+    private final NameSpaceProvider _cacheLocationProvider;
+
+    private final AccessLatency _defaultAccessLatency;
+    private final RetentionPolicy _defaultRetentionPolicy;
+
+    private final static long FILE_SIZE_2GB = 0x7FFFFFFFL;
+
+    private final static String ACCESS_LATENCY_FLAG = "al";
+    private final static String RETENTION_POLICY_FLAG = "rp";
 
     /** Creates a new instance of BasicNameSpaceProvider */
     public BasicNameSpaceProvider(Args args, CellNucleus nucleus) throws Exception {
@@ -63,26 +75,24 @@ public class BasicNameSpaceProvider
 
         _attChecksumImpl = new AttributeChecksumBridge(this);
 
-        AccessLatency defaultAccessLatency;
         String accessLatensyOption = args.getOpt("DefaultAccessLatency");
             if( accessLatensyOption != null && accessLatensyOption.length() > 0) {
                 /*
                  * IllegalArgumentException thrown if option is invalid
                  */
-                defaultAccessLatency = AccessLatency.getAccessLatency(accessLatensyOption);
+                _defaultAccessLatency = AccessLatency.getAccessLatency(accessLatensyOption);
             }else{
-                defaultAccessLatency = StorageInfo.DEFAULT_ACCESS_LATENCY;
+                _defaultAccessLatency = StorageInfo.DEFAULT_ACCESS_LATENCY;
             }
 
-            RetentionPolicy defaultRetentionPolicy;
             String retentionPolicyOption = args.getOpt("DefaultRetentionPolicy");
             if( retentionPolicyOption != null && retentionPolicyOption.length() > 0) {
                 /*
                  * IllegalArgumentException thrown if option is invalid
                  */
-                defaultRetentionPolicy = RetentionPolicy.getRetentionPolicy(retentionPolicyOption);
+                _defaultRetentionPolicy = RetentionPolicy.getRetentionPolicy(retentionPolicyOption);
             }else{
-                defaultRetentionPolicy = StorageInfo.DEFAULT_RETENTION_POLICY;
+                _defaultRetentionPolicy = StorageInfo.DEFAULT_RETENTION_POLICY;
             }
 
         //
@@ -91,7 +101,7 @@ public class BasicNameSpaceProvider
         Class<StorageInfoExtractable> exClass = (Class<StorageInfoExtractable>) Class.forName( _args.argv(0)) ;
         Constructor<StorageInfoExtractable>  extractorInit =
             exClass.getConstructor(AccessLatency.class, RetentionPolicy.class);
-        _extractor =  extractorInit.newInstance(defaultAccessLatency, defaultRetentionPolicy);
+        _extractor =  extractorInit.newInstance(_defaultAccessLatency, _defaultRetentionPolicy);
 
 
         _mountPoint = _args.getOpt("pnfs")  ;
@@ -180,6 +190,20 @@ public class BasicNameSpaceProvider
         }
         else {
             _logNameSpace.info("Empty trash is selected");
+        }
+
+        /*
+         * private reference of cache info provider.
+         * The DcacheNameSpaceProviderFactorys will take care that we have only
+         * one instance of each type of provider.
+         */
+        String cacheLocation_provider = _args.getOpt("cachelocation-provider");
+        if (cacheLocation_provider != null) {
+            _logNameSpace.debug("CacheLocation provider: " + cacheLocation_provider);
+            DcacheNameSpaceProviderFactory cacheLocationProviderFactory = (DcacheNameSpaceProviderFactory) Class.forName(cacheLocation_provider).newInstance();
+            _cacheLocationProvider = (NameSpaceProvider)cacheLocationProviderFactory.getProvider(_args, _nucleus);
+        }else{
+            _cacheLocationProvider = this;
         }
     }
 
@@ -1087,4 +1111,118 @@ public class BasicNameSpaceProvider
                                      e.getMessage());
         }
     }
+
+    @Override
+    public FileAttributes getFileAttributes(Subject subject, PnfsId pnfsId, FileAttribute ... attr) throws CacheException {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    @Override
+    public void setFileAttributes(Subject subject, PnfsId pnfsId, FileAttributes attr) throws CacheException {
+
+        PnfsFile pf = _pathManager.getFileByPnfsId(pnfsId);
+        CacheInfo cacheInfo = null;
+
+        try {
+            for (FileAttribute attribute : attr.getDefinedAttributes()) {
+                switch (attribute) {
+                    case ACCESS_LATENCY:
+                        cacheInfo = getCacheInfo(pf, cacheInfo);
+                        cacheInfo.getFlags().put(ACCESS_LATENCY_FLAG,
+                                attr.getAccessLatency().toString());
+                        break;
+                    case RETENTION_POLICY:
+                        cacheInfo = getCacheInfo(pf, cacheInfo);
+                        cacheInfo.getFlags().put(RETENTION_POLICY_FLAG,
+                                attr.getRetentionPolicy().toString());
+                        break;
+                    case DEFAULT_ACCESS_LATENCY:
+                        cacheInfo = getCacheInfo(pf, cacheInfo);
+                        /*
+                         * update the value only if some one did not updated it yet
+                         */
+                        if( cacheInfo.getFlags().get(ACCESS_LATENCY_FLAG) == null ) {
+                            cacheInfo.getFlags().put(ACCESS_LATENCY_FLAG,
+                                    _defaultAccessLatency.toString());
+                        }
+                        break;
+                    case DEFAULT_RETENTION_POLICY:
+                        cacheInfo = getCacheInfo(pf, cacheInfo);
+                        /*
+                         * update the value only if some one did not updated it yet
+                         */
+                        if( cacheInfo.getFlags().get(RETENTION_POLICY_FLAG) == null ) {
+                            cacheInfo.getFlags().put(RETENTION_POLICY_FLAG,
+                                    _defaultRetentionPolicy.toString());
+                        }
+                        break;
+                    case SIZE:
+                        long size = attr.getSize();
+                        if( size > FILE_SIZE_2GB) {
+                            cacheInfo = getCacheInfo(pf, cacheInfo);
+                            cacheInfo.getFlags().put("l", Long.toString(size));
+                            pf.setLength(1);
+                        }else{
+                            pf.setLength(size);
+                        }
+                        break;
+                    case CHECKSUM:
+                        cacheInfo = getCacheInfo(pf, cacheInfo);
+
+                        for(Checksum sum: attr.getChecksums() ) {
+                            String flagName;
+                            if( sum.getType() == ChecksumType.ADLER32 ) {
+                                flagName = "c";
+                            } else {
+                                flagName = "uc";
+                            }
+                            ChecksumCollection collection = new ChecksumCollection(cacheInfo.getFlags().get(flagName));
+
+                            String currentValue = collection.get(sum.getType().getType());
+                            if( currentValue != null && sum.getValue() != null) {
+                                if( !currentValue.equals(sum.getValue())) {
+                                    throw new CacheException(CacheException.INVALID_ARGS,
+                                           "Checksum mismatch");
+                                }
+                                continue;
+                            }
+                            collection.put(sum.getType().getType(), sum.getValue());
+                            cacheInfo.getFlags().put(flagName, collection.serialize());
+                        }
+                        break;
+                    case LOCATION:
+                        if( _cacheLocationProvider != this) {
+                            _cacheLocationProvider.addCacheLocation(subject, pnfsId, attr.getLocation());
+                        }else{
+                            cacheInfo = getCacheInfo(pf, cacheInfo);
+                            cacheInfo.addCacheLocation(attr.getLocation());
+                        }
+                        break;
+                    case FLAGS:
+                        cacheInfo = getCacheInfo(pf, cacheInfo);
+                        for(Map.Entry<String, String> flag: attr.getFlags().entrySet()) {
+                            cacheInfo.getFlags().put(flag.getKey(), flag.getValue());
+                        }
+                        break;
+                   default:
+                       throw new UnsupportedOperationException("Attribute " + attribute + " not supported yet.");
+                }
+            }
+
+            if( cacheInfo != null ) {
+                cacheInfo.writeCacheInfo(pf);
+            }
+        }catch(IOException e) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
+        }
+
+    }
+
+    /*
+     * poor man caching
+     */
+    private static CacheInfo getCacheInfo(PnfsFile pnfsFile, CacheInfo cacheInfo) throws IOException {
+        return (cacheInfo != null) ? cacheInfo : new CacheInfo(pnfsFile);
+    }
+
 }

@@ -9,7 +9,9 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.namespace.NameSpaceProvider;
+import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Checksum;
+import org.dcache.vehicles.FileAttributes;
 
 /**
  * Base class for decorators of NameSpaceProvider. All methods call
@@ -184,5 +186,19 @@ public class AbstractNameSpaceProviderDecorator
         throws CacheException
     {
         _inner.clearCacheLocation(subject, pnfsId, cacheLocation, removeIfLast);
+    }
+
+    @Override
+    public FileAttributes getFileAttributes(Subject subject, PnfsId pnfsId, FileAttribute... attr)
+            throws CacheException
+    {
+        return _inner.getFileAttributes(subject, pnfsId, attr);
+    }
+
+    @Override
+    public void setFileAttributes(Subject subject, PnfsId pnfsId, FileAttributes attr)
+            throws CacheException
+    {
+        _inner.setFileAttributes(subject, pnfsId, attr);
     }
 }
