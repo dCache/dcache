@@ -16,6 +16,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.vehicles.*;
+import org.dcache.vehicles.*;
 import dmg.cells.nucleus.*;
 import dmg.util.*;
 import org.dcache.tests.cells.CellAdapterHelper;
@@ -98,21 +99,7 @@ public class RepositorySubsystemTest
     {
         new CellStubHelper() {
             @Message(cell="pnfs")
-            public Object message(PnfsSetLengthMessage msg)
-            {
-                msg.setSucceeded();
-                return msg;
-            }
-
-            @Message(cell="pnfs")
-            public Object message(PnfsAddCacheLocationMessage msg)
-            {
-                msg.setSucceeded();
-                return msg;
-            }
-
-            @Message(cell="pnfs")
-            public Object message(PnfsClearCacheLocationMessage msg)
+            public Object message(PnfsSetFileAttributes msg)
             {
                 msg.setSucceeded();
                 return msg;
@@ -176,6 +163,7 @@ public class RepositorySubsystemTest
 
         account.setTotal(5120);
         allocator.setAccount(account);
+        repository.setCellEndpoint(cell);
         repository.setAllocator(allocator);
         repository.setPnfsHandler(pnfs);
         repository.setAccount(account);
@@ -532,41 +520,49 @@ public class RepositorySubsystemTest
     /* Helper method for creating a fourth entry in the repository.
      */
     private void createEntry4(final long overallocation,
-                              final boolean failSetLength,
-                              final boolean failAddCacheLocation,
+                              final boolean failSetAttributes,
                               final boolean cancel,
                               final EntryState transferState,
                               final EntryState finalState)
         throws Throwable
     {
         new CellStubHelper() {
-            @Message(required=true,step=1,cell="pnfs")
-            public Object message(PnfsSetLengthMessage msg)
-            {
-                assertEquals(size4, msg.getLength());
-                if (failSetLength) {
-                    msg.setFailed(1, null);
-                } else {
-                    msg.setSucceeded();
-                }
-                return msg;
-            }
+            boolean setAttr = false;
+            boolean addCache = false;
 
-            @Message(required=true,step=1,cell="pnfs")
-            public Object message(PnfsAddCacheLocationMessage msg)
-            {
-                if (failAddCacheLocation) {
-                    msg.setFailed(1, null);
-                } else {
-                    msg.setSucceeded();
-                }
-                return msg;
-            }
-
-            @Message(required=false,step=0,cell="pnfs")
+            /* If files get garbage collected, then locations are
+             * cleared.
+             */
+            @Message(required=false,step=1,cell="pnfs")
             public Object message(PnfsClearCacheLocationMessage msg)
             {
                 msg.setSucceeded();
+                return msg;
+            }
+
+            /* In case of commit.
+             */
+            @Message(required=false,step=3,cell="pnfs")
+            public Object message(PnfsSetFileAttributes msg)
+            {
+                assertEquals(size4, msg.getFileAttributes().getSize());
+                if (failSetAttributes) {
+                    msg.setFailed(1, null);
+                } else {
+                    msg.setSucceeded();
+                }
+                setAttr = true;
+                return msg;
+            }
+
+            /* In case we cancel or fail to commit.
+             */
+            @Message(required=false,step=5,cell="pnfs")
+            public Object message2(PnfsAddCacheLocationMessage msg)
+            {
+                assertTrue(failSetAttributes || cancel);
+                msg.setSucceeded();
+                addCache = true;
                 return msg;
             }
 
@@ -582,13 +578,18 @@ public class RepositorySubsystemTest
                                            finalState, stickyRecords);
                 try {
                     handle.allocate(size4 + overallocation);
+                    assertStep("No clear after this point", 2);
                     createFile(handle.getFile(), size4);
-                    assertStep("No messages received yet", 0);
                     if (!cancel)
                         handle.commit(null);
                 } finally {
+                    assertStep("No set attributes after this point", 4);
                     handle.close();
                 }
+                assertEquals("SetFileAttributes must be sent unless we don't try to commit",
+                             !cancel, setAttr);
+                assertEquals("AddCacheLocation must be sent if not committd ",
+                             cancel || failSetAttributes, addCache);
             }
         };
     }
@@ -598,17 +599,17 @@ public class RepositorySubsystemTest
     public void testCreateEntry()
         throws Throwable
     {
-        createEntry4(0, false, false, false, FROM_CLIENT, PRECIOUS);
+        createEntry4(0, false, false, FROM_CLIENT, PRECIOUS);
         assertCanOpen(id4, size4, PRECIOUS);
         assertSpaceRecord(5120, 1024, 2048, 1024);
     }
 
     @Test(expected=CacheException.class)
-    public void testCreateEntrySetLengthFailed()
+    public void testCreateEntrySetAttributesFailed()
         throws Throwable
     {
         try {
-            createEntry4(100, true, false, false, FROM_CLIENT, PRECIOUS);
+            createEntry4(100, true, false, FROM_CLIENT, PRECIOUS);
         } finally {
             assertCacheEntry(repository.getEntry(id4), id4, size4, BROKEN);
             assertSpaceRecord(5120, 1024, 1024, 1024);
@@ -620,7 +621,7 @@ public class RepositorySubsystemTest
     public void testCreateEntryUnderallocation()
         throws Throwable
     {
-        createEntry4(-100, false, false, false, FROM_CLIENT, PRECIOUS);
+        createEntry4(-100, false, false, FROM_CLIENT, PRECIOUS);
         assertCanOpen(id4, size4, PRECIOUS);
         assertSpaceRecord(5120, 1024, 2048, 1024);
         // TODO: Check notification
@@ -630,7 +631,7 @@ public class RepositorySubsystemTest
     public void testCreateEntryOverallocation()
         throws Throwable
     {
-        createEntry4(100, false, false, false, FROM_CLIENT, PRECIOUS);
+        createEntry4(100, false, false, FROM_CLIENT, PRECIOUS);
         assertCanOpen(id4, size4, PRECIOUS);
         assertSpaceRecord(5120, 1024, 2048, 1024);
         // TODO: Check notification
@@ -640,7 +641,7 @@ public class RepositorySubsystemTest
     public void testCreateEntryOverallocationFail()
         throws Throwable
     {
-        createEntry4(100, false, false, true, FROM_CLIENT, PRECIOUS);
+        createEntry4(100, false, true, FROM_CLIENT, PRECIOUS);
         assertCacheEntry(repository.getEntry(id4), id4, size4, BROKEN);
         assertSpaceRecord(5120, 1024, 1024, 1024);
         // TODO: Check notification
@@ -660,7 +661,7 @@ public class RepositorySubsystemTest
         throws Throwable
     {
         account.setTotal(3072);
-        createEntry4(0,false, false, false, FROM_CLIENT, PRECIOUS);
+        createEntry4(0, false, false, FROM_CLIENT, PRECIOUS);
         assertCanOpen(id4, size4, PRECIOUS);
         assertSpaceRecord(3072, 0, 2048, 0);
         // TODO: Check notification
