@@ -7,7 +7,9 @@ import diskCacheV111.util.RetentionPolicy;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
+import java.util.EnumSet;
 import org.dcache.namespace.FileAttribute;
+import static org.dcache.namespace.FileAttribute.*;
 import org.dcache.util.Checksum;
 
 /**
@@ -28,17 +30,13 @@ public class FileAttributes implements Serializable {
     /**
      * array of provided attribute types
      */
-    private FileAttribute[] _definedAttributes;
+    private EnumSet<FileAttribute> _definedAttributes =
+        EnumSet.noneOf(FileAttribute.class);
 
     /**
      * file's size
      */
     private long _size;
-
-    /**
-     * file's change time. This is a time then files metadata was modified.
-     */
-    private long _ctime;
 
     /**
      * file's last modification time
@@ -85,32 +83,36 @@ public class FileAttributes implements Serializable {
      */
     private Map<String, String> _flags;
 
+    /** Throws IllegalStateException if attribute is not defined. */
+    private void guard(FileAttribute attribute)
+        throws IllegalStateException
+    {
+        if (!_definedAttributes.contains(attribute))
+            throw new IllegalStateException("Attribute is not defined: " +
+                                            attribute);
+    }
+
+    private void define(FileAttribute attribute)
+    {
+        _definedAttributes.add(attribute);
+    }
+
     /**
      * Get list of available attribute. The array may have zero or more entries.
      * @return array of defined attribute.
      */
-    public FileAttribute[] getDefinedAttributes() {
+    public EnumSet<FileAttribute> getDefinedAttributes() {
         return _definedAttributes;
     }
 
-    /**
-     * Get list of available attribute. The array may have zero or more entries.
-     * @return array of defined attribute.
-     */
-    public void setDefinedAttributes(FileAttribute ... attr) {
-         this._definedAttributes = attr;
-    }
-
     public AccessLatency getAccessLatency() {
+        guard(ACCESS_LATENCY);
         return _accessLatency;
     }
 
     public Set<Checksum> getChecksums() {
+        guard(CHECKSUM);
         return _checksums;
-    }
-
-    public long getChangeTime() {
-        return _ctime;
     }
 
     /**
@@ -118,6 +120,7 @@ public class FileAttributes implements Serializable {
      * @return file type
      */
     public FileType getFileType() {
+        guard(TYPE);
         return _fileType;
     }
 
@@ -126,6 +129,7 @@ public class FileAttributes implements Serializable {
      * @return group id
      */
     public int getGroup() {
+        guard(OWNER_GROUP);
         return _group;
     }
 
@@ -134,6 +138,7 @@ public class FileAttributes implements Serializable {
      * @return time in milliseconds since 1 of January 1970 00:00.00
      */
     public long getModificationTime() {
+        guard(MODIFICATION_TIME);
         return _mtime;
     }
 
@@ -142,66 +147,87 @@ public class FileAttributes implements Serializable {
      * @return owner id
      */
     public int getOwner() {
+        guard(OWNER);
         return _owner;
     }
 
     public RetentionPolicy getRetentionPolicy() {
+        guard(RETENTION_POLICY);
         return _retentionPolicy;
     }
 
     public long getSize() {
+        guard(SIZE);
         return _size;
     }
 
     public void setAccessLatency(AccessLatency accessLatency) {
+        define(ACCESS_LATENCY);
         _accessLatency = accessLatency;
     }
 
     public void setChecksums(Set<Checksum> checksums) {
+        define(CHECKSUM);
         _checksums = checksums;
     }
 
-    public void setChangeTime(long ctime) {
-        _ctime = ctime;
+    public void setDefaultAccessLatency()
+    {
+        define(DEFAULT_RETENTION_POLICY);
+    }
+
+    public void setDefaultRetentionPolicy()
+    {
+        define(DEFAULT_ACCESS_LATENCY);
     }
 
     public void setFileType(FileType fileType) {
+        define(TYPE);
         _fileType = fileType;
     }
 
     public void setGroup(int group) {
+        define(OWNER_GROUP);
         _group = group;
     }
 
     public void setModificationTime(long mtime) {
+        define(MODIFICATION_TIME);
         _mtime = mtime;
     }
 
     public void setOwner(int owner) {
+        define(OWNER);
         _owner = owner;
     }
 
     public void setRetentionPolicy(RetentionPolicy retentionPolicy) {
+        define(RETENTION_POLICY);
         _retentionPolicy = retentionPolicy;
     }
 
     public void setSize(long size) {
+        define(SIZE);
         _size = size;
     }
 
     public void setLocation(String pool) {
+        define(LOCATION);
         _location = pool;
     }
 
     public String getLocation() {
+        guard(LOCATION);
         return _location;
     }
 
     public Map<String, String> getFlags() {
+        guard(FLAGS);
         return _flags;
     }
 
     public void setFlags(Map<String, String> flags) {
+        define(FLAGS);
         _flags = flags;
     }
 }

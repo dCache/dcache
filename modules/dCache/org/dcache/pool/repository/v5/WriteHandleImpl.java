@@ -242,13 +242,6 @@ class WriteHandleImpl implements WriteHandle
             fileAttributes.setAccessLatency(info.getAccessLatency());
             fileAttributes.setRetentionPolicy(info.getRetentionPolicy());
 
-            fileAttributes.setDefinedAttributes(
-                        FileAttribute.SIZE,
-                        FileAttribute.LOCATION,
-                        FileAttribute.ACCESS_LATENCY,
-                        FileAttribute.RETENTION_POLICY
-                    );
-
             /*
              * Update file size, checksum, location, access_latency and
              * retention_policy with in namespace (pnfs or chimera).

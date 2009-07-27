@@ -1298,9 +1298,8 @@ public class PnfsManagerV3 extends CellAdapter {
             FileAttributes fileAttributes = new FileAttributes();
 
             fileAttributes.setSize(length);
-            fileAttributes.setDefinedAttributes(FileAttribute.SIZE,
-                    FileAttribute.DEFAULT_ACCESS_LATENCY,
-                    FileAttribute.DEFAULT_RETENTION_POLICY);
+            fileAttributes.setDefaultAccessLatency();
+            fileAttributes.setDefaultRetentionPolicy();
 
             _nameSpaceProvider.setFileAttributes(subject, pnfsId, fileAttributes);
 

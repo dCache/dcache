@@ -3,6 +3,7 @@ package org.dcache.vehicles;
 import diskCacheV111.vehicles.*;
 import diskCacheV111.util.PnfsId;
 import org.dcache.namespace.FileAttribute;
+import java.util.EnumSet;
 
 /**
  * Vehicle for get files combined attributes.
@@ -14,7 +15,7 @@ public class PnfsGetFileAttributes extends PnfsMessage {
     private static final long serialVersionUID = -6750531802534981651L;
 
     private FileAttributes _fileAttributes;
-    private FileAttribute[] _attributes;
+    private EnumSet<FileAttribute> _attributes;
 
     /**
      * Construct request by PnfsId.
@@ -22,7 +23,7 @@ public class PnfsGetFileAttributes extends PnfsMessage {
      * @param pnfsid
      * @param attr
      */
-    public PnfsGetFileAttributes(PnfsId pnfsid, FileAttribute...attr) {
+    public PnfsGetFileAttributes(PnfsId pnfsid, EnumSet<FileAttribute> attr) {
         super(pnfsid);
         _attributes = attr;
     }
@@ -33,7 +34,7 @@ public class PnfsGetFileAttributes extends PnfsMessage {
      * @param path
      * @param attr
      */
-    public PnfsGetFileAttributes(String path, FileAttribute...attr) {
+    public PnfsGetFileAttributes(String path, EnumSet<FileAttribute> attr) {
         super(path);
         _attributes = attr;
     }
@@ -61,7 +62,7 @@ public class PnfsGetFileAttributes extends PnfsMessage {
      * client interested in file existence only.
      * @return
      */
-    public FileAttribute[] getRequestedAttributes() {
+    public EnumSet<FileAttribute> getRequestedAttributes() {
         return _attributes;
     }
 }

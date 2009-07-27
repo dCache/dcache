@@ -550,7 +550,7 @@ public class ChimeraNameSpaceProvider
 
     @Override
     public void setFileAttributes(Subject subject, PnfsId pnfsId, FileAttributes attr) throws CacheException {
-        _logNameSpace.debug("File attributes update: " + Arrays.toString(attr.getDefinedAttributes()));
+        _logNameSpace.debug("File attributes update: " + attr.getDefinedAttributes());
 
         FsInode inode = new FsInode(_fs, pnfsId.toIdString());
         try {
