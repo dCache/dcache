@@ -289,9 +289,11 @@ public final class Manager
 		}
 	}
 
-	public String hh_update_space_reservation = " <spaceToken>  <size>  # set new size for the space token \n " +
+	public String hh_update_space_reservation = " [-size=<size>]  [-lifetime=<lifetime>] <spaceToken> \n"+
+                "                                                     # set new size and/or lifetime for the space token \n " +
 		                                    "                                                # valid examples of size: 1000, 100kB, 100KB, 100KiB, 100MB, 100MiB, 100GB, 100GiB, 10.5TB, 100TiB \n" +
-                                                    "                                                 # see http://en.wikipedia.org/wiki/Gigabyte for explanation";
+                "                                                     # see http://en.wikipedia.org/wiki/Gigabyte for explanation \n"+
+                "                                                     # lifetime is in seconds ";
 
 	public final long stringToSize(String s)  throws Exception {
 		long size=0L;
@@ -350,19 +352,22 @@ public final class Manager
 	}
 
 
-	public String ac_update_space_reservation_$_2(Args args) throws Exception {
+	public String ac_update_space_reservation_$_1(Args args) throws Exception {
 		long reservationId = Long.parseLong(args.argv(0));
-		long size = 0L;
+                String sSize     = args.getOpt("size");
+                String sLifetime = args.getOpt("lifetime");
+                if (sLifetime==null&&sSize==null) { 
+                        return "Need to specify at least one option \"-lifetime\" or \"-size\"";
+                }
 		try {
-			size = stringToSize(args.argv(1));
 			updateSpaceReservation(reservationId,
 					       null,
 					       null,
 					       null,
 					       null,
 					       null,
-					       Long.valueOf(size),
-					       null,
+					       (sSize != null ?  Long.valueOf(stringToSize(sSize)) : null),
+					       (sLifetime != null ? Long.parseLong(sLifetime)*1000 : null),
 					       null,
 					       null);
 		}
