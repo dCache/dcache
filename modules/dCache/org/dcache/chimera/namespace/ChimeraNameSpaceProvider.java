@@ -552,6 +552,7 @@ public class ChimeraNameSpaceProvider
     public void setFileAttributes(Subject subject, PnfsId pnfsId, FileAttributes attr) throws CacheException {
         _logNameSpace.debug("File attributes update: " + attr.getDefinedAttributes());
 
+        StorageInfo dir = null;
         FsInode inode = new FsInode(_fs, pnfsId.toIdString());
         try {
 
@@ -578,24 +579,32 @@ public class ChimeraNameSpaceProvider
                         break;
                     case DEFAULT_ACCESS_LATENCY:
                         /*
-                         * update the value only if some one did not updated it yet
+                         * update the value only if some one did not
+                         * updated it yet
                          *
-                         * FIXME: this is a quick hack and have to go into Chimera code
+                         * FIXME: this is a quick hack and have to go
+                         * into Chimera code
                          */
-                        if( _fs.getAccessLatency(inode) == null ) {
-                            _fs.setAccessLatency(inode,
-                                    org.dcache.chimera.store.AccessLatency.valueOf(_defaultAccessLatency.getId()));
+                        if (_fs.getAccessLatency(inode) == null) {
+                            if (dir == null) {
+                                dir = _extractor.getStorageInfo(inode);
+                            }
+                            _fs.setAccessLatency(inode, org.dcache.chimera.store.AccessLatency.valueOf(dir.getAccessLatency().getId()));
                         }
                         break;
                     case DEFAULT_RETENTION_POLICY:
                         /*
-                         * update the value only if some one did not updated it yet
+                         * update the value only if some one did not
+                         * updated it yet
                          *
-                         * FIXME: this is a quick hack and have to go into Chimera code
+                         * FIXME: this is a quick hack and have to go
+                         * into Chimera code
                          */
                         if(_fs.getRetentionPolicy(inode) == null) {
-                            _fs.setRetentionPolicy(inode,
-                                    org.dcache.chimera.store.RetentionPolicy.valueOf(_defaultRetentionPolicy.getId()));
+                            if (dir == null) {
+                                dir = _extractor.getStorageInfo(inode);
+                            }
+                            _fs.setRetentionPolicy(inode, org.dcache.chimera.store.RetentionPolicy.valueOf(dir.getRetentionPolicy().getId()));
                         }
                         break;
                     case FLAGS:

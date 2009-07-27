@@ -19,23 +19,7 @@ public class       GenericInfoExtractor
 {
     private final static String SUFFIX = "StorageInfo";
 
-    /**
-     * default access latency for newly created files
-     */
-    private final AccessLatency _defaultAccessLatency;
-
-    /**
-     * default retention policy for newly created files
-     */
-    private final RetentionPolicy _defaultRetentionPolicy;
-
     private Map<String, StorageInfoExtractable> _extractors = new HashMap();
-
-    public GenericInfoExtractor(AccessLatency defaultAL, RetentionPolicy defaultRP) {
-
-        _defaultAccessLatency = defaultAL;
-        _defaultRetentionPolicy = defaultRP;
-    }
 
     /**
      * Returns an info extractor for the given HSM.
@@ -63,10 +47,9 @@ public class       GenericInfoExtractor
             }
             try {
                 Constructor constructor = Class.forName(className)
-                    .getConstructor(AccessLatency.class, RetentionPolicy.class);
+                    .getConstructor();
                 extr = (StorageInfoExtractable)
-                    constructor.newInstance(_defaultAccessLatency,
-                                            _defaultRetentionPolicy);
+                    constructor.newInstance();
                 _extractors.put(hsm, extr);
             } catch (ClassNotFoundException e) {
                 throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
@@ -96,11 +79,9 @@ public class       GenericInfoExtractor
         StorageInfoExtractable extr;
 
         if (storageInfo instanceof OSMStorageInfo) {
-            extr = new OsmInfoExtractor(_defaultAccessLatency,
-                                        _defaultRetentionPolicy);
+            extr = new OsmInfoExtractor();
         } else if (storageInfo instanceof EnstoreStorageInfo) {
-            extr = new EnstoreInfoExtractor(_defaultAccessLatency,
-                                            _defaultRetentionPolicy);
+            extr = new EnstoreInfoExtractor();
         } else {
             String hsmName = storageInfo.getClass().getSimpleName();
             if (!hsmName.endsWith(SUFFIX)) {

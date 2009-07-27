@@ -17,10 +17,6 @@ import org.dcache.util.AbstractPnfsExtractor;
 
 public class OsmInfoExtractor extends AbstractPnfsExtractor {
 
-    public OsmInfoExtractor(AccessLatency defaultAL, RetentionPolicy defaultRP) {
-        super(defaultAL, defaultRP);
-    }
-
     @Override
     public void setStorageInfo( String pnfsMountpoint , PnfsId pnfsId ,
                                 StorageInfo storageInfo , int accessMode )
@@ -37,8 +33,6 @@ public class OsmInfoExtractor extends AbstractPnfsExtractor {
           throw new
           CacheException( 37 , "Not a valid PnfsId "+pnfsId ) ;
        }
-
-       super.storeAlRpInLevel2(storageInfo, pnfsFile);
 
        if( storageInfo.isSetBitFileId() ) {
 
@@ -145,8 +139,6 @@ public class OsmInfoExtractor extends AbstractPnfsExtractor {
 
            String [] template = parentDir.getTag("OSMTemplate") ;
            String [] group    = parentDir.getTag("sGroup" ) ;
-           String [] accessLatency = parentDir.getTag("AccessLatency");
-           String [] retentionPolicy = parentDir.getTag("RetentionPolicy");
            String [] spaceToken = parentDir.getTag("WriteToken");
 
            if( ( template == null     ) || ( group == null     ) ||
@@ -177,35 +169,6 @@ public class OsmInfoExtractor extends AbstractPnfsExtractor {
            String [] tag = parentDir.getTag("hsmInstance") ;
            if( (tag != null ) && ( tag.length > 0 ) &&  ( tag[0] != null ) ) {
                info.setHsm( tag[0].trim().toLowerCase());
-           }
-
-           /*
-            * if Access latency and/or retention policy is defined for a directory
-            * apply it to the file and make it persistent, while it's a file attribute and directory
-            * tag is default value only
-            */
-           if(accessLatency != null) {
-        	   try {
-        		   info.setAccessLatency( AccessLatency.getAccessLatency(accessLatency[0].trim()));
-        		   info.isSetAccessLatency(true);
-        	   }catch(IllegalArgumentException iae) {
-        		   // TODO: do we fail here or not?
-        	   }
-           }else{
-               // force default
-               info.setAccessLatency(_defaultAccessLatency);
-           }
-
-           if(retentionPolicy != null) {
-        	   try {
-        		   info.setRetentionPolicy( RetentionPolicy.getRetentionPolicy(retentionPolicy[0].trim()));
-        		   info.isSetRetentionPolicy(true);
-        	   }catch(IllegalArgumentException iae) {
-        		   // TODO: do we fail here or not?
-        	   }
-           }else{
-               // force default
-               info.setRetentionPolicy(_defaultRetentionPolicy);
            }
 
            if( spaceToken != null ) {

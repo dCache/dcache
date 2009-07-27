@@ -22,21 +22,6 @@ import java.util.List;
  */
 public abstract class AbstractPnfsExtractor implements StorageInfoExtractable {
 
-    /**
-     * default access latency for newly created files
-     */
-    protected final diskCacheV111.util.AccessLatency _defaultAccessLatency;
-
-    /**
-     * default retention policy for newly created files
-     */
-    protected final diskCacheV111.util.RetentionPolicy _defaultRetentionPolicy;
-
-    protected AbstractPnfsExtractor(AccessLatency defaultAL, RetentionPolicy defaultRP) {
-        _defaultAccessLatency = defaultAL;
-        _defaultRetentionPolicy = defaultRP;
-    }
-
     @Override
     public StorageInfo getStorageInfo(String pnfsMountpoint, PnfsId pnfsId) throws CacheException {
 
@@ -106,37 +91,6 @@ public abstract class AbstractPnfsExtractor implements StorageInfoExtractable {
      */
     protected abstract StorageInfo extractFile(String pnfsMountpoint, PnfsFile pnfsFile)
             throws CacheException;
-
-    /**
-     * HACK -  AccessLatency and RetentionPolicy stored as a flags
-     * FIXME: this information shouldn't be stored here.
-     * @param storageInfo
-     * @param pnfsFile
-     * @throws CacheException
-     */
-    protected void storeAlRpInLevel2(StorageInfo storageInfo, PnfsFile pnfsFile)
-            throws CacheException {
-        if (storageInfo.isSetAccessLatency() || storageInfo.isSetRetentionPolicy()) {
-            try {
-
-                CacheInfo info = new CacheInfo(pnfsFile);
-                CacheInfo.CacheFlags flags = info.getFlags();
-
-                if (storageInfo.isSetAccessLatency()) {
-                    flags.put("al", storageInfo.getAccessLatency().toString());
-                }
-
-                if (storageInfo.isSetRetentionPolicy()) {
-                    flags.put("rp", storageInfo.getRetentionPolicy().toString());
-                }
-
-                info.writeCacheInfo(pnfsFile);
-
-            } catch (IOException ee) {
-                throw new CacheException(107, "Problem in set(OSM)StorageInfo : " + ee);
-            }
-        }
-    }
 
     /**
      * Read given file and returns a {@link List} of strings. Each element in the

@@ -11,18 +11,10 @@ public class  EnstoreInfoExtractor extends AbstractPnfsExtractor {
 
     private static final Logger _log = Logger.getLogger(EnstoreInfoExtractor.class);
 
-    public EnstoreInfoExtractor(AccessLatency defaultAL, RetentionPolicy defaultRP) {
-        super(defaultAL, defaultRP);
-    }
-
     @Override
    public void setStorageInfo( String pnfsMountpoint , PnfsId pnfsId ,
                                StorageInfo storageInfo , int accessMode )
            throws CacheException {
-
-	   PnfsFile pnfsFile = PnfsFile.getFileByPnfsId( pnfsMountpoint , pnfsId ) ;
-
-           super.storeAlRpInLevel2(storageInfo, pnfsFile);
 
        if( storageInfo.isSetBitFileId() ) {
     	   throw new
@@ -49,8 +41,6 @@ public class  EnstoreInfoExtractor extends AbstractPnfsExtractor {
            String [] template = parentDir.getTag("OSMTemplate") ;
            String [] group    = parentDir.getTag("storage_group" ) ;
            String [] family   = parentDir.getTag("file_family" ) ;
-           String [] accessLatency = parentDir.getTag("AccessLatency");
-           String [] retentionPolicy = parentDir.getTag("RetentionPolicy");
            String [] spaceToken = parentDir.getTag("WriteToken");
 
 
@@ -76,36 +66,6 @@ public class  EnstoreInfoExtractor extends AbstractPnfsExtractor {
 
            EnstoreStorageInfo info = new EnstoreStorageInfo( gr , family[0].trim() ) ;
            info.addKeys( hash ) ;
-
-
-           /*
-            * if Access latency and/or retention policy is defined for a directory
-            * apply it to the file and make it persistent, while it's a file attribute and directory
-            * tag is default value only
-            */
-           if(accessLatency != null) {
-        	   try {
-        		   info.setAccessLatency( AccessLatency.getAccessLatency(accessLatency[0].trim()));
-        		   info.isSetAccessLatency(true);
-        	   }catch(IllegalArgumentException iae) {
-        		   // TODO: do we fail here or not?
-        	   }
-           }else{
-               // force default
-               info.setAccessLatency(_defaultAccessLatency);
-           }
-
-           if(retentionPolicy != null) {
-        	   try {
-        		   info.setRetentionPolicy( RetentionPolicy.getRetentionPolicy(retentionPolicy[0].trim()));
-        		   info.isSetRetentionPolicy(true);
-        	   }catch(IllegalArgumentException iae) {
-        		   // TODO: do we fail here or not?
-        	   }
-           }else{
-               // force default
-               info.setRetentionPolicy(_defaultRetentionPolicy);
-           }
 
            if( spaceToken != null ) {
                info.setKey("writeToken", spaceToken[0].trim());

@@ -22,10 +22,6 @@ import diskCacheV111.vehicles.StorageInfo;
  */
 public class OpaqueStorageInfoExtractor extends OsmInfoExtractor {
 
-    public OpaqueStorageInfoExtractor(AccessLatency defaultAL, RetentionPolicy defaultRP) {
-        super(defaultAL,defaultRP );
-    }
-
     private static final URI DUMMY_URI = URI.create("osm://unknown-HSM/unknown-path");
 
     // FIXME: this should be configurable.
@@ -85,8 +81,6 @@ public class OpaqueStorageInfoExtractor extends OsmInfoExtractor {
 
         if( pnfsFile == null )
             throw new CacheException( 107 , "Not a valid PnfsId "+pnfsId ) ;
-
-        storeAlRpInLevel2( storageInfo, pnfsFile);
 
         // Silently ignore attempts to store StorageInfo object, unless such access is prohibited.
         switch( accessMode ) {

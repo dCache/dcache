@@ -100,8 +100,8 @@ public class BasicNameSpaceProvider
         //
         Class<StorageInfoExtractable> exClass = (Class<StorageInfoExtractable>) Class.forName( _args.argv(0)) ;
         Constructor<StorageInfoExtractable>  extractorInit =
-            exClass.getConstructor(AccessLatency.class, RetentionPolicy.class);
-        _extractor =  extractorInit.newInstance(_defaultAccessLatency, _defaultRetentionPolicy);
+            exClass.getConstructor();
+        _extractor =  extractorInit.newInstance();
 
 
         _mountPoint = _args.getOpt("pnfs")  ;
@@ -483,97 +483,179 @@ public class BasicNameSpaceProvider
         return pnfsFile.getPnfsId();
     }
 
-
-    public void setStorageInfo(Subject subject, PnfsId pnfsId, StorageInfo storageInfo, int mode) throws CacheException {
-
-
-        _logNameSpace.debug( "setStorageInfo : "+pnfsId ) ;
-        File mountpoint = _pathManager.getMountPointByPnfsId(pnfsId) ;
-        _extractor.setStorageInfo(
-        mountpoint.getAbsolutePath() ,
-        pnfsId ,
-        storageInfo,
-        mode ) ;
-
-        return ;
-    }
-
     /**
-     * HACK -  AccessLatency and RetentionPolicy stored as a flags
+     * HACK -  AccessLatency and RetentionPolicy stored as a level 2 flags
      * FIXME: this information shouldn't be stored here.
      * @param storageInfo
      * @param pnfsFile
-     * @throws diskCacheV111.util.CacheException
+     * @throws CacheException
      */
-    private void getAlRp(StorageInfo storageInfo, CacheInfo cacheInfo)
-            throws CacheException {
+    private void storeAlRpInLevel2(StorageInfo storageInfo, PnfsFile pnfsFile)
+        throws IOException
+    {
+        if (storageInfo.isSetAccessLatency() || storageInfo.isSetRetentionPolicy()) {
+            CacheInfo info = new CacheInfo(pnfsFile);
+            CacheInfo.CacheFlags flags = info.getFlags();
 
-        CacheInfo.CacheFlags flags = cacheInfo.getFlags();
+            if (storageInfo.isSetAccessLatency()) {
+                flags.put(ACCESS_LATENCY_FLAG,
+                          storageInfo.getAccessLatency().toString());
+            }
 
-        String al = flags.get("al");
-        if (al != null) {
-            storageInfo.setAccessLatency(AccessLatency.getAccessLatency(al));
-        }
+            if (storageInfo.isSetRetentionPolicy()) {
+                flags.put(RETENTION_POLICY_FLAG,
+                          storageInfo.getRetentionPolicy().toString());
+            }
 
-        String rp = flags.get("rp");
-        if (rp != null) {
-            storageInfo.setRetentionPolicy(RetentionPolicy.getRetentionPolicy(rp));
+            info.writeCacheInfo(pnfsFile);
         }
     }
 
-    public StorageInfo getStorageInfo(Subject subject, PnfsId pnfsId) throws CacheException {
+    public void setStorageInfo(Subject subject, PnfsId pnfsId, StorageInfo storageInfo, int mode)
+        throws CacheException
+    {
+        _logNameSpace.debug( "setStorageInfo : "+pnfsId ) ;
+        File mountpoint = _pathManager.getMountPointByPnfsId(pnfsId) ;
+        _extractor.setStorageInfo(mountpoint.getAbsolutePath() ,
+                                  pnfsId ,
+                                  storageInfo,
+                                  mode ) ;
 
+        PnfsFile pnfsFile =
+            PnfsFile.getFileByPnfsId(mountpoint, pnfsId);
+        try {
+            storeAlRpInLevel2(storageInfo, pnfsFile);
+        } catch (IOException e) {
+            throw new CacheException("IO error while updating level 2 of " + pnfsId + ": " + e.getMessage());
+        }
+    }
+
+    /**
+     * Returns the default access latency for a directory.
+     *
+     * The access latency for a directory is defined through the
+     * AccessLatency tag of the directory. If not defined or if set to
+     * an invalid value, then the system wide default access latency
+     * is returned.
+     */
+    private AccessLatency getAccessLatencyForDirectory(PnfsFile dir)
+    {
+        String[] s = dir.getTag("AccessLatency");
+        if (s != null) {
+            try {
+                return AccessLatency.getAccessLatency(s[0].trim());
+            } catch (IllegalArgumentException e) {
+                _logNameSpace.error("Invalid AccessLatency tag in " + dir);
+            }
+        }
+        return _defaultAccessLatency;
+    }
+
+
+    /**
+     * Returns the default retention policy for a directory.
+     *
+     * The retention policy for a directory is defined through the
+     * AccessLatency tag of the directory. If not defined or if set to
+     * an invalid value, then the system wide default retention policy
+     * is returned.
+     */
+    private RetentionPolicy getRetentionPolicyForDirectory(PnfsFile dir)
+    {
+        String[] s = dir.getTag("RetentionPolicy");
+        if (s != null) {
+            try {
+                return RetentionPolicy.getRetentionPolicy(s[0].trim());
+            } catch (IllegalArgumentException e) {
+                _logNameSpace.error("Invalid RetentionPolicy tag in " + dir);
+            }
+        }
+        return _defaultRetentionPolicy;
+    }
+
+    public StorageInfo getStorageInfo(Subject subject, PnfsId pnfsId)
+        throws CacheException
+    {
         _logNameSpace.debug("getStorageInfo : " + pnfsId);
         File mountpoint = _pathManager.getMountPointByPnfsId(pnfsId);
-        StorageInfo info = _extractor.getStorageInfo(mountpoint.getAbsolutePath(), pnfsId);
+        StorageInfo info =
+            _extractor.getStorageInfo(mountpoint.getAbsolutePath(), pnfsId);
 
         _logNameSpace.debug("Storage info " + info);
 
         PnfsFile pf = _pathManager.getFileByPnfsId(pnfsId);
-        if (pf.isFile()) {
-
+        if (pf.isDirectory()) {
+            info.setAccessLatency(getAccessLatencyForDirectory(pf));
+            info.setRetentionPolicy(getRetentionPolicyForDirectory(pf));
+        } else if (pf.isFile() && info.isCreatedOnly()) {
+            /* Does not contain level 2 yet. AL and RP is defined by
+             * directory tags.
+             */
+            PnfsFile dir = getParentPnfsFile(mountpoint, pf, null);
+            info.setAccessLatency(getAccessLatencyForDirectory(dir));
+            info.setRetentionPolicy(getRetentionPolicyForDirectory(dir));
+        } else if (pf.isFile()) {
             try {
-
+                PnfsFile dir = null;
                 CacheInfo cinfo = new CacheInfo(pf);
                 CacheInfo.CacheFlags flags = cinfo.getFlags();
 
-                for (Map.Entry<String, String> entry : flags.entrySet()) {
+                /* Add all level 2 flags to storage info.
+                 */
+                for (Map.Entry<String, String> entry: flags.entrySet()) {
                     info.setKey("flag-" + entry.getKey(), entry.getValue());
                 }
 
-                /*
-                 * new files do not have level2
+                /* Set access latency from al flag if
+                 * defined. Otherwise use directory tags.
                  */
-                if( !info.isCreatedOnly() ) {
-                    getAlRp(info, cinfo);
-                }
-
-            } catch (IOException eee) {
-                _logNameSpace.error("Failed to read CacheInfo : " + eee.getMessage());
-            }
-
-            //
-            // simulate large files
-            //
-            if (info.getFileSize() == 1L) {
-
-                long largeFilesize = -1L;
-                try {
-                    String sizeString = info.getKey("flag-l");
-                    if (sizeString != null) {
-                        largeFilesize = Long.parseLong(sizeString);
-                        if (largeFilesize > 0L) {
-                            info.setFileSize(largeFilesize);
-                        }
+                String al = flags.get(ACCESS_LATENCY_FLAG);
+                if (al != null) {
+                    try {
+                        info.setAccessLatency(AccessLatency.getAccessLatency(al));
+                    } catch (IllegalArgumentException e) {
+                        throw new CacheException(CacheException.ATTRIBUTE_FORMAT_ERROR, "Invalid access latency in level 2 of " + pnfsId);
                     }
-                } catch (NumberFormatException nfe) {
-                    /* ignore bad values */
+                } else {
+                    dir = getParentPnfsFile(mountpoint, pf, dir);
+                    info.setAccessLatency(getAccessLatencyForDirectory(dir));
                 }
-            }
 
+                /* Set access latency from rp flag if
+                 * defined. Otherwise use directory tags.
+                 */
+                String rp = flags.get(RETENTION_POLICY_FLAG);
+                if (rp != null) {
+                    try {
+                        info.setRetentionPolicy(RetentionPolicy.getRetentionPolicy(rp));
+                    } catch (IllegalArgumentException e) {
+                        throw new CacheException(CacheException.ATTRIBUTE_FORMAT_ERROR, "Invalid retention policy in level 2 of " + pnfsId);
+                    }
+                } else {
+                    dir = getParentPnfsFile(mountpoint, pf, dir);
+                    info.setRetentionPolicy(getRetentionPolicyForDirectory(dir));
+                }
+
+                /* Simulate large files
+                 */
+                if (info.getFileSize() == 1L) {
+                    try {
+                        String sizeString = flags.get("l");
+                        if (sizeString != null) {
+                            long largeFilesize = Long.parseLong(sizeString);
+                            if (largeFilesize > 0L) {
+                                info.setFileSize(largeFilesize);
+                            }
+                        }
+                    } catch (NumberFormatException nfe) {
+                        throw new CacheException(CacheException.ATTRIBUTE_FORMAT_ERROR, "Invalid length in level 2 of " + pnfsId);
+                    }
+                }
+            } catch (IOException e) {
+                throw new CacheException("IO error while reading level 2 of " + pnfsId);
+            }
         }
         return info;
-
     }
 
     public String[] getFileAttributeList(Subject subject, PnfsId pnfsId) {
@@ -1121,6 +1203,8 @@ public class BasicNameSpaceProvider
     public void setFileAttributes(Subject subject, PnfsId pnfsId, FileAttributes attr) throws CacheException {
 
         PnfsFile pf = _pathManager.getFileByPnfsId(pnfsId);
+        File mountpoint = _pathManager.getMountPointByPnfsId(pnfsId);
+        PnfsFile dir = null;
         CacheInfo cacheInfo = null;
 
         try {
@@ -1138,22 +1222,24 @@ public class BasicNameSpaceProvider
                         break;
                     case DEFAULT_ACCESS_LATENCY:
                         cacheInfo = getCacheInfo(pf, cacheInfo);
-                        /*
-                         * update the value only if some one did not updated it yet
+                        /* update the value only if someone did not
+                         * set it yet
                          */
-                        if( cacheInfo.getFlags().get(ACCESS_LATENCY_FLAG) == null ) {
+                        if (cacheInfo.getFlags().get(ACCESS_LATENCY_FLAG) == null) {
+                            dir = getParentPnfsFile(mountpoint, pf, dir);
                             cacheInfo.getFlags().put(ACCESS_LATENCY_FLAG,
-                                    _defaultAccessLatency.toString());
+                                                     getAccessLatencyForDirectory(dir).toString());
                         }
                         break;
                     case DEFAULT_RETENTION_POLICY:
                         cacheInfo = getCacheInfo(pf, cacheInfo);
-                        /*
-                         * update the value only if some one did not updated it yet
+                        /* update the value only if someone did not
+                         * set it yet
                          */
-                        if( cacheInfo.getFlags().get(RETENTION_POLICY_FLAG) == null ) {
+                        if (cacheInfo.getFlags().get(RETENTION_POLICY_FLAG) == null) {
+                            dir = getParentPnfsFile(mountpoint, pf, dir);
                             cacheInfo.getFlags().put(RETENTION_POLICY_FLAG,
-                                    _defaultRetentionPolicy.toString());
+                                                     getRetentionPolicyForDirectory(dir).toString());
                         }
                         break;
                     case SIZE:
@@ -1225,4 +1311,23 @@ public class BasicNameSpaceProvider
         return (cacheInfo != null) ? cacheInfo : new CacheInfo(pnfsFile);
     }
 
+    /**
+     * Returns the parent directory of file.
+     *
+     * @param mountpoint Mount point of the PNFS file system
+     * @param file The for which to return the parent
+     * @param parent The parent of file; if non-null this value is returned.
+     */
+    private static PnfsFile getParentPnfsFile(File mountpoint, PnfsFile file, PnfsFile parent)
+        throws CacheException
+    {
+        if (parent != null) {
+            return parent;
+        }
+
+        PnfsId id = file.getParentId();
+        if (id == null)
+            throw new CacheException(36, "Couldn't determine parent ID");
+        return PnfsFile.getFileByPnfsId(mountpoint, id);
+    }
 }
