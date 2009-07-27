@@ -8,7 +8,6 @@ import dmg.cells.nucleus.NoRouteToCellException;
 
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.util.CacheException;
-import dmg.cells.nucleus.SerializationException;
 import org.dcache.util.CacheExceptionFactory;
 
 /**
@@ -107,6 +106,8 @@ public class CellStub
     public <T extends Message> T sendAndWait(CellPath path, T msg)
         throws CacheException, InterruptedException
     {
+        msg.setReplyRequired(true);
+
         CellMessage replyMessage;
         try {
             replyMessage =
