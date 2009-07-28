@@ -21,6 +21,7 @@ import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
 import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.xrootd.core.connection.PhysicalXrootdConnection;
 import org.dcache.xrootd.protocol.XrootdProtocol;
+import org.dcache.util.PortRange;
 
 import org.dcache.pool.repository.Allocator;
 import diskCacheV111.util.CacheException;
@@ -31,9 +32,10 @@ import diskCacheV111.movers.NetIFContainer;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
 
-public class XrootdProtocol_2 implements MoverProtocol {
-
+public class XrootdProtocol_2 implements MoverProtocol
+{
     private static final Logger _log = Logger.getLogger(XrootdProtocol_2.class);
 
     private static final int[] DEFAULT_PORTRANGE = {20000, 25000};
@@ -41,160 +43,61 @@ public class XrootdProtocol_2 implements MoverProtocol {
 
     private final CellEndpoint cell;
     private RandomAccessFile diskFile;
-    private ProtocolInfo protocolInfo;
+    private XrootdProtocolInfo protocolInfo;
     private StorageInfo storageInfo;
     private PnfsId pnfsId;
     private Allocator allocator;
-    private long lastTransferred;
-    private long transferTime;
-    private long bytesTransferred;
-    private CountDownLatch transferFinishedSync = new CountDownLatch(1);
-    private boolean transferSuccessful = false;
-    private PhysicalXrootdConnection physicalXrootdConnection;
-    private XrootdMoverController controller;
+    private volatile long lastTransferred;
+    private volatile long transferTime;
+    private volatile long bytesTransferred;
+    private final CountDownLatch transferFinishedSync = new CountDownLatch(1);
+    private volatile boolean transferSuccessful = false;
     private int xrootdFileHandle;
 
-    //	this checksum comes from the door and is compared to the calculated one when the reopen is received
-    //	to make sure that the OpenRequest has not changed meanwhile
+    // this checksum comes from the door and is compared to the
+    // calculated one when the reopen is received to make sure that
+    // the OpenRequest has not changed meanwhile
     private long openChecksum;
 
-    private static Object portSyncer = new Object();
-    private static int lastMoverPort = -1;
-
-
-    public XrootdProtocol_2(CellEndpoint cell) {
+    public XrootdProtocol_2(CellEndpoint cell)
+    {
         this.cell = cell;
         _log.debug("Xrootd mover created.");
     }
 
-
-    public void runIO(RandomAccessFile diskFile, ProtocolInfo protocol, StorageInfo storage, PnfsId pnfsId, Allocator allocator, int access) throws Exception {
-
+    public void runIO(RandomAccessFile diskFile, ProtocolInfo protocol, StorageInfo storage, PnfsId pnfsId, Allocator allocator, int access) throws Exception
+    {
         this.diskFile = diskFile;
-        this.protocolInfo = protocol;
+        this.protocolInfo = (XrootdProtocolInfo) protocol;
         this.storageInfo = storage;
         this.pnfsId = pnfsId;
         this.allocator = allocator;
 
-
-        //
-        //		scan for and try to bind an unused server port
-        //
-        String portRange = System.getProperty("org.dcache.net.tcp.portrange");
-        int firstPort, lastPort;
-
-        if (portRange != null) {
-            String[] range = portRange.split(":");
-            try {
-                firstPort = Integer.parseInt(range[0]);
-                lastPort = Integer.parseInt(range[1]);
-            }catch(NumberFormatException nfe) {
-                firstPort = lastPort = 0;
-            }
-
-        } else {
-            firstPort = DEFAULT_PORTRANGE[0];
-            lastPort = DEFAULT_PORTRANGE[1];
-        }
-
-        if( firstPort >= lastPort ) {
-            throw new SocketException("xrootd portrange not large enough");
-        }
-
-        //      find free port or raise execption if no unused port can be found (end of mover)
-        ServerSocket xrootdServer = createServerSocket(firstPort, lastPort);
-        int serverPort = xrootdServer.getLocalPort();
-
-
-        //
-        //		look for all network interfaces
-        //
-        XrootdProtocolInfo xrootdProtocol = (XrootdProtocolInfo) protocol;
-        this.xrootdFileHandle = xrootdProtocol.getXrootdFileHandle();
-        this.openChecksum = xrootdProtocol.getChecksum();
-
-
-        Collection netifsCol = new ArrayList();
-
-        //		try to pick the ip address with corresponds to the hostname (which is hopefully visible to the world)
-        InetAddress localIP = InetAddress.getLocalHost();
-
-        if (localIP != null && !localIP.isLoopbackAddress() && localIP instanceof Inet4Address) {
-            //			the ip we got from the hostname is at least not 127.0.01 and from the IP4-family
-            Collection col = new ArrayList(1);
-            col.add(localIP);
-            netifsCol.add(new NetIFContainer("", col));
-            _log.debug("sending ip-address derived from hostname to Xrootd-door: "+localIP+" port: "+serverPort);
-        } else {
-            //			the ip we got from the hostname seems to be bad, let's loop through the network interfaces
-            Enumeration ifList = NetworkInterface.getNetworkInterfaces();
-
-            while (ifList.hasMoreElements()) {
-                NetworkInterface netif = (NetworkInterface) ifList
-                    .nextElement();
-
-                Enumeration ips = netif.getInetAddresses();
-                Collection ipsCol = new ArrayList(2);
-
-                while (ips.hasMoreElements()) {
-                    InetAddress addr = (InetAddress) ips.nextElement();
-
-                    //					check again each ip from each interface.
-                    //					WARNING: multiple ip addresses in case of multiple ifs could be selected,
-                    //					we can't determine the "correct" one
-                    if (addr instanceof Inet4Address
-                        && !addr.isLoopbackAddress()) {
-                        ipsCol.add(addr);
-                        _log.debug("sending ip-address derived from network-if to Xrootd-door: "+addr+" port: "+serverPort);
-                    }
-                }
-
-                if (ipsCol.size() > 0) {
-                    netifsCol.add(new NetIFContainer(netif.getName(), ipsCol));
-                } else {
-                    throw new CacheException("Error: Cannot determine my ip address. Aborting transfer");
-                }
-            }
-        }
-
-        //
-        // 		send message back to the door, containing the new serverport and ip
-        //
-        CellPath cellpath = xrootdProtocol.getXrootdDoorCellPath();
-        XrootdDoorAdressInfoMessage doorMsg = new XrootdDoorAdressInfoMessage(getXrootdFileHandle(), serverPort, netifsCol);
-        cell.sendMessage (new CellMessage(cellpath, doorMsg));
-
-        _log.debug("sending redirect message to Xrootd-door "+ cellpath);
-        _log.info("Xrootd mover listening on port: " + serverPort);
-
-        //
-        //	    awaiting connection from client
-        //
-        xrootdServer.setSoTimeout(LISTEN_TIMEOUT);
-
-        Socket socket = null;
+        Socket socket = accept(protocolInfo);
         try {
-            socket = xrootdServer.accept();
-        } catch (SocketTimeoutException e) {
-            throw new CacheException("xrootd transfer failed, mover serversocket timed out after listening for "+LISTEN_TIMEOUT/1000+" secconds. ");
+            _log.info("got connection attempt");
+
+            // create new XrootdConnection based on existing socket
+            PhysicalXrootdConnection physicalXrootdConnection =
+                new PhysicalXrootdConnection(socket, XrootdProtocol.DATA_SERVER);
+            try {
+                // set controller for this connection to handle login, auth
+                // and connection-specific settings
+                XrootdMoverController controller =
+                    new XrootdMoverController(this, physicalXrootdConnection);
+                physicalXrootdConnection.setConnectionListener(controller);
+
+                // initialise counter
+                setLastTransferred();
+
+                // gets notfied on transfer finished by xrootd subsystem
+                transferFinishedSync.await();
+            } finally {
+                physicalXrootdConnection.closeConnection();
+            }
         } finally {
-            xrootdServer.close();
+            socket.close();
         }
-
-        _log.info("got connection attempt");
-
-        //	    pass connection handling over to the xrootd subsystem
-        initXrootd(socket);
-
-
-        //	    initialise counter
-        setLastTransferred();
-
-        //	    gets notfied on transfer finished by xrootd subsystem
-        transferFinishedSync.await();
-
-        //	    end of transfer
-        physicalXrootdConnection.closeConnection();
 
         if (!isTransferSuccessful()) {
             _log.error("xrootd transfer failed");
@@ -202,6 +105,101 @@ public class XrootdProtocol_2 implements MoverProtocol {
         }
 
         _log.info("normal end of xrootd mover process, transfer successful");
+    }
+
+    private Socket accept(XrootdProtocolInfo xrootdProtocol)
+        throws IllegalArgumentException, IOException, CacheException,
+               NoRouteToCellException
+    {
+        String portRange = System.getProperty("org.dcache.net.tcp.portrange");
+        PortRange range;
+        if (portRange != null) {
+            range = PortRange.valueOf(portRange);
+        } else {
+            range = new PortRange(DEFAULT_PORTRANGE[0], DEFAULT_PORTRANGE[1]);
+        }
+
+        ServerSocket xrootdServer = new ServerSocket();
+        try {
+            range.bind(xrootdServer);
+
+            int serverPort = xrootdServer.getLocalPort();
+
+            //
+            // look for all network interfaces
+            //
+            this.xrootdFileHandle = xrootdProtocol.getXrootdFileHandle();
+            this.openChecksum = xrootdProtocol.getChecksum();
+
+            Collection netifsCol = new ArrayList();
+
+            // try to pick the ip address with corresponds to the
+            // hostname (which is hopefully visible to the world)
+            InetAddress localIP = InetAddress.getLocalHost();
+
+            if (localIP != null && !localIP.isLoopbackAddress() && localIP instanceof Inet4Address) {
+                // the ip we got from the hostname is at least not
+                // 127.0.01 and from the IP4-family
+                Collection col = new ArrayList(1);
+                col.add(localIP);
+                netifsCol.add(new NetIFContainer("", col));
+                _log.debug("sending ip-address derived from hostname to Xrootd-door: "+localIP+" port: "+serverPort);
+            } else {
+                // the ip we got from the hostname seems to be bad,
+                // let's loop through the network interfaces
+                Enumeration ifList = NetworkInterface.getNetworkInterfaces();
+
+                while (ifList.hasMoreElements()) {
+                    NetworkInterface netif =
+                        (NetworkInterface) ifList.nextElement();
+
+                    Enumeration ips = netif.getInetAddresses();
+                    Collection ipsCol = new ArrayList(2);
+
+                    while (ips.hasMoreElements()) {
+                        InetAddress addr = (InetAddress) ips.nextElement();
+
+                        // check again each ip from each interface.
+                        // WARNING: multiple ip addresses in case of
+                        // multiple ifs could be selected, we can't
+                        // determine the "correct" one
+                        if (addr instanceof Inet4Address
+                            && !addr.isLoopbackAddress()) {
+                            ipsCol.add(addr);
+                            _log.debug("sending ip-address derived from network-if to Xrootd-door: "+addr+" port: "+serverPort);
+                        }
+                    }
+
+                    if (ipsCol.size() > 0) {
+                        netifsCol.add(new NetIFContainer(netif.getName(), ipsCol));
+                    } else {
+                        throw new CacheException("Error: Cannot determine my ip address. Aborting transfer");
+                    }
+                }
+            }
+
+            //
+            // send message back to the door, containing the new
+            // serverport and ip
+            //
+            CellPath cellpath = xrootdProtocol.getXrootdDoorCellPath();
+            XrootdDoorAdressInfoMessage doorMsg = new XrootdDoorAdressInfoMessage(getXrootdFileHandle(), serverPort, netifsCol);
+            cell.sendMessage (new CellMessage(cellpath, doorMsg));
+
+            _log.debug("sending redirect message to Xrootd-door "+ cellpath);
+            _log.info("Xrootd mover listening on port: " + serverPort);
+
+            //
+            // awaiting connection from client
+            //
+            xrootdServer.setSoTimeout(LISTEN_TIMEOUT);
+
+            return xrootdServer.accept();
+        } catch (SocketTimeoutException e) {
+            throw new CacheException("xrootd transfer failed, mover serversocket timed out after listening for "+LISTEN_TIMEOUT/1000+" secconds. ");
+        } finally {
+            xrootdServer.close();
+        }
     }
 
     public void setAttribute(String name, Object attribute) {}
@@ -227,124 +225,69 @@ public class XrootdProtocol_2 implements MoverProtocol {
         this.transferTime = transferTime;
     }
 
-    public long getLastTransferred() {
+    public long getLastTransferred()
+    {
         return lastTransferred;
     }
 
-    public void setLastTransferred() {
-        this.lastTransferred = System.currentTimeMillis();
+    public void setLastTransferred()
+    {
+        lastTransferred = System.currentTimeMillis();
     }
 
-    public boolean wasChanged() {
+    public boolean wasChanged()
+    {
         return false;
     }
 
-    public RandomAccessFile getDiskFile() {
+    RandomAccessFile getDiskFile()
+    {
         return diskFile;
     }
 
-
-    public PnfsId getPnfsId() {
+    PnfsId getPnfsId()
+    {
         return pnfsId;
     }
 
-
-    public ProtocolInfo getProtocolInfo() {
+    XrootdProtocolInfo getProtocolInfo()
+    {
         return protocolInfo;
     }
 
-
-    public Allocator getAllocator() {
+    Allocator getAllocator()
+    {
         return allocator;
     }
 
-
-    public StorageInfo getStorageInfo() {
+    StorageInfo getStorageInfo()
+    {
         return storageInfo;
     }
 
 
-    public void setTransferFinished()
+    void setTransferFinished()
     {
         transferFinishedSync.countDown();
     }
 
-    private void initXrootd(Socket socket) throws IOException{
-
-        //		create new XrootdConnection based on existing socket
-        physicalXrootdConnection = new PhysicalXrootdConnection(socket, XrootdProtocol.DATA_SERVER);
-
-        //		set controller for this connection to handle login, auth and connection-specific settings
-        controller = new XrootdMoverController(this, physicalXrootdConnection);
-        physicalXrootdConnection.setConnectionListener(controller);
-
-    }
-
-
-    public int getXrootdFileHandle() {
+    int getXrootdFileHandle()
+    {
         return xrootdFileHandle;
     }
 
-
-    public void setTransferSuccessful() {
-        this.transferSuccessful = true;
+    void setTransferSuccessful()
+    {
+        transferSuccessful = true;
     }
 
-    public boolean isTransferSuccessful() {
-        return this.transferSuccessful;
+    boolean isTransferSuccessful()
+    {
+        return transferSuccessful;
     }
 
-    private ServerSocket createServerSocket(int minPort, int maxPort) throws IOException {
-        InetSocketAddress socketAddress;
-        ServerSocket socket = new ServerSocket();
-
-        //        synchronize access to lastMoverPort among all xrootd mover
-        synchronized (portSyncer) {
-
-            int currentPort;
-            if (lastMoverPort == -1) {
-                //            	initial situation, this is the first xrootd mover instance
-                currentPort = lastMoverPort = minPort;
-            } else {
-                //            	another xrootd mover was run before, increment port
-                //            	because we don't want to reuse a server port as far as possible
-                //            	due to the xrootd logical channel attempt
-            	currentPort = lastMoverPort;
-                if (++currentPort > maxPort) {
-                    currentPort = minPort;
-                }
-            }
-
-            //        	loop through all ports in portrange and try binding
-            while (true) {
-                socketAddress =  new InetSocketAddress( currentPort ) ;
-                try {
-                    socket.bind(socketAddress);
-                    break;
-                }catch(IOException e) {
-                    // port is busy, bind failed
-                }
-
-                if (++currentPort > maxPort) {
-                    //        			start again from the beginning
-                    currentPort = minPort;
-                }
-
-                if (currentPort == lastMoverPort) {
-                    //        			at this point we've looped through all ports in the portrange without
-                    //        			finding a bindable port => abort mover
-                    throw new IOException("no unused port found in specified portrange, exiting");
-                }
-            }
-
-            lastMoverPort = currentPort;
-        }
-
-        return socket;
-    }
-
-
-    public long getOpenChecksum() {
+    long getOpenChecksum()
+    {
         return openChecksum;
     }
 }

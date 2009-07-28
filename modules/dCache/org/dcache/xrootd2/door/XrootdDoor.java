@@ -341,6 +341,7 @@ public class XrootdDoor
         } catch (CacheException e) {
             switch (e.getRc()) {
             case CacheException.FILE_NOT_FOUND:
+            case CacheException.NOT_IN_TRASH:
             case CacheException.DIR_NOT_EXISTS:
                 if (!createDir) {
                     throw new DirNotExistsCacheException("Directory does not exist");
@@ -538,6 +539,7 @@ public class XrootdDoor
         } catch (CacheException e) {
             switch (e.getRc()) {
             case CacheException.FILE_NOT_FOUND:
+            case CacheException.NOT_IN_TRASH:
                 _log.info("creating parent directory " + parentDir + " first");
 
                 // create parent directory recursively
@@ -619,7 +621,8 @@ public class XrootdDoor
             try {
                 allMetas[i] = getFileMetaData(allPaths[i]);
             } catch (CacheException e) {
-                if (e.getRc() != CacheException.FILE_NOT_FOUND) {
+                if (e.getRc() != CacheException.FILE_NOT_FOUND &&
+                    e.getRc() != CacheException.NOT_IN_TRASH) {
                     throw e;
                 }
             }
