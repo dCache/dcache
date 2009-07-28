@@ -189,8 +189,9 @@ public class AbstractNameSpaceProviderDecorator
     }
 
     @Override
-    public FileAttributes getFileAttributes(Subject subject, PnfsId pnfsId, FileAttribute... attr)
-            throws CacheException
+    public FileAttributes getFileAttributes(Subject subject, PnfsId pnfsId,
+                                            Set<FileAttribute> attr)
+        throws CacheException
     {
         return _inner.getFileAttributes(subject, pnfsId, attr);
     }

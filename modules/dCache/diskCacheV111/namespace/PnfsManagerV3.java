@@ -53,8 +53,6 @@ public class PnfsManagerV3 extends CellAdapter {
 
 
     private CellPath     _cacheModificationRelay = null ;
-    private boolean      _simulateLargeFiles     = false ;
-    private boolean      _storeFilesize          = false ;
     private CellPath     _pnfsDeleteNotificationRelay = null;
 
     /**
@@ -144,9 +142,7 @@ public class PnfsManagerV3 extends CellAdapter {
                         "Usage : ... [-pnfs=<pnfsMountpoint>] "+
                         "-defaultPnfsServer=<serverName> "+
                         "-cmRelay=<cellPathOfCacheModificationRelay> "+
-                        "-enableLargeFileSimulation "+
                         "-logSlowThreshold=<min. time in milliseconds> " +
-                        "-storeFilesize "+
                         "-queueMaxSize=<pnfs message queue>" +
                 "<StorageInfoExctractorClass>");
 
@@ -186,12 +182,6 @@ public class PnfsManagerV3 extends CellAdapter {
 
             //
             //
-            _simulateLargeFiles = _args.getOpt("enableLargeFileSimulation") != null ;
-            say("enableLargeFileSimulation = "+_simulateLargeFiles);
-            String storeFilesize = _args.getOpt("storeFilesize");
-            _storeFilesize = ( ( storeFilesize != null ) && ( ! storeFilesize.equals("off") ) ) || _simulateLargeFiles ;
-            say("storeFilesize = "+_storeFilesize);
-
             String nameSpace_provider = _args.getOpt("namespace-provider") ;
             if( nameSpace_provider == null ) {
                 nameSpace_provider = defaultNameSpaceProvider;
@@ -913,29 +903,9 @@ public class PnfsManagerV3 extends CellAdapter {
     }
 
     public void getCacheLocations(PnfsGetCacheLocationsMessage pnfsMessage){
-        PnfsId pnfsId = pnfsMessage.getPnfsId();
         Subject subject = pnfsMessage.getSubject();
         try {
-            if( pnfsId == null ){
-                //
-                // if the pnfsid is not defined they want 'StorageInfo by path'
-                // let's get the pnfsId
-                //
-                String  pnfsPath    = pnfsMessage.getPnfsPath() ;
-                if(pnfsPath == null ) {
-                    throw new InvalidMessageCacheException("no pnfsid or path defined");
-                }
-
-                say("get cache locations (by path) global : "+pnfsPath  ) ;
-                PnfsId     id       = pathToPnfsid(subject, pnfsPath, true);
-
-                if( id == null ) {
-                    throw new
-                    CacheException( "can't get pnfsId (not a pnfsfile)" ) ;
-                }
-                pnfsId = id ;
-                pnfsMessage.setPnfsId(pnfsId);
-            }
+            PnfsId pnfsId = populatePnfsId(pnfsMessage);
 
             say("get cache locations for "+pnfsId);
 
@@ -1050,27 +1020,9 @@ public class PnfsManagerV3 extends CellAdapter {
     }
 
     public void setStorageInfo( PnfsSetStorageInfoMessage pnfsMessage ){
-        PnfsId pnfsId   = pnfsMessage.getPnfsId() ;
         Subject subject = pnfsMessage.getSubject();
         try{
-            if( pnfsId == null ){
-                //
-                // if the pnfsid is not defined they want 'StorageInfo by path'
-                // let's get the pnfsId
-                //
-                String  pnfsPath    = pnfsMessage.getPnfsPath() ;
-                if(pnfsPath == null ) {
-                    throw new InvalidMessageCacheException("no pnfsid or path defined");
-                }
-                say("setStorageInfo (by path) global : "+pnfsPath  ) ;
-                PnfsId     id       = pathToPnfsid(subject, pnfsPath, true);
-
-                if( id == null ) {
-                    throw new
-                    CacheException( "can't get pnfsId (not a pnfsfile)" ) ;
-                }
-                pnfsId = id ;
-            }
+            PnfsId pnfsId = populatePnfsId(pnfsMessage);
             say( "setStorageInfo : "+pnfsId ) ;
 
             _nameSpaceProvider.setStorageInfo(subject, pnfsId, pnfsMessage.getStorageInfo(), pnfsMessage.getAccessMode());
@@ -1090,34 +1042,13 @@ public class PnfsManagerV3 extends CellAdapter {
     }
 
     public void getStorageInfo( PnfsGetStorageInfoMessage pnfsMessage ){
-        PnfsId pnfsId   = pnfsMessage.getPnfsId() ;
         Subject subject = pnfsMessage.getSubject();
         try{
-            if( pnfsId == null ){
-                //
-                // if the pnfsid is not defined they want 'StorageInfo by path'
-                // let's get the pnfsId
-                //
-                String  pnfsPath    = pnfsMessage.getPnfsPath() ;
-                if(pnfsPath == null ) {
-                    throw new InvalidMessageCacheException("no pnfsid or path defined");
-                }
-
-                say("getStorageInfo (by path) global : "+pnfsPath  ) ;
-                PnfsId     id       = pathToPnfsid(subject, pnfsPath, true);
-
-                if( id == null ) {
-                    throw new
-                    CacheException( "can't get pnfsId (not a pnfsfile)" ) ;
-                }
-                pnfsId = id ;
-                pnfsMessage.setPnfsId(pnfsId);
-            }
+            PnfsId pnfsId = populatePnfsId(pnfsMessage);
             say( "getStorageInfo : "+pnfsId ) ;
 
             StorageInfo info = _nameSpaceProvider.getStorageInfo(subject, pnfsId);
             pnfsMessage.setStorageInfo(info ) ;
-            pnfsMessage.setPnfsId( pnfsId ) ;
             pnfsMessage.setSucceeded() ;
             say( "Storage info "+info ) ;
             pnfsMessage.setMetaData( _nameSpaceProvider.getFileMetaData(pnfsMessage.getSubject(), pnfsId));
@@ -1144,32 +1075,12 @@ public class PnfsManagerV3 extends CellAdapter {
     }
 
     public void getFileMetaData( PnfsGetFileMetaDataMessage pnfsMessage ){
-        PnfsId pnfsId   = pnfsMessage.getPnfsId() ;
         boolean resolve = pnfsMessage.resolve() ;
         Subject subject = pnfsMessage.getSubject();
         try{
-            if( pnfsId == null ){
-                //
-                // if the pnfsid is not defined they want 'StorageInfo by path'
-                // let's get the pnfsId
-                //
-                String pnfsPath = pnfsMessage.getPnfsPath();
-                if(pnfsPath == null ) {
-                    throw new InvalidMessageCacheException("no pnfsid or path defined");
-                }
-
-                say("getFileMetaData (by path) : "+  pnfsPath ) ;
-                PnfsId   id         = pathToPnfsid(subject, pnfsPath, resolve );
-                if( id == null ) {
-                    throw new
-                    CacheException( "can't get pnfsId (not a pnfsfile)" ) ;
-                }
-                pnfsId = id ;
-                pnfsMessage.setPnfsId(pnfsId);
-            }
+            PnfsId pnfsId = populatePnfsId(pnfsMessage);
             say( "getFileMetaData : "+pnfsId ) ;
 
-            pnfsMessage.setPnfsId( pnfsId ) ;
             pnfsMessage.setSucceeded() ;
             pnfsMessage.setMetaData( _nameSpaceProvider.getFileMetaData(subject,  pnfsId));
 
@@ -1192,11 +1103,11 @@ public class PnfsManagerV3 extends CellAdapter {
     }
 
     public void setFileMetaData( PnfsSetFileMetaDataMessage pnfsMessage ) {
-        PnfsId pnfsId   = pnfsMessage.getPnfsId() ;
-        FileMetaData meta = pnfsMessage.getMetaData() ;
-        say( "setFileMetaData="+meta+" for "+pnfsId ) ;
-
         try {
+            PnfsId pnfsId = populatePnfsId(pnfsMessage);
+            FileMetaData meta = pnfsMessage.getMetaData();
+            say("setFileMetaData=" + meta + " for " + pnfsId);
+
             _nameSpaceProvider.setFileMetaData(pnfsMessage.getSubject(), pnfsId, meta);
         }catch ( Exception e) {
             esay(e);
@@ -1280,12 +1191,6 @@ public class PnfsManagerV3 extends CellAdapter {
 
     public void setLength(PnfsSetLengthMessage pnfsMessage){
 
-        PnfsId pnfsId = pnfsMessage.getPnfsId();
-        long   length = pnfsMessage.getLength();
-        Subject subject = pnfsMessage.getSubject();
-
-        say("Set length of "+pnfsId+" to "+length+" (Simulate Large = "+_simulateLargeFiles+"; store size = "+_storeFilesize+")");
-
         /*
          * While new pools will send PnfsSetFileAttributes old pools
          * will send setLength. This is will happen only during a transition
@@ -1295,8 +1200,13 @@ public class PnfsManagerV3 extends CellAdapter {
          *
          */
         try {
-            FileAttributes fileAttributes = new FileAttributes();
+            PnfsId pnfsId = populatePnfsId(pnfsMessage);
+            long   length = pnfsMessage.getLength();
+            Subject subject = pnfsMessage.getSubject();
 
+            say("Set length of " + pnfsId + " to " + length);
+
+            FileAttributes fileAttributes = new FileAttributes();
             fileAttributes.setSize(length);
             fileAttributes.setDefaultAccessLatency();
             fileAttributes.setDefaultRetentionPolicy();
@@ -1320,10 +1230,10 @@ public class PnfsManagerV3 extends CellAdapter {
 
     public void rename(PnfsRenameMessage pnfsMessage)
     {
-        PnfsId pnfsId = pnfsMessage.getPnfsId();
-        String newName = pnfsMessage.newName();
-        say(" rename "+pnfsId+" to new name : "+newName);
         try {
+            PnfsId pnfsId = populatePnfsId(pnfsMessage);
+            String newName = pnfsMessage.newName();
+            say(" rename "+pnfsId+" to new name : "+newName);
             rename(pnfsMessage.getSubject(), pnfsId, newName);
         }catch( Exception exc){
             esay("Exception in rename "+exc);
@@ -1389,10 +1299,7 @@ public class PnfsManagerV3 extends CellAdapter {
     private void getParent(PnfsGetParentMessage msg)
     {
         try {
-            PnfsId pnfsId = msg.getPnfsId();
-            if (pnfsId == null ) {
-                throw new InvalidMessageCacheException("no pnfsid defined");
-            }
+            PnfsId pnfsId = populatePnfsId(msg);
             msg.setParent(_nameSpaceProvider.getParentOf(msg.getSubject(), pnfsId));
         } catch (CacheException e) {
             esay(e);
@@ -1753,7 +1660,7 @@ public class PnfsManagerV3 extends CellAdapter {
      * Internally updates the path to database ID cache.
      */
     private PnfsId pathToPnfsid(Subject subject, String path, boolean resolve)
-        throws Exception
+        throws CacheException
     {
         PnfsId pnfsId = _nameSpaceProvider.pathToPnfsid(subject, path, resolve);
         updatePathToDatabaseIdCache(path, pnfsId.getDatabaseId());
@@ -1887,23 +1794,72 @@ public class PnfsManagerV3 extends CellAdapter {
         }
     }
 
-    public void getFileAttributes(PnfsGetFileAttributes message) {
-        throw new UnsupportedOperationException();
+    public void getFileAttributes(PnfsGetFileAttributes message)
+    {
+        try {
+            Subject subject = message.getSubject();
+            PnfsId pnfsId = populatePnfsId(message);
+            Set<FileAttribute> requested = message.getRequestedAttributes();
+            if (requested.isEmpty()) {
+                /* The semantics of the message requires us to check
+                 * for existence of the file when the attribute set is
+                 * empty. For now we do this here, but maybe this
+                 * requirement should be pushed into the name space
+                 * providers.
+                 */
+                _nameSpaceProvider.getFileMetaData(subject, pnfsId);
+            } else {
+                FileAttributes attrs =
+                    _nameSpaceProvider.getFileAttributes(subject,
+                                                         pnfsId,
+                                                         requested);
+                message.setFileAttributes(attrs);
+            }
+            message.setSucceeded();
+        } catch (FileNotFoundCacheException e){
+            message.setFailed(e.getRc(), e);
+        } catch (CacheException e) {
+            esay("Error while updating file attributes: " + e.getMessage());
+            message.setFailed(e.getRc(), e);
+        } catch (RuntimeException e) {
+            esay("Error while updating file attributes: " + e.getMessage());
+            message.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
+        }
     }
 
     public void setFileAttributes(PnfsSetFileAttributes message) {
 
         FileAttributes attr = message.getFileAttributes();
         try {
-            _nameSpaceProvider.setFileAttributes(message.getSubject(), message.getPnfsId(), attr);
+            PnfsId pnfsId = populatePnfsId(message);
+            _nameSpaceProvider.setFileAttributes(message.getSubject(),
+                                                 pnfsId,
+                                                 attr);
+            message.setSucceeded();
         }catch(FileNotFoundCacheException e){
             message.setFailed(e.getRc(), e);
         }catch(CacheException e) {
             esay("Error while updating file attributes: " + e.getMessage());
-            message.setFailed(e.getRc(), e.getMessage());
-        }catch(Exception e) {
+            message.setFailed(e.getRc(), e);
+        }catch(RuntimeException e) {
             esay("Error while updating file attributes: " + e.getMessage());
-            message.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
+            message.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
         }
+    }
+
+    private PnfsId populatePnfsId(PnfsMessage message)
+        throws CacheException
+    {
+        PnfsId pnfsId = message.getPnfsId();
+        if (pnfsId == null) {
+            String  path = message.getPnfsPath();
+            if (path == null ) {
+                throw new InvalidMessageCacheException("no pnfsid or path defined");
+            }
+
+            pnfsId = pathToPnfsid(message.getSubject(), path, true);
+            message.setPnfsId(pnfsId);
+        }
+        return pnfsId;
     }
 }

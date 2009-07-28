@@ -147,7 +147,9 @@ public interface NameSpaceProvider
      * @param attr array of requested attributes
      * @return
      */
-    FileAttributes getFileAttributes(Subject subject, PnfsId pnfsId, FileAttribute ... attr) throws CacheException;
+    FileAttributes getFileAttributes(Subject subject, PnfsId pnfsId,
+                                     Set<FileAttribute> attr)
+        throws CacheException;
 
     /**
      * Set files attributes defined by <code>attr</code>.
@@ -155,6 +157,6 @@ public interface NameSpaceProvider
      * @param pnfsId of the file
      * @param attr array of requested attributes
      */
-    void setFileAttributes(Subject subject, PnfsId pnfsId, FileAttributes attr) throws CacheException;
-
+    void setFileAttributes(Subject subject, PnfsId pnfsId, FileAttributes attr)
+        throws CacheException;
 }

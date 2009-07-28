@@ -16,7 +16,7 @@ public enum FileAttribute {
     DEFAULT_RETENTION_POLICY,
     FLAGS,
     HSM,
-    LOCATION,
+    LOCATIONS,
     MODIFICATION_TIME,
     OWNER,
     OWNER_GROUP,
@@ -25,5 +25,6 @@ public enum FileAttribute {
     SIZE,
     STORAGECLASS,
     TYPE
+
     // parent
 }

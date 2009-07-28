@@ -8,6 +8,7 @@ import java.lang.reflect.Constructor;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.ArrayList;
@@ -41,6 +42,7 @@ import dmg.util.Args;
 import java.io.IOException;
 import java.util.Arrays;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.namespace.FileType;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.vehicles.FileAttributes;
@@ -543,9 +545,101 @@ public class ChimeraNameSpaceProvider
 
         return new PnfsId( inodeParent.toString() );
     }
+
+    private FileAttributes getFileAttributes(Subject subject, FsInode inode,
+                                             Set<FileAttribute> attr)
+        throws IOException, ChimeraFsException
+    {
+        FileAttributes attributes = new FileAttributes();
+        Stat stat;
+
+        for (FileAttribute attribute: attr) {
+            switch (attribute) {
+            case ACCESS_LATENCY:
+                attributes.setAccessLatency(diskCacheV111.util.AccessLatency.getAccessLatency(_fs.getAccessLatency(inode).getId()));
+                break;
+            case RETENTION_POLICY:
+                attributes.setRetentionPolicy(diskCacheV111.util.RetentionPolicy.getRetentionPolicy(_fs.getRetentionPolicy(inode).getId()));
+                break;
+            case SIZE:
+                stat = inode.statCache();
+                attributes.setSize(stat.getSize());
+                break;
+            case MODIFICATION_TIME:
+                stat = inode.statCache();
+                attributes.setModificationTime(stat.getMTime());
+                break;
+            case OWNER:
+                stat = inode.statCache();
+                attributes.setOwner(stat.getUid());
+                break;
+            case OWNER_GROUP:
+                stat = inode.statCache();
+                attributes.setGroup(stat.getGid());
+                break;
+            case CHECKSUM:
+                Set<Checksum> checksums = new HashSet<Checksum>();
+                for (ChecksumType type: ChecksumType.values()) {
+                    String value = _fs.getInodeChecksum(inode, type.getType());
+                    if (value != null) {
+                        checksums.add(new Checksum(type,value));
+                    }
+                }
+                attributes.setChecksums(checksums);
+                break;
+            case LOCATIONS:
+                List<String> locations = new ArrayList<String>();
+                List<StorageLocatable> localyManagerLocations =
+                    _fs.getInodeLocations(inode, StorageGenericLocation.DISK);
+                for (StorageLocatable location: localyManagerLocations) {
+                    locations.add(location.location());
+                }
+                attributes.setLocations(locations);
+                break;
+            case FLAGS:
+                ChimeraCacheInfo info = new ChimeraCacheInfo(inode);
+                Map<String,String> flags = new HashMap<String,String>();
+                for (Map.Entry<String,String> e: info.getFlags().entrySet()) {
+                    flags.put(e.getKey(), e.getValue());
+                }
+                attributes.setFlags(flags);
+                break;
+            case TYPE:
+                stat = inode.statCache();
+                UnixPermission perm = new UnixPermission(stat.getMode());
+                if (perm.isReg()) {
+                    attributes.setFileType(FileType.REGULAR);
+                } else if (perm.isDir()) {
+                    attributes.setFileType(FileType.DIR);
+                } else if (perm.isSymLink()) {
+                    attributes.setFileType(FileType.LINK);
+                } else {
+                    attributes.setFileType(FileType.SPECIAL);
+                }
+                break;
+            default:
+                throw new UnsupportedOperationException("Attribute " + attribute + " not supported yet.");
+            }
+        }
+        return attributes;
+    }
+
     @Override
-    public FileAttributes getFileAttributes(Subject subject, PnfsId pnfsId, FileAttribute ... attr) throws CacheException {
-        throw new UnsupportedOperationException();
+    public FileAttributes getFileAttributes(Subject subject, PnfsId pnfsId,
+                                            Set<FileAttribute> attr)
+        throws CacheException
+    {
+        try {
+            return getFileAttributes(subject,
+                                     new FsInode(_fs, pnfsId.toIdString()),
+                                     attr);
+        } catch (FileNotFoundHimeraFsException e) {
+            throw new FileNotFoundCacheException(e.getMessage());
+        } catch (ChimeraFsException e) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
+        } catch (IOException e) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
+        }
     }
 
     @Override
@@ -560,8 +654,10 @@ public class ChimeraNameSpaceProvider
 
                 switch (attribute) {
 
-                    case LOCATION:
-                        _fs.addInodeLocation(inode, StorageGenericLocation.DISK, attr.getLocation());
+                    case LOCATIONS:
+                        for (String location: attr.getLocations()) {
+                            _fs.addInodeLocation(inode, StorageGenericLocation.DISK, location);
+                        }
                         break;
                     case SIZE:
                         _fs.setFileSize(inode, attr.getSize());

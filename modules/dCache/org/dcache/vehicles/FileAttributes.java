@@ -8,6 +8,7 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
 import java.util.EnumSet;
+import java.util.Collection;
 import org.dcache.namespace.FileAttribute;
 import static org.dcache.namespace.FileAttribute.*;
 import org.dcache.util.Checksum;
@@ -74,9 +75,9 @@ public class FileAttributes implements Serializable {
     private FileType _fileType;
 
     /**
-     * File location within dCache.
+     * File locations within dCache.
      */
-    private String _location;
+    private Collection<String> _locations;
 
     /**
      * Key value map of flags acossiated with the file.
@@ -211,14 +212,14 @@ public class FileAttributes implements Serializable {
         _size = size;
     }
 
-    public void setLocation(String pool) {
-        define(LOCATION);
-        _location = pool;
+    public void setLocations(Collection<String> pools) {
+        define(LOCATIONS);
+        _locations = pools;
     }
 
-    public String getLocation() {
-        guard(LOCATION);
-        return _location;
+    public Collection<String> getLocations() {
+        guard(LOCATIONS);
+        return _locations;
     }
 
     public Map<String, String> getFlags() {

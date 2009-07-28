@@ -37,7 +37,9 @@ import diskCacheV111.vehicles.CacheInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.util.Args;
+import dmg.util.CollectionFactory;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.namespace.FileType;
 import org.dcache.util.ChecksumType;
 import org.dcache.vehicles.FileAttributes;
 
@@ -1195,8 +1197,81 @@ public class BasicNameSpaceProvider
     }
 
     @Override
-    public FileAttributes getFileAttributes(Subject subject, PnfsId pnfsId, FileAttribute ... attr) throws CacheException {
-        throw new UnsupportedOperationException("Not implemented yet");
+    public FileAttributes getFileAttributes(Subject subject, PnfsId pnfsId,
+                                            Set<FileAttribute> attr)
+        throws CacheException
+    {
+        PnfsFile pf = _pathManager.getFileByPnfsId(pnfsId);
+        CacheInfo cacheInfo = null;
+        FileMetaData meta = null;
+        FileAttributes attributes = new FileAttributes();
+
+        try {
+            for (FileAttribute attribute: attr) {
+                switch (attribute) {
+                case ACCESS_LATENCY:
+                    cacheInfo = getCacheInfo(pf, cacheInfo);
+                    attributes.setAccessLatency(AccessLatency.getAccessLatency(cacheInfo.getFlags().get(ACCESS_LATENCY_FLAG)));
+                    break;
+                case RETENTION_POLICY:
+                    cacheInfo = getCacheInfo(pf, cacheInfo);
+                    attributes.setRetentionPolicy(RetentionPolicy.getRetentionPolicy(cacheInfo.getFlags().get(ACCESS_LATENCY_FLAG)));
+                    break;
+                case SIZE:
+                    meta = getFileMetaData(subject, pnfsId, meta);
+                    attributes.setSize(meta.getFileSize());
+                    break;
+                case MODIFICATION_TIME:
+                    meta = getFileMetaData(subject, pnfsId, meta);
+                    attributes.setModificationTime(meta.getLastModifiedTime());
+                    break;
+                case OWNER:
+                    meta = getFileMetaData(subject, pnfsId, meta);
+                    attributes.setOwner(meta.getUid());
+                    break;
+                case OWNER_GROUP:
+                    meta = getFileMetaData(subject, pnfsId, meta);
+                    attributes.setGroup(meta.getGid());
+                    break;
+                case CHECKSUM:
+                    attributes.setChecksums(_attChecksumImpl.getChecksums(subject, pnfsId));
+                    break;
+                case LOCATIONS:
+                    if (_cacheLocationProvider != this) {
+                        attributes.setLocations(_cacheLocationProvider.getCacheLocation(subject, pnfsId));
+                    } else {
+                        cacheInfo = getCacheInfo(pf, cacheInfo);
+                        attributes.setLocations(cacheInfo.getCacheLocations());
+                    }
+                    break;
+                case FLAGS:
+                    cacheInfo = getCacheInfo(pf, cacheInfo);
+                    Map<String,String> flags = CollectionFactory.newHashMap();
+                    for (Map.Entry<String,String> e: cacheInfo.getFlags().entrySet()) {
+                        flags.put(e.getKey(), e.getValue());
+                    }
+                    attributes.setFlags(flags);
+                    break;
+                case TYPE:
+                    meta = getFileMetaData(subject, pnfsId, meta);
+                    if (meta.isRegularFile()) {
+                        attributes.setFileType(FileType.REGULAR);
+                    } else if (meta.isDirectory()) {
+                        attributes.setFileType(FileType.DIR);
+                    } else if (meta.isSymbolicLink()) {
+                        attributes.setFileType(FileType.LINK);
+                    } else {
+                        attributes.setFileType(FileType.SPECIAL);
+                    }
+                    break;
+                default:
+                    throw new UnsupportedOperationException("Attribute " + attribute + " not supported yet.");
+                }
+            }
+            return attributes;
+        } catch (IOException e) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
+        }
     }
 
     @Override
@@ -1276,12 +1351,14 @@ public class BasicNameSpaceProvider
                             cacheInfo.getFlags().put(flagName, collection.serialize());
                         }
                         break;
-                    case LOCATION:
-                        if( _cacheLocationProvider != this) {
-                            _cacheLocationProvider.addCacheLocation(subject, pnfsId, attr.getLocation());
-                        }else{
-                            cacheInfo = getCacheInfo(pf, cacheInfo);
-                            cacheInfo.addCacheLocation(attr.getLocation());
+                    case LOCATIONS:
+                        for (String location: attr.getLocations()) {
+                            if (_cacheLocationProvider != this) {
+                                _cacheLocationProvider.addCacheLocation(subject, pnfsId, location);
+                            } else {
+                                cacheInfo = getCacheInfo(pf, cacheInfo);
+                                cacheInfo.addCacheLocation(location);
+                            }
                         }
                         break;
                     case FLAGS:
@@ -1329,5 +1406,20 @@ public class BasicNameSpaceProvider
         if (id == null)
             throw new CacheException(36, "Couldn't determine parent ID");
         return PnfsFile.getFileByPnfsId(mountpoint, id);
+    }
+
+    /**
+     * Returns the meta data of a file.
+     *
+     * @param subject The subject who performs the operation
+     * @param pnfsId The PNFS ID of the file
+     * @param meta The meta data of the file; if non-null this value
+     *             is returned.
+     */
+    private FileMetaData getFileMetaData(Subject subject, PnfsId pnfsId,
+                                         FileMetaData meta)
+        throws CacheException
+    {
+        return (meta != null) ? meta : getFileMetaData(subject, pnfsId);
     }
 }

@@ -15,6 +15,7 @@ import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.MetaDataRecord;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 import java.io.File;
@@ -238,7 +239,7 @@ class WriteHandleImpl implements WriteHandle
 
             FileAttributes fileAttributes = new FileAttributes();
             fileAttributes.setSize(length);
-            fileAttributes.setLocation(_repository.getPoolName());
+            fileAttributes.setLocations(Collections.singleton(_repository.getPoolName()));
             fileAttributes.setAccessLatency(info.getAccessLatency());
             fileAttributes.setRetentionPolicy(info.getRetentionPolicy());
 
