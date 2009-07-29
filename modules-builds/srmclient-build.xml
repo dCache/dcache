@@ -3,6 +3,8 @@
 
 
     <property name="srmclient.build.dir" location="${buildDir}/srmclient" />
+    <property name="srmclient.version" value="2.1.${release.minor.id}-${patch.id}" />
+    <property name="srmclient.vendor" value="Fermi National Accelerator Laboratory" />
 
 
     <property name="srm_client.jar" value="${classesDir}/srm_client.jar" />
@@ -113,6 +115,8 @@
         buid the jar file, compile if required
     -->
 
+
+
     <target name="-srmclient.jar" depends="-srmclient.compile">
 
         <jar jarfile="${srm_client.jar}">
@@ -121,16 +125,13 @@
             <manifest>
                 <section name="Shared">
                     <attribute name="Title" value="Storage Resource Manager (SRM) Client" />
-                    <attribute name="Vendor" value="Fermi National Accelerator Laboratory" />
-                    <attribute name="Version" value="2.0.${srm.minor.version}" />
+                    <attribute name="Vendor" value="${srmclient.vendor}" />
+                    <attribute name="Version" value="${srmclient.version}" />
                     <attribute name="Date" value="${jar.timestamp}" />
                 </section>
-                <section name="Copyright">
-                    <attribute name="Copy" value="Copyright (c) 2002-2008 Fermi National Accelerator Laboratory" />
-                </section>
                 <attribute name="Main-Class" value="gov.fnal.srm.util.Version" />
-                <attribute name="Specification-Version" value="2.0.${srm.minor.version}" />
-                <attribute name="Specification-Vendor" value="Fermi National Accelerator Laboratory" />
+                <attribute name="Specification-Version" value="${srmclient.version}" />
+                <attribute name="Specification-Vendor" value="${srmclient.vendor}" />
                 <attribute name="Specification-Title" value="Storage Resource Manager (SRM)" />
             </manifest>
         </jar>
