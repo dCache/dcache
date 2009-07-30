@@ -288,7 +288,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
             //
             // we expect a single record, so the loop below is fine
             //
-            while(set.next()) { 
+            if(set.next()) { 
                 credential = new RequestCredential(new Long(set.getLong("id")),
                                                    set.getLong("creationtime"),
                                                    set.getString("credentialname"),
