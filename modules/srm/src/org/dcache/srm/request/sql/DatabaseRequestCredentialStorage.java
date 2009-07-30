@@ -95,7 +95,7 @@ import java.io.IOException;
  * @author  timur
  */
 public class DatabaseRequestCredentialStorage implements RequestCredentialStorage {
-   
+    
    /** Creates a new instance of TestDatabaseJobStorage */
    private final String jdbcUrl;
    private final String jdbcClass;
@@ -229,19 +229,19 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
     public static final String INSERT = "INSERT INTO "+requestCredentialTableName + 
        " (id, creationtime, credentialname, role, numberofusers, delegatedcredentials, credentialexpiration) "+
        " VALUES ( ?,?,?,?,?,?,?) ";
-   
-   public void createRequestCredential(RequestCredential requestCredential) {
-      Statement sqlStatement =null;
-      Connection _con = null;
-      try {
-         _con = pool.getConnection();
+    
+    public void createRequestCredential(RequestCredential requestCredential) {
+        Statement sqlStatement =null;
+        Connection _con = null;
+        try {
             GSSCredential credential = requestCredential.getDelegatedCredential();
             String credentialFileName=null;
             if(credential != null) {
                 credentialFileName = credentialsDirectory+"/"+
-                        requestCredential.getId();
+                    requestCredential.getId();
                 writeCredentialInFile(credential,credentialFileName);
             }
+            _con = pool.getConnection();
             int result = insert(_con,
                                 INSERT, 
                                 requestCredential.getId(),
@@ -253,60 +253,78 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
                                 requestCredential.getDelegatedCredentialExpiration());
             _con.commit();
         } 
-        catch (SQLException e) {
-            esay(e);
+        catch (SQLException e) { 
             if (_con!=null) {
-            try {
-               _con.rollback();
-            }
+                try { 
+                    _con.rollback();
+                }
                 catch(SQLException e1) { } 
-            pool.returnFailedConnection(_con);
-            _con = null;
-         }
+                pool.returnFailedConnection(_con);
+                _con = null;
+            }
         }
         finally {
-         if(_con != null) {
+            if (_con!=null) {
                 pool.returnConnection(_con);
                 _con = null;
-         }
-      }
-   }
-   
+            }
+        }
+    }
+
     public static final String SELECT = "SELECT * FROM "+requestCredentialTableName + 
         " WHERE ";
    
     private RequestCredential getRequestCredentialByCondition(String query, 
                                                               Object ...args) {
-      Connection _con = null;
+        Connection _con = null;
         RequestCredential credential = null;   
         ResultSet set = null;
-      try {
-         _con = pool.getConnection();
-            set = select(_con, query,args);
+        PreparedStatement stmt=null;
+        try {
+            _con = pool.getConnection();
+            stmt = prepare(_con, query,args);
+            set = stmt.executeQuery();
             //
             // we expect a single record, so the loop below is fine
             //
-            while(set.next()) { 
+            if(set.next()) { 
                 credential = new RequestCredential(new Long(set.getLong("id")),
                                                    set.getLong("creationtime"),
                                                    set.getString("credentialname"),
                                                    set.getString("role"),
                                                    fileNameToGSSCredentilal(set.getString("delegatedcredentials")),
                                                    set.getLong("credentialexpiration"),
-            this);
-         credential.setSaved(true);
+                                                   this);
+                credential.setSaved(true);
             }
          }
         catch (SQLException e) { 
-         if(_con != null) {
-            pool.returnFailedConnection(_con);
-            _con = null;
-         }
+            if(_con != null) {
+                        if ( set != null ) { 
+                            try { 
+                                    set.close();
+                            }
+                            catch (SQLException e1) { 
+                                    say("Failed to close ResultSet "+e1.getMessage());
+                            }
+                    }
+                    if ( stmt != null ) { 
+                            try { 
+                                    stmt.close();
+                            }
+                            catch (SQLException e1) { 
+                                    say("Failed to close ResultSet "+e1.getMessage());
+                            }
+                    }
+                pool.returnFailedConnection(_con);
+                _con = null;
+            }
         }
         catch (Exception e) { 
-         esay(e);
+            esay(e);
         }
         finally { 
+            if (_con != null) { 
             if ( set != null ) { 
                 try { 
                     set.close();
@@ -315,33 +333,40 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
                     say("Failed to close ResultSet "+e1.getMessage());
                 }
             }
-         if(_con != null) {
+                    if ( stmt != null ) { 
+                            try { 
+                                    stmt.close();
+                            }
+                            catch (SQLException e1) { 
+                                    say("Failed to close ResultSet "+e1.getMessage());
+                            }
+                    }
                 pool.returnConnection(_con);
                 _con=null;
-         }
-      }
+            }
+        }
         return credential;
-   }
-   
+    }
+    
     public static final String SELECT_BY_ID = "SELECT * FROM "+requestCredentialTableName + 
         " WHERE id=?";
-   
-   public RequestCredential getRequestCredential(Long requestCredentialId) {
+
+    public RequestCredential getRequestCredential(Long requestCredentialId) {
         return getRequestCredentialByCondition(SELECT_BY_ID,requestCredentialId.longValue());
-   }
-   
+    }
+    
     public static final String SELECT_BY_NAME = "SELECT * FROM "+requestCredentialTableName + 
         " WHERE credentialname=? and role is null";
-      
+
     public static final String SELECT_BY_NAME_AND_ROLE = "SELECT * FROM "+requestCredentialTableName + 
         " WHERE credentialname=? and role=?";
-      
-      
+
+
    public RequestCredential getRequestCredential(String credentialName,
                                                  String role) {
       if(role == null || role.equalsIgnoreCase("null")) { 
           return getRequestCredentialByCondition(SELECT_BY_NAME,credentialName);
-   }
+      }
       else { 
           return getRequestCredentialByCondition(SELECT_BY_NAME_AND_ROLE,credentialName,role);
       }
@@ -356,13 +381,13 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
       int result = 0;
       Connection _con = null;
       try {
-            GSSCredential credential = requestCredential.getDelegatedCredential();
+          GSSCredential credential = requestCredential.getDelegatedCredential();
           String credentialFileName = null;
-            if(credential != null) {
+          if(credential != null) {
               credentialFileName = credentialsDirectory+"/"+
-                        requestCredential.getId();
-                writeCredentialInFile(credential,credentialFileName);
-            }
+                  requestCredential.getId();
+              writeCredentialInFile(credential,credentialFileName);
+          }
           _con = pool.getConnection();
           result=update(_con,UPDATE,
                         requestCredential.getCreationtime(),
@@ -372,26 +397,26 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
                         credentialFileName,
                         requestCredential.getDelegatedCredentialExpiration(),
                         requestCredential.getId());
-            _con.commit();
+          _con.commit();
       }
       catch (SQLException e) {
           esay(e);
           if (_con!=null) {
-            try {
-               _con.rollback();
-            }
+              try { 
+                  _con.rollback();
+              }
               catch(SQLException e1) { 
                   say("Failed rollback connection "+e1.getMessage());
-         }
-            pool.returnFailedConnection(_con);
-            _con = null;
-         }
+              } 
+              pool.returnFailedConnection(_con);
+              _con = null;
+          }
       }
       finally {
-         if(_con != null) {
+          if(_con != null) {
               pool.returnConnection(_con);
               _con = null;
-         }
+          }
       }
       if(result == 0) {
          //say("update result is 0, calling createRequestCredential()");
@@ -478,7 +503,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
       }
       return null;
    }
-   
+
     public static int update(Connection connection, 
                              String query, 
                              Object ... args)  throws SQLException { 
@@ -495,12 +520,12 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
             }
         }
     }
-   
+    
     public static int delete(Connection connection, 
                              String query, 
                              Object ... args)  throws SQLException { 
         return update(connection, query, args);
-}
+    }
     
     public static int insert(Connection connection, 
                              String query, 
@@ -508,20 +533,12 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
         return update(connection, query, args);
     }
     
-    public static ResultSet select(Connection connection, 
+    public static PreparedStatement prepare(Connection connection, 
                                    String query, 
                                    Object ... args)  throws SQLException { 
-        PreparedStatement stmt = null;
-        try { 
-            stmt =  connection.prepareStatement(query);
+            PreparedStatement stmt =  connection.prepareStatement(query);
             for (int i = 0; i < args.length; i++)
                 stmt.setObject(i + 1, args[i]);
-            return  stmt.executeQuery();
-        }
-        finally { 
-            if (stmt!=null) { 
-                stmt.close();
-            }
-        }
+            return  stmt;
     }
 }
