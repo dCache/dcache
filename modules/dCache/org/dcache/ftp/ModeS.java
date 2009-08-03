@@ -15,87 +15,87 @@ public class ModeS extends Mode
     /* Implements MODE S send operation. */
     private class Sender extends AbstractMultiplexerListener
     {
-	protected SocketChannel _socket;
-	protected long _position;
-	protected long _count;
-	
-	public Sender(SocketChannel socket) 
-	{
-	    _socket   = socket;
-	    _position = getStartPosition();
-	    _count    = getSize();
-	}
+        protected SocketChannel _socket;
+        protected long _position;
+        protected long _count;
 
-	public void register(Multiplexer multiplexer) throws IOException 
-	{
-	    multiplexer.register(this, SelectionKey.OP_WRITE, _socket);
-	}
+        public Sender(SocketChannel socket)
+        {
+            _socket   = socket;
+            _position = getStartPosition();
+            _count    = getSize();
+        }
 
-	public void write(Multiplexer multiplexer, SelectionKey key) 
-	    throws Exception 
-	{
-	    long nbytes = transferTo(_position, _count, _socket);
-	    _monitor.sentBlock(_position, nbytes);
+        public void register(Multiplexer multiplexer) throws IOException
+        {
+            multiplexer.register(this, SelectionKey.OP_WRITE, _socket);
+        }
 
-	    _position += nbytes;
-	    _count    -= nbytes;
+        public void write(Multiplexer multiplexer, SelectionKey key)
+            throws Exception
+        {
+            long nbytes = transferTo(_position, _count, _socket);
+            _monitor.sentBlock(_position, nbytes);
 
-	    /* There is no special end-of-file signal in mode S. Just
-	     * close the connection.
-	     */
-	    if (_count == 0) {
-		close(multiplexer, key, true);
-	    }
-	}
+            _position += nbytes;
+            _count    -= nbytes;
+
+            /* There is no special end-of-file signal in mode S. Just
+             * close the connection.
+             */
+            if (_count == 0) {
+                close(multiplexer, key, true);
+            }
+        }
     }
 
     /* Implements MODE S receive operation. */
     private class Receiver extends AbstractMultiplexerListener
     {
-	protected SocketChannel _socket;
-	protected long          _position;
-	
-	public Receiver(SocketChannel socket) 
-	{
-	    _socket   = socket;
-	    _position = 0;
-	}
+        protected SocketChannel _socket;
+        protected long          _position;
 
-	public void register(Multiplexer multiplexer) throws IOException 
-	{
-	    multiplexer.register(this, SelectionKey.OP_READ, _socket);
-	}
-	
-	public void read(Multiplexer multiplexer, SelectionKey key) 
-	    throws Exception
-	{
-	    _monitor.preallocate(_position + BLOCK_SIZE);
-	    long nbytes = transferFrom(_socket, _position, BLOCK_SIZE);
-	    if (nbytes == -1) {
-		close(multiplexer, key, true);
-	    } else {
-		_monitor.receivedBlock(_position, nbytes);
-		_position += nbytes;
-	    }
-	}
+        public Receiver(SocketChannel socket)
+        {
+            _socket   = socket;
+            _position = 0;
+        }
+
+        public void register(Multiplexer multiplexer) throws IOException
+        {
+            multiplexer.register(this, SelectionKey.OP_READ, _socket);
+        }
+
+        public void read(Multiplexer multiplexer, SelectionKey key)
+            throws Exception
+        {
+            _monitor.preallocate(_position + BLOCK_SIZE);
+            long nbytes = transferFrom(_socket, _position, BLOCK_SIZE);
+            if (nbytes == -1) {
+                close(multiplexer, key, true);
+            } else {
+                _monitor.receivedBlock(_position, nbytes);
+                _position += nbytes;
+            }
+        }
     }
-    
+
     public ModeS(Role role, FileChannel file, ConnectionMonitor monitor)
-	throws IOException 
+        throws IOException
     {
-	super(role, file, monitor);
+        super(role, file, monitor);
     }
 
-    public void newConnection(Multiplexer multiplexer, SocketChannel socket) 
-	throws Exception
+    public void newConnection(Multiplexer multiplexer, SocketChannel socket)
+        throws Exception
     {
-	switch (_role) {
-	case Sender:
-	    multiplexer.add(new Sender(socket));
-	    break;
-	case Receiver:
-	    multiplexer.add(new Receiver(socket));
-	    break;
-	}
-    }    
+        switch (_role) {
+        case Sender:
+            multiplexer.add(new Sender(socket));
+            break;
+        case Receiver:
+            multiplexer.add(new Receiver(socket));
+            break;
+        }
+    }
 }

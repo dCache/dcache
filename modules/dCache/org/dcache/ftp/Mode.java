@@ -50,7 +50,7 @@ public abstract class Mode extends AbstractMultiplexerListener
 
     /** Disabled keys. The value is the interest set of the key. */
     protected Map<SelectionKey, Integer> disabled
-	= new HashMap<SelectionKey, Integer>();
+        = new HashMap<SelectionKey, Integer>();
 
     /** Number of connections for which connect failed. */
     protected int               _failed = 0;
@@ -67,13 +67,13 @@ public abstract class Mode extends AbstractMultiplexerListener
 
     /** Constructs a new mode for outgoing connections. */
     public Mode(Role role, FileChannel file, ConnectionMonitor monitor)
-	throws IOException
+        throws IOException
     {
-	_fileSize    = file.size();
-	_role        = role;
-	_file        = file;
-	_size        = _fileSize;
-	_monitor     = monitor;
+        _fileSize    = file.size();
+        _role        = role;
+        _file        = file;
+        _size        = _fileSize;
+        _monitor     = monitor;
     }
 
     /**
@@ -106,11 +106,11 @@ public abstract class Mode extends AbstractMultiplexerListener
      */
     public void setPartialRetrieveParameters(long position, long size)
     {
-	if (_position < 0 || size < 0 || position + size > _fileSize) {
-	    throw new IllegalArgumentException();
-	}
-	_position = position;
-	_size     = size;
+        if (_position < 0 || size < 0 || position + size > _fileSize) {
+            throw new IllegalArgumentException();
+        }
+        _position = position;
+        _size     = size;
     }
 
     /**
@@ -120,10 +120,10 @@ public abstract class Mode extends AbstractMultiplexerListener
      */
     public void setBufferSize(int value)
     {
-	if (value < 0) {
-	    throw new IllegalArgumentException("Buffer size must be non-negative");
-	}
-	_bufferSize = value;
+        if (value < 0) {
+            throw new IllegalArgumentException("Buffer size must be non-negative");
+        }
+        _bufferSize = value;
     }
 
     /**
@@ -133,22 +133,22 @@ public abstract class Mode extends AbstractMultiplexerListener
      */
     public void setParallelism(int value)
     {
-	if (value <= 0) {
-	    throw new IllegalArgumentException("Parallelism must be positive");
-	}
-	_parallelism = value;
+        if (value <= 0) {
+            throw new IllegalArgumentException("Parallelism must be positive");
+        }
+        _parallelism = value;
     }
 
     /** Returns the starting position of the transfer. */
     public long getStartPosition()
     {
-	return _position;
+        return _position;
     }
 
     /** Returns the number of bytes to transfer. */
     public long getSize()
     {
-	return _size;
+        return _size;
     }
 
     /**
@@ -159,29 +159,29 @@ public abstract class Mode extends AbstractMultiplexerListener
      * with large files. We use a workaround when needed.
      */
     protected long transferTo(long position, long count, SocketChannel socket)
-	throws IOException
+        throws IOException
     {
         if (jdk5or6 && (position + count > 2147483647L)) {
-            long tr = 0;			// Total bytes read
+            long tr = 0;                        // Total bytes read
             long pos = position;
             _buffer.clear();
-	    while (tr < count) {
+            while (tr < count) {
                 _buffer.limit((int)Math.min((count - tr),
                                             (long)_buffer.capacity()));
-		int nr = _file.read(_buffer, pos);
+                int nr = _file.read(_buffer, pos);
                 if (nr < 0 && tr == 0)
                     return -1;
-		if (nr <= 0)
-		    break;
-		_buffer.flip();
-		int nw = socket.write(_buffer);
-		tr += nw;
-		if (nw != nr)
-		    break;
-		pos += nw;
-		_buffer.clear();
-	    }
-	    return tr;
+                if (nr <= 0)
+                    break;
+                _buffer.flip();
+                int nw = socket.write(_buffer);
+                tr += nw;
+                if (nw != nr)
+                    break;
+                pos += nw;
+                _buffer.clear();
+            }
+            return tr;
         } else {
             return _file.transferTo(position, count, socket);
         }
@@ -209,33 +209,33 @@ public abstract class Mode extends AbstractMultiplexerListener
      * unknown if the performance would improve.
      */
     protected long transferFrom(SocketChannel socket, long position, long count)
-	throws IOException
+        throws IOException
     {
-	long tw = 0;			// Total bytes written
-	long pos = position;
+        long tw = 0;                    // Total bytes written
+        long pos = position;
         try {
             _buffer.clear();
-	    while (tw < count) {
+            while (tw < count) {
                 _buffer.limit((int)Math.min((count - tw),
                                             (long)_buffer.capacity()));
-		int nr = socket.read(_buffer);
+                int nr = socket.read(_buffer);
                 if (nr < 0 && tw == 0)
                     return -1;
-		if (nr <= 0)
-		    break;
-		_buffer.flip();
-		int nw = _file.write(_buffer, pos);
-		tw += nw;
-		if (nw != nr)
-		    break;
-		pos += nw;
-		_buffer.clear();
-	    }
-	    return tw;
-	} catch (IOException x) {
-	    if (tw > 0)
-		return tw;
-	    throw x;
+                if (nr <= 0)
+                    break;
+                _buffer.flip();
+                int nw = _file.write(_buffer, pos);
+                tw += nw;
+                if (nw != nr)
+                    break;
+                pos += nw;
+                _buffer.clear();
+            }
+            return tw;
+        } catch (IOException x) {
+            if (tw > 0)
+                return tw;
+            throw x;
         }
     }
 
@@ -251,84 +251,84 @@ public abstract class Mode extends AbstractMultiplexerListener
      * @see setParallelism(), SocketChannel.open()
      */
     protected void registerOutgoing(Multiplexer multiplexer)
-	throws Exception
+        throws Exception
     {
-	IOException lastException = null;
+        IOException lastException = null;
 
-	for (int i = 0; i < _parallelism; i++) {
-	    /* Errors in socket channel creation are likely to
-	     * indicate some serious problems. Therefore we let the
-	     * caller figure out what to do (i.e. we do not catch the
-	     * exception).
-	     */
-	    SocketChannel channel = SocketChannel.open();
-	    try {
-		channel.configureBlocking(false);
-		if (_bufferSize > 0) {
-		    channel.socket().setReceiveBufferSize(_bufferSize);
-		    channel.socket().setSendBufferSize(_bufferSize);
-		}
+        for (int i = 0; i < _parallelism; i++) {
+            /* Errors in socket channel creation are likely to
+             * indicate some serious problems. Therefore we let the
+             * caller figure out what to do (i.e. we do not catch the
+             * exception).
+             */
+            SocketChannel channel = SocketChannel.open();
+            try {
+                channel.configureBlocking(false);
+                if (_bufferSize > 0) {
+                    channel.socket().setReceiveBufferSize(_bufferSize);
+                    channel.socket().setSendBufferSize(_bufferSize);
+                }
                 channel.socket().setKeepAlive(true);
 
-		SelectionKey key =
-		    multiplexer.register(this, SelectionKey.OP_CONNECT, channel);
+                SelectionKey key =
+                    multiplexer.register(this, SelectionKey.OP_CONNECT, channel);
 
                 multiplexer.say("Connecting to " + _address);
- 		if (channel.connect(_address)) {
-		    connect(multiplexer, key);
- 		}
-	    } catch (IOException e) {
-		// Any error is logged, but otherwise ignored.  As
-		// long as at least one connection succeeds, the
-		// transfer can be completed.
-		channel.close();
-		lastException = e;
-		multiplexer.esay(e.toString());
-		_failed++;
+                if (channel.connect(_address)) {
+                    connect(multiplexer, key);
+                }
+            } catch (IOException e) {
+                // Any error is logged, but otherwise ignored.  As
+                // long as at least one connection succeeds, the
+                // transfer can be completed.
+                channel.close();
+                lastException = e;
+                multiplexer.esay(e.toString());
+                _failed++;
 
                 if (allConnectionsEstablished()) {
                     enableDisabledKeys();
                 }
-	    }
-	}
+            }
+        }
 
-	if (_failed == _parallelism) {
-	    throw lastException;
-	}
+        if (_failed == _parallelism) {
+            throw lastException;
+        }
     }
 
     /**
      * Register the mode for incomming connections.
      */
     protected void registerIncomming(Multiplexer multiplexer)
-	throws IOException
+        throws IOException
     {
-	_channel.configureBlocking(false);
+        _channel.configureBlocking(false);
         multiplexer.say("Accepting connections on " +
                         _channel.socket().getLocalSocketAddress());
-	multiplexer.register(this, SelectionKey.OP_ACCEPT, _channel);
+        multiplexer.register(this, SelectionKey.OP_ACCEPT, _channel);
     }
 
     /**
      * Registers this mode with a multiplexer.
      */
     public void register(Multiplexer multiplexer)
-	throws Exception
+        throws Exception
     {
         assert _address != null || _channel != null
             : "Mode must be either set to passive or active.";
 
-	switch (_direction) {
-	case Incomming:
-	    registerIncomming(multiplexer);
-	    break;
-	case Outgoing:
-	    registerOutgoing(multiplexer);
-	    break;
-	default:
-	    // Ignore
-	    break;
-	}
+        switch (_direction) {
+        case Incomming:
+            registerIncomming(multiplexer);
+            break;
+        case Outgoing:
+            registerOutgoing(multiplexer);
+            break;
+        default:
+            // Ignore
+            break;
+        }
     }
 
     /**
@@ -339,21 +339,21 @@ public abstract class Mode extends AbstractMultiplexerListener
      * Failure to accept the connection is propagated to the caller.
      */
     public void accept(Multiplexer multiplexer, SelectionKey key)
-	throws Exception
+        throws Exception
     {
-	ServerSocketChannel server = (ServerSocketChannel)key.channel();
-	SocketChannel channel = server.accept();
-	if (channel != null) {
-	    Socket socket = channel.socket();
-	    _opened++;
-	    multiplexer.say("Opened " + socket);
-	    channel.configureBlocking(false);
-	    if (_bufferSize > 0) {
-		channel.socket().setSendBufferSize(_bufferSize);
-	    }
+        ServerSocketChannel server = (ServerSocketChannel)key.channel();
+        SocketChannel channel = server.accept();
+        if (channel != null) {
+            Socket socket = channel.socket();
+            _opened++;
+            multiplexer.say("Opened " + socket);
+            channel.configureBlocking(false);
+            if (_bufferSize > 0) {
+                channel.socket().setSendBufferSize(_bufferSize);
+            }
             channel.socket().setKeepAlive(true);
-	    newConnection(multiplexer, channel);
-	}
+            newConnection(multiplexer, channel);
+        }
     }
 
     /**
@@ -366,22 +366,22 @@ public abstract class Mode extends AbstractMultiplexerListener
      * the caller.
      */
     public void connect(Multiplexer multiplexer, SelectionKey key)
-	throws Exception
+        throws Exception
     {
-	try {
-	    SocketChannel channel = (SocketChannel)key.channel();
-	    if (channel.finishConnect()) {
-		Socket socket = channel.socket();
-		_opened++;
-		multiplexer.say("Opened " + socket);
-		newConnection(multiplexer, channel);
-	    }
-	} catch (IOException e) {
-	    _failed++;
-	    if (_failed == _parallelism) {
-		throw e;
-	    }
-	} finally {
+        try {
+            SocketChannel channel = (SocketChannel)key.channel();
+            if (channel.finishConnect()) {
+                Socket socket = channel.socket();
+                _opened++;
+                multiplexer.say("Opened " + socket);
+                newConnection(multiplexer, channel);
+            }
+        } catch (IOException e) {
+            _failed++;
+            if (_failed == _parallelism) {
+                throw e;
+            }
+        } finally {
             if (allConnectionsEstablished()) {
                 enableDisabledKeys();
             }
@@ -395,19 +395,19 @@ public abstract class Mode extends AbstractMultiplexerListener
      * then the multiplexer is shut down.
      */
     protected void close(Multiplexer multiplexer, SelectionKey key,
-			 boolean mayShutdown)
-	throws IOException
+                         boolean mayShutdown)
+        throws IOException
     {
         SocketChannel channel = (SocketChannel)key.channel();
         multiplexer.say("Closing " + channel.socket());
 
-	key.cancel();
-	channel.close();
+        key.cancel();
+        channel.close();
 
-	_closed++;
-	if (mayShutdown && _closed == _opened) {
-	    multiplexer.shutdown();
-	}
+        _closed++;
+        if (mayShutdown && _closed == _opened) {
+            multiplexer.shutdown();
+        }
     }
 
     /**
@@ -456,14 +456,14 @@ public abstract class Mode extends AbstractMultiplexerListener
      */
     protected boolean waitForConnectionCompletion(SelectionKey key)
     {
-	if (_direction != Direction.Outgoing) {
-	    throw new IllegalArgumentException("Call is only valid for outgoing connections");
-	}
-	if (allConnectionsEstablished()) {
-	    return true;
-	}
+        if (_direction != Direction.Outgoing) {
+            throw new IllegalArgumentException("Call is only valid for outgoing connections");
+        }
+        if (allConnectionsEstablished()) {
+            return true;
+        }
         disableKey(key);
-	return false;
+        return false;
     }
 
     /**
@@ -471,8 +471,8 @@ public abstract class Mode extends AbstractMultiplexerListener
      * established.
      */
     abstract protected void newConnection(Multiplexer multiplexer,
-					  SocketChannel channel)
-	throws Exception;
+                                          SocketChannel channel)
+        throws Exception;
 
 }
 
