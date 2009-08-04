@@ -21,16 +21,6 @@ public class ModeE extends Mode
      */
     public static final int HEADER_LENGTH = 17;
 
-    /**
-     * The chunk size used when sending files.
-     *
-     * Large blocks will reduce the overhead of sending. However, it
-     * case of multible concurrent streams, large blocks will make
-     * disk access less sequential on both the sending and receiving
-     * side.
-     */
-    public static final int BLOCK_SIZE = 128 * 1024;
-
     public static final int EOR_DESCRIPTOR                       = 128;
     public static final int EOF_DESCRIPTOR                       = 64;
     public static final int SUSPECTED_ERROR_DESCRIPTOR           = 32;
@@ -40,6 +30,16 @@ public class ModeE extends Mode
 
     public static final int KNOWN_DESCRIPTORS =
         EOF_DESCRIPTOR | EOD_DESCRIPTOR | SENDER_CLOSES_THIS_STREAM_DESCRIPTOR;
+
+    /**
+     * The chunk size used when sending files.
+     *
+     * Large blocks will reduce the overhead of sending. However, it
+     * case of multible concurrent streams, large blocks will make
+     * disk access less sequential on both the sending and receiving
+     * side.
+     */
+    private final int _blockSize;
 
     /** Position in file when sending data. Used by the sender. */
     private long _currentPosition;
@@ -56,9 +56,9 @@ public class ModeE extends Mode
 
     /**
      * Implementation of send in mode E. There will be an instance per
-     * data channel. The sender repeatedly bites BLOCK_SIZE bytes of
+     * data channel. The sender repeatedly bites _blockSize bytes of
      * the file and transfers it as a single block. I.e.
-     * _currentPosition is incremented by BLOCK_SIZE bytes at a time.
+     * _currentPosition is incremented by _blockSize bytes at a time.
      */
     private class Sender extends AbstractMultiplexerListener
     {
@@ -100,11 +100,11 @@ public class ModeE extends Mode
         {
             switch (_state) {
             case PREPARE_BLOCK:
-                /* Prepare new block. We 'bite' up to BLOCK_SIZE bytes
+                /* Prepare new block. We 'bite' up to _blockSize bytes
                  * of the file and reserve it for this data channel.
                  */
                 _position         = _currentPosition;
-                _count            = Math.min(_currentCount, BLOCK_SIZE);
+                _count            = Math.min(_currentCount, _blockSize);
                 _currentPosition += _count;
                 _currentCount    -= _count;
 
@@ -332,13 +332,15 @@ public class ModeE extends Mode
         }
     }
 
-    public ModeE(Role role, FileChannel file, ConnectionMonitor monitor)
+    public ModeE(Role role, FileChannel file, ConnectionMonitor monitor,
+                 int blockSize)
         throws IOException
     {
         super(role, file, monitor);
         _currentPosition = getStartPosition();
         _currentCount    = getSize();
         _eodc            = 0;
+        _blockSize       = blockSize;
     }
 
     public void newConnection(Multiplexer multiplexer, SocketChannel socket)

@@ -55,6 +55,13 @@ public class ModeX extends Mode
      */
     public static final int HEADER_LENGTH = 25;
 
+    public static final int EOF_DESCRIPTOR                       = 64;
+    public static final int EOD_DESCRIPTOR                       = 8;
+    public static final int SENDER_CLOSES_THIS_STREAM_DESCRIPTOR = 4;
+
+    public static final int KNOWN_DESCRIPTORS =
+	EOF_DESCRIPTOR | EOD_DESCRIPTOR | SENDER_CLOSES_THIS_STREAM_DESCRIPTOR;
+
     /**
      * The chunk size used when sending files.
      *
@@ -63,14 +70,7 @@ public class ModeX extends Mode
      * disk access less sequential on both the sending and receiving
      * side.
      */
-    public static final int BLOCK_SIZE = 128 * 1024;
-
-    public static final int EOF_DESCRIPTOR                       = 64;
-    public static final int EOD_DESCRIPTOR                       = 8;
-    public static final int SENDER_CLOSES_THIS_STREAM_DESCRIPTOR = 4;
-
-    public static final int KNOWN_DESCRIPTORS =
-        EOF_DESCRIPTOR | EOD_DESCRIPTOR | SENDER_CLOSES_THIS_STREAM_DESCRIPTOR;
+    private final int _blockSize;
 
     /**
      * Position in file when sending data. Used by Sender.
@@ -111,9 +111,9 @@ public class ModeX extends Mode
 
     /**
      * Implementation of send in mode X. There will be an instance per
-     * data channel. The sender repeatedly bites BLOCK_SIZE bytes of
+     * data channel. The sender repeatedly bites _blockSize bytes of
      * the file and transfers it as a single block. I.e.
-     * _currentPosition is incremented by BLOCK_SIZE bytes at a time.
+     * _currentPosition is incremented by _blockSize bytes at a time.
      */
     private class Sender extends AbstractMultiplexerListener
     {
@@ -244,7 +244,7 @@ public class ModeX extends Mode
             switch (_state) {
             case NEXT_BLOCK:
                 _position         = _currentPosition;
-                _count            = Math.min(_currentCount, BLOCK_SIZE);
+                _count            = Math.min(_currentCount, _blockSize);
 
                 /* Prepare header.
                  */
@@ -481,7 +481,8 @@ public class ModeX extends Mode
         }
     }
 
-    public ModeX(Role role, FileChannel file, ConnectionMonitor monitor)
+    public ModeX(Role role, FileChannel file, ConnectionMonitor monitor,
+                 int blockSize)
         throws IOException
     {
         super(role, file, monitor);
@@ -489,6 +490,7 @@ public class ModeX extends Mode
         _currentCount    = getSize();
         _eof             = false;
         _closing         = 0;
+        _blockSize = blockSize;
     }
 
     public void newConnection(Multiplexer multiplexer, SocketChannel socket)
