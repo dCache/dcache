@@ -10,7 +10,7 @@ import java.io.IOException;
 /** Implementation of MODE S. */
 public class ModeS extends Mode
 {
-    public static final int BLOCK_SIZE = 512 * 1024;
+    private final int _blockSize;
 
     /* Implements MODE S send operation. */
     private class Sender extends AbstractMultiplexerListener
@@ -69,8 +69,8 @@ public class ModeS extends Mode
 	public void read(Multiplexer multiplexer, SelectionKey key) 
 	    throws Exception
 	{
-	    _monitor.preallocate(_position + BLOCK_SIZE);
-	    long nbytes = transferFrom(_socket, _position, BLOCK_SIZE);
+            _monitor.preallocate(_position + _blockSize);
+            long nbytes = transferFrom(_socket, _position, _blockSize);
 	    if (nbytes == -1) {
 		close(multiplexer, key, true);
 	    } else {
@@ -80,10 +80,12 @@ public class ModeS extends Mode
 	}
     }
     
-    public ModeS(Role role, FileChannel file, ConnectionMonitor monitor)
+    public ModeS(Role role, FileChannel file, ConnectionMonitor monitor,
+                 int blockSize)
 	throws IOException 
     {
 	super(role, file, monitor);
+        _blockSize = blockSize;
     }
 
     public void newConnection(Multiplexer multiplexer, SocketChannel socket) 
