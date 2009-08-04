@@ -54,6 +54,24 @@ public class GFtpProtocol_2_nio
     /** Key used to extract the read ahead from the domain context. */
     public final static String READ_AHEAD_KEY = "gsiftpReadAhead";
 
+    /**
+     * Default block size for mode S. Although mode S is not a block
+     * protocol, the block size parameter defines the largest amount
+     * of data we will try to transfer in a single iteration of the
+     * transfer loop.
+     */
+    public final static int MODE_S_DEFAULT_BLOCK_SIZE = 512 * 1024;
+
+    /**
+     * Default block size for mode E.
+     */
+    public final static int MODE_E_DEFAULT_BLOCK_SIZE = 128 * 1024;
+
+    /**
+     * Default block size for mode X.
+     */
+    public final static int MODE_X_DEFAULT_BLOCK_SIZE = 128 * 1024;
+
     /** The cell owning this mover. Log messages are sent to it. */
     protected CellAdapter  _cell;
 
@@ -135,6 +153,17 @@ public class GFtpProtocol_2_nio
     protected int          _highPort;
 
     /**
+     * The chunk size used when transferring files.
+     *
+     * Large blocks will reduce the overhead. However, it case of
+     * multible concurrent streams, large blocks will make disk access
+     * less sequential on both the sending and receiving side.
+     *
+     * Default values will be used when null.
+     */
+    protected Integer _blockSize;
+
+    /**
      * Whether true passive mode is allowed, i.e. whether clients are
      * allowed to connect directly to the pool. Do not enable this if
      * the pool does not have inbound connectivity.
@@ -190,16 +219,22 @@ public class GFtpProtocol_2_nio
         }
 
         if (_cell != null) {
-            if (_cell.getArgs().getOpt("allowPassivePool") != null) {
+            Args args = _cell.getArgs();
+            if (args.getOpt("allowPassivePool") != null) {
                 _allowPassivePool =
-                    Boolean.valueOf(_cell.getArgs().getOpt("allowPassivePool"));
+                    Boolean.parseBoolean(args.getOpt("allowPassivePool"));
             }
 
-            if (!jdk5 && _cell.getArgs().getOpt("allowMmap") != null) {
+            if (!jdk5 && args.getOpt("allowMmap") != null) {
                 _mappedDigest =
-                    Boolean.valueOf(_cell.getArgs().getOpt("allowMmap"));
+                    Boolean.parseBoolean(args.getOpt("allowMmap"));
             }
+
+            if (args.getOpt("gsiftpBlockSize") != null) {
+                _blockSize =
+                    Integer.valueOf(args.getOpt("gsiftpBlockSize"));
         }
+    }
     }
 
     /**
@@ -208,13 +243,20 @@ public class GFtpProtocol_2_nio
     protected Mode createMode(String mode, Role role, RandomAccessFile file)
 	throws IOException
     {
+        int blockSize;
         switch (Character.toUpperCase(mode.charAt(0))) {
         case 'S':
-	    return new ModeS(role, file.getChannel(), this);
+            blockSize =
+                (_blockSize == null) ? MODE_S_DEFAULT_BLOCK_SIZE : _blockSize;
+	    return new ModeS(role, file.getChannel(), this, blockSize);
         case 'E':
-	    return new ModeE(role, file.getChannel(), this);
+            blockSize =
+                (_blockSize == null) ? MODE_E_DEFAULT_BLOCK_SIZE : _blockSize;
+	    return new ModeE(role, file.getChannel(), this, blockSize);
         case 'X':
-	    return new ModeX(role, file.getChannel(), this);
+            blockSize =
+                (_blockSize == null) ? MODE_X_DEFAULT_BLOCK_SIZE : _blockSize;
+	    return new ModeX(role, file.getChannel(), this, blockSize);
         default:
 	    throw new IllegalArgumentException("Unknown mode");
 	}
