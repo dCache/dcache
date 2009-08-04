@@ -33,6 +33,7 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.SysTimer;
 import org.dcache.pool.repository.Allocator;
+import org.dcache.util.PortRange;
 
 import org.apache.log4j.Logger;
 import org.dcache.ftp.*;
@@ -144,14 +145,9 @@ public class GFtpProtocol_2_nio
     protected String       _status;
 
     /**
-     * Lowest port to use for passive transfers.
+     * Port range for passive transfers.
      */
-    protected int          _lowPort;
-
-    /**
-     * Highest port to use for passive transfers.
-     */
-    protected int          _highPort;
+    protected PortRange _portRange;
 
     /**
      * The chunk size used when transferring files.
@@ -202,16 +198,9 @@ public class GFtpProtocol_2_nio
 
         String range = System.getProperty("org.globus.tcp.port.range");
         if (range != null) {
-            int ind = range.indexOf(",");
-            if (ind <= 0 || ind == (range.length() - 1)) {
-                esay("Ignoring invalid port range: " + range);
-            }
-
-            int low  = Integer.parseInt(range.substring(0, ind));
-            int high = Integer.parseInt(range.substring(ind + 1));
-
-            _lowPort  = low;
-            _highPort = high;
+            _portRange = PortRange.valueOf(range);
+        } else {
+            _portRange = new PortRange(0);
         }
 
         if (_cell != null) {
@@ -520,29 +509,7 @@ public class GFtpProtocol_2_nio
                 if (bufferSize > 0) {
                     channel.socket().setReceiveBufferSize(bufferSize);
                 }
-
-                if (_lowPort > 0) {
-                    /* We randomise the first socket we attempt to use to
-                     * reduce the risk of conflicts and to make the port less
-                     * predictable.
-                     */
-                    int start =
-                        _random.nextInt(_highPort - _lowPort + 1) + _lowPort;
-                    int i = start;
-                    for (;;) {
-                        try {
-                            channel.socket().bind(new InetSocketAddress(i));
-                            break;
-                        } catch (BindException ee) {
-                            i = (i < _highPort ? i + 1 : _lowPort);
-                            if (i == start) {
-                                throw ee;
-                            }
-                        }
-                    }
-                } else {
-                    channel.socket().bind(new InetSocketAddress(0));
-                }
+                _portRange.bind(channel.socket());
 
                 /* When in passive mode, the door passes us the host
                  * from which the control channel was created. It
