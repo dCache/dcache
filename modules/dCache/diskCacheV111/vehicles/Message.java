@@ -129,9 +129,12 @@ public class Message
      * Returns true if this message is subsumed by the message
      * provided as an argument.
      *
-     * A message A subsumes a message B if and only if both A and B
-     * are idempotent and a reply to A can be used as a valid reply to
-     * B.
+     * A message A subsumes a message B if and only if all of the
+     * following conditions are satisfied:
+     *
+     * - both A and B are idempotent,
+     * - a reply to A can be used as a valid reply to B,
+     * - executing B after A does not change the state of the system.
      */
     public boolean isSubsumedBy(Message message)
     {
