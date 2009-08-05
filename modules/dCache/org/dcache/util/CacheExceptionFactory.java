@@ -12,6 +12,7 @@ import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.LockedCacheException;
+import diskCacheV111.vehicles.Message;
 import static diskCacheV111.util.CacheException.*;
 
 /**
@@ -70,5 +71,15 @@ public class CacheExceptionFactory {
             default:
                 return new CacheException(errorCode, message);
         }
+    }
+
+    public static CacheException exceptionOf(Message message)
+    {
+        Object error = message.getErrorObject();
+        if (error instanceof CacheException) {
+            CacheException ce = (CacheException) error;
+            return exceptionOf(ce.getRc(), ce.getMessage());
+        }
+        return exceptionOf(message.getReturnCode(), String.valueOf(error));
     }
 }

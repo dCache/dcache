@@ -137,19 +137,7 @@ public class CellStub
 
         T reply = (T)replyObject;
         if (reply.getReturnCode() != 0) {
-            Object error = reply.getErrorObject();
-            if (error instanceof CacheException) {
-                CacheException ce = (CacheException) error;
-                throw CacheExceptionFactory.exceptionOf(ce.getRc(), ce.getMessage());
-            }
-            /*
-             * Some components setting correct error code, but
-             * return a string as a error object. Factroy will
-             * try to convert them into an correcponding exception as well.
-             */
-            throw CacheExceptionFactory.exceptionOf(reply.getReturnCode(),
-                                     String.format("Got error from %s: %s",
-                                                   path, error));
+            throw CacheExceptionFactory.exceptionOf(reply);
         }
 
         return reply;
