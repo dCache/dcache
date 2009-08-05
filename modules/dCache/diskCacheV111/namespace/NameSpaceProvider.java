@@ -29,6 +29,7 @@ public interface NameSpaceProvider
 
     /**
      * set file metadata - size, permissions, Owner and group
+     * @param subject Subject of user who invoked this method.
      * @param pnfsId
      * @param metaData
      * @throws CacheException
@@ -37,6 +38,7 @@ public interface NameSpaceProvider
 
     /**
      * get file metadata - size, permissions, Owner and group
+     * @param subject Subject of user who invoked this method.
      * @param pnfsId
      * @return
      * @throws CacheException
@@ -46,6 +48,7 @@ public interface NameSpaceProvider
 
     /**
      * create file or directory for given path
+     * @param subject Subject of user who invoked this method.
      * @param path full path of new object
      * @param metaData initial values for object metadata, like owner, group, permissions mode
      * @param isDirectory create a directory if true
@@ -56,6 +59,7 @@ public interface NameSpaceProvider
 
     /**
      * remove file or directory associated with given pnfsid
+     * @param subject Subject of user who invoked this method.
      * @param pnfsId
      * @throws CacheException
      */
@@ -63,6 +67,7 @@ public interface NameSpaceProvider
 
     /**
      * remove file or directory
+     * @param subject Subject of user who invoked this method.
      * @param path
      * @throws CacheException
      */
@@ -84,6 +89,7 @@ public interface NameSpaceProvider
      * Adds new or replaces existing checksum value for the specific file and checksum type.
      * The type of the checksum is arbitrary integer that client of this interface must chose
      * and use consistently afterwards
+     * @param subject Subject of user who invoked this method.
      * @param type the type (or algorithm) of the checksum
      * @param value HEX presentation of the digest (checksum)
      * @param pnfsId file
@@ -93,6 +99,7 @@ public interface NameSpaceProvider
     /**
      * Returns HEX presentation of the checksum value for the specific file and checksum type.
      * Returns null if value has not been set
+     * @param subject Subject of user who invoked this method.
      * @param type the type (or algorithm) of the checksum
      * @param pnfsId file
      */
@@ -100,6 +107,7 @@ public interface NameSpaceProvider
 
     /**
      * Clears checksum value storage for the specific file and checksum type.
+     * @param subject Subject of user who invoked this method.
      * @param type the type (or algorithm) of the checksum
      * @param pnfsId file
      */
@@ -116,6 +124,7 @@ public interface NameSpaceProvider
 
     /**
      * add a cache location for a file
+     * @param subject Subject of user who invoked this method.
      * @param pnfsId of the file
      * @param cacheLocation the new location
      * @throws CacheException
@@ -124,6 +133,7 @@ public interface NameSpaceProvider
 
     /**
      * get all cache location of the file
+     * @param subject Subject of user who invoked this method.
      * @param pnfsId of the file
      * @return list containing locations or empty list, if locations are unknown
      * @throws CacheException
@@ -132,6 +142,7 @@ public interface NameSpaceProvider
 
     /**
      * clear cache locations
+     * @param subject Subject of user who invoked this method.
      * @param pnfsId of the file
      * @param cacheLocation, "*" forces to remove all known locations
      * @param removeIfLast remove entry from namespace if last known location is removed
@@ -143,6 +154,7 @@ public interface NameSpaceProvider
      * Get files attributes defined by <code>attr</code>. It's allowed to return less
      * attributes than requested. Empty <code>attr</code> equals to file existence check.
      *
+     * @param subject Subject of user who invoked this method.
      * @param pnfsId of the file
      * @param attr array of requested attributes
      * @return
