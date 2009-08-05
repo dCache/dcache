@@ -244,6 +244,7 @@
         class="org.dcache.pool.migration.MigrationModuleServer">
     <description>Replica migration module backend</description>
     <property name="repository" ref="rep"/>
+    <property name="migrationModule" ref="migration"/>
     <property name="PPClient" ref="pp"/>    
   </bean>
 

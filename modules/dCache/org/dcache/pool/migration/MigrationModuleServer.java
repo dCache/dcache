@@ -51,6 +51,7 @@ public class MigrationModuleServer
     private Map<Request,Integer> _requests = new HashMap();
     private P2PClient _p2p;
     private Repository _repository;
+    private MigrationModule _migration;
 
     public void setPPClient(P2PClient p2p)
     {
@@ -62,6 +63,11 @@ public class MigrationModuleServer
         _repository = repository;
     }
 
+    public void setMigrationModule(MigrationModule migration)
+    {
+        _migration = migration;
+    }
+
     public Message messageArrived(PoolMigrationUpdateReplicaMessage message)
         throws CacheException
     {
@@ -70,6 +76,26 @@ public class MigrationModuleServer
         }
 
         PnfsId pnfsId = message.getPnfsId();
+
+        /* This check prevents updates that are indirectly triggered
+         * by a local migration task: In particular the case in which
+         * two pools each try to move the same files to each other
+         * would otherwise have a race condition that would cause
+         * files to be lost. This check prevents that any local
+         * migration task is active on this file at this time and
+         * hence the update request cannot be a result of a local
+         * migration task.
+         */
+        if (_migration.isActive(pnfsId)) {
+            /* We do not use LockedCacheException to maintain
+             * compatibility with pools that do not have that
+             * exception class yet. We can replace this with
+             * LockedCacheException in following major release.
+             */
+            throw new CacheException(CacheException.LOCKED,
+                                     "Target file is busy");
+        }
+
         EntryState targetState = message.getState();
         CacheEntry entry = _repository.getEntry(pnfsId);
         EntryState state = entry.getState();
