@@ -6,6 +6,7 @@
 %package org.dcache.pool.migration
 %access package
 %import diskCacheV111.vehicles.*
+%import static diskCacheV111.util.CacheException.*;
 
 %start TASK::Queued
 %map TASK
@@ -90,6 +91,12 @@ UpdatingExistingFile
                 Failed
                 {
                         fail("Remote pool failed (no route to cell)");
+                }
+        failure(rc: int, cause: Object)
+                [ rc == LOCKED ]
+                Failed
+                {
+                        fail("Replica is locked on target pool");
                 }
         failure(rc: int, cause: Object)
                 [ ctxt.hasMoreLocations() ]

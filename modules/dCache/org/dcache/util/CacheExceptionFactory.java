@@ -10,6 +10,8 @@ import diskCacheV111.util.FileNotOnlineCacheException;
 import diskCacheV111.util.MissingResourceCacheException;
 import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.NotFileCacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.LockedCacheException;
 import static diskCacheV111.util.CacheException.*;
 
 /**
@@ -47,7 +49,10 @@ public class CacheExceptionFactory {
                 return new NotFileCacheException(message);
             case RESOURCE:
                 return new MissingResourceCacheException(message);
-
+            case PERMISSION_DENIED:
+                return new PermissionDeniedCacheException(message);
+            case LOCKED:
+                return new LockedCacheException(message);
             /*
              * thoes do not have own exceptions
              */

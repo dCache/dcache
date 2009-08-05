@@ -377,6 +377,15 @@ public class Job
         return true;
     }
 
+    /**
+     * Returns true if and only if the job contains a running task for
+     * the given PNFS ID.
+     */
+    public synchronized boolean isRunning(PnfsId pnfsId)
+    {
+        return _running.containsKey(pnfsId);
+    }
+
     /** Adds a new task to the job. */
     private synchronized void add(CacheEntry entry)
     {
