@@ -113,6 +113,11 @@ public class CacheException extends Exception {
     public final static int FILE_NOT_ONLINE = 10019 ;
 
     /**
+     * Target object is locked or busy and the operation was denied.
+     */
+    public final static int LOCKED = 10020;
+
+    /**
      * default error code.
      * <b>It's recommended to use more specific error codes</b>
      */
