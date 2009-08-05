@@ -3,7 +3,7 @@ package org.dcache.vehicles;
 import diskCacheV111.vehicles.*;
 import diskCacheV111.util.PnfsId;
 import org.dcache.namespace.FileAttribute;
-import java.util.EnumSet;
+import java.util.Set;
 
 /**
  * Vehicle for get files combined attributes.
@@ -15,7 +15,7 @@ public class PnfsGetFileAttributes extends PnfsMessage {
     private static final long serialVersionUID = -6750531802534981651L;
 
     private FileAttributes _fileAttributes;
-    private EnumSet<FileAttribute> _attributes;
+    private Set<FileAttribute> _attributes;
 
     /**
      * Construct request by PnfsId.
@@ -23,7 +23,7 @@ public class PnfsGetFileAttributes extends PnfsMessage {
      * @param pnfsid
      * @param attr
      */
-    public PnfsGetFileAttributes(PnfsId pnfsid, EnumSet<FileAttribute> attr) {
+    public PnfsGetFileAttributes(PnfsId pnfsid, Set<FileAttribute> attr) {
         super(pnfsid);
         _attributes = attr;
     }
@@ -34,7 +34,7 @@ public class PnfsGetFileAttributes extends PnfsMessage {
      * @param path
      * @param attr
      */
-    public PnfsGetFileAttributes(String path, EnumSet<FileAttribute> attr) {
+    public PnfsGetFileAttributes(String path, Set<FileAttribute> attr) {
         super(path);
         _attributes = attr;
     }
@@ -58,11 +58,11 @@ public class PnfsGetFileAttributes extends PnfsMessage {
     }
 
     /**
-     * Get array of requested {@link FileAttributes}. Empty array indicates that
-     * client interested in file existence only.
+     * Get set of requested {@link FileAttributes}. An empty set
+     * indicates that client interested in file existence only.
      * @return
      */
-    public EnumSet<FileAttribute> getRequestedAttributes() {
+    public Set<FileAttribute> getRequestedAttributes() {
         return _attributes;
     }
 }

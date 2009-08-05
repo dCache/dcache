@@ -29,9 +29,9 @@ public class FileAttributes implements Serializable {
     private static final long serialVersionUID = -3689129805631724432L;
 
     /**
-     * array of provided attribute types
+     * Set of attributes which have been set.
      */
-    private EnumSet<FileAttribute> _definedAttributes =
+    private Set<FileAttribute> _definedAttributes =
         EnumSet.noneOf(FileAttribute.class);
 
     /**
@@ -99,10 +99,11 @@ public class FileAttributes implements Serializable {
     }
 
     /**
-     * Get list of available attribute. The array may have zero or more entries.
-     * @return array of defined attribute.
+     * Get the set of available attributes. The set may have zero or
+     * more entries.
+     * @return set of defined attribute.
      */
-    public EnumSet<FileAttribute> getDefinedAttributes() {
+    public Set<FileAttribute> getDefinedAttributes() {
         return _definedAttributes;
     }
 
