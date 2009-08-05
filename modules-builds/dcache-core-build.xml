@@ -14,14 +14,36 @@
     <property name="dcache.jar" location="${classesDir}/dcache.jar" />
     <property name="xrootd-tokenauthz.jar" location="${classesDir}/xrootd-tokenauthz.jar" />
 
+	<target name="-isUptodate.dcache.jar" depends="-isUptodate.dcache.jar-classes,-isUptodate.dcache.jar-confs">
+		<condition property="dcache.jar.upToDate">
+			<and>
+				<isset property="dcache.jar.upToDate-classes" />
+				<isset property="dcache.jar.upToDate-confs" />
+			</and>
+		</condition>
+	</target>
 
-    <target name="-isUptodate.dcache.jar">
-        <condition property="dcache.jar.upToDate">
+    <target name="-isUptodate.dcache.jar-classes">
+        <condition property="dcache.jar.upToDate-classes">
             <and>
                 <available file="${dcache.jar}" type="file" />
                 <uptodate targetfile="${dcache.jar}">
                     <srcfiles dir="${dcache.src}">
                         <include name="**/*.java" />
+                    </srcfiles>
+                </uptodate>
+            </and>
+        </condition>
+    </target>
+
+	<target name="-isUptodate.dcache.jar-confs">
+        <condition property="dcache.jar.upToDate-confs">
+            <and>
+                <available file="${dcache.jar}" type="file" />
+                <uptodate targetfile="${dcache.jar}">
+                    <srcfiles dir="${dcache.src}">
+                        <include name="**/*.xml" />
+                        <include name="**/*.jdo" />
                     </srcfiles>
                 </uptodate>
             </and>
@@ -178,7 +200,7 @@
         compile dcache code
     -->
 
-    <target name="-dcache.compile" depends="-prepare,-dcache.smc,-dcache.depend" unless="dcache.jar.upToDate">
+    <target name="-dcache.compile" depends="-prepare,-dcache.smc,-dcache.depend" unless="dcache.jar.upToDate-classes">
 
         <mkdir dir="${dcache.build.dir}" />
 
