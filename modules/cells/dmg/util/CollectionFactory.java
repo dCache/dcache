@@ -12,6 +12,8 @@ import java.util.TreeSet;
 import java.util.ArrayList;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Utility class containing static factory methods for common Java
@@ -71,5 +73,10 @@ public class CollectionFactory
     public static <V> List<V> newCopyOnWriteArrayList()
     {
         return new CopyOnWriteArrayList<V>();
+    }
+
+    public static <V> BlockingQueue<V> newLinkedBlockingQueue()
+    {
+        return new LinkedBlockingQueue<V>();
     }
 }
