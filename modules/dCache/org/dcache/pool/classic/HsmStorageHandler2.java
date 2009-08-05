@@ -75,7 +75,6 @@ public class HsmStorageHandler2
     private final Map<PnfsId, FetchThread> _restorePnfsidList = new HashMap();
     private final JobScheduler _fetchQueue;
     private final JobScheduler _storeQueue;
-    private final boolean _checkPnfs = true;
     private final Executor _hsmRemoveExecutor =
         Executors.newSingleThreadExecutor();
     private final ThreadPoolExecutor _hsmRemoveTaskExecutor =
@@ -909,15 +908,31 @@ public class HsmStorageHandler2
 
                 _log.debug("Store thread started " + _thread);
 
-                if (_checkPnfs) {
-                    _log.debug("Getting storageinfo");
-                    try {
-                        _pnfs.getStorageInfo(pnfsId.toString());
-                    } catch (CacheException e) {
-                        throw new CacheException("Cannot verify that file still exists:" + e.getMessage());
-                    }
-                }
+                /* Check if name space entry still exists. If the name
+                 * space entry was deleted, then we delete the file on
+                 * the pool right away.
+                 */
+                try {
+                    _log.debug("Checking if file still exists");
+                    _pnfs.getFileMetaDataById(pnfsId);
+                } catch (CacheException e) {
+                    switch (e.getRc()) {
+                    case CacheException.FILE_NOT_FOUND:
+                        try {
+                            _repository.setState(pnfsId, EntryState.REMOVED);
+                            _log.info("File not found in name space; removed " + pnfsId);
+                        } catch (IllegalTransitionException f) {
+                            _log.error("File not found in name space, but failed to remove "
+                                       + pnfsId + ": " + f);
+                        }
+                        break;
 
+                    case CacheException.NOT_IN_TRASH:
+                        _log.warn("File no longer appears in the name space; the pool can however not confirm that it has been deleted and will thus not remove the file");
+                        break;
+                    }
+                    throw e;
+                }
 
                 StorageInfo storageInfo;
                 ReadHandle handle = _repository.openEntry(pnfsId);
@@ -1023,15 +1038,23 @@ public class HsmStorageHandler2
 
                 notifyFlushMessageTarget(storageInfo);
 
+                _log.info("File successfully stored to tape");
+
                 _repository.setState(pnfsId, EntryState.CACHED);
             } catch (IllegalTransitionException e) {
                 /* Apparently the file is no longer precious. Most
                  * likely it got deleted, which is fine, since the
                  * flush already succeeded.
                  */
+            } catch (FileNotInCacheException e) {
+                /* File was deleted before we could flush it. No harm
+                 * done.
+                 */
+                _infoMsg.setResult(e.getRc(),
+                                   "Flush aborted because file was deleted");
             } catch (CacheException e) {
                 excep = e;
-                _log.error("CacheException : " + e);
+                _log.error("Error while flushing to tape: " + e);
                 _infoMsg.setResult(e.getRc(), e.getMessage());
             } catch (InterruptedException e) {
                 excep = e;
@@ -1056,12 +1079,8 @@ public class HsmStorageHandler2
             } finally {
                 removeStoreEntry(pnfsId);
                 _infoMsg.setTransferTime(System.currentTimeMillis() - _timestamp);
-
                 sendBillingInfo();
-
                 executeCallbacks(excep);
-
-                _log.info("File successfully stored to tape");
             }
         }
 
