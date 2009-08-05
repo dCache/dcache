@@ -17,6 +17,8 @@ import java.io.PrintWriter;
 
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheFileAvailable;
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.StorageInfo;
 
@@ -163,6 +165,8 @@ public class MigrationModule
         String pnfsid = args.getOpt("pnfsid");
         String accessed = args.getOpt("accessed");
         String size = args.getOpt("size");
+        String al = args.getOpt("al");
+        String rp = args.getOpt("rp");
 
         List<CacheEntryFilter> filters = new ArrayList();
 
@@ -204,6 +208,14 @@ public class MigrationModule
 
         if (accessed != null) {
             filters.add(new AccessedFilter(Interval.parseInterval(accessed)));
+        }
+
+        if (al != null) {
+            filters.add(new AccessLatencyFilter(AccessLatency.getAccessLatency(al)));
+        }
+
+        if (rp != null) {
+            filters.add(new RetentionPolicyFilter(RetentionPolicy.getRetentionPolicy(rp)));
         }
 
         return filters;
@@ -473,6 +485,10 @@ public class MigrationModule
         "  -size=<n>|[<n>]..[<m>]\n"+
         "          Only copy replicas with size n, or a size within the\n" +
         "          given, possibly open-ended, interval.\n" +
+        "  -al=ONLINE|NEARLINE\n" +
+        "          Only copy replicas with the given access latency.\n" +
+        "  -rp=CUSTODIAL|REPLICA|OUTPUT\n" +
+        "          Only copy replicas with the given retention policy.\n" +
         "  -smode=same|cached|precious|removable|delete[+<owner>[(<lifetime>)] ...]\n" +
         "          Update the local replica to the given mode after transfer:\n" +
         "          same:\n" +
