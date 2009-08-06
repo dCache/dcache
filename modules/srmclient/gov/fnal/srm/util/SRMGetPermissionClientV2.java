@@ -178,16 +178,29 @@ public class SRMGetPermissionClientV2 extends SRMClient {
 			TPermissionReturn pr = permissionarray[i];
 			txt.append("# owner : "+pr.getOwner()+"\n");
 			txt.append("owner:"+pr.getOwner()+":"+pr.getOwnerPermission().toString()+"\n");
-			for (int j=0; j<pr.getArrayOfUserPermissions().getUserPermissionArray().length; j++) { 
-				TUserPermission upr = pr.getArrayOfUserPermissions().getUserPermissionArray(i);
-				txt.append("user:"+upr.getUserID()+":"+upr.getMode().toString()+"\n");
-			}
-			for (int j=0; j<pr.getArrayOfGroupPermissions().getGroupPermissionArray().length; j++) { 
-				TGroupPermission upr = pr.getArrayOfGroupPermissions().getGroupPermissionArray(i);
-				txt.append("group:"+upr.getGroupID()+":"+upr.getMode().toString()+"\n");
+                        ArrayOfTUserPermission arrayOfUserPermissions = pr.getArrayOfUserPermissions();
+                        if (arrayOfUserPermissions!=null) {
+                                TUserPermission[] userPermissionArray = arrayOfUserPermissions.getUserPermissionArray();
+                                if (userPermissionArray!=null) {
+                                        for (TUserPermission upr : userPermissionArray) { 
+                                                if (upr!=null) {
+                                                        txt.append("user:"+upr.getUserID()+":"+upr.getMode().toString()+"\n");
+                                                }
+                                        }
+                                }
+                        }
+                        ArrayOfTGroupPermission arrayOfGroupPermissions = pr.getArrayOfGroupPermissions();
+                        if (arrayOfGroupPermissions!=null) {
+                                TGroupPermission[] groupPermissionArray = arrayOfGroupPermissions.getGroupPermissionArray();
+                                if (groupPermissionArray!=null) {
+                                        for (TGroupPermission upr: groupPermissionArray) { 
+                                                if (upr!=null) {
+                                                        txt.append("group:"+upr.getGroupID()+":"+upr.getMode().toString()+"\n");
+                                                }
+                                        }
+                                }
 			}
 			txt.append("other:"+pr.getOtherPermission().toString()+"\n");
-			
 		}
 		System.out.println(txt.toString());
 		if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {  
