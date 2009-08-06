@@ -150,6 +150,7 @@ import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileNotOnlineCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FileMetaData;
@@ -176,6 +177,7 @@ import org.dcache.acl.enums.AccessType;
 import org.dcache.acl.enums.AuthType;
 import org.dcache.acl.enums.FileAttribute;
 import org.dcache.acl.enums.InetAddressType;
+import org.dcache.util.Glob;
 
 import dmg.cells.nucleus.CDC;
 
@@ -3842,10 +3844,8 @@ public abstract class AbstractFtpDoorV1
          * to convert it to regular expression pattern,
          * we substitute ? with . and * with .*
          */
-        FilenameMatcher(String pattern) {
-            pattern = pattern.replaceAll("\\?", ".");
-            pattern = pattern.replaceAll("\\*",".*");
-            _toMatch = Pattern.compile(pattern);
+        FilenameMatcher(Glob glob) {
+            _toMatch = glob.toPattern();
         }
 
         public boolean accept(File dir,
@@ -3854,57 +3854,6 @@ public abstract class AbstractFtpDoorV1
 
             return m.matches();
         }
-    }
-
-    private String ftpListLong(File file, Subject subject)
-        throws ACLException, CacheException
-    {
-        StringBuilder mode = new StringBuilder();
-        String path = file.getAbsolutePath();
-        //PnfsId pnfsId = _pnfs.getPnfsIdByPath(path);
-
-        if (file.isDirectory()) {
-            long startTimeDir = System.currentTimeMillis(); //TIMING
-            boolean canListDir =
-                _permissionHandler.canListDir(path, subject, _origin) == AccessType.ACCESS_ALLOWED;
-            boolean canCreateFile =
-                _permissionHandler.canCreateFile(path, subject, _origin) == AccessType.ACCESS_ALLOWED;
-            boolean canCreateDir =
-                _permissionHandler.canCreateDir(path, subject, _origin) == AccessType.ACCESS_ALLOWED;
-            debug("TIMING startTimeDir: (canListDir,canCreateFile, canCreateDir) done in (msec):"+(System.currentTimeMillis()-startTimeDir));//TIMING
-            mode.append('d');
-            mode.append(canListDir ? 'r' : '-');
-            mode.append(canCreateFile || canCreateDir ? 'w' : '-');
-            mode.append(canListDir ? 'x' : '-');
-            mode.append("------");
-        } else {
-            long startTimeFile = System.currentTimeMillis(); //TIMING
-            boolean canReadFile =
-                _permissionHandler.canReadFile(path, subject, _origin)== AccessType.ACCESS_ALLOWED;
-            debug("TIMING startTimeFile: (canReadFile) done in (msec):"+(System.currentTimeMillis() - startTimeFile)); //TIMING
-            mode.append('-');
-            mode.append(canReadFile ? 'r' : '-');
-            mode.append('-');
-            mode.append('-');
-            mode.append("------");
-        }
-
-        long modified = file.lastModified();
-        long age = System.currentTimeMillis() - modified;
-        String format;
-        if (age > (182L * 24 * 60 * 60 * 1000)) {
-            format = "%1$s  1 %2$-10s %3$-10s %4$12d %5$tb %5$2te %5$5tY %6$s";
-        } else {
-            format = "%1$s  1 %2$-10s %3$-10s %4$12d %5$tb %5$2te %5$5tR %6$s";
-        }
-
-        return String.format(format,
-                             mode,
-                             _pwdRecord.Username,
-                             _pwdRecord.Username,
-                             file.length(),
-                             modified,
-                             file.getName());
     }
 
     private void openDataSocket()
@@ -3953,60 +3902,16 @@ public abstract class AbstractFtpDoorV1
             arg = args.argv(0);
         }
 
-        boolean isPattern = arg.indexOf('*') != -1 || arg.indexOf('?') != -1 ||
-            (arg.indexOf('[') != -1 && arg.indexOf(']') != -1);
-
-        File f;
-        FilenameMatcher filenameMatcher;
-        if (isPattern) {
-            // Convert relative paths to full paths relative to base path
-            if (!arg.startsWith("/")) {
-                arg = _curDirV + "/" + arg;
-            }
-
-            FsPath parent_path = new FsPath(arg);
-            List<String> l = parent_path.getPathItemsList();
-            String pattern = l.get(l.size() - 1);
-            parent_path.add("..");
-            String parent = parent_path.toString();
-            if (parent.indexOf('*') != -1 || parent.indexOf('?') != -1 ||
-                (parent.indexOf('[') != -1 && parent.indexOf(']') != -1)) {
-                reply("504 Parent Path Pattern Matching is not supported");
-                return;
-            }
-            String absolute_parent_path = absolutePath(parent_path.toString());
-            if (absolute_parent_path == null) {
-                FsPath relativeToRootPath = new FsPath(_curDirV);
-                relativeToRootPath.add(parent_path.toString());
-                reply("550 " + relativeToRootPath + " not found.");
-                return;
-            }
-            f = new File(absolute_parent_path);
-            if (!f.isDirectory()) {
-                reply("550 Not a directory");
-                return;
-            }
-
-            filenameMatcher = new FilenameMatcher(pattern);
-        } else {
-            String absolutepath = absolutePath(arg);
-            if (absolutepath == null) {
-                FsPath relativeToRootPath = new FsPath(_curDirV);
-                relativeToRootPath.add(arg);
-                reply("550 " + relativeToRootPath + " not found.");
-                return;
-            }
-            f = new File(absolutepath);
-            filenameMatcher = null;
+        String absolutepath = absolutePath(arg);
+        if (absolutepath == null) {
+            FsPath relativeToRootPath = new FsPath(_curDirV);
+            relativeToRootPath.add(arg);
+            reply("550 " + relativeToRootPath + " not found.");
+            return;
         }
-
+        File f = new File(absolutepath);
 
         try {
-            PnfsFile pnfsFile = new PnfsFile(f.toString());
-            if (!pnfsFile.exists() || !pnfsFile.isPnfs()) {
-                reply("550 File not found");
-                return;
-            }
 
             reply("150 Opening ASCII data connection for file list", false);
             try {
@@ -4016,46 +3921,46 @@ public abstract class AbstractFtpDoorV1
                 return;
             }
 
-            File files[];
+            int total;
             try {
                 PrintWriter writer =
                     new PrintWriter(new OutputStreamWriter(new BufferedOutputStream(_dataSocket.getOutputStream()), "US-ASCII"));
 
-                boolean isDirectory = f.isDirectory();
-                if (filenameMatcher != null) {
-                    files = f.listFiles(filenameMatcher);
-                } else if (isDirectory) {
-                    files = f.listFiles();
-                } else {
-                    files = new File[] { f };
+                ListPrinter printer =
+                    listLong
+                    ? new LongListPrinter(writer)
+                    : new ShortListPrinter(writer);
+
+                try {
+                    total = printDirectory(printer, f, null);
+                } catch (NotDirCacheException e) {
+                    /* f exists, but it is not a directory.
+                     */
+                    printFile(printer, f);
+                    total = 1;
+                } catch (FileNotFoundCacheException e) {
+                    /* If f does not exist, then it could be a
+                     * pattern; we move up one directory level and
+                     * repeat the list.
+                     */
+                    total = printDirectory(printer, f.getParentFile(),
+                                           new Glob(f.getName()));
                 }
 
-                if (files == null) {
-                    throw new IOException("I/O failure listing directory");
-                }
-
-                if (listLong){
-                    long startTime = System.currentTimeMillis(); //TIMING
-                    Subject subject = getSubject();
-                    for (File file: files) {
-                        writer.append(ftpListLong(file, subject));
-                        writer.append("\r\n");
-                    }
-                    debug("TIMING: complete LIST done in (msec): " + (System.currentTimeMillis() - startTime)); //TIMING
-                    debug("TIMING: objects (files, dirs) listed: " + files.length); //TIMING
-                } else {
-                    for (File file: files) {
-                        writer.append(file.getName()).append("\r\n");
-                    }
-                }
                 writer.close();
             } finally {
                 closeDataSocket();
             }
-            reply("226 " + files.length + " files");
+            reply("226 " + total + " files");
+        } catch (InterruptedException e) {
+            reply("451 Operation cancelled");
         } catch (ACLException e) {
             reply("451 Internal permission check failure: " + e);
             warn("Error in LIST: " + e.getMessage());
+        } catch (FileNotFoundCacheException e) {
+            reply("550 File not found");
+        } catch (NotDirCacheException e) {
+            reply("550 Not a directory");
         } catch (CacheException e){
             reply("451 Local error in processing");
             warn("Error in LIST: " + e.getMessage());
@@ -4083,11 +3988,6 @@ public abstract class AbstractFtpDoorV1
                 reply("550 Access denied");
                 return;
             }
-            PnfsFile dir = new PnfsFile(path);
-            if (!dir.isPnfs() || !dir.isDirectory()) {
-                reply("550 Directory not found");
-                return;
-            }
 
             reply("150 Opening ASCII data connection for file list", false);
             try {
@@ -4097,22 +3997,27 @@ public abstract class AbstractFtpDoorV1
                 return;
             }
 
-            File[] files;
+            int total;
             try {
                 PrintWriter writer =
                     new PrintWriter(new OutputStreamWriter(new BufferedOutputStream(_dataSocket.getOutputStream()), "US-ASCII"));
 
-                files = dir.listFiles();
-                if (files != null) {
-                    for (File file: files) {
-                        writer.append(file.getName()).append("\r\n");
-                    }
-                }
+                total = printDirectory(new ShortListPrinter(writer),
+                                       new File(path), null);
                 writer.close();
             } finally {
                 closeDataSocket();
             }
-            reply("226 " + files.length + " files");
+            reply("226 " + total + " files");
+        } catch (ACLException e) {
+            reply("451 Internal permission check failure: " + e);
+            warn("Error in LIST: " + e.getMessage());
+        } catch (InterruptedException e) {
+            reply("451 Operation cancelled");
+        } catch (FileNotFoundCacheException e) {
+            reply("550 Directory not found");
+        } catch (NotDirCacheException e) {
+            reply("550 Directory not found");
         } catch (CacheException e) {
             reply("451 Local error in processing");
             warn("Error in NLST: " + e.getMessage());
@@ -4122,132 +4027,6 @@ public abstract class AbstractFtpDoorV1
             reply("451 Local error in processing");
             warn("Error in NLST: " + e.getMessage());
         }
-    }
-
-    /** Writes an RFC 3659 fact to a writer. */
-    private void printFact(PrintWriter writer, Fact fact, Object value)
-    {
-        writer.print(fact);
-        writer.print('=');
-        writer.print(value);
-        writer.print(';');
-    }
-
-    /** Writes a RFC 3659 modify fact to a writer. */
-    private void printModifyFact(PrintWriter writer, FileMetaData meta)
-    {
-        long time = meta.getLastModifiedTime();
-        printFact(writer, Fact.MODIFY, TIMESTAMP_FORMAT.format(new Date(time)));
-    }
-
-    /** Writes a RFC 3659 size fact to a writer. */
-    private void printSizeFact(PrintWriter writer, FileMetaData meta)
-    {
-        printFact(writer, Fact.SIZE, meta.getFileSize());
-    }
-
-    /** Writes a RFC 3659 type fact to a writer. */
-    private void printTypeFact(PrintWriter writer, FileMetaData meta)
-    {
-        if (meta.isDirectory()) {
-            printFact(writer, Fact.TYPE, "dir");
-        } else if (meta.isRegularFile()) {
-            printFact(writer, Fact.TYPE, "file");
-        }
-    }
-
-    /**
-     * Writes a RFC 3659 unique fact to a writer. The value of the
-     * unique fact is the PNFS ID.
-     */
-    private void printUniqueFact(PrintWriter writer, PnfsId id)
-    {
-        printFact(writer, Fact.UNIQUE, id);
-    }
-
-    /**
-     * Writes a RFC 3659 perm fact to a writer. This operation is
-     * rather expensive as the permission information must be
-     * retrieved.
-     */
-    private void printPermFact(PrintWriter writer, String path, FileMetaData meta)
-        throws CacheException, ACLException
-    {
-        Subject subject = getSubject();
-        StringBuffer s = new StringBuffer();
-        if (meta.isDirectory()) {
-            if (_permissionHandler.canCreateFile(path, subject, _origin) == AccessType.ACCESS_ALLOWED) {
-                s.append('c');
-            }
-            if (_permissionHandler.canDeleteDir(path, subject, _origin) == AccessType.ACCESS_ALLOWED) {
-                s.append('d');
-            }
-            s.append('e');
-            if (_permissionHandler.canListDir(path, subject, _origin) == AccessType.ACCESS_ALLOWED) {
-                s.append('l');
-            }
-            if (_permissionHandler.canCreateDir(path, subject, _origin) == AccessType.ACCESS_ALLOWED) {
-                s.append('m');
-            }
-        } else {
-            if (_permissionHandler.canDeleteFile(path, subject, _origin) == AccessType.ACCESS_ALLOWED) {
-                s.append('d');
-            }
-            if (_permissionHandler.canReadFile(path, subject, _origin) == AccessType.ACCESS_ALLOWED) {
-                s.append('r');
-            }
-        }
-        printFact(writer, Fact.PERM, s);
-    }
-
-    /**
-     * Writes a RFC 3659 fact line to a writer.
-     *
-     * @param writer the writer to which to write the facts
-     * @param path the fully qualified path
-     * @param filename the string written after the fact list
-     */
-    private void printFacts(PrintWriter writer, String path, String filename)
-        throws CacheException, ACLException
-    {
-        if (!_currentFacts.isEmpty()) {
-            PnfsGetFileMetaDataMessage msg = _pnfs.getFileMetaDataByPath(path);
-            PnfsId id = msg.getPnfsId();
-            FileMetaData meta = msg.getMetaData();
-
-            AccessType access =
-                _permissionHandler.canGetAttributes(id,
-                                                    getSubject(),
-                                                    _origin,
-                                                    FileAttribute.FATTR4_SUPPORTED_ATTRS);
-
-            for (Fact fact: _currentFacts) {
-                switch (fact) {
-                case SIZE:
-                    if (access == AccessType.ACCESS_ALLOWED) {
-                        printSizeFact(writer, meta);
-                    }
-                    break;
-                case MODIFY:
-                    if (access == AccessType.ACCESS_ALLOWED) {
-                        printModifyFact(writer, meta);
-                    }
-                    break;
-                case TYPE:
-                    printTypeFact(writer, meta);
-                    break;
-                case UNIQUE:
-                    printUniqueFact(writer, id);
-                    break;
-                case PERM:
-                    printPermFact(writer, path, meta);
-                    break;
-                }
-            }
-        }
-        writer.print(' ');
-        writer.print(filename);
-        writer.print("\r\n");
     }
 
     public void ac_mlst(String arg)
@@ -4275,11 +4054,17 @@ public abstract class AbstractFtpDoorV1
         try {
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
+            File f = new File(path);
             pw.println("250- Listing " + arg + "\r\n");
             pw.print(' ');
-            printFacts(pw, path, tvfsPath.toString());
+            printFile(new FactPrinter(pw), f);
             pw.print("250 End");
             reply(sw.toString());
+        } catch (InterruptedException e) {
+            reply("451 Operation cancelled");
+        } catch (IOException e) {
+            reply("451 Local error in processing");
+            warn("Error in MLST: " + e.getMessage());
         } catch (ACLException e) {
             reply("451 Internal permission check failure: " + e);
             warn("Error in MLST: " + e.getMessage());
@@ -4309,12 +4094,6 @@ public abstract class AbstractFtpDoorV1
                 return;
             }
 
-            PnfsFile pnfsFile = new PnfsFile(path);
-            if (!pnfsFile.isPnfs() || !pnfsFile.isDirectory()) {
-                reply("501 Directory not found");
-                return;
-            }
-
             reply("150 Openening ASCII mode data connection for MLSD", false);
             try {
                 openDataSocket();
@@ -4323,26 +4102,27 @@ public abstract class AbstractFtpDoorV1
                 return;
             }
 
-            File[] files;
+            int total;
             try {
                 PrintWriter writer =
                     new PrintWriter(new OutputStreamWriter(new BufferedOutputStream(_dataSocket.getOutputStream()), "UTF-8"));
 
-                File dir = new File(path);
-                files = dir.listFiles();
-                if (files != null) {
-                    for (File file: files) {
-                        printFacts(writer, file.getPath(), file.getName());
-                    }
-                }
+                total = printDirectory(new FactPrinter(writer),
+                                       new File(path), null);
                 writer.close();
             } finally {
                 closeDataSocket();
             }
-            reply("226 MLSD completed for " + files.length + " files");
+            reply("226 MLSD completed for " + total + " files");
+        } catch (InterruptedException e) {
+            reply("451 Operation cancelled");
         } catch (ACLException e) {
             reply("451 Internal permission check failure: " + e);
             warn("Error in MLSD: " + e.getMessage());
+        } catch (FileNotFoundCacheException e) {
+            reply("501 Directory not found");
+        } catch (NotDirCacheException e) {
+            reply("501 Directory not found");
         } catch (CacheException e) {
             reply("451 Local error in processing");
             warn("Error in MLSD: " + e.getMessage());
@@ -5020,4 +4800,266 @@ public abstract class AbstractFtpDoorV1
                         "billing database: " + e.getMessage());
             }
      }
+
+    private void printFile(ListPrinter printer, File path)
+        throws ACLException, CacheException, IOException, InterruptedException
+    {
+        PnfsFile pnfsFile = new PnfsFile(path.toString());
+        if (!pnfsFile.exists() || !pnfsFile.isPnfs()) {
+            throw new FileNotFoundCacheException("No such file: " + path);
+        }
+
+        printer.print(path);
+    }
+
+    private int printDirectory(ListPrinter printer, File path, Glob glob)
+        throws ACLException, CacheException, IOException, InterruptedException
+    {
+        PnfsFile pnfsFile = new PnfsFile(path.toString());
+        if (!pnfsFile.exists() || !pnfsFile.isPnfs()) {
+            throw new FileNotFoundCacheException("No such file: " + path);
+        }
+
+        if (!pnfsFile.isDirectory()) {
+            throw new NotDirCacheException("No such file: " + path);
+        }
+
+        File[] files;
+        if (glob != null) {
+            files = path.listFiles(new FilenameMatcher(glob));
+        } else {
+            files = path.listFiles();
+        }
+
+        int total = 0;
+        for (File file: files) {
+            try {
+                printer.print(file);
+                total++;
+            } catch (FileNotFoundCacheException e) {
+                /* File was probably deleted during
+                 * listing; not an error.
+                 */
+            }
+        }
+        return total;
+    }
+
+    /** Encapsulates the output format of the LIST command. */
+    interface ListPrinter
+    {
+        void print(File file)
+            throws ACLException, CacheException;
+    }
+
+    /** A short format which only include the file name. */
+    static class ShortListPrinter implements ListPrinter
+    {
+        private final PrintWriter _out;
+
+        public ShortListPrinter(PrintWriter writer)
+        {
+            _out = writer;
+        }
+
+        public void print(File file)
+        {
+            _out.append(file.getName()).append("\r\n");
+        }
+    }
+
+    /** A long format corresponding to the 'normal' FTP list format. */
+    class LongListPrinter implements ListPrinter
+    {
+        private final Subject _subject;
+        private final PrintWriter _out;
+
+        public LongListPrinter(PrintWriter writer)
+        {
+            _out = writer;
+            _subject = getSubject();
+        }
+
+        public void print(File file)
+            throws ACLException, CacheException
+        {
+            StringBuilder mode = new StringBuilder();
+            String path = file.getPath();
+
+            if (file.isDirectory()) {
+                boolean canListDir =
+                    _permissionHandler.canListDir(path, _subject, _origin) == AccessType.ACCESS_ALLOWED;
+                boolean canCreateFile =
+                    _permissionHandler.canCreateFile(path, _subject, _origin) == AccessType.ACCESS_ALLOWED;
+                boolean canCreateDir =
+                    _permissionHandler.canCreateDir(path, _subject, _origin) == AccessType.ACCESS_ALLOWED;
+                mode.append('d');
+                mode.append(canListDir ? 'r' : '-');
+                mode.append(canCreateFile || canCreateDir ? 'w' : '-');
+                mode.append(canListDir ? 'x' : '-');
+                mode.append("------");
+            } else {
+                boolean canReadFile =
+                    _permissionHandler.canReadFile(path, _subject, _origin)== AccessType.ACCESS_ALLOWED;
+                mode.append('-');
+                mode.append(canReadFile ? 'r' : '-');
+                mode.append('-');
+                mode.append('-');
+                mode.append("------");
+            }
+
+            long modified = file.lastModified();
+            long age = System.currentTimeMillis() - modified;
+            String format;
+            if (age > (182L * 24 * 60 * 60 * 1000)) {
+                format = "%1$s  1 %2$-10s %3$-10s %4$12d %5$tb %5$2te %5$5tY %6$s";
+            } else {
+                format = "%1$s  1 %2$-10s %3$-10s %4$12d %5$tb %5$2te %5$5tR %6$s";
+            }
+
+            _out.format(format,
+                        mode,
+                        _pwdRecord.Username,
+                        _pwdRecord.Username,
+                        file.length(),
+                        modified,
+                        file.getName());
+            _out.append("\r\n");
+        }
+    }
+
+    /**
+     * ListPrinter using the RFC 3659 fact line format.
+     */
+    private class FactPrinter implements ListPrinter
+    {
+        private final PrintWriter _out;
+        private final Subject _subject;
+
+        public FactPrinter(PrintWriter writer)
+        {
+            _out = writer;
+            _subject = getSubject();
+        }
+
+        public void print(File file)
+            throws ACLException, CacheException
+        {
+            if (!_currentFacts.isEmpty()) {
+                String path = file.toString();
+                PnfsGetFileMetaDataMessage msg =
+                    _pnfs.getFileMetaDataByPath(path);
+                PnfsId id = msg.getPnfsId();
+                FileMetaData meta = msg.getMetaData();
+
+                AccessType access =
+                    _permissionHandler.canGetAttributes(id,
+                                                        _subject,
+                                                        _origin,
+                                                        FileAttribute.FATTR4_SUPPORTED_ATTRS);
+
+                for (Fact fact: _currentFacts) {
+                    switch (fact) {
+                    case SIZE:
+                        if (access == AccessType.ACCESS_ALLOWED) {
+                            printSizeFact(meta);
+                        }
+                        break;
+                    case MODIFY:
+                        if (access == AccessType.ACCESS_ALLOWED) {
+                            printModifyFact(meta);
+                        }
+                        break;
+                    case TYPE:
+                        printTypeFact(meta);
+                        break;
+                    case UNIQUE:
+                        printUniqueFact(id);
+                        break;
+                    case PERM:
+                        printPermFact(path, meta);
+                        break;
+                    }
+                }
+            }
+            _out.print(' ');
+            _out.print(file.getName());
+            _out.print("\r\n");
+        }
+
+        /** Writes an RFC 3659 fact to a writer. */
+        private void printFact(Fact fact, Object value)
+        {
+            _out.print(fact);
+            _out.print('=');
+            _out.print(value);
+            _out.print(';');
+        }
+
+        /** Writes a RFC 3659 modify fact to a writer. */
+        private void printModifyFact(FileMetaData meta)
+        {
+            long time = meta.getLastModifiedTime();
+            printFact(Fact.MODIFY, TIMESTAMP_FORMAT.format(new Date(time)));
+        }
+
+        /** Writes a RFC 3659 size fact to a writer. */
+        private void printSizeFact(FileMetaData meta)
+        {
+            printFact(Fact.SIZE, meta.getFileSize());
+        }
+
+        /** Writes a RFC 3659 type fact to a writer. */
+        private void printTypeFact(FileMetaData meta)
+        {
+            if (meta.isDirectory()) {
+                printFact(Fact.TYPE, "dir");
+            } else if (meta.isRegularFile()) {
+                printFact(Fact.TYPE, "file");
+            }
+        }
+
+        /**
+         * Writes a RFC 3659 unique fact to a writer. The value of the
+         * unique fact is the PNFS ID.
+         */
+        private void printUniqueFact(PnfsId id)
+        {
+            printFact(Fact.UNIQUE, id);
+        }
+
+        /**
+         * Writes a RFC 3659 perm fact to a writer. This operation is
+         * rather expensive as the permission information must be
+         * retrieved.
+         */
+        private void printPermFact(String path, FileMetaData meta)
+            throws CacheException, ACLException
+        {
+            StringBuffer s = new StringBuffer();
+            if (meta.isDirectory()) {
+                if (_permissionHandler.canCreateFile(path, _subject, _origin) == AccessType.ACCESS_ALLOWED) {
+                    s.append('c');
+                }
+                if (_permissionHandler.canDeleteDir(path, _subject, _origin) == AccessType.ACCESS_ALLOWED) {
+                    s.append('d');
+                }
+                s.append('e');
+                if (_permissionHandler.canListDir(path, _subject, _origin) == AccessType.ACCESS_ALLOWED) {
+                    s.append('l');
+                }
+                if (_permissionHandler.canCreateDir(path, _subject, _origin) == AccessType.ACCESS_ALLOWED) {
+                    s.append('m');
+                }
+            } else {
+                if (_permissionHandler.canDeleteFile(path, _subject, _origin) == AccessType.ACCESS_ALLOWED) {
+                    s.append('d');
+                }
+                if (_permissionHandler.canReadFile(path, _subject, _origin) == AccessType.ACCESS_ALLOWED) {
+                    s.append('r');
+                }
+            }
+            printFact(Fact.PERM, s);
+        }
+    }
 }
