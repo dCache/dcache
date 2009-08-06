@@ -1,16 +1,27 @@
 package org.dcache.acl;
 
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 import org.dcache.acl.enums.AuthType;
+import java.security.Principal;
 
 /**
- * An object of type Origin contains information about the origin of a request.
+ * An object of type Origin contains information about the origin of a
+ * request.
+ *
+ * Principals such as this Origin may be associated with a particular
+ * Subject to augment that Subject with an additional identity. Refer
+ * to the Subject class for more information on how to achieve
+ * this. Authorization decisions can then be based upon the Principals
+ * associated with a Subject.
  *
  * @author David Melkumyan, DESY Zeuthen
  */
-public class Origin {
+public class Origin implements Principal, Serializable
+{
+    static final long serialVersionUID = -6791417439972410727L;
 
     private static final char SEPARATOR = ':';
 
@@ -79,5 +90,27 @@ public class Origin {
             sb.append(_authType.getAbbreviation());
         sb.append(SEPARATOR).append(_address);
         return sb.toString();
+    }
+
+    public boolean equals(Object o)
+    {
+        if (!(o instanceof Origin)) {
+            return false;
+        }
+
+        Origin other = (Origin) o;
+        return
+            other._authType == _authType &&
+            other._address.equals(_address);
+    }
+
+    public String getName()
+    {
+        return toString();
+    }
+
+    public int hashCode()
+    {
+        return _address.hashCode();
     }
 }

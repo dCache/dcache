@@ -7,6 +7,7 @@ import java.security.Principal;
 import com.sun.security.auth.UnixNumericUserPrincipal;
 import com.sun.security.auth.UnixNumericGroupPrincipal;
 import com.sun.security.auth.UserPrincipal;
+import org.dcache.acl.Origin;
 
 import org.globus.gsi.jaas.GlobusPrincipal;
 import org.glite.security.voms.FQAN;
@@ -122,6 +123,27 @@ public class Subjects
             }
         }
         throw new NoSuchElementException("Subject has no primary group");
+    }
+
+    /**
+     * Returns the origin of a subject. If no origin is defined, null
+     * is returned. If more than one origin is defined, then
+     * NoSuchElementException is thrown (the intuition being that
+     * there is no unique origin).
+     *
+     * @param NoSuchElementException if there is more than one origin
+     */
+    public static Origin getOrigin(Subject subject)
+        throws NoSuchElementException
+    {
+        Set<Origin> principals = subject.getPrincipals(Origin.class);
+        if (principals.size() == 0) {
+            return null;
+        }
+        if (principals.size() > 1) {
+            throw new NoSuchElementException("Subject has no unique origin");
+        }
+        return principals.iterator().next();
     }
 
     /**
