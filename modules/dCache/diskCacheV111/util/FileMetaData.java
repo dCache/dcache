@@ -256,6 +256,12 @@ public class FileMetaData implements Serializable {
         return _isRegular;
     }
 
+    /** Returns POSIX.1 file mode. */
+    public int getMode()
+    {
+        return _user._perm << 6 | _group._perm << 3 | _world._perm;
+    }
+
     public Permissions getUserPermissions() {
         return _user;
     }

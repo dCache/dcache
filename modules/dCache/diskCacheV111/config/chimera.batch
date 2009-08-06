@@ -36,6 +36,16 @@ set context -c pnfsNumberOfThreads 4
 set context -c DefaultAccessLatency ""
 set context -c DefaultRetentionPolicy ""
 
+#
+# Defaults for acl
+#
+set context -c aclEnabled    false
+set context -c aclTable      t_acl
+set context -c aclConnDriver org.postgresql.Driver
+set context -c aclConnUrl    jdbc:postgresql://localhost/chimera?prepareThreshold=3
+set context -c aclConnUser   postgres
+set context -c aclConnPswd   ""
+
 onerror shutdown
 #
 create diskCacheV111.namespace.PnfsManagerV3 PnfsManager \
@@ -47,6 +57,12 @@ create diskCacheV111.namespace.PnfsManagerV3 PnfsManager \
         -pnfs=${pnfs} \
         -DefaultAccessLatency=${DefaultAccessLatency} \
         -DefaultRetentionPolicy=${DefaultRetentionPolicy} \
+        -aclEnabled=${aclEnabled} \
+        -aclTable=${aclTable} \
+        -aclConnDriver=${aclConnDriver} \
+        -aclConnUrl=${aclConnUrl} \
+        -aclConnUser=${aclConnUser} \
+        -aclConnPswd=${aclConnPswd} \
         -chimeraConfig=${config}/chimera-config.xml \
         -namespace-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory \
         -cachelocation-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory \
@@ -82,14 +98,10 @@ create org.dcache.chimera.namespace.ChimeraCleaner cleaner \
 #
 onerror continue
 
-set context -c aclTable      t_acl
-set context -c aclConnDriver org.postgresql.Driver
-set context -c aclConnUrl    jdbc:postgresql://localhost/chimera?prepareThreshold=3
-set context -c aclConnUser   postgres
-set context -c aclConnPswd   ""
 #
 create org.dcache.acl.AclCell acladmin \
         "-export \
+         -aclEnabled=${aclEnabled} \
          -aclTable=${aclTable} \
          -aclConnDriver=${aclConnDriver} \
          -aclConnUrl=${aclConnUrl} \

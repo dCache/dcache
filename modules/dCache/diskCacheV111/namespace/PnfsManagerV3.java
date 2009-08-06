@@ -12,6 +12,7 @@ import  dmg.cells.nucleus.* ;
 import  dmg.util.* ;
 
 import org.dcache.util.PrefixMap;
+import org.dcache.acl.handler.singleton.AclHandler;
 
 import  java.io.* ;
 import  java.util.*;
@@ -236,6 +237,17 @@ public class PnfsManagerV3 extends CellAdapter {
                                 tmp.equals("enabled"))) {
                 _canFold = true;
             }
+
+            /* Initialize ACL.
+             */
+            Properties props = new Properties();
+            props.setProperty("aclEnabled", _args.getOpt("aclEnabled"));
+            props.setProperty("aclTable", _args.getOpt("aclTable"));
+            props.setProperty("aclConnDriver", _args.getOpt("aclConnDriver"));
+            props.setProperty("aclConnUrl", _args.getOpt("aclConnUrl"));
+            props.setProperty("aclConnUser", _args.getOpt("aclConnUser"));
+            props.setProperty("aclConnPswd", _args.getOpt("aclConnPswd"));
+            AclHandler.setAclConfig(props);
         } catch (Exception e){
             esay ("Exception occurred: "+e);
             start();

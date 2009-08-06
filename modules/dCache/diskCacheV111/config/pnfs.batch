@@ -53,6 +53,13 @@ set context -c pnfsDbUser        srmdcache
 set context -c pnfsDbPassword    srmdcache
 set context -c pnfsPasswordFile  ""
 set context -c pnfsFolding       false
+set context -c aclEnabled    false
+set context -c aclTable      t_acl
+set context -c aclConnDriver org.postgresql.Driver
+set context -c aclConnUrl    jdbc:postgresql://localhost/chimera?prepareThreshold=3
+set context -c aclConnUser   postgres
+set context -c aclConnPswd   ""
+
 set env -c locationThreads 0
 
 #
@@ -75,6 +82,12 @@ create diskCacheV111.namespace.PnfsManagerV3 PnfsManager \
         -threadGroups=${pnfsNumberOfThreadGroups} \
         -default=${defaultPnfsServer} \
         -pnfs=${pnfs} \
+        -aclEnabled=${aclEnabled} \
+        -aclTable=${aclTable} \
+        -aclConnDriver=${aclConnDriver} \
+        -aclConnUrl=${aclConnUrl} \
+        -aclConnUser=${aclConnUser} \
+        -aclConnPswd=${aclConnPswd} \
         -DefaultAccessLatency=${DefaultAccessLatency} \
         -DefaultRetentionPolicy=${DefaultRetentionPolicy} \
         -namespace-provider=${namespaceProvider} \
@@ -137,15 +150,10 @@ onerror shutdown
 # ACL-administration
 #
 onerror continue
-
-set context -c aclTable      t_acl
-set context -c aclConnDriver org.postgresql.Driver
-set context -c aclConnUrl    jdbc:postgresql://localhost/chimera?prepareThreshold=3
-set context -c aclConnUser   postgres
-set context -c aclConnPswd   ""
 #
 create org.dcache.acl.AclCell acladmin \
         "-export \
+         -aclEnabled=${aclEnabled} \
          -aclTable=${aclTable} \
          -aclConnDriver=${aclConnDriver} \
          -aclConnUrl=${aclConnUrl} \

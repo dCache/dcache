@@ -1279,7 +1279,9 @@ statisticsLocation=${ourHomeDir}/statistics
 #
 #     The default case is 1).
 #
+#
 #permissionHandler=diskCacheV111.services.acl.UnixPermissionHandler
+#aclEnabled=false
 #aclTable=t_acl
 #aclConnDriver=org.postgresql.Driver
 #aclConnUrl=jdbc:postgresql://localhost/chimera?prepareThreshold=3

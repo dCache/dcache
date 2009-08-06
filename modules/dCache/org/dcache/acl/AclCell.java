@@ -77,6 +77,7 @@ public class AclCell extends CellAdapter {
     private  Properties getAclProperties() {
         Properties props = new Properties();
 
+        getAclProperty("aclEnabled", props);
         getAclProperty("aclTable", props);
         getAclProperty("aclConnDriver", props);
         getAclProperty("aclConnUrl", props);

@@ -1,5 +1,7 @@
 package org.dcache.namespace;
 
+import static org.dcache.acl.enums.FileAttribute.*;
+
 /**
  *
  * File attributes supported by dCache
@@ -17,6 +19,7 @@ public enum FileAttribute {
     FLAGS,
     HSM,
     LOCATIONS,
+    MODE,
     MODIFICATION_TIME,
     OWNER,
     OWNER_GROUP,

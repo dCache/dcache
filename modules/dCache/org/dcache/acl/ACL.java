@@ -1,5 +1,6 @@
 package org.dcache.acl;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,7 +12,9 @@ import org.dcache.acl.enums.RsType;
  * @author David Melkumyan, DESY Zeuthen
  *
  */
-public class ACL {
+public class ACL implements Serializable
+{
+    static final long serialVersionUID = -1883807712749350105L;
 
     private static final String LINE_SEPARATOR = System.getProperty("line.separator", "\n");
 

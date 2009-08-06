@@ -1,6 +1,7 @@
 package org.dcache.vehicles;
 
 import org.dcache.namespace.FileType;
+import org.dcache.acl.ACL;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
 
@@ -35,6 +36,11 @@ public class FileAttributes implements Serializable {
         EnumSet.noneOf(FileAttribute.class);
 
     /**
+     * NFSv4 Access control list.
+     */
+    private ACL _acl;
+
+    /**
      * file's size
      */
     private long _size;
@@ -58,6 +64,11 @@ public class FileAttributes implements Serializable {
      * file's group id
      */
     private int _group;
+
+    /**
+     * POSIX.1 file mode
+     */
+    private int _mode;
 
     /**
      * file's access latency ( e.g. ONLINE/NEARLINE )
@@ -112,6 +123,12 @@ public class FileAttributes implements Serializable {
         return _accessLatency;
     }
 
+    public ACL getAcl()
+    {
+        guard(ACL);
+        return _acl;
+    }
+
     public Set<Checksum> getChecksums() {
         guard(CHECKSUM);
         return _checksums;
@@ -133,6 +150,11 @@ public class FileAttributes implements Serializable {
     public int getGroup() {
         guard(OWNER_GROUP);
         return _group;
+    }
+
+    public int getMode() {
+        guard(MODE);
+        return _mode;
     }
 
     /**
@@ -168,6 +190,12 @@ public class FileAttributes implements Serializable {
         _accessLatency = accessLatency;
     }
 
+    public void setAcl(ACL acl)
+    {
+        define(ACL);
+        _acl = acl;
+    }
+
     public void setChecksums(Set<Checksum> checksums) {
         define(CHECKSUM);
         _checksums = checksums;
@@ -191,6 +219,11 @@ public class FileAttributes implements Serializable {
     public void setGroup(int group) {
         define(OWNER_GROUP);
         _group = group;
+    }
+
+    public void setMode(int mode) {
+        define(MODE);
+        _mode = mode;
     }
 
     public void setModificationTime(long mtime) {

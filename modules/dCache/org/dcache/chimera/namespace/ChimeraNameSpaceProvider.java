@@ -46,7 +46,8 @@ import org.dcache.namespace.FileType;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.vehicles.FileAttributes;
-
+import org.dcache.acl.ACLException;
+import org.dcache.acl.handler.singleton.AclHandler;
 
 public class ChimeraNameSpaceProvider
     implements NameSpaceProvider
@@ -548,13 +549,20 @@ public class ChimeraNameSpaceProvider
 
     private FileAttributes getFileAttributes(Subject subject, FsInode inode,
                                              Set<FileAttribute> attr)
-        throws IOException, ChimeraFsException
+        throws IOException, ChimeraFsException, ACLException
     {
         FileAttributes attributes = new FileAttributes();
         Stat stat;
 
         for (FileAttribute attribute: attr) {
             switch (attribute) {
+            case ACL:
+                if (AclHandler.getAclConfig().isAclEnabled()) {
+                    attributes.setAcl(AclHandler.getACL(inode.toString()));
+                } else {
+                    attributes.setAcl(null);
+                }
+                break;
             case ACCESS_LATENCY:
                 attributes.setAccessLatency(diskCacheV111.util.AccessLatency.getAccessLatency(_fs.getAccessLatency(inode).getId()));
                 break;
@@ -617,6 +625,10 @@ public class ChimeraNameSpaceProvider
                     attributes.setFileType(FileType.SPECIAL);
                 }
                 break;
+            case MODE:
+                stat = inode.statCache();
+                attributes.setMode(stat.getMode());
+                break;
             default:
                 throw new UnsupportedOperationException("Attribute " + attribute + " not supported yet.");
             }
@@ -635,10 +647,15 @@ public class ChimeraNameSpaceProvider
                                      attr);
         } catch (FileNotFoundHimeraFsException e) {
             throw new FileNotFoundCacheException(e.getMessage());
+        } catch (ACLException e) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     e.getMessage());
         } catch (ChimeraFsException e) {
-            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     e.getMessage());
         } catch (IOException e) {
-            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     e.getMessage());
         }
     }
 

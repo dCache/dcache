@@ -42,6 +42,8 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.util.ChecksumType;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.acl.ACLException;
+import org.dcache.acl.handler.singleton.AclHandler;
 
 import javax.security.auth.Subject;
 
@@ -1209,6 +1211,13 @@ public class BasicNameSpaceProvider
         try {
             for (FileAttribute attribute: attr) {
                 switch (attribute) {
+                case ACL:
+                    if (AclHandler.getAclConfig().isAclEnabled()) {
+                        attributes.setAcl(AclHandler.getACL(pnfsId.toString()));
+                    } else {
+                        attributes.setAcl(null);
+                    }
+                    break;
                 case ACCESS_LATENCY:
                     cacheInfo = getCacheInfo(pf, cacheInfo);
                     attributes.setAccessLatency(AccessLatency.getAccessLatency(cacheInfo.getFlags().get(ACCESS_LATENCY_FLAG)));
@@ -1264,13 +1273,21 @@ public class BasicNameSpaceProvider
                         attributes.setFileType(FileType.SPECIAL);
                     }
                     break;
+                case MODE:
+                    meta = getFileMetaData(subject, pnfsId, meta);
+                    attributes.setMode(meta.getMode());
+                    break;
                 default:
                     throw new UnsupportedOperationException("Attribute " + attribute + " not supported yet.");
                 }
             }
             return attributes;
+        } catch (ACLException e) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     e.getMessage());
         } catch (IOException e) {
-            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     e.getMessage());
         }
     }
 

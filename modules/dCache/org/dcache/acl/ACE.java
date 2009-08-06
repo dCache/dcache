@@ -1,5 +1,6 @@
 package org.dcache.acl;
 
+import java.io.Serializable;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.AceFlags;
 import org.dcache.acl.enums.AceType;
@@ -12,7 +13,9 @@ import org.dcache.acl.enums.Who;
  * @author David Melkumyan, DESY Zeuthen
  *
  */
-public class ACE {
+public class ACE implements Serializable
+{
+    static final long serialVersionUID = -7088617639500399472L;
 
     public static final String DEFAULT_ADDRESS_MSK = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
 
