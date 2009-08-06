@@ -149,6 +149,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileNotOnlineCacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FileMetaData;
@@ -1741,13 +1742,22 @@ public abstract class AbstractFtpDoorV1
         // We do not allow DELE of a directory.
         // Some FTP clients let this slip through, like uberftp client.
         // Some FTP clients detect this and send as an "RMD" request instead.
-        File theFileToDelete = new File(pnfsPath);
-        if (theFileToDelete.isDirectory()) {
-            reply("553 Cannot delete a directory");
-            return;
+        try {
+            PnfsGetFileMetaDataMessage meta =
+                _pnfs.getFileMetaDataByPath(pnfsPath);
+            if (meta.getMetaData().isDirectory()) {
+                reply("553 Cannot delete a directory");
+                return;
+            }
+        } catch (FileNotFoundCacheException e) {
+            reply("550 File not found");
+        } catch (CacheException e) {
+            reply("451 CWD failed: " + e.getMessage());
+            error("Error in CWD: " + e);
         }
 
         if (_useEncpScripts) {
+            File theFileToDelete = new File(pnfsPath);
             String parentOfFile = theFileToDelete.getParent();
             //Check if the file is writable (aka deletable)
             String cmd = _encpPutCmd + " chkw " +
@@ -1935,11 +1945,13 @@ public abstract class AbstractFtpDoorV1
         }
 
         try {
-            // first check that directory is empty and then check permissions to delete empty directory
-            if (new File(pnfsPath).list().length != 0) { //Directory is not empty
-                        reply("553 Directory not empty. Cannot delete.");
-                        return;
-                    }
+            PnfsGetFileMetaDataMessage meta =
+                _pnfs.getFileMetaDataByPath(pnfsPath);
+            if (!meta.getMetaData().isDirectory()) {
+                reply("553 Cannot delete a file");
+                return;
+            }
+
             PnfsId pnfsId = _pnfs.getPnfsIdByPath(pnfsPath);
             if (_permissionHandler.canDeleteDir(pnfsId, getSubject(), _origin) != AccessType.ACCESS_ALLOWED) {
                 if(!setNextPwdRecord()) {
@@ -1957,6 +1969,8 @@ public abstract class AbstractFtpDoorV1
             reply("553 Permission denied, reason (Acl) ");
             error("FTP Door: ACL module failed: " + e);
             return;
+        } catch (FileNotFoundCacheException e) {
+            reply("550 File not found");
         } catch (CacheException ce) {
             if(!setNextPwdRecord()) {
                 reply("553 Permission denied, reason: " + ce);
@@ -2112,20 +2126,27 @@ public abstract class AbstractFtpDoorV1
 
     public void ac_cwd(String arg)
     {
-        String newcwd = absolutePath(arg);
-        if (newcwd == null)
-            newcwd = _pathRoot;
+        try {
+            String newcwd = absolutePath(arg);
+            if (newcwd == null)
+                newcwd = _pathRoot;
 
-        File test = new File(newcwd);
-
-        if (!test.isDirectory()){
-            reply("550 " + test.toString() + ": Not a directory");
-            return;
+            PnfsGetFileMetaDataMessage meta =
+                _pnfs.getFileMetaDataByPath(newcwd);
+            if (!meta.getMetaData().isDirectory()) {
+                reply("550 Not a directory: " + arg);
+                return;
+            }
+            _curDirV = newcwd.substring(_pathRoot.length());
+            if (_curDirV.length() == 0)
+                _curDirV = "/";
+            reply("250 CWD command succcessful. New CWD is <" + _curDirV + ">");
+        } catch (FileNotFoundCacheException e) {
+            reply("550 File not found");
+        } catch (CacheException e) {
+            reply("451 CWD failed: " + e.getMessage());
+            error("Error in CWD: " + e);
         }
-        _curDirV = newcwd.substring(_pathRoot.length());
-        if (_curDirV.length() == 0)
-            _curDirV = "/";
-        reply("250 CWD command succcessful. New CWD is <" + _curDirV + ">");
     }
 
     public void ac_cdup(String arg)
