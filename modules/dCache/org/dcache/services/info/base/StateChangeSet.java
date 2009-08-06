@@ -116,9 +116,11 @@ public class StateChangeSet {
 	 * @param childName the name of the child under question.
 	 * @return true if this child is to be added, updated or removed. 
 	 */
-	protected boolean hasChildChanged( String childName) {
-		return _itrChildren.contains( childName);
-	}
+    protected boolean hasChildChanged( String childName) {
+        return _itrChildren.contains( childName) || _newChildren.containsKey( childName)
+                || _updatedChildren.containsKey( childName)
+                || _removedChildren.contains( childName);
+    }
 
 	
 	/**
