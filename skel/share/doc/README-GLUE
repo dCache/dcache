@@ -10,6 +10,9 @@ The process is designed to be the minimum overhead so it can easily be
 performed manually; however, you may choose to use an automatic
 configuration tool, such as yaim.
 
+Please be aware that changing information provider may result in a
+brief interruption to published information.
+
 
 
 Ensuring dCache information is available
@@ -169,7 +172,60 @@ then verify that the info service is running.
 
 
 
-Configuring BDII
+Decommissioning the old info provider
+----
+
+Sites that were previously using the old (Java-based) info provider
+should ensure that they no longer use it.  This is because, if so
+configured, GIP will attempt to use information from both the (new)
+info-based info provider and the Java-based info provider and merge
+the results.  This will likely lead to a confusing description of
+dCache, which may prevent clients from working correctly.
+
+The Java-based info provider has two configuration files and a
+symbolic link within GIP.  They are:
+
+  o    file: /opt/lcg/var/gip/ldif/lcg-info-static-se.conf
+
+  o    file: /opt/lcg/var/gip/ldif/lcg-info-static-dse.conf
+
+  o    symbolic link: /opt/glite/etc/gip/plugin to
+       /opt/d-cache/jobs/infoDynamicSE-plugin-dcache.
+
+The two files (lcg-info-static-se.conf and lcg-info-static-dse.conf)
+may appear within a different directory if the static_dir variable is
+configured.  You can find the static_dir variable in either
+/opt/glite/etc/gip/glite-info-generic.conf or
+/opt/lcg/etc/lcg-info-generic.conf
+
+Delete the above three entries.
+
+The infoProvider component of dCache, located within the
+infoProviderDomain, collects information for the
+infoDynamicSE-plugin-dcache program.  Since this program is now
+obsolete the infoProvider should be switched off.  This may be
+achieved by running the /opt/d-cache/bin/dcache script:
+
+  /opt/d-cache/bin/dcache stop infoProvider
+
+You can confirm that the infoProvider is no longer running by querying
+the current status of the components:
+
+  # /opt/d-cache/bin/dcache status | grep ^infoProvider
+  infoProviderDomain      stopped         /var/log/infoProviderDomain.log
+
+To prevent dCache from starting the infoProvider when the machine next
+boots, you should edit /opt/d-cache/etc/node_config and ensure that
+the infoProvider option is configured to "no".  You can verify that
+infoProvider is no longer listed as a service:
+
+  # /opt/d-cache/bin/dcache services | grep ^infoProvider
+
+You should see no output from running the command.
+
+
+
+Publishing information from (new) info-based info provider
 ----
 
 By default BDII obtains fresh information by querying GIP.  To allow
