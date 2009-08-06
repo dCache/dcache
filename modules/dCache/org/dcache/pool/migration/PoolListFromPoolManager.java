@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Collection;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.regex.Pattern;
 
 import dmg.cells.nucleus.CellPath;
 
@@ -24,10 +25,10 @@ public abstract class PoolListFromPoolManager
 
     private final double _spaceFactor;
     private final double _cpuFactor;
+    protected final Collection<Pattern> _exclude;
     protected List<PoolCostPair> _pools = Collections.emptyList();
-    protected Collection<String> _exclude;
 
-    public PoolListFromPoolManager(Collection<String> exclude,
+    public PoolListFromPoolManager(Collection<Pattern> exclude,
                                    double spaceFactor,
                                    double cpuFactor)
     {
@@ -46,13 +47,23 @@ public abstract class PoolListFromPoolManager
         _pools = Collections.unmodifiableList(pools);
     }
 
+    private boolean isExcluded(String pool)
+    {
+        for (Pattern pattern: _exclude) {
+            if (pattern.matcher(pool).matches()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public void success(PoolManagerGetPoolsMessage msg)
     {
         List<PoolCostPair> pools =
             new ArrayList<PoolCostPair>(msg.getPools().size());
         for (PoolManagerPoolInformation pool: msg.getPools()) {
             String name = pool.getName();
-            if (!_exclude.contains(name)) {
+            if (!isExcluded(name)) {
                 double space =
                     (_spaceFactor > 0 ? pool.getSpaceCost() * _spaceFactor : 0);
                 double cpu =

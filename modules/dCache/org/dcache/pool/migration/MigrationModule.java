@@ -30,6 +30,7 @@ import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.util.Interval;
+import org.dcache.util.Glob;
 
 import dmg.util.Args;
 import dmg.cells.nucleus.CellEndpoint;
@@ -226,7 +227,7 @@ public class MigrationModule
                        double cpuCost,
                        String type,
                        List<String> targets,
-                       Collection<String> exclude)
+                       Collection<Pattern> exclude)
     {
         CellStub poolManager = _configuration.getPoolManagerStub();
 
@@ -368,10 +369,13 @@ public class MigrationModule
             targets.add(args.argv(i));
         }
 
-        Collection<String> excluded = new HashSet();
-        excluded.add(_configuration.getPoolName());
+        Collection<Pattern> excluded = new HashSet();
+        excluded.add(Pattern.compile(Pattern.quote(_configuration.getPoolName())));
         if (exclude != null) {
-            excluded.addAll(Arrays.asList(exclude.split(",")));
+            for (String s: exclude.split(",")) {
+                Glob glob = new Glob(s);
+                excluded.add(glob.toPattern());
+            }
         }
 
         boolean mustMovePins;
@@ -539,8 +543,9 @@ public class MigrationModule
         "  -refresh=<time>\n" +
         "          Specifies the period in seconds of when target pool information\n" +
         "          is queried from the pool manager. The default is 300 seconds.\n" +
-        "  -exclude=<pool>[,<pool>...]\n" +
-        "          Exclude target pools.\n" +
+        "  -exclude=<pattern>[,<pattern>...]\n" +
+        "          Exclude target pools matching any of the patterns. Single\n" +
+        "          character (?) and multi character (*) wildcards may be used.\n" +
         "  -concurrency=<concurrency>\n" +
         "          Specifies how many concurrent transfers to perform.\n" +
         "          Defaults to 1.\n" +

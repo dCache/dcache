@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.Collection;
 import java.util.List;
 import java.util.Arrays;
+import java.util.regex.Pattern;
 
 public class PoolListFromPoolManagerTest
 {
@@ -22,7 +23,7 @@ public class PoolListFromPoolManagerTest
     private final PoolManagerPoolInformation POOL3 =
         createPool("pool3", Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
 
-    private final Collection<String> EMPTY_LIST =
+    private final Collection<Pattern> EMPTY_LIST =
         Collections.emptyList();
 
     @Test
@@ -76,7 +77,7 @@ public class PoolListFromPoolManagerTest
      */
     static class PoolList extends PoolListFromPoolManager
     {
-        public PoolList(Collection<String> exclude,
+        public PoolList(Collection<Pattern> exclude,
                         double spaceFactor,
                         double cpuFactor)
         {

@@ -1,6 +1,7 @@
 package org.dcache.pool.migration;
 
 import java.util.Collection;
+import java.util.regex.Pattern;
 import org.dcache.cells.CellStub;
 import diskCacheV111.vehicles.PoolManagerGetPoolsByLinkMessage;
 import diskCacheV111.vehicles.PoolManagerGetPoolsMessage;
@@ -12,7 +13,7 @@ class PoolListByLink
     private final String _link;
 
     public PoolListByLink(CellStub poolManager,
-                          Collection<String> exclude,
+                          Collection<Pattern> exclude,
                           double spaceFactor,
                           double cpuFactor,
                           String link)
