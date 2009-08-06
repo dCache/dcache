@@ -8,6 +8,9 @@ import com.sun.security.auth.UnixNumericUserPrincipal;
 import com.sun.security.auth.UnixNumericGroupPrincipal;
 import com.sun.security.auth.UserPrincipal;
 
+import org.globus.gsi.jaas.GlobusPrincipal;
+import org.glite.security.voms.FQAN;
+
 public class Subjects
 {
     /**
@@ -123,10 +126,10 @@ public class Subjects
 
     /**
      * Maps an AuthorizationRecord to a Subject. The Subject will
-     * contain the UID and GID principals of the AuthorizationRecord
-     * object.
-     *
-     * TODO: Add more principals, e.g., an X500 principal.
+     * contain the UID (UnixNumericalUserPrincipal), GID
+     * (UnixNumericGroupPrincipal), the mapped user name
+     * (UserPrincipal), the DN (GlobusPrincipal), and FQAN
+     * (FQANPrincipal) of the AuthorizationRecord object.
      */
     public static Subject getSubject(AuthorizationRecord record)
     {
@@ -140,7 +143,16 @@ public class Subjects
             for (Group group: list.getGroups()) {
                 principals.add(new UnixNumericGroupPrincipal(group.getGid(), primary));
             }
+            String fqan = list.getAttribute();
+            if (fqan != null && !fqan.isEmpty()) {
+                principals.add(new FQANPrincipal(fqan, primary));
+            }
             primary = false;
+        }
+
+        String dn = record.getName();
+        if (dn != null && !dn.isEmpty()) {
+            principals.add(new GlobusPrincipal(dn));
         }
 
         return subject;
