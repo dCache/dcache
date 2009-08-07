@@ -4,7 +4,7 @@ package diskCacheV111.util ;
 
 import java.util.List;
 import java.util.Collections;
-import java.util.EnumSet;
+import java.util.Set;
 
 import org.apache.log4j.Logger;
 
@@ -444,7 +444,7 @@ public class PnfsHandler
      * @param attr array of requested attributes.
      * @return requested attributes
      */
-    public FileAttributes getFileAttributes(PnfsId pnfsid, EnumSet<FileAttribute> attr) throws CacheException {
+    public FileAttributes getFileAttributes(PnfsId pnfsid, Set<FileAttribute> attr) throws CacheException {
         return pnfsRequest(new PnfsGetFileAttributes(pnfsid, attr)).getFileAttributes();
     }
 

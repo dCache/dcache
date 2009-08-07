@@ -88,6 +88,8 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.EnumSet;
+import java.util.Iterator;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -177,7 +179,9 @@ import org.dcache.acl.enums.AccessType;
 import org.dcache.acl.enums.AuthType;
 import org.dcache.acl.enums.FileAttribute;
 import org.dcache.acl.enums.InetAddressType;
+import org.dcache.vehicles.FileAttributes;
 import org.dcache.util.Glob;
+import org.dcache.namespace.FileType;
 
 import dmg.cells.nucleus.CDC;
 
@@ -4809,7 +4813,13 @@ public abstract class AbstractFtpDoorV1
             throw new FileNotFoundCacheException("No such file: " + path);
         }
 
-        printer.print(path);
+        Set<org.dcache.namespace.FileAttribute> required =
+            printer.getRequiredAttributes();
+        PnfsId id =
+            _pnfs.getPnfsIdByPath(path.toString());
+        FileAttributes attributes =
+            _pnfs.getFileAttributes(id, required);
+        printer.print(path, id, attributes);
     }
 
     private int printDirectory(ListPrinter printer, File path, Glob glob)
@@ -4831,10 +4841,17 @@ public abstract class AbstractFtpDoorV1
             files = path.listFiles();
         }
 
+        Set<org.dcache.namespace.FileAttribute> required =
+            printer.getRequiredAttributes();
+
         int total = 0;
         for (File file: files) {
             try {
-                printer.print(file);
+                PnfsId id =
+                    _pnfs.getPnfsIdByPath(file.toString());
+                FileAttributes attributes =
+                    _pnfs.getFileAttributes(id, required);
+                printer.print(file, id, attributes);
                 total++;
             } catch (FileNotFoundCacheException e) {
                 /* File was probably deleted during
@@ -4848,7 +4865,8 @@ public abstract class AbstractFtpDoorV1
     /** Encapsulates the output format of the LIST command. */
     interface ListPrinter
     {
-        void print(File file)
+        Set<org.dcache.namespace.FileAttribute> getRequiredAttributes();
+        void print(File file, PnfsId id, FileAttributes attributes)
             throws ACLException, CacheException;
     }
 
@@ -4862,7 +4880,12 @@ public abstract class AbstractFtpDoorV1
             _out = writer;
         }
 
-        public void print(File file)
+        public Set<org.dcache.namespace.FileAttribute> getRequiredAttributes()
+        {
+            return EnumSet.noneOf(org.dcache.namespace.FileAttribute.class);
+        }
+
+        public void print(File file, PnfsId id, FileAttributes attributes)
         {
             _out.append(file.getName()).append("\r\n");
         }
@@ -4880,13 +4903,20 @@ public abstract class AbstractFtpDoorV1
             _subject = getSubject();
         }
 
-        public void print(File file)
+        public Set<org.dcache.namespace.FileAttribute> getRequiredAttributes()
+        {
+            return EnumSet.of(org.dcache.namespace.FileAttribute.TYPE,
+                              org.dcache.namespace.FileAttribute.MODIFICATION_TIME,
+                              org.dcache.namespace.FileAttribute.SIZE);
+        }
+
+        public void print(File file, PnfsId id, FileAttributes attr)
             throws ACLException, CacheException
         {
             StringBuilder mode = new StringBuilder();
             String path = file.getPath();
 
-            if (file.isDirectory()) {
+            if (attr.getFileType() == FileType.DIR) {
                 boolean canListDir =
                     _permissionHandler.canListDir(path, _subject, _origin) == AccessType.ACCESS_ALLOWED;
                 boolean canCreateFile =
@@ -4908,7 +4938,7 @@ public abstract class AbstractFtpDoorV1
                 mode.append("------");
             }
 
-            long modified = file.lastModified();
+            long modified = attr.getModificationTime();
             long age = System.currentTimeMillis() - modified;
             String format;
             if (age > (182L * 24 * 60 * 60 * 1000)) {
@@ -4921,7 +4951,7 @@ public abstract class AbstractFtpDoorV1
                         mode,
                         _pwdRecord.Username,
                         _pwdRecord.Username,
-                        file.length(),
+                        attr.getSize(),
                         modified,
                         file.getName());
             _out.append("\r\n");
@@ -4942,16 +4972,33 @@ public abstract class AbstractFtpDoorV1
             _subject = getSubject();
         }
 
-        public void print(File file)
+        public Set<org.dcache.namespace.FileAttribute> getRequiredAttributes()
+        {
+            Set<org.dcache.namespace.FileAttribute> attributes =
+                EnumSet.noneOf(org.dcache.namespace.FileAttribute.class);
+            for (Fact fact: _currentFacts) {
+                switch (fact) {
+                case SIZE:
+                    attributes.add(org.dcache.namespace.FileAttribute.SIZE);
+                    break;
+                case MODIFY:
+                    attributes.add(org.dcache.namespace.FileAttribute.MODIFICATION_TIME);
+                    break;
+                case TYPE:
+                case PERM:
+                    attributes.add(org.dcache.namespace.FileAttribute.TYPE);
+                    break;
+                case UNIQUE:
+                    break;
+                }
+            }
+            return attributes;
+        }
+
+        public void print(File file, PnfsId id, FileAttributes attr)
             throws ACLException, CacheException
         {
             if (!_currentFacts.isEmpty()) {
-                String path = file.toString();
-                PnfsGetFileMetaDataMessage msg =
-                    _pnfs.getFileMetaDataByPath(path);
-                PnfsId id = msg.getPnfsId();
-                FileMetaData meta = msg.getMetaData();
-
                 AccessType access =
                     _permissionHandler.canGetAttributes(id,
                                                         _subject,
@@ -4962,22 +5009,22 @@ public abstract class AbstractFtpDoorV1
                     switch (fact) {
                     case SIZE:
                         if (access == AccessType.ACCESS_ALLOWED) {
-                            printSizeFact(meta);
+                            printSizeFact(attr);
                         }
                         break;
                     case MODIFY:
                         if (access == AccessType.ACCESS_ALLOWED) {
-                            printModifyFact(meta);
+                            printModifyFact(attr);
                         }
                         break;
                     case TYPE:
-                        printTypeFact(meta);
+                        printTypeFact(attr);
                         break;
                     case UNIQUE:
                         printUniqueFact(id);
                         break;
                     case PERM:
-                        printPermFact(path, meta);
+                        printPermFact(file.toString(), attr);
                         break;
                     }
                 }
@@ -4997,25 +5044,28 @@ public abstract class AbstractFtpDoorV1
         }
 
         /** Writes a RFC 3659 modify fact to a writer. */
-        private void printModifyFact(FileMetaData meta)
+        private void printModifyFact(FileAttributes attr)
         {
-            long time = meta.getLastModifiedTime();
+            long time = attr.getModificationTime();
             printFact(Fact.MODIFY, TIMESTAMP_FORMAT.format(new Date(time)));
         }
 
         /** Writes a RFC 3659 size fact to a writer. */
-        private void printSizeFact(FileMetaData meta)
+        private void printSizeFact(FileAttributes attr)
         {
-            printFact(Fact.SIZE, meta.getFileSize());
+            printFact(Fact.SIZE, attr.getSize());
         }
 
         /** Writes a RFC 3659 type fact to a writer. */
-        private void printTypeFact(FileMetaData meta)
+        private void printTypeFact(FileAttributes attr)
         {
-            if (meta.isDirectory()) {
+            switch (attr.getFileType()) {
+            case DIR:
                 printFact(Fact.TYPE, "dir");
-            } else if (meta.isRegularFile()) {
+                break;
+            case REGULAR:
                 printFact(Fact.TYPE, "file");
+                break;
             }
         }
 
@@ -5033,11 +5083,11 @@ public abstract class AbstractFtpDoorV1
          * rather expensive as the permission information must be
          * retrieved.
          */
-        private void printPermFact(String path, FileMetaData meta)
+        private void printPermFact(String path, FileAttributes attr)
             throws CacheException, ACLException
         {
             StringBuffer s = new StringBuffer();
-            if (meta.isDirectory()) {
+            if (attr.getFileType() == FileType.DIR) {
                 if (_permissionHandler.canCreateFile(path, _subject, _origin) == AccessType.ACCESS_ALLOWED) {
                     s.append('c');
                 }
