@@ -124,6 +124,9 @@ determineHostName()
         SunOS)
             fqdn=$(/usr/lib/mail/sh/check-hostname |cut -d" " -f7)
             ;;
+         Darwin)
+            fqdn=$(hostname)
+            ;;
         *)
             fqdn=$(hostname --fqdn)
             ;;

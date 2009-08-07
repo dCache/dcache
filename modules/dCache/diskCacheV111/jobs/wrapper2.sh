@@ -102,6 +102,8 @@ irixFix=$0
       weAreLinux
    elif [ "$os" = "IRIX64" ] ; then
       weAreIrix
+   elif [ "$os" = "Darwin" ] ; then
+      weAreLinux
    else
       echo "Sorry, no support for $os" 1>&2
       exit 3

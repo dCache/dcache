@@ -47,6 +47,15 @@ usage()
     exit 2
 } 1>&2
 
+checkReadlinkf()
+{
+  if [ ! "$hasReadlinkf" ] ; then
+    readlink -f . &>/dev/null
+    hasReadlinkf=$?
+  fi
+  return $hasReadlinkf
+}
+
 # Get the canonical path of $1. Only returns a truely canonical path
 # if readlink is available. Otherwise an absolute path which does not
 # end in a symlink is returned.
@@ -54,7 +63,7 @@ getCanonicalPath() # $1 = path
 {
     local link
     link="$1"
-    if type readlink > /dev/null 2>&1; then
+    if checkReadlinkf ; then
         RET="$(readlink -f $link)"
     else
         RET="$(cd $(dirname $link); pwd)/$(basename $link)"

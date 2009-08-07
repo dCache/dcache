@@ -661,7 +661,14 @@
     <property name="input.svg" value="dCache-web-bg-logo.svg" />
 
     <target name="-is.batik.present" >
-        <available file="${batik.home}" type="dir"   property="batik.present"/>
+        <condition property="batik.present">
+            <and>
+                <available file="${batik.home}" type="dir" />
+                <!--The openjdk available at macports does not come with a sun proprietary api required by batik. Please remove this once this shortcomming has been addressed. -->
+                <not><os name="Darwin" /></not>
+            </and>
+        </condition>
+
     </target>
 
     <!--

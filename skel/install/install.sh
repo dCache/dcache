@@ -114,9 +114,21 @@ check_os()
   if [ "$osname" = "Linux" ] ; then
     RET=Linux
   fi
+  if [ "$osname" = "Darwin" ] ; then
+    RET=Darwin
+  fi
   if [ "$osname" = "SunOS" ] ; then
     RET=SunOS
   fi
+}
+
+checkReadlinkf()
+{
+  if [ ! "$hasReadlinkf" ] ; then
+    readlink -f . &>/dev/null
+    hasReadlinkf=$?
+  fi
+  return $hasReadlinkf
 }
 
 # Get the canonical path of $1. Only returns a truely canonical path
@@ -126,7 +138,7 @@ getCanonicalPath() # $1 = path
 {
     local link
     link="$1"
-    if type readlink > /dev/null 2>&1; then
+    if checkReadlinkf ; then
         RET="$(readlink -f $link)"
     else
         RET="$(cd $(dirname $link); pwd)/$(basename $link)"
@@ -163,6 +175,9 @@ shortname_os() {
         SunOS)
             echo `uname -n`
             ;;
+        Darwin)
+            echo `hostname -s`
+            ;;
     esac
 }
 
@@ -173,6 +188,9 @@ domainname_os() {
             ;;
         SunOS)
             echo `/usr/lib/mail//sh/check-hostname |cut -d" " -f7 | awk -F. '{ for( i=2; i <= NF; i++){ printf("%s",$i); if( i  <NF) printf("."); } } '`
+            ;;
+        Darwin)
+            echo `hostname | sed -e 's/[^\.]*//' | sed -e 's/^\.//'`
             ;;
     esac
 }
@@ -185,6 +203,9 @@ fqdn_os() {
             ;;
         SunOS)
             echo `/usr/lib/mail/sh/check-hostname |cut -d" " -f7`
+            ;;
+        Darwin)
+            echo `hostname`
             ;;
     esac
 }
@@ -679,6 +700,13 @@ dcacheInstallPnfs()
   dcacheInstallPnfsMountPoints
 }
 
+dcacheGetSshHostKey(){
+  if [ $(uname) = "Darwin" ] ; then
+    SSH_HOST_KEY="/etc/ssh_host_key"
+  else
+    SSH_HOST_KEY="/etc/ssh/ssh_host_key"
+  fi
+}
 
 dcacheInstallSshKeys()
 {
@@ -692,7 +720,8 @@ dcacheInstallSshKeys()
     else
       logmessage INFO "Generating ssh keys:"
       ssh-keygen -b 768 -t rsa1 -f ./server_key -N "" 2>&1 | logmessage INFO
-      ln -s /etc/ssh/ssh_host_key ./host_key
+      dcacheGetSshHostKey
+      ln -s $SSH_HOST_KEY ./host_key
     fi
   else
     logmessage INFO "Not an admin door inteface node"
