@@ -35,7 +35,8 @@ public class PnfsGetFileAttributes extends PnfsMessage {
      * @param attr
      */
     public PnfsGetFileAttributes(String path, Set<FileAttribute> attr) {
-        super(path);
+        super();
+        setPnfsPath(path);
         _attributes = attr;
     }
 

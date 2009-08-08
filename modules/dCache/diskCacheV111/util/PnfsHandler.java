@@ -449,6 +449,21 @@ public class PnfsHandler
     }
 
     /**
+     * Get file attributes. The PnfsManager is free to return less attributes
+     * than requested. If <code>attr</code> is an empty array, file existence
+     * if checked.
+     *
+     * @param path
+     * @param attr array of requested attributes.
+     * @return requested attributes
+     */
+    public FileAttributes getFileAttributes(String path, Set<FileAttribute> attr)
+        throws CacheException
+    {
+        return pnfsRequest(new PnfsGetFileAttributes(path, attr)).getFileAttributes();
+    }
+
+    /**
      * Set file attributes. If <code>attr</code> is an empty array, file existence
      * if checked.
      *
