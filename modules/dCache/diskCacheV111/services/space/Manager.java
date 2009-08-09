@@ -2373,58 +2373,61 @@ public final class Manager
 		}
 	}
 
+        public static final String SELECT_SPACE_TOKENS_BY_DESCRIPTION =
+                "SELECT * FROM "+ManagerSchemaConstants.SpaceTableName +
+                " WHERE  state = ? AND description = ?";
+
+        public static final String SELECT_SPACE_TOKENS_BY_VOGROUP =
+                "SELECT * FROM "+ManagerSchemaConstants.SpaceTableName +
+                " WHERE  state = ? AND voGroup = ?";
+
+        public static final String SELECT_SPACE_TOKENS_BY_VOROLE =
+                "SELECT * FROM "+ManagerSchemaConstants.SpaceTableName +
+                " WHERE  state = ? AND  voRole = ?";
+
+        public static final String SELECT_SPACE_TOKENS_BY_VOGROUP_AND_VOROLE =
+                "SELECT * FROM "+ManagerSchemaConstants.SpaceTableName +
+                " WHERE  state = ? AND voGroup = ? AND voRole = ?";
+
 	public long[] getSpaceTokens(String voGroup,
 				     String voRole,
 				     String description)  throws SQLException{
-
-                String selectSpace =
-                        "SELECT * FROM "+ManagerSchemaConstants.SpaceTableName +
-                        " WHERE  state = "+SpaceState.RESERVED.getStateId();
+                
+                HashSet spaces = null;
                 if(description == null) {
-			if (voGroup!=null&& !voGroup.equals("")) {
-				selectSpace +=" AND voGroup = '"+voGroup+'\'';
-			}
-                        if(voRole != null && !voRole.equals("")) {
-                                selectSpace += " AND voRole = '"+voRole+'\'';
+			if (voGroup!=null&&!voGroup.equals("")&&
+                            voRole!=null&&!voRole.equals("")) {
+                                spaces = manager.selectPrepared(new  SpaceReservationIO(),
+                                                                SELECT_SPACE_TOKENS_BY_VOGROUP_AND_VOROLE,
+                                                                SpaceState.RESERVED.getStateId(),
+                                                                voGroup,
+                                                                voRole);
+                        }
+                        else {
+                                if (voGroup!=null&&!voGroup.equals("")) {
+                                        spaces = manager.selectPrepared(new  SpaceReservationIO(),
+                                                                        SELECT_SPACE_TOKENS_BY_VOGROUP,
+                                                                        SpaceState.RESERVED.getStateId(),
+                                                                        voGroup);
+                                        
+                                }
+                                if (voRole!=null&&!voRole.equals("")) {
+                                        spaces = manager.selectPrepared(new  SpaceReservationIO(),
+                                                                        SELECT_SPACE_TOKENS_BY_VOROLE,
+                                                                        SpaceState.RESERVED.getStateId(),
+                                                                        voRole);
+                                }
                         }
                 }
                 else {
-			selectSpace += " AND description = '"+description+'\'';
+			spaces = manager.selectPrepared(new  SpaceReservationIO(),
+                                                        SELECT_SPACE_TOKENS_BY_DESCRIPTION,
+                                                        SpaceState.RESERVED.getStateId(),
+                                                        description);
                 }
-
-/*
-		String selectSpace =
-			"SELECT * FROM "+ManagerSchemaConstants.SpaceTableName +
-			" WHERE  state = "+SpaceState.RESERVED.getStateId();
-
-		if(description != null && !description.equals("")) {
-			selectSpace += " AND description = '"+description+'\'';
-		}
-
-		boolean linkgroupid=false;
-		String subSelect   = "select linkgroupid from " + LinkGroupIO.LINKGROUP_VO_TABLE + " where ";
-		if (voGroup!=null && !voGroup.equals("")) {
-			linkgroupid=true;
-			subSelect +=" ( voGroup = '"+voGroup+"' OR vogroup='*') ";
-		}
-		if(voRole != null && !voRole.equals("")) {
-			if(linkgroupid==false) {
-				linkgroupid=true;
-				subSelect += " ( voRole = '"+voRole+"' or vorole='*' ) ";
-			}
-			else {
-				subSelect += " AND ( voRole = '"+voRole+"' or  vorole='*' )";
-			}
-		}
-		if (linkgroupid==true) {
-			selectSpace += "  AND linkgroupid in ( "+subSelect +")";
-		}
-*/
-
-		say("executing statement: "+selectSpace);
-		HashSet spaces = manager.select(new  SpaceReservationIO(),
-						selectSpace);
-
+                if(spaces==null) { 
+                        throw new IllegalArgumentException("getSpaceTokens: all arguments are nulls, not supported"); 
+                }
 		Set<Long> tokenSet = new HashSet<Long>();
 		for (Iterator i=spaces.iterator(); i.hasNext();){
 			Space space = (Space)i.next();
@@ -2438,27 +2441,44 @@ public final class Manager
 		return tokens;
 	}
 
+        public static final String SELECT_SPACE_FILE_BY_PNFSID =
+                "SELECT * FROM "+ ManagerSchemaConstants.SpaceFileTableName + " WHERE pnfsId = ? ";
+
+        public static final String SELECT_SPACE_FILE_BY_PNFSPATH =
+                "SELECT * FROM "+ ManagerSchemaConstants.SpaceFileTableName + " WHERE pnfsPath = ? ";
+
+        public static final String SELECT_SPACE_FILE_BY_PNFSID_AND_PNFSPATH =
+                "SELECT * FROM "+ ManagerSchemaConstants.SpaceFileTableName + " WHERE pnfsId = ? AND pnfsPath = ?";
+
+
 	public long[] getFileSpaceTokens( PnfsId pnfsId,
 					  String pnfsPath)  throws SQLException{
-		String selectSpaceIds =
-			"SELECT * FROM "+ ManagerSchemaConstants.SpaceFileTableName + " WHERE ";
-		boolean needAnd=false;
-		if(pnfsId != null) {
-			selectSpaceIds +=" pnfsId = '"+pnfsId+'\'';
-			needAnd=true;
-		}
 
-		if(pnfsPath != null) {
-			pnfsPath =new FsPath(pnfsPath).toString();
-			if (needAnd == true ) {
-				selectSpaceIds +=" AND ";
-			}
-			selectSpaceIds +=" pnfsPath = '"+pnfsPath+'\'';
-		}
-		say("executing statement: "+selectSpaceIds);
-		HashSet files = manager.select(new FileIO(), selectSpaceIds);
-		Set<Long> tokenSet = new HashSet<Long>();
-		for (Iterator i=files.iterator();i.hasNext();){
+                if (pnfsId==null&&pnfsPath==null) { 
+                        throw new IllegalArgumentException("getFileSpaceTokens: all arguments are nulls, not supported");
+                }
+                HashSet files = null;
+                IoPackage pkg = new FileIO();
+                if (pnfsId != null && pnfsPath != null) {
+                        files = manager.selectPrepared(pkg,
+                                                       SELECT_SPACE_FILE_BY_PNFSID_AND_PNFSPATH,
+                                                       pnfsId.toString(),
+                                                       new FsPath(pnfsPath).toString());
+                }
+                else {
+                        if (pnfsId != null) {
+                                files = manager.selectPrepared(pkg,
+                                                               SELECT_SPACE_FILE_BY_PNFSID,
+                                                               pnfsId.toString());
+                        }
+                        if (pnfsPath != null) {
+                                files = manager.selectPrepared(pkg,
+                                                               SELECT_SPACE_FILE_BY_PNFSPATH,
+                                                               new FsPath(pnfsPath).toString());
+                        }
+                }
+                Set<Long> tokenSet = new HashSet<Long>();
+                for (Iterator i=files.iterator();i.hasNext();){
 			File f=(File)i.next();
 			tokenSet.add(f.getSpaceId());
 		}
