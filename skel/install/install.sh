@@ -125,7 +125,7 @@ check_os()
 checkReadlinkf()
 {
   if [ ! "$hasReadlinkf" ] ; then
-    readlink -f . &>/dev/null
+    readlink -f . > /dev/null 2>&1
     hasReadlinkf=$?
   fi
   return $hasReadlinkf
