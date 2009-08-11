@@ -20,5 +20,5 @@ fi
 . ${ourHomeDir}/classes/extern.classpath
 . ${ourHomeDir}/config/dCacheSetup
 
- ${java} ${java_options} -classpath ${externalLibsClassPath} \
+ ${java} ${java_options} -classpath ${ourHomeDir}/classes/cells.jar:${externalLibsClassPath} \
      org.dcache.chimera.examples.cli.${command} ${ourHomeDir}/config/chimera-config.xml $*
