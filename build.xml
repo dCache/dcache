@@ -590,6 +590,9 @@
         <delete dir="${distDir}" />
         <delete dir="${buildDir}" />
 	<delete dir="${glite.untarredTo}/share"/>
+
+        <!-- Previous versions of gLite tar.gz files unpacked into directory "shared" -->
+	<delete dir="${glite.untarredTo}/shared"/>
     </target>
 
 
