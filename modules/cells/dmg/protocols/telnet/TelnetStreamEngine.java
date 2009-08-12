@@ -13,7 +13,7 @@ public class  TelnetStreamEngine implements StreamEngine {
 
 
      //
-     //   the telnet constants 
+     //   the telnet constants
      //
      private static final byte telnetSE   =   (-16);
      private static final byte telnetNOP  =   (-15);
@@ -45,49 +45,49 @@ public class  TelnetStreamEngine implements StreamEngine {
      private static final int cctCT2  = 5 ;
      private static final int cctSUB  = 6 ;
      private static final int cctESC  = 7 ;
-     
+
      public  static final byte [] telnetBN = { telnetCR , telnetLF } ;
-     
-     private final byte willEcho[] = { 
+
+     private final byte willEcho[] = {
           telnetIAC , telnetWILL , telnetOptionLine ,
-          telnetIAC , telnetWILL , telnetOptionEcho 
+          telnetIAC , telnetWILL , telnetOptionEcho
      } ;
-     private final byte wontEcho[] = { 
+     private final byte wontEcho[] = {
           telnetIAC , telnetWONT , telnetOptionLine ,
-          telnetIAC , telnetWONT , telnetOptionEcho 
+          telnetIAC , telnetWONT , telnetOptionEcho
      } ;
     //
-    // class variables 
+    // class variables
     //
     private int         _engineState ;
-    private int         _controlDataPos ; 
+    private int         _controlDataPos ;
     private byte []     _controlData ;
-    
+
    boolean     _lineMode = true ;
    boolean     _echoMode = true ;
    boolean _passwordMode = false ;
-    
+
    private Socket                     _socket     = null ;
    private TelnetServerAuthentication _serverAuth = null ;
-   private InetAddress                _host       = null ; 
+   private InetAddress                _host       = null ;
    private CellUser                   _userName   = new CellUser("unknow", null, null);
    private InputStream   _inputStream ;
    private OutputStream  _outputStream ;
-   
+
    private TelnetInputStream2  _telnetInputStream ;
    private TelnetOutputStream2 _telnetOutputStream ;
-   
+
    private TelnetInputStreamReader _reader ;
    private TelnetOutputStreamWriter _writer ;
-   
-   
-   public TelnetStreamEngine( Socket socket , 
+
+
+   public TelnetStreamEngine( Socket socket ,
                               TelnetServerAuthentication auth )
           throws IOException, TelnetAuthenticationException, IllegalArgumentException, IllegalAccessException, InvocationTargetException {
-                              
+
       _socket     = socket ;
-      _serverAuth = auth ;   
-      
+      _serverAuth = auth ;
+
       _engineState    = 0 ;
       _controlData    = null ;
       _controlDataPos = 0 ;
@@ -96,58 +96,58 @@ public class  TelnetStreamEngine implements StreamEngine {
 
       _inputStream        = _socket.getInputStream() ;
       _outputStream       = _socket.getOutputStream() ;
-      
+
       _telnetInputStream  = new TelnetInputStream2( this )  ;
       _telnetOutputStream = new TelnetOutputStream2( this ) ;
-      
+
       _writer = new TelnetOutputStreamWriter( _telnetOutputStream ) ;
       _reader = new TelnetInputStreamReader( _telnetInputStream , _writer ) ;
-      
+
       try{
     	       Method meth = _socket.getClass().getMethod( "verify" , (Class [])null) ;
     	       Boolean verified = (Boolean)meth.invoke( _socket , new Object[0] );
     	       if (verified.booleanValue()) {
     	           meth = _socket.getClass().getMethod( "getUserPrincipal" , new Class[0] ) ;
     	           String user = (String)meth.invoke( _socket , new Object[0] );
-    	  
+
     	           meth = _socket.getClass().getMethod( "getRole" , new Class[0] ) ;
     	           String role = (String)meth.invoke( _socket , new Object[0] );
-    	  
+
     	           meth = _socket.getClass().getMethod( "getGroup" , new Class[0] ) ;
     	           String group = (String)meth.invoke( _socket , new Object[0] );
-    	  
+
     	           _userName = new CellUser( user, group, role);
     	       } else {
                    String hostAddress = (_socket.getInetAddress()).getHostAddress();
                    _socket.close();
                    throw new TelnetAuthenticationException("Host "+hostAddress+": Tunnel verification failed!" ) ;
     	       }
-         
+
       }catch(NoSuchMethodException nsm){
     	  // nsm.printStackTrace();
     	  // it's not a tunnel...still OK
       }
 
       if( _serverAuth != null )doAuthentication() ;
-                             
+
    }
    //
    // the stream engine interface
    //
    public Reader getReader(){ return _reader ; }
    public Writer getWriter(){ return _writer ; }
-   
+
    public InputStream  getInputStream(){  return _telnetInputStream  ; }
    public OutputStream getOutputStream(){ return _telnetOutputStream ; }
-   
+
    public CellUser getUserName() {         return _userName ; }
-   
+
    public InetAddress getInetAddress(){  return _host ;  }
    public InetAddress getLocalAddress() { return _socket.getLocalAddress(); }
 
    public Socket getSocket() { return _socket; }
-    
-    
+
+
    //
    // the public and package part
    //
@@ -185,12 +185,12 @@ public class  TelnetStreamEngine implements StreamEngine {
          _outputStream.write( 0xa ) ;
        }else
          _outputStream.write( c ) ;
-         
+
    }
    //
    // now the private parts
    //
-   private void doAuthentication() 
+   private void doAuthentication()
            throws TelnetAuthenticationException,
                   IOException  {
 
@@ -218,11 +218,11 @@ public class  TelnetStreamEngine implements StreamEngine {
       _writer.write( "\n\n !!! Access Denied !!! \n" ) ;
       _writer.flush() ;
       _writer.close() ;
-      throw new 
-      TelnetAuthenticationException( 
+      throw new
+      TelnetAuthenticationException(
           "Not authenticated (host="+_host+";user="+user+")" ) ;
-      
-         
+
+
    }
    private void _handleControl( byte [] cntr )throws IOException{
 //      System.out.print("Control arrived : ");
@@ -231,7 +231,7 @@ public class  TelnetStreamEngine implements StreamEngine {
 //      System.out.println("");
       if(  cntr.length == 3 ){
          switch( cntr[1] ){
-            
+
             case telnetDONT :
               switch( cntr[2] ) {
                  case telnetOptionLine : _lineMode = true ; break ;
@@ -252,7 +252,7 @@ public class  TelnetStreamEngine implements StreamEngine {
              _outputStream.write( cntr ) ;
              _outputStream.flush() ;
             break ;
-         
+
          }
       }
    }
@@ -260,7 +260,7 @@ public class  TelnetStreamEngine implements StreamEngine {
       //
       if( _controlDataPos >= _controlData.length ){
       //
-      //  somethin' wrong with telnet engine 
+      //  somethin' wrong with telnet engine
       //
            _controlDataPos = 0 ;
       }
@@ -272,11 +272,11 @@ public class  TelnetStreamEngine implements StreamEngine {
    }
    private byte [] _engineControlGet(){
       if( _controlDataPos == 0 )return null ;
-      
+
       byte [] rc = new byte[ _controlDataPos ] ;
-      
+
       System.arraycopy( _controlData , 0 , rc , 0 , _controlDataPos ) ;
-      
+
       _engineControlClear() ;
       return rc ;
    }
@@ -287,9 +287,9 @@ public class  TelnetStreamEngine implements StreamEngine {
 
          if( ( rc = _inputStream.read() ) < 0 )return null ;
          if( ( obj = _next( (byte)rc ) ) != null )return obj ;
-      } 
-      
-   
+      }
+
+
    }
    private Object _next( byte c ){
 
@@ -356,9 +356,9 @@ public class  TelnetStreamEngine implements StreamEngine {
              _engineState = cctData ;
              return Byte.valueOf ( c ) ;
           }
-       break ; 
-     }  
+       break ;
+     }
      return null ;
    }
- 
+
 }
