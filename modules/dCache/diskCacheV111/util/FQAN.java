@@ -16,13 +16,13 @@ import java.util.regex.Matcher;
  * @author timur
  */
 public class FQAN implements java.io.Serializable {
-    
+
     static final long serialVersionUID = -2212735007788920585L;
     private static Pattern p1 = Pattern.compile("(.*)/Role=(.*)/Capability=(.*)");
     private static Pattern p2 = Pattern.compile("(.*)/Role=(.*)(.*)");
     private static Pattern p3 = Pattern.compile("(.*)(.*)(.*)");
     private Matcher m = null;
-    
+
     //immutable
     private final String fqan;
     /** Creates a new instance of FQAN */
@@ -32,16 +32,16 @@ public class FQAN implements java.io.Serializable {
         }
         this.fqan = fqan;
     }
-    
+
     public String toString() {
         return fqan;
     }
-    
+
     private Matcher getMatcher() {
         if (m!=null) {
             return m;
         }
-        
+
         m = p1.matcher(fqan);
         if(!m.matches()) {
             m = p2.matcher(fqan);
@@ -52,19 +52,19 @@ public class FQAN implements java.io.Serializable {
         }
         return m;
     }
-    
+
     public String getGroup() {
         return getMatcher().group(1);
     }
-    
+
     public String getRole() {
         return getMatcher().group(2);
     }
-    
+
     public String getCapability() {
         return getMatcher().group(3);
     }
-    
+
     /**
      * @param args the command line arguments
      */
@@ -75,7 +75,7 @@ public class FQAN implements java.io.Serializable {
         System.out.println("Group    = "+fqan.getGroup());
         System.out.println("Role     = "+fqan.getRole());
         System.out.println("Capacity = "+fqan.getGroup());
-        
+
     }
-    
+
 }
