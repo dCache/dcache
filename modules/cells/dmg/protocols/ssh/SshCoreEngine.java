@@ -24,19 +24,19 @@ public class SshCoreEngine  {
    protected static final int SSH_CIPHER_MASK_IDEA     = (1<<SSH_CIPHER_IDEA) ;
    protected static final int SSH_CIPHER_MASK_DES      = (1<<SSH_CIPHER_DES) ;
    protected static final int SSH_CIPHER_MASK_BLOWFISH = (1<<SSH_CIPHER_BLOWFISH) ;
-   
+
    protected static final int SSH_AUTH_RSA         = (1<<2) ;
    protected static final int SSH_AUTH_PASSWORD    = (1<<3) ;
    protected static final int SSH_AUTH_RHOSTS_RSA  = (1<<4) ;
-   
+
    protected SshCoreEngine( Socket socket ) throws IOException {
-   
+
       _socket = socket ;
-      
+
       _input    = new DataInputStream( socket.getInputStream() ) ;
       _output   = socket.getOutputStream() ;
-      
-   
+
+
    }
    public void sendStdout( byte [] data , int off , int size ) throws IOException {
       writePacket( new SshSmsgStdoutData( data , off , size ) ) ;
@@ -52,7 +52,7 @@ public class SshCoreEngine  {
      writePacket( new SshSmsgExitStatus( reason ) ) ;
    }
    public void finish( String reason ) throws IOException {
-   
+
    }
    protected void setCiphers( StreamCipher inCipher , StreamCipher outCipher ){
       _inCipher  = inCipher ;
@@ -94,36 +94,36 @@ public class SshCoreEngine  {
       int c = 0 , i ;
       try{
         for( i = 0 ; i < inBytes.length ; i++ ){
-          if( ( c = _input.read() ) < 0 )break ; 
-          inBytes[i] = (byte) c ;  
-          if( inBytes[i] == '\n' )break ;  
+          if( ( c = _input.read() ) < 0 )break ;
+          inBytes[i] = (byte) c ;
+          if( inBytes[i] == '\n' )break ;
         }
       }catch( Exception e ){
         throw new SshProtocolException( "IO : "+e ) ;
       }
       if( ( i == inBytes.length ) ||
           ( c < 0               )    )
-         throw new 
+         throw new
          SshProtocolException( "Ssh Protocol violation in reading Version" ) ;
-         
+
       return new String( inBytes , 0 , i ) ;
    }
    void printout( String out ){ /* System.out.println( out ) ; */}
    void printerr( String out ){ System.err.println( out ) ; }
    protected boolean setEncryption( int cipherType , byte [] sessionKey ){
-   
+
       StreamCipher inCipher = null , outCipher = null ;
-      
+
       if(  cipherType == SSH_CIPHER_IDEA ){
-      
+
          printout( "SshCoreEngine : Cipher is idea " ) ;
-         
+
          byte [] vector  = new byte[8] ;
          byte [] ideakey = new byte[16] ;
-         
+
          System.arraycopy( sessionKey, 0 ,ideakey , 0 , 16 ) ;
-         
-         //   vector is all zero 
+
+         //   vector is all zero
          inCipher  = new StreamFromBlockCipher(
                          new Jidea( ideakey ) ,
                          vector ,
@@ -132,23 +132,23 @@ public class SshCoreEngine  {
                          new Jidea( ideakey ) ,
                          vector ,
                          "cfb"               ) ;
-                         
+
          printout( "SshCoreEngine : Ciphers created" ) ;
-         
+
       }else if(  cipherType == SSH_CIPHER_BLOWFISH ){
-      
+
          printout( "SshCoreEngine : Cipher is blowfish " ) ;
-         
+
          byte [] vector  = new byte[8] ;
          byte [] ideakey = new byte[32] ;
 //         byte [] ideakey = new byte[sessionKey.length] ;
 
-         
+
          System.arraycopy( sessionKey, 0 ,ideakey , 0 , ideakey.length ) ;
-         
-         //   vector is all zero 
+
+         //   vector is all zero
          printout( "Sshcoreengine : "+byteToHexString( ideakey ) ) ;
-         
+
          inCipher  = new StreamFromBlockCipher(
                          new Jblowfish( ideakey ) ,
                          vector ,
@@ -157,20 +157,20 @@ public class SshCoreEngine  {
                          new Jblowfish( ideakey ) ,
                          vector ,
                          "cbc"               ) ;
-                         
+
          printout( "SshCoreEngine : Ciphers created" ) ;
 
       }else if(  cipherType == SSH_CIPHER_DES ){
-      
+
          printout( "SshCoreEngine : Cipher is des " ) ;
-         
+
          byte [] vector  = new byte[8] ;
          byte [] ideakey = new byte[8] ;
-         
+
          System.arraycopy( sessionKey, 0 ,ideakey , 0 , ideakey.length ) ;
-                  
-         //   vector is all zero 
-         
+
+         //   vector is all zero
+
          inCipher  = new StreamFromBlockCipher(
                          new Jdes( ideakey ) ,
                          vector ,
@@ -179,17 +179,17 @@ public class SshCoreEngine  {
                          new Jdes( ideakey ) ,
                          vector ,
                          "cbc"               ) ;
-                         
+
          printout( "SshCoreEngine : Ciphers created" ) ;
-         
+
       }else{
          printerr( "SshCoreEngine : Cipher not excepted ( exit ) "+cipherType ) ;
          return false  ;
       }
-      
+
       setCiphers( inCipher , outCipher ) ;
       return true ;
-   
+
    }
   static public String byteToHexString( byte b ) {
        String s = Integer.toHexString( ( b < 0 ) ? ( 256 + (int)b ) : (int)b  ) ;
@@ -197,13 +197,13 @@ public class SshCoreEngine  {
        else return s ;
   }
   static public String byteToHexString( byte [] b ) {
-       
+
 	  StringBuilder sb = new StringBuilder(b.length +1);
-	  
+
        for( int i = 0 ; i < b.length ; i ++ ) {
           sb.append(byteToHexString( b[i] ) ).append(" " ) ;
        }
-       return sb.toString() ;    
+       return sb.toString() ;
   }
 
-} 
+}
