@@ -241,12 +241,12 @@ public class PnfsManagerV3 extends CellAdapter {
             /* Initialize ACL.
              */
             Properties props = new Properties();
-            props.setProperty("aclEnabled", _args.getOpt("aclEnabled"));
-            props.setProperty("aclTable", _args.getOpt("aclTable"));
-            props.setProperty("aclConnDriver", _args.getOpt("aclConnDriver"));
-            props.setProperty("aclConnUrl", _args.getOpt("aclConnUrl"));
-            props.setProperty("aclConnUser", _args.getOpt("aclConnUser"));
-            props.setProperty("aclConnPswd", _args.getOpt("aclConnPswd"));
+            getAclProperty("aclEnabled", props, _args);
+            getAclProperty("aclTable", props, _args);
+            getAclProperty("aclConnDriver", props, _args);
+            getAclProperty("aclConnUrl", props, _args);
+            getAclProperty("aclConnUser", props, _args);
+            getAclProperty("aclConnPswd", props, _args);
             AclHandler.setAclConfig(props);
         } catch (Exception e){
             esay ("Exception occurred: "+e);
@@ -257,6 +257,14 @@ public class PnfsManagerV3 extends CellAdapter {
         //Make the cell name well-known
         getNucleus().export();
         start() ;
+    }
+
+    private void getAclProperty(String key, Properties props, Args args)
+    {
+        String value = args.getOpt(key);
+        if (value != null) {
+            props.setProperty(key, value);
+        }
     }
 
     @Override

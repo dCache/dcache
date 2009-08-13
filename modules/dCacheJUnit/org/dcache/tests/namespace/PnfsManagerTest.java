@@ -89,11 +89,17 @@ public class PnfsManagerTest {
 
 
         String args = "org.dcache.chimera.namespace.ChimeraOsmStorageInfoExtractor " +
-                "-threads=1 " +
-                "-namespace-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory " +
-                "-storageinfo-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory " +
-                "-cachelocation-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory " +
-                "-chimeraConfig=modules/external/Chimera/test-config.xml";
+            "-threads=1 " +
+            "-namespace-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory " +
+            "-storageinfo-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory " +
+            "-cachelocation-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory " +
+            "-chimeraConfig=modules/external/Chimera/test-config.xml " +
+            "-aclEnabled=false " +
+            "-aclTable=t_acl " +
+            "-aclConnDriver=org.hsqldb.jdbcDriver " +
+            "-aclConnUrl=jdbc:hsqldb:mem:chimeramem " +
+            "-aclConnUser=postgres " +
+            "-aclConnPswd=";
 
         _pnfsManager =  new PnfsManagerV3("testPnfsManager", args);
 
