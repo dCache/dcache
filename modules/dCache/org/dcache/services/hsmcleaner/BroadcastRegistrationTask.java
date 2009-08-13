@@ -2,12 +2,14 @@ package org.dcache.services.hsmcleaner;
 
 import java.util.TimerTask;
 
-import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.multicaster.BroadcastRegisterMessage;
 import dmg.cells.services.multicaster.BroadcastUnregisterMessage;
+
+import org.apache.log4j.Logger;
 
 /**
  * TimerTask to periodically register a broadcast subscription.
@@ -15,7 +17,7 @@ import dmg.cells.services.multicaster.BroadcastUnregisterMessage;
 public class BroadcastRegistrationTask extends TimerTask
 {
     /** Cell used to send message. */
-    private final CellAdapter _cell;
+    private final CellEndpoint _cellEndpoint;
 
     /** Name of the message class to register. */
     private final String _eventClass;
@@ -25,9 +27,11 @@ public class BroadcastRegistrationTask extends TimerTask
 
     private static CellPath _broadcast = new CellPath("broadcast");
 
-    public BroadcastRegistrationTask(CellAdapter cell, String eventClass, CellPath target)
+	private static final Logger _logger = Logger.getLogger(BroadcastRegistrationTask.class);
+
+    public BroadcastRegistrationTask(CellEndpoint cellEndpoint, String eventClass, CellPath target)
     {
-        _cell = cell;
+        _cellEndpoint = cellEndpoint;
         _eventClass = eventClass;
         _target = target;
     }
@@ -47,9 +51,9 @@ public class BroadcastRegistrationTask extends TimerTask
         try {
             BroadcastRegisterMessage message =
                 new BroadcastRegisterMessage(_eventClass, _target);
-            _cell.sendMessage(new CellMessage(_broadcast, message));
+            _cellEndpoint.sendMessage(new CellMessage(_broadcast, message));
         } catch (NoRouteToCellException e) {
-            _cell.esay("Failed to register with broadcast cell: No route to cell");
+            _logger.error("Failed to register with broadcast cell: No route to cell");
         }
     }
 
@@ -63,9 +67,9 @@ public class BroadcastRegistrationTask extends TimerTask
         try {
             BroadcastUnregisterMessage message =
                 new BroadcastUnregisterMessage(_eventClass, _target);
-            _cell.sendMessage(new CellMessage(_broadcast, message));
+            _cellEndpoint.sendMessage(new CellMessage(_broadcast, message));
         } catch (NoRouteToCellException e) {
-            _cell.esay("Failed to register with broadcast cell: No route to cell");
+            _logger.error("Failed to register with broadcast cell: No route to cell");
         }
     }
 }
