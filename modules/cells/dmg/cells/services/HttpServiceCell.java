@@ -366,6 +366,18 @@ public class      HttpServiceCell
           _pw  = new PrintWriter(
                       new OutputStreamWriter( _out ) ) ;
        }
+
+       private String getContentTypeFor(String fileName)
+       {
+           if (fileName.endsWith(".html")) {
+               return "text/html";
+           } else if (fileName.endsWith(".css")) {
+               return "text/css";
+           } else {
+               return __mimeTypeMap.getContentTypeFor(fileName);
+           }
+       }
+
        public void run(){
           try{
              String request = _br.readLine() ;
@@ -574,34 +586,21 @@ public class      HttpServiceCell
            if( ! f.isFile() )
               throw new Exception( "Url Not found : "+f ) ;
 
-           if( filename.endsWith( ".html" ) ){
-              BufferedReader br = new BufferedReader(
-                                  new FileReader( f )   ) ;
-
-
-              printHttpHeader( 0 ) ;
-              String line = null ;
-              while( ( line = br.readLine() ) != null )
-                  _pw.println( line ) ;
-
-              try{ br.close() ; }catch(IOException iii){}
-           } else {
-              FileInputStream binary = new FileInputStream( f ) ;
-              int rc = 0 ;
-              byte [] buffer = new byte[4*1024] ;
-              printHttpHeader( (int)f.length() , __mimeTypeMap.getContentTypeFor(filename) ) ;
-              try{
-
-                 while( ( rc = binary.read( buffer , 0 , buffer.length ) ) > 0 ){
-                    _out.write( buffer , 0 , rc ) ;
-                 }
-              }finally{
-                 _out.flush() ;
-                 try{ binary.close() ;  }catch(IOException ee){} ;
-
-              }
+           FileInputStream binary = new FileInputStream(f);
+           try {
+               int rc = 0;
+               byte[] buffer = new byte[4 * 1024];
+               printHttpHeader((int)f.length(), getContentTypeFor(filename));
+               while ((rc = binary.read(buffer, 0, buffer.length)) > 0) {
+                   _out.write(buffer, 0, rc);
+               }
+           } finally {
+               _out.flush();
+               try {
+                   binary.close();
+               } catch (IOException e) {
+               }
            }
-
        }
        public void printHttpHeader( int size ){
           printHttpHeader( size , _contentType ) ;
