@@ -9,9 +9,8 @@ import dmg.security.CellUser;
 import dmg.util.* ;
 
 
-public class  TelnetStreamEngine implements StreamEngine {
-
-
+public class  TelnetStreamEngine extends DummyStreamEngine
+{
      //
      //   the telnet constants
      //
@@ -67,12 +66,10 @@ public class  TelnetStreamEngine implements StreamEngine {
    boolean     _echoMode = true ;
    boolean _passwordMode = false ;
 
-   private Socket                     _socket     = null ;
    private TelnetServerAuthentication _serverAuth = null ;
-   private InetAddress                _host       = null ;
-   private CellUser                   _userName   = new CellUser("unknow", null, null);
-   private InputStream   _inputStream ;
-   private OutputStream  _outputStream ;
+
+   private OutputStream _outputStream ;
+   private InputStream _inputStream ;
 
    private TelnetInputStream2  _telnetInputStream ;
    private TelnetOutputStream2 _telnetOutputStream ;
@@ -85,44 +82,30 @@ public class  TelnetStreamEngine implements StreamEngine {
                               TelnetServerAuthentication auth )
           throws IOException, TelnetAuthenticationException, IllegalArgumentException, IllegalAccessException, InvocationTargetException {
 
-      _socket     = socket ;
+       super(socket);
       _serverAuth = auth ;
 
       _engineState    = 0 ;
       _controlData    = null ;
       _controlDataPos = 0 ;
 
-      _host               = _socket.getInetAddress() ;
+      _inputStream = super.getInputStream();
+      _outputStream = super.getOutputStream();
 
-      _inputStream        = _socket.getInputStream() ;
-      _outputStream       = _socket.getOutputStream() ;
-
-      _telnetInputStream  = new TelnetInputStream2( this )  ;
+      _telnetInputStream  = new TelnetInputStream2( this ) ;
       _telnetOutputStream = new TelnetOutputStream2( this ) ;
 
       _writer = new TelnetOutputStreamWriter( _telnetOutputStream ) ;
       _reader = new TelnetInputStreamReader( _telnetInputStream , _writer ) ;
 
       try{
-    	       Method meth = _socket.getClass().getMethod( "verify" , (Class [])null) ;
-    	       Boolean verified = (Boolean)meth.invoke( _socket , new Object[0] );
-    	       if (verified.booleanValue()) {
-    	           meth = _socket.getClass().getMethod( "getUserPrincipal" , new Class[0] ) ;
-    	           String user = (String)meth.invoke( _socket , new Object[0] );
-
-    	           meth = _socket.getClass().getMethod( "getRole" , new Class[0] ) ;
-    	           String role = (String)meth.invoke( _socket , new Object[0] );
-
-    	           meth = _socket.getClass().getMethod( "getGroup" , new Class[0] ) ;
-    	           String group = (String)meth.invoke( _socket , new Object[0] );
-
-    	           _userName = new CellUser( user, group, role);
-    	       } else {
-                   String hostAddress = (_socket.getInetAddress()).getHostAddress();
-                   _socket.close();
-                   throw new TelnetAuthenticationException("Host "+hostAddress+": Tunnel verification failed!" ) ;
-    	       }
-
+          Method meth = socket.getClass().getMethod("verify");
+          boolean verified = (Boolean)meth.invoke(socket);
+          if (!verified) {
+              String hostAddress = (socket.getInetAddress()).getHostAddress();
+              socket.close();
+              throw new TelnetAuthenticationException("Host "+hostAddress+": Tunnel verification failed!" ) ;
+          }
       }catch(NoSuchMethodException nsm){
     	  // nsm.printStackTrace();
     	  // it's not a tunnel...still OK
@@ -134,19 +117,17 @@ public class  TelnetStreamEngine implements StreamEngine {
    //
    // the stream engine interface
    //
+   @Override
    public Reader getReader(){ return _reader ; }
+
+   @Override
    public Writer getWriter(){ return _writer ; }
 
+   @Override
    public InputStream  getInputStream(){  return _telnetInputStream  ; }
+
+   @Override
    public OutputStream getOutputStream(){ return _telnetOutputStream ; }
-
-   public CellUser getUserName() {         return _userName ; }
-
-   public InetAddress getInetAddress(){  return _host ;  }
-   public InetAddress getLocalAddress() { return _socket.getLocalAddress(); }
-
-   public Socket getSocket() { return _socket; }
-
 
    //
    // the public and package part
@@ -160,8 +141,7 @@ public class  TelnetStreamEngine implements StreamEngine {
       setEcho( ! p ) ;
    }
    void close() throws IOException {
-       _outputStream.close() ;
-       _inputStream.close() ;
+       getSocket().close();
    }
    int read() throws IOException {
       Object obj ;
@@ -194,33 +174,35 @@ public class  TelnetStreamEngine implements StreamEngine {
            throws TelnetAuthenticationException,
                   IOException  {
 
-      if( _serverAuth.isHostOk( _host ) )return ;
+      InetAddress host = getInetAddress();
+
+      if( _serverAuth.isHostOk( host ) )return ;
       setEcho( true ) ;
       _writer.write( "\n      User : " ) ;
       _writer.flush() ;
       BufferedReader r  = new BufferedReader( _reader ) ;
       String user = r.readLine() ;
-      if( _serverAuth.isUserOk( _host , user ) ){
-         _userName = new CellUser( user , null, null) ;
+      if( _serverAuth.isUserOk( host , user ) ){
+          setUserName(new CellUser(user, null, null));
          return ;
       }
       setPasswordMode( true ) ;
       _writer.write( "  Password : " ) ;
       _writer.flush() ;
       String password = r.readLine() ;
-      if( _serverAuth.isPasswordOk( _host , user , password ) ){
+      if( _serverAuth.isPasswordOk( host , user , password ) ){
          setPasswordMode( false ) ;
-         _userName = new CellUser( user , null, null) ;
+         setUserName(new CellUser(user, null, null));
          _writer.write("\n\n") ;
          _writer.flush();
          return ;
       }
       _writer.write( "\n\n !!! Access Denied !!! \n" ) ;
       _writer.flush() ;
-      _writer.close() ;
+      close();
       throw new
       TelnetAuthenticationException(
-          "Not authenticated (host="+_host+";user="+user+")" ) ;
+          "Not authenticated (host="+host+";user="+user+")" ) ;
 
 
    }

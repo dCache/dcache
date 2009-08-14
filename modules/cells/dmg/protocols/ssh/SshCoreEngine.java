@@ -5,6 +5,7 @@ import dmg.security.cipher.idea.* ;
 import dmg.security.cipher.des.* ;
 import dmg.security.cipher.blowfish.* ;
 import dmg.security.digest.* ;
+import dmg.util.DummyStreamEngine;
 import java.net.* ;
 import java.io.* ;
 import java.util.* ;
@@ -14,7 +15,7 @@ public class SshCoreEngine  {
 
    private DataInputStream  _input ;
    private OutputStream     _output ;
-   private Socket           _socket ;
+   private DummyStreamEngine _engine;
    private StreamCipher     _inCipher = null , _outCipher = null ;
 
    protected static final int SSH_CIPHER_NONE      = 0 ;
@@ -29,15 +30,13 @@ public class SshCoreEngine  {
    protected static final int SSH_AUTH_PASSWORD    = (1<<3) ;
    protected static final int SSH_AUTH_RHOSTS_RSA  = (1<<4) ;
 
-   protected SshCoreEngine( Socket socket ) throws IOException {
+    protected SshCoreEngine( Socket socket ) throws IOException
+    {
+        _engine = new DummyStreamEngine(socket);
+        _input = new DataInputStream(_engine.getInputStream());
+        _output = _engine.getOutputStream();
+    }
 
-      _socket = socket ;
-
-      _input    = new DataInputStream( socket.getInputStream() ) ;
-      _output   = socket.getOutputStream() ;
-
-
-   }
    public void sendStdout( byte [] data , int off , int size ) throws IOException {
       writePacket( new SshSmsgStdoutData( data , off , size ) ) ;
    }

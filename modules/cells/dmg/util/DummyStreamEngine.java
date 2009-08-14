@@ -46,12 +46,17 @@ public class DummyStreamEngine implements StreamEngine
             meth = _socket.getClass().getMethod("getGroup", new Class[0]);
             String group = (String)meth.invoke(_socket, new Object[0]);
 
-            _userName = new CellUser(user, group, role);
+            setUserName(new CellUser(user, group, role));
         } catch (NoSuchMethodException nsm) {
 
         } catch (Exception e) {
             _logger.warn("Failed to initialize user name in DummyStreamEngine", e);
         }
+    }
+
+    public void setUserName(CellUser userName)
+    {
+        _userName = userName;
     }
 
     public CellUser getUserName()
