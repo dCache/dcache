@@ -21,7 +21,7 @@ public class FQAN implements java.io.Serializable {
     private static Pattern p1 = Pattern.compile("(.*)/Role=(.*)/Capability=(.*)");
     private static Pattern p2 = Pattern.compile("(.*)/Role=(.*)(.*)");
     private static Pattern p3 = Pattern.compile("(.*)(.*)(.*)");
-    private Matcher m = null;
+    private transient Matcher m;
 
     //immutable
     private final String fqan;
