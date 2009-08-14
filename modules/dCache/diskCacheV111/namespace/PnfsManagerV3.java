@@ -1613,7 +1613,8 @@ public class PnfsManagerV3 extends CellAdapter {
             if (isCacheOperation && _locationFifos != _fifos) {
                 int index;
                 if (pnfsId != null) {
-                    index = (Math.abs(pnfsId.hashCode()) % _locationFifos.length);
+                    index =
+                        (int) (Math.abs((long) pnfsId.hashCode()) % _locationFifos.length);
                     say("Using location thread [" + pnfsId + "] " + index);
                 } else {
                     index = _random.nextInt(_locationFifos.length);
@@ -1625,12 +1626,12 @@ public class PnfsManagerV3 extends CellAdapter {
                 if (pnfsId != null) {
                     index =
                         pnfsIdToThreadGroup(pnfsId) * _threads +
-                        (Math.abs(pnfsId.hashCode()) % _threads);
+                        (int) (Math.abs((long) pnfsId.hashCode()) % _threads);
                     say("Using thread [" + pnfsId + "] " + index);
                 } else if (path != null) {
                     index =
                         pathToThreadGroup(path) * _threads +
-                        (Math.abs(path.hashCode()) % _threads);
+                        (int) (Math.abs((long) path.hashCode()) % _threads);
                     say("Using thread [" + path + "] " + index);
                 }else{
                     index = _random.nextInt(_fifos.length);
