@@ -150,12 +150,12 @@ public class      CellShell
          _errorMsg  = ce.getErrorMessage() ;
 
          if( _doOnExit != null ){
-            if( _doOnExit.equals( "shutdown" ) )
-               throw new CommandExitException( ce.toString() , 666 ) ;
-
-            else
-               throw new CommandExitException( ce.getErrorMessage() ,
-                                               ce.getErrorCode()   ) ;
+             if (_doOnExit.equals("shutdown")) {
+                 throw new CommandExitException(ce.toString(), 666, ce);
+             } else {
+                 throw new CommandExitException(ce.getErrorMessage(),
+                                                ce.getErrorCode(), ce);
+             }
          }
          return ce ;
       }catch( Throwable te ){
@@ -1481,18 +1481,25 @@ public String command( String c ) throws CommandExitException {
 
                 /* CommandEvaluationException does not generate output
                  * since it is not really an error. Runtime exceptions
-                 * are logged. Other exceptions are printed to the
-                 * error output.
+                 * other than IllegalArgumentException are
+                 * logged. Other exceptions are printed to the error
+                 * output.
                  */
                 if (!(answer instanceof Throwable)) {
                     println(out, answer.toString());
+                } else if (answer instanceof IllegalArgumentException) {
+                    String msg =
+                        String.format("%s: %d: Illegal argument (%s)",
+                                      source, no,
+                                      ((Exception) answer).getMessage());
+                    println(err, msg);
                 } else if (answer instanceof RuntimeException) {
                     _nucleus.esay((Throwable) answer);
                 } else if (!(answer instanceof CommandEvaluationException)) {
                     String msg =
-                        String.format("%s: %d: %s", source, no,
-                                      ((Throwable) answer).getMessage());
-                    println(err, msg);
+                        Exceptions.getMessageWithCauses((Throwable) answer);
+                    println(err, String.format("%s: %d: Illegal argument (%s)",
+                                               source, no, msg));
                 }
             }
         } finally {

@@ -5,6 +5,7 @@ import dmg.cells.nucleus.CellShell;
 import dmg.util.Args;
 import dmg.util.Log4jWriter;
 import dmg.util.CommandExitException;
+import dmg.util.Exceptions;
 
 import java.io.Reader;
 import java.io.FileReader;
@@ -86,10 +87,10 @@ public class BatchCell extends CellAdapter implements Runnable
         } catch (CommandExitException e) {
             int rc = e.getErrorCode();
             if (rc == 666) {
-                _log.fatal(e.getMessage());
+                _log.fatal(Exceptions.getMessageWithCauses(e));
                 System.exit(6);
             } else {
-                _log.error(e.getMessage());
+                _log.error(Exceptions.getMessageWithCauses(e));
             }
         } catch (IOException e) {
             _log.error("I/O error: " + e.getMessage());
