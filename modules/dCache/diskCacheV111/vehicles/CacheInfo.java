@@ -8,6 +8,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -17,7 +18,7 @@ import java.util.StringTokenizer;
 
 import diskCacheV111.util.PnfsFile;
 
-public class CacheInfo implements java.io.Serializable {
+public class CacheInfo implements Serializable {
     //
     // The level in PNFS dedicated to the cache system
     //
@@ -26,11 +27,14 @@ public class CacheInfo implements java.io.Serializable {
     private final List<String> _cacheLocations = new ArrayList<String>();
     private CacheFlags _cacheFlags = null;
 
-    private static final long serialVersionUID = -7449372587084685726L;
+    static final long serialVersionUID = -7449372587084685726L;
 
-    public static class CacheFlags {
+    public static class CacheFlags implements Serializable
+    {
+        static final long serialVersionUID = 6894258376947344044L;
+
         private Map<String, String> _hash = new HashMap<String, String>();
-        private StringBuffer _inputLine = new StringBuffer();
+        private StringBuilder _inputLine = new StringBuilder();
 
         private void addLine(String line) {
             _inputLine.append(line);
@@ -70,7 +74,7 @@ public class CacheInfo implements java.io.Serializable {
 
         private String toPnfsString() {
 
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             int l = 0;
             sb.append(":");
             for (Map.Entry<String, String> entry : _hash.entrySet()) {
