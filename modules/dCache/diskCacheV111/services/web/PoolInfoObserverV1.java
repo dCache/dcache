@@ -19,7 +19,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
    private Object     _lock            = new Object() ;
    private Object     _infoLock        = new Object() ;
    private Thread     _collectThread   = null ;
-   private Thread     _senderThread    = null ;
+   private final Thread _senderThread;
    private long       _interval        = 60000 ;
    private long       _counter         = 0 ;
    private boolean    _debug           = false ;
@@ -558,11 +558,13 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
           _nucleus.newThread(
               new Runnable(){
                  public void run(){
-                    try{ Thread.currentThread().sleep(_interval/2) ;}
-                    catch(Exception ee){}
-                    ( _collectThread =
-                       _nucleus.newThread( PoolInfoObserverV1.this , "collector" ) ).start() ;
-                    say("Collector now started as well");
+                     try {
+                         Thread.currentThread().sleep(_interval/2);
+                         ( _collectThread =
+                           _nucleus.newThread( PoolInfoObserverV1.this , "collector" ) ).start() ;
+                         say("Collector now started as well");
+                     } catch (InterruptedException e) {
+                     }
                  }
               },
               "init"
@@ -722,7 +724,8 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
       // wait for the worker to be done
       //
       say( "Waiting for collector thread to be finished");
-      _collectThread.interrupt() ;
+      if (_collectThread != null)
+          _collectThread.interrupt();
       _senderThread.interrupt() ;
 //      Dictionary context = _nucleus.getDomainContext() ;
 //      context.remove( "cellInfoTable.html" ) ;
