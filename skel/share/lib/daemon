@@ -1,0 +1,86 @@
+#!/bin/sh
+
+usage()
+{
+    echo "Usage: $(basename $0) [OPTION]... COMMAND"
+    echo
+    echo "Valid options are:"
+    echo "   -d <seconds>   delay between automatic restart"
+    echo "   -p <file>      store PID of daemon in <file>"
+    echo "   -r <file>      restart daemon on termination unless <file> exists"
+    echo "   -u <user>      change effective UID to <user>"
+    echo "   -o <file>      redirect output to <file>"
+    echo "   -f             fork"
+    exit 2
+} 1>&2
+
+run()
+{
+    "$@" < /dev/null &
+    if [ "$pid" ]; then
+        echo $! > "$pid"
+    fi
+}
+
+loop()
+{
+    while run "$@"; wait $!; ! [ -f "$restart" ]; do
+        if [ "$delay" ] ; then
+            sleep "$delay"
+        fi
+    done
+}
+
+fork()
+{
+    if [ "$user" ]; then
+        # Make sure the user is able to write to the PID file
+        if [ "$pid" ]; then
+            touch "$pid"
+            chown "$user" "$pid"
+        fi
+
+        # To preserve white space, we need to quote each argument
+        param="${fork:+-f} ${pid:+-p \"$pid\"} ${restart:+-r \"$restart\"} ${delay:+-d \"$delay\"}"
+        for i in "$@"; do
+            param="$param \"$i\""
+        done
+
+        exec su "$user" -c "/bin/sh \"$0\" $param"
+    fi
+
+    if [ "$restart" ]; then
+        if [ "$fork" ]; then
+            loop "$@" &
+        else
+            loop "$@"
+        fi
+    else
+        run "$@"
+        [ "$fork" ] || wait $!
+    fi
+}
+
+while getopts d:p:r:u:o:f opt "$@"; do
+    case $opt in
+        d) delay="$OPTARG";;
+        p) pid="$OPTARG";;
+        r) restart="$OPTARG";;
+        u) user="$OPTARG";;
+        o) output="$OPTARG";;
+        f) fork=1;;
+    esac
+done
+
+shift $(($OPTIND-1))
+
+[ $# -lt 1 ] && usage
+
+if [ "$output" ]; then
+    fork "$@" 1>> "$output" 2>&1
+else
+    fork "$@"
+fi
+
+
+

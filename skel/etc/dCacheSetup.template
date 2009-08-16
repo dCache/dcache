@@ -152,6 +152,16 @@ java_options="-server -Xmx512m -XX:MaxDirectMemorySize=512m \
               -Dorg.dcache.net.tcp.portrange=33115:33145 \
               -Dlog4j.configuration=file:${ourHomeDir}/config/log4j.properties \
              "
+
+#  ---- User
+#
+#   If defined, the UID of the java process will be set.  Notice that
+#   log files will continue to be generated with the user id that
+#   invoked the init script. When undefined or left blank, the UID
+#   will not be changed.
+#
+#user=
+
 #
 #   Additional option for Kerberos5 authentication:
 #              -Djava.security.krb5.realm=FNAL.GOV \

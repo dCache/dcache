@@ -44,7 +44,8 @@ if [ $? -ne 0 ] ; then
   logfile=/dev/null
 fi
 
-pidFile=${pidDir}/dcache.${domainName}.pid
+stopFile="/tmp/.dcache-stop.${domainName}"
+pidFile="${pidDir}/dcache.${domainName}.pid"
 
 #
 #
@@ -58,7 +59,7 @@ procStop() {
       echo "Pid file (${pidFile}) does not contain valid PID" 1>&2
       exit 1
    fi
-   touch ${config}/realStop.${domainName} 2>/dev/null
+   touch "$stopFile" 2>/dev/null
    kill -TERM $x 1>/dev/null 2>/dev/null
    printf "Stopping ${domainName} (pid=`cat ${pidFile}`) "
 
@@ -113,47 +114,44 @@ procStart() {
       exit 5
   fi
   if [ ! -z "${debug}" ] ; then DEBUG="-debug" ; fi
-  export CLASSPATH
-  CLASSPATH=${classpath}:${thisDir}/../..:${thisDir}/../classes/cells.jar:${thisDir}/../classes/dcache.jar:${externalLibsClassPath}
-  export LD_LIBRARY_PATH
-  LD_LIBRARY_PATH=${librarypath}
+  CLASSPATH="${classpath}:${thisDir}/../..:${thisDir}/../classes/cells.jar:${thisDir}/../classes/dcache.jar:${externalLibsClassPath}"
+  export LD_LIBRARY_PATH="${librarypath}"
 
 # use local jre ( ${ourHomeDir}/jre if it exist. This will allows to
 # us to package required jre with dCache.
 
-if [ -x  ${ourHomeDir}/jre/bin/java ]
-then
-	java=${ourHomeDir}/jre/bin/java
-fi
+  if [ -x "${ourHomeDir}/jre/bin/java" ]
+  then
+      java="${ourHomeDir}/jre/bin/java"
+  fi
 
 # Add a java option for an endorsed directory
-java_options="${java_options} -Djava.endorsed.dirs=${ourHomeDir}/classes/endorsed"
+  java_options="${java_options} \
+                -cp ${CLASSPATH} \
+                -Djava.endorsed.dirs=${ourHomeDir}/classes/endorsed \
+                dmg.cells.services.Domain ${domainName} $TELNET_PORT \
+                -param setupFile=${setupFilePath} \
+                       ourHomeDir=${ourHomeDir} \
+                       ourName=${ourBaseName} \
+                       ${POOL} \
+                $BATCH_FILE $DEBUG"
 
 #
 #  echo "(Using classpath : $CLASSPATH )"
 #  echo "(Using librarypath : $LD_LIBRARY_PATH )"
 #  echo "${java} ${java_options}"
-  rm -fr ${config}/realStop.${domainName} 2>/dev/null
-  [ "${logMode}" = "new" ] && mv ${logfile} ${logfile}.old 2>/dev/null
-     ( while [ ! -f "${config}/realStop.${domainName}" ] ; do
-        ${java} ${java_options} dmg.cells.services.Domain ${domainName} \
-                $TELNET_PORT \
-                -param setupFile=${setupFilePath} \
-                       ourHomeDir=${ourHomeDir} \
-                       ourName=${ourBaseName} \
-                       ${POOL} \
-                $BATCH_FILE $DEBUG  1>>${logfile}  2>&1 </dev/null &
-        latestPid=$!
-        echo ${latestPid} >${pidFile}
-        wait
-        if [ -f "${config}/realStop.${domainName}" ] ; then break ; fi
-        [ "${logMode}" = "new" ] && mv ${logfile} ${logfile}.old 2>/dev/null
-        if [ -f "${config}/delay" ] ; then
-           delay=`cat ${config}/delay 2>/dev/null`
-           sleep ${delay} 2>/dev/null
-        fi
-     done ) >/dev/null 2>&1 </dev/null &
-     printf "Starting ${domainName}  "
+     [ "${logMode}" = "new" ] && mv -f "${logfile}" "${logfile}.old"
+
+     if [ -f "${config}/delay" ] ; then
+         delay=`cat "${config}/delay" 2>/dev/null`
+     else
+         delay=10
+     fi
+
+     rm -f "$stopFile"
+     /bin/sh ${ourHomeDir}/share/lib/daemon ${user:+-u "$user"} -r "${stopFile}" -d "${delay}" -f -p "${pidFile}" -o "${logfile}" "${java}" ${java_options}
+
+     printf "Starting ${domainName} "
      for c in 6 5 4 3 2 1 0 ; do
         latestPid=`cat ${pidFile} 2>/dev/null`
         kill -0 ${latestPid} 1>/dev/null 2>/dev/null
@@ -168,7 +166,7 @@ java_options="${java_options} -Djava.endorsed.dirs=${ourHomeDir}/classes/endorse
      kill -0 ${latestPid} 1>/dev/null 2>/dev/null
      if [ $? -ne 0 ] ; then
          echo " failed"
-         grep PANIC ${logfile}.old
+         grep PANIC "${logfile}"
          exit 4
      else
          echo "Done (pid=${latestPid})"
