@@ -156,7 +156,6 @@ import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FileMetaData;
-import diskCacheV111.util.PnfsFile;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.VOInfo;
 import diskCacheV111.util.ProxyAdapter;
@@ -166,11 +165,12 @@ import diskCacheV111.util.ChecksumPersistence;
 import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.Checksum;
 import diskCacheV111.util.PnfsHandler;
-import org.dcache.auth.UserAuthBase;
-import org.dcache.auth.AuthorizationRecord;
 import diskCacheV111.services.acl.PermissionHandler;
 import diskCacheV111.services.acl.DelegatingPermissionHandler;
 
+import org.dcache.namespace.FileType;
+import org.dcache.auth.UserAuthBase;
+import org.dcache.auth.AuthorizationRecord;
 import org.dcache.cells.AbstractCell;
 import org.dcache.cells.Option;
 import org.dcache.acl.ACLException;
@@ -180,6 +180,12 @@ import org.dcache.acl.enums.AuthType;
 import org.dcache.acl.enums.FileAttribute;
 import org.dcache.acl.enums.InetAddressType;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.vehicles.PnfsListDirectoryMessage;
+import org.dcache.util.list.DirectoryListSource;
+import org.dcache.util.list.DirectoryListPrinter;
+import org.dcache.util.list.ListDirectoryHandler;
+import org.dcache.util.list.DirectoryStream;
+import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.Glob;
 import org.dcache.namespace.FileType;
 
@@ -379,6 +385,11 @@ public abstract class AbstractFtpDoorV1
      * Stub object for talking to the PNFS manager.
      */
     protected PnfsHandler _pnfs;
+
+    /**
+     * Used for directory listing.
+     */
+    protected DirectoryListSource _listSource;
 
     /**
      * User's Origin
@@ -1020,9 +1031,11 @@ public abstract class AbstractFtpDoorV1
 
         _pnfs = new PnfsHandler(this, new CellPath(_pnfsManager));
         _pnfs.setPnfsTimeout(_pnfsTimeout * 1000L);
+        _listSource = new ListDirectoryHandler(_pnfs);
 
         adminCommandListener = new AdminCommandListener();
         addCommandListener(adminCommandListener);
+        addMessageListener(_listSource);
 
         _checkStagePermission = new CheckStagePermission(_stageConfigurationFilePath);
 
@@ -3836,30 +3849,6 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    private class FilenameMatcher implements FilenameFilter
-    {
-        private Pattern _toMatch;
-
-        /**
-         * the pattern is of the type, used in unix shell to match files
-         * where ? corresponds to any symbol and
-         *       * corresponds to 0 or more symbols
-         *
-         * to convert it to regular expression pattern,
-         * we substitute ? with . and * with .*
-         */
-        FilenameMatcher(Glob glob) {
-            _toMatch = glob.toPattern();
-        }
-
-        public boolean accept(File dir,
-                              String name) {
-            Matcher m = _toMatch.matcher(name);
-
-            return m.matches();
-        }
-    }
-
     private void openDataSocket()
         throws IOException
     {
@@ -3899,9 +3888,8 @@ public abstract class AbstractFtpDoorV1
         Args args = new Args(arg);
         boolean listLong =
             args.options().isEmpty() || (args.getOpt("l") != null);
-
         if (args.argc() == 0) {
-            arg = ".";
+            arg = "";
         } else {
             arg = args.argv(0);
         }
@@ -3930,25 +3918,26 @@ public abstract class AbstractFtpDoorV1
                 PrintWriter writer =
                     new PrintWriter(new OutputStreamWriter(new BufferedOutputStream(_dataSocket.getOutputStream()), "US-ASCII"));
 
-                ListPrinter printer =
+                DirectoryListPrinter printer =
                     listLong
                     ? new LongListPrinter(writer)
                     : new ShortListPrinter(writer);
 
                 try {
-                    total = printDirectory(printer, f, null);
+                    total = _listSource.printDirectory(printer, f, null, null);
                 } catch (NotDirCacheException e) {
                     /* f exists, but it is not a directory.
                      */
-                    printFile(printer, f);
+                    _listSource.printFile(printer, f);
                     total = 1;
                 } catch (FileNotFoundCacheException e) {
                     /* If f does not exist, then it could be a
                      * pattern; we move up one directory level and
                      * repeat the list.
                      */
-                    total = printDirectory(printer, f.getParentFile(),
-                                           new Glob(f.getName()));
+                    total =
+                        _listSource.printDirectory(printer, f.getParentFile(),
+                                                   new Glob(f.getName()), null);
                 }
 
                 writer.close();
@@ -3958,9 +3947,6 @@ public abstract class AbstractFtpDoorV1
             reply("226 " + total + " files");
         } catch (InterruptedException e) {
             reply("451 Operation cancelled");
-        } catch (ACLException e) {
-            reply("451 Internal permission check failure: " + e);
-            warn("Error in LIST: " + e.getMessage());
         } catch (FileNotFoundCacheException e) {
             reply("550 File not found");
         } catch (NotDirCacheException e) {
@@ -4006,16 +3992,13 @@ public abstract class AbstractFtpDoorV1
                 PrintWriter writer =
                     new PrintWriter(new OutputStreamWriter(new BufferedOutputStream(_dataSocket.getOutputStream()), "US-ASCII"));
 
-                total = printDirectory(new ShortListPrinter(writer),
-                                       new File(path), null);
+                total = _listSource.printDirectory(new ShortListPrinter(writer),
+                                                   new File(path), null, null);
                 writer.close();
             } finally {
                 closeDataSocket();
             }
             reply("226 " + total + " files");
-        } catch (ACLException e) {
-            reply("451 Internal permission check failure: " + e);
-            warn("Error in LIST: " + e.getMessage());
         } catch (InterruptedException e) {
             reply("451 Operation cancelled");
         } catch (FileNotFoundCacheException e) {
@@ -4061,17 +4044,11 @@ public abstract class AbstractFtpDoorV1
             File f = new File(path);
             pw.println("250- Listing " + arg + "\r\n");
             pw.print(' ');
-            printFile(new FactPrinter(pw), f);
+            _listSource.printFile(new FactPrinter(pw), f);
             pw.print("250 End");
             reply(sw.toString());
         } catch (InterruptedException e) {
             reply("451 Operation cancelled");
-        } catch (IOException e) {
-            reply("451 Local error in processing");
-            warn("Error in MLST: " + e.getMessage());
-        } catch (ACLException e) {
-            reply("451 Internal permission check failure: " + e);
-            warn("Error in MLST: " + e.getMessage());
         } catch (CacheException e) {
             reply("451 Local error in processing");
             warn("Error in MLST: " + e.getMessage());
@@ -4111,8 +4088,8 @@ public abstract class AbstractFtpDoorV1
                 PrintWriter writer =
                     new PrintWriter(new OutputStreamWriter(new BufferedOutputStream(_dataSocket.getOutputStream()), "UTF-8"));
 
-                total = printDirectory(new FactPrinter(writer),
-                                       new File(path), null);
+                total = _listSource.printDirectory(new FactPrinter(writer),
+                                                   new File(path), null, null);
                 writer.close();
             } finally {
                 closeDataSocket();
@@ -4120,9 +4097,6 @@ public abstract class AbstractFtpDoorV1
             reply("226 MLSD completed for " + total + " files");
         } catch (InterruptedException e) {
             reply("451 Operation cancelled");
-        } catch (ACLException e) {
-            reply("451 Internal permission check failure: " + e);
-            warn("Error in MLSD: " + e.getMessage());
         } catch (FileNotFoundCacheException e) {
             reply("501 Directory not found");
         } catch (NotDirCacheException e) {
@@ -4806,78 +4780,8 @@ public abstract class AbstractFtpDoorV1
             }
      }
 
-    private void printFile(ListPrinter printer, File path)
-        throws ACLException, CacheException, IOException, InterruptedException
-    {
-        PnfsFile pnfsFile = new PnfsFile(path.toString());
-        if (!pnfsFile.exists() || !pnfsFile.isPnfs()) {
-            throw new FileNotFoundCacheException("No such file: " + path);
-        }
-
-        Set<org.dcache.namespace.FileAttribute> required =
-            printer.getRequiredAttributes();
-        PnfsId id =
-            _pnfs.getPnfsIdByPath(path.toString());
-        FileAttributes attributes =
-            _pnfs.getFileAttributes(id, required);
-        FileAttributes dirAttr =
-            _pnfs.getFileAttributes(path.getParent(), required);
-        printer.print(dirAttr, path, id, attributes);
-    }
-
-    private int printDirectory(ListPrinter printer, File path, Glob glob)
-        throws ACLException, CacheException, IOException, InterruptedException
-    {
-        PnfsFile pnfsFile = new PnfsFile(path.toString());
-        if (!pnfsFile.exists() || !pnfsFile.isPnfs()) {
-            throw new FileNotFoundCacheException("No such file: " + path);
-        }
-
-        if (!pnfsFile.isDirectory()) {
-            throw new NotDirCacheException("No such file: " + path);
-        }
-
-        File[] files;
-        if (glob != null) {
-            files = path.listFiles(new FilenameMatcher(glob));
-        } else {
-            files = path.listFiles();
-        }
-
-        Set<org.dcache.namespace.FileAttribute> required =
-            printer.getRequiredAttributes();
-        FileAttributes dirAttr =
-            _pnfs.getFileAttributes(path.toString(), required);
-
-        int total = 0;
-        for (File file: files) {
-            try {
-                PnfsId id =
-                    _pnfs.getPnfsIdByPath(file.toString());
-                FileAttributes attributes =
-                    _pnfs.getFileAttributes(id, required);
-                printer.print(dirAttr, file, id, attributes);
-                total++;
-            } catch (FileNotFoundCacheException e) {
-                /* File was probably deleted during
-                 * listing; not an error.
-                 */
-            }
-        }
-        return total;
-    }
-
-    /** Encapsulates the output format of the LIST command. */
-    interface ListPrinter
-    {
-        Set<org.dcache.namespace.FileAttribute> getRequiredAttributes();
-        void print(FileAttributes dirAttr, File file, PnfsId id,
-                   FileAttributes attributes)
-            throws ACLException, CacheException;
-    }
-
-    /** A short format which only include the file name. */
-    static class ShortListPrinter implements ListPrinter
+    /** A short format which only includes the file name. */
+    static class ShortListPrinter implements DirectoryListPrinter
     {
         private final PrintWriter _out;
 
@@ -4891,15 +4795,14 @@ public abstract class AbstractFtpDoorV1
             return EnumSet.noneOf(org.dcache.namespace.FileAttribute.class);
         }
 
-        public void print(FileAttributes dirAttr, File file,
-                          PnfsId id, FileAttributes attributes)
+        public void print(FileAttributes dirAttr, DirectoryEntry entry)
         {
-            _out.append(file.getName()).append("\r\n");
+            _out.append(entry.getName()).append("\r\n");
         }
     }
 
     /** A long format corresponding to the 'normal' FTP list format. */
-    class LongListPrinter implements ListPrinter
+    class LongListPrinter implements DirectoryListPrinter
     {
         private final Subject _subject;
         private final PrintWriter _out;
@@ -4926,12 +4829,10 @@ public abstract class AbstractFtpDoorV1
             return attributes;
         }
 
-        public void print(FileAttributes dirAttr, File file,
-                          PnfsId id, FileAttributes attr)
-            throws ACLException, CacheException
+        public void print(FileAttributes dirAttr, DirectoryEntry entry)
         {
             StringBuilder mode = new StringBuilder();
-            String path = file.getPath();
+            FileAttributes attr = entry.getFileAttributes();
 
             if (attr.getFileType() == FileType.DIR) {
                 boolean canListDir =
@@ -4972,7 +4873,7 @@ public abstract class AbstractFtpDoorV1
                         _pwdRecord.Username,
                         attr.getSize(),
                         modified,
-                        file.getName());
+                        entry.getName());
             _out.append("\r\n");
         }
     }
@@ -4980,7 +4881,7 @@ public abstract class AbstractFtpDoorV1
     /**
      * ListPrinter using the RFC 3659 fact line format.
      */
-    private class FactPrinter implements ListPrinter
+    private class FactPrinter implements DirectoryListPrinter
     {
         private final PrintWriter _out;
         private final Subject _subject;
@@ -5025,12 +4926,13 @@ public abstract class AbstractFtpDoorV1
             return attributes;
         }
 
-        public void print(FileAttributes dirAttr, File file,
-                          PnfsId id, FileAttributes attr)
-            throws ACLException, CacheException
+        public void print(FileAttributes dirAttr, DirectoryEntry entry)
         {
-            AccessType access;
             if (!_currentFacts.isEmpty()) {
+                AccessType access;
+                PnfsId id = entry.getPnfsId();
+                FileAttributes attr = entry.getFileAttributes();
+
                 for (Fact fact: _currentFacts) {
                     switch (fact) {
                     case SIZE:
@@ -5062,7 +4964,7 @@ public abstract class AbstractFtpDoorV1
                 }
             }
             _out.print(' ');
-            _out.print(file.getName());
+            _out.print(entry.getName());
             _out.print("\r\n");
         }
 

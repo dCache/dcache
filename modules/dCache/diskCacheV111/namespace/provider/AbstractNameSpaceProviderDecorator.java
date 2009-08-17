@@ -2,6 +2,8 @@ package diskCacheV111.namespace.provider;
 
 import java.util.Set;
 import java.util.List;
+import java.io.File;
+import java.io.FileFilter;
 import javax.security.auth.Subject;
 
 import diskCacheV111.util.FileMetaData;
@@ -10,7 +12,10 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.namespace.NameSpaceProvider;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.namespace.ListHandler;
 import org.dcache.util.Checksum;
+import org.dcache.util.Glob;
+import org.dcache.util.Interval;
 import org.dcache.vehicles.FileAttributes;
 
 /**
@@ -201,5 +206,13 @@ public class AbstractNameSpaceProviderDecorator
             throws CacheException
     {
         _inner.setFileAttributes(subject, pnfsId, attr);
+    }
+
+    @Override
+    public void list(Subject subject, String path, Glob glob, Interval range,
+                     Set<FileAttribute> attrs, ListHandler handler)
+        throws CacheException
+    {
+        _inner.list(subject, path, glob, range, attrs, handler);
     }
 }

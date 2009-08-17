@@ -2,14 +2,19 @@ package diskCacheV111.namespace;
 
 import java.util.Set;
 import java.util.List;
+import java.io.File;
+import java.io.FileFilter;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.util.Checksum;
+import org.dcache.util.Glob;
+import org.dcache.util.Interval;
 
 import javax.security.auth.Subject;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.namespace.ListHandler;
 import org.dcache.vehicles.FileAttributes;
 
 public interface NameSpaceProvider
@@ -166,9 +171,39 @@ public interface NameSpaceProvider
     /**
      * Set files attributes defined by <code>attr</code>.
      *
+     * @param subject Subject of user who invoked this method.
      * @param pnfsId of the file
      * @param attr array of requested attributes
      */
     void setFileAttributes(Subject subject, PnfsId pnfsId, FileAttributes attr)
+        throws CacheException;
+
+    /**
+     * Lists the content of a directory. The content is returned as a
+     * directory stream. An optional glob pattern andc optional
+     * zero-based range can be used to limit the listing. For each
+     * entry the ListHandler is invoked.
+     *
+     * The glob syntax is limitted to single character (question mark)
+     * and multi character (asterix) wildcards. If glob is null, then
+     * no filtering is applied.
+     *
+     * When a range is specified, only the part of the result set that
+     * falls within the range is return. There is no guarantee that
+     * the result set from two invocations is the same. For instance,
+     * there is no guarantee that first listing [0;999] and then
+     * listing [1000;1999] will actually cover the first 2000 entries:
+     * Files may have been added or deleted from the directory, or the
+     * ordering may have changed for some reason.
+     *
+     * @param subject Subject of user who invoked this method
+     * @param path Path to directory to list
+     * @param glob Pattern to limit the result set; may be null
+     * @param range The range of entries to return; may be null
+     * @param attrs The file attributes to query for each entry
+     * @param handler Handler called for each entry
+     */
+    void list(Subject subject, String path, Glob glob, Interval range,
+              Set<FileAttribute> attrs, ListHandler handler)
         throws CacheException;
 }

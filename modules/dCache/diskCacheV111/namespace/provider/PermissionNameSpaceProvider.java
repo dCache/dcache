@@ -3,6 +3,7 @@ package diskCacheV111.namespace.provider;
 import java.util.Set;
 import java.util.List;
 import java.io.File;
+import java.io.FileFilter;
 import javax.security.auth.Subject;
 
 import diskCacheV111.util.FileMetaData;
@@ -13,7 +14,11 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.namespace.NameSpaceProvider;
 import org.dcache.util.Checksum;
+import org.dcache.util.Glob;
+import org.dcache.util.Interval;
 import org.dcache.auth.Subjects;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.namespace.ListHandler;
 
 /**
  *
@@ -150,6 +155,23 @@ public class PermissionNameSpaceProvider
         }
 
         return super.getStorageInfo(subject, pnfsId);
+    }
+
+    @Override
+    public void list(Subject subject, String path, Glob glob, Interval range,
+                     Set<FileAttribute> attrs, ListHandler handler)
+        throws CacheException
+    {
+        if (!Subjects.isRoot(subject)) {
+            PnfsId pnfsId = super.pathToPnfsid(subject, path, true);
+            FileMetaData meta = super.getFileMetaData(subject, pnfsId);
+
+            if (!canRead(subject, meta)) {
+                throw new PermissionDeniedCacheException(path);
+            }
+        }
+
+        super.list(subject, path, glob, range, attrs, handler);
     }
 
     private boolean canWriteExecute(Subject subject, FileMetaData metadata)

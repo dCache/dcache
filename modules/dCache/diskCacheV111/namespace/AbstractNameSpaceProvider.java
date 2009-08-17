@@ -2,12 +2,17 @@ package diskCacheV111.namespace;
 
 import java.util.Set;
 import java.util.List;
+import java.io.File;
+import java.io.FileFilter;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.namespace.ListHandler;
 import org.dcache.util.Checksum;
+import org.dcache.util.Glob;
+import org.dcache.util.Interval;
 
 import javax.security.auth.Subject;
 import org.dcache.vehicles.FileAttributes;
@@ -186,6 +191,14 @@ public class AbstractNameSpaceProvider
 
     @Override
     public void setFileAttributes(Subject subject, PnfsId pnfsId, FileAttributes attr)
+        throws CacheException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void list(Subject subject, String path, Glob glob, Interval range,
+                     Set<FileAttribute> attrs, ListHandler handler)
         throws CacheException
     {
         throw new UnsupportedOperationException();

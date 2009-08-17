@@ -212,7 +212,7 @@ keyBase=${ourHomeDir}/config
 kpwdFile=${ourHomeDir}/etc/dcache.kpwd
 
 #  ---- Location of PID files
-# 
+#
 #   Do not change unless you know what you are doing.
 #
 pidDir=/var/run
@@ -268,7 +268,7 @@ pidDir=/var/run
 #   from if the information is missing from the main repository. This
 #   is useful for converting from one repository implementation to
 #   another, without having to fetch all the information from the
-#   central PNFS manager.
+#   central PnfsManager.
 #
 #metaDataRepositoryImport=org.dcache.pool.repository.meta.EmptyMetaDataRepository
 
@@ -672,6 +672,14 @@ pnfs=/pnfs/fs
 #
 #pnfsNumberOfThreadGroups=1
 
+#  ---- Number of list threads
+#
+#   The PnfsManager uses dedicated threads for directory list
+#   operations. This variable controls the number of threads to
+#   use.
+#
+#pnfsNumberOfListThreads=1
+
 #   -- don't change this
 #
 #namespaceProvider=diskCacheV111.namespace.provider.BasicNameSpaceProviderFactory
@@ -686,9 +694,9 @@ pnfs=/pnfs/fs
 #pnfsPasswordFile=
 
 
-#  ---- PNFS manager message folding
+#  ---- PnfsManager message folding
 #
-#   Whether to use message folding in PNFS manager. When message folding
+#   Whether to use message folding in PnfsManager. When message folding
 #   is enabled, the PnfsManager will try to fold or collapse processing of
 #   identical messages. This can reduce the load on PNFS or Chimera if a
 #   large number of simulatenous requests on the same objects are performed.

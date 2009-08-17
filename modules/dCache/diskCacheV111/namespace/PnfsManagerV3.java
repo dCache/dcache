@@ -4,6 +4,7 @@ package diskCacheV111.namespace;
 
 import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.vehicles.PnfsSetFileAttributes;
+import org.dcache.vehicles.PnfsListDirectoryMessage;
 import  diskCacheV111.vehicles.*;
 import  diskCacheV111.util.*;
 import  diskCacheV111.namespace.provider.*;
@@ -21,24 +22,34 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.log4j.Logger;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.namespace.ListHandler;
 import org.dcache.vehicles.FileAttributes;
 
 import org.dcache.commons.stats.RequestCounters;
 import javax.security.auth.Subject;
 import static org.dcache.auth.Subjects.ROOT;
 
-public class PnfsManagerV3 extends CellAdapter {
+public class PnfsManagerV3 extends CellAdapter
+{
+    private static final Logger _logDeveloper =
+        Logger.getLogger(PnfsManagerV3.class.getName());
 
-
-    private static final Logger _logDeveloper = Logger.getLogger(PnfsManagerV3.class.getName());
     private static final int THRESHOLD_DISABLED = 0;
+    private static final int DEFAULT_LIST_THREADS = 1;
+    private static final int DEFAULT_DIR_LIST_LIMIT = 100;
 
     private final String      _cellName  ;
     private final Args        _args      ;
     private final CellNucleus _nucleus   ;
     private final Random      _random   = new Random(System.currentTimeMillis());
-    private int          _threads  = 1 ;
-    private int          _threadGroups  = 1 ;
+    private int _threads = 1;
+    private int _threadGroups = 1;
+    private int _directoryListLimit = DEFAULT_DIR_LIST_LIMIT;
+
+    /**
+     * Queue for list operations.
+     */
+    private final BlockingQueue<CellMessage> _listQueue;
 
     /**
      * Tasks queues used for cache location messages. Depending on
@@ -94,6 +105,7 @@ public class PnfsManagerV3 extends CellAdapter {
         _counters.addCounter(PnfsGetParentMessage.class);
         _counters.addCounter(PnfsSetFileAttributes.class);
         _counters.addCounter(PnfsGetFileAttributes.class);
+        _counters.addCounter(PnfsListDirectoryMessage.class);
     }
 
     /**
@@ -118,7 +130,8 @@ public class PnfsManagerV3 extends CellAdapter {
         PnfsGetChecksumMessage.class,
         PnfsCreateEntryMessage.class,
         PnfsCreateDirectoryMessage.class,
-        PnfsGetFileAttributes.class
+        PnfsGetFileAttributes.class,
+        PnfsListDirectoryMessage.class
     };
 
     public PnfsManagerV3( String cellName , String args ) throws Exception {
@@ -232,10 +245,24 @@ public class PnfsManagerV3 extends CellAdapter {
                 _locationFifos = _fifos;
             }
 
+            _listQueue = new LinkedBlockingQueue();
+
+            tmp = _args.getOpt("list-threads");
+            int listThreads =
+                (tmp == null) ? DEFAULT_LIST_THREADS : Integer.parseInt(tmp);
+            for (int i = 0; i < listThreads; i++) {
+                _nucleus.newThread(new ProcessThread(_listQueue), "proc-list-" + i).start();
+            }
+
             tmp = _args.getOpt("folding");
             if (tmp != null && (tmp.equals("true") || tmp.equals("yes") ||
                                 tmp.equals("enabled"))) {
                 _canFold = true;
+            }
+
+            tmp = _args.getOpt("directoryListLimit");
+            if (tmp != null) {
+                _directoryListLimit = Integer.parseInt(tmp);
             }
 
             /* Initialize ACL.
@@ -276,6 +303,8 @@ public class PnfsManagerV3 extends CellAdapter {
         pw.println( _nameSpaceProvider.toString() );
         pw.println( "CacheLocation Provider: ");
         pw.println( _cacheLocationProvider.toString() );
+        pw.println();
+        pw.println("List operations queued: " + _listQueue.size());
         pw.println();
         pw.println("Threads (" + _fifos.length + ") Queue");
         for (int i = 0; i < _fifos.length; i++) {
@@ -1343,6 +1372,85 @@ public class PnfsManagerV3 extends CellAdapter {
         pnfsMessage.setFailed( 5 , "Not supported" ) ;
     }
 
+    /**
+     * PnfsListDirectoryMessages can have more than one reply. This is
+     * to avoid large directories exhausting available memory in the
+     * PnfsManager. In current versions of Java, the only way to list
+     * a directory without building the complete result array in
+     * memory is to gather the elements inside a filter.
+     *
+     * This filter collects entries and sends partial replies for the
+     * PnfsListDirectoryMessage when a certain number of entries have
+     * been collected. The filter will not send the final reply (the
+     * caller has to do that).
+     */
+    private class ListDirectoryFilter implements ListHandler
+    {
+        private final CellPath _requestor;
+        private final PnfsListDirectoryMessage _msg;
+
+        public ListDirectoryFilter(CellPath requestor, PnfsListDirectoryMessage msg)
+        {
+            _msg = msg;
+            _requestor = requestor;
+        }
+
+        private void sendPartialReply()
+        {
+            _msg.setFinal(false);
+            _msg.setReply();
+
+            try {
+                sendMessage(new CellMessage(_requestor, _msg));
+            } catch (NoRouteToCellException e){
+                /* We cannot cancel, so log and ignore.
+                 */
+                esay("Failed to send reply to " + _requestor + ": " + e.getMessage());
+            }
+
+            _msg.clear();
+        }
+
+        public void addEntry(String name, PnfsId pnfsId, FileAttributes attrs)
+        {
+            _msg.addEntry(name, pnfsId, attrs);
+            if (_msg.getEntries().size() >= _directoryListLimit) {
+                sendPartialReply();
+            }
+        }
+    }
+
+    private void listDirectory(CellMessage envelope, PnfsListDirectoryMessage msg)
+    {
+        if (!msg.getReplyRequired()) {
+            return;
+        }
+
+        try {
+            String path = msg.getPnfsPath();
+            CellPath source = (CellPath)envelope.getSourcePath().clone();
+            source.revert();
+            _nameSpaceProvider.list(msg.getSubject(), path,
+                                    msg.getPattern(),
+                                    msg.getRange(),
+                                    msg.getRequestedAttributes(),
+                                    new ListDirectoryFilter(source, msg));
+            msg.setFinal(true);
+            msg.setSucceeded();
+        } catch (FileNotFoundCacheException e) {
+            msg.setFailed(e.getRc(), e.getMessage());
+        } catch (NotDirCacheException e) {
+            msg.setFailed(e.getRc(), e.getMessage());
+        } catch (CacheException e) {
+            esay(e);
+            msg.setFailed(e.getRc(), e.getMessage());
+        } catch (RuntimeException e) {
+            esay(e);
+            msg.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                          e.getMessage());
+        }
+    }
+
     private class ProcessThread implements Runnable {
         private final BlockingQueue<CellMessage> _fifo ;
         private ProcessThread( BlockingQueue<CellMessage> fifo ){ _fifo = fifo ; }
@@ -1427,7 +1535,7 @@ public class PnfsManagerV3 extends CellAdapter {
     public void messageArrived( CellMessage message ){
 
         Object pnfsMessage  = message.getMessageObject();
-        if (! (pnfsMessage instanceof Message) ){
+        if (! (pnfsMessage instanceof PnfsMessage) ){
             say("Unexpected message class "+pnfsMessage.getClass());
             say("source = "+message.getSourceAddress());
             return;
@@ -1446,6 +1554,13 @@ public class PnfsManagerV3 extends CellAdapter {
         }
 
         try {
+            if (pnfs instanceof PnfsListDirectoryMessage) {
+                if (!_listQueue.offer(message)) {
+                    throw new MissingResourceCacheException("PnfsManager queue limit exceeded");
+                }
+                return;
+            }
+
             boolean isCacheOperation =
                 ((pnfs instanceof PnfsAddCacheLocationMessage) ||
                  (pnfs instanceof PnfsClearCacheLocationMessage) ||
@@ -1574,6 +1689,8 @@ public class PnfsManagerV3 extends CellAdapter {
         }
         else if (pnfsMessage instanceof PnfsGetParentMessage){
             getParent((PnfsGetParentMessage)pnfsMessage);
+        } else if (pnfsMessage instanceof PnfsListDirectoryMessage) {
+            listDirectory(message, (PnfsListDirectoryMessage) pnfsMessage);
         }
         else if (pnfsMessage instanceof PnfsGetFileAttributes) {
             getFileAttributes((PnfsGetFileAttributes)pnfsMessage);

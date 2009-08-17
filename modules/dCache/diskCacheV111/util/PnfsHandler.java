@@ -86,7 +86,7 @@ public class PnfsHandler
         _cellStub.setCellEndpoint(endpoint);
     }
 
-    private void send(PnfsMessage msg)
+    public void send(PnfsMessage msg)
     {
         if (_cellStub == null)
             throw new IllegalStateException("Missing endpoint");

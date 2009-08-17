@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.FileFilter;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,13 +18,18 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.Arrays;
+import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 import org.dcache.util.Checksum;
+import org.dcache.util.Glob;
+import org.dcache.util.Interval;
 
 import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.FileNotFoundCacheException;
@@ -40,12 +46,15 @@ import dmg.util.Args;
 import dmg.util.CollectionFactory;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
+import org.dcache.namespace.ListHandler;
 import org.dcache.util.ChecksumType;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.acl.ACLException;
 import org.dcache.acl.handler.singleton.AclHandler;
 
 import javax.security.auth.Subject;
+
+import static org.dcache.auth.Subjects.ROOT;
 
 public class BasicNameSpaceProvider
     implements NameSpaceProvider
@@ -1396,6 +1405,90 @@ public class BasicNameSpaceProvider
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
         }
 
+    }
+
+    /**
+     * PnfsListDirectoryMessages can have more than one reply. This is
+     * to avoid large directories exhausting available memory in the
+     * PnfsManager. In current versions of Java, the only way to list
+     * a directory without building the complete result array in
+     * memory is to gather the elements inside a filter.
+     *
+     * This filter collects entries and sends partial replies for the
+     * PnfsListDirectoryMessage when a certain number of entries have
+     * been collected. The filter will not send the final reply (the
+     * caller has to do that).
+     *
+     * The filter always returns false, thus ensuring that we do not
+     * construct the full array of all files in the directory.
+     */
+    private class ListFilter implements FileFilter
+    {
+        private final Pattern _pattern;
+        private final ListHandler _handler;
+        private final Set<FileAttribute> _attributes;
+        private final Interval _range;
+        private long _counter = 0;
+
+        public ListFilter(Pattern pattern,
+                          Interval range,
+                          Set<FileAttribute> attributes,
+                          ListHandler handler)
+        {
+            _pattern = pattern;
+            _range = range;
+            _handler = handler;
+            _attributes = attributes;
+        }
+
+        public boolean accept(File file)
+        {
+            String name = file.getName();
+            if ((_pattern == null || _pattern.matcher(name).matches()) &&
+                (_range == null || _range.contains(_counter++))) {
+                try {
+                    PnfsId id = pathToPnfsid(ROOT, file.toString(), true);
+                    FileAttributes meta =
+                        _attributes.isEmpty()
+                        ? null
+                        : getFileAttributes(ROOT, id, _attributes);
+                    _handler.addEntry(name, id, meta);
+                } catch (CacheException e) {
+                    /* Deleting a file during a list operation is not
+                     * an error.
+                     */
+                    if (e.getRc() != CacheException.FILE_NOT_FOUND &&
+                        e.getRc() != CacheException.NOT_IN_TRASH) {
+                        /* We cannot abort, so we log instead.
+                         */
+                        _logNameSpace.warn("Lookup failed: " + file);
+                    }
+                }
+            }
+            return false;
+        }
+    }
+
+    @Override
+    public void list(Subject subject, String path, Glob glob, Interval range,
+                     Set<FileAttribute> attrs, ListHandler handler)
+        throws CacheException
+    {
+        File file = new File(path);
+        if (!file.exists()) {
+            throw new FileNotFoundCacheException("Directory does not exist");
+        }
+
+        if (!file.isDirectory()) {
+            throw new NotDirCacheException("Not a directory");
+        }
+
+        Pattern pattern = (glob == null) ? null : glob.toPattern();
+        File[] list = file.listFiles(new ListFilter(pattern, range, attrs, handler));
+        if (list == null) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     "IO Error");
+        }
     }
 
     /*

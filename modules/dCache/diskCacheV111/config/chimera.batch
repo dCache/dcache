@@ -27,6 +27,8 @@ set context -c companionDatabaseHost localhost
 set context -c defaultPnfsServer localhost
 set context -c pnfs /pnfs/fs
 set context -c pnfsNumberOfThreads 4
+set context -c pnfsNumberOfThreadGroups 1
+set context -c pnfsNumberOfListThreads 1
 
 
 #
@@ -52,6 +54,8 @@ create diskCacheV111.namespace.PnfsManagerV3 PnfsManager \
         "org.dcache.chimera.namespace.ChimeraOsmStorageInfoExtractor \
         -cmRelay=broadcast \
         -threads=${pnfsNumberOfThreads} \
+        -threadGroups=${pnfsNumberOfThreadGroups} \
+        -listThreads=${pnfsNumberOfListThreads} \
         -pnfsDeleteRelay=SrmSpaceManager \
         -default=${defaultPnfsServer} \
         -pnfs=${pnfs} \

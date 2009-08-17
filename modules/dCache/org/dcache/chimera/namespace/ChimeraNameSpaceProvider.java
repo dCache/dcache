@@ -4,6 +4,7 @@
 package org.dcache.chimera.namespace;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.lang.reflect.Constructor;
 import java.util.Iterator;
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.HashMap;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 import javax.security.auth.Subject;
 
 import org.apache.log4j.Logger;
@@ -25,6 +27,7 @@ import org.dcache.chimera.StorageGenericLocation;
 import org.dcache.chimera.StorageLocatable;
 import org.dcache.chimera.UnixPermission;
 import org.dcache.chimera.XMLconfig;
+import org.dcache.chimera.HimeraDirectoryEntry;
 import org.dcache.chimera.posix.Stat;
 
 import diskCacheV111.namespace.NameSpaceProvider;
@@ -32,6 +35,7 @@ import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileExistsCacheException;
+import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
@@ -43,8 +47,11 @@ import java.io.IOException;
 import java.util.Arrays;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
+import org.dcache.namespace.ListHandler;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
+import org.dcache.util.Glob;
+import org.dcache.util.Interval;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.acl.ACLException;
 import org.dcache.acl.handler.singleton.AclHandler;
@@ -744,4 +751,49 @@ public class ChimeraNameSpaceProvider
 
     }
 
+    public void list(Subject subject, String path, Glob glob, Interval range,
+                     Set<FileAttribute> attrs, ListHandler handler)
+        throws CacheException
+    {
+        try {
+            Pattern pattern = (glob == null) ? null : glob.toPattern();
+            FsInode dir = _fs.path2inode(path);
+            if (!dir.isDirectory()) {
+                throw new NotDirCacheException("Not a directory: " + path);
+            }
+
+            long counter = 0;
+            for (HimeraDirectoryEntry entry: _fs.listDirFull(dir)) {
+                try {
+                    String name = entry.getName();
+                    if (!name.equals(".") && !name.equals("..") &&
+                        (pattern == null || pattern.matcher(name).matches()) &&
+                        (range == null || range.contains(counter++))) {
+                        PnfsId pnfsId = new PnfsId(entry.getInode().toString());
+                        FileAttributes fa =
+                            attrs.isEmpty()
+                            ? null
+                            : getFileAttributes(subject, entry.getInode(), attrs);
+                        handler.addEntry(name, pnfsId, fa);
+                    }
+                } catch (FileNotFoundHimeraFsException e) {
+                    /* Not an error; files may be deleted during the
+                     * list operation.
+                     */
+                }
+            }
+        } catch (FileNotFoundHimeraFsException e) {
+            throw new FileNotFoundCacheException(e.getMessage());
+        } catch (ChimeraFsException e) {
+            _logNameSpace.error("Exception in list: " + e);
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
+        } catch (ACLException e) {
+            _logNameSpace.error("Exception in list: " + e);
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     e.getMessage());
+        } catch (IOException e) {
+            _logNameSpace.error("Exception in list: " + e);
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
+        }
+    }
 }
