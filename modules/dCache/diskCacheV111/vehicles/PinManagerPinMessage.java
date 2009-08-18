@@ -14,7 +14,6 @@ import diskCacheV111.util.PnfsId;
 public class PinManagerPinMessage extends PinManagerMessage {
     private long lifetime;
     private long requestId;
-    private String pinId;
     private String readPoolName;
     private String clientHost;
     
@@ -58,22 +57,6 @@ public class PinManagerPinMessage extends PinManagerMessage {
         this.lifetime = lifetime;
     }
     
-    /** Getter for property pinId.
-     * @return Value of property pinId.
-     *
-     */
-    public java.lang.String getPinId() {
-        return pinId;
-    }
-    
-    /** Setter for property pinId.
-     * @param pinId New value of property pinId.
-     *
-     */
-    public void setPinId(java.lang.String pinId) {
-        this.pinId = pinId;
-    }
-    
     /** Getter for property readPoolName.
      * @return Value of property readPoolName.
      *
@@ -89,10 +72,11 @@ public class PinManagerPinMessage extends PinManagerMessage {
     public void setReadPoolName(java.lang.String readPoolName) {
         this.readPoolName = readPoolName;
     }
-    
+
+    @Override
     public String toString() {
         return "PinManagerPinMessage["+getPnfsId()+
-                (pinId==null?"":(","+pinId))+
+                (getPinRequestId()==null?"":(","+getPinRequestId()))+
                 "]";
     }
 

@@ -1,15 +1,8 @@
 package org.dcache.services.pinmanager1;
 
-import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.*;
 
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.NoRouteToCellException;
-
-import java.util.List;
-import java.util.ArrayList;
-
 /**
  * Background task used to perform the actual unpinning operation.
  *
@@ -20,16 +13,13 @@ class Extender extends SMCTask
 {
     protected final PinRequest _pinRequest;
     protected final Pin _pin;
-    protected final CellMessage _envelope ;
-    protected final PinManagerMessage _extendMessage ;
-
+    private final PinManagerJob _job;
     protected final ExtenderContext _fsm;
     protected final long _expiration;
     public Extender(PinManager manager,
         Pin pin,
         PinRequest pinRequest,
-        CellMessage envelope,
-        PinManagerMessage extendMessage,
+        PinManagerJob job,
         long expiration)
     {
         super(manager);
@@ -38,11 +28,11 @@ class Extender extends SMCTask
         _pinRequest = pinRequest;
 
         _expiration = expiration;
-        _envelope = envelope;
-        _extendMessage = extendMessage;
+        _job = job;
         _fsm = new ExtenderContext(this);
         setContext(_fsm);
         _fsm.go();
+        job.setSMCTask(this);
         info("Extender constructor done ");
     }
 
@@ -58,6 +48,7 @@ class Extender extends SMCTask
         return (PinManager)_cell;
     }
 
+    @Override
     public String toString()
     {
         return _fsm.getState().toString();
@@ -68,7 +59,10 @@ class Extender extends SMCTask
         error(" failed: "+reason);
         //_pin.unpinFailed(reason);
         try {
-            getManager().extendFailed(_pin,_pinRequest,_extendMessage,_envelope,reason);
+            getManager().extendFailed(_pin,
+                    _pinRequest,
+                    _job,
+                    reason);
         } catch (PinException pe) {
             error(pe.toString());
         }
@@ -80,8 +74,7 @@ class Extender extends SMCTask
         try {
             getManager().extendSucceeded(_pin,
                 _pinRequest,
-                _extendMessage,
-                _envelope,
+                _job,
                 _expiration);
         } catch (PinException pe) {
             error(pe.toString());

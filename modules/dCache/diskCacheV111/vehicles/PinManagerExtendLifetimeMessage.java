@@ -12,44 +12,29 @@ import diskCacheV111.util.PnfsId;
  * @author  timur
  */
 public class PinManagerExtendLifetimeMessage extends PinManagerMessage {
-    private String pinId;
+    private static final long serialVersionUID = 6259613705437421481L;
     private long newLifetime;
     
     //private static final long serialVersionUID;
     
     /** Creates a new instance of PinManagerPinMessage */
-    public PinManagerExtendLifetimeMessage(String pnfsId, String pinId, long newLifetime) {
+    public PinManagerExtendLifetimeMessage(String pnfsId, String pinRequestId, long newLifetime) {
         super(pnfsId);
-        this.pinId = pinId;
+        setPinRequestId(pinRequestId);
         this.newLifetime = newLifetime;
     }
     
-    public PinManagerExtendLifetimeMessage(PnfsId pnfsId, String pinId, long newLifetime) {
+    public PinManagerExtendLifetimeMessage(PnfsId pnfsId, String pinRequestId, long newLifetime) {
         super(pnfsId);
-        this.pinId = pinId;
+        setPinRequestId(pinRequestId);
         this.newLifetime = newLifetime;
     }
     
    
-    /** Getter for property pinId.
-     * @return Value of property pinId.
-     *
-     */
-    public java.lang.String getPinId() {
-        return pinId;
-    }
-    
-    /** Setter for property pinId.
-     * @param pinId New value of property pinId.
-     *
-     */
-    public void setPinId(java.lang.String pinId) {
-        this.pinId = pinId;
-    }
     
     public String toString() {
         return "PinManagerUnpinMessage["+getPnfsId()+
-                (pinId==null?"":(","+pinId))+
+                (getPinRequestId()==null?"":(","+getPinRequestId()))+
                 "]";
     }
 

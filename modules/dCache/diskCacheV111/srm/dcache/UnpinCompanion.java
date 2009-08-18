@@ -199,7 +199,7 @@ public class UnpinCompanion implements CellMessageAnswerable {
             return ;
         }
         say("unpinned");
-        callbacks.Unpinned(unpinResponse.getPinId());
+        callbacks.Unpinned(unpinResponse.getPinRequestId());
     }
     
     public void exceptionArrived( CellMessage request , Exception exception ) {
