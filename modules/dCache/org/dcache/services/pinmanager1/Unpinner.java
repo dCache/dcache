@@ -17,7 +17,7 @@ import java.util.ArrayList;
  */
 class Unpinner extends SMCTask
 {
-    protected final PnfsId _pnfsId;
+    protected final PinManagerJob _job;
     protected final Pin _pin;
     protected final UnpinnerContext _fsm;
     protected final CellPath _pnfsManager;
@@ -25,11 +25,11 @@ class Unpinner extends SMCTask
     protected final boolean isOldStylePin;
     protected final boolean _retry;
 
-    public Unpinner(PinManager manager, PnfsId pnfsId, Pin pin, boolean retry)
+    public Unpinner(PinManager manager, PinManagerJob job, Pin pin, boolean retry)
     {
         super(manager);
         _retry = retry;
-        _pnfsId = pnfsId;
+        _job = job;
         _pin = pin;
         _pnfsManager = manager.getPnfsManager();
         String pool = _pin.getPool();
@@ -41,6 +41,7 @@ class Unpinner extends SMCTask
         _fsm = new UnpinnerContext(this);
         setContext(_fsm);
         _fsm.go();
+        job.setSMCTask(this);
         info("Unpinner constructor done, isOldStylePin="+isOldStylePin);
     }
 
@@ -106,7 +107,8 @@ class Unpinner extends SMCTask
     void deletePnfsFlags()
     {
         info("deletePnfsFlags");
-        PnfsFlagMessage pfm = new PnfsFlagMessage(_pnfsId, "s", PnfsFlagMessage.FlagOperation.REMOVE);
+        PnfsFlagMessage pfm = new PnfsFlagMessage(
+                _job.getPnfsId(), "s", PnfsFlagMessage.FlagOperation.REMOVE);
         pfm.setValue("*");
         pfm.setReplyRequired(true);
         sendMessage(_pnfsManager, pfm, 60*60*1000);
@@ -116,7 +118,7 @@ class Unpinner extends SMCTask
     {
         info("getPnfsMetadata");
         PnfsGetFileMetaDataMessage getMetadata =
-            new PnfsGetFileMetaDataMessage(_pnfsId);
+            new PnfsGetFileMetaDataMessage(_job.getPnfsId());
         getMetadata.setReplyRequired(true);
         sendMessage(_pnfsManager, getMetadata, 60*60*1000);
     }
@@ -125,7 +127,7 @@ class Unpinner extends SMCTask
     {
         info("findCacheLocations");
         PnfsGetCacheLocationsMessage request =
-            new PnfsGetCacheLocationsMessage(_pnfsId);
+            new PnfsGetCacheLocationsMessage(_job.getPnfsId());
         sendMessage(_pnfsManager, request, 60*60*1000);
     }
 
@@ -145,11 +147,11 @@ class Unpinner extends SMCTask
                     Long.toString(_pin.getId());
             String oldStickyBitName = getCellName();
             info("unsetStickyFlags in "+poolName+" for "+
-                _pnfsId+" stickyBitNameName:"+stickyBitName);
+                _job.getPnfsId()+" stickyBitNameName:"+stickyBitName);
 
             PoolSetStickyMessage setStickyRequest =
                 new PoolSetStickyMessage(poolName,
-                _pnfsId, false,stickyBitName,-1);
+                _job.getPnfsId(), false,stickyBitName,-1);
             if(!isOldStylePin) {
                 setStickyRequest.setReplyRequired(true);
                 sendMessage(new CellPath(poolName), setStickyRequest,60*60*1000);
@@ -159,7 +161,7 @@ class Unpinner extends SMCTask
                     sendMessage(new CellPath(poolName), setStickyRequest);
                     setStickyRequest =
                         new PoolSetStickyMessage(poolName,
-                            _pnfsId, false,oldStickyBitName,-1);
+                            _job.getPnfsId(), false,oldStickyBitName,-1);
                     // unpin using old format
                     sendMessage(new CellPath(poolName), setStickyRequest);
                 } catch (NoRouteToCellException e) {

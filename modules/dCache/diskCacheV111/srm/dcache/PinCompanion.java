@@ -211,7 +211,7 @@ public class PinCompanion implements CellMessageAnswerable {
             return ;
         }
         say("pinned");
-        callbacks.Pinned(pinResponse.getPinId());
+        callbacks.Pinned(pinResponse.getPinRequestId());
     }
 
     public void exceptionArrived( CellMessage request , Exception exception ) {

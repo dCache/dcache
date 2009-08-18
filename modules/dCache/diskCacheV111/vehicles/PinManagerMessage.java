@@ -11,11 +11,12 @@ public class PinManagerMessage extends Message {
     private StorageInfo  storageInfo;
     private PnfsId pnfsId = null;
     private AuthorizationRecord authorizationRecord;
+    private String pinRequestId;
 
     private static final long serialVersionUID = 8985723922810987125L;
     
     public PinManagerMessage(String pnfsId){
-	this.pnfsId = new PnfsId(pnfsId) ;
+        this.pnfsId = new PnfsId(pnfsId) ;
         setReplyRequired(true);
     }
 
@@ -40,6 +41,8 @@ public class PinManagerMessage extends Message {
     public void setPnfsId(PnfsId pnfsId){
 	this.pnfsId = pnfsId ;
     }
+
+    @Override
     public String toString(){ 
         return pnfsId==null?
                "NULL":("PnfsId="+pnfsId.toString()) ; 
@@ -67,6 +70,21 @@ public class PinManagerMessage extends Message {
 
     public void setAuthorizationRecord(AuthorizationRecord authorizationRecord) {
         this.authorizationRecord = authorizationRecord;
+    }
+    /** Getter for property pinId.
+     * @return Value of property pinId.
+     *
+     */
+    public String getPinRequestId() {
+        return pinRequestId;
+    }
+
+    /** Setter for property pinId.
+     * @param pinId New value of property pinId.
+     *
+     */
+    public void setPinRequestId(String pinId) {
+        this.pinRequestId = pinId;
     }
     
 }

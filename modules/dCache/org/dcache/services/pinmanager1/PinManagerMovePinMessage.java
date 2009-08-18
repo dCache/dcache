@@ -27,6 +27,7 @@ import java.util.Collection;
  */
 public class PinManagerMovePinMessage extends PinManagerMessage
 {
+    private static final long serialVersionUID = -2917605511586582763L;
     private final PnfsId _pnfsId;
     private final Collection<StickyRecord> _records;
     private final String _sourcePool;
@@ -36,6 +37,7 @@ public class PinManagerMovePinMessage extends PinManagerMessage
                                     Collection<StickyRecord> records,
                                     String sourcePool, String targetPool)
     {
+        super(pnfsId);
         _pnfsId = pnfsId;
         _records = records;
         _sourcePool = sourcePool;
