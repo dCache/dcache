@@ -11,6 +11,7 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.PnfsFile;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.HttpConnectionHandler;
+import diskCacheV111.util.HttpByteRange;
 import org.dcache.pool.repository.Allocator;
 
 import dmg.cells.nucleus.*;
@@ -21,6 +22,8 @@ import java.net.Socket;
 import java.net.InetAddress;
 import java.util.Hashtable;
 import java.util.StringTokenizer;
+import java.util.List;
+import java.text.ParseException;
 
 import org.apache.log4j.Logger;
 
@@ -140,7 +143,29 @@ public class HttpProtocol_1 implements MoverProtocol
                         return;
                     }
                 say("received request for a correct file : "+url.getPath()+" start transmission");
-                httpconnection.sendFile(diskFile);
+
+                List<HttpByteRange>ranges = null;
+                try{
+                    String rangeHeader = httpconnection.getHeaderValue("range");
+                    if(rangeHeader != null)
+                        ranges =  HttpByteRange.parseRanges(rangeHeader,0,diskFile.length()-1);
+                }catch(ParseException e)
+                    {
+                    say("(HttpProtocol_1) " + e.getMessage());
+                 }
+
+                /* We do not know how to handle multiple ranges so
+                 * we treat a request of multiple ranges as invalid and
+                 * send the entire file -- the rfc's prescription when it
+                 * comes to invalid ranges.
+                 */
+                if(ranges == null || ranges.size() != 1){
+                    httpconnection.sendFile(diskFile);
+                }else{
+                    HttpByteRange range = ranges.get(0);
+                    say("received request for range: " + range);
+                    httpconnection.sendPartialFile(diskFile, range.getLower(), range.getSize());
+                }
                 say("transmission complete");
             }
         catch(java.net.SocketTimeoutException ste)

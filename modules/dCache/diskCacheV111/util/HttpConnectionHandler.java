@@ -361,6 +361,26 @@ public class HttpConnectionHandler
     out.flush();
   }
 
+  private synchronized void returnPartialFileHeader(RandomAccessFile diskFile, long offset, long length) throws IOException
+  {
+    if(isclosed())
+    {
+      return;
+    }
+    StringBuffer sb = new StringBuffer();
+    sb.append(HTTP11).append(" 206 Partial Content\n");
+    sb.append("Server: HttpDoor \n");
+    sb.append("Connection: close\n");
+    sb.append("Content-Length: ");
+    sb.append(length).append('\n');
+    sb.append("Content-Range: ");
+    sb.append("bytes ").append(offset).append('-').append(offset+length-1).append("/").append(diskFile.length()).append('\n');
+    sb.append("Content-Type: application/octet-stream\n");
+    sb.append('\n');
+    out.write(sb.toString());
+    out.flush();
+  }
+
   volatile long read = 0;
   private long last_transfer_time    = System.currentTimeMillis() ;
   public synchronized void sendFile(RandomAccessFile diskFile) throws IOException
@@ -371,7 +391,23 @@ public class HttpConnectionHandler
     }
     returnFileHeader(diskFile);
     long length = diskFile.length ();
+    transferFile(diskFile,0,length);
+  }
+
+  public synchronized void sendPartialFile(RandomAccessFile diskFile, long offset, long length) throws IOException
+  {
+     if(isclosed())
+     {
+       return;
+     }
+     returnPartialFileHeader(diskFile, offset, length);
+     transferFile(diskFile, offset, length);
+  }
+
+  private void transferFile(RandomAccessFile diskFile, long offset, long length) throws IOException
+  {
     byte[] b = new byte[1024];
+    diskFile.seek(offset);
     while(read <length)
     {
       int readlen =(int)( length -read <1024?length -read:1024);
