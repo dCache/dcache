@@ -1392,7 +1392,6 @@ class PinManagerDatabase
        return new Pin(
                         set.getLong( "id" ),
                         new PnfsId(set.getString("PnfsId")),
-                        null,
                         set.getLong("Creation"),
                         set.getLong("Expiration"),
                         set.getString("Pool"),

@@ -9,7 +9,6 @@
 
 package org.dcache.services.pinmanager1;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.StorageInfo;
 import java.util.Set;
 import java.util.Date;
 import java.util.Collections;
@@ -21,7 +20,6 @@ import java.util.Collections;
 public class Pin {
     private long id;
     private PnfsId pnfsId;
-    private transient StorageInfo storageInfo;
     private long creationTime;
     private long expirationTime;
     private  long stateTransitionTime;
@@ -32,7 +30,6 @@ public class Pin {
     /** Creates a new instance of Pin */
     public Pin(long id,
         PnfsId pnfsId,
-        StorageInfo storageInfo,
         long creationTime,
         long expirationTime,
         String pool,
@@ -40,7 +37,6 @@ public class Pin {
         PinManagerPinState state) {
         this.id = id;
         this.pnfsId = pnfsId;
-        this.storageInfo = storageInfo;
         this.creationTime = creationTime;
         this.expirationTime = expirationTime;
         this.pool = pool;
@@ -56,13 +52,6 @@ public class Pin {
         return pnfsId;
     }
 
-    public StorageInfo getStorageInfo() {
-        return storageInfo;
-    }
-
-    public void setStorageInfo (StorageInfo info) {
-        storageInfo = info;
-    }
 
     public long getCreationTime() {
         return creationTime;
@@ -91,7 +80,6 @@ public class Pin {
     public String toString() {
         return ""+ id+
             " PnfsId:"+pnfsId+
-            " SI:"+storageInfo+
             " created:"+ new Date(creationTime).toString()+" "+
             " expires:"+ (expirationTime==-1?"Never":new Date(expirationTime).toString())+
             " pool:"+pool+

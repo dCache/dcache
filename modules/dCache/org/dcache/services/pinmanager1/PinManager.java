@@ -1,91 +1,3 @@
-// $Id: PinManager.java,v 1.42 2007-10-25 15:02:43 behrmann Exp $
-// $Log: not supported by cvs2svn $
-// Revision 1.41  2007/08/16 22:04:58  timur
-// simplified srmRm, return SRM_INVALID_PATH if file does not exist
-//
-// Revision 1.38  2007/08/03 20:20:00  timur
-// implementing some of the findbug bugs and recommendations,
-// avoid selfassignment, possible nullpointer exceptions, syncronization issues, etc
-//
-// Revision 1.37  2007/08/03 15:46:01  timur
-// closing sql statement, implementing hashCode functions, not passing null args,
-// resing classes etc, per findbug recommendations
-//
-// Revision 1.36  2007/07/16 21:56:01  timur
-// make sure the empty pgpass is ignored
-//
-// Revision 1.35  2007/05/24 13:51:13  tigran
-// merge of 1.7.1 and the head
-//
-// Revision 1.34  2007/04/18 23:35:30  timur
-// initial state of the pin should be INITIAL_STATE and not PINNED\!
-//
-// Revision 1.33  2007/02/10 04:48:13  timur
-//  first version of SrmExtendFileLifetime
-//
-// Revision 1.32  2006/10/10 21:04:35  timur
-// srmBringOnline related changes
-//
-// Revision 1.31  2006/05/12 22:44:54  litvinse
-// *** empty log message ***
-//
-// Revision 1.30  2005/12/14 10:07:55  tigran
-// setting cell type to class name
-//
-// Revision 1.29  2005/11/22 10:59:30  patrick
-// Versioning enabled.
-//
-// Revision 1.28  2005/11/17 17:45:33  timur
-// fixed two select statements rejected by Postgres8.1
-//
-// Revision 1.27  2005/08/26 21:59:33  timur
-// one more bug removed
-//
-// Revision 1.26  2005/08/26 21:44:37  timur
-// bugs removed
-//
-// Revision 1.25  2005/08/26 21:01:57  timur
-// reorganized data structures and state transitions of PinManager
-//
-// Revision 1.24  2005/08/23 16:22:11  timur
-// added new info messages
-//
-// Revision 1.23  2005/08/22 17:22:08  timur
-// better recovery from unexpected states of PinRequests
-//
-// Revision 1.22  2005/08/19 23:45:26  timur
-// added Pgpass for postgress md5 password suport
-//
-// Revision 1.21  2005/08/16 16:35:25  timur
-// added duration control
-//
-// Revision 1.20  2005/08/15 19:30:59  timur
-// mostly working
-//
-// Revision 1.19  2005/08/15 18:19:43  timur
-// new PinManager first working version, needs more testing
-//
-// Revision 1.18  2005/08/12 17:14:54  timur
-// a first approximation of the new PinManager, not tested, but compiles,
-// do not deploy in production
-//
-// Revision 1.17  2005/03/07 22:57:43  timur
-// more work on space reservation
-//
-// Revision 1.16  2005/03/01 23:12:09  timur
-// Modified the database scema to increase database operations performance
-// and to account for reserved space"and to account for reserved space
-//
-// Revision 1.15  2004/11/09 08:04:46  tigran
-// added SerialVersion ID
-//
-// Revision 1.14  2004/10/20 21:32:29  timur
-// adding classes for space management
-//
-// Revision 1.13  2004/06/22 01:32:09  timur
-// Fixed an initialization bug
-//
-
 /*
  * PinManager.java
  *
@@ -94,9 +6,12 @@
 
 package org.dcache.services.pinmanager1;
 
+import org.apache.log4j.Logger;
 import diskCacheV111.poolManager.RequestContainerV5;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.DelayedReply;
+import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 import dmg.cells.nucleus.ExceptionEvent;
 import dmg.cells.nucleus.CellVersion;
@@ -105,23 +20,28 @@ import diskCacheV111.vehicles.PinManagerMessage;
 import diskCacheV111.vehicles.PinManagerPinMessage;
 import diskCacheV111.vehicles.PinManagerUnpinMessage;
 import diskCacheV111.vehicles.PinManagerExtendLifetimeMessage;
-import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CheckStagePermission;
 import java.io.IOException;
+import java.io.File;
+import java.io.FileReader;
+import java.io.BufferedReader;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Collection;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.PatternSyntaxException;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.dcache.cells.Option;
 import org.dcache.cells.AbstractCell;
 import org.dcache.auth.AuthorizationRecord;
-import org.dcache.pool.repository.StickyRecord;
+import diskCacheV111.vehicles.StorageInfo;
 
 /**
  *   <pre>
@@ -156,6 +76,8 @@ import org.dcache.pool.repository.StickyRecord;
  */
 public class PinManager extends AbstractCell implements Runnable  {
 
+    private static final Logger logger = Logger.getLogger(PinManager.class);
+    
     @Option(
         name = "expirationFrequency",
         description = "Frequency of running pin expiration routine",
@@ -267,17 +189,22 @@ public class PinManager extends AbstractCell implements Runnable  {
 
     // this is the difference between the expiration time of the pin and the
     // expiration time of the sticky bit in the pool. used in case if the
-    // pin exiration / removal could not unpin the file in the pool
+    // pin exiration / removal could not unpinAllRequestForUser the file in the pool
     // (due to the pool down situation)
     protected static final long  POOL_LIFETIME_MARGIN=60*60*1000L;
 
     private PinManagerPolicy pinManagerPolicy;
 
-    private Map<Long, CellMessage> pinToRequestsMap =
-        new ConcurrentHashMap<Long, CellMessage>();
+    private Map<Long, PinManagerJob> pinRequestToJobMap =
+        new ConcurrentHashMap<Long, PinManagerJob>();
 
-    private Map<Long, CellMessage> pinRequestToUnpinRequestsMap =
-        new ConcurrentHashMap<Long, CellMessage>();
+    private Map<Long, PinManagerJob> pinRequestToUnpinJobMap =
+        new ConcurrentHashMap<Long, PinManagerJob>();
+
+    private static AtomicInteger nextInteractiveJobId = new AtomicInteger(0);
+
+    private Map<Integer,InteractiveJob> interactiveJobs =
+            new ConcurrentHashMap<Integer,InteractiveJob>();
 
     /** Tape Protection */
     protected CheckStagePermission _checkStagePermission;
@@ -340,7 +267,7 @@ public class PinManager extends AbstractCell implements Runnable  {
         return new CellPath(poolManager);
     }
 
-
+    @Override
     public CellVersion getCellVersion(){
         return new CellVersion(
             diskCacheV111.util.Version.getVersion(),"$Revision: 1.42 $" );
@@ -355,25 +282,41 @@ public class PinManager extends AbstractCell implements Runnable  {
         if(lifetime != -1) {
             lifetime *=1000;
         }
-        pin(pnfsId,null,lifetime,0,null,null,null);
-        return "pin started";
-
+        PinManagerJobImpl job =
+                new PinManagerJobImpl(PinManagerJobType.PIN,
+                null,null,pnfsId,lifetime,null,null,null,null);
+        pin(job);
+        int id = nextInteractiveJobId.incrementAndGet();
+        interactiveJobs.put(id,job);
+        return "pin started: id="+id+", Job ="+job;
     }
 
     public String hh_unpin = " [-force] [<pinRequestId>] <pnfsId> " +
         "# unpin a a file by pinRequestId and by pnfsId or just by pnfsId" ;
     public String ac_unpin_$_1_2( Args args ) throws Exception {
         boolean force = args.getOpt("force") != null;
+        PnfsId pnfsId;
+        Long pinRequestId = null;
         if(args.argc() == 1) {
-            PnfsId pnfsId = new PnfsId( args.argv(0) ) ;
-            unpin(pnfsId,null,null,null,force);
-            return "unpin started";
-
+            pnfsId = new PnfsId( args.argv(0) ) ;
+            PinManagerJobImpl job =
+                new PinManagerJobImpl(PinManagerJobType.UNPIN,
+                null,null,pnfsId,0,null,null,null,null);
+            unpinAllRequestForUser(job,force);
+            Integer id = nextInteractiveJobId.incrementAndGet();
+            interactiveJobs.put(id,job);
+            return "unpin started: id="+id+", Job="+job;
         }
-        long pinRequestId = Long.parseLong(args.argv(0));
-        PnfsId pnfsId = new PnfsId( args.argv(1) ) ;
-        unpin(pnfsId, pinRequestId,null,null,null,force);
-        return "unpin started";
+        pinRequestId = Long.parseLong(args.argv(0));
+        pnfsId = new PnfsId( args.argv(1) ) ;
+        PinManagerJobImpl job =
+                new PinManagerJobImpl(PinManagerJobType.UNPIN,
+                null,null,pnfsId,0,null,null,null,null);
+        job.setPinRequestId(pinRequestId);
+        unpin(job,force);
+        Integer id = nextInteractiveJobId.incrementAndGet();
+        interactiveJobs.put(id,job);
+        return "unpin started: id="+id+", Job="+job;
 
     }
 
@@ -384,8 +327,14 @@ public class PinManager extends AbstractCell implements Runnable  {
         PnfsId pnfsId = new PnfsId( args.argv(1) ) ;
         long lifetime = Long.parseLong( args.argv(2) ) ;
         lifetime *=1000;
-        extendLifetime(pnfsId, pinRequestId,lifetime,null,null);
-        return "extend lifetime started";
+        PinManagerJobImpl job =
+                new PinManagerJobImpl(PinManagerJobType.EXTEND_LIFETIME,
+                null,null,pnfsId,lifetime,null,null,null,null);
+        job.setPinRequestId(pinRequestId);
+        extendLifetime(job);
+        int id = nextInteractiveJobId.incrementAndGet();
+        interactiveJobs.put(id,job);
+        return "extend lifetime started: id="+id+", Job="+job;
     }
 
 
@@ -498,12 +447,26 @@ public class PinManager extends AbstractCell implements Runnable  {
         debug("forceUnpinning "+pin);
         Collection<PinRequest> pinRequests = pin.getRequests();
         if(pinRequests.isEmpty()) {
-            new Unpinner(this,pin.getPnfsId(),pin,retry);
+            PinManagerJob job = 
+                new PinManagerJobImpl(PinManagerJobType.UNPIN,
+                    null,
+                    null,
+                    pin.getPnfsId(),
+                    0,
+                    null,
+                    null,
+                    null,
+                    null);
+            new Unpinner(this,job,pin,retry);
         }
         else {
             for(PinRequest pinRequest: pinRequests) {
                 try {
-                    unpin(pin.getPnfsId(),pinRequest.getId(),null,null,null,true);
+                    PinManagerJob job = 
+                            new PinManagerJobImpl(PinManagerJobType.UNPIN,
+                            null,null,pin.getPnfsId(),0,null,null,null,null);
+                    job.setPinRequestId(pinRequest.getId());
+                    unpin(job,true);
                 } catch (Exception e) {
                     error("unpinAllInitiallyUnpinnedPins "+e);
                 }
@@ -562,20 +525,7 @@ public class PinManager extends AbstractCell implements Runnable  {
             error(t);
             message.setFailed(-1,t);
         }
-         if(  message.getReplyRequired()  ) {
-            try {
-                message.setReply();
-                info("Reverting derection "+cellMessage);
-                cellMessage.revertDirection();
-                info("Sending reply "+cellMessage);
-                sendMessage(cellMessage);
-            } catch (Exception e) {
-                error("Can't reply message : "+e);
-            }
-        } else {
-            info("reply is not required, finished processing");
-        }
-   }
+    }
 
 
     public void exceptionArrived(ExceptionEvent ee) {
@@ -588,65 +538,59 @@ public class PinManager extends AbstractCell implements Runnable  {
     throws PinException {
 
         PnfsId pnfsId = pinRequest.getPnfsId();
+        long lifetime = pinRequest.getLifetime();
+        PinManagerJobImpl job =
+                new PinManagerJobImpl(PinManagerJobType.PIN,
+                cellMessage,
+                pinRequest,
+                pnfsId,
+                lifetime,
+                pinRequest.getAuthorizationRecord(),
+                pinRequest.getRequestId(),
+                pinRequest.getClientHost(),
+                pinRequest.getStorageInfo());
         if(pnfsId == null ) {
-            pinRequest.setFailed(1, "pnfsId == null");
+            job.returnFailedResponse( "pnfsId == null");
             return;
         }
-        long lifetime = pinRequest.getLifetime();
         if(lifetime <=0 && lifetime != -1 )
         {
 
-            pinRequest.setFailed(1, "lifetime ="+lifetime+" <=0");
+            job.returnFailedResponse( "lifetime ="+lifetime+" <=0");
             return;
         }
-        long srmRequestId = pinRequest.getRequestId();
-        String clientHost = pinRequest.getClientHost();
-        AuthorizationRecord ar = pinRequest.getAuthorizationRecord();
-        pin(pnfsId,
-           clientHost,
-           lifetime,
-           srmRequestId,
-           ar,
-           pinRequest,
-           cellMessage) ;
+
+
+        pin(job) ;
     }
 
     /**
      * this function should work with pinRequestMessage and
      * cellMessage set to null as it might be invoked by an admin command
      */
-    private  void pin(PnfsId pnfsId,
-        String clientHost,
-        long lifetime,
-        long srmRequestId,
-        AuthorizationRecord authRec,
-        PinManagerPinMessage pinRequestMessage, CellMessage cellMessage)
+    private  void pin(PinManagerJobImpl job)
     throws PinException {
+         assert(job.getType()==PinManagerJobType.PIN);
+        info("pin pnfsId="+job.getPnfsId()+" lifetime="+job.getLifetime()+
+            " srmRequestId="+job.getSrmRequestId());
 
-        info("pin pnfsId="+pnfsId+" lifetime="+lifetime+
-            " srmRequestId="+srmRequestId);
-
-        if(maxPinDuration != -1 && lifetime > maxPinDuration) {
-            lifetime = maxPinDuration;
+        if(getMaxPinDuration() != -1 && job.getLifetime() > getMaxPinDuration()) {
+            job.setLifetime( getMaxPinDuration());
             info("Pin lifetime exceeded maxPinDuration, " +
-                "new lifetime is set to "+lifetime);
+                "new lifetime is set to "+job.getLifetime());
         }
         db.initDBConnection();
-        boolean changedReplyRequired = false;
-        // pinRequestIdLong is also a marker that
-        // we have stored a message in a table
-        // if it is not null
-        Long pinRequestIdLong = null;
         try {
             PinRequest pinRequest =
                 db.insertPinRequestIntoNewOrExistingPin(
-                    pnfsId,
-                    lifetime,
-                    srmRequestId,
-                    authRec);
+                    job.getPnfsId(),
+                    job.getLifetime(),
+                    job.getSrmRequestId(),
+                    job.getAuthorizationRecord());
             Pin pin = pinRequest.getPin();
             info("insertPinRequestIntoNewOrExistingPin gave Pin = "+pin+
                 " PinRequest= "+pinRequest);
+            job.setPinRequestId(pinRequest.getId());
             if(pin.getState().equals(PinManagerPinState.PINNED) ){
                 // we are  done here
                 // pin is pinned already
@@ -655,53 +599,27 @@ public class PinManager extends AbstractCell implements Runnable  {
                     pinRequest.getExpirationTime() != -1 &&
                      pin.getExpirationTime() >= pinRequest.getExpirationTime()
                     ) {
-                    // no pin lifetime extention is needed
-                     if(pinRequestMessage != null) {
-                        pinRequestMessage.setPinId(
-                            Long.toString(pinRequest.getId()));
-                     }
-                     return;
+                    job.returnResponse();// no pin lifetime extention is needed
+                    return;
                 }
 
                info("need to extend the lifetime of the request");
-               if(pinRequestMessage != null) {
-                    if(pinRequestMessage.getReplyRequired()) {
-                        changedReplyRequired = true;
-                        pinRequestMessage.setReplyRequired(false);
-                    }
-
-                    pinRequestMessage.setPinId(
-                        Long.toString(pinRequest.getId()));
-               }
                db.commitDBOperations();
-                new Extender(this,pin,pinRequest,cellMessage,pinRequestMessage,
+                new Extender(this,pin,pinRequest,
+                        job,
                     pinRequest.getExpirationTime());
                 return;
             }
             else if(pin.getState().equals(PinManagerPinState.PINNING)) {
-                if(pinRequestMessage != null &&
-                    pinRequestMessage.getReplyRequired() ) {
-                    info("pinning is in progress");
-                    info("settign setReplyRequired(false)");
-                    pinRequestMessage.setReplyRequired(false);
-                    pinRequestIdLong = new Long(pinRequest.getId());
-                    info("putting in the  pinToRequestsMap");
-                    pinToRequestsMap.put(pinRequestIdLong,cellMessage);
-                    return;
-                }
+                info("pinning is in progress, store this request in pinRequestToJobMap");
+                pinRequestToJobMap.put(job.getPinRequestId(),job);
+                return;
             }
             else if(pin.getState().equals(PinManagerPinState.INITIAL)) {
-                if(pinRequestMessage != null &&
-                    pinRequestMessage.getReplyRequired() ) {
-                    pinRequestIdLong = new Long(pinRequest.getId());
-                    pinToRequestsMap.put(pinRequestIdLong,cellMessage);
-                    pinRequestMessage.setReplyRequired(false);
-                }
+                info("pinning will begin, store this request in pinRequestToJobMap");
+                pinRequestToJobMap.put(pinRequest.getId(),job);
+                
                 //start a new pinner
-                StorageInfo storageInfo = null;
-                if(pinRequestMessage != null) {
-                    storageInfo = pinRequestMessage.getStorageInfo();
-                }
                 db.updatePin(pin.getId(),null,null,PinManagerPinState.PINNING);
                 db.commitDBOperations();
                 // we need to commit the new state before we start
@@ -711,31 +629,32 @@ public class PinManager extends AbstractCell implements Runnable  {
                 // (a race condition )
 
                 int allowedStates = RequestContainerV5.allStatesExceptStage;
-                try {
-                    allowedStates = _checkStagePermission.canPerformStaging(authRec.getName(), authRec.getVoRole()) ? RequestContainerV5.allStates : RequestContainerV5.allStatesExceptStage;
-                } catch (PatternSyntaxException ex) {
-                    error("failed to get allowed pool manager states: " + ex);
-                } catch (IOException ex) {
-                    error("failed to get allowed pool manager states: " + ex);
+                if(job.getAuthorizationRecord() != null) {
+                     try {
+                         allowedStates =
+                                 _checkStagePermission.canPerformStaging(
+                                 job.getAuthorizationRecord().getName(),
+                                 job.getAuthorizationRecord().getVoRole()) ?
+                                     RequestContainerV5.allStates :
+                                     RequestContainerV5.allStatesExceptStage;
+                     } catch (PatternSyntaxException ex) {
+                         error("failed to get allowed pool manager states: " + ex);
+                     } catch (IOException ex) {
+                         error("failed to get allowed pool manager states: " + ex);
+                     }
                 }
-                new Pinner(this, pnfsId,clientHost, storageInfo, pin,
-                   lifetime, pinRequest.getId(), allowedStates);
+                new Pinner(this, job, pin,
+                   pinRequest.getId(), allowedStates);
             } else {
-                info("pin returned is in the wrong state");
-                if(pinRequestMessage != null) {
-                    failResponse("pin returned is in the wrong state",3,
-                            pinRequestMessage);
-                }
+                job.returnFailedResponse("pin returned is in the wrong state");
             }
 
         } catch (PinDBException pdbe ) {
             db.rollbackDBOperations();
-            if(pinRequestMessage != null) {
-                failResponse(pdbe,3,pinRequestMessage);
-                if(pinRequestIdLong != null) {
-                    pinRequestMessage.setReplyRequired(true);
-                    pinToRequestsMap.remove(pinRequestIdLong);
-                }
+            job.returnFailedResponse(pdbe);
+            Long pinRequestIdLong = job.getPinRequestId();
+            if(pinRequestIdLong != null) {
+                pinRequestToJobMap.remove(pinRequestIdLong);
             }
         }
         finally {
@@ -774,7 +693,7 @@ public class PinManager extends AbstractCell implements Runnable  {
                 error = "unpinning started";
             } else {
                 success = false;
-                error = "unknown";
+                error = "state is "+pin.getState();
             }
 
             for(PinRequest pinRequest:pinRequests) {
@@ -783,21 +702,15 @@ public class PinManager extends AbstractCell implements Runnable  {
                         db.updatePinRequest(pinRequest.getId(), expiration);
                     }
                 }
-                CellMessage envelope =
-                        pinToRequestsMap.remove(pinRequest.getId());
-                info("pinSucceeded, pin request: "+pinRequest+
-                        " its cellmessage: "+envelope);
-                if(envelope != null) {
-                    PinManagerPinMessage pinMessage =
-                        (PinManagerPinMessage)envelope.getMessageObject();
-                    pinMessage.setPinId(Long.toString(pinRequest.getId()));
+                PinManagerJob job =
+                        pinRequestToJobMap.remove(pinRequest.getId());
+                if(job != null) {
                     if(success) {
-                        returnResponse(pinMessage,envelope);
+                        job.returnResponse();
                     } else {
-                        returnFailedResponse(error,pinMessage,envelope);
+                        job.returnFailedResponse(error);
                     }
                 }
-
                  if(!success) {
                     //deleting the pin requests that
                     db.deletePinRequest(pinRequest.getId());
@@ -816,7 +729,17 @@ public class PinManager extends AbstractCell implements Runnable  {
                 //otherwise we might not see the request in database
                 // if processing succeeds before the commit is executed
                 // (a race condition )
-                new Unpinner(this,pin.getPnfsId(),pin,false);
+                PinManagerJob job = 
+                    new PinManagerJobImpl(PinManagerJobType.UNPIN,
+                        null,
+                        null,
+                        pin.getPnfsId(),
+                        0,
+                        null,
+                        null,
+                        null,
+                        null);
+                new Unpinner(this,job,pin,false);
             }
             db.commitDBOperations();
         } catch (PinDBException pdbe ) {
@@ -828,19 +751,17 @@ public class PinManager extends AbstractCell implements Runnable  {
         }
     }
 
-    public void pinFailed ( Pin pin ) throws PinException {
+    public void pinFailed ( Pin pin, Object reason ) throws PinException {
         Set<PinRequest> pinRequests ;
         db.initDBConnection();
         try {
             pin = db.getPinForUpdate(pin.getId());
             pinRequests = pin.getRequests();
             for(PinRequest pinRequest:pinRequests) {
-                CellMessage envelope =
-                        pinToRequestsMap.remove(pinRequest.getId());
-                if(envelope != null) {
-                    PinManagerPinMessage pinMessage =
-                        (PinManagerPinMessage)envelope.getMessageObject();
-                    returnFailedResponse("Pinning failed",pinMessage,envelope);
+                PinManagerJob job =
+                        pinRequestToJobMap.remove(pinRequest.getId());
+                if(job != null) {
+                    job.returnFailedResponse("Pinning failed: "+reason);
                 }
                 db.deletePinRequest(pinRequest.getId());
             }
@@ -898,22 +819,32 @@ public class PinManager extends AbstractCell implements Runnable  {
     public void extendLifetime(
             PinManagerExtendLifetimeMessage extendLifetimeRequest,
         CellMessage cellMessage) throws PinException {
-        String pinIdStr = extendLifetimeRequest.getPinId();
-        if(pinIdStr == null) {
-            returnFailedResponse("pinIdStr == null",
-                    extendLifetimeRequest, cellMessage);
-            return;
-        }
+        String pinRequestIdStr = extendLifetimeRequest.getPinRequestId();
         PnfsId pnfsId = extendLifetimeRequest.getPnfsId();
-        if(pnfsId == null ) {
-            returnFailedResponse("pnfsId == null",
-                    extendLifetimeRequest, cellMessage);
+        long pinRequestId = Long.parseLong(pinRequestIdStr);
+        long newLifetime = extendLifetimeRequest.getNewLifetime();
+
+        PinManagerJobImpl job =
+            new PinManagerJobImpl(PinManagerJobType.EXTEND_LIFETIME,
+                cellMessage,
+                extendLifetimeRequest,
+                pnfsId,
+                extendLifetimeRequest.getNewLifetime(),
+                extendLifetimeRequest.getAuthorizationRecord(),
+                null,
+                null,
+                null);
+        if(pinRequestIdStr == null) {
+            job.returnFailedResponse("pinRequestIdStr == null");
             return;
         }
-        long pinId = Long.parseLong(pinIdStr);
-        long newLifetime = extendLifetimeRequest.getNewLifetime();
-        extendLifetime(pnfsId, pinId,newLifetime,
-                extendLifetimeRequest, cellMessage);
+        if(pnfsId == null ) {
+            job.returnFailedResponse("pnfsId == null");
+            return;
+        }
+        job.setPinRequestId(pinRequestId);
+
+        extendLifetime(job);
     }
 
     /**
@@ -921,84 +852,68 @@ public class PinManager extends AbstractCell implements Runnable  {
      * cellMessage set to null as it might be invoked by an admin command
      */
 
-    public void extendLifetime(PnfsId pnfsId,
-            long pinRequestId, long newLifetime,
-            PinManagerExtendLifetimeMessage extendLifetimeRequest,
-            CellMessage cellMessage)
+    public void extendLifetime(PinManagerJobImpl job)
             throws PinException
     {
-        info("extend lifetime pnfsId="+pnfsId+" pinId="+pinRequestId+
-                " new lifetime="+newLifetime);
-        if(maxPinDuration !=-1 && newLifetime > maxPinDuration) {
-            newLifetime = maxPinDuration;
+        info("extend lifetime pnfsId="+job.getPnfsId()+" pinRequestId="+job.getPinRequestId()+
+                " new lifetime="+job.getLifetime());
+        if(getMaxPinDuration() !=-1 && job.getLifetime() > getMaxPinDuration()) {
+            job.setLifetime(getMaxPinDuration());
             info("Pin newLifetime exceeded maxPinDuration, " +
-                    "newLifetime is set to "+newLifetime);
+                    "newLifetime is set to "+job.getLifetime() );
         }
         db.initDBConnection();
 
         boolean  changedReplyRequired = false;
         try {
-            Pin pin = db.getPinForUpdateByRequestId(pinRequestId);
+            Pin pin = db.getPinForUpdateByRequestId(job.getPinRequestId());
             if(pin == null) {
-                error("extend: pin request with id = "+pinRequestId+
+                job.returnFailedResponse("extend: pin request with id = "+job.getPinRequestId()+
                         " is not found");
-                if(extendLifetimeRequest != null) {
-                    failResponse("pin request with id = "+pinRequestId+
-                        " is not found",
-                        4,extendLifetimeRequest);
-                }
                 return;
             }
 
             Set<PinRequest> pinRequests = pin.getRequests();
             PinRequest pinRequest = null;
             for(PinRequest aPinRequest: pinRequests) {
-                if(aPinRequest.getId() == pinRequestId) {
+                if(aPinRequest.getId() == job.getPinRequestId()) {
                     pinRequest = aPinRequest;
                     break;
                 }
             }
+            
             if(pinRequest == null) {
-                error("extend: pin request with id = "+pinRequestId+
+                job.returnFailedResponse("extend: pin request with id = "+job.getPinRequestId()+
                         " is not found");
-                if(extendLifetimeRequest != null) {
-                    failResponse("pin request with id = "+pinRequestId+
-                        " is not found",
-                        4,extendLifetimeRequest);
-                }
                 return;
             }
             assert pinRequest != null;
             if(!pin.getState().equals(PinManagerPinState.PINNED) &&
                 pin.getState().equals(PinManagerPinState.INITIAL) &&
                 pin.getState().equals(PinManagerPinState.PINNING ) ) {
-                error("extend: pin request with id = "+pinRequestId+
+                job.returnFailedResponse("extend: pin request with id = "+job.getPinRequestId()+
                         " is not pinned anymore");
-                if(extendLifetimeRequest != null) {
-                    failResponse("pin request with id = "+pinRequestId+
-                        " is not pinned anymore",
-                        4,extendLifetimeRequest);
-                }
                 return;
-
             }
 
             long expiration = pinRequest.getExpirationTime();
             if(expiration == -1) {
                // lifetime is already infinite
                 info("extend: lifetime is already infinite");
+                job.returnResponse();
                return;
             }
             long currentTime = System.currentTimeMillis();
             long remainingTime = expiration - currentTime;
-            if(newLifetime != -1 && remainingTime >= newLifetime) {
+            if(job.getLifetime() != -1 && remainingTime >= job.getLifetime()) {
 
                //nothing to be done here
-               info( "extendLifetime: remainingTime("+extendLifetimeRequest+
-                   ") >= newLifetime("+cellMessage+")");
+               info( "extendLifetime: remainingTime("+remainingTime+
+                   ") >= newLifetime("+job.getLifetime()+")");
+               job.returnResponse();
                return;
             }
-            expiration = newLifetime == -1? -1: currentTime + newLifetime;
+            expiration = job.getLifetime() == -1? -1: currentTime + job.getLifetime();
             if(pin.getExpirationTime() == -1  ||
                 ( pin.getExpirationTime() != -1 &&
                   expiration != -1 &&
@@ -1006,28 +921,19 @@ public class PinManager extends AbstractCell implements Runnable  {
                 db.updatePinRequest(pinRequest.getId(),expiration);
                 info( "extendLifetime:  overall pin lifetime " +
                         "does not need extention");
+                job.returnResponse();
                 return;
             }
             info("need to extend the lifetime of the request");
-            if( extendLifetimeRequest != null &&
-                extendLifetimeRequest.getReplyRequired()) {
-                changedReplyRequired = true;
-                extendLifetimeRequest.setReplyRequired(false);
-            }
+            job.setReplyRequired(false);
             info("starting extender");
-            new Extender(this,pin,pinRequest,cellMessage,extendLifetimeRequest,
+            new Extender(this,pin,pinRequest,job,
                     expiration);
-
-
         } catch (PinDBException pdbe ) {
             error("extend lifetime: "+pdbe);
             db.rollbackDBOperations();
-            if( extendLifetimeRequest != null ) {
-                failResponse(pdbe,3,extendLifetimeRequest);
-                if(changedReplyRequired) {
-                    extendLifetimeRequest.setReplyRequired(true);
-                }
-            }
+            job.setReplyRequired(true);
+            job.returnFailedResponse(pdbe);
         }
         finally {
             db.commitDBOperations();
@@ -1037,8 +943,8 @@ public class PinManager extends AbstractCell implements Runnable  {
 
        public void extendSucceeded ( Pin pin,
            PinRequest pinRequest,
-           PinManagerMessage extendMessage ,
-           CellMessage envelope, long expiration ) throws PinException {
+           PinManagerJob extendJob ,
+           long expiration ) throws PinException {
         info("extendSucceeded pin="+pin+" pinRequest="+pinRequest +
             " new expiration "+expiration);
         boolean success = true;
@@ -1052,11 +958,8 @@ public class PinManager extends AbstractCell implements Runnable  {
              if(!pin.getState().equals(PinManagerPinState.PINNED) &&
                 pin.getState().equals(PinManagerPinState.INITIAL) &&
                 pin.getState().equals(PinManagerPinState.PINNING ) ) {
-                if(extendMessage != null) {
-                    failResponse("pin request with id = "+pinRequest.getId()+
-                            " is not pinned anymore",
-                        4,extendMessage);
-                }
+                extendJob.returnFailedResponse("pin request with id = "+pinRequest.getId()+
+                            " is not pinned anymore");
 
             } else {
                 if(expiration == -1) {
@@ -1074,12 +977,8 @@ public class PinManager extends AbstractCell implements Runnable  {
                         db.updatePin(pin.getId(),new Long(expiration),null,null);
                     }
                 }
+                extendJob.returnResponse();
             }
-
-            if(extendMessage != null) {
-                returnResponse(extendMessage,envelope);
-            }
-
         } catch (PinDBException pdbe ) {
             db.rollbackDBOperations();
         }
@@ -1089,12 +988,12 @@ public class PinManager extends AbstractCell implements Runnable  {
     }
 
     public void extendFailed ( Pin pin ,PinRequest pinRequest,
-        PinManagerMessage extendMessage ,
-           CellMessage envelope,Object reason) throws PinException {
-        error("extenderFailed for pin "+pin+" reason="+reason);
-        if(extendMessage != null) {
-            returnFailedResponse(reason,extendMessage,envelope);
-        }
+        PinManagerJob extendJob  ,
+           Object reason) throws PinException {
+        // extend failed - pool is not available
+        //make pin manager attempt to pin file in a new location
+
+        extendJob.returnFailedResponse(reason);
     }
 
 
@@ -1102,121 +1001,69 @@ public class PinManager extends AbstractCell implements Runnable  {
             CellMessage cellMessage)
     throws PinException {
         PnfsId pnfsId = unpinRequest.getPnfsId();
-        if(pnfsId == null ) {
-            failResponse("pnfsId == null",1, unpinRequest);
-            return;
-        }
-        String pinIdStr = unpinRequest.getPinId();
         Long srmRequestId = unpinRequest.getSrmRequestId();
         AuthorizationRecord authRec = unpinRequest.getAuthorizationRecord();
-
-        if(pinIdStr == null && srmRequestId == null ) {
-            unpin(pnfsId,authRec, unpinRequest, cellMessage,false);
-        } else {
-            unpin(pnfsId, pinIdStr,srmRequestId ,authRec, unpinRequest, cellMessage,false);
-        }
-    }
-
-       /**
-     * this function should work with unpinRequest and
-     * cellMessage set to null as it might be invoked by an admin command
-     * or by watchdog thread
-     */
-    public void unpin(PnfsId pnfsId,
-        String pinRequestIdStr,
-        Long srmRequestId,
-        AuthorizationRecord authRec,
-        PinManagerUnpinMessage unpinRequest,
-        CellMessage cellMessage,
-        boolean force)
-    throws PinException {
-        info("unpin pnfsId="+pnfsId+" pinId="+pinRequestIdStr+" srmRequestId="+srmRequestId);
-
-        long pinRequestId;
-        db.initDBConnection();
-
-        try {
-
-            if(pinRequestIdStr != null) {
-                pinRequestId = Long.parseLong(pinRequestIdStr);
-            } else {
-                pinRequestId =
-                    db.getPinRequestIdByByPnfsIdandSrmRequestId(pnfsId,srmRequestId);
-            }
-        } catch (PinDBException pdbe ) {
-            error("unpin: "+pdbe.toString());
-            db.rollbackDBOperations();
-            if(unpinRequest != null) {
-                failResponse(pdbe,3,unpinRequest);
-            }
+        PinManagerJob job = 
+                new PinManagerJobImpl(PinManagerJobType.UNPIN,
+                cellMessage,
+                unpinRequest,
+                pnfsId,
+                0,
+                unpinRequest.getAuthorizationRecord(),
+                unpinRequest.getSrmRequestId(),
+                null,null);
+        if(pnfsId == null ) {
+            job.returnFailedResponse("pnfsId == null");
             return;
         }
-        finally {
-            db.commitDBOperations();
+        Long pinRequestId = null;
+        if(unpinRequest.getPinRequestId() != null){
+            pinRequestId = Long.parseLong(unpinRequest.getPinRequestId());
         }
+        
+        job.setPinRequestId(pinRequestId);
 
-        unpin(pnfsId,pinRequestId,authRec,unpinRequest,cellMessage,force);
-
+        if(pinRequestId == null && srmRequestId == null ) {
+            unpinAllRequestForUser(job,false);
+        } else {
+            unpin(job,false);
+        }
     }
 
 
-    public void unpin(PnfsId pnfsId,
-        AuthorizationRecord authRec,
-        PinManagerUnpinMessage unpinRequest,
-        CellMessage cellMessage,
+
+    public void unpinAllRequestForUser(PinManagerJob job,
         boolean force)
     throws PinException {
-        info("unpin all requests for pnfsId="+pnfsId);
-        if(unpinRequest != null) {
-            assert unpinRequest.getPinId()==null &&
-                   unpinRequest.getSrmRequestId() ==null;
-        }
+        info("unpin all requests for pnfsId="+job.getPnfsId());
+        assert job.getPinId()==null &&
+               job.getSrmRequestId() ==0;
 
         db.initDBConnection();
         Long pinRequestIdLong = null;
 
         try {
-            Pin pin = db.getAndLockActivePinWithRequestsByPnfstId(pnfsId);
+            Pin pin = db.getAndLockActivePinWithRequestsByPnfstId(job.getPnfsId());
             if(pin == null ) {
-                error("unpin: pin request for PnfsId = "+pnfsId+
+                job.returnFailedResponse("unpin: pin requests for PnfsId = "+job.getPnfsId()+
                         " is not found");
-                if(unpinRequest != null) {
-                    failResponse("pin requests for PnfsId = "+pnfsId+
-                        " is not found",
-                        4,unpinRequest);
-                }
                 return;
             }
 
             if(!force &&  !pin.getState().equals(PinManagerPinState.PINNED)) {
                 if (pin.getState().equals(PinManagerPinState.INITIAL) ||
                      pin.getState().equals(PinManagerPinState.PINNING)) {
-                    error("unpin: in request with PnfsId = "+pnfsId+
-                            " is not pinned yet");
-
-                    if(unpinRequest != null) {
-                        failResponse("pin request with PnfsId = "+pnfsId+
-                                " is not pinned yet",
-                            5,unpinRequest);
-                    }
+                   job.returnFailedResponse("unpin: pin request with PnfsId = "+job.getPnfsId()+
+                                " is not pinned yet");
                     return;
                 } else  {
-                            error("unpin: in request with PnfsId = "+pnfsId+
-                            " is not pinned yet"+
-                            " or is already being upinnned");
-                    if(unpinRequest != null) {
-                        failResponse("pin request with PnfsId = "+pnfsId+
+                    job.returnFailedResponse("unpin: pin request with PnfsId = "+job.getPnfsId()+
                                 " is not pinned, " +
-                            "or is already being upinnned",
-                            5,unpinRequest);
-                    }
+                            "or is already being upinnned");
                     return;
 
                 }
             }
-
-
-
             Set<PinRequest> pinRequests = pin.getRequests();
             int setSize = pinRequests.size();
             boolean skippedPins = false;
@@ -1224,7 +1071,7 @@ public class PinManager extends AbstractCell implements Runnable  {
             int pinReqIndx = 0;
             for(PinRequest pinRequest: pinRequests) {
                 long pinRequestId = pinRequest.getId();
-                if(!force && !pinManagerPolicy.canUnpin(authRec,pinRequest)) {
+                if(!force && !pinManagerPolicy.canUnpin(job.getAuthorizationRecord(),pinRequest)) {
                     skippedPins = true;
                     continue;
                 }
@@ -1235,12 +1082,12 @@ public class PinManager extends AbstractCell implements Runnable  {
                            "just deleting the request");
                     db.deletePinRequest(pinRequestId);
                 } else{
-                    if(unpinRequest != null &&
-                            unpinRequest.getReplyRequired() ) {
-                        pinRequestIdLong = new Long(pinRequestId);
-                        pinRequestToUnpinRequestsMap.put(
-                                pinRequestIdLong,cellMessage);
-                        unpinRequest.setReplyRequired(false);
+                    
+                    pinRequestIdLong = pinRequestId;
+                    pinRequestToUnpinJobMap.put(
+                            pinRequestIdLong,job);
+                    if(job.getPinManagerMessage() != null) {
+                        job.getPinManagerMessage().setReplyRequired(false);
                     }
                     db.updatePin(pin.getId(),null,null,
                             PinManagerPinState.UNPINNING);
@@ -1252,19 +1099,24 @@ public class PinManager extends AbstractCell implements Runnable  {
                     // if processing succeeds before the commit is executed
                     // (a race condition )
 
-                    new Unpinner(this,pin.getPnfsId(),pin,false);
+                    PinManagerJob unpinJob = 
+                        new PinManagerJobImpl(PinManagerJobType.UNPIN,
+                            null,
+                            null,
+                            pin.getPnfsId(),
+                            0,
+                            null,
+                            null,
+                            null,
+                            null);
+                    new Unpinner(this,unpinJob,pin,false);
                     return;
                 }
             }
 
             if(!unpinedAtLeastOne) {
-                error("unpin: pin request with  PnfsId = "+pnfsId+
+                job.returnFailedResponse("pin request with  PnfsId = "+job.getPnfsId()+
                         " can not be unpinned, authorization failure");
-                if(unpinRequest != null) {
-                    failResponse("pin request with  PnfsId = "+pnfsId+
-                        " can not be unpinned, authorization failure",
-                        4,unpinRequest);
-                }
                 return;
             }
 
@@ -1272,11 +1124,11 @@ public class PinManager extends AbstractCell implements Runnable  {
         } catch (PinDBException pdbe ) {
             error("unpin: "+pdbe.toString());
             db.rollbackDBOperations();
-            if(unpinRequest != null) {
-                failResponse(pdbe,3,unpinRequest);
+            job.returnFailedResponse(pdbe);
+            if(job.getPinManagerMessage() != null) {
+                job.getPinManagerMessage().setReplyRequired(true);
                 if(pinRequestIdLong != null) {
-                    unpinRequest.setReplyRequired(true);
-                    pinRequestToUnpinRequestsMap.remove(pinRequestIdLong);
+                    pinRequestToUnpinJobMap.remove(pinRequestIdLong);
                 }
             }
             return;
@@ -1292,51 +1144,52 @@ public class PinManager extends AbstractCell implements Runnable  {
      * cellMessage set to null as it might be invoked by an admin command
      * or by watchdog thread
      */
-    public void unpin(PnfsId pnfsId,
-        long pinRequestId,
-        AuthorizationRecord authRec,
-        PinManagerUnpinMessage unpinRequest,
-        CellMessage cellMessage,
+    public void unpin(PinManagerJob job,
         boolean force)
     throws PinException {
-        info("unpin pnfsId="+pnfsId+" pinId="+pinRequestId);
+        info("unpin pnfsId="+job.getPnfsId()+
+                " pinRequestId="+job.getPinRequestId()+
+                " srmRequestId="+job.getSrmRequestId());
+
+        if(job.getPinRequestId() == null) {
+            db.initDBConnection();
+
+            try {
+                job.setPinRequestId(
+                    db.getPinRequestIdByByPnfsIdandSrmRequestId(
+                        job.getPnfsId(),job.getSrmRequestId()));
+            } catch (PinDBException pdbe ) {
+                error("unpin: "+pdbe.toString());
+                db.rollbackDBOperations();
+                job.returnFailedResponse(pdbe);
+                return;
+            }
+            finally {
+                db.commitDBOperations();
+            }
+        }
+        
         db.initDBConnection();
         Long pinRequestIdLong = null;
         try {
-            Pin pin = db.getPinForUpdateByRequestId(pinRequestId);
+            Pin pin = db.getPinForUpdateByRequestId(job.getPinRequestId());
             if(pin == null) {
-                error("unpin: pin request with id = "+pinRequestId+
-                        " is not found");
-                if(unpinRequest != null) {
-                    failResponse("pin request with id = "+pinRequestId+
-                            " is not found",
-                        4,unpinRequest);
-                }
+                job.returnFailedResponse("unpin: pin request with id = "+
+                        job.getPinRequestId()+ " is not found");
                 return;
             }
 
             if(!force &&  ! pin.getState().equals(PinManagerPinState.PINNED)) {
                 if (pin.getState().equals(PinManagerPinState.INITIAL) ||
                      pin.getState().equals(PinManagerPinState.PINNING)) {
-                    error("unpin: in request with id = "+pinRequestId+
-                            " is not pinned yet");
-
-                    if(unpinRequest != null) {
-                        failResponse("pin request with id = "+pinRequestId+
-                                " is not pinned yet",
-                            5,unpinRequest);
-                    }
+                    job.returnFailedResponse("pin request with id = "+job.getPinRequestId()+
+                                " is not pinned yet");
+                    
                     return;
                 } else {
-                            error("unpin: in request with id = "+pinRequestId+
-                            " is not pinned yet"+
-                            " or is already being upinnned");
-                    if(unpinRequest != null) {
-                        failResponse("pin request with id = "+pinRequestId+
+                    job.returnFailedResponse("pin request with id = "+job.getPinRequestId()+
                                 " is not pinned, " +
-                            "or is already being upinnned",
-                            5,unpinRequest);
-                    }
+                            "or is already being upinnned");
                     return;
 
                 }
@@ -1345,68 +1198,68 @@ public class PinManager extends AbstractCell implements Runnable  {
             Set<PinRequest> pinRequests = pin.getRequests();
             PinRequest foundPinRequest = null;
             for(PinRequest pinRequest: pinRequests) {
-                if(pinRequest.getId() == pinRequestId) {
+                if(pinRequest.getId() == job.getPinRequestId()) {
                     foundPinRequest = pinRequest;
                     break;
                 }
             }
             if(foundPinRequest == null) {
-                error("unpin: pin request with id = "+pinRequestId+
-                        " is not found");
-                if(unpinRequest != null) {
-                    failResponse("pin request with id = "+pinRequestId+
-                            " is not found",
-                        4,unpinRequest);
-                }
+                job.returnFailedResponse("pin request with id = "+job.getPinRequestId()+
+                            " is not found");
                 return;
             }
-            if(!force && !pinManagerPolicy.canUnpin(authRec,foundPinRequest)){
-                error("unpin: pin request with id = "+pinRequestId+
+            if(!force && !pinManagerPolicy.canUnpin(job.getAuthorizationRecord(),foundPinRequest)){
+                job.returnFailedResponse("pin request with id = "+job.getPinRequestId()+
                         " can not be unpinned, authorization failure");
-                if(unpinRequest != null) {
-                    failResponse("pin request with id = "+pinRequestId+
-                        " can not be unpinned, authorization failure",
-                        4,unpinRequest);
-                }
                 return;
 
             }
             if(pinRequests.size() > 1) {
                info("unpin: more than one requests in this pin, " +
                        "just deleting the request");
-               db.deletePinRequest(pinRequestId);
-                // we done, just return the message to requester now
-                // will be done by process message automatically
+               db.deletePinRequest(job.getPinRequestId());
+               job.returnResponse();
                 return;
             }
 
-            if(unpinRequest != null &&
-                    unpinRequest.getReplyRequired() ) {
-                pinRequestIdLong = new Long(pinRequestId);
-                pinRequestToUnpinRequestsMap.put(
-                        pinRequestIdLong,cellMessage);
-                unpinRequest.setReplyRequired(false);
+            if(job.getPinManagerMessage() != null &&
+                    job.getPinManagerMessage().getReplyRequired() ) {
+                pinRequestIdLong = new Long(job.getPinRequestId());
+                
+                pinRequestToUnpinJobMap.put(
+                        pinRequestIdLong,job);
+                job.getPinManagerMessage().setReplyRequired(false);
             }
             db.updatePin(pin.getId(),null,null,
                     PinManagerPinState.UNPINNING);
-            info("starting unpinnerfor request with id = "+pinRequestId);
+            info("starting unpinner for request with id = "+job.getPinRequestId());
             db.commitDBOperations();
             // we need to commit the new state before we start
             // processing
             // otherwise we might not see the request in database
             // if processing succeeds before the commit is executed
             // (a race condition )
-
-            new Unpinner(this,pin.getPnfsId(),pin,false);
+            PinManagerJob unpinJob = 
+                new PinManagerJobImpl(PinManagerJobType.UNPIN,
+                    null,
+                    null,
+                    pin.getPnfsId(),
+                    0,
+                    null,
+                    null,
+                    null,
+                    null);
+            new Unpinner(this,unpinJob,pin,false);
             return;
         } catch (PinDBException pdbe ) {
             error("unpin: "+pdbe.toString());
             db.rollbackDBOperations();
-            if(unpinRequest != null) {
-                failResponse(pdbe,3,unpinRequest);
+            job.returnFailedResponse(pdbe);
+            if(job.getPinManagerMessage()  != null) {
+                
                 if(pinRequestIdLong != null) {
-                    unpinRequest.setReplyRequired(true);
-                    pinRequestToUnpinRequestsMap.remove(pinRequestIdLong);
+                    job.getPinManagerMessage().setReplyRequired(true);
+                    pinRequestToUnpinJobMap.remove(pinRequestIdLong);
                 }
             }
         }
@@ -1427,21 +1280,16 @@ public class PinManager extends AbstractCell implements Runnable  {
             pinRequests = pin.getRequests();
             for(PinRequest pinRequest:pinRequests) {
                 // find all the pin messages, which should not be there
-                CellMessage envelope =
-                        pinToRequestsMap.remove(pinRequest.getId());
-                if(envelope != null) {
-                    PinManagerPinMessage pinMessage =
-                        (PinManagerPinMessage)envelope.getMessageObject();
-                    returnFailedResponse("Pinning failed, unpin has suceeded",
-                            pinMessage,envelope);
+                PinManagerJob job =
+                        pinRequestToJobMap.remove(pinRequest.getId());
+                if(job != null) {
+                    job.returnFailedResponse("Pinning failed, unpin has suceeded");
                 }
-                // find all unpin messages and return success
-                 envelope =
-                        pinRequestToUnpinRequestsMap.remove(pinRequest.getId());
-                if(envelope != null) {
-                    PinManagerUnpinMessage unpinMessage =
-                        (PinManagerUnpinMessage)envelope.getMessageObject();
-                    returnResponse(unpinMessage,envelope);
+                // find all unpinAllRequestForUser messages and return success
+                PinManagerJob unpinjob =
+                        pinRequestToUnpinJobMap.remove(pinRequest.getId());
+                if(unpinjob != null) {
+                    unpinjob.returnResponse();
                 }
                  // delete all pin requests
                 db.deletePinRequest(pinRequest.getId());
@@ -1464,23 +1312,18 @@ public class PinManager extends AbstractCell implements Runnable  {
             pin = db.getPinForUpdate(pin.getId());
             pinRequests = pin.getRequests();
             for(PinRequest pinRequest:pinRequests) {
-                CellMessage envelope =
-                        pinToRequestsMap.remove(pinRequest.getId());
-                if(envelope != null) {
-                    PinManagerPinMessage pinMessage =
-                        (PinManagerPinMessage)envelope.getMessageObject();
-                    returnFailedResponse(
-                            "Pinning failed, unpinning is in progress",
-                            pinMessage,envelope);
+                PinManagerJob job =
+                        pinRequestToJobMap.remove(pinRequest.getId());
+                if(job != null) {
+                    job.returnFailedResponse(
+                                "Pinning failed, unpinning is in progress");
                 }
-                 envelope =
-                        pinRequestToUnpinRequestsMap.remove(pinRequest.getId());
-                if(envelope != null) {
-                    PinManagerUnpinMessage unpinMessage =
-                        (PinManagerUnpinMessage)envelope.getMessageObject();
-                    returnFailedResponse(
-                            "Unpinning failed, unpinning will be retried",
-                        unpinMessage,envelope);
+
+                PinManagerJob unpinjob =
+                        pinRequestToUnpinJobMap.remove(pinRequest.getId());
+                if(unpinjob != null) {
+                    unpinjob.returnFailedResponse(
+                                "Unpinning failed, unpinning will be retried");
                 }
                 db.deletePinRequest(pinRequest.getId());
             }
@@ -1525,8 +1368,12 @@ public class PinManager extends AbstractCell implements Runnable  {
 
         for(PinRequest pinRequest:expiredPinRequests) {
            debug("expiring pin request "+pinRequest);
-           unpin(pinRequest.getPin().getPnfsId(),pinRequest.getId(),
-               pinRequest.getAuthorizationRecord(),null,null,false);
+           PinManagerJob job = 
+                   new PinManagerJobImpl(PinManagerJobType.UNPIN,
+                   null,null,pinRequest.getPin().getPnfsId(),
+                   0,pinRequest.getAuthorizationRecord(),null,null,null);
+           job.setPinRequestId(pinRequest.getId());
+           unpin(job,false);
         }
 
     }
@@ -1607,15 +1454,10 @@ public class PinManager extends AbstractCell implements Runnable  {
                                                                               // the pin
                         for(PinRequest pinRequest:pin.getRequests()) {
                             db.deletePinRequest(pinRequest.getId());
-                            CellMessage envelope =
-                                    pinToRequestsMap.remove(pinRequest.getId());
-                            info("removeFiles: found pin request: "+pinRequest+
-                                    " its cellmessage: "+envelope);
-                            if(envelope != null) {
-                                PinManagerPinMessage pinMessage =
-                                    (PinManagerPinMessage)envelope.getMessageObject();
-                                pinMessage.setPinId(Long.toString(pinRequest.getId()));
-                                returnFailedResponse("File Removed",pinMessage,envelope);
+                            PinManagerJob job =
+                                    pinRequestToJobMap.remove(pinRequest.getId());
+                            if(job != null) {
+                                job.returnFailedResponse("File Removed");
                             }
                         }
                         db.deletePin(pin.getId());
@@ -1629,32 +1471,28 @@ public class PinManager extends AbstractCell implements Runnable  {
         }
     }
 
-     private void removeFile(String pnfsid) {
-        if(pnfsid == null || pnfsid.length() ==0 ) {
-            return;
-        }
-    }
-
     private void movePin(PinManagerMovePinMessage movePin,
         CellMessage envelope ) {
         PnfsId pnfsId = movePin.getPnfsId();
         String srcPool = movePin.getSourcePool();
         String dstPool = movePin.getTargetPool();
-        //Collection<StickyRecord> records = movePin.getRecords();
 
         if(pnfsId == null ) {
             error("pnfsid is not set");
             movePin.setFailed(CacheException.INVALID_ARGS,"pnfsid is not set");
+            returnResponse(movePin, envelope);
             return;
         }
         if(srcPool == null ) {
             error(" source pool is not set");
             movePin.setFailed(CacheException.INVALID_ARGS,"source pool is not set");
+            returnResponse(movePin, envelope);
             return;
         }
         if(dstPool == null ) {
             error("destination pool is not set");
             movePin.setFailed(CacheException.INVALID_ARGS,"destination pool is not set");
+            returnResponse(movePin, envelope);
             return;
         }
 
@@ -1672,11 +1510,13 @@ public class PinManager extends AbstractCell implements Runnable  {
                 if(pinsToMove.isEmpty()) {
                     error("pins for "+pnfsId+" in "+srcPool+ " in pinned state are not  found");
                     movePin.setFailed(1,"pins for "+pnfsId+" in "+srcPool+ " in pinned state are not  found");
+                    returnResponse(movePin, envelope);
                     return;
                 }
                 if(pinsToMove.size() >1) {
                     error("more than one pin found, which is not yet supported ");
                     movePin.setFailed(1,"more than one pin found, which is not yet supported ");
+                    returnResponse(movePin, envelope);
                     return;
                 }
 
@@ -1685,7 +1525,6 @@ public class PinManager extends AbstractCell implements Runnable  {
                         info(" file "+pnfsId+" is  being moved, changing pin request" +srcPin );
                         Pin dstPin =
                             db.newPinForPinMove(pnfsId,dstPool,expirationTime);
-                        movePin.setReplyRequired(false);
                         new PinMover(this,
                             pnfsId,
                             srcPin,
@@ -1857,7 +1696,17 @@ public class PinManager extends AbstractCell implements Runnable  {
         // in the new pool
         db.updatePin(dstPin.getId(),null,null,
         PinManagerPinState.UNPINNING);
-        new Unpinner(this,dstPin.getPnfsId(),dstPin,false);
+        PinManagerJob unpinJob = 
+            new PinManagerJobImpl(PinManagerJobType.UNPIN,
+                null,
+                null,
+                dstPin.getPnfsId(),
+                0,
+                null,
+                null,
+                null,
+                null);
+        new Unpinner(this,unpinJob,dstPin,false);
     }
 
     public void pinMoveFailed (
@@ -1893,6 +1742,267 @@ public class PinManager extends AbstractCell implements Runnable  {
         db.deletePin(dstPin.getId());
         db.commitDBOperations();
     }
+ 
+    private enum PinManagerJobType {
+        PIN,
+        UNPIN,
+        EXTEND_LIFETIME
+    }
 
+    private enum PinManagerJobState {
+        ACTIVE,
+        COMPLETED
+    }
+
+    private interface InteractiveJob
+    {
+        public PinManagerJobState getState();
+    }
+
+    private class PinManagerJobImpl implements PinManagerJob, InteractiveJob {
+
+        private final PinManagerJobType type;
+        private PinManagerJobState state = PinManagerJobState.ACTIVE;
+        private Long pinId;
+        private Long pinRequestId;
+        private CellMessage cellMessage;
+        private PinManagerMessage pinManagerMessage;
+        private String pnfsPath;
+        private PnfsId pnfsId;
+        private long lifetime;
+        private final AuthorizationRecord authRecord;
+        private final long srmRequestId;
+        private final String clientHost ;
+        private StorageInfo storageInfo;
+        private Object errorObject;
+        private int errorCode;
+        private SMCTask task;
+
+        public PinManagerJobImpl(PinManagerJobType type,
+                CellMessage cellMessage,
+                PinManagerMessage pinManagerMessage,
+                PnfsId pnfsId,
+                long lifetime,
+                AuthorizationRecord authRecord,
+                Long srmRequestId,
+                String clientHost,
+                StorageInfo storageInfo) {
+            this.type = type;
+            //do not even store the message, if the reply is not required
+            if(pinManagerMessage != null && pinManagerMessage.getReplyRequired()) {
+                this.cellMessage =  cellMessage ;
+                this.pinManagerMessage = pinManagerMessage;
+            }
+            this.pnfsId = pnfsId;
+            this.lifetime = lifetime;
+            this.authRecord = authRecord;
+            if(srmRequestId != null) {
+                this.srmRequestId = srmRequestId;
+            } else {
+                this.srmRequestId = 0;
+            }
+            this.clientHost =  clientHost;
+            this.storageInfo = storageInfo;
+        }
+        /**
+         * @return the type
+         */
+        public PinManagerJobType getType() {
+            return type;
+        }
+
+        /**
+         * @return the cellMessage
+         */
+        public CellMessage getCellMessage() {
+            return cellMessage;
+        }
+
+        /**
+         * @return the pinManagerMessage
+         */
+        public PinManagerMessage getPinManagerMessage() {
+            return pinManagerMessage;
+        }
+
+        /**
+         * @return the pnfsPath
+         */
+        public String getPnfsPath() {
+            return pnfsPath;
+        }
+
+        /**
+         * @param pnfsPath the pnfsPath to set
+         */
+        public void setPnfsPath(String pnfsPath) {
+            this.pnfsPath = pnfsPath;
+        }
+
+        /**
+         * @return the pnfsId
+         */
+        public PnfsId getPnfsId() {
+            return pnfsId;
+        }
+
+        /**
+         * @param pnfsId the pnfsId to set
+         */
+        public void setPnfsId(PnfsId pnfsId) {
+            this.pnfsId = pnfsId;
+        }
+
+        /**
+         * @return the authRecord
+         */
+        public AuthorizationRecord getAuthorizationRecord() {
+            return authRecord;
+        }
+
+        /**
+         * @return the srmRequestId
+         */
+        public long getSrmRequestId() {
+            return srmRequestId;
+        }
+
+        /**
+         * @return the clientHost
+         */
+        public String getClientHost() {
+            return clientHost;
+        }
+
+        /**
+         * @return the lifetime
+         */
+        public long getLifetime() {
+            return lifetime;
+        }
+
+        /**
+         * @param lifetime the lifetime to set
+         */
+        public void setLifetime(long lifetime) {
+            this.lifetime = lifetime;
+        }
+
+        /**
+         * @return the storageIInfo
+         */
+        public StorageInfo getStorageInfo() {
+            return storageInfo;
+        }
+
+        /**
+         * @param storageIInfo the storageIInfo to set
+         */
+        public void setStorageInfo(StorageInfo storageIInfo) {
+            this.storageInfo = storageIInfo;
+        }
+
+        /**
+         * @return the pinId
+         */
+        public Long getPinId() {
+            return pinId;
+        }
+
+        /**
+         * @param pinId the pinId to set
+         */
+        public void setPinId(Long pinId) {
+            this.pinId = pinId;
+        }
+
+        /**
+         * @return the pinRequestId
+         */
+        public Long getPinRequestId() {
+            return pinRequestId;
+        }
+
+        /**
+         * @param pinRequestId the pinRequestId to set
+         */
+        public void setPinRequestId(Long pinRequestId) {
+            this.pinRequestId = pinRequestId;
+            if(pinManagerMessage != null) {
+                pinManagerMessage.setPinRequestId(pinRequestId.toString());
+            }
+        }
+        
+        public void setReplyRequired(boolean isRequired) {
+            if(pinManagerMessage != null) {
+                pinManagerMessage.setReplyRequired(isRequired);
+            }
+        }
+
+        public void failResponse(Object reason,int rc ) {
+            logger.error("failResponse: "+reason+" rc="+rc);
+            this.errorObject = reason;
+            this.errorCode = rc;
+            if(  pinManagerMessage != null  ) {
+                if( reason != null && !(reason instanceof java.io.Serializable)) {
+                    reason = reason.toString();
+                }
+
+                pinManagerMessage.setFailed(rc, reason);
+            }
+
+        }
+        
+        public void returnFailedResponse(Object reason) {
+            failResponse(reason,1);
+            returnResponse();
+        }
+        
+        public void returnResponse( ) {
+            info("returnResponse");
+             state = PinManagerJobState.COMPLETED;
+            if(pinManagerMessage != null && cellMessage != null ) {
+
+                try {
+                    pinManagerMessage.setReply();
+                    cellMessage.revertDirection();
+                    sendMessage(cellMessage);
+
+                    //return response only once
+                    pinManagerMessage = null;
+                    cellMessage = null;
+                }
+                catch(NoRouteToCellException nrtce) {
+                    error("can not send a response, no route to cell "+cellMessage.getDestinationAddress());
+                    error(nrtce.getMessage());
+                }
+            }
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append(type);
+            sb.append(' ').append(pnfsId);
+            sb.append(" PinRequestId:").append(pinRequestId);
+            sb.append(" PinId:").append(pinId);
+            sb.append(" lifetime:").append(lifetime);
+            if(task != null) sb.append(" smc:").append(task);
+            sb.append(" state:").append(state);
+            if(errorCode != 0) {
+                sb.append(" rc:").append(errorCode);
+                sb.append(' ').append(errorObject);
+            }
+            return sb.toString();
+        }
+
+        public void setSMCTask(SMCTask task) {
+            this.task = task;
+        }
+
+        public PinManagerJobState getState() {
+            return state;
+        }
+    }
 
 }

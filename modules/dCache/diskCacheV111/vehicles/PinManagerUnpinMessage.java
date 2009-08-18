@@ -12,7 +12,6 @@ import diskCacheV111.util.PnfsId;
  * @author  timur
  */
 public class PinManagerUnpinMessage extends PinManagerMessage {
-    private String pinId;
     private Long srmRequestId;
     
     private static final long serialVersionUID = -2435476735204095804L;
@@ -27,9 +26,9 @@ public class PinManagerUnpinMessage extends PinManagerMessage {
     }
     
     /** Creates a new instance of PinManagerPinMessage */
-    public PinManagerUnpinMessage(String pnfsId, String pinId) {
+    public PinManagerUnpinMessage(String pnfsId, String pinRequestId) {
         super(pnfsId);
-        this.pinId = pinId;
+        setPinRequestId(pinRequestId);
     }
     
     public PinManagerUnpinMessage(String pnfsId, Long srmRequestId) {
@@ -37,9 +36,9 @@ public class PinManagerUnpinMessage extends PinManagerMessage {
         this.srmRequestId = srmRequestId;
     }
      
-    public PinManagerUnpinMessage(PnfsId pnfsId, String pinId) {
+    public PinManagerUnpinMessage(PnfsId pnfsId, String pinRequestId) {
         super(pnfsId);
-        this.pinId = pinId;
+        setPinRequestId(pinRequestId);
     }
     
     public PinManagerUnpinMessage(PnfsId pnfsId, Long srmRequestId) {
@@ -47,25 +46,10 @@ public class PinManagerUnpinMessage extends PinManagerMessage {
         this.srmRequestId = srmRequestId;
     }
    
-    /** Getter for property pinId.
-     * @return Value of property pinId.
-     *
-     */
-    public java.lang.String getPinId() {
-        return pinId;
-    }
-    
-    /** Setter for property pinId.
-     * @param pinId New value of property pinId.
-     *
-     */
-    public void setPinId(java.lang.String pinId) {
-        this.pinId = pinId;
-    }
-    
+    @Override
     public String toString() {
         return "PinManagerUnpinMessage["+getPnfsId()+
-                (pinId==null?"":(","+pinId))+
+                (getPinRequestId()==null?"":(","+getPinRequestId()))+
                 "]";
     }
 
