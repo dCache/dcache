@@ -15,14 +15,11 @@ import dmg.cells.nucleus.CellPath;
 class Pinner extends SMCTask
 {
     private final Pin _pin;
-    private final PnfsId _pnfsId;
-    private final String _clientHost;
+    private final PinManagerJob _job;
     private final PinnerContext _fsm;
     private final CellPath _pnfsManager;
     private final CellPath _poolManager;
-    private StorageInfo _storageInfo;
     private String _readPoolName;
-    private long _lifetime;
     private long _expiration;
     // We record this now in Pinner, since upon success
     // we need to change the original pin expiration time
@@ -32,21 +29,15 @@ class Pinner extends SMCTask
     private long _orginalPinRequestId;
 
     public Pinner(PinManager manager,
-        PnfsId pnfsId,
-        String clientHost,
-        StorageInfo storageInfo, Pin pin,
-        long lifetime,
+        PinManagerJob job,
+        Pin pin,
         long orginalPinRequestId)
     {
         super(manager);
-
+        _job = job;
         _pnfsManager = manager.getPnfsManager();
         _poolManager = manager.getPoolManager();
-        _pnfsId = pnfsId;
-        _clientHost = clientHost;
-        _storageInfo = storageInfo;
         _pin = pin;
-        _lifetime = lifetime;
         _orginalPinRequestId = orginalPinRequestId;
         _fsm = new PinnerContext(this);
         setContext(_fsm);
@@ -75,14 +66,13 @@ class Pinner extends SMCTask
     public StorageInfo getStorageInfo()
     {
         info("getStorageInfo");
-        return _storageInfo;
+        return _job.getStorageInfo();
     }
 
     public void setStorageInfo(StorageInfo info)
     {
         info("setStorageInfo");
-        _pin.setStorageInfo(info);
-        _storageInfo = info;
+        _job.setStorageInfo(info);
     }
 
     public void setReadPool(String name)
@@ -95,22 +85,22 @@ class Pinner extends SMCTask
     {
         info("retrieveStorageInfo");
         sendMessage(_pnfsManager,
-                    new PnfsGetStorageInfoMessage(_pnfsId),
+                    new PnfsGetStorageInfoMessage(_job.getPnfsId()),
                     60 * 60 * 1000);
     }
 
     void findReadPool()
     {
-        String host = _clientHost == null ?
+        String host = _job.getClientHost() == null ?
             "localhost":
-            _clientHost;
-        info("findReadPool for "+_pnfsId+" host="+host);
+            _job.getClientHost();
+        info("findReadPool for "+_job.getPnfsId()+" host="+host);
         DCapProtocolInfo pinfo =
             new DCapProtocolInfo("DCap", 3, 0, host, 0);
 
         PoolMgrSelectReadPoolMsg request =
-            new PoolMgrSelectReadPoolMsg(_pnfsId,
-                                         _storageInfo,
+            new PoolMgrSelectReadPoolMsg(_job.getPnfsId(),
+                                         _job.getStorageInfo(),
                                          pinfo,
                                          0);
 
@@ -119,19 +109,20 @@ class Pinner extends SMCTask
 
     void markSticky()
     {
-        info("markSticky");
-        if(_lifetime == -1) {
+        if(_job.getLifetime() == -1) {
             _expiration = -1;
         } else {
-            _expiration = System.currentTimeMillis() +_lifetime;
+            _expiration = System.currentTimeMillis() +_job.getLifetime();
         }
+        info("markSticky "+_job.getPnfsId()+" in pool "+_readPoolName+
+               ( _expiration==-1?" forever":" until epoc "+_expiration));
         long stickyBitExpiration = _expiration;
         if(stickyBitExpiration > 0) {
             stickyBitExpiration += PinManager.POOL_LIFETIME_MARGIN;
         }
         PoolSetStickyMessage setStickyRequest =
             new PoolSetStickyMessage(_readPoolName,
-            _pnfsId,
+            _job.getPnfsId(),
             true,
             //Use a pin specific name, so multiple pins of the same file
             // by the pin manager would be possible
@@ -145,7 +136,7 @@ class Pinner extends SMCTask
 
     void succeed()
     {
-        info("succeed");
+        info("succeed, file pinned in "+_readPoolName);
         try {
             getManager().pinSucceeded(_pin,
                 _readPoolName,
@@ -161,7 +152,7 @@ class Pinner extends SMCTask
     {
         error("failed: "+reason);
         try {
-            getManager().pinFailed(_pin);
+            getManager().pinFailed(_pin,reason);
         } catch (PinException pe) {
            error(pe.toString());
         }

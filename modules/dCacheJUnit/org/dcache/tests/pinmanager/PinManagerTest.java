@@ -104,7 +104,7 @@ public class PinManagerTest {
         assertTrue("failed to pin", pinManagerPinMessage.getReturnCode() == 0 );
         if(pinManagerPinMessage.getReturnCode() == 0) {
             PinManagerUnpinMessage unpin =
-                new PinManagerUnpinMessage(pnfsId,pinManagerPinMessage.getPinId());
+                new PinManagerUnpinMessage(pnfsId,pinManagerPinMessage.getPinRequestId());
             unpin =
                 (PinManagerUnpinMessage)
                 echoCell.sendAndWait(
