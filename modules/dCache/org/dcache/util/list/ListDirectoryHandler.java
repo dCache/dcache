@@ -48,30 +48,14 @@ public class ListDirectoryHandler
 {
     private final static Logger _log =
         Logger.getLogger(ListDirectoryHandler.class);
-    private final static long DEFAULT_TIMEOUT = 60000;
 
     private final PnfsHandler _pnfs;
     private final Map<UUID,Stream> _replies =
         CollectionFactory.newConcurrentHashMap();
-    private volatile long _timeout = DEFAULT_TIMEOUT;
 
     public ListDirectoryHandler(PnfsHandler pnfs)
     {
         _pnfs = pnfs;
-    }
-
-    /**
-     * Sets the timeout for two consecutive reply messages in a reply
-     * stream.
-     */
-    public void setTimeout(long timeout)
-    {
-        _timeout = timeout;
-    }
-
-    public long getTimeout()
-    {
-        return _timeout;
     }
 
     /**
@@ -114,8 +98,7 @@ public class ListDirectoryHandler
         Stream stream = new Stream(dir, uuid);
         try {
             _replies.put(uuid, stream);
-            _pnfs.send(msg);
-            stream.waitForMoreEntries();
+             stream.put(_pnfs.pnfsRequest(msg));
             success = true;
             return stream;
         } finally {
@@ -240,7 +223,7 @@ public class ListDirectoryHandler
             }
 
             PnfsListDirectoryMessage msg =
-                _queue.poll(_timeout, TimeUnit.MILLISECONDS);
+                _queue.poll(_pnfs.getPnfsTimeout(), TimeUnit.MILLISECONDS);
             if (msg == null) {
                 throw new CacheException(CacheException.TIMEOUT,
                                          "Timeout during directory list");

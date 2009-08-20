@@ -185,7 +185,13 @@ public class PnfsHandler
       }
    }
 
-   private <T extends PnfsMessage> T pnfsRequest( T msg )
+    /**
+     * Sends a message to the request manager and blocks until a reply
+     * is received. In case of errors in the reply, those are thrown
+     * as a CacheException. Timeouts and failure to send the message
+     * to the PnfsManager are reported as a timeout CacheException.
+     */
+   public <T extends PnfsMessage> T pnfsRequest( T msg )
            throws CacheException {
 
        if (_cellStub == null)

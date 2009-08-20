@@ -37,6 +37,8 @@ public class PnfsManagerV3 extends CellAdapter
     private static final int THRESHOLD_DISABLED = 0;
     private static final int DEFAULT_LIST_THREADS = 1;
     private static final int DEFAULT_DIR_LIST_LIMIT = 100;
+    private static final int TTL_BUFFER_MAXIMUM = 10000;
+    private static final float TTL_BUFFER_FRACTION = 0.10f;
 
     private final String      _cellName  ;
     private final Args        _args      ;
@@ -1384,15 +1386,23 @@ public class PnfsManagerV3 extends CellAdapter
      * been collected. The filter will not send the final reply (the
      * caller has to do that).
      */
-    private class ListDirectoryFilter implements ListHandler
+    private class ListHandlerImpl implements ListHandler
     {
         private final CellPath _requestor;
         private final PnfsListDirectoryMessage _msg;
+        private final long _delay;
+        private long _deadline;
 
-        public ListDirectoryFilter(CellPath requestor, PnfsListDirectoryMessage msg)
+        public ListHandlerImpl(CellPath requestor, PnfsListDirectoryMessage msg,
+                               long initialDelay, long delay)
         {
             _msg = msg;
             _requestor = requestor;
+            _delay = delay;
+            _deadline =
+                (delay == Long.MAX_VALUE)
+                ? Long.MAX_VALUE
+                : System.currentTimeMillis() + initialDelay;
         }
 
         private void sendPartialReply()
@@ -1413,9 +1423,13 @@ public class PnfsManagerV3 extends CellAdapter
 
         public void addEntry(String name, PnfsId pnfsId, FileAttributes attrs)
         {
+            long now = System.currentTimeMillis();
             _msg.addEntry(name, pnfsId, attrs);
-            if (_msg.getEntries().size() >= _directoryListLimit) {
+            if (_msg.getEntries().size() >= _directoryListLimit ||
+                now > _deadline) {
                 sendPartialReply();
+                _deadline = 
+                    (_delay == Long.MAX_VALUE) ? Long.MAX_VALUE : now + _delay;
             }
         }
     }
@@ -1428,13 +1442,20 @@ public class PnfsManagerV3 extends CellAdapter
 
         try {
             String path = msg.getPnfsPath();
+            long delay = getAdjustedTtl(envelope);
+            long initialDelay =
+                (delay == Long.MAX_VALUE) 
+                ? Long.MAX_VALUE
+                : delay - envelope.getLocalAge();
             CellPath source = (CellPath)envelope.getSourcePath().clone();
             source.revert();
+            ListHandler handler =
+                new ListHandlerImpl(source, msg, initialDelay, delay);
             _nameSpaceProvider.list(msg.getSubject(), path,
                                     msg.getPattern(),
                                     msg.getRange(),
                                     msg.getRequestedAttributes(),
-                                    new ListDirectoryFilter(source, msg));
+                                    handler);
             msg.setFinal(true);
             msg.setSucceeded();
         } catch (FileNotFoundCacheException e) {
@@ -1475,10 +1496,8 @@ public class PnfsManagerV3 extends CellAdapter
                      * whatever is smaller)
                      */
                     PnfsMessage pnfs =
-                        (PnfsMessage)message.getMessageObject() ;
-                    long adjustedTtl = message.getTtl() -
-                        Math.min(10000, message.getTtl() / 10);
-                    if (message.getLocalAge() > adjustedTtl
+                        (PnfsMessage)message.getMessageObject();
+                    if (message.getLocalAge() > getAdjustedTtl(message)
                         && useEarlyDiscard(pnfs)) {
                         esay("Discarding " + pnfs.getClass().getSimpleName() +
                              " because its time to live has been exceeded.");
@@ -1999,5 +2018,20 @@ public class PnfsManagerV3 extends CellAdapter
             message.setPnfsId(pnfsId);
         }
         return pnfsId;
+    }
+
+    /**
+     * Returns the adjusted TTL of a message. The adjusted TTL is the
+     * TTL with some time subtracted to allow for cell communication
+     * overhead. Returns Long.MAX_VALUE if the TTL is infinite.
+     */
+    private static long getAdjustedTtl(CellMessage message)
+    {
+        long ttl = message.getTtl();
+        return 
+            (ttl == Long.MAX_VALUE) 
+            ? Long.MAX_VALUE
+            : ttl - Math.min(TTL_BUFFER_MAXIMUM, 
+                             (long) (ttl * TTL_BUFFER_FRACTION));
     }
 }
