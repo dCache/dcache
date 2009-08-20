@@ -1,10 +1,14 @@
 package org.dcache.util;
 
+import java.io.Serializable;
+
 /**
  * Immutable class for representing intervals.
  */
-public class Interval
+public class Interval implements Serializable
 {
+    static final long serialVersionUID = 4755266838804807324L;
+
     public final long lower;
     public final long upper;
 
