@@ -2,8 +2,8 @@
 
 package diskCacheV111.poolManager ;
 
-import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -12,12 +12,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Collection;
 
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellPath;
+import org.apache.log4j.Logger;
+import org.dcache.cells.AbstractCellComponent;
 
+import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
@@ -27,13 +26,11 @@ import diskCacheV111.vehicles.PoolCheckCostMessage;
 import diskCacheV111.vehicles.PoolCheckFileMessage;
 import diskCacheV111.vehicles.PoolCheckable;
 import diskCacheV111.vehicles.PoolCostCheckable;
+import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.vehicles.PoolManagerPoolInformation;
-
-import org.dcache.cells.AbstractCellComponent;
-
-import org.apache.log4j.Logger;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellPath;
 
 public class PoolMonitorV5
     extends AbstractCellComponent
@@ -820,4 +817,16 @@ public class PoolMonitorV5
             _selectionUnit.getPoolsByPoolGroup(poolGroup);
         return getPoolInformation(pools.iterator());
     }
+
+    /**
+     * Fetch the percentile performance cost; that is, the cost
+     * of the <code>n</code>th pool, in increasing order of performance cost,
+     * where <code>n</code> is <code>(int)floor( fraction * numberOfPools)</code>
+     * @param fraction the percentile fraction.  The value must be between 0 and 1.
+     * @return the nth percentile performance cost, or 0 if there are no pools.
+     */
+    public double getPoolsPercentilePerformanceCost( double fraction) {
+        return _costModule.getPoolsPercentilePerformanceCost( fraction);
+    }
+
 }

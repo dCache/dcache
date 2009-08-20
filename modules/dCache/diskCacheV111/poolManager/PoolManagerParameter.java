@@ -1,7 +1,7 @@
 package diskCacheV111.poolManager ;
 
-import java.util.Map ;
-import java.util.HashMap ;
+import java.util.HashMap;
+import java.util.Map;
 
 public class  PoolManagerParameter implements java.io.Serializable {
 
@@ -26,7 +26,8 @@ public class  PoolManagerParameter implements java.io.Serializable {
 
     double  _slope             = 0.0 ;
     double  _minCostCut        = 0.0 ;
-    double  _costCut           = 0.0 ;
+    private double  _costCut           = 0.0 ;
+    private boolean _costCutIsPercentile = false ;
     double  _alertCostCut      = 0.0 ;
     double  _panicCostCut      = 0.0 ;
     double  _fallbackCostCut   = 0.0 ;
@@ -73,6 +74,7 @@ public class  PoolManagerParameter implements java.io.Serializable {
        _slope             = copy._slope ;           _slopeSet           = copy._slopeSet ;
        _minCostCut        = copy._minCostCut ;      _minCostCutSet      = copy._minCostCutSet ;
        _costCut           = copy._costCut;          _costCutSet         = copy._costCutSet;
+       _costCutIsPercentile = copy._costCutIsPercentile;
        _alertCostCut      = copy._alertCostCut;     _alertCostCutSet    = copy._alertCostCutSet;
        _panicCostCut      = copy._panicCostCut ;    _panicCostCutSet    = copy._panicCostCutSet ;
        _fallbackCostCut   = copy._fallbackCostCut ; _fallbackCostCutSet = copy._fallbackCostCutSet ;
@@ -134,7 +136,10 @@ public class  PoolManagerParameter implements java.io.Serializable {
        if( _stageOnCostSet    = copy._stageOnCostSet    )_stageOnCost       = copy._stageOnCost ;
        if( _p2pAllowedSet     = copy._p2pAllowedSet     )_p2pAllowed        = copy._p2pAllowed ;
        if( _slopeSet          = copy._slopeSet          )_slope             = copy._slope ;
-       if( _costCutSet        = copy._costCutSet        )_costCut           = copy._costCut;
+       if( _costCutSet        = copy._costCutSet        ) {
+           _costCut           = copy._costCut;
+           _costCutIsPercentile = copy._costCutIsPercentile;
+       }
        if( _alertCostCutSet   = copy._alertCostCutSet   )_alertCostCut      = copy._alertCostCut;
        if( _panicCostCutSet   = copy._panicCostCutSet   )_panicCostCut      = copy._panicCostCut ;
        if( _minCostCutSet     = copy._minCostCutSet     )_minCostCut        = copy._minCostCut ;
@@ -161,8 +166,103 @@ public class  PoolManagerParameter implements java.io.Serializable {
     void unsetP2pAllowed(){ _p2pAllowedSet = false ; }
     void setSlope( double value ){ _slope = value ;  _slopeSet = true ;  }
     void unsetSlope(){ _slopeSet = false ; }
-    void setCostCut( double value ){ _costCut = value ; _costCutSet = true ;  }
-    void unsetCostCut(){ _costCutSet = false; }
+
+    /**
+     * Obtain the threshold cost for triggering p2p transfers on cost:
+     * transfers involving reading from a pool with cost greater than the
+     * costCut may trigger a pool-to-pool transfer.  The value returned is
+     * either an absolute measure of cost or a percentile value.  Whether the
+     * number is an absolute cost or a percentile cost is discoverable by
+     * calling the {@link #isCostCutPercentile()} method.
+     * <p>
+     * If the value is absolute then the returned value may be used directly
+     * when evaluating whether the cost for a transfer exceeds the threshold
+     * for triggering a pool-to-pool transfer.
+     * <p>
+     * If the number is a percentile value then the corresponding threshold is
+     * determined dynamically.  If f is the value returned by
+     * <code>getCostCut()</code> and a list of N pools is sorted in ascending
+     * performance cost then the value used is the cost of pool with index
+     * floor(fN).
+     * <p>
+     * @return the threshold cost for pool-to-pool transfers
+     */
+    double getCostCut() {
+        return _costCut;
+    }
+
+    /**
+     * Assign a new value for the threshold at which read requests will trigger
+     * pool-to-pool transfers.  The value may be optionally suffixed with a
+     * percent symbol; doing so will result in the value/100 being stored and
+     * subsequent calls to {@link #isCostCutPercentile()}
+     * returning true.
+     * @param value the String representation of the new costCut value.
+     * @see #getCostCut()
+     */
+    void setCostCut( String value ) {
+        if( value.endsWith( "%")) {
+            String numberPart = value.substring( 0, value.length()-1);
+            _costCut = Double.parseDouble( numberPart)/100;
+            setCostCutIsPercentile( true);
+        } else {
+            _costCut = Double.parseDouble(value) ;
+            setCostCutIsPercentile( false);
+        }
+        _costCutSet = true ;
+    }
+
+    /**
+     * Mark that the current costCut value should be interpreted as having a
+     * relative value compared to the maximum CPU cost of all pools.
+     * @param isPercentile true if the costCut should be interpreted as relative,
+     * false otherwise.
+     * @throws IllegalArgumentException if the transition would result in an illegal state.
+     */
+    void setCostCutIsPercentile( boolean isPercentile) {
+        if( isPercentile) {
+            if( _costCut <= 0)
+                throw new IllegalArgumentException( "Number " + isPercentile + "is too small; must be > 0%");
+            if( _costCut >= 1)
+                throw new IllegalArgumentException( "Number " + isPercentile + " is too large; must be < 100%");
+        }
+        _costCutIsPercentile = isPercentile;
+    }
+
+    /**
+     * Discover whether the current costCut value should be interpreted as
+     * the percentile value.
+     */
+    boolean isCostCutPercentile() {
+        return _costCutIsPercentile;
+    }
+
+    /**
+     * Mark that the costCut value is no longer valid.
+     */
+    void unsetCostCut(){
+        _costCutSet = false;
+    }
+
+    /**
+     * Obtain a String representation of the current costCut value.
+     * <p>
+     * This method returns a String that, for any costCut value, can be
+     * supplied to {@link #setCostCut(String)} without changing its value.
+     * <p>
+     * If the current costCut uses a percentile value then the String
+     * representation will be the value, as a percentage, appended with the
+     * percent symbol otherwise the current value is returned.
+     * @return a String representation of the current cost cut
+     * @see #setCostCut(String)
+     */
+    String getCostCutString() {
+        if( _costCutIsPercentile) {
+            return Double.toString(  _costCut * 100) + "%";
+        } else {
+            return Double.toString(  _costCut);
+        }
+    }
     void setAlertCostCut( double value ){ _alertCostCut = value ; _alertCostCutSet = true ; }
     void unsetAlertCostCut(){ _alertCostCutSet = false ; }
     void setPanicCostCut( double value ){ _panicCostCut = value ; _panicCostCutSet = true ; }

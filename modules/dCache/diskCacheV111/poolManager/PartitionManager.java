@@ -1,15 +1,15 @@
 // $Id: PartitionManager.java,v 1.5 2007-08-09 20:17:48 tigran Exp $
 package diskCacheV111.poolManager ;
 
+import java.io.PrintWriter;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
-import java.io.Serializable;
-import java.io.PrintWriter;
+
+import org.dcache.cells.AbstractCellComponent;
+import org.dcache.cells.CellCommandListener;
 
 import dmg.util.Args;
-
-import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.AbstractCellComponent;
 
 public class PartitionManager
     extends AbstractCellComponent
@@ -163,7 +163,7 @@ public class PartitionManager
        if(para._performanceCostFactorSet)sb.append("   -cpucostfactor=").append(para._performanceCostFactor).append("\n");
        if(para._spaceCostFactorSet      )sb.append("   -spacecostfactor=").append(para._spaceCostFactor).append("\n");
        if(para._minCostCutSet           )sb.append("   -idle=").append(para._minCostCut).append("\n");
-       if(para._costCutSet              )sb.append("   -p2p=").append(para._costCut).append("\n");
+       if(para._costCutSet              )sb.append("   -p2p=").append(para.getCostCutString()).append("\n");
        if(para._alertCostCutSet         )sb.append("   -alert=").append(para._alertCostCut).append("\n");
        if(para._panicCostCutSet         )sb.append("   -halt=").append(para._panicCostCut).append("\n");
        if(para._fallbackCostCutSet      )sb.append("   -fallback=").append(para._fallbackCostCut).append("\n");
@@ -265,6 +265,8 @@ public class PartitionManager
           " -------------------------------------------------------------------\n"+
           "     idle   |   0.0     |  below 'idle' : 'reduce duplicate' mode\n"+
           "     p2p    |   0.0     |  above : start pool to pool mode\n"+
+          "            |           |  If p2p value is a percent then p2p is dynamically\n"+
+          "            |           |  assigned that percentile value of pool performance costs\n"+
           "     alert  |   0.0     |  stop pool 2 pool mode, start stage only mode\n"+
           "     halt   |   0.0     |  suspend system\n"+
           "   fallback |   0.0     |  Allow fallback in Permission matrix on high load\n"+
@@ -278,7 +280,7 @@ public class PartitionManager
        String value = args.getOpt("idle") ;
        if( value != null )para._minCostCut = Double.parseDouble(value) ;
        value = args.getOpt("p2p") ;
-       if( value != null )para._costCut = Double.parseDouble(value) ;
+       if( value != null ) para.setCostCut( value);
        value = args.getOpt("alert") ;
        if( value != null )para._alertCostCut = Double.parseDouble(value) ;
        value = args.getOpt("halt") ;
@@ -288,7 +290,7 @@ public class PartitionManager
 
 
        return "costcuts;idle="+para._minCostCut+
-                      ";p2p="+para._costCut+
+                      ";p2p="+para.getCostCutString()+
                       ";alert="+para._alertCostCut+
                       ";halt="+para._panicCostCut+
                       ";fallback="+para._fallbackCostCut ;
@@ -368,10 +370,10 @@ public class PartitionManager
        }
        if( ( tmp = args.getOpt("p2p") ) != null ){
           if( tmp.equals("off") ){
+            parameter.setCostCut( paramDefault.getCostCutString());
             parameter.unsetCostCut();
-            parameter._costCut = paramDefault._costCut;
           } else {
-             parameter.setCostCut(Double.parseDouble(tmp));
+             parameter.setCostCut(tmp);
           }
        }
        if( ( tmp = args.getOpt("alert") ) != null ){
@@ -551,7 +553,7 @@ public class PartitionManager
     private void dumpThresholdOptions(PrintWriter pw, PoolManagerParameter para)
     {
         pw.append(" -idle=").print(para._minCostCut);
-        pw.append(" -p2p=").print(para._costCut);
+        pw.append(" -p2p=").print(para.getCostCutString());
         pw.append(" -alert=").print(para._alertCostCut);
         pw.append(" -halt=").print(para._panicCostCut);
         pw.append(" -fallback=").print(para._fallbackCostCut);

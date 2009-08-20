@@ -1,22 +1,34 @@
 // $Id: CostModuleV1.java,v 1.21 2007-08-01 20:19:23 tigran Exp $
 
 package diskCacheV111.poolManager ;
-import  java.util.* ;
-import  java.util.regex.* ;
-import  java.io.StringWriter;
-import  java.io.PrintWriter ;
-import  dmg.cells.nucleus.* ;
-import  dmg.util.* ;
-import  diskCacheV111.vehicles.* ;
-import  diskCacheV111.pools.* ;
-import diskCacheV111.pools.PoolCostInfo.NamedPoolQueueInfo;
-
-import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.CellMessageReceiver;
-import org.dcache.cells.AbstractCellComponent;
-import org.dcache.cells.CellMessageDispatcher;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
+import org.dcache.cells.AbstractCellComponent;
+import org.dcache.cells.CellCommandListener;
+import org.dcache.cells.CellMessageDispatcher;
+import org.dcache.cells.CellMessageReceiver;
+
+import diskCacheV111.pools.CostCalculatable;
+import diskCacheV111.pools.CostCalculationEngine;
+import diskCacheV111.pools.PoolCostInfo;
+import diskCacheV111.pools.PoolV2Mode;
+import diskCacheV111.pools.PoolCostInfo.NamedPoolQueueInfo;
+import diskCacheV111.vehicles.CostModulePoolInfoTable;
+import diskCacheV111.vehicles.DoorTransferFinishedMessage;
+import diskCacheV111.vehicles.Pool2PoolTransferMsg;
+import diskCacheV111.vehicles.PoolCostCheckable;
+import diskCacheV111.vehicles.PoolFetchFileMessage;
+import diskCacheV111.vehicles.PoolIoFileMessage;
+import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
+import diskCacheV111.vehicles.PoolMgrSelectPoolMsg;
+import dmg.cells.nucleus.CellMessage;
+import dmg.util.Args;
 
 public class CostModuleV1
     extends AbstractCellComponent
@@ -24,16 +36,24 @@ public class CostModuleV1
                CellCommandListener,
                CellMessageReceiver
 {
+    /** The file size used when calculating performance cost ranked percentile  */
+    public static final long PERCENTILE_FILE_SIZE = 104857600;
     private final static Logger _log = Logger.getLogger(CostModuleV1.class);
 
-   private final Map<String, Entry>     _hash     = new HashMap<String, Entry>() ;
-   private boolean     _isActive = true ;
-   private boolean     _update   = true ;
-   private boolean     _magic    = true ;
-   private boolean     _debug    = false ;
+    private final Map<String, Entry> _hash = new HashMap<String, Entry>() ;
+    private boolean _isActive = true ;
+    private boolean _update = true ;
+    private boolean _magic = true ;
+    private boolean _debug = false ;
+    private boolean _cachedPercentileCostIsValid = false;
+    private double _cachedPercentileCost;
+    private double _cachedPercentileFraction;
     private final CellMessageDispatcher _handlers =
         new CellMessageDispatcher("messageToForward");
 
+    /**
+     * Information about some specific pool.
+     */
    private static class Entry {
        private long timestamp ;
        private PoolCostInfo _info ;
@@ -99,19 +119,55 @@ public class CostModuleV1
         if (! _update)
             return;
 
-        String poolName = msg.getPoolName() ;
+        String poolName = msg.getPoolName();
         PoolV2Mode poolMode = msg.getPoolMode();
-        if (poolMode.getMode() != PoolV2Mode.DISABLED &&
-            !poolMode.isDisabled(PoolV2Mode.DISABLED_STRICT) &&
-            !poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD)) {
-            if (msg.getPoolCostInfo() != null) {
+        PoolCostInfo newInfo = msg.getPoolCostInfo();
+
+        /* Whether the pool mentioned in the message should be removed */
+        boolean removePool = poolMode.getMode() == PoolV2Mode.DISABLED ||
+                poolMode.isDisabled(PoolV2Mode.DISABLED_STRICT) ||
+                poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD);
+
+
+        /* Check whether we should invalidate the cached entry.  We should
+         * only need to do this if:
+         *   * a new pool is discovered,
+         *   * an existing pool is removed,
+         *   * either:
+         *       o  a pool with cost less than the cached value assumes a cost greater
+         *                  than the cached value,
+         *       o  a pool with the cached value takes on a different value,
+         *       o  a pool with cost greater than the cached value assumes a cost less
+         *                  than the cached value.
+         */
+        if( _cachedPercentileCostIsValid) {
+            Entry poolEntry = _hash.get( poolName);
+            if( poolEntry != null) {
+                if( removePool) {
+                    _cachedPercentileCostIsValid = false;
+                } else {
+                    PoolCostInfo oldInfo = poolEntry.getPoolCostInfo();
+                    double oldCost = _costCalculationEngine.getCostCalculatable( oldInfo).getPerformanceCost();
+                    double newCost = _costCalculationEngine.getCostCalculatable( newInfo).getPerformanceCost();
+
+                    if( Math.signum( oldCost-_cachedPercentileCost) != Math.signum( newCost-_cachedPercentileCost))
+                        _cachedPercentileCostIsValid = false;
+                }
+            } else {
+                if( !removePool)
+                    _cachedPercentileCostIsValid = false;
+            }
+        }
+
+        if ( !removePool) {
+            if( newInfo != null) {
                 Entry e = _hash.get(poolName);
 
                 if (e == null) {
-                    e = new Entry(msg.getPoolCostInfo());
+                    e = new Entry( newInfo);
                     _hash.put(poolName, e);
                 } else {
-                    e.setPoolCostInfo(msg.getPoolCostInfo());
+                    e.setPoolCostInfo( newInfo);
                 }
                 e.setTagMap(msg.getTagMap());
             }
@@ -307,8 +363,9 @@ public class CostModuleV1
    private void xsay( String queue , String pool , int diff , Object obj ){
       if(_debug)_log.debug("CostModuleV1 : "+queue+" queue of "+pool+" modified by "+diff+" due to "+obj.getClass().getName());
    }
-   public  PoolCostCheckable getPoolCost( String poolName , long filesize ){
 
+   @Override
+   public synchronized PoolCostCheckable getPoolCost( String poolName , long filesize ){
       Entry cost = _hash.get(poolName);
 
       if( ( cost == null ) ||( !cost.isValid() && _update  ) )
@@ -317,6 +374,49 @@ public class CostModuleV1
       return  new CostCheck( poolName , cost , filesize ) ;
 
    }
+
+   @Override
+   public synchronized double getPoolsPercentilePerformanceCost( double fraction) {
+
+       if( fraction <= 0 || fraction >= 1)
+           throw new IllegalArgumentException( "supplied fraction (" + Double.toString( fraction) +") not between 0 and 1");
+
+       if( !_cachedPercentileCostIsValid || _cachedPercentileFraction != fraction) {
+
+           _log.debug( "Rebuilding percentileCost cache");
+
+           if( _hash.size() > 0) {
+               if( _log.isDebugEnabled())
+                   _log.debug( "  "+Integer.toString( _hash.size())+" pools available");
+
+               double poolCosts[] = new double[ _hash.size()];
+
+               int idx=0;
+               for( Entry poolInfo : _hash.values()) {
+                   CostCalculatable  cost = _costCalculationEngine.getCostCalculatable( poolInfo.getPoolCostInfo());
+                   cost.recalculate( PERCENTILE_FILE_SIZE);
+                   poolCosts[idx++] = cost.getPerformanceCost();
+               }
+
+               Arrays.sort(  poolCosts);
+
+               _cachedPercentileCost = poolCosts [ (int) Math.floor( fraction * _hash.size())];
+
+           } else {
+               _log.debug( "  no pools available");
+               _cachedPercentileCost = 0;
+           }
+
+           _cachedPercentileCostIsValid = true;
+           _cachedPercentileFraction = fraction;
+       }
+
+       return _cachedPercentileCost;
+   }
+
+
+
+
    public boolean isActive(){ return _isActive ; }
 
     public String hh_cm_info = "";
@@ -466,7 +566,8 @@ public class CostModuleV1
    }
 
 
-   public PoolCostInfo getPoolCostInfo(String poolName) {
+   @Override
+   public synchronized PoolCostInfo getPoolCostInfo(String poolName) {
 
 	   PoolCostInfo poolCostInfo = null;
 
@@ -478,5 +579,4 @@ public class CostModuleV1
 
 	   return poolCostInfo;
    }
-
 }
