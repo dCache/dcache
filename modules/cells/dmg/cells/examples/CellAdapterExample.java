@@ -1,19 +1,20 @@
 package dmg.cells.examples ;
 
-import  dmg.cells.nucleus.* ;
-import  dmg.util.* ;
-import  java.io.* ;
+import java.io.PrintWriter;
+
+import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellNucleus;
+import dmg.util.Args;
 
 public class CellAdapterExample extends CellAdapter {
-   private String  _cellName = null ;
    private Args    _args     = null ;
    private CellNucleus _nucleus = null ;
-   private boolean _doEcho   = false ;  
-   private boolean _resend   = false ;  
+   private boolean _doEcho   = false ;
+   private boolean _resend   = false ;
    private boolean _interpreter = false ;
-   private boolean _export      = false ;
    private boolean _forward     = false ;
-   
+
    private int  _echoCounter      = 0 ;
    private int  _resendCounter    = 0 ;
    private int  _forwardCounter   = 0 ;
@@ -29,27 +30,24 @@ public class CellAdapterExample extends CellAdapter {
      * <tr><td>-echo / <strong>-noecho </strong> </td>
      *     <td>echos ( doesn't echo ) incomming packets</td></tr>
      * <tr><td>-resend / <strong>-noresend </strong> </td>
-     *     <td>resends the incomming packets to the same name with the 
+     *     <td>resends the incomming packets to the same name with the
      *         NOT_LOCAL option</td></tr>
      * </table>
      */
    public CellAdapterExample( String cellName , String args ) throws Exception {
       super( cellName , args , false ) ;
-      _cellName = cellName ;
       _args     = getArgs() ;
       _nucleus  = getNucleus() ;
       useInterpreter( true ) ;
       _doEcho   = false ;
       _resend   = false ;
       _interpreter = false ;
-      _export   = false ;
       if( _args.getOpt( "interpreter" ) != null )
           useInterpreter( _interpreter = true ) ;
       if( _args.getOpt( "nointerpreter" ) != null )
           useInterpreter( _interpreter = false ) ;
       if( _args.getOpt( "export" ) != null ){
           getNucleus().export() ;
-          _export = true ;
       }
       if( _args.getOpt( "echo" ) != null  )
           _doEcho = true ;
@@ -63,9 +61,9 @@ public class CellAdapterExample extends CellAdapter {
           _forward = true ;
       if( _args.getOpt( "noforward" ) != null  )
           _forward = false ;
-     
+
       if( _args.getOpt( "wontDie" ) != null ){
-         _nucleus.newThread( 
+         _nucleus.newThread(
              new Runnable(){
                  public void run(){
                     while(true){
@@ -75,22 +73,23 @@ public class CellAdapterExample extends CellAdapter {
                           say( "WontDie interrupted ... " ) ;
                        }
                     }
-                 }   
+                 }
              } ,
-             "watchDog" 
+             "watchDog"
          ).start() ;
       }
       String excp = _args.getOpt("exception") ;
-      
+
       if( excp != null ){
          start() ;
          kill() ;
          throw new
-         Exception( excp.equals("") ? "My Exception" : excp ); 
+         Exception( excp.equals("") ? "My Exception" : excp );
       }
       start() ;
-   } 
-   public void getInfo( PrintWriter pw ){
+   }
+   @Override
+public void getInfo( PrintWriter pw ){
       pw.println( " Echo        : "+(_doEcho?""+_echoCounter:"Off" ) ) ;
       pw.println( " Forward     : "+(_forward?""+_forwardCounter:"Off" ) ) ;
       pw.println( " Resend      : "+(_resend?""+_resendCounter:"Off" ) ) ;
@@ -111,17 +110,17 @@ public class CellAdapterExample extends CellAdapter {
       for( int i = 0 ; i < args.argc() ; i++ )
           sb.append( args.argv(i) ).append(' ') ;
       String msg = sb.toString() ;
-      
+
       String levelString = args.getOpt("level") ;
       if( levelString != null ){
-          
-          try{ 
-               int level = Integer.parseInt(levelString) ; 
+
+          try{
+               int level = Integer.parseInt(levelString) ;
                _nucleus.say( level , msg ) ;
           }catch(Exception ee ){
                _nucleus.esay(ee);
           }
-          
+
       }else if( args.getOpt("error") != null ){
           esay(msg) ;
       }else{
@@ -135,7 +134,7 @@ public class CellAdapterExample extends CellAdapter {
    //  So : set_core_var , set_core , set ; as soon as an acl is found, it is taken.
    //  All others are ignored.
    //
-   public String    acl_set          = "acl.ls" ; 
+   public String    acl_set          = "acl.ls" ;
    public String    acl_set_core     = "acl.ls.x" ;
    public String [] acl_set_core_var = { "example.setcorevar.execute" , "example.setcore.execute" } ;
    public String ac_set_core_var_$_1( Args args )throws Exception {
@@ -145,11 +144,11 @@ public class CellAdapterExample extends CellAdapter {
    public String ac_throw_$_0_1( Args args )throws Exception {
        String msg = args.argc() > 0 ? args.argv(0) : "My Exception" ;
        throw new
-       Exception(msg); 
+       Exception(msg);
 
    }
    public String hh_reset = "  # resets the counters" ;
-   
+
    public String ac_reset( Args args ){
       _forwardCounter   = 0 ;
       _echoCounter      = 0 ;
@@ -157,6 +156,8 @@ public class CellAdapterExample extends CellAdapter {
       _resendCounter    = 0 ;
       return "Done" ;
    }
+
+   @Override
    public void messageToForward( CellMessage msg ){
       if( _forward ){
          msg.nextDestination() ;
@@ -169,10 +170,8 @@ public class CellAdapterExample extends CellAdapter {
          }
       }
    }
-   public void say( String str ){
-      pin( str ) ;
-      super.say( str ) ;
-   }
+
+   @Override
    public void cleanUp(){
 
     say("cleanUp called");
@@ -181,6 +180,8 @@ public class CellAdapterExample extends CellAdapter {
     }catch(Exception ee ){}
     say("Waking Up");
    }
+
+   @Override
    public void messageArrived( CellMessage msg ){
       if( _resend ){
          try{
@@ -201,7 +202,7 @@ public class CellAdapterExample extends CellAdapter {
             esay( "problem reverting msg : "+e ) ;
          }
       }
-   
+
    }
 
-} 
+}
