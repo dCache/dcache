@@ -115,7 +115,8 @@ procStart() {
   fi
   if [ ! -z "${debug}" ] ; then DEBUG="-debug" ; fi
   CLASSPATH="${classpath}:${thisDir}/../..:${thisDir}/../classes/cells.jar:${thisDir}/../classes/dcache.jar:${externalLibsClassPath}"
-  export LD_LIBRARY_PATH="${librarypath}"
+  LD_LIBRARY_PATH="${librarypath}"
+  export LD_LIBRARY_PATH
 
 # use local jre ( ${ourHomeDir}/jre if it exist. This will allows to
 # us to package required jre with dCache.
