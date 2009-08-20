@@ -125,10 +125,10 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request.sql;
 import java.sql.*;
-import org.dcache.srm.Logger;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Iterator;
+import org.apache.log4j.Logger;
 
 /**
  *
@@ -140,7 +140,7 @@ public class RequestsPropertyStorage implements org.dcache.srm.scheduler.JobIdGe
     private String user;
     private String pass;
     private String nextRequestIdTableName;
-    private Logger logger;
+    private static Logger logger = Logger.getLogger(RequestsPropertyStorage.class);
     private int nextIntBase;
     private static int NEXT_INT_STEP=1000;
     private int nextIntIncrement=NEXT_INT_STEP;
@@ -149,17 +149,16 @@ public class RequestsPropertyStorage implements org.dcache.srm.scheduler.JobIdGe
     private long nextLongIncrement=NEXT_LONG_STEP;
     
     /** Creates a new instance of ResuestsPropertyStorage */
-    protected RequestsPropertyStorage(  String jdbcUrl,
+    private RequestsPropertyStorage(  String jdbcUrl,
             String jdbcClass,
             String user,
             String pass,
-            String nextRequestIdTableName,Logger logger) {
+            String nextRequestIdTableName) {
         this.jdbcUrl = jdbcUrl;
         this.jdbcClass = jdbcClass;
         this.user = user;
         this.pass = pass;
         this.nextRequestIdTableName = nextRequestIdTableName;
-        this.logger = logger;
         try{
             dbInit();
             
@@ -169,22 +168,16 @@ public class RequestsPropertyStorage implements org.dcache.srm.scheduler.JobIdGe
     }
     
     public void say(String s){
-        if(logger != null) {
-            logger.log(" RequestsPropertyStorage: "+s);
+        logger.debug(" RequestsPropertyStorage: "+s);
         }
-    }
     
     public void esay(String s){
-        if(logger != null) {
-            logger.elog(" RequestsPropertyStorage: "+s);
+        logger.error(" RequestsPropertyStorage: "+s);
         }
-    }
     
     public void esay(Throwable t){
-        if(logger != null) {
-            logger.elog(t);
+        logger.error("RequestsPropertyStorage",t);
         }
-    }
     
     JdbcConnectionPool pool;
     
@@ -421,7 +414,7 @@ public class RequestsPropertyStorage implements org.dcache.srm.scheduler.JobIdGe
     String jdbcClass,
     String user,
     String pass,
-    String nextRequestIdTableName,Logger logger)  {
+    String nextRequestIdTableName)  {
         for (Iterator i = propertyStorages.iterator();
         i.hasNext();) {
             RequestsPropertyStorage rps = (RequestsPropertyStorage) i.next();
@@ -435,7 +428,7 @@ public class RequestsPropertyStorage implements org.dcache.srm.scheduler.JobIdGe
         }
         RequestsPropertyStorage rps = 
                 new RequestsPropertyStorage(jdbcUrl,jdbcClass,user,pass,
-                nextRequestIdTableName,logger);
+                nextRequestIdTableName);
         propertyStorages.add(rps);
         return rps;
         

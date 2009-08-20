@@ -213,7 +213,6 @@ import java.util.Map;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.sql.Connection;
-import org.dcache.srm.Logger;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -261,7 +260,6 @@ public abstract class Job  {
     
     protected int numberOfRetries = 0;
     protected int maxNumberOfRetries;
-    private Logger logger;
     private long lastStateTransitionTime = System.currentTimeMillis();
     
     private static final Set jobStorages = new HashSet();
@@ -292,7 +290,6 @@ public abstract class Job  {
     int maxNumberOfRetries,
     long lastStateTransitionTime,
     JobHistory[] jobHistoryArray,
-    Logger logger,
     JobIdGenerator generator
     ) {
         if(jobStorage == null) {
@@ -315,7 +312,6 @@ public abstract class Job  {
         this.schedulerTimeStamp = schedulerTimestamp;
         this.numberOfRetries = numberOfRetries;
         this.maxNumberOfRetries = maxNumberOfRetries;
-        this.logger = logger;
         this.lastStateTransitionTime = lastStateTransitionTime;
         this.generator = generator;
         if(jobHistoryArray != null) {
@@ -363,13 +359,11 @@ public abstract class Job  {
     public Job(long lifetime, 
               JobStorage jobStorage,
               int maxNumberOfRetries,
-              JobIdGenerator generator,
-              Logger logger) {
+              JobIdGenerator generator) {
         
         if(jobStorage == null) {
             throw new NullPointerException(" job storage is null");
         }
-        this.logger = logger;
         this.jobStorage = jobStorage;
         this.generator = generator;
         id = generator.getNextId();
@@ -416,21 +410,16 @@ public abstract class Job  {
     }
     
     public void say(String s) {
-        if(logger != null) {
-            logger.log(" Job id="+id+" :"+ s);
+        _log.debug(" Job id="+id+" :"+ s);
         }
-    }
+
     public void esay(String s) {
-        if(logger != null) {
-            logger.elog(" Job id="+id+" error :"+ s);
+        _log.error(" Job id="+id+" error :"+ s);
         }
-    }
     
     public void esay(Throwable t) {
-        if(logger != null) {
-            logger.elog(t);
+        _log.error(" Job id="+id+" exception", t);
         }
-    }
     
     public static final Job getJob(Long jobId) {
          return getJob ( jobId, null);
@@ -517,8 +506,8 @@ public abstract class Job  {
     
     public Job(JobStorage jobStorage, 
         int maxNumberOfRetries,
-         JobIdGenerator generator, Logger logger) {
-        this(12*60*60*1000,jobStorage,maxNumberOfRetries,generator,logger);// 12 hours is the default lifetime
+         JobIdGenerator generator) {
+        this(12*60*60*1000,jobStorage,maxNumberOfRetries,generator);// 12 hours is the default lifetime
         
     }
     

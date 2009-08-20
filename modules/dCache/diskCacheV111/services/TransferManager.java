@@ -153,7 +153,7 @@ public abstract class TransferManager extends CellAdapter {
 
 		try {
 			if ( jdbcUrl != null && jdbcDriver != null && user != null && pass != null ) {
-				requestsPropertyStorage = RequestsPropertyStorage.getPropertyStorage(jdbcUrl, jdbcDriver, user, pass, "nextTransferId",null);
+				requestsPropertyStorage = RequestsPropertyStorage.getPropertyStorage(jdbcUrl, jdbcDriver, user, pass, "nextTransferId");
 			} else {
 				requestsPropertyStorage=null;
 			}
@@ -403,7 +403,7 @@ public abstract class TransferManager extends CellAdapter {
 			return "database connection is already initialized\n";
 		}
 		try {
-			requestsPropertyStorage = RequestsPropertyStorage.getPropertyStorage(jdbcUrl, jdbcDriver, user, pass, "nextTransferId",null);
+                    requestsPropertyStorage = RequestsPropertyStorage.getPropertyStorage(jdbcUrl, jdbcDriver, user, pass, "nextTransferId");
 		} catch (Exception e) {
 			esay("Failed to initialize Data Base connection to generate nextTransferId\n");
 			requestsPropertyStorage=null;

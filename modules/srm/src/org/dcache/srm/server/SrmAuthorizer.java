@@ -101,7 +101,8 @@ public class SrmAuthorizer {
    private org.dcache.srm.SRMAuthorization authorization;
    private org.dcache.srm.request.RequestCredentialStorage credential_storage;
    private org.dcache.srm.request.sql.RequestsPropertyStorage propertyStorage;
-   public org.apache.log4j.Logger log;
+   public static org.apache.log4j.Logger log = org.apache.log4j.Logger.getLogger(
+             SrmAuthorizer.class);
    private static boolean initialized = false;
    private String logConfigFile;
    private Configuration config;
@@ -112,9 +113,6 @@ public class SrmAuthorizer {
    
    private synchronized void initialize(SrmDCacheConnector srmConn) {
       try {
-         log = org.apache.log4j.Logger.getLogger(
-             "logger.org.dcache.authorization."+
-             this.getClass().getName());
          logConfigFile = srmConn.getLogFile();
          org.apache.log4j.xml.DOMConfigurator.configure(logConfigFile);
          // Below re-checks config file periodically; default 60 seconds
@@ -129,9 +127,7 @@ public class SrmAuthorizer {
             config.getJdbcClass(),
             config.getJdbcUser(),
             config.getJdbcPass(),
-            config.getNextRequestIdStorageTable(),
-            config.getStorage()
-            );
+            config.getNextRequestIdStorageTable());
             
             initialized = true;
             log.debug("Successfully initialized");
@@ -263,6 +259,7 @@ public class SrmAuthorizer {
     try {
         return X509CertUtil.getFQANsFromContext(gssContext);
     } catch (AuthorizationException ae) {
+        log.error("Could not extract FQANs from context",ae);
          throw new SRMAuthorizationException("Could not extract FQANs from context " + ae.getMessage());
       }
    }

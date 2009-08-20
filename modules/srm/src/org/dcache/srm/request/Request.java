@@ -255,11 +255,9 @@ public abstract class Request extends Job {
             configuration.getJdbcClass(),
             configuration.getJdbcUser(),
             configuration.getJdbcPass(),
-            configuration.getNextRequestIdStorageTable(),
-            configuration.getStorage())
+            configuration.getNextRequestIdStorageTable())
         :
-            requestsproperties,
-            configuration.getStorage());
+            requestsproperties);
         this.credentialId = requestCredentalId;
         this.storage = configuration.getStorage();
         this.configuration = configuration;
@@ -309,7 +307,6 @@ public abstract class Request extends Job {
         numberOfRetries,maxNumberOfRetries, 
         lastStateTransitionTime, 
         jobHistoryArray, 
-        configuration.getStorage(),
         requestsproperties == null
         ?
             requestsproperties =
@@ -318,8 +315,7 @@ public abstract class Request extends Job {
             configuration.getJdbcClass(),
             configuration.getJdbcUser(),
             configuration.getJdbcPass(),
-            configuration.getNextRequestIdStorageTable(),
-            configuration.getStorage())
+            configuration.getNextRequestIdStorageTable())
         :
             requestsproperties
         

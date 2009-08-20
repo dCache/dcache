@@ -223,9 +223,7 @@ public class SRMServerV1 implements ISRM, IInformationProvider {
         configuration.getJdbcClass(),
         configuration.getJdbcUser(),
         configuration.getJdbcPass(),
-        configuration.getNextRequestIdStorageTable(),
-        configuration.getStorage()
-        );
+        configuration.getNextRequestIdStorageTable());
         
     }
     

@@ -100,7 +100,7 @@ public class DcacheFileMetaData extends org.dcache.srm.FileMetaData {
     private PnfsId pnfsId;
     private StorageInfo storageInfo;
     private diskCacheV111.util.FileMetaData fmd;
-    private Logger logger =  Logger.getLogger(DcacheFileMetaData.class.getName());
+    private static final Logger logger =  Logger.getLogger(DcacheFileMetaData.class);
     
     /** Creates a new instance of DcacheFileMetaData */
     public DcacheFileMetaData(PnfsId pnfsId) {
