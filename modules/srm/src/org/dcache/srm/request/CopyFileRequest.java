@@ -93,8 +93,6 @@ import org.dcache.srm.SrmReleaseSpaceCallbacks;
 import org.dcache.srm.SrmUseSpaceCallbacks;
 import org.dcache.srm.SrmCancelUseOfSpaceCallbacks;
 import org.globus.util.GlobusURL;
-import org.dcache.srm.client.TurlGetterPutter;
-import org.dcache.srm.client.TurlGetterPutterV1;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.IllegalStateTransition;

@@ -74,7 +74,6 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
-import java.net.InetAddress;
 import java.net.MalformedURLException;
 
 import diskCacheV111.srm.RequestFileStatus;
@@ -97,17 +96,7 @@ import org.dcache.srm.SrmReleaseSpaceCallbacks;
 import org.dcache.srm.SrmUseSpaceCallbacks;
 import org.dcache.srm.SrmCancelUseOfSpaceCallbacks;
 
-import org.dcache.srm.v2_2.TGroupPermission;
-import org.dcache.srm.v2_2.TUserPermission;
-import org.dcache.srm.v2_2.TFileStorageType;
-import org.dcache.srm.v2_2.TFileType;
-import org.dcache.srm.v2_2.TMetaDataPathDetail;
-import org.dcache.srm.v2_2.TPermissionMode;
-import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
-import org.dcache.srm.v2_2.SrmPrepareToPutRequest;
-import org.dcache.srm.v2_2.SrmPrepareToPutResponse;
-import org.dcache.srm.v2_2.TPutFileRequest;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TPutRequestFileStatus;
 import org.apache.axis.types.URI;

@@ -718,19 +718,19 @@ public abstract class Job  {
      *
      */
     
-    public java.lang.String getErrorMessage() {
+    public String getErrorMessage() {
         
-        StringBuffer errorMessage = new StringBuffer();
+        StringBuffer errorsb = new StringBuffer();
         synchronized(jobHistory) {
             if(!jobHistory.isEmpty()) {
                 JobHistory nextHistoryElement = (JobHistory)
                     jobHistory.get(jobHistory.size() -1);
                 State nexthistoryElState = nextHistoryElement.getState();
-                errorMessage.append(" at ");
-                errorMessage.append(new java.util.Date(nextHistoryElement.getTransitionTime()));
-                errorMessage.append(" state ").append(nexthistoryElState);
-                errorMessage.append(" : ");
-                errorMessage.append(nextHistoryElement.getDescription());
+                errorsb.append(" at ");
+                errorsb.append(new java.util.Date(nextHistoryElement.getTransitionTime()));
+                errorsb.append(" state ").append(nexthistoryElState);
+                errorsb.append(" : ");
+                errorsb.append(nextHistoryElement.getDescription());
             }
                 /*
                 for( Iterator i = jobHistory.iterator(); i.hasNext();) {
@@ -749,7 +749,7 @@ public abstract class Job  {
                     }
                 }*/
        }
-       return errorMessage.toString();
+       return errorsb.toString();
     }
     
     public void addHistoryEvent(String description){
@@ -758,7 +758,7 @@ public abstract class Job  {
         }
         
     }
-     public java.lang.String getHistory() {
+     public String getHistory() {
         StringBuffer historyString = new StringBuffer();
         synchronized(jobHistory) {
             for( Iterator i = jobHistory.iterator(); i.hasNext();) {
@@ -878,7 +878,7 @@ public abstract class Job  {
      * @return Value of property schedulerId.
      *
      */
-    public java.lang.String getSchedulerId() {
+    public String getSchedulerId() {
         return schedulerId;
     }
     
@@ -886,11 +886,13 @@ public abstract class Job  {
      * @param schedulerId New value of property schedulerId.
      *
      */
-    public void setScheduler(java.lang.String schedulerId,long schedulerTimeStamp) {
+    public void setScheduler(String schedulerId,long schedulerTimeStamp) {
         //  check if the values have indeed changed
         // If they are the same, we do not need to do anythign.
         if(this.schedulerTimeStamp != schedulerTimeStamp ||
-            this.schedulerId != schedulerId) {
+           this.schedulerId != null && schedulerId == null ||
+           schedulerId != null && !schedulerId.equals(this.schedulerId)) {
+
             this.schedulerTimeStamp = schedulerTimeStamp;
             this.schedulerId = schedulerId;
 
@@ -1066,11 +1068,9 @@ public abstract class Job  {
      */
     public void scheduleIfRestored() {
          if(getState() == State.RESTORED) {
-            String schedulerId = getSchedulerId();
-            {
                 if(schedulerId != null) {
                     Scheduler scheduler = Scheduler.getScheduler(schedulerId);
-                    if(schedulerId != null) {
+                    if(scheduler != null) {
                         try
                         {
                             scheduler.schedule(this);
@@ -1081,7 +1081,7 @@ public abstract class Job  {
                     }
                 }
             }
-        }
+
 
     }
     
@@ -1135,7 +1135,7 @@ public abstract class Job  {
          * Getter for property description.
          * @return Value of property description.
          */
-        public java.lang.String getDescription() {
+        public String getDescription() {
             if(description.indexOf('\'') != -1 ) {
                 description = description.replace('\'','`');
             }

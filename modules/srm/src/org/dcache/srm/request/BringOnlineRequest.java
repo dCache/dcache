@@ -193,54 +193,27 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
-import org.dcache.srm.AbstractStorageElement;
-import org.dcache.srm.SRM;
-import diskCacheV111.srm.RequestStatus;
-import diskCacheV111.srm.RequestFileStatus;
-import diskCacheV111.srm.ISRM;
-import org.dcache.srm.GetFileInfoCallbacks;
-import org.dcache.srm.PrepareToPutCallbacks;
 import org.dcache.srm.v2_2.TRequestType;
-import org.globus.util.GlobusURL;
-import java.net.MalformedURLException;
-import java.net.UnknownHostException;
-import java.net.InetAddress;
-import java.io.IOException;
 import org.dcache.srm.SRMUser;
-import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Iterator;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMFileRequestNotFoundException;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.scheduler.JobStorage;
-import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.State;
 
-import org.dcache.srm.v2_2.TGroupPermission;
-import org.dcache.srm.v2_2.TUserPermission;
-import org.dcache.srm.v2_2.TFileStorageType;
-import org.dcache.srm.v2_2.TFileType;
-import org.dcache.srm.v2_2.TMetaDataPathDetail;
-import org.dcache.srm.v2_2.TPermissionMode;
-import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
-import org.dcache.srm.v2_2.SrmPrepareToGetRequest;
-import org.dcache.srm.v2_2.SrmPrepareToGetResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.SrmStatusOfBringOnlineRequestResponse;
 import org.dcache.srm.v2_2.ArrayOfTBringOnlineRequestFileStatus;
-import org.dcache.srm.v2_2.SrmBringOnlineRequest;
 import org.dcache.srm.v2_2.SrmBringOnlineResponse;
 import org.dcache.srm.v2_2.TBringOnlineRequestFileStatus;
 import org.dcache.srm.v2_2.SrmReleaseFilesResponse;
 import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
 import org.apache.axis.types.URI;
-import org.dcache.srm.FileMetaData;
 /*
  * @author  timur
  */
@@ -430,31 +403,6 @@ public class BringOnlineRequest extends ContainerRequest {
     // req from being executed
     public boolean shouldStopHandlerIfReady() {
         return false;
-    }
-    
-    public String kill() {
-        if(true)//isReady())
-        {
-            for(int i = 0 ; i< fileRequests.length;++i) {
-                //BringOnlineFileRequest fr = (BringOnlineFileRequest) getFileRequest(fileRequestsIds[i]);
-                
-                //if(fr.isReadyStatus() )
-                {
-                    //    fr.setDoneStatus("done by kill");
-                }
-            }
-            return "request was ready, set all ready file statuses to done";
-        }
-        
-        synchronized(callbacks_set) {
-            Iterator iter = callbacks_set.iterator();
-            while(iter.hasNext()) {
-                //((GetCallbacks)(iter.next())).kill();
-            }
-            
-        }
-        //setFailedStatus("killed");
-        return "request killed";
     }
     
     public void run() throws org.dcache.srm.scheduler.NonFatalJobFailure, org.dcache.srm.scheduler.FatalJobFailure {

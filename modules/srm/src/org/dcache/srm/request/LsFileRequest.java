@@ -1,49 +1,25 @@
 package org.dcache.srm.request;
 
-import java.net.InetAddress;
-import java.net.MalformedURLException;
 
 import diskCacheV111.srm.RequestFileStatus;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMUser;
-import org.dcache.srm.SRMException;
-import org.dcache.srm.SRMAuthorizationException;
-import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.scheduler.JobStorage;
-import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
-import org.dcache.srm.util.Tools;
 import org.dcache.srm.scheduler.State;
-import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.NonFatalJobFailure;
 import org.dcache.srm.scheduler.FatalJobFailure;
 
 import org.dcache.srm.util.Permissions;
 
-import org.dcache.srm.v2_2.TUserPermission;
-import org.dcache.srm.v2_2.TFileStorageType;
-import org.dcache.srm.v2_2.TFileType;
-import org.dcache.srm.v2_2.TMetaDataPathDetail;
-import org.dcache.srm.v2_2.TPermissionMode;
-import org.dcache.srm.v2_2.TReturnStatus;
-import org.dcache.srm.v2_2.TStatusCode;
-import org.dcache.srm.v2_2.SrmPrepareToGetRequest;
-import org.dcache.srm.v2_2.SrmPrepareToGetResponse;
-import org.dcache.srm.v2_2.TGetFileRequest;
-import org.dcache.srm.v2_2.TReturnStatus;
-import org.dcache.srm.v2_2.TGetRequestFileStatus;
-import org.apache.axis.types.URI;
-import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMTooManyResultsException;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.v2_2.*;
-import org.dcache.srm.request.Request;
 import org.dcache.srm.request.LsRequest;
-import org.apache.axis.types.URI.MalformedURIException;
 
 public class LsFileRequest extends FileRequest {
         public static final String SFN_STRING="?SFN=";

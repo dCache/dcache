@@ -168,11 +168,8 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
-import java.net.InetAddress;
-import java.net.MalformedURLException;
 
 import diskCacheV111.srm.RequestFileStatus;
-import diskCacheV111.srm.FileMetaData;
 import org.dcache.srm.AbstractStorageElement;
 import org.globus.util.GlobusURL;
 import org.dcache.srm.util.Configuration;
@@ -214,7 +211,6 @@ public abstract class FileRequest extends Job {
     //srm configuration
     protected Configuration configuration;
     //error message if error, or just information message
-    private String errorMsg;
     
     private static RequestsPropertyStorage requestsproperties = null;
     private QOSTicket qosTicket;

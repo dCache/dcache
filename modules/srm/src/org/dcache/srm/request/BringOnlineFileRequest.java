@@ -222,7 +222,6 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
-import java.net.InetAddress;
 import java.net.MalformedURLException;
 
 import diskCacheV111.srm.RequestFileStatus;
@@ -234,7 +233,6 @@ import org.dcache.srm.SRMUser;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.scheduler.JobStorage;
-import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.Tools;
 import org.dcache.srm.GetFileInfoCallbacks;
@@ -246,13 +244,6 @@ import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.NonFatalJobFailure;
 import org.dcache.srm.scheduler.FatalJobFailure;
 
-import org.dcache.srm.v2_2.TGroupPermission;
-import org.dcache.srm.v2_2.TUserPermission;
-import org.dcache.srm.v2_2.TFileStorageType;
-import org.dcache.srm.v2_2.TFileType;
-import org.dcache.srm.v2_2.TMetaDataPathDetail;
-import org.dcache.srm.v2_2.TPermissionMode;
-import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TBringOnlineRequestFileStatus;
 import org.dcache.srm.v2_2.TReturnStatus;
@@ -265,7 +256,6 @@ import org.dcache.srm.v2_2.TSURLReturnStatus;
  * @version
  */
 public class BringOnlineFileRequest extends FileRequest {
-
     private final static Logger _log = Logger.getLogger(BringOnlineFileRequest.class);
     
     // the globus url class created from surl_string

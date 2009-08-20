@@ -76,40 +76,15 @@ package org.dcache.srm.server;
 import org.dcache.srm.request.sql.RequestsPropertyStorage;
 import org.globus.axis.gsi.GSIConstants;
 import org.dcache.srm.request.RequestCredential;
-import org.ietf.jgss.GSSContext;
 
 import java.net.Inet4Address;
 
 import java.util.*;
-import java.io.IOException;
-import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSContext;
-import org.ietf.jgss.GSSCredential;
-import org.ietf.jgss.GSSManager;
-import org.ietf.jgss.GSSName;
-import org.globus.gsi.gssapi.net.impl.GSIGssSocket;
-import org.globus.gsi.gssapi.net.GssSocketFactory;
-import org.globus.gsi.gssapi.net.GssSocket;
-import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
-import org.globus.gsi.gssapi.GSSConstants;
-import org.globus.gsi.gssapi.auth.NoAuthorization;
-import org.globus.gsi.GlobusCredential;
-import org.globus.gsi.GlobusCredentialException;
-import org.globus.gsi.TrustedCertificates;
-import org.globus.gsi.bc.BouncyCastleUtil;
-import org.dcache.srm.security.SslGsiSocketFactory;
-import org.gridforum.jgss.ExtendedGSSManager;
 import org.gridforum.jgss.ExtendedGSSContext;
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.CRLException;
 
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.util.Configuration;
-import org.glite.security.util.DirectoryList;
-import org.glite.voms.BasicVOMSTrustStore;
-import org.glite.voms.VOMSValidator;
-import org.glite.voms.VOMSAttribute;
 import gplazma.authz.util.X509CertUtil;
 import gplazma.authz.AuthorizationException;
 

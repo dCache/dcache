@@ -73,16 +73,7 @@ documents or software obtained from this server.
  */
 package org.dcache.srm;
 
-import electric.registry.Registry;
-import electric.server.http.HTTP;
-import electric.net.socket.SocketFactories;
-import electric.util.Context;
-import electric.net.http.HTTPContext;
-import org.dcache.srm.SRMAuthorization;
 import org.globus.util.GlobusURL;
-import org.dcache.srm.SRMUser;
-import org.dcache.srm.request.RequestCredential;
-import org.dcache.srm.request.ContainerRequest;
 import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.request.Request;
@@ -1030,7 +1021,7 @@ public class SRM {
                     return rs;
                 } else {
                     return createFailedRequestStatus("getRequestStatus(): request #" + requestId +
-                            " does not belong to user " + user, requestId);
+                            " owned by "+req_user+" does not belong to user " + user, requestId);
                 }
             }
             return createFailedRequestStatus("getRequestStatus() request #" + requestId +
@@ -1200,7 +1191,7 @@ public class SRM {
             SRMUser req_user = r.getUser();
             if (req_user != null && !req_user.equals(user)) {
                 return createFailedRequestStatus(
-                        "request #" + requestId + " does not belong to user " + user);
+                        "request #" + requestId + " owned by "+req_user +" does not belong to user " + user);
             }
             // get file request from request
             FileRequest fr = r.getFileRequest(fileRequestId);

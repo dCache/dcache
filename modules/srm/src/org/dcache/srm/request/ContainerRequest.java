@@ -248,29 +248,14 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 import org.dcache.srm.scheduler.Scheduler;
-import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.scheduler.JobStorage;
-import org.dcache.srm.scheduler.HashtableJobStorage;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.RequestStatusTool;
 import diskCacheV111.srm.RequestStatus;
-import org.dcache.srm.AbstractStorageElement;
-import org.dcache.srm.SRM;
 import org.dcache.srm.SRMUser;
 import diskCacheV111.srm.RequestFileStatus;
-import org.dcache.srm.SRMAuthorization;
-import java.util.WeakHashMap;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.Iterator;
-import java.util.Observable;
-import java.util.Observer;
-import java.util.HashSet;
-import java.util.Collection;
 import org.dcache.srm.util.Configuration;
-import org.dcache.srm.request.sql.RequestsPropertyStorage;
 import org.dcache.srm.v2_2.*;
 import org.dcache.srm.SRMException;
 

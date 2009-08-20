@@ -392,6 +392,9 @@ public abstract class Request extends Job {
     private TStatusCode statusCode;
     
     public RequestCredential getCredential() {
+        if(credentialId==null) {
+            return null;
+        }
         return RequestCredential.getRequestCredential(credentialId);
     }
 

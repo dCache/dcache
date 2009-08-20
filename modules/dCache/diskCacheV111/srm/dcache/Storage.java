@@ -290,6 +290,7 @@ public class Storage
                         "srmInstance is null, " +
                         "about to call Domain.main()");
                 new Thread() {
+
                     public void run() {
 
                         // Calling the main method and passing some
@@ -1319,10 +1320,18 @@ public class Storage
         return "bring-online-req-max-ready-requests="+value;
     }
 
-    public String fh_set_max_ready_ls= " Syntax: set max ready ls <count>"+
+    public String fh_set_max_read_ls_= " Syntax: set max read ls <count>\n"+
+            " #will set a maximum number of ls requests in the ready state\n"+
+            " #\"set max read ls\" is an alias for \"set max ready ls\" preserved for compatibility ";
+    public String hh_set_max_read_ls= " <count>";
+    public String ac_set_read_ls_$_1(Args args) throws Exception{
+        return ac_set_max_ready_ls_$_1(args);
+    }
+
+    public String fh_set_max_ready_ls= " Syntax: set max ready ls <count>\n"+
             " #will set a maximum number of ls requests in the ready state";
     public String hh_set_max_ready_ls= " <count>";
-    public String ac_set_max_read_ls_$_1(Args args) throws Exception{
+    public String ac_set_max_ready_ls_$_1(Args args) throws Exception{
         if(args.argc() != 1) {
             throw new IllegalArgumentException("count is not specified");
         }
@@ -4863,7 +4872,7 @@ public class Storage
     public String[] srmGetRequestTokens(SRMUser user,String description)
         throws SRMException {
         try {
-            Set tokens = srm.getBringOnlineRequestIds((SRMUser) user,
+            Set<Long> tokens = srm.getBringOnlineRequestIds((SRMUser) user,
                     description);
             tokens.addAll(srm.getGetRequestIds((SRMUser) user,
                     description));

@@ -133,20 +133,14 @@ package diskCacheV111.srm.server;
 import diskCacheV111.srm.ISRM;
 import org.dcache.srm.SRM;
 import diskCacheV111.srm.RequestStatus;
-import diskCacheV111.srm.RequestFileStatus;
 import diskCacheV111.srm.FileMetaData;
-import org.dcache.srm.util.SURL;
 import org.dcache.srm.security.SslGsiSocketFactory;
 
 
 import java.io.IOException;
-import java.net.URL;
-import java.net.MalformedURLException;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 
 import electric.registry.Registry;
-import electric.registry.RegistryException;
 import electric.server.http.HTTP;
 import electric.net.socket.SocketFactories;
 import electric.util.Context;
