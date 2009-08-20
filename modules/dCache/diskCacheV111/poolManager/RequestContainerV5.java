@@ -2,10 +2,7 @@
 
 package diskCacheV111.poolManager ;
 
-import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
-import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.reflect.Constructor;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,22 +12,19 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.regex.Pattern;
 
-import dmg.cells.nucleus.CellAdapter;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.UOID;
-import dmg.cells.nucleus.CDC;
-import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.util.Args;
+import org.apache.log4j.Logger;
+import org.dcache.cells.AbstractCellComponent;
+import org.dcache.cells.CellCommandListener;
+import org.dcache.cells.CellMessageReceiver;
 
+import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.ExtendedRunnable;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.ThreadCounter;
 import diskCacheV111.util.ThreadPool;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.IpProtocolInfo;
@@ -49,13 +43,12 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.RestoreHandlerInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.WarningPnfsFileInfoMessage;
-
-import org.dcache.cells.AbstractCellComponent;
-import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.CellMessageReceiver;
-
-import org.apache.log4j.Logger;
-import org.apache.log4j.NDC;
+import dmg.cells.nucleus.CDC;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.cells.nucleus.UOID;
+import dmg.util.Args;
 
 public class RequestContainerV5
     extends AbstractCellComponent
@@ -279,7 +272,7 @@ public class RequestContainerV5
        pw.println( "Allow stage on cost : "+(def._stageOnCost ? "on":"off") ) ;
        pw.println( "          P2p Slope : "+(float)def._slope ) ;
        pw.println( "     P2p Max Copies : "+def._maxPnfsFileCopies) ;
-       pw.println( "          Cost Cuts : idle="+def._minCostCut+",p2p="+def._costCut+
+       pw.println( "          Cost Cuts : idle="+def._minCostCut+",p2p="+def.getCostCutString()+
                                        ",alert="+def._alertCostCut+",halt="+def._panicCostCut+
                                        ",fallback="+def._fallbackCostCut) ;
        pw.println( "      Restore Limit : "+(_maxRestore<0?"unlimited":(""+_maxRestore)));
@@ -2029,8 +2022,9 @@ public class RequestContainerV5
               if( _bestPool == null )return RT_NOT_FOUND ;
 
               double bestPoolPerformanceCost = _bestPool.getPerformanceCost() ;
-              if(   (  _parameter._costCut     > 0.0                  ) &&
-                    (  bestPoolPerformanceCost >= _parameter._costCut )       ){
+
+              if(   (  _parameter.getCostCut()     > 0.0         ) &&
+                    (  bestPoolPerformanceCost >= getCurrentCostCut( _parameter))    ){
 
                  if( allowFallbackOnPerformance ){
                     //
@@ -2174,7 +2168,8 @@ public class RequestContainerV5
 				// 'slope' below the source pool.
 				//
 				double maxCost = parameter._slope > 0.01 ? (parameter._slope * sources.get(0).getPerformanceCost())
-						: parameter._costCut;
+						: getCurrentCostCut( parameter);
+
 
 				List<List<PoolCostCheckable>> matrix =
                                     _pnfsFileLocation.getFetchPoolMatrix(DirectionType.P2P,
@@ -2568,6 +2563,19 @@ public class RequestContainerV5
 
     public void setSendCostInfo(boolean sendCostInfo) {
         _sendCostInfo = sendCostInfo;
+    }
+
+    /**
+     * Establish the costCut at the moment for the given set of parameters.
+     * If the costCut was assigned a value from a string ending with a '%' then
+     * that percentile cost is used.
+     * @param parameter which set of parameters to consider.
+     * @return the costCut, taking into account possible relative costCut.
+     */
+    private double getCurrentCostCut( PoolManagerParameter parameter) {
+        return parameter.isCostCutPercentile()
+            ? _poolMonitor.getPoolsPercentilePerformanceCost( parameter.getCostCut())
+            : parameter.getCostCut();
     }
     //VP
 }

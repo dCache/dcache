@@ -1,14 +1,36 @@
 // $Id: HttpPoolMgrEngineV3.java,v 1.26 2007-08-16 20:20:56 behrmann Exp $
 package diskCacheV111.poolManager ;
 
-import dmg.util.* ;
-import dmg.cells.nucleus.* ;
-import java.io.* ;
-import java.util.* ;
-import diskCacheV111.vehicles.* ;
-import diskCacheV111.vehicles.hsmControl.*;
-import diskCacheV111.util.* ;
-import java.text.*;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+
+import diskCacheV111.util.HTMLWriter;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
+import diskCacheV111.vehicles.PnfsMapPathMessage;
+import diskCacheV111.vehicles.RestoreHandlerInfo;
+import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.vehicles.hsmControl.HsmControlGetBfDetailsMsg;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellNucleus;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.util.AgingHash;
+import dmg.util.Args;
+import dmg.util.HttpException;
+import dmg.util.HttpRequest;
+import dmg.util.HttpResponseEngine;
 
 public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
 {
@@ -769,7 +791,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         }
         if (p._costCutSet) {
             pw.print("<tr><td align=center>P2p OnCost</td><tr>td align=center>");
-            pw.print(p._costCut);
+            pw.print(p.getCostCutString());
             pw.println("</td></tr>");
         }
         if (p._alertCostCutSet) {
@@ -1547,6 +1569,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             if (tag.equals("NONE"))return -1;
             return tag.compareTo(link.tag);
         }
+        @Override
         public String toString() { return "["+tag+"/"+name+"]"; }
     }
 

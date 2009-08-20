@@ -1,13 +1,16 @@
 // $Id: DummyCostModule.java,v 1.2 2006-10-10 13:50:50 tigran Exp $
 
 package diskCacheV111.poolManager ;
-import  dmg.cells.nucleus.* ;
-import  dmg.util.Args ;
-import diskCacheV111.pools.PoolCostInfo;
-import  diskCacheV111.vehicles.PoolCostCheckable ;
-import  java.io.PrintWriter ;
+import java.io.PrintWriter;
+
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
+
+import diskCacheV111.pools.PoolCostInfo;
+import diskCacheV111.vehicles.PoolCostCheckable;
+import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellMessage;
+import dmg.util.Args;
 
 public class DummyCostModule
     extends AbstractCellComponent
@@ -55,4 +58,8 @@ public class DummyCostModule
 	return null;
    }
 
+   @Override
+   public double getPoolsPercentilePerformanceCost( double fraction) {
+       return 0;
+   }
 }
