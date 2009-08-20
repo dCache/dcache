@@ -115,7 +115,7 @@ public class ListDirectoryHandler
         try {
             _replies.put(uuid, stream);
             _pnfs.send(msg);
-            stream.waitForNextReply();
+            stream.waitForMoreEntries();
             success = true;
             return stream;
         } finally {
@@ -231,7 +231,7 @@ public class ListDirectoryHandler
             _queue.put(msg);
         }
 
-        private void waitForNextReply()
+        private void waitForMoreEntries()
             throws InterruptedException, CacheException
         {
             if (_isFinal) {
@@ -253,6 +253,14 @@ public class ListDirectoryHandler
             }
 
             _iterator = msg.getEntries().iterator();
+
+            /* If the message is empty, then the iterator has no next
+             * element. In that case we wait for the next reply. This
+             * may in particular happen with the final message.
+             */
+            if (!_iterator.hasNext()) {
+                waitForMoreEntries();
+            }
         }
 
         @Override
@@ -266,7 +274,7 @@ public class ListDirectoryHandler
         {
             try {
                 if (_iterator == null || !_iterator.hasNext()) {
-                    waitForNextReply();
+                    waitForMoreEntries();
                     if (_iterator == null) {
                         return false;
                     }
