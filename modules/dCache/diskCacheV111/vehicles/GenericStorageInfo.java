@@ -3,8 +3,10 @@ package diskCacheV111.vehicles;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.log4j.Logger;
 
@@ -260,9 +262,11 @@ java.io.Serializable {
 
     @Override
     public int hashCode() {
+        Set<URI> ourLocations = new HashSet<URI>( locations());
+
         return getAccessLatency().hashCode() ^
         getRetentionPolicy().hashCode() ^
-        locations().hashCode() ^
+        ourLocations.hashCode() ^
         (int) getFileSize() ^
         getStorageClass().hashCode() ^
         (isStored() ? 1 << 0 : 0) ^
@@ -281,7 +285,16 @@ java.io.Serializable {
         if ( !other.getAccessLatency().equals( this.getAccessLatency()) ) return false;
         if ( !other.getRetentionPolicy().equals( this.getRetentionPolicy()) ) return  false;
 
-        if( ! other.locations().equals(this.locations())) return false;
+        /**
+         * Any non-zero number of occurrences of a URI are considered equivalent.  A necessary
+         * condition for equality is that, for each location URI in this object, the other
+         * GenericStorageInfo must have at least one instance of the URI.  Having more than one
+         * is OK.
+         */
+        Set<URI> ourLocations = new HashSet<URI>( locations());
+        Set<URI> otherLocations = new HashSet<URI>( other.locations());
+
+        if( ! otherLocations.equals( ourLocations)) return false;
 
         /**
          *  If two GenericStorageInfo objects have location URIs specified then we ignore any

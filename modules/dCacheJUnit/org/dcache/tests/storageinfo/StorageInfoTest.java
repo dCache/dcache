@@ -1,7 +1,9 @@
 package org.dcache.tests.storageinfo;
 
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedInputStream;
 import java.io.EOFException;
@@ -9,10 +11,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InvalidClassException;
-import java.io.OptionalDataException;
 import java.io.ObjectInputStream;
+import java.io.OptionalDataException;
 import java.io.StreamCorruptedException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 
@@ -104,7 +107,7 @@ public class StorageInfoTest {
 
     @Test
     public void testSameEquals() {
-        
+
         StorageInfo storageInfo = new GenericStorageInfo("osm", "h1:raw");
 
         assertTrue("equal storageInfo did not pass", storageInfo.equals(storageInfo) );
@@ -113,7 +116,7 @@ public class StorageInfoTest {
 
     @Test
     public void testEquals() {
-        
+
         StorageInfo storageInfo = new GenericStorageInfo("osm", "h1:raw");
         StorageInfo otherInfo = new GenericStorageInfo("osm", "h1:raw");
 
@@ -122,8 +125,24 @@ public class StorageInfoTest {
     }
 
     @Test
+    public void testEqualsWithMultipleLocations() throws URISyntaxException {
+        StorageInfo storageInfo = new GenericStorageInfo("osm", "h1:raw");
+        StorageInfo otherInfo = new GenericStorageInfo("osm", "h1:raw");
+
+        final String URI_STRING = "osm://osm/&foo=bar";
+
+        storageInfo.addLocation( new URI( URI_STRING));
+        storageInfo.addLocation( new URI( URI_STRING));
+
+        otherInfo.addLocation( new URI( URI_STRING));
+
+        assertTrue( "storageInfo.equals() with uneven number of identical location URIs", storageInfo.equals(  otherInfo));
+        assertTrue( "stoageInfo.hashCode() was different with uneven number of identical location URIs", storageInfo.hashCode() == otherInfo.hashCode());
+    }
+
+    @Test
     public void testNotEquals() {
-        
+
         StorageInfo storageInfo = new GenericStorageInfo("osm", "h1:raw");
         StorageInfo otherInfo = new GenericStorageInfo("osm", "h1:rawd");
 
@@ -133,7 +152,7 @@ public class StorageInfoTest {
 
     @Test
     public void testNotEqualsByAP() {
-        
+
         StorageInfo storageInfo = new GenericStorageInfo("osm", "h1:raw");
         storageInfo.setRetentionPolicy(RetentionPolicy.REPLICA);
 
@@ -145,7 +164,7 @@ public class StorageInfoTest {
 
     @Test
     public void testNotEqualsByAL() {
-        
+
         StorageInfo storageInfo = new GenericStorageInfo("osm", "h1:raw");
         storageInfo.setAccessLatency(AccessLatency.NEARLINE);
 
@@ -157,7 +176,7 @@ public class StorageInfoTest {
 
     @Test
     public void testNotEqualsByHSM() {
-        
+
         StorageInfo storageInfo = new GenericStorageInfo("osm", "h1:raw");
         StorageInfo otherInfo = new GenericStorageInfo("enstore", "h1:raw");
 
@@ -166,18 +185,18 @@ public class StorageInfoTest {
 
     @Test
     public void testNotEqualsByFileSize() {
-        
+
         StorageInfo storageInfo = new GenericStorageInfo("osm", "h1:raw");
         storageInfo.setFileSize(17);
         StorageInfo otherInfo = new GenericStorageInfo("osm", "h1:raw");
         otherInfo.setFileSize(21);
-        
+
         assertFalse("not equal by file size storageInfo pass", storageInfo.equals(otherInfo) );
     }
 
     @Test
     public void testNotEqualsByMap() {
-        
+
         StorageInfo storageInfo = new GenericStorageInfo("osm", "h1:raw");
         storageInfo.setKey("bla", "bla");
         StorageInfo otherInfo = new GenericStorageInfo("osm", "h1:raw");
