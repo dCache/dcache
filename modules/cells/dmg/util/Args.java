@@ -1,8 +1,11 @@
 package dmg.util ;
 
 import java.util.* ;
+import java.io.Serializable;
 
-public class Args implements java.io.Serializable {
+public class Args
+    implements Serializable, Cloneable
+{
 
    static final long serialVersionUID = -8950082352156787965L;
    private final Map<String, String> _optHash = CollectionFactory.newHashMap();
