@@ -219,6 +219,7 @@ create dmg.cells.services.HttpServiceCell  httpd  ${httpdPort}
 create diskCacheV111.cells.WebCollectorV3 collector \
     "PnfsManager \
      PoolManager \
+     gPlazma \
      -loginBroker=LoginBroker,srm-LoginBroker \
      -replyObject"
 #
