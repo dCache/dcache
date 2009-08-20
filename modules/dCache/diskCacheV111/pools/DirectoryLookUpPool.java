@@ -7,10 +7,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.concurrent.ExecutionException;
 
-import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellNucleus;
 import dmg.util.Args;
 
 import diskCacheV111.movers.DCapConstants;
@@ -22,94 +21,65 @@ import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 
-public class DirectoryLookUpPool extends CellAdapter {
+import org.dcache.cells.AbstractCell;
+import org.apache.log4j.Logger;
+
+/**
+ * Provides directory listing services for DCAP.
+ */
+public class DirectoryLookUpPool extends AbstractCell
+{
+    private final static Logger _log =
+        Logger.getLogger(DirectoryLookUpPool.class);
 
     private final String _poolName;
     private final Args _args;
-    private final CellNucleus _nucleus;
 
-    private String _rootDir = null;
+    private String _rootDir;
 
-    public DirectoryLookUpPool(String poolName, String args) throws Exception {
-        super(poolName, DirectoryLookUpPool.class.getName(), args, false);
+    public DirectoryLookUpPool(String poolName, String args)
+        throws InterruptedException, ExecutionException
+    {
+        super(poolName, args);
 
         _poolName = poolName;
         _args = getArgs();
-        _nucleus = getNucleus();
+
+        doInit();
+    }
+
+    protected void init()
+        throws IllegalArgumentException
+    {
+        _log.info("Lookup Pool " + _poolName + " starting");
 
         int argc = _args.argc();
-        say("Lookup Pool " + poolName + " starting");
-
-        try {
-
-            if (argc < 1)
-                throw new IllegalArgumentException("no base dir specified");
-
-            _rootDir = _args.argv(0);
-
-        } catch (Exception e) {
-            say("Exception occurred on startup: " + e);
-            start();
-            kill();
-            throw e;
+        if (argc < 1) {
+            throw new IllegalArgumentException("no base dir specified");
         }
 
+        _rootDir = _args.argv(0);
+
         useInterpreter(true);
-        _nucleus.export();
-        start();
-
     }
 
-    public void log(String str) {
-        say(str);
-    }
-
-    public void elog(String str) {
-        esay(str);
-    }
-
-    public void plog(String str) {
-        esay("PANIC : " + str);
-    }
-
-    public void getInfo(PrintWriter pw) {
+    public void getInfo(PrintWriter pw)
+    {
         pw.println("Root directory    : " + _rootDir);
-        pw
-            .println("Revision          : [$Id: DirectoryLookUpPool.java,v 1.7 2007-07-26 14:34:12 tigran Exp $]");
+        pw.println("Revision          : [$Id: DirectoryLookUpPool.java,v 1.7 2007-07-26 14:34:12 tigran Exp $]");
     }
 
-    public void messageToForward(CellMessage cellMessage) {
+    public void messageToForward(CellMessage cellMessage)
+    {
         messageArrived(cellMessage);
     }
 
-    public void messageArrived(CellMessage cellMessage) {
-
-        esay("DirectoryLookUp: message arrived: " + cellMessage);
-
-        Object messageObject = cellMessage.getMessageObject();
-
-        if (!(messageObject instanceof Message)) {
-            say("Unexpected message class 1 " + messageObject.getClass());
-            return;
-        }
-
-        Message poolMessage = (Message) messageObject;
-
-        if (poolMessage instanceof PoolIoFileMessage) {
-
-            ioFile((PoolIoFileMessage) poolMessage, cellMessage);
-
-            return;
-        }
-
-    }
-
     // commands
-    public String hh_ls_$_1 = "ls <path>";
-
-    public String ac_ls_$_1(Args args) {
+    public final static String hh_ls_$_1 = "ls <path>";
+    public String ac_ls_$_1(Args args)
+    {
         String path = _rootDir + args.argv(0);
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         File f = new File(path);
 
         if (!f.exists()) {
@@ -144,7 +114,6 @@ public class DirectoryLookUpPool extends CellAdapter {
         }
 
         return sb.toString();
-
     }
 
     // //////////////////////////////////////////////////////////////
@@ -152,21 +121,21 @@ public class DirectoryLookUpPool extends CellAdapter {
     // The io File Part
     //
     //
-    private void ioFile(PoolIoFileMessage poolMessage, CellMessage cellMessage) {
-
-        cellMessage.revertDirection();
-
-        try {
-            _nucleus.newThread(new DirectoryService(poolMessage, cellMessage),"dir").start();
-        } catch (Exception e) {
-            esay(e);
-        }
-
+    public PoolIoFileMessage messageArrived(PoolIoFileMessage message)
+        throws IOException
+    {
+        DirectoryService service = new DirectoryService(message);
+        new Thread(service, "dir").start();
+        message.setSucceeded();
+        return message;
     }
 
-    // this is a actual mover
-    private class DirectoryService implements Runnable {
-
+    /** 
+     * A task which handles directory listing for a particular
+     * client. We have an instance per client request.
+     */
+    private class DirectoryService implements Runnable
+    {
         private DCapProtocolInfo dcap;
         private int sessionId;
 
@@ -177,9 +146,8 @@ public class DirectoryLookUpPool extends CellAdapter {
         private DataInputStream cntIn = null;
         private String _path = null;
 
-        DirectoryService(PoolIoFileMessage poolMessage,
-                         CellMessage originalCellMessage) throws IOException {
-
+        DirectoryService(PoolIoFileMessage poolMessage) throws IOException
+        {
             dcap = (DCapProtocolInfo) poolMessage.getProtocolInfo();
 
             PnfsId pnfsId = poolMessage.getPnfsId();
@@ -192,8 +160,8 @@ public class DirectoryLookUpPool extends CellAdapter {
 
         }
 
-        public void run() {
-
+        public void run()
+        {
             boolean done = false;
             int commandSize;
             int commandCode;
@@ -237,7 +205,7 @@ public class DirectoryLookUpPool extends CellAdapter {
                                                      "Protocol Violation (clREAD<8)");
 
                         long numberOfEntries = cntIn.readLong();
-                        esay("requested " + numberOfEntries + " bytes");
+                        _log.debug("requested " + numberOfEntries + " bytes");
 
                         cntOut.writeACK(DCapConstants.IOCMD_READ);
                         index += doReadDir(cntOut, ostream, dirList, index,
@@ -253,14 +221,16 @@ public class DirectoryLookUpPool extends CellAdapter {
 
                 }
 
-            } catch (Exception e) {
-                esay(e);
+            } catch (CacheException e) {
+                _log.error(e);
+            } catch (IOException e) {
+                _log.warn(e);
             } finally {
                 if (ostream != null) {
                     try {
                         ostream.close();
                     } catch (IOException e) {
-                        // ignored
+                        _log.warn(e);
                     }
                 }
 
@@ -268,7 +238,7 @@ public class DirectoryLookUpPool extends CellAdapter {
                     try {
                         istream.close();
                     } catch (IOException e) {
-                        // ignored
+                        _log.warn(e);
                     }
                 }
 
@@ -276,19 +246,19 @@ public class DirectoryLookUpPool extends CellAdapter {
                     try {
                         dataSocket.close();
                     } catch (IOException e) {
-                        // ignored
+                        _log.warn(e);
                     }
                 }
             }
-
         }
 
-        void connectToClinet() throws Exception {
-
+        void connectToClinet()
+            throws IOException
+        {
             int port = dcap.getPort();
             String[] hosts = dcap.getHosts();
             String host = null;
-            Exception se = null;
+            IOException se = null;
 
             //
             // try to connect to the client, scan the list.
@@ -297,7 +267,7 @@ public class DirectoryLookUpPool extends CellAdapter {
                 try {
                     host = hosts[i];
                     dataSocket = new Socket(host, port);
-                } catch (Exception e) {
+                } catch (IOException e) {
                     se = e;
                     continue;
                 }
@@ -305,13 +275,13 @@ public class DirectoryLookUpPool extends CellAdapter {
             }
 
             if (dataSocket == null) {
-                esay(se);
+                _log.error(se);
                 throw se;
             }
 
             ostream = new DCapDataOutputStream(dataSocket.getOutputStream());
             istream = new DataInputStream(dataSocket.getInputStream());
-            esay("Connected to " + host + "(" + port + ")");
+            _log.error("Connected to " + host + "(" + port + ")");
             //
             // send the sessionId and our (for now) 0 byte security
             // challenge.
@@ -323,19 +293,18 @@ public class DirectoryLookUpPool extends CellAdapter {
             cntOut.writeInt(sessionId);
             cntOut.writeInt(0);
             cntOut.flush();
-
         }
 
         private int doReadDir(DCapDataOutputStream cntOut,
                               DCapDataOutputStream ostream, String dirList, int index,
-                              long len) throws Exception {
-
+                              long len)
+            throws IOException
+        {
             long rc = 0;
             byte data[] = null;
 
             if (index > dirList.length()) {
-                throw new ArrayIndexOutOfBoundsException(
-                                                         " requested index greater then directory size");
+                throw new ArrayIndexOutOfBoundsException("requested index greater then directory size");
             }
 
             data = dirList.getBytes();
@@ -350,15 +319,14 @@ public class DirectoryLookUpPool extends CellAdapter {
             return (int) rc;
         }
 
-        private String createDirEnt(String path) {
-
+        private String createDirEnt(String path)
+        {
             File f = new File(path);
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
 
             if (!f.exists()) {
                 sb.append("Path " + path + " do not exist.");
             } else {
-
                 if (f.isDirectory()) {
                     String[] list = f.list();
                     if (list != null) {
@@ -386,11 +354,8 @@ public class DirectoryLookUpPool extends CellAdapter {
                 }
             }
 
-            esay(sb.toString());
+            _log.error(sb.toString());
             return sb.toString();
-
         }
-
     } // end of private class
-
 } // end of MultiProtocolPool
