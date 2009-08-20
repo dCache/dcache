@@ -148,6 +148,7 @@ import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.movers.GFtpPerfMarkersBlock;
 import diskCacheV111.movers.GFtpPerfMarker;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileNotOnlineCacheException;
@@ -1741,13 +1742,13 @@ public abstract class AbstractFtpDoorV1
     public void ac_dele(String arg)
     {
         if (_readOnly) {
-            println("500 Command disabled");
+            reply("500 Command disabled");
             return;
         }
 
         if (_pwdRecord.isReadOnly()) {
             if(!setNextPwdRecord()) {
-                println("500 Command disabled");
+                reply("500 Command disabled");
                 return;
             } else {
                 ac_dele(arg);
@@ -1765,7 +1766,7 @@ public abstract class AbstractFtpDoorV1
             PnfsGetFileMetaDataMessage meta =
                 _pnfs.getFileMetaDataByPath(pnfsPath);
             if (meta.getMetaData().isDirectory()) {
-                reply("553 Cannot delete a directory");
+                reply("501 Cannot delete a directory");
                 return;
             }
         } catch (FileNotFoundCacheException e) {
@@ -1784,7 +1785,7 @@ public abstract class AbstractFtpDoorV1
                 _pwdRecord.GID + " " +
                 parentOfFile;
             if (spawn(cmd, 1000) != 0 ) {
-                reply("553 Permission denied");
+                reply("550 Permission denied");
                 return;
             }
 
@@ -1793,7 +1794,7 @@ public abstract class AbstractFtpDoorV1
                 _pwdRecord.GID + " " +
                 pnfsPath;
             if( spawn(cmd, 1000) != 0 ) {
-                reply("553 Permission denied (actually permissions looked ok, but the delete failed anyway)");
+                reply("550 Permission denied (actually permissions looked ok, but the delete failed anyway)");
                 return;
             }
         } else {
@@ -1802,7 +1803,7 @@ public abstract class AbstractFtpDoorV1
                 //if (_permissionHandler.canDeleteFile(_pnfs.getPnfsIdByPath(pnfsPath), getSubject(), _origin) != AccessType.ACCESS_ALLOWED) {
                 if (_permissionHandler.canDeleteFile(pnfsPath, getSubject(), _origin) != AccessType.ACCESS_ALLOWED) {
                     if(!setNextPwdRecord()) {
-                        reply("553 Permission denied");
+                        reply("550 Permission denied");
                         return;
                     } else {
                         ac_dele(arg);
@@ -1813,13 +1814,20 @@ public abstract class AbstractFtpDoorV1
                 _pnfs.deletePnfsEntry(pnfsPath);
 
             }catch(ACLException e) {
-                reply("553 Permission denied");
+                reply("550 Permission denied");
                 error("FTP Door: DELE got AclException: " + e.getMessage());
+                return;
+            } catch (PermissionDeniedCacheException e) {
+                if(!setNextPwdRecord()) {
+                    reply("550 Permission denied");
+                } else {
+                    ac_dele(arg);
+                }
                 return;
             } catch (CacheException e) {
                 error("FTP Door: DELE got CacheException: " + e.getMessage());
                 if(!setNextPwdRecord()) {
-                    reply("553 Permission denied, reason: " + e);
+                    reply("550 Permission denied, reason: " + e);
                 } else {
                     ac_dele(arg);
                 }
@@ -1928,13 +1936,13 @@ public abstract class AbstractFtpDoorV1
         }
 
         if (_readOnly) {
-            println("500 Command disabled");
+            reply("500 Command disabled");
             return;
         }
 
         if (_pwdRecord.isReadOnly()) {
             if(!setNextPwdRecord()) {
-                println("500 Command disabled");
+                reply("500 Command disabled");
                 return;
             } else {
                 ac_rmd(arg);
@@ -1944,7 +1952,7 @@ public abstract class AbstractFtpDoorV1
 
         if (_pwdRecord.isAnonymous()) {
             if(!setNextPwdRecord()) {
-                println("554 Anonymous write access not permitted");
+                reply("554 Anonymous write access not permitted");
                 return;
             } else {
                 ac_rmd(arg);
@@ -1967,14 +1975,14 @@ public abstract class AbstractFtpDoorV1
             PnfsGetFileMetaDataMessage meta =
                 _pnfs.getFileMetaDataByPath(pnfsPath);
             if (!meta.getMetaData().isDirectory()) {
-                reply("553 Cannot delete a file");
+                reply("501 Cannot delete a file");
                 return;
             }
 
             PnfsId pnfsId = _pnfs.getPnfsIdByPath(pnfsPath);
             if (_permissionHandler.canDeleteDir(pnfsId, getSubject(), _origin) != AccessType.ACCESS_ALLOWED) {
                 if(!setNextPwdRecord()) {
-                    reply("553 Permission denied");
+                    reply("550 Permission denied");
                     return;
                 } else {
                     ac_rmd(arg);
@@ -1984,23 +1992,25 @@ public abstract class AbstractFtpDoorV1
 
             _pnfs.deletePnfsEntry(pnfsPath);
 
+            reply("200 OK");
         }catch(ACLException e) {
-            reply("553 Permission denied, reason (Acl) ");
+            reply("550 Permission denied, reason (Acl) ");
             error("FTP Door: ACL module failed: " + e);
-            return;
         } catch (FileNotFoundCacheException e) {
             reply("550 File not found");
-        } catch (CacheException ce) {
+        } catch (PermissionDeniedCacheException e) {
             if(!setNextPwdRecord()) {
-                reply("553 Permission denied, reason: " + ce);
-                return;
+                reply("550 Permission denied");
             } else {
                 ac_rmd(arg);
-                return;
+            }
+        } catch (CacheException ce) {
+            if(!setNextPwdRecord()) {
+                reply("550 Permission denied, reason: " + ce);
+            } else {
+                ac_rmd(arg);
             }
         }
-
-        reply("200 OK");
     }
 
 
@@ -2017,13 +2027,13 @@ public abstract class AbstractFtpDoorV1
         }
 
         if (_readOnly) {
-            println("500 Command disabled");
+            reply("500 Command disabled");
             return;
         }
 
         if (_pwdRecord.isReadOnly()) {
             if(!setNextPwdRecord()) {
-                println("500 Command disabled");
+                reply("500 Command disabled");
                 return;
             } else {
                 ac_mkd(arg);
@@ -2033,7 +2043,7 @@ public abstract class AbstractFtpDoorV1
 
         if (_pwdRecord.isAnonymous()) {
             if(!setNextPwdRecord()) {
-                println("554 Anonymous write access not permitted");
+                reply("554 Anonymous write access not permitted");
                 return;
             } else {
                 ac_mkd(arg);
@@ -2064,7 +2074,7 @@ public abstract class AbstractFtpDoorV1
                 _pwdRecord.GID + " " +
                 pnfsPath;
             if (spawn(cmd, 1000) != 0) {
-                reply("553 Permission denied");
+                reply("550 Permission denied");
                 return;
             }
 
@@ -2093,8 +2103,15 @@ public abstract class AbstractFtpDoorV1
                 _pnfs.createPnfsDirectory(pnfsPath, _pwdRecord.UID, _pwdRecord.GID, 0755);
 
             }catch(ACLException e) {
-                reply("553 Permission denied, reason (Acl) ");
+                reply("550 Permission denied, reason (Acl) ");
                 error("FTP Door: ACL module failed: " + e);
+                return;
+            } catch (PermissionDeniedCacheException e) {
+                if(!setNextPwdRecord()) {
+                    reply("550 Permission denied");
+                } else {
+                    ac_mkd(arg);
+                }
                 return;
             } catch(CacheException ce) {
                 if(!setNextPwdRecord()) {
@@ -2379,13 +2396,13 @@ public abstract class AbstractFtpDoorV1
         }
 
         if (_readOnly) {
-            println("500 Command disabled");
+            reply("500 Command disabled");
             return;
         }
 
         if (_pwdRecord.isReadOnly()) {
             if(!setNextPwdRecord()) {
-                println("500 Command disabled");
+                reply("500 Command disabled");
                 return;
             } else {
                 doChmod(permstring, path);
@@ -2421,9 +2438,16 @@ public abstract class AbstractFtpDoorV1
         PnfsGetFileMetaDataMessage fileMetaDataMsg;
         try {
             fileMetaDataMsg = _pnfs.getFileMetaDataByPath(pnfsPath);
+        } catch (PermissionDeniedCacheException e) {
+            if(!setNextPwdRecord()) {
+                reply("550 Permission denied");
+            } else {
+                doChmod(permstring, path);
+            }
+            return;
         } catch (CacheException ce) {
             if(!setNextPwdRecord()) {
-                reply("553 Permission denied, reason: " + ce);
+                reply("550 Permission denied, reason: " + ce);
             } else {
                 doChmod(permstring, path);
             }
@@ -2441,7 +2465,7 @@ public abstract class AbstractFtpDoorV1
         // Only file/directory owner can change permissions on that file/directory
         if (myUid != _pwdRecord.UID) {
             if(!setNextPwdRecord()) {
-                reply("553 Permission denied. Only owner can change permissions.");
+                reply("550 Permission denied. Only owner can change permissions.");
             } else {
                 doChmod(permstring, path);
             }
@@ -2815,11 +2839,10 @@ public abstract class AbstractFtpDoorV1
                         throw new FTPCommandException(550, "Permission denied");
                     }
                 }catch(ACLException e) {
-                    reply("553 Permission denied, reason (Acl) ");
                     error("FTP Door: ACL module failed: " + e);
-                    return;
+                    throw new FTPCommandException(550, "Permission denied, reason (Acl)");
                 } catch(NotFileCacheException ce ) {
-                    throw new FTPCommandException(550, "Not a file");
+                    throw new FTPCommandException(501, "Not a file");
                 }
             }
 
@@ -2914,6 +2937,8 @@ public abstract class AbstractFtpDoorV1
             //    _perfMarkerEngine = new PerfMarkerEngine( protocolInfo.getMax() ) ;
             //    _perfMarkerEngine.startEngine();
             //}
+        } catch (PermissionDeniedCacheException e) {
+            abortTransfer(550, "Permission denied");
         } catch (CacheException e) {
             switch (e.getRc()) {
             case CacheException.FILE_NOT_FOUND:
@@ -3241,13 +3266,15 @@ public abstract class AbstractFtpDoorV1
                                 _perfMarkerConf.period);
             }
         } catch (ACLException e) {
-            abortTransfer(553, "Permission denied, ACLException", e);
+            abortTransfer(550, "Permission denied, ACL failure", e);
         } catch (FTPCommandException e) {
             abortTransfer(e.getCode(), e.getReply());
         } catch (InterruptedException e) {
             abortTransfer(451, "Operation cancelled");
         } catch (IOException e) {
             abortTransfer(451, "Operation failed: " + e.getMessage());
+        } catch (PermissionDeniedCacheException e) {
+            abortTransfer(550, "Permission denied");
         } catch (CacheException e) {
             switch (e.getRc()) {
             case CacheException.FILE_NOT_FOUND:
@@ -3257,13 +3284,13 @@ public abstract class AbstractFtpDoorV1
                 abortTransfer(550, "Directory not found");
                 break;
             case CacheException.FILE_EXISTS:
-                abortTransfer(553, "File exists");
+                abortTransfer(550, "File exists");
                 break;
             case CacheException.TIMEOUT:
                 abortTransfer(451, "Internal timeout", e);
                 break;
             case CacheException.NOT_DIR:
-                abortTransfer(550, "Not a directory");
+                abortTransfer(501, "Not a directory");
                 break;
             default:
                 abortTransfer(451, "Operation failed: " + e.getMessage(), e);
@@ -3764,11 +3791,14 @@ public abstract class AbstractFtpDoorV1
                 filelength = info.getMetaData().getFileSize();
 
             }catch(ACLException e) {
-                reply("553 Permission denied, reason (Acl) ");
+                reply("550 Permission denied, reason (Acl) ");
                 error("FTP Door: ACL module failed: " + e);
                 return;
+            } catch (PermissionDeniedCacheException e) {
+                reply("550 Permission denied");
+                return;
             } catch (CacheException ce) {
-                reply("553 Permission denied, reason: " + ce);
+                reply("550 Permission denied, reason: " + ce);
                 return;
             }
         }
@@ -3833,6 +3863,8 @@ public abstract class AbstractFtpDoorV1
             reply("451 Internal permission check failure: " +
                   e.getMessage());
             error("Error in MDTM: " + e);
+        } catch (PermissionDeniedCacheException e) {
+            reply("550 Permission denied");
         } catch (CacheException e) {
             switch (e.getRc()) {
             case CacheException.FILE_NOT_FOUND:
@@ -3951,6 +3983,8 @@ public abstract class AbstractFtpDoorV1
             reply("550 File not found");
         } catch (NotDirCacheException e) {
             reply("550 Not a directory");
+        } catch (PermissionDeniedCacheException e) {
+            reply("550 Permission denied");
         } catch (CacheException e){
             reply("451 Local error in processing");
             warn("Error in LIST: " + e.getMessage());
@@ -4005,6 +4039,8 @@ public abstract class AbstractFtpDoorV1
             reply("550 Directory not found");
         } catch (NotDirCacheException e) {
             reply("550 Directory not found");
+        } catch (PermissionDeniedCacheException e) {
+            reply("550 Permission denied");
         } catch (CacheException e) {
             reply("451 Local error in processing");
             warn("Error in NLST: " + e.getMessage());
@@ -4049,6 +4085,8 @@ public abstract class AbstractFtpDoorV1
             reply(sw.toString());
         } catch (InterruptedException e) {
             reply("451 Operation cancelled");
+        } catch (PermissionDeniedCacheException e) {
+            reply("550 Permission denied");
         } catch (CacheException e) {
             reply("451 Local error in processing");
             warn("Error in MLST: " + e.getMessage());
@@ -4101,6 +4139,8 @@ public abstract class AbstractFtpDoorV1
             reply("501 Directory not found");
         } catch (NotDirCacheException e) {
             reply("501 Directory not found");
+        } catch (PermissionDeniedCacheException e) {
+            reply("550 Permission denied");
         } catch (CacheException e) {
             reply("451 Local error in processing");
             warn("Error in MLSD: " + e.getMessage());
