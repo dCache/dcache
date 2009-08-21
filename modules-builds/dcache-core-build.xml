@@ -478,7 +478,7 @@
 
         <!-- log4j -->
         <mkdir dir="${server.bin.dir}/classes/log4j" />
-        <property name="log4jVersion" value="1.2.8" />
+        <property name="log4jVersion" value="1.2.15" />
         <copy file="${libDir}/log4j/log4j-${log4jVersion}.jar" todir="${server.bin.dir}/classes/log4j" />
 
         <!-- log4j properties file -->
