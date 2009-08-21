@@ -4,24 +4,29 @@ package diskCacheV111.cells;
 
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.TreeMap;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
-
-import dmg.cells.services.login.LoginBrokerInfo;
-import dmg.cells.nucleus.*;
-import dmg.util.*;
+import java.util.TreeMap;
 
 import diskCacheV111.poolManager.PoolManagerCellInfo;
+import diskCacheV111.pools.PoolCellInfo;
+import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.util.HTMLBuilder;
-
-import diskCacheV111.pools.*;
+import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellNucleus;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.services.login.LoginBrokerInfo;
+import dmg.util.Args;
 
 public class WebCollectorV3 extends CellAdapter implements Runnable
 {
+    protected static final String OPTION_REPEATHEADER = "repeatHeader";
+
     private final CellNucleus _nucleus;
     private final Args       _args;
     private final Map<String,CellQueryInfo> _infoMap
@@ -91,6 +96,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
 
         }
 
+        @Override
         public String toString()
         {
             StringBuilder sb = new StringBuilder();
@@ -163,16 +169,18 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         try {
             _debug = _args.getOpt("debug") != null;
 
-            String optionString = null;
-            try {
-                optionString  = _args.getOpt("repeatHeader");
-                _repeatHeader = Math.max(0, Integer.parseInt(optionString));
-            } catch (NumberFormatException e) {
-                esay("Parsing error in repeatHader command : " + optionString);
+            if( _args.getOpt( OPTION_REPEATHEADER) != null) {
+                String optionString = null;
+                try {
+                    optionString  = _args.getOpt( OPTION_REPEATHEADER);
+                    _repeatHeader = Math.max(0, Integer.parseInt(optionString));
+                } catch (NumberFormatException e) {
+                    esay("Parsing error in " + OPTION_REPEATHEADER + " command : " + optionString);
+                }
+                say("Repeat header set to "+_repeatHeader);
             }
-            say("Repeat header set to "+_repeatHeader);
 
-            optionString = _args.getOpt("aggressive");
+            String optionString = _args.getOpt("aggressive");
             boolean aggressive =
                 (optionString != null) &&
                 (optionString.equals("off") || optionString.equals("false"));
@@ -302,10 +310,11 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         }
     }
 
+    @Override
     public void messageArrived(CellMessage message)
     {
         CellPath path = message.getSourcePath();
-        String destination = (String)path.getCellName();
+        String destination = path.getCellName();
         CellQueryInfo info = _infoMap.get(destination);
         if (info == null) {
             dsay("Unexpected reply arrived from : "+path);
@@ -436,6 +445,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
             _map = map == null ? new TreeMap<String,int[]>() : map;
         }
 
+        @Override
         public String toString()
         {
             return _map.toString();
@@ -946,6 +956,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         }
     }
 
+    @Override
     public void cleanUp()
     {
         say("Clean Up sequence started");
@@ -963,6 +974,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
 
     }
 
+    @Override
     public void getInfo(PrintWriter pw)
     {
         pw.println("        Version : $Id: WebCollectorV3.java,v 1.30 2007-10-29 14:19:08 behrmann Exp $");
