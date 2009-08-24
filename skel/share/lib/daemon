@@ -31,7 +31,7 @@ loop()
     done
 }
 
-fork()
+do_fork()
 {
     if [ "$user" ]; then
         # Make sure the user is able to write to the PID file
@@ -77,9 +77,9 @@ shift `expr $OPTIND - 1`
 [ $# -lt 1 ] && usage
 
 if [ "$output" ]; then
-    fork "$@" 1>> "$output" 2>&1
+    do_fork "$@" 1>> "$output" 2>&1
 else
-    fork "$@"
+    do_fork "$@"
 fi
 
 
