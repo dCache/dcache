@@ -13,6 +13,7 @@ import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.LockedCacheException;
 import diskCacheV111.util.NotInTrashCacheException;
+import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.Message;
 import static diskCacheV111.util.CacheException.*;
 
@@ -57,6 +58,9 @@ public class CacheExceptionFactory {
                 return new LockedCacheException(message);
             case NOT_IN_TRASH:
                 return new NotInTrashCacheException(message);
+            case TIMEOUT:
+                return new TimeoutCacheException(message);
+
             /*
              * thoes do not have own exceptions
              */
@@ -69,7 +73,6 @@ public class CacheExceptionFactory {
             case ATTRIBUTE_FORMAT_ERROR:
             case HSM_DELAY_ERROR:
             case FILE_NOT_STORED:
-            case TIMEOUT:
             default:
                 return new CacheException(errorCode, message);
         }

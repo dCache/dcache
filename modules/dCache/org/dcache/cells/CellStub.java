@@ -8,6 +8,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.TimeoutCacheException;
 import org.dcache.util.CacheExceptionFactory;
 
 /**
@@ -75,10 +76,10 @@ public class CellStub
      * the destination. 
      *
      * If set to false, failure to send the message will cause a
-     * TIMEOUT CacheException to be reported right away. If set to
+     * TimeoutCacheException to be reported right away. If set to
      * true, failure to send the message to the destination cell will
      * be retried until the timeout has been reached. Once the timeout
-     * is reached, a TIMEOUT CacheException is thrown. This is useful
+     * is reached, a TimeoutCacheException is thrown. This is useful
      * for destinations for which communication failure is known to be
      * temporary.
      *
@@ -157,12 +158,12 @@ public class CellStub
              * much the same, so we report this as a timeout. The
              * error message gives the details.
              */
-            throw new CacheException(CacheException.TIMEOUT, e.getMessage());
+            throw new TimeoutCacheException(e.getMessage());
         }
 
         if (replyMessage == null) {
             String errmsg = String.format("Request to %s timed out.", path);
-            throw new CacheException(CacheException.TIMEOUT, errmsg);
+            throw new TimeoutCacheException(errmsg);
         }
 
         Object replyObject = replyMessage.getMessageObject();
