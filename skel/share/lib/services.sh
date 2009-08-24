@@ -57,6 +57,12 @@ printDomains() # $1 = service
             printf "adminDoorDomain "
             ;;
 
+        dir)
+            if [ "$NODE_CONFIG_NAMESPACE" != "chimera" ]; then
+                printf "dirDomain "
+            fi
+            ;;
+
         *Domain)
             printf "%s" "$1 "
             ;;
