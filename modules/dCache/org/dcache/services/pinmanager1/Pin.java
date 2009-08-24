@@ -77,6 +77,7 @@ public class Pin {
         this.state = state;
     }
 
+    @Override
     public String toString() {
         return ""+ id+
             " PnfsId:"+pnfsId+

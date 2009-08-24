@@ -92,7 +92,7 @@ public class PinManager extends AbstractCell implements Runnable  {
         defaultValue = "86400000", // one day
         unit = "ms"
     )
-    protected long maxPinDuration;
+    private long maxPinDuration;
 
     @Option(
         name = "pnfsManager",
@@ -274,7 +274,7 @@ public class PinManager extends AbstractCell implements Runnable  {
     }
 
 
-    public String hh_pin_pnfsid = "<pnfsId> <seconds> " +
+    public final static String hh_pin_pnfsid = "<pnfsId> <seconds> " +
         "# pin a file by pnfsid for <seconds> seconds" ;
     public String ac_pin_pnfsid_$_2( Args args ) throws Exception {
         PnfsId pnfsId = new PnfsId( args.argv(0) ) ;
@@ -291,7 +291,56 @@ public class PinManager extends AbstractCell implements Runnable  {
         return "pin started: id="+id+", Job ="+job;
     }
 
-    public String hh_unpin = " [-force] [<pinRequestId>] <pnfsId> " +
+
+    public  final static String hh_bulk_pin = "<file> <seconds> # pins pnfsids from <file> for <seconds>";
+    public String fh_bulk_pin = 
+        "pin a list of pnfsids from a file for a specified number of seconds\n"+
+        "read a list of pnfsids to pin from a file\n"+
+        "each line in a file is a pnfsid\n";
+    public Object ac_bulk_pin_$_2( final Args args ) throws Exception {
+        final DelayedReply reply = new DelayedReply();
+        Thread t = new Thread("bulk pin") {
+                @Override
+                public void run() {
+                    try {
+                        String fileName = args.argv(0) ;
+                        long lifetime = Long.parseLong( args.argv(1) ) ;
+                        if(lifetime != -1) {
+                            lifetime *=1000;
+                        }
+                        File file = new File(fileName);
+                        if(!file.canRead()) {
+                            reply.send("file "+fileName+" can not be read");
+                            return;
+                        }
+                        BulkPinJob pinJob = new BulkPinJob(fileName, lifetime);
+                        int id = nextInteractiveJobId.incrementAndGet();
+                        interactiveJobs.put(id,pinJob);
+                        reply.send( "pin started, bulk job id="+id);
+                    } catch (NoRouteToCellException nrtce) {
+                        logger.error("bulk pin cell communication failure:  "+nrtce.getMessage());
+                    } catch (IOException ioe) {
+                        logger.warn("bulk pinning failed due to IO error: " +
+                                ioe.getMessage());
+                        try {
+                            reply.send("bulk pinning failed due to IO error: " +
+                                ioe.getMessage());
+                        }catch(Exception e) {
+                            logger.error(e);
+                        }
+                    } catch (InterruptedException ie) {
+                        logger.warn("bulk pin interrupted: "+ie.getMessage());
+                    }
+                }
+            };
+        t.start();
+
+        return reply;
+
+    }
+
+
+    public final static String hh_unpin = " [-force] [<pinRequestId>] <pnfsId> " +
         "# unpin a a file by pinRequestId and by pnfsId or just by pnfsId" ;
     public String ac_unpin_$_1_2( Args args ) throws Exception {
         boolean force = args.getOpt("force") != null;
@@ -320,7 +369,7 @@ public class PinManager extends AbstractCell implements Runnable  {
 
     }
 
-    public String hh_extend_lifetime = "<pinRequestId> <pnfsId> <seconds " +
+    public  final static String hh_extend_lifetime = "<pinRequestId> <pnfsId> <seconds " +
         "# extendlifetime of a pin  by pinRequestId and by pnfsId" ;
     public String ac_extend_lifetime_$_3( Args args ) throws Exception {
         long pinRequestId = Long.parseLong(args.argv(0));
@@ -338,7 +387,7 @@ public class PinManager extends AbstractCell implements Runnable  {
     }
 
 
-    public String hh_set_max_pin_duration =
+    public  final static String hh_set_max_pin_duration =
         " # sets new max pin duration value in milliseconds, -1 for infinite" ;
     public String ac_set_max_pin_duration_$_1( Args args ) throws Exception {
         StringBuilder sb = new StringBuilder();
@@ -357,14 +406,14 @@ public class PinManager extends AbstractCell implements Runnable  {
 
         return sb.toString();
     }
-    public String hh_get_max_pin_duration =
+    public final static String hh_get_max_pin_duration =
             " # gets current max pin duration value" ;
     public String ac_get_max_pin_duration_$_0( Args args ) throws Exception {
 
         return Long.toString(maxPinDuration)+" milliseconds";
     }
 
-    public String hh_ls = " [id|pnfsId] # lists all pins or a specified pin by request id or pnfsid" ;
+    public final static String hh_ls = " [id|pnfsId] # lists all pins or a specified pin by request id or pnfsid" ;
     public String ac_ls_$_0_1(Args args) throws Exception {
         db.initDBConnection();
         try {
@@ -397,6 +446,57 @@ public class PinManager extends AbstractCell implements Runnable  {
         }
     }
 
+   public final static String fh_jobs_clear =
+        "Removes completed interactive jobs. For reference, information about\n" +
+        "interactive jobs is kept until explicitly cleared.\n";
+    public synchronized String ac_jobs_clear(Args args)
+    {
+        Iterator<InteractiveJob> i = interactiveJobs.values().iterator();
+        while (i.hasNext()) {
+            InteractiveJob job = i.next();
+            switch (job.getState()) {
+            case COMPLETED:
+                i.remove();
+                break;
+            default:
+                break;
+            }
+        }
+        return "";
+    }
+
+    public final static String hh_jobs_ls = "[<id1> [ ... [<idN>]]] # list all or specified jobs";
+    public final static String fh_jobs_ls =
+        "Lists all or specified or pin manager jobs.";
+    public synchronized String ac_jobs_ls_$_0_99(Args args)
+    {
+        StringBuilder sb = new StringBuilder();
+        if(args.argc() == 0 ) {
+            for (Map.Entry<Integer,InteractiveJob> e:  interactiveJobs.entrySet()) {
+                sb.append(e.getKey()).append(':');
+                sb.append(e.getValue()).append('\n');
+            }
+        } else {
+            for(int i = 0 ; i<args.argc(); ++i) {
+                try {
+                    int id = Integer.parseInt(args.argv(i));
+                    sb.append(id).append(':');
+                    InteractiveJob job = interactiveJobs.get(id);
+                    if(job != null) {
+                        sb.append(job).append('\n');
+                    } else {
+                        sb.append("id not found").append('\n');
+                    }
+                } catch( NumberFormatException nfe) {
+                    sb.append(args.argv(i)).append(':');
+                    sb.append("Illegal id").append('\n');
+                }
+            }
+        }
+        return sb.toString();
+    }
+
+    @Override
     public void getInfo( java.io.PrintWriter printWriter ) {
         StringBuilder sb = new StringBuilder();
         sb.append("PinManager\n");
@@ -475,7 +575,7 @@ public class PinManager extends AbstractCell implements Runnable  {
     }
 
 
-
+    @Override
     public void messageArrived( final CellMessage cellMessage ) {
         info("messageArrived:"+cellMessage);
          diskCacheV111.util.ThreadManager.execute(new Runnable() {
@@ -527,7 +627,7 @@ public class PinManager extends AbstractCell implements Runnable  {
         }
     }
 
-
+    @Override
     public void exceptionArrived(ExceptionEvent ee) {
         error("Exception Arrived: "+ee);
         error(ee.getException().toString());
@@ -2005,4 +2105,68 @@ public class PinManager extends AbstractCell implements Runnable  {
         }
     }
 
+    private class BulkPinJob implements InteractiveJob  {
+
+        private PinManagerJobState state = PinManagerJobState.ACTIVE;
+        Map<Integer,PinManagerJobImpl> jobs =
+                new HashMap<Integer,PinManagerJobImpl>();
+        BulkPinJob(String fileName, long lifetime ) throws IOException {
+            FileReader fr = new FileReader(fileName);
+            BufferedReader reader = new BufferedReader(fr);
+            try {
+                String line;
+                while((line = reader.readLine()) != null) {
+                    line = line.trim();
+                    if(line.isEmpty() || line.startsWith("#")) continue;
+                    PnfsId pnfsId = new PnfsId(line);
+                    PinManagerJobImpl job =
+                        new PinManagerJobImpl(PinManagerJobType.PIN,
+                        null,null,pnfsId,lifetime,null,null,null,null);
+                    Integer id= nextInteractiveJobId.incrementAndGet();
+                    jobs.put(id,job);
+                    interactiveJobs.put(id, job);
+                }
+            } finally {
+                reader.close();
+            }
+            for(PinManagerJobImpl job:jobs.values()) {
+                try {
+                    pin(job);
+                } catch (PinException pinException) {
+                    job.returnFailedResponse(pinException);
+                }
+            }
+
+        }
+
+        public PinManagerJobState getState() {
+            if(state == PinManagerJobState.COMPLETED) {
+                return state;
+            }
+            //state is active
+            for(PinManagerJobImpl job:jobs.values()) {
+                //there is at least one active job,
+                // leave state as active
+                if(job.getState() ==  PinManagerJobState.ACTIVE) {
+                    return state;
+                }
+            }
+            //no active job found
+            return state =  PinManagerJobState.COMPLETED;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            //state is active
+            sb.append("BulkPinJob ").append(getState());
+            sb.append('\n');
+
+            for (Map.Entry<Integer,PinManagerJobImpl> e:  jobs.entrySet()) {
+                sb.append(' ').append(e.getKey()).append(':');
+                sb.append(e.getValue()).append('\n');
+            }            
+            return sb.toString();
+        }
+    }
 }
