@@ -1,11 +1,27 @@
 package diskCacheV111.util;
 
-import java.util.* ;
-import java.io.* ;
+import java.io.BufferedReader;
+import java.io.EOFException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.StringTokenizer;
+import java.util.Vector;
 
 import org.apache.log4j.Logger;
-import diskCacheV111.namespace.provider.Trash;
+
 import diskCacheV111.namespace.provider.EmptyTrash;
+import diskCacheV111.namespace.provider.Trash;
 
 public class PnfsFile extends File  {
 
@@ -37,6 +53,8 @@ public class PnfsFile extends File  {
        super(getCanonicalPath(new File(mp, file)));
        _pnfsId   = id ;
    }
+
+   @Override
    public boolean exists(){
       if( _pnfsId == null )return super.exists() ;
       try{
@@ -47,6 +65,7 @@ public class PnfsFile extends File  {
       if( _meta.isSymbolicLink() )return true ;
       return super.exists() ;
    }
+
     //
     // taken from linux stat man page
     //
@@ -115,6 +134,8 @@ public class PnfsFile extends File  {
          return f.exists() ;
       }else return false ;
    }
+
+   @Override
    public boolean delete(){
      if( _pnfsId == null )return super.delete() ;
      return false ;
@@ -122,7 +143,7 @@ public class PnfsFile extends File  {
 
     /*
      * This method checks if the file with a name as given pnfsid exists in the trash directory
-     * The result can be 'true/false' 
+     * The result can be 'true/false'
      */
     public static boolean isDeleted(PnfsId pnfsId) {
         return _trash.isFound(pnfsId.getId());
@@ -276,20 +297,24 @@ public class PnfsFile extends File  {
       }
       String [][] sv =  new String[v.size()][] ;
       return v.toArray( sv ) ;
-
    }
+
+   @Override
    public boolean isDirectory(){
       if( _pnfsId == null )return super.isDirectory() ;
       String type = getPnfsFileType() ;
       return ( type.charAt(2) == 'I' ) &&
              ( type.charAt(5) == 'd' )    ;
    }
+
+   @Override
    public boolean isFile(){
       if( _pnfsId == null )return super.isFile() ;
       String type = getPnfsFileType() ;
       return ( type.charAt(2) == 'I' ) &&
              ( type.charAt(6) == 'r' )    ;
    }
+
    public boolean isLink(){
        if( _pnfsId == null )return super.isFile() ;
        String type = getPnfsFileType() ;
@@ -718,23 +743,53 @@ public class PnfsFile extends File  {
          mtab = new File( "/etc/mtab" ) ;
          if( ! mtab.exists() )return new File[0]  ;
       }
-      try{
-         BufferedReader br = new BufferedReader(
-                               new FileReader( mtab ) ) ;
 
-         try{
-            String line = null ;
-            while( ( line = br.readLine() ) != null ){
-               StringTokenizer st = new StringTokenizer(line);
-               try{
-                  st.nextToken() ;
-                  String fs = st.nextToken() ;
-//                  System.out.println("Checking : "+fs ) ;
-                  //
-                  //  get the server name
-                  //
-                  File   mountpoint = new File(fs) ;
 
+      BufferedReader br;
+      try {
+          br = new BufferedReader( new FileReader( mtab ));
+      } catch (FileNotFoundException e) {
+          _logNameSpace.debug( mtab + ": " + e.getMessage());
+          return new File[0] ;
+      }
+
+      /*
+       *  /etc/mtab files have the following format:
+       *
+       *  <src> <mnt-point> <fs-type> <mnt-options> <dump-freq> <fsck-seq>
+       *
+       *  Tokens are space-separated.  <src> is either some hardware
+       *  device or some token that makes sense to the filesystem.
+       *  <mnt-point> is a directory within the VFS. <mnt-options> is a
+       *  comma-separated list of keyword,value pairs that are joined by an
+       *  '=' symbol.
+       */
+      try {
+          String line;
+
+          while( ( line = br.readLine() ) != null ){
+              StringTokenizer st = new StringTokenizer(line);
+
+              // Silently skip empty lines.
+              if( !st.hasMoreTokens())
+                  continue;
+
+              st.nextToken() ; // ignore <src> token
+
+              if( !st.hasMoreTokens()) {
+                  _logNameSpace.debug( "Skipping line with only one token: " + line);
+                  continue;
+              }
+
+              String fs = st.nextToken() ;
+              _logNameSpace.debug( "Checking fs mounted at: " + fs);
+
+              //
+              //  get the server name
+              //
+              File   mountpoint = new File(fs) ;
+
+              try {
                   String serverName = getServerName( mountpoint ) ;
                   //
                   // get the directory cursor ( to dist. io/fs )
@@ -746,16 +801,23 @@ public class PnfsFile extends File  {
                   //
                   if( ( dirPerm == null           ) ||
                       ( dirPerm.length() < 16     ) ||
-                      ( dirPerm.charAt(14) != '0' ) )continue ;
+                      ( dirPerm.charAt(14) != '0' ) ) {
+                      _logNameSpace.debug( fs + " failed dirPerm check.");
+                      continue ;
+                  }
 
                   String mountId = cursor.get( "mountID" ) ;
-                  if( mountId == null )continue ;
+                  if( mountId == null ) {
+                      _logNameSpace.debug( fs + " failed mountID check");
+                      continue ;
+                  }
                   PnfsId id = new PnfsId( mountId ) ;
                   //
                   // look for the smallest mountpoint == largest filesystem
                   //
                   Object [] r = hash.get( serverName ) ;
                   if( r == null ){
+                      _logNameSpace.debug( "Adding " + fs + " as initial candidate for " + mountId);
                      r = new Object[2] ;
                      r[0] = fs ;
                      r[1] = id ;
@@ -766,23 +828,29 @@ public class PnfsFile extends File  {
                        //
                        // found a smaller one
                        //
+                       _logNameSpace.debug( "Updating candidate for " + mountId + " using " + fs);
                        r = new Object[2] ;
                        r[0] = fs ;
                        r[1] = id ;
                        hash.put( serverName , r ) ;
+                     } else {
+                         _logNameSpace.debug( "Ignoring candidate " + fs + " as higher mount-point already discovered");
                      }
                   }
-               }catch( Exception eee ){
-//                  eee.printStackTrace() ;
-                  continue ;
+               } catch (IOException e) {
+                   _logNameSpace.debug( "  skipping entry " + fs + " as it triggered IOException: " + e.getMessage());
                }
             }
-         }finally{
-            try{ br.close() ; }catch(IOException ee){}
-         }
-      }catch(Exception ee ){
-         return new File[0] ;
+      } catch (IOException e) {
+          _logNameSpace.debug( "Skipping parsing of mount-points: " + e.getMessage());
+      }finally{
+          try {
+              br.close();
+          } catch(IOException ee) {
+              _logNameSpace.info( "IOException whilst closing mtab file");
+          }
       }
+
       File [] results = new File[hash.size()] ;
       Enumeration<Object []> e = hash.elements() ;
       for( int i = 0 ; e.hasMoreElements() ; i++ ){
@@ -832,7 +900,8 @@ public class PnfsFile extends File  {
        public String getVirtualPnfsPath(){ return _virtualPnfsPath ; }
        public String getVirtualLocalPath(){ return _virtualLocalPath ; }
        public String getVirtualGlobalPath(){ return _virtualGlobalPath ; }
-       public String toString(){
+       @Override
+    public String toString(){
           return _serverId+"@"+_serverName+":"+
                  _virtualLocalPath+" -> "+_virtualGlobalPath;}
 
@@ -845,13 +914,19 @@ public class PnfsFile extends File  {
       Map<PnfsId, String>    map        = getServerRoots(mountPoint) ;
       String serverMountPath = pathfinder( mountPoint , mountId.toString() ) ;
 
+      _logNameSpace.debug( "Building VirtualMountPoint for " + mountPoint);
+
+
       for(Map.Entry<PnfsId, String> entry: map.entrySet() ){
 
          PnfsId virtualMountId = entry.getKey() ;
          //
          // virtualMountpoint id is smaller than our real mountpoint
          //
-         if( mountId.compareTo(virtualMountId) > 0 )continue ;
+         if( mountId.compareTo(virtualMountId) > 0 ) {
+             _logNameSpace.debug( "  skipping entry as virtualMountId (" + virtualMountId + ") is smaller than our real mountpoint (" + mountId + ")");
+             continue ;
+         }
 
          String virtualPnfsPath = pathfinder( mountPoint , virtualMountId.toString()) ;
          String diff = virtualPnfsPath.substring(serverMountPath.length());
@@ -879,14 +954,16 @@ public class PnfsFile extends File  {
       List<VirtualMountPoint>    list        = new ArrayList<VirtualMountPoint>() ;
       for(  int i = 0 ; i < mountpoints.length ; i++ ){
          try{
-
             list.addAll( getVirtualMountPoints( mountpoints[i] )  ) ;
 
          }catch(IOException ioe ){
+            _logNameSpace.debug(  "IOException whilst building list of virtual mount-points: " + ioe.getMessage());
             throw ioe ;
+         } catch( RuntimeException rte) {
+            _logNameSpace.debug(  "Problem whilst building list of virtual mount-points" + rte.getClass().getSimpleName() + ":", rte);
          }catch(Exception gioe ){
-             // FIXME : what about run time exceptions , e.g. OutOfMemoryExceptions
-            continue ;
+            _logNameSpace.debug(  "Received " + gioe.getClass().getSimpleName()+ " : " + gioe.getMessage());
+            // FIXME : what about run time exceptions , e.g. OutOfMemoryExceptions
          }
       }
       return list ;
@@ -1116,7 +1193,7 @@ public class PnfsFile extends File  {
               System.exit(4);
             }
             int size = new Integer( args[3] ).intValue() ;
-            boolean y= x.setLength( (long)size ) ;
+            boolean y= x.setLength( size ) ;
             System.out.println( "Result : "+y ) ;
           }else if( command.equals( "setsize" ) ){
             if( args.length < 3 ){
@@ -1124,7 +1201,7 @@ public class PnfsFile extends File  {
                System.exit(45);
             }
             int size = new Integer( args[2] ).intValue() ;
-            boolean x = f.setLength( (long)size ) ;
+            boolean x = f.setLength( size ) ;
             System.out.println( "Result : "+x ) ;
          }else if( command.equals( "mountpoints" ) ){
             String [] mps = PnfsFile.getPnfsMountpoints() ;
