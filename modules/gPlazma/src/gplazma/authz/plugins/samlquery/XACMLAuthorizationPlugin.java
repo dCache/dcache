@@ -91,7 +91,7 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
             if( tlocalId!=null && tlocalId.age() < getCacheLifetime() &&
                     tlocalId.sameServiceName(resourceX509ID) &&
                     tlocalId.sameDesiredUserName(desiredUserName)) {
-                getLogger().info("Using cached mapping for User with DN: " + X509Subject + " and Role " + fqan + "with Desired user name: " + desiredUserName);
+                getLogger().info("Using cached mapping for User with DN: " + X509Subject + " and Role " + fqan + " with Desired user name: " + desiredUserName);
 
                 return getgPlazmaAuthorizationRecord(tlocalId.getLocalId(), X509Subject, fqan);
             }
@@ -113,7 +113,7 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
             throw new AuthorizationException(e.toString());
         }
 
-        getLogger().info("Requesting mapping for User with DN: " + X509Subject + " and Role " + fqan + "with Desired user name: " + desiredUserName);
+        getLogger().info("Requesting mapping for User with DN: " + X509Subject + " and Role " + fqan + " with Desired user name: " + desiredUserName);
 
         getLogger().debug("Mapping Service URL configuration: " + getMappingServiceURL());
         try {
