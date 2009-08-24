@@ -78,6 +78,7 @@ public class PnfsHandler
         _poolName = poolName;
         _cellStub.setDestinationPath(pnfsManagerPath);
         _cellStub.setTimeout(DEFAULT_PNFS_TIMEOUT);
+        _cellStub.setRetryOnNoRouteToCell(true);
     }
 
     @Override

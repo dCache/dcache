@@ -25,6 +25,7 @@ public class CellStub
     private CellEndpoint _endpoint;
     private CellPath _destination;
     private long _timeout = 30000;
+    private boolean _retryOnNoRouteToCell;
 
     public CellStub()
     {
@@ -69,6 +70,38 @@ public class CellStub
     }
 
     /**
+     * Set the value of the retryOnNoRouteCell property, which
+     * determines whether to retry on failure to route the message to
+     * the destination. 
+     *
+     * If set to false, failure to send the message will cause a
+     * TIMEOUT CacheException to be reported right away. If set to
+     * true, failure to send the message to the destination cell will
+     * be retried until the timeout has been reached. Once the timeout
+     * is reached, a TIMEOUT CacheException is thrown. This is useful
+     * for destinations for which communication failure is known to be
+     * temporary.
+     *
+     * Limitations: This property currently only has an effect on the
+     * sendAndWait method. Asynchronous message delivery always
+     * reports a no route error in case of communication failure.
+     */
+    public void setRetryOnNoRouteToCell(boolean retry)
+    {
+        _retryOnNoRouteToCell = retry;
+    }
+
+    /**
+     * Returns the value of the retryOnNoRouteCell property, which
+     * determines whether to retry on failure to route the message to
+     * the destination.
+     */
+    public boolean getRetryOnNoRouteToCell()
+    {
+        return _retryOnNoRouteToCell;
+    }
+
+    /**
      * Sends a message and waits for the reply. The reply is expected
      * to contain a message object of the same type as the message
      * object that was sent, and the return code of that message is
@@ -110,8 +143,14 @@ public class CellStub
 
         CellMessage replyMessage;
         try {
-            replyMessage =
-                _endpoint.sendAndWait(new CellMessage(path, msg), _timeout);
+            CellMessage envelope = new CellMessage(path, msg);
+            if (_retryOnNoRouteToCell) {
+                replyMessage =
+                    _endpoint.sendAndWaitToPermanent(envelope, _timeout);
+            } else {
+                replyMessage =
+                    _endpoint.sendAndWait(envelope, _timeout);
+            }
         } catch (NoRouteToCellException e) {
             /* From callers point of view a timeout due to a lost
              * message or a missing route to the destination is pretty
