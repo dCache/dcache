@@ -101,9 +101,6 @@ import org.dcache.srm.SrmReleaseSpaceCallbacks;
 import org.dcache.srm.SrmUseSpaceCallbacks;
 
 import org.dcache.srm.util.Configuration;
-//import org.dcache.srm.util.PnfsFileId;
-//import org.dcache.srm.security.DCacheAuthorization;
-//import org.dcache.srm.security.AuthorizationRecord;
 import org.dcache.srm.security.SslGsiSocketFactory;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
@@ -168,8 +165,6 @@ import org.dcache.srm.PinCallbacks;
 import org.dcache.srm.UnpinCallbacks;
 import org.dcache.srm.util.Permissions;
 import org.dcache.srm.CopyCallbacks;
-//import org.dcache.srm.PutCompanion;
-//import org.dcache.srm.AdvisoryDeleteCompanion;
 import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.SRM;
 import org.dcache.srm.BadSRMObjectException;
@@ -195,9 +190,7 @@ import org.ietf.jgss.GSSCredential;
 
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
-// End of imports to pull out once we pull out srmLs stuff
 
-// Beginning of JDOM imports.  We may not need them all.
 import java.io.File;
 
 import javax.naming.NamingException;
@@ -237,8 +230,6 @@ public class Storage
 
     private String srm_root = "";
     private Args           _args;
-    //    private ManagerImpl srm_manager;
-    //    private SRMServerV1 srm_manager_v1;
     private String _poolManagerName;
     private String _pnfsManagerName;
     private CellPath _poolMgrPath;
@@ -1168,37 +1159,6 @@ public class Storage
         }
     }
 
-
-/*    public String fh_lambdastation= " Syntax: labmdastation [<on|off>] ";
-    public String hh_lambdastation= " on|off";
-    public String ac_lambdastation_$_0_1(Args args) {
-	boolean ls;
-	try {
-	    if (args.argc() == 1) {
-		if (args.argv(0).equalsIgnoreCase("on")) {
-		    ls = true;
-		}
-		else {
-		    ls = false;
-		}
-		config.setLambdaStationEnabled(ls);
-	    }
-	    if (config.getLambdaStationEnabled()) {
-		return "on";
-	    }
-	    else {
-		return "off";
-	    }
-
-	}catch(Throwable t) {
-            t.printStackTrace();
-            return t.toString();
-	}
-    }*/
-
-
-
-
     public String fh_ls_completed= " Syntax: ls completed [-get] [-put]" +
         " [-copy] [-l] [max_count]"+
             " #will list completed (done, failed or canceled) requests, " +
@@ -1386,338 +1346,6 @@ public class Storage
                    srm.getAbstractStorageElementGauges().toString();
       }
 
-        /*
-        public String fh_rc_running_ls= " Syntax: rc running ls "+
-         "[-get] [-put] [-copy] [-l]"+
-        " #will list running requests";
-        public String hh_rc_running_ls= " [-get] [-put] [-copy] [-l]";
-        public String ac_rc_running_ls(Args args) {
-            boolean get=args.getOpt("get") != null;
-            boolean put=args.getOpt("put") != null;
-            boolean copy=args.getOpt("copy") != null;
-            boolean longformat = args.getOpt("l") != null;
-            if( (!get && !put && !copy ) ||
-            get && put && copy) {
-                return null;//RequestScheduler.listAllRunningRequests(longformat);
-            }
-            StringBuffer sb = new StringBuffer();
-            if(get) {
-                //Scheduler scheduler = srm.getGetRequestScheduler();
-                //sb.append(scheduler.listRunningRequests(longformat));
-                sb.append('\n');
-            }
-            if(put) {
-                //Scheduler scheduler = srm.getPutRequestScheduler();
-                //sb.append(scheduler.listRunningRequests(longformat));
-                sb.append('\n');
-            }
-            if(copy) {
-                //Scheduler scheduler = srm.getCopyRequestScheduler();
-                //sb.append(scheduler.listRunningRequests(longformat));
-                sb.append('\n');
-            }
-            return sb.toString();
-        }
-
-        public String fh_rc_queued_ls= " Syntax: rc queued ls "+
-         "[-get] [-put] [-copy] [-l]"+
-        "#will list queued requests";
-        public String hh_rc_queued_ls= " [-get] [-put] [-copy] [-l]";
-        public String ac_rc_queued_ls(Args args) {
-            boolean get=args.getOpt("get") != null;
-            boolean put=args.getOpt("put") != null;
-            boolean copy=args.getOpt("copy") != null;
-            boolean longformat = args.getOpt("l") != null;
-            if( (!get && !put && !copy ) ||
-            get && put && copy) {
-                return null;//Scheduler.listAllQueuedRequests(longformat);
-            }
-            StringBuffer sb = new StringBuffer();
-            if(get) {
-                //Scheduler scheduler = srm.getGetRequestScheduler();
-                //sb.append(scheduler.listQueuedRequests(longformat));
-                sb.append('\n');
-            }
-            if(put) {
-                //Scheduler scheduler = srm.getPutRequestScheduler();
-                //sb.append(scheduler.listQueuedRequests(longformat));
-                sb.append('\n');
-            }
-            if(copy) {
-                //Scheduler scheduler = srm.getCopyRequestScheduler();
-                //sb.append(scheduler.listQueuedRequests(longformat));
-                sb.append('\n');
-            }
-            return sb.toString();
-        }
-
-        public String fh_rc_pending_ls= " Syntax: rc pending ls "+
-         "[-get] [-put] [-copy] [-l]"+
-        "#will list pending requests";
-        public String hh_rc_pending_ls= " [-get] [-put] [-copy] [-l]";
-        public String ac_rc_pending_ls(Args args) {
-            boolean get=args.getOpt("get") != null;
-            boolean put=args.getOpt("put") != null;
-            boolean copy=args.getOpt("copy") != null;
-            boolean longformat = args.getOpt("l") != null;
-            if( (!get && !put && !copy ) ||
-            get && put && copy) {
-                return null;//RequestScheduler.listAllPendingRequests(longformat);
-            }
-            StringBuffer sb = new StringBuffer();
-            if(get) {
-                //Scheduler scheduler = srm.getGetRequestScheduler();
-                //sb.append(scheduler.listPendingRequests(longformat));
-                sb.append('\n');
-            }
-            if(put) {
-                //Scheduler scheduler = srm.getPutRequestScheduler();
-                //sb.append(scheduler.listPendingRequests(longformat));
-                sb.append('\n');
-            }
-            if(copy) {
-                //Scheduler scheduler = srm.getCopyRequestScheduler();
-                //sb.append(scheduler.listPendingRequests(longformat));
-                sb.append('\n');
-            }
-            return sb.toString();
-        }
-
-        public String fh_rc_ready_ls= " Syntax: rc ready ls "+
-         "[-get] [-put] [-copy] [-l]"+
-        " #will list ready requests";
-        public String hh_rc_ready_ls= " [-get] [-put] [-copy] [-l]";
-        public String ac_rc_ready_ls(Args args) {
-            boolean get=args.getOpt("get") != null;
-            boolean put=args.getOpt("put") != null;
-            boolean copy=args.getOpt("copy") != null;
-            boolean longformat = args.getOpt("l") != null;
-            if( (!get && !put && !copy ) ||
-            get && put && copy) {
-                return null;//RequestScheduler.listAllReadyRequests();
-            }
-            StringBuffer sb = new StringBuffer();
-            if(get) {
-                //Scheduler scheduler = srm.getGetRequestScheduler();
-                //sb.append(scheduler.listReadyRequests(longformat));
-                sb.append('\n');
-            }
-            if(put) {
-                //Scheduler scheduler = srm.getPutRequestScheduler();
-                //sb.append(scheduler.listReadyRequests(longformat));
-                sb.append('\n');
-            }
-            if(copy) {
-                //Scheduler scheduler = srm.getCopyRequestScheduler();
-                //sb.append(scheduler.listReadyRequests(longformat));
-                sb.append('\n');
-            }
-            return sb.toString();
-        }
-
-        public String fh_rc_failed_ls= " Syntax: rc failed ls "+
-         "[-get] [-put] [-copy] [-l]"+
-        "#will list failed requests";
-        public String hh_rc_failed_ls= " [-get] [-put] [-copy] [-l]";
-        public String ac_rc_failed_ls(Args args) {
-            boolean get=args.getOpt("get") != null;
-            boolean put=args.getOpt("put") != null;
-            boolean copy=args.getOpt("copy") != null;
-            boolean longformat = args.getOpt("l") != null;
-            if( (!get && !put && !copy ) ||
-            get && put && copy) {
-                return null;//RequestScheduler.listAllFailedRequests(longformat);
-            }
-            StringBuffer sb = new StringBuffer();
-            if(get) {
-                //Scheduler scheduler = srm.getGetRequestScheduler();
-                //sb.append(scheduler.listFailedRequests(longformat));
-                sb.append('\n');
-            }
-            if(put) {
-                //Scheduler scheduler = srm.getPutRequestScheduler();
-                //sb.append(scheduler.listFailedRequests(longformat));
-                sb.append('\n');
-            }
-            if(copy) {
-                //Scheduler scheduler = srm.getCopyRequestScheduler();
-                //sb.append(scheduler.listFailedRequests(longformat));
-                sb.append('\n');
-            }
-            return sb.toString();
-        }
-
-        public String fh_rc_done_ls= " Syntax: rc done ls "+
-         "[-get] [-put] [-copy] [-l]"+
-        " #will list done requests";
-        public String hh_rc_done_ls= " [-get] [-put] [-copy] [-l]";
-        public String ac_rc_done_ls(Args args) {
-            boolean get=args.getOpt("get") != null;
-            boolean put=args.getOpt("put") != null;
-            boolean copy=args.getOpt("copy") != null;
-            boolean longformat = args.getOpt("l") != null;
-            if( (!get && !put && !copy ) ||
-            get && put && copy) {
-                return null;//Scheduler.listAllDoneRequests(longformat);
-            }
-            StringBuffer sb = new StringBuffer();
-            if(get) {
-                //Scheduler scheduler = srm.getGetRequestScheduler();
-                //sb.append(scheduler.listDoneRequests(longformat));
-                sb.append('\n');
-            }
-            if(put) {
-                //Scheduler scheduler = srm.getPutRequestScheduler();
-                //sb.append(scheduler.listDoneRequests(longformat));
-                sb.append('\n');
-            }
-            if(copy) {
-                //Scheduler scheduler = srm.getCopyRequestScheduler();
-                //sb.append(scheduler.listDoneRequests(longformat));
-                sb.append('\n');
-            }
-            return sb.toString();
-        }
-
-        public String hh_set_max_running_get_requests = "<max-get-requests>";
-        public String ac_set_max_running_get_requests_$_1(Args args) {
-            int req_num = Integer.parseInt(args.argv(0)) ;
-            if(req_num <= 0) {
-                return "Error, maximum number of active get requests "+
-                  " should be greater then 0 ";
-            }
-        //RequestScheduler sheduler = srm.getGetRequestScheduler();
-        //sheduler.setmax_active_requests(req_num);
-        //config.setMaxActiveGet(req_num);
-            return "set max number of active get requests to "+req_num;
-        }
-
-        public String hh_set_max_running_put_requests = "<max-put-requests>";
-        public String ac_set_max_running_put_requests_$_1(Args args) {
-            int req_num = Integer.parseInt(args.argv(0)) ;
-            if(req_num <= 0) {
-                return "Error, maximum number of active put requests "+
-                   "should be greater then 0 ";
-            }
-            //Scheduler sheduler = srm.getPutRequestScheduler();
-            //sheduler.setmax_active_requests(req_num);
-           // config.setMaxActivePut(req_num);
-            return "set max number of active put requests to "+req_num;
-        }
-
-        public String hh_set_max_running_copy_requests = "<max-copy-requests>";
-        public String ac_set_max_running_copy_requests_$_1(Args args) {
-            int req_num = Integer.parseInt(args.argv(0)) ;
-            if(req_num <= 0) {
-                return "Error, maximum number of active copy requests should "+
-         " be greater then 0 ";
-            }
-            //Scheduler sheduler = srm.getCopyRequestScheduler();
-            //sheduler.setmax_active_requests(req_num);
-            //config.setMaxActiveCopy(req_num);
-            return "set max number of active copy requests to "+req_num;
-        }
-
-        public String hh_set_max_done_get_requests =
-        "<max-done-get-requests> #set the maximum number "+
-        "of completed request to be stored for reference purposes";
-        public String ac_set_max_done_get_requests_$_1(Args args) {
-            int req_num = Integer.parseInt(args.argv(0)) ;
-            if(req_num <= 0) {
-                return "Error, maximum number of done get requests should be"+
-         " greater then 0 ";
-            }
-        //RequestScheduler sheduler = srm.getGetRequestScheduler();
-        //sheduler.setMax_done_reqs(req_num);
-        //config.setMaxDoneGet(req_num);
-            return "set max number of done get requests to "+req_num;
-        }
-
-        public String hh_set_max_done_put_requests =
-        "<max-done-put-requests> #set the maximum number "+
-        "of completed request to be stored for reference purposes";
-        public String ac_set_max_done_put_requests_$_1(Args args) {
-            int req_num = Integer.parseInt(args.argv(0)) ;
-            if(req_num <= 0) {
-                return "Error, maximum number of done put requests should be"+
-         " greater then 0 ";
-            }
-            //Scheduler sheduler = srm.getPutRequestScheduler();
-            //sheduler.setMax_done_reqs(req_num);
-            //config.setMaxDonePut(req_num);
-            return "set max number of done put requests to "+req_num;
-        }
-
-        public String hh_set_max_done_copy_requests =
-        "<max-done-copy-requests> #set the maximum number "+
-        "of completed request to be stored for reference purposes";
-        public String ac_set_max_done_copy_requests_$_1(Args args) {
-            int req_num = Integer.parseInt(args.argv(0)) ;
-            if(req_num <= 0) {
-                return "Error, maximum number of done copy requests should be "+
-         "greater then 0 ";
-            }
-            //Scheduler sheduler = srm.getCopyRequestScheduler();
-            //sheduler.setMax_done_reqs(req_num);
-            //config.setMaxDoneCopy(req_num);
-            return "set max number of done copy requests to "+req_num;
-        }
-
-        public String hh_set_get_lifetime =
-        "<get-request-lifetime (sec)> #set the lifetime "+
-        "of get request";
-        public String ac_set_get_lifetime_$_1(Args args) {
-            long lifetime = Long.parseLong(args.argv(0)) ;
-            if(lifetime <= 0) {
-                return "Error, lifetime should be greater then 0 ";
-            }
-        //equestScheduler sheduler = srm.getGetRequestScheduler();
-        //sheduler.setLifetime(lifetime);
-        //config.setGetLifetime(lifetime);
-            return "set lifetime of future get requests to "+lifetime+" seconds";
-        }
-
-        public String hh_set_put_lifetime =
-        "<put-request-lifetime (sec)> #set the lifetime "+
-        "of put request";
-        public String ac_set_put_lifetime_$_1(Args args) {
-            long lifetime = Long.parseLong(args.argv(0)) ;
-            if(lifetime <= 0) {
-                return "Error, lifetime should be greater then 0 ";
-            }
-            //Scheduler sheduler = srm.getPutRequestScheduler();
-            //sheduler.setLifetime(lifetime);
-            config.setPutLifetime(lifetime);
-            return "set lifetime of future put requests to "+lifetime+" seconds";
-        }
-
-        public String hh_set_copy_lifetime =
-        "<copy-request-lifetime (sec)> #set the lifetime "+
-        "of copy request";
-        public String ac_set_copy_lifetime_$_1(Args args) {
-            long lifetime = Long.parseLong(args.argv(0)) ;
-            if(lifetime <= 0) {
-                return "Error, lifetime should be greater then 0 ";
-            }
-            //Scheduler sheduler = srm.getCopyRequestScheduler();
-            //sheduler.setLifetime(lifetime);
-            config.setCopyLifetime(lifetime);
-            return "set lifetime of future copy requests to "+lifetime+" seconds";
-        }
-
-        public String hh_set_gsiftp_streams = "<num-of-gsiftp-parallel-streams>";
-        public String ac_set_gsiftp_streams_$_1(Args args) {
-            int streams = Integer.parseInt(args.argv(0)) ;
-            if(streams <= 0) {
-                return
-                "Error, number of parallel gsiftp streams should be greater then 0 ";
-            }
-            config.setParallel_streams(streams);
-            return "set number of parallel gsiftp streams to "+streams;
-        }
-         *
-         */
-
 
     /**
      * Receives the Cell Messages
@@ -1732,23 +1360,6 @@ public class Storage
 
     public void messageArrived( CellMessage cellMessage ) {
         final Object o = cellMessage.getMessageObject();
-            /*if(o instanceof RemoteGsiftpDelegateUserCredentialsMessage ) {
-                say( " RemoteGsiftpDelegateUserCredentialsMessage From   : "+
-                cellMessage.getSourceAddress() ) ;
-                RemoteGsiftpDelegateUserCredentialsMessage delegate =
-                    (RemoteGsiftpDelegateUserCredentialsMessage)o;
-                 final String host = delegate.getHost();
-                 final int port = delegate.getPort();
-                 final  GSSCredential remoteCredential = getCredentialById(
-                  delegate.getId());
-                 new Thread( new Runnable() {public void run()
-                 {
-                     delegate(remoteCredential,host,port);
-                 }}).start();
-
-                return;
-            }
-            else*/
         if(o instanceof TransferManagerMessage){
             diskCacheV111.util.ThreadManager.execute(new Runnable() {
                 public void run() {
@@ -1759,38 +1370,6 @@ public class Storage
 
         super.messageArrived(cellMessage);
     }
-
-//     private boolean isCached(StorageInfo storage_info, PnfsId _pnfsId) {
-// 	    PnfsGetCacheLocationsMessage msg = new PnfsGetCacheLocationsMessage(_pnfsId);
-// 	    CellMessage checkMessage = new CellMessage( _pnfsPath, msg );
-// 	    say("isCached: Waiting for PnfsGetCacheLocationsMessage reply from PnfsManager");
-// 	    try {
-// 		    checkMessage = sendAndWait(checkMessage,
-// 					       __pnfsTimeout*1000 ) ;
-// 		    if(checkMessage == null) {
-// 			    esay("isCached(): timeout expired");
-// 			    return false;
-// 		    }
-// 		    msg = (PnfsGetCacheLocationsMessage) checkMessage.getMessageObject() ;
-// 	    }
-// 	    catch(Exception ee ) {
-// 		    esay("isCached(): error receiving message back from PnfsManager : "+ee);
-// 		    return false;
-// 	    }
-// 	    if (msg.getReturnCode()!=0) {
-// 		    esay("isCached(): Failed to get PnfsGetCacheLocationsMessage");
-// 		    return false;
-// 	    }
-// 	    StringBuffer sb = new StringBuffer();
-// 	    sb.append("isCached(): cache locations for file "+_pnfsId+ ":");
-// 	    for(Iterator<String> i=msg.getCacheLocations().iterator();i.hasNext();) {
-// 		    sb.append(i.next()).append(" ");
-// 	    }
-// 	    say(sb.toString());
-// 	    return (msg.getCacheLocations().isEmpty()==false);
-//     }
-
-
 
     private boolean isCached(StorageInfo storage_info, PnfsId _pnfsId) {
          PoolMgrQueryPoolsMsg query =
@@ -1896,7 +1475,6 @@ public class Storage
 
     public String selectGetProtocol(String[] protocols)
     throws SRMException {
-        //say("selectGetProtocol("+protocols+")");
         HashSet available_protocols = listAvailableProtocols();
         available_protocols.retainAll(Arrays.asList(protocols));
         available_protocols.removeAll(Arrays.asList(SRM_GET_NOT_SUPPORTED_PROTOCOLS));
@@ -1930,7 +1508,6 @@ public class Storage
 
     public String selectPutProtocol(String[] protocols)
     throws SRMException {
-        //say("selectPutProtocol("+protocols+")");
         HashSet available_protocols = listAvailableProtocols();
         available_protocols.retainAll(Arrays.asList(protocols));
         available_protocols.removeAll(Arrays.asList(SRM_PUT_NOT_SUPPORTED_PROTOCOLS));
@@ -2506,17 +2083,6 @@ public class Storage
             }
         }
 
-
-    //
-    // create a RequestStatus with state set to "Failed"
-    //
-
-
-
-
-
-
-
     public void getFileInfo(SRMUser user, String filePath,
         GetFileInfoCallbacks callbacks) {
         String actualPnfsPath= srm_root+"/"+filePath;
@@ -2529,10 +2095,6 @@ public class Storage
                 actualPnfsPath,
                 callbacks,
                 this);
-    }
-
-    public void unPin(String pnfsPath, String pinId) {
-
     }
 
     public void prepareToPut(SRMUser user,
@@ -2582,8 +2144,6 @@ public class Storage
         if (user != null && user instanceof AuthorizationRecord) {
                 duser = (AuthorizationRecord) user;
         }
-
-// 		_pnfs.pnfsSetFileMetaData(dfmd.getPnfsId(),dfmd.getFmd());
 
         PnfsSetFileMetaDataMessage msg =
             new PnfsSetFileMetaDataMessage(dfmd.getPnfsId());
@@ -3679,12 +3239,6 @@ public class Storage
             FileMetaData parentFmd,
             boolean overwrite) {
         // we can not overwrite file in dcache (at least for now)
-        //System.out.println("_canWrite user="+user+
-        //        " fileId="+fileId+
-        //        " fmd="+fmd+
-        //        " parentFileId="+parentFileId+
-        //        " parentFmd="+parentFmd+
-        //        " overwrite="+overwrite);
         if(! overwrite) {
             if(fileId != null ) {
                 // file exists and we can't overwrite
