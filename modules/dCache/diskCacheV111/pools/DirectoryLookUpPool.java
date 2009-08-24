@@ -7,22 +7,40 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.Set;
+import java.util.EnumSet;
 import java.util.concurrent.ExecutionException;
 
 import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.DelayedReply;
+import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 
 import diskCacheV111.movers.DCapConstants;
 import diskCacheV111.movers.DCapDataOutputStream;
+import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsFile;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 
 import org.dcache.cells.AbstractCell;
 import org.apache.log4j.Logger;
+
+import org.dcache.namespace.FileAttribute;
+import org.dcache.util.list.DirectoryListSource;
+import org.dcache.util.list.ListDirectoryHandler;
+import org.dcache.util.list.DirectoryEntry;
+import org.dcache.util.list.DirectoryListPrinter;
+import org.dcache.vehicles.FileAttributes;
+
+import static org.dcache.namespace.FileAttribute.*;
+import static org.dcache.namespace.FileType.*;
 
 /**
  * Provides directory listing services for DCAP.
@@ -32,10 +50,12 @@ public class DirectoryLookUpPool extends AbstractCell
     private final static Logger _log =
         Logger.getLogger(DirectoryLookUpPool.class);
 
+    private final static CellPath PNFS_MANAGER = new CellPath("PnfsManager");
+
     private final String _poolName;
     private final Args _args;
-
-    private String _rootDir;
+    private PnfsHandler _pnfs;
+    private DirectoryListSource _list;
 
     public DirectoryLookUpPool(String poolName, String args)
         throws InterruptedException, ExecutionException
@@ -53,19 +73,16 @@ public class DirectoryLookUpPool extends AbstractCell
     {
         _log.info("Lookup Pool " + _poolName + " starting");
 
-        int argc = _args.argc();
-        if (argc < 1) {
-            throw new IllegalArgumentException("no base dir specified");
-        }
+        _pnfs = new PnfsHandler(this, PNFS_MANAGER);
+        _list = new ListDirectoryHandler(_pnfs);
 
-        _rootDir = _args.argv(0);
+        addMessageListener(_list);
 
         useInterpreter(true);
     }
 
     public void getInfo(PrintWriter pw)
     {
-        pw.println("Root directory    : " + _rootDir);
         pw.println("Revision          : [$Id: DirectoryLookUpPool.java,v 1.7 2007-07-26 14:34:12 tigran Exp $]");
     }
 
@@ -73,47 +90,126 @@ public class DirectoryLookUpPool extends AbstractCell
     {
         messageArrived(cellMessage);
     }
+    
+    /**
+     * List a directory.
+     */
+    private String list(File path)
+        throws InterruptedException, CacheException
+    {
+        StringBuilder sb = new StringBuilder();
+        try {
+            _list.printDirectory(new DirectoryPrinter(sb), path, null, null);
+        } catch (FileNotFoundCacheException e) {
+            sb.append("Path " + path + " does not exist.");
+        } catch (NotDirCacheException e) {
+            _list.printFile(new FilePrinter(sb, path.getParentFile()), path);
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Reply format for directory listings.
+     */
+    class DirectoryPrinter implements DirectoryListPrinter
+    {
+        private final StringBuilder _out;
+
+        public DirectoryPrinter(StringBuilder out)
+        {
+            _out = out;
+        }
+
+        public Set<FileAttribute> getRequiredAttributes()
+        {
+            return EnumSet.of(TYPE, SIZE);
+        }
+
+        public void print(FileAttributes dirAttr, DirectoryEntry entry)
+        {
+            FileAttributes attr = entry.getFileAttributes();
+            _out.append(entry.getPnfsId());
+            switch (attr.getFileType()) {
+            case DIR:
+                _out.append(":d:");
+                break;
+            case REGULAR:
+            case LINK:
+            case SPECIAL:
+                _out.append(":f:");
+                break;
+            }
+            _out.append(attr.getSize()).append(':').append(entry.getName());
+            _out.append('\n');
+        }
+    }
+
+    /**
+     * Reply format for single file listings.
+     */
+    class FilePrinter implements DirectoryListPrinter
+    {
+        private final StringBuilder _out;
+        private final File _dir;
+
+        public FilePrinter(StringBuilder out, File dir)
+        {
+            _out = out;
+            _dir = dir;
+        }
+
+        public Set<FileAttribute> getRequiredAttributes()
+        {
+            return EnumSet.of(TYPE, SIZE);
+        }
+
+        public void print(FileAttributes dirAttr, DirectoryEntry entry)
+        {
+            FileAttributes attr = entry.getFileAttributes();
+            if (attr.getFileType() == REGULAR) {
+                _out.append(new File(_dir, entry.getName()));
+                _out.append(" : ").append(attr.getSize());
+            }
+        }
+    }
+
+    /**
+     * List task that can serve as a DelayedReply.
+     */
+    class ListThread extends DelayedReply implements Runnable
+    {
+        private final File _path;
+
+        public ListThread(File path)
+        {
+            _path = path;
+        }
+
+        public void run()
+        {
+            try {
+                try {
+                    send(list(_path));
+                } catch (CacheException e) {
+                    send(e);
+                }
+            } catch (InterruptedException e) {
+                // end of thread
+            } catch (NoRouteToCellException e) {
+                _log.warn("Failed to send list reply: " + e.getMessage());
+            }
+        }
+    }
 
     // commands
     public final static String hh_ls_$_1 = "ls <path>";
-    public String ac_ls_$_1(Args args)
+    public DelayedReply ac_ls_$_1(Args args)
+        throws CacheException, InterruptedException
     {
-        String path = _rootDir + args.argv(0);
-        StringBuilder sb = new StringBuilder();
-        File f = new File(path);
-
-        if (!f.exists()) {
-            sb.append("Path " + path + " do not exist.");
-        } else {
-
-            if (f.isDirectory()) {
-                String[] list = f.list();
-                if (list != null) {
-                    for (int i = 0; i < list.length; i++) {
-                        File ff = new File(path, list[i]);
-                        try {
-                            PnfsFile pnfsFile = new PnfsFile(f, list[i]);
-                            sb.append(pnfsFile.getPnfsId().toString());
-                        } catch (Exception e) {
-                            continue;
-                        }
-                        if (ff.isDirectory()) {
-                            sb.append(":d:");
-                        } else {
-                            sb.append(":f:");
-                        }
-                        sb.append(list[i].length()).append(':').append(list[i])
-                            .append('\n');
-                    }
-                }
-            } else {
-                if (f.isFile()) {
-                    sb.append(path).append(" : ").append(f.length());
-                }
-            }
-        }
-
-        return sb.toString();
+        File path = new File(args.argv(0));
+        ListThread thread = new ListThread(path);
+        new Thread(thread, "list[" + path + "]").start();
+        return thread;
     }
 
     // //////////////////////////////////////////////////////////////
@@ -124,8 +220,10 @@ public class DirectoryLookUpPool extends AbstractCell
     public PoolIoFileMessage messageArrived(PoolIoFileMessage message)
         throws IOException
     {
-        DirectoryService service = new DirectoryService(message);
-        new Thread(service, "dir").start();
+        DCapProtocolInfo dcap = (DCapProtocolInfo) message.getProtocolInfo();
+        PnfsId pnfsId = message.getPnfsId();
+        DirectoryService service = new DirectoryService(dcap, pnfsId);
+        new Thread(service, "list[" + pnfsId + "]").start();
         message.setSucceeded();
         return message;
     }
@@ -144,20 +242,14 @@ public class DirectoryLookUpPool extends AbstractCell
         private Socket dataSocket = null;
         private DCapDataOutputStream cntOut = null;
         private DataInputStream cntIn = null;
-        private String _path = null;
+        private PnfsId pnfsId;
 
-        DirectoryService(PoolIoFileMessage poolMessage) throws IOException
+        DirectoryService(DCapProtocolInfo dcap, PnfsId pnfsId) 
+            throws IOException
         {
-            dcap = (DCapProtocolInfo) poolMessage.getProtocolInfo();
-
-            PnfsId pnfsId = poolMessage.getPnfsId();
-            _path = PnfsFile.pathfinder(new File(_rootDir), pnfsId.toString());
-            String rootPrefix = PnfsFile.pathfinder(new File(_rootDir),
-                                                    PnfsFile.getMountId(new File(_rootDir)).toString());
-            _path = _rootDir + _path.substring(rootPrefix.length());
-
-            sessionId = dcap.getSessionId();
-
+            this.dcap = dcap;
+            this.pnfsId = pnfsId;
+            this.sessionId = dcap.getSessionId();
         }
 
         public void run()
@@ -166,10 +258,11 @@ public class DirectoryLookUpPool extends AbstractCell
             int commandSize;
             int commandCode;
             int minSize;
-            String dirList = createDirEnt(_path);
             int index = 0;
 
             try {
+                String path = _pnfs.getPathByPnfsId(pnfsId);
+                String dirList = list(new File(path));
 
                 connectToClinet();
 
@@ -225,6 +318,8 @@ public class DirectoryLookUpPool extends AbstractCell
                 _log.error(e);
             } catch (IOException e) {
                 _log.warn(e);
+            } catch (InterruptedException e) {
+                // end of thread
             } finally {
                 if (ostream != null) {
                     try {
@@ -317,45 +412,6 @@ public class DirectoryLookUpPool extends AbstractCell
             ostream.writeDATA_TRAILER();
 
             return (int) rc;
-        }
-
-        private String createDirEnt(String path)
-        {
-            File f = new File(path);
-            StringBuilder sb = new StringBuilder();
-
-            if (!f.exists()) {
-                sb.append("Path " + path + " do not exist.");
-            } else {
-                if (f.isDirectory()) {
-                    String[] list = f.list();
-                    if (list != null) {
-                        for (int i = 0; i < list.length; i++) {
-                            File ff = new File(path, list[i]);
-                            try {
-                                PnfsFile pnfsFile = new PnfsFile(f, list[i]);
-                                sb.append(pnfsFile.getPnfsId().toString());
-                            } catch (Exception e) {
-                                continue;
-                            }
-                            if (ff.isDirectory()) {
-                                sb.append(":d:");
-                            } else {
-                                sb.append(":f:");
-                            }
-                            sb.append(list[i].length()).append(':').append(
-                                                                           list[i]).append('\n');
-                        }
-                    }
-                } else {
-                    if (f.isFile()) {
-                        sb.append(path).append(" : ").append(f.length());
-                    }
-                }
-            }
-
-            _log.error(sb.toString());
-            return sb.toString();
         }
     } // end of private class
 } // end of MultiProtocolPool
