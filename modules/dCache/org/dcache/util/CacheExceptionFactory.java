@@ -12,6 +12,7 @@ import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.LockedCacheException;
+import diskCacheV111.util.NotInTrashCacheException;
 import diskCacheV111.vehicles.Message;
 import static diskCacheV111.util.CacheException.*;
 
@@ -54,13 +55,14 @@ public class CacheExceptionFactory {
                 return new PermissionDeniedCacheException(message);
             case LOCKED:
                 return new LockedCacheException(message);
+            case NOT_IN_TRASH:
+                return new NotInTrashCacheException(message);
             /*
              * thoes do not have own exceptions
              */
             case PANIC:
             case FILE_PRECIOUS:
             case INVALID_ARGS:
-            case NOT_IN_TRASH:
             case FILESIZE_UNKNOWN:
             case FILESIZE_MISMATCH:
             case UNEXPECTED_SYSTEM_EXCEPTION:
