@@ -312,24 +312,35 @@ public class BasicNameSpaceProvider
             throw new IllegalArgumentException( "g2l match failed : "+ie.getMessage());
         }
 
+        File parent = pf.getParentFile();
+
         boolean rc;
-
-        try{
-
-            if( isDirectory ) {
+        try {
+            if (isDirectory) {
                 rc = pf.mkdir();
-            }else{
+            } else {
                 rc = pf.createNewFile();
             }
-
-        }catch(Exception e){
-        	_logNameSpace.error("failed to create a new entry: " + globalPath, e);
-            throw new IllegalArgumentException( "failed : " + e.getMessage());
+        } catch (IOException e) {
+            if (parent.isDirectory()) {
+                _logNameSpace.error("Failed to create " + globalPath + ": " 
+                                    + e.getMessage());
+                throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                         "IO Error creating " + name 
+                                         + ": " + e.getMessage());
+            } else {
+                rc = false;
+            }
         }
 
-        if( ! rc ) {
-            throw new
-            FileExistsCacheException("File exists") ;
+        if (!rc) {
+            if (!parent.exists()) {
+                throw new FileNotFoundCacheException("No such file or directory: " + name);
+            } else if (!parent.isDirectory()) {
+                throw new NotDirCacheException("Not a directory: " + name);
+            } else {
+                throw new FileExistsCacheException("File exists: " + name);  
+            }
         }
 
         if( ! pf.isPnfs() ){
@@ -342,10 +353,12 @@ public class BasicNameSpaceProvider
         pnfsId = pf.getPnfsId();
         try {
             this.setFileMetaData(subject, pnfsId, metaData);
-        }catch(Exception e) {
-        	_logNameSpace.error("failed to set permissions for: " + globalPath, e);
-        	pf.delete();
-        	throw new IllegalArgumentException( "failed to set permissions for: " + globalPath + " : " + e.getMessage());
+        } catch (RuntimeException e) {
+            pf.delete();
+            throw e;
+        } catch (CacheException e) {
+            pf.delete();
+            throw e;
         }
 
         if(_logNameSpace.isDebugEnabled() ) {

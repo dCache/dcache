@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 import org.dcache.chimera.FileExistsChimeraFsException;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.ChimeraFsException;
+import org.dcache.chimera.NotDirChimeraException;
 import org.dcache.chimera.FileNotFoundHimeraFsException;
 import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.StorageGenericLocation;
@@ -207,21 +208,24 @@ public class ChimeraNameSpaceProvider
         FsInode inode = null;
 
         try {
-        Stat metadataStat = fileMetadata2Stat(metaData, isDir );
+            Stat metadataStat = fileMetadata2Stat(metaData, isDir );
 
-        File newEntryFile = new File(path);
+            File newEntryFile = new File(path);
 
-        FsInode parent = _fs.path2inode(newEntryFile.getParent());
+            FsInode parent = _fs.path2inode(newEntryFile.getParent());
 
-        if( isDir ) {
-            inode = _fs.mkdir(parent, newEntryFile.getName(), metadataStat.getUid(), metadataStat.getGid(), metadataStat.getMode() );
-        }else{
-            inode = _fs.createFile(parent, newEntryFile.getName(), metadataStat.getUid(), metadataStat.getGid(), metadataStat.getMode() );
-        }
-
-        }catch( FileExistsChimeraFsException fee) {
-            throw new FileExistsCacheException(path);
-        }catch(ChimeraFsException e) {
+            if( isDir ) {
+                inode = _fs.mkdir(parent, newEntryFile.getName(), metadataStat.getUid(), metadataStat.getGid(), metadataStat.getMode() );
+            }else{
+                inode = _fs.createFile(parent, newEntryFile.getName(), metadataStat.getUid(), metadataStat.getGid(), metadataStat.getMode() );
+            }
+        } catch (NotDirChimeraException e) {
+            throw new NotDirCacheException("Not a directory: " + path);
+        } catch (FileNotFoundHimeraFsException e) {
+            throw new FileNotFoundCacheException("No such file or directory: " + path);
+        } catch (FileExistsChimeraFsException e) {
+            throw new FileExistsCacheException("File exists: " + path);
+        } catch (ChimeraFsException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                      e.getMessage());
         }
