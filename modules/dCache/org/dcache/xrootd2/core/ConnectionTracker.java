@@ -1,7 +1,6 @@
 package org.dcache.xrootd2.core;
 
 import java.io.PrintWriter;
-import java.util.UUID;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -33,7 +32,7 @@ public class ConnectionTracker
     private final static Logger _log =
         Logger.getLogger(ConnectionTracker.class);
 
-    private Map<UUID, Channel> _channels = new ConcurrentHashMap();
+    private Map<Integer, Channel> _channels = new ConcurrentHashMap();
     private AtomicInteger _counter = new AtomicInteger();
 
     public ConnectionTracker()
@@ -72,7 +71,7 @@ public class ConnectionTracker
     public String ac_connections(Args args)
     {
         StringBuffer s = new StringBuffer();
-        for (Map.Entry<UUID,Channel> e: _channels.entrySet()) {
+        for (Map.Entry<Integer,Channel> e: _channels.entrySet()) {
             Channel c = e.getValue();
             s.append(e.getKey() + " " +
                      c.getRemoteAddress() + "\n");
@@ -82,8 +81,8 @@ public class ConnectionTracker
 
     public String ac_kill_$_1(Args args)
     {
-        UUID uuid = UUID.fromString(args.argv(1));
-        Channel channel = _channels.get(uuid);
+        int id = Integer.parseInt(args.argv(1));
+        Channel channel = _channels.get(id);
         if (channel == null) {
             return "No such connection";
         }
