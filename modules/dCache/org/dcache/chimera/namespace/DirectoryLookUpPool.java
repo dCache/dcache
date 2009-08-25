@@ -35,6 +35,7 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PoolIoFileMessage;
+import org.dcache.chimera.DirectoryStreamB;
 
 public class DirectoryLookUpPool extends CellAdapter {
 
@@ -181,14 +182,14 @@ public class DirectoryLookUpPool extends CellAdapter {
         FsInode inode = _fs.path2inode(args.argv(0));
 
             if( inode.isDirectory() ) {
-                HimeraDirectoryEntry[] list = _fs.listDirFull(inode) ;
-
-                if( list != null ) {
-                    for( int i = 0; i < list.length; i++) {
-
-                        sb.append(list[i].getStat()).append("  ").append( list[i].getInode().toString() ).
-                        append("  ").append(list[i].getName()).append('\n');
+                DirectoryStreamB<HimeraDirectoryEntry> dirStream = inode.newDirectoryStream();
+                try{
+                    for( HimeraDirectoryEntry entry: dirStream) {
+                        sb.append(entry.getStat()).append("  ").append( entry.getInode().toString() ).
+                        append("  ").append(entry.getName()).append('\n');
                     }
+                }finally{
+                    dirStream.close();
                 }
             }else{
                sb.append(inode.statCache()).append("  ").append( inode.toString() ).
@@ -528,26 +529,28 @@ public class DirectoryLookUpPool extends CellAdapter {
 				sb.append("Path " + dirInode.toString() + " do not exist.");
 			} else {
 
-				if (dirInode.isDirectory()) {
-					HimeraDirectoryEntry[] list = _fs.listDirFull(dirInode) ;
-					if (list != null) {
-						for (int i = 0; i < list.length; i++) {
-							FsInode inode = dirInode.inodeOf(list[i].getName());
-							try {
-								sb.append(inode.toString());
-							} catch (Exception e) {
-								continue;
-							}
-							if (inode.isDirectory()) {
-								sb.append(":d:");
-							} else {
-								sb.append(":f:");
-							}
-							sb.append(list[i].getName().length()).append(':').append(
-									list[i].getName()).append('\n');
-						}
-					}
-				}
+                            if (dirInode.isDirectory()) {
+                                DirectoryStreamB<HimeraDirectoryEntry> dirStream = dirInode.newDirectoryStream();
+                                try {
+                                    for (HimeraDirectoryEntry entry : dirStream) {
+                                        FsInode inode = dirInode.inodeOf(entry.getName());
+                                        sb.append(inode.toString());
+                                        if (inode.isDirectory()) {
+                                            sb.append(":d:");
+                                        } else {
+                                            sb.append(":f:");
+                                        }
+                                        sb.append(entry.getName().length()).append(':').
+                                                append(entry.getName()).append('\n');
+                                    }
+                                } finally {
+                                    try {
+                                        dirStream.close();
+                                    } catch (IOException e) {
+                                        throw new ChimeraFsException(e.getMessage());
+                                    }
+                                }
+                            }
 			}
 
 			esay(sb.toString());

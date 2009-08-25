@@ -4,7 +4,6 @@
 package org.dcache.chimera.namespace;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.lang.reflect.Constructor;
 import java.util.Iterator;
 import java.util.List;
@@ -45,7 +44,6 @@ import diskCacheV111.util.FileNotFoundCacheException;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.util.Args;
 import java.io.IOException;
-import java.util.Arrays;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.namespace.ListHandler;
@@ -56,6 +54,7 @@ import org.dcache.util.Interval;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.acl.ACLException;
 import org.dcache.acl.handler.singleton.AclHandler;
+import org.dcache.chimera.DirectoryStreamB;
 
 public class ChimeraNameSpaceProvider
     implements NameSpaceProvider
@@ -767,24 +766,30 @@ public class ChimeraNameSpaceProvider
             }
 
             long counter = 0;
-            for (HimeraDirectoryEntry entry: _fs.listDirFull(dir)) {
-                try {
-                    String name = entry.getName();
-                    if (!name.equals(".") && !name.equals("..") &&
-                        (pattern == null || pattern.matcher(name).matches()) &&
-                        (range == null || range.contains(counter++))) {
-                        PnfsId pnfsId = new PnfsId(entry.getInode().toString());
-                        FileAttributes fa =
-                            attrs.isEmpty()
-                            ? null
-                            : getFileAttributes(subject, entry.getInode(), attrs);
-                        handler.addEntry(name, pnfsId, fa);
+            DirectoryStreamB<HimeraDirectoryEntry> dirStream = dir.newDirectoryStream();
+            try{
+                for (HimeraDirectoryEntry entry: dirStream) {
+                    try {
+                        String name = entry.getName();
+                        if (!name.equals(".") && !name.equals("..") &&
+                            (pattern == null || pattern.matcher(name).matches()) &&
+                            (range == null || range.contains(counter++))) {
+                            PnfsId pnfsId = new PnfsId(entry.getInode().toString());
+                            // FIXME: actually, HimeraDirectoryEntry already contains most of attributes
+                            FileAttributes fa =
+                                attrs.isEmpty()
+                                ? null
+                                : getFileAttributes(subject, entry.getInode(), attrs);
+                            handler.addEntry(name, pnfsId, fa);
+                        }
+                    } catch (FileNotFoundHimeraFsException e) {
+                        /* Not an error; files may be deleted during the
+                         * list operation.
+                         */
                     }
-                } catch (FileNotFoundHimeraFsException e) {
-                    /* Not an error; files may be deleted during the
-                     * list operation.
-                     */
                 }
+            }finally{
+                dirStream.close();
             }
         } catch (FileNotFoundHimeraFsException e) {
             throw new FileNotFoundCacheException(e.getMessage());
