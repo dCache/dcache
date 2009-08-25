@@ -269,7 +269,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
         Statement sqlStatement = null;
         try {
             _con = pool.getConnection();
-            State[] states = State.getAllStates();
+            State[] states = State.values();
             String countStates = "SELECT count(*) from "+srmStateTableName;
             sqlStatement = _con.createStatement();
             ResultSet rs = sqlStatement.executeQuery( countStates);

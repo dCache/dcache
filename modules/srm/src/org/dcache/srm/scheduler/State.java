@@ -106,52 +106,42 @@ package org.dcache.srm.scheduler;
  *
  * @author  timur
  */
-public final class State implements java.io.Serializable {
+public enum State {
+    PENDING        ("Pending",        0),
+    PRIORITYTQUEUED("PriorityTQueued",1),
+    TQUEUED        ("TQueued"        ,2),
+    RUNNING        ("Running"        ,3),
+    RETRYWAIT      ("RetryWait"      ,4),
+    ASYNCWAIT      ("AsyncWait"      ,5),
+    RQUEUED        ("RQueued"        ,6),
+    READY          ("Ready"          ,7),
+    TRANSFERRING   ("Transferring"   ,8),
+    DONE           ("Done"           ,9, true),
+    CANCELED       ("Canceled"       ,10, true),
+    FAILED         ("Failed"         ,11, true),
+    RESTORED       ("Restored"       ,12),
+    RUNNINGWITHOUTTHREAD("RunningWithoutThread"       ,13);
     
     private final String name;
     private final int stateId;
+    private final boolean isFinal;
     
-    public static final State PENDING         = new State("Pending",        0);
-    public static final State PRIORITYTQUEUED = new State("PriorityTQueued",1);
-    public static final State TQUEUED         = new State("TQueued"        ,2);
-    public static final State RUNNING         = new State("Running"        ,3);
-    public static final State RETRYWAIT       = new State("RetryWait"      ,4);
-    public static final State ASYNCWAIT       = new State("AsyncWait"      ,5);
-    public static final State RQUEUED         = new State("RQueued"        ,6);
-    public static final State READY           = new State("Ready"          ,7);
-    public static final State TRANSFERRING    = new State("Transferring"   ,8);
-    public static final State DONE            = new State("Done"           ,9);
-    public static final State CANCELED        = new State("Canceled"       ,10);
-    public static final State FAILED          = new State("Failed"         ,11);
-    public static final State RESTORED        = new State("Restored"       ,12);
-    public static final State RUNNINGWITHOUTTHREAD  = new State("RunningWithoutThread"       ,13);
     
     
     private static final long serialVersionUID = 4561665427863772427L;
     
-    /** Creates a new instance of State */
+    /** Creates a new instance of non final State  */
     private State(String name,int stateId) {
+        this(name, stateId, false);
+    }
+
+    /** Creates a new instance of State */
+    private State(String name,int stateId, boolean isFinal) {
         this.name = name;
         this.stateId = stateId;
+        this.isFinal = isFinal;
     }
     
-    public static State[] getAllStates() {
-        return new State[] {
-         PENDING,
-         PRIORITYTQUEUED,
-         TQUEUED,
-         RUNNING,
-         RETRYWAIT,
-         ASYNCWAIT,
-         RQUEUED,
-         READY,
-         TRANSFERRING,
-         DONE,
-         CANCELED,
-         FAILED,
-         RESTORED,
-         RUNNINGWITHOUTTHREAD };
-    }
     public String toString() {
         return name;
     }
@@ -166,79 +156,44 @@ public final class State implements java.io.Serializable {
         if(state == null || state.equalsIgnoreCase("null")) {
             throw new NullPointerException(" null state ");
         }
-        
-        if(PENDING.name.equals(state)) return PENDING;
-        
-        if(PRIORITYTQUEUED.name.equals(state)) return PRIORITYTQUEUED;
-        
-        if(TQUEUED.name.equals(state)) return TQUEUED;
-        
-        if(RUNNING.name.equals(state)) return RUNNING;
-        
-        if(RETRYWAIT.name.equals(state)) return RETRYWAIT;
-        
-        if(ASYNCWAIT.name.equals(state)) return ASYNCWAIT;
-        
-        if(RQUEUED.name.equals(state)) return RQUEUED;
-        
-        if(READY.name.equals(state)) return READY;
-        
-        if(TRANSFERRING.name.equals(state)) return TRANSFERRING;
-        
-        if(DONE.name.equals(state)) return DONE;
-        
-        if(CANCELED.name.equals(state)) return CANCELED;
-        
-        if(FAILED.name.equals(state)) return FAILED;
-        
-        if(RESTORED.name.equals(state)) return RESTORED;
-        
-        if(RUNNINGWITHOUTTHREAD.name.equals(state)) return RUNNINGWITHOUTTHREAD;
-        
+        for(State aState: values()) {
+            if(aState.name.equalsIgnoreCase(state)) {
+                return aState;
+            }
+        }
         try{
             int stateId = Integer.parseInt(state);
             return getState(stateId);
+        } catch (NumberFormatException nfe) {
+            throw new IllegalArgumentException("Unknown State:"+state);
         }
-        catch(Exception e) {
-            throw new IllegalArgumentException("Unknown State");
         }
-    }
     
     public static State getState(int stateId) throws IllegalArgumentException {
         
-        if(PENDING.stateId == stateId) return PENDING;
-        
-        if(PRIORITYTQUEUED.stateId == stateId) return PRIORITYTQUEUED;
-        
-        if(TQUEUED.stateId == stateId) return TQUEUED;
-        
-        if(RUNNING.stateId == stateId) return RUNNING;
-        
-        if(RETRYWAIT.stateId == stateId) return RETRYWAIT;
-        
-        if(ASYNCWAIT.stateId == stateId) return ASYNCWAIT;
-        
-        if(RQUEUED.stateId == stateId) return RQUEUED;
-        
-        if(READY.stateId == stateId) return READY;
-        
-        if(TRANSFERRING.stateId == stateId) return TRANSFERRING;
-        
-        if(DONE.stateId == stateId) return DONE;
-        
-        if(CANCELED.stateId == stateId) return CANCELED;
-        
-        if(FAILED.stateId == stateId) return FAILED;
-        
-        if(RESTORED.stateId == stateId) return RESTORED;
-        
-        if(RUNNINGWITHOUTTHREAD.stateId == stateId) return RUNNINGWITHOUTTHREAD;
-        
-        throw new IllegalArgumentException("Unknown State Id");
+      for(State aState: values()) {
+            if(aState.stateId == stateId) {
+                return aState;
+    }
+        }
+        throw new IllegalArgumentException("Unknown State Id:"+stateId);
     }
     
+   /**
+     * a utility method which tells if the given state is a final state
+     * @param state
+     * @return true if the state is final
+     */
     public static boolean isFinalState(State state) {
-        return state == DONE || state == CANCELED || state == FAILED;
+        return state.isFinal;
     }
+    
+    /**
+     * a utility method which tells if this state is a final state
+     * @return true if the state is final
+     */
+    public boolean isFinalState() {
+        return isFinal;
+}
     
 }
