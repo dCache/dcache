@@ -14,11 +14,8 @@
 /*
  * $Id: dcap_preload.c,v 1.39 2006-09-26 07:47:27 tigran Exp $
  */
-#include "dcap.h"
-#include <dcap_debug.h>
-/*
+#include <dcap.h>
 #include <sys/stat.h>
-*/
 #include <sys/types.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -28,7 +25,6 @@
 #include <dirent.h>
 #include <dcap_debug.h>
 #include <sys/mman.h>
-
 
 
 /* 
@@ -79,15 +75,6 @@ off_t lseek(int fd, off_t offset, int mode)
 	return dc_lseek(fd, offset, mode);
 }
 
-
-
-int _xstat(int i, const char *p, struct stat *s)
-{
-        dc_debug(DC_TRACE, "Running preloaded _xstat for %s", p);
-        return dc_stat(p, s);
-}
-
-
 int __xstat(int i, const char *p, struct stat *s)
 {
 	dc_debug(DC_TRACE, "Running preloaded __xstat for %s", p);
@@ -95,23 +82,12 @@ int __xstat(int i, const char *p, struct stat *s)
 }
 
 
-int _lxstat(int i, const char *p, struct stat *s)
-{
-        dc_debug(DC_TRACE, "Running preloaded _lxstat for %s", p);
-        return dc_lstat(p, s);
-}
-
 int __lxstat(int i, const char *p, struct stat *s)
 {
 	dc_debug(DC_TRACE, "Running preloaded __lxstat for %s", p);
 	return dc_lstat(p, s);
 }
 
-int _fxstat(int i, int fd, struct stat *s)
-{
-        dc_debug(DC_TRACE, "Running preloaded _fxstat for [%d]", fd);
-        return dc_fstat(fd, s);
-}
 
 int __fxstat(int i, int fd, struct stat *s)
 {
