@@ -7,6 +7,7 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.State;
+import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateTransition;
 import org.dcache.services.info.base.StateUpdate;
@@ -39,7 +40,17 @@ public class LinkgroupTotalSpaceMaintainer extends AbstractStateWatcher {
 	private static final String PREDICATE_PATHS[] = { "reservations.*.space.used",
 													"linkgroups.*.space.free",
 													"linkgroups.*.reservations.*"};
-	
+
+	private final StateExhibitor _exhibitor;
+
+	/**
+	 * Create a new secondary information provider that uses the provided StateExhibitor
+	 * to query the current and future dCache state.
+	 * @param exhibitor
+	 */
+	public LinkgroupTotalSpaceMaintainer( StateExhibitor exhibitor) {
+		_exhibitor = exhibitor;
+	}
 
 	/**
 	 * Provide a list of the paths we're interested in.
@@ -49,19 +60,20 @@ public class LinkgroupTotalSpaceMaintainer extends AbstractStateWatcher {
 		return PREDICATE_PATHS;
 	}
 
-	public void trigger(StateTransition str) {
+	@Override
+    public void trigger(StateTransition str) {
 		
 		if( _log.isInfoEnabled())
 			_log.info( "Watcher " + this.getClass().getSimpleName() + " triggered");
-		
-		// Build a mapping of how linkgroup-IDs map to the corresponding space.free metric  
-		Map<String,Long> freeSpaceAfter = SimpleIntegerMapVisitor.buildMap( str, LINKGROUPS, SPACE_FREE);
+
+		// Build a mapping of how linkgroup-IDs map to the corresponding space.free metric
+		Map<String,Long> freeSpaceAfter = SimpleIntegerMapVisitor.buildMap( _exhibitor, str, LINKGROUPS, SPACE_FREE);
 		
 		// Build a mapping of how reservation-IDs map to space.used metric
-		Map<String,Long> usedSpaceAfter = SimpleIntegerMapVisitor.buildMap( str, RESERVATIONS, SPACE_USED);
+		Map<String,Long> usedSpaceAfter = SimpleIntegerMapVisitor.buildMap( _exhibitor, str, RESERVATIONS, SPACE_USED);
 		
 		// Build a mapping of reservation-IDs to linkgroup-IDs
-		Map<String,String> reservationToLinkgroup = SimpleStringMapVisitor.buildMap( str, RESERVATIONS, LINKGROUPREF);
+		Map<String,String> reservationToLinkgroup = SimpleStringMapVisitor.buildMap( _exhibitor, str, RESERVATIONS, LINKGROUPREF);
 		
 		Set<String> linkgroupsToUpdate = new HashSet<String>();
 		
@@ -89,7 +101,7 @@ public class LinkgroupTotalSpaceMaintainer extends AbstractStateWatcher {
 													Map<String,Long> usedSpaceAfter,
 													Map<String,String> reservationToLinkgroup) {
 		// Build map of the current reservation-ID to space.used metric
-		Map<String,Long> usedSpaceNow = SimpleIntegerMapVisitor.buildMap( RESERVATIONS, SPACE_USED);
+		Map<String,Long> usedSpaceNow = SimpleIntegerMapVisitor.buildMap( _exhibitor, RESERVATIONS, SPACE_USED);
 
 		if( usedSpaceNow.equals( usedSpaceAfter)) {
 			if( _log.isDebugEnabled())
@@ -123,7 +135,7 @@ public class LinkgroupTotalSpaceMaintainer extends AbstractStateWatcher {
 												Map<String, Long> freeSpaceAfter) {
 
 		// Build map from linkgroup-ID to used metric, both now and after. 
-		Map<String,Long> freeSpaceNow = SimpleIntegerMapVisitor.buildMap(LINKGROUPS, SPACE_USED);
+		Map<String,Long> freeSpaceNow = SimpleIntegerMapVisitor.buildMap( _exhibitor, LINKGROUPS, SPACE_USED);
 
 		if( freeSpaceNow.equals( freeSpaceAfter)) {
 			if( _log.isDebugEnabled())

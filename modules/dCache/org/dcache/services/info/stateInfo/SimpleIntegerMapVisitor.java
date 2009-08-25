@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.dcache.services.info.base.IntegerStateValue;
-import org.dcache.services.info.base.State;
+import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateTransition;
 
@@ -35,9 +35,9 @@ public class SimpleIntegerMapVisitor extends SimpleSkeletonMapVisitor {
 	 * @param pathToMetric the StatePath, relative to the list item, of the StringStateValue
 	 * @return the mapping between list items and the metric values.
 	 */
-	public static final Map<String,Long> buildMap( StatePath pathToList, StatePath pathToMetric) {
+	public static final Map<String,Long> buildMap( StateExhibitor exhibitor, StatePath pathToList, StatePath pathToMetric) {
 		SimpleIntegerMapVisitor visitor = new SimpleIntegerMapVisitor( pathToList, pathToMetric);
-		State.getInstance().visitState( visitor, pathToList);
+		exhibitor.visitState( visitor, pathToList);
 		return visitor.getMap();
 	}
 	
@@ -49,9 +49,9 @@ public class SimpleIntegerMapVisitor extends SimpleSkeletonMapVisitor {
 	 * @param pathToMetric the StatePath, relative to the list item, of the StringStateValue
 	 * @return the mapping between list items and the metric values.
 	 */
-	public static final Map<String,Long> buildMap( StateTransition transition, StatePath pathToList, StatePath pathToMetric) {
+	public static final Map<String,Long> buildMap( StateExhibitor exhibitor, StateTransition transition, StatePath pathToList, StatePath pathToMetric) {
 		SimpleIntegerMapVisitor visitor = new SimpleIntegerMapVisitor( pathToList, pathToMetric);
-		State.getInstance().visitState(transition, visitor, pathToList);
+		exhibitor.visitState(transition, visitor, pathToList);
 		return visitor.getMap();
 	}
 	

@@ -2,6 +2,7 @@ package org.dcache.services.info.gathers;
 
 import org.apache.log4j.Logger;
 import org.dcache.services.info.InfoProvider;
+import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 
 import dmg.cells.nucleus.CellMessageAnswerable;
@@ -34,9 +35,9 @@ public class RoutingMgrDga extends SkelListBasedActivity {
 	
 	private final CellMessageAnswerable _handler;
 	
-	public RoutingMgrDga( CellMessageAnswerable handler) {
+	public RoutingMgrDga( StateExhibitor exhibitor, CellMessageAnswerable handler) {
 		
-		super( new StatePath( "domains"), MIN_LIST_REFRESH_PERIOD, SUCC_MSG_DELAY); 
+		super( exhibitor, new StatePath( "domains"), MIN_LIST_REFRESH_PERIOD, SUCC_MSG_DELAY);
 	
 		_handler = handler;
 	}
@@ -71,7 +72,8 @@ public class RoutingMgrDga extends SkelListBasedActivity {
 	/**
 	 * We only expect to have a single instance of this class.
 	 */
-	public String toString() {
+	@Override
+    public String toString() {
 		return this.getClass().getSimpleName();
 	}
 

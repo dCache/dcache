@@ -9,7 +9,7 @@ import org.apache.log4j.Logger;
 import org.dcache.services.info.base.BooleanStateValue;
 import org.dcache.services.info.base.FloatingPointStateValue;
 import org.dcache.services.info.base.IntegerStateValue;
-import org.dcache.services.info.base.State;
+import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateTransition;
 import org.dcache.services.info.base.StateVisitor;
@@ -29,12 +29,12 @@ public class PoolgroupToPoolsVisitor implements StateVisitor {
 	 * Obtain a Map between a poolgroup and the pools that are currently members of this poolgroup.
 	 * @return
 	 */
-	public static Map <String,Set<String>> getDetails() {
+	public static Map <String,Set<String>> getDetails( StateExhibitor exhibitor) {
 		if( _log.isInfoEnabled())
 			_log.info( "Gathering current status");
 		
 		PoolgroupToPoolsVisitor visitor = new PoolgroupToPoolsVisitor();
-		State.getInstance().visitState(visitor, POOLGROUPS_PATH);		
+		exhibitor.visitState(visitor, POOLGROUPS_PATH);		
 		return visitor._poolgroups;		
 	}
 
@@ -44,12 +44,12 @@ public class PoolgroupToPoolsVisitor implements StateVisitor {
 	 * @param transition the StateTransition to consider
 	 * @return
 	 */
-	public static Map <String,Set<String>> getDetails( StateTransition transition) {
+	public static Map <String,Set<String>> getDetails( StateExhibitor exhibitor, StateTransition transition) {
 		if( _log.isInfoEnabled())
 			_log.info( "Gathering status after transition");
 		
 		PoolgroupToPoolsVisitor visitor = new PoolgroupToPoolsVisitor();
-		State.getInstance().visitState(transition, visitor, POOLGROUPS_PATH);		
+		exhibitor.visitState(transition, visitor, POOLGROUPS_PATH);		
 		return visitor._poolgroups;		
 	}
 

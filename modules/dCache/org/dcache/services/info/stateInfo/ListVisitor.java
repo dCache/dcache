@@ -4,7 +4,7 @@ import java.util.Set;
 import java.util.HashSet;
 
 import org.apache.log4j.Logger;
-import org.dcache.services.info.base.State;
+import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateTransition;
 
@@ -24,12 +24,12 @@ public class ListVisitor extends SkeletonListVisitor {
 	 * @param path the StatePath that is the parent to the required items. 
 	 * @return the Set of all items that have the path as their parent.
 	 */
-	static public Set<String> getDetails( StatePath path) {
+	static public Set<String> getDetails( StateExhibitor exhibitor, StatePath path) {
 		if( _log.isDebugEnabled())
 			_log.debug( "Gathering current status for path " + path);
 		
 		ListVisitor visitor = new ListVisitor( path);
-		State.getInstance().visitState(visitor, path);		
+		exhibitor.visitState(visitor, path);		
 		return visitor.getItems();
 	}
 
@@ -40,12 +40,12 @@ public class ListVisitor extends SkeletonListVisitor {
 	 * @param path the StatePath that is the parent to the require list of items.
 	 * @return the Set of all items that have the path as their parent.
 	 */
-	static public Set<String> getDetails( StateTransition str, StatePath path) {
+	static public Set<String> getDetails( StateExhibitor exhibitor, StateTransition str, StatePath path) {
 		if( _log.isDebugEnabled())
 			_log.debug( "Gathering current status for path " + path);
 		
 		ListVisitor visitor = new ListVisitor( path);
-		State.getInstance().visitState( str, visitor, path);
+		exhibitor.visitState( str, visitor, path);
 		return visitor.getItems();		
 	}
 

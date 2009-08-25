@@ -5,6 +5,7 @@ import java.util.Set;
 import java.util.Stack;
 
 import org.apache.log4j.Logger;
+import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.stateInfo.ListVisitor;
 
@@ -59,15 +60,17 @@ abstract class SkelListBasedActivity implements Schedulable {
 	
 	/** Time between sending successive messages, in milliseconds */
 	private final int _successiveMsgDelay;
-	
+
+	private final StateExhibitor _exhibitor;
 
 	/**
 	 * Create a new List-based activity, based on the list of items below parentPath in
 	 * dCache's state.
 	 * @param parentPath all list items must satisfy parentPath.isParentOf(item)
 	 */
-	protected SkelListBasedActivity (  StatePath parentPath) {
+	protected SkelListBasedActivity ( StateExhibitor exhibitor, StatePath parentPath) {
 		_parentPath = parentPath;
+		_exhibitor = exhibitor;
 
 		updateStack();  // Bring in initial work.
 
@@ -85,9 +88,9 @@ abstract class SkelListBasedActivity implements Schedulable {
 	 * @param minimumListRefreshPeriod An enforced minimum time, in milliseconds, between the same item being called.
 	 * @param successiveMsgDelay The minimum time between triggering() successive items, in milliseconds. 
 	 */
-	protected SkelListBasedActivity (  StatePath parentPath, int minimumListRefreshPeriod, int successiveMsgDelay) {
+	protected SkelListBasedActivity ( StateExhibitor exhibitor, StatePath parentPath, int minimumListRefreshPeriod, int successiveMsgDelay) {
 		_parentPath = parentPath;
-		
+		_exhibitor = exhibitor;
 		updateStack();  // Bring in initial work.
 		
 		_minimumListRefreshPeriod = minimumListRefreshPeriod;
@@ -150,7 +153,7 @@ abstract class SkelListBasedActivity implements Schedulable {
 	 *  Query dCache's current state and add the new Set to to our _outstandingWork Stack.
 	 */
 	private void updateStack() {
-		Set<String> items = ListVisitor.getDetails( _parentPath);
+		Set<String> items = ListVisitor.getDetails( _exhibitor, _parentPath);
 		
 		for( String item : items)
 			_outstandingWork.add( item);

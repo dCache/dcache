@@ -34,10 +34,8 @@ import org.apache.log4j.Logger;
  * some synchronous classes also use this to build lists from dCache current
  * state (e.g., to send a message requesting data to each currently known
  * pool).
- *
- * @author Paul Millar <paul.millar@desy.de>
  */
-public class State {
+public class State implements StateExhibitor {
 
     /**
      * Constants used for persistent metadata
@@ -399,6 +397,23 @@ public class State {
     }
 
     /**
+     * Visit the current status of dCache.
+     */
+    @Override
+    public void visitState( StateVisitor visitor) {
+        visitState( visitor, (StatePath)null);
+    }
+
+    /**
+     * Visit the future status of dCache after the given StateTransition has
+     * completed.
+     */
+    @Override
+    public void visitState( StateVisitor visitor, StateTransition transition) {
+        visitState( transition, visitor, null);
+    }
+
+    /**
      * Allow an arbitrary algorithm to visit the current dCache state, that
      * is, to receive call-backs describing the process of walking over the
      * state and the contents therein.
@@ -413,6 +428,7 @@ public class State {
      * @param start
      *            the StatePath of the point to start walking the tree.
      */
+    @Override
     public void visitState( StateVisitor visitor, StatePath start) {
         try {
             _stateReadLock.lock();
@@ -435,6 +451,7 @@ public class State {
      * @param start
      *            the "starting" point within the dCache state
      */
+    @Override
     public void visitState( StateTransition transition, StateVisitor visitor,
                             StatePath start) {
         try {

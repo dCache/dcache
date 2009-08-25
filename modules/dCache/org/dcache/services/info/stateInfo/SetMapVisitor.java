@@ -5,7 +5,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.dcache.services.info.base.State;
+import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateTransition;
 
@@ -58,10 +58,11 @@ public class SetMapVisitor extends SkeletonListVisitor {
 	 * @param pathToSecondList the StatePath, relative to the list item for parent of the item list.
 	 * @return a mapping between an item and the set of items at a fixed relative path.
 	 */
-	static public Map<String,Set<String>> getDetails( StatePath pathToMainList,
+	static public Map<String,Set<String>> getDetails( StateExhibitor exhibitor,
+													StatePath pathToMainList,
 													StatePath pathToSecondList) {
 		SetMapVisitor visitor = new SetMapVisitor( pathToMainList, pathToSecondList);
-		State.getInstance().visitState( visitor, pathToMainList);
+		exhibitor.visitState( visitor, pathToMainList);
 		return visitor.getMap();
 	}
 
@@ -90,11 +91,12 @@ public class SetMapVisitor extends SkeletonListVisitor {
 	 * @param pathToSecondList the StatePath, relative to the list item for parent of the item list.
 	 * @return a mapping between an item and the set of items at a fixed relative path.
 	 */
-	static public Map<String,Set<String>> getDetails( StateTransition transition,
+	static public Map<String,Set<String>> getDetails( StateExhibitor exhibitor,
+														StateTransition transition,
 														StatePath pathToMainList,
 														StatePath pathToSecondList) {
 		SetMapVisitor visitor = new SetMapVisitor( pathToMainList, pathToSecondList);
-		State.getInstance().visitState(transition, visitor, pathToMainList);
+		exhibitor.visitState(transition, visitor, pathToMainList);
 		return visitor.getMap();
 	}
 

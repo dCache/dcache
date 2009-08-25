@@ -6,6 +6,7 @@ import org.dcache.services.info.base.BooleanStateValue;
 import org.dcache.services.info.base.FloatingPointStateValue;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.State;
+import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateVisitor;
 import org.dcache.services.info.base.StringStateValue;
@@ -41,6 +42,11 @@ public class XmlSerialiser implements StateVisitor, StateSerialiser {
 	private String _lastBranchIdName;
 	private boolean _haveLastBranch;
 	
+	private final StateExhibitor _exhibitor;
+
+	public XmlSerialiser( StateExhibitor exhibitor) {
+		_exhibitor = exhibitor;
+	}
 	
 	private static class Attribute {
 		final String name, value;
@@ -75,7 +81,7 @@ public class XmlSerialiser implements StateVisitor, StateSerialiser {
 		
 		addElement( "<?xml version=\"1.0\"?>");
 		
-		State.getInstance().visitState( this, start);
+		_exhibitor.visitState( this, start);
 		
 		/**
 		 *  We ensure that there is always at least one element (the &lt;dCache/> element).

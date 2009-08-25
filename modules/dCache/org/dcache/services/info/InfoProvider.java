@@ -1,22 +1,15 @@
 package org.dcache.services.info;
 
 import java.io.PrintWriter;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
-
-import dmg.cells.nucleus.CellAdapter;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellMessageAnswerable;
-import dmg.cells.nucleus.CellNucleus;
-import dmg.cells.nucleus.CellVersion;
-import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.util.Args;
 
 import org.apache.log4j.Logger;
 import org.dcache.services.info.base.BadStatePathException;
 import org.dcache.services.info.base.State;
+import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StateMaintainer;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.conduits.Conduit;
@@ -31,8 +24,15 @@ import org.dcache.services.info.serialisation.PrettyPrintTextSerialiser;
 import org.dcache.services.info.serialisation.SimpleTextSerialiser;
 import org.dcache.services.info.serialisation.StateSerialiser;
 import org.dcache.services.info.serialisation.XmlSerialiser;
-
 import org.dcache.vehicles.InfoGetSerialisedDataMessage;
+
+import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellMessageAnswerable;
+import dmg.cells.nucleus.CellNucleus;
+import dmg.cells.nucleus.CellVersion;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.util.Args;
 
 public class InfoProvider extends CellAdapter {
 
@@ -60,7 +60,7 @@ public class InfoProvider extends CellAdapter {
 	private Map<String,Conduit> _conduits;
 	private DataGatheringScheduler _scheduler;
 	private MessageHandlerChain _msgHandlerChain;
-	private StateSerialiser _currentSerialiser = new SimpleTextSerialiser();
+	private StateSerialiser _currentSerialiser;
 	private Map<String,StateSerialiser> _availableSerialisers;
 	private StatePath _startSerialisingFrom;
 
@@ -69,6 +69,7 @@ public class InfoProvider extends CellAdapter {
 	 * Correctly report our version and revision information.
 	 * @return a CellVersion for this cell.
 	 */
+    @Override
     public CellVersion getCellVersion() {
         return new CellVersion(diskCacheV111.util.Version.getVersion(),
                                "$Revision: 9086 $");
@@ -77,6 +78,7 @@ public class InfoProvider extends CellAdapter {
     /**
      * Provide information for the info command.
      */
+    @Override
     public void getInfo(PrintWriter pw)
     {
         pw.println("    Overview of the info cell:\n");
@@ -119,19 +121,22 @@ public class InfoProvider extends CellAdapter {
 			_log.warn( "Duplicate InfoProvider detected.");
 		}
 
+        StateExhibitor exhibitor = State.getInstance();
+
 		/**
 		 * Build our list of possible serialisers.
 		 */
 		_availableSerialisers = new HashMap<String,StateSerialiser>();
-		addSerialiser( new XmlSerialiser());
-		addSerialiser( new SimpleTextSerialiser());
-		addSerialiser( new PrettyPrintTextSerialiser());
+		addSerialiser( new XmlSerialiser( exhibitor));
+		addSerialiser( new SimpleTextSerialiser( exhibitor));
+		addSerialiser( new PrettyPrintTextSerialiser( exhibitor));
+		_currentSerialiser = new SimpleTextSerialiser( exhibitor);
 
 		useInterpreter( true );
 	    buildMessageHandlerChain();
-	    startDgaScheduler();
-		addDefaultConduits();
-		addDefaultWatchers();
+	    startDgaScheduler( exhibitor);
+		addDefaultConduits( exhibitor);
+		addDefaultWatchers( exhibitor);
 	    startConduits();
 
 		start();  // Go, go gadget InfoProvider
@@ -142,7 +147,8 @@ public class InfoProvider extends CellAdapter {
 	/**
 	 * Called from the Cell's finalize() method.
 	 */
-	public void cleanUp() {
+	@Override
+    public void cleanUp() {
 		stopConduits();
 		_scheduler.shutdown();
 		StateMaintainer.getInstance().shutdown();
@@ -166,10 +172,10 @@ public class InfoProvider extends CellAdapter {
 	/**
 	 *   Initialise conduits list with default options.
 	 */
-	void addDefaultConduits() {
+	void addDefaultConduits( StateExhibitor exhibitor) {
 		_conduits = new HashMap<String,Conduit>();
 
-		Conduit con = new XmlConduit();
+		Conduit con = new XmlConduit( exhibitor);
 		_conduits.put( con.toString(), con);
 	}
 
@@ -233,11 +239,11 @@ public class InfoProvider extends CellAdapter {
 	 *  Start the synchronous collection of dCache state: Data-Gathering Activity.
 	 *  This requires that MessageHandlerChain has already been initialised.
 	 */
-	void startDgaScheduler()
+	void startDgaScheduler( StateExhibitor exhibitor)
 	{
 	    _scheduler = new DataGatheringScheduler();
 
-	    _scheduler.addDefaultActivity();
+	    _scheduler.addDefaultActivity( exhibitor);
 
         Thread ict = new Thread( _scheduler);
         ict.setName("DGA-Scheduler");
@@ -270,7 +276,8 @@ public class InfoProvider extends CellAdapter {
 	 * responsibility for processing this CellMessage to our MessageHandlerChain
 	 * instance.
 	 */
-	public synchronized void messageArrived( CellMessage msg ) {
+	@Override
+    public synchronized void messageArrived( CellMessage msg ) {
 
 		if( msg.getMessageObject() instanceof InfoGetSerialisedDataMessage) {
 			addSerialisedDataToMsg( (InfoGetSerialisedDataMessage) msg.getMessageObject());
@@ -294,7 +301,8 @@ public class InfoProvider extends CellAdapter {
 	 * Override the CellAdapter default sendMessage() so we simply display
 	 * an error message if we get an exception.
 	 */
-	public void sendMessage( CellMessage msg) {
+	@Override
+    public void sendMessage( CellMessage msg) {
 		try {
 			super.sendMessage(msg);
 		} catch( NoRouteToCellException e) {
@@ -327,11 +335,11 @@ public class InfoProvider extends CellAdapter {
 	/**
 	 *   S T A T E   W A T C H E R S
 	 */
-	private void addDefaultWatchers() {
-		State.getInstance().addStateWatcher(new PoolgroupSpaceWatcher());
-		State.getInstance().addStateWatcher(new PoolsSummaryMaintainer());
-		State.getInstance().addStateWatcher(new LinkgroupTotalSpaceMaintainer());
-		State.getInstance().addStateWatcher(new LinkSpaceMaintainer());
+	private void addDefaultWatchers( StateExhibitor exhibitor) {
+		State.getInstance().addStateWatcher(new PoolgroupSpaceWatcher( exhibitor));
+		State.getInstance().addStateWatcher(new PoolsSummaryMaintainer( exhibitor));
+		State.getInstance().addStateWatcher(new LinkgroupTotalSpaceMaintainer( exhibitor));
+		State.getInstance().addStateWatcher(new LinkSpaceMaintainer( exhibitor));
 	}
 
 

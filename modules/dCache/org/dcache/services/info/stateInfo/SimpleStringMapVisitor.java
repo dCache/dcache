@@ -3,7 +3,7 @@ package org.dcache.services.info.stateInfo;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.dcache.services.info.base.State;
+import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateTransition;
 import org.dcache.services.info.base.StringStateValue;
@@ -24,8 +24,6 @@ import org.dcache.services.info.base.StringStateValue;
  *   "item2" --> "foo2"
  *   "item3" --> "foo3"
  * </pre>
- * 
- * @author Paul Millar <paul.millar@desy.de>
  */
 public class SimpleStringMapVisitor extends SimpleSkeletonMapVisitor {
 
@@ -35,9 +33,9 @@ public class SimpleStringMapVisitor extends SimpleSkeletonMapVisitor {
 	 * @param pathToMetric the StatePath, relative to the list item, of the StringStateValue
 	 * @return the mapping between list items and the metric values.
 	 */
-	public static final Map<String,String> buildMap( StatePath pathToList, StatePath pathToMetric) {
+	public static final Map<String,String> buildMap( StateExhibitor exhibitor, StatePath pathToList, StatePath pathToMetric) {
 		SimpleStringMapVisitor visitor = new SimpleStringMapVisitor( pathToList, pathToMetric);
-		State.getInstance().visitState( visitor, pathToList);
+		exhibitor.visitState( visitor, pathToList);
 		return visitor.getMap();
 	}
 	
@@ -49,9 +47,9 @@ public class SimpleStringMapVisitor extends SimpleSkeletonMapVisitor {
 	 * @param pathToMetric the StatePath, relative to the list item, of the StringStateValue
 	 * @return the mapping between list items and the metric values.
 	 */
-	public static final Map<String,String> buildMap( StateTransition transition, StatePath pathToList, StatePath pathToMetric) {
+	public static final Map<String,String> buildMap( StateExhibitor exhibitor, StateTransition transition, StatePath pathToList, StatePath pathToMetric) {
 		SimpleStringMapVisitor visitor = new SimpleStringMapVisitor( pathToList, pathToMetric);
-		State.getInstance().visitState(transition, visitor, pathToList);
+		exhibitor.visitState(transition, visitor, pathToList);
 		return visitor.getMap();
 	}
 	

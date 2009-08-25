@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.dcache.services.info.base.State;
+import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateTransition;
 import org.dcache.services.info.base.StateUpdate;
@@ -26,17 +27,27 @@ public class LinkSpaceMaintainer extends AbstractStateWatcher {
 	
 	private static final StatePath LINKS_PATH = new StatePath( "links");
 	private static final StatePath POOL_MEMBERSHIP_REL_PATH = new StatePath( "pools");
+	private final StateExhibitor _exhibitor;
 
-	
+	/**
+	 * Create a new secondary information provider that uses the provided StateExhibitor
+	 * to query the current and future dCache state.
+	 * @param exhibitor
+	 */
+	public LinkSpaceMaintainer( StateExhibitor exhibitor) {
+		_exhibitor = exhibitor;
+	}
+
 	@Override
 	protected String[] getPredicates() {
 		return PREDICATE_PATHS;
 	}
 
-	public void trigger(StateTransition str) {
+	@Override
+    public void trigger(StateTransition str) {
 		
-		Map<String,Set<String>> futureLinksToPools = SetMapVisitor.getDetails(str, LINKS_PATH, POOL_MEMBERSHIP_REL_PATH);
-		Map<String,SpaceInfo> futurePoolSize = PoolSpaceVisitor.getDetails( str);
+		Map<String,Set<String>> futureLinksToPools = SetMapVisitor.getDetails( _exhibitor, str, LINKS_PATH, POOL_MEMBERSHIP_REL_PATH);
+		Map<String,SpaceInfo> futurePoolSize = PoolSpaceVisitor.getDetails( _exhibitor, str);
 
 		Set<String> linksToUpdate = new HashSet<String>();
 		
@@ -63,7 +74,7 @@ public class LinkSpaceMaintainer extends AbstractStateWatcher {
 	 */
 	private void addLinksWhereLinkHasChanged( Set<String> linksToUpdate, Map<String,Set<String>> futureLinksToPools) {
 		
-		Map<String,Set<String>> currentLinksToPools = SetMapVisitor.getDetails(LINKS_PATH, POOL_MEMBERSHIP_REL_PATH);
+		Map<String,Set<String>> currentLinksToPools = SetMapVisitor.getDetails( _exhibitor, LINKS_PATH, POOL_MEMBERSHIP_REL_PATH);
 		
 		if( currentLinksToPools.equals( futureLinksToPools))
 			return;
@@ -100,7 +111,7 @@ public class LinkSpaceMaintainer extends AbstractStateWatcher {
 	private void addLinksWherePoolsHaveChanged( Set<String> linksToUpdate, Map<String, Set<String>> futureLinksToPools, Map<String,SpaceInfo> futurePoolSize) {
 		
 		// Get the current pool space information
-		Map<String,SpaceInfo> currentPoolSize = PoolSpaceVisitor.getDetails();
+		Map<String,SpaceInfo> currentPoolSize = PoolSpaceVisitor.getDetails( _exhibitor);
 		
 		if( futurePoolSize.equals( currentPoolSize))
 			return;

@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.apache.log4j.Logger;
+import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 
 /**
@@ -150,7 +151,8 @@ public class DataGatheringScheduler implements Runnable {
 		 * A human-understandable name for this DGA
 		 * @return the underlying DGA's name
 		 */
-		public String toString() {
+		@Override
+        public String toString() {
 			return _dga.toString();
 		}
 		
@@ -201,7 +203,6 @@ public class DataGatheringScheduler implements Runnable {
 		
 		_logSched.debug("DGA Scheduler thread shutting down.");
 	}
-	
 
 	/**
 	 * Add a new data-gathering activity. 
@@ -302,8 +303,7 @@ public class DataGatheringScheduler implements Runnable {
 		
 		return pa != null ? null : "Unknown DGA " + name;
 	}
-	
-	
+
 
 	/**
 	 * Request that this thread sends no more requests
@@ -375,8 +375,8 @@ public class DataGatheringScheduler implements Runnable {
 	/**
 	 * Add hard-coded, default activity
 	 */
-	public void addDefaultActivity() {
-				
+	public void addDefaultActivity( StateExhibitor exhibitor) {
+
 		addActivity( new SingleMessageDga( "PoolManager", "psux ls pool", new StringListMsgHandler("pools"), 60));
 		addActivity( new SingleMessageDga( "PoolManager", "psux ls pgroup", new StringListMsgHandler("poolgroups"), 60));
 		addActivity( new SingleMessageDga( "PoolManager", "psux ls unit", new StringListMsgHandler("units"), 60));
@@ -400,15 +400,15 @@ public class DataGatheringScheduler implements Runnable {
 		// Pick up domains
 		addActivity( new SingleMessageDga( "topo", "gettopomap", new TopoMapHandler(), 120));
 		// Pick up cell information
-		addActivity( new CellInfoDga( new CellInfoMsgHandler()));
-		
-		// Pick up a domain's routing information.
-		addActivity( new RoutingMgrDga( new RoutingMgrMsgHandler()));
+		addActivity( new CellInfoDga( exhibitor, new CellInfoMsgHandler()));
 
-		addActivity( new ListBasedMessageDga( new StatePath("pools"),      "PoolManager", "psux ls pool",   new PoolInfoMsgHandler()));
-		addActivity( new ListBasedMessageDga( new StatePath("poolgroups"), "PoolManager", "psux ls pgroup", new PoolGroupInfoMsgHandler()));
-		addActivity( new ListBasedMessageDga( new StatePath("units"),      "PoolManager", "psux ls unit",   new UnitInfoMsgHandler()));
-		addActivity( new ListBasedMessageDga( new StatePath("unitgroups"), "PoolManager", "psux ls ugroup", new UGroupInfoMsgHandler()));
+		// Pick up a domain's routing information.
+		addActivity( new RoutingMgrDga( exhibitor, new RoutingMgrMsgHandler()));
+
+		addActivity( new ListBasedMessageDga( exhibitor, new StatePath("pools"),      "PoolManager", "psux ls pool",   new PoolInfoMsgHandler()));
+		addActivity( new ListBasedMessageDga( exhibitor, new StatePath("poolgroups"), "PoolManager", "psux ls pgroup", new PoolGroupInfoMsgHandler()));
+		addActivity( new ListBasedMessageDga( exhibitor, new StatePath("units"),      "PoolManager", "psux ls unit",   new UnitInfoMsgHandler()));
+		addActivity( new ListBasedMessageDga( exhibitor, new StatePath("unitgroups"), "PoolManager", "psux ls ugroup", new UGroupInfoMsgHandler()));
 	}
 
 

@@ -6,6 +6,7 @@ import org.dcache.services.info.base.BooleanStateValue;
 import org.dcache.services.info.base.FloatingPointStateValue;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.State;
+import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateVisitor;
 import org.dcache.services.info.base.StringStateValue;
@@ -26,11 +27,18 @@ import org.dcache.services.info.base.StringStateValue;
  */
 public class SimpleTextSerialiser implements StateVisitor, StateSerialiser {
 	
+	public static final String NAME = "simple";
+		
 	private static final String LIST_TYPE = "List item";
 	
 	private StringBuilder _result = new StringBuilder();
 	private StatePath _lastStateComponentPath=null;
 	private StatePath _startPath;
+	private final StateExhibitor _exhibitor;
+	
+	public SimpleTextSerialiser( StateExhibitor exhibitor) {
+		_exhibitor = exhibitor;
+	}
 	
 	public String serialise( StatePath start) {
 		_result = new StringBuilder();
@@ -41,7 +49,7 @@ public class SimpleTextSerialiser implements StateVisitor, StateSerialiser {
 			_result.append(">\n");
 		}
 		
-		State.getInstance().visitState( this, start);
+		_exhibitor.visitState( this, start);
 		
 		return _result.toString();
 	}
@@ -52,7 +60,7 @@ public class SimpleTextSerialiser implements StateVisitor, StateSerialiser {
 	
 	
 	public String getName() {
-		return "simple";
+		return NAME;
 	}
 	
 	public void visitBoolean(StatePath path, BooleanStateValue value) {

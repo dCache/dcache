@@ -6,6 +6,7 @@ import java.net.Socket;
 import java.net.SocketException;
 
 import org.apache.log4j.Logger;
+import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.serialisation.XmlSerialiser;
 
 /**
@@ -32,8 +33,14 @@ public class XmlConduit extends AbstractThreadedConduit {
 	private ServerSocket _svr_skt=null;
 	
 	/** Our serialiser for the current dCache state */
-	private XmlSerialiser _xmlSerialiser = new XmlSerialiser();
+	private final XmlSerialiser _xmlSerialiser;
 	
+	public XmlConduit( StateExhibitor exhibitor) {
+		super();
+		_xmlSerialiser = new XmlSerialiser( exhibitor);
+	}
+	
+	@Override
 	public void enable() {
 		try {
 			_svr_skt = new ServerSocket(_port);
@@ -48,6 +55,7 @@ public class XmlConduit extends AbstractThreadedConduit {
 	}
 	
 
+	@Override
 	void triggerBlockingActivityToReturn() {
 		if( _svr_skt == null) 
 			return;
@@ -66,6 +74,7 @@ public class XmlConduit extends AbstractThreadedConduit {
 	 * Wait for an incoming connection to the listening socket.  When
 	 * one is received, send it the XML serialisation of our current state.
 	 */
+	@Override
 	void blockingActivity() {
 		Socket skt=null;
 		

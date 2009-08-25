@@ -4,9 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
-import org.dcache.services.info.base.IntegerStateValue;
-import org.dcache.services.info.base.StatePath;
-import org.dcache.services.info.base.State;
+import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StateTransition;
 
 /**
@@ -23,13 +21,13 @@ public class PoolSpaceVisitor extends AbstractPoolSpaceVisitor {
 	 * Obtain a Map between pools and their space information for current dCache state.
 	 * @return
 	 */
-	public static Map <String,SpaceInfo> getDetails() {
+	public static Map <String,SpaceInfo> getDetails( StateExhibitor exhibitor) {
 		if( _log.isInfoEnabled())
 			_log.info( "Gathering current status");
 
 		PoolSpaceVisitor visitor = new PoolSpaceVisitor();
 		
-		State.getInstance().visitState( visitor, POOLS_PATH);
+		exhibitor.visitState( visitor, POOLS_PATH);
 		
 		return visitor._poolgroups;
 	}
@@ -40,12 +38,12 @@ public class PoolSpaceVisitor extends AbstractPoolSpaceVisitor {
 	 * @param transition  the StateTransition to consider.
 	 * @return Map between a pool's name and that pool's SpaceInfo 
 	 */
-	public static Map <String,SpaceInfo> getDetails( StateTransition transition) {
+	public static Map <String,SpaceInfo> getDetails( StateExhibitor exhibitor, StateTransition transition) {
 		if( _log.isInfoEnabled())
 			_log.info( "Gathering status after transition");
 
 		PoolSpaceVisitor visitor = new PoolSpaceVisitor();
-		State.getInstance().visitState(transition, visitor, POOLS_PATH);		
+		exhibitor.visitState( transition, visitor, POOLS_PATH);		
 		return visitor._poolgroups;	
 	}
 

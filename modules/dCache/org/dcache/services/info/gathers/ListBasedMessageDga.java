@@ -1,6 +1,7 @@
 package org.dcache.services.info.gathers;
 
 import org.dcache.services.info.InfoProvider;
+import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 
 import dmg.cells.nucleus.CellMessageAnswerable;
@@ -36,10 +37,12 @@ public class ListBasedMessageDga extends SkelListBasedActivity {
 	 * @param message the message to send.
 	 * @param handler the cell handler for the return msg payload.
 	 */
-	public ListBasedMessageDga( StatePath parent, String cellName, String message, CellMessageAnswerable handler) {
-		
-		super( parent);
-		
+	public ListBasedMessageDga( StateExhibitor exhibitor, StatePath parent,
+	                            String cellName, String message,
+	                            CellMessageAnswerable handler) {
+
+		super( exhibitor, parent);
+
 		_cellName = cellName;
 		_parentPath = parent.toString();
 		_messagePrefix = message;
@@ -47,12 +50,12 @@ public class ListBasedMessageDga extends SkelListBasedActivity {
 		
 		_cellPath = new CellPath( cellName);
 	}
-	
 
 	/**
 	 * Triggered every-so-often, under control of SkelListBasedActivity.
 	 */
-	public void trigger() {
+	@Override
+    public void trigger() {
 		
 		super.trigger();
 		
@@ -69,10 +72,9 @@ public class ListBasedMessageDga extends SkelListBasedActivity {
 
 		_msgHandlerChain.sendCellMsg( _cellPath, sb.toString(), _handler, getMetricLifetime());
 	}
-	
-	
 
-	public String toString() {
+	@Override
+    public String toString() {
 		StringBuilder sb = new StringBuilder();
 		
 		sb.append(this.getClass().getSimpleName());

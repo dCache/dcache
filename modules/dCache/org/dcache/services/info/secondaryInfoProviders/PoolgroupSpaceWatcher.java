@@ -6,11 +6,11 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
-import org.dcache.services.info.base.State;
 import org.dcache.services.info.base.StateComposite;
-import org.dcache.services.info.base.StateUpdate;
+import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateTransition;
+import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.stateInfo.PoolSpaceVisitor;
 import org.dcache.services.info.stateInfo.SetMapVisitor;
 import org.dcache.services.info.stateInfo.SpaceInfo;
@@ -32,31 +32,43 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 	private static final StatePath POOLGROUPS_PATH = new StatePath( "poolgroups");
 	private static final StatePath POOL_MEMBERSHIP_REL_PATH = new StatePath( "pools");
 	
+	private final StateExhibitor _exhibitor;
+
+	/**
+	 * Create a new secondary information provider that uses the provided StateExhibitor
+	 * to query the current and future dCache state.
+	 * @param exhibitor
+	 */
+	public PoolgroupSpaceWatcher( StateExhibitor exhibitor) {
+		_exhibitor = exhibitor;
+	}
+
 	@Override
 	protected String[] getPredicates() {
 		return PREDICATE_PATHS;
 	}
 	
 	
-	public void trigger( StateTransition transition) {
+	@Override
+    public void trigger( StateTransition transition) {
 		Set<String> recalcPoolgroup = new HashSet<String>();		
 		if( _log.isInfoEnabled())
 			_log.info( "Watcher " + this.getClass().getSimpleName() + " triggered");
-		
-		_log.debug( "Gathering state:");		
-		_log.debug( "  building current poolgroup membership.");		
-		Map <String,Set<String>> currentPoolgroupMembership = SetMapVisitor.getDetails( POOLGROUPS_PATH, POOL_MEMBERSHIP_REL_PATH); 
 
-		_log.debug( "  building future poolgroup membership.");		
-		Map <String,Set<String>> futurePoolgroupMembership = SetMapVisitor.getDetails( transition, POOLGROUPS_PATH, POOL_MEMBERSHIP_REL_PATH);
-		
-		_log.debug( "  establishing current pool space mapping.");		
-		Map<String, SpaceInfo> poolSpaceInfoPre = PoolSpaceVisitor.getDetails();		
+		_log.debug( "Gathering state:");
+		_log.debug( "  building current poolgroup membership.");
+		Map <String,Set<String>> currentPoolgroupMembership = SetMapVisitor.getDetails( _exhibitor, POOLGROUPS_PATH, POOL_MEMBERSHIP_REL_PATH);
 
-		_log.debug( "  establishing future pool space mapping.");		
-		Map<String, SpaceInfo> poolSpaceInfoPost = PoolSpaceVisitor.getDetails(transition);
-		
-		_log.debug( "Looking for changes in poolgroup membership.");		
+		_log.debug( "  building future poolgroup membership.");
+		Map <String,Set<String>> futurePoolgroupMembership = SetMapVisitor.getDetails( _exhibitor, transition, POOLGROUPS_PATH, POOL_MEMBERSHIP_REL_PATH);
+
+		_log.debug( "  establishing current pool space mapping.");
+		Map<String, SpaceInfo> poolSpaceInfoPre = PoolSpaceVisitor.getDetails( _exhibitor);
+
+		_log.debug( "  establishing future pool space mapping.");
+		Map<String, SpaceInfo> poolSpaceInfoPost = PoolSpaceVisitor.getDetails( _exhibitor, transition);
+
+		_log.debug( "Looking for changes in poolgroup membership.");
 		updateTodoBasedOnMembership( recalcPoolgroup, transition, currentPoolgroupMembership, futurePoolgroupMembership);
 
 		_log.debug( "Looking for changes in pool space information.");
@@ -79,8 +91,6 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 			
 			buildNewMetrics( update, thisPgPath.newChild("space"), futurePoolgroupMembership.get(thisPoolgroup), poolSpaceInfoPost);
 		}
-			
-		State.getInstance().updateState( update);
 	}
 
 
