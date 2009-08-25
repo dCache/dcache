@@ -1,5 +1,6 @@
 package org.dcache.services.info.base;
 
+
 import static org.junit.Assert.*;
 
 import java.util.HashMap;

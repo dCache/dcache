@@ -1,5 +1,6 @@
 package org.dcache.services.info.base;
 
+
 import static org.junit.Assert.*;
 
 import java.util.Map;
@@ -10,21 +11,17 @@ public class BooleanStateValueTests extends InfoBaseTest {
 
 	/**
 	 * A simple visitor to test that acceptVisitor works as expected.
-	 * @author Paul Millar <paul.millar@desy.de>
 	 */
 	class TestBooleanVisitor implements StateVisitor {
 		boolean _visitCalledWrongMethod;
 		BooleanStateValue _value;
 		StatePath _visitPath;
 		
-		public void visitBoolean( StatePath path, BooleanStateValue value) {
-			
+		// Visit a BooleanStateValue: we assert that this hasn't happened before.
+		public void visitBoolean( StatePath path, BooleanStateValue value) {			
 			assertNull( "Stored _value not null", _value);
-			
 			_value = value;
-			
 			assertNull( "Stored _visitPath not null", _visitPath);
-			
 			_visitPath = path;
 		}
 

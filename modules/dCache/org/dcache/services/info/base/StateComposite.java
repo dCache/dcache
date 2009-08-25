@@ -38,7 +38,7 @@ public class StateComposite implements StateComponent {
 
 
 	/** Minimum lifetime for on-the-fly created StateComposites, in seconds */
-	private static final long DEFAULT_LIFETIME = 10;
+	static final long DEFAULT_LIFETIME = 10;
 
 	private final Map<String, StateComponent> _children = new HashMap<String, StateComponent>();
 	private StatePersistentMetadata _metadataRef;
@@ -137,7 +137,8 @@ public class StateComposite implements StateComponent {
 	/**
 	 * Return a cryptic string describing this StateComposite.
 	 */
-	public String toString() {
+	@Override
+    public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("StateComposite <");
 		sb.append( isMortal() ? "+" : isEphemeral() ? "*" : "#" );

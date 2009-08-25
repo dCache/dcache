@@ -1,5 +1,6 @@
 package org.dcache.services.info.base;
 
+
 import static org.junit.Assert.*;
 
 
@@ -139,6 +140,7 @@ public class StatePathTest extends InfoBaseTest {
 					StatePath path1 = buildStatePath( len, offset, stride);
 
 					assertFalse( "path1 equals null", path1.equals( null));
+					assertEquals( "path1 equals path1", path1, path1);
 
 					// Iterate over all other StatePaths, checking equality.					
 					for( int lenOther = 1; lenOther < MAX_LEN; lenOther++) {
@@ -168,7 +170,6 @@ public class StatePathTest extends InfoBaseTest {
 			}
 		}
 	}
-	
 	
 
 	
@@ -207,8 +208,22 @@ public class StatePathTest extends InfoBaseTest {
 			}
 		}
 	}
-
 	
+	
+	@Test
+	public void testEqualsOrHasChildNotEqualAsNull() {
+		StatePath path = StatePath.parsePath("aa.bb");
+		
+		assertFalse( "null is unexpectedly equal-or-child-of a path", path.equalsOrHasChild( null));
+	}
+
+	@Test
+	public void testNullIsParentOf() {	
+		StatePath path = StatePath.parsePath("aa.bb");
+		
+		assertFalse( "StatePath claiming to be parent of root", path.isParentOf(null));
+	}
+
 	/**
 	 * Check that isParentOf() works as expected.
 	 */
@@ -265,13 +280,24 @@ public class StatePathTest extends InfoBaseTest {
 							sb.append( ".");
 						sb.append( element);
 					}
-										
+					
 					assertEquals( "path name mismatch: " + path.toString()+ " != " + sb.toString(),
 							path.toString(), sb.toString());
 				}
 			}
 		}		
 	}
+	
+	@Test
+	public void testToStringPrefix() {
+		StatePath testPath = StatePath.parsePath("aa.bb.cc");
+		
+		assertEquals( "toString with prefix", "aa.bb.cc", testPath.toString( null));
+		assertEquals( "toString with prefix", "bb.cc", testPath.toString( StatePath.parsePath( "foo")));
+		assertEquals( "toString with prefix", "cc", testPath.toString( StatePath.parsePath( "foo.bar")));
+		assertEquals( "toString with prefix", "", testPath.toString( StatePath.parsePath( "foo.bar.baz")));
+	}
+	
 
 	
 	@Test
