@@ -180,6 +180,8 @@ import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.services.space.message.GetSpaceMetaData;
 import diskCacheV111.services.space.message.GetSpaceTokens;
+import diskCacheV111.util.TimeoutCacheException;
+import diskCacheV111.util.NotInTrashCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import org.dcache.auth.persistence.AuthRecordPersistenceManager;
 import org.dcache.commons.stats.RequestCounters;
@@ -2644,68 +2646,26 @@ public class Storage
                 config.isRemoveFile());
     }
 
-
-    public void removeDirectory(final SRMUser user,
-            final Vector tree)  throws SRMException {
+    public void removeDirectory(SRMUser user, Vector tree)
+        throws SRMException
+    {
         _log.debug("Storage.removeDirectory");
-        AuthorizationRecord duser = (AuthorizationRecord) user;
-        for (Iterator i = tree.iterator(); i.hasNext();) {
-            String path= (String)i.next();
-            String actualPnfsPath= srm_root+"/"+path;
-            PnfsGetStorageInfoMessage storage_info_msg =null;
-            PnfsGetStorageInfoMessage filemetadata_msg =null;
-
-            PnfsId pnfsId;
+        for (Object path: tree) {
+            String actualPath = srm_root + "/" + path;
             try {
-                storage_info_msg = _pnfs.getStorageInfoByPath(actualPnfsPath);
+                _pnfs.deletePnfsEntry(actualPath);
+            } catch (TimeoutCacheException e) {
+                _log.error("Failed to delete " + actualPath + " due to timeout");
+                throw new SRMException("Internal name space timeout while deleting " + path);
+            } catch (FileNotFoundCacheException e) {
+                throw new SRMException("File does not exist: " + path);
+            } catch (NotInTrashCacheException e) {
+                throw new SRMException("File does not exist: " + path);
             } catch (CacheException e) {
-                _log.warn("could not get storage info or file metadata by path "+
-                    actualPnfsPath);
-                throw new SRMException("could not get storage info or file " +
-                                       "metadata by path " + e.getMessage(), e);
-            }
-            if ( storage_info_msg != null) {
-                pnfsId = storage_info_msg.getPnfsId();
-            } else if (filemetadata_msg != null) {
-                pnfsId = filemetadata_msg.getPnfsId();
-            } else {
-                _log.warn("could not get storage info or file metadata by path "+
-                    actualPnfsPath);
-                throw new SRMException("could not get storage info or file " +
-                    "metadata by path "+actualPnfsPath);
-            }
-
-            PnfsDeleteEntryMessage delete_request =
-                    new PnfsDeleteEntryMessage(actualPnfsPath);
-            delete_request.setReplyRequired(true);
-            CellMessage answer=null;
-            Object o=null;
-
-            try {
-                answer = sendAndWait( new CellMessage(
-                        new CellPath("PnfsManager") ,
-                        delete_request) ,
-                        __pnfsTimeout*1000);
-            } catch (NoRouteToCellException e) {
-                throw new SRMException("PnfsManager is unavailable: " +
-                                       e.getMessage(), e);
-            } catch (InterruptedException e) {
-                throw new SRMException("Request to PnfsManager was interrupted", e);
-            }
-            if (answer == null ||
-                    (o = answer.getMessageObject()) == null ||
-                    !(o instanceof PnfsDeleteEntryMessage)) {
-                _log.error("sent PnfsDeleteEntryMessage pnfs, received "+o+" back");
-                throw new SRMException("can not delete "+actualPnfsPath);
-            } else {
-                PnfsDeleteEntryMessage delete_reply =
-                    (PnfsDeleteEntryMessage) answer.getMessageObject();
-                if (delete_reply.getReturnCode() != 0) {
-                    throw new SRMException("Delete Failed : "+actualPnfsPath+
-                            " PnfsDeleteEntryMessage return code="+
-                        delete_reply.getReturnCode()+
-                            " reason : "+delete_reply.getErrorObject());
-                }
+                _log.error("Failed to delete " + actualPath + ": " 
+                           + e.getMessage());
+                throw new SRMException("Failed to delete " + path + ": " 
+                                       + e.getMessage());
             }
         }
     }
@@ -4598,13 +4558,13 @@ public class Storage
     public String getStorageBackendVersion() {
         return diskCacheV111.util.Version.getVersion();
     }
-    
+
     public boolean exists(SRMUser user,
                           String path)  throws SRMException {
             String absolute_path = srm_root + "/" + path;
             try {
                 return _pnfs.getPnfsIdByPath(absolute_path) != null;
-            } 
+            }
             catch (CacheException e) {
                 if (e.getRc() == CacheException.FILE_NOT_FOUND ||
                     e.getRc() == CacheException.NOT_IN_TRASH) {
@@ -4613,7 +4573,7 @@ public class Storage
                 _log.warn("Failed to find file by path : "+e.getMessage());
                 throw new SRMException("Failed to find file by path due to internal system failure or timeout : "+e.getMessage());
             }
-            catch (RuntimeException e) { 
+            catch (RuntimeException e) {
                 _log.error("Unexpected Exception ",e);
                 throw new SRMException("Failed to find file by path due to internal system failure or timeout, unexpected exception thrown : "+e.getMessage());
             }
