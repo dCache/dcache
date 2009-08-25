@@ -34,10 +34,13 @@ import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.cells.CellMessageSender;
 import org.dcache.cells.CellStub;
+import org.dcache.auth.Subjects;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.vehicles.PnfsSetFileAttributes;
+
+import javax.security.auth.Subject;
 
 public class PnfsHandler
     implements CellMessageSender
@@ -46,6 +49,8 @@ public class PnfsHandler
     private static final long DEFAULT_PNFS_TIMEOUT = 30 * 60 * 1000L;
 
     private final CellStub _cellStub = new CellStub();
+
+    private Subject _subject;
 
     private static final Logger _logNameSpace =
         Logger.getLogger("logger.org.dcache.namespace." + PnfsHandler.class.getName());
@@ -87,11 +92,19 @@ public class PnfsHandler
         _cellStub.setCellEndpoint(endpoint);
     }
 
+    public void setSubject(Subject subject)
+    {
+        _subject = subject;
+    }
+
     public void send(PnfsMessage msg)
     {
         if (_cellStub == null)
             throw new IllegalStateException("Missing endpoint");
 
+        if (_subject != null) {
+            msg.setSubject(_subject);
+        }
         _cellStub.send(msg);
     }
 
@@ -200,6 +213,9 @@ public class PnfsHandler
 
         try {
             msg.setReplyRequired(true);
+            if (_subject != null) {
+                msg.setSubject(_subject);
+            }
             return _cellStub.sendAndWait(msg);
         } catch (InterruptedException e) {
             throw  new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,

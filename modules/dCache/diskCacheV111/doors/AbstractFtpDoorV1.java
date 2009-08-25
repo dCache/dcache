@@ -168,6 +168,7 @@ import diskCacheV111.util.Checksum;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.services.acl.PermissionHandler;
 import diskCacheV111.services.acl.DelegatingPermissionHandler;
+import diskCacheV111.services.acl.GrantAllPermissionHandler;
 
 import org.dcache.namespace.FileType;
 import org.dcache.auth.UserAuthBase;
@@ -188,6 +189,7 @@ import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.util.list.DirectoryStream;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.Glob;
+import org.dcache.auth.Subjects;
 import org.dcache.namespace.FileType;
 
 import dmg.cells.nucleus.CDC;
@@ -401,6 +403,13 @@ public abstract class AbstractFtpDoorV1
      * Permission Handler
      */
     protected PermissionHandler _permissionHandler;
+
+    @Option(
+        name = "permission-handler",
+        description = "Permission handler class names",
+        defaultValue = ""
+    )
+    protected String _permissionHandlerClasses;
 
     @Option(
         name = "poolManager",
@@ -1025,13 +1034,22 @@ public abstract class AbstractFtpDoorV1
 
         /* Permission handler.
          */
-        _permissionHandler = new DelegatingPermissionHandler(this);
-        _origin =
-            new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
-                       _engine.getInetAddress());
+        Subject subject;
+        _origin = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+                             _engine.getInetAddress());
+        if (_permissionHandlerClasses != null) {
+            _permissionHandler = new DelegatingPermissionHandler(this);
+            subject = Subjects.ROOT;
+        } else {
+            _permissionHandler = new GrantAllPermissionHandler();
+            subject = new Subject();
+            subject.getPrincipals().add(_origin);
+            subject.setReadOnly();
+        }
 
         _pnfs = new PnfsHandler(this, new CellPath(_pnfsManager));
         _pnfs.setPnfsTimeout(_pnfsTimeout * 1000L);
+        _pnfs.setSubject(subject);
         _listSource = new ListDirectoryHandler(_pnfs);
 
         adminCommandListener = new AdminCommandListener();
@@ -4798,6 +4816,7 @@ public abstract class AbstractFtpDoorV1
           subject.getPrincipals().add(user);
           subject.getPrincipals().add(group);
           subject.getPrincipals().add(_origin);
+          subject.setReadOnly();
 
           return subject;
     }

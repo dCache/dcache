@@ -36,7 +36,7 @@ public class DelegatingPermissionHandler implements PermissionHandler {
 
     private static final Logger _logger = Logger.getLogger("logger.org.dcache.authorization." + DelegatingPermissionHandler.class.getName());
 
-    private static final String DELIMITER = ",";
+    public static final String DELIMITER = ",";
 
     private final PermissionHandler[] permHandlers;
 

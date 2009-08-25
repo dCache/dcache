@@ -24,6 +24,9 @@ import org.apache.log4j.Logger;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.ListHandler;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.namespace.ChainedPermissionHandler;
+import org.dcache.namespace.PosixPermissionHandler;
+import org.dcache.namespace.ACLPermissionHandler;
 
 import org.dcache.commons.stats.RequestCounters;
 import javax.security.auth.Subject;
@@ -205,7 +208,8 @@ public class PnfsManagerV3 extends CellAdapter
 
             say("Namespace provider: " + nameSpace_provider);
             DcacheNameSpaceProviderFactory nameSpaceProviderFactory = (DcacheNameSpaceProviderFactory) Class.forName(nameSpace_provider).newInstance();
-            _nameSpaceProvider = (NameSpaceProvider)nameSpaceProviderFactory.getProvider(_args, _nucleus);
+            _nameSpaceProvider =
+                new PermissionHandlerNameSpaceProvider(nameSpaceProviderFactory.getProvider(_args, _nucleus), new ChainedPermissionHandler(new ACLPermissionHandler(), new PosixPermissionHandler()));
 
 
             String cacheLocation_provider = _args.getOpt("cachelocation-provider") ;
@@ -993,7 +997,13 @@ public class PnfsManagerV3 extends CellAdapter
             try{
                 say( "Trying to get storageInfo for "+pnfsId) ;
 
-                StorageInfo info = _nameSpaceProvider.getStorageInfo(pnfsMessage.getSubject(), pnfsId);
+                /* If we were allowed to create the entry above, then
+                 * we also ought to be allowed to read it here. Hence
+                 * we use ROOT as the subject.
+                 */
+                StorageInfo info =
+                    _nameSpaceProvider.getStorageInfo(ROOT, pnfsId);
+
 
                 pnfsMessage.setStorageInfo( info ) ;
                 pnfsMessage.setMetaData(_nameSpaceProvider.getFileMetaData(pnfsMessage.getSubject(), pnfsId));
@@ -1033,7 +1043,12 @@ public class PnfsManagerV3 extends CellAdapter
             try{
                 say( "Trying to get storageInfo for "+pnfsId) ;
 
-                StorageInfo info = _nameSpaceProvider.getStorageInfo(pnfsMessage.getSubject(), pnfsId);
+                /* If we were allowed to create the entry above, then
+                 * we also ought to be allowed to read it here. Hence
+                 * we use ROOT as the subject.
+                 */
+                StorageInfo info =
+                    _nameSpaceProvider.getStorageInfo(ROOT, pnfsId);
 
                 /*
                  * store current values of access latency and retention policy
@@ -1055,7 +1070,7 @@ public class PnfsManagerV3 extends CellAdapter
                 info.setIsNew(true);
 
                 pnfsMessage.setStorageInfo( info ) ;
-                pnfsMessage.setMetaData(_nameSpaceProvider.getFileMetaData(pnfsMessage.getSubject(), pnfsId));
+                pnfsMessage.setMetaData(_nameSpaceProvider.getFileMetaData(ROOT, pnfsId));
 
             }catch(Exception eeee){
                 esay( "Can't determine storageInfo : "+eeee ) ;

@@ -78,6 +78,7 @@ import diskCacheV111.util.Base64;
 import diskCacheV111.util.KAuthFile;
 import diskCacheV111.util.FQAN;
 import org.dcache.auth.*;
+import diskCacheV111.services.acl.GrantAllPermissionHandler;
 
 //java
 import java.net.InetAddress;
@@ -85,6 +86,7 @@ import java.net.UnknownHostException;
 import java.util.Iterator;
 import java.util.HashSet;
 import java.util.concurrent.ExecutionException;
+import javax.security.auth.Subject;
 
 //jgss
 import org.ietf.jgss.GSSException;
@@ -372,6 +374,13 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         if (_pwdRecord == null && authRecord == null) {
             reply("530 Permission denied");
             return;
+        }
+
+        if (_permissionHandler instanceof GrantAllPermissionHandler) {
+            Subject subject = Subjects.getSubject(authRecord);
+            subject.getPrincipals().add(_origin);
+            subject.setReadOnly();
+            _pnfs.setSubject(subject);
         }
 
         //if(_pwdRecord==null && authRecord != null) {}
