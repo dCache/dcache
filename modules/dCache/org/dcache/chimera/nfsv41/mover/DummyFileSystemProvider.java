@@ -13,6 +13,7 @@ import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.store.AccessLatency;
 import org.dcache.chimera.store.InodeStorageInformation;
 import org.dcache.chimera.store.RetentionPolicy;
+import org.dcache.chimera.DirectoryStreamB;
 
 public class DummyFileSystemProvider implements FileSystemProvider {
 
@@ -204,19 +205,7 @@ public class DummyFileSystemProvider implements FileSystemProvider {
     }
 
     @Override
-    public String[] listDir(String arg0) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String[] listDir(FsInode arg0) throws IOHimeraFsException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public HimeraDirectoryEntry[] listDirFull(FsInode arg0)
+    public DirectoryStreamB<HimeraDirectoryEntry> newDirectoryStream(FsInode dir)
             throws IOHimeraFsException {
         // TODO Auto-generated method stub
         return null;
