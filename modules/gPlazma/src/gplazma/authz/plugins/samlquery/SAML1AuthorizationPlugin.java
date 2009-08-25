@@ -53,7 +53,7 @@ public class SAML1AuthorizationPlugin extends SAMLAuthorizationPlugin {
             if( tlocalId!=null && tlocalId.age() < getCacheLifetime() &&
                     tlocalId.sameServiceName(serviceName) &&
                     tlocalId.sameDesiredUserName(desiredUserName)) {
-                getLogger().info("Using cached mapping for User with DN: " + subjectDN + " and Role " + role + "with Desired user name: " + desiredUserName);
+                getLogger().info("Using cached mapping for User with DN: " + subjectDN + " and Role " + role + " with Desired user name: " + desiredUserName);
 
                 gPlazmaAuthorizationRecord gauthrec = getgPlazmaAuthorizationRecord(tlocalId.getLocalId(), subjectDN, role);
                 if (gauthrec!=null) {
@@ -64,7 +64,7 @@ public class SAML1AuthorizationPlugin extends SAMLAuthorizationPlugin {
             }
         }
 
-        getLogger().info("Requesting mapping for User with DN: " + subjectDN + " and Role " + role + "with Desired user name: " + desiredUserName);
+        getLogger().info("Requesting mapping for User with DN: " + subjectDN + " and Role " + role + " with Desired user name: " + desiredUserName);
 
         getLogger().debug("Mapping Service URL configuration: " + getMappingServiceURL());
         try {
