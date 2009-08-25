@@ -3974,11 +3974,11 @@ public abstract class AbstractFtpDoorV1
                     : new ShortListPrinter(writer);
 
                 try {
-                    total = _listSource.printDirectory(printer, f, null, null);
+                    total = _listSource.printDirectory(null, printer, f, null, null);
                 } catch (NotDirCacheException e) {
                     /* f exists, but it is not a directory.
                      */
-                    _listSource.printFile(printer, f);
+                    _listSource.printFile(null, printer, f);
                     total = 1;
                 } catch (FileNotFoundCacheException e) {
                     /* If f does not exist, then it could be a
@@ -3986,7 +3986,7 @@ public abstract class AbstractFtpDoorV1
                      * repeat the list.
                      */
                     total =
-                        _listSource.printDirectory(printer, f.getParentFile(),
+                        _listSource.printDirectory(null, printer, f.getParentFile(),
                                                    new Glob(f.getName()), null);
                 }
 
@@ -4044,7 +4044,7 @@ public abstract class AbstractFtpDoorV1
                 PrintWriter writer =
                     new PrintWriter(new OutputStreamWriter(new BufferedOutputStream(_dataSocket.getOutputStream()), "US-ASCII"));
 
-                total = _listSource.printDirectory(new ShortListPrinter(writer),
+                total = _listSource.printDirectory(null, new ShortListPrinter(writer),
                                                    new File(path), null, null);
                 writer.close();
             } finally {
@@ -4098,7 +4098,7 @@ public abstract class AbstractFtpDoorV1
             File f = new File(path);
             pw.println("250- Listing " + arg + "\r\n");
             pw.print(' ');
-            _listSource.printFile(new FactPrinter(pw), f);
+            _listSource.printFile(null, new FactPrinter(pw), f);
             pw.print("250 End");
             reply(sw.toString());
         } catch (InterruptedException e) {
@@ -4144,7 +4144,7 @@ public abstract class AbstractFtpDoorV1
                 PrintWriter writer =
                     new PrintWriter(new OutputStreamWriter(new BufferedOutputStream(_dataSocket.getOutputStream()), "UTF-8"));
 
-                total = _listSource.printDirectory(new FactPrinter(writer),
+                total = _listSource.printDirectory(null, new FactPrinter(writer),
                                                    new File(path), null, null);
                 writer.close();
             } finally {

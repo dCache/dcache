@@ -90,7 +90,7 @@ public class DirectoryLookUpPool extends AbstractCell
     {
         messageArrived(cellMessage);
     }
-    
+
     /**
      * List a directory.
      */
@@ -99,11 +99,13 @@ public class DirectoryLookUpPool extends AbstractCell
     {
         StringBuilder sb = new StringBuilder();
         try {
-            _list.printDirectory(new DirectoryPrinter(sb), path, null, null);
+            _list.printDirectory(null, new DirectoryPrinter(sb),
+                                 path, null, null);
         } catch (FileNotFoundCacheException e) {
             sb.append("Path " + path + " does not exist.");
         } catch (NotDirCacheException e) {
-            _list.printFile(new FilePrinter(sb, path.getParentFile()), path);
+            _list.printFile(null, new FilePrinter(sb, path.getParentFile()),
+                            path);
         }
         return sb.toString();
     }
@@ -228,7 +230,7 @@ public class DirectoryLookUpPool extends AbstractCell
         return message;
     }
 
-    /** 
+    /**
      * A task which handles directory listing for a particular
      * client. We have an instance per client request.
      */
@@ -244,7 +246,7 @@ public class DirectoryLookUpPool extends AbstractCell
         private DataInputStream cntIn = null;
         private PnfsId pnfsId;
 
-        DirectoryService(DCapProtocolInfo dcap, PnfsId pnfsId) 
+        DirectoryService(DCapProtocolInfo dcap, PnfsId pnfsId)
             throws IOException
         {
             this.dcap = dcap;

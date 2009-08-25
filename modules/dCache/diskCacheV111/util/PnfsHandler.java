@@ -48,7 +48,7 @@ public class PnfsHandler
     private final String _poolName;
     private static final long DEFAULT_PNFS_TIMEOUT = 30 * 60 * 1000L;
 
-    private final CellStub _cellStub = new CellStub();
+    private final CellStub _cellStub;
 
     private Subject _subject;
 
@@ -81,9 +81,26 @@ public class PnfsHandler
                        String poolName)
     {
         _poolName = poolName;
+        _cellStub = new CellStub();
         _cellStub.setDestinationPath(pnfsManagerPath);
         _cellStub.setTimeout(DEFAULT_PNFS_TIMEOUT);
         _cellStub.setRetryOnNoRouteToCell(true);
+    }
+
+    /**
+     * Copy constructor. The primary purpose is to create session
+     * specific PnfsHandlers with a session specific subject. Notice
+     * that the CellStub is shared between the two handlers and thus
+     * the timeout will always be the same.
+     *
+     * @param handler The PnfsHandler to copy
+     * @param subject The Subject to apply to the copy
+     */
+    public PnfsHandler(PnfsHandler handler, Subject subject)
+    {
+        _poolName = handler._poolName;
+        _cellStub = handler._cellStub;
+        _subject = subject;
     }
 
     @Override

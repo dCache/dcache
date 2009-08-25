@@ -28,6 +28,7 @@ import dmg.util.CollectionFactory;
 import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.apache.log4j.Logger;
+import javax.security.auth.Subject;
 
 /**
  * DirectoryListSource which delegates the list operation to the
@@ -69,10 +70,11 @@ public class ListDirectoryHandler
      */
     @Override
     public DirectoryStream
-        list(File path, Glob pattern, Interval range)
+        list(Subject subject, File path, Glob pattern, Interval range)
         throws InterruptedException, CacheException
     {
-        return list(path, pattern, range, EnumSet.noneOf(FileAttribute.class));
+        return list(subject, path, pattern, range,
+                    EnumSet.noneOf(FileAttribute.class));
     }
 
     /**
@@ -86,7 +88,7 @@ public class ListDirectoryHandler
      */
     @Override
     public DirectoryStream
-        list(File path, Glob pattern, Interval range,
+        list(Subject subject, File path, Glob pattern, Interval range,
              Set<FileAttribute> attributes)
         throws InterruptedException, CacheException
     {
@@ -97,6 +99,7 @@ public class ListDirectoryHandler
         boolean success = false;
         Stream stream = new Stream(dir, uuid);
         try {
+            msg.setSubject(subject);
             _replies.put(uuid, stream);
              stream.put(_pnfs.pnfsRequest(msg));
             success = true;
@@ -109,24 +112,26 @@ public class ListDirectoryHandler
     }
 
     @Override
-    public void printFile(DirectoryListPrinter printer, File path)
+    public void printFile(Subject subject, DirectoryListPrinter printer,
+                          File path)
         throws InterruptedException, CacheException
     {
+        PnfsHandler handler = new PnfsHandler(_pnfs, subject);
         Set<FileAttribute> required =
             printer.getRequiredAttributes();
         PnfsId id =
-            _pnfs.getPnfsIdByPath(path.toString());
+            handler.getPnfsIdByPath(path.toString());
         FileAttributes attributes =
-            _pnfs.getFileAttributes(id, required);
+            handler.getFileAttributes(id, required);
         FileAttributes dirAttr =
-            _pnfs.getFileAttributes(path.getParent(), required);
+            handler.getFileAttributes(path.getParent(), required);
         printer.print(dirAttr,
                       new DirectoryEntry(path.getName(), id, attributes));
     }
 
     @Override
-    public int printDirectory(DirectoryListPrinter printer, File path,
-                              Glob glob, Interval range)
+    public int printDirectory(Subject subject, DirectoryListPrinter printer,
+                              File path, Glob glob, Interval range)
         throws InterruptedException, CacheException
     {
         Set<org.dcache.namespace.FileAttribute> required =
@@ -134,7 +139,7 @@ public class ListDirectoryHandler
         FileAttributes dirAttr =
             _pnfs.getFileAttributes(path.toString(), required);
         DirectoryStream stream =
-            list(path, glob, range, required);
+            list(subject, path, glob, range, required);
         try {
             int total = 0;
             for (DirectoryEntry entry: stream) {
