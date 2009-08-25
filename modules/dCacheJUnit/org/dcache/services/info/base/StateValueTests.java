@@ -1,11 +1,12 @@
 package org.dcache.services.info.base;
 
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
@@ -111,6 +112,119 @@ public class StateValueTests extends InfoBaseTest {
         assertEquals( "visitor list not zero", testVal.getVisitorInfo().size(), 0);
     }
 
+
+    @Test
+    public void testAcceptVisitorNoTransitionNullPath() {
+        TestStateValue testVal = newTestStateValue();
+        StateVisitor visitor = new VerifyingVisitor();
+
+        testVal.acceptVisitor( null, visitor);
+
+        List<TestStateValue.AcceptVisitorInfo> visitorList = testVal.getVisitorInfo();
+        assertEquals( "unexpected number of visitors", 1, visitorList.size());
+
+        TestStateValue.AcceptVisitorInfo avi = visitorList.get( 0);
+
+        assertNull( "StatePath when visiting", avi.getStatePath());
+        assertSame( "Unknown StateVisitor", visitor, avi.getVisitor());
+    }
+
+    @Test
+    public void testAcceptVisitorNoTransitionRealPath() {
+        TestStateValue testVal = newTestStateValue();
+        StateVisitor visitor = new VerifyingVisitor();
+        StatePath path = StatePath.parsePath( "aaa.bbb.cc");
+
+        testVal.acceptVisitor( path, visitor);
+
+        List<TestStateValue.AcceptVisitorInfo> visitorList = testVal.getVisitorInfo();
+        assertEquals( "unexpected number of visitors", 1, visitorList.size());
+
+        TestStateValue.AcceptVisitorInfo avi = visitorList.get( 0);
+
+        assertEquals( "StatePath when visiting", path, avi.getStatePath());
+        assertSame( "Unknown StateVisitor", visitor, avi.getVisitor());
+    }
+
+    @Test
+    public void testAcceptVisitorNoTransitionNoSkipNullPath() {
+        TestStateValue testVal = newTestStateValue();
+        StateVisitor visitor = new VerifyingVisitor();
+
+        testVal.acceptVisitor( null, null, visitor);
+
+        List<TestStateValue.AcceptVisitorInfo> visitorList = testVal.getVisitorInfo();
+        assertEquals( "unexpected number of visitors", 1, visitorList.size());
+
+        TestStateValue.AcceptVisitorInfo avi = visitorList.get( 0);
+
+        assertNull( "StatePath when visiting", avi.getStatePath());
+        assertSame( "Unknown StateVisitor", visitor, avi.getVisitor());
+    }
+
+    @Test
+    public void testAcceptVisitorNoTransitionWithSkipNullPath() {
+        TestStateValue testVal = newTestStateValue();
+        StateVisitor visitor = new VerifyingVisitor();
+
+        testVal.acceptVisitor( null, StatePath.parsePath( "aaa.bbb"), visitor);
+
+        List<TestStateValue.AcceptVisitorInfo> visitorList = testVal.getVisitorInfo();
+        assertEquals( "unexpected number of visitors", 0, visitorList.size());
+    }
+
+    @Test
+    public void testAcceptVisitorNoTransitionWithSkipRealPath() {
+        TestStateValue testVal = newTestStateValue();
+        StateVisitor visitor = new VerifyingVisitor();
+
+        testVal.acceptVisitor( StatePath.parsePath( "aa.bb"), StatePath.parsePath( "cc.dd"), visitor);
+
+        List<TestStateValue.AcceptVisitorInfo> visitorList = testVal.getVisitorInfo();
+        assertEquals( "unexpected number of visitors", 0, visitorList.size());
+    }
+
+    @Test
+    public void testAcceptVisitorNoTransitionNoSkipRealPath() {
+        TestStateValue testVal = newTestStateValue();
+        StateVisitor visitor = new VerifyingVisitor();
+        StatePath path = StatePath.parsePath( "aa.bb");
+
+        testVal.acceptVisitor( path, null, visitor);
+
+        List<TestStateValue.AcceptVisitorInfo> visitorList = testVal.getVisitorInfo();
+        assertEquals( "unexpected number of visitors", 1, visitorList.size());
+
+        TestStateValue.AcceptVisitorInfo avi = visitorList.get( 0);
+
+        assertEquals( "StatePath when visiting", path, avi.getStatePath());
+        assertSame( "Unknown StateVisitor", visitor, avi.getVisitor());
+    }
+
+    /**
+     * This test may look a bit odd:  the transition has no effect on the visitor.
+     * What happens is that any effect the transition may have had is dealt with by
+     * the StateComposite immediately before the StateValue.  If a StateValue is
+     * called with a StateTransition it is already known that no changes are to take
+     * place to this StateValue from the StateTransition.
+     */
+    @Test
+    public void testAcceptVisitorTransition() {
+        TestStateValue testVal = newTestStateValue();
+        StateVisitor visitor = new VerifyingVisitor();
+        StatePath path = StatePath.parsePath( "aa.bb");
+        StateTransition transition = new StateTransition();
+
+        testVal.acceptVisitor( transition, path, null, visitor);
+
+        List<TestStateValue.AcceptVisitorInfo> visitorList = testVal.getVisitorInfo();
+        assertEquals( "unexpected number of visitors", 1, visitorList.size());
+
+        TestStateValue.AcceptVisitorInfo avi = visitorList.get( 0);
+
+        assertEquals( "StatePath when visiting", path, avi.getStatePath());
+        assertSame( "Unknown StateVisitor", visitor, avi.getVisitor());
+    }
 
 	/**
 	 *  P R I V A T E   F U N C T I O N S

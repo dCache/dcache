@@ -223,6 +223,321 @@ public class StateCompositeTest extends InfoBaseTest {
 	}
 
 	/**
+	 * Test method for {@link org.dcache.services.info.base.StateComposite#acceptVisitor(org.dcache.services.info.base.StatePath, org.dcache.services.info.base.StatePath, org.dcache.services.info.base.StateVisitor)}.
+	 */
+	@Test
+	public void testAcceptVisitorStatePathStatePathStateVisitor() {
+		VerifyingVisitor visitor = newDefaultVisitor();
+
+		_rootComposite.acceptVisitor(null, null, visitor);
+
+		assertTrue( "Doesn't match expected visitor-pattern", visitor.satisfied());
+	}
+
+	/**
+	 *  Test for AcceptVisitor: case 1
+	 */
+	@Test
+	public void testAcceptVisitorVarious() {
+		VerifyingVisitor visitor = newDefaultVisitor();
+
+		/* Add one of each metric type to the ephemeral branch */
+		assertVisitorAddMetric( visitor,
+				BRANCH_EPHEMERAL_PATH.newChild("string-metric"), new StringStateValue( "boo"));
+		assertVisitorAddMetric( visitor,
+				BRANCH_EPHEMERAL_PATH.newChild("int-metric"), new IntegerStateValue( 42));
+		assertVisitorAddMetric( visitor,
+				BRANCH_EPHEMERAL_PATH.newChild("float-metric"), new FloatingPointStateValue( 3.14159265));
+		assertVisitorAddMetric( visitor,
+				BRANCH_EPHEMERAL_PATH.newChild("bool-metric"), new BooleanStateValue( true));
+
+		/* Add new metrics to a different branch, the mortal one. */
+
+		assertVisitorAddMetric( visitor,
+				BRANCH_MORTAL_PATH.newChild("string-metric"), new StringStateValue( "boo"));
+		assertVisitorAddMetric( visitor,
+				BRANCH_MORTAL_PATH.newChild("int-metric"), new IntegerStateValue( 42));
+		assertVisitorAddMetric( visitor,
+				BRANCH_MORTAL_PATH.newChild("float-metric"), new FloatingPointStateValue( 3.14159));
+		assertVisitorAddMetric( visitor,
+				BRANCH_MORTAL_PATH.newChild("bool-metric"), new BooleanStateValue( true));
+
+		/* Update metrics on ephemeral branch values: same name with different values */
+
+		assertVisitorAddMetric( visitor,
+				BRANCH_EPHEMERAL_PATH.newChild("string-metric"), new StringStateValue( "fizz"));
+		assertVisitorAddMetric( visitor,
+				BRANCH_EPHEMERAL_PATH.newChild("int-metric"), new IntegerStateValue( 23));
+		assertVisitorAddMetric( visitor,
+				BRANCH_EPHEMERAL_PATH.newChild("float-metric"), new FloatingPointStateValue( 1.41421356));
+		assertVisitorAddMetric( visitor,
+				BRANCH_EPHEMERAL_PATH.newChild("bool-metric"), new BooleanStateValue( false));
+
+		/* Create metrics on fresh branches */
+		assertVisitorAddMetric( visitor,
+				BRANCH_EPHEMERAL_PATH.newChild("string-metric-branch").newChild("string-metric"), new StringStateValue( "baz"));
+		assertVisitorAddMetric( visitor,
+				BRANCH_MORTAL_PATH.newChild("int-metric-branch").newChild("int-metric"), new IntegerStateValue( 42));
+		assertVisitorAddMetric( visitor,
+				BRANCH_MORTAL_PATH.newChild("float-metric-branch").newChild("float-metric"), new FloatingPointStateValue( 3.14159));
+		assertVisitorAddMetric( visitor,
+				BRANCH_MORTAL_PATH.newChild("bool-metric-branch").newChild("bool-metric"), new BooleanStateValue( true));
+	}
+
+	@Test
+	public void testAddPoolgroup() throws MetricStatePathException {
+		VerifyingVisitor visitor = newDefaultVisitor();
+
+		StatePath pgPath = StatePath.parsePath("poolgroups");
+
+		StatePath pg1enabled = StatePath.parsePath("poolgroups.poolGroup1.enabled");
+		StatePath pg2p1 = StatePath.parsePath("poolgroups.poolGroup2.pools.pool1");
+		StatePath pg2p2 = StatePath.parsePath("poolgroups.poolGroup2.pools.pool2");
+		StatePath pg2p3 = StatePath.parsePath("poolgroups.poolGroup2.pools.pool3");
+
+		StatePath pg3enabled = StatePath.parsePath( "poolgroups.poolGroup3.enabled");
+
+		StateValue newPg1Metric = new BooleanStateValue( true, 60);
+		visitor.addExpectedMetric( pg1enabled, newPg1Metric);
+
+		visitor.addExpectedBranch( pg2p1);
+		visitor.addExpectedBranch( pg2p2);
+		visitor.addExpectedBranch( pg2p3);
+
+		StateTransition transition = new StateTransition();
+
+		_rootComposite.buildTransition( null, pg1enabled, newPg1Metric, transition);
+		_rootComposite.buildTransition( null, pg2p1, new StateComposite( 60), transition);
+		_rootComposite.buildTransition( null, pg2p2, new StateComposite( 60), transition);
+		_rootComposite.buildTransition( null, pg2p3, new StateComposite( 60), transition);
+
+		_rootComposite.applyTransition(null, transition);
+
+		visitor.assertSatisfiedSkip( "visitor not satisfied before applying change", _rootComposite, pgPath);
+
+		StateValue newPg3Metric = new BooleanStateValue( true, 60);
+		visitor.addExpectedMetric( pg3enabled, newPg3Metric);
+
+		transition = new StateTransition();
+		_rootComposite.buildTransition( null, pg3enabled, newPg3Metric, transition);
+
+		visitor.assertSatisfiedTransitionSkip("visitor not satisfied simulating the change", _rootComposite, pgPath, transition);
+
+		_rootComposite.applyTransition( null, transition);
+
+		visitor.reset();
+		_rootComposite.acceptVisitor( null, pgPath, visitor);
+		assertTrue( "visitor not satisfied after applying change", visitor.satisfied());
+
+		visitor.assertSatisfiedSkip("visitor not satisfied simulating the change", _rootComposite, pgPath);
+	}
+
+	/**
+	 * Test method for {@link org.dcache.services.info.base.StateComposite#acceptVisitor(org.dcache.services.info.base.StateTransition, org.dcache.services.info.base.StatePath, org.dcache.services.info.base.StatePath, org.dcache.services.info.base.StateVisitor)}.
+	 */
+	@Test
+	public void testAcceptVisitorStateTransitionStatePathStatePathStateVisitor() {
+		StateValue metric = new StringStateValue( "Some metric dummy data here");
+
+		assertVisitTransition( StatePath.parsePath( "MyMetric"), metric);
+
+		assertVisitTransition( BRANCH_EPHEMERAL_PATH.newChild("MyMetric"), metric);
+		assertVisitTransition( BRANCH_MORTAL_PATH.newChild("MyMetric"), metric);
+		assertVisitTransition( BRANCH_IMMORTAL_PATH.newChild("MyMetric"), metric);
+
+		assertVisitTransition( BRANCH_EPHEMERAL_PATH.newChild("new-branch").newChild("MyMetric"), metric);
+		assertVisitTransition( BRANCH_MORTAL_PATH.newChild("new-branch").newChild("MyMetric"), metric);
+		assertVisitTransition( BRANCH_IMMORTAL_PATH.newChild("new-branch").newChild("MyMetric"), metric);
+
+		assertVisitTransition( StatePath.parsePath( "aaa.bbb.ccc.MyMetric"), metric);
+	}
+
+	@Test
+	public void testUpdateCompositeWithChildren() throws MetricStatePathException {
+		VerifyingVisitor visitor = newDefaultVisitor();
+
+		String metricName = "a metric";
+		StateValue metricValue = new StringStateValue( "test string", 20);
+
+		visitor.addExpectedMetric( BRANCH_MORTAL_PATH.newChild( metricName), metricValue);
+		addMetric( BRANCH_MORTAL_PATH.newChild( metricName), metricValue);
+
+		visitor.assertSatisfied( "Not satisfied before update", _rootComposite);
+
+		/**
+		 * Try to update the mortal composite, extending its lifetime.
+		 */
+
+		StateTransition transition = new StateTransition();
+		_rootComposite.buildTransition( null, BRANCH_MORTAL_PATH, new StateComposite( LIFETIME_MORTAL_COMPOSITE +10), transition);
+
+		visitor.assertSatisfiedTransition( "Not satisfied whilst updating", _rootComposite, transition);
+
+		_rootComposite.applyTransition(null, transition);
+
+		visitor.assertSatisfied( "Not satisfied after updating", _rootComposite);
+	}
+
+	/**
+	 * Test method for {@link org.dcache.services.info.base.StateComposite#applyTransition(org.dcache.services.info.base.StatePath, org.dcache.services.info.base.StateTransition)}.
+	 */
+	@Test
+	public void testApplyTransition() {
+		StatePath metricPath = StatePath.parsePath( "foo.bar.baz");
+		StateValue metricValue = new StringStateValue( "some dummy data");
+
+		// Build the visitor we expect to pass after a metric has been added
+		VerifyingVisitor visitor = newDefaultVisitor();
+		visitor.addExpectedMetric( metricPath, metricValue);
+
+		// Build transition for adding a metric
+		StateTransition transition = new StateTransition();
+		try {
+			_rootComposite.buildTransition( null, metricPath, metricValue, transition);
+		} catch (MetricStatePathException e) {
+			fail( "Failed to add metric at path " + metricPath);
+		}
+		_rootComposite.applyTransition(null, transition);
+
+		// Check that, after applying the transition, it works as expected.
+		visitor.reset();
+		_rootComposite.acceptVisitor( null, null, visitor);
+
+		assertTrue( "VerifyingVisitor not satisfied after applying transition", visitor.satisfied());
+	}
+
+
+	@Test
+	public void testApplyTransitionUpdatingStringMetrics() throws MetricStatePathException {
+		// Build a verifying visitor for the initial state: check it passes.
+		VerifyingVisitor visitorNoMetric = newDefaultVisitor();
+		visitorNoMetric.assertSatisfied( "checking no-metric before adding metric", _rootComposite);
+
+		// Add a string metric
+		String metricName = "myMetric";
+		StatePath metricPath = BRANCH_MORTAL_PATH.newChild( metricName);
+		StateValue metricValue = new StringStateValue( "Test string 1", 60);
+
+		addMetric( metricPath, metricValue);
+
+		// Paranoid: check this actually worked OK.
+		VerifyingVisitor visitorWithMetric = newDefaultVisitor();
+		visitorWithMetric.addExpectedMetric( metricPath, metricValue);
+		visitorWithMetric.assertSatisfied( "problem establishing initial metric", _rootComposite);
+
+		// Add the new metric value
+		StateValue newMetricValue = new StringStateValue( "Test string 2", 60);
+
+		// Build the removal transition, we want to update the StringStateValue
+		StateTransition transition = new StateTransition();
+		_rootComposite.buildTransition( null, metricPath, newMetricValue, transition);
+
+		StateChangeSet mortalBranchScs = transition.getStateChangeSet( BRANCH_MORTAL_PATH);
+
+		assertScsCount( "root branch change-set", transition.getStateChangeSet( null), 0, 1, 0, 0);
+
+		assertNotNull( "mortal branch change-set is null", mortalBranchScs);
+		assertTrue( "mortal branch change-set doesn't contain expected metric", mortalBranchScs._updatedChildren.containsKey( metricName));
+		assertScsCount( "mortal branch change-set", mortalBranchScs, 0, 0, 0, 1);
+
+		// Apply the transition
+		_rootComposite.applyTransition( null, transition);
+
+		// Check we're back were we started
+		VerifyingVisitor visitorWithNewMetric = newDefaultVisitor();
+		visitorWithNewMetric.addExpectedMetric( metricPath, newMetricValue);
+		visitorWithNewMetric.assertSatisfied( "problem establishing initial metric", _rootComposite);
+	}
+
+	@Test
+	public void testApplyTransitionUpdatingIntegerMetrics() throws MetricStatePathException {
+		// Build a verifying visitor for the initial state: check it passes.
+		VerifyingVisitor visitorNoMetric = newDefaultVisitor();
+		visitorNoMetric.assertSatisfied( "checking no-metric before adding metric", _rootComposite);
+
+		// Add a string metric
+		String metricName = "myMetric";
+		StatePath metricPath = BRANCH_MORTAL_PATH.newChild( metricName);
+		StateValue metricValue = new IntegerStateValue( 100, 60);
+
+		addMetric( metricPath, metricValue);
+
+		// Paranoid: check this actually worked OK.
+		VerifyingVisitor visitorWithMetric = newDefaultVisitor();
+		visitorWithMetric.addExpectedMetric( metricPath, metricValue);
+		visitorWithMetric.assertSatisfied( "problem establishing initial metric", _rootComposite);
+
+		// Add the new metric value
+		StateValue newMetricValue = new IntegerStateValue( 200, 60);
+
+		// Build the removal transition, we want to update the StringStateValue
+		StateTransition transition = new StateTransition();
+		_rootComposite.buildTransition( null, metricPath, newMetricValue, transition);
+
+		StateChangeSet mortalBranchScs = transition.getStateChangeSet( BRANCH_MORTAL_PATH);
+
+		assertScsCount( "root branch change-set", transition.getStateChangeSet( null), 0, 1, 0, 0);
+
+		assertNotNull( "mortal branch change-set is null", mortalBranchScs);
+		assertTrue( "mortal branch change-set doesn't contain expected metric", mortalBranchScs._updatedChildren.containsKey( metricName));
+		assertScsCount( "mortal branch change-set", mortalBranchScs, 0, 0, 0, 1);
+
+		// Apply the transition
+		_rootComposite.applyTransition( null, transition);
+
+		// Check we're back were we started
+		VerifyingVisitor visitorWithNewMetric = newDefaultVisitor();
+		visitorWithNewMetric.addExpectedMetric( metricPath, newMetricValue);
+		visitorWithNewMetric.assertSatisfied( "problem establishing initial metric", _rootComposite);
+	}
+
+	@Test
+	public void testSkipToEmptyBranch() {
+		VerifyingVisitor visitor = new VerifyingVisitor(BRANCH_EPHEMERAL_PATH);
+		visitor.assertSatisfiedSkip( "problem with skip to a branch with a metric", _rootComposite, BRANCH_EPHEMERAL_PATH);
+	}
+
+	@Test
+	public void testSkipToNonEmptyBranch() throws MetricStatePathException {
+		String metricName = "myMetric";
+		StateValue metricValue = new StringStateValue( "Test string", 20);
+		StatePath metricPath = BRANCH_EPHEMERAL_PATH.newChild( metricName);
+
+		addMetric( metricPath, metricValue);
+
+		VerifyingVisitor visitor = new VerifyingVisitor( metricPath, metricValue);
+
+		visitor.assertSatisfiedSkip( "problem with skip to a branch with a metric", _rootComposite, metricPath);
+	}
+
+	@Test
+	public void testSkipToMetric() throws MetricStatePathException {
+		String metricName = "myMetric";
+		StateValue metricValue = new StringStateValue( "Test string", 20);
+		StatePath metricPath = BRANCH_EPHEMERAL_PATH.newChild( metricName);
+
+		addMetric( metricPath, metricValue);
+
+		VerifyingVisitor visitor = new VerifyingVisitor( metricPath, metricValue);
+
+		visitor.assertSatisfiedSkip("problem with skip to a metric", _rootComposite, metricPath);
+	}
+
+
+	@Test
+	public void testSkipToNewMetric() throws MetricStatePathException {
+		String metricName = "myMetric";
+		StateValue metricValue = new StringStateValue( "Test string", 0);
+		StatePath metricPath = BRANCH_EPHEMERAL_PATH.newChild( metricName);
+
+		StateTransition transition = new StateTransition();
+		_rootComposite.buildTransition( null, metricPath, metricValue, transition);
+
+		VerifyingVisitor visitor = new VerifyingVisitor( metricPath, metricValue);
+		visitor.assertSatisfiedTransitionSkip("problem with skip to a new metric", _rootComposite, metricPath, transition);
+	}
+
+	/**
 	 * Test method for {@link org.dcache.services.info.base.StateComposite#buildTransition(org.dcache.services.info.base.StatePath, org.dcache.services.info.base.StatePath, org.dcache.services.info.base.StateComponent, org.dcache.services.info.base.StateTransition)}.
 	 *
 	 * Try building a transition for a metric added to the root.
@@ -671,4 +986,100 @@ public class StateCompositeTest extends InfoBaseTest {
 	    assertEquals( msg + " remove children", removeChildrenCount, scsRemovedChildren);
 	    assertEquals( msg + " updated children", updateChildrenCount, scsUpdatedChildren);
 	}
+
+	/**
+     * Check that acceptVisitor with a transition will work. The transition
+     * is taken from the supplied parameters. The transition isn't applied,
+     * so this method may be called multiple times.
+     *
+     * @param metricPath
+     * @param metricValue
+     */
+    private void assertVisitTransition( StatePath metricPath,
+                                        StateValue metricValue) {
+
+        // Build the visitor we expect to pass after a metric has been added
+        VerifyingVisitor visitor = newDefaultVisitor();
+        visitor.addExpectedMetric( metricPath, metricValue);
+
+        // Build transition for adding a metric
+        StateTransition transition = new StateTransition();
+        try {
+            _rootComposite.buildTransition( null, metricPath, metricValue,
+                                            transition);
+        } catch (MetricStatePathException e) {
+            fail( "Failed to add metric at path " + metricPath);
+        }
+
+        // Check that visiting with transition works as expected
+        visitor.assertSatisfiedTransition(
+                                           "VerifyingVisitor not satisfied after applying transition",
+                                           _rootComposite, transition);
+    }
+
+
+	/**
+     * Assert that we can add the given metric to the tree and visiting gives
+     * the correct results.
+     *
+     * @param visitor
+     * @param path
+     * @param metric
+     */
+    private void assertVisitorAddMetric( VerifyingVisitor visitor,
+                                         StatePath path, StateValue metric) {
+        /* Just to double-check: do we get the right result to begin with? */
+        visitor.assertSatisfied(
+                                 "VerifyingVisitor not satisfied before changing anything",
+                                 _rootComposite);
+
+        /* Update the visitor so we check for the new metric */
+        visitor.addExpectedMetric( path, metric);
+
+        /* Build a transition for adding this metric */
+        StateTransition transition = new StateTransition();
+        try {
+            _rootComposite.buildTransition( null, path, metric, transition);
+        } catch (MetricStatePathException e) {
+            fail( "Failed to add metric at path " + path);
+        }
+
+        /*
+         * Verify that the simulated effect of the transition works as
+         * expected.
+         */
+        visitor.assertSatisfiedTransition(
+                                           "VerifyingVisitor not satisfied with simulating transition",
+                                           _rootComposite, transition);
+
+        /* Apply the transition, so updating the tree */
+        _rootComposite.applyTransition( null, transition);
+
+        /* Verify the transition now works */
+        visitor.assertSatisfied(
+                                 "VerifyingVisitor not satisfied after applying transition",
+                                 _rootComposite);
+    }
+
+
+	/**
+     * Return a new VerifyingVisitor that will pass the default set of
+     * branches:
+     * <ul>
+     * <li>BRANCH_EPHEMERAL_PATH
+     * <li>BRANCH_MORTAL_PATH
+     * <li>BRANCH_IMMORTAL_PATH
+     * </ul>
+     *
+     * @return
+     */
+    private VerifyingVisitor newDefaultVisitor() {
+        VerifyingVisitor visitor = new VerifyingVisitor();
+
+        visitor.addExpectedBranch( BRANCH_EPHEMERAL_PATH);
+        visitor.addExpectedBranch( BRANCH_MORTAL_PATH);
+        visitor.addExpectedBranch( BRANCH_IMMORTAL_PATH);
+
+        return visitor;
+    }
 }
