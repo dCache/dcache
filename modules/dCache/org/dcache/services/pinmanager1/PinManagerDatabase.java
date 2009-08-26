@@ -1468,7 +1468,7 @@ class PinManagerDatabase
             assert pinRequest != null;
             return pinRequest;
         } catch(SQLException sqle) {
-            sqle.printStackTrace();
+            _logger.error(sqle);
             throw new PinDBException("insertPinRequestIntoNewOrExistingPin failed: "+sqle);
         }
     }
@@ -1492,8 +1492,31 @@ class PinManagerDatabase
                 PinManagerPinState.MOVING);
             return getPin( _con, id);
         } catch(SQLException sqle) {
-            sqle.printStackTrace();
+            _logger.error(sqle);
             throw new PinDBException("newPinForPinMove failed: "+sqle);
+        }
+    }
+
+    public Pin newPinForRepin(
+        PnfsId pnfsId,
+        long expirationTime) throws PinDBException {
+        Connection _con = getThreadLocalConnection();
+        if(_con == null) {
+           throw new PinDBException(1,"DB is not initialized in this thread!!!");
+        }
+
+        try {
+            long id = nextLong(_con);
+            insertPin(_con,
+                id,
+                pnfsId,
+                expirationTime,
+                null,
+                PinManagerPinState.PINNING);
+            return getPin( _con, id);
+        } catch(SQLException sqle) {
+            _logger.error(sqle);
+            throw new PinDBException("newPinForRepin failed: "+sqle);
         }
     }
 
