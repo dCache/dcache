@@ -510,7 +510,8 @@ public class PinManager extends AbstractCell implements Runnable  {
 
     }
 
-   private  Collection<Pin> unconnectedPins=null;
+    private  Collection<Pin> unconnectedPins=null;
+
     private void runInventoryBeforeStartPart() throws PinDBException {
         // we get all the problematic pins before the pin manager starts
         // receiving new requests
@@ -763,6 +764,81 @@ public class PinManager extends AbstractCell implements Runnable  {
     }
 
 
+    /**
+     * This Method moves all pin requests for pins for the same pnfsid
+     * in REPINNING or ERROR state to this pin
+     *  This method is called from the pinSucceeded method
+     * where db transaction has been aready started.
+     * The state of pin in REPINNING or ERROR state, once it is stripped of all
+     * Pin Requests is changed to the UNPINNING state
+     * so that the pin manager keeps on trying to remove the assosiated
+     * sticky flag, when the pool where pin once existed is back online
+     * @param pin a new pin
+     * @throws org.dcache.services.pinmanager1.PinDBException
+     */
+    private void moveRepinningPinRequestsIntoNewPin(Pin pin) throws PinDBException {
+
+        for (Pin apin : db.allPinsByPnfsId(pin.getPnfsId())) {
+             if (apin.getState()     == PinManagerPinState.REPINNING ||
+                    apin.getState() == PinManagerPinState.ERROR) {
+                apin = db.getPinForUpdate(apin.getId());
+                for (PinRequest pinRequest : apin.getRequests()) {
+                    db.movePinRequest(pinRequest.getId(), pin.getId());
+                    PinManagerJob job = pinRequestToJobMap.remove(pinRequest.getId());
+                    if (job != null) {
+                        job.returnResponse();
+                    }
+                }
+                db.updatePin(apin.getId(), null, null, PinManagerPinState.UNPINNINGFAILED);
+            }
+        }
+    }
+
+
+    /**
+     * This method is called by either when pinning attempt has failed
+     *  This method is called from a  method
+     * where db transaction has been aready started.
+     * The method finds all the pins in the REPINNING state
+     * and changes their state to ERROR
+     * It makes all the pending requests that are assosiated with this pin
+     * to fail.
+     * The pin requests that are assumed to have succeeded already are preserved.
+     * <p>
+     * Once the request is in ERROR state, there will be further attempts to
+     * repin it done periodically
+     *
+     * @param pin
+     * @param error
+     * @throws org.dcache.services.pinmanager1.PinDBException
+     */
+    private void errorRepinRequests(Pin pin, Object error) throws PinDBException {
+        for (Pin apin : db.allPinsByPnfsId(pin.getPnfsId())) {
+            if (apin.getId() == pin.getId()) {
+                // we do not
+                continue;
+            }
+            if (apin.getState() == PinManagerPinState.REPINNING) {
+                apin = db.getPinForUpdate(apin.getId());
+                for (PinRequest pinRequest : apin.getRequests()) {
+                    PinManagerJob job = pinRequestToJobMap.remove(pinRequest.getId());
+                    if (job != null) {
+                        job.returnFailedResponse("original pinned copy is not accessible, " + "repinning attemt failed:" + error);
+                    }
+                    // the pending job we found could have been either extend
+                    // or a pin request
+                    if(job.getType() == PinManagerJobType.PIN) {
+                       // we returned failure for this pin request
+                       // no need to keep it
+                       db.deletePinRequest(pinRequest.getId());
+                    }
+                }
+                // We will keep on trying to repin this pin
+                db.updatePin(apin.getId(), null, null, PinManagerPinState.ERROR);
+            }
+        }
+    }
+
     public void pinSucceeded ( Pin pin ,
         String pool,
         long expiration,
@@ -794,6 +870,17 @@ public class PinManager extends AbstractCell implements Runnable  {
             } else {
                 success = false;
                 error = "state is "+pin.getState();
+            }
+
+            if(success) {
+                moveRepinningPinRequestsIntoNewPin(pin);
+                // update the pin so it picks
+                // up all the pin requests that are moved from the
+                // old request
+                pin = db.getPinForUpdate(pin.getId());
+            } else {
+                errorRepinRequests(pin, error);
+
             }
 
             for(PinRequest pinRequest:pinRequests) {
@@ -855,6 +942,11 @@ public class PinManager extends AbstractCell implements Runnable  {
         Set<PinRequest> pinRequests ;
         db.initDBConnection();
         try {
+
+            //If there are repin requests
+            // fail them
+            errorRepinRequests(pin, reason);
+
             pin = db.getPinForUpdate(pin.getId());
             pinRequests = pin.getRequests();
             for(PinRequest pinRequest:pinRequests) {
@@ -1093,9 +1185,64 @@ public class PinManager extends AbstractCell implements Runnable  {
         // extend failed - pool is not available
         //make pin manager attempt to pin file in a new location
 
-        extendJob.returnFailedResponse(reason);
+        repin(extendJob,pin);
     }
 
+    /**
+     * If the operation on already pinned replica fails,most likely failed due
+     * to the pinned replica or pool inavailability, PinManager does not fail
+     * this operation, but tries to pin a file again, which could lead to the
+     * file being pinned in a new pool.
+     * <p>
+     * If pinning in a new pool succeeds, all pin requests associated with this
+     * pin is moved to the new pin.
+     * <p>
+     * If pinning in a new pool fails, the pending requests on this pin are
+     * failed, and the requests that are reported to have succeed are preserved,
+     * and the pin will be attempted to be repinned over and over again
+     *
+     * @param job this is the job that lead to the operation on the
+     * pin that failed.
+     *
+     * @param pin
+     * @throws org.dcache.services.pinmanager1.PinException
+     */
+    public void repin(PinManagerJob job,Pin pin) throws PinException {
+        db.initDBConnection();
+        try {
+            Pin oldPin = db.getPinForUpdate(pin.getId());
+            if(oldPin.getState() != PinManagerPinState.PINNED) {
+                throw new PinException("Pin "+oldPin+"is not pinned");
+            }
+            db.updatePin(oldPin.getId(), expirationFrequency,null,
+                    PinManagerPinState.REPINNING);
+            Pin newPin =
+                    db.newPinForRepin(oldPin.getPnfsId(),
+                    oldPin.getExpirationTime());
+            long lifetime = oldPin.getExpirationTime() == -1 ? -1 :
+                oldPin.getExpirationTime() - System.currentTimeMillis();
+
+            PinManagerJobImpl newPinJob =
+                new PinManagerJobImpl(PinManagerJobType.PIN,
+                null,null,oldPin.getPnfsId(),lifetime,null,null,null,null);
+            //save the extend job on pinRequestToJobMap
+            // if the new pinning succeeds, the extend job will
+            // receive a success notification
+            // if it fails, it will cause the extend request to fail
+            if(job != null && job.getPinRequestId() != null) {
+                pinRequestToJobMap.put(job.getPinRequestId(),job);
+            }
+            new Pinner(this, newPinJob, newPin,0, RequestContainerV5.allStates);
+
+        } catch (PinDBException pdbe ) {
+            error("repinFile: "+pdbe.toString());
+            db.rollbackDBOperations();
+            return;
+        }
+        finally {
+            db.commitDBOperations();
+        }
+    }
 
     public void unpin(PinManagerUnpinMessage unpinRequest,
             CellMessage cellMessage)
@@ -1455,6 +1602,23 @@ public class PinManager extends AbstractCell implements Runnable  {
         }
     }
 
+    private void repinErrorPins() throws PinException {
+        // we get all the problematic pins before the pin manager starts
+        // receiving new requests
+        Collection<Pin> errorPins=null;
+        db.initDBConnection();
+        try {
+            errorPins=db.getPinsByState(PinManagerPinState.ERROR);
+        } finally {
+            db.commitDBOperations();
+        }
+
+        for(Pin pin: errorPins) {
+            repin(null, pin);
+        }
+    }
+
+
     public void expirePinRequests() throws PinException{
         Collection<PinRequest> expiredPinRequests=null;
         db.initDBConnection();
@@ -1513,6 +1677,12 @@ public class PinManager extends AbstractCell implements Runnable  {
                     expirePinsWithoutRequests();
                 } catch(PinException pdbe) {
                     error("expirePinsWithoutRequests failed: " +pdbe);
+                }
+
+                try {
+                    repinErrorPins();
+                } catch(PinException pdbe) {
+                    error("repinErrorPins failed: " +pdbe);
                 }
 
                 try {
@@ -1842,12 +2012,6 @@ public class PinManager extends AbstractCell implements Runnable  {
         db.deletePin(dstPin.getId());
         db.commitDBOperations();
     }
- 
-    private enum PinManagerJobType {
-        PIN,
-        UNPIN,
-        EXTEND_LIFETIME
-    }
 
     private enum PinManagerJobState {
         ACTIVE,
@@ -2028,7 +2192,7 @@ public class PinManager extends AbstractCell implements Runnable  {
          */
         public void setPinRequestId(Long pinRequestId) {
             this.pinRequestId = pinRequestId;
-            if(pinManagerMessage != null) {
+            if(pinManagerMessage != null && pinRequestId != null) {
                 pinManagerMessage.setPinRequestId(pinRequestId.toString());
             }
         }
