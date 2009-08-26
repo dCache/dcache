@@ -74,6 +74,12 @@ public interface PinManagerJob {
      */
     StorageInfo getStorageInfo();
 
+    /**
+     *
+     * @return type of job
+     */
+    PinManagerJobType getType();
+
 
     void returnFailedResponse(Object reason);
 

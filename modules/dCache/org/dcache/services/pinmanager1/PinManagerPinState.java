@@ -131,7 +131,9 @@ public enum PinManagerPinState {
      EXPIRED("EXPIRED", 5),
      UNPINNING("UNPINNING", 6),
      UNPINNINGFAILED("UNPINNINGFAILED", 7),
-     MOVING("MOVING", 8);
+     MOVING("MOVING", 8),
+     REPINNING("REPINNING",9),
+     ERROR("ERROR",10);
 
     private final String name;
     private final int stateId;
