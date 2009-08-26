@@ -22,11 +22,9 @@ import diskCacheV111.movers.DCapDataOutputStream;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsFile;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.vehicles.DCapProtocolInfo;
-import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 
 import org.dcache.cells.AbstractCell;

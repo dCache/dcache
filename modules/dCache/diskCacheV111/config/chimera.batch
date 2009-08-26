@@ -113,8 +113,3 @@ create org.dcache.acl.AclCell acladmin \
          -aclConnPswd=${aclConnPswd} \
          "
 onerror shutdown
-#
-create org.dcache.chimera.namespace.DirectoryLookUpPool dirLookupPool \
-        "-export \
-         -chimeraConfig=${config}/chimera-config.xml \
-        "
