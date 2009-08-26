@@ -2651,7 +2651,7 @@ public class Storage
     {
         _log.debug("Storage.removeDirectory");
         for (Object path: tree) {
-            String actualPath = srm_root + "/" + path;
+            String actualPath = getFullPath(path.toString());
             try {
                 _pnfs.deletePnfsEntry(actualPath);
             } catch (TimeoutCacheException e) {
@@ -4577,5 +4577,15 @@ public class Storage
                 _log.error("Unexpected Exception ",e);
                 throw new SRMException("Failed to find file by path due to internal system failure or timeout, unexpected exception thrown : "+e.getMessage());
             }
+    }
+
+    /**
+     * Given a path relative to the root path, this method returns a
+     * full PNFS path.
+     */
+    private String getFullPath(String path)
+    {
+        FsPath fullPath = new FsPath(srm_root + "/" + path);
+        return fullPath.toString();
     }
 }
