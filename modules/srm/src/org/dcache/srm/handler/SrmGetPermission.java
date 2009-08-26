@@ -22,6 +22,8 @@ import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
 import org.apache.axis.types.URI;
+import org.apache.log4j.Logger;
+import org.apache.axis.types.URI.MalformedURIException;
 
 /**
  *
@@ -29,6 +31,8 @@ import org.apache.axis.types.URI;
  */
 
 public class SrmGetPermission {
+        private static Logger logger = 
+                Logger.getLogger(SrmGetPermission.class);
 	private final static String SFN_STRING="?SFN=";
 	AbstractStorageElement storage;
 	SrmGetPermissionRequest request;
@@ -46,33 +50,18 @@ public class SrmGetPermission {
 		this.storage = storage;
 	}
     
-	private void say(String txt) {
-		if(storage!=null) {
-			storage.log("SrmGetPermission "+txt);
-		}
-	}
-    
-	private void esay(String txt) {
-		if(storage!=null) {
-			storage.elog("SrmGetPermission "+txt);
-		}
-	}
-	
-	private void esay(Throwable t) {
-		if(storage!=null) {
-			storage.elog(" SrmGetPermission exception: ");
-			storage.elog(t);
-		}
-	}
-	
 	public SrmGetPermissionResponse getResponse() {
 		if(response != null ) return response;
 		try {
 			response = srmGetPermission();
-		} 
-		catch(Exception e) {
-			storage.elog(e);
-		}
+        } catch(MalformedURIException mue) {
+            logger.debug(" malformed uri : "+mue.getMessage());
+            response = getFailedResponse(" malformed uri : "+mue.getMessage(),
+                    TStatusCode.SRM_INVALID_REQUEST);
+        } catch(SRMException srme) {
+            logger.error(srme);
+            response = getFailedResponse(srme.toString());
+        }
 		return response;
 	}
 	
@@ -97,7 +86,8 @@ public class SrmGetPermission {
 	 * implementation of srm get permission
 	 */
 	
-	public SrmGetPermissionResponse srmGetPermission() throws SRMException,org.apache.axis.types.URI.MalformedURIException {
+	public SrmGetPermissionResponse srmGetPermission() throws SRMException,
+            MalformedURIException {
 		SrmGetPermissionResponse response  = new SrmGetPermissionResponse();
 		TReturnStatus returnStatus = new TReturnStatus();
 		returnStatus.setStatusCode(TStatusCode.SRM_SUCCESS);
@@ -119,8 +109,8 @@ public class SrmGetPermission {
 		boolean haveFailure = false;
 		int nfailed = 0;
 		for(int i=0;i <length;i++){
-			say("SURL["+i+"]= "+uriarray[i]);
-			path[i]  = uriarray[i].getPath(true,true);
+            logger.debug("SURL["+i+"]= "+uriarray[i]);
+            path[i]  = uriarray[i].getPath(true,true);
 			int indx = path[i].indexOf(SFN_STRING);
 			TReturnStatus rs = new TReturnStatus();
 			rs.setStatusCode(TStatusCode.SRM_SUCCESS);
@@ -156,7 +146,7 @@ public class SrmGetPermission {
 				p.setOwner(owner);
 			}
 			catch (SRMException srme) {
-				esay(srme);
+				logger.warn(srme);
 				p.getStatus().setStatusCode(TStatusCode.SRM_FAILURE);
 				p.getStatus().setExplanation(uriarray[i]+" "+srme.getMessage());
 				haveFailure = true;

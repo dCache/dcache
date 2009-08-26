@@ -45,12 +45,15 @@ import java.util.Iterator;
 import java.util.Collections;
 import java.util.Comparator;
 import java.io.File;
+import org.apache.log4j.Logger;
 /**
  *
  * @author neha
  */
 
 public class SrmCheckPermission {
+        private static Logger logger =
+            Logger.getLogger(SrmCheckPermission.class);
 	private final static String SFN_STRING="?SFN=";
 	AbstractStorageElement storage;
 	SrmCheckPermissionRequest request;
@@ -68,32 +71,13 @@ public class SrmCheckPermission {
 		this.storage = storage;
 	}
 	
-	private void say(String txt) {
-		if(storage!=null) {
-			storage.log("SrmCheckPermission "+txt);
-		}
-	}
-	
-	private void esay(String txt) {
-		if(storage!=null) {
-			storage.elog("SrmCheckPermission "+txt);
-		}
-	}
-	
-	private void esay(Throwable t) {
-		if(storage!=null) {
-			storage.elog(" SrmCheckPermission exception: ");
-			storage.elog(t);
-		}
-	}
-	
 	public SrmCheckPermissionResponse getResponse() {
 		if(response != null ) return response;
 		try {
 			response = srmCheckPermission();
 		} 
 		catch(Exception e) {
-			storage.elog(e);
+			logger.error(e);
 		}
 		return response;
 	}
@@ -147,7 +131,7 @@ public class SrmCheckPermission {
 			TSURLPermissionReturn pr = new TSURLPermissionReturn();
 			pr.setStatus(rs);
 			pr.setSurl(uriarray[i]);
-			say("SURL["+i+"]= "+uriarray[i]);
+			logger.debug("SURL["+i+"]= "+uriarray[i]);
 			path[i] = uriarray[i].getPath(true,true);
 			int indx    = path[i].indexOf(SFN_STRING);	
 			if(indx != -1) { 
@@ -169,7 +153,7 @@ public class SrmCheckPermission {
 				pr.setPermission(pm);
 			}
 			catch (SRMException srme) { 
-				esay(srme);
+				logger.warn(srme);
 				pr.getStatus().setStatusCode(TStatusCode.SRM_FAILURE);
 				pr.getStatus().setExplanation(uriarray[i]+" "+srme.getMessage());
 				nfailed++;

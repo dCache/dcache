@@ -24,6 +24,8 @@ import org.dcache.srm.util.Configuration;
 import org.dcache.srm.scheduler.Scheduler;
 import org.apache.axis.types.URI;
 import org.dcache.srm.SRMProtocol;
+import org.apache.log4j.Logger;
+import org.apache.axis.types.URI.MalformedURIException;
 
 /**
  *
@@ -31,6 +33,9 @@ import org.dcache.srm.SRMProtocol;
  */
 
 public class SrmGetSpaceTokens {
+    private static Logger logger = 
+            Logger.getLogger(SrmGetSpaceTokens.class);
+       
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement  storage;
     SrmGetSpaceTokensRequest  request;
@@ -62,33 +67,17 @@ public class SrmGetSpaceTokens {
         }
     }
     
-    
-    private void say(String txt) {
-        if(storage!=null) {
-            storage.log("SrmGetSpaceTokens "+txt);
-        }
-    }
-    
-    private void esay(String txt) {
-        if(storage!=null) {
-            storage.elog("SrmGetSpaceTokens "+txt);
-        }
-    }
-    
-    private void esay(Throwable t) {
-        if(storage!=null) {
-            storage.elog(" SrmGetSpaceTokens exception : ");
-            storage.elog(t);
-        }
-    }
-    
     public SrmGetSpaceTokensResponse getResponse() {
         if(response != null ) return response;
         try {
             response = srmGetSpaceTokens();
-        } catch(Exception e) {
-            storage.elog(e);
-            response = getFailedResponse("Exception : "+e.toString());
+        } catch(MalformedURIException mue) {
+            logger.debug(" malformed uri : "+mue.getMessage());
+            response = getFailedResponse(" malformed uri : "+mue.getMessage(),
+                    TStatusCode.SRM_INVALID_REQUEST);
+        } catch(SRMException srme) {
+            logger.error(srme);
+            response = getFailedResponse(srme.toString());
         }
         return response;
     }
@@ -115,34 +104,27 @@ public class SrmGetSpaceTokens {
      */
     
     public SrmGetSpaceTokensResponse srmGetSpaceTokens() 
-        throws SRMException,org.apache.axis.types.URI.MalformedURIException {
-        try {
-            if(request==null) {
-                return getFailedResponse(
-                        "srmGetSpaceTokens: null request passed to SrmGetSpaceTokens",
-                        TStatusCode.SRM_INVALID_REQUEST);
-            }
-            String description = request.getUserSpaceTokenDescription();
-            String[] spaceTokens = storage.srmGetSpaceTokens(user,description);
-            
-            if(spaceTokens == null || spaceTokens.length == 0) {
-                return getFailedResponse(
-                        "the space token description provided does not refer to any existing space",
-                        TStatusCode.SRM_INVALID_REQUEST);
-                
-            }
-            SrmGetSpaceTokensResponse response = 
-                    new SrmGetSpaceTokensResponse(
-                    new TReturnStatus(TStatusCode.SRM_SUCCESS,"OK"),
-                    new ArrayOfString(spaceTokens));
-            
-            return response;
-       }
-       catch (Exception e) {
-           esay(e);
-           return getFailedResponse(e.toString(),
-                   TStatusCode.SRM_INTERNAL_ERROR);
-       }
+        throws SRMException,MalformedURIException {
+        if(request==null) {
+            return getFailedResponse(
+                    "srmGetSpaceTokens: null request passed to SrmGetSpaceTokens",
+                    TStatusCode.SRM_INVALID_REQUEST);
+        }
+        String description = request.getUserSpaceTokenDescription();
+        String[] spaceTokens = storage.srmGetSpaceTokens(user,description);
+
+        if(spaceTokens == null || spaceTokens.length == 0) {
+            return getFailedResponse(
+                    "the space token description provided does not refer to any existing space",
+                    TStatusCode.SRM_INVALID_REQUEST);
+
+        }
+        SrmGetSpaceTokensResponse response =
+                new SrmGetSpaceTokensResponse(
+                new TReturnStatus(TStatusCode.SRM_SUCCESS,"OK"),
+                new ArrayOfString(spaceTokens));
+
+        return response;
    }
     
     

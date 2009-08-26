@@ -24,6 +24,9 @@ import org.dcache.srm.util.Configuration;
 import org.dcache.srm.scheduler.Scheduler;
 import org.apache.axis.types.URI;
 import org.dcache.srm.SRMProtocol;
+import org.apache.log4j.Logger;
+import org.apache.axis.types.URI.MalformedURIException;
+
 
 /**
  *
@@ -31,6 +34,8 @@ import org.dcache.srm.SRMProtocol;
  */
 
 public class SrmGetRequestTokens {
+    private static Logger logger = 
+            Logger.getLogger(SrmGetRequestTokens.class);
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement  storage;
     SrmGetRequestTokensRequest  request;
@@ -62,33 +67,17 @@ public class SrmGetRequestTokens {
         }
     }
     
-    
-    private void say(String txt) {
-        if(storage!=null) {
-            storage.log("SrmGetRequestTokens "+" "+txt);
-        }
-    }
-    
-    private void esay(String txt) {
-        if(storage!=null) {
-            storage.elog("SrmGetRequestTokens "+" "+txt);
-        }
-    }
-    
-    private void esay(Throwable t) {
-        if(storage!=null) {
-            storage.elog(" SrmGetRequestTokens exception : ");
-            storage.elog(t);
-        }
-    }
-    
     public SrmGetRequestTokensResponse getResponse() {
         if(response != null ) return response;
         try {
             response = srmGetRequestTokens();
-        } catch(Exception e) {
-            storage.elog(e);
-            response = getFailedResponse("Exception : "+e.toString());
+        } catch(MalformedURIException mue) {
+            logger.debug(" malformed uri : "+mue.getMessage());
+            response = getFailedResponse(" malformed uri : "+mue.getMessage(),
+                    TStatusCode.SRM_INVALID_REQUEST);
+        } catch(SRMException srme) {
+            logger.error(srme);
+            response = getFailedResponse(srme.toString());
         }
         return response;
     }
@@ -116,40 +105,33 @@ public class SrmGetRequestTokens {
     
     public SrmGetRequestTokensResponse srmGetRequestTokens() 
         throws SRMException,org.apache.axis.types.URI.MalformedURIException {
-        try {
-            if(request==null) {
-                return getFailedResponse(
-                        "srmGetRequestTokens: null request passed to SrmGetRequestTokens",
-                        TStatusCode.SRM_INVALID_REQUEST);
+        if(request==null) {
+            return getFailedResponse(
+                    "srmGetRequestTokens: null request passed to SrmGetRequestTokens",
+                    TStatusCode.SRM_INVALID_REQUEST);
+        }
+        String description = request.getUserRequestDescription();
+
+        String[] requestTokens = storage.srmGetRequestTokens(user,description);
+        if(requestTokens.length >0) {
+            TRequestTokenReturn[] requestTokenReturns =
+                    new TRequestTokenReturn[requestTokens.length];
+            for(int i =0; i <requestTokens.length; ++i) {
+                requestTokenReturns[i] =
+                        new TRequestTokenReturn(requestTokens[i],null);
             }
-            String description = request.getUserRequestDescription();
+            SrmGetRequestTokensResponse response =
+                    new SrmGetRequestTokensResponse(
+                    new TReturnStatus(TStatusCode.SRM_SUCCESS,"OK"),
+                    new ArrayOfTRequestTokenReturn(requestTokenReturns));
+
+                    return response;
+        } else {
+               return getFailedResponse("userRequestDescription does not refer to any existing known requests",
+               TStatusCode.SRM_INVALID_REQUEST);
+
+        }
             
-            String[] requestTokens = storage.srmGetRequestTokens(user,description);
-            if(requestTokens.length >0) {
-                TRequestTokenReturn[] requestTokenReturns = 
-                        new TRequestTokenReturn[requestTokens.length];
-                for(int i =0; i <requestTokens.length; ++i) {
-                    requestTokenReturns[i] = 
-                            new TRequestTokenReturn(requestTokens[i],null);
-                }
-                SrmGetRequestTokensResponse response = 
-                        new SrmGetRequestTokensResponse(
-                        new TReturnStatus(TStatusCode.SRM_SUCCESS,"OK"),
-                        new ArrayOfTRequestTokenReturn(requestTokenReturns));
-                        
-                        return response;
-            } else {
-                   return getFailedResponse("userRequestDescription does not refer to any existing known requests",
-                   TStatusCode.SRM_INVALID_REQUEST);
-                
-            }
-            
-       }
-       catch (Exception e) {
-           esay(e);
-           return getFailedResponse(e.toString(),
-                   TStatusCode.SRM_INTERNAL_ERROR);
-       }
    }
     
     

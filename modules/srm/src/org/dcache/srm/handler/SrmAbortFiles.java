@@ -23,6 +23,10 @@ import org.dcache.srm.util.Configuration;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
+import org.apache.log4j.Logger;
+import org.apache.axis.types.URI.MalformedURIException;
+import java.sql.SQLException;
+
 
 /**
  *
@@ -30,6 +34,8 @@ import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
  */
 public class SrmAbortFiles {
     
+    private static Logger logger = 
+            Logger.getLogger(SrmAbortFiles.class);
     
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement storage;
@@ -58,23 +64,6 @@ public class SrmAbortFiles {
         this.configuration = srm.getConfiguration();
     }
     
-    private void say(String words_of_wisdom) {
-        if(storage!=null) {
-            storage.log("SrmAbortFiles "+words_of_wisdom);
-        }
-    }
-    
-    private void esay(String words_of_despare) {
-        if(storage!=null) {
-            storage.elog("SrmAbortFiles "+words_of_despare);
-        }
-    }
-    private void esay(Throwable t) {
-        if(storage!=null) {
-            storage.elog(" SrmAbortFiles exception : ");
-            storage.elog(t);
-        }
-    }
     boolean longFormat =false;
     String servicePathAndSFNPart = "";
     int port;
@@ -83,11 +72,21 @@ public class SrmAbortFiles {
         if(response != null ) return response;
         try {
             response = srmAbortFiles();
-        } catch(Exception e) {
-            storage.elog(e);
-            response = getFailedResponse(e.toString());
+        } catch(MalformedURIException mue) {
+            logger.debug(" malformed uri : "+mue.getMessage());
+            response = getFailedResponse(" malformed uri : "+mue.getMessage(),
+                    TStatusCode.SRM_INVALID_REQUEST);
+        } catch(SQLException sqle) {
+            logger.error(sqle);
+            response = getFailedResponse("sql error "+sqle.getMessage(),
+                    TStatusCode.SRM_INTERNAL_ERROR);
+        } catch(SRMException srme) {
+            logger.error(srme);
+            response = getFailedResponse(srme.toString());
+        } catch(IllegalStateTransition ist) {
+            logger.error(ist);
+            response = getFailedResponse(ist.toString());
         }
-        
         return response;
     }
     
@@ -110,11 +109,8 @@ public class SrmAbortFiles {
      * implementation of srm ls
      */
     public SrmAbortFilesResponse srmAbortFiles()
-    throws SRMException,org.apache.axis.types.URI.MalformedURIException,
-            java.sql.SQLException, IllegalStateTransition {
-        
-        
-        say("Entering srmAbortFiles.");
+    throws SRMException,MalformedURIException,
+            SQLException, IllegalStateTransition {
         String requestToken = srmAbortFilesRequest.getRequestToken();
         if( requestToken == null ) {
             return getFailedResponse("request contains no request token");

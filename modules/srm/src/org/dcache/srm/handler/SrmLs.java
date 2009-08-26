@@ -23,11 +23,15 @@ import org.dcache.srm.request.LsFileRequest;
 import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.request.sql.LsFileRequestStorage;
 import org.dcache.srm.request.sql.LsRequestStorage;
+import org.apache.log4j.Logger;
+
 /**
  *
  * @author  timur
  */
 public class SrmLs {
+        private static Logger logger = 
+            Logger.getLogger(SrmLs.class);
         private final static String SFN_STRING="?SFN=";
         private int maxNumOfLevels=100;
         AbstractStorageElement storage;
@@ -89,23 +93,6 @@ public class SrmLs {
                 return response;
         }
 
-        private void say(String words_of_wisdom) {
-                if(storage!=null) {
-                        storage.log("SrmLs "+words_of_wisdom);
-                }
-        }
-
-        private void esay(String words_of_despare) {
-                if(storage!=null) {
-                        storage.elog("SrmLs "+words_of_despare);
-                }
-        }
-        private void esay(Throwable t) {
-                if(storage!=null) {
-                        storage.elog(" SrmLs exception : ");
-                        storage.elog(t);
-                }
-        }
         boolean longFormat =false;
         String servicePathAndSFNPart = "";
         int port;
@@ -116,7 +103,7 @@ public class SrmLs {
                         response = srmLs();
                 }
                 catch(Exception e) {
-                        storage.elog(e);
+                        logger.error(e);
                         response = new SrmLsResponse();
                         TReturnStatus returnStatus = new TReturnStatus();
                         returnStatus.setStatusCode(TStatusCode.SRM_FAILURE);

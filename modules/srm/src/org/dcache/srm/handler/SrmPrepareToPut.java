@@ -29,12 +29,16 @@ import org.dcache.srm.request.sql.PutRequestStorage;
 import org.dcache.srm.request.sql.PutFileRequestStorage;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.Tools;
+import org.apache.log4j.Logger;
+import org.apache.axis.types.URI.MalformedURIException;
 
 /**
  *
  * @author  timur
  */
 public class SrmPrepareToPut {
+    private static Logger logger = 
+            Logger.getLogger(SrmPrepareToPut.class);
     
     
     private final static String SFN_STRING="?SFN=";
@@ -85,23 +89,6 @@ public class SrmPrepareToPut {
         this.client_host = client_host;
     }
     
-    private void say(String words_of_wisdom) {
-        if(storage!=null) {
-            storage.log("SrmPrepareToPut "+words_of_wisdom);
-        }
-    }
-    
-    private void esay(String words_of_despare) {
-        if(storage!=null) {
-            storage.elog("SrmPrepareToPut "+words_of_despare);
-        }
-    }
-    private void esay(Throwable t) {
-        if(storage!=null) {
-            storage.elog(" SrmPrepareToPut exception : ");
-            storage.elog(t);
-        }
-    }
     boolean longFormat =false;
     
     public Scheduler getPutScheduler() {
@@ -122,13 +109,13 @@ public class SrmPrepareToPut {
         if(response != null ) return response;
         try {
             response = srmPrepareToPut();
-        } catch(Exception e) {
-            storage.elog(e);
-            response = new SrmPrepareToPutResponse();
-            TReturnStatus returnStatus = new TReturnStatus();
-            returnStatus.setStatusCode(TStatusCode.SRM_FAILURE);
-            returnStatus.setExplanation(e.toString());
-            response.setReturnStatus(returnStatus);
+        } catch(MalformedURIException mue) {
+            logger.debug(" malformed uri : "+mue.getMessage());
+            response = getFailedResponse(" malformed uri : "+mue.getMessage(),
+                    TStatusCode.SRM_INVALID_REQUEST);
+        } catch(SRMException srme) {
+            logger.error(srme);
+            response = getFailedResponse(srme.toString());
         }
         
         return response;
@@ -153,10 +140,7 @@ public class SrmPrepareToPut {
     private static final String[] emptyArr = new String[0];
 
     public SrmPrepareToPutResponse srmPrepareToPut()
-    throws SRMException,org.apache.axis.types.URI.MalformedURIException {
-        
-        
-        say("Entering srmPrepareToPut()");
+    throws SRMException,MalformedURIException {
         TFileStorageType storageType = request.getDesiredFileStorageType();
         if(storageType != null && !storageType.equals(TFileStorageType.PERMANENT)) {
              return getFailedResponse("DesiredFileStorageType "+storageType+" is not supported",
@@ -240,7 +224,6 @@ public class SrmPrepareToPut {
             }
             errorsb.append(']');
  	    status.setExplanation(errorsb.toString());
-            esay(errorsb.toString());
  	    SrmPrepareToPutResponse srmPrepareToPutResponse = new SrmPrepareToPutResponse();
  	    srmPrepareToPutResponse.setReturnStatus(status);
  	    org.dcache.srm.v2_2.TPutRequestFileStatus[] statusArray = new org.dcache.srm.v2_2.TPutRequestFileStatus[fileRequests.length];
@@ -297,10 +280,6 @@ public class SrmPrepareToPut {
                 :lifetimeInSeconds*1000
                 :configuration.getPutLifetime();
         try {
-            say("[iyStorage ="+putStorage);
-            /*
-             *
-             */
             PutRequest r =
                     new  PutRequest(
                     user,
@@ -336,7 +315,6 @@ public class SrmPrepareToPut {
 	    }
             
             if(overwriteMode != null) {
-                say("setting overwriteMode to "+overwriteMode);
                 r.setOverwriteMode(overwriteMode);
             }
 	    
@@ -348,7 +326,7 @@ public class SrmPrepareToPut {
             // Return the request status
             return r.getSrmPrepareToPutResponse();
         } catch(Exception e) {
-            esay(e);
+            logger.warn(e);
             return getFailedResponse(e.toString());
         }
         

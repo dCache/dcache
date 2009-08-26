@@ -25,6 +25,8 @@ import org.dcache.srm.util.Configuration;
 import org.dcache.srm.scheduler.Scheduler;
 import org.apache.axis.types.URI;
 import org.dcache.srm.SRMProtocol;
+import org.apache.log4j.Logger;
+import org.apache.axis.types.URI.MalformedURIException;
 
 /**
  *
@@ -32,6 +34,8 @@ import org.dcache.srm.SRMProtocol;
  */
 
 public class SrmStatusOfReserveSpaceRequest {
+    private static Logger logger = 
+            Logger.getLogger(SrmStatusOfReserveSpaceRequest.class);
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement  storage;
     SrmStatusOfReserveSpaceRequestRequest  request;
@@ -68,34 +72,18 @@ public class SrmStatusOfReserveSpaceRequest {
         }
     }
     
-    
-    private void say(String txt) {
-        if(storage!=null) {
-            storage.log("SrmStatusOfReserveSpaceRequest "+txt);
-        }
-    }
-    
-    private void esay(String txt) {
-        if(storage!=null) {
-            storage.elog("SrmStatusOfReserveSpaceRequest "+txt);
-        }
-    }
-    
-    private void esay(Throwable t) {
-        if(storage!=null) {
-            storage.elog(" SrmStatusOfReserveSpaceRequest exception : ");
-            storage.elog(t);
-        }
-    }
-    
     public SrmStatusOfReserveSpaceRequestResponse getResponse() {
         if(response != null ) return response;
         try {
             response = reserveSpaceStatus();
-        } catch(Exception e) {
-            storage.elog(e);
-            response = getFailedResponse("Exception : "+e.toString());
-        }
+        } catch(MalformedURIException mue) {
+            logger.debug(" malformed uri : "+mue.getMessage());
+            response = getFailedResponse(" malformed uri : "+mue.getMessage(),
+                    TStatusCode.SRM_INVALID_REQUEST);
+        } catch(SRMException srme) {
+            logger.error(srme);
+            response = getFailedResponse(srme.toString());
+        }        
         return response;
     }
     
@@ -153,12 +141,9 @@ public class SrmStatusOfReserveSpaceRequest {
                         TStatusCode.SRM_INVALID_REQUEST);
             }
             SrmStatusOfReserveSpaceRequestResponse resp = request.getSrmStatusOfReserveSpaceRequestResponse();
-            say("returning resp, status="+
-                resp.getReturnStatus().getStatusCode());
             return resp;
        }
        catch (Exception e) {
-           esay(e);
            return getFailedResponse(e.toString(),
                    TStatusCode.SRM_INTERNAL_ERROR);
        }

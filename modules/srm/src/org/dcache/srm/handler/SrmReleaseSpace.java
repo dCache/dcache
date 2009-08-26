@@ -27,7 +27,9 @@ import org.dcache.srm.util.Configuration;
 import org.dcache.srm.scheduler.Scheduler;
 import org.apache.axis.types.URI;
 import org.dcache.srm.request.ContainerRequest;
-import org.dcache.srm.SRMProtocol;
+import org.apache.log4j.Logger;
+import org.apache.axis.types.URI.MalformedURIException;
+
 
 /**
  *
@@ -35,6 +37,8 @@ import org.dcache.srm.SRMProtocol;
  */
 
 public class SrmReleaseSpace {
+    private static Logger logger = 
+            Logger.getLogger(SrmReleaseSpace.class);
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement  storage;
     SrmReleaseSpaceRequest  request;
@@ -71,32 +75,17 @@ public class SrmReleaseSpace {
         }
     }
     
-    private void say(String txt) {
-        if(storage!=null) {
-            storage.log("SrmReleaseSpace "+txt);
-        }
-    }
-    
-    private void esay(String txt) {
-        if(storage!=null) {
-            storage.elog("SrmReleaseSpace "+txt);
-        }
-    }
-    
-    private void esay(Throwable t) {
-        if(storage!=null) {
-            storage.elog(" SrmReleaseSpace exception : ");
-            storage.elog(t);
-        }
-    }
-    
     public SrmReleaseSpaceResponse getResponse() {
         if(response != null ) return response;
         try {
             response = releaseSpace();
-        } catch(Exception e) {
-            storage.elog(e);
-            response = getFailedResponse("Exception : "+e.toString());
+        } catch(MalformedURIException mue) {
+            logger.debug(" malformed uri : "+mue.getMessage());
+            response = getFailedResponse(" malformed uri : "+mue.getMessage(),
+                    TStatusCode.SRM_INVALID_REQUEST);
+        } catch(SRMException srme) {
+            logger.error(srme);
+            response = getFailedResponse(srme.toString());
         }
         return response;
     }
@@ -123,7 +112,7 @@ public class SrmReleaseSpace {
     
     TReturnStatus status = new TReturnStatus();
     public SrmReleaseSpaceResponse releaseSpace() 
-        throws SRMException,org.apache.axis.types.URI.MalformedURIException {
+        throws SRMException,MalformedURIException {
         if(request==null) {
             return getFailedResponse("srmReleaseSpace: null request passed to SrmReleaseSpace",
                     TStatusCode.SRM_INVALID_REQUEST);
@@ -184,7 +173,6 @@ public class SrmReleaseSpace {
             this.notifyAll();
         }
            public void ReleaseSpaceFailed(String reason){
-                esay("ReleaseSpaceFailed: "+reason);
                 status.setStatusCode(TStatusCode.SRM_FAILURE);
                 status.setExplanation(reason);
                 complete();
@@ -192,9 +180,6 @@ public class SrmReleaseSpace {
             }
     
             public void SpaceReleased(String spaceReservationToken,long remainingSpaceSize){
-                say("space "+spaceReservationToken+
-                        " released successfully, remainingSpaceSize="+
-                        remainingSpaceSize);
                 status.setStatusCode(TStatusCode.SRM_SUCCESS);
                 status.setExplanation("Space released");
                 complete();
@@ -202,8 +187,6 @@ public class SrmReleaseSpace {
             }
     
             public void ReleaseSpaceFailed(Exception e){
-                esay("ReleaseSpaceFailed");
-                esay(e);
                 status.setStatusCode(TStatusCode.SRM_FAILURE);
                 status.setExplanation(e.toString());
                 complete();

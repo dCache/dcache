@@ -29,6 +29,9 @@ import java.util.Comparator;
 import org.dcache.srm.SRMDuplicationException;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMInvalidPathException;
+import org.apache.log4j.Logger;
+import org.apache.axis.types.URI.MalformedURIException;
+
 
 /**
  *
@@ -36,6 +39,8 @@ import org.dcache.srm.SRMInvalidPathException;
  */
 
 public class SrmRmdir {
+        private static Logger logger = 
+            Logger.getLogger(SrmRmdir.class);
 	private final static String SFN_STRING="?SFN=";
 	AbstractStorageElement storage;
 	SrmRmdirRequest           request;
@@ -53,32 +58,17 @@ public class SrmRmdir {
 		this.storage = storage;
 	}
 	
-	private void say(String txt) {
-		if(storage!=null) {
-			storage.log("SrmRmdir "+txt);
-		}
-	}
-	
-	private void esay(String txt) {
-		if(storage!=null) {
-			storage.elog("SrmRmdir "+txt);
-		}
-	}
-	
-	
-	private void esay(Throwable t) {
-		if(storage!=null) {
-			storage.elog(" SrmRmdir exception : ");
-			storage.elog(t);
-		}
-	}
-	
 	public SrmRmdirResponse getResponse() {
 		if(response != null ) return response;
 		try {
 			response = srmRmdir();
-		} catch(Exception e) {
-			storage.elog(e);
+        } catch(MalformedURIException mue) {
+            logger.debug(" malformed uri : "+mue.getMessage());
+            response = getFailedResponse(" malformed uri : "+mue.getMessage(),
+            TStatusCode.SRM_INVALID_REQUEST);
+        } catch(SRMException srme) {
+            logger.error(srme);
+            response = getFailedResponse(srme.toString());
 		}
 		return response;
 	}
@@ -99,8 +89,6 @@ public class SrmRmdir {
 			dirList  = storage.listNonLinkedDirectory(user,directory);
 		} 
                 catch(SRMAuthorizationException srmae) {
-                    
-			esay("Can't authorize user: " + srmae.getMessage());
 			response.getReturnStatus().setStatusCode(
                                 TStatusCode.SRM_AUTHORIZATION_FAILURE);
 			response.getReturnStatus().setExplanation(
@@ -108,7 +96,6 @@ public class SrmRmdir {
 			return;
                 }
 		catch (SRMInvalidPathException srmipe) {
-                    esay("Invalid path: " + srmipe.getMessage());
                     if(topdir) {
 			response.getReturnStatus().setStatusCode(
                                 TStatusCode.SRM_INVALID_PATH);
@@ -124,7 +111,6 @@ public class SrmRmdir {
                     }
 		} 
 		catch (SRMException srme) {
-			esay("unhandles SRM exception: " + srme.getMessage());
 			response.getReturnStatus().setStatusCode(
                                 TStatusCode.SRM_FAILURE);
 			response.getReturnStatus().setExplanation(
@@ -132,7 +118,7 @@ public class SrmRmdir {
 			return;
 		} 
 		catch (Exception e) {
-			esay(e);
+			logger.warn(e);
 			response.getReturnStatus().setStatusCode(
                                 TStatusCode.SRM_FAILURE);
 			response.getReturnStatus().setExplanation(
@@ -186,7 +172,7 @@ public class SrmRmdir {
 	 */
 	
 	public SrmRmdirResponse srmRmdir() throws 
-                SRMException,org.apache.axis.types.URI.MalformedURIException {
+                SRMException,MalformedURIException {
 		SrmRmdirResponse response  = new SrmRmdirResponse();
 		TReturnStatus returnStatus = new TReturnStatus();
 		returnStatus.setStatusCode(TStatusCode.SRM_SUCCESS);
@@ -196,7 +182,6 @@ public class SrmRmdir {
 		}
 		Boolean recursive          = request.getRecursive();
 		org.apache.axis.types.URI surl = request.getSURL();
-		say("SURL[0]="+surl);
 		int port    = surl.getPort();
 		String host = surl.getHost();
 		String path = surl.getPath(true,true);
@@ -241,7 +226,7 @@ public class SrmRmdir {
 			storage.removeDirectory(user,tree);
 		} 
 		catch (SRMException srme) {
-			esay(srme);
+			logger.warn("failed to remove "+path,srme);
 			response.getReturnStatus().setStatusCode(
                                 TStatusCode.SRM_FAILURE);
 			response.getReturnStatus().setExplanation(

@@ -20,8 +20,15 @@ import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.request.sql.LsFileRequestStorage;
 import org.dcache.srm.request.sql.LsRequestStorage;
 import org.dcache.srm.SRM;
+import org.apache.log4j.Logger;
+import org.apache.axis.types.URI.MalformedURIException;
+import java.sql.SQLException;
+
+
 
 public class SrmStatusOfLsRequest {
+        private static Logger logger = 
+            Logger.getLogger(SrmStatusOfLsRequest.class);
         private final static String SFN_STRING="?SFN=";
         AbstractStorageElement storage;
         SrmStatusOfLsRequestRequest request;
@@ -50,25 +57,6 @@ public class SrmStatusOfLsRequest {
                 this.configuration = srm.getConfiguration();
         }
 
-        private void say(String txt) {
-                if(storage!=null) {
-                        storage.log("SrmStatusOfLsRequest "+txt);
-                }
-        }
-
-        private void esay(String txt) {
-                if(storage!=null) {
-                        storage.elog("SrmStatusOfLsRequest "+txt);
-                }
-        }
-
-        private void esay(Throwable t) {
-                if(storage!=null) {
-                        storage.elog(" SrmStatusOfLsRequest exception : ");
-                        storage.elog(t);
-                }
-        }
-
         boolean longFormat =false;
         String servicePathAndSFNPart = "";
         int port;
@@ -77,15 +65,18 @@ public class SrmStatusOfLsRequest {
                 if(response != null ) return response;
                 try {
                         response = srmStatusOfLsRequest();
-                }
-                catch(Exception e) {
-                        storage.elog(e);
-                        response = new SrmStatusOfLsRequestResponse();
-                        TReturnStatus returnStatus = new TReturnStatus();
-                        returnStatus.setStatusCode(TStatusCode.SRM_FAILURE);
-                        returnStatus.setExplanation(e.toString());
-                        response.setReturnStatus(returnStatus);
-                }
+                } catch(MalformedURIException mue) {
+                    logger.debug(" malformed uri : "+mue.getMessage());
+                    response = getFailedResponse(" malformed uri : "+mue.getMessage(),
+                            TStatusCode.SRM_INVALID_REQUEST);
+                } catch(SQLException sqle) {
+                    logger.error(sqle);
+                    response = getFailedResponse("sql error "+sqle.getMessage(),
+                            TStatusCode.SRM_INTERNAL_ERROR);
+                } catch(SRMException srme) {
+                    logger.error(srme);
+                    response = getFailedResponse(srme.toString());
+                }        
                 return response;
         }
 
@@ -106,9 +97,8 @@ public class SrmStatusOfLsRequest {
         }
 
         public SrmStatusOfLsRequestResponse srmStatusOfLsRequest()
-                throws SRMException,org.apache.axis.types.URI.MalformedURIException,
-                java.sql.SQLException {
-                say("Entering srmStatusOfLsRequest.");
+                throws SRMException,MalformedURIException,
+                SQLException {
                 String requestToken = request.getRequestToken();
                 if( requestToken == null ) {
                         return getFailedResponse("request contains no request token");

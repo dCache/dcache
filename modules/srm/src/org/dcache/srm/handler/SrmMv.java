@@ -26,6 +26,8 @@ import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMDuplicationException;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidPathException;
+import org.apache.log4j.Logger;
+import org.apache.axis.types.URI.MalformedURIException;
 
 /**
  *
@@ -33,6 +35,8 @@ import org.dcache.srm.SRMInvalidPathException;
  */
 
 public class SrmMv {
+        private static Logger logger = 
+                Logger.getLogger(SrmMv.class);
 	private final static String SFN_STRING="?SFN=";
 	AbstractStorageElement storage;
 	SrmMvRequest           request;
@@ -50,33 +54,18 @@ public class SrmMv {
 		this.storage = storage;
 	}
 	
-	private void say(String txt) {
-		if(storage!=null) {
-			storage.log("SrmMv "+txt);
-		}
-	}
-	
-    
-	private void esay(String txt) {
-		if(storage!=null) {
-			storage.elog("SrmMv "+txt);
-		}
-	}
-    
-	private void esay(Throwable t) {
-		if(storage!=null) {
-			storage.elog(" SrmMv exception : ");
-			storage.elog(t);
-		}
-	}
-	
 	public SrmMvResponse getResponse() {
 		if(response != null ) return response;
 		try {
 			response = srmMv();
-		} catch(Exception e) {
-			storage.elog(e);
-		}
+        } catch(MalformedURIException mue) {
+            logger.debug(" malformed uri : "+mue.getMessage());
+            response = getFailedResponse(" malformed uri : "+mue.getMessage(),
+                    TStatusCode.SRM_INVALID_REQUEST);
+        } catch(SRMException srme) {
+            logger.error(srme);
+            response = getFailedResponse(srme.toString());
+        }
 		return response;
 	}
 	
@@ -100,7 +89,8 @@ public class SrmMv {
 	 * implementation of srm mv
 	 */
 	
-	public SrmMvResponse srmMv() throws SRMException,org.apache.axis.types.URI.MalformedURIException {
+	public SrmMvResponse srmMv() throws SRMException,
+            MalformedURIException {
 		SrmMvResponse response      = new SrmMvResponse();
 		TReturnStatus returnStatus  = new TReturnStatus();
 		returnStatus.setStatusCode(TStatusCode.SRM_SUCCESS);
@@ -127,7 +117,7 @@ public class SrmMv {
 			storage.moveEntry(user,from_path,to_path);
                 } 
 		catch (Exception e) { 
-		    esay(e);
+		    logger.warn(e);
 		    response.getReturnStatus().setExplanation(e.getMessage());
 		    if ( e instanceof SRMDuplicationException) { 
 			response.getReturnStatus().setStatusCode(TStatusCode.SRM_DUPLICATION_ERROR);

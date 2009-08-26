@@ -26,6 +26,8 @@ import org.dcache.srm.util.Configuration;
 import org.dcache.srm.scheduler.Scheduler;
 import org.apache.axis.types.URI;
 import org.dcache.srm.SRMProtocol;
+import org.apache.log4j.Logger;
+import org.apache.axis.types.URI.MalformedURIException;
 
 /**
  *
@@ -33,6 +35,8 @@ import org.dcache.srm.SRMProtocol;
  */
 
 public class SrmReserveSpace {
+    private static Logger logger = 
+            Logger.getLogger(SrmReserveSpace.class);
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement  storage;
     SrmReserveSpaceRequest  request;
@@ -73,33 +77,17 @@ public class SrmReserveSpace {
         reserverSpaceRequestStorage = srm.getReserveSpaceRequestStorage();
     }
     
-    
-    private void say(String txt) {
-        if(storage!=null) {
-            storage.log("SrmReserveSpace "+txt);
-        }
-    }
-    
-    private void esay(String txt) {
-        if(storage!=null) {
-            storage.elog("SrmReserveSpace "+txt);
-        }
-    }
-    
-    private void esay(Throwable t) {
-        if(storage!=null) {
-            storage.elog(" SrmReserveSpace exception : ");
-            storage.elog(t);
-        }
-    }
-    
     public SrmReserveSpaceResponse getResponse() {
         if(response != null ) return response;
         try {
             response = reserveSpace();
-        } catch(Exception e) {
-            storage.elog(e);
-            response = getFailedResponse("Exception : "+e.toString());
+        } catch(MalformedURIException mue) {
+            logger.debug(" malformed uri : "+mue.getMessage());
+            response = getFailedResponse(" malformed uri : "+mue.getMessage(),
+                    TStatusCode.SRM_INVALID_REQUEST);
+        } catch(SRMException srme) {
+            logger.error(srme);
+            response = getFailedResponse(srme.toString());
         }
         return response;
     }
@@ -126,7 +114,7 @@ public class SrmReserveSpace {
      */
     
     public SrmReserveSpaceResponse reserveSpace() 
-        throws SRMException,org.apache.axis.types.URI.MalformedURIException {
+        throws SRMException,MalformedURIException {
         if(request==null) {
             return getFailedResponse("srmReserveSpace: null request passed to SrmReserveSpace",
                     TStatusCode.SRM_INVALID_REQUEST);
@@ -189,7 +177,7 @@ public class SrmReserveSpace {
          return reserveRequest.getSrmReserveSpaceResponse();
        }
        catch (Exception e) {
-           esay(e);
+           logger.warn(e);
            return getFailedResponse(e.toString(),
                    TStatusCode.SRM_INTERNAL_ERROR);
        }

@@ -22,6 +22,9 @@ import org.dcache.srm.request.ContainerRequest;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.IllegalStateTransition;
+import org.apache.log4j.Logger;
+import org.apache.axis.types.URI.MalformedURIException;
+import java.sql.SQLException;
 
 /**
  *
@@ -29,7 +32,8 @@ import org.dcache.srm.scheduler.IllegalStateTransition;
  */
 public class SrmGetRequestSummary {
     
-    
+    private static Logger logger = 
+            Logger.getLogger(SrmGetRequestSummary.class);
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement storage;
     SrmGetRequestSummaryRequest srmGetRequestSummaryRequest;
@@ -55,23 +59,6 @@ public class SrmGetRequestSummary {
         this.configuration = srm.getConfiguration();
     }
     
-    private void say(String words_of_wisdom) {
-        if(storage!=null) {
-            storage.log("SrmGetRequestSummary "+words_of_wisdom);
-        }
-    }
-    
-    private void esay(String words_of_despare) {
-        if(storage!=null) {
-            storage.elog("SrmGetRequestSummary "+words_of_despare);
-        }
-    }
-    private void esay(Throwable t) {
-        if(storage!=null) {
-            storage.elog(" SrmGetRequestSummary exception : ");
-            storage.elog(t);
-        }
-    }
     boolean longFormat =false;
     String servicePathAndSFNPart = "";
     int port;
@@ -80,9 +67,20 @@ public class SrmGetRequestSummary {
         if(response != null ) return response;
         try {
             response = srmGetRequestSummary();
-        } catch(Exception e) {
-            storage.elog(e);
-            response = getFailedResponse(e.toString());
+        } catch(MalformedURIException mue) {
+            logger.debug(" malformed uri : "+mue.getMessage());
+            response = getFailedResponse(" malformed uri : "+mue.getMessage(),
+                    TStatusCode.SRM_INVALID_REQUEST);
+        } catch(SQLException sqle) {
+            logger.error(sqle);
+            response = getFailedResponse("sql error "+sqle.getMessage(),
+                    TStatusCode.SRM_INTERNAL_ERROR);
+        } catch(SRMException srme) {
+            logger.error(srme);
+            response = getFailedResponse(srme.toString());
+        } catch(IllegalStateTransition ist) {
+            logger.error(ist);
+            response = getFailedResponse(ist.toString());
         }
         
         return response;
@@ -109,9 +107,6 @@ public class SrmGetRequestSummary {
     public SrmGetRequestSummaryResponse srmGetRequestSummary()
     throws SRMException,org.apache.axis.types.URI.MalformedURIException,
             java.sql.SQLException, IllegalStateTransition {
-        
-        
-        say("Entering srmAbortRequest.");
         String[] requestTokens = srmGetRequestSummaryRequest.getArrayOfRequestTokens().getStringArray();
         if( requestTokens == null ) {
             return getFailedResponse("request contains no request tokens");

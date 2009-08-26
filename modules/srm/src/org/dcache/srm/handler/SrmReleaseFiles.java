@@ -35,6 +35,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.HashMap;
 import org.dcache.srm.request.sql.DatabaseFileRequestStorage;
+import org.apache.axis.types.URI.MalformedURIException;
+import java.sql.SQLException;
 
 
 /**
@@ -77,23 +79,6 @@ public class SrmReleaseFiles {
         this.srm = srm;
     }
     
-    private void say(String words_of_wisdom) {
-        if(storage!=null) {
-            storage.log("SrmReleaseFiles "+words_of_wisdom);
-        }
-    }
-    
-    private void esay(String words_of_despare) {
-        if(storage!=null) {
-            storage.elog("SrmReleaseFiles "+words_of_despare);
-        }
-    }
-    private void esay(Throwable t) {
-        if(storage!=null) {
-            storage.elog(" SrmReleaseFiles exception : ");
-            storage.elog(t);
-        }
-    }
     boolean longFormat =false;
     String servicePathAndSFNPart = "";
     int port;
@@ -102,9 +87,20 @@ public class SrmReleaseFiles {
         if(response != null ) return response;
         try {
             response = srmReleaseFiles();
-        } catch(Exception e) {
-            storage.elog(e);
-            response = getFailedResponse(e.toString());
+        } catch(MalformedURIException mue) {
+            logger.debug(" malformed uri : "+mue.getMessage());
+            response = getFailedResponse(" malformed uri : "+mue.getMessage(),
+                    TStatusCode.SRM_INVALID_REQUEST);
+        } catch(SQLException sqle) {
+            logger.error(sqle);
+            response = getFailedResponse("sql error "+sqle.getMessage(),
+                    TStatusCode.SRM_INTERNAL_ERROR);
+        } catch(SRMException srme) {
+            logger.error(srme);
+            response = getFailedResponse(srme.toString());
+        } catch(IllegalStateTransition ist) {
+            logger.error(ist);
+            response = getFailedResponse(ist.toString());
         }
         
         return response;
@@ -131,11 +127,8 @@ public class SrmReleaseFiles {
      * implementation of srm ls
      */
     public SrmReleaseFilesResponse srmReleaseFiles()
-    throws SRMException,org.apache.axis.types.URI.MalformedURIException,
-            java.sql.SQLException, IllegalStateTransition {
-        
-        
-        say("Entering srmReleaseFiles");
+    throws SRMException,MalformedURIException,
+           SQLException, IllegalStateTransition {
         String requestToken = srmReleaseFilesRequest.getRequestToken();
         Long requestId = null;
         if( requestToken != null ) {        
@@ -148,7 +141,6 @@ public class SrmReleaseFiles {
                                          TStatusCode.SRM_INVALID_REQUEST);
             }
         }        
-        say("srmReleaseFiles, requestToken="+requestToken);
         URI [] surls ;
         if(  srmReleaseFilesRequest.getArrayOfSURLs() == null ){
             if(requestToken == null) {
@@ -189,7 +181,6 @@ public class SrmReleaseFiles {
         //if(request instanceof GetRequest) {
         String surl_strings[] = null;
         if( surls == null ){
-        say( "surls == null");
             if(request instanceof GetRequest) {
                 synchronized(request) {
                     State state = request.getState();
@@ -202,7 +193,6 @@ public class SrmReleaseFiles {
                 return bringOnlineRequest.releaseFiles(null,null);
             }
         } else {
-         say( "surls != null");
            if(surls.length == 0) {
                 return getFailedResponse("0 lenght SiteURLs array");
             }
@@ -251,7 +241,6 @@ public class SrmReleaseFiles {
     }
 
     private SrmReleaseFilesResponse unpinFilesDirectlyBySURLAndRequestId(final Long requestId, final URI[] surls) {
-        say("unpinFilesDirectlyBySURLAndRequestId");
         TSURLReturnStatus[] surlReturnStatusArray = 
             new TSURLReturnStatus[surls.length];
         int failure_num=0;
@@ -289,8 +278,7 @@ public class SrmReleaseFiles {
     }
     
    private SrmReleaseFilesResponse unpinDirectlyBySURLs(final URI[] surls) throws
-   java.sql.SQLException, IllegalStateTransition {
-       say("unpinDirectlyBySURLs"); 
+   SQLException, IllegalStateTransition {
        //prepare initial return statuses
        Map<URI,TSURLReturnStatus> surlsMap = 
            new HashMap<URI,TSURLReturnStatus>();
@@ -338,7 +326,6 @@ public class SrmReleaseFiles {
     }
    
     private void unpinFilesDirectlyBySURLs(final URI[] surls, Map<URI,TSURLReturnStatus> surlsMap ) {
-        say("unpinFilesDirectlyBySURLAndRequestId");
         TSURLReturnStatus[] surlReturnStatusArray = 
             new TSURLReturnStatus[surls.length];
         int failure_num=0;
@@ -351,8 +338,7 @@ public class SrmReleaseFiles {
                     new TReturnStatus(TStatusCode.SRM_SUCCESS,"released"));
             }
             catch(Exception e) {
-                
-                esay(e);
+                logger.warn(e);
                 //if rs status is TStatusCode.SRM_INTERNAL_ERROR 
                 // this means it was not changed since 
                 // it is set initially in the calling function
@@ -397,10 +383,7 @@ public class SrmReleaseFiles {
        
        Set<GetFileRequest> gfrToRelease = 
             findGetFileRequestBySURLs(surls);
-       say("got GetFiles to release:");
        for (GetFileRequest fileRequest: gfrToRelease) {
-            
-            say("got GetFiles to release: "+fileRequest);
             synchronized(fileRequest) {
                 State state = fileRequest.getState();
                 if(!State.isFinalState(state)) {
@@ -441,7 +424,7 @@ public class SrmReleaseFiles {
             activeRequestIds = 
                 reqstorage.getActiveFileRequestIds(scheduler.getId());
         } catch (java.sql.SQLException sqle) {
-            esay(sqle);
+            logger.warn(sqle);
             //just return empty
             return foundRequests;
         }
@@ -471,7 +454,7 @@ public class SrmReleaseFiles {
             activeRequestIds = 
                 reqstorage.getActiveFileRequestIds(scheduler.getId());
         } catch (java.sql.SQLException sqle) {
-            esay(sqle);
+            logger.warn(sqle);
             //just return empty
             return foundRequests;
         }

@@ -25,6 +25,7 @@ import org.dcache.srm.scheduler.Scheduler;
 import org.apache.axis.types.URI;
 import org.dcache.srm.request.ContainerRequest;
 import org.dcache.srm.SRMProtocol;
+import org.apache.log4j.Logger;
 
 /**
  *
@@ -32,6 +33,9 @@ import org.dcache.srm.SRMProtocol;
  */
 
 public class SrmGetTransferProtocols {
+   private static Logger logger = 
+           Logger.getLogger(SrmGetTransferProtocols.class);
+
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement storage;
     SRMUser            user;
@@ -70,25 +74,6 @@ public class SrmGetTransferProtocols {
         }
     }
     
-    private void say(String txt) {
-        if(storage!=null) {
-            storage.log("SrmGetTransferProtocols "+" "+txt);
-        }
-    }
-    
-    private void esay(String txt) {
-        if(storage!=null) {
-            storage.elog("SrmGetTransferProtocols "+" "+txt);
-        }
-    }
-    
-    private void esay(Throwable t) {
-        if(storage!=null) {
-            storage.elog(" SrmGetTransferProtocols exception : ");
-            storage.elog(t);
-        }
-    }
-    
     public SrmGetTransferProtocolsResponse getResponse() {
         if(response != null ) return response;
         response = new SrmGetTransferProtocolsResponse();
@@ -97,7 +82,7 @@ public class SrmGetTransferProtocols {
           
          protocols = srm.getProtocols(user,credential);
       } catch(Exception e) {
-         esay(e);
+         logger.warn(e);
          return getFailedResponse("SrmGetTransferProtocols failed: "+e,
                  TStatusCode.SRM_INTERNAL_ERROR);
       }

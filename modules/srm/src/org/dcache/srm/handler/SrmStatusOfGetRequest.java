@@ -21,13 +21,18 @@ import org.dcache.srm.request.sql.GetRequestStorage;
 import org.dcache.srm.request.sql.GetFileRequestStorage;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.SRM;
+import org.apache.log4j.Logger;
+import org.apache.axis.types.URI.MalformedURIException;
+import java.sql.SQLException;
+
+
 /**
  *
  * @author  timur
  */
 public class SrmStatusOfGetRequest {
-    
-    
+    private static Logger logger = 
+            Logger.getLogger(SrmStatusOfGetRequest.class);
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement storage;
     SrmStatusOfGetRequestRequest statusOfGetRequestRequest;
@@ -60,23 +65,6 @@ public class SrmStatusOfGetRequest {
         
     }
     
-    private void say(String words_of_wisdom) {
-        if(storage!=null) {
-            storage.log("SrmStatusOfGetRequest "+words_of_wisdom);
-        }
-    }
-    
-    private void esay(String words_of_despare) {
-        if(storage!=null) {
-            storage.elog("SrmStatusOfGetRequest "+words_of_despare);
-        }
-    }
-    private void esay(Throwable t) {
-        if(storage!=null) {
-            storage.elog(" SrmStatusOfGetRequest exception : ");
-            storage.elog(t);
-        }
-    }
     boolean longFormat =false;
     String servicePathAndSFNPart = "";
     int port;
@@ -85,14 +73,18 @@ public class SrmStatusOfGetRequest {
         if(response != null ) return response;
         try {
             response = srmGetStatus();
-        } catch(Exception e) {
-            storage.elog(e);
-            response = new SrmStatusOfGetRequestResponse();
-            TReturnStatus returnStatus = new TReturnStatus();
-            returnStatus.setStatusCode(TStatusCode.SRM_FAILURE);
-            returnStatus.setExplanation(e.toString());
-            response.setReturnStatus(returnStatus);
-        }
+        } catch(MalformedURIException mue) {
+            logger.debug(" malformed uri : "+mue.getMessage());
+            response = getFailedResponse(" malformed uri : "+mue.getMessage(),
+                    TStatusCode.SRM_INVALID_REQUEST);
+        } catch(SQLException sqle) {
+            logger.error(sqle);
+            response = getFailedResponse("sql error "+sqle.getMessage(),
+                    TStatusCode.SRM_INTERNAL_ERROR);
+        } catch(SRMException srme) {
+            logger.error(srme);
+            response = getFailedResponse(srme.toString());
+        }        
         
         return response;
     }
@@ -116,11 +108,8 @@ public class SrmStatusOfGetRequest {
      * implementation of srm get status
      */
     public SrmStatusOfGetRequestResponse srmGetStatus()
-    throws SRMException,org.apache.axis.types.URI.MalformedURIException,
-            java.sql.SQLException {
-        
-        
-        say("Entering srmGetStatus.");
+    throws SRMException,MalformedURIException,
+            SQLException {
         String requestToken = statusOfGetRequestRequest.getRequestToken();
         if( requestToken == null ) {
             return getFailedResponse("request contains no request token");

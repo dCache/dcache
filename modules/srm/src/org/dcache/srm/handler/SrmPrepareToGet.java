@@ -24,6 +24,9 @@ import org.dcache.srm.request.sql.GetRequestStorage;
 import org.dcache.srm.request.sql.GetFileRequestStorage;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.Tools;
+import org.apache.log4j.Logger;
+import org.apache.axis.types.URI.MalformedURIException;
+
 
 /**
  *
@@ -31,7 +34,8 @@ import org.dcache.srm.util.Tools;
  */
 public class SrmPrepareToGet {
     
-    
+    private static Logger logger = 
+            Logger.getLogger(SrmPrepareToGet.class);
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement storage;
     SrmPrepareToGetRequest request;
@@ -82,23 +86,6 @@ public class SrmPrepareToGet {
         }
     }
     
-    private void say(String words_of_wisdom) {
-        if(storage!=null) {
-            storage.log("SrmPrepareToGet "+words_of_wisdom);
-        }
-    }
-    
-    private void esay(String words_of_despare) {
-        if(storage!=null) {
-            storage.elog("SrmPrepareToGet "+words_of_despare);
-        }
-    }
-    private void esay(Throwable t) {
-        if(storage!=null) {
-            storage.elog(" SrmPrepareToGet exception : ");
-            storage.elog(t);
-        }
-    }
     boolean longFormat =false;
     String servicePathAndSFNPart = "";
     int port;
@@ -107,13 +94,13 @@ public class SrmPrepareToGet {
         if(response != null ) return response;
         try {
             response = srmPrepareToGet();
-        } catch(Exception e) {
-            storage.elog(e);
-            response = new SrmPrepareToGetResponse();
-            TReturnStatus returnStatus = new TReturnStatus();
-            returnStatus.setStatusCode(TStatusCode.SRM_FAILURE);
-            returnStatus.setExplanation(e.toString());
-            response.setReturnStatus(returnStatus);
+        } catch(MalformedURIException mue) {
+            logger.debug(" malformed uri : "+mue.getMessage());
+            response = getFailedResponse(" malformed uri : "+mue.getMessage(),
+                    TStatusCode.SRM_INVALID_REQUEST);
+        } catch(SRMException srme) {
+            logger.error(srme);
+            response = getFailedResponse(srme.toString());
         }
         
         return response;
@@ -142,10 +129,6 @@ public class SrmPrepareToGet {
      */
     public SrmPrepareToGetResponse srmPrepareToGet()
     throws SRMException,org.apache.axis.types.URI.MalformedURIException {
-        
-        
-        say("Entering srmPrepareToGet.");
-        
         String [] protocols = null;
         if(request.getTransferParameters() != null &&
                 request.getTransferParameters().getArrayOfTransferProtocols() != null ) {
@@ -186,14 +169,14 @@ public class SrmPrepareToGet {
             }
         }
 
-	String[] supportedProtocols = storage.supportedPutProtocols();
-	boolean foundMatchedProtocol=false;
-	for(int i=0;i<supportedProtocols.length;i++){
-	     for(int j=0; j<protocols.length; ++j) {
-		 if(supportedProtocols[i].equals(protocols[j])){
-		     foundMatchedProtocol=true;
-		     break;
-		 }
+        String[] supportedProtocols = storage.supportedPutProtocols();
+        boolean foundMatchedProtocol=false;
+        for(int i=0;i<supportedProtocols.length;i++){
+             for(int j=0; j<protocols.length; ++j) {
+             if(supportedProtocols[i].equals(protocols[j])){
+                 foundMatchedProtocol=true;
+                 break;
+             }
 	     }
 	}
 
@@ -209,7 +192,6 @@ public class SrmPrepareToGet {
             }
             errorsb.append(']');
  	    status.setExplanation(errorsb.toString());
-            esay(errorsb.toString());
  	    SrmPrepareToGetResponse srmPrepareToGetResponse = new SrmPrepareToGetResponse();
  	    srmPrepareToGetResponse.setReturnStatus(status);
  	    org.dcache.srm.v2_2.TGetRequestFileStatus[] statusArray = new org.dcache.srm.v2_2.TGetRequestFileStatus[fileRequests.length];
@@ -259,7 +241,6 @@ public class SrmPrepareToGet {
                 :lifetimeInSeconds*1000
                 :configuration.getGetLifetime();
         try {
-            say("getStorage ="+getStorage);
             GetRequest r =
                     new  GetRequest(user,credential.getId(),
                     getStorage,
@@ -295,7 +276,7 @@ public class SrmPrepareToGet {
             // Return the request status
             return r.getSrmPrepareToGetResponse();
         } catch(Exception e) {
-            esay(e);
+            logger.warn(e);
             return getFailedResponse(e.toString());
         }
         

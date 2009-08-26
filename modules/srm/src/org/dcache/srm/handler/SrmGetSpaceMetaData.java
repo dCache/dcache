@@ -24,6 +24,8 @@ import org.dcache.srm.util.Configuration;
 import org.dcache.srm.scheduler.Scheduler;
 import org.apache.axis.types.URI;
 import org.dcache.srm.SRMProtocol;
+import org.apache.log4j.Logger;
+import org.apache.axis.types.URI.MalformedURIException;
 
 /**
  *
@@ -31,6 +33,8 @@ import org.dcache.srm.SRMProtocol;
  */
 
 public class SrmGetSpaceMetaData {
+    private static Logger logger = 
+            Logger.getLogger(SrmGetSpaceMetaData.class);
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement  storage;
     SrmGetSpaceMetaDataRequest  request;
@@ -62,33 +66,17 @@ public class SrmGetSpaceMetaData {
         }
     }
     
-    
-    private void say(String txt) {
-        if(storage!=null) {
-            storage.log("SrmGetSpaceMetaData "+txt);
-        }
-    }
-    
-    private void esay(String txt) {
-        if(storage!=null) {
-            storage.elog("SrmGetSpaceMetaData "+txt);
-        }
-    }
-    
-    private void esay(Throwable t) {
-        if(storage!=null) {
-            storage.elog(" SrmGetSpaceMetaData exception : ");
-            storage.elog(t);
-        }
-    }
-    
     public SrmGetSpaceMetaDataResponse getResponse() {
         if(response != null ) return response;
         try {
             response = srmGetSpaceMetaData();
-        } catch(Exception e) {
-            storage.elog(e);
-            response = getFailedResponse("Exception : "+e.toString());
+        } catch(MalformedURIException mue) {
+            logger.debug(" malformed uri : "+mue.getMessage());
+            response = getFailedResponse(" malformed uri : "+mue.getMessage(),
+                    TStatusCode.SRM_INVALID_REQUEST);
+        } catch(SRMException srme) {
+            logger.error(srme);
+            response = getFailedResponse(srme.toString());
         }
         return response;
     }
@@ -115,33 +103,26 @@ public class SrmGetSpaceMetaData {
      */
     
     public SrmGetSpaceMetaDataResponse srmGetSpaceMetaData() 
-        throws SRMException,org.apache.axis.types.URI.MalformedURIException {
-        try {
-            if(request==null) {
-                return getFailedResponse(
-                        "srmGetSpaceMetaData: null request passed to SrmGetSpaceMetaData",
-                        TStatusCode.SRM_INVALID_REQUEST);
-            }
-            String[] spaceTokens = request.getArrayOfSpaceTokens().getStringArray();
-            if(spaceTokens == null) {
-                return getFailedResponse(
-                        "srmGetSpaceMetaData: null array of tokens passed to SrmGetSpaceMetaData",
-                        TStatusCode.SRM_INVALID_REQUEST);
-            }
+        throws SRMException,MalformedURIException {
+        if(request==null) {
+            return getFailedResponse(
+                    "srmGetSpaceMetaData: null request passed to SrmGetSpaceMetaData",
+                    TStatusCode.SRM_INVALID_REQUEST);
+        }
+        String[] spaceTokens = request.getArrayOfSpaceTokens().getStringArray();
+        if(spaceTokens == null) {
+            return getFailedResponse(
+                    "srmGetSpaceMetaData: null array of tokens passed to SrmGetSpaceMetaData",
+                    TStatusCode.SRM_INVALID_REQUEST);
+        }
 
-            TMetaDataSpace[] array = storage.srmGetSpaceMetaData(user,spaceTokens);
-            SrmGetSpaceMetaDataResponse response = 
-                    new SrmGetSpaceMetaDataResponse(
-                    new TReturnStatus(TStatusCode.SRM_SUCCESS,"OK"),
-                    new ArrayOfTMetaDataSpace(array));
-            
-            return response;
-       }
-       catch (Exception e) {
-           esay(e);
-           return getFailedResponse(e.toString(),
-                   TStatusCode.SRM_INTERNAL_ERROR);
-       }
+        TMetaDataSpace[] array = storage.srmGetSpaceMetaData(user,spaceTokens);
+        SrmGetSpaceMetaDataResponse response =
+                new SrmGetSpaceMetaDataResponse(
+                new TReturnStatus(TStatusCode.SRM_SUCCESS,"OK"),
+                new ArrayOfTMetaDataSpace(array));
+
+        return response;
    }
     
     

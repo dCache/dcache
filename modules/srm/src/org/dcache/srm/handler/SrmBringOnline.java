@@ -23,6 +23,8 @@ import org.dcache.srm.request.sql.BringOnlineRequestStorage;
 import org.dcache.srm.request.sql.BringOnlineFileRequestStorage;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.Tools;
+import org.apache.log4j.Logger;
+import org.apache.axis.types.URI.MalformedURIException;
 
 /**
  *
@@ -30,6 +32,8 @@ import org.dcache.srm.util.Tools;
  */
 public class SrmBringOnline {
     
+    private static Logger logger = 
+            Logger.getLogger(SrmBringOnline.class);
     
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement storage;
@@ -81,23 +85,6 @@ public class SrmBringOnline {
         }
     }
     
-    private void say(String words_of_wisdom) {
-        if(storage!=null) {
-            storage.log("SrmBringOnline "+words_of_wisdom);
-        }
-    }
-    
-    private void esay(String words_of_despare) {
-        if(storage!=null) {
-            storage.elog("SrmBringOnline "+words_of_despare);
-        }
-    }
-    private void esay(Throwable t) {
-        if(storage!=null) {
-            storage.elog(" SrmBringOnline exception : ");
-            storage.elog(t);
-        }
-    }
     boolean longFormat =false;
     String servicePathAndSFNPart = "";
     int port;
@@ -106,13 +93,13 @@ public class SrmBringOnline {
         if(response != null ) return response;
         try {
             response = srmBringOnline();
-        } catch(Exception e) {
-            storage.elog(e);
-            response = new SrmBringOnlineResponse();
-            TReturnStatus returnStatus = new TReturnStatus();
-            returnStatus.setStatusCode(TStatusCode.SRM_FAILURE);
-            returnStatus.setExplanation(e.toString());
-            response.setReturnStatus(returnStatus);
+        } catch(MalformedURIException mue) {
+            logger.debug(" malformed uri : "+mue.getMessage());
+            response = getFailedResponse(" malformed uri : "+mue.getMessage(),
+                    TStatusCode.SRM_INVALID_REQUEST);
+        } catch(SRMException srme) {
+            logger.error(srme);
+            response = getFailedResponse(srme.toString());
         }
         
         return response;
@@ -137,27 +124,14 @@ public class SrmBringOnline {
      * implementation of srm ls
      */
     public SrmBringOnlineResponse srmBringOnline()
-    throws SRMException,org.apache.axis.types.URI.MalformedURIException {
-        
-        
-        say("Entering srmBringOnline.");
-        
+    throws SRMException,MalformedURIException {
         String [] protocols = null;
-        
         if(request.getTransferParameters() != null &&
                 request.getTransferParameters().getArrayOfTransferProtocols() != null ) {
             protocols =
                     request.getTransferParameters().getArrayOfTransferProtocols().getStringArray();
         }
         protocols = Tools.trimStringArray(protocols);
-        
-        if(protocols == null || protocols.length <1) {
-            esay("request contains no transfer protocols");
-           // not for bring online
-           // return getFailedResponse("request contains no transfer protocols",
-           //     TStatusCode.SRM_INVALID_REQUEST);
-        }
-        
         if(request.getTransferParameters() != null &&
                 request.getTransferParameters().getArrayOfClientNetworks() != null ) {
             String[] clientNetworks = 
@@ -221,7 +195,6 @@ public class SrmBringOnline {
         }
         //for bring online request we do not limit lifetime from above for bring online request
         try {
-            say("BringOnlineStorage ="+bringOnlineStorage);
             BringOnlineRequest r =
                     new  BringOnlineRequest(user,
                     credential.getId(),
@@ -260,7 +233,7 @@ public class SrmBringOnline {
             // Return the request status
             return r.getSrmBringOnlineResponse();
         } catch(Exception e) {
-            esay(e);
+            logger.error(e);
             return getFailedResponse(e.toString());
         }
         

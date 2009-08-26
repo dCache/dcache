@@ -28,6 +28,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.io.File;
 import org.apache.axis.types.URI;
+import org.apache.log4j.Logger;
+import org.apache.axis.types.URI.MalformedURIException;
+
 
 
 /**
@@ -36,6 +39,8 @@ import org.apache.axis.types.URI;
  */
 
 public class SrmSetPermission {
+        private static Logger logger =
+            Logger.getLogger(SrmSetPermission.class);
 	private final static String SFN_STRING="?SFN=";
 	AbstractStorageElement   storage;
 	SrmSetPermissionRequest  request;
@@ -53,33 +58,18 @@ public class SrmSetPermission {
 		this.storage = storage;
 	}
 	
-	private void say(String txt) {
-		if(storage!=null) {
-			storage.log("SrmSetPermission "+txt);
-		}
-	}
-	
-	private void esay(String txt) {
-		if(storage!=null) {
-			storage.elog("SrmSetPermission "+txt);
-		}
-	}
-	
-	private void esay(Throwable t) {
-		if(storage!=null) {
-			storage.elog(" SrmSetPermission exception : ");
-			storage.elog(t);
-		}
-	}
-	
 	public SrmSetPermissionResponse getResponse() {
 		if(response != null ) return response;
 		try {
 			response = srmSetPermission();
-		} 
-		catch(Exception e) {
-			storage.elog(e);
-		}
+                } catch(MalformedURIException mue) {
+                    logger.debug(" malformed uri : "+mue.getMessage());
+                    response = getFailedResponse(" malformed uri : "+mue.getMessage(),
+                            TStatusCode.SRM_INVALID_REQUEST);
+                } catch(SRMException srme) {
+                    logger.error(srme);
+                    response = getFailedResponse(srme.toString());
+                }
 		return response;
 	}
 
@@ -104,7 +94,8 @@ public class SrmSetPermission {
 	 * implementation of srm set permission
 	 */
 	
-	public SrmSetPermissionResponse srmSetPermission() throws SRMException,org.apache.axis.types.URI.MalformedURIException {
+	public SrmSetPermissionResponse srmSetPermission() throws SRMException,
+                MalformedURIException {
 		SrmSetPermissionResponse response  = new SrmSetPermissionResponse();
 		TReturnStatus returnStatus = new TReturnStatus();
 		returnStatus.setStatusCode(TStatusCode.SRM_SUCCESS);
@@ -207,12 +198,12 @@ public class SrmSetPermission {
 			    storage.setFileMetaData(user,fmd);
 			}
 			catch (SRMException e) {
-				esay(e);
+				logger.warn(e);
 				return getFailedResponse(e.getMessage(),TStatusCode.SRM_FAILURE);
 			}
 		}
 		catch  (SRMException srme) {
-			esay(srme);
+			logger.warn(srme);
 			return getFailedResponse(srme.getMessage(),TStatusCode.SRM_FAILURE);
 		}
 		response.getReturnStatus().setStatusCode(TStatusCode.SRM_SUCCESS);

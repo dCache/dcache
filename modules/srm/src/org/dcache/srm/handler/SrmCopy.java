@@ -28,6 +28,7 @@ import org.dcache.srm.scheduler.Scheduler;
 import org.apache.axis.types.URI;
 import org.dcache.srm.request.ContainerRequest;
 import org.dcache.srm.SRMProtocol;
+import org.apache.log4j.Logger;
 
 /**
  *
@@ -35,6 +36,8 @@ import org.dcache.srm.SRMProtocol;
  */
 
 public class SrmCopy {
+    private static Logger logger = 
+            Logger.getLogger(SrmCopy.class);
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement storage;
     SrmCopyRequest         request;
@@ -83,31 +86,12 @@ public class SrmCopy {
         this.client_host = client_host;
     }
     
-    private void say(String txt) {
-        if(storage!=null) {
-            storage.log("SrmCopy "+txt);
-        }
-    }
-    
-    private void esay(String txt) {
-        if(storage!=null) {
-            storage.elog("SrmCopy "+txt);
-        }
-    }
-    
-    private void esay(Throwable t) {
-        if(storage!=null) {
-            storage.elog(" SrmCopy exception : ");
-            storage.elog(t);
-        }
-    }
-    
     public SrmCopyResponse getResponse() {
         if(response != null ) return response;
         try {
             response = srmCopy();
         } catch(Exception e) {
-            storage.elog(e);
+            logger.error(e);
             response = getFailedResponse("Exception : "+e.toString());
         }
         return response;
@@ -186,12 +170,11 @@ public class SrmCopy {
         if( overwriteMode != null &&
             overwriteMode.equals(TOverwriteMode.WHEN_FILES_ARE_DIFFERENT)) {
             getFailedResponse(
-                    "Owewrite Mode WHEN_FILES_ARE_DIFFERENT is not supported",
+                    "Overwrite Mode WHEN_FILES_ARE_DIFFERENT is not supported",
                     TStatusCode.SRM_NOT_SUPPORTED);
         }
         
         try {
-            say("calling Request.createCopyRequest()");
             ContainerRequest r = new CopyRequest(
                     user,
                     credential.getId(),
@@ -228,7 +211,7 @@ public class SrmCopy {
             response = ((CopyRequest)r).getSrmCopyResponse();
             return response;
         } catch(Exception e) {
-            esay(e);
+            logger.error(e);
             return getFailedResponse("copy request generated error : "+e.toString(),
                     TStatusCode.SRM_INTERNAL_ERROR);
         }

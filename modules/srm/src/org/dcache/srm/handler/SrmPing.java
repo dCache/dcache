@@ -23,13 +23,16 @@ import org.dcache.srm.SRMException;
 import org.dcache.srm.util.Configuration;
 import org.apache.axis.types.URI;
 import org.dcache.srm.request.ContainerRequest;
-import org.dcache.srm.SRMProtocol;
+import org.apache.log4j.Logger;
+
 /**
  *
  * @author  litvinse
  */
 
 public class SrmPing {
+        private static Logger logger = 
+                Logger.getLogger(SrmPing.class);
 	private final static String SFN_STRING="?SFN=";
 	AbstractStorageElement storage;
 	SRMUser            user;
@@ -53,25 +56,6 @@ public class SrmPing {
 			throw new NullPointerException("storage is null");
 		}
 		this.storage = storage;
-	}
-    
-	private void say(String txt) {
-		if(storage!=null) {
-			storage.log("SrmPing "+txt);
-		}
-	}
-    
-	private void esay(String txt) {
-		if(storage!=null) {
-			storage.elog("SrmPing "+txt);
-		}
-	}
-    
-	private void esay(Throwable t) {
-		if(storage!=null) {
-			storage.elog(" SrmPing exception : ");
-			storage.elog(t);
-		}
 	}
     
 	public SrmPingResponse getResponse() {

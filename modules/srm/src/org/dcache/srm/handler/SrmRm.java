@@ -28,7 +28,8 @@ import org.dcache.srm.RemoveFileCallbacks;
 import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
 import org.apache.axis.types.URI;
 import org.dcache.srm.util.Configuration;
-
+import org.apache.log4j.Logger;
+import org.apache.axis.types.URI.MalformedURIException;
 
 /**
  *
@@ -37,6 +38,9 @@ import org.dcache.srm.util.Configuration;
 
 public class SrmRm {
 	private final static String SFN_STRING = "?SFN=";
+        private static Logger logger = 
+            Logger.getLogger(SrmRm.class);
+        
 	AbstractStorageElement storage;
 	SrmRmRequest           request;
 	SrmRmResponse          response;
@@ -58,39 +62,23 @@ public class SrmRm {
 		}
 	}
 	
-	private void say(String txt) {
-		if(storage!=null) {
-			storage.log("SrmRm "+txt);
-		}
-	}
-	
-	private void esay(String txt) {
-		if(storage!=null) {
-			storage.elog("SrmRm "+txt);
-		}
-	}
-	
-	private void esay(Throwable t) {
-		if(storage!=null) {
-			storage.elog(" SrmRm exception : ");
-			storage.elog(t);
-		}
-	}
-	
 	public SrmRmResponse getResponse() {
-		if(response != null ) return response;
-		try {
-			response = srmRm();
-		} 
-		catch(Exception e) {
-			storage.elog(e);
-			response = new SrmRmResponse();
-			TReturnStatus returnStatus = new TReturnStatus();
-			returnStatus.setStatusCode(TStatusCode.SRM_FAILURE);
-			returnStatus.setExplanation(e.toString());
-			response.setReturnStatus(returnStatus);
-		}
-		return response;
+            
+            if(response != null ) {
+                return response;
+            }
+            
+            try {
+                response = srmRm();
+            } catch(MalformedURIException mue) {
+                logger.debug(" malformed uri : "+mue.getMessage());
+                response = getResponse(" malformed uri : "+mue.getMessage(),
+                    TStatusCode.SRM_INVALID_REQUEST);
+            } catch(SRMException srme) {
+                logger.error(srme);
+                response = getFailedResponse(srme.toString());
+            }
+            return response;
 	}
 	
 	public static final SrmRmResponse getFailedResponse(String error) {
@@ -116,7 +104,7 @@ public class SrmRm {
      */
     
 	public SrmRmResponse srmRm() throws SRMException,
-		org.apache.axis.types.URI.MalformedURIException {
+		MalformedURIException {
 		if(request==null) {
 			return getResponse(" null request passed to SrmRm()",
 					   TStatusCode.SRM_INVALID_REQUEST);
@@ -138,7 +126,6 @@ public class SrmRm {
 		for (int i = 0; i < surls.length; i++) {
 			surlReturnStatusArray[i] = new TSURLReturnStatus();
 			surlReturnStatusArray[i].setSurl(surls[i]);
-			say("SURL["+i+"]="+surls[i]);
 			callbacks[i] = new RemoveFile();
 		}
 		
@@ -146,7 +133,6 @@ public class SrmRm {
 		int end=callbacks.length>configuration.getSizeOfSingleRemoveBatch()?configuration.getSizeOfSingleRemoveBatch():callbacks.length;
 
 		while(end<=callbacks.length) { 
-			say("Deleting chunk of "+configuration.getSizeOfSingleRemoveBatch()+" from "+start+"to "+end);
 			for ( int i=start;i<end;i++) {
 				try {
 					String path = surls[i].getPath(true,true);
@@ -158,14 +144,14 @@ public class SrmRm {
 					
 				} 
 				catch(RuntimeException re) {
-					esay(re);
+					logger.error(re);
 					surlReturnStatusArray[i].setStatus( 
 						new TReturnStatus(
 							TStatusCode.SRM_INTERNAL_ERROR,
 							"RuntimeException "+re.getMessage()));
 				} 
 				catch (Exception e) {
-					esay(e);
+					logger.error(e);
 					surlReturnStatusArray[i].setStatus( 
 						new TReturnStatus(
 							TStatusCode.SRM_INTERNAL_ERROR,
@@ -226,7 +212,7 @@ public class SrmRm {
 			status = new TReturnStatus(
 				TStatusCode.SRM_FAILURE,
 				reason);
-			esay("RemoveFileFailed:"+reason);
+			logger.info("RemoveFileFailed:"+reason);
 			done();
 		}
 		
@@ -234,7 +220,7 @@ public class SrmRm {
 			status = new TReturnStatus(
 				TStatusCode.SRM_INVALID_PATH,
 				reason);
-			esay("RemoveFileFailed:"+reason);
+			logger.info("RemoveFileFailed:"+reason);
 			done();
 		}
 		
@@ -251,7 +237,7 @@ public class SrmRm {
 				"Exception: "+e.getMessage());
 			TReturnStatus individualFileReturnStatus
 				= new TReturnStatus();
-			esay(e);
+			logger.warn(e);
 			done();
 		}
 		
@@ -259,7 +245,7 @@ public class SrmRm {
 			status = new TReturnStatus(
                     TStatusCode.SRM_FAILURE,
                     "Timeout: ");
-			esay("Timeout");
+			logger.warn("Timeout");
 			done();
 		}
 		

@@ -21,6 +21,8 @@ import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
 import org.dcache.srm.FileMetaData;
 import org.apache.log4j.Logger;
+import org.apache.axis.types.URI.MalformedURIException;
+import java.sql.SQLException;
 /**
  *
  * @author  timur
@@ -64,16 +66,21 @@ public class SrmPutDone {
         if(response != null ) return response;
         try {
             response = srmPutDone();
+        } catch(MalformedURIException mue) {
+            logger.debug(" malformed uri : "+mue.getMessage());
+            response = getFailedResponse(" malformed uri : "+mue.getMessage(),
+                    TStatusCode.SRM_INVALID_REQUEST);
+        } catch(SQLException sqle) {
+            logger.error(sqle);
+            response = getFailedResponse("sql error "+sqle.getMessage(),
+                    TStatusCode.SRM_INTERNAL_ERROR);
+        } catch(SRMException srme) {
+            logger.error(srme);
+            response = getFailedResponse(srme.toString());
+        } catch(IllegalStateTransition ist) {
+            logger.error(ist);
+            response = getFailedResponse(ist.toString());
         }
-        catch (Exception e) {
-            if (e instanceof RuntimeException) {
-                    logger.error("Caught RuntimeException ",e);
-            }
-            else { 
-                logger.error(e);
-            }
-            response = getFailedResponse(e.toString());
-        } 
         return response;
     }
     
@@ -95,8 +102,8 @@ public class SrmPutDone {
 
     public SrmPutDoneResponse srmPutDone()
 	throws SRMException,
-	org.apache.axis.types.URI.MalformedURIException,
-	java.sql.SQLException, 
+	MalformedURIException,
+	SQLException, 
 	IllegalStateTransition {
         String requestToken = srmPutDoneRequest.getRequestToken();
         if( requestToken == null ) {

@@ -19,6 +19,10 @@ import org.dcache.srm.request.sql.CopyRequestStorage;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.request.ContainerRequest;
+import org.apache.log4j.Logger;
+import org.apache.axis.types.URI.MalformedURIException;
+import java.sql.SQLException;
+
 
 /**
  *
@@ -26,6 +30,8 @@ import org.dcache.srm.request.ContainerRequest;
  */
 
 public class SrmStatusOfCopyRequest {
+    private static Logger logger = 
+            Logger.getLogger(SrmStatusOfCopyRequest.class);
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement         storage;
     SrmStatusOfCopyRequestRequest  request;
@@ -55,25 +61,6 @@ public class SrmStatusOfCopyRequest {
         this.configuration = srm.getConfiguration();
     }
     
-    private void say(String words_of_wisdom) {
-        if (storage!=null) {
-            storage.log("SrmStatusOfCopyRequest "+words_of_wisdom);
-        }
-    }
-    
-    private void esay(String words_of_despare) {
-        if(storage!=null) {
-            storage.elog("SrmStatusOfCopyRequest "+words_of_despare);
-        }
-    }
-    
-    private void esay(Throwable t) {
-        if(storage!=null) {
-            storage.elog(" SrmStatusOfCopyRequest exception : ");
-            storage.elog(t);
-        }
-    }
-    
     boolean longFormat = false;
     String servicePathAndSFNPart = "";
     int port;
@@ -83,12 +70,18 @@ public class SrmStatusOfCopyRequest {
         if(response != null ) return response;
         try {
             response = srmStatusOfCopyRequest();
-	}catch( SRMException se) {
-            response = getFailedResponse("Exception : "+se.getMessage());
-        } catch(Exception e) {
-            storage.elog(e);
-            response = getFailedResponse("Exception : "+e.toString());
-        }
+        } catch(MalformedURIException mue) {
+            logger.debug(" malformed uri : "+mue.getMessage());
+            response = getFailedResponse(" malformed uri : "+mue.getMessage(),
+                    TStatusCode.SRM_INVALID_REQUEST);
+        } catch(SQLException sqle) {
+            logger.error(sqle);
+            response = getFailedResponse("sql error "+sqle.getMessage(),
+                    TStatusCode.SRM_INTERNAL_ERROR);
+        } catch(SRMException srme) {
+            logger.error(srme);
+            response = getFailedResponse(srme.toString());
+        }        
         return response;
     }
     
@@ -111,9 +104,8 @@ public class SrmStatusOfCopyRequest {
     
     public SrmStatusOfCopyRequestResponse srmStatusOfCopyRequest()
     throws SRMException,
-            org.apache.axis.types.URI.MalformedURIException,
-            java.sql.SQLException {
-        say("Entering srmStatusOfCopyRequest");
+            MalformedURIException,
+            SQLException {
         String requestToken = request.getRequestToken();
         if( requestToken == null ) {
             return getFailedResponse("request contains no request token",
