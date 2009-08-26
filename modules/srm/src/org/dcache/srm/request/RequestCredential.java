@@ -132,7 +132,7 @@ import java.util.Map;
 import java.lang.ref.WeakReference;
 import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.SRMAuthorizationException;
-import org.dcache.srm.request.sql.RequestsPropertyStorage;
+import org.dcache.srm.scheduler.JobIdGeneratorFactory;
 import java.sql.SQLException;
 /**
  *
@@ -282,13 +282,13 @@ public class RequestCredential {
     public RequestCredential(String credentialName, 
                             String role,
                             GSSCredential delegatedCredential,
-                            RequestCredentialStorage storage,
-                            RequestsPropertyStorage propertiesStorage) 
+                            RequestCredentialStorage storage) 
                             throws SQLException,org.ietf.jgss.GSSException {
         //System.out.println("RequestCredential  constructor");
         //start();
                                
-        this.id = propertiesStorage.getNextId();
+        this.id = 
+            JobIdGeneratorFactory.getJobIdGeneratorFactory().getJobIdGenerator().getNextId();
         this.creationtime = System.currentTimeMillis();
         this.credentialName = credentialName;
         this.role = role;

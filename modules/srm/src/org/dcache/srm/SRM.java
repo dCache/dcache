@@ -110,6 +110,7 @@ import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.request.RequestCredentialStorage;
+import org.dcache.srm.request.sql.RequestsPropertyStorage;
 import diskCacheV111.srm.server.SRMServerV1;
 
 import diskCacheV111.srm.FileMetaData;
@@ -317,6 +318,17 @@ public class SRM {
                 protocol_property = protocol_property + "|org.globus.net.protocol";
             }
             System.setProperty("java.protocol.handler.pkgs", protocol_property);
+        }
+
+        try {
+            RequestsPropertyStorage.initPropertyStorage( config.getJdbcUrl(),
+                config.getJdbcClass(),
+                config.getJdbcUser(),
+                config.getJdbcPass(),
+                config.getNextRequestIdStorageTable()
+                );
+        } catch (IllegalStateException ise) {
+            //already initialized
         }
 
         //config.setLocalSRM(this);

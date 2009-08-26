@@ -73,7 +73,6 @@ exporting documents or software obtained from this server.
 
 package org.dcache.srm.server;
 
-import org.dcache.srm.request.sql.RequestsPropertyStorage;
 import org.globus.axis.gsi.GSIConstants;
 import org.dcache.srm.request.RequestCredential;
 
@@ -100,7 +99,6 @@ public class SrmAuthorizer {
    public static final String REMOTE_ADDR = "REMOTE_ADDR";
    private org.dcache.srm.SRMAuthorization authorization;
    private org.dcache.srm.request.RequestCredentialStorage credential_storage;
-   private org.dcache.srm.request.sql.RequestsPropertyStorage propertyStorage;
    public static org.apache.log4j.Logger log = org.apache.log4j.Logger.getLogger(
              SrmAuthorizer.class);
    private static boolean initialized = false;
@@ -122,13 +120,7 @@ public class SrmAuthorizer {
             config.getAuthorization();
          credential_storage =
             srmConn.getSrm().getRequestCredentialStorage();
-         propertyStorage = RequestsPropertyStorage.getPropertyStorage(
-            config.getJdbcUrl(),
-            config.getJdbcClass(),
-            config.getJdbcUser(),
-            config.getJdbcPass(),
-            config.getNextRequestIdStorageTable());
-            
+
             initialized = true;
             log.debug("Successfully initialized");
       } catch (Exception e) {
@@ -217,7 +209,7 @@ public class SrmAuthorizer {
             log.debug("About to create new RequestCredential");
             rc = new org.dcache.srm.request.RequestCredential(userCredential.secureId, role,
                userCredential.credential,
-               credential_storage,propertyStorage );
+               credential_storage );
          }
          rc.saveCredential();
          log.debug("About to return RequestCredential = " + rc);

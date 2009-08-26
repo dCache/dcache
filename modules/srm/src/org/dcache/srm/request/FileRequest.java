@@ -178,7 +178,6 @@ import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.scheduler.IllegalStateTransition;
-import org.dcache.srm.request.sql.RequestsPropertyStorage;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.SRMUser;
@@ -211,8 +210,7 @@ public abstract class FileRequest extends Job {
     //srm configuration
     protected Configuration configuration;
     //error message if error, or just information message
-    
-    private static RequestsPropertyStorage requestsproperties = null;
+
     private QOSTicket qosTicket;
 
     private static final long serialVersionUID = -5737484917461810463L;
@@ -230,18 +228,7 @@ public abstract class FileRequest extends Job {
     Long  requestCredentalId,
     Configuration configuration,long lifetime,
     JobStorage jobStorage,int maxNumberOfRetries) throws Exception {
-        super(lifetime, jobStorage,maxNumberOfRetries,
-        requestsproperties == null
-        ?
-            requestsproperties =
-            RequestsPropertyStorage.getPropertyStorage(
-            configuration.getJdbcUrl(),
-            configuration.getJdbcClass(),
-            configuration.getJdbcUser(),
-            configuration.getJdbcPass(),
-            configuration.getNextRequestIdStorageTable())
-        :
-            requestsproperties);
+        super(lifetime, jobStorage,maxNumberOfRetries);
         this.credentialId = requestCredentalId;
         this.configuration = configuration;
         this.storage = configuration.getStorage();
@@ -274,25 +261,14 @@ public abstract class FileRequest extends Job {
     ) {
         super(id,
         nextJobId,
-        jobStorage, 
-        creationTime,  lifetime, 
-        stateId, errorMessage, 
+        jobStorage,
+        creationTime,  lifetime,
+        stateId, errorMessage,
         scheduelerId,
         schedulerTimeStamp,
-        numberOfRetries,maxNumberOfRetries, 
-        lastStateTransitionTime, 
-        jobHistoryArray, 
-        requestsproperties == null
-        ?
-            requestsproperties =
-            RequestsPropertyStorage.getPropertyStorage(
-            configuration.getJdbcUrl(),
-            configuration.getJdbcClass(),
-            configuration.getJdbcUser(),
-            configuration.getJdbcPass(),
-            configuration.getNextRequestIdStorageTable())
-        :
-            requestsproperties);
+        numberOfRetries,maxNumberOfRetries,
+        lastStateTransitionTime,
+        jobHistoryArray);
         this.credentialId = requestCredentalId;
         this.configuration = configuration;
         this.storage = configuration.getStorage();
@@ -391,7 +367,7 @@ public abstract class FileRequest extends Job {
                     if( state  != State.FAILED &&
                     state != State.DONE &&
                     state != State.CANCELED) {
-                        if(state == State.READY || 
+                        if(state == State.READY ||
                            state == State.TRANSFERRING ||
                            state == State.RUNNING) {
                             setState(State.DONE,"set by setStatus to \"Done\"");

@@ -229,6 +229,8 @@ public abstract class Job  {
     private static final org.apache.log4j.Logger _log = 
         org.apache.log4j.Logger.getLogger(Job.class);
 
+    private static final long DEFAULT_JOB_LIFETIME_MILLIS= 12*60*60*1000; //12 hours
+
     // this is the map from jobIds to jobs
     // job ids are referenced from jobs
     // jobs are wrapped into WeakReferences to prevent
@@ -286,11 +288,10 @@ public abstract class Job  {
     long lifetime,int stateId,String errorMessage,
     String schedulerId,
     long schedulerTimestamp,
-    int numberOfRetries, 
+    int numberOfRetries,
     int maxNumberOfRetries,
     long lastStateTransitionTime,
-    JobHistory[] jobHistoryArray,
-    JobIdGenerator generator
+    JobHistory[] jobHistoryArray
     ) {
         if(jobStorage == null) {
             throw new NullPointerException(" job storage is null");
@@ -313,7 +314,6 @@ public abstract class Job  {
         this.numberOfRetries = numberOfRetries;
         this.maxNumberOfRetries = maxNumberOfRetries;
         this.lastStateTransitionTime = lastStateTransitionTime;
-        this.generator = generator;
         if(jobHistoryArray != null) {
             java.util.Arrays.sort(jobHistoryArray,new java.util.Comparator(){
                  public int compare(java.lang.Object o1,java.lang.Object o2) {
@@ -351,23 +351,21 @@ public abstract class Job  {
             } else {
                 LifetimeExpiration.schedule(id, new_lifetime);
             }
-        }        
+        }
     }
-    
+
     /** Creates a new instance of Job */
-    
-    public Job(long lifetime, 
+
+    public Job(long lifetime,
               JobStorage jobStorage,
-              int maxNumberOfRetries,
-              JobIdGenerator generator) {
-        
+              int maxNumberOfRetries) {
+
         if(jobStorage == null) {
             throw new NullPointerException(" job storage is null");
         }
         this.jobStorage = jobStorage;
-        this.generator = generator;
-        id = generator.getNextId();
-        
+        id = nextId();
+
         this.lifetime = lifetime;
         this.maxNumberOfRetries = maxNumberOfRetries;
 
@@ -375,7 +373,7 @@ public abstract class Job  {
         synchronized (weakJobStorage) {
             weakJobStorage.put(id, new WeakReference(this));
         }
-        jobHistory.add( new JobHistory(generator.nextLong(),state,"created",lastStateTransitionTime));        
+        jobHistory.add( new JobHistory(nextLong(),state,"created",lastStateTransitionTime));
     }
     
     
@@ -502,13 +500,12 @@ public abstract class Job  {
         }
         throw new IllegalArgumentException("jobId = "+jobId+" does not correspond to any known job");
     }
-    
-    
-    public Job(JobStorage jobStorage, 
-        int maxNumberOfRetries,
-         JobIdGenerator generator) {
-        this(12*60*60*1000,jobStorage,maxNumberOfRetries,generator);// 12 hours is the default lifetime
-        
+
+
+    public Job(JobStorage jobStorage,
+        int maxNumberOfRetries) {
+        this(DEFAULT_JOB_LIFETIME_MILLIS,jobStorage,maxNumberOfRetries);
+
     }
     
     
@@ -649,11 +646,11 @@ public abstract class Job  {
             old = this.state;
             this.state = state;
             lastStateTransitionTime = System.currentTimeMillis();
-            
+
             synchronized(jobHistory) {
-                jobHistory.add( new JobHistory(generator.nextLong(),state,description,lastStateTransitionTime));
-            }     
-            
+                jobHistory.add( new JobHistory(nextLong(),state,description,lastStateTransitionTime));
+            }
+
             if( errorMessage.length()== 0) {
                   errorMessage.append(description);
             } else {
@@ -740,12 +737,12 @@ public abstract class Job  {
        }
        return errorsb.toString();
     }
-    
+
     public void addHistoryEvent(String description){
         synchronized(jobHistory) {
-            jobHistory.add( new JobHistory(generator.nextLong(),state,description, System.currentTimeMillis()));
+            jobHistory.add( new JobHistory(nextLong(),state,description, System.currentTimeMillis()));
         }
-        
+
     }
      public String getHistory() {
         StringBuffer historyString = new StringBuffer();
@@ -922,13 +919,44 @@ public abstract class Job  {
 
         if (!LifetimeExpiration.cancel(id)) {
             throw new SRMException (" job expiration has started already ");
-        }        
+        }
         LifetimeExpiration.schedule(id, newLifetimeInMillis);
 
         return 0;
     }
-    
-    private static class LifetimeExpiration extends TimerTask 
+
+    /**
+     * @return the generator
+     */
+    private JobIdGenerator getGenerator() {
+        if(generator == null) {
+              generator = JobIdGeneratorFactory.getJobIdGeneratorFactory().getJobIdGenerator();
+        }
+        return generator;
+    }
+
+    /**we use long values internally
+     *but to remain complaint with srm v1
+     * we use the generator's next id method
+     * which returns longs limited to int range
+     * @return next Long id
+     */
+    private Long nextId() {
+        return getGenerator().getNextId();
+    }
+
+    /**
+     *
+     * @return next long value
+     */
+    private long nextLong() {
+        return getGenerator().nextLong();
+    }
+
+
+
+
+    private static class LifetimeExpiration extends TimerTask
     {
         static private Map<Long,LifetimeExpiration> _instances = 
             new HashMap<Long,LifetimeExpiration>();

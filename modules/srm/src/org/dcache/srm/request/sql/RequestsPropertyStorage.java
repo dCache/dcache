@@ -127,14 +127,18 @@ package org.dcache.srm.request.sql;
 import java.sql.*;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.Iterator;
+import org.dcache.srm.scheduler.JobIdGenerator ;
+import org.dcache.srm.scheduler.JobIdGeneratorFactory;
 import org.apache.log4j.Logger;
 
 /**
- *
+ * This class is used by srm to generate long and int ids
+ * that are guaranteed to be unique as long as the database used by the
+ * class is preserved and can be connected to.
  * @author  timur
  */
-public class RequestsPropertyStorage implements org.dcache.srm.scheduler.JobIdGenerator {
+public class RequestsPropertyStorage extends JobIdGeneratorFactory implements JobIdGenerator {
+
     private String jdbcUrl;
     private String jdbcClass;
     private String user;
@@ -147,8 +151,9 @@ public class RequestsPropertyStorage implements org.dcache.srm.scheduler.JobIdGe
     private long nextLongBase;
     private static long NEXT_LONG_STEP=10000;
     private long nextLongIncrement=NEXT_LONG_STEP;
-    
-    /** Creates a new instance of ResuestsPropertyStorage */
+    private static RequestsPropertyStorage requestsPropertyStorage;
+
+    /** Creates a new instance of RequestsPropertyStorage */
     private RequestsPropertyStorage(  String jdbcUrl,
             String jdbcClass,
             String user,
@@ -268,7 +273,16 @@ public class RequestsPropertyStorage implements org.dcache.srm.scheduler.JobIdGe
     
     
     
-    
+    /**
+     * Generate a next unique int request id
+     * Databse table is used to preserve the state of the request generator.
+     * In this table we store a single record with field NEXTINT
+     * We read the value of this field and increase it by NEXT_INT_STEP (1000 by
+     * default), Thus reserving the 1000 values for use by this instance.
+     * Once we used up all of the values we repeat the database update.
+     * This is done to minimize the number of database operations.
+     * @return new int request id 
+     */
     public  int getNextRequestId()  {
         return nextInt();
     }
@@ -336,6 +350,17 @@ public class RequestsPropertyStorage implements org.dcache.srm.scheduler.JobIdGe
     }
     
     long _nextLongBase = 0;
+    /**
+     * Generate a next unique long id
+     * Databse table is used to preserve the state of the long id generator.
+     * In this table we store a single record with field NEXTLONG
+     * We read the value of this field and increase it by NEXT_LONG_STEP (10000
+     * by default), thus reserving the 10000 values for use by this instance.
+     * Once we used up all of the values we repeat the database update.
+     * This is done to minimize the number of database operations.
+
+     * @return next unique long number
+     */
     public synchronized long nextLong() {
         if(nextLongIncrement >= NEXT_LONG_STEP) {
             nextLongIncrement =0;
@@ -384,7 +409,8 @@ public class RequestsPropertyStorage implements org.dcache.srm.scheduler.JobIdGe
         say(" return nextLong="+nextLong);
         return nextLong;
     }
-    
+
+    @Override
     public boolean equals(Object o) {
         if( this == o) {
             return true;
@@ -400,7 +426,8 @@ public class RequestsPropertyStorage implements org.dcache.srm.scheduler.JobIdGe
         rps.user.equals(user) &&
         rps.nextRequestIdTableName.equals(nextRequestIdTableName);
     }
-    
+
+    @Override
     public int hashCode() {
         return jdbcClass.hashCode() ^
         jdbcUrl.hashCode() ^
@@ -408,30 +435,27 @@ public class RequestsPropertyStorage implements org.dcache.srm.scheduler.JobIdGe
         user.hashCode() ^
         nextRequestIdTableName.hashCode();
     }
+
+    @Override
+    public JobIdGenerator getJobIdGenerator() {
+        return this;
+    }
+
     private static Set propertyStorages = new HashSet();
-    
-    public synchronized static final RequestsPropertyStorage getPropertyStorage(String jdbcUrl,
+        public synchronized static final void initPropertyStorage(String jdbcUrl,
     String jdbcClass,
     String user,
     String pass,
     String nextRequestIdTableName)  {
-        for (Iterator i = propertyStorages.iterator();
-        i.hasNext();) {
-            RequestsPropertyStorage rps = (RequestsPropertyStorage) i.next();
-            if(rps.jdbcClass.equals(jdbcClass) &&
-            rps.jdbcUrl.equals(jdbcUrl) &&
-            rps.pass.equals(pass) &&
-            rps.user.equals(user) &&
-            rps.nextRequestIdTableName.equals(nextRequestIdTableName) ){
-                return rps;
+        if(RequestsPropertyStorage.requestsPropertyStorage != null) {
+            throw new java.lang.IllegalStateException("RequestsPropertyStorage is already initialized");
             }
-        }
-        RequestsPropertyStorage rps = 
-                new RequestsPropertyStorage(jdbcUrl,jdbcClass,user,pass,
-                nextRequestIdTableName);
-        propertyStorages.add(rps);
-        return rps;
-        
+       requestsPropertyStorage  =   new RequestsPropertyStorage(jdbcUrl,jdbcClass,user,pass,
+            nextRequestIdTableName);
+       initJobIdGeneratorFactory(requestsPropertyStorage);
+
     }
+
+
 
 }

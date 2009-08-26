@@ -235,29 +235,7 @@ public abstract class Request extends Job {
     String description,
     String client_host
         ) throws Exception{
-        /*
-        if(requestsproperties == null)
-        {
-            requestsproperties = new RequestsPropertyStorage( configuration.getJdbcUrl(),
-        configuration.getJdbcClass(),
-        configuration.getJdbcUser(),
-        configuration.getJdbcPass(),
-        configuration.getNextRequestIdStorageTable()
-        );
-        }
-        */
-        super(lifetime,requestJobsStorage,max_number_of_retries,
-        requestsproperties == null
-        ?
-            requestsproperties =
-            RequestsPropertyStorage.getPropertyStorage(
-            configuration.getJdbcUrl(),
-            configuration.getJdbcClass(),
-            configuration.getJdbcUser(),
-            configuration.getJdbcPass(),
-            configuration.getNextRequestIdStorageTable())
-        :
-            requestsproperties);
+        super(lifetime,requestJobsStorage,max_number_of_retries);
         this.credentialId = requestCredentalId;
         this.storage = configuration.getStorage();
         this.configuration = configuration;
@@ -297,29 +275,16 @@ public abstract class Request extends Job {
     ) {
         super(id,
         nextJobId,
-        jobStorage, 
-        creationTime,  
-        lifetime, 
-        stateId, 
-        errorMessage, 
+        jobStorage,
+        creationTime,
+        lifetime,
+        stateId,
+        errorMessage,
         scheduelerId,
         schedulerTimeStamp,
-        numberOfRetries,maxNumberOfRetries, 
-        lastStateTransitionTime, 
-        jobHistoryArray, 
-        requestsproperties == null
-        ?
-            requestsproperties =
-            RequestsPropertyStorage.getPropertyStorage(
-            configuration.getJdbcUrl(),
-            configuration.getJdbcClass(),
-            configuration.getJdbcUser(),
-            configuration.getJdbcPass(),
-            configuration.getNextRequestIdStorageTable())
-        :
-            requestsproperties
-        
-        );
+        numberOfRetries,maxNumberOfRetries,
+        lastStateTransitionTime,
+        jobHistoryArray);
         this.configuration = configuration;
         this.storage = configuration.getStorage();
         this.credentialId = credentialId;

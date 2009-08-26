@@ -68,6 +68,8 @@ import java.util.Properties;
 import diskCacheV111.doors.FTPTransactionLog;
 
 import org.dcache.srm.request.sql.RequestsPropertyStorage;
+import org.dcache.srm.scheduler.JobIdGeneratorFactory;
+import org.dcache.srm.scheduler.JobIdGenerator;
 
 import diskCacheV111.util.Pgpass;
 import javax.jdo.JDOHelper;
@@ -115,7 +117,7 @@ public abstract class TransferManager extends CellAdapter {
 	private Timer moverTimeoutTimer = new Timer(true);
 	private Map moverTimeoutTimerTasks = new Hashtable();
 	private String _ioQueueName = null; // multi io queue option
-	RequestsPropertyStorage requestsPropertyStorage;
+	private JobIdGenerator idGenerator;
 
 	public HashSet justRequestedIDs =  new HashSet();
         private String poolProxy ;
@@ -153,14 +155,20 @@ public abstract class TransferManager extends CellAdapter {
 
 		try {
 			if ( jdbcUrl != null && jdbcDriver != null && user != null && pass != null ) {
-				requestsPropertyStorage = RequestsPropertyStorage.getPropertyStorage(jdbcUrl, jdbcDriver, user, pass, "nextTransferId");
+                try {
+                    RequestsPropertyStorage.initPropertyStorage(jdbcUrl, jdbcDriver, user, pass, "srmnextrequestid");
+                } catch (IllegalStateException ise){
+                    // already initialized
+                }
+                idGenerator = JobIdGeneratorFactory.
+                        getJobIdGeneratorFactory().getJobIdGenerator();
 			} else {
-				requestsPropertyStorage=null;
+				idGenerator=null;
 			}
 		} catch (Exception e) {
 			esay("Failed to initialize Data Base connection to generate nextTransferId using default values");
 			esay("jdbcUrl="+jdbcUrl+" jdbcDriver="+jdbcDriver+" dbUser="+user+" dbPass="+pass+" pgPass="+pwdfile);
-			requestsPropertyStorage=null;
+			idGenerator=null;
 			//esay(e);
 		}
 
@@ -279,7 +287,7 @@ public abstract class TransferManager extends CellAdapter {
 		} else {
 			sb.append("dblogging=false\n");
 		}
-		if (requestsPropertyStorage!=null) {
+		if (idGenerator!=null) {
 			sb.append("TransferID is generated using Data Base \n");
 		} else {
 			sb.append("TransferID is generated w/o DB access \n");
@@ -399,14 +407,20 @@ public abstract class TransferManager extends CellAdapter {
 	}
 
 	public String ac_dbinit_$_0( Args args ) throws CommandException {
-		if ( requestsPropertyStorage != null ) {
+		if ( idGenerator != null ) {
 			return "database connection is already initialized\n";
 		}
 		try {
-                    requestsPropertyStorage = RequestsPropertyStorage.getPropertyStorage(jdbcUrl, jdbcDriver, user, pass, "nextTransferId");
+              try {
+                    RequestsPropertyStorage.initPropertyStorage(jdbcUrl, jdbcDriver, user, pass, "srmnextrequestid");
+                } catch (IllegalStateException ise){
+                    // already initialized
+                }
+                idGenerator = RequestsPropertyStorage.
+                        getJobIdGeneratorFactory().getJobIdGenerator();
 		} catch (Exception e) {
 			esay("Failed to initialize Data Base connection to generate nextTransferId\n");
-			requestsPropertyStorage=null;
+			idGenerator=null;
 			esay(e);
 			return "Failed to initialize Data Base connection to generate nextTransferId\n";
 		}
@@ -735,14 +749,14 @@ public abstract class TransferManager extends CellAdapter {
 	}
 	/**      */
 	public synchronized long getNextMessageID() {
-		if (requestsPropertyStorage!=null) {
+		if (idGenerator!=null) {
 			try {
-				nextMessageID=requestsPropertyStorage.nextLong();
+				nextMessageID=idGenerator.nextLong();
 			} catch (Exception e)  {
 				esay("Having trouble getting getNextMessageID from DB");
 				esay(e);
 				esay("will nullify requestsPropertyStorage");
-				requestsPropertyStorage=null;
+				idGenerator=null;
 				getNextMessageID();
 			}
 		} else {

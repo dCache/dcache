@@ -154,7 +154,6 @@ import org.dcache.srm.util.Configuration;
 import diskCacheV111.srm.IInformationProvider;
 import diskCacheV111.srm.StorageElementInfo;
 import org.dcache.srm.SRMException;
-import org.dcache.srm.request.sql.RequestsPropertyStorage;
 import java.sql.SQLException;
 
 import org.ietf.jgss.GSSCredential;
@@ -170,8 +169,7 @@ public class SRMServerV1 implements ISRM, IInformationProvider {
     private static SslGsiSocketFactory socket_factory;
     private Configuration configuration;
     private RequestCredentialStorage credential_storage;
-    RequestsPropertyStorage propertyStorage;
-    
+
     public SRMServerV1(SRM srm,int port,
     SRMAuthorization authorization,
     Configuration configuration,
@@ -217,14 +215,6 @@ public class SRMServerV1 implements ISRM, IInformationProvider {
         catch(electric.registry.RegistryException re) {
             throw new IOException(" can not publish the SRM server: "+re);
         }
-        
-        propertyStorage = RequestsPropertyStorage.getPropertyStorage(
-        configuration.getJdbcUrl(),
-        configuration.getJdbcClass(),
-        configuration.getJdbcUser(),
-        configuration.getJdbcPass(),
-        configuration.getNextRequestIdStorageTable());
-        
     }
     
     public void say(String s) {
@@ -599,7 +589,7 @@ public class SRMServerV1 implements ISRM, IInformationProvider {
                 say("creating new RequestCredential");
                 rc = new RequestCredential(userCredential.secureId, role,
                 userCredential.credential,
-                credential_storage,propertyStorage );
+                credential_storage);
             }
             say("returning RequestCredential = "+rc);
             rc.saveCredential();
