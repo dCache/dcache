@@ -9,8 +9,6 @@ import java.util.Collection;
  * Some objects want to know when (some portion of) dCache state changes.
  * These object's class must implement this interface.  They must
  * also be registered with the State object to have any effect.
- * 
- * @author Paul Millar <paul.millar@desy.de>
  */
 public interface StateWatcher {
 
@@ -24,11 +22,15 @@ public interface StateWatcher {
 	public Collection<StatePathPredicate> getPredicate();
 	
 	/**
-	 * Evaluate the forthcoming changes and calculate some
-	 * derived data.
-	 * @return the new values for the dCache State.  This update
-	 * should <i>not</i> contain any of the supplied information,
-	 * or null if no changes are necessary.
+	 * This method is called when a pending StateTransition alters
+	 * one (or more) metrics that match a StatePathPredicate
+	 * from {@link getPredicate}.
+	 * <p>
+	 * If the StateWatcher is acting as a secondary information provider, so
+	 * maintains derived metrics, it may choose to update those metrics 
+	 * based on the values that are to change in the forthcoming transition.
+	 * If this is so, the new metric values are to be added to the provided
+	 * StateUpdate object.
 	 */
-	public void trigger(StateTransition str);	
+	public void trigger(StateTransition str, StateUpdate update);	
 }

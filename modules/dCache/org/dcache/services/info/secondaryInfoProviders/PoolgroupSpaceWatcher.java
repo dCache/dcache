@@ -8,9 +8,9 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 import org.dcache.services.info.base.StateComposite;
 import org.dcache.services.info.base.StateExhibitor;
+import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateTransition;
-import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.stateInfo.PoolSpaceVisitor;
 import org.dcache.services.info.stateInfo.SetMapVisitor;
 import org.dcache.services.info.stateInfo.SpaceInfo;
@@ -50,8 +50,10 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 	
 	
 	@Override
-    public void trigger( StateTransition transition) {
-		Set<String> recalcPoolgroup = new HashSet<String>();		
+    public void trigger( StateTransition transition, StateUpdate update) {
+	    super.trigger( transition, update);
+	    
+	    Set<String> recalcPoolgroup = new HashSet<String>();		
 		if( _log.isInfoEnabled())
 			_log.info( "Watcher " + this.getClass().getSimpleName() + " triggered");
 
@@ -80,8 +82,6 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 			return;
 		}
 			
-		StateUpdate update = new StateUpdate();
-		
 		for( String thisPoolgroup : recalcPoolgroup) {
 
 			if( _log.isDebugEnabled())

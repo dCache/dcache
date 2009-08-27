@@ -1,7 +1,6 @@
 package org.dcache.services.info.secondaryInfoProviders;
 
 import org.apache.log4j.Logger;
-import org.dcache.services.info.base.State;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateTransition;
@@ -38,7 +37,8 @@ public class PoolsSummaryMaintainer extends AbstractStateWatcher {
 	 * Something's changed, recalculate the summary information.
 	 */
 	@Override
-    public void trigger(StateTransition str) {
+    public void trigger(StateTransition str, StateUpdate update) {
+		super.trigger( str, update);
 		
 		if( _log.isInfoEnabled())
 			_log.info( "Watcher " + this.getClass().getSimpleName() + " triggered");
@@ -50,9 +50,7 @@ public class PoolsSummaryMaintainer extends AbstractStateWatcher {
 			_log.debug( "got summary: " + info.toString());
 		
 		// Add our new information as immortal data
-		StateUpdate update = new StateUpdate();
 		info.addMetrics( update, SUMMARY_POOLS_SPACE_PATH, true);		
-		State.getInstance().updateState( update);
 	}
 
 }

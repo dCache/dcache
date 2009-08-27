@@ -4,7 +4,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.dcache.services.info.base.State;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateTransition;
@@ -44,8 +43,9 @@ public class LinkSpaceMaintainer extends AbstractStateWatcher {
 	}
 
 	@Override
-    public void trigger(StateTransition str) {
-		
+    public void trigger(StateTransition str, StateUpdate update) {
+	    super.trigger( str, update);
+
 		Map<String,Set<String>> futureLinksToPools = SetMapVisitor.getDetails( _exhibitor, str, LINKS_PATH, POOL_MEMBERSHIP_REL_PATH);
 		Map<String,SpaceInfo> futurePoolSize = PoolSpaceVisitor.getDetails( _exhibitor, str);
 
@@ -57,12 +57,8 @@ public class LinkSpaceMaintainer extends AbstractStateWatcher {
 		if( linksToUpdate.isEmpty())
 			return;
 		
-		StateUpdate update = new StateUpdate();
-		
 		for( String linkName : linksToUpdate)
 			addUpdateInfo( update, linkName, futureLinksToPools.get( linkName), futurePoolSize);
-		
-		State.getInstance().updateState( update);
 	}
 
 	

@@ -6,7 +6,6 @@ import java.util.Set;
 
 import org.apache.log4j.Logger;
 import org.dcache.services.info.base.IntegerStateValue;
-import org.dcache.services.info.base.State;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateTransition;
@@ -61,8 +60,9 @@ public class LinkgroupTotalSpaceMaintainer extends AbstractStateWatcher {
 	}
 
 	@Override
-    public void trigger(StateTransition str) {
-		
+	public void trigger( StateTransition str, StateUpdate update) {	    
+	    super.trigger( str, update);
+
 		if( _log.isInfoEnabled())
 			_log.info( "Watcher " + this.getClass().getSimpleName() + " triggered");
 
@@ -86,10 +86,8 @@ public class LinkgroupTotalSpaceMaintainer extends AbstractStateWatcher {
 			_log.warn( this.getClass().getSimpleName()+" triggered, but apparently nothing needs doing.");
 			return;
 		}
-			
-		StateUpdate update = new StateUpdate();
-		addLinkgroupChanges( update, linkgroupsToUpdate, str, freeSpaceAfter, usedSpaceAfter, reservationToLinkgroup);			
-		State.getInstance().updateState( update);
+
+		addLinkgroupChanges( update, linkgroupsToUpdate, str, freeSpaceAfter, usedSpaceAfter, reservationToLinkgroup);
 	}
 	
 	

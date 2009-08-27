@@ -176,7 +176,10 @@ public class State implements StateCaretaker, StateExhibitor {
                 _log.debug( " Dump of pending StateTransition follows...\n\n" +
                             transition.dumpContents());
 
-            checkWatchers( transition);
+            StateUpdate resultingUpdate = checkWatchers( transition);
+            
+            if( resultingUpdate != null)
+                _pendingUpdates.add(  resultingUpdate);
 
         } finally {
             _stateReadLock.unlock();
@@ -213,14 +216,15 @@ public class State implements StateCaretaker, StateExhibitor {
      * StateTransition, the corresponding StateWatcher's
      * <code>trigger()</code> method is called.
      * <p>
-     * NB For consistency, the caller <i>must</i> hold a reader-lock that was
-     * established when the StateTransition was obtained. For this reason no
-     * locking is done within this method.
      *
      * @param transition
      *            The StateTransition to apply
+     * @return a StateUpdate containing new metrics, or null if there are no
+     *         new metrics to update.
      */
-    private void checkWatchers( StateTransition transition) {
+    public StateUpdate checkWatchers( StateTransition transition) {
+
+        StateUpdate update = new StateUpdate();
 
         for( StateWatcherInfo thisWatcherInfo : _watchers) {
 
@@ -260,9 +264,11 @@ public class State implements StateCaretaker, StateExhibitor {
                 if( _log.isInfoEnabled())
                     _log.info( "triggering watcher " + thisWatcher);
                 thisWatcherInfo.incrementCounter();
-                thisWatcher.trigger( transition);
+                thisWatcher.trigger( transition, update);
             }
         }
+
+        return update.count() > 0 ? update : null;
     }
 
     /**
