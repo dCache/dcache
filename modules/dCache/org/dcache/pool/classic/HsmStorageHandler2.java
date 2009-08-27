@@ -183,6 +183,7 @@ public class HsmStorageHandler2
         _storeQueue.shutdown();
     }
 
+    @Override
     public void setCellEndpoint(CellEndpoint endpoint)
     {
         super.setCellEndpoint(endpoint);
@@ -216,6 +217,7 @@ public class HsmStorageHandler2
         _fetchQueue.setMaxActiveJobs(restores);
     }
 
+    @Override
     public synchronized void printSetup(PrintWriter pw)
     {
         pw.println("#\n# HsmStorageHandler2("+getClass().getName()+")\n#");
@@ -227,6 +229,7 @@ public class HsmStorageHandler2
         pw.println("rm set timeout "+(_maxRemoveRun/1000L));
     }
 
+    @Override
     public synchronized void getInfo(PrintWriter pw)
     {
         pw.println("         Version  : $Id$");
@@ -422,11 +425,6 @@ public class HsmStorageHandler2
             _infoMsg.setStorageInfo(storageInfo);
 
             long fileSize = storageInfo.getFileSize();
-
-            // Fixme!
-            if (fileSize == 0)
-                throw new
-                    CacheException("Couldn't get file size of " + pnfsId);
 
             _infoMsg.setFileSize(fileSize);
 
