@@ -142,6 +142,9 @@ import java.util.Map;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Collections;
+import java.util.EnumSet;
+import java.util.Collection;
+import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 import diskCacheV111.services.PermissionHandler;
 import org.dcache.srm.AbstractStorageElement;
@@ -176,6 +179,10 @@ import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
+import org.dcache.util.list.DirectoryListSource;
+import org.dcache.util.list.DirectoryListPrinter;
+import org.dcache.util.list.DirectoryEntry;
+import org.dcache.util.list.ListDirectoryHandler;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.services.space.message.GetSpaceMetaData;
@@ -183,9 +190,14 @@ import diskCacheV111.services.space.message.GetSpaceTokens;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.util.NotInTrashCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.NotDirCacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
 import org.dcache.auth.persistence.AuthRecordPersistenceManager;
+import org.dcache.auth.Subjects;
 import org.dcache.commons.stats.RequestCounters;
-
+import org.dcache.vehicles.FileAttributes;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.namespace.FileType;
 
 import org.ietf.jgss.GSSCredential;
 
@@ -199,6 +211,7 @@ import javax.naming.NamingException;
 import javax.naming.NamingEnumeration;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
+import javax.security.auth.Subject;
 
 import org.apache.log4j.Logger;
 
@@ -257,6 +270,8 @@ public class Storage
     private final FsPath _httpRootPath;
 
     private LoginBrokerHandler _loginBrokerHandler = null ;
+
+    private final DirectoryListSource _listSource;
 
     // public static SRM getSRMInstance(String xmlConfigPath)
     public static SRM getSRMInstance(final String[] dCacheParams,
@@ -361,6 +376,9 @@ public class Storage
 
         _httpRootPath = new FsPath(getOption("httpRootPath", "/"));
         _xrootdRootPath = new FsPath(getOption("xrootdRootPath", "/"));
+
+        _listSource = new ListDirectoryHandler(_pnfs);
+        addMessageListener(_listSource);
 
         /**
          *  Add addresses ensuring preferred ordering: external addresses are before any
@@ -1350,27 +1368,15 @@ public class Storage
 
 
     /**
-     * Receives the Cell Messages
-     * we currently process messages received as the
-     * response to something we sent
-     * to other cells
-     *
-     * @param  cellMessage
-     *         cellMessage Object containing the actual message
-     *
+     * Starts new threads for processing TransferManagerMessage.
      */
-
-    public void messageArrived( CellMessage cellMessage ) {
-        final Object o = cellMessage.getMessageObject();
-        if(o instanceof TransferManagerMessage){
-            diskCacheV111.util.ThreadManager.execute(new Runnable() {
+    public void messageArrived(final TransferManagerMessage msg)
+    {
+        diskCacheV111.util.ThreadManager.execute(new Runnable() {
                 public void run() {
-                    handleTransferManagerMessage((TransferManagerMessage)o);
+                    handleTransferManagerMessage(msg);
                 }
             });
-        }
-
-        super.messageArrived(cellMessage);
     }
 
     private boolean isCached(StorageInfo storage_info, PnfsId _pnfsId) {
@@ -3823,185 +3829,138 @@ public class Storage
         }
     }
 
-
-    public String[] listNonLinkedDirectory(SRMUser user,
-            String directoryName) throws SRMException {
-
-        String actualPath       = srm_root+"/"+directoryName;
-        FsPath fsPath           = new FsPath(actualPath);
-        String pnfsPath         = fsPath.toString();
-        diskCacheV111.util.FileMetaData pathFmd    = null;
-        StorageInfo storageInfo = null;
-        PnfsGetStorageInfoMessage storageInfoMessage =null;
-        PnfsGetFileMetaDataMessage metadataMessage = null;
-        PnfsId pnfsId;
+    /**
+     * Provides a directory listing of directoryName if and only if
+     * directoryName is no a symbolic link. As a side effect, the
+     * method checks that directoryName can be deleted by the user.
+     *
+     * @param user The SRMUser performing the operation; this myst be
+     * of type AuthorizationRecord
+     * @param directoryName The directory to delete
+     * @return The array of directory entries or null if directoryName
+     * is a symbolic link
+     */
+    public String[] listNonLinkedDirectory(SRMUser user, String directoryName)
+        throws SRMException
+    {
         AuthorizationRecord duser = (AuthorizationRecord) user;
-
+        String path = getFullPath(directoryName);
         try {
-            storageInfoMessage = _pnfs.getStorageInfoByPath(actualPath);
+            boolean canDelete =
+                permissionHandler.canDeleteDir(duser.getUid(),
+                                               duser.getGid(),
+                                               path);
+            if (!canDelete) {
+                _log.warn("Cannot delete directory " + path +
+                          ": Permission denied");
+                throw new SRMAuthorizationException("Permission denied");
+            }
+
+            FileAttributes attr =
+                _pnfs.getFileAttributes(path, EnumSet.of(FileAttribute.TYPE));
+            if (attr.getFileType() == FileType.LINK)  {
+                return null;
+            }
         } catch (FileNotFoundCacheException e) {
-            throw new SRMInvalidPathException("path does not exists: " + pnfsPath, e);
-        } catch ( CacheException ce1 ) {
-            if( ce1.getRc() == CacheException.FILE_NOT_FOUND || ce1.getRc() == CacheException.NOT_IN_TRASH ) {
-                throw new SRMInvalidPathException("path does not exists: " + pnfsPath, ce1);
-            }
-
-            // FIXME: cleanup required
-            try {
-                metadataMessage  = _pnfs.getFileMetaDataByPath(actualPath);
-            } catch (CacheException ce) {
-                _log.warn("getFileMetaDataByPath failed"+ce.getMessage());
-                throw new SRMInvalidPathException(pnfsPath+" : "+ce.getMessage(), ce);
-            } catch (RuntimeException e) {
-                _log.fatal(e,e);
-                throw new SRMInvalidPathException(pnfsPath+" : "+e.toString(), e);
-            }
+            throw new SRMInvalidPathException("No such file or directory", e);
+        } catch (NotInTrashCacheException e) {
+            throw new SRMInvalidPathException("No such file or directory", e);
+        } catch (TimeoutCacheException e) {
+            throw new SRMInternalErrorException("Internal name space timeout", e);
+        } catch (CacheException e) {
+            _log.error("Failed to list directory " + path + ": "
+                       + e.getMessage());
+            throw new SRMException(String.format("Failed delete directory [rc=%d,msg=%s]",
+                                                 e.getRc(), e.getMessage()));
         }
 
-        if ( storageInfoMessage != null ) {
-            storageInfo = storageInfoMessage.getStorageInfo();
-            pathFmd     = storageInfoMessage.getMetaData();
-            pnfsId      = storageInfoMessage.getPnfsId();
-        } else if ( metadataMessage != null) {
-            pathFmd = metadataMessage.getMetaData();
-            pnfsId  = metadataMessage.getPnfsId();
-        } else {
-            _log.warn("could not get storage info or file metadata by path ");
-            throw new SRMInvalidPathException(
-                    "could not get storage info or file metadata by path ");
-        }
-
-        if(!pathFmd.isDirectory())  {
-            throw new SRMInvalidPathException("pnfsPath is not a directory!");
-        }
-
-        boolean canDelete=false;
-        try {
-            canDelete=permissionHandler.canDeleteDir(duser.getUid(),
-                duser.getGid(), pnfsPath);
-        } catch (CacheException ce) {
-            _log.warn(ce);
-            throw new SRMAuthorizationException("can't delete :"+ce.getMessage(), ce);
-        }
-
-        if ( !canDelete ) {
-            _log.warn("can't delete directory "+pnfsPath);
-            throw new SRMAuthorizationException("can't delete");
-        }
-        _log.debug(pnfsPath+" dir: "+pathFmd.isDirectory()+" link: "+
-            pathFmd.isSymbolicLink()+" regular: "+pathFmd.isRegularFile());
-        if(!pathFmd.isSymbolicLink())  {
-            java.io.File dirFile = new java.io.File(pnfsPath);
-            return dirFile.list();
-        } else {
-            return null;
-        }
-
+        return listDirectory(user, directoryName, null);
     }
 
-    public java.io.File[] listDirectoryFiles(SRMUser user, String directoryName,
-            FileMetaData fileMetaData) throws SRMException {
+    public File[] listDirectoryFiles(SRMUser user, String directoryName,
+                                     FileMetaData fileMetaData)
+        throws SRMException
+    {
+        final File path = new File(getFullPath(directoryName));
+        final Collection<File> result = new ArrayList<File>();
+        Subject subject = Subjects.getSubject((AuthorizationRecord) user);
+        DirectoryListPrinter printer =
+            new DirectoryListPrinter()
+            {
+                public Set<FileAttribute> getRequiredAttributes()
+                {
+                    return EnumSet.noneOf(FileAttribute.class);
+                }
 
-        String actualFilePath = srm_root+"/"+directoryName;
-        FsPath pnfsPathFile = new FsPath(actualFilePath);
-        String pnfsPath = pnfsPathFile.toString();
-        diskCacheV111.util.FileMetaData util_fmd = null;
-        if(fileMetaData != null && fileMetaData instanceof DcacheFileMetaData) {
-            util_fmd =  ((DcacheFileMetaData)fileMetaData).getFmd();
-        }
+                public void print(FileAttributes dirAttr, DirectoryEntry entry)
+                {
+                    result.add(new File(path, entry.getName()));
+                }
+            };
 
-        if(util_fmd == null) {
-            diskCacheV111.vehicles.PnfsGetFileMetaDataMessage metadataMessage;
-            try {
-                metadataMessage =
-                        _pnfs.getFileMetaDataByPath(pnfsPath);
-            } catch (CacheException e) {
-                throw new SRMException(e.getMessage(), e);
-            }
-
-            if(metadataMessage.getReturnCode() != 0) {
-                throw new SRMException(
-                        "listDirectory("+pnfsPath+
-                    "): can't get pnfs metadata: " +
-                    "metadataMessage.getReturnCode() != 0, error="+
-                        metadataMessage.getErrorObject());
-            }
-            util_fmd =metadataMessage.getMetaData();
-        }
-        if(!util_fmd.isDirectory())  {
-            throw new SRMException("pnfsPath is not a directory!");
-        }
-        AuthorizationRecord duser = (AuthorizationRecord) user;
         try {
-            if(!permissionHandler.dirCanRead(
-                    duser.getUid(),
-                    duser.getGid(),
-                    actualFilePath, util_fmd)) {
-                throw new SRMException("listDirectory("+pnfsPath+"): directory " +
-                    "listing is not allowed ");
-            }
-        } catch(CacheException e) {
-            throw new SRMException("listDirectory("+pnfsPath+")", e);
+            _listSource.printDirectory(subject, printer, path, null, null);
+            return result.toArray(new File[0]);
+        } catch (TimeoutCacheException e) {
+            throw new SRMInternalErrorException("Internal name space timeout", e);
+        } catch (InterruptedException e) {
+            throw new SRMInternalErrorException("List aborted by administrator", e);
+        } catch (NotDirCacheException e) {
+            throw new SRMInvalidPathException("Not a directory", e);
+        } catch (FileNotFoundCacheException e) {
+            throw new SRMInvalidPathException("No such file or directory", e);
+        } catch (NotInTrashCacheException e) {
+            throw new SRMInvalidPathException("No such file or directory", e);
+        } catch (PermissionDeniedCacheException e) {
+            throw new SRMAuthorizationException("Permission denied", e);
+        } catch (CacheException e) {
+            _log.error("Failed to list directory " + path + ": "
+                       + e.getMessage());
+            throw new SRMException(String.format("List failed [rc=%d,msg=%s]",
+                                                 e.getRc(), e.getMessage()));
         }
-        java.io.File dirFile = new java.io.File(pnfsPath);
-	if (!dirFile.exists()) {
-	    throw new SRMInternalErrorException("path="+pnfsPath+
-                " does not exist, possibly pnfs is not mounted on SRM server " +
-                "host, contact SRM administrator \n" );
-	}
-        return dirFile.listFiles();
     }
 
     public String[] listDirectory(SRMUser user, String directoryName,
-            FileMetaData fileMetaData) throws SRMException {
+                                  FileMetaData fileMetaData)
+        throws SRMException
+    {
+        final File path = new File(getFullPath(directoryName));
+        final Collection<String> result = new ArrayList<String>();
+        Subject subject = Subjects.getSubject((AuthorizationRecord) user);
+        DirectoryListPrinter printer =
+            new DirectoryListPrinter()
+            {
+                public Set<FileAttribute> getRequiredAttributes()
+                {
+                    return EnumSet.noneOf(FileAttribute.class);
+                }
 
-        String actualFilePath = srm_root+"/"+directoryName;
-        FsPath pnfsPathFile = new FsPath(actualFilePath);
-        String pnfsPath = pnfsPathFile.toString();
-        diskCacheV111.util.FileMetaData util_fmd = null;
-        if(fileMetaData != null && fileMetaData instanceof DcacheFileMetaData) {
-            util_fmd =  ((DcacheFileMetaData)fileMetaData).getFmd();
-        }
+                public void print(FileAttributes dirAttr, DirectoryEntry entry)
+                {
+                    result.add(entry.getName());
+                }
+            };
 
-        if(util_fmd == null) {
-            diskCacheV111.vehicles.PnfsGetFileMetaDataMessage metadataMessage;
-            try {
-                metadataMessage =
-                        _pnfs.getFileMetaDataByPath(pnfsPath);
-            }catch(CacheException e) {
-                throw new SRMException(e.getMessage(), e);
-            }
-
-            if(metadataMessage.getReturnCode() != 0) {
-                throw new SRMException(
-                        "listDirectory("+pnfsPath+"): can't get pnfs metadata: " +
-                    "metadataMessage.getReturnCode() != 0, error="+
-                        metadataMessage.getErrorObject());
-            }
-            util_fmd =metadataMessage.getMetaData();
-        }
-        if(!util_fmd.isDirectory())  {
-            throw new SRMException("pnfsPath is not a directory!");
-        }
-        AuthorizationRecord duser = (AuthorizationRecord) user;
         try {
-            if(!permissionHandler.dirCanRead(
-                    duser.getUid(),
-                    duser.getGid(),
-                    actualFilePath, util_fmd)) {
-                throw new SRMException("listDirectory("+pnfsPath+"): directory " +
-                    "listing is not allowed ");
-            }
+            _listSource.printDirectory(subject, printer, path, null, null);
+            return result.toArray(new String[0]);
+        } catch (TimeoutCacheException e) {
+            throw new SRMInternalErrorException("Internal name space timeout", e);
+        } catch (InterruptedException e) {
+            throw new SRMInternalErrorException("List aborted by administrator", e);
+        } catch (NotDirCacheException e) {
+            throw new SRMInvalidPathException("Not a directory", e);
+        } catch (FileNotFoundCacheException e) {
+            throw new SRMInvalidPathException("No such file or directory", e);
+        } catch (NotInTrashCacheException e) {
+            throw new SRMInvalidPathException("No such file or directory", e);
+        } catch (PermissionDeniedCacheException e) {
+            throw new SRMAuthorizationException("Permission denied", e);
         } catch (CacheException e) {
-            throw new SRMException("listDirectory("+pnfsPath+")", e);
+            throw new SRMException(String.format("List failed [rc=%d,msg=%s]",
+                                                 e.getRc(), e.getMessage()));
         }
-        java.io.File dirFile = new java.io.File(pnfsPath);
-	if (!dirFile.exists()) {
-	    throw new SRMInternalErrorException("path="+pnfsPath+
-                " does not exist, possibly pnfs is not mounted on SRM server " +
-                "host, contact SRM administrator \n");
-	}
-        return dirFile.list();
     }
 
     public void srmReserveSpace(SRMUser user,
