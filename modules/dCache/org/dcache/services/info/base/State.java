@@ -1,5 +1,6 @@
 package org.dcache.services.info.base;
 
+import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Stack;
@@ -35,7 +36,7 @@ import org.apache.log4j.Logger;
  * state (e.g., to send a message requesting data to each currently known
  * pool).
  */
-public class State implements StateExhibitor {
+public class State implements StateCaretaker, StateExhibitor {
 
     /**
      * Constants used for persistent metadata
@@ -119,20 +120,19 @@ public class State implements StateExhibitor {
      *
      * @return the Date when a metric or branch will next need to be expired.
      */
-    protected Date getEarliestMetricExpiryDate() {
+    @Override
+    public Date getEarliestMetricExpiryDate() {
         return _state.getEarliestChildExpiryDate();
     }
-
-    /**
-     * Discover whether there are pending StateUpdates on the pending update
-     * stack.
-     *
-     * @return the number of StateUpdates on the pending updates Stack.
-     */
+    
     public int countPendingUpdates() {
-        synchronized (_pendingUpdates) {
+        synchronized( _pendingUpdates) {
             return _pendingUpdates.size();
         }
+    }
+    
+    public StateUpdate popUpdate() {
+        return _pendingUpdates.pop();
     }
 
     /**
@@ -150,21 +150,8 @@ public class State implements StateExhibitor {
      * <li>Traverse the tree, applying the StateTransition
      * </ol>
      */
-    protected void processUpdateStack() {
-        StateUpdate update;
-        int pendingUpdates;
-
-        synchronized (_pendingUpdates) {
-            if( _pendingUpdates.empty())
-                return;
-
-            update = _pendingUpdates.pop();
-            pendingUpdates = _pendingUpdates.size();
-        }
-
-        if( _log.isInfoEnabled())
-            _log.info( "Processing update with " + update.count() +
-                       " metric updates, " + pendingUpdates + " pending.");
+    @Override
+    public void processUpdate( StateUpdate update) {
 
         if( update.count() == 0) {
             _log.warn( "StateUpdate with zero updates encountered");
@@ -367,7 +354,8 @@ public class State implements StateExhibitor {
      * <li>Apply the changes described in the StateTransition
      * <ol>
      */
-    protected synchronized void removeExpiredMetrics() {
+    @Override
+    public synchronized void removeExpiredMetrics() {
 
         // A quick check before obtaining the lock
         Date expDate = getEarliestMetricExpiryDate();

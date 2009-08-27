@@ -52,7 +52,7 @@ public class StateMaintainer implements Runnable {
 			while( state.countPendingUpdates() > 0) {
 				if( _log.isDebugEnabled())
 					_log.debug( "Iterating, " + state.countPendingUpdates() + " remaining");
-				state.processUpdateStack();
+				state.processUpdate( state.popUpdate());
 			}
 
 			_log.debug( "Done ... going to sleep");
