@@ -13,7 +13,6 @@ import java.util.Iterator;
 import org.ietf.jgss.*;
 
 // globus gsi
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.glite.voms.FQAN;
 import org.globus.gsi.GSIConstants;
@@ -27,7 +26,7 @@ import org.gridforum.jgss.ExtendedGSSManager;
 
 class GsiTunnel extends GssTunnel  {
 
-    private static Logger _log = Logger.getLogger(GsiTunnel.class);
+    private final static Logger _log = Logger.getLogger(GsiTunnel.class);
 
     private ExtendedGSSContext _e_context = null;
 
@@ -75,7 +74,9 @@ class GsiTunnel extends GssTunnel  {
         	if( super.verify(in, out, addon) ) {
         		scanExtendedAttributes(_e_context);
         	}
-        } catch( Exception e) { }
+        } catch( Exception e) {
+            _log.error("Failed to verify", e);
+        }
 
         return _context.isEstablished();
     }
@@ -94,8 +95,14 @@ class GsiTunnel extends GssTunnel  {
             if (fqans.hasNext()) {
                 String fqanValue = fqans.next();
                 FQAN fqan = new FQAN(fqanValue);
-                _role = fqan.getRole();
                 _group = fqan.getGroup();
+                String role = fqan.getRole();
+
+                if(role == null  || role.equals("") ) {
+                    _role = _group;
+                }else{
+                    _role = _group + "/Role=" + role;
+                }
             }
 
         } catch (AuthorizationException e) {
