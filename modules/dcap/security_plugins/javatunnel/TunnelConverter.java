@@ -5,14 +5,15 @@
 package javatunnel;
 
 import java.io.*;
+import org.apache.log4j.Logger;
 
 class TunnelConverter implements Convertable,UserBindible  {
-    
+
+    private final static Logger _log = Logger.getLogger(TunnelConverter.class);
+
     private boolean _isAuthentificated = false;
-    
-    public TunnelConverter() {
-    }
-    
+    private final static int IO_BUFFER_SIZE = 1048576; // 1 MB
+
     public void encode(byte[] buf, int len, OutputStream out) throws java.io.IOException  {
         
         byte[] realBytes = new byte[len];
@@ -28,21 +29,25 @@ class TunnelConverter implements Convertable,UserBindible  {
     
     public byte[] decode(InputStream in) throws java.io.IOException {
 
-		byte[] buf = new byte[1048576]; // 1MB
-		int c;
-		int total = 0;
-		
-		do {
-			c = in.read();
-			if ( c < 0 ) break;
-			buf[total] = (byte)c;
-			total++;
-		}while( (c != '\n') && (c !='\r'));
+        byte[] buf = new byte[IO_BUFFER_SIZE];
+        int c;
+        int total = 0;
 
-	if( total < 5 ) return null;
-                 		
-        return Base64.base64ToByteArray( new String (buf, 4, total-5) );
-        
+        do {
+            c = in.read();
+            if (c < 0) {
+                throw new EOFException("Remote end point has closed connection");
+            }
+            buf[total] = (byte) c;
+            total++;
+        } while ((c != '\n') && (c != '\r'));
+
+        if (total < 5) {
+            throw new IOException("short read: " + total + new String(buf, 0, total));
+        }
+
+        return Base64.base64ToByteArray(new String(buf, 4, total - 5));
+
     }
     
     public boolean auth(InputStream in, OutputStream out, Object addon) {
@@ -60,7 +65,7 @@ class TunnelConverter implements Convertable,UserBindible  {
             String secret = "xxx >> SECRET << xxxx";
             os.println(secret);
         }catch ( Exception e ) {
-            e.printStackTrace();
+            _log.error("failed auth", e);
             return false;
         }
         return true;
@@ -75,6 +80,7 @@ class TunnelConverter implements Convertable,UserBindible  {
             System.out.println(  is.readLine());
             
         }catch ( IOException e ) {
+            _log.error("verify failed", e);
             return false;
         }
         return true;
