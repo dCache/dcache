@@ -36,7 +36,7 @@ import org.apache.log4j.Logger;
  * state (e.g., to send a message requesting data to each currently known
  * pool).
  */
-public class State implements StateCaretaker, StateExhibitor {
+public class State implements StateCaretaker, StateExhibitor, StateObservatory {
 
     /**
      * Constants used for persistent metadata
@@ -222,6 +222,7 @@ public class State implements StateCaretaker, StateExhibitor {
      * @return a StateUpdate containing new metrics, or null if there are no
      *         new metrics to update.
      */
+    @Override
     public StateUpdate checkWatchers( StateTransition transition) {
 
         StateUpdate update = new StateUpdate();
@@ -298,6 +299,7 @@ public class State implements StateCaretaker, StateExhibitor {
      *            a String to prefix each line of the output
      * @return the list of watchers.
      */
+    @Override
     public String[] listStateWatcher() {
         String[] watchers = new String[_watchers.size()];
 
@@ -315,6 +317,7 @@ public class State implements StateCaretaker, StateExhibitor {
      *            the StateWatcher name to enable.
      * @return the number of matching entries.
      */
+    @Override
     public int enableStateWatcher( String name) {
         int count = 0;
 
@@ -334,6 +337,7 @@ public class State implements StateCaretaker, StateExhibitor {
      *            the StateWatcher name to disable.
      * @return the number of matching entries.
      */
+    @Override
     public int disableStateWatcher( String name) {
         int count = 0;
 
@@ -395,7 +399,7 @@ public class State implements StateCaretaker, StateExhibitor {
      */
     @Override
     public void visitState( StateVisitor visitor) {
-        visitState( visitor, (StatePath)null);
+        visitState( visitor, (StatePath) null);
     }
 
     /**
@@ -461,8 +465,6 @@ public class State implements StateCaretaker, StateExhibitor {
      * Small, simple class to hold information about our registered
      * StateWatchers, whether they are enabled and how many times they've
      * been triggered.
-     *
-     * @author Paul Millar <paul.millar@desy.de>
      */
     static private class StateWatcherInfo {
         StateWatcher _watcher;

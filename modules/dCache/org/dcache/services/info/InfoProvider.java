@@ -11,6 +11,7 @@ import org.dcache.services.info.base.BadStatePathException;
 import org.dcache.services.info.base.State;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StateMaintainer;
+import org.dcache.services.info.base.StateObservatory;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.conduits.Conduit;
 import org.dcache.services.info.conduits.XmlConduit;
@@ -64,6 +65,7 @@ public class InfoProvider extends CellAdapter {
 	private Map<String,StateSerialiser> _availableSerialisers;
 	private StatePath _startSerialisingFrom;
 
+    private final StateObservatory _observatory;
 
 	/**
 	 * Correctly report our version and revision information.
@@ -94,7 +96,7 @@ public class InfoProvider extends CellAdapter {
         pw.print( _scheduler.listActivity().size());
         pw.println( " data-gathering activities.");
 
-        pw.print( State.getInstance().listStateWatcher().length);
+        pw.print( _observatory.listStateWatcher().length);
         pw.println( " state watchers.");
 
         pw.print( _availableSerialisers.size());
@@ -121,7 +123,9 @@ public class InfoProvider extends CellAdapter {
 			_log.warn( "Duplicate InfoProvider detected.");
 		}
 
-        StateExhibitor exhibitor = State.getInstance();
+		State state = State.getInstance();
+        StateExhibitor exhibitor = state;
+        _observatory = state;
 
 		/**
 		 * Build our list of possible serialisers.
@@ -336,10 +340,10 @@ public class InfoProvider extends CellAdapter {
 	 *   S T A T E   W A T C H E R S
 	 */
 	private void addDefaultWatchers( StateExhibitor exhibitor) {
-		State.getInstance().addStateWatcher(new PoolgroupSpaceWatcher( exhibitor));
-		State.getInstance().addStateWatcher(new PoolsSummaryMaintainer( exhibitor));
-		State.getInstance().addStateWatcher(new LinkgroupTotalSpaceMaintainer( exhibitor));
-		State.getInstance().addStateWatcher(new LinkSpaceMaintainer( exhibitor));
+	    _observatory.addStateWatcher(new PoolgroupSpaceWatcher( exhibitor));
+	    _observatory.addStateWatcher(new PoolsSummaryMaintainer( exhibitor));
+	    _observatory.addStateWatcher(new LinkgroupTotalSpaceMaintainer( exhibitor));
+	    _observatory.addStateWatcher(new LinkSpaceMaintainer( exhibitor));
 	}
 
 
@@ -672,7 +676,7 @@ public class InfoProvider extends CellAdapter {
 	public String ac_watchers_ls_$_0( Args args) {
 		StringBuilder sb = new StringBuilder();
 		sb.append( "State Watchers:\n");
-		String watcherNames[] = State.getInstance().listStateWatcher();
+		String watcherNames[] = _observatory.listStateWatcher();
 
 		if( watcherNames.length > 0)
 			for( String name : watcherNames) {
@@ -693,7 +697,7 @@ public class InfoProvider extends CellAdapter {
 	public String ac_watchers_enable_$_1( Args args) {
 		int count;
 
-		count = State.getInstance().enableStateWatcher(args.argv(0));
+		count = _observatory.enableStateWatcher(args.argv(0));
 
 		switch( count) {
 		case 0:
@@ -709,7 +713,7 @@ public class InfoProvider extends CellAdapter {
 	public String ac_watchers_disable_$_1( Args args) {
 		int count;
 
-		count = State.getInstance().disableStateWatcher(args.argv(0));
+		count = _observatory.disableStateWatcher(args.argv(0));
 
 		switch( count) {
 		case 0:
