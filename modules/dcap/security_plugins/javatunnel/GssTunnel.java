@@ -6,10 +6,13 @@ package javatunnel;
 
 import java.net.*;
 import java.io.*;
+import org.apache.log4j.Logger;
 import org.ietf.jgss.*;
 
 
 class GssTunnel extends TunnelConverter {
+
+    private final static Logger _log = Logger.getLogger(GssTunnel.class);
 
     // GSS Kerberos context and others
     private GSSManager _gManager = null;
@@ -53,7 +56,7 @@ class GssTunnel extends TunnelConverter {
                 _context = _gManager.createContext(_myCredential);
             }
             catch( Exception e ) {
-                e.printStackTrace();
+                _log.error("Failed to initialize GSS context", e);
             }
         }
 
@@ -82,7 +85,7 @@ class GssTunnel extends TunnelConverter {
             GSSContext.DEFAULT_LIFETIME);
         }
         catch( Exception e ) {
-            e.printStackTrace();
+            _log.error("Failed to initialize GSS context", e);
         }
 
     }
@@ -102,8 +105,8 @@ class GssTunnel extends TunnelConverter {
         if(_authDone) {
             try {
                 retValue = _context.unwrap(retValue, 0, retValue.length, _prop);
-            } catch (Exception ge) {
-                retValue =  null;
+            } catch (GSSException ge) {
+                throw new IOException("Failed to unwrap message: " + ge.getMessage());
             }
         }
 
@@ -164,7 +167,7 @@ class GssTunnel extends TunnelConverter {
             }
 
         } catch( Exception e) {
-            e.printStackTrace();
+            _log.error("Failed to authenticate", e);
         }
 
         _authDone = established ;
@@ -198,15 +201,14 @@ class GssTunnel extends TunnelConverter {
 
             }
 
-        } catch( Exception e) {
-            e.printStackTrace();
-        }
-
-        try {
             _userPrincipal = _context.getSrcName();
-        } catch( Exception e) {
-            e.printStackTrace();
-            _userPrincipal = null;
+
+        } catch( EOFException e) {
+            _log.debug("connection closed");
+        } catch( IOException e) {
+            _log.error("Failed to verify", e);
+        } catch (GSSException e) {
+            _log.error("Failed to verify", e);
         }
 
         _authDone = _context.isEstablished();

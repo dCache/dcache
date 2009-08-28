@@ -4,6 +4,7 @@
 
 package javatunnel;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -27,12 +28,12 @@ class TunnelInputStream extends InputStream {
         byte b;
 
         if ((_buffer == null) || (_pos >= _buffer.length)) {
-            _buffer = _converter.decode(_in);
+            try {
+                _buffer = _converter.decode(_in);
+            }catch(EOFException e) {
+                return -1;
+            }
             _pos = 0;
-        }
-
-        if (_buffer == null) {
-            return -1;
         }
 
         b = _buffer[_pos];
