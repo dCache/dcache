@@ -190,6 +190,7 @@ import diskCacheV111.services.space.message.GetSpaceTokens;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.util.NotInTrashCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import org.dcache.auth.persistence.AuthRecordPersistenceManager;
@@ -2676,151 +2677,50 @@ public class Storage
         }
     }
 
-    public void createDirectory(final SRMUser user,
-            final String directory)  throws SRMException {
+    public void createDirectory(SRMUser user, String directory)
+        throws SRMException
+    {
         _log.debug("Storage.createDirectory");
-        //
-        // checks are done in this order:
-        //   - directory exists  NO : YES
-        //                       |     +-- exception
-        //                       +-- parent exists YES : NO
-        //                                          |    +-- exception
-        //                                          +-- can write YES : NO
-        //                                                         |     +-- exception
-        //                                                         +-- create PnfsEntry
-        AuthorizationRecord duser = (AuthorizationRecord) user;
-        String actualPnfsPath= srm_root+"/"+directory;
-        PnfsGetStorageInfoMessage  storageInfoMessage  =null;
-        PnfsGetFileMetaDataMessage fileMetadataMessage =null;
-        diskCacheV111.util.FileMetaData parentFmd      =null;
-        StorageInfo storageInfo = null;
-        PnfsId pnfsId;
-        try {
-            fileMetadataMessage = _pnfs.getFileMetaDataByPath(actualPnfsPath);
-            throw new SRMDuplicationException("already exists");
-        } catch( CacheException ce) {
-            _log.info("createDirectory "+actualPnfsPath+" does not exist, " +
-                "proceeding to create ");
-        }
-        if ( fileMetadataMessage != null ) {
-            _log.warn("createDirectory: "+actualPnfsPath+" already exists");
-            throw new SRMDuplicationException("already exists");
-        }
-        //
-        // checking parent
-        //
-        FsPath parentFsPath = new FsPath(actualPnfsPath);
-        parentFsPath.add("..");
-        String parent = parentFsPath.toString();
 
         try {
-            fileMetadataMessage = _pnfs.getFileMetaDataByPath(parent);
+            /* We copy the mode (permissions) of the parent directory,
+             * so we start by querying it. REVISIT: It's a bit strange
+             * that PNFS doesn't provide an option to copy the parent
+             * mode.
+             */
+            String path = getFullPath(directory);
+            String parent = FsPath.getParent(path);
+            FileAttributes attr =
+                _pnfs.getFileAttributes(parent, EnumSet.of(FileAttribute.MODE));
+
+            /* Permission checks are performed by PnfsManager because
+             * we specify a Subject for the request.
+             */
+            AuthorizationRecord duser = (AuthorizationRecord) user;
+            PnfsHandler handler =
+                new PnfsHandler(_pnfs, Subjects.getSubject(duser));
+            handler.createPnfsDirectory(path,
+                                        duser.getUid(), duser.getGid(),
+                                        attr.getMode());
+        } catch (TimeoutCacheException e) {
+            throw new SRMInternalErrorException("Internal name space timeout", e);
+        } catch (NotDirCacheException e) {
+            throw new SRMInvalidPathException("Parent path is not a directory", e);
+        } catch (NotInTrashCacheException e) {
+            throw new SRMInvalidPathException("Parent path does not exist", e);
+        } catch (FileNotFoundCacheException e) {
+            throw new SRMInvalidPathException("Parent path does not exist", e);
+        } catch (FileExistsCacheException e) {
+            throw new SRMDuplicationException("File exists");
+        } catch (PermissionDeniedCacheException e) {
+            throw new SRMAuthorizationException("Permission denied");
         } catch (CacheException e) {
-            _log.error("failed to get metadata for "+actualPnfsPath+" parent "+parent);
-            throw new SRMInvalidPathException("parent path or a component of the " +
-                                              "parent path does not exist", e);
-        }
-        if (fileMetadataMessage != null) {
-            parentFmd = fileMetadataMessage.getMetaData();
-            pnfsId    = fileMetadataMessage.getPnfsId();
-        } else {
-            _log.error("createDirectory: "+actualPnfsPath+" creation failed, " +
-                "parent path does not exist");
-            throw new SRMInvalidPathException("parent path or a component " +
-                "of the parent path does not exist");
-        }
-
-        int uid = parentFmd.getUid();
-        int gid = parentFmd.getGid();
-        diskCacheV111.util.FileMetaData.Permissions perms =
-                parentFmd.getUserPermissions();
-        int permissions = (perms.canRead()    ? 4 : 0) |
-                (perms.canWrite()   ? 2 : 0) |
-                (perms.canExecute() ? 1 : 0);
-        permissions <<=3;
-        perms = parentFmd.getGroupPermissions();
-        permissions |=    (perms.canRead()    ? 4 : 0) |
-                (perms.canWrite()   ? 2 : 0) |
-                (perms.canExecute() ? 1 : 0);
-        permissions <<=3;
-        perms = parentFmd.getWorldPermissions();
-        permissions |=    (perms.canRead()    ? 4 : 0) |
-                (perms.canWrite()   ? 2 : 0) |
-                (perms.canExecute() ? 1 : 0);
-
-        if (permissions == 0 ) {
-            _log.warn("createDirectory: cannot create directory \""+actualPnfsPath+
-                "\": Permission denied");
-            throw new SRMAuthorizationException(" can't write into parent path," +
-                " permission denied");
-        }
-
-        if (duser.getUid() == uid ) {
-            if (!Permissions.userCanWrite(permissions) ||
-                !Permissions.userCanExecute(permissions)) {
-                _log.warn("createDirectory: cannot create directory \""+
-                          actualPnfsPath+"\": Permission denied");
-                throw new SRMAuthorizationException(" Permission denied");
-            }
-        } else if ( duser.getGid() == gid ) {
-            if (!Permissions.groupCanWrite(permissions) ||
-                !Permissions.groupCanExecute(permissions)) {
-                _log.warn("createDirectory: cannot create directory \""+
-                          actualPnfsPath+"\": Permission denied");
-                throw new SRMAuthorizationException(" Permission denied");
-            }
-        } else {
-            if (!Permissions.worldCanWrite(permissions) ||
-                !Permissions.worldCanExecute(permissions)) {
-                _log.warn("createDirectory: cannot create directory \""+
-                          actualPnfsPath+"\": Permission denied");
-                throw new SRMAuthorizationException(" Permission denied");
-            }
-        }
-
-        PnfsGetStorageInfoMessage createRequest =
-            new PnfsCreateDirectoryMessage(actualPnfsPath,duser.getUid(),
-            duser.getGid(),permissions); // was 0755
-        CellMessage answer=null;
-        Object o=null;
-        try {
-            answer = sendAndWait( new CellMessage(
-                    new CellPath("PnfsManager") ,
-                    createRequest) ,
-                    __pnfsTimeout*1000);
-        } catch (NoRouteToCellException e) {
-            throw new SRMException("PnfsManager is unavailable: " + e.getMessage(), e);
-        } catch (InterruptedException e) {
-            throw new SRMException("Request to PnfsManager got interrupted", e);
-        }
-        if (answer == null ||
-                (o = answer.getMessageObject()) == null ||
-                !(o instanceof PnfsCreateDirectoryMessage)) {
-            _log.warn("sent PnfsCreateDirectoryMessage to pnfs, received "+o+" back");
-            throw new SRMException("Can't create, communication with pnfs failure");
-        } else {
-            PnfsCreateDirectoryMessage createReply =
-                (PnfsCreateDirectoryMessage) answer.getMessageObject();
-            if (createReply.getReturnCode() != 0) {
-                _log.warn("createDirectory: directory creation failed, got error return code from pnfs");
-		    if (createReply.getReturnCode() == CacheException.FILE_EXISTS) {
-			    throw new SRMDuplicationException("already exists");
-		    }
-                Object error = createReply.getErrorObject();
-
-                if(error instanceof Throwable) {
-                   throw new SRMException("Failed to create, got error return " +
-                       "code from pnfs",(Throwable)error);
-                }
-                else
-		{
-                    throw new SRMException("Failed to create, got error return " +
-                        "code from pnfs: "+error);
-                }
-            }
+            _log.error("Failed to create directory " + directory + ": "
+                       + e.getMessage());
+            throw new SRMException(String.format("Failed to create directory [rc=%d,msg=%s]",
+                                                 e.getRc(), e.getMessage()));
         }
     }
-
 
     public void moveEntry(final SRMUser user,
 			  final String from,

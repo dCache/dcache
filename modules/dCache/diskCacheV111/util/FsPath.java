@@ -119,6 +119,15 @@ public class FsPath {
         }
         return true;
     }
+    
+    /**
+     * Returns the parent path of a path.
+     */
+    public static String getParent(String path)
+    {
+        FsPath p = new FsPath(path);
+        return p.getParent().toString();
+    }
 
     public static void main(String[] args) {
         FsPath path = new FsPath("/pnfs/desy.de");
