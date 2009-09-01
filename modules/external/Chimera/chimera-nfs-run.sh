@@ -31,7 +31,7 @@ pfile=/var/run/chimera-nfsv3.pid
 #
 #  Returns 0 on success, 1 on timeout.
 #
-function waitForEvent()
+waitForEvent()
 {
     for try in 0 1 2 3 4 5 6 7 8 9 10 too-much; do
         $1 
@@ -80,7 +80,7 @@ dCacheChimeraStart()
   if [ -f ${pfile} ]
   then
     pid=`cat ${pfile}`
-    kill -0 ${pid} > /dev/null 2>&1
+    kill -s 0 ${pid} > /dev/null 2>&1
     if [ $? -eq 0 ]
     then
       echo "Old NFS process still running"
@@ -111,7 +111,7 @@ dCacheChimeraStop()
   if [ -f ${pfile} ]
   then
     pid=`cat ${pfile}`
-    kill -0 ${pid} > /dev/null 2>&1
+    kill -s 0 ${pid} > /dev/null 2>&1
     if [ $? -eq 0 ]
     then
       echo "Shutting down Chimera-NFSv3 interface"
