@@ -1537,7 +1537,7 @@ public class PinManager extends AbstractCell implements Runnable  {
                    null,null,pinRequest.getPin().getPnfsId(),
                    0,pinRequest.getAuthorizationRecord(),null,null,null);
            job.setPinRequestId(pinRequest.getId());
-           unpin(job,false);
+           unpin(job,true);
         }
 
     }
