@@ -15,6 +15,9 @@ import static org.dcache.chimera.UnixPermission.*;
 
 /**
  * A PermissionHandler implementing the POSIX.1 permission model.
+ *
+ * Notice that there is no concept of a ROOT owner in this
+ * PermissionHandler. That is, ROOT is just a regular user.
  */
 public class PosixPermissionHandler implements PermissionHandler
 {
@@ -184,17 +187,30 @@ public class PosixPermissionHandler implements PermissionHandler
                                        FileAttributes attr,
                                        Set<FileAttribute> attributes)
     {
-        int mode = parentAttr.getMode();
+        /* Some flags can only be changed by the owner of the file.
+         */
+        if (attributes.contains(OWNER) ||
+            attributes.contains(OWNER_GROUP) ||
+            attributes.contains(MODE) || 
+            attributes.contains(PERMISSION)) {
 
-        if (Subjects.hasUid(subject, parentAttr.getOwner())) {
-            return AccessType.valueOf(isSet(mode, S_IWUSR | S_IXUSR));
+            if (!Subjects.hasUid(subject, attr.getOwner())) {
+                return AccessType.ACCESS_DENIED;
+            }
         }
 
-        if (Subjects.hasGid(subject, parentAttr.getGroup())) {
-            return AccessType.valueOf(isSet(mode, S_IWGRP | S_IXGRP));
+        /* Other flags can be changed by however got write permission.
+         */
+        int mode = attr.getMode();
+        if (Subjects.hasUid(subject, attr.getOwner())) {
+            return AccessType.valueOf(isSet(mode, S_IWUSR));
         }
 
-        return AccessType.valueOf(isSet(mode, S_IWOTH | S_IXOTH));
+        if (Subjects.hasGid(subject, attr.getGroup())) {
+            return AccessType.valueOf(isSet(mode, S_IWGRP));
+        }
+
+        return AccessType.valueOf(isSet(mode, S_IWOTH));
     }
 
     public AccessType canGetAttributes(Subject subject,

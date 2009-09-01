@@ -9,7 +9,9 @@ import diskCacheV111.util.*;
 import dmg.cells.nucleus.*;
 import dmg.util.*;
 import dmg.security.CellUser;
+import diskCacheV111.services.acl.PermissionHandler;
 import diskCacheV111.services.acl.DelegatingPermissionHandler;
+import diskCacheV111.services.acl.GrantAllPermissionHandler;
 import gplazma.authz.AuthorizationException;
 import diskCacheV111.services.authorization.GplazmaService;
 import diskCacheV111.poolManager.RequestContainerV5;
@@ -76,7 +78,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
     protected final CellPath _billingCellPath = new CellPath("billing");
     private final Origin _origin;
     private Subject _subject=null;
-    private final DelegatingPermissionHandler _permissionHandler;
+    private final PermissionHandler _permissionHandler;
 
     /**
      * Tape Protection
@@ -221,12 +223,22 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
 
         String check = (String)_cell.getDomainContext().get("dCapDoor-check");
         if( check != null )_checkStrict = check.equals("strict") ;
+        
+        _origin = new Origin((_authorizationStrong || _authorizationRequired) ? AuthType.ORIGIN_AUTHTYPE_STRONG : AuthType.ORIGIN_AUTHTYPE_WEAK, "0");
+        _cell.say("Origin: " + _origin.toString());
 
+        String permissionHandlerClasses = _args.getOpt("permission-handler");
+        if (permissionHandlerClasses == null ||
+            permissionHandlerClasses.isEmpty()) {
+            _permissionHandler = new GrantAllPermissionHandler();
+            Subject subject = new Subject();
+            subject.getPrincipals().add(_origin);
+            subject.setReadOnly();
+            _pnfs.setSubject(subject);
+        } else {
             _permissionHandler = new DelegatingPermissionHandler(_cell);
-            _cell.say("Permission Handler: " + _permissionHandler);
-
-            _origin = new Origin((_authorizationStrong || _authorizationRequired) ? AuthType.ORIGIN_AUTHTYPE_STRONG : AuthType.ORIGIN_AUTHTYPE_WEAK, "0");
-            _cell.say("Origin: " + _origin.toString());
+        }
+        _cell.say("Permission Handler: " + _permissionHandler);
 
         _readOnly = _args.getOpt("readOnly") != null ;
         if (_readOnly)
@@ -2821,6 +2833,11 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
         //Add principals to the subject:
         _subject.getPrincipals().add(userPrincipal);
         _subject.getPrincipals().add(groupPrincipal);
+        _subject.getPrincipals().add(_origin);
+
+        if (_permissionHandler instanceof GrantAllPermissionHandler) {
+            _pnfs.setSubject(_subject);
+        }
 
         /*
          * this block could be part of the catch {} , but

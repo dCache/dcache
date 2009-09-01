@@ -217,13 +217,68 @@ public class PermissionHandlerNameSpaceProvider
     {
         if (!Subjects.isRoot(subject)) {
             FileAttributes attributes =
-                getFileAttributesForPermissionHandler(pnfsId);
+                getFileAttributesForPermissionHandler(pnfsId, TYPE);
 
-            if (_handler.canReadFile(subject, attributes) != ACCESS_ALLOWED) {
+            if (attributes.getFileType() != DIR &&
+                _handler.canReadFile(subject, attributes) != ACCESS_ALLOWED) {
                 throw new PermissionDeniedCacheException("Access denied: " + pnfsId.toString());
             }
         }
 
         return super.getStorageInfo(subject, pnfsId);
     }
+
+    @Override
+    public void setFileMetaData(Subject subject, PnfsId pnfsId,
+                                FileMetaData metaData)
+        throws CacheException
+    {
+        if (!Subjects.isRoot(subject)) {
+            PnfsId parentId = super.getParentOf(subject, pnfsId);
+            FileAttributes parentAttributes =
+                getFileAttributesForPermissionHandler(parentId);
+            FileAttributes attributes =
+                getFileAttributesForPermissionHandler(pnfsId);
+            Set<FileAttribute> toChange = EnumSet.noneOf(FileAttribute.class);
+            if (metaData.isUserPermissionsSet()) {
+                toChange.add(MODE);
+                toChange.add(OWNER);
+                toChange.add(OWNER_GROUP);
+            }
+            if (!metaData.isDirectory() && metaData.isSizeSet()) {
+                toChange.add(SIZE);
+            }
+
+            if (_handler.canSetAttributes(subject, parentAttributes, attributes,
+                                          toChange) != ACCESS_ALLOWED) {
+                throw new PermissionDeniedCacheException("Access denied: " +
+                                                         pnfsId.toString());
+            }
+        }
+
+        super.setFileMetaData(subject, pnfsId, metaData);
+    }
+
+    @Override
+    public void setFileAttributes(Subject subject, PnfsId pnfsId,
+                                  FileAttributes attr)
+            throws CacheException
+    {
+        if (!Subjects.isRoot(subject)) {
+            PnfsId parentId = super.getParentOf(subject, pnfsId);
+            FileAttributes parentAttributes =
+                getFileAttributesForPermissionHandler(parentId);
+            FileAttributes attributes =
+                getFileAttributesForPermissionHandler(pnfsId);
+
+            if (_handler.canSetAttributes(subject, parentAttributes, attributes,
+                                          attr.getDefinedAttributes()) != ACCESS_ALLOWED) {
+                throw new PermissionDeniedCacheException("Access denied: " +
+                                                         pnfsId.toString());
+            }
+        }
+
+        super.setFileAttributes(subject, pnfsId, attr);
+    }
+
 }
