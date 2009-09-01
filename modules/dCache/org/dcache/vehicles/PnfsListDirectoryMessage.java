@@ -83,9 +83,9 @@ public class PnfsListDirectoryMessage extends PnfsMessage
     }
 
     /** Adds an entry to the entry list. */
-    public void addEntry(String name, PnfsId id, FileAttributes attr)
+    public void addEntry(String name, FileAttributes attr)
     {
-        _entries.add(new DirectoryEntry(name, id, attr));
+        _entries.add(new DirectoryEntry(name, attr));
     }
 
     /** Sets a new entry list. */

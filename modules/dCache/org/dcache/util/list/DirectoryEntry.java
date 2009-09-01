@@ -17,24 +17,17 @@ public class DirectoryEntry implements Serializable
     static final long serialVersionUID = 9015474311202968086L;
 
     public final String _name;
-    public final PnfsId _pnfsId;
     public final FileAttributes _attributes;
 
-    public DirectoryEntry(String name, PnfsId pnfsId, FileAttributes attr)
+    public DirectoryEntry(String name, FileAttributes attr)
     {
         _name = name;
-        _pnfsId = pnfsId;
         _attributes = attr;
     }
 
     public String getName()
     {
         return _name;
-    }
-
-    public PnfsId getPnfsId()
-    {
-        return _pnfsId;
     }
 
     public FileAttributes getFileAttributes()

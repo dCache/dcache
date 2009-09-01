@@ -1,6 +1,5 @@
 package org.dcache.namespace;
 
-import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 import org.dcache.vehicles.FileAttributes;
 
@@ -9,6 +8,6 @@ import org.dcache.vehicles.FileAttributes;
  */
 public interface ListHandler
 {
-    void addEntry(String name, PnfsId pnfsId, FileAttributes attrs)
+    void addEntry(String name, FileAttributes attrs)
         throws CacheException;
 }

@@ -1436,10 +1436,10 @@ public class PnfsManagerV3 extends CellAdapter
             _msg.clear();
         }
 
-        public void addEntry(String name, PnfsId pnfsId, FileAttributes attrs)
+        public void addEntry(String name, FileAttributes attrs)
         {
             long now = System.currentTimeMillis();
-            _msg.addEntry(name, pnfsId, attrs);
+            _msg.addEntry(name, attrs);
             if (_msg.getEntries().size() >= _directoryListLimit ||
                 now > _deadline) {
                 sendPartialReply();

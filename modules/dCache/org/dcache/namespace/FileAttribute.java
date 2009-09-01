@@ -27,7 +27,8 @@ public enum FileAttribute {
     RETENTION_POLICY,
     SIZE,
     STORAGECLASS,
-    TYPE;
+    TYPE,
+    PNFSID;
 
     /**
      * Returns the matching NFS4 attribute, or null if there is

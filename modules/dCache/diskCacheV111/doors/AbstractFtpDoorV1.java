@@ -4811,6 +4811,7 @@ public abstract class AbstractFtpDoorV1
                     attributes.addAll(_pdp.getRequiredAttributes());
                     break;
                 case UNIQUE:
+                    attributes.add(org.dcache.namespace.FileAttribute.PNFSID);
                     break;
                 }
             }
@@ -4821,7 +4822,6 @@ public abstract class AbstractFtpDoorV1
         {
             if (!_currentFacts.isEmpty()) {
                 AccessType access;
-                PnfsId id = entry.getPnfsId();
                 FileAttributes attr = entry.getFileAttributes();
 
                 for (Fact fact: _currentFacts) {
@@ -4846,7 +4846,7 @@ public abstract class AbstractFtpDoorV1
                         printTypeFact(attr);
                         break;
                     case UNIQUE:
-                        printUniqueFact(id);
+                        printUniqueFact(attr);
                         break;
                     case PERM:
                         printPermFact(dirAttr, attr);
@@ -4898,9 +4898,9 @@ public abstract class AbstractFtpDoorV1
          * Writes a RFC 3659 unique fact to a writer. The value of the
          * unique fact is the PNFS ID.
          */
-        private void printUniqueFact(PnfsId id)
+        private void printUniqueFact(FileAttributes attr)
         {
-            printFact(Fact.UNIQUE, id);
+            printFact(Fact.UNIQUE, attr.getPnfsId());
         }
 
         /**

@@ -4,6 +4,7 @@ import org.dcache.namespace.FileType;
 import org.dcache.acl.ACL;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
+import diskCacheV111.util.PnfsId;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -95,6 +96,11 @@ public class FileAttributes implements Serializable {
      */
     private Map<String, String> _flags;
 
+    /**
+     * The unique PNFS ID of a file.
+     */
+    private PnfsId _pnfsId;
+
     /** Throws IllegalStateException if attribute is not defined. */
     private void guard(FileAttribute attribute)
         throws IllegalStateException
@@ -185,6 +191,12 @@ public class FileAttributes implements Serializable {
         return _size;
     }
 
+    public PnfsId getPnfsId()
+    {
+        guard(PNFSID);
+        return _pnfsId;
+    }
+
     public void setAccessLatency(AccessLatency accessLatency) {
         define(ACCESS_LATENCY);
         _accessLatency = accessLatency;
@@ -264,5 +276,11 @@ public class FileAttributes implements Serializable {
     public void setFlags(Map<String, String> flags) {
         define(FLAGS);
         _flags = flags;
+    }
+
+    public void setPnfsId(PnfsId pnfsId)
+    {
+        define(PNFSID);
+        _pnfsId = pnfsId;
     }
 }

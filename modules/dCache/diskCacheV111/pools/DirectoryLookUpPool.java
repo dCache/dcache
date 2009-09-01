@@ -122,13 +122,13 @@ public class DirectoryLookUpPool extends AbstractCell
 
         public Set<FileAttribute> getRequiredAttributes()
         {
-            return EnumSet.of(TYPE, SIZE);
+            return EnumSet.of(PNFSID, TYPE, SIZE);
         }
 
         public void print(FileAttributes dirAttr, DirectoryEntry entry)
         {
             FileAttributes attr = entry.getFileAttributes();
-            _out.append(entry.getPnfsId());
+            _out.append(attr.getPnfsId());
             switch (attr.getFileType()) {
             case DIR:
                 _out.append(":d:");

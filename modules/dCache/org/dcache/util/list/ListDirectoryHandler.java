@@ -119,14 +119,12 @@ public class ListDirectoryHandler
         PnfsHandler handler = new PnfsHandler(_pnfs, subject);
         Set<FileAttribute> required =
             printer.getRequiredAttributes();
-        PnfsId id =
-            handler.getPnfsIdByPath(path.toString());
         FileAttributes attributes =
-            handler.getFileAttributes(id, required);
+            handler.getFileAttributes(path.toString(), required);
         FileAttributes dirAttr =
             handler.getFileAttributes(path.getParent(), required);
         printer.print(dirAttr,
-                      new DirectoryEntry(path.getName(), id, attributes));
+                      new DirectoryEntry(path.getName(), attributes));
     }
 
     @Override

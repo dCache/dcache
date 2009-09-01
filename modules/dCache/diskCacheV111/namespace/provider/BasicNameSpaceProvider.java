@@ -323,10 +323,10 @@ public class BasicNameSpaceProvider
             }
         } catch (IOException e) {
             if (parent.isDirectory()) {
-                _logNameSpace.error("Failed to create " + globalPath + ": " 
+                _logNameSpace.error("Failed to create " + globalPath + ": "
                                     + e.getMessage());
                 throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                         "IO Error creating " + name 
+                                         "IO Error creating " + name
                                          + ": " + e.getMessage());
             } else {
                 rc = false;
@@ -339,7 +339,7 @@ public class BasicNameSpaceProvider
             } else if (!parent.isDirectory()) {
                 throw new NotDirCacheException("Not a directory: " + name);
             } else {
-                throw new FileExistsCacheException("File exists: " + name);  
+                throw new FileExistsCacheException("File exists: " + name);
             }
         }
 
@@ -1299,6 +1299,9 @@ public class BasicNameSpaceProvider
                     meta = getFileMetaData(subject, pnfsId, meta);
                     attributes.setMode(meta.getMode());
                     break;
+                case PNFSID:
+                    attributes.setPnfsId(pnfsId);
+                    break;
                 default:
                     throw new UnsupportedOperationException("Attribute " + attribute + " not supported yet.");
                 }
@@ -1460,12 +1463,15 @@ public class BasicNameSpaceProvider
             if ((_pattern == null || _pattern.matcher(name).matches()) &&
                 (_range == null || _range.contains(_counter++))) {
                 try {
-                    PnfsId id = pathToPnfsid(ROOT, file.toString(), true);
-                    FileAttributes meta =
-                        _attributes.isEmpty()
-                        ? null
-                        : getFileAttributes(ROOT, id, _attributes);
-                    _handler.addEntry(name, id, meta);
+                    if (_attributes.isEmpty()) {
+                        _handler.addEntry(name, null);
+                    } else {
+                        PnfsId id =
+                            pathToPnfsid(ROOT, file.toString(), true);
+                        FileAttributes attr =
+                            getFileAttributes(ROOT, id, _attributes);
+                        _handler.addEntry(name, attr);
+                    }
                 } catch (CacheException e) {
                     /* Deleting a file during a list operation is not
                      * an error.

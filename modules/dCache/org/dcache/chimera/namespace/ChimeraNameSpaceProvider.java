@@ -639,6 +639,9 @@ public class ChimeraNameSpaceProvider
                 stat = inode.statCache();
                 attributes.setMode(stat.getMode());
                 break;
+            case PNFSID:
+                attributes.setPnfsId(new PnfsId(inode.toString()));
+                break;
             default:
                 throw new UnsupportedOperationException("Attribute " + attribute + " not supported yet.");
             }
@@ -774,13 +777,13 @@ public class ChimeraNameSpaceProvider
                         if (!name.equals(".") && !name.equals("..") &&
                             (pattern == null || pattern.matcher(name).matches()) &&
                             (range == null || range.contains(counter++))) {
-                            PnfsId pnfsId = new PnfsId(entry.getInode().toString());
-                            // FIXME: actually, HimeraDirectoryEntry already contains most of attributes
+                            // FIXME: actually, HimeraDirectoryEntry
+                            // already contains most of attributes
                             FileAttributes fa =
                                 attrs.isEmpty()
                                 ? null
                                 : getFileAttributes(subject, entry.getInode(), attrs);
-                            handler.addEntry(name, pnfsId, fa);
+                            handler.addEntry(name, fa);
                         }
                     } catch (FileNotFoundHimeraFsException e) {
                         /* Not an error; files may be deleted during the
