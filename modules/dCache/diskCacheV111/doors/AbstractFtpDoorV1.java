@@ -426,12 +426,6 @@ public abstract class AbstractFtpDoorV1
     protected String _pnfsManager;
 
     @Option(
-        name = "encp-put",
-        description = "Path to encp utility"
-    )
-    protected String _encpPutCmd;
-
-    @Option(
         name = "clientDataPortRange"
     )
     protected String _portRange;
@@ -663,8 +657,6 @@ public abstract class AbstractFtpDoorV1
     protected final int _sleepAfterMoverKill = 15; // seconds
 
     protected final int _spaceManagerTimeout = 5 * 60;
-
-    protected boolean _useEncpScripts;
 
     /**
      * Lowest allowable port to use for the data channel when using an
@@ -973,14 +965,6 @@ public abstract class AbstractFtpDoorV1
         if (_local_host == null)
             _local_host = _engine.getLocalAddress().getHostName();
 
-        if (_encpPutCmd != null) {
-            warn("FTP Door: The -encp-put option was specified. " +
-                 "This is DEPRECATED.");
-            _useEncpScripts = true;
-        } else {
-            _useEncpScripts = false;
-        }
-
         if (!_use_gplazmaAuthzModule) {
             _gplazmaPolicyFilePath = null;
         } else if (_gplazmaPolicyFilePath == null) {
@@ -1062,20 +1046,6 @@ public abstract class AbstractFtpDoorV1
 
         _workerThread = new Thread(this);
     }
-
-/*
- * This has been replaced by log4j-style calls. CellName can
- * be embedded in log messages in the CellAdapter class...
-    public void say(String s)
-    {
-        super.say("(" + getCellName() + ") " + s);
-    }
-
-    public void esay(String s)
-    {
-        super.esay("(" + getCellName() + ") " + s);
-    }
-*/
 
     protected AdminCommandListener adminCommandListener;
     public class AdminCommandListener
@@ -1407,12 +1377,6 @@ public abstract class AbstractFtpDoorV1
         pw.println( " Last Command  : " + _lastCommand);
         pw.println( " Command Count : " + _commandCounter);
         pw.println( "     I/O Queue : " + _ioQueueName);
-
-        if (_useEncpScripts) {
-            pw.println( "    Encp Script: " + _encpPutCmd);
-        } else {
-            pw.println("    Encp Script is not used");
-        }
         pw.println(adminCommandListener.ac_get_door_info(new Args("")));
     }
 
@@ -1794,63 +1758,39 @@ public abstract class AbstractFtpDoorV1
             error("Error in CWD: " + e);
         }
 
-        if (_useEncpScripts) {
-            File theFileToDelete = new File(pnfsPath);
-            String parentOfFile = theFileToDelete.getParent();
-            //Check if the file is writable (aka deletable)
-            String cmd = _encpPutCmd + " chkw " +
-                _pwdRecord.UID + " " +
-                _pwdRecord.GID + " " +
-                parentOfFile;
-            if (spawn(cmd, 1000) != 0 ) {
-                reply("550 Permission denied");
-                return;
-            }
+        try {
 
-            cmd = _encpPutCmd + " rm " +
-                _pwdRecord.UID + " " +
-                _pwdRecord.GID + " " +
-                pnfsPath;
-            if( spawn(cmd, 1000) != 0 ) {
-                reply("550 Permission denied (actually permissions looked ok, but the delete failed anyway)");
-                return;
-            }
-        } else {
-            try {
-
-                //if (_permissionHandler.canDeleteFile(_pnfs.getPnfsIdByPath(pnfsPath), getSubject(), _origin) != AccessType.ACCESS_ALLOWED) {
-                if (_permissionHandler.canDeleteFile(pnfsPath, getSubject(), _origin) != AccessType.ACCESS_ALLOWED) {
-                    if(!setNextPwdRecord()) {
-                        reply("550 Permission denied");
-                        return;
-                    } else {
-                        ac_dele(arg);
-                        return;
-                    }
-                }
-
-                _pnfs.deletePnfsEntry(pnfsPath);
-
-            }catch(ACLException e) {
-                reply("550 Permission denied");
-                error("FTP Door: DELE got AclException: " + e.getMessage());
-                return;
-            } catch (PermissionDeniedCacheException e) {
+            if (_permissionHandler.canDeleteFile(pnfsPath, getSubject(), _origin) != AccessType.ACCESS_ALLOWED) {
                 if(!setNextPwdRecord()) {
                     reply("550 Permission denied");
+                    return;
                 } else {
                     ac_dele(arg);
+                    return;
                 }
-                return;
-            } catch (CacheException e) {
-                error("FTP Door: DELE got CacheException: " + e.getMessage());
-                if(!setNextPwdRecord()) {
-                    reply("550 Permission denied, reason: " + e);
-                } else {
-                    ac_dele(arg);
-                }
-                return;
             }
+
+            _pnfs.deletePnfsEntry(pnfsPath);
+
+        }catch(ACLException e) {
+            reply("550 Permission denied");
+            error("FTP Door: DELE got AclException: " + e.getMessage());
+            return;
+        } catch (PermissionDeniedCacheException e) {
+            if(!setNextPwdRecord()) {
+                reply("550 Permission denied");
+            } else {
+                ac_dele(arg);
+            }
+            return;
+        } catch (CacheException e) {
+            error("FTP Door: DELE got CacheException: " + e.getMessage());
+            if(!setNextPwdRecord()) {
+                reply("550 Permission denied, reason: " + e);
+            } else {
+                ac_dele(arg);
+            }
+            return;
         }
         sendRemoveInfoToBilling(pnfsPath);
         reply("200 file deleted");
@@ -2080,65 +2020,39 @@ public abstract class AbstractFtpDoorV1
             }
         }
 
-        if (_useEncpScripts) {
-            File x = new File(pnfsPath);
-            if (x.exists()) {
-                reply("550 " + arg + ": already exists");
-                return;
+        try {
+            String parent = new File(pnfsPath).getParent();
+            PnfsId parentId = _pnfs.getPnfsIdByPath(parent);
+            if (_permissionHandler.canCreateDir(parentId, getSubject(), _origin) != AccessType.ACCESS_ALLOWED) {
+                if(!setNextPwdRecord()) {
+                    reply("553 Permission denied");
+                    return;
+                } else {
+                    ac_mkd(arg);
+                    return;
+                }
             }
 
-            String cmd = _encpPutCmd + " chkc " +
-                _pwdRecord.UID + " " +
-                _pwdRecord.GID + " " +
-                pnfsPath;
-            if (spawn(cmd, 1000) != 0) {
+            _pnfs.createPnfsDirectory(pnfsPath, _pwdRecord.UID, _pwdRecord.GID, 0755);
+
+        }catch(ACLException e) {
+            reply("550 Permission denied, reason (Acl) ");
+            error("FTP Door: ACL module failed: " + e);
+            return;
+        } catch (PermissionDeniedCacheException e) {
+            if(!setNextPwdRecord()) {
                 reply("550 Permission denied");
-                return;
+            } else {
+                ac_mkd(arg);
             }
-
-            cmd = _encpPutCmd + " mkd " +
-                _pwdRecord.UID + " " +
-                _pwdRecord.GID + " " +
-                pnfsPath;
-            if (spawn(cmd, 1000) != 0) {
-                reply("552 Error creating directory " + arg);
+            return;
+        } catch(CacheException ce) {
+            if(!setNextPwdRecord()) {
+                reply("553 Permission denied, reason: "+ce);
                 return;
-            }
-        } else {
-            try {
-                String parent = new File(pnfsPath).getParent();
-                PnfsId parentId = _pnfs.getPnfsIdByPath(parent);
-                if (_permissionHandler.canCreateDir(parentId, getSubject(), _origin) != AccessType.ACCESS_ALLOWED) {
-                    if(!setNextPwdRecord()) {
-                        reply("553 Permission denied");
-                        return;
-                    } else {
-                        ac_mkd(arg);
-                        return;
-                    }
-                }
-
-                _pnfs.createPnfsDirectory(pnfsPath, _pwdRecord.UID, _pwdRecord.GID, 0755);
-
-            }catch(ACLException e) {
-                reply("550 Permission denied, reason (Acl) ");
-                error("FTP Door: ACL module failed: " + e);
+            } else {
+                ac_mkd(arg);
                 return;
-            } catch (PermissionDeniedCacheException e) {
-                if(!setNextPwdRecord()) {
-                    reply("550 Permission denied");
-                } else {
-                    ac_mkd(arg);
-                }
-                return;
-            } catch(CacheException ce) {
-                if(!setNextPwdRecord()) {
-                    reply("553 Permission denied, reason: "+ce);
-                    return;
-                } else {
-                    ac_mkd(arg);
-                    return;
-                }
             }
         }
         reply("200 OK");
@@ -2821,47 +2735,23 @@ public abstract class AbstractFtpDoorV1
 
             /* Check file permissions.
              */
-            if (_useEncpScripts) {
-                File f = new File(_transfer.path);
-                if (!f.exists()) {
-                    throw new FTPCommandException(500,
-                                                  "File " + relativeToRootPath + " not found",
-                                                  "File " + _transfer.path + " not found");
-                }
-                if (f.isDirectory()) {
-                    throw new FTPCommandException(500,
-                                                  "File " + relativeToRootPath + " is a directory, we don't allow that",
-                                                  "File " + _transfer.path + " is a directory");
-                }
-                String cmd = _encpPutCmd + " chkr " +
-                    _pwdRecord.UID + " " +
-                    _pwdRecord.GID + " " +
-                    _transfer.path;
-                if (spawn(cmd, 1000) != 0) {
-                    throw new FTPCommandException(553,
-                                                  "Permission denied",
-                                                  "Permission denied for path : " + _transfer.path);
-                }
-            } else {
-
-                //PnfsId pnfsId = _pnfs.getPnfsIdByPath(_transfer.path);
-                try {
-                    if (_permissionHandler.canReadFile(_transfer.path, getSubject(), _origin) != AccessType.ACCESS_ALLOWED) {
-                        if(setNextPwdRecord()) {
-                            retrieve(file, offset, size,
-                                     mode, xferMode,
-                                     parallelStart, parallelMin, parallelMax,
-                                     client, bufSize, reply127, version);
-                            return;
-                        }
-                        throw new FTPCommandException(550, "Permission denied");
+            //PnfsId pnfsId = _pnfs.getPnfsIdByPath(_transfer.path);
+            try {
+                if (_permissionHandler.canReadFile(_transfer.path, getSubject(), _origin) != AccessType.ACCESS_ALLOWED) {
+                    if(setNextPwdRecord()) {
+                        retrieve(file, offset, size,
+                                 mode, xferMode,
+                                 parallelStart, parallelMin, parallelMax,
+                                 client, bufSize, reply127, version);
+                        return;
                     }
-                }catch(ACLException e) {
-                    error("FTP Door: ACL module failed: " + e);
-                    throw new FTPCommandException(550, "Permission denied, reason (Acl)");
-                } catch(NotFileCacheException ce ) {
-                    throw new FTPCommandException(501, "Not a file");
+                    throw new FTPCommandException(550, "Permission denied");
                 }
+            }catch(ACLException e) {
+                error("FTP Door: ACL module failed: " + e);
+                throw new FTPCommandException(550, "Permission denied, reason (Acl)");
+            } catch(NotFileCacheException ce ) {
+                throw new FTPCommandException(501, "Not a file");
             }
 
             info("FTP Door: retrieve user=" + _user);
@@ -3132,45 +3022,24 @@ public abstract class AbstractFtpDoorV1
 
             /* Check if the user has permission to create the file.
              */
-            if (_useEncpScripts) {
-                _transfer.state = "checking permissions via encp script";
-                // Save it into enstore
-                String cmd = _encpPutCmd + " chkc "
-                    + _pwdRecord.UID + " "
-                    + _pwdRecord.GID + " "
-                    + _transfer.path;
-                Process p = Runtime.getRuntime().exec(cmd);
-                try {
-                    p.waitFor();
-                    if (p.exitValue() != 0) {
-                        throw new FTPCommandException
-                            (550,
-                             "Permission denied",
-                             "Permission denied for path: " + _transfer.path);
-                    }
-                } finally {
-                    p.destroy();
+            _transfer.state = "checking permissions via permission handler";
+            info("FTP Door: store: checking permissions via permission " +
+                 "handler for path: " + _transfer.path);
+            String parent = new File(_transfer.path).getParent();
+            PnfsId parentId = _pnfs.getPnfsIdByPath(parent);
+            if (_permissionHandler.canCreateFile(parentId, getSubject(), _origin) != AccessType.ACCESS_ALLOWED) {
+                if(!setNextPwdRecord()) {
+                    throw new FTPCommandException
+                        (550,
+                         "Permission denied",
+                         "Permission denied for path: " + _transfer.path);
+                } else {
+                    store(file, mode, xferMode,
+                          parallelStart, parallelMin, parallelMax,
+                          client, bufSize, reply127, version);
+                    return;
                 }
-            } else {
-                _transfer.state = "checking permissions via permission handler";
-                info("FTP Door: store: checking permissions via permission " +
-                     "handler for path: " + _transfer.path);
-                String parent = new File(_transfer.path).getParent();
-                PnfsId parentId = _pnfs.getPnfsIdByPath(parent);
-                if (_permissionHandler.canCreateFile(parentId, getSubject(), _origin) != AccessType.ACCESS_ALLOWED) {
-                        if(!setNextPwdRecord()) {
-                            throw new FTPCommandException
-                                (550,
-                                 "Permission denied",
-                                 "Permission denied for path: " + _transfer.path);
-                        } else {
-                            store(file, mode, xferMode,
-                                  parallelStart, parallelMin, parallelMax,
-                                  client, bufSize, reply127, version);
-                            return;
-                        }
-                    }
-                }
+            }
 
             /* Create PNFS entry.
              */
@@ -3777,48 +3646,29 @@ public abstract class AbstractFtpDoorV1
 
         String path = absolutePath(arg);
         long filelength = 0;
-        if (_useEncpScripts) {
-            File f = new File(path);
-            if (!f.exists()) {
-                reply("500 File not found");
-                return;
-            }
-
-            String cmd = _encpPutCmd + " chkr " +
-                _pwdRecord.UID + " " +
-                _pwdRecord.GID + " " +
-                path;
-            if (spawn(cmd, 1000) != 0) {
-                reply("553 Permission denied");
-                return;
-            }
-            filelength = f.length();
-
-        } else {
-            try {
-                PnfsGetStorageInfoMessage info = _pnfs.getStorageInfoByPath(path);
-                PnfsId pnfsId = _pnfs.getPnfsIdByPath(path);
-                if (_permissionHandler.canGetAttributes(pnfsId, getSubject(), _origin, FileAttribute.FATTR4_SIZE) != AccessType.ACCESS_ALLOWED) {
-                    if(!setNextPwdRecord()) {
-                        reply("553 Permission denied");
-                    } else {
-                        ac_size(arg);
-                    }
-                    return;
+        try {
+            PnfsGetStorageInfoMessage info = _pnfs.getStorageInfoByPath(path);
+            PnfsId pnfsId = _pnfs.getPnfsIdByPath(path);
+            if (_permissionHandler.canGetAttributes(pnfsId, getSubject(), _origin, FileAttribute.FATTR4_SIZE) != AccessType.ACCESS_ALLOWED) {
+                if(!setNextPwdRecord()) {
+                    reply("553 Permission denied");
+                } else {
+                    ac_size(arg);
                 }
-                filelength = info.getMetaData().getFileSize();
-
-            }catch(ACLException e) {
-                reply("550 Permission denied, reason (Acl) ");
-                error("FTP Door: ACL module failed: " + e);
-                return;
-            } catch (PermissionDeniedCacheException e) {
-                reply("550 Permission denied");
-                return;
-            } catch (CacheException ce) {
-                reply("550 Permission denied, reason: " + ce);
                 return;
             }
+            filelength = info.getMetaData().getFileSize();
+
+        } catch(ACLException e) {
+            reply("550 Permission denied, reason (Acl) ");
+            error("FTP Door: ACL module failed: " + e);
+            return;
+        } catch (PermissionDeniedCacheException e) {
+            reply("550 Permission denied");
+            return;
+        } catch (CacheException ce) {
+            reply("550 Permission denied, reason: " + ce);
+            return;
         }
         reply("213 " + filelength);
     }
@@ -3843,37 +3693,19 @@ public abstract class AbstractFtpDoorV1
             }
 
             long modification_time;
-            if (_useEncpScripts) {
-                File f = new File(path);
-                if (!f.exists()) {
-                    reply("550 File not found");
-                    return;
-                }
-
-                String cmd = _encpPutCmd + " chkr " +
-                    _pwdRecord.UID + " " +
-                    _pwdRecord.GID + " " +
-                    path;
-                if (spawn(cmd, 1000) != 0) {
+            PnfsGetFileMetaDataMessage info =
+                _pnfs.getFileMetaDataByPath(path);
+            PnfsId pnfsId = info.getPnfsId();
+            if (_permissionHandler.canGetAttributes(pnfsId, getSubject(), _origin, FileAttribute.FATTR4_SUPPORTED_ATTRS) != AccessType.ACCESS_ALLOWED) {
+                if(!setNextPwdRecord()) {
                     reply("550 Permission denied");
-                    return;
+                } else {
+                    ac_mdtm(arg);
                 }
-                modification_time = f.lastModified();
-            } else {
-                PnfsGetFileMetaDataMessage info =
-                    _pnfs.getFileMetaDataByPath(path);
-                PnfsId pnfsId = info.getPnfsId();
-                if (_permissionHandler.canGetAttributes(pnfsId, getSubject(), _origin, FileAttribute.FATTR4_SUPPORTED_ATTRS) != AccessType.ACCESS_ALLOWED) {
-                    if(!setNextPwdRecord()) {
-                        reply("550 Permission denied");
-                    } else {
-                        ac_mdtm(arg);
-                    }
-                    return;
-                }
-
-                modification_time = info.getMetaData().getLastModifiedTime();
+                return;
             }
+
+            modification_time = info.getMetaData().getLastModifiedTime();
             String time_val =
                 TIMESTAMP_FORMAT.format(new Date(modification_time));
             reply("213 " + time_val);

@@ -121,7 +121,6 @@ create dmg.cells.services.login.LoginManager GFTP-${thisHostname} \
              -tlog=${FtpTLogDir} \
 "
 #             -tlog=/tmp/dcache-ftp-tlog \
-#             -encp-put=${scripts}/encp-put.sh \
 #             -gsi-helper-cmd=${homeRoot}/dcache-deploy/gsint/gsint.sh \
 #             -retryWait=60 \
 
