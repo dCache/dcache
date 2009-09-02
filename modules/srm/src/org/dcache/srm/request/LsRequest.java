@@ -64,6 +64,9 @@ public class LsRequest extends ContainerRequest {
                                                   jobFileRequestStorage,
                                                   storage,max_number_of_retries);
                 }
+                if(configuration.isAsynchronousLs()) {
+                    storeInSharedMemory();
+        }
         }
 
         public  LsRequest(

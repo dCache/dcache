@@ -270,6 +270,9 @@ public abstract class Job  {
     
     private TimerTask retryTimer;
     
+    private static boolean storeInSharedMemoryCache =true;
+    private static final SharedMemoryCache sharedMemoryCache =
+            new SharedMemoryCache();
 
     public static final void registerJobStorage(JobStorage jobStorage) {
         synchronized(jobStorages) {
@@ -376,7 +379,12 @@ public abstract class Job  {
         jobHistory.add( new JobHistory(nextLong(),state,"created",lastStateTransitionTime));
     }
     
+    protected void storeInSharedMemory () {
+        if(storeInSharedMemoryCache) {
+            sharedMemoryCache.updateSharedMemoryChache(this);
+        }
     
+    }
     
     private  JobStorage jobStorage;
     
@@ -435,13 +443,23 @@ public abstract class Job  {
             }
         }
         
+        Job job = null;
+
+        //
+        // This will allow to retrieve a job put in
+        // a shared cache by a different instance of SRM
+        // in a cluster
+        if(storeInSharedMemoryCache) {
+            job = sharedMemoryCache.getJob(jobId);
+        }
+
+        if(job == null) {
         JobStorage jobStoragesArray[];
         synchronized(jobStorages) {
             jobStoragesArray =
             (JobStorage[])jobStorages.toArray(new JobStorage[0]);
         }
         
-        Job job = null;
         
         for(int i = 0; i<jobStoragesArray.length; ++i) {
             
@@ -468,6 +486,7 @@ public abstract class Job  {
                 break;
             }
         }
+        }
         //since we do not synchronize  on the jobStorages or the job class 
         // in this method, some other thread could have got to the same point, and created
         // an instance of the job for the same job id
@@ -485,11 +504,15 @@ public abstract class Job  {
                     return (Job) o1;
                 }
             }
+
             if (job != null)
             {                
                 //System.out.println("storring job in weakJobStorage, ");
                 weakJobStorage.put(job.id,new WeakReference(job));
+                if(storeInSharedMemoryCache) {
+                    sharedMemoryCache.updateSharedMemoryChache(job);
             }
+        }
         }
         
         if(job != null) {
@@ -683,6 +706,11 @@ public abstract class Job  {
                 throw new IllegalStateTransition("Scheduler ID is null");
             }
             
+        }
+        if(!old.isFinalState() && state.isFinalState()) {
+            if(storeInSharedMemoryCache) {
+                sharedMemoryCache.updateSharedMemoryChache(this);
+            }
         }
         stateChanged(old);
         if(save) {
@@ -1224,4 +1252,31 @@ public abstract class Job  {
 	public void setJdc(JDC jdc) {
         this.jdc = jdc;
 	}
+
+
+    /**
+     * Setter for parameter controlling the caching of jobs in memory
+     * Since the cache is used for clustering the jobs,
+     * Save memory should be disabled if the SRM is running
+     * in terracotta clustered environment
+     * @param value If false, the incomplete requests will be cached
+     * in  memory , if true, they might be Garbage collected and
+     *  be reread from DB, when accessed
+     */
+    public static void saveMemory(boolean value) {
+        storeInSharedMemoryCache = !value;
+        if(storeInSharedMemoryCache == false) {
+            sharedMemoryCache.clearCache();
+        }
+    }
+
+    public static Set<Job> getActiveJobs(Class type) {
+        if(storeInSharedMemoryCache) {
+            return sharedMemoryCache.getJobs(type);
+        } else {
+            return new HashSet<Job>();
+        }
+    }
+
+ 
 }

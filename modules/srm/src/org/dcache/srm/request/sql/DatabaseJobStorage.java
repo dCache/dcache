@@ -95,8 +95,6 @@ import org.dcache.commons.util.SqlHelper;
 public abstract class DatabaseJobStorage implements JobStorage, Runnable {
     
     protected static final String INDEX_SUFFIX="_idx";
-    private boolean useJobsSet;
-    private java.util.Set jobsSet = java.util.Collections.synchronizedSet(new java.util.HashSet());
 
     protected Configuration configuration;
     private final String jdbcUrl;
@@ -344,7 +342,6 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                 Job job = getJob(jobId,_con);
                 pool.returnConnection(_con);
                 _con = null;
-                updateJobsSet(job);
                 return job;
             }
             catch(SQLException sqle) {
@@ -403,31 +400,11 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             LASTSTATETRANSITIONTIME,
             set,
             12 );
-            updateJobsSet(job);
             return job;
         } finally {
             SqlHelper.tryToClose(set);
             SqlHelper.tryToClose(statement);
         }
-    }
-    
-    private void updateJobsSet(Job job) {
-        if(job ==null) {
-            return;
-        }
-        if(useJobsSet) {
-            State state = job.getState();
-            if(jobsSet.contains(job)  && State.isFinalState(state)) {
-                say("removing job #"+job.getId() +" from hash set");
-                jobsSet.remove(job);
-            }
-            if(!jobsSet.contains(job) && !State.isFinalState(state)) {
-                say("putting job #"+job.getId() +" to hash set");
-                jobsSet.add(job);
-            }
-                
-        }
-        
     }
     
     public void saveJob(final Job job,boolean saveifmonitoringisdesabled) throws SQLException{
@@ -436,7 +413,6 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             return;
         }
         final Semaphore lock = job.getLock(); 
-        updateJobsSet(job);
         final long jobId = job.getId().longValue();
         final String historyTableName =  getHistoryTableName();
         final Iterator historyIterator = job.getHistoryIterator();
@@ -842,7 +818,12 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
             _con = pool.getConnection();
             sqlStatement = _con.createStatement();
             String sqlStatementString = "SELECT * FROM " + getTableName();
-            sqlStatementString += " WHERE SCHEDULERID='"+schedulerId+"' AND STATE='"+state+"' ";
+            if(schedulerId == null) {
+                sqlStatementString += " WHERE SCHEDULERID is NULL";
+            } else {
+                sqlStatementString += " WHERE SCHEDULERID='"+schedulerId+'\'';
+            }
+            sqlStatementString += " AND STATE='"+state.getStateId()+"' ";
             say("executing statement: "+sqlStatementString);
             set = sqlStatement.executeQuery(sqlStatementString);
             while(set.next()) {
@@ -899,35 +880,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
         }
     }
     
-    /**
-     * Getter for property useJobsSet.
-     * @return Value of property useJobsSet.
-     */
-    public boolean isUseJobsSet() {
-        return useJobsSet;
-    }
     
-    /**
-     * Setter for parameter controlling the 
-     * caching of requests in memory
-     * @param value If false, the incomplete requests will be cached 
-     *   memory , if true, they might be Garbage collected and
-     *  be reread from DB, when accessed
-     */
-    public void saveMemory(boolean value) {
-        this.useJobsSet = !value;
-        if(useJobsSet == false && !jobsSet.isEmpty()) {
-            try
-            {
-                jobsSet.clear();
-            }
-            catch(Exception e)
-            {
-                //clear did not work, try garbage collection
-                jobsSet = java.util.Collections.synchronizedSet(new java.util.HashSet());
-            }
-        }
-    }
          protected void createTable(String tableName, String createStatement) throws SQLException {
             createTable(tableName, createStatement,false,false);
          }

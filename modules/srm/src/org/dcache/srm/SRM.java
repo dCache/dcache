@@ -331,9 +331,9 @@ public class SRM {
             //already initialized
         }
 
-        //config.setLocalSRM(this);
         requestCredentialStorage = new DatabaseRequestCredentialStorage(config);
         RequestCredential.registerRequestCredentialStorage(requestCredentialStorage);
+         Job.saveMemory(config.isSaveMemory());
 
         lsRequestScheduler = new Scheduler("ls_" + name, storage);
         // scheduler parameters
@@ -421,18 +421,6 @@ public class SRM {
         reserveSpaceRequestStorage = new ReserveSpaceRequestStorage(configuration);
         lsRequestStorage = new LsRequestStorage(configuration);
         lsFileRequestStorage = new LsFileRequestStorage(configuration);
-
-        bringOnlineStorage.saveMemory(config.isSaveMemory());
-        getStorage.saveMemory(config.isSaveMemory());
-        putStorage.saveMemory(config.isSaveMemory());
-        copyStorage.saveMemory(config.isSaveMemory());
-        bringOnlineFileRequestStorage.saveMemory(config.isSaveMemory());
-        getFileRequestStorage.saveMemory(config.isSaveMemory());
-        putFileRequestStorage.saveMemory(config.isSaveMemory());
-        copyFileRequestStorage.saveMemory(config.isSaveMemory());
-        reserveSpaceRequestStorage.saveMemory(config.isSaveMemory());
-        lsRequestStorage.saveMemory(config.isSaveMemory());
-        lsFileRequestStorage.saveMemory(config.isSaveMemory());
         Job.registerJobStorage(bringOnlineFileRequestStorage);
         Job.registerJobStorage(getFileRequestStorage);
         Job.registerJobStorage(putFileRequestStorage);

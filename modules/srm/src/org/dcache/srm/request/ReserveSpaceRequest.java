@@ -267,6 +267,7 @@ public class ReserveSpaceRequest extends Request {
         }
         
         this.spaceReservationLifetime = spaceReservationLifetime;
+        storeInSharedMemory();
         say("created");
         
     }

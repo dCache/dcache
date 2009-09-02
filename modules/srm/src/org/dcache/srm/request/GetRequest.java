@@ -248,6 +248,7 @@ public class GetRequest extends ContainerRequest {
             
             fileRequests[i] = fileRequest;
         }
+        storeInSharedMemory();
     }
     
     /**
