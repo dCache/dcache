@@ -16,6 +16,7 @@
         quotaManager=none
         sendCostInfoMessages=no
         poolStatusRelay=broadcast
+        stageConfigurationFilePath=
       </value>
     </property>
   </bean>
@@ -81,6 +82,7 @@
       <bean class="${threadPool}"/>
     </property>
     <property name="sendCostInfo" value="${sendCostInfoMessages}"/>
+    <property name="stageConfigurationFile" value="${stageConfigurationFilePath}"/>
   </bean>
 
 

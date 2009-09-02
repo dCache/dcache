@@ -6,12 +6,17 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Collection;
+import java.util.NoSuchElementException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+
+import javax.security.auth.Subject;
+import org.dcache.auth.Subjects;
 
 public class CheckStagePermission {
     private File _stageConfigFile;
@@ -31,6 +36,41 @@ public class CheckStagePermission {
 
         _stageConfigFile = new File(stageConfigurationFilePath);
         _isEnabled = true;
+    }
+
+    /**
+     * Check whether staging is allowed for a particular subject.
+     *
+     * @param subject The subject
+     * @return true if and only if the subject is allowed to perform
+     * staging
+     */
+    public boolean canPerformStaging(Subject subject)
+        throws PatternSyntaxException, IOException
+    {
+        if (!_isEnabled || Subjects.isRoot(subject))
+            return true;
+
+        try {
+            String dn = Subjects.getDn(subject);
+            Collection<String> fqans = Subjects.getFqans(subject);
+
+            if (dn == null) {
+                dn = "";
+            }
+
+            if (fqans.isEmpty()) {
+                return canPerformStaging(dn, "");
+            } else {
+                for (String fqan: fqans) {
+                    if (canPerformStaging(dn, fqan))
+                        return true;
+                }
+                return false;
+            }
+        } catch (NoSuchElementException e) {
+            throw new IllegalArgumentException("Subject has multible DNs");
+        }
     }
 
     /**

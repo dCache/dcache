@@ -171,6 +171,8 @@ import diskCacheV111.services.acl.DelegatingPermissionHandler;
 import diskCacheV111.services.acl.GrantAllPermissionHandler;
 
 import org.dcache.namespace.FileType;
+import org.dcache.auth.FQANPrincipal;
+import org.dcache.auth.Subjects;
 import org.dcache.auth.UserAuthBase;
 import org.dcache.auth.AuthorizationRecord;
 import org.dcache.cells.AbstractCell;
@@ -191,6 +193,7 @@ import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.Glob;
 import org.dcache.auth.Subjects;
 import org.dcache.namespace.FileType;
+import org.globus.gsi.jaas.GlobusPrincipal;
 
 import dmg.cells.nucleus.CDC;
 
@@ -1023,7 +1026,7 @@ public abstract class AbstractFtpDoorV1
                              _engine.getInetAddress());
         if (_permissionHandlerClasses != null) {
             _permissionHandler = new DelegatingPermissionHandler(this);
-            subject = Subjects.ROOT;
+            subject = null;
         } else {
             _permissionHandler = new GrantAllPermissionHandler();
             subject = new Subject();
@@ -3357,15 +3360,17 @@ public abstract class AbstractFtpDoorV1
                                                         protocolInfo,
                                                         0L);
             } else {   //transfer: 'retrieve'
-                int allowedStates = _checkStagePermission.canPerformStaging(_pwdRecord.DN, _pwdRecord.getFqan()) ?
-                            RequestContainerV5.allStates :
-                            RequestContainerV5.allStatesExceptStage;
-
+                Subject subject = getSubject();
+                int allowedStates =
+                    _checkStagePermission.canPerformStaging(subject)
+                    ? RequestContainerV5.allStates
+                    : RequestContainerV5.allStatesExceptStage;
                 request = new PoolMgrSelectReadPoolMsg(_transfer.pnfsId,
                                                        storageInfo,
                                                        protocolInfo,
                                                        0L,
                                                        allowedStates);
+                request.setSubject(subject);
             }
             request.setPnfsPath(_transfer.path);
             request = sendAndWait(new CellPath(_poolManager), request,
@@ -4637,20 +4642,12 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    private final Subject getSubject() {
-
-          Principal user = new UnixNumericUserPrincipal(_pwdRecord.UID);
-          Principal group = new UnixNumericGroupPrincipal(_pwdRecord.GID, true);
-
-          Subject subject = new Subject();
-
-          //Add principals to the subject:
-          subject.getPrincipals().add(user);
-          subject.getPrincipals().add(group);
-          subject.getPrincipals().add(_origin);
-          subject.setReadOnly();
-
-          return subject;
+    private final Subject getSubject()
+    {
+        Subject subject = Subjects.getSubject(_pwdRecord, true);
+        subject.getPrincipals().add(_origin);
+        subject.setReadOnly();
+        return subject;
     }
 
     private void sendRemoveInfoToBilling(String pathInPnfs) {

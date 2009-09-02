@@ -30,6 +30,7 @@ import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.RetentionPolicy;
 import org.dcache.auth.UserAuthRecord;
+import org.dcache.auth.Subjects;
 
 import diskCacheV111.util.PnfsHandler;
 import org.dcache.acl.ACLException;
@@ -2394,16 +2395,23 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
                 //
                 // try to get some space to store the file.
                 //
-               int allowedStates = RequestContainerV5.allStatesExceptStage;
-			   try {
-				   allowedStates = _checkStagePermission.canPerformStaging(_userAuthRecord.DN, _userAuthRecord.getFqan()) ?
-                            RequestContainerV5.allStates :
-                            RequestContainerV5.allStatesExceptStage;
-			   } catch (IOException e) {
-				  _cell.esay("Error while reading data from StageConfiguration.conf file : " + e.getMessage());
-			   }
-
-               getPoolMessage = new PoolMgrSelectReadPoolMsg(_pnfsId,_storageInfo,_protocolInfo,0, allowedStates);
+               int allowedStates;
+               try {
+                   allowedStates =
+                       _checkStagePermission.canPerformStaging(_subject)
+                       ? RequestContainerV5.allStates
+                       : RequestContainerV5.allStatesExceptStage;
+               } catch (IOException e) {
+                   allowedStates = RequestContainerV5.allStatesExceptStage;
+                   _cell.esay("Error while reading data from StageConfiguration.conf file : " + e.getMessage());
+               }
+               getPoolMessage =
+                   new PoolMgrSelectReadPoolMsg(_pnfsId,
+                                                _storageInfo,
+                                                _protocolInfo,
+                                                0,
+                                                allowedStates);
+               getPoolMessage.setSubject(_subject);
                getPoolMessage.setIoQueueName(_ioQueueName );
             }
 
@@ -2826,14 +2834,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
                 _user.getName()+"("+_user.getRole()+","+user.UID+","+
                 user.GID+","+_userHome+")");
 
-        Principal userPrincipal = new UnixNumericUserPrincipal(user.UID);
-        Principal groupPrincipal = new UnixNumericGroupPrincipal(user.GID, true);
-
-        _subject = new Subject();
-        //Add principals to the subject:
-        _subject.getPrincipals().add(userPrincipal);
-        _subject.getPrincipals().add(groupPrincipal);
+        _subject = Subjects.getSubject(user, true);
         _subject.getPrincipals().add(_origin);
+        _subject.setReadOnly();
 
         if (_permissionHandler instanceof GrantAllPermissionHandler) {
             _pnfs.setSubject(_subject);

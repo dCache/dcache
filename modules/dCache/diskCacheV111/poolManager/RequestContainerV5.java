@@ -3,6 +3,7 @@
 package diskCacheV111.poolManager ;
 
 import java.io.PrintWriter;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -12,9 +13,11 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import org.apache.log4j.Logger;
 import org.dcache.cells.AbstractCellComponent;
@@ -23,6 +26,7 @@ import org.dcache.cells.CellMessageReceiver;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.util.ExtendedRunnable;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.ThreadPool;
@@ -49,6 +53,10 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.UOID;
 import dmg.util.Args;
+
+import org.dcache.auth.FQANPrincipal;
+import org.dcache.auth.Subjects;
+import org.globus.gsi.jaas.GlobusPrincipal;
 
 public class RequestContainerV5
     extends AbstractCellComponent
@@ -85,6 +93,9 @@ public class RequestContainerV5
     private int         _maxRetries    = 3 ;
     private int         _maxRestore    = -1 ;
     private boolean     _sendCostInfo  = false ;
+
+    private CheckStagePermission _stagePolicyDecisionPoint;
+
     private boolean     _sendHitInfo   = false ;
 
     private int         _restoreExceeded = 0 ;
@@ -606,12 +617,14 @@ public class RequestContainerV5
 
     public void messageArrived(CellMessage envelope,
                                PoolMgrSelectReadPoolMsg request)
+        throws PatternSyntaxException, IOException
     {
         boolean enforceP2P = false ;
 
         PnfsId       pnfsId       = request.getPnfsId() ;
         ProtocolInfo protocolInfo = request.getProtocolInfo() ;
         int allowedStates = request.getAllowedStates();
+
         String  hostName    =
                protocolInfo instanceof IpProtocolInfo ?
                ((IpProtocolInfo)protocolInfo).getHosts()[0] :
@@ -717,6 +730,7 @@ public class RequestContainerV5
         private   String       _state         = "[<idle>]";
         private   int          _mode          = ST_INIT ;
         private   final int    _allowedStates;
+        private   boolean      _stagingDenied = false;
         private   int          _currentRc     = 0 ;
         private   String       _currentRm     = "" ;
 
@@ -859,6 +873,7 @@ public class RequestContainerV5
         public void addRequest( CellMessage message ){
 
            _messages.add(message);
+           _stagingDenied = false;
 
            long ttl = message.getTtl();
            if (ttl < Long.MAX_VALUE) {
@@ -1211,6 +1226,39 @@ public class RequestContainerV5
            }
         }
 
+        private boolean canStage()
+        {
+            /* If the result is cached or the door disabled staging,
+             * then we don't check the permissions.
+             */
+            if (_stagingDenied || (_allowedStates & ST_STAGE) == 0) {
+                return false;
+            }
+
+            /* Staging is allowed if just one of the requests has
+             * permission to stage.
+             */
+            for (CellMessage envelope: _messages) {
+                try {
+                    PoolMgrSelectReadPoolMsg msg =
+                        (PoolMgrSelectReadPoolMsg) envelope.getMessageObject();
+                    if (_stagePolicyDecisionPoint.canPerformStaging(msg.getSubject())) {
+                        return true;
+                    }
+                } catch (IOException e) {
+                    _log.error("Failed to verify stage permissions: " + e.getMessage());
+                } catch (PatternSyntaxException e) {
+                    _log.error("Failed to verify stage permissions: " + e.getMessage());
+                }
+            }
+
+            /* None of the requests had the necessary credentials to
+             * stage. This result is cached.
+             */
+            _stagingDenied = true;
+            return false;
+        }
+
         private void nextStep( int mode , int shouldContinue ){
             if (_currentRc == CacheException.NOT_IN_TRASH ||
                 _currentRc == CacheException.FILE_NOT_FOUND) {
@@ -1220,27 +1268,38 @@ public class RequestContainerV5
                 sendInfoMessage(_pnfsId , _storageInfo ,
                                 _currentRc , "Failed "+_currentRm);
             } else {
-                 if( (mode & _allowedStates) == 0 ) { //'mode' is not an allowed state
-                     _mode = ST_DONE;
-                     _forceContinue = true;
-                     _state = "Failed";
-                     _log.debug("RequestContainerV5.nextStep() : No permission to perform " + modeToString(mode));
-                     _currentRc = CacheException.FILE_NOT_ONLINE;
-                     _currentRm = "File not online. Staging not allowed.";
-                     sendInfoMessage(_pnfsId , _storageInfo ,
-                                     _currentRc , "No permission to perform staging." + _currentRm);
-                 } else if ((mode & _allowedStates) == mode){ //'mode' is allowed state
-                _mode = mode ;
-                _forceContinue = shouldContinue == CONTINUE ;
-                if( _mode != ST_DONE ){
-                    _currentRc = 0 ;
-                    _currentRm = "" ;
-                }
-              } else {
-                _log.error("Value of (mode & _allowedStates) is neither equal to '0' nor to 'mode'." +
-                            " Current value of mode = " + Integer.toString(mode));
+                if (mode == ST_STAGE && !canStage()) {
+                    _mode = ST_DONE;
+                    _forceContinue = true;
+                    _state = "Failed";
+                    _log.debug("Subject is not authorized to stage");
+                    _currentRc = CacheException.FILE_NOT_ONLINE;
+                    _currentRm = "File not online. Staging not allowed.";
+                    sendInfoMessage(_pnfsId , _storageInfo ,
+                                    _currentRc , "Permission denied." + _currentRm);
+                } else if ((mode & _allowedStates) == 0) {
+                    _mode = ST_DONE;
+                    _forceContinue = true;
+                    _state = "Failed";
+                    _log.debug("No permission to perform " +
+                               modeToString(mode));
+                    _currentRc = CacheException.PERMISSION_DENIED;
+                    _currentRm = "Permission denied.";
+                    sendInfoMessage(_pnfsId, _storageInfo, _currentRc,
+                                    "Permission denied for " +
+                                    modeToString(mode));
+                } else if ((mode & _allowedStates) == mode) {
+                    _mode = mode ;
+                    _forceContinue = shouldContinue == CONTINUE ;
+                    if( _mode != ST_DONE ){
+                        _currentRc = 0 ;
+                        _currentRm = "" ;
+                    }
+                } else {
+                    _log.error("Value of (mode & _allowedStates) is neither equal to '0' nor to 'mode'." +
+                               " Current value of mode = " + Integer.toString(mode));
                     throw new IllegalStateException("Illegal value of 'mode'.");
-              }
+                }
             }
         }
         //
@@ -2578,4 +2637,9 @@ public class RequestContainerV5
             : parameter.getCostCut();
     }
     //VP
+
+    public void setStageConfigurationFile(String path)
+    {
+        _stagePolicyDecisionPoint = new CheckStagePermission(path);
+    }
 }

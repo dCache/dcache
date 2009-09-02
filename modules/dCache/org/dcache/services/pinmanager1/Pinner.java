@@ -4,6 +4,7 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.*;
 
 import dmg.cells.nucleus.CellPath;
+import org.dcache.auth.Subjects;
 
 /**
  * Background task used to perform the actual pinning operation. To do
@@ -113,6 +114,7 @@ class Pinner extends SMCTask
                                          pinfo,
                                          0,
                                          _allowedStates);
+        request.setSubject(Subjects.getSubject(_job.getAuthorizationRecord()));
 
         sendMessage(_poolManager, request, 60*60*1000);
     }

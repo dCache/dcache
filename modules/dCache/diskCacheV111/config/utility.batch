@@ -15,10 +15,11 @@ import context -c setupContext
 #
 # check -strong dCapPort sshPort ftpPort srmPort
 
-#
-#  Cell communication
-#
+# Cell communication
 exec -run -shell file:${ourHomeDir}/config/tunnel.fragment 
+
+# Stage protection
+exec -run -shell file:${ourHomeDir}/config/stage.fragment doors
 
 #
 #
@@ -48,8 +49,6 @@ onerror continue
    set context -c pinManagerDbPassword ${srmDbPassword}
 
 #  ----- Tape Protection
-   set context -c stageConfigurationFilePath   ""
-
    set context -c pinManagerPasswordFile "${srmPasswordFile}"
 
 # in seconds, -1 for infinite 

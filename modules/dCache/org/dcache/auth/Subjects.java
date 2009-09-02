@@ -1,6 +1,9 @@
 package org.dcache.auth;
 
 import java.util.Set;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.ArrayList;
 import java.util.NoSuchElementException;
 import javax.security.auth.Subject;
 import java.security.Principal;
@@ -147,6 +150,45 @@ public class Subjects
     }
 
     /**
+     * Returns the DN of a subject. If no DN is defined, null is
+     * returned. If more than one DN is defined, then
+     * NoSuchElementException is thrown (the intuition being that
+     * there is no unique DN).
+     *
+     * @param NoSuchElementException if there is more than one DN
+     */
+    public static String getDn(Subject subject)
+    {
+        Set<GlobusPrincipal> principals =
+            subject.getPrincipals(GlobusPrincipal.class);
+        if (principals.size() == 0) {
+            return null;
+        }
+        if (principals.size() > 1) {
+            throw new NoSuchElementException("Subject has no unique DN");
+        }
+        return principals.iterator().next().getName();
+    }
+
+    /**
+     * Returns the collection of FQANs of a subject.
+     */
+    public static Collection<String> getFqans(Subject subject)
+    {
+        Set<FQANPrincipal> principals =
+            subject.getPrincipals(FQANPrincipal.class);
+        if (principals.size() == 0) {
+            return Collections.emptySet();
+        }
+
+        Collection<String> fqans = new ArrayList<String>();
+        for (FQANPrincipal principal: principals) {
+            fqans.add(principal.getName());
+        }
+        return fqans;
+    }
+
+    /**
      * Maps an AuthorizationRecord to a Subject. The Subject will
      * contain the UID (UnixNumericalUserPrincipal), GID
      * (UnixNumericGroupPrincipal), the mapped user name
@@ -175,6 +217,35 @@ public class Subjects
         String dn = record.getName();
         if (dn != null && !dn.isEmpty()) {
             principals.add(new GlobusPrincipal(dn));
+        }
+
+        return subject;
+    }
+
+    /**
+     * Maps a UserAuthBase to a Subject.  The Subject will contain the
+     * UID (UnixNumericalUserPrincipal), GID
+     * (UnixNumericGroupPrincipal), DN (GlobusPrincipal), and FQAN
+     * (FQANPrincipal) principals.
+     *
+     * @param user UserAuthBase to convert
+     * @param primary Whether the groups of user are the primary groups
+     */
+    public final static Subject getSubject(UserAuthBase user, boolean primary)
+    {
+        Subject subject = new Subject();
+        Set<Principal> principals = subject.getPrincipals();
+        principals.add(new UnixNumericUserPrincipal(user.UID));
+        principals.add(new UnixNumericGroupPrincipal(user.GID, primary));
+
+        String dn = user.DN;
+        if (dn != null && !dn.isEmpty()) {
+            principals.add(new GlobusPrincipal(dn));
+        }
+
+        String fqan = user.getFqan().toString();
+        if (fqan != null && !fqan.isEmpty()) {
+            principals.add(new FQANPrincipal(fqan, primary));
         }
 
         return subject;

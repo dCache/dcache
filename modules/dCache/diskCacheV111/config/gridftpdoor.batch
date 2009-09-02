@@ -11,10 +11,11 @@ copy file:${setupFile} context:setupContext
 #
 import context -c setupContext
 
-#
-#  Cell communication
-#
+# Cell communication
 exec -run -shell file:${ourHomeDir}/config/tunnel.fragment
+
+# Stage protection
+exec -run -shell file:${ourHomeDir}/config/stage.fragment doors
 
 #
 #      GridFTP Door
@@ -47,8 +48,7 @@ set context -c gsiftpAllowPassivePool false
 set context -c PermissionHandlerDataSource diskCacheV111.services.PnfsManagerFileMetaDataSource
 set context -c FtpTLogDir ""
 set context -c permissionHandler diskCacheV111.services.acl.UnixPermissionHandler
-#  ----- Tape Protection
-set context -c stageConfigurationFilePath   ""
+
 #  ----- ACL-variables
 set context -c aclTable      t_acl
 set context -c aclConnDriver org.postgresql.Driver

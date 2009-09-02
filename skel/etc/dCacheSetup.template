@@ -1313,4 +1313,15 @@ statisticsLocation=${ourHomeDir}/statistics
 #   and there is a similarly named file containing a list of FQANs and DNs whose owners
 #   are allowed to stage files (i.e., to read files from dCache that are stored only on tape).
 #
+#   Stage configuration can be provided either on the door or on the PoolManager as described
+#   in the following two cases below:
+#      1) stage configuration provided on the door
+#         (remember to repeat the same configuration on each door):
+#         stagePolicyEnforcementPoint=doors
+#      2) stage configuration provided on the PoolManager:
+#         stagePolicyEnforcementPoint=PoolManager
+#
+#       The default case is 1).
+#
 #stageConfigurationFilePath=${ourHomeDir}/config/StageConfiguration.conf
+#stagePolicyEnforcementPoint=doors

@@ -1,0 +1,20 @@
+# Defines stage protection related defaults and implements the stage
+# PEP logic.
+
+# Default values
+onerror continue
+set context -c stageConfigurationFilePath ""
+set context -c stagePolicyEnforcementPoint doors
+onerror shutdown
+
+# Disables stage PEP in this domain
+define env stage-disable-pep.exe end
+  set context stageConfigurationFilePath ""
+end
+
+# Decide whether to enable the stage PEP
+onerror continue
+eval ${stagePolicyEnforcementPoint} ${1} !=
+exec env stage-disable-pep.exe -run -ifok
+onerror shutdown
+

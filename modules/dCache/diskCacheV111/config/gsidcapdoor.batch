@@ -15,29 +15,29 @@ import context -c setupContext
 #
 check -strong dCapGsiPort
 
-#
-#  Cell communication
-#
+# Cell communication
 exec -run -shell file:${ourHomeDir}/config/tunnel.fragment
+
+# Stage protection
+exec -run -shell file:${ourHomeDir}/config/stage.fragment doors
 
 #
 #
 onerror continue
-   set context -c useGPlazmaAuthorizationModule  false
-   set context -c useGPlazmaAuthorizationCell    true
-   set context -c gplazmaPolicy               ${ourHomeDir}/etc/dcachesrm-gplazma.policy
-   set context -c gsidcapIoQueue              ""
-   set context -c gsidcapIoQueueOverwrite     denied
-   set context -c gsidcapMaxLogin             1500
-   set context -c permissionHandler           diskCacheV111.services.acl.UnixPermissionHandler
-#  ----- Tape Protection
-   set context -c stageConfigurationFilePath   ""
+set context -c useGPlazmaAuthorizationModule  false
+set context -c useGPlazmaAuthorizationCell    true
+set context -c gplazmaPolicy               ${ourHomeDir}/etc/dcachesrm-gplazma.policy
+set context -c gsidcapIoQueue              ""
+set context -c gsidcapIoQueueOverwrite     denied
+set context -c gsidcapMaxLogin             1500
+set context -c permissionHandler           diskCacheV111.services.acl.UnixPermissionHandler
+
 #  ----- ACL-variables
-   set context -c aclTable      t_acl
-   set context -c aclConnDriver org.postgresql.Driver
-   set context -c aclConnUrl    jdbc:postgresql://localhost/chimera?prepareThreshold=3
-   set context -c aclConnUser   postgres
-   set context -c aclConnPswd   ""
+set context -c aclTable      t_acl
+set context -c aclConnDriver org.postgresql.Driver
+set context -c aclConnUrl    jdbc:postgresql://localhost/chimera?prepareThreshold=3
+set context -c aclConnUser   postgres
+set context -c aclConnPswd   ""
 
 #
 #  ----  Usage of Srm Space Manager
