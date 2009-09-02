@@ -47,6 +47,7 @@ import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
+import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.PoolDeliverFileMessage;
@@ -60,16 +61,18 @@ import diskCacheV111.vehicles.StorageInfo;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.util.Args;
 import org.acplt.oncrpc.XdrBufferDecodingStream;
+import org.dcache.cells.CellCommandListener;
 import org.dcache.chimera.nfs.v4.client.GetDeviceListStub;
 import org.dcache.chimera.nfs.v4.client.NFSv41Client;
 import org.dcache.chimera.nfs.v4.layouttype4;
 import org.dcache.chimera.nfs.v4.nfsv4_1_file_layout_ds_addr4;
 
-public class NFSv41Door extends AbstractCell implements NFSv41DeviceManager {
+public class NFSv41Door extends AbstractCell
+        implements NFSv41DeviceManager, CellCommandListener {
 
-    private static final Logger _log = Logger
-            .getLogger("logger.org.dcache.doors.nfsv4");
+    private static final Logger _log = Logger.getLogger(NFSv41Door.class);
 
     /** dCache-friendly NFS device id to pool name mapping */
     private Map<String, NFS4IoDevice> _poolNameToIpMap = new HashMap<String, NFS4IoDevice>();
@@ -254,6 +257,12 @@ public class NFSv41Door extends AbstractCell implements NFSv41DeviceManager {
             throw new RuntimeException(ex);
         }
 
+    }
+
+    protected void messageArrived(DoorTransferFinishedMessage transferFinishedMessage) {
+
+        NFS4ProtocolInfo protocolInfo = (NFS4ProtocolInfo)transferFinishedMessage.getProtocolInfo();
+        _ioMessages.remove(new StateidAsKey(protocolInfo.stateId()));
     }
 
     @Override
@@ -545,5 +554,40 @@ public class NFSv41Door extends AbstractCell implements NFSv41DeviceManager {
         nfsv4_1_file_layout_ds_addr4 file_layout = GetDeviceListStub.decodeFileDevice(device.getDeviceAddr().da_addr_body);
         return NFSv41Client.device2Address(file_layout.nflda_multipath_ds_list[0].value[0].na_r_addr);
 
+    }
+
+    /*
+     * Cell specific
+     */
+
+    @Override
+    public String getInfo() {
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("NFSv4.1 door (MDS): \n");
+        sb.append("  Known pools (DS):\n");
+        for(Map.Entry<String, NFS4IoDevice> ioDevice: _poolNameToIpMap.entrySet()) {
+            sb.append("    ").append(ioDevice.getKey()).append(" : ").
+                    append(ioDevice.getValue()).append("\n");
+        }
+        sb.append("\n  Known movers (layouts):\n");
+        for(PoolIoFileMessage io: _ioMessages.values()) {
+            sb.append("    ").append(io.getPnfsId()).append(" : ").append(io.getMoverId()).
+                    append("@").append(io.getPoolName()).append("\n");
+        }
+        return sb.toString();
+
+    }
+
+    public static String hh_ac_kill_mover = " <pool> <moverid> # kill mover on the pool";
+    public String ac_kill_mover_$_2(Args args) throws Exception {
+        int mover = Integer.parseInt(args.argv(1));
+        String pool = args.argv(0);
+
+        PoolMoverKillMessage message = new PoolMoverKillMessage(pool, mover);
+
+        message.setReplyRequired(false);
+        sendMessage(new CellMessage(new CellPath(pool), message));
+        return "";
     }
 }

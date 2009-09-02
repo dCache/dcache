@@ -31,6 +31,6 @@ onerror shutdown
 #    NFSv4.1    D o o r
 #
 create org.dcache.chimera.nfsv41.door.NFSv41Door NFSv41 \
-           "-chimeraConfig=${ourHomeDir}/config/chimera-config.xml"
+           "-chimeraConfig=${ourHomeDir}/config/chimera-config.xml -export"
 #
 #
