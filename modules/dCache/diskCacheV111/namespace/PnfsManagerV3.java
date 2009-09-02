@@ -409,7 +409,7 @@ public class PnfsManagerV3 extends CellAdapter
 
         try {
             newName = args.argv(1);
-            rename(ROOT, pnfsId, newName);
+            rename(ROOT, pnfsId, newName, true);
         }catch( Exception e) {
             return "rename failed: " + e.getMessage() ;
         }
@@ -1293,27 +1293,28 @@ public class PnfsManagerV3 extends CellAdapter
 
     }
 
-
-    public void rename(PnfsRenameMessage pnfsMessage)
+    public void rename(PnfsRenameMessage msg)
     {
         try {
-            PnfsId pnfsId = populatePnfsId(pnfsMessage);
-            String newName = pnfsMessage.newName();
-            say(" rename "+pnfsId+" to new name : "+newName);
-            rename(pnfsMessage.getSubject(), pnfsId, newName);
-        }catch( Exception exc){
-            esay("Exception in rename "+exc);
-            esay(exc);
-            pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,"Pnfs rename failed");
+            PnfsId pnfsId = populatePnfsId(msg);
+            String newName = msg.newName();
+            say("rename " + pnfsId + " to new name : " + newName);
+            rename(msg.getSubject(), pnfsId, newName, msg.getOverwrite());
+        } catch (CacheException e){
+            msg.setFailed(e.getRc(), e.getMessage());
+        } catch (RuntimeException e) {
+            esay(e);
+            msg.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                          "Pnfs rename failed");
         }
-
     }
 
-    private void rename(Subject subject, PnfsId pnfsId, String newName)
+    private void rename(Subject subject, PnfsId pnfsId,
+                        String newName, boolean overwrite)
         throws CacheException
     {
         say("Renaming " + pnfsId + " to " + newName );
-        _nameSpaceProvider.renameEntry(subject, pnfsId, newName);
+        _nameSpaceProvider.renameEntry(subject, pnfsId, newName, overwrite);
     }
 
 
@@ -1443,7 +1444,7 @@ public class PnfsManagerV3 extends CellAdapter
             if (_msg.getEntries().size() >= _directoryListLimit ||
                 now > _deadline) {
                 sendPartialReply();
-                _deadline = 
+                _deadline =
                     (_delay == Long.MAX_VALUE) ? Long.MAX_VALUE : now + _delay;
             }
         }
@@ -1459,7 +1460,7 @@ public class PnfsManagerV3 extends CellAdapter
             String path = msg.getPnfsPath();
             long delay = getAdjustedTtl(envelope);
             long initialDelay =
-                (delay == Long.MAX_VALUE) 
+                (delay == Long.MAX_VALUE)
                 ? Long.MAX_VALUE
                 : delay - envelope.getLocalAge();
             CellPath source = (CellPath)envelope.getSourcePath().clone();
@@ -2043,10 +2044,10 @@ public class PnfsManagerV3 extends CellAdapter
     private static long getAdjustedTtl(CellMessage message)
     {
         long ttl = message.getTtl();
-        return 
-            (ttl == Long.MAX_VALUE) 
+        return
+            (ttl == Long.MAX_VALUE)
             ? Long.MAX_VALUE
-            : ttl - Math.min(TTL_BUFFER_MAXIMUM, 
+            : ttl - Math.min(TTL_BUFFER_MAXIMUM,
                              (long) (ttl * TTL_BUFFER_FRACTION));
     }
 }

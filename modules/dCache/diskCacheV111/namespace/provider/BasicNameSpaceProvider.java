@@ -763,14 +763,29 @@ public class BasicNameSpaceProvider
 
     }
 
+    public void renameEntry(Subject subject, PnfsId pnfsId,
+                            String newName, boolean overwrite)
+        throws CacheException
+    {
+        File src =
+            new File(_pathManager.globalToLocal(this.pnfsidToPath(subject,
+                                                                  pnfsId)));
+        File dest = new File(_pathManager.globalToLocal(newName));
 
-    public void renameEntry(Subject subject, PnfsId pnfsId, String newName) throws CacheException {
+        if (!overwrite && dest.exists()) {
+            throw new FileExistsCacheException("File exists: " + dest);
+        }
 
-        File src = new File(_pathManager.globalToLocal(this.pnfsidToPath(subject, pnfsId)));
-        String localPath = _pathManager.globalToLocal(newName);
+        if (!src.renameTo(dest)) {
+            if (!src.exists()) {
+                throw new FileNotFoundCacheException("No such file or directory: " + pnfsId);
+            }
+            if (!dest.getParentFile().isDirectory()) {
+                throw new NotDirCacheException("No such directory: " + dest.getParent());
+            }
 
-        if( !src.renameTo( new File(localPath) ) ) {
-            throw new CacheException(2817, "Failed to rename " + pnfsId + " (" + src.getAbsolutePath() + ") " +" to " + newName + " (" + localPath + ") ");
+            throw new CacheException("Failed to rename " + pnfsId
+                                     + " to " + newName);
         }
     }
 

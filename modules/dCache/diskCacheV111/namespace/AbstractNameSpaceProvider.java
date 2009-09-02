@@ -56,7 +56,8 @@ public class AbstractNameSpaceProvider
     }
 
     @Override
-    public void renameEntry(Subject subject, PnfsId pnfsId, String newName)
+    public void renameEntry(Subject subject, PnfsId pnfsId,
+                            String newName, boolean overwrite)
         throws CacheException
     {
         throw new UnsupportedOperationException();

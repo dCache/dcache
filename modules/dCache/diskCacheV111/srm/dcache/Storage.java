@@ -2977,7 +2977,8 @@ public class Storage
         if (toExists) {
             newName += "/"+fromFile.getName();
         }
-        PnfsRenameMessage renameRequest = new PnfsRenameMessage(pnfsId,newName);
+        PnfsRenameMessage renameRequest =
+            new PnfsRenameMessage(pnfsId,newName, false);
         CellMessage answer=null;
         Object o=null;
         try {

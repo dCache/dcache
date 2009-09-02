@@ -8,17 +8,23 @@ import  diskCacheV111.util.* ;
 
 public class PnfsRenameMessage extends PnfsMessage
 {
-    private String _newName = null;
-
     private static final long serialVersionUID = 4595311595112609899L;
 
-    public PnfsRenameMessage(PnfsId pnfsId, String newName) {
+    private final String _newName;
+    private final boolean _overwrite;
+
+    public PnfsRenameMessage(PnfsId pnfsId, String newName, boolean overwrite) {
         super(pnfsId);
         _newName = newName;
+        _overwrite = overwrite;
         setReplyRequired(true);
     }
 
     public String newName() {
         return _newName;
+    }
+
+    public boolean getOverwrite() {
+        return _overwrite;
     }
 }

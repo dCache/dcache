@@ -255,7 +255,10 @@ public class ChimeraNameSpaceProvider
         }
     }
 
-    public void renameEntry(Subject subject, PnfsId pnfsId, String newName) throws CacheException {
+    public void renameEntry(Subject subject, PnfsId pnfsId,
+                            String newName, boolean overwrite)
+        throws CacheException
+    {
         try {
             FsInode inode = new FsInode(_fs, pnfsId.toIdString());
             FsInode parentDir = _fs.getParentOf( inode );
@@ -268,18 +271,40 @@ public class ChimeraNameSpaceProvider
             File dest = new File(newName);
             FsInode destDir = null;
 
-            if( dest.getParent().equals( pathFile.getParent()) ) {
-                destDir = parentDir;
-            }else{
-                destDir = _fs.path2inode( dest.getParent() );
+            try {
+                if( dest.getParent().equals( pathFile.getParent()) ) {
+                    destDir = parentDir;
+                }else{
+                    destDir = _fs.path2inode( dest.getParent() );
+                }
+            } catch (FileNotFoundHimeraFsException e) {
+                throw new NotDirCacheException("No such directory: " +
+                                               dest.getParent());
+            }
+
+            if (!overwrite) {
+                try {
+                    _fs.path2inode(newName);
+                    throw new FileExistsCacheException("File exists:" + newName);
+                } catch (FileNotFoundHimeraFsException e) {
+                    /* This is what we want; unfortunately there is no way
+                     * to test this with Chimera without throwing an
+                     * exception.
+                     */
+                }
             }
 
             _fs.move(parentDir, name, destDir, dest.getName());
-        }catch(FileNotFoundHimeraFsException fnf) {
-            throw new FileNotFoundCacheException(pnfsId.toString());
-        }catch(FileExistsChimeraFsException fee) {
-            throw new FileExistsCacheException(newName);
-        }catch(ChimeraFsException e) {
+        } catch (FileNotFoundHimeraFsException e) {
+            throw new FileNotFoundCacheException("No such file or directory: "
+                                                 + pnfsId);
+        } catch (FileExistsChimeraFsException e) {
+            /* With the current implementation of Chimera, I don't
+             * expect this to be thrown. Instead Chimera insists on
+             * overwriting the destination file.
+             */
+            throw new FileExistsCacheException("File exists:" + newName);
+        } catch (ChimeraFsException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                      e.getMessage());
         }

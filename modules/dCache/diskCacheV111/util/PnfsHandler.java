@@ -272,13 +272,14 @@ public class PnfsHandler
     public void renameEntry(PnfsId pnfsId, String newName)
         throws CacheException
     {
-        PnfsRenameMessage pnfsMsg = new PnfsRenameMessage(pnfsId, newName);
-        PnfsMessage msg = pnfsRequest(pnfsMsg);
-        if (msg.getReturnCode() != 0) {
-            throw new CacheException(msg.getErrorObject().toString());
-        }
+        renameEntry(pnfsId, newName, true);
     }
 
+    public void renameEntry(PnfsId pnfsId, String newName, boolean overwrite)
+        throws CacheException
+    {
+        pnfsRequest(new PnfsRenameMessage(pnfsId, newName, overwrite));
+    }
 
    public PnfsCreateEntryMessage createPnfsEntry( String path , int uid , int gid , int mode )
           throws CacheException                {

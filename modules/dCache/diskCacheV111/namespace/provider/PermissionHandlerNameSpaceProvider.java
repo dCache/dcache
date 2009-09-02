@@ -13,6 +13,7 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.namespace.NameSpaceProvider;
 import org.dcache.util.Checksum;
@@ -164,30 +165,83 @@ public class PermissionHandlerNameSpaceProvider
     }
 
     @Override
-    public void renameEntry(Subject subject, PnfsId pnfsId, String newName)
+    public void renameEntry(Subject subject, PnfsId pnfsId,
+                            String newName, boolean overwrite)
         throws CacheException
     {
-        if (!Subjects.isRoot(subject)) {
-            PnfsId parentId = super.getParentOf(subject, pnfsId);
-
-            File newFile = new File(newName);
-            File newParent = newFile.getParentFile();
-            PnfsId newParentId =
-                super.pathToPnfsid(subject, newParent.toString(), true);
-
-            FileAttributes parentAttributes =
-                getFileAttributesForPermissionHandler(parentId);
-            FileAttributes newParrentAttributes =
-                getFileAttributesForPermissionHandler(newParentId);
-
-            if (_handler.canRename(subject,
-                                   parentAttributes,
-                                   newParrentAttributes) != ACCESS_ALLOWED) {
-                throw new PermissionDeniedCacheException("Access denied: " + pnfsId.toString());
-            }
+        if (Subjects.isRoot(subject)) {
+            super.renameEntry(subject, pnfsId, newName, overwrite);
+            return;
         }
 
-        super.renameEntry(subject, pnfsId, newName);
+        /* We must perform permission checking for non-root subjects.
+         * For rename, this is complicated by the fact that the
+         * destination name may exist and we may be requested to
+         * overwrite it. Hence we need to check both rename and delete
+         * permissions, however the delete permissions must only be
+         * checked if the target actually exists.
+         *
+         * We assume that the common case is that the target does not
+         * exist. Hence our strategy is to try the rename without
+         * overwriting, and if that fails, then we check the delete
+         * permissions on the destination name.
+         */
+        PnfsId parentId = super.getParentOf(subject, pnfsId);
+
+        File newFile = new File(newName);
+        File newParent = newFile.getParentFile();
+        PnfsId newParentId =
+            super.pathToPnfsid(subject, newParent.toString(), true);
+
+        FileAttributes parentAttributes =
+            getFileAttributesForPermissionHandler(parentId);
+        FileAttributes newParentAttributes =
+            getFileAttributesForPermissionHandler(newParentId);
+
+        if (_handler.canRename(subject,
+                               parentAttributes,
+                               newParentAttributes) != ACCESS_ALLOWED) {
+            throw new PermissionDeniedCacheException("Access denied: " +
+                                                     pnfsId.toString());
+        }
+
+        try {
+            super.renameEntry(subject, pnfsId, newName, false);
+        } catch (FileExistsCacheException e) {
+            if (!overwrite) {
+                throw e;
+            }
+                
+            /* Destination name exists and we were requested to
+             * overwrite it.  Thus the subject must have delete
+             * permission for the destination name.
+             */
+            PnfsId destId =
+                super.pathToPnfsid(subject, newName, false);
+            FileAttributes destAttributes =
+                getFileAttributesForPermissionHandler(destId, TYPE);
+            if (destAttributes.getFileType() == DIR) {
+                if (_handler.canDeleteDir(subject,
+                                          newParentAttributes,
+                                          destAttributes) != ACCESS_ALLOWED) {
+                    throw new PermissionDeniedCacheException("Access denied: " +
+                                                             newName);
+                }
+            } else {
+                if (_handler.canDeleteFile(subject,
+                                           newParentAttributes,
+                                           destAttributes) != ACCESS_ALLOWED) {
+                    throw new PermissionDeniedCacheException("Access denied: " +
+                                                             newName);
+                }
+            }
+
+            /* Now we know the subject has delete permissions for
+             * the destination name, so let's try to rename with
+             * overwrite enabled.
+             */
+            super.renameEntry(subject, pnfsId, newName, true);
+        }
     }
 
     @Override

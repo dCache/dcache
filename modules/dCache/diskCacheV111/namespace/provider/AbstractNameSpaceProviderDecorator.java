@@ -68,10 +68,11 @@ public class AbstractNameSpaceProviderDecorator
     }
 
     @Override
-    public void renameEntry(Subject subject, PnfsId pnfsId, String newName)
+    public void renameEntry(Subject subject, PnfsId pnfsId,
+                            String newName, boolean overwrite)
         throws CacheException
     {
-        _inner.renameEntry(subject, pnfsId, newName);
+        _inner.renameEntry(subject, pnfsId, newName, overwrite);
     }
 
     @Override
