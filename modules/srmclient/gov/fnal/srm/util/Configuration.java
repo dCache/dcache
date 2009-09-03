@@ -528,7 +528,7 @@ public class Configuration {
       
         @Option(
                 name = "streams_num",
-                description = "number of streams, nonnegative integer",
+                description = "number of streams, nonnegative integer. Multi-stream extended block transfer require writes to be performed in server-passive and reads in server active mode. If client specified server_mode option conflicts with the multi-stream required mode, the transfer will be performed in a single stream mode, regardless of value specified for the streams_num option",
                 defaultValue = "10",
                 required=false,
                 log=true,
