@@ -1498,8 +1498,8 @@ public class Configuration {
         
         @Option(
                 name = "server_mode",
-                description =  	"gridftp server mode for data transfer (\"passive\" or \"active\")",
-                defaultValue = "passive",
+                description =  	"gridftp server mode for data transfer (\"passive\" or \"active\"). Needs to be explicitly specified to appropriate value if client or ftp server is behind a firewall",
+                defaultValue = "null",
                 required=false,
                 log=true,
                 save=true
@@ -1510,26 +1510,7 @@ public class Configuration {
         
         synchronized public void setServerMode(String x) { 
                 server_mode=x;
-                passive_server_mode=x.equalsIgnoreCase("passive");
         }
-        
-	private boolean passive_server_mode=true;
-
-        public boolean isPassiveServerMode() {
-		return passive_server_mode;
-	}
-        
-	synchronized public void setPassiveServerMode(boolean mode) {
-                if (mode) { 
-                        server_mode="passive";
-                        passive_server_mode = mode;
-                }
-                else { 
-                        server_mode="active";
-                        passive_server_mode = mode;
-               }
-	}
-        
         
         @Option(
                 name = "storagetype",
@@ -1770,7 +1751,7 @@ public class Configuration {
                 
         @Option(
                 name = "cksm_type",
-                description = "<type|negotiate> calculate and verify server and client checksum values using this type (adler32|MD4|MD5| .... ). If checksum value has been omitted, missing value will be computed over the local file. If negotiate is set - client will attempt to negotiate cksm type for the file checksum value avilable at the server. For gridftp transfers to/from servers that support checksumming features",
+                description = "<type|negotiate> calculate and verify server and client checksum values using this type (adler32|MD4|MD5|....). If checksum value has been omitted, missing value will be computed over the local file. If negotiate is set - client will attempt to negotiate cksm type for the file checksum value avilable at the server. For gridftp transfers to/from servers that support checksumming features",
                 required=false,
                 log=true,
                 save=true
