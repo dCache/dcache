@@ -192,7 +192,6 @@ import org.dcache.util.list.DirectoryStream;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.Glob;
 import org.dcache.auth.Subjects;
-import org.dcache.namespace.FileType;
 import org.globus.gsi.jaas.GlobusPrincipal;
 
 import dmg.cells.nucleus.CDC;
@@ -1741,28 +1740,9 @@ public abstract class AbstractFtpDoorV1
             }
         }
 
-        info("FTP Door got admin command to delete " + arg);
         String pnfsPath = absolutePath(arg);
 
-        // We do not allow DELE of a directory.
-        // Some FTP clients let this slip through, like uberftp client.
-        // Some FTP clients detect this and send as an "RMD" request instead.
         try {
-            PnfsGetFileMetaDataMessage meta =
-                _pnfs.getFileMetaDataByPath(pnfsPath);
-            if (meta.getMetaData().isDirectory()) {
-                reply("501 Cannot delete a directory");
-                return;
-            }
-        } catch (FileNotFoundCacheException e) {
-            reply("550 File not found");
-        } catch (CacheException e) {
-            reply("451 CWD failed: " + e.getMessage());
-            error("Error in CWD: " + e);
-        }
-
-        try {
-
             if (_permissionHandler.canDeleteFile(pnfsPath, getSubject(), _origin) != AccessType.ACCESS_ALLOWED) {
                 if(!setNextPwdRecord()) {
                     reply("550 Permission denied");
@@ -1773,7 +1753,8 @@ public abstract class AbstractFtpDoorV1
                 }
             }
 
-            _pnfs.deletePnfsEntry(pnfsPath);
+            _pnfs.deletePnfsEntry(pnfsPath,
+                                  EnumSet.of(FileType.REGULAR, FileType.LINK));
 
         }catch(ACLException e) {
             reply("550 Permission denied");
@@ -1933,13 +1914,6 @@ public abstract class AbstractFtpDoorV1
         }
 
         try {
-            PnfsGetFileMetaDataMessage meta =
-                _pnfs.getFileMetaDataByPath(pnfsPath);
-            if (!meta.getMetaData().isDirectory()) {
-                reply("501 Cannot delete a file");
-                return;
-            }
-
             PnfsId pnfsId = _pnfs.getPnfsIdByPath(pnfsPath);
             if (_permissionHandler.canDeleteDir(pnfsId, getSubject(), _origin) != AccessType.ACCESS_ALLOWED) {
                 if(!setNextPwdRecord()) {
@@ -1951,7 +1925,7 @@ public abstract class AbstractFtpDoorV1
                 }
             }
 
-            _pnfs.deletePnfsEntry(pnfsPath);
+            _pnfs.deletePnfsEntry(pnfsPath, EnumSet.of(FileType.DIR));
 
             reply("200 OK");
         }catch(ACLException e) {

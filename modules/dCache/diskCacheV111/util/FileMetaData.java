@@ -4,6 +4,7 @@ package diskCacheV111.util;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import org.dcache.namespace.FileType;
 
 public class FileMetaData implements Serializable {
 
@@ -254,6 +255,14 @@ public class FileMetaData implements Serializable {
 
     public boolean isRegularFile() {
         return _isRegular;
+    }
+
+    public FileType getFileType()
+    {
+        if (isSymbolicLink()) return FileType.LINK;
+        if (isDirectory()) return FileType.DIR;
+        if (isRegularFile()) return FileType.REGULAR;
+        return FileType.SPECIAL;
     }
 
     /** Returns POSIX.1 file mode. */

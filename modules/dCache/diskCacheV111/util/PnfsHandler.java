@@ -5,6 +5,7 @@ package diskCacheV111.util ;
 import java.util.List;
 import java.util.Collections;
 import java.util.Set;
+import java.util.EnumSet;
 
 import org.apache.log4j.Logger;
 
@@ -39,6 +40,7 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.vehicles.PnfsSetFileAttributes;
+import org.dcache.namespace.FileType;
 
 import javax.security.auth.Subject;
 
@@ -367,34 +369,33 @@ public class PnfsHandler
             return pnfsRequest(new PnfsGetParentMessage(pnfsId)).getParent();
     }
 
-   public void deletePnfsEntry( String path )  throws CacheException {
+    public void deletePnfsEntry(String path) throws CacheException
+    {
+        deletePnfsEntry(null, path);
+    }
 
-       PnfsDeleteEntryMessage pnfsMsg = new PnfsDeleteEntryMessage(path);
-       pnfsMsg.setReplyRequired(true);
+    public void deletePnfsEntry(String path, Set<FileType> allowed)
+        throws CacheException
+    {
+        deletePnfsEntry(null, path, allowed);
+    }
 
-       /*
-        * use request, which throws exceptions in case of.....
-        */
-       pnfsRequest( pnfsMsg ) ;
-   }
-
-   public void deletePnfsEntry( PnfsId pnfsid )  throws CacheException {
-
-       PnfsDeleteEntryMessage pnfsMsg = new PnfsDeleteEntryMessage(pnfsid);
-       pnfsMsg.setReplyRequired(true);
-
-       /*
-        * use request, which throws exceptions in case of.....
-        */
-
-       pnfsRequest( pnfsMsg ) ;
-   }
-
+    public void deletePnfsEntry(PnfsId pnfsid)  throws CacheException
+    {
+        deletePnfsEntry(pnfsid, null);
+    }
 
     public void deletePnfsEntry(PnfsId pnfsid, String path)
         throws CacheException
     {
-        pnfsRequest(new PnfsDeleteEntryMessage(pnfsid, path));
+        deletePnfsEntry(pnfsid, path, EnumSet.allOf(FileType.class));
+    }
+
+    private void deletePnfsEntry(PnfsId pnfsid, String path,
+                                 Set<FileType> allowed)
+        throws CacheException
+    {
+        pnfsRequest(new PnfsDeleteEntryMessage(pnfsid, path, allowed));
     }
 
    public CacheStatistics getCacheStatistics( String pnfsId ) {

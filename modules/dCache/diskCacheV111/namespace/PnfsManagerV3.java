@@ -21,8 +21,10 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.log4j.Logger;
+import org.dcache.auth.Subjects;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.ListHandler;
+import org.dcache.namespace.FileType;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.ChainedPermissionHandler;
 import org.dcache.namespace.PosixPermissionHandler;
@@ -1185,11 +1187,31 @@ public class PnfsManagerV3 extends CellAdapter
 
     }
 
+    /**
+     * Returns true if and only if pnfsid is of one of the given
+     * types.
+     */
+    private boolean isOfType(PnfsId pnfsid, Set<FileType> types)
+        throws CacheException
+    {
+        /* Assuming the file exists, it must be of some type. Hence we
+         * can avoid the query if types contains all types.
+         */
+        if (types.equals(EnumSet.allOf(FileType.class))) {
+            return true;
+        }
+
+        FileMetaData meta =
+            _nameSpaceProvider.getFileMetaData(Subjects.ROOT, pnfsid);
+        return types.contains(meta.getFileType());
+    }
+
     public void deleteEntry(PnfsDeleteEntryMessage pnfsMessage){
 
         String path = pnfsMessage.getPath();
         PnfsId pnfsId = pnfsMessage.getPnfsId();
         Subject subject = pnfsMessage.getSubject();
+        Set<FileType> allowed = pnfsMessage.getAllowedFileTypes();
 
         try {
 
@@ -1211,15 +1233,25 @@ public class PnfsManagerV3 extends CellAdapter
                  */
                 if( pnfsId != null ) {
                     if( !pnfsIdFromPath.equals(pnfsId) ) {
-                        throw new FileNotFoundCacheException("pnfsid do not corresopnds to provided file");
+                        throw new FileNotFoundCacheException("Pnfsid does not correspond to provided file");
                     }
                 } else {
                 	pnfsId = pnfsIdFromPath;
                 }
 
+                if (!isOfType(pnfsId, allowed)) {
+                    throw new CacheException(CacheException.INVALID_ARGS,
+                                             "Path exists but is not of the expected type");
+                }
+
                 say("delete PNFS entry for "+ path );
                 _nameSpaceProvider.deleteEntry(subject, path);
             } else {
+                if (!isOfType(pnfsId, allowed)) {
+                    throw new CacheException(CacheException.INVALID_ARGS,
+                                             "Path exists but is not of the expected type");
+                }
+
                 say("delete PNFS entry for "+ pnfsId );
                 _nameSpaceProvider.deleteEntry(subject, pnfsId);
             }
