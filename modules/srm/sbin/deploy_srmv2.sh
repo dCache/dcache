@@ -307,8 +307,8 @@ done
 #execute "$cmd"
 
 
-mv ${TOMCAT_PATH}/common/lib/cog-tomcat.jar ${TOMCAT_PATH}/server/lib/
-mv ${TOMCAT_PATH}/common/lib/cog-url.jar ${TOMCAT_PATH}/server/lib/
+mv ${TOMCAT_PATH}/common/lib/cog-tomcat*.jar ${TOMCAT_PATH}/server/lib/
+mv ${TOMCAT_PATH}/common/lib/cog-url*.jar ${TOMCAT_PATH}/server/lib/
 cmd="cp ${CELLS_JARS_DIR}/cells-protocols.jar ${TOMCAT_PATH}/server/lib/"
 execute "$cmd"
 #cmd="cp ${SRM_JARS_DIR}/srm-tomcat.jar ${TOMCAT_PATH}/server/lib/"
@@ -359,7 +359,8 @@ add_classpath()
 
 logmessage INFO "modifying system CLASSPATH in ${SETCLASS_SH} ..."
 add_classpath "server/lib/cells-protocols.jar"
-add_classpath "server/lib/cog-url.jar"
+cog_url_jar=`basename $(ls ${TOMCAT_PATH}/server/lib/cog-url*.jar)`
+add_classpath "server/lib/${cog_url_jar}"
 
 
 if [ -d ${SRM_WEBAPP_DIR} ] ; then
@@ -382,7 +383,7 @@ do
    execute "$cmd"
 done
 
-cmd="mv ${TOMCAT_PATH}/common/lib/cog-axis.jar ${SRM_WEBAPP_DIR}/WEB-INF/lib"
+cmd="mv ${TOMCAT_PATH}/common/lib/cog-axis*.jar ${SRM_WEBAPP_DIR}/WEB-INF/lib"
 #   echo $cmd
 execute "$cmd"
 
