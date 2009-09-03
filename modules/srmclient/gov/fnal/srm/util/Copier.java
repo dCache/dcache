@@ -486,14 +486,10 @@ public class Copier implements Runnable {
                 configuration.getX509_user_cert(), configuration.getX509_user_key(),
                 GSSCredential.INITIATE_AND_ACCEPT);
             }
-            //For new command line option , changes start here 
-	    int streams_num=configuration.getStreams_num();	
-	    boolean passive_server_mode=configuration.isPassiveServerMode(); 
-            if(streams_num == 1){
-	            javaGridFtpCopy(from, to, credential,logger, false, configuration.getDoSendCheckSum(), passive_server_mode);
-	    }else{
-		    javaGridFtpCopy(from, to, credential,logger , true, configuration.getDoSendCheckSum(), passive_server_mode);
-            }
+            javaGridFtpCopy(from, 
+                            to, 
+                            credential,
+                            logger);
             return;
         }
         URL fromURL;
@@ -581,24 +577,52 @@ public class Copier implements Runnable {
     }
     
     public void javaGridFtpCopy(GlobusURL src_url,
-    GlobusURL dst_url,
-    GSSCredential credential,
-    Logger logger,
-    boolean emode,
-    boolean send_checksum,
-    boolean  passive_server_mode) throws Exception {
-        if( ( src_url.getProtocol().equals("gsiftp") ||
-        src_url.getProtocol().equals("gridftp") ) &&
-        dst_url.getProtocol().equals("file")) {
+                                GlobusURL dst_url,
+                                GSSCredential credential,
+                                Logger logger) throws Exception {
+        String serverMode   = configuration.getServerMode();
+        int numberOfStreams = configuration.getStreams_num();
+        if((src_url.getProtocol().equals("gsiftp")||src_url.getProtocol().equals("gridftp")) &&
+           dst_url.getProtocol().equals("file")) {
+            //
+            // case of read 
+            //
+            boolean passive_server_mode=true;
+            if (serverMode==null) { 
+                // this means server_mode option was not specified at all, 
+                // we preserve default behavior (passive, any number of streams)
+                passive_server_mode=true;
+            }
+            else if(serverMode.equalsIgnoreCase("passive")) { 
+                // server_mode specified to passive, make sure number of streams is 1
+                passive_server_mode=true;
+                if (numberOfStreams!=1) { 
+                    logger.elog("server_mode is specified as passive, setting number of streams to 1");
+                    numberOfStreams=1;
+                }
+            }
+            else if(serverMode.equalsIgnoreCase("active")) { 
+                passive_server_mode=false;
+            }
+            else { 
+                throw new IllegalArgumentException("Unknown server_mode option specified \""+serverMode+
+                                                   "\". Allowed options \"passive\" or \"active\"");
+            }
+            boolean emode = (numberOfStreams!=1);
             GridftpClient client;
-            
             client = new GridftpClient(src_url.getHost(),
-            src_url.getPort(),configuration.getTcp_buffer_size(),
-            configuration.getBuffer_size(),credential,logger);
-            client.setStreamsNum(configuration.getStreams_num());
-            client.setChecksum(configuration.getCksmType(),configuration.getCksmValue());
+                                       src_url.getPort(),
+                                       configuration.getTcp_buffer_size(),
+                                       configuration.getBuffer_size(),
+                                       credential,logger);
+            client.setStreamsNum(numberOfStreams);
+            client.setChecksum(configuration.getCksmType(),
+                               configuration.getCksmValue());
             try {
-                client.gridFTPRead(src_url.getPath(),dst_url.getPath(), emode,passive_server_mode );
+                client.gridFTPRead(src_url.getPath(),
+                                   dst_url.getPath(), 
+                                   emode,
+                                   passive_server_mode );
 		num_completed_successfully++;
             }
             finally {
@@ -607,20 +631,48 @@ public class Copier implements Runnable {
             return;
         }
         
-        if(  src_url.getProtocol().equals("file") &&
-        ( dst_url.getProtocol().equals("gsiftp") ||
-        dst_url.getProtocol().equals("gridftp") )
-        ) {
+        if(src_url.getProtocol().equals("file")&&
+           (dst_url.getProtocol().equals("gsiftp")||dst_url.getProtocol().equals("gridftp"))) { 
+            //
+            // case of write 
+            // 
+            boolean passive_server_mode=true;
+            if (serverMode==null) { 
+                // this means server_mode option was not specified at all, 
+                // we preserve default behavior (passive, any number of streams)
+                passive_server_mode=true;
+            }
+            else if(serverMode.equalsIgnoreCase("passive")) { 
+                passive_server_mode=true;
+            }
+            else if(serverMode.equalsIgnoreCase("active")) { 
+                passive_server_mode=false;
+                if (numberOfStreams!=1) { 
+                    logger.elog("server_mode is specified as active, setting number of streams to 1");
+                    numberOfStreams=1;
+                }
+            }
+            else { 
+                throw new IllegalArgumentException("Unknown server_mode option specified \""+serverMode+
+                                                   "\". Allowed options \"passive\" or \"active\"");
+            }
+            boolean emode = (numberOfStreams!=1);
             GridftpClient client;
             client = new GridftpClient(dst_url.getHost(),
-            dst_url.getPort(), configuration.getTcp_buffer_size(),
-            configuration.getBuffer_size(),credential,logger);
-            client.setStreamsNum(configuration.getStreams_num());
-            client.setChecksum(configuration.getCksmType(),configuration.getCksmValue());
+                                       dst_url.getPort(),
+                                       configuration.getTcp_buffer_size(),
+                                       configuration.getBuffer_size(),
+                                       credential,logger);
+            client.setStreamsNum(numberOfStreams);
+            client.setChecksum(configuration.getCksmType(),
+                               configuration.getCksmValue());
             try {
-                client.gridFTPWrite(src_url.getPath(),dst_url.getPath(), emode, send_checksum,passive_server_mode);
+                client.gridFTPWrite(src_url.getPath(),
+                                    dst_url.getPath(),
+                                    emode,
+                                    configuration.getDoSendCheckSum(),
+                                    passive_server_mode);
 		num_completed_successfully++;
-		
             }
             finally {
                 client.close();

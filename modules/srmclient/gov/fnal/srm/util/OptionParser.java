@@ -147,6 +147,8 @@ public class OptionParser {
                 for (String s:names) { 
                         if(s.length()>maxlength)maxlength=s.length();
                 }
+                int indent=maxlength+nblanks+2;
+                int width=80-indent;
                 while(c!=null) { 
                         for (Field field : c.getDeclaredFields()) {
                                 Option option = field.getAnnotation(Option.class);
@@ -166,13 +168,19 @@ public class OptionParser {
                                                                 }
                                                                 for (int i=option.name().length();i<maxlength;i++) sb.append(' ');
                                                                 if (field.getType()!= Boolean.TYPE) {
-                                                                        sb.append(option.description()+"\n");
-                                                                        for (int i=0;i<maxlength+nblanks+2;i++) sb.append(' ');
+                                                                        String lines=splitStringIntoSentences(option.description(),
+                                                                                                              indent,
+                                                                                                              width);
+                                                                        sb.append(lines).append('\n');
+                                                                        for (int i=0;i<indent;i++) sb.append(' ');
                                                                         sb.append("current value is "+(value!=null?value:"null(not set) ")+" "+option.unit()+"\n");
                                                                 }
                                                                 else { 
-                                                                        sb.append(option.description()+"(switch)\n");
-                                                                        for (int i=0;i<maxlength+nblanks+2;i++) sb.append(' ');
+                                                                        String lines=splitStringIntoSentences(option.description()+"(switch)",
+                                                                                                              indent,
+                                                                                                              width);
+                                                                        sb.append(lines).append('\n');
+                                                                        for (int i=0;i<indent;i++) sb.append(' ');
                                                                         sb.append("current value is "+value+"\n");
                                                                 }
                                                         }
@@ -538,5 +546,22 @@ public class OptionParser {
                         }
                 }
                 return result;
+        }
+
+        public static String splitStringIntoSentences(String text, int start, int width){ 
+                if (text.length()<=width) return text;
+                StringBuilder sb = new StringBuilder();
+                String[] words=text.split(" ");
+                int currentLineWidth=0;
+                for (String word: words) { 
+                        currentLineWidth+=word.length()+1;
+                        if (currentLineWidth>width-1) {
+                                sb.append('\n');
+                                for (int j=0;j<start;j++) sb.append(' ');
+                                currentLineWidth=0;
+                        }
+                        sb.append(word).append(' ');
+                }
+                return sb.toString();
         }
 }
