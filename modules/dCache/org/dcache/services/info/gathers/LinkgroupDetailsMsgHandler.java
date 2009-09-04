@@ -6,10 +6,10 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 import org.dcache.services.info.base.BooleanStateValue;
 import org.dcache.services.info.base.IntegerStateValue;
-import org.dcache.services.info.base.State;
 import org.dcache.services.info.base.StateComposite;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
+import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.services.info.base.StringStateValue;
 
 import diskCacheV111.services.space.LinkGroup;
@@ -25,8 +25,12 @@ public class LinkgroupDetailsMsgHandler implements MessageHandler {
 	private static final StatePath SUMMARY_LINKGROUP_BLANKET_AUTH_BY_VO = StatePath.parsePath( "summary.linkgroup.blanket-auth.by-VO");
 	private static final String WILDCARD_ROLE = "*";
 	private static final String WILDCARD_VO = "*";
+
+	final private StateUpdateManager _sum;
 	
-	private State _state = State.getInstance();
+	public LinkgroupDetailsMsgHandler( StateUpdateManager sum) {
+		_sum = sum;
+	}
 
 	public boolean handleMessage(Message messagePayload, long metricLifetime) {
 		
@@ -87,7 +91,7 @@ public class LinkgroupDetailsMsgHandler implements MessageHandler {
 			}
 		}
 			
-		_state.updateState(update);
+		_sum.enqueueUpdate( update);
 		
 		return true;
 	}

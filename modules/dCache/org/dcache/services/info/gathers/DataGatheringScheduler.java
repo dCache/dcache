@@ -7,6 +7,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
+import org.dcache.services.info.base.StateUpdateManager;
 
 /**
  * This thread is responsible for scheduling various data-gathering activity.
@@ -173,7 +174,12 @@ public class DataGatheringScheduler implements Runnable {
 		}
 	}
 	
-	
+	private final StateUpdateManager _sum;
+
+	public DataGatheringScheduler( StateUpdateManager sum) {
+	    _sum = sum;
+	}
+
 	/**
 	 * Main loop for this thread triggering DataGatheringActivity.
 	 */
@@ -377,16 +383,16 @@ public class DataGatheringScheduler implements Runnable {
 	 */
 	public void addDefaultActivity( StateExhibitor exhibitor) {
 
-		addActivity( new SingleMessageDga( "PoolManager", "psux ls pool", new StringListMsgHandler("pools"), 60));
-		addActivity( new SingleMessageDga( "PoolManager", "psux ls pgroup", new StringListMsgHandler("poolgroups"), 60));
-		addActivity( new SingleMessageDga( "PoolManager", "psux ls unit", new StringListMsgHandler("units"), 60));
-		addActivity( new SingleMessageDga( "PoolManager", "psux ls ugroup", new StringListMsgHandler("unitgroups"), 60));
+		addActivity( new SingleMessageDga( "PoolManager", "psux ls pool", new StringListMsgHandler( _sum, "pools"), 60));
+		addActivity( new SingleMessageDga( "PoolManager", "psux ls pgroup", new StringListMsgHandler( _sum, "poolgroups"), 60));
+		addActivity( new SingleMessageDga( "PoolManager", "psux ls unit", new StringListMsgHandler( _sum, "units"), 60));
+		addActivity( new SingleMessageDga( "PoolManager", "psux ls ugroup", new StringListMsgHandler( _sum, "unitgroups"), 60));
 		
-		addActivity( new SingleMessageDga( "PoolManager", "xcm ls", new PoolCostMsgHandler(), 60));
+		addActivity( new SingleMessageDga( "PoolManager", "xcm ls", new PoolCostMsgHandler( _sum), 60));
 
-		addActivity( new SingleMessageDga( "PoolManager", "psux ls link -x -resolve", new LinkInfoMsgHandler(), 60));
+		addActivity( new SingleMessageDga( "PoolManager", "psux ls link -x -resolve", new LinkInfoMsgHandler( _sum), 60));
 
-		LoginBrokerLsMsgHandler msgHandler = new LoginBrokerLsMsgHandler();
+		LoginBrokerLsMsgHandler msgHandler = new LoginBrokerLsMsgHandler( _sum);
 		addActivity( new SingleMessageDga( "LoginBroker",     "ls -binary", msgHandler, 60));
 		addActivity( new SingleMessageDga( "srm-LoginBroker", "ls -binary", msgHandler, 60));
 		
@@ -398,17 +404,17 @@ public class DataGatheringScheduler implements Runnable {
 		addActivity( new SrmSpaceDetailsDga( 300)); // every five minutes, as this may be a heavy-weight operation.
 		
 		// Pick up domains
-		addActivity( new SingleMessageDga( "topo", "gettopomap", new TopoMapHandler(), 120));
+		addActivity( new SingleMessageDga( "topo", "gettopomap", new TopoMapHandler( _sum), 120));
 		// Pick up cell information
-		addActivity( new CellInfoDga( exhibitor, new CellInfoMsgHandler()));
+		addActivity( new CellInfoDga( exhibitor, new CellInfoMsgHandler( _sum)));
 
 		// Pick up a domain's routing information.
-		addActivity( new RoutingMgrDga( exhibitor, new RoutingMgrMsgHandler()));
+		addActivity( new RoutingMgrDga( exhibitor, new RoutingMgrMsgHandler( _sum)));
 
-		addActivity( new ListBasedMessageDga( exhibitor, new StatePath("pools"),      "PoolManager", "psux ls pool",   new PoolInfoMsgHandler()));
-		addActivity( new ListBasedMessageDga( exhibitor, new StatePath("poolgroups"), "PoolManager", "psux ls pgroup", new PoolGroupInfoMsgHandler()));
-		addActivity( new ListBasedMessageDga( exhibitor, new StatePath("units"),      "PoolManager", "psux ls unit",   new UnitInfoMsgHandler()));
-		addActivity( new ListBasedMessageDga( exhibitor, new StatePath("unitgroups"), "PoolManager", "psux ls ugroup", new UGroupInfoMsgHandler()));
+		addActivity( new ListBasedMessageDga( exhibitor, new StatePath("pools"),      "PoolManager", "psux ls pool",   new PoolInfoMsgHandler( _sum)));
+		addActivity( new ListBasedMessageDga( exhibitor, new StatePath("poolgroups"), "PoolManager", "psux ls pgroup", new PoolGroupInfoMsgHandler( _sum)));
+		addActivity( new ListBasedMessageDga( exhibitor, new StatePath("units"),      "PoolManager", "psux ls unit",   new UnitInfoMsgHandler( _sum)));
+		addActivity( new ListBasedMessageDga( exhibitor, new StatePath("unitgroups"), "PoolManager", "psux ls ugroup", new UGroupInfoMsgHandler( _sum)));
 	}
 
 

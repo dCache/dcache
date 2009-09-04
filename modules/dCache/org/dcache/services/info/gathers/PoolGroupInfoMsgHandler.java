@@ -2,8 +2,9 @@ package org.dcache.services.info.gathers;
 
 import org.apache.log4j.Logger;
 import org.dcache.services.info.base.StateComposite;
-import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StatePath;
+import org.dcache.services.info.base.StateUpdate;
+import org.dcache.services.info.base.StateUpdateManager;
 
 public class PoolGroupInfoMsgHandler extends CellMessageHandlerSkel {
 
@@ -11,7 +12,12 @@ public class PoolGroupInfoMsgHandler extends CellMessageHandlerSkel {
 
 	private static final StatePath POOLGROUPS_PATH = new StatePath( "poolgroups");
 
-	public void process(Object msgPayload, long metricLifetime) {
+	public PoolGroupInfoMsgHandler(StateUpdateManager sum) {
+		super(sum);
+	}
+
+	@Override
+    public void process(Object msgPayload, long metricLifetime) {
 
 		_log.info( "processing new poolgroup information");
 		

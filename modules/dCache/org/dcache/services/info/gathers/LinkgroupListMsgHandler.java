@@ -4,7 +4,7 @@ import org.apache.log4j.Logger;
 import org.dcache.services.info.base.StateComposite;
 import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StatePath;
-import org.dcache.services.info.base.State;
+import org.dcache.services.info.base.StateUpdateManager;
 
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.services.space.message.GetLinkGroupNamesMessage;
@@ -21,7 +21,11 @@ public class LinkgroupListMsgHandler implements MessageHandler {
 	private static Logger _log = Logger.getLogger( LinkgroupListMsgHandler.class);
 	private static final StatePath LINKGROUPS_PATH = new StatePath("linkgroups");
 	
-	private State _state = State.getInstance();
+	final private StateUpdateManager _sum;
+	
+	public LinkgroupListMsgHandler( StateUpdateManager sum) {
+		_sum = sum;
+	}
 
 	public boolean handleMessage(Message messagePayload, long metricLifetime) {
 		
@@ -48,7 +52,7 @@ public class LinkgroupListMsgHandler implements MessageHandler {
 		}
 			
 		if( update != null)
-			_state.updateState(update);
+			_sum.enqueueUpdate( update);
 		else
 			_log.info( "received GetLinkGroupNamesMessage with no linkgroups listed");
 		

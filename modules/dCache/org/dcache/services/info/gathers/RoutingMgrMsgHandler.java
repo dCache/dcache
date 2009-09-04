@@ -8,6 +8,7 @@ import org.apache.log4j.Logger;
 import org.dcache.services.info.base.StateComposite;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
+import org.dcache.services.info.base.StateUpdateManager;
 
 /**
  * This class handles incoming messages from the RoutingMgr cell of some specific domain.  The messages are the
@@ -69,6 +70,11 @@ public class RoutingMgrMsgHandler extends CellMessageHandlerSkel {
 	
 	private static final StatePath DOMAINS_PATH = new StatePath( "domains");
 	
+
+	public RoutingMgrMsgHandler(StateUpdateManager sum) {
+		super(sum);
+	}
+
 
 	@Override
 	public void process(Object msgPayload, long metricLifetime) {

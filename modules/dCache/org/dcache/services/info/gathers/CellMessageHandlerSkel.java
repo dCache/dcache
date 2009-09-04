@@ -8,10 +8,10 @@ import java.util.TimeZone;
 import org.apache.log4j.Logger;
 import org.dcache.services.info.InfoProvider;
 import org.dcache.services.info.base.IntegerStateValue;
-import org.dcache.services.info.base.State;
 import org.dcache.services.info.base.StateComposite;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
+import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.services.info.base.StringStateValue;
 
 import dmg.cells.nucleus.CellMessage;
@@ -59,10 +59,14 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
 				new StringStateValue( _iso8601DateFormat.format( theTime), lifetime));
 	}
 
-	
-	private final State _state = State.getInstance();
-	private final MessageHandlerChain _msgHandlerChain = InfoProvider.getInstance().getMessageHandlerChain();
-	
+
+	private final StateUpdateManager _sum;
+    private final MessageHandlerChain _msgHandlerChain = InfoProvider.getInstance().getMessageHandlerChain();
+
+	public CellMessageHandlerSkel( StateUpdateManager sum) {
+		_sum = sum;
+	}
+
 	/**
 	 *  Process the information payload.  The metricLifetime gives how long
 	 *  the metrics should last, in seconds.
@@ -105,7 +109,7 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
 		if( _log.isDebugEnabled())
 			_log.debug( "adding update to state's to-do stack with " + update.count() + " updates for " + this.getClass().getSimpleName());
 
-		_state.updateState(update);
+		_sum.enqueueUpdate( update);
 	}
 	
 	

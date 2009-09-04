@@ -1,144 +1,145 @@
 package org.dcache.services.info.base;
 
-import java.lang.Runnable;
 import java.util.Date;
+import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.log4j.Logger;
 
 /**
- * The StateMaintainer is a thread that maintains the state.  It wakes up when updates to
- * the dCache state are needed, based on the stack of pending StateUpdates.
- * 
- * @author Paul Millar <paul.millar@desy.de>
+ * The StateMaintainer class provides the machinery for processing
+ * StateUpdate objects independently of whichever Thread created them. It is
+ * also responsible for purging those metrics that have expired.
  */
-public class StateMaintainer implements Runnable {
-	
-	private static final Logger _log = Logger.getLogger(StateMaintainer.class);
-	
-	private static StateMaintainer _instance = null;
-	private static Thread _smThread;
-	
-	public static StateMaintainer getInstance() {
-		if( _instance == null)
-			createNewMaintainer();
-		
-		return _instance;
-	}
-	
-	public static void createNewMaintainer() {
-		_instance = new StateMaintainer();
-		
-		_smThread = new Thread( _instance, "StateMaintainer"); 
-		_smThread.start();
-	}
+public class StateMaintainer implements StateUpdateManager {
 
-	volatile private boolean _isAwake = true;
-	volatile private boolean _shouldQuit = false;
-	
-	public void run() {
-		
-		State state = State.getInstance();
-		
-		_log.info( "StateMaintainer thread has started");
-	
-		while( !_shouldQuit) {
-			
-			// check for delete data.
-			_log.debug( "checking for expired metrics.");
-			state.removeExpiredMetrics();
+    private static final Logger _log = Logger.getLogger( StateMaintainer.class);
 
-			// Process pending updates
-			_log.debug( "checking for pending StateUpdates in update stack.");
-			while( state.countPendingUpdates() > 0) {
-				if( _log.isDebugEnabled())
-					_log.debug( "Iterating, " + state.countPendingUpdates() + " remaining");
-				state.processUpdate( state.popUpdate());
-			}
+    /** Our scheduler */
+    final private ScheduledExecutorService _scheduler;
 
-			_log.debug( "Done ... going to sleep");
-			
-			sleep();
-		}
+    /** The number of pending requests, queued up in the scheduler */
+    final private AtomicInteger _pendingRequestCount = new AtomicInteger();
 
-	}
-	
+    /** Our link to the business logic for update dCache state */
+    private StateCaretaker _caretaker;
 
-	/**
-	 *   Wait to be woken up.  This wait may timeout if metrics are to
-	 *   be deleted in the future.
-	 */
-	private void sleep() {
-		long sleepTime;
-		
-		// calculate how long to sleep for
-		Date nextExp = State.getInstance().getEarliestMetricExpiryDate();
-		
-		if( nextExp != null) {			
-			Date now = new Date();
-			
-			if( nextExp.before(now))
-				return;
-		
-			sleepTime = nextExp.getTime() - now.getTime(); 
-		} else
-			sleepTime = 0; // wait until notified.
-		
-		synchronized( this) {
-			
-			if( State.getInstance().countPendingUpdates() > 0) {
-				_log.debug( "We have work to do, Batman, another " + State.getInstance().countPendingUpdates() +" updates");
-				return;
-			}
+    /**
+     * The Future for the next scheduled metric purge, or null if no such
+     * activity has been scheduled
+     */
+    private ScheduledFuture<?> _metricExpiryFuture;
+    private Date _metricExpiryDate;
 
-			if( _log.isDebugEnabled())
-				_log.debug( "StateMaintainer is going to sleep for "+sleepTime+"ms");			
-			
-			_isAwake = false;
-	
-			try {
-				this.wait( sleepTime);
-			} catch( InterruptedException e) {
-				_log.info( "StateMaintainer thread was interrupted.");
-			}
-			_isAwake = true;
-			_log.info( "StateMaintainer awoke.");
-		}
-		
-	}
-	
-	
-	
-	/**
-	 *  Wakes up the StateMaintainer thread.  This forces the maintainer thread
-	 *  to recalculate its activities, based on any new activity.
-	 */
-	protected void wakeUp() {
-		
-		synchronized( this) {
-			if ( _isAwake) {
-				_log.debug( "not waking StateMaintainer, already awake.");
-			} else {
-				_log.debug( "waking up StateMaintainer.");
-				this.notify();
-			}
-		}
-	}
-	
-	/**
-	 * Instruct the StateMaintainer thread to shutdown.  Wait for this to happen.
-	 */
-	public void shutdown() {
-		_shouldQuit = true;
-		
-		wakeUp();
-		
-		_log.debug( "waiting for StateMaintainer to finish...");
-		
-		try {
-			_smThread.join();
-		} catch ( InterruptedException e) {
-			Thread.currentThread().interrupt();
-		}
-	}
-	
+    /**
+     * Create a new StateMaintainer with a link to some StateCaretaker
+     * 
+     * @param caretaker
+     *            the StateCaretaker that will undertake the business logic
+     *            of updating dCache state.
+     */
+    public StateMaintainer( final StateCaretaker caretaker) {
+        _caretaker = caretaker;
+        _scheduler = Executors.newSingleThreadScheduledExecutor();
+    }
+
+    /**
+     * Alter which StateCaretaker the StateMaintainer will use.
+     * 
+     * @param caretaker
+     */
+    synchronized void setStateCaretaker( final StateCaretaker caretaker) {
+        _caretaker = caretaker;
+    }
+
+    @Override
+    public int countPendingUpdates() {
+        return _pendingRequestCount.get();
+    }
+
+    @Override
+    public synchronized void enqueueUpdate( final StateUpdate pendingUpdate) {
+        _pendingRequestCount.incrementAndGet();
+        _scheduler.submit( new Runnable() {
+            @Override
+            public void run() {
+                _caretaker.processUpdate( pendingUpdate);
+                _pendingRequestCount.decrementAndGet();
+                checkScheduledExpungeActivity();
+            }
+        });
+    }
+
+    @Override
+    public synchronized void shutdown() throws InterruptedException {
+        List<Runnable> unprocessed = _scheduler.shutdownNow();
+        if( !unprocessed.isEmpty())
+            _log.info( "Shutting down with " + unprocessed.size() +
+                       " pending updates");
+    }
+
+    /**
+     * Check StateCaretaker to obtain the earliest time when a metric will
+     * expire. If this value has changed then reschedule the metric expiry
+     * activity.
+     * <p>
+     * It is safe to call this method whenever the value of
+     * {@link StateCaretaker#getEarliestMetricExpiryDate()} could possible
+     * have changed.
+     */
+    synchronized void checkScheduledExpungeActivity() {
+        Date earliestMetricExpiry = _caretaker.getEarliestMetricExpiryDate();
+
+        if( earliestMetricExpiry == null && _metricExpiryDate == null)
+            return;
+
+        if( _metricExpiryDate == null) {
+            scheduleMetricExpunge( earliestMetricExpiry);
+        } else if( !_metricExpiryDate.equals( earliestMetricExpiry)) {
+            _metricExpiryFuture.cancel( false);
+            scheduleMetricExpunge( earliestMetricExpiry);
+        }
+    }
+
+    /**
+     * Create a new scheduled task to expunge metrics. This method doesn't
+     * cancel an existing scheduled task and will always schedule activity.
+     * <p>
+     * This method should be called only when we know the value from
+     * {@link StateCaretaker#getEarliestMetricExpiryDate()} has changed.
+     */
+    synchronized void scheduleMetricExpunge() {
+        scheduleMetricExpunge( _caretaker.getEarliestMetricExpiryDate());
+    }
+
+    /**
+     * If whenExpunge is not null then schedule a task to call
+     * {@link StateCaretaker#removeExpiredMetrics()} then call
+     * {@link #scheduleMetricExpunge()} to schedule the next metric purge
+     * activity. If whenExpunge is null then nothing happens.
+     * 
+     * @param whenExpunge
+     *            some time in the future to schedule a task or null.
+     */
+    private void scheduleMetricExpunge( final Date whenExpunge) {
+        _metricExpiryDate = whenExpunge;
+
+        if( whenExpunge == null) {
+            _metricExpiryFuture = null;
+            return;
+        }
+
+        long delay = whenExpunge.getTime() - System.currentTimeMillis();
+
+        _metricExpiryFuture = _scheduler.schedule( new Runnable() {
+            public void run() {
+                _caretaker.removeExpiredMetrics();
+                scheduleMetricExpunge();
+            }
+        }, delay, TimeUnit.MILLISECONDS);
+    }
 }

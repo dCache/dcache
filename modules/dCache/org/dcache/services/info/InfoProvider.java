@@ -9,10 +9,12 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 import org.dcache.services.info.base.BadStatePathException;
 import org.dcache.services.info.base.State;
+import org.dcache.services.info.base.StateCaretaker;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StateMaintainer;
 import org.dcache.services.info.base.StateObservatory;
 import org.dcache.services.info.base.StatePath;
+import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.services.info.conduits.Conduit;
 import org.dcache.services.info.conduits.XmlConduit;
 import org.dcache.services.info.gathers.DataGatheringScheduler;
@@ -65,7 +67,9 @@ public class InfoProvider extends CellAdapter {
 	private Map<String,StateSerialiser> _availableSerialisers;
 	private StatePath _startSerialisingFrom;
 
-    private final StateObservatory _observatory;
+	private final State _state = new State();
+    private final StateObservatory _observatory = _state;
+    private final StateUpdateManager _sum;
 
 	/**
 	 * Correctly report our version and revision information.
@@ -96,14 +100,10 @@ public class InfoProvider extends CellAdapter {
         pw.print( _scheduler.listActivity().size());
         pw.println( " data-gathering activities.");
 
-        pw.print( _observatory.listStateWatcher().length);
-        pw.println( " state watchers.");
-
         pw.print( _availableSerialisers.size());
         pw.println( " available serialisers.");
 
-        pw.print( State.getInstance().countPendingUpdates());
-        pw.println( " pending updates to state.");
+        _state.getInfo( pw);
     }
 
 
@@ -123,9 +123,9 @@ public class InfoProvider extends CellAdapter {
 			_log.warn( "Duplicate InfoProvider detected.");
 		}
 
-		State state = State.getInstance();
-        StateExhibitor exhibitor = state;
-        _observatory = state;
+		_sum = new StateMaintainer( _state);
+		
+        StateExhibitor exhibitor = _state;
 
 		/**
 		 * Build our list of possible serialisers.
@@ -155,7 +155,12 @@ public class InfoProvider extends CellAdapter {
     public void cleanUp() {
 		stopConduits();
 		_scheduler.shutdown();
-		StateMaintainer.getInstance().shutdown();
+		
+		try {
+            _sum.shutdown();
+        } catch (InterruptedException e) {
+            _log.error( "Interrupted whilst waiting for StateUpdateMaintainer to stop.");
+        }
 	}
 
 
@@ -245,7 +250,7 @@ public class InfoProvider extends CellAdapter {
 	 */
 	void startDgaScheduler( StateExhibitor exhibitor)
 	{
-	    _scheduler = new DataGatheringScheduler();
+	    _scheduler = new DataGatheringScheduler( _sum);
 
 	    _scheduler.addDefaultActivity( exhibitor);
 
@@ -260,7 +265,7 @@ public class InfoProvider extends CellAdapter {
 	 * set of MessageHandler subclass instances.
 	 */
 	private void buildMessageHandlerChain() {
-		_msgHandlerChain = new MessageHandlerChain();
+		_msgHandlerChain = new MessageHandlerChain( _sum);
 
 		_msgHandlerChain.addDefaultHandlers();
 	}

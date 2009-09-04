@@ -3,6 +3,7 @@ package org.dcache.services.info.gathers;
 import org.apache.log4j.Logger;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
+import org.dcache.services.info.base.StateUpdateManager;
 
 
 /**
@@ -15,9 +16,14 @@ public class UGroupInfoMsgHandler extends CellMessageHandlerSkel {
 	private static Logger _log = Logger.getLogger( UGroupInfoMsgHandler.class);
 	
 	private static final StatePath UNITGROUP_PATH = new StatePath( "unitgroups");
-	
-	public void process(Object msgPayload, long metricLifetime) {
-		
+
+	public UGroupInfoMsgHandler(StateUpdateManager sum) {
+		super(sum);
+	}
+
+	@Override
+    public void process(Object msgPayload, long metricLifetime) {
+
 		if( !msgPayload.getClass().isArray()) {
 			_log.error( "unexpected received non-array payload");
 			return;			

@@ -1,17 +1,24 @@
 package org.dcache.services.info.gathers;
 
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
+
 import org.apache.log4j.Logger;
+import org.dcache.services.info.base.FloatingPointStateValue;
+import org.dcache.services.info.base.IntegerStateValue;
+import org.dcache.services.info.base.StatePath;
+import org.dcache.services.info.base.StateUpdate;
+import org.dcache.services.info.base.StateUpdateManager;
+import org.dcache.services.info.base.StringStateValue;
 import org.dcache.services.info.stateInfo.SpaceInfo;
 
 import diskCacheV111.vehicles.CostModulePoolInfoTable;
 import diskCacheV111.pools.PoolCostInfo;
+import diskCacheV111.pools.PoolCostInfo.NamedPoolQueueInfo;
 import diskCacheV111.pools.PoolCostInfo.PoolQueueInfo;
 import diskCacheV111.pools.PoolCostInfo.PoolSpaceInfo;
-import diskCacheV111.pools.PoolCostInfo.NamedPoolQueueInfo;
 
-import java.util.*;
-
-import org.dcache.services.info.base.*;
 
 /**
  * This class processing incoming CellMessages that contain CostModulePoolInfoTable
@@ -22,8 +29,13 @@ public class PoolCostMsgHandler extends CellMessageHandlerSkel {
 
 	private static Logger _log = Logger.getLogger( PoolCostMsgHandler.class);
 
-	public void process(Object msgPayload, long msgDeliveryPeriod) {
-		
+	public PoolCostMsgHandler(StateUpdateManager sum) {
+		super(sum);
+	}
+
+	@Override
+    public void process(Object msgPayload, long msgDeliveryPeriod) {
+
 		long metricLifetime = (long) (msgDeliveryPeriod * 2.5); // Give metrics a lifetime of 2.5* message deliver period
 		
 		if( !(msgPayload instanceof CostModulePoolInfoTable)) {

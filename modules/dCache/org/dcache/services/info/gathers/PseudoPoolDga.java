@@ -3,10 +3,10 @@ package org.dcache.services.info.gathers;
 import java.util.Random;
 import java.util.Date;
 
-import org.dcache.services.info.base.State;
 import org.dcache.services.info.base.StateComposite;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
+import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.services.info.stateInfo.SpaceInfo;
 
 
@@ -75,6 +75,8 @@ public class PseudoPoolDga implements Schedulable {
 	private final long _maxDelay;
 	private final Random _rnd = new Random();
 	
+	private final StateUpdateManager _sum;
+
 	/**
 	 * Create a new fake pool, injecting information roughly periodically
 	 * (5% spread) and randomly increasing (and purging) space usage.
@@ -82,10 +84,11 @@ public class PseudoPoolDga implements Schedulable {
 	 * @param how often (on average) update metrics should be sent, in milliseconds
 	 * @param the total capacity of this pool, in GiB
 	 */
-	public PseudoPoolDga( String poolName, int updatePeriod, long capacity) {
-		
+	public PseudoPoolDga( StateUpdateManager sum, String poolName, int updatePeriod, long capacity) {
+
 		_poolName = poolName;
-		
+		_sum = sum;
+
 		StatePath pools = new StatePath( "pools");
 		_ourSpacePath = pools.newChild(poolName).newChild("space");
 		
@@ -127,7 +130,7 @@ public class PseudoPoolDga implements Schedulable {
 		
 		_spaceInfo.addMetrics(update, _ourSpacePath, _metricLifetime);
 		
-		State.getInstance().updateState(update);
+		_sum.enqueueUpdate( update);
 	}
 	
 	/**
@@ -159,9 +162,9 @@ public class PseudoPoolDga implements Schedulable {
 			_spaceInfo.updatePrecious( -size);
 		}
 	}
-	
 
-	public String toString()
+	@Override
+    public String toString()
 	{
 		return this.getClass().getSimpleName() + "[" + _poolName + "]";
 	}

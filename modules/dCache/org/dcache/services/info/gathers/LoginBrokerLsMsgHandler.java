@@ -10,8 +10,10 @@ import org.dcache.services.info.base.FloatingPointStateValue;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
+import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.services.info.base.StringStateValue;
 
+import dmg.cells.nucleus.UOID;
 import dmg.cells.services.login.LoginBrokerInfo;
 
 /**
@@ -26,7 +28,13 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 
 	private static final StatePath PATH_TO_DOORS = new StatePath( "doors");
 
-	public void process(Object msgPayload, long metricLifetime) {
+
+	public LoginBrokerLsMsgHandler(StateUpdateManager sum) {
+		super(sum);
+	}
+
+	@Override
+    public void process(Object msgPayload, long metricLifetime) {
 
 		if( !msgPayload.getClass().isArray()) {
 			_log.error( "unexpected received non-array payload");

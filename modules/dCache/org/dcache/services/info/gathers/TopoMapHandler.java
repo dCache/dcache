@@ -3,6 +3,7 @@ package org.dcache.services.info.gathers;
 import org.apache.log4j.Logger;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
+import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.services.info.base.StringStateValue;
 
 import dmg.cells.network.CellDomainNode;
@@ -20,6 +21,9 @@ public class TopoMapHandler extends CellMessageHandlerSkel {
 	
 	private static final StatePath DOMAINS_PATH = new StatePath( "domains");
 
+	public TopoMapHandler(StateUpdateManager sum) {
+		super(sum);
+	}
 
 	@Override
 	public void process(Object msgPayload, long metricLifetime) {

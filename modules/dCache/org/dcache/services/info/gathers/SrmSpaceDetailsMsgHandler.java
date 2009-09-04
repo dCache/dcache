@@ -5,10 +5,10 @@ import java.util.Set;
 
 import org.apache.log4j.Logger;
 import org.dcache.services.info.base.IntegerStateValue;
-import org.dcache.services.info.base.State;
 import org.dcache.services.info.base.StateComposite;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
+import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.services.info.base.StringStateValue;
 
 import diskCacheV111.services.space.Space;
@@ -21,8 +21,12 @@ public class SrmSpaceDetailsMsgHandler implements MessageHandler {
 	private static final StatePath SPACES_PATH = StatePath.parsePath("reservations");
 	private static final StatePath LINKGROUPS = new StatePath("linkgroups");
 	private static final String SRM_ROLE_WILDCARD = "*";
+
+	final private StateUpdateManager _sum;
 	
-	private State _state = State.getInstance();
+	public SrmSpaceDetailsMsgHandler( StateUpdateManager sum) {
+		_sum = sum;
+	}
 
 	public boolean handleMessage(Message messagePayload, long metricLifetime) {
 		
@@ -73,7 +77,7 @@ public class SrmSpaceDetailsMsgHandler implements MessageHandler {
 			addVoInfo( update, thisSpacePath.newChild( "authorisation"), space.getVoGroup(), space.getVoRole(), metricLifetime);
 		}
 			
-		_state.updateState(update);
+		_sum.enqueueUpdate( update);
 		
 		return true;
 	}

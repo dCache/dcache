@@ -5,6 +5,7 @@ import org.dcache.services.info.base.BooleanStateValue;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
+import org.dcache.services.info.base.StateUpdateManager;
 
 public class PoolInfoMsgHandler extends CellMessageHandlerSkel {
 	
@@ -12,7 +13,12 @@ public class PoolInfoMsgHandler extends CellMessageHandlerSkel {
 
 	private static final StatePath POOLS_PATH = new StatePath( "pools");
 
-	public void process(Object msgPayload, long metricLifetime) {
+	public PoolInfoMsgHandler(StateUpdateManager sum) {
+		super(sum);
+	}
+
+	@Override
+    public void process(Object msgPayload, long metricLifetime) {
 
 		StateUpdate update = new StateUpdate();
 			
@@ -32,7 +38,7 @@ public class PoolInfoMsgHandler extends CellMessageHandlerSkel {
 		Long heartBeat = (Long) array[4];
 		Boolean isReadOnly = (Boolean) array [5];
 		
-		String poolName = (String) array[0].toString();
+		String poolName = array[0].toString();
 
 		StatePath thisPoolPath = POOLS_PATH.newChild( poolName);
 			

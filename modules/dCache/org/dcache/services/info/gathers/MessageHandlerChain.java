@@ -9,6 +9,7 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.dcache.services.info.InfoProvider;
+import org.dcache.services.info.base.StateUpdateManager;
 
 import diskCacheV111.vehicles.Message;
 import dmg.cells.nucleus.CellMessage;
@@ -38,6 +39,12 @@ public class MessageHandlerChain {
 
 	private List<MessageHandler> _messageHandler = new LinkedList<MessageHandler>();
 	
+	final private StateUpdateManager _sum;
+
+	public MessageHandlerChain( StateUpdateManager sum) {
+	    _sum = sum;
+	}
+
 	/**
 	 * For each message we send, a small amount of metadata is recorded (when it was sent and a long).
 	 * The long is so, when the return message is received, we can pass this parameter on
@@ -204,9 +211,9 @@ public class MessageHandlerChain {
 	 * Add a standard set of handlers for reply Messages
 	 */
 	public void addDefaultHandlers() {
-		addMessageHandler( new LinkgroupListMsgHandler());
-		addMessageHandler( new LinkgroupDetailsMsgHandler());
-		addMessageHandler( new SrmSpaceDetailsMsgHandler());
+		addMessageHandler( new LinkgroupListMsgHandler( _sum));
+		addMessageHandler( new LinkgroupDetailsMsgHandler( _sum));
+		addMessageHandler( new SrmSpaceDetailsMsgHandler( _sum));
 	}
 
 }

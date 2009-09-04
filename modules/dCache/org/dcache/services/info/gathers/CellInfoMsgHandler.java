@@ -4,6 +4,7 @@ import org.apache.log4j.Logger;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
+import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.services.info.base.StringStateValue;
 
 import dmg.cells.nucleus.CellInfo;
@@ -20,7 +21,11 @@ public class CellInfoMsgHandler extends CellMessageHandlerSkel {
 	private static Logger _log = Logger.getLogger( CellInfoMsgHandler.class);
 	
 	private static final StatePath DOMAINS_PATH = new StatePath( "domains");
-	
+
+	public CellInfoMsgHandler(StateUpdateManager sum) {
+		super(sum);
+	}
+
 	@Override
 	public void process(Object msgPayload, long metricLifetime) {
 		

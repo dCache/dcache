@@ -3,6 +3,7 @@ package org.dcache.services.info.gathers;
 import org.dcache.services.info.base.StateComposite;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
+import org.dcache.services.info.base.StateUpdateManager;
 
 /**
  * A generic routine for processing an incoming CellMessage.  The message is expected to
@@ -19,11 +20,13 @@ public class StringListMsgHandler extends CellMessageHandlerSkel {
 	 * @param path a String representation of the path under which incoming elements
 	 * will be added
 	 */
-	public StringListMsgHandler( String path) {
+	public StringListMsgHandler( StateUpdateManager sum, String path) {
+		super( sum);
 		_path = new StatePath(path);
 	}
 	
-	public void process( Object msgPayload, long metricLifetime) {		
+	@Override
+    public void process( Object msgPayload, long metricLifetime) {		
 		
 		Object array[] = (Object []) msgPayload;
 		

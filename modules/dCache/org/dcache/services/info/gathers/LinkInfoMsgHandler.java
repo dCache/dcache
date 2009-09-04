@@ -7,8 +7,10 @@ import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StateComposite;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
+import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.services.info.base.StringStateValue;
 
+import dmg.cells.nucleus.UOID;
 
 /**
  * A class to handle reply messages from PoolManager's "psux ls -x -resolve" command.
@@ -21,6 +23,11 @@ public class LinkInfoMsgHandler extends CellMessageHandlerSkel {
 
 	private static final int EXPECTED_ARRAY_SIZE=13;
 
+	public LinkInfoMsgHandler(StateUpdateManager sum) {
+		super(sum);
+	}
+
+	@Override
 	public void process(Object msgPayload, long metricLifetime) {
 		
 		StateUpdate update = null;

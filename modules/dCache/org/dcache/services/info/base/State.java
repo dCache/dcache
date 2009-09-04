@@ -3,7 +3,6 @@ package org.dcache.services.info.base;
 import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.Date;
-import java.util.Stack;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -35,6 +34,8 @@ import org.apache.log4j.Logger;
  * some synchronous classes also use this to build lists from dCache current
  * state (e.g., to send a message requesting data to each currently known
  * pool).
+ * 
+ * @author Paul Millar <paul.millar@desy.de>
  */
 public class State implements StateCaretaker, StateExhibitor, StateObservatory {
 
@@ -46,49 +47,26 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
 
     private static final Logger _log = Logger.getLogger( State.class);
 
-    /** The singleton instance of State */
-    private static State _instance;
-
-    /** Static initialisation of static members */
-    static {
-        /** Create our singleton instance */
-        _instance = new State();
-    }
-
-    /**
-     * Discover the single instance of State
-     *
-     * @return the State object.
-     */
-    public static State getInstance() {
-        return _instance;
-    }
-
     /**
      * Class member variables...
      */
 
-    /** Our current state */
+    /** The root branch of the dCache state */
     private final StateComposite _state;
 
     /** All registered StateWatchers */
     private final Collection<StateWatcherInfo> _watchers = new CopyOnWriteArrayList<StateWatcherInfo>();
-    // private final Collection<StateWatcher> _watchers = new
-    // CopyOnWriteArrayList<StateWatcher>();
 
     /** Our read/write lock */
     private final ReadWriteLock _stateRWLock = new ReentrantReadWriteLock();
     private final Lock _stateReadLock = _stateRWLock.readLock();
     private final Lock _stateWriteLock = _stateRWLock.writeLock();
 
-    /** Our list of pending Updates */
-    private final Stack<StateUpdate> _pendingUpdates = new Stack<StateUpdate>();
+    // TODO: remove this completely. It's only needed to support derived
+    // metrics
+    private StateUpdateManager _updateManager;
 
-    /**
-     * Our private State constructor.
-     */
-    private State() {
-
+    public State() {
         // Build our persistent State metadata tree, with default contents
         StatePersistentMetadata metadata = new StatePersistentMetadata();
         metadata.addDefault();
@@ -98,21 +76,14 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
     }
 
     /**
-     * Record a set of new metric values that are to be incorporated within
-     * dCache's current state. This is achieved by placing the StateUpdate on
-     * a Stack of pending updates and, if necessary, waking up the separate
-     * StateMaintainer thread.
-     *
-     * @param update
-     *            the set of changes that should be made.
+     * Record a new StateUpdateManager. This will be used to enqueue
+     * StateUpdates from secondary information providers.
+     * 
+     * @param sum
+     *            the StateUpdateManager
      */
-    public void updateState( StateUpdate update) {
-
-        synchronized (_pendingUpdates) {
-            _pendingUpdates.push( update);
-        }
-
-        StateMaintainer.getInstance().wakeUp();
+    public void setStateUpdateManager( StateUpdateManager sum) {
+        _updateManager = sum;
     }
 
     /**
@@ -123,16 +94,6 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
     @Override
     public Date getEarliestMetricExpiryDate() {
         return _state.getEarliestChildExpiryDate();
-    }
-    
-    public int countPendingUpdates() {
-        synchronized( _pendingUpdates) {
-            return _pendingUpdates.size();
-        }
-    }
-    
-    public StateUpdate popUpdate() {
-        return _pendingUpdates.pop();
     }
 
     /**
@@ -152,6 +113,13 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
      */
     @Override
     public void processUpdate( StateUpdate update) {
+
+        // It's just possible that we might be called with null; ignore these
+        // spurious calls.
+        if( update == null) {
+            _log.warn( "processUpdate called with null StateUpdate");
+            return;
+        }
 
         if( update.count() == 0) {
             _log.warn( "StateUpdate with zero updates encountered");
@@ -177,9 +145,11 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
                             transition.dumpContents());
 
             StateUpdate resultingUpdate = checkWatchers( transition);
-            
+
+            // TODO: don't enqueue the update but merge with existing StateTransition and
+            // look for additional StateWatchers.
             if( resultingUpdate != null)
-                _pendingUpdates.add(  resultingUpdate);
+                _updateManager.enqueueUpdate( resultingUpdate);
 
         } finally {
             _stateReadLock.unlock();
@@ -214,9 +184,11 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
      * <p>
      * If the StatePathPredicate matches some significant change within the
      * StateTransition, the corresponding StateWatcher's
-     * <code>trigger()</code> method is called.
+     * <code>trigger()</code> method is called. The trigger method is
+     * provided with a StateUpdate within which it may register additional
+     * metrics.
      * <p>
-     *
+     * 
      * @param transition
      *            The StateTransition to apply
      * @return a StateUpdate containing new metrics, or null if there are no
@@ -509,4 +481,16 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
         }
     }
 
+    /**
+     * Emit output suitable for the info cell command.
+     * 
+     * @param pw
+     */
+    public void getInfo( PrintWriter pw) {
+        pw.print( listStateWatcher().length);
+        pw.println( " state watchers.");
+
+        pw.print( _updateManager.countPendingUpdates());
+        pw.println( " pending updates to state.");
+    }
 }
