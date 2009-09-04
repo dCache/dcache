@@ -14,9 +14,10 @@ package org.dcache.srm;
  */
 
 public interface RemoveFileCallbacks {
-	public void RemoveFileSucceeded();
-	public void RemoveFileFailed(String reason);
-        public void FileNotFound(String error);
-	public void Exception(Exception e);
-	public void Timeout();
+    public void RemoveFileSucceeded();
+    public void RemoveFileFailed(String reason);
+    public void FileNotFound(String error);
+    public void Exception(Exception e);
+    public void Timeout();
+    public void PermissionDenied();
 }

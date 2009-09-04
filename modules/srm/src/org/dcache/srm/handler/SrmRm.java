@@ -15,6 +15,8 @@
 
 package org.dcache.srm.handler;
 
+import java.util.concurrent.CountDownLatch;
+
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
@@ -199,7 +201,7 @@ public class SrmRm {
 	private class RemoveFile implements RemoveFileCallbacks {
 		
 		public TReturnStatus status;
-		private boolean     done = false;
+            private CountDownLatch _done = new CountDownLatch(1);
 		private boolean success  = true;
 		public RemoveFile( ) {
 		}
@@ -248,24 +250,23 @@ public class SrmRm {
 			logger.warn("Timeout");
 			done();
 		}
+
+            public void PermissionDenied() 
+            {
+                status = new TReturnStatus(TStatusCode.SRM_AUTHORIZATION_FAILURE,
+                                           "Permission denied");
+                done();
+            }
 		
-		public void waitToComplete() throws
-			InterruptedException {
-			long start_time = System.currentTimeMillis();
-			synchronized(this) {
-				while(true) {
-					if(done) {
-						return;
-					}
-					wait(3600);
-				}
-			}
-		}
+            public void waitToComplete() 
+                throws InterruptedException 
+            {
+                _done.await();
+            }
 		
-		public  synchronized void done() {
-			done = true;
-			notifyAll();
-		}
-		
+            public void done() 
+            {
+                _done.countDown();
+            }
 	};
 }

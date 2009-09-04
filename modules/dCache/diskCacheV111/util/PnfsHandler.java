@@ -57,6 +57,15 @@ public class PnfsHandler
     private static final Logger _logNameSpace =
         Logger.getLogger("logger.org.dcache.namespace." + PnfsHandler.class.getName());
 
+    private static CellStub createStub(CellPath path)
+    {
+        CellStub stub = new CellStub();
+        stub.setDestinationPath(path);
+        stub.setTimeout(DEFAULT_PNFS_TIMEOUT);
+        stub.setRetryOnNoRouteToCell(true);
+        return stub;
+    }
+
     @Deprecated
     public PnfsHandler(CellEndpoint endpoint,
                        CellPath pnfsManagerPath,
@@ -76,17 +85,24 @@ public class PnfsHandler
 
     public PnfsHandler(CellPath pnfsManagerPath)
     {
-        this(pnfsManagerPath, "<client>");
+        this(createStub(pnfsManagerPath));
     }
 
     public PnfsHandler(CellPath pnfsManagerPath,
                        String poolName)
     {
+        this(createStub(pnfsManagerPath), poolName);
+    }
+
+    public PnfsHandler(CellStub stub)
+    {
+        this(stub, "<client>");
+    }
+
+    public PnfsHandler(CellStub stub, String poolName)
+    {
+        _cellStub = stub;
         _poolName = poolName;
-        _cellStub = new CellStub();
-        _cellStub.setDestinationPath(pnfsManagerPath);
-        _cellStub.setTimeout(DEFAULT_PNFS_TIMEOUT);
-        _cellStub.setRetryOnNoRouteToCell(true);
     }
 
     /**

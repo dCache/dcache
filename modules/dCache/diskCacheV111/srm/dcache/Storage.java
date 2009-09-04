@@ -79,6 +79,7 @@ import dmg.cells.nucleus.ExceptionEvent;
 import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.NoRouteToCellException;
+import org.dcache.cells.CellStub;
 
 import dmg.util.Args;
 
@@ -249,10 +250,10 @@ public class Storage
     private String _poolManagerName;
     private String _pnfsManagerName;
     private CellPath _poolMgrPath;
+    private CellStub _pnfsStub;
     private PnfsHandler _pnfs;
     private PermissionHandler permissionHandler;
     String _hosts[];
-    private CellPath _pnfsPath;
     private int __pnfsTimeout = 60 ;
     private String loginBrokerName="LoginBroker";
     private CellPath loginBrokerPath;
@@ -364,12 +365,18 @@ public class Storage
 
         _args      = getArgs() ;
 
+        __pnfsTimeout =getIntOption("pnfs-timeout",__pnfsTimeout);
         _poolManagerName = getOption("poolManager", "PoolManager" );
         _pnfsManagerName = getOption("pnfsManager" , "PnfsManager") ;
         _poolMgrPath     = new CellPath( _poolManagerName ) ;
-        _pnfsPath = new CellPath( _pnfsManagerName );
-        _pnfs = new PnfsHandler( this, _pnfsPath ) ;
-        permissionHandler = new PermissionHandler(this,_pnfsPath);
+        _pnfsStub = new CellStub();
+        _pnfsStub.setDestination(_pnfsManagerName);
+        _pnfsStub.setCellEndpoint(this);
+        _pnfsStub.setTimeout(__pnfsTimeout * 1000);
+        _pnfsStub.setRetryOnNoRouteToCell(true);
+        _pnfs = new PnfsHandler(_pnfsStub);
+        permissionHandler = 
+            new PermissionHandler(this, new CellPath(_pnfsManagerName));
         InetAddress[] addresses = InetAddress.getAllByName(
                 InetAddress.getLocalHost().getHostName());
 
@@ -408,8 +415,6 @@ public class Storage
                 throw e;
             }
         }
-        __pnfsTimeout =getIntOption("pnfs-timeout",__pnfsTimeout);
-        _pnfs.setPnfsTimeout(__pnfsTimeout*1000);
         __poolManagerTimeout =getIntOption("pool-manager-timeout",
             __poolManagerTimeout);
 
@@ -2641,16 +2646,16 @@ public class Storage
     }
 
     public void removeFile(final SRMUser user,
-            final String path,
-            RemoveFileCallbacks callbacks) {
+                           final String path,
+                           RemoveFileCallbacks callbacks) 
+    {
         _log.debug("Storage.removeFile");
-        String actualPnfsPath= srm_root+"/"+path;
-        RemoveFileCompanion.removeFile(
-                (AuthorizationRecord)user,
-                actualPnfsPath,
-                callbacks,
-                this,
-                config.isRemoveFile());
+
+        RemoveFileCompanion.removeFile((AuthorizationRecord)user,
+                                       getFullPath(path),
+                                       callbacks,
+                                       _pnfsStub,
+                                       this);
     }
 
     public void removeDirectory(SRMUser user, Vector tree)
