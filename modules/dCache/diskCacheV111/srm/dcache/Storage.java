@@ -194,6 +194,7 @@ import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.FileExistsCacheException;
 import org.dcache.auth.persistence.AuthRecordPersistenceManager;
 import org.dcache.auth.Subjects;
 import org.dcache.commons.stats.RequestCounters;
@@ -2727,296 +2728,62 @@ public class Storage
         }
     }
 
-    public void moveEntry(final SRMUser user,
-			  final String from,
-			  final String to)  throws SRMException {
-        _log.debug("Storage.moveEntry");
-        AuthorizationRecord duser = (AuthorizationRecord) user;
-        String actualFromPnfsPath= srm_root+"/"+from;
-        String actualToPnfsPath= srm_root+"/"+to;
-        FsPath fromFsPath           = new FsPath(actualFromPnfsPath);
-        String fromPnfsPath         = fromFsPath.toString();
-        PnfsGetStorageInfoMessage  storageInfoMessage  =null;
-        PnfsGetFileMetaDataMessage fileMetadataMessage =null;
-        diskCacheV111.util.FileMetaData toFmd          =null;
-        diskCacheV111.util.FileMetaData fromFmd        =null;
-        diskCacheV111.util.FileMetaData parentFmd      =null;
-        StorageInfo storageInfo = null;
-        PnfsId pnfsId;
-        FsPath toFsPath           = new FsPath(actualToPnfsPath);
-        String toPnfsPath         = toFsPath.toString();
-
-	try {
-            storageInfoMessage = _pnfs.getStorageInfoByPath(actualFromPnfsPath);
-        }
-	catch(CacheException ce1 ) {
-            try {
-                fileMetadataMessage = _pnfs.getFileMetaDataByPath(actualFromPnfsPath);
-            }
-	    catch(CacheException e2) {
-                _log.warn("moveEntry: \"from\" path does not exist");
-                throw new SRMInvalidPathException(actualFromPnfsPath+" (source) does not exist", e2);
-            }
-        }
-        if ( storageInfoMessage  != null) {
-            storageInfo = storageInfoMessage.getStorageInfo();
-            fromFmd     = storageInfoMessage.getMetaData();
-            pnfsId      = storageInfoMessage.getPnfsId();
-        }
-	else if ( fileMetadataMessage != null) {
-            fromFmd = fileMetadataMessage.getMetaData();
-            pnfsId  = fileMetadataMessage.getPnfsId();
-        }
-	else {
-            _log.warn("moveEntry: \"from\" path, failed to get metadata - file does not exist");
-            throw new SRMInvalidPathException(actualFromPnfsPath+
-                " (source) failed to get metadata - file does not exist");
-        }
-        int uid = fromFmd.getUid();
-        int gid = fromFmd.getGid();
-        diskCacheV111.util.FileMetaData.Permissions perms =
-                fromFmd.getUserPermissions();
-        int permissions = (perms.canRead()    ? 4 : 0) |
-	    (perms.canWrite()   ? 2 : 0) |
-	    (perms.canExecute() ? 1 : 0);
-        permissions <<=3;
-        perms = fromFmd.getGroupPermissions();
-        permissions |=    (perms.canRead()    ? 4 : 0) |
-	    (perms.canWrite()   ? 2 : 0) |
-	    (perms.canExecute() ? 1 : 0);
-        permissions <<=3;
-        perms = fromFmd.getWorldPermissions();
-        permissions |=    (perms.canRead()    ? 4 : 0) |
-	    (perms.canWrite()   ? 2 : 0) |
-	    (perms.canExecute() ? 1 : 0);
-
-        if (permissions == 0 ) {
-            _log.warn("moveEntry: cannot move source \""+
-                actualFromPnfsPath+"\": Permission denied ");
-            throw new SRMException(" don't have write access to source ");
-        }
-
-        if (duser.getUid() == uid ) {
-            if (!Permissions.userCanWrite(permissions)) {
-                _log.warn("moveEntry: cannot move source  \""+actualFromPnfsPath+
-                    "\": Permission denied");
-                throw new SRMException(" don't have write access to source");
-            }
-        } else if ( duser.getGid() == gid ) {
-            if (!Permissions.groupCanWrite(permissions) ) {
-                _log.warn("moveEntry: cannot move source \""+actualFromPnfsPath+
-                    "\": Permission denied");
-                throw new SRMException(" don't have group write access to source");
-            }
-        } else {
-            if (!Permissions.worldCanWrite(permissions) ) {
-                _log.warn("moveEntry: cannot move source \""+actualFromPnfsPath+
-                    "\": Permission denied");
-                throw new SRMException(" don't have world write access to source");
-            }
-        }
-
-        if ( fromPnfsPath.equals(toPnfsPath) ) {
-            _log.info("moveEntry: \"to\" is identical to \"from\", return success");
-            return;
-        }
-
-        storageInfoMessage  = null;
-        fileMetadataMessage = null;
-        storageInfo = null;
-        PnfsId toPnfsId;
-        PnfsId parentPnfsId;
-        boolean toExists=true;
-
+    public void moveEntry(SRMUser user, String from, String to)  
+        throws SRMException 
+    {
+        Subject subject = Subjects.getSubject((AuthorizationRecord) user);
+        PnfsHandler handler = new PnfsHandler(_pnfs, subject);
+        String fromPath = getFullPath(from);
+        String toPath = getFullPath(to);
 
         try {
-            storageInfoMessage = _pnfs.getStorageInfoByPath(actualToPnfsPath);
-        }
-	catch(CacheException ce1 ) {
             try {
-                fileMetadataMessage = _pnfs.getFileMetaDataByPath(actualToPnfsPath);
-            }
-	    catch(CacheException e2) {
-            }
-        }
-        if ( storageInfoMessage  != null) {
-            storageInfo = storageInfoMessage.getStorageInfo();
-            toFmd       = storageInfoMessage.getMetaData();
-            toPnfsId    = storageInfoMessage.getPnfsId();
-        }
-	else if ( fileMetadataMessage != null) {
-            toFmd   = fileMetadataMessage.getMetaData();
-            toPnfsId = fileMetadataMessage.getPnfsId();
-        }
-	else {
-            toExists=false;
-        }
-
-        //
-        // Logic is this :
-        //                 destination may be non-existing file with valid path
-        //                 destination may be existing directory
-        //
-
-        if (toExists) {
-            if (toFmd.isRegularFile()) {
-                _log.warn("moveEntry: cannot move to existing file \""+
-                    actualToPnfsPath+"\"");
-                throw new SRMDuplicationException(" cannot move to existing file \""+
-                    actualToPnfsPath+"\"");
-            }
-        }
-	else {
-            //
-            // check parent
-            //
-            FsPath toParentFsPath = new FsPath(actualToPnfsPath);
-            toParentFsPath.add("..");
-            String toParent = toParentFsPath.toString();
-            fileMetadataMessage=null;
-            storageInfoMessage=null;
-            try
-	    {
-                storageInfoMessage = _pnfs.getStorageInfoByPath(toParent);
-            }
-	    catch(CacheException ce1 ) {
-                try {
-                    fileMetadataMessage = _pnfs.getFileMetaDataByPath(toParent);
+                FileAttributes attr = 
+                    handler.getFileAttributes(toPath, EnumSet.of(FileAttribute.TYPE));
+                if (attr.getFileType() != FileType.DIR) {
+                    throw new SRMDuplicationException("Destination exists");
                 }
-		catch(CacheException e2) {
-                    _log.error("moveEntry: neither destination no its parent path exist "+
-                        actualToPnfsPath);
-                    throw new SRMInvalidPathException("neither destination no its " +
-                                                      "parent path exist "+actualToPnfsPath, e2);
-                }
-            }
-            if (storageInfoMessage != null) {
-                storageInfo  = storageInfoMessage.getStorageInfo();
-                toFmd        = storageInfoMessage.getMetaData();
-                toPnfsId     = storageInfoMessage.getPnfsId();
-            }
-	    else if (fileMetadataMessage != null) {
-                toFmd    = fileMetadataMessage.getMetaData();
-                toPnfsId = fileMetadataMessage.getPnfsId();
-            }
-	    else {
-                _log.warn("moveEntry: "+actualToPnfsPath+" does not exist and its path " +
-                    "does not exist");
-                throw new SRMInvalidPathException(" path or a component of the " +
-                    "destination path does not exist");
-            }
-            if (toFmd.isRegularFile()) {
-                _log.warn("moveEntry: cannot move to existing file \""+actualToPnfsPath+"\"");
-                throw new SRMException(" cannot move to existing file \""+
-                    actualToPnfsPath+"\"");
+                 
+                File fromFile = new File(fromPath);
+                File toFile = new File(new File(toPath), fromFile.getName());
+                toPath = toFile.toString();
+                to = to + "/" + fromFile.getName();
+            } catch (FileNotFoundCacheException e) {
+                /* Destination name does not exist; not a problem.
+                 */
             }
 
-        }
-        //
-        // check we can write into destination
-        //
+            /* In case the source and destination names are identical, we
+             * silently ignore the request.
+             */
+            if (fromPath.equals(toPath)) {
+                _log.info("moveEntry: Source and destination paths are identical: " + fromPath);
+                return;
+            }
 
-        int to_uid = fromFmd.getUid();
-        int to_gid = fromFmd.getGid();
-        diskCacheV111.util.FileMetaData.Permissions to_perms =
-                toFmd.getUserPermissions();
-        permissions = (to_perms.canRead()    ? 4 : 0) |
-                (to_perms.canWrite()   ? 2 : 0) |
-                (to_perms.canExecute() ? 1 : 0);
-        permissions <<=3;
-        to_perms = toFmd.getGroupPermissions();
-        permissions |=    (to_perms.canRead()    ? 4 : 0) |
-                (to_perms.canWrite()   ? 2 : 0) |
-                (to_perms.canExecute() ? 1 : 0);
-        permissions <<=3;
-        to_perms = toFmd.getWorldPermissions();
-        permissions |=    (to_perms.canRead()    ? 4 : 0) |
-                (to_perms.canWrite()   ? 2 : 0) |
-                (to_perms.canExecute() ? 1 : 0);
-
-        if (permissions == 0 ) {
-            _log.warn("moveEntry: cannot move to directory \""+actualToPnfsPath+
-                "\": Permission denied");
-            throw new SRMException(" don't have write access to destination");
-        }
-
-        if (duser.getUid() == uid ) {
-            if (!Permissions.userCanWrite(permissions)) {
-                _log.warn("moveEntry: cannot move directory to  \""+actualToPnfsPath+
-                    "\": Permission denied");
-                throw new SRMException(" don't have write access to destination");
-            }
-        }
-	else if ( duser.getGid() == gid ) {
-            if (!Permissions.groupCanWrite(permissions)) {
-                _log.warn("moveEntry: cannot move to directory \""+actualToPnfsPath+
-                    "\": Permission denied");
-                throw new SRMException(" don't have group write access to destination");
-            }
-        }
-	else {
-            if (!Permissions.worldCanWrite(permissions)) {
-                _log.warn("moveEntry: cannot move to directory \""+actualToPnfsPath+
-                    "\": Permission denied");
-                throw new SRMException(" don't have world write access to destination");
-            }
-        }
-        java.io.File fromFile = new File(actualFromPnfsPath);
-        java.io.File toFile   = new File(actualToPnfsPath);
-        String newName = actualToPnfsPath;
-        String[] dirlist;
-        if ( toExists ) {
-            //
-            // the output is directory and contains the same file
-            //
-            dirlist = toFile.list();
-            for (int i=0; i<dirlist.length;i++) {
-                if (dirlist[i].compareTo(fromFile.getName())==0)  {
-                    _log.warn("moveEntry: cannot overwrite existing entry \""+
-                        actualToPnfsPath+"/"+fromFile.getName());
-                    throw new SRMException(" cannot overwrite existing entry \""+
-                        actualToPnfsPath+"/"+fromFile.getName());
-                }
-            }
-        }
-        if (toExists) {
-            newName += "/"+fromFile.getName();
-        }
-        PnfsRenameMessage renameRequest =
-            new PnfsRenameMessage(pnfsId,newName, false);
-        CellMessage answer=null;
-        Object o=null;
-        try {
-            answer = sendAndWait( new CellMessage(
-				      new CellPath("PnfsManager") ,
-				      renameRequest) ,
-				  __pnfsTimeout*1000);
-        } catch (NoRouteToCellException e) {
-            throw new SRMException("PnfsManager is unavailable: " + e.getMessage(), e);
-        } catch (InterruptedException e) {
-            throw new SRMException("Request to PnfsManager got interrupted", e);
-        }
-        if (answer == null ||
-                (o = answer.getMessageObject()) == null ||
-                !(o instanceof PnfsRenameMessage )) {
-            _log.warn("moveEntry: sent  PnfsRenameMessage to pnfs, received "+o+
-                " back");
-            throw new SRMInternalErrorException(
-                "Can't create, communication with pnfs failure");
-        }
-	else {
-            PnfsRenameMessage reply = (PnfsRenameMessage) answer.getMessageObject();
-            if (reply.getReturnCode() != 0) {
-                _log.warn("moveEntry: mv failed, got error return code from pnfs");
-                _log.warn("MoveEntry: "+reply.getPnfsPath()+" "+reply.getPnfsId()+" "+
-                    reply.getErrorObject());
-                throw new SRMInternalErrorException(
-                    "Failed to move, got error return code from pnfs"+
-                    reply.getErrorObject());
-            }
+            handler.renameEntry(fromPath, toPath, false);
+        } catch (FileNotFoundCacheException e) {
+            throw new SRMInvalidPathException("No such file or directory", e);
+        } catch (FileExistsCacheException e) {
+            throw new SRMDuplicationException("Destination exists", e);
+        } catch (NotDirCacheException e) {
+            /* The parent of the target name did not exist or was not
+             * a directory.
+             */
+            String parent = (new File(to)).getParent();
+            throw new SRMInvalidPathException("No such directory: " + 
+                                              parent, e);
+        } catch (PermissionDeniedCacheException e) {
+            throw new SRMException("Permission denied");
+        } catch (TimeoutCacheException e) {
+            _log.error("Failed to rename " + fromPath + " due to timeout");
+            throw new SRMInternalErrorException("Internal name space timeout");
+        } catch (CacheException e) {
+            _log.error("Failed to rename " + fromPath + ": " + e.getMessage());
+            throw new SRMException(String.format("Rename failed [rc=%d,msg=%s]",
+                                                 e.getRc(), e.getMessage()));
         }
     }
-
 
     public boolean canRead(SRMUser user, String fileId, FileMetaData fmd) {
         return _canRead(user,fileId,fmd);

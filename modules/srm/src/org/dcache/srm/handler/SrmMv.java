@@ -23,6 +23,7 @@ import org.dcache.srm.v2_2.SrmMvRequest;
 import org.dcache.srm.v2_2.SrmMvResponse;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMDuplicationException;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidPathException;
@@ -127,6 +128,9 @@ public class SrmMv {
 		    }
 		    else if ( e instanceof  SRMInvalidPathException ) { 
 			response.getReturnStatus().setStatusCode(TStatusCode.SRM_INVALID_PATH);
+		    }
+		    else if ( e instanceof SRMAuthorizationException ) { 
+			response.getReturnStatus().setStatusCode(TStatusCode.SRM_AUTHORIZATION_FAILURE);
 		    }
 		    else if ( e instanceof SRMException ) { 
 			response.getReturnStatus().setStatusCode(TStatusCode.SRM_FAILURE);

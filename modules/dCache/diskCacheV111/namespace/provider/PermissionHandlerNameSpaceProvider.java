@@ -12,6 +12,7 @@ import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.NotDirCacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.vehicles.StorageInfo;
@@ -190,8 +191,14 @@ public class PermissionHandlerNameSpaceProvider
 
         File newFile = new File(newName);
         File newParent = newFile.getParentFile();
-        PnfsId newParentId =
-            super.pathToPnfsid(subject, newParent.toString(), true);
+        PnfsId newParentId;
+        try {
+            newParentId = 
+                super.pathToPnfsid(subject, newParent.toString(), true);
+        } catch (FileNotFoundCacheException e) {
+            throw new NotDirCacheException("No such directory: " + 
+                                           newParent.toString());            
+        }
 
         FileAttributes parentAttributes =
             getFileAttributesForPermissionHandler(parentId);

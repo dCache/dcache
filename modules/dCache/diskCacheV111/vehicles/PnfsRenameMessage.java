@@ -20,6 +20,12 @@ public class PnfsRenameMessage extends PnfsMessage
         setReplyRequired(true);
     }
 
+    public PnfsRenameMessage(String path, String newName, boolean overwrite) 
+    {
+        this((PnfsId) null, newName, overwrite);
+        setPnfsPath(path);
+    }
+
     public String newName() {
         return _newName;
     }

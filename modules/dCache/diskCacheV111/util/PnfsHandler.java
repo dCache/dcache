@@ -299,6 +299,12 @@ public class PnfsHandler
         pnfsRequest(new PnfsRenameMessage(pnfsId, newName, overwrite));
     }
 
+    public void renameEntry(String path, String newName, boolean overwrite)
+        throws CacheException
+    {
+        pnfsRequest(new PnfsRenameMessage(path, newName, overwrite));
+    }
+
    public PnfsCreateEntryMessage createPnfsEntry( String path , int uid , int gid , int mode )
           throws CacheException                {
 
