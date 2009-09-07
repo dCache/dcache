@@ -29,8 +29,8 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 	private static final StatePath PATH_TO_DOORS = new StatePath( "doors");
 
 
-	public LoginBrokerLsMsgHandler(StateUpdateManager sum) {
-		super(sum);
+	public LoginBrokerLsMsgHandler(StateUpdateManager sum, MessageMetadataRepository<UOID> msgMetaRepo) {
+		super(sum, msgMetaRepo);
 	}
 
 	@Override

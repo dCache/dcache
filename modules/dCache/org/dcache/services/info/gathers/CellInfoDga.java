@@ -1,7 +1,6 @@
 package org.dcache.services.info.gathers;
 
 import org.apache.log4j.Logger;
-import org.dcache.services.info.InfoProvider;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 
@@ -12,7 +11,7 @@ public class CellInfoDga extends SkelListBasedActivity {
 
 	private static final Logger _log = Logger.getLogger( CellInfoDga.class);
 
-    private final MessageHandlerChain _msgHandlerChain = InfoProvider.getInstance().getMessageHandlerChain();
+	private final MessageSender _sender;
 
 	/**
 	 *  Use our own list timings.  Enforce a minimum delay of two minutes between successive
@@ -24,11 +23,12 @@ public class CellInfoDga extends SkelListBasedActivity {
 
 	private final CellMessageAnswerable _handler;
 
-	public CellInfoDga( StateExhibitor exhibitor, CellMessageAnswerable handler) {
+	public CellInfoDga( StateExhibitor exhibitor, MessageSender sender, CellMessageAnswerable handler) {
 
 		super( exhibitor, new StatePath( "domains"), MIN_LIST_REFRESH_PERIOD, SUCC_MSG_DELAY);
 
 		_handler = handler;
+		_sender = sender;
 	}
 
 	/**
@@ -50,7 +50,7 @@ public class CellInfoDga extends SkelListBasedActivity {
 		if( _log.isInfoEnabled())
 			_log.info( "sending message getcellinfos to System cell on domain " + domainName);
 
-		_msgHandlerChain.sendCellMsg( systemCellPath, "getcellinfos", _handler, getMetricLifetime());
+		_sender.sendMessage( getMetricLifetime(), _handler, systemCellPath, "getcellinfos");
 	}
 
 	/**

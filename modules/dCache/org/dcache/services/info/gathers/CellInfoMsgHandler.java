@@ -9,6 +9,7 @@ import org.dcache.services.info.base.StringStateValue;
 
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellVersion;
+import dmg.cells.nucleus.UOID;
 
 /**
  * Process an incoming message from issuing the command "getcellinfos" on the System
@@ -22,8 +23,8 @@ public class CellInfoMsgHandler extends CellMessageHandlerSkel {
 	
 	private static final StatePath DOMAINS_PATH = new StatePath( "domains");
 
-	public CellInfoMsgHandler(StateUpdateManager sum) {
-		super(sum);
+	public CellInfoMsgHandler(StateUpdateManager sum, MessageMetadataRepository<UOID> msgMetaRepo) {
+		super(sum, msgMetaRepo);
 	}
 
 	@Override

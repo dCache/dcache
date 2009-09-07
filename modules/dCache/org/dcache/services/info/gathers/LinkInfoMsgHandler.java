@@ -23,8 +23,8 @@ public class LinkInfoMsgHandler extends CellMessageHandlerSkel {
 
 	private static final int EXPECTED_ARRAY_SIZE=13;
 
-	public LinkInfoMsgHandler(StateUpdateManager sum) {
-		super(sum);
+	public LinkInfoMsgHandler(StateUpdateManager sum, MessageMetadataRepository<UOID> msgMetaRepo) {
+		super(sum, msgMetaRepo);
 	}
 
 	@Override

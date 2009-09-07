@@ -6,6 +6,7 @@ import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.services.info.base.StringStateValue;
 
+import dmg.cells.nucleus.UOID;
 
 /**
  * Process incoming Object array (*shudder*) and update state.
@@ -15,11 +16,10 @@ import org.dcache.services.info.base.StringStateValue;
 public class UnitInfoMsgHandler extends CellMessageHandlerSkel {
 
 	private static Logger _log = Logger.getLogger( UnitInfoMsgHandler.class);
-
 	private static final StatePath UNITS_PATH = new StatePath( "units");
-	
-	public UnitInfoMsgHandler(StateUpdateManager sum) {
-		super(sum);
+
+	public UnitInfoMsgHandler(StateUpdateManager sum, MessageMetadataRepository<UOID> msgMetaRepo) {
+		super(sum, msgMetaRepo);
 	}
 
 	@Override

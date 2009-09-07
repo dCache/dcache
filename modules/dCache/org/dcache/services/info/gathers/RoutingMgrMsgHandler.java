@@ -10,6 +10,8 @@ import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StateUpdateManager;
 
+import dmg.cells.nucleus.UOID;
+
 /**
  * This class handles incoming messages from the RoutingMgr cell of some specific domain.  The messages are the
  * result of an "ls -x" admin command, which returns a dump of that RoutingMgr's current routing knowledge.
@@ -71,8 +73,8 @@ public class RoutingMgrMsgHandler extends CellMessageHandlerSkel {
 	private static final StatePath DOMAINS_PATH = new StatePath( "domains");
 	
 
-	public RoutingMgrMsgHandler(StateUpdateManager sum) {
-		super(sum);
+	public RoutingMgrMsgHandler(StateUpdateManager sum, MessageMetadataRepository<UOID> msgMetaRepo) {
+		super(sum, msgMetaRepo);
 	}
 
 

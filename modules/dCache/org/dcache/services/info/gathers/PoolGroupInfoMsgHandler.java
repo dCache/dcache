@@ -6,14 +6,16 @@ import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StateUpdateManager;
 
+import dmg.cells.nucleus.UOID;
+
 public class PoolGroupInfoMsgHandler extends CellMessageHandlerSkel {
 
 	private static Logger _log = Logger.getLogger( PoolGroupInfoMsgHandler.class);
 
 	private static final StatePath POOLGROUPS_PATH = new StatePath( "poolgroups");
 
-	public PoolGroupInfoMsgHandler(StateUpdateManager sum) {
-		super(sum);
+	public PoolGroupInfoMsgHandler(StateUpdateManager sum, MessageMetadataRepository<UOID> msgMetaRepo) {
+		super(sum, msgMetaRepo);
 	}
 
 	@Override

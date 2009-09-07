@@ -1,6 +1,5 @@
 package org.dcache.services.info.gathers;
 
-import org.dcache.services.info.InfoProvider;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 
@@ -22,9 +21,9 @@ public class ListBasedMessageDga extends SkelListBasedActivity {
 	private final CellPath _cellPath;
 	private final String _messagePrefix;
 	private final CellMessageAnswerable _handler;
-	
-	private final MessageHandlerChain _msgHandlerChain = InfoProvider.getInstance().getMessageHandlerChain();
-	
+
+	private final MessageSender _sender;
+
 	/* The following two are only needed for toString() */
 	private final String _cellName;
 	private final String _parentPath;
@@ -37,9 +36,7 @@ public class ListBasedMessageDga extends SkelListBasedActivity {
 	 * @param message the message to send.
 	 * @param handler the cell handler for the return msg payload.
 	 */
-	public ListBasedMessageDga( StateExhibitor exhibitor, StatePath parent,
-	                            String cellName, String message,
-	                            CellMessageAnswerable handler) {
+	public ListBasedMessageDga( StateExhibitor exhibitor, MessageSender sender, StatePath parent, String cellName, String message, CellMessageAnswerable handler) {
 
 		super( exhibitor, parent);
 
@@ -49,6 +46,7 @@ public class ListBasedMessageDga extends SkelListBasedActivity {
 		_handler = handler;
 		
 		_cellPath = new CellPath( cellName);
+		_sender = sender;
 	}
 
 	/**
@@ -70,7 +68,7 @@ public class ListBasedMessageDga extends SkelListBasedActivity {
 		sb.append( " ");
 		sb.append( item);
 
-		_msgHandlerChain.sendCellMsg( _cellPath, sb.toString(), _handler, getMetricLifetime());
+		_sender.sendMessage( getMetricLifetime(), _handler, _cellPath, sb.toString());
 	}
 
 	@Override

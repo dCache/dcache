@@ -5,6 +5,7 @@ import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StateUpdateManager;
 
+import dmg.cells.nucleus.UOID;
 
 /**
  * Process an incoming message from PoolManager about a specific UnitGroup.
@@ -17,8 +18,8 @@ public class UGroupInfoMsgHandler extends CellMessageHandlerSkel {
 	
 	private static final StatePath UNITGROUP_PATH = new StatePath( "unitgroups");
 
-	public UGroupInfoMsgHandler(StateUpdateManager sum) {
-		super(sum);
+	public UGroupInfoMsgHandler(StateUpdateManager sum, MessageMetadataRepository<UOID> msgMetaRepo) {
+		super(sum, msgMetaRepo);
 	}
 
 	@Override

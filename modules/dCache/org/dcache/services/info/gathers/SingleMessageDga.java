@@ -1,7 +1,5 @@
 package org.dcache.services.info.gathers;
 
-import org.dcache.services.info.InfoProvider;
-
 import diskCacheV111.vehicles.Message;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
@@ -32,7 +30,7 @@ public class SingleMessageDga extends SkelPeriodicActivity {
 	private String _requestString;
 	private Message _requestMessage;
 	private CellMessageAnswerable _handler;
-	private MessageHandlerChain _msgHandlerChain = InfoProvider.getInstance().getMessageHandlerChain();
+	private final MessageSender _sender;
 
 	/**
 	 * Create a new Single-Message DataGatheringActivity. 
@@ -40,7 +38,7 @@ public class SingleMessageDga extends SkelPeriodicActivity {
 	 * @param request the message string,
 	 * @param interval how often (in seconds) this should be sent.
 	 */
-	public SingleMessageDga( String cellName, String request, CellMessageAnswerable handler, long interval)
+	public SingleMessageDga( MessageSender sender, String cellName, String request, CellMessageAnswerable handler, long interval)
 	{
 		super( interval);
 		
@@ -48,6 +46,7 @@ public class SingleMessageDga extends SkelPeriodicActivity {
 		_requestMessage = null;
 		_requestString = request;
 		_handler = handler;
+		_sender = sender;
 	}
 	
 	/**
@@ -56,7 +55,7 @@ public class SingleMessageDga extends SkelPeriodicActivity {
 	 * @param request the Message to send
 	 * @param interval how often (in seconds) this message should be sent.
 	 */
-	public SingleMessageDga( String cellName, Message request, long interval)
+	public SingleMessageDga( MessageHandlerChain mhc, String cellName, Message request, long interval)
 	{
 		super( interval);
 		
@@ -64,24 +63,27 @@ public class SingleMessageDga extends SkelPeriodicActivity {
 		_requestMessage = request;
 		_requestString = null;
 		// reply messages are handled by a MessageHandler chain.
+		_sender = mhc;
 	}
 
 	
 	/**
 	 * Send messages to query current list of pools.
 	 */
-	public void trigger() {
+	@Override
+    public void trigger() {
 		super.trigger();
 		
 		if( _requestMessage != null) {
 			CellMessage msg = new CellMessage( _cp, _requestMessage);
-			InfoProvider.getInstance().sendMessage( msg);
+			_sender.sendMessage( 0, null, msg);
 		} else
-			_msgHandlerChain.sendCellMsg( _cp, _requestString, _handler, super.metricLifetime());
+			_sender.sendMessage( super.metricLifetime(), _handler, _cp, _requestString);
 	}
 	
 	
-	public String toString()
+	@Override
+    public String toString()
 	{
 		String msgName;
 		

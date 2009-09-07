@@ -1,7 +1,6 @@
 package org.dcache.services.info.gathers;
 
 import org.apache.log4j.Logger;
-import org.dcache.services.info.InfoProvider;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 
@@ -23,7 +22,7 @@ public class RoutingMgrDga extends SkelListBasedActivity {
 	
 	private static final Logger _log = Logger.getLogger( RoutingMgrDga.class);
 
-	private final MessageHandlerChain _msgHandlerChain = InfoProvider.getInstance().getMessageHandlerChain();
+	private final MessageSender _sender;
 
 	/**
 	 *  Use our own list timings.  Enforce a minimum delay of 5 minutes between successive
@@ -34,11 +33,12 @@ public class RoutingMgrDga extends SkelListBasedActivity {
 	private static int SUCC_MSG_DELAY = 5000;
 	
 	private final CellMessageAnswerable _handler;
-	
-	public RoutingMgrDga( StateExhibitor exhibitor, CellMessageAnswerable handler) {
-		
+
+	public RoutingMgrDga( StateExhibitor exhibitor, MessageSender sender, CellMessageAnswerable handler) {
+
 		super( exhibitor, new StatePath( "domains"), MIN_LIST_REFRESH_PERIOD, SUCC_MSG_DELAY);
-	
+
+		_sender = sender;
 		_handler = handler;
 	}
 	
@@ -65,8 +65,8 @@ public class RoutingMgrDga extends SkelListBasedActivity {
 		
 		if( _log.isInfoEnabled())
 			_log.info( "sending message \"ls -x\" to RoutingMgr cell on domain " + domainName);
-		
-		_msgHandlerChain.sendCellMsg( routingMgrCellPath, "ls -x", _handler, getMetricLifetime());
+
+		_sender.sendMessage( getMetricLifetime(), _handler, routingMgrCellPath, "ls -x");
 	}
 	
 	/**

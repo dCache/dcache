@@ -6,7 +6,6 @@ import java.util.Date;
 import java.util.TimeZone;
 
 import org.apache.log4j.Logger;
-import org.dcache.services.info.InfoProvider;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StateComposite;
 import org.dcache.services.info.base.StatePath;
@@ -16,6 +15,7 @@ import org.dcache.services.info.base.StringStateValue;
 
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
+import dmg.cells.nucleus.UOID;
 
 
 /**
@@ -60,11 +60,12 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
 	}
 
 
+	private final MessageMetadataRepository<UOID> _msgMetadataRepo;
 	private final StateUpdateManager _sum;
-    private final MessageHandlerChain _msgHandlerChain = InfoProvider.getInstance().getMessageHandlerChain();
 
-	public CellMessageHandlerSkel( StateUpdateManager sum) {
+	public CellMessageHandlerSkel( StateUpdateManager sum, MessageMetadataRepository<UOID> msgHandlerChain) {
 		_sum = sum;
+		_msgMetadataRepo = msgHandlerChain;
 	}
 
 	/**
@@ -132,8 +133,8 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
 		if( _log.isDebugEnabled())
 			_log.debug( "incoming CellMessage received from " + answer.getSourceAddress());
 
-		long ttl = _msgHandlerChain.getMetricLifetime( request.getUOID());
-		
+		long ttl = _msgMetadataRepo.getMetricTTL( request.getUOID());
+
 		/**
 		 * If we receive an exception, make a note of it and don't bother the super class. 
 		 */
@@ -144,6 +145,8 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
 		}
 		
 		process( payload, ttl);
+
+		_msgMetadataRepo.remove( request.getUOID());
 	}
                
 
@@ -157,5 +160,8 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
 	/**
 	 * Timeouts we just ignore.
 	 */
-	public void answerTimedOut( CellMessage request) {}
+	public void answerTimedOut( CellMessage request) {
+		_log.info("Message timed out");
+		_msgMetadataRepo.remove( request.getUOID());
+	}
 }

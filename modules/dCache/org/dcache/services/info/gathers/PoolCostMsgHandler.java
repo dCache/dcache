@@ -13,12 +13,12 @@ import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.services.info.base.StringStateValue;
 import org.dcache.services.info.stateInfo.SpaceInfo;
 
-import diskCacheV111.vehicles.CostModulePoolInfoTable;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolCostInfo.NamedPoolQueueInfo;
 import diskCacheV111.pools.PoolCostInfo.PoolQueueInfo;
 import diskCacheV111.pools.PoolCostInfo.PoolSpaceInfo;
-
+import diskCacheV111.vehicles.CostModulePoolInfoTable;
+import dmg.cells.nucleus.UOID;
 
 /**
  * This class processing incoming CellMessages that contain CostModulePoolInfoTable
@@ -29,8 +29,8 @@ public class PoolCostMsgHandler extends CellMessageHandlerSkel {
 
 	private static Logger _log = Logger.getLogger( PoolCostMsgHandler.class);
 
-	public PoolCostMsgHandler(StateUpdateManager sum) {
-		super(sum);
+	public PoolCostMsgHandler(StateUpdateManager sum, MessageMetadataRepository<UOID> msgMetaRepo) {
+		super(sum, msgMetaRepo);
 	}
 
 	@Override

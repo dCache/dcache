@@ -9,7 +9,6 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 import org.dcache.services.info.base.BadStatePathException;
 import org.dcache.services.info.base.State;
-import org.dcache.services.info.base.StateCaretaker;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StateMaintainer;
 import org.dcache.services.info.base.StateObservatory;
@@ -31,7 +30,6 @@ import org.dcache.vehicles.InfoGetSerialisedDataMessage;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.NoRouteToCellException;
@@ -41,24 +39,14 @@ public class InfoProvider extends CellAdapter {
 
 	private static Logger _log = Logger.getLogger(InfoProvider.class);
 
-	/** Our default timeout for sending messages, in milliseconds */
-	private static final long STANDARD_TIMEOUT = 1000;
-
-
 	private static InfoProvider _instance;
 	private static final String ADMIN_INTERFACE_OK = "Done.";
 	private static final String ADMIN_INTERFACE_NONE = "(none)";
 	private static final String ADMIN_INTERFACE_LIST_PREFIX = "  ";
 	private static final String TOPLEVEL_DIRECTORY_LABEL = "(top)";
 
-
-	/**
-	 * Poor man's singleton
-	 * @return
-	 */
-	public static InfoProvider getInstance() {
-		return _instance;
-	}
+	/** The name of the serialiser we use by default: must exist as key in _availableSerialisers */
+	private static final String DEFAULT_SERIALISER_NAME = SimpleTextSerialiser.NAME;
 
 	private Map<String,Conduit> _conduits;
 	private DataGatheringScheduler _scheduler;
@@ -252,7 +240,7 @@ public class InfoProvider extends CellAdapter {
 	{
 	    _scheduler = new DataGatheringScheduler( _sum);
 
-	    _scheduler.addDefaultActivity( exhibitor);
+	    _scheduler.addDefaultActivity( exhibitor, _msgHandlerChain, _msgHandlerChain);
 
         Thread ict = new Thread( _scheduler);
         ict.setName("DGA-Scheduler");
@@ -265,18 +253,9 @@ public class InfoProvider extends CellAdapter {
 	 * set of MessageHandler subclass instances.
 	 */
 	private void buildMessageHandlerChain() {
-		_msgHandlerChain = new MessageHandlerChain( _sum);
+		_msgHandlerChain = new MessageHandlerChain( _sum, this);
 
 		_msgHandlerChain.addDefaultHandlers();
-	}
-
-
-	/**
-	 * Provide the InfoProvider's MessageHandlerChain.
-	 * @return the MessageHandlerChain instance.
-	 */
-	public MessageHandlerChain getMessageHandlerChain() {
-		return _msgHandlerChain;
 	}
 
 
@@ -319,19 +298,6 @@ public class InfoProvider extends CellAdapter {
 		}
 	}
 
-	/**
-	 * Override the CellAdapter default sendMessage() so we simply display
-	 * an error message if we get an exception
-	 * @param msg
-	 * @param callback
-	 */
-	public void sendMessage( CellMessage msg, CellMessageAnswerable callback) {
-		try {
-			super.sendMessage(msg, callback, STANDARD_TIMEOUT);
-		} catch(Exception e ) {
-			_log.warn( "Problem sending msg: ", e);
-		}
-	}
 
 
 	/**

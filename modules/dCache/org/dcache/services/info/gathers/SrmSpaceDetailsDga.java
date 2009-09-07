@@ -1,7 +1,6 @@
 package org.dcache.services.info.gathers;
 
 import org.apache.log4j.Logger;
-import org.dcache.services.info.InfoProvider;
 
 import diskCacheV111.services.space.message.GetSpaceTokensMessage;
 import dmg.cells.nucleus.CellPath;
@@ -24,8 +23,8 @@ public class SrmSpaceDetailsDga extends SkelPeriodicActivity {
 	private static final double SAFETY_FACTOR = 2.5;
 	
 	private CellPath _cp = new CellPath( SRM_CELL_NAME);
-	private MessageHandlerChain _mhc = InfoProvider.getInstance().getMessageHandlerChain();
-	
+	private final MessageSender _sender;
+
 	/** The period between successive requests for data, in seconds */
 	final long _metricLifetime;
 	
@@ -33,9 +32,10 @@ public class SrmSpaceDetailsDga extends SkelPeriodicActivity {
 	 * Create new DGA for maintaining a list of all SRM Spaces.
 	 * @param interval how often the list of spaces should be updated, in seconds.
 	 */
-	public SrmSpaceDetailsDga( int interval) {
+	public SrmSpaceDetailsDga( MessageSender sender, int interval) {
 		super( interval);
-		
+
+		_sender = sender;
 		_metricLifetime = Math.round( interval * SAFETY_FACTOR);
 	}
 
@@ -48,12 +48,13 @@ public class SrmSpaceDetailsDga extends SkelPeriodicActivity {
 		
 		if( _log.isInfoEnabled())
 			_log.info( "Sending space token details request message");
-		
-		_mhc.sendMessage( _cp, new GetSpaceTokensMessage(), _metricLifetime); 
+
+		_sender.sendMessage( _metricLifetime, _cp, new GetSpaceTokensMessage());
 	}
 
 	
-	public String toString()
+	@Override
+    public String toString()
 	{
 		return this.getClass().getSimpleName();
 	}	

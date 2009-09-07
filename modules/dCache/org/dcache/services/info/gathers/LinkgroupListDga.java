@@ -1,7 +1,7 @@
 package org.dcache.services.info.gathers;
 
 import org.apache.log4j.Logger;
-import org.dcache.services.info.InfoProvider;
+
 import diskCacheV111.services.space.message.GetLinkGroupNamesMessage;
 import dmg.cells.nucleus.CellPath;
 
@@ -21,8 +21,8 @@ public class LinkgroupListDga extends SkelPeriodicActivity {
 	private static final double SAFETY_FACTOR = 2.5;
 	
 	private CellPath _cp = new CellPath( SRM_CELL_NAME);
-	private MessageHandlerChain _mhc = InfoProvider.getInstance().getMessageHandlerChain();
-	
+	private final MessageHandlerChain _mhc;
+
 	/** The period between successive requests for data, in seconds */
 	long _metricLifetime;
 	
@@ -30,9 +30,10 @@ public class LinkgroupListDga extends SkelPeriodicActivity {
 	 * Create new DGA for maintaining a list of LinkGroups.
 	 * @param interval how often the list of linkgroups should be updated, in seconds.
 	 */
-	public LinkgroupListDga( int interval) {
+	public LinkgroupListDga( int interval, MessageHandlerChain mhc) {
 		super( interval);
 
+		_mhc = mhc;
 		_metricLifetime = Math.round( interval * SAFETY_FACTOR);
 	}
 
@@ -45,12 +46,13 @@ public class LinkgroupListDga extends SkelPeriodicActivity {
 		
 		if( _log.isInfoEnabled())
 			_log.info( "Sending linkgroup list request message");
-		
-		_mhc.sendMessage( _cp, new GetLinkGroupNamesMessage(), _metricLifetime); 
+
+		_mhc.sendMessage( _metricLifetime, _cp, new GetLinkGroupNamesMessage());
 	}
 
 	
-	public String toString()
+	@Override
+    public String toString()
 	{
 		return this.getClass().getSimpleName();
 	}	

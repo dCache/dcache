@@ -5,6 +5,8 @@ import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StateUpdateManager;
 
+import dmg.cells.nucleus.UOID;
+
 /**
  * A generic routine for processing an incoming CellMessage.  The message is expected to
  * be an array of Strings that should be inserted into dCache state at a specific
@@ -20,8 +22,8 @@ public class StringListMsgHandler extends CellMessageHandlerSkel {
 	 * @param path a String representation of the path under which incoming elements
 	 * will be added
 	 */
-	public StringListMsgHandler( StateUpdateManager sum, String path) {
-		super( sum);
+	public StringListMsgHandler( StateUpdateManager sum, MessageMetadataRepository<UOID> msgMetaRepo, String path) {
+		super( sum, msgMetaRepo);
 		_path = new StatePath(path);
 	}
 	

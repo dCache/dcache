@@ -7,14 +7,16 @@ import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StateUpdateManager;
 
+import dmg.cells.nucleus.UOID;
+
 public class PoolInfoMsgHandler extends CellMessageHandlerSkel {
 	
 	private static Logger _log = Logger.getLogger( PoolInfoMsgHandler.class);
 
 	private static final StatePath POOLS_PATH = new StatePath( "pools");
 
-	public PoolInfoMsgHandler(StateUpdateManager sum) {
-		super(sum);
+	public PoolInfoMsgHandler(StateUpdateManager sum, MessageMetadataRepository<UOID> msgMetaRepo) {
+		super(sum, msgMetaRepo);
 	}
 
 	@Override
@@ -56,5 +58,5 @@ public class PoolInfoMsgHandler extends CellMessageHandlerSkel {
 
 		applyUpdates( update);
 	}
-		
+
 }

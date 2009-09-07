@@ -7,6 +7,7 @@ import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.services.info.base.StringStateValue;
 
 import dmg.cells.network.CellDomainNode;
+import dmg.cells.nucleus.UOID;
 
 /**
  * This class handles reply messages from the TopoCell when issuing a
@@ -21,8 +22,8 @@ public class TopoMapHandler extends CellMessageHandlerSkel {
 	
 	private static final StatePath DOMAINS_PATH = new StatePath( "domains");
 
-	public TopoMapHandler(StateUpdateManager sum) {
-		super(sum);
+	public TopoMapHandler(StateUpdateManager sum, MessageMetadataRepository<UOID> msgMetaRepo) {
+		super(sum, msgMetaRepo);
 	}
 
 	@Override
