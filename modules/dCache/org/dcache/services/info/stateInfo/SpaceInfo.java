@@ -3,6 +3,7 @@ package org.dcache.services.info.stateInfo;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
+
 import diskCacheV111.pools.PoolCostInfo;
 
 /**
@@ -11,6 +12,13 @@ import diskCacheV111.pools.PoolCostInfo;
  * @author Paul Millar <paul.millar@desy.de>
  */
 public class SpaceInfo {
+
+    public static final String PATH_ELEMENT_TOTAL = "total";
+    public static final String PATH_ELEMENT_FREE = "free";
+    public static final String PATH_ELEMENT_PRECIOUS = "precious";
+    public static final String PATH_ELEMENT_REMOVABLE = "removable";
+    public static final String PATH_ELEMENT_USED = "used";
+
 	private long _total;
 	private long _free;
 	private long _precious;
@@ -27,6 +35,15 @@ public class SpaceInfo {
 		_used = totalSpace - freeSpace;
 	}
 	
+	/**
+	 * Create a new SpaceInfo that duplicates information in otherInfo
+	 * @param otherInfo the SpaceInfo to duplicate
+	 */
+	public SpaceInfo( SpaceInfo otherInfo) {
+	    this( otherInfo.getTotal(), otherInfo.getFree(),
+	          otherInfo.getPrecious(), otherInfo.getRemovable());
+	}
+
 	/**
 	 * Create a zero-sized Space.
 	 */
@@ -52,14 +69,16 @@ public class SpaceInfo {
 		//_used = spaceInfo.getUsedSpace();
 		_used = _total-_free;
 	}
-	
+
+	@Override
 	public boolean equals( Object o) {
 		if( !( o instanceof SpaceInfo))
 			return false;
 		SpaceInfo info = (SpaceInfo) o;
 		return info._total == _total && info._free == _free && info._precious == _precious && info._removable == _removable && info._used == _used;
 	}
-	
+
+	@Override
 	public int hashCode() {
 		return (int)_total+(int)_free+(int)_precious+(int)_removable;
 	}
@@ -213,11 +232,11 @@ public class SpaceInfo {
 	 * @param duration how long this metric should survive, in seconds.
 	 */
 	public void addMetrics( StateUpdate update, StatePath path, long duration) {
-		update.appendUpdate(path.newChild("total"), new IntegerStateValue( _total, duration));
-		update.appendUpdate(path.newChild("free"), new IntegerStateValue( _free, duration));
-		update.appendUpdate(path.newChild("precious"), new IntegerStateValue( _precious, duration));
-		update.appendUpdate(path.newChild("removable"), new IntegerStateValue( _removable, duration));
-		update.appendUpdate(path.newChild("used"), new IntegerStateValue( _used, duration));
+		update.appendUpdate(path.newChild(PATH_ELEMENT_TOTAL), new IntegerStateValue( _total, duration));
+		update.appendUpdate(path.newChild(PATH_ELEMENT_FREE), new IntegerStateValue( _free, duration));
+		update.appendUpdate(path.newChild(PATH_ELEMENT_PRECIOUS), new IntegerStateValue( _precious, duration));
+		update.appendUpdate(path.newChild(PATH_ELEMENT_REMOVABLE), new IntegerStateValue( _removable, duration));
+		update.appendUpdate(path.newChild(PATH_ELEMENT_USED), new IntegerStateValue( _used, duration));
 	}
 	
 	/**
@@ -229,17 +248,18 @@ public class SpaceInfo {
 	 * @param isImmortal if true, the metric will be immortal, otherwise ephemeral.
 	 */
 	public void addMetrics( StateUpdate update, StatePath path, boolean isImmortal) {
-		update.appendUpdate(path.newChild("total"), new IntegerStateValue( _total, isImmortal));
-		update.appendUpdate(path.newChild("free"), new IntegerStateValue( _free, isImmortal));
-		update.appendUpdate(path.newChild("precious"), new IntegerStateValue( _precious, isImmortal));
-		update.appendUpdate(path.newChild("removable"), new IntegerStateValue( _removable, isImmortal));
-		update.appendUpdate(path.newChild("used"), new IntegerStateValue( _used, isImmortal));		
+		update.appendUpdate(path.newChild(PATH_ELEMENT_TOTAL), new IntegerStateValue( _total, isImmortal));
+		update.appendUpdate(path.newChild(PATH_ELEMENT_FREE), new IntegerStateValue( _free, isImmortal));
+		update.appendUpdate(path.newChild(PATH_ELEMENT_PRECIOUS), new IntegerStateValue( _precious, isImmortal));
+		update.appendUpdate(path.newChild(PATH_ELEMENT_REMOVABLE), new IntegerStateValue( _removable, isImmortal));
+		update.appendUpdate(path.newChild(PATH_ELEMENT_USED), new IntegerStateValue( _used, isImmortal));
 	}
 	
 	
 	/**
 	 * A string describing this SpaceInfo object.
 	 */
+	@Override
 	public String toString() {
 		return "[SpaceInfo: total="+_total + ", precious="+_precious + ", removable="+_removable + ", used="+_used + ", free="+_free +"]";
 	}
