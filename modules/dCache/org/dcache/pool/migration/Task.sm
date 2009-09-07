@@ -1,5 +1,5 @@
 %{
-// 
+//
 %}
 
 %class Task
@@ -21,21 +21,21 @@ Queued
 
 GettingLocations
 Entry
-{       
+{
         queryLocations();
 }
 {
-        timeout
+        query_timeout
                 Failed
                 {
                         fail("PnfsManager failed (no response)");
                 }
-        noroute
+        query_noroute
                 Failed
                 {
                         fail("PnfsManager failed (no route to cell)");
                 }
-        failure(rc: int, cause: Object)
+        query_failure(rc: int, cause: Object)
                 Failed
                 {
                         fail("PnfsManager failed (" + cause + ")");
@@ -44,13 +44,13 @@ Entry
                 Cancelled
                 {
                 }
-        success
+        query_success
                 [ ctxt.hasMoreLocations() ]
                 UpdatingExistingFile
                 {
                         updateExistingReplica();
                 }
-        success
+        query_success
                 InitiatingCopy
                 {
                 }
@@ -60,93 +60,93 @@ Entry
 // trying until we succeed or we tried them all.
 UpdatingExistingFile
 {
-        timeout
+        update_timeout
                 [ ctxt.hasMoreLocations() ]
                 nil
                 {
                         updateExistingReplica();
                 }
-        timeout
+        update_timeout
                 [ ctxt.isEager() ]
                 InitiatingCopy
                 {
                 }
-        timeout
+        update_timeout
                 Failed
                 {
                         fail("Remote pool failed (no response)");
                 }
-        noroute
+        update_noroute
                 [ ctxt.hasMoreLocations() ]
                 nil
                 {
                         updateExistingReplica();
                 }
-        noroute
+        update_noroute
                 [ ctxt.isEager() ]
                 InitiatingCopy
                 {
                 }
-        noroute
+        update_noroute
                 Failed
                 {
                         fail("Remote pool failed (no route to cell)");
                 }
-        failure(rc: int, cause: Object)
+        update_failure(rc: int, cause: Object)
                 [ rc == LOCKED ]
                 Failed
                 {
                         fail("Replica is locked on target pool");
                 }
-        failure(rc: int, cause: Object)
+        update_failure(rc: int, cause: Object)
                 [ ctxt.hasMoreLocations() ]
                 nil
                 {
                         updateExistingReplica();
                 }
-        failure(rc: int, cause: Object)
+        update_failure(rc: int, cause: Object)
                 InitiatingCopy
                 {
                 }
-        success
+        update_success
                 [ ctxt.getMustMovePins() ]
                 MovingPin
                 {
                 }
-        success
+        update_success
                 Done
                 {
                 }
         cancel
-                Cancelled
+                CancellingUpdate
                 {
                 }
 }
 
-// Update got cancelled. We simply wait for the previous update 
+// Update got cancelled. We simply wait for the previous update
 // operation to finish and then go to either Cancelled, Done or
 // Failed.
 CancellingUpdate
 {
-        timeout
+        update_timeout
                 Cancelled
                 {
                 }
-        noroute
+        update_noroute
                 Cancelled
                 {
                 }
-        failure(rc: int, cause: Object)
+        update_failure(rc: int, cause: Object)
                 Cancelled
                 {
                 }
-        success
+        update_success
                 [ ctxt.getMustMovePins() ]
                 Failed
                 {
                         fail("Failed to cancel task");
                 }
-        success
+        update_success
                 Done
                 {
                 }
@@ -163,31 +163,31 @@ Entry
         initiateCopy();
 }
 {
-        success
+        copy_success
                 Copying
                 {
                 }
-        nopools
+        copy_nopools
                 Failed
                 {
                         fail(String.format("No targets"));
                 }
-        noroute
+        copy_noroute
                 Failed
                 {
                         fail(String.format("Pool %s failed (no route to cell)",
                                            ctxt.getTarget()));
                 }
-        failure(rc: int, cause: Object)
+        copy_failure(rc: int, cause: Object)
                 Failed
                 {
                         fail(String.format("Pool %s failed (%s)",
                                            ctxt.getTarget(), cause));
                 }
-        timeout
+        copy_timeout
                 Waiting
                 {
-                        // No reply, but message could have been 
+                        // No reply, but message could have been
                         // received anyway, so try to cancel it.
                         cancelCopy();
                 }
@@ -200,7 +200,7 @@ Entry
                 Failed
                 {
                         fail(String.format("Transfer to %s failed (%s)",
-                                           ctxt.getTarget(), 
+                                           ctxt.getTarget(),
                                            message.getErrorObject()));
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
@@ -215,7 +215,7 @@ Entry
                 }
 }
 
-// Pool accepted the task. Wait for it to finish and 
+// Pool accepted the task. Wait for it to finish and
 // periodically send a ping to verify it is alive.
 Copying
 Entry
@@ -226,7 +226,7 @@ Exit
 {
         stopTimer();
 }
-{                
+{
         timer
                 Pinging
                 {
@@ -236,7 +236,7 @@ Exit
                 Failed
                 {
                         fail(String.format("Transfer to %s failed (%s)",
-                                           ctxt.getTarget(), 
+                                           ctxt.getTarget(),
                                            message.getErrorObject()));
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
@@ -261,23 +261,23 @@ Entry
 {
         ping();
 }
-{                
-        success
+{
+        ping_success
                 Copying
                 {
                         // Task is alive
                 }
-        failure(rc: int, cause: Object)
+        ping_failure(rc: int, cause: Object)
                 Waiting
                 {
                         // Task is gone
                 }
-        noroute
+        ping_noroute
                 NoResponse
                 {
                         // We cannot talk to the pool
                 }
-        timeout
+        ping_timeout
                 NoResponse
                 {
                         // Pool does not respond.
@@ -287,7 +287,7 @@ Entry
                 Failed
                 {
                         fail(String.format("Transfer to %s failed (%s)",
-                                           ctxt.getTarget(), 
+                                           ctxt.getTarget(),
                                            message.getErrorObject()));
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
@@ -307,40 +307,40 @@ Entry
 }
 
 // Pool did not reply to ping. Let's give it some time
-// and ping it again. 
+// and ping it again.
 NoResponse
 Entry
 {
         startTimer(ctxt.getNoResponseTimeout());
 }
 Exit
-{       
+{
         stopTimer();
 }
-{                
+{
         timer
                 nil
                 {
                         ping();
                 }
-        success
+        ping_success
                 Copying
                 {
                         // Task is alive
                 }
-        failure(rc: int, cause: Object)
+        ping_failure(rc: int, cause: Object)
                 Waiting
                 {
                         // Task is gone
                 }
-        noroute
+        ping_noroute
                 Failed
                 {
                         // We still cannot talk to the pool
                         fail(String.format("Pool %s failed (no route to cell)",
                                            ctxt.getTarget()));
                 }
-        timeout
+        ping_timeout
                 Failed
                 {
                         // Message timed out again
@@ -352,7 +352,7 @@ Exit
                 Failed
                 {
                         fail(String.format("Transfer to %s failed (%s)",
-                                           ctxt.getTarget(), 
+                                           ctxt.getTarget(),
                                            message.getErrorObject()));
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
@@ -382,7 +382,7 @@ Entry
 {
         stopTimer();
 }
-{                
+{
         timer
                 Failed
                 {
@@ -394,7 +394,7 @@ Entry
                 Failed
                 {
                         fail(String.format("Transfer to %s failed (%s)",
-                                           ctxt.getTarget(), 
+                                           ctxt.getTarget(),
                                            message.getErrorObject()));
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
@@ -407,10 +407,6 @@ Entry
                 Done
                 {
                 }
-        Default
-                nil
-                {
-                }
 }
 
 MovingPin
@@ -419,21 +415,21 @@ Entry
         movePin();
 }
 {
-        success
+        move_success
                 Done
                 {
                 }
-        failure(rc: int, cause: Object)
+        move_failure(rc: int, cause: Object)
                 Failed
                 {
                         fail("Pin manager failed (" + cause + ")");
                 }
-        noroute
+        move_noroute
                 Failed
                 {
                         fail("Pin manager failed (no route to cell)");
                 }
-        timeout
+        move_timeout
                 Failed
                 {
                         fail("Pin manager failed (timeout)");
@@ -446,8 +442,8 @@ Entry
 }
 
 // User requested to abort the task, but we already asked
-// a pool to copy the file. Let's try to cancel the copy 
-// and wait for CopyFinished. 
+// a pool to copy the file. Let's try to cancel the copy
+// and wait for CopyFinished.
 Cancelling
 Entry
 {
@@ -481,7 +477,20 @@ Exit
                 Done
                 {
                 }
-        Default
+        cancel_success
+                nil
+                {
+                }
+        cancel_failure(rc: int, cause: Object)
+                nil
+                {
+                }
+        cancel_noroute
+                Failed
+                {
+                        fail("Failed to cancel task (no route)");
+                }
+        cancel_timeout
                 nil
                 {
                 }
@@ -495,20 +504,12 @@ Entry
         notifyCancelled();
 }
 {
-        Default
-                nil
-                {
-                }
 }
 
 // Something went wrong. In some cases the transfer could have
 // succeeded, but we don't know.
 Failed
 {
-        Default
-                nil
-                {
-                }   
 }
 
 // Transfer completed.
@@ -517,11 +518,16 @@ Entry
 {
         notifyCompleted();
 }
-{    
+{
+}
+
+// This will cause the state machine to always be input enabled
+Default
+{
         Default
                 nil
                 {
-                }   
+                }
 }
 
 %%

@@ -13,6 +13,9 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.io.PrintWriter;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
+
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.Message;
@@ -24,6 +27,7 @@ import org.dcache.pool.repository.CacheEntry;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.MessageCallback;
 import org.dcache.services.pinmanager1.PinManagerMovePinMessage;
+import org.dcache.util.ReflectionUtils;
 
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellMessage;
@@ -215,7 +219,7 @@ public class Task
     {
         _pnfs.send(new PnfsGetCacheLocationsMessage(getPnfsId()),
                    PnfsGetCacheLocationsMessage.class,
-                   new Callback<PnfsGetCacheLocationsMessage>()
+                   new Callback<PnfsGetCacheLocationsMessage>("query_")
                    {
                        public void success(PnfsGetCacheLocationsMessage msg)
                        {
@@ -256,7 +260,7 @@ public class Task
         _target = new CellPath(_locations.remove(0));
         _pool.send(_target, message,
                    PoolMigrationUpdateReplicaMessage.class,
-                   new Callback());
+                   new Callback("update_"));
 
         /* Small optimisation to avoid having too many lists allocated. */
         if (_locations.isEmpty()) {
@@ -280,13 +284,13 @@ public class Task
                                                            getTargetState(),
                                                            getTargetStickyRecords()),
                        PoolMigrationCopyReplicaMessage.class,
-                       new Callback());
+                       new Callback("copy_"));
         } catch (NoSuchElementException e) {
             _target = null;
             _executor.execute(new LoggingTask(new Runnable() {
                     public void run() {
                         synchronized (Task.this) {
-                            _fsm.nopools();
+                            _fsm.copy_nopools();
                         }
                     }
                 }));
@@ -299,7 +303,7 @@ public class Task
         _pool.send(_target,
                    new PoolMigrationCancelMessage(_source, getPnfsId(), _id),
                    PoolMigrationCancelMessage.class,
-                   new Callback());
+                   new Callback("cancel_"));
     }
 
     /** FSM Action */
@@ -313,7 +317,7 @@ public class Task
             }
         }
 
-        Callback callback = new Callback();
+        Callback callback = new Callback("move_");
         if (records.isEmpty()) {
             callback.success(null);
         } else {
@@ -394,7 +398,7 @@ public class Task
     {
         _pool.send(_target,
                    new PoolMigrationPingMessage(_source, getPnfsId(), _id),
-                   PoolMigrationPingMessage.class, new Callback());
+                   PoolMigrationPingMessage.class, new Callback("ping_"));
     }
 
     /**
@@ -423,48 +427,74 @@ public class Task
      */
     class Callback<T extends Message> implements MessageCallback<T>
     {
+        private final String _prefix;
+
+        public Callback()
+        {
+            _prefix = "";
+        }
+
+        public Callback(String prefix)
+        {
+            _prefix = prefix;
+        }
+
+        protected void transition(String name, final Object... arguments)
+        {
+            Class[] parameterTypes = new Class[arguments.length];
+            for (int i = 0; i < arguments.length; i++)
+                parameterTypes[i] = arguments[i].getClass();
+            final Method m =
+                ReflectionUtils.resolve(_fsm.getClass(), _prefix + name,
+                                        parameterTypes);
+            if (m != null) {
+                _executor.execute(new LoggingTask(new Runnable() {
+                        public void run() {
+                            try {
+                                synchronized (Task.this) {
+                                    m.invoke(_fsm, arguments);
+                                }
+                            } catch (IllegalAccessException e) {
+                                /* We are not allowed to call this
+                                 * method. Better escalate it.
+                                 */
+                                throw new RuntimeException("Bug detected", e);
+                            } catch (InvocationTargetException e) {
+                                /* The context is not supposed to
+                                 * throw exceptions, so smells like a
+                                 * bug.
+                                 */
+                                throw new RuntimeException("Bug detected", e);
+                            } catch (statemap.TransitionUndefinedException e) {
+                                throw new RuntimeException("State machine is incomplete", e);
+                            }
+                        }
+                    }));
+            }
+        }
+
+        @Override
         public void success(T message)
         {
-            _executor.execute(new LoggingTask(new Runnable() {
-                    public void run() {
-                        synchronized (Task.this) {
-                            _fsm.success();
-                        }
-                    }
-                }));
+            transition("success");
         }
 
-        public void failure(final int rc, final Object cause)
+        @Override
+        public void failure(int rc, Object cause)
         {
-            _executor.execute(new LoggingTask(new Runnable() {
-                    public void run() {
-                        synchronized (Task.this) {
-                            _fsm.failure(rc, cause);
-                        }
-                    }
-                }));
+            transition("failure", rc, cause);
         }
 
+        @Override
         public void timeout()
         {
-            _executor.execute(new LoggingTask(new Runnable() {
-                    public void run() {
-                        synchronized (Task.this) {
-                            _fsm.timeout();
-                        }
-                    }
-                }));
+            transition("timeout");
         }
 
+        @Override
         public void noroute()
         {
-            _executor.execute(new LoggingTask(new Runnable() {
-                    public void run() {
-                        synchronized (Task.this) {
-                            _fsm.noroute();
-                        }
-                    }
-                }));
+            transition("noroute");
         }
     }
 
