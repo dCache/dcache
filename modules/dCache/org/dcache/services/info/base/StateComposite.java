@@ -784,36 +784,38 @@ public class StateComposite implements StateComponent {
 		// Check each child in turn:
 		for( Map.Entry<String, StateComponent>entry : _children.entrySet()) {
 
-                        boolean shouldRemoveThisChild = forced;
-                        boolean shouldItr = forced;
-
 			StateComponent childValue = entry.getValue();
 			String childName = entry.getKey();
+
+			boolean shouldRemoveThisChild = forced;
+            boolean shouldItr = forced;
 
 			// If *this* child has expired, we should mark it as To Be Removed.
 			if( childValue.hasExpired()) {
 				if( _log.isDebugEnabled())
 					_log.debug("registering "+childName+" (in path "+ourPath+") for removal.");
 
-                                shouldRemoveThisChild = shouldItr = true;
+				shouldRemoveThisChild = shouldItr = true;
 			}
 
 			// If *this* child has some child that has expired, iterate down.
 			Date childExp = childValue.getEarliestChildExpiryDate();
-                        if( childExp != null && now.after( childExp))
+			if( childExp != null && !now.before( childExp))
 				shouldItr = true;
 
-                        if( shouldItr) {
+			if( shouldItr || shouldRemoveThisChild) {
 				StateChangeSet changeSet = transition.getOrCreateChangeSet( ourPath);
 
 				if( shouldRemoveThisChild)
 					changeSet.recordRemovedChild( childName);
 
-                                changeSet.recordChildItr( childName);
-                                childValue.buildRemovalTransition( buildChildPath(ourPath, childName), transition, shouldRemoveThisChild);
-                        }
-                }
-        }
+				if( shouldItr) {
+					changeSet.recordChildItr( childName);
+					childValue.buildRemovalTransition( buildChildPath(ourPath, childName), transition, shouldRemoveThisChild);
+				}
+			}
+		}
+	}
 
 
 	/**
