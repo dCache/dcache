@@ -31,6 +31,7 @@ public class StateChangeSet {
 	 * @param value the StateComponent
 	 */
 	protected void recordNewChild( String childName, StateComponent value) {
+	    purgeChildEntries( childName);
 		_newChildren.put(childName, value);
 	}
 
@@ -41,6 +42,7 @@ public class StateChangeSet {
 	 * @param value the new value of this child.
 	 */
 	protected void recordUpdatedChild( String childName, StateComponent value) {
+        purgeChildEntries( childName);
 		_updatedChildren.put(childName, value);
 	}
 	
@@ -50,6 +52,7 @@ public class StateChangeSet {
 	 * @param childName the name of the child.
 	 */
 	protected void recordRemovedChild( String childName) {
+        purgeChildEntries( childName);
 		_removedChildren.add(childName);
 	}
 	
@@ -155,6 +158,18 @@ public class StateChangeSet {
 	}
 	
 	
+	/**
+	 * Remove the named child from the list of those to be removed.
+	 * If the named child isn't to be removed then this method has
+	 * no effect.
+	 * @param childName
+	 */
+	protected void ensureChildNotRemoved( String childName) {
+	    _removedChildren.remove( childName);
+	}
+
+
+
 	/**
 	 * Returns whether a particular named child is to be added.
 	 * @param path The StatePath of the StateComposite
@@ -276,5 +291,17 @@ public class StateChangeSet {
 		return sb.toString();
 	}
 
+	/**
+	 * Remove any reference to the named child in the new, updated or removed children.
+	 * The list of those child entries to iterate down into is not affected.
+	 * <p>
+	 * It is intended this is done before adding a child entry.
+	 * @param childName
+	 */
+    private void purgeChildEntries( String childName) {
+        _newChildren.remove( childName);
+        _updatedChildren.remove( childName);
+        _removedChildren.remove( childName);
+    }
 
 }

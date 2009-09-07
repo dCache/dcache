@@ -215,6 +215,19 @@ public class StateChangeSetTests {
     }
 
     @Test
+    public void testGetFreshChildValueAfterNewAndUpdated() {
+        StateValue newMetricValue = new TestStateValue( true);
+        _scs.recordNewChild( METRIC_NAME, newMetricValue);
+
+        StateValue updatedMetricValue = new TestStateValue( true);
+        _scs.recordUpdatedChild( METRIC_NAME, updatedMetricValue);
+
+        StateComponent freshComponent = _scs.getFreshChildValue( METRIC_NAME);
+
+        assertSame( "checking recovered StateComponent is what was recorded", updatedMetricValue, freshComponent);
+    }
+
+    @Test
     public void testGetFreshChildValueAfterUpdatedAndNew() {
         StateValue updatedMetricValue = new TestStateValue( true);
         _scs.recordUpdatedChild( METRIC_NAME, updatedMetricValue);
@@ -225,6 +238,127 @@ public class StateChangeSetTests {
         StateComponent freshComponent = _scs.getFreshChildValue( METRIC_NAME);
 
         assertSame( "checking recovered StateComponent is what was recorded", newMetricValue, freshComponent);
+    }
+
+    @Test
+    public void testNewThenUpdate() {
+        StateValue updatedMetricValue = new TestStateValue( true);
+        StateValue newMetricValue = new TestStateValue( true);
+
+        _scs.recordUpdatedChild( METRIC_NAME, updatedMetricValue);
+        _scs.recordNewChild( METRIC_NAME, newMetricValue);
+
+        assertFalse( "childIsUpdate", _scs.childIsUpdated( METRIC_NAME));
+        assertTrue( "childIsNew", _scs.childIsNew( METRIC_NAME));
+
+        assertNull( "updatedChildValue", _scs.getUpdatedChildValue( METRIC_NAME));
+        assertSame( "newChildValue", newMetricValue, _scs.getNewChildValue( METRIC_NAME));
+
+        Collection<String> updatedChildren = _scs.getUpdatedChildren();
+        Collection<String> newChildren = _scs.getNewChildren();
+
+        assertFalse( "updatedChildren not null", updatedChildren == null);
+        assertFalse( "newChildren not null", newChildren == null);
+
+        assertTrue( "updatedChildren", updatedChildren.isEmpty());
+        assertTrue( "newChildren", newChildren.contains( METRIC_NAME));
+    }
+
+    @Test
+    public void testUpdateThenNew() {
+        StateValue updatedMetricValue = new TestStateValue( true);
+        StateValue newMetricValue = new TestStateValue( true);
+
+        _scs.recordNewChild( METRIC_NAME, newMetricValue);
+        _scs.recordUpdatedChild( METRIC_NAME, updatedMetricValue);
+
+        assertTrue( "childIsUpdate", _scs.childIsUpdated( METRIC_NAME));
+        assertFalse( "childIsNew", _scs.childIsNew( METRIC_NAME));
+
+        assertNull( "getNewChildValue", _scs.getNewChildValue( METRIC_NAME));
+        assertSame( "getUpdatedChildValue", updatedMetricValue, _scs.getUpdatedChildValue( METRIC_NAME));
+
+        Collection<String> updatedChildren = _scs.getUpdatedChildren();
+        Collection<String> newChildren = _scs.getNewChildren();
+
+        assertFalse( "updatedChildren not null", updatedChildren == null);
+        assertFalse( "newChildren not null", newChildren == null);
+
+        assertTrue( "newChildren", newChildren.isEmpty());
+        assertTrue( "updatedChildren", updatedChildren.contains( METRIC_NAME));
+    }
+
+    @Test
+    public void testRemovedThenNew() {
+        StateValue newMetricValue = new TestStateValue( true);
+
+        _scs.recordRemovedChild( METRIC_NAME);
+        _scs.recordNewChild( METRIC_NAME, newMetricValue);
+
+        assertTrue( "childIsNew", _scs.childIsNew( METRIC_NAME));
+        assertFalse( "childIsRemoved", _scs.childIsRemoved( METRIC_NAME));
+
+        assertSame( "newChildValue", newMetricValue, _scs.getNewChildValue( METRIC_NAME));
+
+        Collection<String> removedChildren = _scs.getRemovedChildren();
+        Collection<String> newChildren = _scs.getNewChildren();
+
+        assertFalse( "removedChildren not null", removedChildren == null);
+        assertFalse( "newChildren not null", newChildren == null);
+
+        assertTrue( "removedChildren", removedChildren.isEmpty());
+        assertTrue( "newChildren", newChildren.contains( METRIC_NAME));
+    }
+
+    @Test
+    public void testNewThenRemoved() {
+        StateValue newMetricValue = new TestStateValue( true);
+
+        _scs.recordNewChild( METRIC_NAME, newMetricValue);
+        _scs.recordRemovedChild( METRIC_NAME);
+
+        assertFalse( "childIsNew()", _scs.childIsNew( METRIC_NAME));
+        assertTrue( "childIsRemoved()", _scs.childIsRemoved( METRIC_NAME));
+
+        assertNull( "newChildValue is null", _scs.getNewChildValue( METRIC_NAME));
+
+        Collection<String> removedChildren = _scs.getRemovedChildren();
+        Collection<String> newChildren = _scs.getNewChildren();
+
+        assertFalse( "removedChildren not null", removedChildren == null);
+        assertFalse( "newChildren not null", newChildren == null);
+
+        assertTrue( "getNewChildren() is empty", newChildren.isEmpty());
+        assertTrue( "getRemovedChildren() has METRIC_NAME", removedChildren.contains( METRIC_NAME));
+    }
+
+    @Test
+    public void testRemoveThenEnsureNotRemoved() {
+        _scs.recordRemovedChild( METRIC_NAME);
+        _scs.ensureChildNotRemoved( METRIC_NAME);
+        assertFalse( "childIsRemoved", _scs.childIsRemoved(  METRIC_NAME));
+
+        Collection<String> removedChildren = _scs.getRemovedChildren();
+
+        assertFalse( "removedChildren not null", removedChildren == null);
+        assertFalse( "getRemovedChildren() does not have METRIC_NAME", removedChildren.contains( METRIC_NAME));
+    }
+
+    @Test
+    public void testRemoveTwoChildrenThenEnsureNotRemovedOne() {
+        String metricName2 = "otherMetric";
+
+        _scs.recordRemovedChild( METRIC_NAME);
+        _scs.recordRemovedChild( metricName2);
+        _scs.ensureChildNotRemoved( METRIC_NAME);
+        assertFalse( "childIsRemoved", _scs.childIsRemoved(  METRIC_NAME));
+        assertTrue( "childIsRemoved", _scs.childIsRemoved(  metricName2));
+
+        Collection<String> removedChildren = _scs.getRemovedChildren();
+
+        assertFalse( "removedChildren not null", removedChildren == null);
+        assertFalse( "getRemovedChildren() does not have METRIC_NAME", removedChildren.contains( METRIC_NAME));
+        assertTrue( "getRemovedChildren() does have metricName2", removedChildren.contains( metricName2));
     }
 
     @Test
