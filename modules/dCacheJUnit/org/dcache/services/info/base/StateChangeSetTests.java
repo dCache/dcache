@@ -1,6 +1,5 @@
 package org.dcache.services.info.base;
 
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -29,26 +28,32 @@ public class StateChangeSetTests {
     public void testRecordNewChild() {
         StateValue value = new TestStateValue( false);
         _scs.recordNewChild( METRIC_NAME, value);
-        assertSame( "checking we get metric back", value, _scs.getNewChildValue( METRIC_NAME));
+        assertSame( "checking we get metric back", value,
+                    _scs.getNewChildValue( METRIC_NAME));
 
         assertTrue( "checking childIsNew ", _scs.childIsNew( METRIC_NAME));
 
         Collection<String> newChildren = _scs.getNewChildren();
         assertEquals( "checking new-children Set size ", 1, newChildren.size());
-        assertTrue( "checking new-children Set contents ", newChildren.contains( METRIC_NAME));
+        assertTrue( "checking new-children Set contents ",
+                    newChildren.contains( METRIC_NAME));
     }
 
     @Test
     public void testRecordUpdatedChild() {
         StateValue value = new TestStateValue( false);
         _scs.recordUpdatedChild( METRIC_NAME, value);
-        assertSame( "checking we get metric back", value, _scs.getUpdatedChildValue( METRIC_NAME));
+        assertSame( "checking we get metric back", value,
+                    _scs.getUpdatedChildValue( METRIC_NAME));
 
-        assertTrue( "checking childIsUpdated ", _scs.childIsUpdated( METRIC_NAME));
+        assertTrue( "checking childIsUpdated ",
+                    _scs.childIsUpdated( METRIC_NAME));
 
         Collection<String> updatedChildren = _scs.getUpdatedChildren();
-        assertEquals( "checking new-children Set size ", 1, updatedChildren.size());
-        assertTrue( "checking new-children Set contents ", updatedChildren.contains( METRIC_NAME));
+        assertEquals( "checking new-children Set size ", 1,
+                      updatedChildren.size());
+        assertTrue( "checking new-children Set contents ",
+                    updatedChildren.contains( METRIC_NAME));
     }
 
     @Test
@@ -56,31 +61,38 @@ public class StateChangeSetTests {
 
         _scs.recordRemovedChild( METRIC_NAME);
 
-        assertTrue( "checking childIsRemoved ", _scs.childIsRemoved( METRIC_NAME));
+        assertTrue( "checking childIsRemoved ",
+                    _scs.childIsRemoved( METRIC_NAME));
 
         Collection<String> removedChildren = _scs.getRemovedChildren();
-        assertEquals( "checking new-children Set size ", 1, removedChildren.size());
-        assertTrue( "checking new-children Set contents ", removedChildren.contains( METRIC_NAME));
+        assertEquals( "checking new-children Set size ", 1,
+                      removedChildren.size());
+        assertTrue( "checking new-children Set contents ",
+                    removedChildren.contains( METRIC_NAME));
     }
 
     @Test
     public void testRecordChildIsImmortalWith() {
-        assertFalse( "checking haveImmortalChild before setting", _scs.haveImmortalChild());
+        assertFalse( "checking haveImmortalChild before setting",
+                     _scs.haveImmortalChild());
         _scs.recordChildIsImmortal();
-        assertTrue( "checking haveImmortalChild after setting", _scs.haveImmortalChild());
+        assertTrue( "checking haveImmortalChild after setting",
+                    _scs.haveImmortalChild());
     }
 
     @Test
     public void testRecordNewWhenIShouldExpireDate() {
         assertNull( "Test initial expire date", _scs.getWhenIShouldExpireDate());
 
-        Date someTimeInTheFuture = new Date(System.currentTimeMillis() + 10*1000);
+        Date someTimeInTheFuture = new Date(
+                                             System.currentTimeMillis() + 10 * 1000);
 
         _scs.recordNewWhenIShouldExpireDate( someTimeInTheFuture);
 
         Date expireDate = _scs.getWhenIShouldExpireDate();
 
-        assertEquals( "Check new value is recorded", someTimeInTheFuture, expireDate);
+        assertEquals( "Check new value is recorded", someTimeInTheFuture,
+                      expireDate);
     }
 
     @Test
@@ -91,29 +103,34 @@ public class StateChangeSetTests {
     @Test
     public void testRecordChildItr() {
         _scs.recordChildItr( METRIC_NAME);
-        assertTrue( "named child not found when added", _scs.getItrChildren().contains( METRIC_NAME));
+        assertTrue( "named child not found when added",
+                    _scs.getItrChildren().contains( METRIC_NAME));
     }
 
     @Test
     public void testGetItrChildrenInitial() {
-        assertTrue( "checking getItrChildren() initial empty", _scs.getItrChildren().isEmpty());
+        assertTrue( "checking getItrChildren() initial empty",
+                    _scs.getItrChildren().isEmpty());
     }
 
     @Test
     public void testGetItrChildrenAfterChange() {
         _scs.recordChildItr( METRIC_NAME);
-        assertFalse( "checking getItrChildren() not empty", _scs.getItrChildren().isEmpty());
+        assertFalse( "checking getItrChildren() not empty",
+                     _scs.getItrChildren().isEmpty());
     }
 
     @Test
     public void testHasChildChangedInitial() {
-        assertFalse( "Checking hasChildChanged initially false", _scs.hasChildChanged( METRIC_NAME));
+        assertFalse( "Checking hasChildChanged initially false",
+                     _scs.hasChildChanged( METRIC_NAME));
     }
 
     @Test
     public void testHasChildChangedAfterChange() {
         _scs.recordChildItr( METRIC_NAME);
-        assertTrue( "Checking hasChildChanged updated correctly", _scs.hasChildChanged( METRIC_NAME));
+        assertTrue( "Checking hasChildChanged updated correctly",
+                    _scs.hasChildChanged( METRIC_NAME));
     }
 
     @Test
@@ -121,8 +138,8 @@ public class StateChangeSetTests {
         StateValue value = new TestStateValue( false);
 
         _scs.recordNewChild( METRIC_NAME, value);
-        assertTrue( "Checking hasChildChanged returns true for new child", _scs
-                .hasChildChanged( METRIC_NAME));
+        assertTrue( "Checking hasChildChanged returns true for new child",
+                    _scs.hasChildChanged( METRIC_NAME));
     }
 
     @Test
@@ -150,48 +167,55 @@ public class StateChangeSetTests {
     @Test
     public void testHaveImmortalChildAfterRegistered() {
         _scs.recordChildIsImmortal();
-        assertTrue( "checking initially haveImmortalChild() true", _scs.haveImmortalChild());
+        assertTrue( "checking initially haveImmortalChild() true",
+                    _scs.haveImmortalChild());
     }
 
     @Test
     public void testChildIsRemovedInitial() {
-        assertFalse( "Checking initial childIsRemoved", _scs.childIsRemoved( METRIC_NAME));
+        assertFalse( "Checking initial childIsRemoved",
+                     _scs.childIsRemoved( METRIC_NAME));
     }
 
     @Test
     public void testChildIsRemovedAfterUpdate() {
         _scs.recordRemovedChild( METRIC_NAME);
-        assertTrue( "Checking childIsRemoved after recording removed child", _scs.childIsRemoved( METRIC_NAME));
+        assertTrue( "Checking childIsRemoved after recording removed child",
+                    _scs.childIsRemoved( METRIC_NAME));
     }
 
     @Test
     public void testChildIsUpdatedInitial() {
-        assertFalse( "Checking initial childIsUpdated", _scs.childIsUpdated( METRIC_NAME));
+        assertFalse( "Checking initial childIsUpdated",
+                     _scs.childIsUpdated( METRIC_NAME));
     }
 
     @Test
     public void testChildIsUpdatedAfterUpdate() {
         StateValue metricValue = new TestStateValue( true);
         _scs.recordUpdatedChild( METRIC_NAME, metricValue);
-        assertTrue( "Checking childIsUpdated after recording updated metric", _scs.childIsUpdated( METRIC_NAME));
+        assertTrue( "Checking childIsUpdated after recording updated metric",
+                    _scs.childIsUpdated( METRIC_NAME));
     }
 
     @Test
     public void testChildIsNewInitial() {
-        assertFalse( "Checking initial childIsNew", _scs.childIsNew( METRIC_NAME));
+        assertFalse( "Checking initial childIsNew",
+                     _scs.childIsNew( METRIC_NAME));
     }
 
     @Test
     public void testChildIsNewWithMetric() {
         StateValue metricValue = new TestStateValue( true);
         _scs.recordNewChild( METRIC_NAME, metricValue);
-        assertTrue( "Checking childIsNew after recording new metric", _scs.childIsNew( METRIC_NAME));
+        assertTrue( "Checking childIsNew after recording new metric",
+                    _scs.childIsNew( METRIC_NAME));
     }
-
 
     @Test
     public void testGetFreshChildValueInitial() {
-        assertNull( "Checking initial getFreshChildValue", _scs.getFreshChildValue( METRIC_NAME));
+        assertNull( "Checking initial getFreshChildValue",
+                    _scs.getFreshChildValue( METRIC_NAME));
     }
 
     @Test
@@ -201,7 +225,8 @@ public class StateChangeSetTests {
 
         StateComponent freshComponent = _scs.getFreshChildValue( METRIC_NAME);
 
-        assertSame( "checking recovered StateComponent is what was recorded", metricValue, freshComponent);
+        assertSame( "checking recovered StateComponent is what was recorded",
+                    metricValue, freshComponent);
     }
 
     @Test
@@ -211,7 +236,8 @@ public class StateChangeSetTests {
 
         StateComponent freshComponent = _scs.getFreshChildValue( METRIC_NAME);
 
-        assertSame( "checking recovered StateComponent is what was recorded", metricValue, freshComponent);
+        assertSame( "checking recovered StateComponent is what was recorded",
+                    metricValue, freshComponent);
     }
 
     @Test
@@ -224,7 +250,8 @@ public class StateChangeSetTests {
 
         StateComponent freshComponent = _scs.getFreshChildValue( METRIC_NAME);
 
-        assertSame( "checking recovered StateComponent is what was recorded", updatedMetricValue, freshComponent);
+        assertSame( "checking recovered StateComponent is what was recorded",
+                    updatedMetricValue, freshComponent);
     }
 
     @Test
@@ -237,7 +264,8 @@ public class StateChangeSetTests {
 
         StateComponent freshComponent = _scs.getFreshChildValue( METRIC_NAME);
 
-        assertSame( "checking recovered StateComponent is what was recorded", newMetricValue, freshComponent);
+        assertSame( "checking recovered StateComponent is what was recorded",
+                    newMetricValue, freshComponent);
     }
 
     @Test
@@ -251,8 +279,10 @@ public class StateChangeSetTests {
         assertFalse( "childIsUpdate", _scs.childIsUpdated( METRIC_NAME));
         assertTrue( "childIsNew", _scs.childIsNew( METRIC_NAME));
 
-        assertNull( "updatedChildValue", _scs.getUpdatedChildValue( METRIC_NAME));
-        assertSame( "newChildValue", newMetricValue, _scs.getNewChildValue( METRIC_NAME));
+        assertNull( "updatedChildValue",
+                    _scs.getUpdatedChildValue( METRIC_NAME));
+        assertSame( "newChildValue", newMetricValue,
+                    _scs.getNewChildValue( METRIC_NAME));
 
         Collection<String> updatedChildren = _scs.getUpdatedChildren();
         Collection<String> newChildren = _scs.getNewChildren();
@@ -276,7 +306,8 @@ public class StateChangeSetTests {
         assertFalse( "childIsNew", _scs.childIsNew( METRIC_NAME));
 
         assertNull( "getNewChildValue", _scs.getNewChildValue( METRIC_NAME));
-        assertSame( "getUpdatedChildValue", updatedMetricValue, _scs.getUpdatedChildValue( METRIC_NAME));
+        assertSame( "getUpdatedChildValue", updatedMetricValue,
+                    _scs.getUpdatedChildValue( METRIC_NAME));
 
         Collection<String> updatedChildren = _scs.getUpdatedChildren();
         Collection<String> newChildren = _scs.getNewChildren();
@@ -298,7 +329,8 @@ public class StateChangeSetTests {
         assertTrue( "childIsNew", _scs.childIsNew( METRIC_NAME));
         assertFalse( "childIsRemoved", _scs.childIsRemoved( METRIC_NAME));
 
-        assertSame( "newChildValue", newMetricValue, _scs.getNewChildValue( METRIC_NAME));
+        assertSame( "newChildValue", newMetricValue,
+                    _scs.getNewChildValue( METRIC_NAME));
 
         Collection<String> removedChildren = _scs.getRemovedChildren();
         Collection<String> newChildren = _scs.getNewChildren();
@@ -320,7 +352,8 @@ public class StateChangeSetTests {
         assertFalse( "childIsNew()", _scs.childIsNew( METRIC_NAME));
         assertTrue( "childIsRemoved()", _scs.childIsRemoved( METRIC_NAME));
 
-        assertNull( "newChildValue is null", _scs.getNewChildValue( METRIC_NAME));
+        assertNull( "newChildValue is null",
+                    _scs.getNewChildValue( METRIC_NAME));
 
         Collection<String> removedChildren = _scs.getRemovedChildren();
         Collection<String> newChildren = _scs.getNewChildren();
@@ -329,19 +362,21 @@ public class StateChangeSetTests {
         assertFalse( "newChildren not null", newChildren == null);
 
         assertTrue( "getNewChildren() is empty", newChildren.isEmpty());
-        assertTrue( "getRemovedChildren() has METRIC_NAME", removedChildren.contains( METRIC_NAME));
+        assertTrue( "getRemovedChildren() has METRIC_NAME",
+                    removedChildren.contains( METRIC_NAME));
     }
 
     @Test
     public void testRemoveThenEnsureNotRemoved() {
         _scs.recordRemovedChild( METRIC_NAME);
         _scs.ensureChildNotRemoved( METRIC_NAME);
-        assertFalse( "childIsRemoved", _scs.childIsRemoved(  METRIC_NAME));
+        assertFalse( "childIsRemoved", _scs.childIsRemoved( METRIC_NAME));
 
         Collection<String> removedChildren = _scs.getRemovedChildren();
 
         assertFalse( "removedChildren not null", removedChildren == null);
-        assertFalse( "getRemovedChildren() does not have METRIC_NAME", removedChildren.contains( METRIC_NAME));
+        assertFalse( "getRemovedChildren() does not have METRIC_NAME",
+                     removedChildren.contains( METRIC_NAME));
     }
 
     @Test
@@ -351,14 +386,16 @@ public class StateChangeSetTests {
         _scs.recordRemovedChild( METRIC_NAME);
         _scs.recordRemovedChild( metricName2);
         _scs.ensureChildNotRemoved( METRIC_NAME);
-        assertFalse( "childIsRemoved", _scs.childIsRemoved(  METRIC_NAME));
-        assertTrue( "childIsRemoved", _scs.childIsRemoved(  metricName2));
+        assertFalse( "childIsRemoved", _scs.childIsRemoved( METRIC_NAME));
+        assertTrue( "childIsRemoved", _scs.childIsRemoved( metricName2));
 
         Collection<String> removedChildren = _scs.getRemovedChildren();
 
         assertFalse( "removedChildren not null", removedChildren == null);
-        assertFalse( "getRemovedChildren() does not have METRIC_NAME", removedChildren.contains( METRIC_NAME));
-        assertTrue( "getRemovedChildren() does have metricName2", removedChildren.contains( metricName2));
+        assertFalse( "getRemovedChildren() does not have METRIC_NAME",
+                     removedChildren.contains( METRIC_NAME));
+        assertTrue( "getRemovedChildren() does have metricName2",
+                    removedChildren.contains( metricName2));
     }
 
     @Test
@@ -376,7 +413,8 @@ public class StateChangeSetTests {
         Collection<String> names = _scs.getNewChildren();
 
         assertNotNull( "Check what we get back isn't null", names);
-        assertTrue( "Check that Collection has our metric", names.contains( METRIC_NAME));
+        assertTrue( "Check that Collection has our metric",
+                    names.contains( METRIC_NAME));
     }
 
     @Test
@@ -393,7 +431,8 @@ public class StateChangeSetTests {
         Collection<String> names = _scs.getRemovedChildren();
 
         assertNotNull( "Check what we get back isn't null", names);
-        assertTrue( "Check that Collection has our metric", names.contains( METRIC_NAME));
+        assertTrue( "Check that Collection has our metric",
+                    names.contains( METRIC_NAME));
     }
 
     @Test
@@ -411,12 +450,14 @@ public class StateChangeSetTests {
         Collection<String> names = _scs.getUpdatedChildren();
 
         assertNotNull( "Check what we get back isn't null", names);
-        assertTrue( "Check that Collection has our metric", names.contains( METRIC_NAME));
+        assertTrue( "Check that Collection has our metric",
+                    names.contains( METRIC_NAME));
     }
 
     @Test
     public void testGetUpdatedChildValueInitial() {
-        assertNull( "expect null reply initially", _scs.getUpdatedChildValue( METRIC_NAME));
+        assertNull( "expect null reply initially",
+                    _scs.getUpdatedChildValue( METRIC_NAME));
     }
 
     @Test
@@ -425,7 +466,8 @@ public class StateChangeSetTests {
         _scs.recordUpdatedChild( METRIC_NAME, metricValue);
 
         StateComponent component = _scs.getUpdatedChildValue( METRIC_NAME);
-        assertSame( "checking we get back same value as registered", metricValue, component);
+        assertSame( "checking we get back same value as registered",
+                    metricValue, component);
     }
 
     @Test
@@ -435,7 +477,8 @@ public class StateChangeSetTests {
 
         StateComponent component = _scs.getNewChildValue( METRIC_NAME);
 
-        assertSame( "Checking we get back same value as registered", metricValue, component);
+        assertSame( "Checking we get back same value as registered",
+                    metricValue, component);
     }
 
     @Test
@@ -457,8 +500,10 @@ public class StateChangeSetTests {
         String afterUpdateDump = _scs.dumpContents();
 
         assertNotNull( "checking dump after update not null", afterUpdateDump);
-        assertTrue( "checking dump after update not empty", afterUpdateDump.length() > 0);
-        assertFalse( "checking dump before and after add are not equal", initialDump.equals( afterUpdateDump));
+        assertTrue( "checking dump after update not empty",
+                    afterUpdateDump.length() > 0);
+        assertFalse( "checking dump before and after add are not equal",
+                     initialDump.equals( afterUpdateDump));
     }
 
 }
