@@ -497,18 +497,6 @@ public class DummyFileSystemProvider implements FileSystemProvider {
     }
 
     @Override
-    public long usedFiles() throws ChimeraFsException {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-    @Override
-    public long usedSpace() throws ChimeraFsException {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-    @Override
     public int write(FsInode arg0, int arg1, long arg2, byte[] arg3, int arg4,
             int arg5) throws ChimeraFsException {
         // TODO Auto-generated method stub
