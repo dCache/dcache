@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileSystemProvider;
+import org.dcache.chimera.FsStat;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.HimeraDirectoryEntry;
 import org.dcache.chimera.IOHimeraFsException;
@@ -518,6 +519,10 @@ public class DummyFileSystemProvider implements FileSystemProvider {
     public void close() throws IOException {
         // TODO Auto-generated method stub
 
+    }
+
+    public FsStat getFsStat() {
+        return null;
     }
 
 }
