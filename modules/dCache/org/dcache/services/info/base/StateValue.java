@@ -65,6 +65,7 @@ abstract public class StateValue implements StateComponent {
 	 * Make the actual data/time this value will expire available.
 	 * @return when this StateValue will expire
 	 */
+    @Override
 	public Date getExpiryDate() {
 		return _expiryTime != null ? new Date( _expiryTime.getTime()) : null;
 	}
@@ -100,6 +101,7 @@ abstract public class StateValue implements StateComponent {
 	/**
 	 * A simple wrapper to check for non-null start values.
 	 */
+    @Override
 	public void acceptVisitor( StatePath path, StatePath start, StateVisitor visitor) {
 		if( start != null)
 			return;
@@ -113,41 +115,55 @@ abstract public class StateValue implements StateComponent {
 	 * Sub-classes of StateValue all ignore the transition when being visited: the StateComposite takes
 	 * care of all effects from processing the transition.
 	 */
+    @Override
 	public void acceptVisitor( StateTransition transition, StatePath path, StatePath start, StateVisitor visitor) {
 		acceptVisitor( path, start, visitor);
 	}
 
 
+    @Override
 	public void applyTransition( StatePath ourPath, StateTransition transition) {
 		// Simply do nothing. All activity takes place in StateComposite.
 	}
 
 
+	@Override
 	public void buildTransition( StatePath ourPath, StatePath childPath, StateComponent newChild, StateTransition transition) throws MetricStatePathException {
 		// If we're here, the user has specified a path with a metric in it.
 		throw new MetricStatePathException( ourPath.toString());
 	}
 
+	@Override
 	public void buildRemovalTransition( StatePath ourPath, StateTransition transition, boolean forced) {
 		// Simply do nothing, all activity takes place in StateComposites
 	}
 
+	@Override
 	public boolean predicateHasBeenTriggered( StatePath ourPath, StatePathPredicate predicate, StateTransition transition) throws MetricStatePathException {
                throw new MetricStatePathException( ourPath.toString());
 	}
 
+	@Override
+    public void buildPurgeTransition( StateTransition transition, StatePath ourPath, StatePath remainingPath) {
+        // Simply do nothing, all activity takes place in parent StateComposite
+    }
+
+    @Override
 	public boolean isMortal() {
 		return _expiryTime != null;
 	}
 
+    @Override
 	public boolean isEphemeral() {
 		return _expiryTime == null && _isEphemeral;
 	}
 
+    @Override
 	public boolean isImmortal() {
 		return _expiryTime == null && !_isEphemeral;
 	}
 
+    @Override
 	public Date getEarliestChildExpiryDate() {
 		return null; // we never have children.
 	}

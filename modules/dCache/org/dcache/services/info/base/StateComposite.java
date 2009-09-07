@@ -609,6 +609,9 @@ public class StateComposite implements StateComponent {
 		if( newComponent.isImmortal())
 			changeSet.recordChildIsImmortal();
 
+		// If we currently scheduled to remove the named child, make sure we don't!
+		changeSet.ensureChildNotRemoved( childName);
+
 		/**
 		 * If newComponent is one of our children, process it directly.
 		 */
@@ -817,6 +820,39 @@ public class StateComposite implements StateComponent {
 		}
 	}
 
+
+	/**
+	 * We are to update a StateTransition so all StateComponents that have a certain path as
+	 * their parent are to be removed.
+	 */
+    public void buildPurgeTransition( StateTransition transition, StatePath ourPath, StatePath remainingPath) {
+        if( _log.isDebugEnabled())
+            _log.debug("entering buildPurgeTransition( "+ourPath+", "+remainingPath+"..)");
+
+        if( remainingPath == null) {
+            // If remainingPath is null, we should remove everything.
+            buildRemovalTransition( ourPath, transition, true);
+        } else {
+            String childName = remainingPath.getFirstElement();
+
+            if( _children.containsKey( childName)) {
+                StateComponent child = _children.get( childName);
+                StatePath childPath = buildChildPath( ourPath, childName);
+                StateChangeSet scs = transition.getOrCreateChangeSet( ourPath);
+
+                if( child instanceof StateComposite)
+                    scs.recordChildItr( childName);
+
+                if( remainingPath.isSimplePath())
+                    scs.recordRemovedChild( childName);
+
+                child.buildPurgeTransition( transition, childPath, remainingPath.childPath());
+            }
+
+            // Otherwise, we still have to iterate down...
+            // if we don't have the named child, do nothing
+        }
+    }
 
 	/**
 	 * Return a hash-code that honours the equals() / hashCode() contract.

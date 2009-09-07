@@ -1,5 +1,7 @@
+/**
+ *
+ */
 package org.dcache.services.info.base;
-
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -11,6 +13,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.Date;
+import java.util.Set;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -408,6 +411,44 @@ public class StateCompositeTest extends InfoBaseTest {
 
 
 	@Test
+	public void testApplyTransitionRemovingMetrics() throws MetricStatePathException {
+
+		// Build a verifying visitor for the initial state: check it passes.
+		VerifyingVisitor visitorNoMetric = newDefaultVisitor();
+		visitorNoMetric.assertSatisfied("checking no-metric before adding metric", _rootComposite);
+
+		// Add a metric with zero lifetime; so should it will be removed later
+		String metricName = "myMetric";
+		StatePath metricPath = BRANCH_MORTAL_PATH.newChild( metricName);
+		StateValue metricValue = new StringStateValue( "Test string", 0);
+
+		addMetric( metricPath, metricValue);
+
+		// Paranoid: check this actually worked OK.
+		VerifyingVisitor visitorWithMetric = newDefaultVisitor();
+		visitorWithMetric.addExpectedMetric( metricPath, metricValue);
+		visitorWithMetric.assertSatisfied( "problem establishing expiring metric", _rootComposite);
+
+		// Build the removal transition, we should remove the metric we just added
+		StateTransition transition = new StateTransition();
+		_rootComposite.buildRemovalTransition( null, transition, false);
+
+		StateChangeSet mortalBranchScs = transition.getStateChangeSet( BRANCH_MORTAL_PATH);
+
+		assertScsCount( "root branch change-set", transition.getStateChangeSet( null), 0, 1, 0, 0);
+
+		assertNotNull( "mortal branch change-set is null", mortalBranchScs);
+		assertTrue( "mortal branch change-set doesn't contain expected metric", mortalBranchScs._removedChildren.contains( metricName));
+		assertScsCount( "mortal branch change-set", mortalBranchScs, 0, 1, 1, 0);
+
+		// Apply the transition
+		_rootComposite.applyTransition( null, transition);
+
+		// Check we're back were we started
+		visitorNoMetric.assertSatisfied("checking no-metric after removing expired metric", _rootComposite);
+	}
+
+	@Test
 	public void testApplyTransitionUpdatingStringMetrics() throws MetricStatePathException {
 		// Build a verifying visitor for the initial state: check it passes.
 		VerifyingVisitor visitorNoMetric = newDefaultVisitor();
@@ -536,6 +577,55 @@ public class StateCompositeTest extends InfoBaseTest {
 		VerifyingVisitor visitor = new VerifyingVisitor( metricPath, metricValue);
 		visitor.assertSatisfiedTransitionSkip("problem with skip to a new metric", _rootComposite, metricPath, transition);
 	}
+
+	/**
+	 * Check that, when simulating a transition involving StateComponents being removed,
+	 * the skip still works as expected.
+	 * @throws InterruptedException
+	 * @throws MetricStatePathException
+	 */
+	@Test
+	public void testSkipToExpiredMetric() throws InterruptedException, MetricStatePathException {
+
+		String metricName = "myMetric";
+		StatePath metricPath = BRANCH_MORTAL_PATH.newChild( metricName);
+
+		VerifyingVisitor visitorNoMetric = new VerifyingVisitor( BRANCH_MORTAL_PATH);
+		visitorNoMetric.assertSatisfiedSkip("checking no-metric before adding metric", _rootComposite, metricPath);
+
+		// Add a metric with zero lifetime; so should it will be removed later
+
+		StateValue metricValue = new StringStateValue( "Test string", 0);
+
+		assertTrue( "metric with zero lifetime not expected to retire straight away", metricValue.hasExpired());
+
+		addMetric( metricPath, metricValue);
+
+
+		VerifyingVisitor visitorMetric = new VerifyingVisitor( metricPath, metricValue);
+		visitorMetric.assertSatisfiedSkip( "problem establishing expiring metric", _rootComposite, metricPath);
+
+		// Build the removal transition
+
+		StateTransition transition = new StateTransition();
+		_rootComposite.buildRemovalTransition( null, transition, false);
+
+		StateChangeSet rootBranchScs = transition.getStateChangeSet( null);
+		assertNotNull( "mortal branch change-set is null", rootBranchScs);
+
+		assertScsCount( "root branch change-set", rootBranchScs, 0, 1, 0, 0);
+
+		StateChangeSet mortalBranchScs = transition.getStateChangeSet( BRANCH_MORTAL_PATH);
+		assertNotNull( "mortal branch change-set is null", mortalBranchScs);
+
+		assertScsCount( "mortal branch change-set", mortalBranchScs, 0, 1, 1, 0);
+		assertTrue( "mortal branch change-set doesn't contain expected metric", mortalBranchScs._removedChildren.contains( metricName));
+
+		// Check that we don't see the metric when simulating metric removal.
+
+		visitorNoMetric.assertSatisfiedTransitionSkip("simulating removal with skip", _rootComposite, metricPath, transition);
+	}
+
 
 	/**
 	 * Test method for {@link org.dcache.services.info.base.StateComposite#buildTransition(org.dcache.services.info.base.StatePath, org.dcache.services.info.base.StatePath, org.dcache.services.info.base.StateComponent, org.dcache.services.info.base.StateTransition)}.
@@ -739,6 +829,113 @@ public class StateCompositeTest extends InfoBaseTest {
 	}
 
 	/**
+	 * Test method for {@link org.dcache.services.info.base.StateComposite#buildRemovalTransition(org.dcache.services.info.base.StatePath, org.dcache.services.info.base.StateTransition, boolean)}.
+	 * @throws MetricStatePathException
+	 */
+	@Test
+	public void testBuildRemovalTransitionNotForcedWithMetricInRoot() throws MetricStatePathException {
+
+		String expMetricName = "expiredMetric";
+
+		// Add an already-expired metric
+		addMetric( new StatePath( expMetricName), new StringStateValue( "dummy metric value", 0));
+
+		StateTransition transition = new StateTransition();
+
+		_rootComposite.buildRemovalTransition(null, transition, false);
+		assertNotNull( transition.getStateChangeSet(null));
+		assertNull( transition.getStateChangeSet( BRANCH_EPHEMERAL_PATH));
+		assertNull( transition.getStateChangeSet( BRANCH_IMMORTAL_PATH));
+		assertNull( transition.getStateChangeSet( BRANCH_MORTAL_PATH));
+
+		StateChangeSet scs = transition.getStateChangeSet(null);
+
+		assertNotNull( "root StateChangeSet is null", scs);
+		assertScsCount( "root", scs, 0, 1, 1, 0);
+
+		Set<String> removedChildren = scs.getRemovedChildren();
+
+		assertTrue( "missing expired metric", removedChildren.contains( expMetricName));
+		assertFalse( "ephemeral branch present", removedChildren.contains( BRANCH_EPHEMERAL_NAME));
+		assertFalse( "immortal branch present", removedChildren.contains( BRANCH_IMMORTAL_NAME));
+		assertFalse( "mortal branch present", removedChildren.contains( BRANCH_MORTAL_NAME));
+	}
+
+
+	/**
+	 * Test method for {@link org.dcache.services.info.base.StateComposite#buildRemovalTransition(org.dcache.services.info.base.StatePath, org.dcache.services.info.base.StateTransition, boolean)}.
+	 * @throws MetricStatePathException
+	 */
+	@Test
+	public void testBuildRemovalTransitionNotForcedWithMetricInBranch() throws MetricStatePathException {
+
+		String expMetricName = "expiredMetric";
+
+		// Add an already-expired metric
+		StateTransition t = new StateTransition();
+		_rootComposite.buildTransition( null, BRANCH_MORTAL_PATH.newChild(expMetricName), new StringStateValue( "dummy metric value", 0), t);
+		_rootComposite.applyTransition(null, t);
+
+		StateTransition transition = new StateTransition();
+
+		_rootComposite.buildRemovalTransition(null, transition, false);
+		assertNotNull( transition.getStateChangeSet(null));
+		assertNotNull( transition.getStateChangeSet( BRANCH_MORTAL_PATH));
+		assertNull( transition.getStateChangeSet( BRANCH_EPHEMERAL_PATH));
+		assertNull( transition.getStateChangeSet( BRANCH_IMMORTAL_PATH));
+
+		StateChangeSet rootScs = transition.getStateChangeSet(null);
+		assertNotNull( "root branch StateChangeSet is null", rootScs);
+		assertScsCount( "root branch", rootScs, 0, 1, 0, 0);
+
+		StateChangeSet mortalScs = transition.getStateChangeSet( BRANCH_MORTAL_PATH);
+		assertNotNull( "mortal branch StateChangeSet is null", mortalScs);
+		assertScsCount( "mortal branch", mortalScs, 0, 1, 1, 0);
+
+		Set<String> removedChildren = mortalScs.getRemovedChildren();
+
+		assertTrue( "missing expired metric", removedChildren.contains( expMetricName));
+	}
+
+
+	/**
+	 * Test method for {@link org.dcache.services.info.base.StateComposite#buildRemovalTransition(org.dcache.services.info.base.StatePath, org.dcache.services.info.base.StateTransition, boolean)}.
+	 * @throws MetricStatePathException
+	 */
+	@Test
+	public void testBuildRemovalTransitionNoExpMortalsIsForced() throws MetricStatePathException {
+
+		String metricName = "aStringMetric";
+
+		// Add a yet-to-expire mortal metric to root composite.
+		addMetric( new StatePath( metricName), new StringStateValue( "dummy metric value", 10));
+
+		StateTransition transition = new StateTransition();
+
+		// Build a forced removal change-set
+		_rootComposite.buildRemovalTransition( null, transition, true);
+
+		assertNull( transition.getStateChangeSet( BRANCH_EPHEMERAL_PATH));
+		assertNull( transition.getStateChangeSet( BRANCH_IMMORTAL_PATH));
+		assertNull( transition.getStateChangeSet( BRANCH_MORTAL_PATH));
+
+        StateChangeSet scs = transition.getStateChangeSet(null);
+        assertNotNull( scs);
+
+        assertScsCount( "root", scs, 0, 4, 4, 0);
+
+		assertTrue( "missing ephemeral branch from itr", scs.getItrChildren().contains( BRANCH_EPHEMERAL_NAME));
+		assertTrue( "missing immortal branch from itr", scs.getItrChildren().contains( BRANCH_IMMORTAL_NAME));
+		assertTrue( "missing mortal branch from itr", scs.getItrChildren().contains( BRANCH_MORTAL_NAME));
+        assertTrue( "missing metric from itr", scs.getItrChildren().contains( metricName));
+
+		assertTrue( "missing ephemeral branch from remove", scs.getRemovedChildren().contains( BRANCH_EPHEMERAL_NAME));
+		assertTrue( "missing immortal branch from remove", scs.getRemovedChildren().contains( BRANCH_IMMORTAL_NAME));
+		assertTrue( "missing mortal branch from remove", scs.getRemovedChildren().contains( BRANCH_MORTAL_NAME));
+		assertTrue( "missing metric from remove", scs.getRemovedChildren().contains( metricName));
+	}
+
+	/**
 	 * Test method for {@link org.dcache.services.info.base.StateComposite#equals(java.lang.Object)}.
 	 */
 	@Test
@@ -919,6 +1116,374 @@ public class StateCompositeTest extends InfoBaseTest {
 		addMetric( BRANCH_EPHEMERAL_PATH.newChild( "immortal metric"), new StringStateValue( "dummy metric value", true));
 		assertIsImmortal( "ephemeral composite not promoted to immortality", _ephemeralComposite);
 	}
+
+	/**
+     * Check Purge
+     */
+
+
+    @Test
+    public void testPurgeEverything() {
+        StateTransition transition = new StateTransition();
+
+        // Remove everything.
+        _rootComposite.buildPurgeTransition( transition, null, null);
+
+        StateChangeSet rootScs = transition.getStateChangeSet( null);
+        assertNotNull( "Check that root Scs exists", rootScs);
+
+        assertScsCount( "root Scs", rootScs, 0, 3, 3, 0);
+
+        assertTrue( "Ephemeral branch is to be removed", rootScs.childIsRemoved( BRANCH_EPHEMERAL_NAME));
+        assertTrue( "Mortal branch is to be removed", rootScs.childIsRemoved( BRANCH_MORTAL_NAME));
+        assertTrue( "Immortal branch is to be removed", rootScs.childIsRemoved( BRANCH_IMMORTAL_NAME));
+
+        StateChangeSet mortalBranchScs = transition.getStateChangeSet( BRANCH_MORTAL_PATH);
+        assertNull( "Check that mortal Scs exists", mortalBranchScs);
+
+        StateChangeSet immortalBranchScs = transition.getStateChangeSet( BRANCH_IMMORTAL_PATH);
+        assertNull( "Check that immortal Scs exists", immortalBranchScs);
+
+        StateChangeSet ephemeralBranchScs = transition.getStateChangeSet( BRANCH_EPHEMERAL_PATH);
+        assertNull( "Check that ephemeral Scs exists", ephemeralBranchScs);
+
+        // The proof of the pudding is in the tasting...
+
+        _rootComposite.applyTransition( null, transition);
+
+        VerifyingVisitor emptyVisitor = new VerifyingVisitor();
+        emptyVisitor.assertSatisfied( "checking state is complete empty", _rootComposite);
+    }
+
+    @Test
+    public void testPurgeMortal() {
+        StateTransition transition = new StateTransition();
+
+        // Remove everything.
+        _rootComposite.buildPurgeTransition( transition, null, BRANCH_MORTAL_PATH);
+
+        StateChangeSet rootScs = transition.getStateChangeSet( null);
+        assertNotNull( "Check that root Scs exists", rootScs);
+
+        assertScsCount( "root Scs", rootScs, 0, 1, 1, 0);
+
+        assertFalse( "Ephemeral branch is to be removed", rootScs.childIsRemoved( BRANCH_EPHEMERAL_NAME));
+        assertTrue( "Mortal branch is to be removed", rootScs.childIsRemoved( BRANCH_MORTAL_NAME));
+        assertFalse( "Immortal branch is to be removed", rootScs.childIsRemoved( BRANCH_IMMORTAL_NAME));
+
+        StateChangeSet mortalBranchScs = transition.getStateChangeSet( BRANCH_MORTAL_PATH);
+        assertNull( "Check that mortal Scs exists", mortalBranchScs);
+
+        StateChangeSet immortalBranchScs = transition.getStateChangeSet( BRANCH_IMMORTAL_PATH);
+        assertNull( "Check that immortal Scs exists", immortalBranchScs);
+
+        StateChangeSet ephemeralBranchScs = transition.getStateChangeSet( BRANCH_EPHEMERAL_PATH);
+        assertNull( "Check that ephemeral Scs exists", ephemeralBranchScs);
+
+        // The proof of the pudding is in the tasting...
+
+        _rootComposite.applyTransition( null, transition);
+
+        VerifyingVisitor visitor = new VerifyingVisitor();
+        visitor.addExpectedBranch( BRANCH_EPHEMERAL_PATH);
+        visitor.addExpectedBranch( BRANCH_IMMORTAL_PATH);
+        visitor.assertSatisfied( "checking state contains two branches", _rootComposite);
+    }
+
+    @Test
+    public void testPurgeMortalBranchWithMetric() throws MetricStatePathException {
+
+        String metricName = "a metric";
+
+        // Add our metric to the mortal branch
+        addMetric( BRANCH_MORTAL_PATH.newChild( metricName), new StringStateValue( "String value", 100));
+
+        // Try to remove the mortal branch and everything underneath it.
+        StateTransition transition = new StateTransition();
+
+        _rootComposite.buildPurgeTransition( transition, null, BRANCH_MORTAL_PATH);
+
+        StateChangeSet rootScs = transition.getStateChangeSet( null);
+        assertNotNull( "Check that root Scs exists", rootScs);
+
+        assertScsCount( "root Scs", rootScs, 0, 1, 1, 0);
+
+        assertFalse( "Ephemeral branch is to be removed", rootScs.childIsRemoved( BRANCH_EPHEMERAL_NAME));
+        assertTrue( "Mortal branch is to be removed", rootScs.childIsRemoved( BRANCH_MORTAL_NAME));
+        assertFalse( "Immortal branch is to be removed", rootScs.childIsRemoved( BRANCH_IMMORTAL_NAME));
+
+        StateChangeSet immortalBranchScs = transition.getStateChangeSet( BRANCH_IMMORTAL_PATH);
+        assertNull( "Check that immortal Scs exists", immortalBranchScs);
+
+        StateChangeSet ephemeralBranchScs = transition.getStateChangeSet( BRANCH_EPHEMERAL_PATH);
+        assertNull( "Check that ephemeral Scs exists", ephemeralBranchScs);
+
+        StateChangeSet mortalBranchScs = transition.getStateChangeSet( BRANCH_MORTAL_PATH);
+        assertNotNull( "Check that mortal Scs exists", mortalBranchScs);
+
+        assertScsCount( "mortal branch Scs", mortalBranchScs, 0, 1, 1, 0);
+
+        assertTrue( "check metric is to be removed", mortalBranchScs.childIsRemoved( metricName));
+
+        // The proof of the pudding is in the tasting...
+
+        _rootComposite.applyTransition( null, transition);
+
+        VerifyingVisitor visitor = new VerifyingVisitor();
+        visitor.addExpectedBranch( BRANCH_EPHEMERAL_PATH);
+        visitor.addExpectedBranch( BRANCH_IMMORTAL_PATH);
+        visitor.assertSatisfied( "checking state contains two branches", _rootComposite);
+    }
+
+    @Test
+    public void testPurgeMortalMetric() throws MetricStatePathException {
+
+        String metricName = "a metric";
+        StatePath metricPath = BRANCH_MORTAL_PATH.newChild( metricName);
+
+        // Add our metric to the mortal branch
+        addMetric( metricPath, new StringStateValue( "String value", 100));
+
+        // Build a transition to remove just the metric
+        StateTransition transition = new StateTransition();
+        _rootComposite.buildPurgeTransition( transition, null, metricPath);
+
+        // Verify that the transition is as expected
+        StateChangeSet rootScs = transition.getStateChangeSet( null);
+        assertNotNull( "Check that root Scs exists", rootScs);
+
+        assertScsCount( "root Scs", rootScs, 0, 1, 0, 0);
+
+        assertFalse( "Ephemeral branch is to be removed", rootScs.childIsRemoved( BRANCH_EPHEMERAL_NAME));
+        assertFalse( "Mortal branch is to be removed", rootScs.childIsRemoved( BRANCH_MORTAL_NAME));
+        assertFalse( "Immortal branch is to be removed", rootScs.childIsRemoved( BRANCH_IMMORTAL_NAME));
+
+        StateChangeSet immortalBranchScs = transition.getStateChangeSet( BRANCH_IMMORTAL_PATH);
+        assertNull( "Check that immortal Scs exists", immortalBranchScs);
+
+        StateChangeSet ephemeralBranchScs = transition.getStateChangeSet( BRANCH_EPHEMERAL_PATH);
+        assertNull( "Check that ephemeral Scs exists", ephemeralBranchScs);
+
+        StateChangeSet mortalBranchScs = transition.getStateChangeSet( BRANCH_MORTAL_PATH);
+        assertNotNull( "Check that mortal Scs exists", mortalBranchScs);
+
+        assertScsCount( "mortal branch Scs", mortalBranchScs, 0, 0, 1, 0);
+
+        assertTrue( "check metric is to be removed", mortalBranchScs.childIsRemoved( metricName));
+
+        // The proof of the pudding is in the tasting...
+
+        _rootComposite.applyTransition( null, transition);
+
+        VerifyingVisitor visitor = newDefaultVisitor();
+        visitor.assertSatisfied( "checking state contains two branches", _rootComposite);
+    }
+
+    @Test
+    public void testPurgeMortalMetricThenAddMetric() throws MetricStatePathException {
+
+        String metricName = "myStringMetric";
+        StatePath metricPath = BRANCH_MORTAL_PATH.newChild( metricName);
+
+        // Add our metric to the mortal branch
+        addMetric( metricPath, new StringStateValue( "The old value", 100));
+
+        // Build transition to remove just the metric
+        StateTransition transition = new StateTransition();
+        _rootComposite.buildPurgeTransition( transition, null, metricPath);
+
+        // Verify that everything is as expected
+        StateChangeSet rootScs = transition.getStateChangeSet( null);
+        assertNotNull( "Check that root Scs exists", rootScs);
+
+        assertScsCount( "root Scs", rootScs, 0, 1, 0, 0);
+
+        assertFalse( "Ephemeral branch is to be removed", rootScs.childIsRemoved( BRANCH_EPHEMERAL_NAME));
+        assertFalse( "Mortal branch is to be removed", rootScs.childIsRemoved( BRANCH_MORTAL_NAME));
+        assertFalse( "Immortal branch is to be removed", rootScs.childIsRemoved( BRANCH_IMMORTAL_NAME));
+
+        assertNull( "Check that immortal Scs doesn't exists", transition.getStateChangeSet( BRANCH_IMMORTAL_PATH));
+
+        assertNull( "Check that ephemeral Scs doesn't exists", transition.getStateChangeSet( BRANCH_EPHEMERAL_PATH));
+
+        StateChangeSet mortalBranchScs = transition.getStateChangeSet( BRANCH_MORTAL_PATH);
+        assertNotNull( "Check that mortal Scs exists", mortalBranchScs);
+
+        assertScsCount( "mortal branch Scs", mortalBranchScs, 0, 0, 1, 0);
+
+        assertTrue( "check metric is to be removed", mortalBranchScs.childIsRemoved( metricName));
+
+        // Now we add a new metric with the same path
+        StateValue newMetric = new StringStateValue("The new value", 100);
+        _rootComposite.buildTransition( null, metricPath, newMetric, transition);
+
+        // And verify that the transition is as expected.
+        assertScsCount( "root Scs", rootScs, 0, 1, 0, 0);
+
+        assertFalse( "Ephemeral branch is to be removed", rootScs.childIsRemoved( BRANCH_EPHEMERAL_NAME));
+        assertFalse( "Mortal branch is to be removed", rootScs.childIsRemoved( BRANCH_MORTAL_NAME));
+        assertFalse( "Immortal branch is to be removed", rootScs.childIsRemoved( BRANCH_IMMORTAL_NAME));
+
+        assertNull( "Check that immortal Scs doesn't exists", transition.getStateChangeSet( BRANCH_IMMORTAL_PATH));
+
+        assertNull( "Check that ephemeral Scs doesn't exists", transition.getStateChangeSet( BRANCH_EPHEMERAL_PATH));
+
+        mortalBranchScs = transition.getStateChangeSet( BRANCH_MORTAL_PATH);
+        assertNotNull( "Check that mortal Scs exists", mortalBranchScs);
+
+        assertScsCount( "mortal branch Scs", mortalBranchScs, 0, 0, 0, 1);
+
+        assertTrue( "check metric is to be updated", mortalBranchScs.childIsUpdated( metricName));
+        assertFalse( "check metric is not to be removed", mortalBranchScs.childIsRemoved( metricName));
+
+        // The proof of the pudding is in the tasting...
+
+        _rootComposite.applyTransition( null, transition);
+
+        VerifyingVisitor visitor = newDefaultVisitor();
+        visitor.addExpectedMetric( metricPath, newMetric);
+        visitor.assertSatisfied( "checking state contains two branches", _rootComposite);
+    }
+
+    @Test
+    public void testPurgeMortalBranchThenAddMetric() throws MetricStatePathException {
+
+        String metricName = "a metric";
+        StatePath metricPath = BRANCH_MORTAL_PATH.newChild( metricName);
+
+        // Add our metric to the mortal branch
+        addMetric( metricPath, new StringStateValue( "String value", 100));
+
+        // Build transition to purge branch (so also removing the metric)
+        StateTransition transition = new StateTransition();
+        _rootComposite.buildPurgeTransition( transition, null, BRANCH_MORTAL_PATH);
+
+        // Verify that everything is as expected
+        StateChangeSet rootScs = transition.getStateChangeSet( null);
+        assertNotNull( "Check that root Scs exists", rootScs);
+
+        assertScsCount( "root Scs", rootScs, 0, 1, 1, 0);
+
+        assertFalse( "Ephemeral branch is not to be removed", rootScs.childIsRemoved( BRANCH_EPHEMERAL_NAME));
+        assertTrue( "Mortal branch is to be removed", rootScs.childIsRemoved( BRANCH_MORTAL_NAME));
+        assertFalse( "Immortal branch is not to be removed", rootScs.childIsRemoved( BRANCH_IMMORTAL_NAME));
+
+        assertNull( "Check that immortal Scs doesn't exists", transition.getStateChangeSet( BRANCH_IMMORTAL_PATH));
+
+        assertNull( "Check that ephemeral Scs doesn't exists", transition.getStateChangeSet( BRANCH_EPHEMERAL_PATH));
+
+        StateChangeSet mortalBranchScs = transition.getStateChangeSet( BRANCH_MORTAL_PATH);
+        assertNotNull( "Check that mortal Scs exists", mortalBranchScs);
+
+        assertScsCount( "mortal branch Scs", mortalBranchScs, 0, 1, 1, 0);
+
+        assertTrue( "check metric is to be removed", mortalBranchScs.childIsRemoved( metricName));
+
+        // Now we add a new metric with the same path
+        StateValue newMetric = new StringStateValue( "The new value", 100);
+        _rootComposite.buildTransition( null, metricPath, newMetric, transition);
+
+        // And verify that the transition is as expected.
+        assertScsCount( "root Scs", rootScs, 0, 1, 0, 0);
+
+        assertFalse( "Ephemeral branch is to be removed", rootScs.childIsRemoved( BRANCH_EPHEMERAL_NAME));
+        assertFalse( "Mortal branch is to be removed", rootScs.childIsRemoved( BRANCH_MORTAL_NAME));
+        assertFalse( "Immortal branch is to be removed", rootScs.childIsRemoved( BRANCH_IMMORTAL_NAME));
+
+        assertNull( "Check that immortal Scs doesn't exists", transition.getStateChangeSet( BRANCH_IMMORTAL_PATH));
+
+        assertNull( "Check that ephemeral Scs doesn't exists", transition.getStateChangeSet( BRANCH_EPHEMERAL_PATH));
+
+        mortalBranchScs = transition.getStateChangeSet( BRANCH_MORTAL_PATH);
+        assertNotNull( "Check that mortal Scs exists", mortalBranchScs);
+
+        assertScsCount( "mortal branch Scs", mortalBranchScs, 0, 1, 0, 1);
+
+        assertTrue( "check metric is to be updated", mortalBranchScs.childIsUpdated( metricName));
+        assertFalse( "check metric is not to be removed", mortalBranchScs.childIsRemoved( metricName));
+
+        // The proof of the pudding is in the tasting...
+
+        _rootComposite.applyTransition( null, transition);
+
+        VerifyingVisitor visitor = newDefaultVisitor();
+        visitor.addExpectedMetric( metricPath, newMetric);
+        visitor.assertSatisfied( "checking state contains two branches", _rootComposite);
+    }
+
+    @Test
+    public void testPurgeMortalBranchWithTwoMetricsThenAddMetric() throws MetricStatePathException {
+
+        String metricName = "metric-we-recreate";
+        StatePath metricPath = BRANCH_MORTAL_PATH.newChild( metricName);
+        String doomedMetricName = "metric-we-allow-to-be-purged";
+        StatePath doomedMetricPath = BRANCH_MORTAL_PATH.newChild( doomedMetricName);
+
+        // Add our metric to the mortal branch
+        addMetric( metricPath, new StringStateValue( "String value", 100));
+
+        // Add a doomed metric to the mortal branch
+        addMetric( doomedMetricPath, new StringStateValue( "String value", 100));
+
+
+        // Build transition to purge branch (so removing the metric)
+        StateTransition transition = new StateTransition();
+        _rootComposite.buildPurgeTransition( transition, null, BRANCH_MORTAL_PATH);
+
+        // Verify that everything is as expected
+        StateChangeSet rootScs = transition.getStateChangeSet( null);
+        assertNotNull( "Check that root Scs exists", rootScs);
+
+        assertScsCount( "root Scs", rootScs, 0, 1, 1, 0);
+
+        assertFalse( "Ephemeral branch is not to be removed", rootScs.childIsRemoved( BRANCH_EPHEMERAL_NAME));
+        assertTrue( "Mortal branch is to be removed", rootScs.childIsRemoved( BRANCH_MORTAL_NAME));
+        assertFalse( "Immortal branch is not to be removed", rootScs.childIsRemoved( BRANCH_IMMORTAL_NAME));
+
+        assertNull( "Check that immortal Scs doesn't exists", transition.getStateChangeSet( BRANCH_IMMORTAL_PATH));
+
+        assertNull( "Check that ephemeral Scs doesn't exists", transition.getStateChangeSet( BRANCH_EPHEMERAL_PATH));
+
+        StateChangeSet mortalBranchScs = transition.getStateChangeSet( BRANCH_MORTAL_PATH);
+        assertNotNull( "Check that mortal Scs exists", mortalBranchScs);
+
+        assertScsCount( "mortal branch Scs", mortalBranchScs, 0, 2, 2, 0);
+
+        assertTrue( "check doomedMetric is to be removed", mortalBranchScs.childIsRemoved( doomedMetricName));
+        assertTrue( "check metric is to be removed", mortalBranchScs.childIsRemoved( metricName));
+
+        // Now we add a new metric with the same path
+        StateValue newMetric = new StringStateValue( "The new value");
+        _rootComposite.buildTransition( null, metricPath, newMetric, transition);
+
+        // And verify that the transition is as expected.
+        assertScsCount( "root Scs", rootScs, 0, 1, 0, 0);
+
+        assertFalse( "Ephemeral branch is to be removed", rootScs.childIsRemoved( BRANCH_EPHEMERAL_NAME));
+        assertFalse( "Mortal branch is to be removed", rootScs.childIsRemoved( BRANCH_MORTAL_NAME));
+        assertFalse( "Immortal branch is to be removed", rootScs.childIsRemoved( BRANCH_IMMORTAL_NAME));
+
+        assertNull( "Check that immortal Scs doesn't exists", transition.getStateChangeSet( BRANCH_IMMORTAL_PATH));
+
+        assertNull( "Check that ephemeral Scs doesn't exists", transition.getStateChangeSet( BRANCH_EPHEMERAL_PATH));
+
+        mortalBranchScs = transition.getStateChangeSet( BRANCH_MORTAL_PATH);
+        assertNotNull( "Check that mortal Scs exists", mortalBranchScs);
+
+        assertScsCount( "mortal branch Scs", mortalBranchScs, 0, 2, 1, 1);
+
+        assertTrue( "check metric is to be updated", mortalBranchScs.childIsUpdated( metricName));
+        assertFalse( "check metric is not to be removed", mortalBranchScs.childIsRemoved( metricName));
+        assertTrue( "check doomedMetric is still to be removed", mortalBranchScs.childIsRemoved( doomedMetricName));
+
+        // The proof of the pudding is in the tasting...
+
+        _rootComposite.applyTransition( null, transition);
+
+        VerifyingVisitor visitor = newDefaultVisitor();
+        visitor.addExpectedMetric( metricPath, newMetric);
+        visitor.assertSatisfied( "checking state contains two branches", _rootComposite);
+    }
 
 
 	/**

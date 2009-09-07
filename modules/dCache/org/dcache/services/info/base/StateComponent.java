@@ -99,6 +99,14 @@ interface StateComponent {
 
 	
 	/**
+	 *  Update a StateTransition so all components below remainingPath from the current
+	 *  StateComponent will be removed.  This is equivalent to
+	 *  buildRemovalTransition( ..., transition, true)
+	 *  for the top-most element in the named subtree.
+	 */
+	public void buildPurgeTransition( StateTransition transition, StatePath ourPath, StatePath remainingPath);
+
+	/**
 	 * Whether this component has expired.
 	 * @return true if the parent object should remove this object, false otherwise.
 	 */
