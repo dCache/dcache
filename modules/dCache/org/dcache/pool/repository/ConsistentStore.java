@@ -351,4 +351,24 @@ public class ConsistentStore
     {
         return String.format("[data=%s;meta=%s]", _fileStore, _metaDataStore);
     }
+
+    /**
+     * Provides the amount of free space on the file system containing
+     * the data files.
+     */
+    @Override
+    public long getFreeSpace()
+    {
+        return _metaDataStore.getFreeSpace();
+    }
+
+    /**
+     * Provides the total amount of space on the file system
+     * containing the data files.
+     */
+    @Override
+    public long getTotalSpace()
+    {
+        return _metaDataStore.getTotalSpace();
+    }
 }

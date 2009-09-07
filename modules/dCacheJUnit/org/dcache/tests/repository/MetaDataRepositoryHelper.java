@@ -239,4 +239,11 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
     public void close() {
     }
 
+    public long getTotalSpace() {
+        return 0;
+    }
+
+    public long getFreeSpace() {
+        return 0;
+    }
 }

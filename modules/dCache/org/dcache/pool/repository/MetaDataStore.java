@@ -10,6 +10,10 @@ import diskCacheV111.util.CacheException;
 /**
  * The MetaDataStore interface provides an abstraction of how
  * MetaDataRecord objects are created, retrieved and removed.
+ *
+ * The name is misleading and should be renamed. The reason is that
+ * the interface is used as an abstraction over both meta data storage
+ * and file storage.
  */
 public interface MetaDataStore
 {
@@ -86,4 +90,16 @@ public interface MetaDataStore
 
     /** Closes the store and frees any associated resources. */
     void close();
+
+    /**
+     * Provides the amount of free space on the file system containing
+     * the data files.
+     */
+    long getFreeSpace();
+
+    /**
+     * Provides the total amount of space on the file system
+     * containing the data files.
+     */
+    long getTotalSpace();
 }

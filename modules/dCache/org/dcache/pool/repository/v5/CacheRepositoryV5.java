@@ -352,7 +352,7 @@ public class CacheRepositoryV5
                 CheckHealthTask task = new CheckHealthTask(this);
                 task.setAccount(_account);
                 task.setMetaDataStore(_store);
-                _executor.scheduleWithFixedDelay(task, 30, 30, TimeUnit.SECONDS);
+                _executor.scheduleWithFixedDelay(task, 0, 60, TimeUnit.SECONDS);
             }
         } catch (CacheException e) {
             throw new RepositoryException("Failed to initialise repository: " + e.getMessage());

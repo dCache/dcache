@@ -9,7 +9,7 @@ import org.dcache.pool.repository.Account;
 
 class CheckHealthTask implements Runnable
 {
-    private static Logger _log = Logger.getLogger(CheckHealthTask.class);
+    private final static Logger _log = Logger.getLogger(CheckHealthTask.class);
 
     private final CacheRepositoryV5 _repository;
 
@@ -46,8 +46,11 @@ class CheckHealthTask implements Runnable
 
         if (!checkSpaceAccounting()) {
             _log.error("Marking pool read-only due to accounting errors. This is a bug. Please report it to support@dcache.org.");
-            _repository.fail(FaultAction.READONLY, "Accounting errors detected");
+            _repository.fail(FaultAction.READONLY,
+                             "Accounting errors detected");
         }
+
+        adjustFreeSpace();
     }
 
     private boolean checkSpaceAccounting()
@@ -93,5 +96,34 @@ class CheckHealthTask implements Runnable
         }
 
         return true;
+    }
+
+    private void adjustFreeSpace()
+    {
+        /* At any time the file system must have at least as much free
+         * space as shows in the account. Thus invariantly
+         *
+         *      _metaDataStore.getFreeSpace >= _account.getFree
+         *
+         * Taking the monitor lock on the account object prevents
+         * anybody else from allocating space from the account. Hence
+         * throughout the period we have the lock, the file system
+         * must have at least as much free space as the account.
+         */
+        synchronized (_account) {
+            long free = _metaDataStore.getFreeSpace();
+            long total = _metaDataStore.getTotalSpace();
+
+            if (total < _account.getTotal()) {
+                _log.warn("The file system containing the data files appears to be smaller than the configured pool size.");
+            }
+
+            if (free < _account.getFree()) {
+                _log.warn("The file system containing the data files appears to have less free space than expected; reducing the pool size to compensate. Notice that this does not leave any space for the meta data. If such data is stored on the same file system, then it is paramount that the pool size is reconfigured to leave enough space for the meta data.");
+
+                _account.setTotal(_account.getTotal() -
+                                  (_account.getFree() - free));
+            }
+        }
     }
 }

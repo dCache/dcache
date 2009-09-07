@@ -23,14 +23,13 @@ public interface FileStore
 
     /**
      * Provides the amount of free space on the file system containing
-     * the data files. This will only be implemented for Java 6.
+     * the data files.
      */
     public long getFreeSpace();
 
     /**
      * Provides the total amount of space on the file system
-     * containing the data files. This will only be implemented for
-     * Java 6.
+     * containing the data files.
      */
     public long getTotalSpace();
 

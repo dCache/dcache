@@ -82,11 +82,13 @@ public class BerkeleyDBMetaDataRepository
         _views = new MetaDataRepositoryViews(_database);
     }
 
+    @Override
     public Collection<PnfsId> list()
     {
         throw new RuntimeException("Not implemented");
     }
 
+    @Override
     public MetaDataRecord get(PnfsId id)
     {
         return CacheRepositoryEntryImpl.load(this, id);
@@ -95,6 +97,7 @@ public class BerkeleyDBMetaDataRepository
     /**
      * TODO: The entry is not persistent yet!
      */
+    @Override
     public MetaDataRecord create(PnfsId id)
         throws DuplicateEntryException
     {
@@ -112,6 +115,7 @@ public class BerkeleyDBMetaDataRepository
     /**
      * TODO: The entry is not persistent yet!
      */
+    @Override
     public MetaDataRecord create(MetaDataRecord entry)
         throws DuplicateEntryException, CacheException
     {
@@ -127,12 +131,14 @@ public class BerkeleyDBMetaDataRepository
         return new CacheRepositoryEntryImpl(this, entry);
     }
 
+    @Override
     public void remove(PnfsId id)
     {
         _views.getStorageInfoMap().remove(id.toString());
         _views.getStateMap().remove(id.toString());
     }
 
+    @Override
     public boolean isOk()
     {
         File tmp = new File(_dir, ".repository_is_ok");
@@ -182,6 +188,7 @@ public class BerkeleyDBMetaDataRepository
     }
 
     /** Closes the database. */
+    @Override
     public void close()
     {
         try {
@@ -194,9 +201,30 @@ public class BerkeleyDBMetaDataRepository
     /**
      * Returns the path
      */
+    @Override
     public String toString()
     {
         return _dir.toString();
+    }
+
+    /**
+     * Provides the amount of free space on the file system containing
+     * the data files.
+     */
+    @Override
+    public long getFreeSpace()
+    {
+        return _fileStore.getFreeSpace();
+    }
+
+    /**
+     * Provides the total amount of space on the file system
+     * containing the data files.
+     */
+    @Override
+    public long getTotalSpace()
+    {
+        return _fileStore.getTotalSpace();
     }
 
     /**

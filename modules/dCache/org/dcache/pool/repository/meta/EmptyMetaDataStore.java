@@ -25,38 +25,57 @@ public class EmptyMetaDataStore
     {
     }
 
+    @Override
     public Collection<PnfsId> list()
     {
         return Collections.emptyList();
     }
 
+    @Override
     public MetaDataRecord get(PnfsId id)
     {
         return null;
     }
 
+    @Override
     public MetaDataRecord create(PnfsId id)
         throws RepositoryException
     {
         throw new RepositoryException("Store is read only");
     }
 
+    @Override
     public MetaDataRecord create(MetaDataRecord entry)
         throws RepositoryException
     {
         throw new RepositoryException("Store is read only");
     }
 
+    @Override
     public void remove(PnfsId id)
     {
     }
 
+    @Override
     public boolean isOk()
     {
         return true;
     }
 
+    @Override
     public void close()
     {
+    }
+
+    @Override
+    public long getFreeSpace()
+    {
+        return 0;
+    }
+
+    @Override
+    public long getTotalSpace()
+    {
+        return 0;
     }
 }

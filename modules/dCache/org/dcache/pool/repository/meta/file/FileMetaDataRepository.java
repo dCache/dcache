@@ -43,6 +43,7 @@ public class FileMetaDataRepository
         }
     }
 
+    @Override
     public Collection<PnfsId> list()
     {
         String[] files = _metadir.list();
@@ -59,6 +60,7 @@ public class FileMetaDataRepository
         return ids;
     }
 
+    @Override
     public MetaDataRecord create(PnfsId id)
         throws DuplicateEntryException, CacheException
     {
@@ -94,12 +96,14 @@ public class FileMetaDataRepository
     }
 
     // todo
+    @Override
     public MetaDataRecord create(MetaDataRecord entry)
         throws DuplicateEntryException, CacheException {
 
         return null;
     }
 
+    @Override
     public MetaDataRecord get(PnfsId id)
         throws CacheException
     {
@@ -118,6 +122,7 @@ public class FileMetaDataRepository
         return null;
     }
 
+    @Override
     public void remove(PnfsId id) {
         File controlFile = new File(_metadir, id.toString());
         File siFile = new File(_metadir, "SI-"+id.toString());
@@ -126,6 +131,7 @@ public class FileMetaDataRepository
         siFile.delete();
     }
 
+    @Override
     public boolean isOk()
     {
         File tmp = new File(_metadir, ".repository_is_ok");
@@ -146,17 +152,37 @@ public class FileMetaDataRepository
     }
 
     /** NOP */
+    @Override
     public void close()
     {
-
     }
 
     /**
      * Returns the path
      */
+    @Override
     public String toString()
     {
         return _metadir.toString();
     }
 
+    /**
+     * Provides the amount of free space on the file system containing
+     * the data files.
+     */
+    @Override
+    public long getFreeSpace()
+    {
+        return _fileStore.getFreeSpace();
+    }
+
+    /**
+     * Provides the total amount of space on the file system
+     * containing the data files.
+     */
+    @Override
+    public long getTotalSpace()
+    {
+        return _fileStore.getTotalSpace();
+    }
 }

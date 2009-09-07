@@ -64,30 +64,30 @@ public class FlatFileStore implements FileStore
 
     public long getFreeSpace()
     {
-        return 0;// return _dataDir.getFreeSpace();
+        return _dataDir.getUsableSpace();
     }
 
     public long getTotalSpace()
     {
-        return 0;// return _dataDir.getTotalSpace();
+        return _dataDir.getTotalSpace();
     }
 
     public boolean isOk()
     {
-       try {
-           File tmp = new File(_dataDir, ".repository_is_ok");
-	   tmp.delete();
-	   tmp.deleteOnExit();
+        try {
+            File tmp = new File(_dataDir, ".repository_is_ok");
+            tmp.delete();
+            tmp.deleteOnExit();
 
-	   if (!tmp.createNewFile())
-               return false;
+            if (!tmp.createNewFile())
+                return false;
 
-	   if (!tmp.exists())
-               return false;
+            if (!tmp.exists())
+                return false;
 
-	   return true;
-	} catch (IOException e) {
-	   return false;
-	}
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
     }
 }
