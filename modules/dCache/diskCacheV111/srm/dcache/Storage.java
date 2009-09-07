@@ -376,7 +376,7 @@ public class Storage
         _pnfsStub.setTimeout(__pnfsTimeout * 1000);
         _pnfsStub.setRetryOnNoRouteToCell(true);
         _pnfs = new PnfsHandler(_pnfsStub);
-        permissionHandler = 
+        permissionHandler =
             new PermissionHandler(this, new CellPath(_pnfsManagerName));
         InetAddress[] addresses = InetAddress.getAllByName(
                 InetAddress.getLocalHost().getHostName());
@@ -2648,7 +2648,7 @@ public class Storage
 
     public void removeFile(final SRMUser user,
                            final String path,
-                           RemoveFileCallbacks callbacks) 
+                           RemoveFileCallbacks callbacks)
     {
         _log.debug("Storage.removeFile");
 
@@ -2675,9 +2675,9 @@ public class Storage
             } catch (NotInTrashCacheException e) {
                 throw new SRMException("File does not exist: " + path);
             } catch (CacheException e) {
-                _log.error("Failed to delete " + actualPath + ": " 
+                _log.error("Failed to delete " + actualPath + ": "
                            + e.getMessage());
-                throw new SRMException("Failed to delete " + path + ": " 
+                throw new SRMException("Failed to delete " + path + ": "
                                        + e.getMessage());
             }
         }
@@ -2728,8 +2728,8 @@ public class Storage
         }
     }
 
-    public void moveEntry(SRMUser user, String from, String to)  
-        throws SRMException 
+    public void moveEntry(SRMUser user, String from, String to)
+        throws SRMException
     {
         Subject subject = Subjects.getSubject((AuthorizationRecord) user);
         PnfsHandler handler = new PnfsHandler(_pnfs, subject);
@@ -2738,12 +2738,12 @@ public class Storage
 
         try {
             try {
-                FileAttributes attr = 
+                FileAttributes attr =
                     handler.getFileAttributes(toPath, EnumSet.of(FileAttribute.TYPE));
                 if (attr.getFileType() != FileType.DIR) {
                     throw new SRMDuplicationException("Destination exists");
                 }
-                 
+
                 File fromFile = new File(fromPath);
                 File toFile = new File(new File(toPath), fromFile.getName());
                 toPath = toFile.toString();
@@ -2771,7 +2771,7 @@ public class Storage
              * a directory.
              */
             String parent = (new File(to)).getParent();
-            throw new SRMInvalidPathException("No such directory: " + 
+            throw new SRMInvalidPathException("No such directory: " +
                                               parent, e);
         } catch (PermissionDeniedCacheException e) {
             throw new SRMException("Permission denied");
