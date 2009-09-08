@@ -34,7 +34,7 @@ import org.apache.log4j.Logger;
  * some synchronous classes also use this to build lists from dCache current
  * state (e.g., to send a message requesting data to each currently known
  * pool).
- * 
+ *
  * @author Paul Millar <paul.millar@desy.de>
  */
 public class State implements StateCaretaker, StateExhibitor, StateObservatory {
@@ -78,7 +78,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
     /**
      * Record a new StateUpdateManager. This will be used to enqueue
      * StateUpdates from secondary information providers.
-     * 
+     *
      * @param sum
      *            the StateUpdateManager
      */
@@ -188,7 +188,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
      * provided with a StateUpdate within which it may register additional
      * metrics.
      * <p>
-     * 
+     *
      * @param transition
      *            The StateTransition to apply
      * @return a StateUpdate containing new metrics, or null if there are no
@@ -241,7 +241,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
             }
         }
 
-        return update.count() > 0 ? update : null;
+        return update.count() > 0 || update.countPurges() > 0 ? update : null;
     }
 
     /**
@@ -483,7 +483,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
 
     /**
      * Emit output suitable for the info cell command.
-     * 
+     *
      * @param pw
      */
     public void getInfo( PrintWriter pw) {
