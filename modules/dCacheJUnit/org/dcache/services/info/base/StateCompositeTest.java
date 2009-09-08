@@ -80,6 +80,16 @@ public class StateCompositeTest extends InfoBaseTest {
 		assertNotNull( "Cannot create ephemeral StateComposite", new StateComposite());
 	}
 
+	@Test
+	public void testStateCompositeBooleanFalse() {
+	    assertIsEphemeral( "StateComposite(false)", new StateComposite(false));
+	}
+
+    @Test
+    public void testStateCompositeBooleanTrue() {
+        assertIsImmortal( "StateComposite(true)", new StateComposite(true));
+    }
+
 	/**
 	 * Test method for {@link org.dcache.services.info.base.StateComposite#StateComposite(org.dcache.services.info.base.StatePersistentMetadata)}.
 	 */

@@ -4,6 +4,11 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -38,6 +43,45 @@ public class StateUpdateTests {
 		_update.appendUpdate( NEW_INTEGER_PATH.parentPath().newChild("anotherInteger"), new IntegerStateValue( 39, MORTAL_METRIC_DURATION));
 		assertSame( "count not updated", 3, _update.count());
 	}
+
+	@Test
+	public void testAppendUpdateCollectionImmortal() {
+	    StatePath basePath = StatePath.parsePath( "aa.bb");
+	    Set<String> items = new HashSet<String>();
+	    items.add( "item1");
+        items.add( "item2");
+        items.add( "item3");
+	    _update.appendUpdateCollection( basePath, items, true);
+
+	    for( String item : items)
+	        assertTrue( _update.hasUpdate( basePath.newChild( item), new StateComposite()));
+	}
+
+    @Test
+    public void testAppendUpdateCollectionEphemeral() {
+        StatePath basePath = StatePath.parsePath( "aa.bb");
+        Set<String> items = new HashSet<String>();
+        items.add( "item1");
+        items.add( "item2");
+        items.add( "item3");
+        _update.appendUpdateCollection( basePath, items, true);
+
+        for( String item : items)
+            assertTrue( _update.hasUpdate( basePath.newChild( item), new StateComposite()));
+    }
+
+    @Test
+    public void testAppendUpdateCollectionMortal() {
+        StatePath basePath = StatePath.parsePath( "aa.bb");
+        List<String> items = new LinkedList<String>();
+        items.add( "item1");
+        items.add( "item2");
+        items.add( "item3");
+        _update.appendUpdateCollection( basePath, items, 10);
+
+        for( String item : items)
+            assertTrue( _update.hasUpdate( basePath.newChild( item), new StateComposite()));
+    }
 
 	@Test
 	public void testUpdateTransition() throws BadStatePathException {

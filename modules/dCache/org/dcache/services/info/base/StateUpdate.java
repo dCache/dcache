@@ -4,6 +4,7 @@
 package org.dcache.services.info.base;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -111,6 +112,31 @@ public class StateUpdate {
 	 */
 	public void appendUpdate( StatePath path, StateComponent value) {
 		_updates.add( new StateUpdateInstance( path, value));
+	}
+
+	/**
+	 * Add a Collection of items as a series of StateComposites.  These
+	 * may be immortal or ephemeral.
+	 * @param path  The common StatePath for this Collection
+	 * @param items The items to add
+	 * @param isImmortal true for immortal StateComposites; false for ephemeral
+	 */
+	public void appendUpdateCollection( StatePath path, Collection<String> items,
+			boolean isImmortal) {
+		for( String item : items)
+			appendUpdate( path.newChild(item), new StateComposite( isImmortal));
+	}
+
+	/**
+	 * Add a Collection of items as mortal StateComposite objects.
+	 * @param path The common StatePath for this Collection
+	 * @param items The Collection of names.
+	 * @param lifetime the lifetime, in seconds, for the StateComposites.
+	 */
+	public void appendUpdateCollection( StatePath path, List<String> items,
+			long lifetime) {
+		for( String item : items)
+			appendUpdate( path.newChild(item), new StateComposite( lifetime));
 	}
 
 

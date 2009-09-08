@@ -68,8 +68,23 @@ public class StateComposite implements StateComponent {
 	 * should be created Mortal.
 	 */
 	public StateComposite() {
-		becomeEphemeral();
-		_metadataRef = null; // Set when added to state tree
+		this( false);
+	}
+
+	/**
+	 * Create a new Ephemeral or Immortal StateComposite.  Normally
+	 * StateComposites should be mortal.  (Mortal StateComposites will
+	 * automatically extend their lives so they don't expire before their
+	 * children.)
+	 * @param isImmortal true for an immortal StateComposite, false for
+	 * an ephemeral one.
+	 */
+	public StateComposite( boolean isImmortal) {
+		if( isImmortal)
+			becomeImmortal();
+		else
+			becomeEphemeral();
+		_metadataRef = null;
 	}
 
 	/**
