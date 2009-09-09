@@ -203,6 +203,7 @@ public class SrmCopy {
                 }
             }
             r.schedule();
+            response = ((CopyRequest)r).getSrmCopyResponse();
             return response;
         } catch(Exception e) {
             logger.error(e);
