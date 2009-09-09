@@ -9,6 +9,7 @@ import java.util.Formatter;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.TreeMap;
 import java.util.List;
 import java.util.Collection;
 import java.util.Collections;
@@ -78,11 +79,11 @@ public class UniversalSpringCell
     private ConfigurableApplicationContext _context;
 
     /**
-     * List of registered info providers. Sorted to maintain
-     * consistent ordering.
+     * Registered info providers mapped to their bean names. Sorted to
+     * maintain consistent ordering.
      */
-    private final Set<CellInfoProvider> _infoProviders =
-        new TreeSet<CellInfoProvider>(new ClassNameComparator());
+    private final Map<CellInfoProvider,String> _infoProviders =
+        new TreeMap<CellInfoProvider,String>(new ClassNameComparator());
 
     /**
      * List of registered setup providers. Sorted to maintain
@@ -230,24 +231,6 @@ public class UniversalSpringCell
     }
 
     /**
-     * Returns the name of a given bean, or null if no such bean is
-     * defined.
-     *
-     * This method is relatively expensive and should not be used for
-     * time critical purposes.
-     */
-    private String getNameOfBean(Object bean)
-    {
-        ConfigurableListableBeanFactory factory = _context.getBeanFactory();
-        Map<String,Object> map = factory.getBeansOfType(bean.getClass());
-        for (Map.Entry<String, Object> e: map.entrySet()) {
-            if (e.getValue() == bean)
-                return e.getKey();
-        }
-        return null;
-    }
-
-    /**
      * Returns the singleton bean with a given name. Returns null if
      * such a bean does not exist.
      */
@@ -292,8 +275,9 @@ public class UniversalSpringCell
     public void getInfo(PrintWriter pw)
     {
         ConfigurableListableBeanFactory factory = _context.getBeanFactory();
-        for (CellInfoProvider provider : _infoProviders) {
-            String name = getNameOfBean(provider);
+        for (Map.Entry<CellInfoProvider,String> entry: _infoProviders.entrySet()) {
+            CellInfoProvider provider = entry.getKey();
+            String name = entry.getValue();
             try {
                 BeanDefinition definition = factory.getBeanDefinition(name);
                 String description = definition.getDescription();
@@ -319,8 +303,9 @@ public class UniversalSpringCell
     public CellInfo getCellInfo()
     {
         CellInfo info = super.getCellInfo();
-        for (CellInfoProvider provider : _infoProviders)
+        for (CellInfoProvider provider : _infoProviders.keySet()) {
             info = provider.getCellInfo(info);
+        }
         return info;
     }
 
@@ -650,9 +635,9 @@ public class UniversalSpringCell
      * Registers an info provider. Info providers contribute to the
      * result of the <code>getInfo</code> method.
      */
-    public void addInfoProviderBean(CellInfoProvider bean)
+    public void addInfoProviderBean(CellInfoProvider bean, String name)
     {
-        _infoProviders.add(bean);
+        _infoProviders.put(bean, name);
     }
 
     /**
@@ -717,7 +702,7 @@ public class UniversalSpringCell
         }
 
         if (CellInfoProvider.class.isInstance(bean)) {
-            addInfoProviderBean((CellInfoProvider)bean);
+            addInfoProviderBean((CellInfoProvider)bean, beanName);
         }
 
         if (CellMessageReceiver.class.isInstance(bean)) {
