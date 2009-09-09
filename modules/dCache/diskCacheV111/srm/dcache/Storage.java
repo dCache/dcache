@@ -259,6 +259,7 @@ public class Storage
     private CellStub _copyManagerStub;
     private CellStub _gridftpTransferManagerStub;
     private CellStub _pinManagerStub;
+    private CellStub _loginBrokerStub;
     private PnfsHandler _pnfs;
     private PermissionHandler permissionHandler;
     String _hosts[];
@@ -413,6 +414,12 @@ public class Storage
         _pnfsStub.setCellEndpoint(this);
         _pnfsStub.setTimeout(__pnfsTimeout * 1000);
         _pnfsStub.setRetryOnNoRouteToCell(true);
+
+        _loginBrokerStub = new CellStub();
+        _loginBrokerStub.setCellEndpoint(this);
+        _loginBrokerStub.setDestination(loginBrokerName);
+        _loginBrokerStub.setTimeout(__pnfsTimeout * 1000);
+
         _pnfs = new PnfsHandler(_pnfsStub);
         permissionHandler =
             new PermissionHandler(this, new CellPath(_pnfsManagerName));
@@ -1506,7 +1513,7 @@ public class Storage
 
     public String selectGetProtocol(String[] protocols)
     throws SRMException {
-        HashSet available_protocols = listAvailableProtocols();
+        Set<String> available_protocols = listAvailableProtocols();
         available_protocols.retainAll(Arrays.asList(protocols));
         available_protocols.removeAll(Arrays.asList(SRM_GET_NOT_SUPPORTED_PROTOCOLS));
         if(available_protocols.size() == 0) {
@@ -1539,7 +1546,7 @@ public class Storage
 
     public String selectPutProtocol(String[] protocols)
     throws SRMException {
-        HashSet available_protocols = listAvailableProtocols();
+        Set<String> available_protocols = listAvailableProtocols();
         available_protocols.retainAll(Arrays.asList(protocols));
         available_protocols.removeAll(Arrays.asList(SRM_PUT_NOT_SUPPORTED_PROTOCOLS));
         if(available_protocols.size() == 0) {
@@ -1573,18 +1580,18 @@ public class Storage
 
     public String[] supportedGetProtocols()
     throws SRMException {
-        HashSet protocols = this.listAvailableProtocols();
-        return (String[]) protocols.toArray(new String[0]);
+        Set<String> protocols = listAvailableProtocols();
+        return protocols.toArray(new String[0]);
     }
 
     public String[] supportedPutProtocols()
     throws SRMException {
-        HashSet protocols = this.listAvailableProtocols();
+        Set<String> protocols = listAvailableProtocols();
         // "http" is for getting only
         if(protocols.contains("http")) {
             protocols.remove("http");
         }
-        return (String[]) protocols.toArray(new String[0]);
+        return protocols.toArray(new String[0]);
     }
 
     public String selectGetHost(String protocol,String fileId)
@@ -1773,177 +1780,100 @@ public class Storage
     }
 
     public LoginBrokerInfo[] getLoginBrokerInfos()
-    throws SRMException {
+        throws SRMException
+    {
         return getLoginBrokerInfos((String)null);
     }
 
-    public static final int MAX_LOGIN_BROKER_RETRIES=5;
+    // These hashtables are used as a caching mechanizm for the login
+    // broker infos. Here we asume that no protocol called "null" is
+    // going to be ever used.
+    private final Map<String,LoginBrokerInfo[]> latestLoginBrokerInfos =
+        new HashMap<String,LoginBrokerInfo[]>();
+    private final Map<String,Long> latestLoginBrokerInfosTimes =
+        new HashMap<String,Long>();
+    private long LOGINBROKERINFO_VALIDITYSPAN = 30 * 1000;
+    private static final int MAX_LOGIN_BROKER_RETRIES=5;
 
-    private class LoginBrokerCompanion implements CellMessageAnswerable {
-        public boolean answered = false;
-        public LoginBrokerInfo[] loginBrokerInfos ; //null by default
-        public String error; //null by default, error is indicated by error being nonnull
+    public LoginBrokerInfo[] getLoginBrokerInfos(String protocol)
+        throws SRMException
+    {
+        String key = (protocol == null) ? "null" : protocol;
 
-        public void answerArrived( CellMessage request ,
-                CellMessage answer    ) {
-            int i = 0;
-            if(answer == null) {
-                failedNotify("getLoginBrokerInfos: answer == null");
-                return;
-            }
-            Object o = answer.getMessageObject();
-            if(o == null ) {
-                failedNotify("getLoginBrokerInfos: loginBroker answer is null");
-                return;
-            }
-
-            if(!(o instanceof  dmg.cells.services.login.LoginBrokerInfo[]) ) {
-                failedNotify("getLoginBrokerInfos: login broker returned o ="+o);
-                return;
-            }
-            LoginBrokerInfo[] _loginBrokerInfos = (LoginBrokerInfo[]) o;
-
-            successNotify(_loginBrokerInfos);
-        }
-
-        public void exceptionArrived( CellMessage request ,
-                Exception   exception ) {
-            failedNotify("request failed: "+exception);
-        }
-
-        public void answerTimedOut( CellMessage request ) {
-            failedNotify("request timed out");
-        }
-
-        public synchronized void successNotify(LoginBrokerInfo[] loginBrokerInfos ) {
-            this.loginBrokerInfos =loginBrokerInfos ;
-            answered = true;
-            notifyAll();
-        }
-
-        public synchronized void failedNotify(String error) {
-            _log.error("LoginBrokerCompanion.failedNotify("+error+")");
-            this.error =error ;
-            answered = true;
-            notifyAll();
-        }
-
-        public void waitForAnswer() throws InterruptedException {
-            while(true) {
-                synchronized(this) {
-                    wait(1000);
-                    if(answered) {
-                        return;
+        synchronized (latestLoginBrokerInfosTimes) {
+            Long timestamp = latestLoginBrokerInfosTimes.get(key);
+            if (timestamp !=null) {
+                long age = System.currentTimeMillis() - timestamp;
+                if (age < LOGINBROKERINFO_VALIDITYSPAN) {
+                    LoginBrokerInfo[] infos = latestLoginBrokerInfos.get(key);
+                    if (infos != null) {
+                        return infos;
                     }
                 }
             }
         }
-    }
-    //these hashtables will be used as a caching mechanizm for the login broker infos
-    // here we asume that no protocol called "null" is going to be ever used
-    private java.util.Hashtable latestLoginBrokerInfos = new java.util.Hashtable();
-    private java.util.Hashtable latestLoginBrokerInfosTimes =
-            new java.util.Hashtable();
-    // 30 secs in millisecond
-    private long LOGINBROKERINFO_VALIDITYSPAN =30*1000;
-
-    public LoginBrokerInfo[] getLoginBrokerInfos(String protocol)
-    throws SRMException {
-        String key = protocol == null ? "null" : protocol;
-        Object o = latestLoginBrokerInfosTimes.get(key);
-        if(o !=null) {
-            Long timestamp = (Long) o;
-            if(System.currentTimeMillis() - timestamp.longValue() <
-                    LOGINBROKERINFO_VALIDITYSPAN) {
-                o = latestLoginBrokerInfos.get(key);
-                if(o != null) {
-                    return (LoginBrokerInfo[]) o;
-                }
-            }
-        }
-
-        if(loginBrokerPath == null) {
-            loginBrokerPath = new CellPath(loginBrokerName);
-        }
 
         String brokerMessage = "ls -binary";
-        if(protocol != null) {
-            brokerMessage = brokerMessage+" -protocol="+protocol;
-        }
-        LoginBrokerCompanion companion = null;
-        for(int retry=0;retry<MAX_LOGIN_BROKER_RETRIES;++retry) {
-            companion = new LoginBrokerCompanion();
-            _log.debug("getLoginBrokerInfos sending \""+brokerMessage+
-                       "\"  to LoginBroker");
-            sendMessage(new CellMessage(loginBrokerPath,brokerMessage) ,
-                        companion,
-                        __pnfsTimeout*1000) ;
-            try {
-                companion.waitForAnswer();
-            } catch (InterruptedException ie) {
-                // ignore
-            }
-            if(companion.error != null) {
-                try {
-                    Thread.sleep(5*1000);
-                } catch (InterruptedException ie) {
-                    // ignore
-                }
-                continue;
-            }
-            break;
+        if (protocol != null) {
+            brokerMessage = brokerMessage + " -protocol=" + protocol;
         }
 
-        if(companion.error != null) {
-            throw new SRMException(" communication with Login Broker failed with"+
-                companion.error);
+        String error;
+        try {
+            int retry = 0;
+            do {
+                _log.debug("getLoginBrokerInfos sending \"" + brokerMessage +
+                           "\"  to LoginBroker");
+                try {
+                    LoginBrokerInfo[] infos =
+                        _loginBrokerStub.sendAndWait(brokerMessage,
+                                                     LoginBrokerInfo[].class);
+                    synchronized (latestLoginBrokerInfosTimes) {
+                        latestLoginBrokerInfosTimes.put(key, System.currentTimeMillis());
+                        latestLoginBrokerInfos.put(key, infos);
+                    }
+                    return infos;
+                } catch (TimeoutCacheException e) {
+                    error = "LoginBroker is unavailable";
+                } catch (CacheException e) {
+                    error = e.getMessage();
+                }
+                Thread.sleep(5 * 1000);
+            } while (++retry < MAX_LOGIN_BROKER_RETRIES);
+        } catch (InterruptedException e) {
+            throw new SRMException("Request was interrupted", e);
         }
-        latestLoginBrokerInfosTimes.put(key, Long.valueOf(System.currentTimeMillis()));
-        latestLoginBrokerInfos.put(key,  companion.loginBrokerInfos);
-        return companion.loginBrokerInfos;
+
+        throw new SRMException(error);
     }
 
-    public HashSet listAvailableProtocols()
-    throws SRMException {
-        HashSet protocols = new HashSet();
-        LoginBrokerInfo[] loginBrokerInfos = getLoginBrokerInfos();
-        int len = loginBrokerInfos.length;
-        for(int i = 0; i<len; ++i) {
-            String protocol = loginBrokerInfos[i].getProtocolFamily();
-            if(!protocols.contains(protocol)) {
-                protocols.add(protocol);
-            }
-
+    public Set<String> listAvailableProtocols()
+        throws SRMException
+    {
+        Set<String> protocols = new HashSet<String>();
+        for (LoginBrokerInfo info: getLoginBrokerInfos()) {
+            protocols.add(info.getProtocolFamily());
         }
-
         return protocols;
     }
 
     public boolean isLocalTransferUrl(String url)
-    throws SRMException {
-
-        GlobusURL gurl;
+        throws SRMException
+    {
         try {
-            gurl = new GlobusURL(url);
-        } catch(MalformedURLException mue) {
-            return false;
-        }
-        String protocol = gurl.getProtocol();
-        LoginBrokerInfo[] loginBrokerInfos = getLoginBrokerInfos(protocol);
-        if(loginBrokerInfos.length == 0) {
-            return false;
-        }
-        String host = gurl.getHost();
-        int port = gurl.getPort();
-
-        for(int i=0;i<loginBrokerInfos.length;++i) {
-            if(loginBrokerInfos[i].getHost().equals(host)  &&
-                    loginBrokerInfos[i].getPort() == port) {
-                return true;
+            GlobusURL gurl = new GlobusURL(url);
+            String protocol = gurl.getProtocol();
+            String host = gurl.getHost();
+            int port = gurl.getPort();
+            for (LoginBrokerInfo info: getLoginBrokerInfos(protocol)) {
+                if (info.getHost().equals(host) && info.getPort() == port) {
+                    return true;
+                }
             }
+            return false;
+        } catch (MalformedURLException e) {
+            return false;
         }
-
-        return false;
     }
 
 
