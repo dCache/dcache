@@ -3,6 +3,14 @@
  */
 package org.dcache.chimera.nfsv41.door;
 
+import com.sun.grizzly.BaseSelectionKeyHandler;
+import com.sun.grizzly.Controller;
+import com.sun.grizzly.DefaultProtocolChain;
+import com.sun.grizzly.DefaultProtocolChainInstanceHandler;
+import com.sun.grizzly.ProtocolChain;
+import com.sun.grizzly.ProtocolChainInstanceHandler;
+import com.sun.grizzly.ProtocolFilter;
+import com.sun.grizzly.TCPSelectorHandler;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -10,14 +18,13 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.acplt.oncrpc.OncRpcException;
+import org.dcache.xdr.OncRpcException;
 import org.acplt.oncrpc.apps.jportmap.OncRpcEmbeddedPortmap;
 import org.apache.log4j.Logger;
 import org.dcache.cells.AbstractCell;
@@ -33,14 +40,13 @@ import org.dcache.chimera.nfs.ExportFile;
 import org.dcache.chimera.nfs.v4.DeviceID;
 import org.dcache.chimera.nfs.v4.DeviceManager;
 import org.dcache.chimera.nfs.ChimeraNFSException;
-import org.dcache.chimera.nfs.v4.HimeraNFS4Server;
+import org.dcache.chimera.nfs.v4.NFSServerV41;
 import org.dcache.chimera.nfs.v4.NFS4IoDevice;
 import org.dcache.chimera.nfs.v4.NFSv41DeviceManager;
-import org.dcache.chimera.nfs.v4.device_addr4;
-import org.dcache.chimera.nfs.v4.layoutiomode4;
-import org.dcache.chimera.nfs.v4.nfs4_prot;
-import org.dcache.chimera.nfs.v4.nfsstat4;
-import org.dcache.chimera.nfs.v4.stateid4;
+import org.dcache.chimera.nfs.v4.xdr.device_addr4;
+import org.dcache.chimera.nfs.v4.xdr.layoutiomode4;
+import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
+import org.dcache.chimera.nfs.v4.xdr.stateid4;
 import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
 
 import diskCacheV111.util.AccessLatency;
@@ -62,12 +68,19 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
-import org.acplt.oncrpc.XdrBufferDecodingStream;
+import java.nio.ByteBuffer;
+import org.acplt.oncrpc.OncRpcPortmapClient;
 import org.dcache.cells.CellCommandListener;
-import org.dcache.chimera.nfs.v4.client.GetDeviceListStub;
-import org.dcache.chimera.nfs.v4.client.NFSv41Client;
-import org.dcache.chimera.nfs.v4.layouttype4;
-import org.dcache.chimera.nfs.v4.nfsv4_1_file_layout_ds_addr4;
+import org.dcache.chimera.nfs.v3.MountServer;
+import org.dcache.chimera.nfs.v4.xdr.layouttype4;
+import org.dcache.chimera.nfs.v4.xdr.nfsv4_1_file_layout_ds_addr4;
+import org.dcache.chimera.nfsv41.Utils;
+import org.dcache.xdr.RpcDispatchable;
+import org.dcache.xdr.RpcDispatcher;
+import org.dcache.xdr.RpcParserProtocolFilter;
+import org.dcache.xdr.RpcProtocolFilter;
+import org.dcache.xdr.XdrBuffer;
+import org.dcache.xdr.XdrDecodingStream;
 
 public class NFSv41Door extends AbstractCell
         implements NFSv41DeviceManager, CellCommandListener {
@@ -84,7 +97,7 @@ public class NFSv41Door extends AbstractCell
     /** next device id, 0 reserved for MDS */
     private final AtomicInteger _nextDeviceID = new AtomicInteger(1);
 
-    private final Map<StateidAsKey, PoolIoFileMessage> _ioMessages = new ConcurrentHashMap<StateidAsKey, PoolIoFileMessage>();
+    private final Map<stateid4, PoolIoFileMessage> _ioMessages = new ConcurrentHashMap<stateid4, PoolIoFileMessage>();
 
     /**
      * The usual timeout for NFS ops. is 30s.
@@ -121,7 +134,7 @@ public class NFSv41Door extends AbstractCell
     private File _exports;
 
     /** request/reply mapping */
-    private final Map<StateidAsKey, NFS4IoDevice> _requestReplyMap = new HashMap<StateidAsKey, NFS4IoDevice>();
+    private final Map<stateid4, NFS4IoDevice> _requestReplyMap = new HashMap<stateid4, NFS4IoDevice>();
 
     public NFSv41Door(String cellName, String args) throws Exception {
         super(cellName, args);
@@ -170,12 +183,71 @@ public class NFSv41Door extends AbstractCell
         final NFSv41DeviceManager _dm = this;
         final ExportFile exportFile = new ExportFile(_exports);
 
+        final Map<Integer, RpcDispatchable> programs = new HashMap<Integer, RpcDispatchable>();
+
         new Thread("NFSv4.1 Door Thread") {
             @Override
             public void run() {
                 try {
-                    HimeraNFS4Server nfsServer = new HimeraNFS4Server(2049, _dm, fs, exportFile );
-                    nfsServer.run();
+                    NFSServerV41 nfs4 = new NFSServerV41(_dm, fs, exportFile );
+
+                    new OncRpcEmbeddedPortmap(2000);
+
+                    OncRpcPortmapClient portmap = new OncRpcPortmapClient(InetAddress.getByName("127.0.0.1"));
+                    portmap.getOncRpcClient().setTimeout(2000);
+                    portmap.setPort(100005, 3, 6, 2049);
+                    portmap.setPort(100005, 1, 6, 2049);
+                    portmap.setPort(100003, 4, 6, 2049);
+
+                    ExportFile exports = new ExportFile(new File("/etc/exports"));
+                    MountServer ms = new MountServer(exports, fs);
+
+                    programs.put(100003, nfs4);
+                    programs.put(100005, ms);
+
+                    final ProtocolFilter rpcFilter = new RpcParserProtocolFilter();
+                    final ProtocolFilter rpcProcessor = new RpcProtocolFilter();
+                    final ProtocolFilter rpcDispatcher = new RpcDispatcher(programs);
+
+                    final Controller controller = new Controller();
+                    final TCPSelectorHandler tcp_handler = new TCPSelectorHandler();
+                    tcp_handler.setPort(2049);
+                    tcp_handler.setSelectionKeyHandler(new BaseSelectionKeyHandler());
+
+                    controller.addSelectorHandler(tcp_handler);
+                    controller.setReadThreadsCount(5);
+
+                    final ProtocolChain protocolChain = new DefaultProtocolChain();
+                    protocolChain.addFilter(rpcFilter);
+                    protocolChain.addFilter(rpcProcessor);
+                    protocolChain.addFilter(rpcDispatcher);
+
+                    ((DefaultProtocolChain) protocolChain).setContinuousExecution(true);
+
+                    ProtocolChainInstanceHandler pciHandler = new DefaultProtocolChainInstanceHandler() {
+
+                        @Override
+                        public ProtocolChain poll() {
+                            return protocolChain;
+                        }
+
+                        @Override
+                        public boolean offer(ProtocolChain pc) {
+                            return false;
+                        }
+                    };
+
+                    controller.setProtocolChainInstanceHandler(pciHandler);
+
+                    try {
+                        controller.start();
+                    } catch (IOException e) {
+                        _log.fatal("Exception in controller...", e);
+                    }
+
+                } catch (org.acplt.oncrpc.OncRpcException e) {
+                    // TODO: kill the cell
+                    error(e);
                 } catch (OncRpcException e) {
                     // TODO: kill the cell
                     error(e);
@@ -218,7 +290,7 @@ public class NFSv41Door extends AbstractCell
                     /*
                      * clean stale entry
                      */
-                    DeviceID oldId = new DeviceID(device.getDeviceId());
+                    DeviceID oldId = device.getDeviceId();
                     _deviceMap.remove(oldId);
                 }
                 /*
@@ -228,14 +300,15 @@ public class NFSv41Door extends AbstractCell
                 InetSocketAddress[] addresses = new InetSocketAddress[1];
                 addresses[0] = poolAddress;
                 device_addr4 deviceAddr = DeviceManager.deviceAddrOf(addresses);
-                DeviceID deviceID = new DeviceID(id2deviceid(id));
-                device = new NFS4IoDevice(id2deviceid(id), deviceAddr);
+                DeviceID deviceID = DeviceID.valueOf(id);
+                device = new NFS4IoDevice(deviceID, deviceAddr);
                 _poolNameToIpMap.put(poolName, device);
                 _deviceMap.put(deviceID, device);
-                _log.debug("pool " + poolName + " mapped to deviceid " + Arrays.toString(deviceID.getId()) + " " + message.getId() + " inet: " + poolAddress);
+                _log.debug("pool " + poolName + " mapped to deviceid " + deviceID
+                        + " " + message.getId() + " inet: " + poolAddress);
             }
 
-            XdrBufferDecodingStream xdr = new XdrBufferDecodingStream(message.challange());
+            XdrDecodingStream xdr = new XdrBuffer(ByteBuffer.wrap(message.challange()));
             stateid4 stateid = new stateid4();
 
             xdr.beginDecoding();
@@ -243,7 +316,7 @@ public class NFSv41Door extends AbstractCell
             xdr.endDecoding();
 
             synchronized (_requestReplyMap) {
-                _requestReplyMap.put(new StateidAsKey(stateid), device);
+                _requestReplyMap.put(stateid, device);
                 _requestReplyMap.notifyAll();
             }
 
@@ -262,7 +335,7 @@ public class NFSv41Door extends AbstractCell
     protected void messageArrived(DoorTransferFinishedMessage transferFinishedMessage) {
 
         NFS4ProtocolInfo protocolInfo = (NFS4ProtocolInfo)transferFinishedMessage.getProtocolInfo();
-        _ioMessages.remove(new StateidAsKey(protocolInfo.stateId()));
+        _ioMessages.remove(protocolInfo.stateId());
     }
 
     @Override
@@ -294,13 +367,10 @@ public class NFSv41Door extends AbstractCell
      */
 
     @Override
-    public NFS4IoDevice getIoDevice(byte[] deviceId) {
+    public NFS4IoDevice getIoDevice(DeviceID deviceId) {
 
-        NFS4IoDevice device = null;
+        return _deviceMap.get(deviceId);
 
-        device = _deviceMap.get(new DeviceID(deviceId));
-
-        return device;
     }
 
     /**
@@ -370,7 +440,7 @@ public class NFSv41Door extends AbstractCell
         poolIOMessage = sendMessageXXX( new CellPath(getPoolMessage.getPoolName()),  poolIOMessage, nfsstat4.NFS4ERR_LAYOUTTRYLATER);
         _log.debug("mover ready: pool=" + getPoolMessage.getPoolName() + " moverid=" +
                 poolIOMessage.getMoverId());
-        _ioMessages.put( new StateidAsKey(protocolInfo.stateId()), poolIOMessage);
+        _ioMessages.put( protocolInfo.stateId(), poolIOMessage);
 
             /*
              * FIXME;
@@ -384,9 +454,7 @@ public class NFSv41Door extends AbstractCell
         stateid4 stateid = protocolInfo.stateId();
         int timeToWait = NFS_REPLY_TIMEOUT;
         synchronized (_requestReplyMap) {
-            StateidAsKey stateidAsKey = new StateidAsKey(stateid);
-            while (!_requestReplyMap.containsKey(stateidAsKey) && timeToWait > 0) {
-
+            while (!_requestReplyMap.containsKey(stateid) && timeToWait > 0) {
                 long s = System.currentTimeMillis();
                 _requestReplyMap.wait(NFS_REPLY_TIMEOUT);
                 timeToWait -= System.currentTimeMillis() - s;
@@ -396,10 +464,10 @@ public class NFSv41Door extends AbstractCell
                         "Mover did not started in time");
             }
 
-            device = _requestReplyMap.remove(stateidAsKey);
+            device = _requestReplyMap.remove(stateid);
         }
 
-        _log.debug("request: " + Arrays.toString(stateid.other) + " : received device: " + Arrays.toString(device.getDeviceId()));
+        _log.debug("request: " + stateid + " : received device: " + device.getDeviceId());
 
         return device;
     }
@@ -429,7 +497,8 @@ public class NFSv41Door extends AbstractCell
         T poolReply = (T)reply.getMessageObject();
         if( poolReply.getReturnCode() != 0 ) {
             throw new ChimeraNFSException(error_state,
-                    "pool not available: " + poolReply.getReturnCode() );
+                    "pool not available: " + poolReply.getReturnCode()  + " : " +
+                    poolReply.getErrorObject());
         }
 
         return poolReply;        
@@ -444,20 +513,6 @@ public class NFSv41Door extends AbstractCell
         return knownDevices;
     }
 
-
-    private static byte[] id2deviceid(int id) {
-
-
-        byte[] buffer = Integer.toString(id).getBytes();
-        byte[] devData = new byte[nfs4_prot.NFS4_DEVICEID4_SIZE];
-
-        int len = Math.min(buffer.length, nfs4_prot.NFS4_DEVICEID4_SIZE);
-        System.arraycopy(buffer, 0, devData, 0, len);
-
-        return devData;
-
-    }
-
     /*
      * (non-Javadoc)
      *
@@ -465,20 +520,20 @@ public class NFSv41Door extends AbstractCell
      */
     @Override
     public void addIoDevice(NFS4IoDevice device, int ioMode) {
-        _deviceMap.put(new DeviceID(device.getDeviceId()), device);
+        _deviceMap.put(device.getDeviceId(), device);
     }
 
     /*
      * (non-Javadoc)
      *
-     * @see org.dcache.chimera.nfsv4.NFSv41DeviceManager#releaseDevice(IoDevice ioDevice)
+     * @see org.dcache.chimera.nfsv4.NFSv41DeviceManager#releaseDevice(stateid4 stateid)
      */
     @Override
     public void releaseDevice(stateid4 stateid) {
 
         try {
 
-            PoolIoFileMessage poolIoFileMessage = _ioMessages.remove(new StateidAsKey(stateid));
+            PoolIoFileMessage poolIoFileMessage = _ioMessages.remove(stateid);
             if( poolIoFileMessage != null ) {
 
                 PoolMoverKillMessage message =
@@ -499,41 +554,6 @@ public class NFSv41Door extends AbstractCell
         }
     }
 
-
-    /*
-     * wrapper class to make equals works on stateid4 objects.
-     * The autogeberated code do not provide them,
-     *
-     * TODO: while spec is stabilized, i cann commit all autogenerated files into
-     * source tree and fix classes to natively support equals.
-     */
-    public static class StateidAsKey {
-
-        private final stateid4 _stateid;
-
-        public StateidAsKey(stateid4 stateid) {
-            _stateid = stateid;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-
-            if (obj == this) return true;
-
-            if ( !(obj instanceof StateidAsKey))  return false;
-
-            final stateid4 other = ((StateidAsKey) obj)._stateid;
-
-            return other.seqid.value == _stateid.seqid.value && Arrays.equals(_stateid.other, other.other);
-        }
-
-        @Override
-        public int hashCode() {
-            return _stateid.seqid.value;
-        }
-
-    }
-
     /**
      * Get {@link InetSocketAddress} connected to particular device.
      * TODO: this code have to go back into NFSv4.1 server code
@@ -551,8 +571,8 @@ public class NFSv41Door extends AbstractCell
             throw new IllegalArgumentException("Unsupported layout type: " +addr.da_layout_type );
         }
 
-        nfsv4_1_file_layout_ds_addr4 file_layout = GetDeviceListStub.decodeFileDevice(device.getDeviceAddr().da_addr_body);
-        return NFSv41Client.device2Address(file_layout.nflda_multipath_ds_list[0].value[0].na_r_addr);
+        nfsv4_1_file_layout_ds_addr4 file_layout = Utils.decodeFileDevice(device.getDeviceAddr().da_addr_body);
+        return Utils.device2Address(file_layout.nflda_multipath_ds_list[0].value[0].na_r_addr);
 
     }
 

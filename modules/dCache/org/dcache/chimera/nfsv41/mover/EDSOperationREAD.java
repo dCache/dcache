@@ -5,7 +5,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Map;
 
-import org.acplt.oncrpc.server.OncRpcCallInformation;
 import org.apache.log4j.Logger;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.IOHimeraFsException;
@@ -14,24 +13,25 @@ import org.dcache.chimera.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.chimera.nfs.v4.CompoundArgs;
 import org.dcache.chimera.nfs.ChimeraNFSException;
 import org.dcache.chimera.nfs.v4.NFSv4OperationResult;
-import org.dcache.chimera.nfs.v4.READ4res;
-import org.dcache.chimera.nfs.v4.READ4resok;
-import org.dcache.chimera.nfs.v4.nfs_argop4;
-import org.dcache.chimera.nfs.v4.nfs_opnum4;
-import org.dcache.chimera.nfs.v4.nfsstat4;
-import org.dcache.chimera.nfsv41.door.NFSv41Door.StateidAsKey;
+import org.dcache.chimera.nfs.v4.xdr.READ4res;
+import org.dcache.chimera.nfs.v4.xdr.READ4resok;
+import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
+import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
+import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
+import org.dcache.chimera.nfs.v4.xdr.stateid4;
+import org.dcache.xdr.RpcCall;
 
 public class EDSOperationREAD extends AbstractNFSv4Operation {
 
     private static final Logger _log = Logger.getLogger(EDSOperationREAD.class.getName());
 
-     private final Map<StateidAsKey, MoverBridge> _activeIO;
+     private final Map<stateid4, MoverBridge> _activeIO;
 
-    public EDSOperationREAD(FileSystemProvider fs, OncRpcCallInformation call$, CompoundArgs fh, nfs_argop4 args,  Map<StateidAsKey, MoverBridge> activeIO, ExportFile exports) {
+    public EDSOperationREAD(FileSystemProvider fs, RpcCall call$, CompoundArgs fh, nfs_argop4 args,  Map<stateid4, MoverBridge> activeIO, ExportFile exports) {
         super(fs, exports, call$, fh, args, nfs_opnum4.OP_READ);
         _activeIO = activeIO;
         if(_log.isDebugEnabled() ) {
-            _log.debug("NFS Request  DSREAD from: " + _callInfo.peerAddress.getHostAddress() );
+            _log.debug("NFS Request  DSREAD from: " + _callInfo.getTransport().getRemoteSocketAddress() );
         }
     }
 
@@ -44,14 +44,14 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
             long offset = _args.opread.offset.value.value;
             int count = _args.opread.count.value.value;
 
-            MoverBridge moverBridge = _activeIO.get(new StateidAsKey(_args.opread.stateid));
+            MoverBridge moverBridge = _activeIO.get(_args.opread.stateid);
 
-            byte[] buf = new byte[count];
+            ByteBuffer bb = ByteBuffer.allocate(count);
 
             FileChannel fc = moverBridge.getFileChannel();
             IOReadFile in = new IOReadFile(fc);
 
-            int bytesReaded = in.read(buf, offset, count);
+            int bytesReaded = in.read(bb, offset, count);
 
             if( bytesReaded < 0 ) {
                 throw new IOHimeraFsException("IO not allowed");
@@ -61,18 +61,15 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
 
             res.status = nfsstat4.NFS4_OK;
             res.resok4 = new READ4resok();
-            if(bytesReaded != count ) {
-                res.resok4.data = new byte[bytesReaded];
-                System.arraycopy(buf, 0, res.resok4.data, 0, bytesReaded);
-            }else{
-                res.resok4.data = buf;
-            }
+            res.resok4.data = bb;
 
             if( offset + bytesReaded == fc.size() ) {
                 res.resok4.eof = true;
             }
 
-            _log.debug("MOVER: " + bytesReaded + "@"  +offset +" readed, " + _args.opread.count.value.value + " requested.");
+            if( _log.isDebugEnabled() ) {
+                _log.debug("MOVER: " + bytesReaded + "@"  +offset +" readed, " + _args.opread.count.value.value + " requested.");
+            }
 
         }catch(IOHimeraFsException hioe) {
             res.status = nfsstat4.NFS4ERR_IO;
@@ -100,13 +97,10 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
             _fc = fc;
         }
 
-        public int read(byte[] b, long off, long len) throws IOException {
+        public int read(ByteBuffer bb, long off, long len) throws IOException {
 
-            ByteBuffer bb = ByteBuffer.wrap(b, 0, (int)len);
             bb.rewind();
-            _fc.position(off);
-
-            return _fc.read(bb);
+            return _fc.read(bb, off);
 
         }
 

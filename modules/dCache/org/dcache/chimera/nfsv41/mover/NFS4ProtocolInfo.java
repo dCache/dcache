@@ -8,7 +8,7 @@ package org.dcache.chimera.nfsv41.mover;
  */
 import java.net.InetAddress;
 
-import org.dcache.chimera.nfs.v4.stateid4;
+import org.dcache.chimera.nfs.v4.xdr.stateid4;
 
 import diskCacheV111.vehicles.IpProtocolInfo;
 import dmg.cells.nucleus.CellPath;
@@ -83,10 +83,4 @@ public class NFS4ProtocolInfo implements IpProtocolInfo {
     }
 
 }
-/*
- * $Log: NFS4ProtocolInfo.java,v $
- * Revision 1.1  2006/09/25 13:53:02  tigran
- * first steps to integrate into dCache:
- * NFS4ProtocolInfo and, for testing, NFSv4 pool
- *
- */
+

@@ -91,7 +91,7 @@ dCacheChimeraStart()
   echo "Starting Chimera-NFSv3 interface"
   ${java} ${java_options} \
      -classpath ${ourHomeDir}/classes/cells.jar:${externalLibsClassPath} \
-     org.dcache.chimera.nfs.v3.Main2 \
+     org.dcache.chimera.nfs.v3.Main \
      ${ourHomeDir}/config/chimera-config.xml > ${log} 2>&1 &
   echo $! > ${pfile}
 

@@ -5,7 +5,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Map;
 
-import org.acplt.oncrpc.server.OncRpcCallInformation;
 import org.apache.log4j.Logger;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.IOHimeraFsException;
@@ -14,33 +13,34 @@ import org.dcache.chimera.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.chimera.nfs.v4.CompoundArgs;
 import org.dcache.chimera.nfs.ChimeraNFSException;
 import org.dcache.chimera.nfs.v4.NFSv4OperationResult;
-import org.dcache.chimera.nfs.v4.WRITE4res;
-import org.dcache.chimera.nfs.v4.WRITE4resok;
-import org.dcache.chimera.nfs.v4.count4;
-import org.dcache.chimera.nfs.v4.nfs4_prot;
-import org.dcache.chimera.nfs.v4.nfs_argop4;
-import org.dcache.chimera.nfs.v4.nfs_opnum4;
-import org.dcache.chimera.nfs.v4.nfsstat4;
-import org.dcache.chimera.nfs.v4.stable_how4;
-import org.dcache.chimera.nfs.v4.uint32_t;
-import org.dcache.chimera.nfs.v4.verifier4;
+import org.dcache.chimera.nfs.v4.xdr.WRITE4res;
+import org.dcache.chimera.nfs.v4.xdr.WRITE4resok;
+import org.dcache.chimera.nfs.v4.xdr.count4;
+import org.dcache.chimera.nfs.v4.xdr.nfs4_prot;
+import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
+import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
+import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
+import org.dcache.chimera.nfs.v4.xdr.stable_how4;
+import org.dcache.chimera.nfs.v4.xdr.stateid4;
+import org.dcache.chimera.nfs.v4.xdr.uint32_t;
+import org.dcache.chimera.nfs.v4.xdr.verifier4;
 
-import org.dcache.chimera.nfsv41.door.NFSv41Door.StateidAsKey;
 import org.dcache.pool.movers.MoverProtocol;
+import org.dcache.xdr.RpcCall;
 
 public class EDSOperationWRITE extends AbstractNFSv4Operation {
 
     private static final Logger _log = Logger.getLogger(EDSOperationWRITE.class.getName());
 
-     private final Map<StateidAsKey, MoverBridge> _activeIO;
+     private final Map<stateid4, MoverBridge> _activeIO;
      private static final int INC_SPACE = (50 * 1024 * 1024);
 
 
-    public EDSOperationWRITE(FileSystemProvider fs, OncRpcCallInformation call$, CompoundArgs fh, nfs_argop4 args, Map<StateidAsKey, MoverBridge> activeIO, ExportFile exports) {
+    public EDSOperationWRITE(FileSystemProvider fs, RpcCall call$, CompoundArgs fh, nfs_argop4 args, Map<stateid4, MoverBridge> activeIO, ExportFile exports) {
         super(fs, exports, call$, fh, args, nfs_opnum4.OP_WRITE);
         _activeIO = activeIO;
         if(_log.isDebugEnabled() ) {
-            _log.debug("NFS Request DSWRITE from: " + _callInfo.peerAddress.getHostAddress() );
+            _log.debug("NFS Request DSWRITE from: " + _callInfo.getTransport().getRemoteSocketAddress() );
         }
     }
 
@@ -51,13 +51,13 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
 
         try {
 
-            MoverBridge moverBridge = _activeIO.get( new StateidAsKey(_args.opwrite.stateid));
+            MoverBridge moverBridge = _activeIO.get( _args.opwrite.stateid);
             if( (moverBridge.getIoMode() & MoverProtocol.WRITE) != MoverProtocol.WRITE ) {
                 throw new ChimeraNFSException(nfsstat4.NFS4ERR_PERM, "an attermp to write without IO mode enabled");
             }
 
             long offset = _args.opwrite.offset.value.value;
-            int count = _args.opwrite.data.length;
+            int count = _args.opwrite.data.remaining();
 
             FileChannel fc = moverBridge.getFileChannel();
             IOWriteFile out = new IOWriteFile(fc);
@@ -80,7 +80,7 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
             res.resok4.writeverf = new verifier4();
             res.resok4.writeverf.value = new byte[nfs4_prot.NFS4_VERIFIER_SIZE];
 
-            _log.debug("MOVER: " + bytesWritten + "@"  +offset +" written, " + _args.opwrite.data.length + " requested.");
+            _log.debug("MOVER: " + bytesWritten + "@"  +offset +" written, " + bytesWritten + " requested.");
 
         }catch(IOHimeraFsException hioe) {
             _log.debug(hioe.getMessage());
@@ -110,11 +110,10 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
             _fc = fc;
         }
 
-        public int write(byte[] b, long off, long len) throws IOException {
-            ByteBuffer bb = ByteBuffer.wrap(b, 0, (int)len);
+        public int write(ByteBuffer bb, long off, long len) throws IOException {
+
             bb.rewind();
-            _fc.position(off);
-            return _fc.write(bb);
+            return _fc.write(bb, off);
         }
 
         public long size() throws IOException {

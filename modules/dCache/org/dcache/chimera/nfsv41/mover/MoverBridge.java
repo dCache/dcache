@@ -2,7 +2,7 @@ package org.dcache.chimera.nfsv41.mover;
 
 import java.nio.channels.FileChannel;
 import diskCacheV111.util.PnfsId;
-import org.dcache.chimera.nfs.v4.stateid4;
+import org.dcache.chimera.nfs.v4.xdr.stateid4;
 import org.dcache.pool.movers.ManualMover;
 import org.dcache.pool.repository.Allocator;
 

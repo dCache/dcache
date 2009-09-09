@@ -22,9 +22,10 @@ import diskCacheV111.vehicles.StorageInfo;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
-import org.acplt.oncrpc.XdrBufferEncodingStream;
-import org.dcache.chimera.nfs.v4.stateid4;
+import org.dcache.chimera.nfs.v4.xdr.stateid4;
 import org.dcache.util.PortRange;
+import org.dcache.xdr.XdrBuffer;
+import org.dcache.xdr.XdrEncodingStream;
 
 public class NFSv41ProtocolMover implements ManualMover {
 
@@ -169,11 +170,11 @@ public class NFSv41ProtocolMover implements ManualMover {
              *
              */
 
-            XdrBufferEncodingStream xdr = new XdrBufferEncodingStream(128);
-            xdr.beginEncoding(null, 0);
+            XdrEncodingStream xdr = new XdrBuffer(128);
+            xdr.beginEncoding();
             stateid.xdrEncode(xdr);
             xdr.endEncoding();
-            byte[] d = xdr.getXdrData();
+            byte[] d = xdr.body().array();
 
             PoolPassiveIoFileMessage msg = new PoolPassiveIoFileMessage(_cell.getCellInfo().getCellName(),
                     new InetSocketAddress(localIp, _nfsIO.getLocalPort()), d);
