@@ -40,7 +40,6 @@ public class SrmPrepareToGet {
     AbstractStorageElement storage;
     SrmPrepareToGetRequest request;
     SrmPrepareToGetResponse response;
-    Scheduler getScheduler;
     SRMUser user;
     RequestCredential credential;
     GetRequestStorage getStorage;
@@ -68,10 +67,6 @@ public class SrmPrepareToGet {
             throw new NullPointerException("storage is null");
         }
         this.storage = storage;
-        this.getScheduler = srm.getGetRequestScheduler();
-        if(getScheduler == null) {
-            throw new NullPointerException("getScheduler is null");
-        }
         this.configuration = srm.getConfiguration();
         if(configuration == null) {
             throw new NullPointerException("configuration is null");
@@ -268,9 +263,7 @@ public class SrmPrepareToGet {
 		    }
 	    }
 	    
-            r.setScheduler(getScheduler.getId(),0);
-            
-            r.schedule(getScheduler);
+            r.schedule();
             // RequestScheduler will take care of the rest
             //getRequestScheduler.add(r);
             // Return the request status

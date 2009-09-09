@@ -407,9 +407,6 @@ public abstract class ContainerRequest extends Request {
         return null;
     }
 
-
-    public abstract void schedule(Scheduler scheduler) throws InterruptedException,IllegalStateTransition, java.sql.SQLException;
-
     /*
      * public abstract instance methods
      */

@@ -39,7 +39,6 @@ public class SrmBringOnline {
     AbstractStorageElement storage;
     SrmBringOnlineRequest request;
     SrmBringOnlineResponse response;
-    Scheduler bringOnlineScheduler;
     SRMUser user;
     RequestCredential credential;
     BringOnlineRequestStorage bringOnlineStorage;
@@ -67,10 +66,6 @@ public class SrmBringOnline {
             throw new NullPointerException("storage is null");
         }
         this.storage = storage;
-        this.bringOnlineScheduler = srm.getBringOnlineRequestScheduler();
-        if(bringOnlineScheduler == null) {
-            throw new NullPointerException("bringOnlineScheduler is null");
-        }
         this.configuration = srm.getConfiguration();
         if(configuration == null) {
             throw new NullPointerException("configuration is null");
@@ -225,9 +220,7 @@ public class SrmBringOnline {
 	    }
 
 
-            r.setScheduler(bringOnlineScheduler.getId(),0);
-            
-            r.schedule(bringOnlineScheduler);
+            r.schedule();
             // RequestScheduler will take care of the rest
             //getRequestScheduler.add(r);
             // Return the request status

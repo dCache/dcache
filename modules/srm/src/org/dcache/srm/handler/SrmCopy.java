@@ -43,7 +43,6 @@ public class SrmCopy {
     SrmCopyRequest         request;
     SrmCopyResponse        response;
     SRMUser            user;
-    Scheduler              scheduler;
     RequestCredential      credential;
     CopyRequestStorage     copyRequestStorage;
     CopyFileRequestStorage copyFileRequestStorage;
@@ -67,10 +66,6 @@ public class SrmCopy {
             throw new NullPointerException("storage is null");
         }
         this.storage = storage;
-        this.scheduler = srm.getCopyRequestScheduler();
-        if (scheduler == null) {
-            throw new NullPointerException("scheduler is null");
-        }
         this.configuration = srm.getConfiguration();
         if (configuration == null) {
             throw new NullPointerException("configuration is null");
@@ -207,8 +202,7 @@ public class SrmCopy {
                     }
                 }
             }
-            r.schedule(scheduler);
-            response = ((CopyRequest)r).getSrmCopyResponse();
+            r.schedule();
             return response;
         } catch(Exception e) {
             logger.error(e);

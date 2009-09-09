@@ -228,12 +228,12 @@ public class PutRequest extends ContainerRequest{
         throw new SRMException("file request for surl ="+surl +" is not found");
     }
 
-    
-    public void schedule(Scheduler scheduler) throws InterruptedException,java.sql.SQLException,
+    @Override
+    public void schedule() throws InterruptedException,
     IllegalStateTransition {
         for(int i = 0; i < fileRequests.length ;++ i) {
-            PutFileRequest fileRequest = (PutFileRequest)fileRequests[i];
-            scheduler.schedule(fileRequest);
+            PutFileRequest fileRequest = (PutFileRequest) fileRequests[i];
+            fileRequest.schedule();
         }
     }
     

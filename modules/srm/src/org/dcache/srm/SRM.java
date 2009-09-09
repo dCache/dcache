@@ -81,8 +81,13 @@ import org.dcache.srm.request.ContainerRequest;
 import org.dcache.srm.request.PutRequest;
 import org.dcache.srm.request.PutFileRequest;
 import org.dcache.srm.request.GetRequest;
+import org.dcache.srm.request.GetFileRequest;
+import org.dcache.srm.request.LsRequest;
+import org.dcache.srm.request.LsFileRequest;
+import org.dcache.srm.request.ReserveSpaceRequest;
 import org.dcache.srm.request.CopyRequest;
 import org.dcache.srm.request.BringOnlineRequest;
+import org.dcache.srm.request.BringOnlineFileRequest;
 import org.dcache.srm.request.sql.DatabaseRequestStorage;
 import org.dcache.srm.request.sql.DatabaseContainerRequestStorage;
 import org.dcache.srm.request.sql.GetFileRequestStorage;
@@ -104,6 +109,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 
 import org.dcache.srm.scheduler.Scheduler;
+import org.dcache.srm.scheduler.SchedulerFactory;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.Job;
@@ -181,15 +187,9 @@ public class SRM {
     private SRMAuthorization authorization;
     private SRMServerV1 server;
     private Configuration configuration;
-    private Scheduler bringOnlineRequestScheduler;
-    private Scheduler getRequestScheduler;
-    private Scheduler putRequestScheduler;
-    private Scheduler copyRequestScheduler;
-    private Scheduler reserveSpaceScheduler;
-    private Scheduler lsRequestScheduler;
     private RequestCredentialStorage requestCredentialStorage;
-    //    private RequestScheduler putRequestScheduler;
-    //    private RequestScheduler copyRequestScheduler;
+    //    private RequestScheduler getPutRequestScheduler();
+    //    private RequestScheduler getCopyRequestScheduler();
     /** Creates a new instance of SRM
      *
      * @param  srcSURLS
@@ -333,80 +333,14 @@ public class SRM {
 
         requestCredentialStorage = new DatabaseRequestCredentialStorage(config);
         RequestCredential.registerRequestCredentialStorage(requestCredentialStorage);
+        SchedulerFactory.initSchedulerFactory(storage, config, name);
+
          Job.saveMemory(config.isSaveMemory());
 
-        lsRequestScheduler = new Scheduler("ls_" + name, storage);
-        // scheduler parameters
-        lsRequestScheduler.setMaxThreadQueueSize(config.getLsReqTQueueSize());
-        lsRequestScheduler.setThreadPoolSize(config.getLsThreadPoolSize());
-        lsRequestScheduler.setMaxWaitingJobNum(config.getLsMaxWaitingRequests());
-        lsRequestScheduler.setMaxReadyQueueSize(config.getLsReadyQueueSize());
-        lsRequestScheduler.setMaxReadyJobs(config.getLsMaxReadyJobs());
-        lsRequestScheduler.setMaxNumberOfRetries(config.getLsMaxNumOfRetries());
-        lsRequestScheduler.setRetryTimeout(config.getLsRetryTimeout());
-        lsRequestScheduler.setMaxRunningByOwner(config.getLsMaxRunningBySameOwner());
-        lsRequestScheduler.setPriorityPolicyPlugin(config.getLsPriorityPolicyPlugin());
-        lsRequestScheduler.start();
-
-
-        getRequestScheduler = new Scheduler("get_" + name, storage);
-        // scheduler parameters
-        getRequestScheduler.setMaxThreadQueueSize(config.getGetReqTQueueSize());
-        getRequestScheduler.setThreadPoolSize(config.getGetThreadPoolSize());
-        getRequestScheduler.setMaxWaitingJobNum(config.getGetMaxWaitingRequests());
-        getRequestScheduler.setMaxReadyQueueSize(config.getGetReadyQueueSize());
-        getRequestScheduler.setMaxReadyJobs(config.getGetMaxReadyJobs());
-        getRequestScheduler.setMaxNumberOfRetries(config.getGetMaxNumOfRetries());
-        getRequestScheduler.setRetryTimeout(config.getGetRetryTimeout());
-        getRequestScheduler.setMaxRunningByOwner(config.getGetMaxRunningBySameOwner());
-        getRequestScheduler.setPriorityPolicyPlugin(config.getGetPriorityPolicyPlugin());
-        getRequestScheduler.start();
-
-
-        bringOnlineRequestScheduler = new Scheduler("bring_online_" + name, storage);
-        // scheduler parameters
-        bringOnlineRequestScheduler.setMaxThreadQueueSize(config.getBringOnlineReqTQueueSize());
-        bringOnlineRequestScheduler.setThreadPoolSize(config.getBringOnlineThreadPoolSize());
-        bringOnlineRequestScheduler.setMaxWaitingJobNum(config.getBringOnlineMaxWaitingRequests());
-        bringOnlineRequestScheduler.setMaxReadyQueueSize(config.getBringOnlineReadyQueueSize());
-        bringOnlineRequestScheduler.setMaxReadyJobs(config.getBringOnlineMaxReadyJobs());
-        bringOnlineRequestScheduler.setMaxNumberOfRetries(config.getBringOnlineMaxNumOfRetries());
-        bringOnlineRequestScheduler.setRetryTimeout(config.getBringOnlineRetryTimeout());
-        bringOnlineRequestScheduler.setMaxRunningByOwner(config.getBringOnlineMaxRunningBySameOwner());
-        bringOnlineRequestScheduler.setPriorityPolicyPlugin(config.getBringOnlinePriorityPolicyPlugin());
-        bringOnlineRequestScheduler.start();
-
-
-        putRequestScheduler = new Scheduler("put_" + name, storage);
-        // scheduler parameters
-        putRequestScheduler.setMaxThreadQueueSize(config.getPutReqTQueueSize());
-        putRequestScheduler.setThreadPoolSize(config.getPutThreadPoolSize());
-        putRequestScheduler.setMaxWaitingJobNum(config.getPutMaxWaitingRequests());
-        putRequestScheduler.setMaxReadyQueueSize(config.getPutReadyQueueSize());
-        putRequestScheduler.setMaxReadyJobs(config.getPutMaxReadyJobs());
-        putRequestScheduler.setMaxNumberOfRetries(config.getPutMaxNumOfRetries());
-        putRequestScheduler.setRetryTimeout(config.getPutRetryTimeout());
-        putRequestScheduler.setMaxRunningByOwner(config.getPutMaxRunningBySameOwner());
-        putRequestScheduler.setPriorityPolicyPlugin(config.getPutPriorityPolicyPlugin());
-        putRequestScheduler.start();
-
-        copyRequestScheduler = new Scheduler("copy_" + name, storage);
-        // scheduler parameters
-        copyRequestScheduler.setMaxThreadQueueSize(config.getCopyReqTQueueSize());
-        copyRequestScheduler.setThreadPoolSize(config.getCopyThreadPoolSize());
-        copyRequestScheduler.setMaxWaitingJobNum(config.getCopyMaxWaitingRequests());
-        copyRequestScheduler.setMaxNumberOfRetries(config.getCopyMaxNumOfRetries());
-        copyRequestScheduler.setRetryTimeout(config.getCopyRetryTimeout());
-        copyRequestScheduler.setMaxRunningByOwner(config.getCopyMaxRunningBySameOwner());
-        copyRequestScheduler.setPriorityPolicyPlugin(config.getCopyPriorityPolicyPlugin());
-        copyRequestScheduler.start();
-
-        reserveSpaceScheduler = new Scheduler("reserve_space" + name, storage);
-        reserveSpaceScheduler.start();
         //config.getMaxActiveGet(),config.getMaxDoneGet(),config.getGetLifetime(),config);
-       /* putRequestScheduler = new RequestScheduler("put ContainerRequest Scheduler",
+       /* getPutRequestScheduler() = new RequestScheduler("put ContainerRequest Scheduler",
         config.getMaxActivePut(),config.getMaxDonePut(),config.getPutLifetime(),config);
-        copyRequestScheduler = new RequestScheduler("copy ContainerRequest Scheduler",
+        getCopyRequestScheduler() = new RequestScheduler("copy ContainerRequest Scheduler",
         config.getMaxActiveCopy(),config.getMaxDoneCopy(),config.getCopyLifetime(),config);
 
          */
@@ -447,28 +381,28 @@ public class SRM {
         lsFileRequestStorage.updatePendingJobs();
 
 
-        lsRequestScheduler.jobStorageAdded(lsFileRequestStorage);
-        lsFileRequestStorage.schedulePendingJobs(lsRequestScheduler);
+        getLsRequestScheduler().jobStorageAdded(lsFileRequestStorage);
+        lsFileRequestStorage.schedulePendingJobs(getLsRequestScheduler());
 
 
-//        lsRequestStorage.schedulePendingJobs(lsRequestScheduler);
-//        lsRequestScheduler.jobStorageAdded(lsRequestStorage);
+//        lsRequestStorage.schedulePendingJobs(getLsRequestScheduler());
+//        getLsRequestScheduler().jobStorageAdded(lsRequestStorage);
 
-        bringOnlineRequestScheduler.jobStorageAdded(bringOnlineFileRequestStorage);
-        bringOnlineFileRequestStorage.schedulePendingJobs(getRequestScheduler);
+        getBringOnlineRequestScheduler().jobStorageAdded(bringOnlineFileRequestStorage);
+        bringOnlineFileRequestStorage.schedulePendingJobs(getBringOnlineRequestScheduler());
 
-        getRequestScheduler.jobStorageAdded(getFileRequestStorage);
-        getFileRequestStorage.schedulePendingJobs(getRequestScheduler);
+        getGetRequestScheduler().jobStorageAdded(getFileRequestStorage);
+        getFileRequestStorage.schedulePendingJobs(getGetRequestScheduler());
 
-        putRequestScheduler.jobStorageAdded(putFileRequestStorage);
-        putFileRequestStorage.schedulePendingJobs(putRequestScheduler);
+        getPutRequestScheduler().jobStorageAdded(putFileRequestStorage);
+        putFileRequestStorage.schedulePendingJobs(getPutRequestScheduler());
 
-        copyRequestScheduler.jobStorageAdded(copyFileRequestStorage);
-        copyRequestScheduler.jobStorageAdded(copyStorage);
-        copyStorage.schedulePendingJobs(copyRequestScheduler);
+        getCopyRequestScheduler().jobStorageAdded(copyFileRequestStorage);
+        getCopyRequestScheduler().jobStorageAdded(copyStorage);
+        copyStorage.schedulePendingJobs(getCopyRequestScheduler());
 
-        reserveSpaceScheduler.jobStorageAdded(reserveSpaceRequestStorage);
-        reserveSpaceRequestStorage.schedulePendingJobs(reserveSpaceScheduler);
+        getReserveSpaceScheduler().jobStorageAdded(reserveSpaceRequestStorage);
+        reserveSpaceRequestStorage.schedulePendingJobs(getReserveSpaceScheduler());
 
         if (configuration.isVacuum()) {
             say("starting vacuum thread");
@@ -822,7 +756,7 @@ public class SRM {
                     null);
             say(" Copy Request = " + r);
             // RequesScheduler will take care of the rest
-            r.schedule(copyRequestScheduler);
+            r.schedule();
 
             // Return the request status
             RequestStatus rs = r.getRequestStatus();
@@ -887,11 +821,9 @@ public class SRM {
                     configuration.getGetMaxNumOfRetries(),
                     null,
                     client_host);
-            r.setScheduler(getRequestScheduler.getId(), 0);
-
-            r.schedule(getRequestScheduler);
+            r.schedule();
             // RequestScheduler will take care of the rest
-            //getRequestScheduler.add(r);
+            //getGetRequestScheduler().add(r);
             // Return the request status
             RequestStatus rs = r.getRequestStatus();
             say("get() initial RequestStatus = " + rs);
@@ -1148,9 +1080,7 @@ public class SRM {
                     null,
                     null,
                     null);
-            r.setScheduler(putRequestScheduler.getId(), 0);
-            //requestScheduler will pick up from here
-            r.schedule(putRequestScheduler);
+            r.schedule();
             // return status
             return r.getRequestStatus();
         } catch (Exception e) {
@@ -1298,15 +1228,15 @@ public class SRM {
     }
 
     public void listGetRequests(StringBuffer sb) throws java.sql.SQLException {
-        listRequests(sb, getRequestScheduler, getStorage);
+        listRequests(sb, getGetRequestScheduler(), getStorage);
     }
 
     public Set getGetRequestIds(SRMUser user, String description) throws java.sql.SQLException {
-        return getStorage.getActiveRequestIds(getRequestScheduler.getId(), user, description);
+        return getStorage.getActiveRequestIds(getGetRequestScheduler().getId(), user, description);
     }
 
     public Set getLsRequestIds(SRMUser user, String description) throws java.sql.SQLException {
-        return lsRequestStorage.getActiveRequestIds(getRequestScheduler.getId(), user, description);
+        return lsRequestStorage.getActiveRequestIds(getGetRequestScheduler().getId(), user, description);
     }
 
     public void listLatestCompletedGetRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
@@ -1349,47 +1279,47 @@ public class SRM {
     }
 
     public void printGetSchedulerInfo(StringBuffer sb) throws java.sql.SQLException {
-        getRequestScheduler.getInfo(sb);
+        getGetRequestScheduler().getInfo(sb);
     }
 
     public void printLsSchedulerInfo(StringBuffer sb) throws java.sql.SQLException {
-        lsRequestScheduler.getInfo(sb);
+        getLsRequestScheduler().getInfo(sb);
     }
 
     public void printGetSchedulerThreadQueue(StringBuffer sb) throws java.sql.SQLException {
-        getRequestScheduler.printThreadQueue(sb);
+        getGetRequestScheduler().printThreadQueue(sb);
 
     }
 
     public void printGetSchedulerPriorityThreadQueue(StringBuffer sb) throws java.sql.SQLException {
-        getRequestScheduler.printPriorityThreadQueue(sb);
+        getGetRequestScheduler().printPriorityThreadQueue(sb);
     }
 
     public void printGetSchedulerReadyThreadQueue(StringBuffer sb) throws java.sql.SQLException {
-        getRequestScheduler.printReadyQueue(sb);
+        getGetRequestScheduler().printReadyQueue(sb);
 
     }
 
     public void printLsSchedulerThreadQueue(StringBuffer sb) throws java.sql.SQLException {
-        lsRequestScheduler.printThreadQueue(sb);
+        getLsRequestScheduler().printThreadQueue(sb);
 
     }
 
     public void printLsSchedulerPriorityThreadQueue(StringBuffer sb) throws java.sql.SQLException {
-        lsRequestScheduler.printPriorityThreadQueue(sb);
+        getLsRequestScheduler().printPriorityThreadQueue(sb);
     }
 
     public void printLsSchedulerReadyThreadQueue(StringBuffer sb) throws java.sql.SQLException {
-        lsRequestScheduler.printReadyQueue(sb);
+        getLsRequestScheduler().printReadyQueue(sb);
 
     }
 
     public void listPutRequests(StringBuffer sb) throws java.sql.SQLException {
-        listRequests(sb, putRequestScheduler, putStorage);
+        listRequests(sb, getPutRequestScheduler(), putStorage);
     }
 
     public Set getPutRequestIds(SRMUser user, String description) throws java.sql.SQLException {
-        return putStorage.getActiveRequestIds(putRequestScheduler.getId(), user, description);
+        return putStorage.getActiveRequestIds(getPutRequestScheduler().getId(), user, description);
     }
 
     public void listLatestCompletedPutRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
@@ -1429,29 +1359,29 @@ public class SRM {
     }
 
     public void printPutSchedulerInfo(StringBuffer sb) throws java.sql.SQLException {
-        putRequestScheduler.getInfo(sb);
+        getPutRequestScheduler().getInfo(sb);
     }
 
     public void printPutSchedulerThreadQueue(StringBuffer sb) throws java.sql.SQLException {
-        putRequestScheduler.printThreadQueue(sb);
+        getPutRequestScheduler().printThreadQueue(sb);
 
     }
 
     public void printPutSchedulerPriorityThreadQueue(StringBuffer sb) throws java.sql.SQLException {
-        putRequestScheduler.printPriorityThreadQueue(sb);
+        getPutRequestScheduler().printPriorityThreadQueue(sb);
     }
 
     public void printPutSchedulerReadyThreadQueue(StringBuffer sb) throws java.sql.SQLException {
-        putRequestScheduler.printReadyQueue(sb);
+        getPutRequestScheduler().printReadyQueue(sb);
 
     }
 
     public void listCopyRequests(StringBuffer sb) throws java.sql.SQLException {
-        listRequests(sb, copyRequestScheduler, copyStorage);
+        listRequests(sb, getCopyRequestScheduler(), copyStorage);
     }
 
     public Set getCopyRequestIds(SRMUser user, String description) throws java.sql.SQLException {
-        return copyStorage.getActiveRequestIds(copyRequestScheduler.getId(), user, description);
+        return copyStorage.getActiveRequestIds(getCopyRequestScheduler().getId(), user, description);
     }
 
     public void listLatestCompletedCopyRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
@@ -1491,29 +1421,29 @@ public class SRM {
     }
 
     public void printCopySchedulerInfo(StringBuffer sb) throws java.sql.SQLException {
-        copyRequestScheduler.getInfo(sb);
+        getCopyRequestScheduler().getInfo(sb);
     }
 
     public void printCopySchedulerThreadQueue(StringBuffer sb) throws java.sql.SQLException {
-        copyRequestScheduler.printThreadQueue(sb);
+        getCopyRequestScheduler().printThreadQueue(sb);
 
     }
 
     public void printCopySchedulerPriorityThreadQueue(StringBuffer sb) throws java.sql.SQLException {
-        copyRequestScheduler.printPriorityThreadQueue(sb);
+        getCopyRequestScheduler().printPriorityThreadQueue(sb);
     }
 
     public void printCopySchedulerReadyThreadQueue(StringBuffer sb) throws java.sql.SQLException {
-        copyRequestScheduler.printReadyQueue(sb);
+        getCopyRequestScheduler().printReadyQueue(sb);
 
     }
 
     public void listBringOnlineRequests(StringBuffer sb) throws java.sql.SQLException {
-        listRequests(sb, bringOnlineRequestScheduler, bringOnlineStorage);
+        listRequests(sb, getBringOnlineRequestScheduler(), bringOnlineStorage);
     }
 
     public Set getBringOnlineRequestIds(SRMUser user, String description) throws java.sql.SQLException {
-        return bringOnlineStorage.getActiveRequestIds(bringOnlineRequestScheduler.getId(), user, description);
+        return bringOnlineStorage.getActiveRequestIds(getBringOnlineRequestScheduler().getId(), user, description);
     }
 
     public void listLatestCompletedBringOnlineRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
@@ -1553,29 +1483,33 @@ public class SRM {
     }
 
     public void printBringOnlineSchedulerInfo(StringBuffer sb) throws java.sql.SQLException {
-        bringOnlineRequestScheduler.getInfo(sb);
+        getBringOnlineRequestScheduler().getInfo(sb);
     }
 
     public void printBringOnlineSchedulerThreadQueue(StringBuffer sb) throws java.sql.SQLException {
-        bringOnlineRequestScheduler.printThreadQueue(sb);
+        getBringOnlineRequestScheduler().printThreadQueue(sb);
 
     }
 
     public void printBringOnlineSchedulerPriorityThreadQueue(StringBuffer sb) throws java.sql.SQLException {
-        bringOnlineRequestScheduler.printPriorityThreadQueue(sb);
+        getBringOnlineRequestScheduler().printPriorityThreadQueue(sb);
     }
 
     public void printBringOnlineSchedulerReadyThreadQueue(StringBuffer sb) throws java.sql.SQLException {
-        bringOnlineRequestScheduler.printReadyQueue(sb);
+        getBringOnlineRequestScheduler().printReadyQueue(sb);
 
     }
 
+    private Scheduler getScheduler(Class requestType) {
+        return SchedulerFactory.getSchedulerFactory().
+                getScheduler(requestType);
+    }
     public void listReserveSpaceRequests(StringBuffer sb) throws java.sql.SQLException {
-        listRequests(sb, reserveSpaceScheduler, reserveSpaceRequestStorage);
+        listRequests(sb, getReserveSpaceScheduler(), reserveSpaceRequestStorage);
     }
 
     public void listLsRequests(StringBuffer sb) throws java.sql.SQLException {
-        listRequests(sb, lsRequestScheduler, lsRequestStorage);
+        listRequests(sb, getLsRequestScheduler(), lsRequestStorage);
     }
 
     private void listRequests(StringBuffer sb,
@@ -1591,12 +1525,12 @@ public class SRM {
     }
 
     public double getLoad() {
-        int copyRunning = copyRequestScheduler.getTotalRunningThreads();
-        int maxCopyRunning = copyRequestScheduler.getThreadPoolSize();
-        int getRunning = getRequestScheduler.getTotalRunningThreads();
-        int maxGetRunning = getRequestScheduler.getThreadPoolSize();
-        int putRunning = putRequestScheduler.getTotalRunningThreads();
-        int maxPutRunning = putRequestScheduler.getThreadPoolSize();
+        int copyRunning = getCopyRequestScheduler().getTotalRunningThreads();
+        int maxCopyRunning = getCopyRequestScheduler().getThreadPoolSize();
+        int getRunning = getGetRequestScheduler().getTotalRunningThreads();
+        int maxGetRunning = getGetRequestScheduler().getThreadPoolSize();
+        int putRunning = getPutRequestScheduler().getTotalRunningThreads();
+        int maxPutRunning = getPutRequestScheduler().getThreadPoolSize();
 
         double load = (double) copyRunning / (double) maxCopyRunning / 3.0d +
                 (double) getRunning / (double) maxGetRunning / 3.0d +
@@ -1649,32 +1583,32 @@ public class SRM {
 
     public void cancelAllGetRequest(StringBuffer sb, String pattern) throws java.sql.SQLException {
 
-        cancelAllRequest(sb, pattern, getRequestScheduler, getStorage);
+        cancelAllRequest(sb, pattern, getGetRequestScheduler(), getStorage);
     }
 
     public void cancelAllBringOnlineRequest(StringBuffer sb, String pattern) throws java.sql.SQLException {
 
-        cancelAllRequest(sb, pattern, bringOnlineRequestScheduler, bringOnlineStorage);
+        cancelAllRequest(sb, pattern, getBringOnlineRequestScheduler(), bringOnlineStorage);
     }
 
     public void cancelAllPutRequest(StringBuffer sb, String pattern) throws java.sql.SQLException {
 
-        cancelAllRequest(sb, pattern, putRequestScheduler, putStorage);
+        cancelAllRequest(sb, pattern, getPutRequestScheduler(), putStorage);
     }
 
     public void cancelAllCopyRequest(StringBuffer sb, String pattern) throws java.sql.SQLException {
 
-        cancelAllRequest(sb, pattern, copyRequestScheduler, copyStorage);
+        cancelAllRequest(sb, pattern, getCopyRequestScheduler(), copyStorage);
     }
 
     public void cancelAllReserveSpaceRequest(StringBuffer sb, String pattern) throws java.sql.SQLException {
 
-        cancelAllRequest(sb, pattern, reserveSpaceScheduler, reserveSpaceRequestStorage);
+        cancelAllRequest(sb, pattern, getReserveSpaceScheduler(), reserveSpaceRequestStorage);
     }
 
     public void cancelAllLsRequests(StringBuffer sb, String pattern) throws java.sql.SQLException {
 
-        cancelAllRequest(sb, pattern, lsRequestScheduler, lsRequestStorage);
+        cancelAllRequest(sb, pattern, getLsRequestScheduler(), lsRequestStorage);
     }
 
     private void cancelAllRequest(StringBuffer sb,
@@ -1742,19 +1676,19 @@ public class SRM {
     }
 
     public Scheduler getGetRequestScheduler() {
-        return getRequestScheduler;
+        return getScheduler(GetFileRequest.class);
     }
 
     public Scheduler getBringOnlineRequestScheduler() {
-        return bringOnlineRequestScheduler;
+        return getScheduler(BringOnlineFileRequest.class);
     }
 
     public Scheduler getPutRequestScheduler() {
-        return putRequestScheduler;
+        return  getScheduler(PutFileRequest.class);
     }
 
     public Scheduler getCopyRequestScheduler() {
-        return copyRequestScheduler;
+        return getScheduler(CopyRequest.class);
     }
 
     public ReserveSpaceRequestStorage getReserveSpaceRequestStorage() {
@@ -1802,10 +1736,11 @@ public class SRM {
     }
 
     public Scheduler getReserveSpaceScheduler() {
-        return reserveSpaceScheduler;
+        return getScheduler(ReserveSpaceRequest.class);
     }
 
     public Scheduler getLsRequestScheduler() {
-        return lsRequestScheduler;
+        return getScheduler(LsFileRequest.class);
     }
+
 }

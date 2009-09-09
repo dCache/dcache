@@ -16,7 +16,6 @@ import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMTooManyResultsException;
 import org.dcache.srm.util.Configuration;
-import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.request.LsRequest;
 import org.dcache.srm.request.LsFileRequest;
@@ -40,7 +39,6 @@ public class SrmLs {
         SrmLsResponse response;
         LsRequestStorage requestStorage;
         LsFileRequestStorage fileRequestStorage;
-        Scheduler scheduler;
         RequestCredential credential;
         SRMUser user;
         String client_host;
@@ -61,10 +59,6 @@ public class SrmLs {
                 this.maxNumOfLevels  = srm.getConfiguration().getMaxNumberOfLsLevels();
                 this.credential=credential;
                 this.client_host=client_host;
-                this.scheduler = srm.getLsRequestScheduler();
-                if(this.scheduler == null) {
-                        throw new NullPointerException("lsScheduler is null");
-                }
                 this.requestStorage = srm.getLsRequestStorage();
                 if(this.requestStorage == null) {
                         throw new NullPointerException("ls request storage is null");
@@ -189,8 +183,7 @@ public class SrmLs {
                         r.setLongFormat(longFormat);
                         r.setMaxNumOfResults(max_results_num);
                         if (configuration.isAsynchronousLs()) { 
-                                r.setScheduler(scheduler.getId(),0);
-                                r.schedule(scheduler);
+                                r.schedule();
                                 return r.getSrmLsResponse();
                         }
                         else { 

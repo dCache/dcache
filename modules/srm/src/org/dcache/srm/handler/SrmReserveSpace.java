@@ -42,7 +42,6 @@ public class SrmReserveSpace {
     SrmReserveSpaceRequest  request;
     SrmReserveSpaceResponse response;
     SRMUser             user;
-    Scheduler               scheduler;
     RequestCredential       credential;
     Configuration           configuration;
     ReserveSpaceRequestStorage reserverSpaceRequestStorage;
@@ -65,10 +64,6 @@ public class SrmReserveSpace {
             throw new NullPointerException("storage is null");
         }
         this.storage = storage;
-        this.scheduler = srm.getReserveSpaceScheduler();
-        if (scheduler == null) {
-            throw new NullPointerException("scheduler is null");
-        }
         this.configuration = srm.getConfiguration();
         if (configuration == null) {
             throw new NullPointerException("configuration is null");
@@ -173,7 +168,7 @@ public class SrmReserveSpace {
                 description,
                client_host);
            
-            reserveRequest.schedule(scheduler);
+            reserveRequest.schedule();
          return reserveRequest.getSrmReserveSpaceResponse();
        }
        catch (Exception e) {

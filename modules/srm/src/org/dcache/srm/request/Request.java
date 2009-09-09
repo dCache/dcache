@@ -444,7 +444,7 @@ public abstract class Request extends Job {
         retryDeltaTime = 1;
     }
 
-    public abstract void schedule(Scheduler scheduler) throws InterruptedException, IllegalStateTransition, SQLException;
+    //public abstract void schedule(Scheduler scheduler) throws InterruptedException, IllegalStateTransition, SQLException;
 
     
     /**

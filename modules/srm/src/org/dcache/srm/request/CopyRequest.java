@@ -1134,10 +1134,6 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
         }
     }
     
-    public void schedule(Scheduler scheduler) throws InterruptedException,IllegalStateTransition, java.sql.SQLException{
-        scheduler.schedule(this);
-    }
-        
     public void fileRequestCompleted()
     {
         resetRetryDeltaTime();

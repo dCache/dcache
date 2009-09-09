@@ -390,11 +390,6 @@ public class ReserveSpaceRequest extends Request {
     protected void stateChanged(State oldState) {
     }
     
-    public void schedule(Scheduler scheduler) throws InterruptedException,
-    IllegalStateTransition,java.sql.SQLException {
-        scheduler.schedule(this);
-    }
-    
     
     public void run() throws NonFatalJobFailure, FatalJobFailure {
         try{

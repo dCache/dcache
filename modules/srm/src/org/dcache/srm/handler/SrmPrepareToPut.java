@@ -45,7 +45,6 @@ public class SrmPrepareToPut {
     AbstractStorageElement storage;
     SrmPrepareToPutRequest request;
     SrmPrepareToPutResponse response;
-    Scheduler putScheduler;
     SRMUser user;
     RequestCredential credential;
     PutRequestStorage putStorage;
@@ -70,10 +69,6 @@ public class SrmPrepareToPut {
             throw new NullPointerException("storage is null");
         }
         this.storage = storage;
-        this.putScheduler = srm.getPutRequestScheduler();
-        if(putScheduler == null) {
-            throw new NullPointerException("putScheduler is null");
-        }
         this.configuration = srm.getConfiguration();
         if(configuration == null) {
             throw new NullPointerException("configuration is null");
@@ -90,10 +85,6 @@ public class SrmPrepareToPut {
     }
     
     boolean longFormat =false;
-    
-    public Scheduler getPutScheduler() {
-        return putScheduler;
-    }
     
     public PutRequestStorage getPutStorage() {
         return putStorage;
@@ -318,9 +309,7 @@ public class SrmPrepareToPut {
                 r.setOverwriteMode(overwriteMode);
             }
 	    
-            r.setScheduler(putScheduler.getId(),0);
-            
-            r.schedule(putScheduler);
+            r.schedule();
             // RequestScheduler will take care of the rest
             //getRequestScheduler.add(r);
             // Return the request status

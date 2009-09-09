@@ -712,6 +712,11 @@ public abstract class Job  {
                 sharedMemoryCache.updateSharedMemoryChache(this);
             }
         }
+        if(!old.isFinalState() && state.isFinalState()) {
+            if(storeInSharedMemoryCache) {
+                sharedMemoryCache.updateSharedMemoryChache(this);
+            }
+        }
         stateChanged(old);
         if(save) {
             saveJob();
@@ -1269,6 +1274,20 @@ public abstract class Job  {
             sharedMemoryCache.clearCache();
         }
     }
+    /**
+     * This is the initial call to schedule the job for execution
+     */
+    public synchronized void schedule() throws InterruptedException,IllegalStateTransition
+    {
+            if(!State.PENDING.equals(state)) {
+                throw new IllegalStateException("State is not pending");
+            }
+            Scheduler scheduler = SchedulerFactory.getSchedulerFactory().getScheduler(this);
+            this.setScheduler(scheduler.getId(), 0);
+            scheduler.schedule(this);
+    }
+
+
 
     public static Set<Job> getActiveJobs(Class type) {
         if(storeInSharedMemoryCache) {

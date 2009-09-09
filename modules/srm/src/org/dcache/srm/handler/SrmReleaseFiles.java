@@ -26,6 +26,7 @@ import org.dcache.srm.request.BringOnlineFileRequest;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.IllegalStateTransition;
+import org.dcache.srm.scheduler.SchedulerFactory;
 import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
 import org.apache.axis.types.URI; 
 import org.apache.log4j.Logger;
@@ -414,9 +415,10 @@ public class SrmReleaseFiles {
     }
     
     private Set<BringOnlineFileRequest> findBringOnlineFileRequestBySURLs(URI[] surls)  {
-        Scheduler scheduler = srm.getBringOnlineRequestScheduler();
-        
         DatabaseFileRequestStorage reqstorage = srm.getBringOnlineFileRequestStorage();
+        Scheduler scheduler =
+                SchedulerFactory.getSchedulerFactory().
+                getScheduler(BringOnlineFileRequest.class);
         Set<BringOnlineFileRequest> foundRequests = 
             new HashSet<BringOnlineFileRequest>();
         Set<Long> activeRequestIds ;

@@ -317,14 +317,15 @@ public class GetRequest extends ContainerRequest {
         throw new SRMException("file request for surl ="+surl +" is not found");
     }
   
-    public void schedule(Scheduler scheduler) throws InterruptedException,
-    IllegalStateTransition,java.sql.SQLException {
+    @Override
+    public void schedule() throws InterruptedException,
+    IllegalStateTransition {
         for(int i = 0; i < fileRequests.length ;++ i) {
             GetFileRequest fileRequest = (GetFileRequest) fileRequests[i];
-            scheduler.schedule(fileRequest);
+            fileRequest.schedule();
         }
     }
-    
+
     // ContainerRequest request;
     /**
      * for each file request in the request

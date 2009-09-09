@@ -41,7 +41,6 @@ public class SrmStatusOfReserveSpaceRequest {
     SrmStatusOfReserveSpaceRequestRequest  request;
     SrmStatusOfReserveSpaceRequestResponse response;
     SRMUser             user;
-    Scheduler               scheduler;
     RequestCredential       credential;
     Configuration           configuration;
     
@@ -62,10 +61,6 @@ public class SrmStatusOfReserveSpaceRequest {
             throw new NullPointerException("storage is null");
         }
         this.storage = storage;
-        this.scheduler = srm.getReserveSpaceScheduler();
-        if (scheduler == null) {
-            throw new NullPointerException("scheduler is null");
-        }
         this.configuration = srm.getConfiguration();
         if (configuration == null) {
             throw new NullPointerException("configuration is null");

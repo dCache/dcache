@@ -339,11 +339,12 @@ public class BringOnlineRequest extends ContainerRequest {
         throw new SRMFileRequestNotFoundException("file request for surl ="+surl +" is not found");
     }
   
-    public void schedule(Scheduler scheduler) throws InterruptedException,
-    IllegalStateTransition,java.sql.SQLException {
+    @Override
+    public void schedule() throws InterruptedException,
+    IllegalStateTransition {
         for(int i = 0; i < fileRequests.length ;++ i) {
             BringOnlineFileRequest fileRequest = (BringOnlineFileRequest) fileRequests[i];
-            scheduler.schedule(fileRequest);
+            fileRequest.schedule();
         }
     }
     

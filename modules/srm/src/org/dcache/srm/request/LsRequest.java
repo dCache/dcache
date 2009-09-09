@@ -147,7 +147,7 @@ public class LsRequest extends ContainerRequest {
                 IllegalStateTransition,java.sql.SQLException {
                 for(int i = 0; i < fileRequests.length ;++ i) {
                         LsFileRequest fileRequest = (LsFileRequest) fileRequests[i];
-                        scheduler.schedule(fileRequest);
+                        fileRequest.schedule();
                 }
         }
 
