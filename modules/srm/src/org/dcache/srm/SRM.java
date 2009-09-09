@@ -106,6 +106,7 @@ import org.dcache.srm.util.Tools;
 import java.util.Set;
 import java.util.Iterator;
 import java.io.IOException;
+import java.io.File;
 import java.net.InetAddress;
 
 import org.dcache.srm.scheduler.Scheduler;
@@ -171,6 +172,7 @@ import org.dcache.srm.v2_2.SrmAbortRequestResponse;
 import org.dcache.commons.stats.RequestCounters;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.commons.stats.rrd.RrdRequestCounters;
+import org.dcache.commons.stats.rrd.RrdRequestExecutionTimeGauges;
 import org.dcache.commons.stats.MonitoringProxy;
 import java.lang.reflect.Method;
 
@@ -237,6 +239,14 @@ public class SRM {
     private RequestExecutionTimeGauges<Class> srmServerV2Gauges;
     private RequestExecutionTimeGauges<String> srmServerV1Gauges;
     private RequestExecutionTimeGauges<Method> abstractStorageElementGauges;
+    private RrdRequestExecutionTimeGauges rrdSrmServerV2Gauges;
+    private RrdRequestExecutionTimeGauges rrdSrmServerV1Gauges;
+    private RrdRequestExecutionTimeGauges rrdAstractStorageElementGauges;
+
+    private RequestCounters srmRequestCounters;
+    private RequestExecutionTimeGauges srmRequestGauges;
+    private RrdRequestExecutionTimeGauges rrdSrmRequestGauges;
+    private RrdRequestCounters rrdSrmRequestCounters;
 
     /**
      * if multiple srm installations live within same storage, they should have different names
@@ -267,20 +277,20 @@ public class SRM {
         this.name = name;
         srmServerV2Counters = new RequestCounters<Class>("SRMServerV2");
         srmServerV1Counters = new RequestCounters<String>("SRMServerV1");
-        if (configuration.getRrdDirectory() != null) {
-            String rrddir = configuration.getRrdDirectory() +
+        if (configuration.getCounterRrdDirectory() != null) {
+            String rrddir = configuration.getCounterRrdDirectory() +
                     java.io.File.separatorChar + "srmv1";
             rrdSrmServerV1Counters =
                     new RrdRequestCounters(srmServerV1Counters, rrddir);
             rrdSrmServerV1Counters.startRrdUpdates();
             rrdSrmServerV1Counters.startRrdGraphPlots();
-            rrddir = configuration.getRrdDirectory() +
+            rrddir = configuration.getCounterRrdDirectory() +
                     java.io.File.separatorChar + "srmv2";
             rrdSrmServerV2Counters =
                     new RrdRequestCounters(srmServerV2Counters, rrddir);
             rrdSrmServerV2Counters.startRrdUpdates();
             rrdSrmServerV2Counters.startRrdGraphPlots();
-            rrddir =  configuration.getRrdDirectory() +
+            rrddir =  configuration.getCounterRrdDirectory() +
                     java.io.File.separatorChar + "storage";
 
             rrdAstractStorageElementCounters =
@@ -292,6 +302,38 @@ public class SRM {
         }
         srmServerV2Gauges = new RequestExecutionTimeGauges<Class> ("SRMServerV2");
         srmServerV1Gauges = new RequestExecutionTimeGauges<String> ("SRMServerV1");
+        if (configuration.getGaugeRrdDirectory() != null) {
+            File rrddir = new File(configuration.getGaugeRrdDirectory() +
+                    File.separatorChar + "srmv1");
+            rrdSrmServerV1Gauges =
+                    new RrdRequestExecutionTimeGauges(srmServerV1Gauges, rrddir);
+            rrdSrmServerV1Gauges.startRrdUpdates();
+            rrdSrmServerV1Gauges.startRrdGraphPlots();
+            rrddir = new File(configuration.getGaugeRrdDirectory() +
+                    File.separatorChar + "srmv2");
+            rrdSrmServerV2Gauges =
+                    new RrdRequestExecutionTimeGauges(srmServerV2Gauges, rrddir);
+            rrdSrmServerV2Gauges.startRrdUpdates();
+            rrdSrmServerV2Gauges.startRrdGraphPlots();
+            rrddir = new File (configuration.getGaugeRrdDirectory() +
+                    java.io.File.separatorChar + "storage");
+
+            rrdAstractStorageElementGauges =
+                    new RrdRequestExecutionTimeGauges(abstractStorageElementGauges, rrddir);
+            rrdAstractStorageElementGauges.startRrdUpdates();
+            rrdAstractStorageElementGauges.startRrdGraphPlots();
+
+
+        }
+
+         srmRequestCounters =
+                 new RequestCounters("SRMRequestsCounters");
+         srmRequestGauges =
+                 new RequestExecutionTimeGauges("SRMRequestsGauges");
+
+         RrdRequestExecutionTimeGauges rrdSrmRequestGauges;
+         RrdRequestCounters rrdSrmRequestCounters;
+
         // these jdbc parameters need to be set before the
         // first jdbc instance is created
         // so we do it before everything else

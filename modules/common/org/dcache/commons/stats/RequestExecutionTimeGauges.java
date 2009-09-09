@@ -174,5 +174,13 @@ public class RequestExecutionTimeGauges<T> {
         getGauge(gaugeKey).update(nextExecTime);
     }
 
+    /**
+     *
+     * @return keyset
+     */
+    public Set<T> keySet() {
+        return gauges.keySet();
+    }
+
 
 }

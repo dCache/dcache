@@ -364,8 +364,12 @@ public class SRMDispatcher {
 		    System.exit(1);
 		}
 	    }
-	    SRMDispatcher dispatcher = new SRMDispatcher(conf);
-	    dispatcher.work();
+        int repeatCount=conf.getRepeatCount() == null ?
+            1:conf.getRepeatCount();
+        for(int i=0; i<repeatCount; i++) {
+            SRMDispatcher dispatcher = new SRMDispatcher(conf);
+            dispatcher.work();
+        }
 	}
 	catch(Exception e) {
 	   if(conf.isDebug()) { 

@@ -1803,6 +1803,40 @@ public class Configuration {
 		this.is_AbortRequest = yes;
 	}
 
+        @Option(
+                name = "repeat",
+                description = "number of times to repeat a client run",
+                defaultValue = "null",
+                required=false,
+                log=true,
+                save=true
+                )
+                private Integer repeatCount;
+
+        public Integer getRepeatCount() {
+		return repeatCount;
+	}
+
+        public void setRepeatCount(Integer count) {
+                repeatCount=count;
+        }
+
+        @Option(
+                name = "dryrun",
+                description =  	"performs srm \"get/put\", without actual data transfer for use as a diagnostics tool",
+                defaultValue = "false",
+                required=false,
+                log=true
+                )
+                private boolean dryrun;
+
+        public boolean isDryrun() {
+		return dryrun;
+	}
+
+        public void setDryrun(boolean dryrun) {
+                this.dryrun = dryrun;
+	}
 	private String srmUrl;
 	private String surls[];
 

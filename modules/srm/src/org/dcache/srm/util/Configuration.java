@@ -264,7 +264,10 @@ public class Configuration {
     private int maxNumberOfLsEntries = 1000;
     private int maxNumberOfLsLevels = 100;
     private boolean clientDNSLookup=false;
-    private String rrdDirectory = null;
+    private String counterRrdDirectory = null;
+    private String gaugeRrdDirectory = null;
+    private String srmCounterRrdDirectory = null;
+    private String srmGaugeRrdDirectory = null;
 
     /** Creates a new instance of Configuration */
     public Configuration() {
@@ -1376,7 +1379,6 @@ public class Configuration {
         sb.append("\n\tcleanPendingRequestsOnRestart=").append(this.cleanPendingRequestsOnRestart);
         sb.append("\n\tclientDNSLookup=").append(this.clientDNSLookup);
         sb.append("\n\tasync-ls=").append(this.asynchronousLs);
-        sb.append("\n\rrdDirectory=").append(this.getRrdDirectory());
 
         return sb.toString();
     }
@@ -2696,15 +2698,57 @@ public class Configuration {
     /**
      * @return the rrdDirectory
      */
-    public String getRrdDirectory() {
-        return rrdDirectory;
+    public String getCounterRrdDirectory() {
+        return counterRrdDirectory;
     }
 
     /**
      * @param rrdDirectory the rrdDirectory to set
      */
-    public void setRrdDirectory(String rrdDirectory) {
-        this.rrdDirectory = rrdDirectory;
+    public void setCounterRrdDirectory(String rrdDirectory) {
+        this.counterRrdDirectory = rrdDirectory;
+    }
+
+    /**
+     * @return the gaugeRrdDirectory
+     */
+    public String getGaugeRrdDirectory() {
+        return gaugeRrdDirectory;
+    }
+
+    /**
+     * @param gaugeRrdDirectory the gaugeRrdDirectory to set
+     */
+    public void setGaugeRrdDirectory(String gaugeRrdDirectory) {
+        this.gaugeRrdDirectory = gaugeRrdDirectory;
+    }
+
+    /**
+     * @return the srmCounterRrdDirectory
+     */
+    public String getSrmCounterRrdDirectory() {
+        return srmCounterRrdDirectory;
+    }
+
+    /**
+     * @param srmCounterRrdDirectory the srmCounterRrdDirectory to set
+     */
+    public void setSrmCounterRrdDirectory(String srmCounterRrdDirectory) {
+        this.srmCounterRrdDirectory = srmCounterRrdDirectory;
+    }
+
+    /**
+     * @return the srmGaugeRrdDirectory
+     */
+    public String getSrmGaugeRrdDirectory() {
+        return srmGaugeRrdDirectory;
+    }
+
+    /**
+     * @param srmGaugeRrdDirectory the srmGaugeRrdDirectory to set
+     */
+    public void setSrmGaugeRrdDirectory(String srmGaugeRrdDirectory) {
+        this.srmGaugeRrdDirectory = srmGaugeRrdDirectory;
     }
 
 

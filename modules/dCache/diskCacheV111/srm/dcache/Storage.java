@@ -727,7 +727,12 @@ public class Storage
         config.setClientDNSLookup(isOptionSetToTrueOrYes("client-dns-lookup",
         config.isClientDNSLookup())); // false by default
 
-        config.setRrdDirectory(getOption("rrdDirectory",config.getRrdDirectory()));
+        config.setCounterRrdDirectory(getOption("counterRrdDirectory",config.getCounterRrdDirectory()));
+        config.setGaugeRrdDirectory(getOption("gaugeRrdDirectory",config.getGaugeRrdDirectory()));
+
+        config.setSrmCounterRrdDirectory(getOption("srmCounterRrdDirectory",config.getSrmCounterRrdDirectory()));
+        config.setSrmGaugeRrdDirectory(getOption("srmGaugeRrdDirectory",config.getSrmGaugeRrdDirectory()));
+
 
         _log.info("scheduler parameter read, starting");
         this.useInterpreter(true);
