@@ -146,6 +146,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Collection;
 import java.util.ArrayList;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import diskCacheV111.services.PermissionHandler;
 import org.dcache.srm.AbstractStorageElement;
@@ -252,6 +253,12 @@ public class Storage
     private String _pnfsManagerName;
     private CellPath _poolMgrPath;
     private CellStub _pnfsStub;
+    private CellStub _poolManagerStub;
+    private CellStub _poolStub;
+    private CellStub _spaceManagerStub;
+    private CellStub _copyManagerStub;
+    private CellStub _gridftpTransferManagerStub;
+    private CellStub _pinManagerStub;
     private PnfsHandler _pnfs;
     private PermissionHandler permissionHandler;
     String _hosts[];
@@ -366,10 +373,41 @@ public class Storage
 
         _args      = getArgs() ;
 
-        __pnfsTimeout =getIntOption("pnfs-timeout",__pnfsTimeout);
+        __poolManagerTimeout =
+            getIntOption("pool-manager-timeout", __poolManagerTimeout);
         _poolManagerName = getOption("poolManager", "PoolManager" );
-        _pnfsManagerName = getOption("pnfsManager" , "PnfsManager") ;
         _poolMgrPath     = new CellPath( _poolManagerName ) ;
+        _poolManagerStub = new CellStub();
+        _poolManagerStub.setDestination(_poolManagerName);
+        _poolManagerStub.setCellEndpoint(this);
+        _poolManagerStub.setTimeout(__poolManagerTimeout * 1000);
+
+        _poolStub = new CellStub();
+        _poolStub.setCellEndpoint(this);
+        _poolStub.setTimeout(__poolManagerTimeout * 1000);
+
+        _spaceManagerStub = new CellStub();
+        _spaceManagerStub.setCellEndpoint(this);
+        _spaceManagerStub.setDestination("SrmSpaceManager");
+        _spaceManagerStub.setTimeout(3 * 60 * 1000);
+
+        _gridftpTransferManagerStub = new CellStub();
+        _gridftpTransferManagerStub.setCellEndpoint(this);
+        _gridftpTransferManagerStub.setDestination(remoteGridftpTransferManagerName);
+        _gridftpTransferManagerStub.setTimeout(24 * 60 * 60 * 1000);
+
+        _copyManagerStub = new CellStub();
+        _copyManagerStub.setCellEndpoint(this);
+        _copyManagerStub.setDestination("CopyManager");
+        _copyManagerStub.setTimeout(24 * 60 * 60 * 1000);
+
+        _pinManagerStub = new CellStub();
+        _pinManagerStub.setCellEndpoint(this);
+        _pinManagerStub.setDestination("PinManager");
+        _pinManagerStub.setTimeout(60 * 60 * 1000);
+
+        __pnfsTimeout = getIntOption("pnfs-timeout",__pnfsTimeout);
+        _pnfsManagerName = getOption("pnfsManager" , "PnfsManager") ;
         _pnfsStub = new CellStub();
         _pnfsStub.setDestination(_pnfsManagerName);
         _pnfsStub.setCellEndpoint(this);
@@ -416,8 +454,6 @@ public class Storage
                 throw e;
             }
         }
-        __poolManagerTimeout =getIntOption("pool-manager-timeout",
-            __poolManagerTimeout);
 
         config.setPort(getIntOption("srmport",config.getPort()));
         config.setSizeOfSingleRemoveBatch(getIntOption("size-of-single-remove-batch",config.getSizeOfSingleRemoveBatch()));
@@ -1391,58 +1427,33 @@ public class Storage
             });
     }
 
-    private boolean isCached(StorageInfo storage_info, PnfsId _pnfsId) {
-         PoolMgrQueryPoolsMsg query =
-                 new PoolMgrQueryPoolsMsg( DirectionType.READ ,
-                       storage_info.getStorageClass()+"@"+storage_info.getHsm() ,
-                       storage_info.getCacheClass(),
-                       "*/*",
-                       config.getSrmhost(),
-                       null);
-
-         CellMessage checkMessage = new CellMessage( _poolMgrPath , query ) ;
-         _log.debug("isCached: Waiting for PoolMgrQueryPoolsMsg reply from PoolManager");
+    private boolean isCached(StorageInfo storage_info, PnfsId _pnfsId)
+    {
          try {
-             checkMessage = sendAndWait(  checkMessage , __poolManagerTimeout*1000 ) ;
-             if(checkMessage == null) {
-                 _log.warn("isCached(): timeout expired");
-                 return false;
+             PoolMgrQueryPoolsMsg query =
+                 new PoolMgrQueryPoolsMsg(DirectionType.READ,
+                                          storage_info.getStorageClass()+"@"+storage_info.getHsm(),
+                                          storage_info.getCacheClass(),
+                                          "*/*",
+                                          config.getSrmhost(),
+                                          null);
+
+             _log.debug("isCached: Waiting for PoolMgrQueryPoolsMsg reply from PoolManager");
+             query = _poolManagerStub.sendAndWait(query);
+             Set<String> readPools = new HashSet<String>();
+             for (List<String> list: query.getPools()) {
+                 readPools.addAll(list);
              }
-             query = (PoolMgrQueryPoolsMsg) checkMessage.getMessageObject() ;
-         }
- 	catch(Exception ee ) {
-            _log.warn("isCached(): error receiving message back from PoolManager : "+ee);
+
+             List<String> assumedLocations = _pnfs.getCacheLocations(_pnfsId);
+             return !Collections.disjoint(readPools, assumedLocations);
+         } catch (CacheException e) {
+            _log.warn("isCached(): error receiving message back from PoolManager : " + e);
+             return false;
+         } catch (InterruptedException e) {
+             Thread.currentThread().interrupt();
              return false;
          }
-
-         if( query.getReturnCode() != 0 ) {
-             _log.debug( "storageInfo Available") ;
-         }
-         try {
-             List assumedLocations = _pnfs.getCacheLocations(_pnfsId) ;
-             List<String> [] lists = query.getPools() ;
-             HashMap hash = new HashMap() ;
-
-             for( int i = 0 ; i < lists.length ; i++ ) {
-                 Iterator nn = lists[i].iterator() ;
-                 while( nn.hasNext() ) {
-                     hash.put( nn.next() , "" ) ;
-                 }
-             }
-
-             Iterator nn = assumedLocations.iterator() ;
-
-             while( nn.hasNext() ) {
-                 if( hash.get( nn.next() ) != null ) {
-                     return true;
-                 }
-             }
-         } catch (RuntimeException e) {
-             _log.fatal("isCached exception", e);
-         } catch (Exception e) {
-             _log.error("isCached exception : " + e);
-         }
-         return false;
      }
 
     public void log(String s)
@@ -2131,71 +2142,45 @@ public class Storage
                 overwrite);
     }
 
-
-
     public void setFileMetaData(SRMUser user, FileMetaData fmd)
-        throws SRMException {
-        DcacheFileMetaData dfmd=null;
+        throws SRMException
+    {
         if(!(fmd instanceof DcacheFileMetaData)) {
-                throw new SRMException("Storage.setFileMetaData: " +
-                        "metadata in not dCacheMetaData");
+            throw new SRMException("Storage.setFileMetaData: " +
+                                   "metadata in not dCacheMetaData");
         }
-        dfmd = (DcacheFileMetaData) fmd;
+        DcacheFileMetaData dfmd = (DcacheFileMetaData) fmd;
         _log.info("Storage.setFileMetaData("+dfmd.getFmd()+
                   " , size="+dfmd.getFmd().getFileSize()+")");
 
-
         dfmd.getFmd().setUserPermissions(
-                new diskCacheV111.util.FileMetaData.Permissions (
+            new diskCacheV111.util.FileMetaData.Permissions(
                 (dfmd.permMode >> 6 ) & 0x7 ) ) ;
         dfmd.getFmd().setGroupPermissions(
-                new diskCacheV111.util.FileMetaData.Permissions (
+            new diskCacheV111.util.FileMetaData.Permissions(
                 (dfmd.permMode >> 3 ) & 0x7 )) ;
         dfmd.getFmd().setWorldPermissions(
-                new diskCacheV111.util.FileMetaData.Permissions(
+            new diskCacheV111.util.FileMetaData.Permissions(
                 dfmd.permMode  & 0x7 ) ) ;
-
 
         long time = System.currentTimeMillis()/1000L;
         dfmd.getFmd().setLastAccessedTime(time);
         dfmd.getFmd().setLastModifiedTime(time);
 
-        AuthorizationRecord duser = null;
-        if (user != null && user instanceof AuthorizationRecord) {
-                duser = (AuthorizationRecord) user;
-        }
-
-        PnfsSetFileMetaDataMessage msg =
-            new PnfsSetFileMetaDataMessage(dfmd.getPnfsId());
-        msg.setMetaData(dfmd.getFmd());
-        msg.setReplyRequired(true);
-        CellMessage answer=null;
-        Object o=null;
         try {
-                answer = sendAndWait(new CellMessage(
-                                             new CellPath("PnfsManager") ,
-                                             msg) ,
-                                     __pnfsTimeout*1000);
-        } catch (NoRouteToCellException e) {
-            throw new SRMException("PnfsManager is unavailable: "+ e.getMessage(), e);
+            PnfsSetFileMetaDataMessage msg =
+                new PnfsSetFileMetaDataMessage(dfmd.getPnfsId());
+            msg.setMetaData(dfmd.getFmd());
+            _pnfsStub.sendAndWait(msg);
+        } catch (TimeoutCacheException e) {
+            throw new SRMInternalErrorException("PnfsManager is unavailable: "
+                                                + e.getMessage(), e);
+        } catch (CacheException e) {
+            throw new SRMException("SetFileMetaData failed for " + fmd.SURL +
+                                   "; return code=" + e.getRc() +
+                                   " reason=" + e.getMessage());
         } catch (InterruptedException e) {
             throw new SRMException("Request was interrupted", e);
-        }
-        if (answer == null ||
-            (o = answer.getMessageObject()) == null ||
-            !(o instanceof PnfsSetFileMetaDataMessage)) {
-               _log.warn("sent PnfsSetFileMetaDataMessage, received "+o+" back");
-                throw new SRMException("can set metadata "+fmd.SURL);
-        }
-        else {
-            PnfsSetFileMetaDataMessage reply  =
-                (PnfsSetFileMetaDataMessage) answer.getMessageObject();
-            if (reply.getReturnCode() != 0) {
-                    throw new SRMException("SetFileMetaData Failed : "+fmd.SURL+
-                                           "SetFileMetaData  return code="+
-                        reply.getReturnCode()+
-                                           " reason : "+reply.getErrorObject());
-            }
         }
     }
 
@@ -2281,40 +2266,22 @@ public class Storage
         }
 
 	try {
-	    GetFileSpaceTokensMessage getSpaceTokensMessage =
+	    GetFileSpaceTokensMessage msg =
                 new GetFileSpaceTokensMessage(pnfsId);
-	    CellMessage answer =  sendAndWait(
-                new CellMessage(
-                new CellPath("SrmSpaceManager"),getSpaceTokensMessage),
-					      60*60*1000);
-            if(answer==null) {
-                _log.error("Failed to retrieve space reservation tokens for file "+
-                    absolute_path+"("+pnfsId+")");
+            msg = _spaceManagerStub.sendAndWait(msg);
+
+            if (msg.getSpaceTokens() != null) {
+                fmd.spaceTokens = new long[msg.getSpaceTokens().length];
+                System.arraycopy(msg.getSpaceTokens(), 0,
+                                 fmd.spaceTokens, 0,
+                                 msg.getSpaceTokens().length);
             }
-	    else {
-                Object messageObject =answer.getMessageObject();
-                if(messageObject instanceof GetFileSpaceTokensMessage) {
-                    getSpaceTokensMessage =
-                        (GetFileSpaceTokensMessage)answer.getMessageObject();
-                    if (getSpaceTokensMessage.getReturnCode() != 0) {
-                        _log.warn("Failed to retrieve space reservation tokens for file "+
-                            absolute_path+"("+pnfsId+")");
-                    }
-                    else {
-                        if (getSpaceTokensMessage.getSpaceTokens()!=null) {
-                            fmd.spaceTokens =
-                                new long[getSpaceTokensMessage.getSpaceTokens().length];
-                            System.arraycopy(getSpaceTokensMessage.getSpaceTokens(),0,
-                                 fmd.spaceTokens,0,
-                                getSpaceTokensMessage.getSpaceTokens().length);
-                        }
-                    }
-                }
-                else {
-                    _log.error("Failed to retrieve space reservation tokens for file "+
-                    absolute_path+"("+pnfsId+") : "+messageObject);
-                }
-	    }
+        } catch (TimeoutCacheException e) {
+            _log.error("Failed to retrieve space reservation tokens for file "+
+                       absolute_path+"("+pnfsId+"): SrmSpaceManager timed out");
+        } catch (CacheException e) {
+            _log.error("Failed to retrieve space reservation tokens for file "+
+                       absolute_path+"("+pnfsId+"): " + e.getMessage());
         } catch (RuntimeException e) {
 	    _log.fatal("getFileMetaData failed", e);
         } catch (Exception e) {
@@ -2494,121 +2461,86 @@ public class Storage
 
 
     public void localCopy(SRMUser user,String fromFilePath, String toFilePath)
-    throws SRMException {
-        String actualFromFilePath = srm_root+"/"+fromFilePath;
-        String actualToFilePath = srm_root+"/"+toFilePath;
+        throws SRMException
+    {
+        String actualFromFilePath = getFullPath(fromFilePath);
+        String actualToFilePath = getFullPath(toFilePath);
         long id = getNextMessageID();
-        _log.debug("localCopy for user "+ user+"from actualFromFilePath to actualToFilePath");
+        _log.debug("localCopy for user " + user +
+                   "from actualFromFilePath to actualToFilePath");
         AuthorizationRecord duser = (AuthorizationRecord)user;
-        CopyManagerMessage copyRequest =
-                new CopyManagerMessage(
-                duser.getUid(),
-                duser.getGid(),
-                actualFromFilePath,
-                actualToFilePath,
-                id,
-                config.getBuffer_size(),
-                config.getTcp_buffer_size());
-
-        CellMessage answer;
         try {
-            answer = sendAndWait(new CellMessage(
-                    new CellPath("CopyManager"),
-                    copyRequest),1000*60*60*24);
-        } catch (NoRouteToCellException e) {
-            throw new SRMException("CopyManager is unavailable: " +
-                                   e.getMessage(), e);
+            CopyManagerMessage copyRequest =
+                new CopyManagerMessage(duser.getUid(),
+                                       duser.getGid(),
+                                       actualFromFilePath,
+                                       actualToFilePath,
+                                       id,
+                                       config.getBuffer_size(),
+                                       config.getTcp_buffer_size());
+            _copyManagerStub.sendAndWait(copyRequest);
+        } catch (TimeoutCacheException e) {
+            _log.error("CopyManager is unavailable");
+            throw new SRMInternalErrorException("CopyManager is unavailable: " +
+                                                e.getMessage(), e);
+        } catch (CacheException e) {
+            String msg = " local copy failed with code =" + e.getRc() +
+                " details: " + e.getMessage();
+            _log.warn(msg);
+            throw new SRMException(msg, e);
         } catch (InterruptedException e) {
             throw new SRMException("Request to CopyManager was interrupted", e);
         }
-
-        if (answer == null) {
-            String emsg = "timeout expired while waiting for answer from CopyManager";
-            _log.error(emsg);
-            throw new SRMException(emsg);
-        }
-        Object object = answer.getMessageObject();
-        if(object == null ||
-                !(object instanceof CopyManagerMessage)) {
-            String emsg ="failed to recive the "+
-                    "CopyMessage back";
-            _log.error(emsg);
-            throw new SRMException(emsg);
-        }
-        CopyManagerMessage copyResponse =
-                (CopyManagerMessage) object;
-        int rc = copyResponse.getReturnCode();
-        if( rc != 0) {
-            String emsg =" local copy failed with code ="+ rc +
-                    " details: "+copyResponse.getDescription();
-            _log.warn(emsg);
-            throw new SRMException(emsg);
-        }
     }
-
 
     public void prepareToPutInReservedSpace(SRMUser user, String path, long size,
         long spaceReservationToken, PrepareToPutInSpaceCallbacks callbacks) {
         throw new java.lang.UnsupportedOperationException("NotImplementedException");
     }
 
+    private final Map<String,StorageElementInfo> poolInfos =
+        new HashMap<String,StorageElementInfo>();
+    private final Map<String,Long> poolInfosTimestamps =
+        new HashMap<String,Long>();
 
-
-    public HashMap poolInfos = new HashMap();
-    public HashMap poolInfosTimestamps = new HashMap();
-
-    public StorageElementInfo getPoolInfo(String pool) throws SRMException {
-        synchronized(poolInfosTimestamps) {
-            if(poolInfosTimestamps.containsKey(pool)) {
-                long poolInfoTimestamp =
-                        ((Long)(poolInfosTimestamps.get(pool))).longValue();
-                if((System.currentTimeMillis() - poolInfoTimestamp) < 3*1000*60) {
-                    return (StorageElementInfo) poolInfos.get(pool);
-                }
+    public StorageElementInfo getPoolInfo(String pool) throws SRMException
+    {
+        synchronized (poolInfosTimestamps) {
+            Long timestamp = poolInfosTimestamps.get(pool);
+            if (timestamp != null &&
+                (System.currentTimeMillis() - timestamp) < 3 * 1000 * 60) {
+                return poolInfos.get(pool);
             }
         }
 
-        CellMessage poolInfoMessage = new CellMessage(
-                new CellPath((String)( pool)) ,
-                "xgetcellinfo" ) ;
-        //say("getPoolInfo("+pool+"): Waiting for Pool reply for \"xgetcellinfo\"");
         try {
-            poolInfoMessage = sendAndWait(poolInfoMessage,
-                    __poolManagerTimeout*1000);
-        } catch (NoRouteToCellException e) {
-            throw new SRMException("Pool is unavailable: " + e.getMessage(), e);
+            PoolCellInfo poolCellInfo =
+                _poolStub.sendAndWait(new CellPath(pool),
+                                      "xgetcellinfo", PoolCellInfo.class);
+
+            PoolCostInfo.PoolSpaceInfo info = poolCellInfo.getPoolCostInfo().getSpaceInfo() ;
+            long total     = info.getTotalSpace() ;
+            long freespace = info.getFreeSpace() ;
+            long precious  = info.getPreciousSpace() ;
+            long removable = info.getRemovableSpace() ;
+            StorageElementInfo poolInfo = new StorageElementInfo();
+            poolInfo.totalSpace = total;
+            poolInfo.availableSpace = freespace+removable;
+            poolInfo.usedSpace = precious+removable;
+
+            synchronized (poolInfosTimestamps) {
+                poolInfos.put(pool, poolInfo);
+                poolInfosTimestamps.put(pool, System.currentTimeMillis());
+            }
+            return poolInfo;
+        } catch (TimeoutCacheException e) {
+            throw new SRMInternalErrorException("Pool is unavailable: " + e.getMessage(), e);
+        } catch (CacheException e) {
+            _log.error("Pool returned [" + e + "] for xgetcellinfo");
+            throw new SRMException(e.getMessage(), e);
         } catch (InterruptedException e) {
             throw new SRMException("Request to pool was interrupted", e);
         }
-
-        if(poolInfoMessage == null) {
-            String error = "pool timeout expired" ;
-            _log.error(error);
-            throw new SRMException(error);
-        }
-
-        Object o = poolInfoMessage.getMessageObject();
-        if(o == null || !(o instanceof  PoolCellInfo)) {
-            String error = "pool returned o="+o ;
-            _log.error(error);
-            throw new SRMException(error);
-        }
-        PoolCellInfo  poolCellInfo = (PoolCellInfo)o;
-        PoolCostInfo.PoolSpaceInfo info = poolCellInfo.getPoolCostInfo().getSpaceInfo() ;
-        long total     = info.getTotalSpace() ;
-        long freespace = info.getFreeSpace() ;
-        long precious  = info.getPreciousSpace() ;
-        long removable = info.getRemovableSpace() ;
-        StorageElementInfo poolInfo = new StorageElementInfo();
-        poolInfo.totalSpace = total;
-        poolInfo.availableSpace = freespace+removable;
-        poolInfo.usedSpace = precious+removable;
-        synchronized(poolInfosTimestamps) {
-            poolInfos.put(pool,poolInfo);
-            poolInfosTimestamps.put(pool, Long.valueOf(System.currentTimeMillis()));
-        }
-        return poolInfo;
-
     }
 
     public void advisoryDelete(final SRMUser user, final String path,
@@ -2674,7 +2606,7 @@ public class Storage
                 _pnfs.deletePnfsEntry(actualPath);
             } catch (TimeoutCacheException e) {
                 _log.error("Failed to delete " + actualPath + " due to timeout");
-                throw new SRMException("Internal name space timeout while deleting " + path);
+                throw new SRMInternalErrorException("Internal name space timeout while deleting " + path);
             } catch (FileNotFoundCacheException e) {
                 throw new SRMException("File does not exist: " + path);
             } catch (NotInTrashCacheException e) {
@@ -3075,19 +3007,13 @@ public class Storage
 
         try {
             long callerId = Long.parseLong(transferId);
-            Long longCallerId = Long.valueOf(callerId);
-            TransferInfo info;
-            synchronized(callerIdToHandler) {
-                Object o =  callerIdToHandler.get(longCallerId);
-                if( o == null) {
-                    return;
-                }
-                info = (TransferInfo) o;
-            }
-            CancelTransferMessage cancel =
+            TransferInfo info = callerIdToHandler.get(callerId);
+            if (info != null) {
+                CancelTransferMessage cancel =
                     new diskCacheV111.vehicles.transferManager.
-                CancelTransferMessage(info.transferId, callerId);
-            sendMessage(new CellMessage(info.cellPath,cancel));
+                    CancelTransferMessage(info.transferId, callerId);
+                sendMessage(new CellMessage(info.cellPath,cancel));
+            }
         } catch (NoRouteToCellException e) {
             _log.error("Failed to kill remote transfer: " + e.getMessage());
         } catch (NumberFormatException e) {
@@ -3095,34 +3021,32 @@ public class Storage
         }
     }
 
-
-    private String performRemoteTransfer(
-            SRMUser user,
-            String remoteTURL,
-            String actualFilePath,
-            boolean store,
-            SRMUser remoteUser,
-            Long remoteCredentialId,
-            String spaceReservationId,
-            Long size,
-            CopyCallbacks callbacks
-            )
-            throws SRMException {
+    private String performRemoteTransfer(SRMUser user,
+                                         String remoteTURL,
+                                         String actualFilePath,
+                                         boolean store,
+                                         SRMUser remoteUser,
+                                         Long remoteCredentialId,
+                                         String spaceReservationId,
+                                         Long size,
+                                         CopyCallbacks callbacks)
+        throws SRMException
+    {
         _log.debug("performRemoteTransfer performing "+(store?"store":"restore"));
-        if(!verifyUserPathIsRootSubpath(actualFilePath,user)) {
+        if (!verifyUserPathIsRootSubpath(actualFilePath,user)) {
             throw new SRMAuthorizationException("user's path "+actualFilePath+
-                    " is not subpath of the user's root");
+                                                " is not subpath of the user's root");
         }
 
-        if(remoteTURL.startsWith("gsiftp://")) {
+        if (remoteTURL.startsWith("gsiftp://")) {
             AuthorizationRecord duser = (AuthorizationRecord)user;
 
             //call this for the sake of checking that user is reading
             // from the "root" of the user
             String path = getTurlPath(actualFilePath,"gsiftp",user);
-            if(path == null) {
+            if (path == null) {
                 throw new SRMException("user is not authorized to access path: "+
-                        actualFilePath);
+                                       actualFilePath);
             }
 
 
@@ -3136,70 +3060,54 @@ public class Storage
             if (remoteCredential != null)
             	credentialName = remoteCredential.getCredentialName();
 
-            if(store && spaceReservationId != null  && size != null) {
-                gsiftpTransferRequest = new RemoteGsiftpTransferManagerMessage(
-                        duser.getName(),
-                        duser.getUid(),
-                        duser.getGid(),
-                        remoteTURL,
-                        actualFilePath,
-                        store,
-                        remoteCredentialId,
-                        credentialName,
-                        config.getBuffer_size(),
-                        config.getTcp_buffer_size(),
-                        spaceReservationId,
-                        config.isSpace_reservation_strict(),
-                        size
-                        );
+            if (store && spaceReservationId != null && size != null) {
+                gsiftpTransferRequest =
+                    new RemoteGsiftpTransferManagerMessage(duser.getName(),
+                                                           duser.getUid(),
+                                                           duser.getGid(),
+                                                           remoteTURL,
+                                                           actualFilePath,
+                                                           store,
+                                                           remoteCredentialId,
+                                                           credentialName,
+                                                           config.getBuffer_size(),
+                                                           config.getTcp_buffer_size(),
+                                                           spaceReservationId,
+                                                           config.isSpace_reservation_strict(),
+                                                           size
+                                                           );
             } else {
-                gsiftpTransferRequest = new RemoteGsiftpTransferManagerMessage(
-                        duser.getName(),
-                        duser.getUid(),
-                        duser.getGid(),
-                        remoteTURL,
-                        actualFilePath,
-                        store,
-                        remoteCredentialId,
-                        credentialName,
-                        config.getBuffer_size(),
-                        config.getTcp_buffer_size()
-                        );
+                gsiftpTransferRequest =
+                    new RemoteGsiftpTransferManagerMessage(duser.getName(),
+                                                           duser.getUid(),
+                                                           duser.getGid(),
+                                                           remoteTURL,
+                                                           actualFilePath,
+                                                           store,
+                                                           remoteCredentialId,
+                                                           credentialName,
+                                                           config.getBuffer_size(),
+                                                           config.getTcp_buffer_size()
+                                                           );
             }
-            gsiftpTransferRequest.setReplyRequired(true);
             gsiftpTransferRequest.setStreams_num(config.getParallel_streams());
-            CellMessage answer;
             try {
-                CellPath cellPath = new CellPath(remoteGridftpTransferManagerName);
-                answer = sendAndWait(new CellMessage(
-                        cellPath,
-                        gsiftpTransferRequest),1000*60*60*24);
-                RemoteGsiftpTransferManagerMessage
-                        answer_message =
-                        (RemoteGsiftpTransferManagerMessage)
-                        answer.getMessageObject();
-                if(answer_message.getReturnCode() != 0) {
-                    if(answer_message.getErrorObject() != null) {
-                        throw new SRMException("TransferManager error"+
-                                answer_message.getErrorObject().toString());
-                    } else {
-                        throw new SRMException("TransferManager error");
-
-                    }
-                }
-                long id = answer_message.getId();
-                _log.debug("received first RemoteGsiftpTransferManagerMessage reply from" +
-                    " transfer manager, id ="+id);
-                GridftpTransferInfo info = new GridftpTransferInfo(id,
-                    remoteCredentialId,callbacks,cellPath);
-                Long longCallerId = Long.valueOf(id);
-                _log.debug("strorring info for callerId = "+longCallerId);
-                synchronized(callerIdToHandler) {
-                    callerIdToHandler.put(longCallerId,info);
-                }
-                return longCallerId.toString();
-            } catch (NoRouteToCellException e) {
-                throw new SRMException("Transfer manager is unavailable: " +
+                RemoteGsiftpTransferManagerMessage reply =
+                    _gridftpTransferManagerStub.sendAndWait(gsiftpTransferRequest);
+                long id = reply.getId();
+                _log.debug("received first RemoteGsiftpTransferManagerMessage "
+                           + "reply from transfer manager, id ="+id);
+                GridftpTransferInfo info =
+                    new GridftpTransferInfo(id, remoteCredentialId, callbacks,
+                                            _gridftpTransferManagerStub.getDestinationPath());
+                _log.debug("storing info for callerId = " + id);
+                callerIdToHandler.put(id, info);
+                return String.valueOf(id);
+            } catch (TimeoutCacheException e) {
+                throw new SRMInternalErrorException("Transfer manager is unavailable: " +
+                                                    e.getMessage(), e);
+            } catch (CacheException e) {
+                throw new SRMException("TransferManager error: "+
                                        e.getMessage(), e);
             } catch (InterruptedException e) {
                 throw new SRMException("Request to transfer manager got interruptd", e);
@@ -3208,7 +3116,8 @@ public class Storage
         throw new SRMException("not implemented");
     }
 
-    private Map callerIdToHandler = new HashMap();
+    private final Map<Long, GridftpTransferInfo> callerIdToHandler =
+        new ConcurrentHashMap<Long, GridftpTransferInfo>();
 
     private class TransferInfo {
         private long transferId;
@@ -3260,24 +3169,18 @@ public class Storage
 
         }
 
-        Object o;
-        synchronized(callerIdToHandler) {
-            o = callerIdToHandler.get(callerId);
-            if(o == null) {
-                _log.error("TransferInfo for callerId="+callerId+"not found");
-                return;
-            }
+        TransferInfo info = callerIdToHandler.get(callerId);
+        if (info == null) {
+            _log.error("TransferInfo for callerId="+callerId+"not found");
+            return;
         }
-        TransferInfo info = (TransferInfo)o;
 
         if (message instanceof TransferCompleteMessage ) {
             TransferCompleteMessage complete =
                     (TransferCompleteMessage)message;
             info.callbacks.copyComplete(null,null);
             _log.debug("removing TransferInfo for callerId="+callerId);
-            synchronized(callerIdToHandler) {
-                callerIdToHandler.remove(callerId);
-            }
+            callerIdToHandler.remove(callerId);
         } else if(message instanceof TransferFailedMessage) {
             Object error =                 message.getErrorObject();
             if(error != null ) {
@@ -3293,10 +3196,7 @@ public class Storage
             }
 
             _log.debug("removing TransferInfo for callerId="+callerId);
-            synchronized(callerIdToHandler) {
-                callerIdToHandler.remove(callerId);
-            }
-
+            callerIdToHandler.remove(callerId);
         }
 
     }
@@ -3430,57 +3330,45 @@ public class Storage
         return storageElementInfo;
     }
 
-    private List pools = Collections.emptyList();
+    private List<String> pools = Collections.emptyList();
 
-    private void updateStorageElementInfo() throws SRMException      {
-        try{
-            PoolManagerGetPoolListMessage getPoolsQuery = new
-                    PoolManagerGetPoolListMessage();
-            getPoolsQuery.setReplyRequired(true);
-            CellMessage getPoolMessage = new CellMessage( _poolMgrPath , getPoolsQuery ) ;
-            getPoolMessage = sendAndWait(  getPoolMessage ,
-                    __poolManagerTimeout*1000 ) ;
-
-            if(getPoolMessage != null) {
-                Object o = getPoolMessage.getMessageObject();
-                if(o != null && o instanceof  PoolManagerGetPoolListMessage) {
-                    getPoolsQuery = (PoolManagerGetPoolListMessage)o;
-
-                    StorageElementInfo info = new StorageElementInfo();
-                    List newPools = getPoolsQuery.getPoolList();
-                    if(!newPools.isEmpty() ) {
-                        pools = newPools;
-                    } else {
-                        _log.info("receieved an empty pool list from the pool manager," +
-                            "using the prevois list");
-                    }
-                } else {
-                    _log.error("poolManager returned o="+o+
-                        ", using previosly saved pool list");
-                }
+    private void updateStorageElementInfo() throws SRMException
+    {
+        try {
+            PoolManagerGetPoolListMessage getPoolsQuery =
+                _poolManagerStub.sendAndWait(new PoolManagerGetPoolListMessage());
+            List<String> newPools = getPoolsQuery.getPoolList();
+            if (!newPools.isEmpty()) {
+                pools = newPools;
             } else {
-                _log.error("poolManager timeout expired, using previosly saved pool list");
+                _log.info("receieved an empty pool list from the pool manager," +
+                          "using the previous list");
             }
-        } catch (NoRouteToCellException e) {
-            _log.error("PoolManager is unavailable: " + e.getMessage());
+        } catch (TimeoutCacheException e) {
+            _log.error("poolManager timeout, using previously saved pool list");
+        } catch (CacheException e) {
+            _log.error("poolManager returned [" + e + "]" +
+                       ", using previously saved pool list");
         } catch (InterruptedException e) {
             _log.error("Request to PoolManager got interrupted");
+            Thread.currentThread().interrupt();
+            return;
         }
 
         StorageElementInfo info = new StorageElementInfo();
-        for( Iterator i = pools.iterator(); i.hasNext();) {
+        for (String pool: pools) {
             try {
-                StorageElementInfo poolInfo = getPoolInfo((String)(i.next()));
+                StorageElementInfo poolInfo = getPoolInfo(pool);
                 info.availableSpace += poolInfo.availableSpace;
                 info.totalSpace += poolInfo.totalSpace;
                 info.usedSpace += poolInfo.usedSpace;
-            } catch (RuntimeException e) {
-                _log.fatal("can not get info from pool "+i.next()+
-                           " , contunue with the rest of the pools", e);
-            } catch (Exception e) {
-                _log.error("can not get info from pool "+i.next()+
-                           ", contunue with the rest of the pools: " +
+            } catch (SRMException e) {
+                _log.error("Cannot get info from pool [" + pool +
+                           "], continuing with the rest of the pools: " +
                            e.getMessage());
+            } catch (RuntimeException e) {
+                _log.fatal("Cannot get info from pool [" + pool +
+                           "], continuing with the rest of the pools", e);
             }
         }
 
@@ -3867,36 +3755,20 @@ public class Storage
                 throw new SRMException("invalid token: "+spaceTokens[i]);
             }
         }
+
         GetSpaceMetaData getSpaces = new GetSpaceMetaData(tokens);
-        CellMessage cellMessage = new CellMessage(
-                new CellPath("SrmSpaceManager"),
-                getSpaces);
         try {
-            cellMessage = sendAndWait(
-                    cellMessage,
-                    3*60*1000);
-        } catch (NoRouteToCellException e) {
-            throw new SRMException("SrmSpaceManager is unavailable: " +
-                                   e.getMessage(), e);
+            getSpaces = _spaceManagerStub.sendAndWait(getSpaces);
+        } catch (TimeoutCacheException e) {
+            throw new SRMInternalErrorException("SrmSpaceManager is unavailable: " +
+                                                e.getMessage(), e);
+        } catch (CacheException e) {
+            _log.warn("GetSpaceMetaData failed with rc=" + e.getRc()+
+                      " error="+e.getMessage());
+            throw new SRMException("GetSpaceMetaData failed with rc="+
+                                   e.getRc() + " error=" + e.getMessage(), e);
         } catch (InterruptedException e) {
             throw new SRMException("Request to SrmSpaceManaget got interrupted", e);
-        }
-
-        if(cellMessage == null ||
-                    cellMessage.getMessageObject() ==null ||
-                    !(cellMessage.getMessageObject()  instanceof GetSpaceMetaData)) {
-            String error = "sent GetSpaceMetaData to SrmSpaceManager, received "+
-                    (cellMessage == null?"timeout":cellMessage.getMessageObject())
-                    +" back";
-            _log.error(error );
-                throw new SRMException(error);
-        }
-        getSpaces = (GetSpaceMetaData)cellMessage.getMessageObject() ;
-        if(getSpaces.getReturnCode() != 0) {
-            _log.warn("GetSpaceMetaData failed with rc="+getSpaces.getReturnCode()+
-                " error="+getSpaces.getErrorObject());
-            throw new SRMException("GetSpaceMetaData failed with rc="+
-                getSpaces.getReturnCode()+ " error="+getSpaces.getErrorObject());
         }
 
         diskCacheV111.services.space.Space[] spaces = getSpaces.getSpaces();
@@ -3977,47 +3849,34 @@ public class Storage
      * @return
      */
     public String[] srmGetSpaceTokens(SRMUser user, String description)
-        throws SRMException {
+        throws SRMException
+    {
         AuthorizationRecord duser = (AuthorizationRecord) user;
         _log.debug("srmGetSpaceTokens ("+description+")");
-       GetSpaceTokens getTokens = new GetSpaceTokens(duser.getVoGroup(),
-           duser.getVoRole(),description);
-        CellMessage cellMessage = new CellMessage(
-                new CellPath("SrmSpaceManager"),
-                getTokens);
+        GetSpaceTokens getTokens =
+            new GetSpaceTokens(duser.getVoGroup(), duser.getVoRole(),
+                               description);
         try {
-            cellMessage = sendAndWait(
-                    cellMessage,
-                    3*60*1000);
-        } catch (NoRouteToCellException e) {
-            throw new SRMException("SrmSpaceManager is unavailable: " +
-                                   e.getMessage(), e);
+            getTokens = _spaceManagerStub.sendAndWait(getTokens);
+        } catch (TimeoutCacheException e) {
+            throw new SRMInternalErrorException("SrmSpaceManager is unavailable: " +
+                                                e.getMessage(), e);
+        } catch (CacheException e) {
+            _log.warn("GetSpaceTokens failed with rc=" + e.getRc() +
+                      " error="+e.getMessage());
+            throw new SRMException("GetSpaceTokens failed with rc="+
+                                   e.getRc() + " error=" + e.getMessage(), e);
         } catch (InterruptedException e) {
             throw new SRMException("Request to SrmSpaceManager got interrupted", e);
         }
-         if(cellMessage == null ||
-            cellMessage.getMessageObject() ==null ||
-            !(cellMessage.getMessageObject()  instanceof GetSpaceTokens)) {
-            String error = "sent GetSpaceTokens to SrmSpaceManager, received "+
-                    (cellMessage==null?"timeout":cellMessage.getMessageObject()) +" back";
-            _log.error(error);
-                throw new SRMException(error);
+        long tokens[] = getTokens.getSpaceTokens();
+        String tokenStrings[] = new String[tokens.length];
+        for(int i = 0; i < tokens.length; ++i) {
+            tokenStrings[i] = Long.toString(tokens[i]);
+            _log.debug("srmGetSpaceTokens returns token#"+i+" : "+tokenStrings[i]);
         }
-        getTokens = (GetSpaceTokens)cellMessage.getMessageObject() ;
-        if(getTokens.getReturnCode() != 0) {
-            _log.warn("GetSpaceTokens failed with rc="+getTokens.getReturnCode()+
-                " error="+getTokens.getErrorObject());
-            throw new SRMException("GetSpaceTokens failed with rc="+
-                getTokens.getReturnCode()+ " error="+getTokens.getErrorObject());
-        }
-       long tokens[] =  getTokens.getSpaceTokens();
-       String tokenStrings[] =new String[tokens.length];
-       for(int i =0; i<tokens.length; ++i) {
-           tokenStrings[i] = Long.toString(tokens[i]);
-           _log.debug("srmGetSpaceTokens returns token#"+i+" : "+tokenStrings[i]);
-       }
 
-       return tokenStrings;
+        return tokenStrings;
     }
 
     public String[] srmGetRequestTokens(SRMUser user,String description)
@@ -4099,44 +3958,29 @@ public class Storage
      * in millis to assign to space reservation
      * @return long lifetime of spacereservation left in milliseconds
      */
-    public long srmExtendReservationLifetime(SRMUser user,
-        String spaceToken, long newReservationLifetime) throws SRMException {
-        long longSpaceToken;
+    public long srmExtendReservationLifetime(SRMUser user, String spaceToken,
+                                             long newReservationLifetime)
+        throws SRMException
+    {
         try {
-            longSpaceToken = Long.parseLong(spaceToken);
+            long longSpaceToken = Long.parseLong(spaceToken);
+            ExtendLifetime extendLifetime =
+                new ExtendLifetime(longSpaceToken, newReservationLifetime);
+            extendLifetime = _spaceManagerStub.sendAndWait(extendLifetime);
+            return extendLifetime.getNewLifetime();
         } catch (NumberFormatException e){
             throw new SRMException("Cannot parse space token: " +
                                    e.getMessage(), e);
-        }
-        ExtendLifetime extendLifetime =
-                new ExtendLifetime( longSpaceToken, newReservationLifetime);
-
-        try {
-            CellMessage response =  sendAndWait( new CellMessage(
-                    new CellPath( "SrmSpaceManager") ,
-                    extendLifetime ) ,
-                    60*60*1000
-                    );
-            if(response == null) {
-                throw new SRMException("srmExtendReservationLifetime response " +
-                    "lifetime expired");
-            }
-            extendLifetime = (ExtendLifetime) response.getMessageObject();
-            //say("StageAndPinCompanion: recordAsPinned");
-            //rr.recordAsPinned (_fr,true);
-        } catch (NoRouteToCellException e) {
-            throw new SRMException("SrmSpaceManager is unavailable: " + e.getMessage(), e);
+        } catch (TimeoutCacheException e) {
+            throw new SRMInternalErrorException("SrmSpaceManager is unavailable: " + e.getMessage(), e);
+        } catch (CacheException e) {
+            throw new SRMException("srmExtendReservationLifetime failed, " +
+                                   "ExtendLifetime.returnCode="+
+                                   e.getRc()+" errorObject = "+
+                                   e.getMessage());
         } catch (InterruptedException e) {
             throw new SRMException("Request to SrmSpaceManager got interrupted", e);
         }
-
-        if(extendLifetime.getReturnCode() != 0) {
-            throw new SRMException("srmExtendReservationLifetime failed, " +
-                "ExtendLifetime.returnCode="+
-                    extendLifetime.getReturnCode()+" errorObject = "+
-                extendLifetime.getErrorObject());
-        }
-        return extendLifetime.getNewLifetime();
     }
 
     /**
@@ -4148,48 +3992,27 @@ public class Storage
      * @return long lifetime left for pin in millis
      */
     public long extendPinLifetime(SRMUser user,
-        String fileId, String pinId, long newPinLifetime) throws SRMException {
-        PnfsId pnfsId = null;
+        String fileId, String pinId, long newPinLifetime)
+        throws SRMException
+    {
         try {
-            pnfsId = new PnfsId(fileId);
+            PnfsId pnfsId = new PnfsId(fileId);
+            PinManagerExtendLifetimeMessage extendLifetime =
+                new PinManagerExtendLifetimeMessage(pnfsId, pinId,
+                                                    newPinLifetime);
+            extendLifetime.setAuthorizationRecord((AuthorizationRecord) user);
+            extendLifetime = _pinManagerStub.sendAndWait(extendLifetime);
+            return extendLifetime.getNewLifetime();
         } catch (IllegalArgumentException e) {
             throw new SRMException("Invalid PNFS ID: " + fileId, e);
-        }
-
-
-        PinManagerExtendLifetimeMessage extendLifetime =
-            new PinManagerExtendLifetimeMessage(
-            pnfsId, pinId,newPinLifetime);
-        extendLifetime.setAuthorizationRecord((AuthorizationRecord) user);
-
-        try {
-            CellMessage response =  sendAndWait( new CellMessage(
-                    new CellPath( "PinManager") ,
-                    extendLifetime ) ,
-                    60*60*1000
-                    );
-            if(response == null) {
-                throw new SRMException(
-                    "PinManagerExtendLifetimeMessage response lifetime expired");
-            }
-            extendLifetime =
-                (PinManagerExtendLifetimeMessage) response.getMessageObject();
-            //say("StageAndPinCompanion: recordAsPinned");
-            //rr.recordAsPinned (_fr,true);
-        } catch (NoRouteToCellException e) {
-            throw new SRMException("PinManager is unavailable: " +
-                                   e.getMessage(), e);
+        } catch (TimeoutCacheException e) {
+            throw new SRMInternalErrorException("PinManager is unavailable: " +
+                                                e.getMessage(), e);
+        } catch (CacheException e) {
+            throw new SRMException("extendPinLifetime failed, PinManagerExtendLifetimeMessage.returnCode="+ e.getRc() + " errorObject = " + e.getMessage());
         } catch (InterruptedException e) {
             throw new SRMException("Request to PinManager got interrupted", e);
         }
-
-        if(extendLifetime.getReturnCode() != 0) {
-            throw new SRMException(
-                "extendPinLifetime failed, PinManagerExtendLifetimeMessage.returnCode="+
-                extendLifetime.getReturnCode()+
-                " errorObject = "+extendLifetime.getErrorObject());
-        }
-        return extendLifetime.getNewLifetime();
     }
 
     public String getStorageBackendVersion() {

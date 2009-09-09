@@ -1,5 +1,7 @@
 package org.dcache.cells;
 
+import java.io.Serializable;
+
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
@@ -73,7 +75,7 @@ public class CellStub
     /**
      * Set the value of the retryOnNoRouteCell property, which
      * determines whether to retry on failure to route the message to
-     * the destination. 
+     * the destination.
      *
      * If set to false, failure to send the message will cause a
      * TimeoutCacheException to be reported right away. If set to
@@ -142,6 +144,52 @@ public class CellStub
     {
         msg.setReplyRequired(true);
 
+        T reply = (T) sendAndWait(path, msg, msg.getClass());
+
+        if (reply.getReturnCode() != 0) {
+            throw CacheExceptionFactory.exceptionOf(reply);
+        }
+
+        return reply;
+    }
+
+    /**
+     * Sends a message and waits for the reply. The reply is expected
+     * to contain a message object of the specified type. If this is
+     * not the case, an exception is thrown.
+     *
+     * @param  msg     the message object to send
+     * @param  type    the expected type of the reply
+     * @return         the message object from the reply
+     * @throws InterruptedException If the thread is interrupted
+     * @throws CacheException If the message could not be sent, a
+     *       timeout occured, or the object in the reply was of the
+     *       wrong type.
+     */
+    public <T extends Serializable> T sendAndWait(Object msg, Class<T> type)
+        throws CacheException, InterruptedException
+    {
+        return sendAndWait(_destination, msg, type);
+    }
+
+    /**
+     * Sends a message and waits for the reply. The reply is expected
+     * to contain a message object of the specified type. If this is
+     * not the case, an exception is thrown.
+     *
+     * @param  path    the destination cell
+     * @param  msg     the message object to send
+     * @param  type    the expected type of the reply
+     * @return         the message object from the reply
+     * @throws InterruptedException If the thread is interrupted
+     * @throws CacheException If the message could not be sent, a
+     *       timeout occured, or the object in the reply was of the
+     *       wrong type.
+     */
+    public <T extends Serializable> T 
+                      sendAndWait(CellPath path, Object msg, Class<T> type)
+        throws CacheException, InterruptedException
+    {
         CellMessage replyMessage;
         try {
             CellMessage envelope = new CellMessage(path, msg);
@@ -167,7 +215,7 @@ public class CellStub
         }
 
         Object replyObject = replyMessage.getMessageObject();
-        if (!(msg.getClass().isInstance(replyObject))) {
+        if (!(type.isInstance(replyObject))) {
             String errmsg = "Got unexpected message of class " +
                 replyObject.getClass() + " from " +
                 replyMessage.getSourceAddress();
@@ -175,12 +223,7 @@ public class CellStub
                                      errmsg);
         }
 
-        T reply = (T)replyObject;
-        if (reply.getReturnCode() != 0) {
-            throw CacheExceptionFactory.exceptionOf(reply);
-        }
-
-        return reply;
+        return (T)replyObject;
     }
 
     /**
@@ -188,8 +231,8 @@ public class CellStub
      * of type <code>type</code>. The result is delivered to
      * <code>callback</code>.
      */
-    public <T> void send(Object message, Class<T> type,
-                         MessageCallback<T> callback)
+    public <T extends Serializable> void send(Object message, Class<T> type,
+                                              MessageCallback<T> callback)
     {
         if (_destination == null)
             throw new IllegalStateException("Destination must be specified");
@@ -202,9 +245,9 @@ public class CellStub
      * <code>type</code>. The result is delivered to
      * <code>callback</code>.
      */
-    public <T> void send(CellPath destination,
-                         Object message, Class<T> type,
-                         MessageCallback<T> callback)
+    public <T extends Serializable> void send(CellPath destination,
+                                              Object message, Class<T> type,
+                                              MessageCallback<T> callback)
     {
         if (message instanceof Message) {
             ((Message) message).setReplyRequired(true);
@@ -217,7 +260,8 @@ public class CellStub
     /**
      * Sends <code>message</code> to <code>destination</code>.
      */
-    public void send(Object message) {
+    public void send(Serializable message) 
+    {
         if (_destination == null) {
             throw new IllegalStateException("Destination must be specified");
         }
@@ -228,7 +272,8 @@ public class CellStub
     /**
      * Sends <code>message</code> to <code>destination</code>.
      */
-    public void send(CellPath destination, Object message) {
+    public void send(CellPath destination, Serializable message) 
+    {
         try {
             _endpoint.sendMessage(new CellMessage(destination, message));
         } catch (NoRouteToCellException e) {
