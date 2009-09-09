@@ -33,7 +33,7 @@ class ReadHandleImpl implements ReadHandle
      * descriptor will throw IllegalStateException.
      * @throws IllegalStateException if EntryIODescriptor is closed.
      */
-    public void close() throws IllegalStateException
+    public synchronized void close() throws IllegalStateException
     {
         if (!_open)
             throw new IllegalStateException("Handle is closed");
@@ -52,7 +52,7 @@ class ReadHandleImpl implements ReadHandle
      * @return disk file
      * @throws IllegalStateException if EntryIODescriptor is closed.
      */
-    public File getFile() throws IllegalStateException
+    public synchronized File getFile() throws IllegalStateException
     {
         if (!_open)
             throw new IllegalStateException("Handle is closed");
@@ -70,7 +70,7 @@ class ReadHandleImpl implements ReadHandle
      * @return cache entry
      * @throws IllegalStateException
      */
-    public CacheEntry getEntry()  throws IllegalStateException
+    public synchronized CacheEntry getEntry()  throws IllegalStateException
     {
         if (!_open)
             throw new IllegalStateException("Handle is closed");

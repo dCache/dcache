@@ -68,6 +68,9 @@ class WriteHandleImpl implements WriteHandle
     /** Amount of space allocated for this handle. */
     private long _allocated;
 
+    /** Current thread which performs allocation. */
+    private Thread _allocationThread;
+
     WriteHandleImpl(CacheRepositoryV5 repository,
                     Allocator allocator,
                     PnfsHandler pnfs,
@@ -86,28 +89,81 @@ class WriteHandleImpl implements WriteHandle
         _allocated = 0;
     }
 
+    private synchronized void setState(HandleState state)
+    {
+        _state = state;
+        if (state != HandleState.OPEN && _allocationThread != null) {
+            _allocationThread.interrupt();
+        }
+    }
+
+    private synchronized boolean isOpen()
+    {
+        return _state == HandleState.OPEN;
+    }
+
+    /**
+     * Sets the allocation thread to the calling thread. Blocks if
+     * allocation thread is already set.
+     *
+     * @throws InterruptedException if thread is interrupted
+     * @throws IllegalStateException if handle is closed
+     */
+    private synchronized void setAllocationThread()
+        throws InterruptedException,
+               IllegalStateException
+    {
+        while (_allocationThread != null) {
+            wait();
+        }
+
+        if (!isOpen()) {
+            throw new IllegalStateException("Handle is closed");
+        }
+
+        _allocationThread = Thread.currentThread();
+    }
+
+    /**
+     * Clears the allocation thread field.
+     */
+    private synchronized void clearAllocationThread()
+    {
+        _allocationThread = null;
+        notifyAll();
+    }
 
     /**
      * Allocate space and block until space becomes available.
      *
      * @param size in bytes
-     * @throws InterruptedException
-     * @throws IllegalStateException if EntryIODescriptor is closed or
-     * READ-ONLY
+     * @throws InterruptedException if thread is interrupted
+     * @throws IllegalStateException if handle is closed
      * @throws IllegalArgumentException
-     *             if <i>size</i> < 0
+     *             if <i>size</i> &lt; 0
      */
     public void allocate(long size)
         throws IllegalStateException, IllegalArgumentException, InterruptedException
     {
         if (size < 0)
             throw new IllegalArgumentException("Size is negative");
-        if (_state != HandleState.OPEN)
-            throw new IllegalStateException("Handle is closed");
 
-        _allocator.allocate(size);
-        _allocated += size;
-        _entry.setSize(_allocated);
+        setAllocationThread();
+        try {
+            _allocator.allocate(size);
+        } catch (InterruptedException e) {
+            if (!isOpen()) {
+                throw new IllegalStateException("Handle is closed");
+            }
+            throw e;
+        } finally {
+            clearAllocationThread();
+        }
+
+        synchronized (this) {
+            _allocated += size;
+            _entry.setSize(_allocated);
+        }
     }
 
     /**
@@ -124,17 +180,17 @@ class WriteHandleImpl implements WriteHandle
      * Adjust space reservation. Will log an error in case of under
      * allocation.
      */
-    private void adjustReservation(long length)
+    private synchronized void adjustReservation(long length)
         throws InterruptedException
     {
         try {
             if (_allocated < length) {
                 _log.error("Under allocation detected. This is a bug. Please report it.");
-                allocate(length - _allocated);
+                _allocator.allocate(length - _allocated);
             } else if (_allocated > length) {
                 _allocator.free(_allocated - length);
-                _allocated = length;
             }
+            _allocated = length;
             _entry.setSize(length);
         } catch (InterruptedException e) {
             /* Space allocation is broken now. The entry size
@@ -196,7 +252,6 @@ class WriteHandleImpl implements WriteHandle
         _pnfs.setFileAttributes(_entry.getPnfsId(), attr);
     }
 
-
     private void setToTargetState()
         throws CacheException
     {
@@ -219,7 +274,7 @@ class WriteHandleImpl implements WriteHandle
         _repository.setState(_entry, _targetState);
     }
 
-    public void commit(Checksum checksum)
+    public synchronized void commit(Checksum checksum)
         throws IllegalStateException, InterruptedException, CacheException
     {
         if (_state != HandleState.OPEN)
@@ -251,7 +306,7 @@ class WriteHandleImpl implements WriteHandle
 
             setToTargetState();
 
-            _state = HandleState.COMMITTED;
+            setState(HandleState.COMMITTED);
         } catch (CacheException e) {
             /* If any of the PNFS operations return FILE_NOT_FOUND,
              * then we change the target state and the close method
@@ -269,7 +324,7 @@ class WriteHandleImpl implements WriteHandle
      * commit. The file is either removed or marked bad, depending on
      * its state.
      */
-    private void fail()
+    private synchronized void fail()
     {
         long length = getFile().length();
         try {
@@ -307,7 +362,7 @@ class WriteHandleImpl implements WriteHandle
         }
     }
 
-    public void close()
+    public synchronized void close()
         throws IllegalStateException
     {
         switch (_state) {
@@ -316,11 +371,11 @@ class WriteHandleImpl implements WriteHandle
 
         case OPEN:
             fail();
-            _state = HandleState.CLOSED;
+            setState(HandleState.CLOSED);
             break;
 
         case COMMITTED:
-            _state = HandleState.CLOSED;
+            setState(HandleState.CLOSED);
             break;
         }
         _repository.destroyWhenRemovedAndUnused(_entry);
@@ -330,7 +385,7 @@ class WriteHandleImpl implements WriteHandle
      * @return disk file
      * @throws IllegalStateException if EntryIODescriptor is closed.
      */
-    public File getFile() throws IllegalStateException
+    public synchronized File getFile() throws IllegalStateException
     {
         if (_state == HandleState.CLOSED)
             throw new IllegalStateException("Handle is closed");
@@ -348,7 +403,7 @@ class WriteHandleImpl implements WriteHandle
      * @return cache entry
      * @throws IllegalStateException
      */
-    public CacheEntry getEntry()  throws IllegalStateException
+    public synchronized CacheEntry getEntry()  throws IllegalStateException
     {
         if (_state == HandleState.CLOSED)
             throw new IllegalStateException("Handle is closed");
