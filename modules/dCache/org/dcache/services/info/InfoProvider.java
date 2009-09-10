@@ -20,6 +20,7 @@ import org.dcache.services.info.gathers.DataGatheringScheduler;
 import org.dcache.services.info.gathers.MessageHandlerChain;
 import org.dcache.services.info.secondaryInfoProviders.LinkSpaceMaintainer;
 import org.dcache.services.info.secondaryInfoProviders.LinkgroupTotalSpaceMaintainer;
+import org.dcache.services.info.secondaryInfoProviders.NormalisedAccessSpaceMaintainer;
 import org.dcache.services.info.secondaryInfoProviders.PoolgroupSpaceWatcher;
 import org.dcache.services.info.secondaryInfoProviders.PoolsSummaryMaintainer;
 import org.dcache.services.info.serialisation.PrettyPrintTextSerialiser;
@@ -315,6 +316,7 @@ public class InfoProvider extends CellAdapter {
 	    _observatory.addStateWatcher(new PoolsSummaryMaintainer( exhibitor));
 	    _observatory.addStateWatcher(new LinkgroupTotalSpaceMaintainer( exhibitor));
 	    _observatory.addStateWatcher(new LinkSpaceMaintainer( exhibitor));
+	    _observatory.addStateWatcher(new NormalisedAccessSpaceMaintainer( exhibitor));
 	}
 
 

@@ -154,6 +154,21 @@ public class StatePersistentMetadata {
 		this.add( StatePath.parsePath("doors.*"), branchMetadata( "door", "name"));
 		this.add( StatePath.parsePath("doors.*.interfaces.*"), branchMetadata( "interface", "name"));
 
+		this.add( StatePath.parsePath( "nas.*"), branchMetadata( "nas", "id"));
+		this.add( StatePath.parsePath( "nas.*.links.*"), branchMetadata( "linkref", "name"));
+		this.add( StatePath.parsePath( "nas.*.pools.*"), branchMetadata( "poolref", "name"));
+		this.add( StatePath.parsePath( "nas.*.units.store.read.*"),  branchMetadata( "unitref", "name"));
+        this.add( StatePath.parsePath( "nas.*.units.store.write.*"), branchMetadata( "unitref", "name"));
+        this.add( StatePath.parsePath( "nas.*.units.store.stage.*"), branchMetadata( "unitref", "name"));
+        this.add( StatePath.parsePath( "nas.*.units.dcache.read.*"),  branchMetadata( "unitref", "name"));
+        this.add( StatePath.parsePath( "nas.*.units.dcache.write.*"), branchMetadata( "unitref", "name"));
+        this.add( StatePath.parsePath( "nas.*.units.dcache.stage.*"), branchMetadata( "unitref", "name"));
+        this.add( StatePath.parsePath( "nas.*.units.protocol.read.*"),  branchMetadata( "unitref", "name"));
+        this.add( StatePath.parsePath( "nas.*.units.protocol.write.*"), branchMetadata( "unitref", "name"));
+        this.add( StatePath.parsePath( "nas.*.units.protocol.stage.*"), branchMetadata( "unitref", "name"));
+        this.add( StatePath.parsePath( "nas.*.units.net.read.*"),  branchMetadata( "unitref", "name"));
+        this.add( StatePath.parsePath( "nas.*.units.net.write.*"), branchMetadata( "unitref", "name"));
+        this.add( StatePath.parsePath( "nas.*.units.net.stage.*"), branchMetadata( "unitref", "name"));
 	}
 	
 	
