@@ -258,6 +258,10 @@
        <echo message="                       : to overwrite default location" />
        <echo message="                       : -Ddcapclient.bin.dir=/path/to/install " />
        <echo message="" />
+       <echo message="     install-dcap64    : build deploy-ready dcap64 client" />
+       <echo message="                       : to overwrite default location" />
+       <echo message="                       : -Ddcapclient.bin.dir=/path/to/install " />
+       <echo message="" />
        <echo message="     server.rpm        : generate dcache-server-xxx.rpm" />
        <echo message="     server.tgz        : generate dcache-server-xxx.tgz" />
        <echo message="     server.dep        : generate dcache-server-xxx.dep" />
