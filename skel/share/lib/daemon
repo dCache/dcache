@@ -11,12 +11,23 @@ usage()
     echo "   -u <user>      change effective UID to <user>"
     echo "   -o <file>      redirect output to <file>"
     echo "   -f             fork"
+    echo
+    echo "If the output is redirected with -o then this will happen as the"
+    echo "user invoking daemon, not as the user specified with -u. The"
+    echo "PID file specified with -p on the other hand is updated by the"
+    echo "unprivileged user, so the script ensures that the file is writable"
+    echo "before dropping privileges."
+    echo
+    echo "Almost all error messages are redirected when -o is specified,"
+    echo "including failure to execute the command. The daemon does not fully"
+    echo "detach from the shell unless -o is specified. Use -o /dev/null if"
+    echo "the output is not relevant."
     exit 2
 } 1>&2
 
 run()
 {
-    "$@" < /dev/null &
+    "$@" &
     if [ "$pid" ]; then
         echo $! > "$pid"
     fi
@@ -29,36 +40,6 @@ loop()
             sleep "$delay"
         fi
     done
-}
-
-do_fork()
-{
-    if [ "$user" ]; then
-        # Make sure the user is able to write to the PID file
-        if [ "$pid" ]; then
-            touch "$pid"
-            chown "$user" "$pid"
-        fi
-
-        # To preserve white space, we need to quote each argument
-        param="${fork:+-f} ${pid:+-p \"$pid\"} ${restart:+-r \"$restart\"} ${delay:+-d \"$delay\"}"
-        for i in "$@"; do
-            param="$param \"$i\""
-        done
-
-        exec su "$user" -c "/bin/sh \"$0\" $param"
-    fi
-
-    if [ "$restart" ]; then
-        if [ "$fork" ]; then
-            loop "$@" &
-        else
-            loop "$@"
-        fi
-    else
-        run "$@"
-        [ "$fork" ] || wait $!
-    fi
 }
 
 while getopts d:p:r:u:o:f opt "$@"; do
@@ -76,11 +57,39 @@ shift `expr $OPTIND - 1`
 
 [ $# -lt 1 ] && usage
 
+# Redirect if -o is given
+exec </dev/null
 if [ "$output" ]; then
-    do_fork "$@" 1>> "$output" 2>&1
-else
-    do_fork "$@"
+    exec 1>> "$output" 2>&1
 fi
 
+# Switch user if -u is given
+if [ "$user" ]; then
+    # Make sure the user is able to write to the PID file
+    if [ "$pid" ]; then
+        touch "$pid"
+        chown "$user" "$pid"
+    fi
+
+    # To preserve white space, we need to quote each argument
+    param="${fork:+-f} ${pid:+-p \"$pid\"} ${restart:+-r \"$restart\"} ${delay:+-d \"$delay\"}"
+    for i in "$@"; do
+        param="$param \"$i\""
+    done
+
+    exec su "$user" -c "/bin/sh \"$0\" $param"
+fi
+
+# Run the program
+if [ "$restart" ]; then
+    if [ "$fork" ]; then
+        loop "$@" &
+    else
+        loop "$@"
+    fi
+else
+    run "$@"
+    [ "$fork" ] || wait $!
+fi
 
 
