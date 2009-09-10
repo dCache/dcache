@@ -4,6 +4,7 @@
 
     <property name="javatunnel.build.dir" location="${buildDir}/javatunnel" />
     <property name="dcap32.build.dir" location="${buildDir}/dcap32" />
+    <property name="dcap64.build.dir" location="${buildDir}/dcap64" />
 
     <!--
           Properties  -  the following properties, paths, and selectors
@@ -132,7 +133,7 @@
 
 
     <!--
-        compile dCap client libraries 64 bit
+        compile dCap client libraries 32 bit
     -->
     <target name="-dcap32.compile" depends="-lib.globus32.untar,-lib.heimdal.untar">
 
