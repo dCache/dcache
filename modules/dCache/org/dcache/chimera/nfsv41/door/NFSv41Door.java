@@ -40,6 +40,7 @@ import org.dcache.chimera.nfs.ExportFile;
 import org.dcache.chimera.nfs.v4.DeviceID;
 import org.dcache.chimera.nfs.v4.DeviceManager;
 import org.dcache.chimera.nfs.ChimeraNFSException;
+import org.dcache.cells.CellStub;
 import org.dcache.chimera.nfs.v4.NFSServerV41;
 import org.dcache.chimera.nfs.v4.NFS4Client;
 import org.dcache.chimera.nfs.v4.NFSv4StateHandler;
@@ -56,7 +57,6 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
-import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.PoolDeliverFileMessage;
 import diskCacheV111.vehicles.PoolIoFileMessage;
@@ -139,12 +139,21 @@ public class NFSv41Door extends AbstractCell
     private final Map<stateid4, NFS4IoDevice> _requestReplyMap = new HashMap<stateid4, NFS4IoDevice>();
 
     /**
+     * Cell communication helper.
+     */
+    private final CellStub _poolManagerCellStub;
+
+    /**
      * Grizzly thread controller
      */
     private Controller _controller;
 
     public NFSv41Door(String cellName, String args) throws Exception {
         super(cellName, args);
+        _poolManagerCellStub = new CellStub();
+        _poolManagerCellStub.setCellEndpoint(this);
+        _poolManagerCellStub.setDestinationPath(_poolManagerPath);
+        _poolManagerCellStub.setTimeout(NFS_REPLY_TIMEOUT);
 
         doInit();
     }
@@ -422,7 +431,7 @@ public class NFSv41Door extends AbstractCell
         if ( (iomode == layoutiomode4.LAYOUTIOMODE4_READ) || !storageInfo.isCreatedOnly() ) {
             _log.debug("looking for read pool for " + pnfsId.toString());
             getPoolMessage = new PoolMgrSelectReadPoolMsg(pnfsId,
-                    storageInfo, protocolInfo, storageInfo.getFileSize() );
+                    storageInfo, protocolInfo, storageInfo.getFileSize());
         } else {
             _log.debug("looking for write pool for " + pnfsId.toString());
             getPoolMessage = new PoolMgrSelectWritePoolMsg(pnfsId,
@@ -430,7 +439,11 @@ public class NFSv41Door extends AbstractCell
         }
 
         _log.debug("requesting pool for IO: " + pnfsId );
-        getPoolMessage = sendMessageXXX(_poolManagerPath, getPoolMessage, nfsstat4.NFS4ERR_LAYOUTTRYLATER);
+        try {
+            getPoolMessage = _poolManagerCellStub.sendAndWait(getPoolMessage);
+        }catch (CacheException e) {
+            throw new ChimeraNFSException(nfsstat4.NFS4ERR_LAYOUTTRYLATER, e.getMessage() );
+        }
         _log.debug("pool received. Requesting the file: " + getPoolMessage.getPoolName());
 
         PoolIoFileMessage poolIOMessage ;
@@ -444,7 +457,11 @@ public class NFSv41Door extends AbstractCell
                     protocolInfo, storageInfo);
         }
 
-        poolIOMessage = sendMessageXXX( new CellPath(getPoolMessage.getPoolName()),  poolIOMessage, nfsstat4.NFS4ERR_LAYOUTTRYLATER);
+        try {
+            poolIOMessage = _poolManagerCellStub.sendAndWait( new CellPath(getPoolMessage.getPoolName()),  poolIOMessage);
+        }catch(CacheException e) {
+            throw new ChimeraNFSException(nfsstat4.NFS4ERR_LAYOUTTRYLATER, e.getMessage() );
+        }
         _log.debug("mover ready: pool=" + getPoolMessage.getPoolName() + " moverid=" +
                 poolIOMessage.getMoverId());
         _ioMessages.put( protocolInfo.stateId(), poolIOMessage);
@@ -479,38 +496,6 @@ public class NFSv41Door extends AbstractCell
         return device;
     }
 
-    
-    private <T extends Message> T sendMessageXXX(CellPath destination, T message, int error_state)
-            throws InterruptedException, IOException {
-
-        CellMessage reply;
-        try {
-            reply = sendAndWait(new CellMessage(destination, message),
-                    NFS_REPLY_TIMEOUT);
-        }catch (NoRouteToCellException e) {
-            // FIXME: in some cases we simply can retry
-            throw new ChimeraNFSException(nfsstat4.NFS4ERR_SERVERFAULT, e.getMessage());
-        }
-
-        if( reply == null ) {
-            throw new ChimeraNFSException(error_state, message.getClass() + " not available in time");
-        }
-
-        if( reply.getMessageObject().getClass().isInstance(Exception.class) ) {
-                Exception e = (Exception)reply.getMessageObject();
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_SERVERFAULT, e.getMessage());
-        }
-
-        T poolReply = (T)reply.getMessageObject();
-        if( poolReply.getReturnCode() != 0 ) {
-            throw new ChimeraNFSException(error_state,
-                    "pool not available: " + poolReply.getReturnCode()  + " : " +
-                    poolReply.getErrorObject());
-        }
-
-        return poolReply;        
-    }
-
     @Override
     public List<NFS4IoDevice> getIoDeviceList() {
         List<NFS4IoDevice> knownDevices = new ArrayList<NFS4IoDevice>();
@@ -538,26 +523,14 @@ public class NFSv41Door extends AbstractCell
     @Override
     public void releaseDevice(stateid4 stateid) {
 
-        try {
+        PoolIoFileMessage poolIoFileMessage = _ioMessages.remove(stateid);
+        if (poolIoFileMessage != null) {
 
-            PoolIoFileMessage poolIoFileMessage = _ioMessages.remove(stateid);
-            if( poolIoFileMessage != null ) {
-
-                PoolMoverKillMessage message =
+            PoolMoverKillMessage message =
                     new PoolMoverKillMessage(poolIoFileMessage.getPoolName(),
-                            poolIoFileMessage.getMoverId());
+                    poolIoFileMessage.getMoverId());
 
-                message.setReplyRequired(false);
-                try {
-                    sendMessage(new CellMessage(new CellPath(poolIoFileMessage.getPoolName()),
-                                                message));
-                } catch (NoRouteToCellException e) {
-                    _log.info("can't send mover kill message to " + poolIoFileMessage.getPoolName());
-                }
-            }
-
-        }catch(NumberFormatException nfe) {
-            _log.warn("invalid state id: " + new String(stateid.other));
+            _poolManagerCellStub.send(message);
         }
     }
 
