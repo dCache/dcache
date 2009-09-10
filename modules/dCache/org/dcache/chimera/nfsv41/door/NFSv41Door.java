@@ -41,6 +41,8 @@ import org.dcache.chimera.nfs.v4.DeviceID;
 import org.dcache.chimera.nfs.v4.DeviceManager;
 import org.dcache.chimera.nfs.ChimeraNFSException;
 import org.dcache.chimera.nfs.v4.NFSServerV41;
+import org.dcache.chimera.nfs.v4.NFS4Client;
+import org.dcache.chimera.nfs.v4.NFSv4StateHandler;
 import org.dcache.chimera.nfs.v4.NFS4IoDevice;
 import org.dcache.chimera.nfs.v4.NFSv41DeviceManager;
 import org.dcache.chimera.nfs.v4.xdr.device_addr4;
@@ -136,6 +138,11 @@ public class NFSv41Door extends AbstractCell
     /** request/reply mapping */
     private final Map<stateid4, NFS4IoDevice> _requestReplyMap = new HashMap<stateid4, NFS4IoDevice>();
 
+    /**
+     * Grizzly thread controller
+     */
+    private Controller _controller;
+
     public NFSv41Door(String cellName, String args) throws Exception {
         super(cellName, args);
 
@@ -209,13 +216,13 @@ public class NFSv41Door extends AbstractCell
                     final ProtocolFilter rpcProcessor = new RpcProtocolFilter();
                     final ProtocolFilter rpcDispatcher = new RpcDispatcher(programs);
 
-                    final Controller controller = new Controller();
+                    _controller = new Controller();
                     final TCPSelectorHandler tcp_handler = new TCPSelectorHandler();
                     tcp_handler.setPort(2049);
                     tcp_handler.setSelectionKeyHandler(new BaseSelectionKeyHandler());
 
-                    controller.addSelectorHandler(tcp_handler);
-                    controller.setReadThreadsCount(5);
+                    _controller.addSelectorHandler(tcp_handler);
+                    _controller.setReadThreadsCount(5);
 
                     final ProtocolChain protocolChain = new DefaultProtocolChain();
                     protocolChain.addFilter(rpcFilter);
@@ -237,10 +244,10 @@ public class NFSv41Door extends AbstractCell
                         }
                     };
 
-                    controller.setProtocolChainInstanceHandler(pciHandler);
+                    _controller.setProtocolChainInstanceHandler(pciHandler);
 
                     try {
-                        controller.start();
+                        _controller.start();
                     } catch (IOException e) {
                         _log.fatal("Exception in controller...", e);
                     }
@@ -585,21 +592,30 @@ public class NFSv41Door extends AbstractCell
 
         StringBuilder sb = new StringBuilder();
         sb.append("NFSv4.1 door (MDS): \n");
+        sb.append("  Concurrent Thread number : ").append(_controller.getReadThreadsCount()).append("\n");
+        sb.append("  Thread pool              : ").append(_controller.getThreadPool()).append("\n");
         sb.append("  Known pools (DS):\n");
         for(Map.Entry<String, NFS4IoDevice> ioDevice: _poolNameToIpMap.entrySet()) {
             sb.append("    ").append(ioDevice.getKey()).append(" : ").
                     append(ioDevice.getValue()).append("\n");
         }
+
         sb.append("\n  Known movers (layouts):\n");
         for(PoolIoFileMessage io: _ioMessages.values()) {
             sb.append("    ").append(io.getPnfsId()).append(" : ").append(io.getMoverId()).
                     append("@").append(io.getPoolName()).append("\n");
         }
+
+        sb.append("\n  Known clients:\n");
+        for (NFS4Client client : NFSv4StateHandler.getInstace().getClients()) {
+            sb.append("    ").append(client).append("\n");
+        }
+
         return sb.toString();
 
     }
 
-    public static String hh_ac_kill_mover = " <pool> <moverid> # kill mover on the pool";
+    public static final String hh_ac_kill_mover = " <pool> <moverid> # kill mover on the pool";
     public String ac_kill_mover_$_2(Args args) throws Exception {
         int mover = Integer.parseInt(args.argv(1));
         String pool = args.argv(0);
@@ -609,5 +625,11 @@ public class NFSv41Door extends AbstractCell
         message.setReplyRequired(false);
         sendMessage(new CellMessage(new CellPath(pool), message));
         return "";
+    }
+
+    public static final String hh_ac_set_thread_count = " <count> # set number of concurrent threads";
+    public String ac_set_thread_count_$_1(Args args) throws Exception {
+        _controller.setReadThreadsCount(Integer.valueOf(args.argv(0)));
+        return "Thread count: " + _controller.getReadThreadsCount();
     }
 }
