@@ -143,8 +143,9 @@ public class LsRequest extends ContainerRequest {
                 throw new SRMException("ls file request for surl ="+surl +" is not found");
         }
 
-        public void schedule(Scheduler scheduler) throws InterruptedException,
-                IllegalStateTransition,java.sql.SQLException {
+        @Override
+        public void schedule() throws InterruptedException,
+                IllegalStateTransition {
                 for(int i = 0; i < fileRequests.length ;++ i) {
                         LsFileRequest fileRequest = (LsFileRequest) fileRequests[i];
                         fileRequest.schedule();

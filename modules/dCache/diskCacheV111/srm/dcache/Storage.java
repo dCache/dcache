@@ -942,6 +942,9 @@ public class Storage
             srm.printGetSchedulerInfo(sb);
             srm.printPutSchedulerInfo(sb);
             srm.printCopySchedulerInfo(sb);
+            srm.printBringOnlineSchedulerInfo(sb);
+            srm.printLsSchedulerInfo(sb);
+
         } catch (java.sql.SQLException sqle) {
             sqle.printStackTrace(printWriter);
         }
