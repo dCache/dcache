@@ -3,7 +3,7 @@
 #
 
 # Top Level Makfile
-PACKAGE_NAME=dcachedcap
+PACKAGE_NAME=dcap
 BIN_PATH = /afs/.desy.de/products/dcache
 RPM_STAGING_DIR	= /usr/src/packages/SOURCES
 LIB_PATH = $(BIN_PATH)/lib
@@ -98,7 +98,6 @@ dist: cleanall
 
 rpm: cleanall dist
 	@$(RPMBUILD) -ta build/$(PACKAGE_NAME).src.tgz
-	
 
 rebuild: cleanall all
 	@echo "Compilation Done."
