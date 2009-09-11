@@ -28,6 +28,7 @@ import org.dcache.cells.CellStub;
 
 import diskCacheV111.movers.NetIFContainer;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.DirNotExistsCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
@@ -287,6 +288,10 @@ public class XrootdDoor
                                storageInfo,
                                protocolInfo,
                                isWrite);
+            } catch (TimeoutCacheException e) {
+                if (isWrite) {
+                    throw e;
+                }
             } catch (CacheException e) {
                 _log.warn("Pool error: " + e.getMessage());
             }
