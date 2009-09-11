@@ -1,5 +1,7 @@
 package org.dcache.xrootd2.protocol.messages;
 
+import java.util.Arrays;
+
 import org.dcache.xrootd2.protocol.XrootdProtocol;
 import org.jboss.netty.buffer.ChannelBuffer;
 
@@ -22,5 +24,12 @@ public class ReadVRequest extends GenericReadRequestMessage
     public EmbeddedReadRequest[] getReadRequestList()
     {
         return super.getReadRequestList();
+    }
+
+    public String toString()
+    {
+        return String.format("readv[%d,%s]",
+                             getPathID(), 
+                             Arrays.toString(getReadRequestList()));
     }
 }

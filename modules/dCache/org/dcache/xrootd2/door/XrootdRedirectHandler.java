@@ -258,7 +258,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                 _log.debug("checksum of openrequest: " + checksum);
 
                 InetSocketAddress redirectAddress =
-                    _door.transfer(remoteAddress, pnfsid, storageInfo,
+                    _door.transfer(remoteAddress, path, pnfsid, storageInfo,
                                    fileHandle, checksum, isWrite);
 
                 // ok, open was successful

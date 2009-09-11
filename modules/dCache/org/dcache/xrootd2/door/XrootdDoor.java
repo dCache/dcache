@@ -258,7 +258,7 @@ public class XrootdDoor
      */
     public InetSocketAddress
         transfer(InetSocketAddress client,
-                 PnfsId pnfsid, StorageInfo storageInfo,
+                 String path, PnfsId pnfsid, StorageInfo storageInfo,
                  int fileHandle, long checksum, boolean isWrite)
         throws CacheException, InterruptedException
     {
@@ -272,6 +272,8 @@ public class XrootdDoor
                                    pnfsid,
                                    fileHandle,
                                    checksum);
+
+        protocolInfo.setPath(path);
 
         InetSocketAddress redirectAddress = null;
         do {

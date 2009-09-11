@@ -169,4 +169,8 @@ public class OpenRequest extends AbstractRequestMessage
     //	}
 
 
+    public String toString()
+    {
+        return String.format("open[%d,%d,%s,%s]", mode, options, path, opaque);
+    }
 }

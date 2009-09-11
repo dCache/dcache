@@ -40,7 +40,10 @@ onerror continue
   set context -c flushMessageTarget     broadcast
   set context -c sweeper                org.dcache.pool.classic.SpaceSweeper2
   set context -c poolupDestination      broadcast
-
+  set context -c xrootdMoverDiskThreads 20
+  set context -c xrootdMoverSocketThreads 5
+  set context -c xrootdMoverMaxMemoryPerConnection 16777216
+  set context -c xrootdMoverMaxMemory 67108864
 onerror shutdown
 
 #
@@ -51,6 +54,7 @@ define context MoverMap endDefine
    movermap define GFtp-1  org.dcache.pool.movers.GFtpProtocol_2_nio
    movermap define GFtp-2  org.dcache.pool.movers.GFtpProtocol_2_nio
    movermap define NFS4-4  org.dcache.chimera.nfsv41.mover.NFSv41ProtocolMover
+   movermap define Xrootd-2  org.dcache.xrootd2.pool.XrootdProtocol_3
 endDefine
 
 # This defines how to instantiate the pool code.
@@ -76,6 +80,10 @@ define context startPools endDefine
     -pnfsmanager=${pnfsmanager} \
     -flushMessageTarget=${flushMessageTarget} \
     -sweeper=${sweeper} \
+    -xrootd-mover-disk-threads=${xrootdMoverDiskThreads} \
+    -xrootd-mover-socket-threads=${xrootdMoverSocketThreads} \
+    -xrootd-mover-max-memory-per-connection=${xrootdMoverMaxMemoryPerConnection} \
+    -xrootd-mover-max-memory=${xrootdMoverMaxMemory} \
     -${2} -${3} -${4} -${5} -${6} -${7} -${8}"
 endDefine
 

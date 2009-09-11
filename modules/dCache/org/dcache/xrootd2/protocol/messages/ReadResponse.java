@@ -5,6 +5,8 @@ import static org.dcache.xrootd2.protocol.XrootdProtocol.*;
 import java.nio.channels.ScatteringByteChannel;
 import java.io.IOException;
 
+import org.dcache.xrootd2.protocol.messages.GenericReadRequestMessage.EmbeddedReadRequest;
+
 public class ReadResponse extends AbstractResponseMessage
 {
     public ReadResponse(int sId, int length)
@@ -28,5 +30,25 @@ public class ReadResponse extends AbstractResponseMessage
         throws IOException
     {
         return _buffer.writeBytes(in, length);
+    }
+
+    /**
+     * Reads bytes from a channel into the response buffer.
+     */
+    public int writeBytes(EmbeddedReadRequest req)
+    {
+        putSignedInt(req.getFileHandle());
+        putSignedInt(req.BytesToRead());
+        putSignedLong(req.getOffset());
+        return 16;
+    }
+
+    /**
+     * Returns the size of the payload. Only accurate as the long as
+     * we have not begun to send the buffer.
+     */
+    public int getDataLength()
+    {
+        return _buffer.readableBytes() - SERVER_RESPONSE_LEN;
     }
 }

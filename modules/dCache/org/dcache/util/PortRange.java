@@ -9,6 +9,9 @@ import java.net.Socket;
 import java.util.Random;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import org.jboss.netty.bootstrap.ServerBootstrap;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelException;
 
 /**
  * Immutable class representing a port range.
@@ -110,12 +113,12 @@ public class PortRange extends Interval
      * @throws IOException if the bind operation fails, or if the
      * socket is already bound.
      */
-    public void bind(ServerSocket socket, InetSocketAddress endpoint)
+    public int bind(ServerSocket socket, InetSocketAddress endpoint)
         throws IOException
     {
         int port = endpoint.getPort();
         PortRange range = (port > 0) ? new PortRange(port) : this;
-        range.bind(socket, endpoint.getAddress());
+        return range.bind(socket, endpoint.getAddress());
     }
 
     /**
@@ -127,12 +130,12 @@ public class PortRange extends Interval
      * @throws IOException if the bind operation fails, or if the
      * socket is already bound.
      */
-    public void bind(Socket socket, InetSocketAddress endpoint)
+    public int bind(Socket socket, InetSocketAddress endpoint)
         throws IOException
     {
         int port = endpoint.getPort();
         PortRange range = (port > 0) ? new PortRange(port) : this;
-        range.bind(socket, endpoint.getAddress());
+        return range.bind(socket, endpoint.getAddress());
     }
 
     /**
@@ -143,7 +146,7 @@ public class PortRange extends Interval
      * @throws IOException if the bind operation fails, or if the
      * socket is already bound.
      */
-    public void bind(ServerSocket socket, InetAddress address)
+    public int bind(ServerSocket socket, InetAddress address)
         throws IOException
     {
         int start = random();
@@ -151,7 +154,7 @@ public class PortRange extends Interval
         do {
             try {
                 socket.bind(new InetSocketAddress(address, port));
-                return;
+                return port;
             } catch (BindException e) {
             }
             port = succ(port);
@@ -168,7 +171,7 @@ public class PortRange extends Interval
      * @throws IOException if the bind operation fails, or if the
      * socket is already bound.
      */
-    public void bind(Socket socket, InetAddress address)
+    public int bind(Socket socket, InetAddress address)
         throws IOException
     {
         int start = random();
@@ -176,8 +179,34 @@ public class PortRange extends Interval
         do {
             try {
                 socket.bind(new InetSocketAddress(address, port));
-                return;
+                return port;
             } catch (BindException e) {
+            }
+            port = succ(port);
+        } while (port != start);
+
+        throw new BindException("No free port within range");
+    }
+
+    /**
+     * Binds <code>server</socket> to <code>address</code>. A port is
+     * chosen from this port range. If the port range is [0,0], then a
+     * free port is chosen by the OS.
+     *
+     * @throws IOException if the bind operation fails.
+     */
+    public Channel bind(ServerBootstrap server, InetAddress address)
+        throws IOException
+    {
+        int start = random();
+        int port = start;
+        do {
+            try {
+                return server.bind(new InetSocketAddress(address, port));
+            } catch (ChannelException e) {
+                if (!(e.getCause() instanceof BindException)) {
+                    throw e;
+                }
             }
             port = succ(port);
         } while (port != start);
@@ -193,10 +222,10 @@ public class PortRange extends Interval
      * @throws IOException if the bind operation fails, or if the
      * socket is already bound.
      */
-    public void bind(ServerSocket socket)
+    public int bind(ServerSocket socket)
         throws IOException
     {
-        bind(socket, (InetAddress) null);
+        return bind(socket, (InetAddress) null);
     }
 
     /**
@@ -207,12 +236,25 @@ public class PortRange extends Interval
      * @throws IOException if the bind operation fails, or if the
      * socket is already bound.
      */
-    public void bind(Socket socket)
+    public int bind(Socket socket)
         throws IOException
     {
-        bind(socket, (InetAddress) null);
+        return bind(socket, (InetAddress) null);
     }
 
+    /**
+     * Binds <code>server</socket> to the wildcard
+     * <code>address</code>. A port is chosen from this port range. If
+     * the port range is [0,0], then a free port is chosen by the OS.
+     *
+     * @throws IOException if the bind operation fails, or if the
+     * socket is already bound.
+     */
+    public Channel bind(ServerBootstrap socket)
+        throws IOException
+    {
+        return bind(socket, (InetAddress) null);
+    }
 
     @Override
     public String toString()

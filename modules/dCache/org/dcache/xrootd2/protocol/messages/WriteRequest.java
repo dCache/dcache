@@ -1,5 +1,8 @@
 package org.dcache.xrootd2.protocol.messages;
 
+import java.io.IOException;
+import java.nio.channels.GatheringByteChannel;
+
 import org.dcache.xrootd2.protocol.XrootdProtocol;
 import org.jboss.netty.buffer.ChannelBuffer;
 
@@ -7,7 +10,8 @@ public class WriteRequest extends AbstractRequestMessage
 {
     private final int fhandle;
     private final long offset;
-    private final byte[] data;
+    private final int dlen;
+    private final ChannelBuffer buffer;
 
     public WriteRequest(ChannelBuffer buffer)
     {
@@ -18,10 +22,9 @@ public class WriteRequest extends AbstractRequestMessage
 
         fhandle = buffer.getInt(4);
         offset = buffer.getLong(8);
+        dlen = buffer.getInt(20);
 
-        int dlen = buffer.getInt(20);
-        data = new byte[dlen];
-        buffer.getBytes(24, data);
+        this.buffer = buffer;
     }
 
     public int getFileHandle()
@@ -36,11 +39,15 @@ public class WriteRequest extends AbstractRequestMessage
 
     public int getDataLength()
     {
-        return data.length;
+        return dlen;
     }
 
-    public byte[] getData()
+    public void getData(GatheringByteChannel out)
+        throws IOException
     {
-        return data;
+        int len = 0;
+        while (len < dlen) {
+            len += buffer.getBytes(24, out, dlen);
+        }
     }
 }

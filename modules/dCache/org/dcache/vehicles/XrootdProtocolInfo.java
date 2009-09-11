@@ -26,6 +26,8 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
 
 	private long _checksum;
 
+    private String _path;
+
 	public XrootdProtocolInfo(String protocol,  int major,int minor,
 			String host, int port, CellPath pathToDoor, PnfsId pnfsID, int xrootdFileHandle, long checksum) {
 
@@ -93,7 +95,7 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
 	public void setXrootdDoorCellPath(CellPath toDoor) {
 		_pathToDoor = toDoor;
 	}
-	
+
 	public PnfsId getPnfsId() {
 		return _pnfsId;
 	}
@@ -107,15 +109,24 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
 //		it is supposed to be. This saves one message.
 		return false;
 	}
-	
+
 	/**
 	 * Gets the checkum of the initial xrootd OpenRequest. It is used to check that the open received
 	 * by the door and the (re-)open received by the mover are identical. Think of it as a hashcode but
-	 * without the StreamID to be considered 
+	 * without the StreamID to be considered
 	 * @return the checksum
 	 */
 	public long getChecksum() {
 		return _checksum;
 	}
 
+    public void setPath(String path)
+    {
+        _path = path;
+    }
+
+    public String getPath()
+    {
+        return _path;
+    }
 }

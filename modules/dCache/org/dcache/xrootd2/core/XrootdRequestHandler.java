@@ -5,6 +5,8 @@ import org.jboss.netty.channel.SimpleChannelHandler;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.ChannelPipelineCoverage;
+import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.ChannelFutureListener;
 
 import org.dcache.xrootd2.protocol.messages.*;
 import static org.dcache.xrootd2.protocol.XrootdProtocol.*;
@@ -58,29 +60,39 @@ public class XrootdRequestHandler extends SimpleChannelHandler
         }
     }
 
-    protected void respond(ChannelHandlerContext ctx,
-                           MessageEvent e,
-                           AbstractResponseMessage msg)
-    {
-        write(ctx, e.getChannel(), e.getFuture(), msg);
-    }
-
-    protected void respondWithError(ChannelHandlerContext ctx,
+    protected ChannelFuture respond(ChannelHandlerContext ctx,
                                     MessageEvent e,
-                                    AbstractRequestMessage msg,
-                                    int errorCode, String errMsg)
+                                    AbstractResponseMessage msg)
     {
-        respond(ctx, e,
-                new ErrorResponse(msg.getStreamID(), errorCode, errMsg));
+        return e.getChannel().write(msg);
     }
 
+    protected ChannelFuture respondWithError(ChannelHandlerContext ctx,
+                                             MessageEvent e,
+                                             AbstractRequestMessage msg,
+                                             int errorCode, String errMsg)
+    {
+        return respond(ctx, e,
+                       new ErrorResponse(msg.getStreamID(), errorCode, errMsg));
+    }
 
-    protected void unsupported(ChannelHandlerContext ctx,
-                               MessageEvent e,
-                               AbstractRequestMessage msg)
+    protected ChannelFuture closeWithError(ChannelHandlerContext ctx,
+                                           MessageEvent e,
+                                           AbstractRequestMessage msg,
+                                           int errorCode, String errMsg)
+    {
+        ChannelFuture f = respondWithError(ctx, e, msg, errorCode, errMsg);
+        f.addListener(ChannelFutureListener.CLOSE);
+        return f;
+    }
+
+    protected ChannelFuture unsupported(ChannelHandlerContext ctx,
+                                        MessageEvent e,
+                                        AbstractRequestMessage msg)
     {
         _log.info("Unsupported request: " + msg);
-        respondWithError(ctx, e, msg, kXR_Unsupported, "Request not supported");
+        return respondWithError(ctx, e, msg, kXR_Unsupported,
+                                "Request not supported");
     }
 
     protected void doOnLogin(ChannelHandlerContext ctx, MessageEvent e, LoginRequest msg)

@@ -33,6 +33,10 @@ public abstract class GenericReadRequestMessage extends AbstractRequestMessage
             return offs;
         }
 
+        public String toString()
+        {
+            return String.format("(%d,%d,%d)", fh, len, offs);
+        }
     }
 
     private final static Logger _log =
@@ -51,15 +55,15 @@ public abstract class GenericReadRequestMessage extends AbstractRequestMessage
             pathid = -1;
             readList = new EmbeddedReadRequest[0];
         } else {
-            pathid = buffer.getUnsignedByte(24);
-
             int prefix = 0;
-            if (alen % 16 != 0) {
-                if (alen % 16 != 8) {
-                    _log.warn("invalid readv request: data doesn't start with 8 byte prefix (pathid)");
-                } else {
-                    prefix = 8;
-                }
+            if (alen % 16 == 0) {
+                pathid = -1;
+            } else if (alen % 16 != 8) {
+                pathid = -1;
+                _log.warn("invalid readv request: data doesn't start with 8 byte prefix (pathid)");
+            } else {
+                pathid = buffer.getUnsignedByte(24);
+                prefix = 8;
             }
 
             int numberOfListEntries = (alen - prefix) / 16;
@@ -67,7 +71,7 @@ public abstract class GenericReadRequestMessage extends AbstractRequestMessage
             readList = new EmbeddedReadRequest[numberOfListEntries];
 
             for (int i = 0; i < numberOfListEntries; i++) {
-                int j = i * 16 + prefix;
+                int j = 24 + prefix + i * 16;
                 readList[i] = new EmbeddedReadRequest(buffer.getInt(j),
                                                       buffer.getInt(j + 4),
                                                       buffer.getLong(j + 8));
