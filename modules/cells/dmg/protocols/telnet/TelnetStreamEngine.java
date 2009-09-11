@@ -106,6 +106,18 @@ public class  TelnetStreamEngine extends DummyStreamEngine
               socket.close();
               throw new TelnetAuthenticationException("Host "+hostAddress+": Tunnel verification failed!" ) ;
           }
+
+          meth = socket.getClass().getMethod("getUserPrincipal", new Class[0]);
+          String user = (String) meth.invoke(socket, new Object[0]);
+
+          meth = socket.getClass().getMethod("getRole", new Class[0]);
+          String role = (String) meth.invoke(socket, new Object[0]);
+
+          meth = socket.getClass().getMethod("getGroup", new Class[0]);
+          String group = (String) meth.invoke(socket, new Object[0]);
+
+          setUserName(new CellUser(user, group, role));
+
       }catch(NoSuchMethodException nsm){
     	  // nsm.printStackTrace();
     	  // it's not a tunnel...still OK
