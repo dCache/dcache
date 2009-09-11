@@ -173,7 +173,6 @@ import org.dcache.srm.util.Permissions;
 import org.dcache.srm.CopyCallbacks;
 import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.SRM;
-import org.dcache.srm.BadSRMObjectException;
 import org.dcache.srm.v2_2.TMetaDataSpace;
 import org.dcache.srm.v2_2.TRetentionPolicyInfo;
 import org.dcache.srm.v2_2.TRetentionPolicy;
@@ -212,6 +211,7 @@ import org.dcache.srm.request.RequestCredential;
 
 import java.io.File;
 
+import java.util.concurrent.TimeoutException;
 import javax.naming.NamingException;
 import javax.naming.NamingEnumeration;
 import javax.naming.directory.DirContext;
@@ -273,7 +273,6 @@ public class Storage
         "RemoteGsiftpTransferManager";
     private final Configuration config = new Configuration();
     private Thread storageInfoUpdateThread;
-    private static SRM srmInstance = null;
     private static final Object syncObj = new Object();
     private boolean ignoreClientProtocolOrder; //falseByDefault
     private boolean customGetHostByAddr; //falseByDefault
@@ -288,17 +287,19 @@ public class Storage
     // public static SRM getSRMInstance(String xmlConfigPath)
     public static SRM getSRMInstance(final String[] dCacheParams,
             long timeout)
-            throws BadSRMObjectException {
+            throws InterruptedException,
+            java.util.concurrent.TimeoutException
+    {
 
         _log.info("Here are the params/args to go to dCache: " + Arrays.toString(dCacheParams));
 
         _log.debug("entering Storage.getSRMInstance");
+        SRM srmInstance = SRM.getSRM();
         if (srmInstance != null) {
             _log.debug("in Storage.getSRMInstance(), about to " +
                        "return existing srmInstance");
             return srmInstance;
-        }
-	else {
+        } else {
             // TODO:  Here is the kludge to keep from calling Domain.main
             //        twice, and therefore trying to create 2 instances
             //        of SRM.  We need a better solution than this...
@@ -334,23 +335,7 @@ public class Storage
                         "already been run.");
             }
         }
-        long time_expired = 0;
-        long wait_period = 1000;
-        synchronized (syncObj) {
-            while(srmInstance == null ) {
-                _log.info("Waiting for srm initialization to complete.");
-                try {
-                    syncObj.wait(wait_period);
-                    time_expired += wait_period;
-                } catch (InterruptedException ie) {
-                    throw new BadSRMObjectException("Failed to get srmInstance", ie);
-                }
-                if(time_expired > timeout) {
-                    throw new BadSRMObjectException(
-                            "startup takes longer then timeout");
-                }
-            }
-        }
+        srmInstance = SRM.getInstance(timeout);
         _log.debug("about to return the instance of srm");
         return srmInstance;
     }
@@ -830,7 +815,7 @@ public class Storage
             _log.debug("In constructor of Storage, about " +
                        "to instantiate SRM...");
 
-            srm = new SRM(config,name);
+            srm = SRM.getSRM(config,name);
             _log.debug("In anonymous inner class, srm instantiated.");
         } catch (Throwable t) {
             _log.warn("Aborted anonymous inner class, error starting srm", t);
@@ -845,16 +830,7 @@ public class Storage
         storageInfoUpdateThread = getNucleus().newThread(this);
         storageInfoUpdateThread.start();
 
-        _log.debug("In Storage constructor, about to get/set srmInstance.");
-
-        synchronized(syncObj) {
-            srmInstance = srm;
-            _log.debug("srmInstance is not null, srmInstance="+srmInstance);
-            syncObj.notifyAll();
         }
-
-        _log.debug("srmInstance was set, about to exit Storage constructor.");
-    }
 
     private String getOption(String value) {
         String tmpstr = _args.getOpt(value);

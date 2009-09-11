@@ -80,7 +80,7 @@ public class Main extends CommandInterpreter implements  Runnable {
             new Storage(gridftphost,gridftpport,config,stat,chown,out,err);
         config.setStorage(storage);
         
-        srm = new SRM(config,name);
+        srm = SRM.getSRM(config,name);
          new Thread(this).start();    
         
         

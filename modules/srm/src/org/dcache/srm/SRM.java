@@ -176,6 +176,8 @@ import org.dcache.commons.stats.rrd.RrdRequestExecutionTimeGauges;
 import org.dcache.commons.stats.MonitoringProxy;
 import java.lang.reflect.Method;
 
+import java.util.concurrent.TimeoutException;
+
 /**
  * SRM class creates an instance of SRM client class and publishes it on a
  * given port as a storage element.
@@ -247,11 +249,18 @@ public class SRM {
     private RequestExecutionTimeGauges srmRequestGauges;
     private RrdRequestExecutionTimeGauges rrdSrmRequestGauges;
     private RrdRequestCounters rrdSrmRequestCounters;
-
+    private static SRM srm;
     /**
-     * if multiple srm installations live within same storage, they should have different names
+     * Creates a new instance of SRM 
+     * @param config
+     * @param name
+     * @throws java.io.IOException
+     * @throws java.sql.SQLException
+     * @throws java.lang.InterruptedException
+     * @throws org.dcache.srm.scheduler.IllegalStateTransition
+     * @throws electric.xml.ParseException
      */
-    public SRM(Configuration config, String name)
+    private SRM(Configuration config, String name)
             throws java.io.IOException,
             java.sql.SQLException,
             InterruptedException,
@@ -477,6 +486,68 @@ public class SRM {
         this.say("srm started :\n\t" + configuration.toString());
 
     }
+
+    /**
+     * SRM is now a singleton, this will return an instance of
+     * will create a new SRM if it does not exist
+     * @param configuration
+     * @param name
+     * @return SRM
+     * @throws java.io.IOException
+     * @throws java.sql.SQLException
+     * @throws java.lang.InterruptedException
+     * @throws org.dcache.srm.scheduler.IllegalStateTransition
+     * @throws electric.xml.ParseException
+     */
+    public static synchronized final SRM getSRM(Configuration configuration,
+            String name) throws java.io.IOException,
+            java.sql.SQLException,
+            InterruptedException,
+            org.dcache.srm.scheduler.IllegalStateTransition,
+            electric.xml.ParseException {
+
+        if(srm != null) {
+            return srm;
+        }
+
+        srm = new SRM(configuration, name);
+        SRM.class.notifyAll();
+        return srm;
+    }
+
+    /**
+     *  This method will return srm if it was already created
+     *  or will wait for timeout millis for its creation
+     * @param timeout
+     * @return
+     * @throws java.lang.InterruptedException
+     * @throws java.util.concurrent.TimeoutException
+     */
+    public static synchronized final SRM getInstance(long timeout)
+            throws InterruptedException, TimeoutException {
+        long time_expired = 0;
+        long wait_period = 1000;
+        while(srm == null ) {
+            System.out.println(new java.util.Date() +
+                   " Waiting for srm initialization to complete.");
+            SRM.class.wait(wait_period);
+            time_expired += wait_period;
+            if(time_expired > timeout) {
+                throw new TimeoutException(
+                        "startup takes longer then timeout");
+            }
+        }
+        return srm;
+    }
+
+    /**
+     *
+     * @return instance of SRM if it was created or null if it was not
+     */
+    public static final SRM getSRM() {
+        return srm;
+    }
+
 
     /**
      * @return this host InetAddress
