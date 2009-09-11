@@ -288,6 +288,9 @@ public class XrootdDoor
                                protocolInfo,
                                isWrite);
             } catch (CacheException e) {
+                if (isWrite && e.getRc() == CacheException.TIMEOUT) {
+                    throw e;
+                }
                 _log.warn("Pool error: " + e.getMessage());
             }
         } while (redirectAddress == null);

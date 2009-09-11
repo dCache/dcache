@@ -242,29 +242,41 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
             StorageInfo storageInfo = msg.getStorageInfo();
             FileMetaData metaData = msg.getMetaData();
             PnfsId pnfsid = msg.getPnfsId();
+            boolean success = false;
+            try {
+                info.setMappedIds(metaData.getGid(), metaData.getUid());
+                info.setPnfsId(pnfsid);
 
-            info.setMappedIds(metaData.getGid(), metaData.getUid());
-            info.setPnfsId(pnfsid);
+                // get unique fileHandle (PnfsId is not unique in case the
+                // same file is opened more than once in this
+                // door-instance)
+                int fileHandle = _handleCounter.getAndIncrement();
 
-            // get unique fileHandle (PnfsId is not unique in case the
-            // same file is opened more than once in this
-            // door-instance)
-            int fileHandle = _handleCounter.getAndIncrement();
+                info.setFileHandle(fileHandle);
 
-            info.setFileHandle(fileHandle);
+                long checksum = req.calcChecksum();
+                _log.debug("checksum of openrequest: " + checksum);
 
-            long checksum = req.calcChecksum();
-            _log.debug("checksum of openrequest: " + checksum);
+                InetSocketAddress redirectAddress =
+                    _door.transfer(remoteAddress, pnfsid, storageInfo,
+                                   fileHandle, checksum, isWrite);
 
-            InetSocketAddress redirectAddress =
-                _door.transfer(remoteAddress, pnfsid, storageInfo,
-                               fileHandle, checksum, isWrite);
-
-            // ok, open was successful
-            respond(ctx, event,
-                    new RedirectResponse(req.getStreamID(),
-                                         redirectAddress.getHostName(),
-                                         redirectAddress.getPort()));
+                // ok, open was successful
+                respond(ctx, event,
+                        new RedirectResponse(req.getStreamID(),
+                                             redirectAddress.getHostName(),
+                                             redirectAddress.getPort()));
+                success = true;
+            } finally {
+                if (!success && isWrite) {
+                    try {
+                        _door.deletePnfsEntry(pnfsid);
+                    } catch (CacheException e) {
+                        _log.error(String.format("Failed to initiate write transfer, but removing the dangling name space entry for [%s] failed too [%s]",
+                                                 pnfsid, e.getMessage()));
+                    }
+                }
+            }
         } catch (CacheException e) {
             switch (e.getRc()) {
             case CacheException.FILE_NOT_FOUND:

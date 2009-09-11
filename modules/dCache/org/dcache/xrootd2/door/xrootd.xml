@@ -10,7 +10,7 @@
     <property name="properties">
       <value>
         xrootdPort=1094
-        xrootdPoolTimeout=3000
+        xrootdPoolTimeout=4000
         xrootdThreads=1000
         xrootdMaxChannelMemorySize=16777216
         xrootdMaxTotalMemorySize=16777216
