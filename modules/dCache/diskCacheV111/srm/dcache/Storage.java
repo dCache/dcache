@@ -2610,6 +2610,15 @@ public class Storage
             try {
                 FileAttributes attr =
                     handler.getFileAttributes(toPath, EnumSet.of(FileAttribute.TYPE));
+
+                /* We now know the destination exists. In case the
+                 * source and destination names are identical, we
+                 * silently ignore the request.
+                 */
+                if (fromPath.equals(toPath)) {
+                    return;
+                }
+
                 if (attr.getFileType() != FileType.DIR) {
                     throw new SRMDuplicationException("Destination exists");
                 }
@@ -2621,14 +2630,6 @@ public class Storage
             } catch (FileNotFoundCacheException e) {
                 /* Destination name does not exist; not a problem.
                  */
-            }
-
-            /* In case the source and destination names are identical, we
-             * silently ignore the request.
-             */
-            if (fromPath.equals(toPath)) {
-                _log.info("moveEntry: Source and destination paths are identical: " + fromPath);
-                return;
             }
 
             handler.renameEntry(fromPath, toPath, false);
