@@ -14,10 +14,11 @@ import context -c setupContext
 #   Make sure we got what we need.
 #
 
-#
-#  Cell communication
-#
+# Cell communication
 exec -run -shell file:${ourHomeDir}/config/tunnel.fragment 
+
+# Permission configuration
+exec -run -shell file:${ourHomeDir}/config/permission.fragment
 
 #
 # If companionDatabaseHost and defaultPnfsServer are not set in dCacheSetup, use localhost, for pnfs use /pnfs/fs:
@@ -37,16 +38,6 @@ set context -c pnfsNumberOfListThreads 1
 
 set context -c DefaultAccessLatency ""
 set context -c DefaultRetentionPolicy ""
-
-#
-# Defaults for acl
-#
-set context -c aclEnabled    false
-set context -c aclTable      t_acl
-set context -c aclConnDriver org.postgresql.Driver
-set context -c aclConnUrl    jdbc:postgresql://localhost/chimera?prepareThreshold=3
-set context -c aclConnUser   postgres
-set context -c aclConnPswd   ""
 
 onerror shutdown
 #

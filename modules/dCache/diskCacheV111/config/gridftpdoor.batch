@@ -17,6 +17,9 @@ exec -run -shell file:${ourHomeDir}/config/tunnel.fragment
 # Stage protection
 exec -run -shell file:${ourHomeDir}/config/stage.fragment doors
 
+# Permission configuration
+exec -run -shell file:${ourHomeDir}/config/permission.fragment
+
 #
 #      GridFTP Door
 #
@@ -45,16 +48,7 @@ set context -c gsiftpAdapterInternalInterface ""
 set context -c gsiftpIoQueue                  ""
 set context -c overwriteEnabled false
 set context -c gsiftpAllowPassivePool false
-set context -c PermissionHandlerDataSource diskCacheV111.services.PnfsManagerFileMetaDataSource
 set context -c FtpTLogDir ""
-set context -c permissionHandler diskCacheV111.services.acl.UnixPermissionHandler
-
-#  ----- ACL-variables
-set context -c aclTable      t_acl
-set context -c aclConnDriver org.postgresql.Driver
-set context -c aclConnUrl    jdbc:postgresql://localhost/chimera?prepareThreshold=3
-set context -c aclConnUser   postgres
-set context -c aclConnPswd   ""
 
 #
 #  ----  Usage of Srm Space Manager
@@ -115,7 +109,6 @@ create dmg.cells.services.login.LoginManager GFTP-${thisHostname} \
              -aclConnPswd=${aclConnPswd} \
              -stageConfigurationFilePath=${stageConfigurationFilePath} \
              -ftp-adapter-internal-interface=${gsiftpAdapterInternalInterface} \
-             -meta-data-provider=${PermissionHandlerDataSource} \
              -overwrite=${overwriteEnabled} \
              -allowPassivePool=${gsiftpAllowPassivePool} \
              -tlog=${FtpTLogDir} \

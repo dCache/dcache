@@ -11,10 +11,11 @@ copy file:${setupFile} context:setupContext
 #
 import context -c setupContext
 
-#
-#  Cell communication
-#
+# Cell communication
 exec -run -shell file:${ourHomeDir}/config/tunnel.fragment 
+
+# Permission configuration
+exec -run -shell file:${ourHomeDir}/config/permission.fragment
 
 #
 #   The PnfsManager Part
@@ -54,12 +55,6 @@ set context -c pnfsDbUser        srmdcache
 set context -c pnfsDbPassword    srmdcache
 set context -c pnfsPasswordFile  ""
 set context -c pnfsFolding       false
-set context -c aclEnabled    false
-set context -c aclTable      t_acl
-set context -c aclConnDriver org.postgresql.Driver
-set context -c aclConnUrl    jdbc:postgresql://localhost/chimera?prepareThreshold=3
-set context -c aclConnUser   postgres
-set context -c aclConnPswd   ""
 
 set env -c locationThreads 0
 
