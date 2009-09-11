@@ -137,6 +137,7 @@ import java.util.Random;
 import java.util.Vector;
 import java.util.List;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Set;
 import java.util.HashMap;
 import java.util.Map;
@@ -1952,30 +1953,32 @@ public class Storage
             return resolvedHost+":"+ lbi.getPort();
 
     }
-    public String selectHost(LoginBrokerInfo[]loginBrokerInfos)
-    throws SRMException {
-        java.util.Arrays.sort(loginBrokerInfos,new java.util.Comparator(){
-            public int compare(java.lang.Object o1,java.lang.Object o2) {
-                LoginBrokerInfo loginBrokerInfo1 = (LoginBrokerInfo)o1;
-                LoginBrokerInfo loginBrokerInfo2 = (LoginBrokerInfo)o2;
-                double load1 = loginBrokerInfo1.getLoad();
-                double load2 = loginBrokerInfo2.getLoad();
-                if(load1<load2) { return -1  ;}
-                if(load1==load2) { return 0  ;}
-                return 1;
-            } });
-            int len = loginBrokerInfos.length;
 
-            if(len <=0){
-                return null;
+    private final static Comparator<LoginBrokerInfo> LOAD_ORDER =
+        new Comparator<LoginBrokerInfo>() {
+            public int compare(LoginBrokerInfo info1, LoginBrokerInfo info2)
+            {
+                return (int)Math.signum(info1.getLoad() - info2.getLoad());
             }
+        };
 
-            int selected_indx = rand.nextInt(java.lang.Math.min(len,
-                numDoorInRanSelection));
-            String doorHostPort = lbiToDoor(loginBrokerInfos[selected_indx]);
+    public String selectHost(LoginBrokerInfo[]loginBrokerInfos)
+        throws SRMException
+    {
+        Arrays.sort(loginBrokerInfos, LOAD_ORDER);
+        int len = loginBrokerInfos.length;
+        if (len <=0){
+            return null;
+        }
 
-            _log.debug("selectHost returns "+doorHostPort);
-            return doorHostPort;
+        int selected_indx;
+        synchronized (rand) {
+            selected_indx = rand.nextInt(Math.min(len, numDoorInRanSelection));
+        }
+        String doorHostPort = lbiToDoor(loginBrokerInfos[selected_indx]);
+
+        _log.debug("selectHost returns "+doorHostPort);
+        return doorHostPort;
     }
 
 
