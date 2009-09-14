@@ -63,10 +63,15 @@ public class StateMaintainer implements StateUpdateManager {
 
     @Override
     public synchronized void enqueueUpdate( final StateUpdate pendingUpdate) {
+        if( _log.isDebugEnabled())
+            _log.debug(  "enqueing job to process update " + pendingUpdate);
+
         _pendingRequestCount.incrementAndGet();
         _scheduler.submit( new Runnable() {
             @Override
             public void run() {
+                if( _log.isDebugEnabled())
+                    _log.debug(  "starting job to process update " + pendingUpdate);
                 _caretaker.processUpdate( pendingUpdate);
                 _pendingRequestCount.decrementAndGet();
                 checkScheduledExpungeActivity();
