@@ -1,8 +1,11 @@
 package org.dcache.services.info.conduits;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.net.SocketException;
 
 import org.apache.log4j.Logger;
@@ -36,7 +39,7 @@ public class XmlConduit extends AbstractThreadedConduit {
 	
 	public void enable() {
 		try {
-			_svr_skt = new ServerSocket(_port);
+			_svr_skt = new ServerSocket(_port, 5, InetAddress.getByName( null));
 		} catch( IOException e) {
 			Thread.currentThread().interrupt();
 			return;
