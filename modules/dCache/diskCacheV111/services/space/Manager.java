@@ -3234,6 +3234,11 @@ public final class Manager
                         if(spaceManagerEnabled) {
                                 logger.error("SpaceException: "+se.getMessage()); 
                         }
+                        else { 
+                                if (logger.isDebugEnabled()) {
+                                        logger.error("SpaceException: "+se.getMessage()); 
+                                }
+                        }
 			spaceMessage.setFailed(-2,se);
 		}
 		catch(Throwable t) {
