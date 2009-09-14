@@ -263,8 +263,6 @@ public final class Manager
 		printWriter.println("deleteStoredFileRecord="+deleteStoredFileRecord);
 		printWriter.println("pnfsManager="+pnfsManager);
 		printWriter.println("poolManager="+poolManager);
-		printWriter.println("defaultLatency="+defaultLatency);
-		printWriter.println("defaultPolicy="+defaultPolicy);
 		printWriter.println("reserveSpaceForNonSRMTransfers="+reserveSpaceForNonSRMTransfers);
 		printWriter.println("returnFlushedSpaceToReservation="+returnFlushedSpaceToReservation);
 		printWriter.println("returnRemovedSpaceToReservation="+returnRemovedSpaceToReservation);
@@ -853,10 +851,8 @@ public final class Manager
 		String latencyString = args.getOpt("acclat");
 		String policyString  = args.getOpt("retpol");
 
-		AccessLatency latency = latencyString==null?
-			defaultLatency:AccessLatency.getAccessLatency(latencyString);
-		RetentionPolicy policy = policyString==null?
-			defaultPolicy:RetentionPolicy.getRetentionPolicy(policyString);
+		AccessLatency latency = AccessLatency.getAccessLatency(latencyString);
+		RetentionPolicy policy = RetentionPolicy.getRetentionPolicy(policyString);
 
 		String lgIdString = args.getOpt("lgid");
 		String lgName     = args.getOpt("lg");
@@ -3652,13 +3648,17 @@ public final class Manager
 		if(!spaceManagerEnabled) {
 			throw new SpaceException("SpaceManager is disabled in configuration");
 		}
+                if (reserve.getAccessLatency()==null) { 
+                        throw new IllegalArgumentException("reserveSpace : accessLatency=null is not supported");
+                }
+                if (reserve.getRetentionPolicy()==null) {
+                        throw new IllegalArgumentException("reserveSpace : retentionPolicy=null is not supported");
+                }
 		long reservationId = reserveSpace(reserve.getVoGroup(),
 						  reserve.getVoRole(),
 						  reserve.getSizeInBytes(),
-						  (reserve.getAccessLatency()==null?
-						   defaultLatency:reserve.getAccessLatency()),
-						  (reserve.getRetentionPolicy()==null?
-						   defaultPolicy:reserve.getRetentionPolicy()),
+						  reserve.getAccessLatency(),
+						  reserve.getRetentionPolicy(),
 						  reserve.getLifetime(),
 						  reserve.getDescription());
 		reserve.setSpaceToken(reservationId);
