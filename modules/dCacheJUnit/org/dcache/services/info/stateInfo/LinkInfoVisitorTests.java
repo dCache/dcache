@@ -16,6 +16,8 @@ import org.apache.log4j.Logger;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.TestStateExhibitor;
+import org.dcache.services.info.secondaryInfoProviders.StateLocation;
+import org.globus.util.log4j.PatternLayout;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -31,9 +33,9 @@ public class LinkInfoVisitorTests {
      * to the console.
      */
     static {
-        Logger log = Logger.getLogger( LinkInfoVisitor.class);
+        Logger log = Logger.getRootLogger();
         log.removeAllAppenders();
-        log.addAppender( new ConsoleAppender());
+        log.addAppender( new ConsoleAppender( new PatternLayout()));
         log.setLevel( Level.WARN);
     }
 
@@ -101,6 +103,25 @@ public class LinkInfoVisitorTests {
         pools.add(  "a pool");
 
         assertLinkWithPoolsOk( pools);
+    }
+
+    @Test
+    public void testLinkWithSpaceMetrics() {
+        String linkName = "link-1";
+        long totalSpace = 10;
+        long freeSpace = 8;
+        long preciousSpace = 1;
+        long removableSpace = 1;
+
+        StateLocation.putLink( _exhibitor, linkName);
+
+        SpaceInfo linkSpace = new SpaceInfo( totalSpace, freeSpace, preciousSpace, removableSpace);
+
+        StateLocation.putLinkSpaceMetrics( _exhibitor, linkName, linkSpace);
+
+        LinkInfo expectedLinkInfo = new LinkInfo(linkName);
+        
+        assertSingleLinkInfo( linkName, expectedLinkInfo);
     }
 
     @Test

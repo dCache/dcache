@@ -24,6 +24,7 @@ public class LinkInfoVisitor extends SkeletonListVisitor {
     private static final String LINK_POOLGROUPS_PATH_ELEMENT = "poolgroups";
     private static final String LINK_UNITGROUPS_PATH_ELEMENT = "unitgroups";
     private static final String LINK_UNITS_PATH_ELEMENT = "units";
+    private static final String LINK_SPACE_PATH_ELEMENT = "space";
 
     /*
      * The names of the branches for different collections of units.
@@ -119,6 +120,7 @@ public class LinkInfoVisitor extends SkeletonListVisitor {
     private StatePath _thisLinkPoolgroupPath;
     private StatePath _thisLinkUnitgroupsPath;
     private StatePath _thisLinkUnitsPath;
+    private StatePath _thisLinkSpacePath;
     private StatePath _thisLinkOperationPrefPath;
     private StatePath _thisLinkPath;
 
@@ -145,6 +147,7 @@ public class LinkInfoVisitor extends SkeletonListVisitor {
         _thisLinkUnitgroupsPath =
                 _thisLinkPath.newChild( LINK_UNITGROUPS_PATH_ELEMENT);
         _thisLinkUnitsPath = _thisLinkPath.newChild( LINK_UNITS_PATH_ELEMENT);
+        _thisLinkSpacePath = _thisLinkPath.newChild( LINK_SPACE_PATH_ELEMENT);
         _thisLinkOperationPrefPath =
                 _thisLinkPath.newChild( LINK_PREFS_PATH_ELEMENT);
     }
@@ -166,6 +169,12 @@ public class LinkInfoVisitor extends SkeletonListVisitor {
          */
         if( _thisLinkUnitsPath.equals( path) ||
             (_thisLinkUnitsPath.isParentOf( path) && UNIT_TYPE_NAMES.containsKey( listItem)))
+            return;
+
+        /*
+         * Skip  link.<link id>.space and any child element of this path
+         */
+        if( _thisLinkSpacePath.equals( path) || _thisLinkSpacePath.isParentOf( path))
             return;
 
         StatePath parentPath = path.parentPath();

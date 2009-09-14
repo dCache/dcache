@@ -400,6 +400,14 @@ public class StateLocation {
     }
 
     /**
+     * Add space metrics for named link.
+     */
+    static public void putLinkSpaceMetrics( TestStateExhibitor exhibitor,
+                                            String linkName, SpaceInfo info) {
+        putSpaceMetrics( exhibitor, linkPath( linkName).newChild( PATH_ELEMENT_SPACE), info);
+    }
+
+    /**
      * Add reservation metrics
      */
     static public void putReservationDescription( TestStateExhibitor exhibitor,
