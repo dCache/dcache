@@ -114,6 +114,7 @@ public class InfoProvider extends CellAdapter {
 		}
 
 		_sum = new StateMaintainer( _state);
+		_state.setStateUpdateManager( _sum);
 		
         StateExhibitor exhibitor = _state;
 
