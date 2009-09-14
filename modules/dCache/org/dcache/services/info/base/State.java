@@ -357,7 +357,12 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
                 _log.debug( " Dump of pending StateTransition follows...\n\n" +
                             transition.dumpContents());
 
-            checkWatchers( transition);
+            StateUpdate resultingUpdate = checkWatchers( transition);
+
+            // TODO: don't enqueue the update but merge with existing StateTransition and
+            // look for additional StateWatchers.
+            if( resultingUpdate != null)
+                _updateManager.enqueueUpdate( resultingUpdate);
 
         } finally {
             _stateReadLock.unlock();
