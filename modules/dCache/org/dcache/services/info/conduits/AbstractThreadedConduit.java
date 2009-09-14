@@ -102,7 +102,8 @@ abstract class AbstractThreadedConduit implements Runnable, Conduit {
 	 * Since we anticipate each conduit to have only one instance, we return the Class simple
 	 * name here.
 	 */
-	public String toString() {
+	@Override
+    public String toString() {
 		return this.getClass().getSimpleName();
 	}
 	

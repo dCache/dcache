@@ -113,7 +113,7 @@ public class StatePath {
 				
 				int len = bytes.length > 10 ? 10 : bytes.length; // limit length
 				for( int i = 0; i < len; i++)
-					stringHash ^= ((int) bytes[i]) << (i*5 + elementCount) % 24;
+					stringHash ^= (bytes[i]) << (i*5 + elementCount) % 24;
 			}
 			
 			code ^= stringHash;
@@ -132,6 +132,7 @@ public class StatePath {
 	 * @param otherPath: the other path to compare
 	 * @return: whether the other path point to the same location.
 	 */
+	@Override
 	public boolean equals( Object otherObject) {
 		if( !( otherObject instanceof StatePath))
 			return false;
@@ -156,7 +157,8 @@ public class StatePath {
 	 * Overload the hashCode to honour the contract:
 	 *    A.hashCode()==B.hashCode() =>  A.equals(B) 
 	 */
-	public int hashCode() {
+	@Override
+    public int hashCode() {
 		if( !_haveHashCode)
 			calcHashCode();
 		

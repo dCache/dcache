@@ -115,6 +115,7 @@ public class StatePathPredicate extends StatePath {
 	 *
 	 * @return the path for the child element, or null if there is no child.
 	 */
+	@Override
 	public StatePathPredicate childPath() {
 		StatePath childPath = super.childPath();	
 		return childPath == null ? null : new StatePathPredicate( childPath);
