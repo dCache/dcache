@@ -11,7 +11,6 @@ import com.sun.grizzly.ProtocolChain;
 import com.sun.grizzly.ProtocolChainInstanceHandler;
 import com.sun.grizzly.ProtocolFilter;
 import com.sun.grizzly.TCPSelectorHandler;
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetAddress;
@@ -27,14 +26,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.dcache.xdr.OncRpcException;
 import org.acplt.oncrpc.apps.jportmap.OncRpcEmbeddedPortmap;
 import org.apache.log4j.Logger;
-import org.dcache.cells.AbstractCell;
-import org.dcache.cells.Option;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FsInode;
-import org.dcache.chimera.JdbcFs;
-import org.dcache.chimera.XMLconfig;
-import org.dcache.chimera.namespace.ChimeraOsmStorageInfoExtractor;
 import org.dcache.chimera.namespace.ChimeraStorageInfoExtractable;
 import org.dcache.chimera.nfs.ExportFile;
 import org.dcache.chimera.nfs.v4.DeviceID;
@@ -52,10 +46,8 @@ import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
 import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
 
-import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.PoolDeliverFileMessage;
@@ -68,10 +60,12 @@ import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
 import diskCacheV111.vehicles.StorageInfo;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 import java.nio.ByteBuffer;
 import org.acplt.oncrpc.OncRpcPortmapClient;
+import org.dcache.cells.CellInfoProvider;
+import org.dcache.cells.CellMessageReceiver;
+import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.chimera.nfs.v3.MountServer;
 import org.dcache.chimera.nfs.v4.xdr.layouttype4;
@@ -84,8 +78,9 @@ import org.dcache.xdr.RpcProtocolFilter;
 import org.dcache.xdr.XdrBuffer;
 import org.dcache.xdr.XdrDecodingStream;
 
-public class NFSv41Door extends AbstractCell
-        implements NFSv41DeviceManager, CellCommandListener {
+public class NFSv41Door extends AbstractCellComponent implements
+        NFSv41DeviceManager, CellCommandListener,
+        CellMessageReceiver, CellInfoProvider {
 
     private static final Logger _log = Logger.getLogger(NFSv41Door.class);
 
@@ -94,7 +89,6 @@ public class NFSv41Door extends AbstractCell
 
     /** All known devices */
     private Map<DeviceID, NFS4IoDevice> _deviceMap = new HashMap<DeviceID, NFS4IoDevice>();
-
 
     /** next device id, 0 reserved for MDS */
     private final AtomicInteger _nextDeviceID = new AtomicInteger(1);
@@ -111,84 +105,41 @@ public class NFSv41Door extends AbstractCell
      * nfsv4 server engine
      */
 
-    /** storage info extractor */
-    private ChimeraStorageInfoExtractable _storageInfoExctractor;
-
-    @Option (
-        name = "poolManager",
-        description = "well known name of the pool manager",
-        defaultValue = "PoolManager"
-    )
-    private CellPath _poolManagerPath;
-
-    @Option(
-       name = "chimeraConfig",
-       description = "path to chimera config file",
-       required = true
-    )
-    private File _chimeraConfigFile;
-
-    @Option(
-        name = "nfs-exports",
-        description = "path to nfs exports file",
-        defaultValue = "/etc/exports"
-    )
-    private File _exports;
-
     /** request/reply mapping */
     private final Map<stateid4, NFS4IoDevice> _requestReplyMap = new HashMap<stateid4, NFS4IoDevice>();
 
     /**
      * Cell communication helper.
      */
-    private final CellStub _poolManagerCellStub;
+    private CellStub _poolManagerStub;
 
     /**
      * Grizzly thread controller
      */
     private Controller _controller;
 
-    public NFSv41Door(String cellName, String args) throws Exception {
-        super(cellName, args);
-        _poolManagerCellStub = new CellStub();
-        _poolManagerCellStub.setCellEndpoint(this);
-        _poolManagerCellStub.setDestinationPath(_poolManagerPath);
-        _poolManagerCellStub.setTimeout(NFS_REPLY_TIMEOUT);
-
-        doInit();
+    public void setPoolManagerStub(CellStub stub)
+    {
+        _poolManagerStub = stub;
     }
 
-    @Override
-    protected void init() throws Exception {
+    private FileSystemProvider _fileFileSystemProvider;
+    public void setFileSystemProvider(FileSystemProvider fs) {
+        _fileFileSystemProvider = fs;
+    }
 
-        super.init();
+    private ExportFile _exportFile;
+    public void setExportFile(ExportFile export) {
+        _exportFile = export;
+    }
 
-        AccessLatency defaultAccessLatency;
-        String accessLatensyOption = getArgs().getOpt("DefaultAccessLatency");
-        if( accessLatensyOption != null && accessLatensyOption.length() > 0) {
-            /*
-             * IllegalArgumentException thrown if option is invalid
-             */
-            defaultAccessLatency = AccessLatency.getAccessLatency(accessLatensyOption);
-        }else{
-            defaultAccessLatency = StorageInfo.DEFAULT_ACCESS_LATENCY;
-        }
+    /** storage info extractor */
+    private ChimeraStorageInfoExtractable _storageInfoExctractor;
+    public void setChimeraStorageInfoExtractable(ChimeraStorageInfoExtractable extractor) {
+        _storageInfoExctractor = extractor;
+    }
 
-        RetentionPolicy defaultRetentionPolicy;
-        String retentionPolicyOption = getArgs().getOpt("DefaultRetentionPolicy");
-        if( retentionPolicyOption != null && retentionPolicyOption.length() > 0) {
-            /*
-             * IllegalArgumentException thrown if option is invalid
-             */
-            defaultRetentionPolicy = RetentionPolicy.getRetentionPolicy(retentionPolicyOption);
-        }else{
-            defaultRetentionPolicy = StorageInfo.DEFAULT_RETENTION_POLICY;
-        }
-        _storageInfoExctractor = new ChimeraOsmStorageInfoExtractor(defaultAccessLatency, defaultRetentionPolicy);
-
-        XMLconfig config = new XMLconfig(_chimeraConfigFile);
-
-        final FileSystemProvider fs = new JdbcFs(config);
+    public void init() throws Exception {
 
         boolean isPortMapRunning = OncRpcEmbeddedPortmap.isPortmapRunning();
         if (!isPortMapRunning) {
@@ -197,7 +148,6 @@ public class NFSv41Door extends AbstractCell
         }
 
         final NFSv41DeviceManager _dm = this;
-        final ExportFile exportFile = new ExportFile(_exports);
 
         final Map<Integer, RpcDispatchable> programs = new HashMap<Integer, RpcDispatchable>();
 
@@ -205,7 +155,7 @@ public class NFSv41Door extends AbstractCell
             @Override
             public void run() {
                 try {
-                    NFSServerV41 nfs4 = new NFSServerV41(_dm, fs, exportFile );
+                    NFSServerV41 nfs4 = new NFSServerV41(_dm, _fileFileSystemProvider, _exportFile );
 
                     new OncRpcEmbeddedPortmap(2000);
 
@@ -215,8 +165,7 @@ public class NFSv41Door extends AbstractCell
                     portmap.setPort(100005, 1, 6, 2049);
                     portmap.setPort(100003, 4, 6, 2049);
 
-                    ExportFile exports = new ExportFile(new File("/etc/exports"));
-                    MountServer ms = new MountServer(exports, fs);
+                    MountServer ms = new MountServer(_exportFile, _fileFileSystemProvider);
 
                     programs.put(100003, nfs4);
                     programs.put(100005, ms);
@@ -263,16 +212,16 @@ public class NFSv41Door extends AbstractCell
 
                 } catch (org.acplt.oncrpc.OncRpcException e) {
                     // TODO: kill the cell
-                    error(e);
+                    _log.error(e);
                 } catch (OncRpcException e) {
                     // TODO: kill the cell
-                    error(e);
+                    _log.error(e);
                 } catch (IOException e) {
                     // TODO: kill the cell
-                    error(e);
+                    _log.error(e);
                 } catch (ChimeraFsException e) {
                     // TODO: kill the cell
-                    error(e);
+                    _log.error(e);
                 }
 
             }
@@ -354,13 +303,6 @@ public class NFSv41Door extends AbstractCell
         _ioMessages.remove(protocolInfo.stateId());
     }
 
-    @Override
-    public void getInfo(PrintWriter pw) {
-        pw.println("    $Id:NFSv41Door.java 140 2007-06-07 13:44:55Z tigran $");
-    }
-
-    // message handling
-
     private int nextDeviceID() {
         return _nextDeviceID.incrementAndGet();
     }
@@ -440,7 +382,7 @@ public class NFSv41Door extends AbstractCell
 
         _log.debug("requesting pool for IO: " + pnfsId );
         try {
-            getPoolMessage = _poolManagerCellStub.sendAndWait(getPoolMessage);
+            getPoolMessage = _poolManagerStub.sendAndWait(getPoolMessage);
         }catch (CacheException e) {
             throw new ChimeraNFSException(nfsstat4.NFS4ERR_LAYOUTTRYLATER, e.getMessage() );
         }
@@ -458,7 +400,7 @@ public class NFSv41Door extends AbstractCell
         }
 
         try {
-            poolIOMessage = _poolManagerCellStub.sendAndWait( new CellPath(getPoolMessage.getPoolName()),  poolIOMessage);
+            poolIOMessage = _poolManagerStub.sendAndWait( new CellPath(getPoolMessage.getPoolName()),  poolIOMessage);
         }catch(CacheException e) {
             throw new ChimeraNFSException(nfsstat4.NFS4ERR_LAYOUTTRYLATER, e.getMessage() );
         }
@@ -530,7 +472,7 @@ public class NFSv41Door extends AbstractCell
                     new PoolMoverKillMessage(poolIoFileMessage.getPoolName(),
                     poolIoFileMessage.getMoverId());
 
-            _poolManagerCellStub.send(message);
+            _poolManagerStub.send(message);
         }
     }
 
@@ -559,33 +501,28 @@ public class NFSv41Door extends AbstractCell
     /*
      * Cell specific
      */
-
     @Override
-    public String getInfo() {
+    public void getInfo(PrintWriter pw) {
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("NFSv4.1 door (MDS): \n");
-        sb.append("  Concurrent Thread number : ").append(_controller.getReadThreadsCount()).append("\n");
-        sb.append("  Thread pool              : ").append(_controller.getThreadPool()).append("\n");
-        sb.append("  Known pools (DS):\n");
+        pw.println("NFSv4.1 door (MDS):");
+        pw.println( String.format("  Concurrent Thread number : %d", _controller.getReadThreadsCount() ));
+        pw.println( String.format("  Thread pool              : %s", _controller.getThreadPool() ));
+        pw.println("  Known pools (DS):\n");
         for(Map.Entry<String, NFS4IoDevice> ioDevice: _poolNameToIpMap.entrySet()) {
-            sb.append("    ").append(ioDevice.getKey()).append(" : ").
-                    append(ioDevice.getValue()).append("\n");
+            pw.println( String.format("    %s : %s", ioDevice.getKey(),ioDevice.getValue() ));
         }
 
-        sb.append("\n  Known movers (layouts):\n");
+        pw.println();
+        pw.println("  Known movers (layouts):");
         for(PoolIoFileMessage io: _ioMessages.values()) {
-            sb.append("    ").append(io.getPnfsId()).append(" : ").append(io.getMoverId()).
-                    append("@").append(io.getPoolName()).append("\n");
+            pw.println( String.format("    %s : %s@%s", io.getPnfsId(), io.getMoverId(), io.getPoolName() ));
         }
 
-        sb.append("\n  Known clients:\n");
+        pw.println();
+        pw.println("  Known clients:");
         for (NFS4Client client : NFSv4StateHandler.getInstace().getClients()) {
-            sb.append("    ").append(client).append("\n");
+            pw.println( String.format("    %s", client ));
         }
-
-        return sb.toString();
-
     }
 
     public static final String hh_ac_kill_mover = " <pool> <moverid> # kill mover on the pool";
