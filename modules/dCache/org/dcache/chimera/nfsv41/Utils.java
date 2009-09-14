@@ -5,7 +5,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import org.dcache.chimera.nfs.v4.xdr.nfsv4_1_file_layout_ds_addr4;
 import org.dcache.xdr.OncRpcException;
 import org.dcache.xdr.Xdr;
@@ -20,7 +19,6 @@ public class Utils {
 
         String[] cb_addr = deviceId.trim().split("[.]");
 
-        System.out.println(Arrays.toString(cb_addr));
         byte[] addr = new byte[4];
         addr[0] = (byte)Integer.parseInt(cb_addr[0]);
         addr[1] = (byte)Integer.parseInt(cb_addr[1]);
