@@ -133,7 +133,8 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
 		if( _log.isDebugEnabled())
 			_log.debug( "incoming CellMessage received from " + answer.getSourceAddress());
 
-		long ttl = _msgMetadataRepo.getMetricTTL( request.getUOID());
+		long ttl = _msgMetadataRepo.getMetricTTL( request.getLastUOID());
+        _msgMetadataRepo.remove( request.getLastUOID());
 
 		/**
 		 * If we receive an exception, make a note of it and don't bother the super class. 
@@ -145,8 +146,6 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
 		}
 		
 		process( payload, ttl);
-
-		_msgMetadataRepo.remove( request.getUOID());
 	}
                
 
