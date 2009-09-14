@@ -13,11 +13,11 @@ import java.util.Set;
 import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.log4j.PatternLayout;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.TestStateExhibitor;
 import org.dcache.services.info.secondaryInfoProviders.StateLocation;
-import org.globus.util.log4j.PatternLayout;
 import org.junit.Before;
 import org.junit.Test;
 
