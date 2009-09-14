@@ -41,7 +41,6 @@ public class InfoProvider extends CellAdapter {
 
 	private static Logger _log = Logger.getLogger(InfoProvider.class);
 
-	private static InfoProvider _instance;
 	private static final String ADMIN_INTERFACE_OK = "Done.";
 	private static final String ADMIN_INTERFACE_NONE = "(none)";
 	private static final String ADMIN_INTERFACE_LIST_PREFIX = "  ";
@@ -106,12 +105,6 @@ public class InfoProvider extends CellAdapter {
                           CellNucleus.PRINT_ERROR_CELL ) ;
 
 		_log.info( "InfoProvider starting...");
-
-		if( _instance == null)
-			_instance = this;
-		else {
-			_log.warn( "Duplicate InfoProvider detected.");
-		}
 
 		_sum = new StateMaintainer( _state);
 		_state.setStateUpdateManager( _sum);
