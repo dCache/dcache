@@ -117,6 +117,7 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>, Mes
 	 * @throws SerializationException if the payload isn't serialisable.
 	 */
 	public void sendMessage( long ttl, CellMessageAnswerable handler, CellMessage envelope) throws SerializationException {
+        putMetricTTL( envelope.getUOID(), ttl);
 
 		try {
 			if( handler == null)
@@ -125,10 +126,9 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>, Mes
 				_endpoint.sendMessage( envelope, handler, STANDARD_TIMEOUT);
 		} catch( NoRouteToCellException e) {
 			_log.info( "No route to cell " + envelope.getDestinationAddress());
+			remove( envelope.getUOID());
 			return;
 		}
-
-		putMetricTTL( envelope.getUOID(), ttl);
 	}
 
 
