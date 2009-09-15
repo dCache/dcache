@@ -15,7 +15,8 @@
         <pathelement location="${classesDir}/cells.jar" />
         <pathelement location="${classesDir}/dcache.jar" />
         <pathelement location="${libDir}/jclarens/clarens-discovery.jar" />
-        <fileset dir="${axis.untared}" includes="**/*.jar" />
+        <fileset dir="${axis.untared}" includes="**/*.jar" excludes="**/log4j-*.jar"/>
+        <fileset dir="${libDir}/log4j" includes="*.jar" />
     </path>
 
     <!--
