@@ -376,7 +376,7 @@ mkdir ${SRM_WEBAPP_DIR}/WEB-INF/lib
 #
 # copy jar files to srm webapp dir
 #
-for i in ${AXIS_WEBAPP_DIR}/WEB-INF/lib/*jar ${SRM_JARS_DIR}/glue/*jar ${SRM_JARS_DIR}/srm.jar ${SRM_JARS_DIR}/jdbc-drivers/*.jar ${SRM_JARS_DIR}/jdom/jdom.jar ${DCACHE_JARS_DIR}/dcache.jar ${DCACHE_JARS_DIR}/dcache-common.jar ${SRM_JARS_DIR}/glite/*.jar ${SRM_JARS_DIR}/gplazma/*.jar ${DCACHE_JARS_DIR}/cells.jar ${DCACHE_JARS_DIR}/jpox/*.jar ${DCACHE_JARS_DIR}/smc/*.jar ${DCACHE_JARS_DIR}/terapaths/*.jar ${DCACHE_JARS_DIR}/toplink/*.jar ${DCACHE_JARS_DIR}/spring/*.jar ${DCACHE_JARS_DIR}/activemq/*.jar ${DCACHE_JARS_DIR}/opensaml/*.jar ${DCACHE_JARS_DIR}/endorsed/xercesImpl*.jar  ${DCACHE_JARS_DIR}/rrd4j/*.jar  ${DCACHE_JARS_DIR}/log4j/*.jar
+for i in ${AXIS_WEBAPP_DIR}/WEB-INF/lib/*jar ${SRM_JARS_DIR}/glue/*jar ${SRM_JARS_DIR}/srm.jar ${SRM_JARS_DIR}/jdbc-drivers/*.jar ${SRM_JARS_DIR}/jdom/jdom.jar ${DCACHE_JARS_DIR}/dcache.jar ${DCACHE_JARS_DIR}/dcache-common.jar ${SRM_JARS_DIR}/glite/*.jar ${SRM_JARS_DIR}/gplazma/*.jar ${DCACHE_JARS_DIR}/cells.jar ${DCACHE_JARS_DIR}/jpox/*.jar ${DCACHE_JARS_DIR}/smc/*.jar ${DCACHE_JARS_DIR}/terapaths/*.jar ${DCACHE_JARS_DIR}/toplink/*.jar ${DCACHE_JARS_DIR}/spring/*.jar ${DCACHE_JARS_DIR}/activemq/*.jar ${DCACHE_JARS_DIR}/opensaml/*.jar ${DCACHE_JARS_DIR}/endorsed/xercesImpl*.jar  ${DCACHE_JARS_DIR}/rrd4j/*.jar  ${DCACHE_JARS_DIR}/log4j/*.jar  ${DCACHE_JARS_DIR}/slf4j/*.jar
 do
    cmd="cp ${i} ${SRM_WEBAPP_DIR}/WEB-INF/lib"
 #   echo $cmd
