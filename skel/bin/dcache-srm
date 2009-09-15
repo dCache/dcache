@@ -17,8 +17,18 @@ hostname=`hostname | awk -F. '{print $1}'`
 
 PID_DIR=${PID_DIR:-/var/run}
 
+JAVA_OPTS="${JAVA_OPTS} -Dorg.globus.jglobus.delegation.cache.lifetime=30000"
+# we need to activate the globus gsi key pair caching for those installations that
+# continue to use  dCacheSetup where -Dorg.globus.jglobus.delegation.cache.lifetime is not
+# specified
+if ! echo "${JAVA_OPTS}" | grep -- "-Dorg\.globus\.jglobus\.delegation\.cache\.lifetime=" 2>&1 >/dev/null ; then
+    JAVA_OPTS="${JAVA_OPTS} \
+                 -Dorg.globus.jglobus.delegation.cache.lifetime=30000"
+fi
+
 export JAVA_HOME
 export JAVA_OPTS
+
 export CATALINA_HOME=${TOMCAT_BASE_PATH}/apache-tomcat-5.5.20
 export config=${ourHomeDir}/config
 export CATALINA_PID=${PID_DIR}/dcache.srm-${hostname}Domain.pid

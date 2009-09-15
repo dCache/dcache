@@ -126,6 +126,14 @@ procStart() {
       java="${ourHomeDir}/jre/bin/java"
   fi
 
+# we need to activate the globus gsi key pair caching for those installations that
+# continue to use  dCacheSetup where -Dorg.globus.jglobus.delegation.cache.lifetime is not 
+# specified
+  if ! echo "${java_options}" | grep -- "-Dorg\.globus\.jglobus\.delegation\.cache\.lifetime=" 2>&1 >/dev/null ; then
+     java_options="${java_options} \
+                 -Dorg.globus.jglobus.delegation.cache.lifetime=30000"
+  fi
+
 # Add a java option for an endorsed directory
   java_options="${java_options} \
                 -cp ${CLASSPATH} \

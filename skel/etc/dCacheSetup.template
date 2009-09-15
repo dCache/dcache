@@ -151,6 +151,7 @@ java_options="-server -Xmx512m -XX:MaxDirectMemorySize=512m \
               -Dorg.dcache.dcap.port=0 \
               -Dorg.dcache.net.tcp.portrange=33115:33145 \
               -Dlog4j.configuration=file:${ourHomeDir}/config/log4j.properties \
+              -Dorg.globus.jglobus.delegation.cache.lifetime=30000 \
              "
 
 #  ---- User
