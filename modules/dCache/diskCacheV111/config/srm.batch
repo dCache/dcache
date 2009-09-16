@@ -191,13 +191,11 @@ set context -c srmJdbcMonitoringLogEnabled false
 set context -c srmJdbcExecutionThreadNum 5
 set context -c srmMaxNumberOfJdbcTasksInQueue 1000
 
-# if space reservation request does not specify retention policy
-# we will assign this retention policy by default
-set context -c SpaceManagerDefaultRetentionPolicy CUSTODIAL
-
 # if space reservation request does not specify access latency
 # we will assign this access latency by default
-set context -c SpaceManagerDefaultAccessLatency NEARLINE
+set context -c DefaultAccessLatency NEARLINE
+set context -c SpaceManagerDefaultAccessLatency ${DefaultAccessLatency}
+set context -c DefaultAccessLatencyForSpaceReservation ${SpaceManagerDefaultAccessLatency}
 
 #if the transfer request come from the door, and there was not prior
 # space reservation made for this file, should we try to reserve
@@ -345,8 +343,7 @@ create diskCacheV111.services.space.Manager SrmSpaceManager \
         -dbPass=${srmDbPassword} \
         -poolManager=PoolManager \
         -pnfsManager=PnfsManager \
-        -defaultRetentionPolicy=${SpaceManagerDefaultRetentionPolicy} \
-        -defaultAccessLatency=${SpaceManagerDefaultAccessLatency} \
+        -defaultAccessLatencyForSpaceReservation=${DefaultAccessLatencyForSpaceReservation} \
         -reserveSpaceForNonSRMTransfers=${SpaceManagerReserveSpaceForNonSRMTransfers} \
         -deleteStoredFileRecord=false \
         -returnFlushedSpaceToReservation=true \

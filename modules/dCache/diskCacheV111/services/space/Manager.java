@@ -177,6 +177,9 @@ public final class Manager
 		if(_args.getOpt("defaultAccessLatency") != null) {
 			defaultLatency = AccessLatency.getAccessLatency(_args.getOpt("defaultAccessLatency"));
 		}
+		if(_args.getOpt("defaultAccessLatencyForSpaceReservation") != null) {
+			defaultLatency = AccessLatency.getAccessLatency(_args.getOpt("defaultAccessLatencyForSpaceReservation"));
+		}
 		if(_args.getOpt("reserveSpaceForNonSRMTransfers") != null) {
 			reserveSpaceForNonSRMTransfers=
 				_args.getOpt("reserveSpaceForNonSRMTransfers").equalsIgnoreCase("true");
@@ -263,6 +266,7 @@ public final class Manager
 		printWriter.println("deleteStoredFileRecord="+deleteStoredFileRecord);
 		printWriter.println("pnfsManager="+pnfsManager);
 		printWriter.println("poolManager="+poolManager);
+                printWriter.println("defaultLatencyForSpaceReservations="+defaultLatency);
 		printWriter.println("reserveSpaceForNonSRMTransfers="+reserveSpaceForNonSRMTransfers);
 		printWriter.println("returnFlushedSpaceToReservation="+returnFlushedSpaceToReservation);
 		printWriter.println("returnRemovedSpaceToReservation="+returnRemovedSpaceToReservation);
@@ -851,7 +855,8 @@ public final class Manager
 		String latencyString = args.getOpt("acclat");
 		String policyString  = args.getOpt("retpol");
 
-		AccessLatency latency = AccessLatency.getAccessLatency(latencyString);
+		AccessLatency latency = latencyString==null?
+			defaultLatency:AccessLatency.getAccessLatency(latencyString);
 		RetentionPolicy policy = RetentionPolicy.getRetentionPolicy(policyString);
 
 		String lgIdString = args.getOpt("lgid");
@@ -3648,16 +3653,14 @@ public final class Manager
 		if(!spaceManagerEnabled) {
 			throw new SpaceException("SpaceManager is disabled in configuration");
 		}
-                if (reserve.getAccessLatency()==null) { 
-                        throw new IllegalArgumentException("reserveSpace : accessLatency=null is not supported");
-                }
                 if (reserve.getRetentionPolicy()==null) {
                         throw new IllegalArgumentException("reserveSpace : retentionPolicy=null is not supported");
                 }
 		long reservationId = reserveSpace(reserve.getVoGroup(),
 						  reserve.getVoRole(),
 						  reserve.getSizeInBytes(),
-						  reserve.getAccessLatency(),
+                                                  (reserve.getAccessLatency()==null?
+                                                   defaultLatency:reserve.getAccessLatency()),
 						  reserve.getRetentionPolicy(),
 						  reserve.getLifetime(),
 						  reserve.getDescription());
