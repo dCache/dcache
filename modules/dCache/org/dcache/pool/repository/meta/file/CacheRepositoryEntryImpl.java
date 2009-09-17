@@ -22,11 +22,11 @@ import org.dcache.pool.repository.v3.RepositoryException;
 import org.dcache.pool.repository.v3.SiFileCorruptedException;
 import org.dcache.pool.repository.v3.entry.CacheRepositoryEntryState;
 
-import com.sun.corba.se.impl.io.OptionalDataException;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
+import java.io.OptionalDataException;
 
 public class CacheRepositoryEntryImpl implements MetaDataRecord
 {
