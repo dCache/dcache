@@ -93,7 +93,12 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
      */
     @Override
     public Date getEarliestMetricExpiryDate() {
-        return _state.getEarliestChildExpiryDate();
+        Date earliestExpiryDate = _state.getEarliestChildExpiryDate();
+
+        if( _log.isDebugEnabled())
+            _log.debug(  "reporting that earliest expiry time is " + ((earliestExpiryDate.getTime() - System.currentTimeMillis())/1000) + "s in the future");
+
+        return earliestExpiryDate;
     }
 
     /**
@@ -113,6 +118,8 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
      */
     @Override
     public void processUpdate( StateUpdate update) {
+        if( _log.isDebugEnabled())
+            _log.debug(  "beginning to process update: \n" + update.debugInfo());
 
         // It's just possible that we might be called with null; ignore these
         // spurious calls.
@@ -140,9 +147,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
                 _log.error( "Error updating state:", e);
             }
 
-            if( _log.isDebugEnabled())
-                _log.debug( " Dump of pending StateTransition follows...\n\n" +
-                            transition.dumpContents());
+            _log.debug( "checking StateWatchers");
 
             StateUpdate resultingUpdate = checkWatchers( transition);
 
@@ -167,6 +172,9 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
      *            the StateTransition to apply.
      */
     private void applyTransition( StateTransition transition) {
+        if( _log.isDebugEnabled())
+            _log.debug(  "now applying following transition to state:\n\n" + transition.dumpContents());
+
         try {
             _stateWriteLock.lock();
 
@@ -217,7 +225,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
             for( StatePathPredicate thisPredicate : thisWatcher.getPredicate()) {
 
                 if( _log.isDebugEnabled())
-                    _log.debug( "checking predicate " + thisPredicate);
+                    _log.debug( "checking watcher " + thisWatcher +" predicate " + thisPredicate);
 
                 try {
                     hasBeenTriggered = _state.predicateHasBeenTriggered(
@@ -352,10 +360,6 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
             _stateReadLock.lock();
 
             _state.buildRemovalTransition( null, transition, false);
-
-            if( _log.isDebugEnabled())
-                _log.debug( " Dump of pending StateTransition follows...\n\n" +
-                            transition.dumpContents());
 
             StateUpdate resultingUpdate = checkWatchers( transition);
 
