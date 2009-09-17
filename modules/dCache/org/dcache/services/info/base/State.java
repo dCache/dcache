@@ -227,14 +227,9 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
                 if( _log.isDebugEnabled())
                     _log.debug( "checking watcher " + thisWatcher +" predicate " + thisPredicate);
 
-                try {
-                    hasBeenTriggered = _state.predicateHasBeenTriggered(
-                                                                         null,
-                                                                         thisPredicate,
-                                                                         transition);
-                } catch (MetricStatePathException e) {
-                    _log.warn( "problem querying trigger:", e);
-                }
+                hasBeenTriggered = _state.predicateHasBeenTriggered( null,
+                                                                     thisPredicate,
+                                                                     transition);
 
                 if( hasBeenTriggered)
                     break; // we only need one predicate to match, so quit

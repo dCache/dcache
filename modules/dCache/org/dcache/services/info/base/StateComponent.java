@@ -53,7 +53,7 @@ interface StateComponent {
 	 * @return true if the StatePathPredicate has been triggered, false otherwise
 	 * @throws MetricStatePathException
 	 */
-	boolean predicateHasBeenTriggered( StatePath ourPath, StatePathPredicate predicate, StateTransition transition) throws MetricStatePathException;
+	boolean predicateHasBeenTriggered( StatePath ourPath, StatePathPredicate predicate, StateTransition transition);
 
 	/**
 	 * Apply a transformation, updating the live set of data.

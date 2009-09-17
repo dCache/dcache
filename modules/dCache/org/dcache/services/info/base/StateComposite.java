@@ -688,7 +688,7 @@ public class StateComposite implements StateComponent {
 	 * @param transition the StateTransition to consider.
 	 * @return true if the transition has triggered this predicate, false otherwise
 	 */
-	public boolean predicateHasBeenTriggered( StatePath ourPath, StatePathPredicate predicate, StateTransition transition) throws MetricStatePathException {
+	public boolean predicateHasBeenTriggered( StatePath ourPath, StatePathPredicate predicate, StateTransition transition) {
 
 		if( _log.isDebugEnabled())
 			_log.debug("entering ("+ (ourPath != null ? ourPath.toString() : "(null)") +", " + (predicate != null ? predicate.toString() : "(null)") + ")");

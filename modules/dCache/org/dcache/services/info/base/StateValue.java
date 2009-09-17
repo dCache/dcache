@@ -139,8 +139,13 @@ abstract public class StateValue implements StateComponent {
 	}
 
 	@Override
-	public boolean predicateHasBeenTriggered( StatePath ourPath, StatePathPredicate predicate, StateTransition transition) throws MetricStatePathException {
-               throw new MetricStatePathException( ourPath.toString());
+	public boolean predicateHasBeenTriggered( StatePath ourPath, StatePathPredicate predicate, StateTransition transition) {
+	    /*
+	     * If we've iterated down to a metric then we <i>know</i>
+	     * that nothing's changed:  any change that might satisfy this predicate would happen
+	     * within the StateComposite that this StateValue is (or is to be) located within.
+	     */
+	    return false;
 	}
 
 	@Override
