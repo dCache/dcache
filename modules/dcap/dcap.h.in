@@ -140,6 +140,7 @@ extern int     dc_readv2(int, iovec2 *, int);
 #define onErrorDefault -1
 
 extern void dc_setOpenTimeout(time_t);
+extern void dc_setCloseTimeout(unsigned int);
 extern void dc_setOnError(int);
 
 /* read ahead buffering */
