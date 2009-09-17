@@ -32,7 +32,7 @@ public class LinkInfoMsgHandler extends CellMessageHandlerSkel {
 		
 		StateUpdate update = null;
 
-		ArrayList linkInfoArray = (ArrayList) msgPayload;
+		ArrayList<?> linkInfoArray = (ArrayList<?>) msgPayload;
 		
 		StatePath linksPath = new StatePath( "links");
 		

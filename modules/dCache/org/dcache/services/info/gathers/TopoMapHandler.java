@@ -38,7 +38,7 @@ public class TopoMapHandler extends CellMessageHandlerSkel {
 			return;
 		}
 
-		Class arrayClass = msgPayload.getClass().getComponentType();
+		Class<?> arrayClass = msgPayload.getClass().getComponentType();
 		
 		if( arrayClass == null) {
 			_log.error( "unable to figure out what array type is.");

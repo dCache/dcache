@@ -78,7 +78,8 @@ public class RoutingMgrMsgHandler extends CellMessageHandlerSkel {
 	}
 
 
-	@Override
+	@SuppressWarnings("unchecked")
+    @Override
 	public void process(Object msgPayload, long metricLifetime) {
 		
 		_log.debug( "received msg.");
