@@ -19,6 +19,7 @@
 
 extern int dc_real_fsync( struct vsp_node *);
 
+static unsigned int closeTimeOut = 0;
 
 int
 dc_close(int fd)
@@ -80,7 +81,7 @@ dc_close(int fd)
 		closemsg[1] = htonl(IOCMD_CLOSE); /* actual command */
 
 		dc_debug(DC_IO, "Sending CLOSE for fd:%d ID:%d.", node->dataFd, node->queueID);
-		dcap_set_alarm(DCAP_IO_TIMEOUT/4);
+		dcap_set_alarm(closeTimeOut > 0 ? closeTimeOut : DCAP_IO_TIMEOUT/4);
 		tmp = sendDataMessage(node, (char *) closemsg, msglen*sizeof(int32_t), ASCII_OK, NULL);
 		/* FIXME: error detection missing */
 		if( tmp < 0 ) {
@@ -191,3 +192,9 @@ void dc_closeAll()
 		free(list.fds);
 	}
 }
+
+void dc_setCloseTimeout(unsigned int t)
+{
+	closeTimeOut = t;
+}
+

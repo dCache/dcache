@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
 	extraOption[0] = '\0';
 	allocSpaceOption[0] = '\0';
 	
-	while( (c = getopt(argc, argv, "Ad:o:h:iX:Pt:l:aB:b:up:T:r:s:w:c")) != EOF) {
+	while( (c = getopt(argc, argv, "Ad:o:h:iX:Pt:l:aB:b:up:T:r:s:w:cC:")) != EOF) {
 	
 		switch(c) {
 			case 'd':				
@@ -164,6 +164,9 @@ int main(int argc, char *argv[])
 			case 'A':
 				dc_setClientActive();
 				break;				
+			case 'C':				
+				dc_setCloseTimeout(atoi(optarg));
+				break;
 			case '?':
 				usage();
 				
@@ -378,7 +381,7 @@ void usage()
 	fprintf(stderr,"    [-P [-t <time in seconds>] [-l <stage location>] ]\n");
 	fprintf(stderr,"    [-a] [-b <read_ahead bufferSize>] [-B <bufferSize>]\n");
 	fprintf(stderr,"    [-X <extraOption>] [-u] [-p <first port>[:last port]]\n");
-	fprintf(stderr,"    [-r <buffers size>] [-s <buffer size>] [-c] <src> <dest>\n");
+	fprintf(stderr,"    [-r <buffers size>] [-s <buffer size>] [-c] [-C <seconds>] <src> <dest>\n");
 	
 	/* some help */
 
@@ -402,6 +405,7 @@ void usage()
 	fprintf(stderr, "\t-w <tunnel type>              : specify tunnel type.\n");
 	fprintf(stderr, "\t-r <buffer size>              : specify TCP receive buffer size.\n");
 	fprintf(stderr, "\t-s <buffer size>              : specify TCP send buffer size.\n");
-	fprintf(stderr, "\t-c                            : disable chacksum calculation.\n");
+	fprintf(stderr, "\t-c                            : disable checksum calculation.\n");
+	fprintf(stderr, "\t-C <seconds>                  : specify timeout for the 'close' operation.\n");
 	exit(1);
 }
