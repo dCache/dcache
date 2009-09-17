@@ -60,6 +60,7 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>, Mes
 	 * @param handler a new handler to add to the list.
 	 */
 	public void addMessageHandler( MessageHandler handler) {
+	    _log.debug( "Adding MessageHandler " + handler.getClass().getCanonicalName());
 		_messageHandler.add(handler);
 	}
 
@@ -201,8 +202,11 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>, Mes
     public long getMetricTTL( UOID messageId) {
         flushOldMetadata();
 
+        if( _log.isDebugEnabled())
+            _log.debug(  "Querying for metric ttl stored against message-ID " + messageId);
+
         if( !_msgMetadata.containsKey( messageId))
-            throw new IllegalArgumentException("No metadata recoreded for message " + messageId);
+            throw new IllegalArgumentException("No metadata recorded for message " + messageId);
 
         MessageMetadata metadata = _msgMetadata.get( messageId);
 
@@ -222,6 +226,9 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>, Mes
     public void putMetricTTL( UOID messageId, long ttl) {
         if( messageId == null)
             throw new NullPointerException( "Attempting to record ttl against null messageId");
+
+        if( _log.isDebugEnabled())
+            _log.debug(  "Adding metric ttl " + ttl + " against message-ID " + messageId);
 
         _msgMetadata.put( messageId, new MessageMetadata( ttl));
     }
