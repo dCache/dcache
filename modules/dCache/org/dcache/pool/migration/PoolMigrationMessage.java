@@ -13,15 +13,13 @@ public class PoolMigrationMessage extends Message
 
     private final String _pool;
     private final PnfsId _pnfsId;
-    private final long _taskId;
     private final UUID _uuid;
 
-    public PoolMigrationMessage(UUID uuid, String pool, PnfsId pnfsId, long taskId)
+    public PoolMigrationMessage(UUID uuid, String pool, PnfsId pnfsId)
     {
         _uuid = uuid;
         _pool = pool;
         _pnfsId = pnfsId;
-        _taskId = taskId;
     }
 
     public UUID getUUID()
@@ -37,10 +35,5 @@ public class PoolMigrationMessage extends Message
     public PnfsId getPnfsId()
     {
         return _pnfsId;
-    }
-
-    public long getTaskId()
-    {
-        return _taskId;
     }
 }

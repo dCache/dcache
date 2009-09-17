@@ -212,7 +212,7 @@ public class Task
     synchronized public void
         messageArrived(PoolMigrationCopyFinishedMessage message)
     {
-        if (message.getTaskId() == _id || _uuid.equals(message.getUUID())) {
+        if (_uuid.equals(message.getUUID())) {
             _fsm.messageArrived(message);
         }
     }
@@ -294,7 +294,6 @@ public class Task
                    new PoolMigrationCopyReplicaMessage(_uuid,
                                                        _source,
                                                        pnfsId,
-                                                       _id,
                                                        storageInfo,
                                                        getTargetState(),
                                                        getTargetStickyRecords(),
@@ -309,8 +308,7 @@ public class Task
         _pool.send(_target,
                    new PoolMigrationCancelMessage(_uuid,
                                                   _source,
-                                                  getPnfsId(),
-                                                  _id),
+                                                  getPnfsId()),
                    PoolMigrationCancelMessage.class,
                    new Callback("cancel_"));
     }
@@ -408,8 +406,7 @@ public class Task
         _pool.send(_target,
                    new PoolMigrationPingMessage(_uuid,
                                                 _source,
-                                                getPnfsId(),
-                                                _id),
+                                                getPnfsId()),
                    PoolMigrationPingMessage.class, new Callback("ping_"));
     }
 

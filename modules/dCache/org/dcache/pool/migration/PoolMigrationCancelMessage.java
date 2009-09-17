@@ -12,8 +12,8 @@ public class PoolMigrationCancelMessage extends PoolMigrationMessage
 {
     static final long serialVersionUID = -7995913634698011318L;
 
-    public PoolMigrationCancelMessage(UUID uuid, String pool, PnfsId pnfsId, long taskId)
+    public PoolMigrationCancelMessage(UUID uuid, String pool, PnfsId pnfsId)
     {
-        super(uuid, pool, pnfsId, taskId);
+        super(uuid, pool, pnfsId);
     }
 }

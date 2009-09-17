@@ -12,9 +12,8 @@ public class PoolMigrationPingMessage extends PoolMigrationMessage
 {
     static final long serialVersionUID = -5751734202065289034L;
 
-    public PoolMigrationPingMessage(UUID uuid, String pool,
-                                    PnfsId pnfsId, long taskId)
+    public PoolMigrationPingMessage(UUID uuid, String pool, PnfsId pnfsId)
     {
-        super(uuid, pool, pnfsId, taskId);
+        super(uuid, pool, pnfsId);
     }
 }

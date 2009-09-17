@@ -199,10 +199,6 @@ public class MigrationModuleServer
         }
 
         UUID uuid = message.getUUID();
-        if (uuid == null) {
-            uuid = findRequest(message.getPool(), message.getTaskId());
-        }
-
         if (_requests.containsKey(uuid)) {
             message.setSucceeded();
         } else {
@@ -220,10 +216,6 @@ public class MigrationModuleServer
         }
 
         UUID uuid = message.getUUID();
-        if (uuid == null) {
-            uuid = findRequest(message.getPool(), message.getTaskId());
-        }
-
         Request request = _requests.get(uuid);
         if (request == null || !request.cancel()) {
             throw new CacheException(CacheException.INVALID_ARGS,
@@ -232,21 +224,6 @@ public class MigrationModuleServer
 
         message.setSucceeded();
         return message;
-    }
-
-    /**
-     * For compatibility with old pools that do not provide a
-     * UUID. Will eventually be removed.
-     */
-    private UUID findRequest(String pool, long taskId)
-    {
-        for (Request request: _requests.values()) {
-            if (request.getPool().equals(pool) &&
-                request.getTaskId() == taskId) {
-                return request.getUUID();
-            }
-        }
-        return null;
     }
 
     private class Request implements CacheFileAvailable, Runnable
@@ -258,7 +235,6 @@ public class MigrationModuleServer
         private final List<StickyRecord> _stickyRecords;
         private final EntryState _targetState;
         private final String _pool;
-        private final long _taskId;
         private final boolean _computeChecksumOnUpdate;
         private Integer _companion;
         private Future _updateTask;
@@ -271,7 +247,6 @@ public class MigrationModuleServer
             _stickyRecords = message.getStickyRecords();
             _targetState = message.getState();
             _pool = message.getPool();
-            _taskId = message.getTaskId();
             _computeChecksumOnUpdate = message.getComputeChecksumOnUpdate();
 
             if (_targetState != PRECIOUS && _targetState != CACHED) {
@@ -293,11 +268,6 @@ public class MigrationModuleServer
         public synchronized String getPool()
         {
             return _pool;
-        }
-
-        public synchronized long getTaskId()
-        {
-            return _taskId;
         }
 
         public synchronized void start()
@@ -329,8 +299,7 @@ public class MigrationModuleServer
         protected synchronized void finished(Throwable e)
         {
             PoolMigrationCopyFinishedMessage message =
-                new PoolMigrationCopyFinishedMessage(_uuid, _pool,
-                                                     _pnfsId, _taskId);
+                new PoolMigrationCopyFinishedMessage(_uuid, _pool, _pnfsId);
             if (e != null) {
                 if (e instanceof CacheException) {
                     CacheException ce = (CacheException) e;

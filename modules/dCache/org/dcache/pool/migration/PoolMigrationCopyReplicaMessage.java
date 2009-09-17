@@ -23,13 +23,13 @@ public class PoolMigrationCopyReplicaMessage extends PoolMigrationMessage
     private final boolean _computeChecksumOnUpdate;
 
     public PoolMigrationCopyReplicaMessage(UUID uuid, String pool,
-                                           PnfsId pnfsId, long taskId,
+                                           PnfsId pnfsId, 
                                            StorageInfo storageInfo,
                                            EntryState state,
                                            List<StickyRecord> stickyRecords,
                                            boolean computeChecksumOnUpdate)
     {
-        super(uuid, pool, pnfsId, taskId);
+        super(uuid, pool, pnfsId);
         _storageInfo = storageInfo;
         _state = state;
         _stickyRecords = stickyRecords;
