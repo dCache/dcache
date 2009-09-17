@@ -24,36 +24,25 @@ public class StateMaintainerTests extends InfoBaseTest {
      * always reports that no metrics should be expunged.
      */
     private static class SlowCaretaker implements StateCaretaker {
-        long _delay;
-        private CountDownLatch _updatesLatch;
+        final long _delay;
+        long _count = 0;
 
         /**
          * Create a new SlowCaretaker that delays all processUpdate() calls
          * by some fixed delay
          * 
-         * @param delay
+         * @param delay the delay in milliseconds
          */
         public SlowCaretaker( long delay) {
-            this( delay, 1);
-        }
-
-        /**
-         * Create a new SlowCaretaker that delays all processUpdate() calls
-         * by some fixed delay
-         * 
-         * @param delay
-         */
-        public SlowCaretaker( long delay, int count) {
             _delay = delay;
-            _updatesLatch = new CountDownLatch( count);
         }
 
         @Override
         public void processUpdate( StateUpdate update) {
-            _updatesLatch.countDown();
-
-            if( _updatesLatch.getCount() > 0)
-                return;
+            synchronized( this) {
+                _count++;
+                notifyAll();
+            }
 
             try {
                 Thread.sleep( _delay);
@@ -62,8 +51,9 @@ public class StateMaintainerTests extends InfoBaseTest {
             }
         }
 
-        public void blockOnUpdate() throws InterruptedException {
-            _updatesLatch.await();
+        public synchronized void blockOnCount( int desiredCount) throws InterruptedException {
+            while( _count < desiredCount)
+                wait();
         }
 
         @Override
@@ -265,19 +255,23 @@ public class StateMaintainerTests extends InfoBaseTest {
 
     @Test(timeout = 1000)
     public void testCountPendingUpdates() throws InterruptedException {
-
-        _maintainer.setStateCaretaker( new SlowCaretaker( 1));
+        // Create a caretaker that will take 10s to process each request.
+        SlowCaretaker slowCaretaker = new SlowCaretaker( 1000);
+        _maintainer.setStateCaretaker( slowCaretaker);
 
         assertEquals( "initial state", 0, _maintainer.countPendingUpdates());
 
+        // Start an initial update.  This will take 10s to complete.
         _maintainer.enqueueUpdate( new StateUpdate());
 
-        assertEquals( "count after one update added", 1,
+        // Active updates are still counted; so we have 10s to process this line
+        assertEquals( "count after first update is being processed", 1,
                       _maintainer.countPendingUpdates());
 
         _maintainer.enqueueUpdate( new StateUpdate());
 
-        assertEquals( "count after two updates added", 2,
+        // Again we have 10s to get to this point; vanishingly small risk of false-positive result.
+        assertEquals( "count with an update being processed and second update queued", 2,
                       _maintainer.countPendingUpdates());
     }
 
