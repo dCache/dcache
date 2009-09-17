@@ -254,18 +254,12 @@ public class Task
     /** FSM Action */
     synchronized void updateExistingReplica()
     {
-        long ttl = System.currentTimeMillis() + (_pool.getTimeout() / 2);
-        Message message =
-            new PoolMigrationUpdateReplicaMessage(getPnfsId(),
-                                                  getTargetState(),
-                                                  getTargetStickyRecords(),
-                                                  ttl);
-        _target = new CellPath(_locations.remove(0));
-        _pool.send(_target, message,
-                   PoolMigrationUpdateReplicaMessage.class,
-                   new Callback("update_"));
+        assert !_locations.isEmpty();
 
-        /* Small optimisation to avoid having too many lists allocated. */
+        initiateCopy(new CellPath(_locations.remove(0)));
+
+        /* Small optimisation to avoid having too many lists allocated.
+         */
         if (_locations.isEmpty()) {
             _locations = Collections.emptyList();
         }
@@ -275,21 +269,7 @@ public class Task
     synchronized void initiateCopy()
     {
         try {
-            PnfsId pnfsId = _entry.getPnfsId();
-            StorageInfo storageInfo = _entry.getStorageInfo();
-
-            _target = _job.selectPool();
-            _pool.send(_target,
-                       new PoolMigrationCopyReplicaMessage(_uuid,
-                                                           _source,
-                                                           pnfsId,
-                                                           _id,
-                                                           storageInfo,
-                                                           getTargetState(),
-                                                           getTargetStickyRecords(),
-                                                           false),
-                       PoolMigrationCopyReplicaMessage.class,
-                       new Callback("copy_"));
+            initiateCopy(_job.selectPool());
         } catch (NoSuchElementException e) {
             _target = null;
             _executor.execute(new LoggingTask(new Runnable() {
@@ -300,6 +280,27 @@ public class Task
                     }
                 }));
         }
+    }
+
+    /**
+     * Ask <code>target</code> to copy the file.
+     */
+    private synchronized void initiateCopy(CellPath target)
+    {
+        PnfsId pnfsId = _entry.getPnfsId();
+        StorageInfo storageInfo = _entry.getStorageInfo();
+        _target = target;
+        _pool.send(_target,
+                   new PoolMigrationCopyReplicaMessage(_uuid,
+                                                       _source,
+                                                       pnfsId,
+                                                       _id,
+                                                       storageInfo,
+                                                       getTargetState(),
+                                                       getTargetStickyRecords(),
+                                                       false),
+                   PoolMigrationCopyReplicaMessage.class,
+                   new Callback("copy_"));
     }
 
     /** FSM Action */

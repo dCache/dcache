@@ -60,98 +60,78 @@ Entry
 // trying until we succeed or we tried them all.
 UpdatingExistingFile
 {
-        update_timeout
+        copy_timeout
                 [ ctxt.hasMoreLocations() ]
                 nil
                 {
                         updateExistingReplica();
                 }
-        update_timeout
+        copy_timeout
                 [ ctxt.isEager() ]
                 InitiatingCopy
                 {
                 }
-        update_timeout
+        copy_timeout
                 Failed
                 {
                         fail("Remote pool failed (no response)");
                 }
-        update_noroute
+        copy_noroute
                 [ ctxt.hasMoreLocations() ]
                 nil
                 {
                         updateExistingReplica();
                 }
-        update_noroute
+        copy_noroute
                 [ ctxt.isEager() ]
                 InitiatingCopy
                 {
                 }
-        update_noroute
+        copy_noroute
                 Failed
                 {
                         fail("Remote pool failed (no route to cell)");
                 }
-        update_failure(rc: int, cause: Object)
+        copy_failure(rc: int, cause: Object)
                 [ rc == LOCKED ]
                 Failed
                 {
                         fail("Replica is locked on target pool");
                 }
-        update_failure(rc: int, cause: Object)
+        copy_failure(rc: int, cause: Object)
                 [ ctxt.hasMoreLocations() ]
                 nil
                 {
                         updateExistingReplica();
                 }
-        update_failure(rc: int, cause: Object)
+        copy_failure(rc: int, cause: Object)
                 InitiatingCopy
                 {
                 }
-        update_success
-                [ ctxt.getMustMovePins() ]
+        copy_success
+                Copying
+                {
+                }
+        cancel
+                Cancelling
+                {
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ message.getReturnCode() != 0 ]
+                Failed
+                {
+                        fail(String.format("Transfer to %s failed (%s)",
+                                           ctxt.getTarget(),
+                                           message.getErrorObject()));
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ message.getReturnCode() == 0 && ctxt.getMustMovePins() ]
                 MovingPin
                 {
                 }
-        update_success
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ message.getReturnCode() == 0 ]
                 Done
-                {
-                }
-        cancel
-                CancellingUpdate
-                {
-                }
-}
-
-// Update got cancelled. We simply wait for the previous update
-// operation to finish and then go to either Cancelled, Done or
-// Failed.
-CancellingUpdate
-{
-        update_timeout
-                Cancelled
-                {
-                }
-        update_noroute
-                Cancelled
-                {
-                }
-        update_failure(rc: int, cause: Object)
-                Cancelled
-                {
-                }
-        update_success
-                [ ctxt.getMustMovePins() ]
-                Failed
-                {
-                        fail("Failed to cancel task");
-                }
-        update_success
-                Done
-                {
-                }
-        cancel
-                nil
                 {
                 }
 }
@@ -458,7 +438,7 @@ Exit
         timer
                 Failed
                 {
-                        fail(String.format("Pool %s failed (no response)",
+                        fail(String.format("Failed to cancel task (no response from %s)",
                                            ctxt.getTarget()));
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)

@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.LockedCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheFileAvailable;
 import diskCacheV111.util.Checksum;
@@ -108,13 +109,7 @@ public class MigrationModuleServer
          * migration task.
          */
         if (_migration.isActive(pnfsId)) {
-            /* We do not use LockedCacheException to maintain
-             * compatibility with pools that do not have that
-             * exception class yet. We can replace this with
-             * LockedCacheException in following major release.
-             */
-            throw new CacheException(CacheException.LOCKED,
-                                     "Target file is busy");
+            throw new LockedCacheException("Target file is busy");
         }
 
         EntryState targetState = message.getState();
@@ -164,7 +159,7 @@ public class MigrationModuleServer
 
     public Message
         messageArrived(CellMessage envelope, PoolMigrationCopyReplicaMessage message)
-        throws UnknownHostException
+        throws LockedCacheException,UnknownHostException
     {
         if (message.isReply()) {
             return null;
@@ -173,6 +168,19 @@ public class MigrationModuleServer
         if (envelope.getLocalAge() >= envelope.getTtl()) {
             _log.warn("PoolMigrationCopyReplica message discarded: TTL exceeded");
             return null;
+        }
+
+        /* This check prevents updates that are indirectly triggered
+         * by a local migration task: In particular the case in which
+         * two pools each try to move the same files to each other
+         * would otherwise have a race condition that would cause
+         * files to be lost. This check prevents that any local
+         * migration task is active on this file at this time and
+         * hence the update request cannot be a result of a local
+         * migration task.
+         */
+        if (_migration.isActive(message.getPnfsId())) {
+            throw new LockedCacheException("Target file is busy");
         }
 
         Request request =
@@ -346,12 +354,17 @@ public class MigrationModuleServer
             }
         }
 
+        @Override
         public synchronized void cacheFileAvailable(String file, Throwable e)
         {
             _requests.remove(_uuid);
             finished(e);
         }
 
+        /**
+         * Executed to update an exiting replica
+         */
+        @Override
         public void run()
         {
             try {
