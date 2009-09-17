@@ -24,6 +24,7 @@ public class PosixPermissionHandler implements PermissionHandler
     private Set<FileAttribute> _requiredAttributes =
         Collections.unmodifiableSet(EnumSet.of(OWNER, OWNER_GROUP, MODE));
 
+    @Override
     public Set<FileAttribute> getRequiredAttributes()
     {
         return _requiredAttributes;
@@ -34,6 +35,7 @@ public class PosixPermissionHandler implements PermissionHandler
         return (mode & flag) == flag;
     }
 
+    @Override
     public AccessType canReadFile(Subject subject, FileAttributes attr)
     {
         int mode = attr.getMode();
@@ -48,6 +50,7 @@ public class PosixPermissionHandler implements PermissionHandler
         return AccessType.valueOf(isSet(mode, S_IROTH));
     }
 
+    @Override
     public AccessType canWriteFile(Subject subject, FileAttributes attr)
     {
         int mode = attr.getMode();
@@ -62,6 +65,7 @@ public class PosixPermissionHandler implements PermissionHandler
         return AccessType.valueOf(isSet(mode, S_IWOTH));
     }
 
+    @Override
     public AccessType canCreateSubDir(Subject subject, FileAttributes attr)
     {
         int mode = attr.getMode();
@@ -76,6 +80,7 @@ public class PosixPermissionHandler implements PermissionHandler
         return AccessType.valueOf(isSet(mode, S_IWOTH | S_IXOTH));
     }
 
+    @Override
     public AccessType canCreateFile(Subject subject, FileAttributes attr)
     {
         int mode = attr.getMode();
@@ -90,6 +95,7 @@ public class PosixPermissionHandler implements PermissionHandler
         return AccessType.valueOf(isSet(mode, S_IWOTH | S_IXOTH));
     }
 
+    @Override
     public AccessType canDeleteFile(Subject subject,
                                     FileAttributes parentAttr,
                                     FileAttributes childAttr)
@@ -107,6 +113,7 @@ public class PosixPermissionHandler implements PermissionHandler
         return AccessType.valueOf(isSet(mode, S_IWOTH | S_IXOTH));
     }
 
+    @Override
     public AccessType canDeleteDir(Subject subject,
                                    FileAttributes parentAttr,
                                    FileAttributes childAttr)
@@ -124,6 +131,7 @@ public class PosixPermissionHandler implements PermissionHandler
         return AccessType.valueOf(isSet(mode, S_IWOTH | S_IXOTH));
     }
 
+    @Override
     public AccessType canListDir(Subject subject, FileAttributes attr)
     {
         int mode = attr.getMode();
@@ -139,6 +147,7 @@ public class PosixPermissionHandler implements PermissionHandler
         return AccessType.valueOf(isSet(mode, S_IROTH | S_IXOTH));
     }
 
+    @Override
     public AccessType canLookup(Subject subject, FileAttributes attr)
     {
         int mode = attr.getMode();
@@ -154,9 +163,11 @@ public class PosixPermissionHandler implements PermissionHandler
         return AccessType.valueOf(isSet(mode, S_IXOTH));
     }
 
+    @Override
     public AccessType canRename(Subject subject,
                                 FileAttributes parentAttr,
-                                FileAttributes newParentAttr)
+                                FileAttributes newParentAttr,
+                                boolean isDirectory)
     {
         int parentMode = parentAttr.getMode();
         int newParentMode = newParentAttr.getMode();
@@ -182,6 +193,7 @@ public class PosixPermissionHandler implements PermissionHandler
         return AccessType.valueOf(isSet(newParentMode, S_IWOTH | S_IXOTH));
     }
 
+    @Override
     public AccessType canSetAttributes(Subject subject,
                                        FileAttributes parentAttr,
                                        FileAttributes attr,
@@ -191,7 +203,7 @@ public class PosixPermissionHandler implements PermissionHandler
          */
         if (attributes.contains(OWNER) ||
             attributes.contains(OWNER_GROUP) ||
-            attributes.contains(MODE) || 
+            attributes.contains(MODE) ||
             attributes.contains(PERMISSION)) {
 
             if (!Subjects.hasUid(subject, attr.getOwner())) {
@@ -213,6 +225,7 @@ public class PosixPermissionHandler implements PermissionHandler
         return AccessType.valueOf(isSet(mode, S_IWOTH));
     }
 
+    @Override
     public AccessType canGetAttributes(Subject subject,
                                        FileAttributes parentAttr,
                                        FileAttributes attr,

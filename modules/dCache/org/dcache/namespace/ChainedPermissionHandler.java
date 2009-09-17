@@ -38,6 +38,7 @@ public class ChainedPermissionHandler implements PermissionHandler
         _chain.addAll(Arrays.asList(chain));
     }
 
+    @Override
     public Set<FileAttribute> getRequiredAttributes()
     {
         Set<FileAttribute> attributes = EnumSet.noneOf(FileAttribute.class);
@@ -47,6 +48,7 @@ public class ChainedPermissionHandler implements PermissionHandler
         return attributes;
     }
 
+    @Override
     public AccessType canReadFile(Subject subject, FileAttributes attr)
     {
         for (PermissionHandler handler: _chain) {
@@ -57,6 +59,7 @@ public class ChainedPermissionHandler implements PermissionHandler
         return AccessType.ACCESS_UNDEFINED;
     }
 
+    @Override
     public AccessType canWriteFile(Subject subject, FileAttributes attr)
     {
         for (PermissionHandler handler: _chain) {
@@ -67,6 +70,7 @@ public class ChainedPermissionHandler implements PermissionHandler
         return AccessType.ACCESS_UNDEFINED;
     }
 
+    @Override
     public AccessType canCreateSubDir(Subject subject, FileAttributes attr)
     {
         for (PermissionHandler handler: _chain) {
@@ -77,6 +81,7 @@ public class ChainedPermissionHandler implements PermissionHandler
         return AccessType.ACCESS_UNDEFINED;
     }
 
+    @Override
     public AccessType canCreateFile(Subject subject, FileAttributes attr)
     {
         for (PermissionHandler handler: _chain) {
@@ -87,6 +92,7 @@ public class ChainedPermissionHandler implements PermissionHandler
         return AccessType.ACCESS_UNDEFINED;
     }
 
+    @Override
     public AccessType canDeleteFile(Subject subject,
                                     FileAttributes parentAttr,
                                     FileAttributes childAttr)
@@ -100,6 +106,7 @@ public class ChainedPermissionHandler implements PermissionHandler
         return AccessType.ACCESS_UNDEFINED;
     }
 
+    @Override
     public AccessType canDeleteDir(Subject subject,
                                    FileAttributes parentAttr,
                                    FileAttributes childAttr)
@@ -113,19 +120,22 @@ public class ChainedPermissionHandler implements PermissionHandler
         return AccessType.ACCESS_UNDEFINED;
     }
 
+    @Override
     public AccessType canRename(Subject subject,
                                 FileAttributes existingParentAttr,
-                                FileAttributes newParentAttr)
+                                FileAttributes newParentAttr,
+                                boolean isDirectory)
     {
         for (PermissionHandler handler: _chain) {
             AccessType res = handler.canRename(subject, existingParentAttr,
-                                               newParentAttr);
+                                               newParentAttr, isDirectory);
             if (res != null && res != AccessType.ACCESS_UNDEFINED)
                 return res;
         }
         return AccessType.ACCESS_UNDEFINED;
     }
 
+    @Override
     public AccessType canListDir(Subject subject, FileAttributes attr)
     {
         for (PermissionHandler handler: _chain) {
@@ -136,6 +146,7 @@ public class ChainedPermissionHandler implements PermissionHandler
         return AccessType.ACCESS_UNDEFINED;
     }
 
+    @Override
     public AccessType canLookup(Subject subject, FileAttributes attr)
     {
         for (PermissionHandler handler: _chain) {
@@ -192,6 +203,7 @@ public class ChainedPermissionHandler implements PermissionHandler
         return ACCESS_UNDEFINED;
     }
 
+    @Override
     public AccessType canSetAttributes(Subject subject,
                                        FileAttributes parentAttrs,
                                        FileAttributes attrs,
@@ -214,6 +226,7 @@ public class ChainedPermissionHandler implements PermissionHandler
         return allAllowed ? ACCESS_ALLOWED : ACCESS_UNDEFINED;
     }
 
+    @Override
     public AccessType canGetAttributes(Subject subject,
                                        FileAttributes parentAttrs,
                                        FileAttributes attrs,

@@ -114,12 +114,15 @@ public interface PermissionHandler
      *            Attributes of directory containing the file to rename
      * @param newParentAttr
      *            Attributes of the new parent directory
+     * @param isDirectory
+     *            True if and only if the entry to rename is a directory
      *
      * @return Returns the access type granted
      */
     AccessType canRename(Subject subject,
                          FileAttributes existingParentAttr,
-                         FileAttributes newParentAttr);
+                         FileAttributes newParentAttr,
+                         boolean isDirectory);
 
     /**
      * checks whether the user can list directory

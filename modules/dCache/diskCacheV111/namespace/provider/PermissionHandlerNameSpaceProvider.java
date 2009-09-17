@@ -193,11 +193,11 @@ public class PermissionHandlerNameSpaceProvider
         File newParent = newFile.getParentFile();
         PnfsId newParentId;
         try {
-            newParentId = 
+            newParentId =
                 super.pathToPnfsid(subject, newParent.toString(), true);
         } catch (FileNotFoundCacheException e) {
-            throw new NotDirCacheException("No such directory: " + 
-                                           newParent.toString());            
+            throw new NotDirCacheException("No such directory: " +
+                                           newParent.toString());
         }
 
         FileAttributes parentAttributes =
@@ -205,9 +205,14 @@ public class PermissionHandlerNameSpaceProvider
         FileAttributes newParentAttributes =
             getFileAttributesForPermissionHandler(newParentId);
 
+        FileAttributes fileAttributes =
+            _inner.getFileAttributes(Subjects.ROOT, pnfsId, EnumSet.of(TYPE));
+        boolean isDir = (fileAttributes.getFileType() == DIR);
+
         if (_handler.canRename(subject,
                                parentAttributes,
-                               newParentAttributes) != ACCESS_ALLOWED) {
+                               newParentAttributes,
+                               isDir) != ACCESS_ALLOWED) {
             throw new PermissionDeniedCacheException("Access denied: " +
                                                      pnfsId.toString());
         }
@@ -218,7 +223,7 @@ public class PermissionHandlerNameSpaceProvider
             if (!overwrite) {
                 throw e;
             }
-                
+
             /* Destination name exists and we were requested to
              * overwrite it.  Thus the subject must have delete
              * permission for the destination name.

@@ -29,6 +29,7 @@ public class ACLPermissionHandler implements PermissionHandler
     private Set<FileAttribute> _requiredAttributes =
         Collections.unmodifiableSet(EnumSet.of(ACL, OWNER, OWNER_GROUP));
 
+    @Override
     public Set<FileAttribute> getRequiredAttributes()
     {
         return _requiredAttributes;
@@ -42,30 +43,35 @@ public class ACLPermissionHandler implements PermissionHandler
         return AclMapper.getPermission(subject, origin, owner, acl);
     }
 
+    @Override
     public AccessType canReadFile(Subject subject, FileAttributes attr)
     {
         Permission permission = getPermission(subject, attr);
         return AccessType.valueOf(AclNFSv4Matcher.isAllowed(permission, READ));
     }
 
+    @Override
     public AccessType canWriteFile(Subject subject, FileAttributes attr)
     {
         Permission permission = getPermission(subject, attr);
         return AccessType.valueOf(AclNFSv4Matcher.isAllowed(permission, WRITE));
     }
 
+    @Override
     public AccessType canCreateSubDir(Subject subject, FileAttributes attr)
     {
         Permission permission = getPermission(subject, attr);
         return AccessType.valueOf(AclNFSv4Matcher.isAllowed(permission, CREATE, true));
     }
 
+    @Override
     public AccessType canCreateFile(Subject subject, FileAttributes attr)
     {
         Permission permission = getPermission(subject, attr);
         return AccessType.valueOf(AclNFSv4Matcher.isAllowed(permission, CREATE, false));
     }
 
+    @Override
     public AccessType canDeleteFile(Subject subject,
                                     FileAttributes parentAttr,
                                     FileAttributes childAttr)
@@ -78,6 +84,7 @@ public class ACLPermissionHandler implements PermissionHandler
                                                             false));
     }
 
+    @Override
     public AccessType canDeleteDir(Subject subject,
                                    FileAttributes parentAttr,
                                    FileAttributes childAttr)
@@ -90,6 +97,7 @@ public class ACLPermissionHandler implements PermissionHandler
                                                             true));
     }
 
+    @Override
     public AccessType canListDir(Subject subject, FileAttributes attr)
     {
         Permission permission = getPermission(subject, attr);
@@ -97,18 +105,29 @@ public class ACLPermissionHandler implements PermissionHandler
                                                             READDIR));
     }
 
+    @Override
     public AccessType canLookup(Subject subject, FileAttributes attr)
     {
-        return AccessType.ACCESS_UNDEFINED;
+        Permission permission = getPermission(subject, attr);
+        return AccessType.valueOf(AclNFSv4Matcher.isAllowed(permission,
+                                                            LOOKUP));
     }
 
+    @Override
     public AccessType canRename(Subject subject,
                                 FileAttributes parentAttr,
-                                FileAttributes newParentAttr)
+                                FileAttributes newParentAttr,
+                                boolean isDirectory)
     {
-        return AccessType.ACCESS_UNDEFINED;
+        Permission permission1 = getPermission(subject, parentAttr);
+        Permission permission2 = getPermission(subject, newParentAttr);
+        return AccessType.valueOf(AclNFSv4Matcher.isAllowed(permission1,
+                                                            permission2,
+                                                            RENAME,
+                                                            isDirectory));
     }
 
+    @Override
     public AccessType canSetAttributes(Subject subject,
                                        FileAttributes parentAttr,
                                        FileAttributes attr,
@@ -118,6 +137,7 @@ public class ACLPermissionHandler implements PermissionHandler
         return canSetGetAttributes(permission, attributes, SETATTR);
     }
 
+    @Override
     public AccessType canGetAttributes(Subject subject,
                                        FileAttributes parentAttr,
                                        FileAttributes attr,
