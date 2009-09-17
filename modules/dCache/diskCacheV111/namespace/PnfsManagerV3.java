@@ -2032,11 +2032,20 @@ public class PnfsManagerV3 extends CellAdapter
         }
     }
 
-    public void setFileAttributes(PnfsSetFileAttributes message) {
-
-        FileAttributes attr = message.getFileAttributes();
+    public void setFileAttributes(PnfsSetFileAttributes message)
+    {
         try {
+            FileAttributes attr = message.getFileAttributes();
             PnfsId pnfsId = populatePnfsId(message);
+
+            if (attr.getDefinedAttributes().contains(FileAttribute.LOCATIONS)) {
+                for (String pool: attr.getLocations()) {
+                    PnfsMessage msg =
+                        new PnfsAddCacheLocationMessage(pnfsId, pool);
+                    forwardModifyCacheLocationMessage(msg);
+                }
+            }
+
             _nameSpaceProvider.setFileAttributes(message.getSubject(),
                                                  pnfsId,
                                                  attr);
