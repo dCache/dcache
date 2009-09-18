@@ -159,7 +159,8 @@ public class SrmExtendFileLifeTime {
         return response;
     }
     
-    public SrmExtendFileLifeTimeResponse srmExtendTURLorPinLifeTime() {
+    public SrmExtendFileLifeTimeResponse srmExtendTURLorPinLifeTime()
+            throws SRMInvalidRequestException {
         try {
             requestId = new Long( token);
         } catch (NumberFormatException nfe){

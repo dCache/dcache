@@ -182,6 +182,7 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SRM;
+import org.dcache.srm.SRMInvalidRequestException;
 
 
 import org.dcache.srm.qos.QOSTicket;
@@ -331,11 +332,17 @@ public abstract class FileRequest extends Job {
     }
     
     public String toString(boolean longformat) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append(" FileRequest ");
         sb.append(" id =").append(getId());
         sb.append(" job priority  =").append(getPriority());
-        sb.append(" crteator priority  =").append(getUser().getPriority());
+
+        sb.append(" crteator priority  =");
+        try {
+            sb.append(getUser().getPriority());
+        } catch (SRMInvalidRequestException ire) {
+            sb.append("Unknown");
+        }
         sb.append(" state=").append(getState());
         if(longformat) {
             sb.append('\n').append(getRequestFileStatus());
@@ -399,11 +406,11 @@ public abstract class FileRequest extends Job {
         
     }
     
-    public SRMUser getUser() {
+    public SRMUser getUser() throws SRMInvalidRequestException {
         return getRequest().getUser();
     }
 
-    public Request getRequest()   {
+    public Request getRequest() throws SRMInvalidRequestException  {
         return Request.getRequest(requestId);
     }
     
@@ -460,9 +467,25 @@ public abstract class FileRequest extends Job {
         }
         return path;
     }
-    
+
+    /**
+     *
+     * @return
+     */
      public String getSubmitterId() {
-         return Long.toString(getUser().getId());
+         try {
+            return Long.toString(getUser().getId());
+         } catch (Exception e) {
+             //
+             // Throwing the exception from this method
+             //  will prevent the change of the status of this request
+             //  to canceled, done or failed.
+             // Therefore we catch the exception and
+             // just report the submitter id as unknown
+             //
+             esay(e);
+             return "unknown";
+         }
      }
 
 }

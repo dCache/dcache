@@ -38,6 +38,7 @@ import java.util.HashMap;
 import org.dcache.srm.request.sql.DatabaseFileRequestStorage;
 import org.apache.axis.types.URI.MalformedURIException;
 import java.sql.SQLException;
+import org.dcache.srm.SRMInvalidRequestException;
 
 
 /**
@@ -96,6 +97,9 @@ public class SrmReleaseFiles {
             logger.error(sqle);
             response = getFailedResponse("sql error "+sqle.getMessage(),
                     TStatusCode.SRM_INTERNAL_ERROR);
+        } catch(SRMInvalidRequestException ire) {
+            response = getFailedResponse(ire.toString(),
+                    TStatusCode.SRM_INVALID_REQUEST);
         } catch(SRMException srme) {
             logger.error(srme);
             response = getFailedResponse(srme.toString());
@@ -279,7 +283,7 @@ public class SrmReleaseFiles {
     }
     
    private SrmReleaseFilesResponse unpinDirectlyBySURLs(final URI[] surls) throws
-   SQLException, IllegalStateTransition {
+   SQLException, IllegalStateTransition, SRMInvalidRequestException {
        //prepare initial return statuses
        Map<URI,TSURLReturnStatus> surlsMap = 
            new HashMap<URI,TSURLReturnStatus>();
@@ -357,7 +361,10 @@ public class SrmReleaseFiles {
     }
 
     private void releaseFileRequestsDirectlyBySURLs(final URI[] surls,
-        Map<URI,TSURLReturnStatus> surlsMap) throws java.sql.SQLException, IllegalStateTransition {
+        Map<URI,TSURLReturnStatus> surlsMap) 
+        throws java.sql.SQLException, 
+        IllegalStateTransition,
+        SRMInvalidRequestException {
         Set<BringOnlineFileRequest> bofrsToRelease = 
             findBringOnlineFileRequestBySURLs(surls);
        for (BringOnlineFileRequest fileRequest: bofrsToRelease) {
@@ -414,7 +421,7 @@ public class SrmReleaseFiles {
             
     }
     
-    private Set<BringOnlineFileRequest> findBringOnlineFileRequestBySURLs(URI[] surls)  {
+    private Set<BringOnlineFileRequest> findBringOnlineFileRequestBySURLs(URI[] surls) {
         DatabaseFileRequestStorage reqstorage = srm.getBringOnlineFileRequestStorage();
         Scheduler scheduler =
                 SchedulerFactory.getSchedulerFactory().
@@ -432,7 +439,13 @@ public class SrmReleaseFiles {
         }
         
         for(Long requestId:activeRequestIds) {
-            Job job = Job.getJob(requestId);
+            Job job;
+            try {
+                job =  Job.getJob(requestId);
+            } catch (SRMInvalidRequestException ire) {
+                logger.error(ire);
+                continue;
+            }
             if(job == null || !(job instanceof BringOnlineFileRequest)) {
                 continue;
             }
@@ -463,7 +476,13 @@ public class SrmReleaseFiles {
         
         
         for(Long requestId:activeRequestIds) {
-            Job job = Job.getJob(requestId);
+            Job job;
+            try {
+                job =  Job.getJob(requestId);
+            } catch (SRMInvalidRequestException ire) {
+                logger.error(ire);
+                continue;
+            }
             if(job == null || !(job instanceof GetFileRequest)) {
                 continue;
             }

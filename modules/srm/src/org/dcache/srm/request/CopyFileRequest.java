@@ -110,6 +110,8 @@ import org.dcache.srm.util.ShellCommandExecuter;
 import org.dcache.srm.v2_2.*;
 import org.apache.axis.types.URI;
 import org.dcache.srm.SRMUser;
+import org.dcache.srm.SRMInvalidRequestException;
+import org.apache.log4j.Logger;
 
 
 /**
@@ -119,6 +121,7 @@ import org.dcache.srm.SRMUser;
  */
 public class CopyFileRequest extends FileRequest {
     
+    private static final Logger logger = Logger.getLogger(CopyFileRequest.class);
 	private String from_url;
 	private String to_url;
 	private GlobusURL from_turl;
@@ -782,7 +785,11 @@ public class CopyFileRequest extends FileRequest {
 			}
 			try {
 				setState(State.DONE, "setStateToDone called");
-				((CopyRequest)getRequest()).fileRequestCompleted();
+                try {
+                    ((CopyRequest)getRequest()).fileRequestCompleted();
+                } catch (SRMInvalidRequestException ire) {
+                    esay(ire);
+                }
 			}
 			catch(IllegalStateTransition ist) {
 				esay(ist);
@@ -1053,10 +1060,17 @@ public class CopyFileRequest extends FileRequest {
 			if( transferId != null)           {
 				storage.killRemoteTransfer(transferId);
 			}
+            SRMUser user ;
+            try {
+                user = getUser();
+            } catch (SRMInvalidRequestException ire) {
+                esay(ire);
+                return;
+            }
 			if(spaceReservationId != null && weReservedSpace) {
 				say("storage.releaseSpace("+spaceReservationId+"\"");
 				SrmReleaseSpaceCallbacks callbacks = new TheReleaseSpaceCallbacks(this.getId());
-				storage.srmReleaseSpace(  getUser(),
+				storage.srmReleaseSpace(  user,
 							  spaceReservationId,
 							  null,
 							  callbacks);
@@ -1066,7 +1080,7 @@ public class CopyFileRequest extends FileRequest {
 			   spaceMarkedAsBeingUsed ) {
 				SrmCancelUseOfSpaceCallbacks callbacks =
 					new CopyCancelUseOfSpaceCallbacks(getId());
-				storage.srmUnmarkSpaceAsBeingUsed(getUser(),
+				storage.srmUnmarkSpaceAsBeingUsed(user,
 								  spaceReservationId,local_to_path,
 								  callbacks);
 			}
@@ -1198,7 +1212,8 @@ public class CopyFileRequest extends FileRequest {
 			this.fileRequestJobId = fileRequestJobId;
 		}
         
-		public CopyFileRequest getCopyFileRequest() throws java.sql.SQLException{
+		public CopyFileRequest getCopyFileRequest() 
+                throws java.sql.SQLException, SRMInvalidRequestException{
 			Job job = Job.getJob(fileRequestJobId);
 			if(job != null) {
 				return (CopyFileRequest) job;
@@ -1451,7 +1466,8 @@ public class CopyFileRequest extends FileRequest {
 			this.notifyAll();
 		}
         
-		private CopyFileRequest getCopyFileRequest()  {
+		private CopyFileRequest getCopyFileRequest()  
+                throws SRMInvalidRequestException{
 			Job job = Job.getJob(fileRequestJobId);
 			if(job != null) {
 				return (CopyFileRequest) job;
@@ -1460,14 +1476,24 @@ public class CopyFileRequest extends FileRequest {
 		}
         
 		public void copyComplete(String fileId, FileMetaData fmd) {
-			CopyFileRequest  copyFileRequest = getCopyFileRequest();
-			copyFileRequest.say("copy succeeded");
-			copyFileRequest.setStateToDone();
-			complete(true);
+            try {
+                CopyFileRequest  copyFileRequest = getCopyFileRequest();
+                copyFileRequest.say("copy succeeded");
+                copyFileRequest.setStateToDone();
+                complete(true);
+            } catch (SRMInvalidRequestException ire) {
+                logger.error(ire);
+            }
 		}
          
 		public void copyFailed(Exception e) {
-			CopyFileRequest  copyFileRequest = getCopyFileRequest();
+			CopyFileRequest  copyFileRequest ;
+            try {
+                 copyFileRequest   = getCopyFileRequest();
+            } catch (SRMInvalidRequestException ire) {
+                logger.error(ire);
+                return;
+            }
 			copyFileRequest.transferError = e;
 			copyFileRequest.esay("copy failed:");
 			copyFileRequest.esay(e);
@@ -1596,7 +1622,9 @@ public class CopyFileRequest extends FileRequest {
     
 	public static class TheReserveSpaceCallbacks implements SrmReserveSpaceCallbacks {
 		Long fileRequestJobId;
-		public CopyFileRequest getCopyFileRequest() throws java.sql.SQLException{
+		public CopyFileRequest getCopyFileRequest() 
+                throws java.sql.SQLException, SRMInvalidRequestException
+        {
 			Job job = Job.getJob(fileRequestJobId);
 			if(job != null) {
 				return (CopyFileRequest) job;
@@ -1708,7 +1736,8 @@ public class CopyFileRequest extends FileRequest {
 			this.fileRequestJobId = fileRequestJobId;
 		}
 		
-		public CopyFileRequest getCopyFileRequest() throws java.sql.SQLException {
+		public CopyFileRequest getCopyFileRequest() 
+                throws java.sql.SQLException, SRMInvalidRequestException {
 			Job job = Job.getJob(fileRequestJobId);
 			if(job != null) {
 				return (CopyFileRequest) job;
@@ -1807,7 +1836,8 @@ public class CopyFileRequest extends FileRequest {
 	public static class CopyUseSpaceCallbacks implements SrmUseSpaceCallbacks {
 		Long fileRequestJobId;
 
-		public CopyFileRequest getCopyFileRequest() throws java.sql.SQLException{
+		public CopyFileRequest getCopyFileRequest() 
+                throws java.sql.SQLException, SRMInvalidRequestException{
 			Job job = Job.getJob(fileRequestJobId);
 			if(job != null) {
 				return (CopyFileRequest) job;
@@ -1988,7 +2018,8 @@ public class CopyFileRequest extends FileRequest {
 	public static class CopyCancelUseOfSpaceCallbacks implements SrmCancelUseOfSpaceCallbacks {
 		Long fileRequestJobId;
 		
-		public CopyFileRequest getCopyFileRequest() throws java.sql.SQLException{
+		public CopyFileRequest getCopyFileRequest() 
+                throws java.sql.SQLException, SRMInvalidRequestException {
 			Job job = Job.getJob(fileRequestJobId);
 			if(job != null) {
 				return (CopyFileRequest) job;

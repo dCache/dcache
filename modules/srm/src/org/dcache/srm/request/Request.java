@@ -1,135 +1,3 @@
-// $Id$
-// $Log: not supported by cvs2svn $
-// Revision 1.26  2007/02/20 01:37:56  timur
-// more changes to report status according to the spec and make ls report lifetime as -1 (infinite)
-//
-// Revision 1.25  2007/02/17 05:44:25  timur
-// propagate SRM_NO_FREE_SPACE to reserveSpace, refactored database code a bit
-//
-// Revision 1.24  2007/01/10 23:00:24  timur
-// implemented srmGetRequestTokens, store request description in database, fixed several srmv2 issues
-//
-// Revision 1.23  2007/01/06 00:23:55  timur
-// merging production branch changes to database layer to improve performance and reduce number of updates
-//
-// Revision 1.18.2.2  2007/01/04 02:58:54  timur
-// changes to database layer to improve performance and reduce number of updates
-//
-// Revision 1.18.2.1  2006/09/11 22:25:55  timur
-// reduce number of sql communications
-//
-// Revision 1.18  2006/07/10 22:03:28  timur
-// updated some of the error codes
-//
-// Revision 1.17  2006/06/22 20:13:47  timur
-// removed bug preventing returning of the error message to the client
-//
-// Revision 1.16  2006/06/20 15:42:17  timur
-// initial v2.2 commit, code is based on a week old wsdl, will update the wsdl and code next
-//
-// Revision 1.15  2006/06/12 22:04:06  timur
-// made fts happier by  returning empty error message for non-failed requests
-//
-// Revision 1.13  2006/04/26 17:17:56  timur
-// store the history of the state transitions in the database
-//
-// Revision 1.12  2006/04/18 00:53:47  timur
-// added the job execution history storage for better diagnostics and profiling
-//
-// Revision 1.11  2006/04/12 23:16:23  timur
-// storing state transition time in database, storing transferId for copy requests in database, renaming tables if schema changes without asking
-//
-// Revision 1.10  2006/03/28 00:20:48  timur
-// added srmAbortFiles support
-//
-// Revision 1.9  2006/03/14 17:44:19  timur
-// moving toward the axis 1_3
-//
-// Revision 1.8  2005/12/09 00:26:09  timur
-// srmPrepareToGet works
-//
-// Revision 1.7  2005/12/02 22:20:51  timur
-// working on srmReleaseFiles
-//
-// Revision 1.6  2005/11/17 20:45:55  timur
-// started work on srmPrepareToGet functions
-//
-// Revision 1.5  2005/05/04 21:54:52  timur
-// new scheduling policy on restart for put and get request - do not schedule the request if the user does not update its status
-//
-// Revision 1.4  2005/03/30 22:42:10  timur
-// more database schema changes
-//
-// Revision 1.3  2005/03/11 21:16:26  timur
-// making srm compatible with cern tools again
-//
-// Revision 1.2  2005/03/01 23:10:39  timur
-// Modified the database scema to increase database operations performance and to account for reserved space"and to account for reserved space
-//
-// Revision 1.1  2005/01/14 23:07:14  timur
-// moving general srm code in a separate repository
-//
-// Revision 1.10  2005/01/03 20:46:51  timur
-// use function
-//
-// Revision 1.9  2004/11/15 17:00:40  timur
-// removed the debug thread stack printing
-//
-// Revision 1.8  2004/11/09 08:04:47  tigran
-// added SerialVersion ID
-//
-// Revision 1.7  2004/11/08 23:02:41  timur
-// remote gridftp manager kills the mover when the mover thread is killed,  further modified the srm database handling
-//
-// Revision 1.6  2004/10/28 02:41:31  timur
-// changed the database scema a little bit, fixed various synchronization bugs in the scheduler, added interactive shell to the File System srm
-//
-// Revision 1.5  2004/08/20 20:07:53  timur
-// set file status to Failed if all requests are done or failed
-//
-// Revision 1.4  2004/08/17 16:01:14  timur
-// simplifying scheduler, removing some bugs, and redusing the amount of logs
-//
-// Revision 1.3  2004/08/10 22:17:16  timur
-// added indeces creation for state field, update postgres driver
-//
-// Revision 1.2  2004/08/06 19:35:24  timur
-// merging branch srm-branch-12_May_2004 into the trunk
-//
-// Revision 1.1.2.16  2004/08/03 16:37:51  timur
-// removing unneeded dependancies on dcache
-//
-// Revision 1.1.2.15  2004/07/29 22:17:29  timur
-// Some functionality for disk srm is working
-//
-// Revision 1.1.2.14  2004/07/14 18:58:51  timur
-// get/put requests status' are set to done when all file requests are done
-//
-// Revision 1.1.2.13  2004/07/12 21:52:06  timur
-// remote srm error handling is improved, minor issues fixed
-//
-// Revision 1.1.2.12  2004/07/09 01:58:40  timur
-// fixed a syncronization problem, added auto dirs creation for copy function
-//
-// Revision 1.1.2.11  2004/07/02 20:10:24  timur
-// fixed the leak of sql connections, added propogation of srm errors
-//
-// Revision 1.1.2.10  2004/06/30 20:37:24  timur
-// added more monitoring functions, added retries to the srm client part, adapted the srmclientv1 for usage in srmcp
-//
-// Revision 1.1.2.9  2004/06/23 21:56:01  timur
-// Get Requests are now stored in database, Request Credentials are now stored in database too
-//
-// Revision 1.1.2.8  2004/06/22 01:38:07  timur
-// working on the database part, created persistent storage for getFileRequests, for the next requestId
-//
-// Revision 1.1.2.7  2004/06/16 22:14:31  timur
-// copy works for mulfile request
-//
-// Revision 1.1.2.6  2004/06/16 19:44:33  timur
-// added cvs logging tags and fermi copyright headers at the top, removed Copier.java and CopyJob.java
-//
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -217,6 +85,7 @@ import org.dcache.srm.util.Configuration;
 import org.dcache.srm.request.sql.RequestsPropertyStorage;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.SRMUser;
+import org.dcache.srm.SRMInvalidRequestException;
 
 /**
  *
@@ -379,7 +248,8 @@ public abstract class Request extends Job {
     }
 
     
-    public static Request getRequest(Long requestId)  {
+    public static Request getRequest(Long requestId) 
+            throws  SRMInvalidRequestException {
         Job job = Job.getJob( requestId);
         if (job == null || !(job instanceof Request)) {
             return null;
@@ -389,7 +259,8 @@ public abstract class Request extends Job {
 
     
     
-    public static Request getRequest(int requestNum)  {
+    public static Request getRequest(int requestNum) 
+            throws SRMInvalidRequestException {
         return (Request) Job.getJob(new Long((long) requestNum));
     }
 

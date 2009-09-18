@@ -95,6 +95,7 @@ import org.dcache.srm.SrmReserveSpaceCallbacks;
 import org.dcache.srm.SrmReleaseSpaceCallbacks;
 import org.dcache.srm.SrmUseSpaceCallbacks;
 import org.dcache.srm.SrmCancelUseOfSpaceCallbacks;
+import org.dcache.srm.SRMInvalidRequestException;
 
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TReturnStatus;
@@ -349,7 +350,7 @@ public class PutFileRequest extends FileRequest {
     }
 
 
-    public boolean canWrite() {
+    public boolean canWrite() throws SRMInvalidRequestException {
         if(fileId == null && parentFileId == null) {
             return false;
         }
@@ -393,7 +394,8 @@ public class PutFileRequest extends FileRequest {
         return rfs;
     }
 
-    public TPutRequestFileStatus getTPutRequestFileStatus() throws java.sql.SQLException{
+    public TPutRequestFileStatus getTPutRequestFileStatus()
+            throws java.sql.SQLException, SRMInvalidRequestException{
         TPutRequestFileStatus fileStatus = new TPutRequestFileStatus();
         fileStatus.setFileSize(new org.apache.axis.types.UnsignedLong(getSize()));
 
@@ -685,8 +687,19 @@ public class PutFileRequest extends FileRequest {
         State state = getState();
         say("State changed from "+oldState+" to "+getState());
         if(state == State.READY) {
-            getRequest().resetRetryDeltaTime();
+            try {
+                getRequest().resetRetryDeltaTime();
+            } catch (SRMInvalidRequestException ire) {
+                esay(ire);
+            }
         }
+        SRMUser user;
+         try {
+             user = getUser();
+         }catch(SRMInvalidRequestException ire) {
+             esay(ire);
+             return;
+         }
         if(State.isFinalState(state)) {
             say("space reservation is "+spaceReservationId);
             if(configuration.isReserve_space_implicitely() &&
@@ -694,7 +707,7 @@ public class PutFileRequest extends FileRequest {
                     spaceMarkedAsBeingUsed ) {
                 SrmCancelUseOfSpaceCallbacks callbacks =
                         new PutCancelUseOfSpaceCallbacks(getId());
-                storage.srmUnmarkSpaceAsBeingUsed(getUser(),
+                storage.srmUnmarkSpaceAsBeingUsed(user,
                         spaceReservationId,getPath(),
                         callbacks);
 
@@ -703,7 +716,7 @@ public class PutFileRequest extends FileRequest {
                 say("storage.releaseSpace("+spaceReservationId+"\"");
                 SrmReleaseSpaceCallbacks callbacks =
                         new PutReleaseSpaceCallbacks(this.getId());
-                storage.srmReleaseSpace(  getUser(),
+                storage.srmReleaseSpace(  user,
                         spaceReservationId,
                         (Long)null, //release all of space we reserved
                         callbacks);
@@ -735,15 +748,6 @@ public class PutFileRequest extends FileRequest {
     public void setSpaceReservationId(java.lang.String spaceReservationId) {
         this.spaceReservationId = spaceReservationId;
     }
-
-    /**
-     * Getter for property clientHost.
-     * @return Value of property clientHost.
-     */
-    public java.lang.String getClientHost() {
-        return getRequest().getClient_host();
-    }
-
 
     public TReturnStatus getReturnStatus() {
         TReturnStatus returnStatus = new TReturnStatus();
@@ -783,7 +787,7 @@ public class PutFileRequest extends FileRequest {
             this.fileRequestJobId = fileRequestJobId;
         }
 
-        public PutFileRequest getPutFileRequest() {
+        public PutFileRequest getPutFileRequest() throws SRMInvalidRequestException {
             Job job = Job.getJob(fileRequestJobId);
             if(job != null) {
                 return (PutFileRequest) job;
@@ -974,7 +978,9 @@ public class PutFileRequest extends FileRequest {
     public static class PutReserveSpaceCallbacks implements SrmReserveSpaceCallbacks {
         Long fileRequestJobId;
 
-        public PutFileRequest getPutFileRequest() throws java.sql.SQLException{
+        public PutFileRequest getPutFileRequest() 
+                throws java.sql.SQLException,
+                SRMInvalidRequestException {
             Job job = Job.getJob(fileRequestJobId);
             if(job != null) {
                 return (PutFileRequest) job;
@@ -1080,7 +1086,9 @@ public class PutFileRequest extends FileRequest {
     public static class PutReleaseSpaceCallbacks implements SrmReleaseSpaceCallbacks {
         Long fileRequestJobId;
 
-        public PutFileRequest getPutFileRequest() throws java.sql.SQLException{
+        public PutFileRequest getPutFileRequest()
+                throws java.sql.SQLException,
+                  SRMInvalidRequestException {
             Job job = Job.getJob(fileRequestJobId);
             if(job != null) {
                 return (PutFileRequest) job;
@@ -1127,7 +1135,9 @@ public class PutFileRequest extends FileRequest {
     public static class PutUseSpaceCallbacks implements SrmUseSpaceCallbacks {
         Long fileRequestJobId;
 
-        public PutFileRequest getPutFileRequest() throws java.sql.SQLException{
+        public PutFileRequest getPutFileRequest() 
+                throws java.sql.SQLException,
+                SRMInvalidRequestException {
             Job job = Job.getJob(fileRequestJobId);
             if(job != null) {
                 return (PutFileRequest) job;
@@ -1313,7 +1323,8 @@ public class PutFileRequest extends FileRequest {
     public static class PutCancelUseOfSpaceCallbacks implements SrmCancelUseOfSpaceCallbacks {
         Long fileRequestJobId;
 
-        public PutFileRequest getPutFileRequest() throws java.sql.SQLException{
+        public PutFileRequest getPutFileRequest() 
+                throws java.sql.SQLException, SRMInvalidRequestException {
             Job job = Job.getJob(fileRequestJobId);
             if(job != null) {
                 return (PutFileRequest) job;
@@ -1365,7 +1376,8 @@ public class PutFileRequest extends FileRequest {
             this.fileRequestJobId = fileRequestJobId;
         }
 
-        public PutFileRequest getPutFileRequest() throws java.sql.SQLException {
+        public PutFileRequest getPutFileRequest() 
+                throws java.sql.SQLException, SRMInvalidRequestException {
             Job job = Job.getJob(fileRequestJobId);
             if(job != null) {
                 return (PutFileRequest) job;

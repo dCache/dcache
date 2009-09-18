@@ -1,106 +1,3 @@
-// $Id$
-// $Log: not supported by cvs2svn $
-// Revision 1.11  2006/12/13 22:13:20  timur
-// from production branch: name scheduler threads, allow to timeout the waitStartupt of job wrapper
-//
-// Revision 1.10  2006/10/24 07:44:38  litvinse
-// moved JobAppraiser interface into separate package
-// added handles to select scheduler priority policies
-//
-// Revision 1.9  2006/08/25 22:46:51  timur
-// disable job restoration upon restart
-//
-// Revision 1.8  2006/04/21 22:58:27  timur
-// we do not need a thread running when we start a remote transfer, but we want to control the number of the transfers, I hope the code accomplishes this now, though an addition of the new job state
-//
-// Revision 1.7  2006/04/18 00:53:47  timur
-// added the job execution history storage for better diagnostics and profiling
-//
-// Revision 1.6  2006/04/12 23:16:24  timur
-// storing state transition time in database, storing transferId for copy requests in database, renaming tables if schema changes without asking
-//
-// Revision 1.5  2005/12/07 16:24:07  timur
-// append in setError, and log errors even when retrying
-//
-// Revision 1.4  2005/05/19 05:39:06  timur
-// less logging via scheduler
-//
-// Revision 1.3  2005/05/04 21:54:52  timur
-// new scheduling policy on restart for put and get request - do not schedule the request if the user does not update its status
-//
-// Revision 1.2  2005/03/30 22:42:11  timur
-// more database schema changes
-//
-// Revision 1.1  2005/01/14 23:07:15  timur
-// moving general srm code in a separate repository
-//
-// Revision 1.19  2004/11/12 22:50:40  timur
-// activate the fairness in scheduler
-//
-// Revision 1.18  2004/11/08 23:02:41  timur
-// remote gridftp manager kills the mover when the mover thread is killed,  further modified the srm database handling
-//
-// Revision 1.17  2004/11/01 18:10:28  timur
-// addind more message printing to the scheduler for debugging, state varible synchronization
-//
-// Revision 1.16  2004/10/28 02:41:31  timur
-// changed the database scema a little bit, fixed various synchronization bugs in the scheduler, added interactive shell to the File System srm
-//
-// Revision 1.15  2004/09/14 01:47:52  timur
-// check that timer exists before canceling it
-//
-// Revision 1.14  2004/08/31 18:12:30  timur
-// use linked list to store the queue
-//
-// Revision 1.13  2004/08/30 19:01:24  timur
-// make sure that update thread does not continue, untill the job it schedules is removed from the queue
-//
-// Revision 1.12  2004/08/30 17:14:49  timur
-// stop updating the status on the remote machine when the copy request is canceled, handle the queues more correctly
-//
-// Revision 1.11  2004/08/27 02:37:22  timur
-// make scheduler update queues periodically, no matter what
-//
-// Revision 1.10  2004/08/26 21:22:30  timur
-// scheduler bug (not setting job value to null) in a loop serching for the next job to execute
-//
-// Revision 1.9  2004/08/17 17:17:24  timur
-// increment number of retries to avoid infinite retries
-//
-// Revision 1.8  2004/08/17 16:01:14  timur
-// simplifying scheduler, removing some bugs, and redusing the amount of logs
-//
-// Revision 1.7  2004/08/10 17:03:47  timur
-// more monitoring, change file request state, when request is complete
-//
-// Revision 1.6  2004/08/06 19:35:25  timur
-// merging branch srm-branch-12_May_2004 into the trunk
-//
-// Revision 1.5.2.9  2004/07/12 21:52:07  timur
-// remote srm error handling is improved, minor issues fixed
-//
-// Revision 1.5.2.8  2004/07/09 22:14:54  timur
-// more synchronization problems resloved
-//
-// Revision 1.5.2.7  2004/07/02 20:10:25  timur
-// fixed the leak of sql connections, added propogation of srm errors
-//
-// Revision 1.5.2.6  2004/06/30 20:37:24  timur
-// added more monitoring functions, added retries to the srm client part, adapted the srmclientv1 for usage in srmcp
-//
-// Revision 1.5.2.5  2004/06/28 21:54:10  timur
-// added configuration options for the schedulers
-//
-// Revision 1.5.2.4  2004/06/22 01:38:07  timur
-// working on the database part, created persistent storage for getFileRequests, for the next requestId
-//
-// Revision 1.5.2.3  2004/06/18 22:20:52  timur
-// adding sql database storage for requests
-//
-// Revision 1.5.2.2  2004/06/16 19:44:34  timur
-// added cvs logging tags and fermi copyright headers at the top, removed Copier.java and CopyJob.java
-//
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -191,6 +88,7 @@ import org.dcache.srm.Logger;
 import org.dcache.srm.request.*;
 import org.dcache.srm.scheduler.policies.*;
 import org.dcache.srm.util.JDC;
+import org.dcache.srm.SRMInvalidRequestException;
 /**
  *
  * @author  timur
@@ -579,7 +477,8 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
 	}
 
 	// this is supposed to be the only place that removes the jobs from
-	private void updatePriorityThreadQueue()  throws java.sql.SQLException{
+	private void updatePriorityThreadQueue()  
+            throws java.sql.SQLException, SRMInvalidRequestException {
 		while(true) {
 			Job job = null;
 			if(useFairness) {
@@ -685,7 +584,8 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
 	}
 
 	// this is supposed to be the only place that removes the jobs from
-	private void updateThreadQueue() throws java.sql.SQLException {
+	private void updateThreadQueue() 
+            throws java.sql.SQLException, SRMInvalidRequestException {
 
         while(true) {
             Job job = null;
@@ -804,7 +704,8 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
         }
     }
 
-    private void updateReadyQueue()  throws java.sql.SQLException{
+    private void updateReadyQueue()  
+            throws java.sql.SQLException, SRMInvalidRequestException{
         while(true) {
 
             if(getTotalReady() >= maxReadyJobs) {

@@ -20,6 +20,7 @@ import org.dcache.srm.SRMTooManyResultsException;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.v2_2.*;
 import org.dcache.srm.request.LsRequest;
+import org.dcache.srm.SRMInvalidRequestException;
 
 public class LsFileRequest extends FileRequest {
         public static final String SFN_STRING="?SFN=";
@@ -240,11 +241,15 @@ public class LsFileRequest extends FileRequest {
         
 
         protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
-                State state = getState();
-                say("State changed from "+oldState+" to "+getState());
-                        if(state == State.READY) {
-                                getRequest().resetRetryDeltaTime();
-                        }
+            State state = getState();
+            say("State changed from "+oldState+" to "+getState());
+                if(state == State.READY) {
+                    try {
+                        getRequest().resetRetryDeltaTime();
+                    } catch(SRMInvalidRequestException ire) {
+                        esay(ire);
+                    }
+                }
         }
 
         public TReturnStatus getReturnStatus() {
@@ -614,7 +619,12 @@ public class LsFileRequest extends FileRequest {
                 sb.append(" FileRequest ");
                 sb.append(" id =").append(getId());
                 sb.append(" job priority  =").append(getPriority());
-                sb.append(" crteator priority  =").append(getUser().getPriority());
+                sb.append(" crteator priority  =");
+                try {
+                    sb.append(getUser().getPriority());
+                } catch (SRMInvalidRequestException ire) {
+                    sb.append("unknown");
+                }
                 sb.append(" state=").append(getState());
                 if(longformat) {
                         sb.append('\n').append(getSurlString());

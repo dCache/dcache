@@ -156,6 +156,7 @@ import org.dcache.srm.SRMDuplicationException;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.SRMAuthorizationException;
+import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.GetFileInfoCallbacks;
 import org.dcache.srm.PrepareToPutCallbacks;
@@ -1024,6 +1025,8 @@ public class Storage
             StringBuffer sb = new StringBuffer();
             srm.cancelRequest(sb, id);
             return sb.toString();
+        } catch (SRMInvalidRequestException ire) {
+            return "Invalid request: "+ire.getMessage();
         } catch (NumberFormatException e) {
             return e.toString();
         } catch (SQLException e) {

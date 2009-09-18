@@ -219,6 +219,7 @@ import org.dcache.srm.AbstractStorageElement;
 import org.globus.util.GlobusURL;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.scheduler.JobStorage;
@@ -462,7 +463,7 @@ public class GetFileRequest extends FileRequest {
     
     
     
-    public boolean canRead() {
+    public boolean canRead() throws SRMInvalidRequestException{
         if(fileId == null) {
             return false;
         }
@@ -526,7 +527,8 @@ public class GetFileRequest extends FileRequest {
         return rfs;
     }
     
-    public TGetRequestFileStatus getTGetRequestFileStatus() throws java.sql.SQLException{
+    public TGetRequestFileStatus getTGetRequestFileStatus() 
+            throws java.sql.SQLException, SRMInvalidRequestException{
         TGetRequestFileStatus fileStatus = new TGetRequestFileStatus();
         if(fileMetaData != null) {
             fileStatus.setFileSize(new org.apache.axis.types.UnsignedLong(fileMetaData.size));
@@ -688,6 +690,9 @@ public class GetFileRequest extends FileRequest {
                     return;
                 }
             }
+        } catch (SRMInvalidRequestException ire) {
+            esay(ire);
+            throw new FatalJobFailure(ire.getMessage());
         }
         catch(IllegalStateTransition ist) {
             throw new NonFatalJobFailure(ist.toString());
@@ -755,13 +760,24 @@ public class GetFileRequest extends FileRequest {
         State state = getState();
         say("State changed from "+oldState+" to "+getState());
         if(state == State.READY) {
-            getRequest().resetRetryDeltaTime();
+            try {
+                getRequest().resetRetryDeltaTime();
+            } catch (SRMInvalidRequestException ire) {
+                esay(ire);
+            }
         }
         if(State.isFinalState(state)) {
             if(fileId != null && pinId != null) {
                 UnpinCallbacks callbacks = new TheUninCallbacks(this.getId());
                 say("state changed to final state, unpinning fileId= "+ fileId+" pinId = "+pinId);
-                storage.unPinFile(getUser(),fileId, callbacks, pinId);
+                SRMUser user;
+                try {
+                    user = getUser();
+                } catch (SRMInvalidRequestException ire) {
+                    esay (ire) ;
+                    return;
+                }
+                storage.unPinFile(user,fileId, callbacks, pinId);
             }
         }
     }
@@ -849,7 +865,8 @@ public class GetFileRequest extends FileRequest {
             this.fileRequestJobId = fileRequestJobId;
         }
         
-        private GetFileRequest getGetFileRequest()   throws java.sql.SQLException{
+        private GetFileRequest getGetFileRequest() 
+                throws java.sql.SQLException, SRMInvalidRequestException {
             Job job = Job.getJob(fileRequestJobId);
             if(job != null) {
                 return (GetFileRequest) job;
@@ -1021,7 +1038,8 @@ public class GetFileRequest extends FileRequest {
             this.fileRequestJobId = fileRequestJobId;
         }
         
-        public GetFileRequest getGetFileRequest() throws java.sql.SQLException {
+        public GetFileRequest getGetFileRequest() 
+                throws java.sql.SQLException,SRMInvalidRequestException  {
             Job job = Job.getJob(fileRequestJobId);
             if(job != null) {
                 return (GetFileRequest) job;
@@ -1153,7 +1171,8 @@ public class GetFileRequest extends FileRequest {
             this.fileRequestJobId = fileRequestJobId;
         }
         
-        public GetFileRequest getGetFileRequest() throws java.sql.SQLException {
+        public GetFileRequest getGetFileRequest() 
+                throws java.sql.SQLException, SRMInvalidRequestException {
             Job job = Job.getJob(fileRequestJobId);
             if(job != null) {
                 return (GetFileRequest) job;

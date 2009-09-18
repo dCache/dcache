@@ -219,6 +219,7 @@ import java.util.Iterator;
 import org.dcache.srm.SRMAbortedException;
 import org.dcache.srm.SRMReleasedException;
 import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.util.JDC;
 /**
  *
@@ -395,8 +396,12 @@ public abstract class Job  {
     private boolean savedInFinalState = false;
 
 	private JDC jdc;
-    
-    public void saveJob()  {
+
+    public void saveJob() {
+        saveJob(false);
+    }
+
+    public void saveJob(boolean force)  {
         //  by making sure that the saving of the job in final state happens 
         // only once 
         // we hope to eliminate the dubplicate key error
@@ -405,7 +410,7 @@ public abstract class Job  {
         }
         try {
             boolean isFinalState = State.isFinalState(this.getState());
-            jobStorage.saveJob(this, isFinalState);
+            jobStorage.saveJob(this, isFinalState || force);
             savedInFinalState = isFinalState;
         } catch(Throwable t) {
             // if saving fails we do not want to fail the request
@@ -414,7 +419,7 @@ public abstract class Job  {
             
         }
     }
-    
+
     public void say(String s) {
         _log.debug(" Job id="+id+" :"+ s);
         }
@@ -427,11 +432,12 @@ public abstract class Job  {
         _log.error(" Job id="+id+" exception", t);
         }
     
-    public static final Job getJob(Long jobId) {
+    public static final Job getJob(Long jobId) throws SRMInvalidRequestException{
          return getJob ( jobId, null);
     }
     
-    public static final Job getJob(Long jobId, Connection _con) {
+    public static final Job getJob(Long jobId, Connection _con) 
+            throws SRMInvalidRequestException  {
         synchronized(weakJobStorage) {
             Object o = weakJobStorage.get(jobId);
             if(o!= null) {
@@ -453,39 +459,41 @@ public abstract class Job  {
             job = sharedMemoryCache.getJob(jobId);
         }
 
+        boolean restoredFromDb=false;
         if(job == null) {
-        JobStorage jobStoragesArray[];
-        synchronized(jobStorages) {
-            jobStoragesArray =
-            (JobStorage[])jobStorages.toArray(new JobStorage[0]);
-        }
+            JobStorage jobStoragesArray[];
+            synchronized(jobStorages) {
+                jobStoragesArray =
+                (JobStorage[])jobStorages.toArray(new JobStorage[0]);
+            }
         
         
-        for(int i = 0; i<jobStoragesArray.length; ++i) {
-            
-            if(_con == null)
-            {
-                try{
-                    job = (Job) jobStoragesArray[i].getJob(jobId);
+            for(int i = 0; i<jobStoragesArray.length; ++i) {
+
+                if(_con == null)
+                {
+                    try{
+                        job = (Job) jobStoragesArray[i].getJob(jobId);
+                    }
+                    catch(java.sql.SQLException sqle){
+                        sqle.printStackTrace();
+                    }
                 }
-                catch(java.sql.SQLException sqle){
-                    sqle.printStackTrace();
+                else
+                {
+                    try {
+                        job = (Job) jobStoragesArray[i].getJob(jobId,_con);
+                    }
+                    catch(java.sql.SQLException sqle){
+                        sqle.printStackTrace();
+                    }
+
+                }
+                if(job != null) {
+                    restoredFromDb = true;
+                    break;
                 }
             }
-            else
-            {
-                try {
-                    job = (Job) jobStoragesArray[i].getJob(jobId,_con);
-                }
-                catch(java.sql.SQLException sqle){
-                    sqle.printStackTrace();
-                }
-                
-            }
-            if(job != null) {
-                break;
-            }
-        }
         }
         //since we do not synchronize  on the jobStorages or the job class 
         // in this method, some other thread could have got to the same point, and created
@@ -515,13 +523,13 @@ public abstract class Job  {
         }
         }
         
-        if(job != null) {
+        if(job != null && restoredFromDb) {
             //System.out.println("calling job.expireRestoredJobOrCreateExperationTimer();" );
             job.expireRestoredJobOrCreateExperationTimer();
             //System.out.println("returning job ");
             return job;
         }
-        throw new IllegalArgumentException("jobId = "+jobId+" does not correspond to any known job");
+        throw new SRMInvalidRequestException("jobId = "+jobId+" does not correspond to any known job");
     }
 
 

@@ -15,6 +15,7 @@ import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.request.Request;
 import org.dcache.srm.request.ContainerRequest;
 import org.dcache.srm.util.Configuration;
@@ -69,6 +70,10 @@ public class SrmAbortRequest {
         } catch(MalformedURIException mue) {
             logger.debug(" malformed uri : "+mue.getMessage());
             response = getFailedResponse(" malformed uri : "+mue.getMessage(),
+                    TStatusCode.SRM_INVALID_REQUEST);
+        } catch(SRMInvalidRequestException ire) {
+            logger.debug(" invalid request : "+ire.getMessage());
+            response = getFailedResponse(" invalid request : "+ire.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
         } catch(SQLException sqle) {
             logger.error(sqle);

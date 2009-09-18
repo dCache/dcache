@@ -13,6 +13,7 @@ import org.dcache.srm.v2_2.SrmAbortFilesResponse;
 import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.SRMUser;
+import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
@@ -75,6 +76,10 @@ public class SrmAbortFiles {
         } catch(MalformedURIException mue) {
             logger.debug(" malformed uri : "+mue.getMessage());
             response = getFailedResponse(" malformed uri : "+mue.getMessage(),
+                    TStatusCode.SRM_INVALID_REQUEST);
+        } catch(SRMInvalidRequestException ire) {
+            logger.debug(" invalid request : "+ire.getMessage());
+            response = getFailedResponse(" invalid request : "+ire.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
         } catch(SQLException sqle) {
             logger.error(sqle);

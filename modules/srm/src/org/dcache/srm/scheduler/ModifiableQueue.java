@@ -120,6 +120,7 @@ package org.dcache.srm.scheduler;
 import java.util.List;
 import java.util.LinkedList;
 import java.util.Iterator;
+import org.dcache.srm.SRMInvalidRequestException;
 /**
  *
  * @author  timur
@@ -149,7 +150,7 @@ public class ModifiableQueue  {
     }
     
     
-    public  Job peek()  throws java.sql.SQLException{
+    public  Job peek()  throws java.sql.SQLException,SRMInvalidRequestException {
         
         Long headId;
         synchronized(queue){
@@ -165,7 +166,10 @@ public class ModifiableQueue  {
     }
     
     
-    public Job take() throws InterruptedException, java.sql.SQLException {
+    public Job take()
+            throws InterruptedException,
+            java.sql.SQLException,
+            SRMInvalidRequestException {
         for(;;) {
             Long id = null;
             synchronized(queue) {
@@ -188,7 +192,10 @@ public class ModifiableQueue  {
         }
     }
     
-    public Job poll(long msecs) throws InterruptedException, java.sql.SQLException {
+    public Job poll(long msecs)
+            throws InterruptedException,
+            java.sql.SQLException,
+            SRMInvalidRequestException {
         
         long waitTime = msecs;
         long start = (msecs <= 0)? 0: System.currentTimeMillis();
@@ -315,7 +322,8 @@ public class ModifiableQueue  {
         public int calculateValue(int queueLength, int queuePosition, Job job);
     }
     
-    public synchronized Job getGreatestValueObject(ValueCalculator calc)  throws java.sql.SQLException{
+    public synchronized Job getGreatestValueObject(ValueCalculator calc)  
+            throws java.sql.SQLException, SRMInvalidRequestException{
         Job greatestValueJob;
         int greatestValue;
        //System.out.println("QUEUE.getGreatestValueObject()");

@@ -33,7 +33,6 @@ public class SrmStatusOfLsRequest {
         AbstractStorageElement storage;
         SrmStatusOfLsRequestRequest request;
         SrmStatusOfLsRequestResponse response;
-        Scheduler scheduler;
         SRMUser user;
         RequestCredential credential;
         LsRequestStorage requestStorage;
@@ -53,7 +52,6 @@ public class SrmStatusOfLsRequest {
                 this.user = user;
                 this.credential = credential;
                 this.storage = storage;
-                this.scheduler = srm.getGetRequestScheduler();
                 this.configuration = srm.getConfiguration();
         }
 

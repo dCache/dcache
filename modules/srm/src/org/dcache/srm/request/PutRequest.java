@@ -161,7 +161,7 @@ public class PutRequest extends ContainerRequest{
             
             fileRequests[i] = fileRequest;
         }
-         storeInSharedMemory();
+        storeInSharedMemory();
         
     }
     
@@ -231,6 +231,12 @@ public class PutRequest extends ContainerRequest{
     @Override
     public void schedule() throws InterruptedException,
     IllegalStateTransition {
+        
+        // save this request in request storage unconditionally
+        // file requests will get stored as soon as they are
+        // scheduled, and the saved state needs to be consistent
+
+        saveJob(true);
         for(int i = 0; i < fileRequests.length ;++ i) {
             PutFileRequest fileRequest = (PutFileRequest) fileRequests[i];
             fileRequest.schedule();

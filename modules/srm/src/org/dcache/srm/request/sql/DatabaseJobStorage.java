@@ -78,6 +78,7 @@ import java.sql.*;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Iterator;
+import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.scheduler.Job.JobHistory;
 import org.dcache.srm.scheduler.JobStorage;
@@ -702,10 +703,14 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             for(java.util.Iterator i =idsSet.iterator(); i.hasNext();)
             {   
                 Long ID = (Long)i.next();
-                Job job = Job.getJob(ID,
-                
-                _con);
-                scheduler.schedule(job);
+                try {
+                    Job job = Job.getJob(ID,
+
+                    _con);
+                    scheduler.schedule(job);
+                } catch (SRMInvalidRequestException ire) {
+                    logger.elog(ire);
+                }
             }
         }
         catch(SQLException sqle1) {
@@ -753,9 +758,12 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
                 Long ID = (Long)i.next();
                 // we just restore the job, which will triger the experation of the job, if its lifetime
                 // is over
-                
-                Job job = Job.getJob(ID,
-                _con);
+                try {
+                    Job job = Job.getJob(ID,
+                    _con);
+                } catch (SRMInvalidRequestException ire) {
+                    logger.elog(ire);
+                }
                 
             }
         }

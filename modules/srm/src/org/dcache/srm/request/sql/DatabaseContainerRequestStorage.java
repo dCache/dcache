@@ -15,6 +15,7 @@ import org.dcache.srm.util.Configuration;
 import java.sql.*;
 import java.util.Set;
 import org.dcache.srm.SRMUser;
+import org.dcache.srm.SRMInvalidRequestException;
 
 /**
  *
@@ -125,7 +126,11 @@ public abstract class DatabaseContainerRequestStorage extends DatabaseRequestSto
         sqlStatement.close();
         FileRequest[] fileRequests = new FileRequest[fileIds.length];
         for(int i = 0; i<fileRequests.length; ++i) {
-            fileRequests[i] = (FileRequest) Job.getJob(fileIds[i],_con);
+            try {
+                fileRequests[i] = (FileRequest) Job.getJob(fileIds[i],_con);
+            } catch (SRMInvalidRequestException ire){
+                logger.elog(ire);
+            }
         }
         return getContainerRequest(
         _con,

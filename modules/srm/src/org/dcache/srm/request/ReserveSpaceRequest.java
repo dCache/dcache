@@ -203,6 +203,8 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.SrmReserveSpaceResponse;
 import org.dcache.srm.v2_2.SrmStatusOfReserveSpaceRequestResponse;
 import org.apache.axis.types.UnsignedLong;
+import org.dcache.srm.SRMInvalidRequestException;
+import org.apache.log4j.Logger;
 /**
  * File request is an abstract "SRM file request"
  * its concrete subclasses are GetFileRequest,PutFileRequest and CopyFileRequest
@@ -216,7 +218,8 @@ import org.apache.axis.types.UnsignedLong;
  * @version
  */
 public class ReserveSpaceRequest extends Request {
-    
+    private static final Logger logger =
+            Logger.getLogger (ReserveSpaceRequest.class);
     
     private long sizeInBytes ;
     private TRetentionPolicy retentionPolicy =null;
@@ -483,7 +486,8 @@ public class ReserveSpaceRequest extends Request {
         return status;
     }
     
-    public static ReserveSpaceRequest getRequest(Long requestId)  {
+    public static ReserveSpaceRequest getRequest(Long requestId)
+            throws SRMInvalidRequestException {
         Job job = Job.getJob( requestId);
         if(job == null || !(job instanceof ReserveSpaceRequest)) {
             return null;
@@ -497,7 +501,8 @@ public class ReserveSpaceRequest extends Request {
             this.requestJobId = requestJobId;
         }
         
-        public ReserveSpaceRequest geReserveSpacetRequest() {
+        public ReserveSpaceRequest getReserveSpacetRequest()
+                throws SRMInvalidRequestException {
             Job job = Job.getJob(requestJobId);
             if(job != null) {
                 return (ReserveSpaceRequest) job;
@@ -506,7 +511,14 @@ public class ReserveSpaceRequest extends Request {
         }
         
         public void ReserveSpaceFailed(String reason) {
-            ReserveSpaceRequest request = geReserveSpacetRequest();
+
+            ReserveSpaceRequest request;
+            try {
+                  request  = getReserveSpacetRequest();
+            } catch (SRMInvalidRequestException ire) {
+                logger.error(ire);
+                return;
+            }
             try {
                 synchronized(request) {
                     
@@ -523,7 +535,13 @@ public class ReserveSpaceRequest extends Request {
         }
         
         public void NoFreeSpace(String  reason) {
-            ReserveSpaceRequest request = geReserveSpacetRequest();
+            ReserveSpaceRequest request;
+            try {
+                  request  = getReserveSpacetRequest();
+            } catch (SRMInvalidRequestException ire) {
+                logger.error(ire);
+                return;
+            }
             
             try {
                 synchronized(request) {
@@ -542,7 +560,13 @@ public class ReserveSpaceRequest extends Request {
         }
  
         public void ReserveSpaceFailed(Exception e) {
-            ReserveSpaceRequest request = geReserveSpacetRequest();
+            ReserveSpaceRequest request;
+            try {
+                  request  = getReserveSpacetRequest();
+            } catch (SRMInvalidRequestException ire) {
+                logger.error(ire);
+                return;
+            }
             
             try {
                 synchronized(request) {
@@ -561,7 +585,13 @@ public class ReserveSpaceRequest extends Request {
         }
         
         public void SpaceReserved(String spaceReservationToken, long reservedSpaceSize) {
-            ReserveSpaceRequest request = geReserveSpacetRequest();
+            ReserveSpaceRequest request;
+            try {
+                  request  = getReserveSpacetRequest();
+            } catch (SRMInvalidRequestException ire) {
+                logger.error(ire);
+                return;
+            }
             try {
                 synchronized(request) {
                     

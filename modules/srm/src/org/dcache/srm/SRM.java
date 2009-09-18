@@ -109,6 +109,7 @@ import java.io.IOException;
 import java.io.File;
 import java.net.InetAddress;
 
+import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.SchedulerFactory;
 import org.dcache.srm.scheduler.State;
@@ -177,6 +178,7 @@ import org.dcache.commons.stats.MonitoringProxy;
 import java.lang.reflect.Method;
 
 import java.util.concurrent.TimeoutException;
+import org.apache.log4j.Logger;
 
 /**
  * SRM class creates an instance of SRM client class and publishes it on a
@@ -185,7 +187,7 @@ import java.util.concurrent.TimeoutException;
  * @author  timur
  */
 public class SRM {
-
+    private static final Logger logger = Logger.getLogger(SRM.class);
     private String name;
     private InetAddress host;
     private SRMAuthorization authorization;
@@ -1356,8 +1358,12 @@ public class SRM {
         Set activeRequestIds = getStorage.getLatestCompletedRequestIds(maxCount);
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
-            GetRequest gr = (GetRequest) ContainerRequest.getRequest(requestId);
-            sb.append(gr).append('\n');
+            try {
+                GetRequest gr = (GetRequest) ContainerRequest.getRequest(requestId);
+                sb.append(gr).append('\n');
+            } catch (SRMInvalidRequestException ire) {
+                logger.error(ire);
+            }
         }
 
     }
@@ -1366,8 +1372,12 @@ public class SRM {
         Set activeRequestIds = getStorage.getLatestFailedRequestIds(maxCount);
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
-            GetRequest gr = (GetRequest) ContainerRequest.getRequest(requestId);
-            sb.append(gr).append('\n');
+            try {
+                GetRequest gr = (GetRequest) ContainerRequest.getRequest(requestId);
+                sb.append(gr).append('\n');
+            } catch (SRMInvalidRequestException ire) {
+                logger.error(ire);
+            }
         }
 
     }
@@ -1376,8 +1386,12 @@ public class SRM {
         Set activeRequestIds = getStorage.getLatestDoneRequestIds(maxCount);
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
-            GetRequest gr = (GetRequest) ContainerRequest.getRequest(requestId);
-            sb.append(gr).append('\n');
+            try {
+                GetRequest gr = (GetRequest) ContainerRequest.getRequest(requestId);
+                sb.append(gr).append('\n');
+            } catch (SRMInvalidRequestException ire) {
+                logger.error(ire);
+            }
         }
 
     }
@@ -1386,8 +1400,12 @@ public class SRM {
         Set activeRequestIds = getStorage.getLatestCanceledRequestIds(maxCount);
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
-            GetRequest gr = (GetRequest) ContainerRequest.getRequest(requestId);
-            sb.append(gr).append('\n');
+            try {
+                GetRequest gr = (GetRequest) ContainerRequest.getRequest(requestId);
+                sb.append(gr).append('\n');
+            } catch (SRMInvalidRequestException ire) {
+                logger.error(ire);
+            }
         }
     }
 
@@ -1439,8 +1457,12 @@ public class SRM {
         Set activeRequestIds = putStorage.getLatestCompletedRequestIds(maxCount);
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
-            PutRequest pr = (PutRequest) ContainerRequest.getRequest(requestId);
-            sb.append(pr).append('\n');
+            try {
+                PutRequest pr = (PutRequest) ContainerRequest.getRequest(requestId);
+                sb.append(pr).append('\n');
+            } catch (SRMInvalidRequestException ire) {
+                logger.error(ire);
+            }
         }
     }
 
@@ -1448,8 +1470,12 @@ public class SRM {
         Set activeRequestIds = putStorage.getLatestFailedRequestIds(maxCount);
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
-            PutRequest pr = (PutRequest) ContainerRequest.getRequest(requestId);
-            sb.append(pr).append('\n');
+            try {
+                PutRequest pr = (PutRequest) ContainerRequest.getRequest(requestId);
+                sb.append(pr).append('\n');
+            } catch (SRMInvalidRequestException ire) {
+                logger.error(ire);
+            }
         }
     }
 
@@ -1457,8 +1483,12 @@ public class SRM {
         Set activeRequestIds = putStorage.getLatestCanceledRequestIds(maxCount);
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
-            PutRequest pr = (PutRequest) ContainerRequest.getRequest(requestId);
-            sb.append(pr).append('\n');
+            try {
+                PutRequest pr = (PutRequest) ContainerRequest.getRequest(requestId);
+                sb.append(pr).append('\n');
+            } catch (SRMInvalidRequestException ire) {
+                logger.error(ire);
+            }
         }
     }
 
@@ -1466,8 +1496,12 @@ public class SRM {
         Set activeRequestIds = putStorage.getLatestDoneRequestIds(maxCount);
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
-            PutRequest pr = (PutRequest) ContainerRequest.getRequest(requestId);
-            sb.append(pr).append('\n');
+            try {
+                PutRequest pr = (PutRequest) ContainerRequest.getRequest(requestId);
+                sb.append(pr).append('\n');
+            } catch (SRMInvalidRequestException ire) {
+                logger.error(ire);
+            }
         }
     }
 
@@ -1501,8 +1535,12 @@ public class SRM {
         Set activeRequestIds = copyStorage.getLatestCompletedRequestIds(maxCount);
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
-            CopyRequest cr = (CopyRequest) ContainerRequest.getRequest(requestId);
-            sb.append(cr).append('\n');
+            try {
+                CopyRequest cr = (CopyRequest) ContainerRequest.getRequest(requestId);
+                sb.append(cr).append('\n');
+            } catch (SRMInvalidRequestException ire) {
+                logger.error(ire);
+            }
         }
     }
 
@@ -1510,8 +1548,12 @@ public class SRM {
         Set activeRequestIds = copyStorage.getLatestFailedRequestIds(maxCount);
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
-            CopyRequest cr = (CopyRequest) ContainerRequest.getRequest(requestId);
-            sb.append(cr).append('\n');
+            try {
+                CopyRequest cr = (CopyRequest) ContainerRequest.getRequest(requestId);
+                sb.append(cr).append('\n');
+            } catch (SRMInvalidRequestException ire) {
+                logger.error(ire);
+            }
         }
     }
 
@@ -1519,8 +1561,12 @@ public class SRM {
         Set activeRequestIds = copyStorage.getLatestCanceledRequestIds(maxCount);
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
-            CopyRequest cr = (CopyRequest) ContainerRequest.getRequest(requestId);
-            sb.append(cr).append('\n');
+            try {
+                CopyRequest cr = (CopyRequest) ContainerRequest.getRequest(requestId);
+                sb.append(cr).append('\n');
+            } catch (SRMInvalidRequestException ire) {
+                logger.error(ire);
+            }
         }
     }
 
@@ -1528,8 +1574,12 @@ public class SRM {
         Set activeRequestIds = copyStorage.getLatestDoneRequestIds(maxCount);
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
-            CopyRequest cr = (CopyRequest) ContainerRequest.getRequest(requestId);
-            sb.append(cr).append('\n');
+            try {
+                CopyRequest cr = (CopyRequest) ContainerRequest.getRequest(requestId);
+                sb.append(cr).append('\n');
+            } catch (SRMInvalidRequestException ire) {
+                logger.error(ire);
+            }
         }
     }
 
@@ -1563,8 +1613,12 @@ public class SRM {
         Set activeRequestIds = bringOnlineStorage.getLatestCompletedRequestIds(maxCount);
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
-            BringOnlineRequest pr = (BringOnlineRequest) ContainerRequest.getRequest(requestId);
-            sb.append(pr).append('\n');
+            try {
+                BringOnlineRequest pr = (BringOnlineRequest) ContainerRequest.getRequest(requestId);
+                sb.append(pr).append('\n');
+            } catch (SRMInvalidRequestException ire) {
+                logger.error(ire);
+            }
         }
     }
 
@@ -1572,8 +1626,12 @@ public class SRM {
         Set activeRequestIds = bringOnlineStorage.getLatestFailedRequestIds(maxCount);
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
-            BringOnlineRequest pr = (BringOnlineRequest) ContainerRequest.getRequest(requestId);
-            sb.append(pr).append('\n');
+            try {
+                BringOnlineRequest pr = (BringOnlineRequest) ContainerRequest.getRequest(requestId);
+                sb.append(pr).append('\n');
+            } catch (SRMInvalidRequestException ire) {
+                logger.error(ire);
+            }
         }
     }
 
@@ -1581,8 +1639,12 @@ public class SRM {
         Set activeRequestIds = bringOnlineStorage.getLatestCanceledRequestIds(maxCount);
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
-            BringOnlineRequest pr = (BringOnlineRequest) ContainerRequest.getRequest(requestId);
-            sb.append(pr).append('\n');
+            try {
+                BringOnlineRequest pr = (BringOnlineRequest) ContainerRequest.getRequest(requestId);
+                sb.append(pr).append('\n');
+            } catch (SRMInvalidRequestException ire) {
+                logger.error(ire);
+            }
         }
     }
 
@@ -1590,8 +1652,12 @@ public class SRM {
         Set activeRequestIds = bringOnlineStorage.getLatestDoneRequestIds(maxCount);
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
-            BringOnlineRequest pr = (BringOnlineRequest) ContainerRequest.getRequest(requestId);
-            sb.append(pr).append('\n');
+            try {
+                BringOnlineRequest pr = (BringOnlineRequest) ContainerRequest.getRequest(requestId);
+                sb.append(pr).append('\n');
+            } catch (SRMInvalidRequestException ire) {
+                logger.error(ire);
+            }
         }
     }
 
@@ -1632,8 +1698,12 @@ public class SRM {
                 storage.getActiveRequestIds(scheduler.getId());
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
-            Request r = (Request) Request.getRequest(requestId);
-            sb.append(r).append('\n');
+            try {
+                Request r = (Request) Request.getRequest(requestId);
+                sb.append(r).append('\n');
+            } catch (SRMInvalidRequestException ire) {
+                logger.error(ire);
+            }
         }
     }
 
@@ -1651,7 +1721,8 @@ public class SRM {
         return load;
     }
 
-    public void listRequest(StringBuffer sb, Long requestId, boolean longformat) throws java.sql.SQLException {
+    public void listRequest(StringBuffer sb, Long requestId, boolean longformat) throws java.sql.SQLException,
+    SRMInvalidRequestException {
         Job job = Job.getJob(requestId);
         if (job == null) {
             sb.append("request with reqiest id " + requestId + " is not found\n");
@@ -1670,7 +1741,8 @@ public class SRM {
         }
     }
 
-    public void cancelRequest(StringBuffer sb, Long requestId) throws java.sql.SQLException {
+    public void cancelRequest(StringBuffer sb, Long requestId) throws java.sql.SQLException,
+    SRMInvalidRequestException {
         Job job = Job.getJob(requestId);
         if (job == null || !(job instanceof ContainerRequest)) {
             sb.append("request with reqiest id " + requestId + " is not found\n");
@@ -1694,32 +1766,38 @@ public class SRM {
         }
     }
 
-    public void cancelAllGetRequest(StringBuffer sb, String pattern) throws java.sql.SQLException {
+    public void cancelAllGetRequest(StringBuffer sb, String pattern)
+            throws java.sql.SQLException, SRMInvalidRequestException {
 
         cancelAllRequest(sb, pattern, getGetRequestScheduler(), getStorage);
     }
 
-    public void cancelAllBringOnlineRequest(StringBuffer sb, String pattern) throws java.sql.SQLException {
+    public void cancelAllBringOnlineRequest(StringBuffer sb, String pattern) 
+            throws java.sql.SQLException, SRMInvalidRequestException {
 
         cancelAllRequest(sb, pattern, getBringOnlineRequestScheduler(), bringOnlineStorage);
     }
 
-    public void cancelAllPutRequest(StringBuffer sb, String pattern) throws java.sql.SQLException {
+    public void cancelAllPutRequest(StringBuffer sb, String pattern)
+            throws java.sql.SQLException, SRMInvalidRequestException {
 
         cancelAllRequest(sb, pattern, getPutRequestScheduler(), putStorage);
     }
 
-    public void cancelAllCopyRequest(StringBuffer sb, String pattern) throws java.sql.SQLException {
+    public void cancelAllCopyRequest(StringBuffer sb, String pattern) 
+            throws java.sql.SQLException, SRMInvalidRequestException {
 
         cancelAllRequest(sb, pattern, getCopyRequestScheduler(), copyStorage);
     }
 
-    public void cancelAllReserveSpaceRequest(StringBuffer sb, String pattern) throws java.sql.SQLException {
+    public void cancelAllReserveSpaceRequest(StringBuffer sb, String pattern)
+            throws java.sql.SQLException, SRMInvalidRequestException {
 
         cancelAllRequest(sb, pattern, getReserveSpaceScheduler(), reserveSpaceRequestStorage);
     }
 
-    public void cancelAllLsRequests(StringBuffer sb, String pattern) throws java.sql.SQLException {
+    public void cancelAllLsRequests(StringBuffer sb, String pattern)
+            throws java.sql.SQLException, SRMInvalidRequestException {
 
         cancelAllRequest(sb, pattern, getLsRequestScheduler(), lsRequestStorage);
     }
@@ -1727,7 +1805,8 @@ public class SRM {
     private void cancelAllRequest(StringBuffer sb,
             String pattern,
             Scheduler scheduler,
-            DatabaseRequestStorage storage) throws java.sql.SQLException {
+            DatabaseRequestStorage storage) throws java.sql.SQLException,
+            SRMInvalidRequestException {
 
         java.util.Set<Long> jobsToKill = new java.util.HashSet<Long>();
         java.util.regex.Pattern p = java.util.regex.Pattern.compile(pattern);
