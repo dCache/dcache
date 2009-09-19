@@ -381,10 +381,7 @@ public abstract class Job  {
     }
     
     protected void storeInSharedMemory () {
-        if(storeInSharedMemoryCache) {
-            sharedMemoryCache.updateSharedMemoryChache(this);
-        }
-    
+        sharedMemoryCache.updateSharedMemoryChache(this);
     }
     
     private  JobStorage jobStorage;
@@ -455,9 +452,7 @@ public abstract class Job  {
         // This will allow to retrieve a job put in
         // a shared cache by a different instance of SRM
         // in a cluster
-        if(storeInSharedMemoryCache) {
-            job = sharedMemoryCache.getJob(jobId);
-        }
+        job = sharedMemoryCache.getJob(jobId);
 
         boolean restoredFromDb=false;
         if(job == null) {
@@ -517,9 +512,7 @@ public abstract class Job  {
             {                
                 //System.out.println("storring job in weakJobStorage, ");
                 weakJobStorage.put(job.id,new WeakReference(job));
-                if(storeInSharedMemoryCache) {
-                    sharedMemoryCache.updateSharedMemoryChache(job);
-            }
+                sharedMemoryCache.updateSharedMemoryChache(job);
         }
         }
         
@@ -716,14 +709,10 @@ public abstract class Job  {
             
         }
         if(!old.isFinalState() && state.isFinalState()) {
-            if(storeInSharedMemoryCache) {
-                sharedMemoryCache.updateSharedMemoryChache(this);
-            }
+            sharedMemoryCache.updateSharedMemoryChache(this);
         }
         if(!old.isFinalState() && state.isFinalState()) {
-            if(storeInSharedMemoryCache) {
-                sharedMemoryCache.updateSharedMemoryChache(this);
-            }
+            sharedMemoryCache.updateSharedMemoryChache(this);
         }
         stateChanged(old);
         if(save) {
@@ -1268,21 +1257,6 @@ public abstract class Job  {
 
 
     /**
-     * Setter for parameter controlling the caching of jobs in memory
-     * Since the cache is used for clustering the jobs,
-     * Save memory should be disabled if the SRM is running
-     * in terracotta clustered environment
-     * @param value If false, the incomplete requests will be cached
-     * in  memory , if true, they might be Garbage collected and
-     *  be reread from DB, when accessed
-     */
-    public static void saveMemory(boolean value) {
-        storeInSharedMemoryCache = !value;
-        if(storeInSharedMemoryCache == false) {
-            sharedMemoryCache.clearCache();
-        }
-    }
-    /**
      * This is the initial call to schedule the job for execution
      */
     public synchronized void schedule() throws InterruptedException,IllegalStateTransition
@@ -1298,12 +1272,7 @@ public abstract class Job  {
 
 
     public static Set<Job> getActiveJobs(Class type) {
-        if(storeInSharedMemoryCache) {
-            return sharedMemoryCache.getJobs(type);
-        } else {
-            return new HashSet<Job>();
-        }
+        return sharedMemoryCache.getJobs(type);
     }
-
  
 }

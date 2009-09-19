@@ -555,9 +555,6 @@ public class Storage
 
         config.setMoveEntry(isOptionSetToTrueOrYes("mv",config.isMoveEntry()));
 
-        config.setSaveMemory(isOptionSetToTrueOrYes("save-memory",
-            config.isSaveMemory()));
-
         config.setReserve_space_implicitely(isOptionSetToTrueOrYes(
             "reserve-space-implicitly",config.isReserve_space_implicitely()));
 

@@ -104,6 +104,7 @@ import org.dcache.srm.request.sql.LsFileRequestStorage;
 import org.dcache.srm.request.sql.DatabaseRequestCredentialStorage;
 import org.dcache.srm.util.Tools;
 import java.util.Set;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.io.IOException;
 import java.io.File;
@@ -387,8 +388,6 @@ public class SRM {
         requestCredentialStorage = new DatabaseRequestCredentialStorage(config);
         RequestCredential.registerRequestCredentialStorage(requestCredentialStorage);
         SchedulerFactory.initSchedulerFactory(storage, config, name);
-
-         Job.saveMemory(config.isSaveMemory());
 
         //config.getMaxActiveGet(),config.getMaxDoneGet(),config.getGetLifetime(),config);
        /* getPutRequestScheduler() = new RequestScheduler("put ContainerRequest Scheduler",
@@ -1347,11 +1346,11 @@ public class SRM {
     }
 
     public Set getGetRequestIds(SRMUser user, String description) throws java.sql.SQLException {
-        return getStorage.getActiveRequestIds(getGetRequestScheduler().getId(), user, description);
+        return getActiveJobIds(GetRequest.class,description);
     }
 
     public Set getLsRequestIds(SRMUser user, String description) throws java.sql.SQLException {
-        return lsRequestStorage.getActiveRequestIds(getGetRequestScheduler().getId(), user, description);
+        return getActiveJobIds(LsRequest.class,description);
     }
 
     public void listLatestCompletedGetRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
@@ -1450,7 +1449,7 @@ public class SRM {
     }
 
     public Set getPutRequestIds(SRMUser user, String description) throws java.sql.SQLException {
-        return putStorage.getActiveRequestIds(getPutRequestScheduler().getId(), user, description);
+        return getActiveJobIds(PutRequest.class,description);
     }
 
     public void listLatestCompletedPutRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
@@ -1528,7 +1527,7 @@ public class SRM {
     }
 
     public Set getCopyRequestIds(SRMUser user, String description) throws java.sql.SQLException {
-        return copyStorage.getActiveRequestIds(getCopyRequestScheduler().getId(), user, description);
+        return getActiveJobIds(CopyRequest.class,description);
     }
 
     public void listLatestCompletedCopyRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
@@ -1606,7 +1605,7 @@ public class SRM {
     }
 
     public Set getBringOnlineRequestIds(SRMUser user, String description) throws java.sql.SQLException {
-        return bringOnlineStorage.getActiveRequestIds(getBringOnlineRequestScheduler().getId(), user, description);
+        return getActiveJobIds(BringOnlineRequest.class,description);
     }
 
     public void listLatestCompletedBringOnlineRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
@@ -1934,5 +1933,24 @@ public class SRM {
     public Scheduler getLsRequestScheduler() {
         return getScheduler(LsFileRequest.class);
     }
+
+    public static Set<Long> getActiveJobIds(Class type, String description) {
+        Set<Job> jobs = Job.getActiveJobs(type);
+        Set<Long> ids = new HashSet<Long>();
+        for(Job job: jobs) {
+            if(description != null ) {
+                if( job instanceof Request ) {
+                    Request r = (Request) job;
+                    if(description.equals(r.getDescription())) {
+                        ids.add( job.getId());
+                    }
+                }
+            } else {
+                ids.add( job.getId());
+            }
+        }
+        return ids;
+    }
+
 
 }

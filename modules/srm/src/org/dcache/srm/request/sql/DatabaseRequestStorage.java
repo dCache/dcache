@@ -186,7 +186,7 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
         
     }
     
-    public Set getActiveRequestIds(String schedulerid)  throws java.sql.SQLException {
+    public Set<Long> getActiveRequestIds(String schedulerid)  throws java.sql.SQLException {
         String condition = " SCHEDULERID='"+schedulerid+
         "' AND STATE !="+State.DONE.getStateId()+
         " AND STATE !="+State.CANCELED.getStateId()+
@@ -194,7 +194,7 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
         return getJobIdsByCondition(condition);
     }
 
-    public Set getActiveRequestIds(String schedulerid, 
+    public Set<Long> getActiveRequestIds(String schedulerid,
             SRMUser user,
             String description )  throws java.sql.SQLException {
         String condition = " SCHEDULERID='"+schedulerid+
@@ -209,7 +209,7 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
         return getJobIdsByCondition(condition);
     }
     
-    public Set getLatestCompletedRequestIds(int maxNum)  throws java.sql.SQLException {
+    public Set<Long> getLatestCompletedRequestIds(int maxNum)  throws java.sql.SQLException {
         return getJobIdsByCondition(
         " STATE ="+State.DONE.getStateId()+
         " OR STATE ="+State.CANCELED.getStateId()+
