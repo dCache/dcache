@@ -4,6 +4,10 @@
 
 .PHONY: libgssTunnel.so client server
 
+PATH_PREFIX_DIR = /usr/local/
+LIB_PATH = $(PATH_PREFIX_DIR)/lib
+CP    = cp
+
 # Your compiler/linker options here
 
 #VP CFLAGS = 
@@ -34,8 +38,10 @@ ifeq "$(K)" "MIT"
 K5  = /usr
 SSL =
 
-CFLAGS  += -I$(K5)/include/ -I$(K5)/include/gssapi -DMIT_KRB5 
-LIBS = -L$(K5)/lib -lgssapi_krb5 $(SYS_LIBS)
+ARCH =
+
+CFLAGS  += -I$(K5)/include/ -I$(K5)/include/gssapi -DMIT_KRB5 -fPIC
+LIBS = -L$(K5)/lib$(ARCH) -lgssapi_krb5 $(SYS_LIBS)
 
 else
 
@@ -45,7 +51,7 @@ K5  = /products/heimdal
 SSL = /products/ssl
 
 CFLAGS  += -I$(K5)/include/ -I$(K5)/include/gssapi
-LIBS = -L$(K5)/lib -lgssapi \
+LIBS = -L$(K5)/lib$(ARCH) -lgssapi \
 	-lkrb5 -lroken -L$(SSL)/lib \
 	-lcrypto -lasn1 $(SYS_LIBS)
 
@@ -77,3 +83,8 @@ clean:
 
 .c.o:
 	$(CC) -c $(CFLAGS) $<
+	
+
+install: $(PLUGIN)
+	mkdir -p $(LIB_PATH)/
+	$(CP) $(PLUGIN) $(LIB_PATH)/;

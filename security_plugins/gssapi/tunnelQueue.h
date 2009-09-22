@@ -7,7 +7,7 @@
  */
 #ifndef TUNNEL_QUEUE_H
 #define TUNNEL_QUEUE_H
-
+#include <errno.h>
 #include <gssapi.h>
 
 typedef struct {

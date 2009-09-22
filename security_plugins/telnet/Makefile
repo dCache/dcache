@@ -11,18 +11,28 @@ CFLAGS = -I. -fPIC
 OBJS = telnetTunnel.o user.o 
 OBJS_pwd = dcapPasswd.o 
 
+PATH_PREFIX_DIR = /usr/local/
+LIB_PATH = $(PATH_PREFIX_DIR)/lib
 
-all: $(OBJS)  plugin 
+CP    = cp
+
+PLUGIN = libtelnetTunnel.so
+
+all: $(OBJS)  $(PLUGIN)
 
 dcapPasswd: $(OBJS_pwd)
 	$(CC) -o dcapPasswd $(OBJS_pwd) -lcrypt
 
 
-plugin:
-	$(LD) $(LDFLAGS) -o libtelnetTunnel.so $(OBJS) $(LIBS)
+$(PLUGIN):
+	$(LD) $(LDFLAGS) -o $(PLUGIN) $(OBJS) $(LIBS)
 	
 clean:
-	@rm -f *.o core a.out libtelnetTunnel.so dcapPasswd $(OBJS)
+	@rm -f *.o core a.out $(PLUGIN) dcapPasswd $(OBJS)
 
 .c.o:
 	$(CC) -c $(CFLAGS) $<
+
+install: $(PLUGIN) all
+	mkdir -p $(LIB_PATH)/
+	$(CP) $(PLUGIN) $(LIB_PATH)/;

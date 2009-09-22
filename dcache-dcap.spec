@@ -5,7 +5,7 @@ Summary: dCache Client
 Vendor: dCache.org
 Name: dcap
 Version: 1.9.3
-Release: 3
+Release: 3rc
 Prefix: /opt/d-cache/dcap
 BuildRoot: %{_tmppath}/%{name}-%{version}-build
 Source: %{name}.src.tgz
@@ -46,6 +46,22 @@ Requires: libdcap
 This package contains the gsi tunnel plugin library used by dcachedcap.
 This library is dynamically loaded at run time.
 
+%package -n libdcap-tunnel-krb
+Summary: dCache GSI Tunnel
+Group: Applications/System
+Requires: libdcap
+%description -n libdcap-tunnel-krb
+This package contains the gsi tunnel plugin library used by dcachedcap.
+This library is dynamically loaded at run time.
+
+%package -n libdcap-tunnel-telnet
+Summary: dCache GSI Tunnel
+Group: Applications/System
+Requires: libdcap
+%description -n libdcap-tunnel-telnet
+This package contains the gsi tunnel plugin library used by dcachedcap.
+This library is dynamically loaded at run time.
+
 %prep
 
 %setup -c
@@ -63,11 +79,17 @@ arch=64
 %endif
 make clean
 make install BIN_PATH=%{buildroot}%{prefix} LIB_PATH=%{buildroot}/${libdir}
-
+OLDCWD=`pwd`
 cd security_plugins/gssapi
 make clean
 make install ARCH=${arch} LIB_PATH=%{buildroot}/${libdir}
-
+make clean
+make -f  Makefile.gss install ARCH=${arch} LIB_PATH=%{buildroot}/${libdir}
+cd ${OLDCWD}
+cd security_plugins/telnet
+make clean
+make
+make install ARCH=${arch} LIB_PATH=%{buildroot}/${libdir}
 %clean
 rm -rf $RPM_BUILD_ROOT
 
@@ -121,4 +143,28 @@ rm -rf $RPM_BUILD_ROOT
 %endif
 %else
 %{prefix}/lib/libgsiTunnel.so
+%endif
+
+%files -n libdcap-tunnel-krb
+%defattr(-,root,root)
+%ifos Linux
+%ifarch x86_64
+%{prefix}/lib64/libgssTunnel.so
+%else
+%{prefix}/lib/libgssTunnel.so
+%endif
+%else
+%{prefix}/lib/libgssTunnel.so
+%endif
+
+%files -n libdcap-tunnel-telnet
+%defattr(-,root,root)
+%ifos Linux
+%ifarch x86_64
+%{prefix}/lib64/libtelnetTunnel.so
+%else
+%{prefix}/lib/libtelnetTunnel.so
+%endif
+%else
+%{prefix}/lib/libtelnetTunnel.so
 %endif
