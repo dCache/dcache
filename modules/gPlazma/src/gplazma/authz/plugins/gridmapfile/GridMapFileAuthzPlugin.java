@@ -104,11 +104,7 @@ public class GridMapFileAuthzPlugin extends RecordMappingPlugin {
         }
 
         gPlazmaAuthorizationRecord gauthrec = getgPlazmaAuthorizationRecord(user_name, subjectDN, role);
-        if (gauthrec!=null) {
-            gauthrec.setSubjectDN(subjectDN);
-            // Set the fqan to null, because it was not used for authorization.
-            gauthrec.setFqan(null);
-        }
+
         return gauthrec;
     }
 

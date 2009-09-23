@@ -1,12 +1,9 @@
 package org.dcache.auth;
 
 import gplazma.authz.records.gPlazmaAuthorizationRecord;
+import gplazma.authz.util.NameRolePair;
 
-import java.util.LinkedList;
-import java.util.Iterator;
-import java.util.List;
-
-import diskCacheV111.util.FQAN;
+import java.util.*;
 
 
 public class RecordConvert {
@@ -91,37 +88,41 @@ public class RecordConvert {
     /** Extract values from AuthenticationMessage and write in AuthorizationRecord
         * @return A filled-in AuthorizationRecord.
         */
-        public static AuthorizationRecord gPlazmaToAuthorizationRecord(List <gPlazmaAuthorizationRecord> gauthreclist) {
+        public static AuthorizationRecord gPlazmaToAuthorizationRecord(Map<NameRolePair, gPlazmaAuthorizationRecord> user_auths) {
 
           AuthorizationRecord authrec = new AuthorizationRecord();
-          Iterator<gPlazmaAuthorizationRecord> gauthreciter = gauthreclist.iterator();
-          gPlazmaAuthorizationRecord gauthrec = gauthreciter.hasNext() ? gauthreciter.next() : null;
+          Iterator<NameRolePair> nameRolesIter = user_auths.keySet().iterator();
+          NameRolePair firstPair = nameRolesIter.hasNext() ? nameRolesIter.next() : null;
+          gPlazmaAuthorizationRecord gauthrec = user_auths.get(firstPair);
           if (gauthrec == null) return authrec;
 
           authrec.setIdentity(gauthrec.getUsername());
-          authrec.setName(gauthrec.getSubjectDN());
+          authrec.setName(firstPair.getName());
           authrec.setUid(gauthrec.getUID());
           authrec.setPriority(gauthrec.getPriority());
           authrec.setHome(gauthrec.getHome());
           authrec.setRoot(gauthrec.getRoot());
           authrec.setReadOnly(gauthrec.isReadOnly());
 
-          List grplistcoll = new LinkedList<GroupList>();
-          while(gauthrec!=null) {
+          List<GroupList> grplistcoll = new LinkedList<GroupList>();
+        //Set<gPlazmaAuthorizationRecord> gauth_records = new LinkedHashSet<gPlazmaAuthorizationRecord>(user_auths.values());
+        for( NameRolePair nameAndRole : user_auths.keySet()) {
             GroupList grplist = new GroupList();
-            List grpcoll = new LinkedList<Group>();
-            int[] GIDs = gauthrec.getGIDs();
-            for (int gid : GIDs) {
-              Group grp = new Group();
-              grp.setGroupList(grplist);
-              grp.setGid(gid);
-              grpcoll.add(grp);
+            List<Group> grpcoll = new LinkedList<Group>();
+            gauthrec = user_auths.get(nameAndRole);
+            if(gauthrec!=null) {
+                int[] GIDs = gauthrec.getGIDs();
+                for (int gid : GIDs) {
+                    Group grp = new Group();
+                    grp.setGroupList(grplist);
+                    grp.setGid(gid);
+                    grpcoll.add(grp);
+                }
             }
             grplist.setGroups(grpcoll);
-            grplist.setAttribute(gauthrec.getFqan());
+            grplist.setAttribute(nameAndRole.getRole());
             grplist.setAuthRecord(authrec);
             grplistcoll.add(grplist);
-            gauthrec = gauthreciter.hasNext() ? gauthreciter.next() : null;
           }
           authrec.setGroupLists(grplistcoll);
           authrec.setId();

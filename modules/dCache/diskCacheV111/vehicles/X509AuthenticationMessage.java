@@ -1,29 +1,20 @@
 package diskCacheV111.vehicles;
 
-import java.util.LinkedList;
+import java.util.Map;
 
 import gplazma.authz.records.gPlazmaAuthorizationRecord;
+import gplazma.authz.util.NameRolePair;
 
 public class X509AuthenticationMessage extends AuthenticationMessage {
-
+  private static final long serialVersionUID = 5725336468955225808L;
   X509Info x509info=null;
 
   public X509AuthenticationMessage() {
     super();
   }
 
-  //public X509AuthenticationMessage(X509Info x509info) {
-  //  super(x509info.getId());
-  //  this.x509info = x509info;
-  //}
-
-  //public X509AuthenticationMessage(UserAuthBase user_auth, X509Info x509info) {
-  //  super(user_auth, x509info.getId());
-  //  this.x509info = x509info;
-  //}
-
-  public X509AuthenticationMessage(LinkedList<gPlazmaAuthorizationRecord> gauthlist, X509Info x509info) {
-    super(gauthlist, x509info.getId());
+  public X509AuthenticationMessage(Map<NameRolePair, gPlazmaAuthorizationRecord> user_auths, X509Info x509info) {
+    super(user_auths, x509info.getId());
     this.x509info = x509info;
   }
 

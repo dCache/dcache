@@ -1,9 +1,7 @@
 package diskCacheV111.services.authorization;
 
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.LinkedList;
-import java.util.HashSet;
-import java.util.Iterator;
+import java.util.*;
 
 import org.apache.log4j.Logger;
 
@@ -14,6 +12,7 @@ import dmg.cells.nucleus.CellPath;
 import dmg.util.Args;
 import gplazma.authz.AuthorizationController;
 import gplazma.authz.AuthorizationException;
+import gplazma.authz.util.NameRolePair;
 import gplazma.authz.records.gPlazmaAuthorizationRecord;
 import diskCacheV111.vehicles.AuthenticationMessage;
 
@@ -121,15 +120,18 @@ public class GplazmaService {
             }
             _authServ = new AuthorizationController(gplazmaPolicyFilePath);
             gPlazmaAuthorizationRecord gauthrec = _authServ.authorize(userPrincipal, userRole, null, null, null, null);
-            LinkedList<gPlazmaAuthorizationRecord> gauthlist = new LinkedList<gPlazmaAuthorizationRecord>();
-            gauthlist.add(gauthrec);
-            authRecord = RecordConvert.gPlazmaToAuthorizationRecord(gauthlist);
+            //LinkedList<gPlazmaAuthorizationRecord> gauthlist = new LinkedList<gPlazmaAuthorizationRecord>();
+            //gauthlist.add(gauthrec);
+            Map <NameRolePair, gPlazmaAuthorizationRecord> authzMappingrecords = new LinkedHashMap <NameRolePair, gPlazmaAuthorizationRecord>();
+            authzMappingrecords.put(new NameRolePair(userPrincipal, userRole), gauthrec);
+            authRecord = RecordConvert.gPlazmaToAuthorizationRecord(authzMappingrecords);
         }
 
 
         if (authRecord == null) return null;
 
-        Iterator<GroupList>  _userAuthGroupLists = authRecord.getGroupLists().iterator();
+        Set<GroupList> uniqueGroupListSet = new LinkedHashSet<GroupList>(authRecord.getGroupLists());
+        Iterator<GroupList> _userAuthGroupLists = uniqueGroupListSet.iterator();
 
         if (_userAuthGroupLists == null || !_userAuthGroupLists.hasNext()) return null;
 

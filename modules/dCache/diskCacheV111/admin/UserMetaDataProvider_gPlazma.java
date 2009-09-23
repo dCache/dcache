@@ -11,6 +11,7 @@ import dmg.util.Args;
 
 import gplazma.authz.AuthorizationController;
 import gplazma.authz.AuthorizationException;
+import gplazma.authz.util.NameRolePair;
 import gplazma.authz.records.gPlazmaAuthorizationRecord;
 import org.dcache.auth.*;
 import org.dcache.vehicles.AuthorizationMessage;
@@ -168,16 +169,18 @@ public class UserMetaDataProvider_gPlazma implements UserMetaDataProvider {
                 authRecord = authzm.getAuthorizationRecord();
         	}else{
         		// module
-                LinkedList<gPlazmaAuthorizationRecord> gauthlist = new LinkedList <gPlazmaAuthorizationRecord>();
-                gauthlist.add(_authCtrl.authorize(userPrincipal, userRole, null, null, null, null));
-                authRecord = RecordConvert.gPlazmaToAuthorizationRecord(gauthlist);
+                gPlazmaAuthorizationRecord gauthrec = _authCtrl.authorize(userPrincipal, userRole, null, null, null, null);
+                Map <NameRolePair, gPlazmaAuthorizationRecord> authzMappingrecords = new LinkedHashMap <NameRolePair, gPlazmaAuthorizationRecord>();
+                authzMappingrecords.put(new NameRolePair(userPrincipal, userRole), gauthrec);
+                authRecord = RecordConvert.gPlazmaToAuthorizationRecord(authzMappingrecords);
         	}
 
             if( authRecord.getGroupLists() == null ) {
                 throw new AuthorizationException("User not found");
             }
 
-            Iterator<GroupList> _userAuthGroupLists = authRecord.getGroupLists().iterator();    
+            Set<GroupList> uniqueGroupListSet = new LinkedHashSet<GroupList>(authRecord.getGroupLists());
+            Iterator<GroupList> _userAuthGroupLists = uniqueGroupListSet.iterator();
             GroupList grplist  = _userAuthGroupLists.next();
             String fqan = grplist.getAttribute();
             int i=0, glsize = grplist.getGroups().size();

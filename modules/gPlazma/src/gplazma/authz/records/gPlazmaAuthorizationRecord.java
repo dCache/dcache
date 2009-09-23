@@ -5,10 +5,7 @@ import java.io.Serializable;
 public class gPlazmaAuthorizationRecord extends AuthorizationRecordBase implements Serializable
 {
     private static final long serialVersionUID = 4793270902707803837L;
-    private String SubjectDN;
-    private String FQAN;
     private Object custom_record;
-    private long authRequestID;
 
     public gPlazmaAuthorizationRecord(String user,
                                       boolean readOnly,
@@ -22,24 +19,6 @@ public class gPlazmaAuthorizationRecord extends AuthorizationRecordBase implemen
         super( user, readOnly, priority, uid, gids, home, root,fsroot);
     }
 
-    public gPlazmaAuthorizationRecord(String user,
-                                      boolean readOnly,
-                                      int priority,
-                                      int uid,
-                                      int[] gids,
-                                      String home,
-                                      String root,
-                                      String fsroot,
-                                      String dn,
-                                      String fqan,
-                                      long authRequestID)
-    {
-        super( user, readOnly, priority, uid, gids, home, root,fsroot);
-        this.SubjectDN=dn;
-        this.FQAN=fqan;
-        this.authRequestID=authRequestID;
-    }
-
     public gPlazmaAuthorizationRecord(Object obj)
     {
         this( null, true, 0, -1, null, "", "", "");
@@ -50,32 +29,9 @@ public class gPlazmaAuthorizationRecord extends AuthorizationRecordBase implemen
     {
     }
 
-    public String getSubjectDN() {
-        return SubjectDN;
-    }
-
-    public void setSubjectDN(String dn) {
-        SubjectDN=dn;
-    }
-
-    public String getFqan() {
-        return FQAN;
-    }
-
-    public void setFqan(String fqan) {
-        FQAN=fqan;
-    }
 
     public Object getCustomRecord() {
         return custom_record;
-    }
-
-    public long getRequestID() {
-        return authRequestID;
-    }
-
-    public void setRequestID(long req_id) {
-        authRequestID=req_id;
     }
 
     public String toString()

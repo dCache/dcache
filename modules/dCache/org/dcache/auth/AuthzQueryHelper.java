@@ -10,13 +10,10 @@ import org.dcache.vehicles.gPlazmaDelegationInfo;
 import org.dcache.vehicles.AuthorizationMessage;
 import org.dcache.srm.security.SslGsiSocketFactory;
 import org.apache.log4j.Logger;
-import org.apache.log4j.Appender;
-import org.apache.log4j.ConsoleAppender;
-import org.apache.log4j.PatternLayout;
 import gplazma.authz.AuthorizationException;
-import gplazma.authz.AuthorizationController;
 import gplazma.authz.records.gPlazmaAuthorizationRecord;
 import gplazma.authz.util.X509CertUtil;
+import gplazma.authz.util.NameRolePair;
 
 import java.security.cert.X509Certificate;
 import java.net.InetAddress;
@@ -171,11 +168,18 @@ public class AuthzQueryHelper {
                         } else {
                             if( authobj instanceof Exception ) throw (Exception) authobj;
                             authmessage = (AuthenticationMessage) authobj;
-                            Iterator<gPlazmaAuthorizationRecord> recordsIter = authmessage.getgPlazmaAuthRecords().iterator();
-                            while (recordsIter.hasNext()) {
-                                gPlazmaAuthorizationRecord rec = recordsIter.next();
-                                String GIDS_str = Arrays.toString(rec.getGIDs());
-                                log.info("received " + rec.getUsername() + " " + rec.getUID() + " " + GIDS_str + " " + rec.getRoot());
+                            Map <NameRolePair, gPlazmaAuthorizationRecord> user_auths = authmessage.getgPlazmaAuthzMap();
+                            if(log.isDebugEnabled()) {
+                                for( NameRolePair nameAndRole : user_auths.keySet()) {
+                                    StringBuilder sb = new StringBuilder("authorized ");
+                                    sb.append(nameAndRole.getName()+nameAndRole.getRole()).append(" as: ");
+                                    gPlazmaAuthorizationRecord record = user_auths.get(nameAndRole);
+                                    sb.append(record.getUsername()).append(" ").
+                                            append(record.getUID()).append(" ").
+                                            append(Arrays.toString(record.getGIDs())).append(" ").
+                                            append(record.getRoot());
+                                    log.debug(sb);
+                                }
                             }
                         }
                     } catch (IOException ioe) {
@@ -257,11 +261,18 @@ public class AuthzQueryHelper {
                     throw new AuthorizationException("authRequestID " + authRequestID + " delegation failed: mismatch with returned authRequestID " + ((Message) authobj).getId());
                 }
                 authmessage = (AuthenticationMessage) authobj;
-                Iterator <gPlazmaAuthorizationRecord> recordsIter = authmessage.getgPlazmaAuthRecords().iterator();
-                while (recordsIter.hasNext()) {
-                    gPlazmaAuthorizationRecord rec = recordsIter.next();
-                    String GIDS_str = Arrays.toString(rec.getGIDs());
-                    log.info("received " + rec.getUsername() + " " + rec.getUID() + " " + GIDS_str + " " + rec.getRoot());
+                Map <NameRolePair, gPlazmaAuthorizationRecord> user_auths = authmessage.getgPlazmaAuthzMap();
+                if(log.isDebugEnabled()) {
+                    for( NameRolePair nameAndRole : user_auths.keySet()) {
+                        StringBuilder sb = new StringBuilder("authorized ");
+                        sb.append(nameAndRole.getName()+nameAndRole.getRole()).append(" as: ");
+                        gPlazmaAuthorizationRecord record = user_auths.get(nameAndRole);
+                        sb.append(record.getUsername()).append(" ").
+                                append(record.getUID()).append(" ").
+                                append(Arrays.toString(record.getGIDs())).append(" ").
+                                append(record.getRoot());
+                        log.debug(sb);
+                    }
                 }
             } else {
                 if( authobj instanceof NoRouteToCellException ) {
@@ -313,11 +324,18 @@ public class AuthzQueryHelper {
                 if(authmessage.getAuthRequestID()!=authRequestID) {
                     throw new AuthorizationException("authRequestID " + authRequestID + " authentication failed: mismatch with returned authRequestID " + ((Message) authobj).getId());
                 }
-                Iterator <gPlazmaAuthorizationRecord> recordsIter = authmessage.getgPlazmaAuthRecords().iterator();
-                while (recordsIter.hasNext()) {
-                    gPlazmaAuthorizationRecord rec = recordsIter.next();
-                    String GIDS_str = Arrays.toString(rec.getGIDs());
-                    log.info("received " + rec.getUsername() + " " + rec.getUID() + " " + GIDS_str + " " + rec.getRoot());
+                Map <NameRolePair, gPlazmaAuthorizationRecord> user_auths = authmessage.getgPlazmaAuthzMap();
+                if(log.isDebugEnabled()) {
+                    for( NameRolePair nameAndRole : user_auths.keySet()) {
+                        StringBuilder sb = new StringBuilder("authorized ");
+                        sb.append(nameAndRole.getName()+nameAndRole.getRole()).append(" as: ");
+                        gPlazmaAuthorizationRecord record = user_auths.get(nameAndRole);
+                        sb.append(record.getUsername()).append(" ").
+                                append(record.getUID()).append(" ").
+                                append(Arrays.toString(record.getGIDs())).append(" ").
+                                append(record.getRoot());
+                        log.debug(sb);
+                    }
                 }
             } else {
                 if( authobj instanceof Throwable )

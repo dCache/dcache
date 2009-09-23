@@ -146,10 +146,7 @@ public class VORoleMapAuthzPlugin extends RecordMappingPlugin {
         }
 
         gPlazmaAuthorizationRecord gauthrec = getgPlazmaAuthorizationRecord(user_name, subjectDN, role);
-        if (gauthrec!=null) {
-            gauthrec.setSubjectDN(subjectDN);
-            gauthrec.setFqan(role);
-        }
+
         return gauthrec;
     }
 

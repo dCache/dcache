@@ -130,6 +130,7 @@ import gplazma.authz.plugins.saz.SAZAuthorizationPlugin;
 import gplazma.authz.records.gPlazmaAuthorizationRecord;
 import gplazma.authz.util.X509CertUtil;
 import gplazma.authz.util.HostUtil;
+import gplazma.authz.util.NameRolePair;
 
 /**
  *
@@ -213,7 +214,7 @@ public class AuthorizationController {
         return plugin_loader;
     }
 
-    public LinkedList <gPlazmaAuthorizationRecord> authorize(GSSContext context, String desiredUserName, String serviceUrl, Socket socket)
+    public Map <NameRolePair, gPlazmaAuthorizationRecord> authorize(GSSContext context, String desiredUserName, String serviceUrl, Socket socket)
     throws AuthorizationException {
         AuthorizationException authexceptions=null;
 
@@ -239,12 +240,9 @@ public class AuthorizationController {
         return authorize(chain, desiredUserName, serviceUrl, socket);
     }
     
-    public LinkedList <gPlazmaAuthorizationRecord> authorize(X509Certificate[] chain, String desiredUserName, String serviceUrl, Socket socket)
+    public Map <NameRolePair, gPlazmaAuthorizationRecord> authorize(X509Certificate[] chain, String desiredUserName, String serviceUrl, Socket socket)
     throws AuthorizationException {
         AuthorizationException authexceptions=null;
-        
-        Iterator plugins = plugin_loader.getPlugins();
-        if (!plugins.hasNext()) return new LinkedList <gPlazmaAuthorizationRecord> ();
         
         try {
             setUseSAZ(authConfig.getSazClientOn());
@@ -322,9 +320,10 @@ public class AuthorizationController {
         
     }
     
-    public LinkedList <gPlazmaAuthorizationRecord> authorize(String subjectDN, Iterable <String> roles, X509Certificate[] chain, String desiredUserName, String serviceUrl, Socket socket)
-    throws AuthorizationException {
-        LinkedList <gPlazmaAuthorizationRecord> records = new LinkedList <gPlazmaAuthorizationRecord> ();
+    public Map <NameRolePair, gPlazmaAuthorizationRecord>
+        authorize(String subjectDN, Iterable <String> roles, X509Certificate[] chain, String desiredUserName, String serviceUrl, Socket socket)
+            throws AuthorizationException {
+        Map <NameRolePair, gPlazmaAuthorizationRecord> records = new LinkedHashMap <NameRolePair, gPlazmaAuthorizationRecord>();
         
         AuthorizationException authexceptions=null;
         
@@ -341,14 +340,25 @@ public class AuthorizationController {
                 else
                     authexceptions = new AuthorizationException(authexceptions.getMessage() + "\n" + ase.getMessage());
             }
-            if(r!=null && !records.contains(r)) {
-                records.add(r);
-                if(desiredUserName!=null) break;
-            }
+            records.put(new NameRolePair(subjectDN, role), r);
+            if(desiredUserName!=null) break;
         }
-        
-        if(authexceptions!=null && records.isEmpty()) throw authexceptions;
-        return records;
+
+        // Check whether authorization was denied.
+         for( NameRolePair nameAndRole : records.keySet()) {
+          gPlazmaAuthorizationRecord r = records.get(nameAndRole);
+          if(r!=null) {
+              return records;
+          }
+         }
+
+        // All authrecords are null. Perhaps no plugins were tried.
+        if(!plugin_loader.getPlugins().hasNext()) {
+            return records;
+        }
+
+        // Indicate denial
+        throw authexceptions;
     }
     
     
@@ -373,8 +383,6 @@ public class AuthorizationController {
         }
         
         if(authexceptions!=null && r==null) throw authexceptions;
-
-        r.setRequestID(authRequestID);
         
         return r;
     }

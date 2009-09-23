@@ -1,34 +1,36 @@
 package diskCacheV111.vehicles;
 
-import java.util.LinkedList;
+import java.util.Map;
+import java.util.LinkedHashMap;
 
 import gplazma.authz.records.gPlazmaAuthorizationRecord;
+import gplazma.authz.util.NameRolePair;
 
 public class AuthenticationMessage extends Message {
-
+  private static final long serialVersionUID = 2742509423862943223L;
   long authRequestID;
-  LinkedList<gPlazmaAuthorizationRecord> gauthlist;
+  Map<NameRolePair, gPlazmaAuthorizationRecord> user_auths;    
 
-  public AuthenticationMessage() {
+    public AuthenticationMessage() {
     super();
   }
 
-  public AuthenticationMessage(LinkedList <gPlazmaAuthorizationRecord> gauthlist, long authRequestID) {
+  public AuthenticationMessage(Map<NameRolePair, gPlazmaAuthorizationRecord> user_auths, long authRequestID) {
     this();
     this.authRequestID = authRequestID;
-    this.gauthlist=gauthlist;
+    this.user_auths=user_auths;
   }
 
   public long getAuthRequestID() {
     return authRequestID;
   }
 
-  public LinkedList <gPlazmaAuthorizationRecord> getgPlazmaAuthRecords() {
-    if (gauthlist==null) {
-        gauthlist = new LinkedList <gPlazmaAuthorizationRecord> ();
+  public Map<NameRolePair, gPlazmaAuthorizationRecord> getgPlazmaAuthzMap() {
+    if (user_auths==null) {
+        user_auths = new LinkedHashMap<NameRolePair, gPlazmaAuthorizationRecord>();
   }
 
-    return gauthlist;
+    return user_auths;
     }
 
-  }
+}

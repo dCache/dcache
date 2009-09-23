@@ -85,6 +85,8 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Iterator;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import javax.security.auth.Subject;
 
@@ -393,7 +395,8 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     public void resetPwdRecord()
     {
         if (authRecord != null) {
-            _userAuthGroupLists = authRecord.getGroupLists().iterator();
+            Set<GroupList> uniqueGroupListSet = new LinkedHashSet<GroupList>(authRecord.getGroupLists());
+            _userAuthGroupLists = uniqueGroupListSet.iterator();
             setNextPwdRecord();
         } else {
             _userAuthGroupLists = null;

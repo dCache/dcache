@@ -175,10 +175,6 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
         if(username!=null) {
             getLogger().info("xacml-vo-mapping service returned Username: " + username);
             gPlazmaAuthorizationRecord gauthrec = getgPlazmaAuthorizationRecord(username, subjectDN, role);
-            if(gauthrec!=null) {
-                gauthrec.setSubjectDN(subjectDN);
-                gauthrec.setFqan(role);
-            }
             return gauthrec;
         } else {
             if(localId.getUID() == null || localId.getGID() == null) {
@@ -240,15 +236,8 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
                         newGIDs,
                         gauthrec.getHome(),
                         gauthrec.getRoot(),
-                        gauthrec.getFsRoot(),
-                        gauthrec.getSubjectDN(),
-                        gauthrec.getFqan(),
-                        gauthrec.getRequestID());
+                        gauthrec.getFsRoot());
             }
-        }
-        if (gauthrec!=null) {
-            gauthrec.setSubjectDN(subjectDN);
-            gauthrec.setFqan(role);
         }
 
         return gauthrec;

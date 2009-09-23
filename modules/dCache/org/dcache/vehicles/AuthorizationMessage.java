@@ -71,15 +71,13 @@ COPYRIGHT STATUS:
 package org.dcache.vehicles;
 
 import diskCacheV111.vehicles.AuthenticationMessage;
-import diskCacheV111.util.FQAN;
 import org.dcache.auth.*;
 
-import java.util.List;
 import java.util.Random;
-import java.util.LinkedList;
-import java.util.Iterator;
+import java.util.Map;
 
 import gplazma.authz.records.gPlazmaAuthorizationRecord;
+import gplazma.authz.util.NameRolePair;
 
 public class AuthorizationMessage {
 
@@ -100,8 +98,8 @@ public class AuthorizationMessage {
   */
   private AuthorizationRecord  getAuthorizationRecord(AuthenticationMessage authmsg) {
 
-    LinkedList <gPlazmaAuthorizationRecord> gauthreclist =  authmsg.getgPlazmaAuthRecords();
-    return RecordConvert.gPlazmaToAuthorizationRecord(gauthreclist);
+    Map<NameRolePair, gPlazmaAuthorizationRecord> user_auths =  authmsg.getgPlazmaAuthzMap();
+    return RecordConvert.gPlazmaToAuthorizationRecord(user_auths);
 
     /*
     Iterator<gPlazmaAuthorizationRecord> authreciter = authreclist.iterator();
