@@ -92,7 +92,7 @@ dCacheChimeraStart()
   ${java} ${java_options} \
      -classpath ${ourHomeDir}/classes/cells.jar:${externalLibsClassPath} \
      org.dcache.chimera.nfs.v3.Main \
-     ${ourHomeDir}/config/chimera-config.xml > ${log} 2>&1 &
+     ${ourHomeDir}/config/chimera-config.xml >> ${log} 2>&1 &
   echo $! > ${pfile}
 
   waitForEvent portmapPortPresent "Waiting for portmap port" \
