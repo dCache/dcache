@@ -2,8 +2,7 @@ package gplazma.authz.util;
 
 import java.io.Serializable;
 
-/** Performs an LDAP  search.
- *
+/**
  * Holds a subjectDN and FQAN from a user's credentials, so the combination can be used as a key to a Map.
  */
 
@@ -24,16 +23,34 @@ public class NameRolePair implements Serializable {
     public void setName(String arg)  { name = arg; }
     public void setRole(String arg) { role = arg; }
 
+    /**
+     *  Check whether NamePairRole has the supplied name.
+     */
+    public boolean hasName(String name) {
+      return this.name==null ? name==null : this.name.equals(name);
+    }
+
+    /**
+     *  Check whether NamePairRole has the supplied role.
+     */
+    public boolean hasRole(String role) {
+      return this.role==null ? role==null : this.role.equals(role);
+    }
+
+
     @Override
     public boolean equals (Object other) {
         if ( this == other ) return true;
         if ( !(other instanceof NameRolePair) ) return false;
-        return name.equals(((NameRolePair) other).getName()) &&
-                role.equals(((NameRolePair) other).getRole());
+        NameRolePair otherPair = (NameRolePair) other;
+        return otherPair.hasName(name) && otherPair.hasRole(role);
     }
 
     @Override
     public int hashCode() {
+        if(name==null && role==null) return 0;
+        if(role==null) return name.hashCode();
+        if(name==null) return role.hashCode();
         return name.hashCode()^ role.hashCode();
     }
 }
