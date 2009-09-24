@@ -127,6 +127,7 @@ import org.globus.util.GlobusURL;
 
 import java.net.InetAddress;
 import java.net.MalformedURLException;
+import java.net.UnknownHostException;
 import java.net.Socket;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -148,6 +149,8 @@ import java.util.EnumSet;
 import java.util.Collection;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 import diskCacheV111.services.PermissionHandler;
 import org.dcache.srm.AbstractStorageElement;
@@ -180,6 +183,7 @@ import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TAccessLatency;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TReturnStatus;
+import org.dcache.util.LoginBrokerHandler;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.list.DirectoryListSource;
@@ -262,9 +266,11 @@ public class Storage
     private CellStub _gridftpTransferManagerStub;
     private CellStub _pinManagerStub;
     private CellStub _loginBrokerStub;
+    private ScheduledExecutorService _executor =
+        Executors.newSingleThreadScheduledExecutor();
+
     private PnfsHandler _pnfs;
     private PermissionHandler permissionHandler;
-    String _hosts[];
     private int __pnfsTimeout = 60 ;
     private String loginBrokerName="LoginBroker";
     private CellPath loginBrokerPath;
@@ -281,7 +287,7 @@ public class Storage
     private final FsPath _xrootdRootPath;
     private final FsPath _httpRootPath;
 
-    private LoginBrokerHandler _loginBrokerHandler = null ;
+    private final LoginBrokerHandler _loginBrokerHandler;
 
     private final DirectoryListSource _listSource;
 
@@ -410,34 +416,12 @@ public class Storage
         _pnfs = new PnfsHandler(_pnfsStub);
         permissionHandler =
             new PermissionHandler(this, new CellPath(_pnfsManagerName));
-        InetAddress[] addresses = InetAddress.getAllByName(
-                InetAddress.getLocalHost().getHostName());
-
-        _hosts = new String[addresses.length];
 
         _httpRootPath = new FsPath(getOption("httpRootPath", "/"));
         _xrootdRootPath = new FsPath(getOption("xrootdRootPath", "/"));
 
         _listSource = new ListDirectoryHandler(_pnfs);
         addMessageListener(_listSource);
-
-        /**
-         *  Add addresses ensuring preferred ordering: external addresses are before any
-         *  internal interface addresses.
-         */
-        int nextExternalIfIndex = 0;
-        int nextInternalIfIndex = addresses.length-1;
-
-        for( int i = 0; i < addresses.length; i++) {
-    		InetAddress addr = addresses[i];
-
-        	if( !addr.isLinkLocalAddress() && !addr.isLoopbackAddress() &&
-        			!addr.isSiteLocalAddress() && !addr.isMulticastAddress()) {
-        		_hosts [nextExternalIfIndex++] = addr.getHostName();
-        	} else {
-        		_hosts [nextInternalIfIndex--] = addr.getHostName();
-        	}
-        }
 
         String tmpstr = _args.getOpt("config");
         if(tmpstr != null) {
@@ -765,9 +749,6 @@ public class Storage
         this.useInterpreter(true);
         this.getNucleus().export();
 
-        _loginBrokerHandler = new LoginBrokerHandler() ;
-        addCommandListener( _loginBrokerHandler ) ;
-
         this.start();
         try {
             Thread.sleep(5000);
@@ -828,6 +809,8 @@ public class Storage
         storageInfoUpdateThread = getNucleus().newThread(this);
         storageInfoUpdateThread.start();
 
+        _loginBrokerHandler = createLoginBrokerHandler();
+
         }
 
     private String getOption(String value) {
@@ -869,6 +852,22 @@ public class Storage
        }
     }
 
+    private double getDoubleOption(String value) throws IllegalArgumentException {
+        String tmpstr = _args.getOpt(value);
+        if(tmpstr == null || tmpstr.length() == 0)  {
+            throw new IllegalArgumentException("option "+value+" is not set");
+        }
+        return Double.parseDouble(tmpstr);
+    }
+
+    private double getDoubleOption(String value, double default_value) {
+        String tmpstr = _args.getOpt(value);
+        if(tmpstr == null || tmpstr.length() == 0)  {
+            return default_value;
+        }
+        return Double.parseDouble(tmpstr);
+    }
+
     private long getLongOption(String value) throws IllegalArgumentException {
         String tmpstr = _args.getOpt(value);
         if(tmpstr == null || tmpstr.length() == 0)  {
@@ -901,6 +900,50 @@ public class Storage
        return Integer.parseInt(tmpstr);
     }
 
+    /**
+     * Creates a new LoginBrokerHandler based on the current cell
+     * options.
+     */
+    private LoginBrokerHandler createLoginBrokerHandler()
+        throws UnknownHostException
+    {
+        LoginBrokerHandler handler = new LoginBrokerHandler();
+
+        String broker = _args.getOpt("srmLoginBroker");
+        if (broker != null) {
+            handler.setLoginBroker(new CellPath(broker));
+        }
+        handler.setProtocolFamily(getOption("protocolFamily", "SRM"));
+        handler.setProtocolVersion(getOption("protocolVersion", "0.1"));
+        try {
+            handler.setUpdateTime(getLongOption("brokerUpdateTime", 5*60*1000));
+        } catch (NumberFormatException e) {
+            _log.fatal("Failed to parse brokerUpdateTime: " +
+                       e.getMessage());
+        }
+        try {
+            handler.setUpdateThreshold(getDoubleOption("brokerUpdateOffset", 0.1));
+        } catch (NumberFormatException e) {
+            _log.fatal("Failed to parse brokerUpdateOffset: " +
+                       e.getMessage());
+        }
+
+        handler.setAddresses(InetAddress.getAllByName(InetAddress.getLocalHost().getHostName()));
+        handler.setPort(config.getPort());
+
+        handler.setLoad(new LoginBrokerHandler.LoadProvider() {
+                public double getLoad() {
+                    return srm.getLoad();
+                }
+            });
+        handler.setExecutor(_executor);
+        handler.start();
+
+        addCommandListener(handler);
+
+        return handler;
+    }
+
     public void getInfo( java.io.PrintWriter printWriter ) {
         StringBuffer sb = new StringBuffer();
         sb.append("SRM Cell");
@@ -924,10 +967,8 @@ public class Storage
             sqle.printStackTrace(printWriter);
         }
         printWriter.println( sb.toString()) ;
-        if( _loginBrokerHandler != null ){
-            printWriter.println( "  LoginBroker Info :" ) ;
-            _loginBrokerHandler.getInfo( printWriter ) ;
-        }
+        printWriter.println( "  LoginBroker Info :" ) ;
+        _loginBrokerHandler.getInfo( printWriter ) ;
     }
 
     public CellVersion getCellVersion(){
@@ -3533,118 +3574,6 @@ public class Storage
                 fsPath.toString(),
                 callbacks,
                 this);
-    }
-
-    public final class LoginBrokerHandler implements Runnable
-    {
-        private String _srmLoginBroker        = null ;
-        private String _protocolFamily     = null ;
-        private String _protocolVersion    = null ;
-        private long   _brokerUpdateTime   = 5*60*1000 ;
-        private double _brokerUpdateOffset = (double)0.1 ;
-        private LoginBrokerInfo _info      = null ;
-        private double _currentLoad        = 0.0 ;
-        private LoginBrokerHandler(){
-
-            _srmLoginBroker = _args.getOpt( "srmLoginBroker" ) ;
-            if( _srmLoginBroker == null )return;
-
-            _protocolFamily    = _args.getOpt("protocolFamily" ) ;
-            if( _protocolFamily == null )_protocolFamily = "SRM" ;
-            _protocolVersion = _args.getOpt("protocolVersion") ;
-            if( _protocolVersion == null )_protocolVersion = "0.1" ;
-            String tmp = _args.getOpt("brokerUpdateTime") ;
-            if(tmp != null) {
-                try{
-                    _brokerUpdateTime = Long.parseLong(tmp) * 1000 ;
-                } catch (NumberFormatException e) {
-                    _log.fatal("Failed to parse brokerUpdateTime: " +
-                               e.getMessage());
-                }
-            }
-            tmp = _args.getOpt("brokerUpdateOffset") ;
-            if(tmp != null) {
-                try{
-                    _brokerUpdateOffset = Double.parseDouble(tmp) ;
-                }catch(NumberFormatException e ){
-                    _log.fatal("Failed to parse brokerUpdateOffset: " +
-                               e.getMessage());
-                }
-            }
-
-            _info = new LoginBrokerInfo(
-                    getNucleus().getCellName() ,
-                    getNucleus().getCellDomainName() ,
-                    _protocolFamily ,
-                    _protocolVersion ,
-                    Storage.this.getClass().getName() ) ;
-
-            _info.setUpdateTime( _brokerUpdateTime ) ;
-
-            getNucleus().newThread( this , "loginBrokerHandler" ).start() ;
-
-        }
-        public void run(){
-            try{
-                synchronized(this){
-                    while( ! Thread.interrupted() ){
-                        try {
-                            runUpdate() ;
-                        } catch (RuntimeException e) {
-                            _log.fatal("Login Broker Thread reports : ", e);
-                        }
-                        wait( _brokerUpdateTime ) ;
-                    }
-                }
-            }catch( Exception io ){
-                _log.warn( "Login Broker Thread terminated due to "+io ) ;
-            }
-        }
-
-        public String hh_lb_set_update = "<updateTime/sec>" ;
-        public String ac_lb_set_update_$_1( Args args ){
-            long update = Long.parseLong( args.argv(0) )*1000 ;
-            if( update < 2000 )
-                throw new
-                        IllegalArgumentException("Update time out of range") ;
-
-            synchronized(this){
-                _brokerUpdateTime = update ;
-                _info.setUpdateTime(update) ;
-                notifyAll() ;
-            }
-            return "" ;
-        }
-        private synchronized void runUpdate(){
-
-            _info.setHosts(_hosts);
-            _info.setPort(config.getPort());
-            if(srm != null) {
-                _currentLoad = srm.getLoad();
-            }
-            _info.setLoad(_currentLoad);
-            try{
-                sendMessage(new CellMessage(new CellPath(_srmLoginBroker),_info));
-            } catch (NoRouteToCellException e) {
-                _log.error("Login broker is unavailable: " + e.getMessage());
-            }
-        }
-
-        public void getInfo( PrintWriter pw ){
-            if( _srmLoginBroker == null ){
-                pw.println( "    Login Broker : DISABLED" ) ;
-                return ;
-            }
-            pw.println( "    LoginBroker      : "+_srmLoginBroker ) ;
-            pw.println( "    Protocol Family  : "+_protocolFamily ) ;
-            pw.println( "    Protocol Version : "+_protocolVersion ) ;
-            pw.println( "    Update Time      : "+
-                (_brokerUpdateTime/1000)+" seconds" ) ;
-            pw.println( "    Update Offset    : "+
-                    ((int)(_brokerUpdateOffset*100.))+" %" ) ;
-
-        }
-        private boolean isActive(){ return _srmLoginBroker != null ; }
     }
 
     /**

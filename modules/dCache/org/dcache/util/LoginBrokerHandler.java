@@ -17,6 +17,9 @@ import dmg.util.Args;
 
 import org.apache.log4j.Logger;
 
+/**
+ * Utility class to periodically register a door in a login broker.
+ */
 public class LoginBrokerHandler
     extends AbstractCellComponent
     implements CellCommandListener
@@ -30,15 +33,11 @@ public class LoginBrokerHandler
     private String _protocolEngine;
     private long   _brokerUpdateTime = 5 * 60;
     private double _brokerUpdateThreshold = 0.1;
-    private double _currentLoad = 0.0;
+    private LoadProvider _load = new FixedLoad(0.0);
     private String[] _hosts = new String[0];
     private int _port;
     private ScheduledExecutorService _executor;
     private ScheduledFuture _task;
-
-    private LoginBrokerHandler()
-    {
-    }
 
     public final static String hh_lb_set_update = "<updateTime/sec>";
     public synchronized String ac_lb_set_update_$_1(Args args)
@@ -69,6 +68,7 @@ public class LoginBrokerHandler
         info.setUpdateTime(_brokerUpdateTime * 1000);
         info.setHosts(_hosts);
         info.setPort(_port);
+        info.setLoad(_load.getLoad());
 
         try {
             sendMessage(new CellMessage(_loginBroker, info));
@@ -129,10 +129,16 @@ public class LoginBrokerHandler
     {
         double load =
             (maxChildren > 0) ? (double)children / (double)maxChildren : 0.0;
-        if (Math.abs(_currentLoad - load) > _brokerUpdateThreshold) {
+        setLoad(new FixedLoad(load));
+    }
+
+    public synchronized void setLoad(LoadProvider load)
+    {
+        double diff = Math.abs(_load.getLoad() - load.getLoad());
+        if (diff > _brokerUpdateThreshold) {
             rescheduleTask();
         }
-        _currentLoad = load;
+        _load = load;
     }
 
     public synchronized void setLoginBroker(CellPath loginBroker)
@@ -239,5 +245,29 @@ public class LoginBrokerHandler
             };
         _task = _executor.scheduleWithFixedDelay(command, 0, _brokerUpdateTime,
                                                  TimeUnit.SECONDS);
+    }
+
+    /**
+     * Callback interface to query the current load.
+     */
+    public interface LoadProvider
+    {
+        double getLoad();
+    }
+
+    private static class FixedLoad implements LoadProvider
+    {
+        private double _load;
+
+        public FixedLoad(double load)
+        {
+            _load = load;
+        }
+
+        @Override
+        public double getLoad()
+        {
+            return _load;
+        }
     }
 }
