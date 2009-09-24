@@ -41,8 +41,6 @@ public class SrmBringOnline {
     SrmBringOnlineResponse response;
     SRMUser user;
     RequestCredential credential;
-    BringOnlineRequestStorage bringOnlineStorage;
-    BringOnlineFileRequestStorage bringOnlineFileRequestStorage;
     Configuration configuration;
     private int results_num;
     private int max_results_num;
@@ -70,15 +68,7 @@ public class SrmBringOnline {
         if(configuration == null) {
             throw new NullPointerException("configuration is null");
         }
-        this.bringOnlineStorage = srm.getBringOnlineStorage();
-        if(bringOnlineStorage == null) {
-            throw new NullPointerException("bringOnlineStorage is null");
         }
-        this.bringOnlineFileRequestStorage = srm.getBringOnlineFileRequestStorage();
-        if(bringOnlineFileRequestStorage == null) {
-            throw new NullPointerException("bringOnlineFileRequestStorage is null");
-        }
-    }
     
     boolean longFormat =false;
     String servicePathAndSFNPart = "";
@@ -193,13 +183,11 @@ public class SrmBringOnline {
             BringOnlineRequest r =
                     new  BringOnlineRequest(user,
                     credential.getId(),
-                    bringOnlineStorage,
                     surls,
                     protocols,
                     configuration,
                     lifetime,
                     desiredLietimeInSeconds,
-                    bringOnlineFileRequestStorage,
                     configuration.getGetRetryTimeout(),
                     configuration.getGetMaxNumOfRetries(),
                     request.getUserRequestDescription(),

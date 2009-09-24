@@ -234,7 +234,6 @@ public class ReserveSpaceRequest extends Request {
             SRMUser user,
             Configuration configuration,
             long lifetime,
-            JobStorage jobStorage,
             int maxNumberOfRetries,
             long sizeInBytes ,
             long spaceReservationLifetime,
@@ -252,7 +251,6 @@ public class ReserveSpaceRequest extends Request {
     String description)*/
               super(user,
               requestCredentalId,
-              jobStorage,
               configuration,
               maxNumberOfRetries,
               0,
@@ -283,7 +281,6 @@ public class ReserveSpaceRequest extends Request {
     public ReserveSpaceRequest(
             Long id,
             Long nextJobId,
-            JobStorage jobStorage,
             long creationTime,
             long lifetime,
             int stateId,
@@ -317,7 +314,6 @@ public class ReserveSpaceRequest extends Request {
                  */
                 super(id,
                 nextJobId,
-                jobStorage,
                 creationTime,  
                 lifetime,
                 stateId, 

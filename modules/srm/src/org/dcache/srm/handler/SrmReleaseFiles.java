@@ -17,6 +17,9 @@ import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.scheduler.Scheduler;
+import org.dcache.srm.scheduler.SchedulerFactory;
+import org.dcache.srm.scheduler.JobStorageFactory;
+import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.request.ContainerRequest;
 import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.request.GetRequest;
@@ -422,37 +425,41 @@ public class SrmReleaseFiles {
     }
     
     private Set<BringOnlineFileRequest> findBringOnlineFileRequestBySURLs(URI[] surls) {
-        DatabaseFileRequestStorage reqstorage = srm.getBringOnlineFileRequestStorage();
         Scheduler scheduler =
                 SchedulerFactory.getSchedulerFactory().
                 getScheduler(BringOnlineFileRequest.class);
         Set<BringOnlineFileRequest> foundRequests = 
             new HashSet<BringOnlineFileRequest>();
-        Set<Long> activeRequestIds ;
-        try {
-            activeRequestIds = 
-                reqstorage.getActiveFileRequestIds(scheduler.getId());
-        } catch (java.sql.SQLException sqle) {
-            logger.warn(sqle);
-            //just return empty
-            return foundRequests;
-        }
-        
-        for(Long requestId:activeRequestIds) {
-            Job job;
+        JobStorage js = 
+                JobStorageFactory.getJobStorageFactory().getJobStorage(BringOnlineFileRequest.class);
+        if(js instanceof DatabaseFileRequestStorage) {
+            DatabaseFileRequestStorage reqstorage =(DatabaseFileRequestStorage) js;
+            Set<Long> activeRequestIds ;
             try {
-                job =  Job.getJob(requestId);
-            } catch (SRMInvalidRequestException ire) {
-                logger.error(ire);
-                continue;
+                activeRequestIds = 
+                   reqstorage.getActiveFileRequestIds(scheduler.getId());
+            } catch (java.sql.SQLException sqle) {
+                logger.warn(sqle);
+                //just return empty
+                return foundRequests;
             }
-            if(job == null || !(job instanceof BringOnlineFileRequest)) {
-                continue;
-            }
-            BringOnlineFileRequest bofr = (BringOnlineFileRequest)job;
-            for(URI surl: surls) { 
-                if(bofr.getSurlString().equals(surl.toString())) {
-                    foundRequests.add(bofr);
+        
+            for(Long requestId:activeRequestIds) {
+                Job job;
+                try {
+                    job =  Job.getJob(requestId);
+                } catch (SRMInvalidRequestException ire) {
+                    logger.error(ire);
+                    continue;
+                }
+                if(job == null || !(job instanceof BringOnlineFileRequest)) {
+                    continue;
+                }
+                BringOnlineFileRequest bofr = (BringOnlineFileRequest)job;
+                for(URI surl: surls) { 
+                    if(bofr.getSurlString().equals(surl.toString())) {
+                        foundRequests.add(bofr);
+                    }
                 }
             }
         }
@@ -461,9 +468,13 @@ public class SrmReleaseFiles {
     
     private Set<GetFileRequest> findGetFileRequestBySURLs(URI[] surls)  {
         Scheduler scheduler = srm.getGetRequestScheduler();
-        DatabaseFileRequestStorage reqstorage = srm.getGetFileRequestStorage();
         Set<GetFileRequest> foundRequests = 
             new HashSet<GetFileRequest>();
+        JobStorage js =
+                JobStorageFactory.getJobStorageFactory().getJobStorage(GetFileRequest.class);
+        if(js instanceof DatabaseFileRequestStorage) {
+           DatabaseFileRequestStorage  reqstorage =
+                   (DatabaseFileRequestStorage) js;
         Set<Long> activeRequestIds ;
         try {
             activeRequestIds = 
@@ -492,6 +503,7 @@ public class SrmReleaseFiles {
                     foundRequests.add(gfr);
                 }
             }
+        }
         }
         return foundRequests;
     }

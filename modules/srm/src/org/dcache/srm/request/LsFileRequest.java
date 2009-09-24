@@ -34,7 +34,6 @@ public class LsFileRequest extends FileRequest {
                              Configuration configuration,
                              org.apache.axis.types.URI url,
                              long lifetime,
-                             JobStorage jobStorage,
                              AbstractStorageElement storage,
                              int maxNumberOfRetries) throws Exception {
 
@@ -42,7 +41,6 @@ public class LsFileRequest extends FileRequest {
                       requestCredentalId,
                       configuration,
                       lifetime,
-                      jobStorage,
                       maxNumberOfRetries);
                 this.request=request;
                 this.surl=url;
@@ -52,7 +50,6 @@ public class LsFileRequest extends FileRequest {
         public LsFileRequest(
                 Long id,
                 Long nextJobId,
-                JobStorage jobStorage,
                 long creationTime,
                 long lifetime,
                 int stateId,
@@ -71,7 +68,6 @@ public class LsFileRequest extends FileRequest {
                 throws java.sql.SQLException {
                 super(id,
                       nextJobId,
-                      jobStorage,
                       creationTime,
                       lifetime,
                       stateId,

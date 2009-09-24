@@ -106,7 +106,6 @@ public class PutRequest extends ContainerRequest{
     private TOverwriteMode overwriteMode;
     public PutRequest(SRMUser user,
     Long requestCredentialId,
-    JobStorage requestJobsStorage,
     String[] srcFileNames,
     String[] destUrls,
     long[] sizes,
@@ -114,7 +113,6 @@ public class PutRequest extends ContainerRequest{
     String[] protocols,
     Configuration configuration,
     long lifetime,
-    JobStorage fileRequestJobStorage,
     long max_update_period,
     int max_number_of_retries,
     String client_host,
@@ -126,7 +124,6 @@ public class PutRequest extends ContainerRequest{
         
         super(user,
                 requestCredentialId,
-                requestJobsStorage,
                 configuration, 
                 max_number_of_retries,
                 max_update_period,
@@ -152,7 +149,6 @@ public class PutRequest extends ContainerRequest{
             configuration,
             destUrls[i],sizes[i],
             lifetime,
-            fileRequestJobStorage  , 
             storage,max_number_of_retries,
             spaceToken,
             retentionPolicy,
@@ -168,7 +164,6 @@ public class PutRequest extends ContainerRequest{
     public  PutRequest(
     Long id,
     Long nextJobId,
-    JobStorage jobStorage,
     long creationTime,
     long lifetime,
     int stateId,
@@ -192,7 +187,6 @@ public class PutRequest extends ContainerRequest{
     ) throws java.sql.SQLException {
         super( id,
         nextJobId,
-        jobStorage,
         creationTime,
         lifetime,
         stateId,

@@ -270,7 +270,6 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage{
         return new  PutRequest(
                 ID,
                 NEXTJOBID,
-                this,
                 CREATIONTIME,
                 LIFETIME,
                 STATE,

@@ -166,13 +166,11 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
     
     public CopyRequest( SRMUser user,
     Long requestCredentialId,
-    JobStorage jobStorage,
     String[] from_urls,
     String[] to_urls,
     String spaceToken,
     Configuration configuration,
     long lifetime,
-    JobStorage fileRequestJobStorage,
     long max_update_period,
     int max_number_of_retries,
     SRMProtocol callerSrmProtocol,
@@ -185,7 +183,6 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
     ) throws Exception{
         super(user,
             requestCredentialId,
-                jobStorage,
                 configuration,
                 max_number_of_retries,
                 max_update_period,
@@ -222,8 +219,7 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
                 requestCredentialId,
                 configuration,from_urls[i],to_urls[i],
                 spaceToken,
-                lifetime, fileRequestJobStorage  , 
-                storage,max_number_of_retries);
+                lifetime,storage, max_number_of_retries  );
             fileRequests[i] = fileRequest;
         }
         this.callerSrmProtocol = callerSrmProtocol;
@@ -244,7 +240,6 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
     public  CopyRequest(
     Long id,
     Long nextJobId,
-    JobStorage jobStorage,
     long creationTime,
     long lifetime,
     int stateId,
@@ -270,7 +265,6 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
     )  throws java.sql.SQLException {
         super( id,
         nextJobId,
-        jobStorage,
         creationTime,
         lifetime,
         stateId,

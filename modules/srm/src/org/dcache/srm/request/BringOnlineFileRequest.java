@@ -123,7 +123,6 @@ public class BringOnlineFileRequest extends FileRequest {
     Configuration configuration,
     String url,
     long lifetime,
-    JobStorage jobStorage,
     AbstractStorageElement storage,
     int maxNumberOfRetries
     
@@ -132,7 +131,6 @@ public class BringOnlineFileRequest extends FileRequest {
                 requestCredentalId, 
                 configuration, 
                 lifetime, 
-                jobStorage,
                 maxNumberOfRetries);
         say("BringOnlineFileRequest, requestId="+requestId+" fileRequestId = "+getId());
         try {
@@ -152,7 +150,6 @@ public class BringOnlineFileRequest extends FileRequest {
     public BringOnlineFileRequest(
     Long id,
     Long nextJobId,
-    JobStorage jobStorage,
     long creationTime,
     long lifetime,
     int stateId,
@@ -173,7 +170,6 @@ public class BringOnlineFileRequest extends FileRequest {
     ) throws java.sql.SQLException {
         super(id,
         nextJobId,
-        jobStorage,
         creationTime,
         lifetime,
         stateId,

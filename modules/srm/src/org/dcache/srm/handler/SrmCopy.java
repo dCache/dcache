@@ -44,8 +44,6 @@ public class SrmCopy {
     SrmCopyResponse        response;
     SRMUser            user;
     RequestCredential      credential;
-    CopyRequestStorage     copyRequestStorage;
-    CopyFileRequestStorage copyFileRequestStorage;
     Configuration          configuration;
     private String client_host;
     
@@ -69,14 +67,6 @@ public class SrmCopy {
         this.configuration = srm.getConfiguration();
         if (configuration == null) {
             throw new NullPointerException("configuration is null");
-        }
-        this.copyRequestStorage = srm.getCopyStorage();
-        if(copyRequestStorage == null) {
-            throw new NullPointerException("getStorage is null");
-        }
-        this.copyFileRequestStorage = srm.getCopyFileRequestStorage();
-        if(copyFileRequestStorage == null) {
-            throw new NullPointerException("getFileRequestStorage is null");
         }
         this.client_host = client_host;
     }
@@ -173,13 +163,11 @@ public class SrmCopy {
             ContainerRequest r = new CopyRequest(
                     user,
                     credential.getId(),
-                    copyRequestStorage,
                     from_urls,
                     to_urls,
                     spaceToken,
                     configuration,
                     lifetime,
-                    copyFileRequestStorage,
                     configuration.getCopyRetryTimeout(),
                     configuration.getCopyMaxNumOfRetries(),
                     SRMProtocol.V2_1,

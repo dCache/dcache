@@ -295,7 +295,6 @@ public abstract class ContainerRequest extends Request {
      */
     public ContainerRequest(SRMUser user,
     Long requestCredentalId,
-    JobStorage requestJobsStorage,
     Configuration configuration,
     int max_number_of_retries,
     long max_update_period,
@@ -315,7 +314,6 @@ public abstract class ContainerRequest extends Request {
         */
          super(user ,
          requestCredentalId,
-         requestJobsStorage,
          configuration,
          max_number_of_retries,
          max_update_period,
@@ -335,7 +333,6 @@ public abstract class ContainerRequest extends Request {
     protected ContainerRequest(
     Long id,
     Long nextJobId,
-    JobStorage jobStorage,
     long creationTime,
     long lifetime,
     int stateId,
@@ -358,7 +355,6 @@ public abstract class ContainerRequest extends Request {
     ) {
      super(     id,
      nextJobId,
-     jobStorage,
      creationTime,
      lifetime,
      stateId,

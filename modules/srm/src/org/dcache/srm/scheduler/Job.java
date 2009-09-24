@@ -288,7 +288,7 @@ public abstract class Job  {
     // will never be called
     // we can not call it from the constructor, since this may lead to recursive job restoration
     // leading to the exhaust of the pool of database connections
-    protected Job(Long id, Long nextJobId,JobStorage jobStorage, long creationTime,
+    protected Job(Long id, Long nextJobId, long creationTime,
     long lifetime,int stateId,String errorMessage,
     String schedulerId,
     long schedulerTimestamp,
@@ -297,10 +297,6 @@ public abstract class Job  {
     long lastStateTransitionTime,
     JobHistory[] jobHistoryArray
     ) {
-        if(jobStorage == null) {
-            throw new NullPointerException(" job storage is null");
-        }
-        this.jobStorage = jobStorage;
         if(id == null) {
             throw new NullPointerException(" job id is null");
         }
@@ -361,13 +357,8 @@ public abstract class Job  {
     /** Creates a new instance of Job */
 
     public Job(long lifetime,
-              JobStorage jobStorage,
               int maxNumberOfRetries) {
 
-        if(jobStorage == null) {
-            throw new NullPointerException(" job storage is null");
-        }
-        this.jobStorage = jobStorage;
         id = nextId();
 
         this.lifetime = lifetime;
@@ -384,8 +375,6 @@ public abstract class Job  {
         sharedMemoryCache.updateSharedMemoryChache(this);
     }
     
-    private  JobStorage jobStorage;
-    
     private static final long serialVersionUID = 2690583464813886836L;
     
     // this method is called whenever the state of the job changes, or when the job's
@@ -393,6 +382,11 @@ public abstract class Job  {
     private boolean savedInFinalState = false;
 
 	private JDC jdc;
+
+   private JobStorage getJobStorage() {
+       return JobStorageFactory.getJobStorageFactory().getJobStorage(this);
+   }
+
 
     public void saveJob() {
         saveJob(false);
@@ -407,7 +401,7 @@ public abstract class Job  {
         }
         try {
             boolean isFinalState = State.isFinalState(this.getState());
-            jobStorage.saveJob(this, isFinalState || force);
+            getJobStorage().saveJob(this, isFinalState || force);
             savedInFinalState = isFinalState;
         } catch(Throwable t) {
             // if saving fails we do not want to fail the request
@@ -526,11 +520,11 @@ public abstract class Job  {
     }
 
 
-    public Job(JobStorage jobStorage,
+    /*public Job(JobStorage jobStorage,
         int maxNumberOfRetries) {
         this(DEFAULT_JOB_LIFETIME_MILLIS,jobStorage,maxNumberOfRetries);
 
-    }
+    } */
     
     
     public static void addClassStateChangeListener(PropertyChangeListener listener) {
@@ -916,7 +910,7 @@ public abstract class Job  {
             // even if the jbbc monitoring log is disabled,
             // as we use scheduler id to identify who this job belongs to.
             try {
-                this.jobStorage.saveJob(this,true);        
+                    getJobStorage().saveJob(this,true);
             }catch (java.sql.SQLException sqle) {
                 esay(sqle);
             }

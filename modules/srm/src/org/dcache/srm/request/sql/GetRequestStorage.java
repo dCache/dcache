@@ -271,7 +271,6 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage{
         return new  GetRequest(
                 ID,
                 NEXTJOBID,
-                this,
                 CREATIONTIME,
                 LIFETIME,
                 STATE,

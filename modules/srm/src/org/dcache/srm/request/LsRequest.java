@@ -35,17 +35,14 @@ public class LsRequest extends ContainerRequest {
 
         public LsRequest(SRMUser user,
                          Long requestCredentialId,
-                         JobStorage jobStorage,
                          SrmLsRequest request,
                          Configuration configuration,
                          long lifetime,
-                         JobStorage jobFileRequestStorage,
                          long max_update_period,
                          int max_number_of_retries,
                          String client_host ) throws Exception {
                 super(user,
                       requestCredentialId,
-                      jobStorage,
                       configuration,
                       max_number_of_retries,
                       max_update_period,
@@ -61,7 +58,6 @@ public class LsRequest extends ContainerRequest {
                                                   configuration,
                                                   request.getArrayOfSURLs().getUrlArray()[i],
                                                   lifetime,
-                                                  jobFileRequestStorage,
                                                   storage,max_number_of_retries);
                 }
                 if(configuration.isAsynchronousLs()) {
@@ -72,7 +68,6 @@ public class LsRequest extends ContainerRequest {
         public  LsRequest(
                 Long id,
                 Long nextJobId,
-                JobStorage jobStorage,
                 long creationTime,
                 long lifetime,
                 int stateId,
@@ -99,7 +94,6 @@ public class LsRequest extends ContainerRequest {
                 int offset) throws java.sql.SQLException {
                 super(id,
                       nextJobId,
-                      jobStorage,
                       creationTime,
                       lifetime,
                       stateId,

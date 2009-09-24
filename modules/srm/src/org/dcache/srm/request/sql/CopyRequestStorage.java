@@ -284,7 +284,6 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage{
             return new  CopyRequest( 
                         ID, 
                         NEXTJOBID,
-                        this,
                         CREATIONTIME,
                         LIFETIME,
                         STATE,

@@ -47,8 +47,6 @@ public class SrmPrepareToPut {
     SrmPrepareToPutResponse response;
     SRMUser user;
     RequestCredential credential;
-    PutRequestStorage putStorage;
-    PutFileRequestStorage putFileRequestStorage;
     Configuration configuration;
     String client_host;
     
@@ -73,26 +71,11 @@ public class SrmPrepareToPut {
         if(configuration == null) {
             throw new NullPointerException("configuration is null");
         }
-        this.putStorage = srm.getPutStorage();
-        if(putStorage == null) {
-            throw new NullPointerException("putStorage is null");
-        }
-        this.putFileRequestStorage = srm.getPutFileRequestStorage();
-        if(putFileRequestStorage == null) {
-            throw new NullPointerException("putFileRequestStorage is null");
-        }
         this.client_host = client_host;
     }
     
     boolean longFormat =false;
     
-    public PutRequestStorage getPutStorage() {
-        return putStorage;
-    }
-    
-    public PutFileRequestStorage getPutFileRequestStorage() {
-        return putFileRequestStorage;
-    }
     String servicePathAndSFNPart = "";
     int port;
     String host;
@@ -275,7 +258,6 @@ public class SrmPrepareToPut {
                     new  PutRequest(
                     user,
                     credential.getId(),
-                    putStorage,
                     srcFileNames,
                     destUrls,
                     sizes,
@@ -283,7 +265,6 @@ public class SrmPrepareToPut {
                     protocols,
                     configuration,
                     lifetime,
-                    putFileRequestStorage,
                     configuration.getGetRetryTimeout(),
                     configuration.getGetMaxNumOfRetries(),
                     client_host,

@@ -106,20 +106,17 @@ public class BringOnlineRequest extends ContainerRequest {
     
     public BringOnlineRequest(SRMUser user,
     Long requestCredentialId,
-    JobStorage jobStorage,
     String[] surls,
     String[] protocols,
     Configuration configuration,
     long lifetime,
     long desiredOnlineLifetimeInSeconds,
-    JobStorage jobFileRequestStorage,
     long max_update_period,
     int max_number_of_retries,
     String description,
     String client_host
     ) throws Exception {
         super(user,requestCredentialId,
-            jobStorage,
             configuration, 
             max_number_of_retries,
             max_update_period,
@@ -145,7 +142,6 @@ public class BringOnlineRequest extends ContainerRequest {
                     configuration, 
                     surls[i],  
                     lifetime, 
-                    jobFileRequestStorage  , 
                     storage,
                     max_number_of_retries);
             
@@ -160,7 +156,6 @@ public class BringOnlineRequest extends ContainerRequest {
     public  BringOnlineRequest(
     Long id,
     Long nextJobId,
-    JobStorage jobStorage,
     long creationTime,
     long lifetime,
     int stateId,
@@ -184,7 +179,6 @@ public class BringOnlineRequest extends ContainerRequest {
    )  throws java.sql.SQLException {
         super( id,
         nextJobId,
-        jobStorage,
         creationTime,
         lifetime,
         stateId,

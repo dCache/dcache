@@ -153,12 +153,11 @@ public class CopyFileRequest extends FileRequest {
 			       String to_url,
 			       String spaceToken,
 			       long lifetime,
-			       JobStorage jobStorage,
 			       AbstractStorageElement storage,
 			       int max_number_of_retries) throws Exception {
 		super(requestId, 
 		      requestCredentalId,
-                    configuration, lifetime, jobStorage,max_number_of_retries);
+                    configuration, lifetime, max_number_of_retries);
 		say("CopyFileRequest");
 		this.from_url = from_url;
 		this.to_url = to_url;
@@ -205,7 +204,6 @@ public class CopyFileRequest extends FileRequest {
 		)  throws java.sql.SQLException {
 		super(id,
 		      nextJobId,
-		      jobStorage,
 		      creationTime,
 		      lifetime,
 		      stateId,
@@ -1060,13 +1058,13 @@ public class CopyFileRequest extends FileRequest {
 			if( transferId != null)           {
 				storage.killRemoteTransfer(transferId);
 			}
-            SRMUser user ;
-            try {
-                user = getUser();
-            } catch (SRMInvalidRequestException ire) {
-                esay(ire);
-                return;
-            }
+                        SRMUser user ;
+                        try {
+                            user = getUser();
+                        } catch (SRMInvalidRequestException ire) {
+                            esay(ire);
+                            return;
+                        }
 			if(spaceReservationId != null && weReservedSpace) {
 				say("storage.releaseSpace("+spaceReservationId+"\"");
 				SrmReleaseSpaceCallbacks callbacks = new TheReleaseSpaceCallbacks(this.getId());

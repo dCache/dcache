@@ -183,7 +183,6 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage {
            return new GetFileRequest(
             ID,
             NEXTJOBID ,
-            this,
             CREATIONTIME,
             LIFETIME,
             STATE,

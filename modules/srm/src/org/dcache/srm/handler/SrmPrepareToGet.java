@@ -42,8 +42,6 @@ public class SrmPrepareToGet {
     SrmPrepareToGetResponse response;
     SRMUser user;
     RequestCredential credential;
-    GetRequestStorage getStorage;
-    GetFileRequestStorage getFileRequestStorage;
     Configuration configuration;
     private int results_num;
     private int max_results_num;
@@ -71,15 +69,7 @@ public class SrmPrepareToGet {
         if(configuration == null) {
             throw new NullPointerException("configuration is null");
         }
-        this.getStorage = srm.getGetStorage();
-        if(getStorage == null) {
-            throw new NullPointerException("getStorage is null");
         }
-        this.getFileRequestStorage = srm.getGetFileRequestStorage();
-        if(getFileRequestStorage == null) {
-            throw new NullPointerException("getFileRequestStorage is null");
-        }
-    }
     
     boolean longFormat =false;
     String servicePathAndSFNPart = "";
@@ -238,12 +228,10 @@ public class SrmPrepareToGet {
         try {
             GetRequest r =
                     new  GetRequest(user,credential.getId(),
-                    getStorage,
                     surls,
                     protocols,
                     configuration,
                     lifetime,
-                    getFileRequestStorage,
                     configuration.getGetRetryTimeout(),
                     configuration.getGetMaxNumOfRetries(),
                     request.getUserRequestDescription(),

@@ -20,8 +20,6 @@ import org.dcache.srm.scheduler.State;
 import org.dcache.srm.request.LsRequest;
 import org.dcache.srm.request.LsFileRequest;
 import org.dcache.srm.request.FileRequest;
-import org.dcache.srm.request.sql.LsFileRequestStorage;
-import org.dcache.srm.request.sql.LsRequestStorage;
 import org.apache.log4j.Logger;
 
 /**
@@ -37,8 +35,6 @@ public class SrmLs {
         Configuration configuration;
         SrmLsRequest request;
         SrmLsResponse response;
-        LsRequestStorage requestStorage;
-        LsFileRequestStorage fileRequestStorage;
         RequestCredential credential;
         SRMUser user;
         String client_host;
@@ -59,14 +55,6 @@ public class SrmLs {
                 this.maxNumOfLevels  = srm.getConfiguration().getMaxNumberOfLsLevels();
                 this.credential=credential;
                 this.client_host=client_host;
-                this.requestStorage = srm.getLsRequestStorage();
-                if(this.requestStorage == null) {
-                        throw new NullPointerException("ls request storage is null");
-                }
-                this.fileRequestStorage = srm.getLsFileRequestStorage();
-                if (this.fileRequestStorage==null) {
-                        throw new NullPointerException("ls file request storage is null");
-                }
                 this.configuration = srm.getConfiguration();
         }
 
@@ -169,11 +157,9 @@ public class SrmLs {
                 try {
                         LsRequest r = new LsRequest(user,
                                                     credential.getId(),
-                                                    requestStorage,
                                                     request,
                                                     configuration,
                                                     3600*1000,
-                                                    fileRequestStorage,
                                                     configuration.getLsRetryTimeout(),
                                                     configuration.getLsMaxNumOfRetries(),
                                                     client_host);

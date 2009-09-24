@@ -230,8 +230,8 @@ public abstract class FileRequest extends Job {
     protected FileRequest(Long requestId,
     Long  requestCredentalId,
     Configuration configuration,long lifetime,
-    JobStorage jobStorage,int maxNumberOfRetries) throws Exception {
-        super(lifetime, jobStorage,maxNumberOfRetries);
+    int maxNumberOfRetries) throws Exception {
+        super(lifetime, maxNumberOfRetries);
         this.credentialId = requestCredentalId;
         this.configuration = configuration;
         this.storage = configuration.getStorage();
@@ -248,7 +248,6 @@ public abstract class FileRequest extends Job {
     protected FileRequest(
     Long id,
     Long nextJobId,
-    JobStorage jobStorage,
     long creationTime,long lifetime,
     int stateId,String errorMessage,
     String scheduelerId,
@@ -264,7 +263,6 @@ public abstract class FileRequest extends Job {
     ) {
         super(id,
         nextJobId,
-        jobStorage,
         creationTime,  lifetime,
         stateId, errorMessage,
         scheduelerId,

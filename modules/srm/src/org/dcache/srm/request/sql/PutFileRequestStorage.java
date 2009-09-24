@@ -216,7 +216,6 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage {
         return new PutFileRequest(
         ID,
         NEXTJOBID ,
-        this,
         CREATIONTIME,
         LIFETIME,
         STATE,

@@ -241,7 +241,6 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage {
         return new ReserveSpaceRequest(
             ID,
             NEXTJOBID ,
-            this,
             CREATIONTIME,
             LIFETIME,
             STATE,

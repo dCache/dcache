@@ -92,7 +92,6 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage {
            return new BringOnlineFileRequest(
             ID,
             NEXTJOBID ,
-            this,
             CREATIONTIME,
             LIFETIME,
             STATE,

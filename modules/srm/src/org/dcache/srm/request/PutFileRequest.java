@@ -136,7 +136,6 @@ public class PutFileRequest extends FileRequest {
             String url,
             long size,
             long lifetime,
-            JobStorage jobStorage,
             AbstractStorageElement storage,
             int maxNumberOfRetires,
             String spaceReservationId,
@@ -147,7 +146,6 @@ public class PutFileRequest extends FileRequest {
                 requestCredentalId,
                 configuration,
                 lifetime,
-                jobStorage,
                 maxNumberOfRetires);
         say("constructor url = "+url+")");
         try {
@@ -172,7 +170,6 @@ public class PutFileRequest extends FileRequest {
     public PutFileRequest(
             Long id,
             Long nextJobId,
-            JobStorage jobStorage,
             long creationTime,
             long lifetime,
             int stateId,
@@ -198,7 +195,6 @@ public class PutFileRequest extends FileRequest {
             ) throws java.sql.SQLException {
         super(id,
                 nextJobId,
-                jobStorage,
                 creationTime,
                 lifetime,
                 stateId,

@@ -86,6 +86,7 @@ import org.dcache.srm.request.LsRequest;
 import org.dcache.srm.request.LsFileRequest;
 import org.dcache.srm.request.ReserveSpaceRequest;
 import org.dcache.srm.request.CopyRequest;
+import org.dcache.srm.request.CopyFileRequest;
 import org.dcache.srm.request.BringOnlineRequest;
 import org.dcache.srm.request.BringOnlineFileRequest;
 import org.dcache.srm.request.sql.DatabaseRequestStorage;
@@ -115,6 +116,8 @@ import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.SchedulerFactory;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.IllegalStateTransition;
+import org.dcache.srm.scheduler.JobStorageFactory;
+import org.dcache.srm.request.sql.DatabaseJobStorageFactory;
 import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.request.RequestCredential;
@@ -195,46 +198,7 @@ public class SRM {
     private SRMServerV1 server;
     private Configuration configuration;
     private RequestCredentialStorage requestCredentialStorage;
-    //    private RequestScheduler getPutRequestScheduler();
-    //    private RequestScheduler getCopyRequestScheduler();
-    /** Creates a new instance of SRM
-     *
-     * @param  srcSURLS
-     *         array of source SURL (Site specific URL) strings
-     * @param  storage
-     *         implemntation of abstract storage gives the methods
-     *         to communicate to underlying storage
-     * @param  port
-     *         what port to publish the Web Service interface to SRM
-     * @param  pathPrefix
-     *         all path given by SRM users will be prepandes with this string
-     * @param  proxies_directory
-     *         directory where the user proxies will be stored temporarily
-     * @param  url_copy_command
-     *         path to the script or program with the same functionality and
-     *         semantics as globus-url-copy. It will be used for performing
-     *         MSS-to-MSS transfers
-     * @param  wantPerm
-     *         array of boolean values indicating if permonent copies are
-     *         desired
-     */
-    /** Creates a new instance of SRM
-     *
-     * @param  config
-     *         all srm config options
-     */
-    private BringOnlineRequestStorage bringOnlineStorage;
-    private GetRequestStorage getStorage;
-    private PutRequestStorage putStorage;
-    private CopyRequestStorage copyStorage;
-    private BringOnlineFileRequestStorage bringOnlineFileRequestStorage;
-    private GetFileRequestStorage getFileRequestStorage;
-    private PutFileRequestStorage putFileRequestStorage;
-    private CopyFileRequestStorage copyFileRequestStorage;
-    private ReserveSpaceRequestStorage reserveSpaceRequestStorage;
     private AbstractStorageElement storage;
-    private LsRequestStorage lsRequestStorage;
-    private LsFileRequestStorage lsFileRequestStorage;
     private RequestCounters<Class> srmServerV2Counters;
     private RequestCounters<String> srmServerV1Counters;
     private RequestCounters<Method> abstractStorageElementCounters;
@@ -389,72 +353,8 @@ public class SRM {
         RequestCredential.registerRequestCredentialStorage(requestCredentialStorage);
         SchedulerFactory.initSchedulerFactory(storage, config, name);
 
-        //config.getMaxActiveGet(),config.getMaxDoneGet(),config.getGetLifetime(),config);
-       /* getPutRequestScheduler() = new RequestScheduler("put ContainerRequest Scheduler",
-        config.getMaxActivePut(),config.getMaxDonePut(),config.getPutLifetime(),config);
-        getCopyRequestScheduler() = new RequestScheduler("copy ContainerRequest Scheduler",
-        config.getMaxActiveCopy(),config.getMaxDoneCopy(),config.getCopyLifetime(),config);
-
-         */
-        bringOnlineStorage = new BringOnlineRequestStorage(configuration);
-        getStorage = new GetRequestStorage(configuration);
-        putStorage = new PutRequestStorage(configuration);
-        copyStorage = new CopyRequestStorage(configuration);
-        bringOnlineFileRequestStorage = new BringOnlineFileRequestStorage(configuration);
-        getFileRequestStorage = new GetFileRequestStorage(configuration);
-        putFileRequestStorage = new PutFileRequestStorage(configuration);
-        copyFileRequestStorage = new CopyFileRequestStorage(configuration);
-        reserveSpaceRequestStorage = new ReserveSpaceRequestStorage(configuration);
-        lsRequestStorage = new LsRequestStorage(configuration);
-        lsFileRequestStorage = new LsFileRequestStorage(configuration);
-        Job.registerJobStorage(bringOnlineFileRequestStorage);
-        Job.registerJobStorage(getFileRequestStorage);
-        Job.registerJobStorage(putFileRequestStorage);
-        Job.registerJobStorage(copyFileRequestStorage);
-        Job.registerJobStorage(bringOnlineStorage);
-        Job.registerJobStorage(getStorage);
-        Job.registerJobStorage(putStorage);
-        Job.registerJobStorage(copyStorage);
-        Job.registerJobStorage(reserveSpaceRequestStorage);
-        Job.registerJobStorage(lsRequestStorage);
-        Job.registerJobStorage(lsFileRequestStorage);
-
-        bringOnlineStorage.updatePendingJobs();
-        getStorage.updatePendingJobs();
-        copyStorage.updatePendingJobs();
-        putStorage.updatePendingJobs();
-        bringOnlineFileRequestStorage.updatePendingJobs();
-        getFileRequestStorage.updatePendingJobs();
-        putFileRequestStorage.updatePendingJobs();
-        copyFileRequestStorage.updatePendingJobs();
-        reserveSpaceRequestStorage.updatePendingJobs();
-
-        lsRequestStorage.updatePendingJobs();
-        lsFileRequestStorage.updatePendingJobs();
-
-
-        getLsRequestScheduler().jobStorageAdded(lsFileRequestStorage);
-        lsFileRequestStorage.schedulePendingJobs(getLsRequestScheduler());
-
-
-//        lsRequestStorage.schedulePendingJobs(getLsRequestScheduler());
-//        getLsRequestScheduler().jobStorageAdded(lsRequestStorage);
-
-        getBringOnlineRequestScheduler().jobStorageAdded(bringOnlineFileRequestStorage);
-        bringOnlineFileRequestStorage.schedulePendingJobs(getBringOnlineRequestScheduler());
-
-        getGetRequestScheduler().jobStorageAdded(getFileRequestStorage);
-        getFileRequestStorage.schedulePendingJobs(getGetRequestScheduler());
-
-        getPutRequestScheduler().jobStorageAdded(putFileRequestStorage);
-        putFileRequestStorage.schedulePendingJobs(getPutRequestScheduler());
-
-        getCopyRequestScheduler().jobStorageAdded(copyFileRequestStorage);
-        getCopyRequestScheduler().jobStorageAdded(copyStorage);
-        copyStorage.schedulePendingJobs(getCopyRequestScheduler());
-
-        getReserveSpaceScheduler().jobStorageAdded(reserveSpaceRequestStorage);
-        reserveSpaceRequestStorage.schedulePendingJobs(getReserveSpaceScheduler());
+         JobStorageFactory.initJobStorageFactory(
+                  new DatabaseJobStorageFactory(configuration));
 
         if (configuration.isVacuum()) {
             say("starting vacuum thread");
@@ -853,13 +753,11 @@ public class SRM {
             ContainerRequest r = new CopyRequest(
                     user,
                     credential.getId(),
-                    copyStorage,
                     from_urls,
                     to_urls,
                     null, // no space reservation in v1
                     configuration,
                     lifetime,
-                    copyFileRequestStorage,
                     configuration.getCopyRetryTimeout(),
                     configuration.getCopyMaxNumOfRetries(),
                     SRMProtocol.V1_1,
@@ -927,10 +825,8 @@ public class SRM {
             }
             ContainerRequest r =
                     new GetRequest(user, credential.getId(),
-                    getStorage,
                     surls, protocols, configuration,
                     configuration.getGetLifetime(),
-                    getFileRequestStorage,
                     configuration.getGetRetryTimeout(),
                     configuration.getGetMaxNumOfRetries(),
                     null,
@@ -1183,10 +1079,8 @@ public class SRM {
             // create a new put request
             ContainerRequest r = new PutRequest(user,
                     credential.getId(),
-                    putStorage,
                     sources, dests_urls, sizes,
                     wantPerm, protocols, configuration, configuration.getPutLifetime(),
-                    putFileRequestStorage,
                     configuration.getPutRetryTimeout(),
                     configuration.getPutMaxNumOfRetries(),
                     clientHost,
@@ -1342,7 +1236,7 @@ public class SRM {
     }
 
     public void listGetRequests(StringBuffer sb) throws java.sql.SQLException {
-        listRequests(sb, getGetRequestScheduler(), getStorage);
+        listRequests(sb, getGetRequestScheduler(), getGetStorage());
     }
 
     public Set getGetRequestIds(SRMUser user, String description) throws java.sql.SQLException {
@@ -1354,7 +1248,7 @@ public class SRM {
     }
 
     public void listLatestCompletedGetRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
-        Set activeRequestIds = getStorage.getLatestCompletedRequestIds(maxCount);
+        Set activeRequestIds = getGetStorage().getLatestCompletedRequestIds(maxCount);
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
             try {
@@ -1368,7 +1262,7 @@ public class SRM {
     }
 
     public void listLatestFailedGetRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
-        Set activeRequestIds = getStorage.getLatestFailedRequestIds(maxCount);
+        Set activeRequestIds = getGetStorage().getLatestFailedRequestIds(maxCount);
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
             try {
@@ -1382,7 +1276,7 @@ public class SRM {
     }
 
     public void listLatestDoneGetRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
-        Set activeRequestIds = getStorage.getLatestDoneRequestIds(maxCount);
+        Set activeRequestIds = getGetStorage().getLatestDoneRequestIds(maxCount);
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
             try {
@@ -1396,7 +1290,7 @@ public class SRM {
     }
 
     public void listLatestCanceledGetRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
-        Set activeRequestIds = getStorage.getLatestCanceledRequestIds(maxCount);
+        Set activeRequestIds = getGetStorage().getLatestCanceledRequestIds(maxCount);
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
             try {
@@ -1445,7 +1339,7 @@ public class SRM {
     }
 
     public void listPutRequests(StringBuffer sb) throws java.sql.SQLException {
-        listRequests(sb, getPutRequestScheduler(), putStorage);
+        listRequests(sb, getPutRequestScheduler(), getPutStorage());
     }
 
     public Set getPutRequestIds(SRMUser user, String description) throws java.sql.SQLException {
@@ -1453,7 +1347,7 @@ public class SRM {
     }
 
     public void listLatestCompletedPutRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
-        Set activeRequestIds = putStorage.getLatestCompletedRequestIds(maxCount);
+        Set activeRequestIds = getPutStorage().getLatestCompletedRequestIds(maxCount);
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
             try {
@@ -1466,7 +1360,7 @@ public class SRM {
     }
 
     public void listLatestFailedPutRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
-        Set activeRequestIds = putStorage.getLatestFailedRequestIds(maxCount);
+        Set activeRequestIds =getPutStorage().getLatestFailedRequestIds(maxCount);
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
             try {
@@ -1479,7 +1373,7 @@ public class SRM {
     }
 
     public void listLatestCanceledPutRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
-        Set activeRequestIds = putStorage.getLatestCanceledRequestIds(maxCount);
+        Set activeRequestIds = getPutStorage().getLatestCanceledRequestIds(maxCount);
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
             try {
@@ -1492,7 +1386,7 @@ public class SRM {
     }
 
     public void listLatestDonePutRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
-        Set activeRequestIds = putStorage.getLatestDoneRequestIds(maxCount);
+        Set activeRequestIds = getPutStorage().getLatestDoneRequestIds(maxCount);
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
             try {
@@ -1523,7 +1417,7 @@ public class SRM {
     }
 
     public void listCopyRequests(StringBuffer sb) throws java.sql.SQLException {
-        listRequests(sb, getCopyRequestScheduler(), copyStorage);
+        listRequests(sb, getCopyRequestScheduler(), getCopyStorage());
     }
 
     public Set getCopyRequestIds(SRMUser user, String description) throws java.sql.SQLException {
@@ -1531,7 +1425,7 @@ public class SRM {
     }
 
     public void listLatestCompletedCopyRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
-        Set activeRequestIds = copyStorage.getLatestCompletedRequestIds(maxCount);
+        Set activeRequestIds = getCopyStorage().getLatestCompletedRequestIds(maxCount);
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
             try {
@@ -1544,7 +1438,7 @@ public class SRM {
     }
 
     public void listLatestFailedCopyRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
-        Set activeRequestIds = copyStorage.getLatestFailedRequestIds(maxCount);
+        Set activeRequestIds = getCopyStorage().getLatestFailedRequestIds(maxCount);
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
             try {
@@ -1557,7 +1451,7 @@ public class SRM {
     }
 
     public void listLatestCanceledCopyRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
-        Set activeRequestIds = copyStorage.getLatestCanceledRequestIds(maxCount);
+        Set activeRequestIds = getCopyStorage().getLatestCanceledRequestIds(maxCount);
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
             try {
@@ -1570,7 +1464,7 @@ public class SRM {
     }
 
     public void listLatestDoneCopyRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
-        Set activeRequestIds = copyStorage.getLatestDoneRequestIds(maxCount);
+        Set activeRequestIds = getCopyStorage().getLatestDoneRequestIds(maxCount);
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
             try {
@@ -1601,7 +1495,7 @@ public class SRM {
     }
 
     public void listBringOnlineRequests(StringBuffer sb) throws java.sql.SQLException {
-        listRequests(sb, getBringOnlineRequestScheduler(), bringOnlineStorage);
+        listRequests(sb, getBringOnlineRequestScheduler(), getBringOnlineStorage());
     }
 
     public Set getBringOnlineRequestIds(SRMUser user, String description) throws java.sql.SQLException {
@@ -1609,7 +1503,7 @@ public class SRM {
     }
 
     public void listLatestCompletedBringOnlineRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
-        Set activeRequestIds = bringOnlineStorage.getLatestCompletedRequestIds(maxCount);
+        Set activeRequestIds = getBringOnlineStorage().getLatestCompletedRequestIds(maxCount);
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
             try {
@@ -1622,7 +1516,7 @@ public class SRM {
     }
 
     public void listLatestFailedBringOnlineRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
-        Set activeRequestIds = bringOnlineStorage.getLatestFailedRequestIds(maxCount);
+        Set activeRequestIds = getBringOnlineStorage().getLatestFailedRequestIds(maxCount);
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
             try {
@@ -1635,7 +1529,7 @@ public class SRM {
     }
 
     public void listLatestCanceledBringOnlineRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
-        Set activeRequestIds = bringOnlineStorage.getLatestCanceledRequestIds(maxCount);
+        Set activeRequestIds = getBringOnlineStorage().getLatestCanceledRequestIds(maxCount);
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
             try {
@@ -1648,7 +1542,7 @@ public class SRM {
     }
 
     public void listLatestDoneBringOnlineRequests(StringBuffer sb, int maxCount) throws java.sql.SQLException {
-        Set activeRequestIds = bringOnlineStorage.getLatestDoneRequestIds(maxCount);
+        Set activeRequestIds = getBringOnlineStorage().getLatestDoneRequestIds(maxCount);
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
             try {
@@ -1683,11 +1577,11 @@ public class SRM {
                 getScheduler(requestType);
     }
     public void listReserveSpaceRequests(StringBuffer sb) throws java.sql.SQLException {
-        listRequests(sb, getReserveSpaceScheduler(), reserveSpaceRequestStorage);
+        listRequests(sb, getReserveSpaceScheduler(), getReserveSpaceRequestStorage());
     }
 
     public void listLsRequests(StringBuffer sb) throws java.sql.SQLException {
-        listRequests(sb, getLsRequestScheduler(), lsRequestStorage);
+        listRequests(sb, getLsRequestScheduler(), getLsRequestStorage());
     }
 
     private void listRequests(StringBuffer sb,
@@ -1768,37 +1662,37 @@ public class SRM {
     public void cancelAllGetRequest(StringBuffer sb, String pattern)
             throws java.sql.SQLException, SRMInvalidRequestException {
 
-        cancelAllRequest(sb, pattern, getGetRequestScheduler(), getStorage);
+        cancelAllRequest(sb, pattern, getGetRequestScheduler(), getGetStorage());
     }
 
     public void cancelAllBringOnlineRequest(StringBuffer sb, String pattern) 
             throws java.sql.SQLException, SRMInvalidRequestException {
 
-        cancelAllRequest(sb, pattern, getBringOnlineRequestScheduler(), bringOnlineStorage);
+        cancelAllRequest(sb, pattern, getBringOnlineRequestScheduler(), getBringOnlineStorage());
     }
 
     public void cancelAllPutRequest(StringBuffer sb, String pattern)
             throws java.sql.SQLException, SRMInvalidRequestException {
 
-        cancelAllRequest(sb, pattern, getPutRequestScheduler(), putStorage);
+        cancelAllRequest(sb, pattern, getPutRequestScheduler(), getPutStorage());
     }
 
     public void cancelAllCopyRequest(StringBuffer sb, String pattern) 
             throws java.sql.SQLException, SRMInvalidRequestException {
 
-        cancelAllRequest(sb, pattern, getCopyRequestScheduler(), copyStorage);
+        cancelAllRequest(sb, pattern, getCopyRequestScheduler(), getCopyStorage());
     }
 
     public void cancelAllReserveSpaceRequest(StringBuffer sb, String pattern)
             throws java.sql.SQLException, SRMInvalidRequestException {
 
-        cancelAllRequest(sb, pattern, getReserveSpaceScheduler(), reserveSpaceRequestStorage);
+        cancelAllRequest(sb, pattern, getReserveSpaceScheduler(), getReserveSpaceRequestStorage());
     }
 
     public void cancelAllLsRequests(StringBuffer sb, String pattern)
             throws java.sql.SQLException, SRMInvalidRequestException {
 
-        cancelAllRequest(sb, pattern, getLsRequestScheduler(), lsRequestStorage);
+        cancelAllRequest(sb, pattern, getLsRequestScheduler(), getLsRequestStorage());
     }
 
     private void cancelAllRequest(StringBuffer sb,
@@ -1882,48 +1776,59 @@ public class SRM {
         return getScheduler(CopyRequest.class);
     }
 
-    public ReserveSpaceRequestStorage getReserveSpaceRequestStorage() {
-        return reserveSpaceRequestStorage;
+    public DatabaseRequestStorage getReserveSpaceRequestStorage() {
+        return (DatabaseRequestStorage) JobStorageFactory.getJobStorageFactory().
+                getJobStorage(ReserveSpaceRequest.class);
     }
 
-    public LsRequestStorage getLsRequestStorage() {
-        return lsRequestStorage;
+    public DatabaseRequestStorage getLsRequestStorage() {
+        return (DatabaseRequestStorage) JobStorageFactory.getJobStorageFactory().
+                getJobStorage(LsRequest.class);
     }
 
-    public LsFileRequestStorage getLsFileRequestStorage() {
-        return lsFileRequestStorage;
+    public JobStorage getLsFileRequestStorage() {
+        return JobStorageFactory.getJobStorageFactory().
+                getJobStorage(LsFileRequest.class);
     }
 
-    public BringOnlineRequestStorage getBringOnlineStorage() {
-        return bringOnlineStorage;
+    public DatabaseRequestStorage getBringOnlineStorage() {
+        return (DatabaseRequestStorage) JobStorageFactory.getJobStorageFactory().
+                getJobStorage(BringOnlineRequest.class);
     }
 
-    public GetRequestStorage getGetStorage() {
-        return getStorage;
+    public DatabaseRequestStorage  getGetStorage() {
+        return (DatabaseRequestStorage) JobStorageFactory.getJobStorageFactory().
+                getJobStorage(GetRequest.class);
     }
 
-    public PutRequestStorage getPutStorage() {
-        return putStorage;
+    public DatabaseRequestStorage getPutStorage() {
+        return (DatabaseRequestStorage)  JobStorageFactory.getJobStorageFactory().
+                getJobStorage(PutRequest.class);
     }
 
-    public CopyRequestStorage getCopyStorage() {
-        return copyStorage;
+    public DatabaseRequestStorage getCopyStorage() {
+        return (DatabaseRequestStorage) JobStorageFactory.getJobStorageFactory().
+                getJobStorage(CopyRequest.class);
     }
 
-    public BringOnlineFileRequestStorage getBringOnlineFileRequestStorage() {
-        return bringOnlineFileRequestStorage;
+    public JobStorage getBringOnlineFileRequestStorage() {
+        return JobStorageFactory.getJobStorageFactory().
+                getJobStorage(BringOnlineFileRequest.class);
     }
 
-    public GetFileRequestStorage getGetFileRequestStorage() {
-        return getFileRequestStorage;
+    public JobStorage getGetFileRequestStorage() {
+        return JobStorageFactory.getJobStorageFactory().
+                getJobStorage(GetFileRequest.class);
     }
 
-    public PutFileRequestStorage getPutFileRequestStorage() {
-        return putFileRequestStorage;
+    public JobStorage getPutFileRequestStorage() {
+        return JobStorageFactory.getJobStorageFactory().
+                getJobStorage(PutFileRequest.class);
     }
 
-    public CopyFileRequestStorage getCopyFileRequestStorage() {
-        return copyFileRequestStorage;
+    public JobStorage getCopyFileRequestStorage() {
+        return JobStorageFactory.getJobStorageFactory().
+                getJobStorage(CopyFileRequest.class);
     }
 
     public Scheduler getReserveSpaceScheduler() {

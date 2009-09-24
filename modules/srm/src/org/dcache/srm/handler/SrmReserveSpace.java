@@ -44,7 +44,6 @@ public class SrmReserveSpace {
     SRMUser             user;
     RequestCredential       credential;
     Configuration           configuration;
-    ReserveSpaceRequestStorage reserverSpaceRequestStorage;
     private String client_host;
     
     public SrmReserveSpace(SRMUser user,
@@ -69,7 +68,6 @@ public class SrmReserveSpace {
             throw new NullPointerException("configuration is null");
         }
         this.client_host = client_host;
-        reserverSpaceRequestStorage = srm.getReserveSpaceRequestStorage();
     }
     
     public SrmReserveSpaceResponse getResponse() {
@@ -159,7 +157,6 @@ public class SrmReserveSpace {
                 user,
                 configuration,
                 requestLifetime*1000L,
-                reserverSpaceRequestStorage,
                 3,
                 sizeInBytes,
                 lifetimeInSeconds == -1? -1L: lifetimeInSeconds*1000L,

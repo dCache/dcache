@@ -96,7 +96,6 @@ public abstract class Request extends Job {
     private SRMUser user;
     public Request(SRMUser user,
     Long requestCredentalId,
-    JobStorage requestJobsStorage,
     Configuration configuration,
     int max_number_of_retries,
     long max_update_period,
@@ -104,7 +103,7 @@ public abstract class Request extends Job {
     String description,
     String client_host
         ) throws Exception{
-        super(lifetime,requestJobsStorage,max_number_of_retries);
+        super(lifetime,max_number_of_retries);
         this.credentialId = requestCredentalId;
         this.storage = configuration.getStorage();
         this.configuration = configuration;
@@ -122,7 +121,6 @@ public abstract class Request extends Job {
     protected Request(
     Long id,
     Long nextJobId,
-    JobStorage jobStorage,
     long creationTime,
     long lifetime,
     int stateId,
@@ -144,7 +142,6 @@ public abstract class Request extends Job {
     ) {
         super(id,
         nextJobId,
-        jobStorage,
         creationTime,
         lifetime,
         stateId,

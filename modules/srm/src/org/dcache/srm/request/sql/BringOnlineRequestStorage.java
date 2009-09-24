@@ -223,7 +223,6 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
             return new  BringOnlineRequest( 
                         ID, 
                         NEXTJOBID,
-                        this,
                         CREATIONTIME,
                         LIFETIME,
                         STATE,

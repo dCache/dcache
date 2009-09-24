@@ -25,7 +25,7 @@ import java.util.Set;
  *
  * @author  timur
  */
-public abstract class DatabaseFileRequestStorage extends DatabaseJobStorage  implements org.dcache.srm.request.FileRequestStorage{
+public abstract class DatabaseFileRequestStorage extends DatabaseJobStorage  {
     
     /** Creates a new instance of FileRequestStorage */
     public DatabaseFileRequestStorage

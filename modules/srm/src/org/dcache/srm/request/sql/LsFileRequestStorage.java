@@ -66,7 +66,6 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage {
                         getJobHistory(ID,connection);
                 return new LsFileRequest(ID,
                                          NEXTJOBID ,
-                                         this,
                                          CREATIONTIME,
                                          LIFETIME,
                                          STATE,

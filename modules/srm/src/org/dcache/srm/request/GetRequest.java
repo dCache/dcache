@@ -213,12 +213,10 @@ public class GetRequest extends ContainerRequest {
     
     public GetRequest(SRMUser user,
     Long requestCredentialId,
-    JobStorage jobStorage,
     String[] surls,
     String[] protocols,
     Configuration configuration,
     long lifetime,
-    JobStorage jobFileRequestStorage,
     long max_update_period,
     int max_number_of_retries,
     String description,
@@ -226,7 +224,6 @@ public class GetRequest extends ContainerRequest {
     ) throws Exception {
         super(user,
                 requestCredentialId,
-                jobStorage,
                 configuration, 
                 max_number_of_retries,
                 max_update_period,
@@ -244,7 +241,7 @@ public class GetRequest extends ContainerRequest {
         for(int i = 0; i<len; ++i) {
             GetFileRequest fileRequest =
             new GetFileRequest(getId(),requestCredentialId,
-            configuration, surls[i],  lifetime, jobFileRequestStorage  , storage,max_number_of_retries);
+            configuration, surls[i],  lifetime,  storage,max_number_of_retries);
             
             fileRequests[i] = fileRequest;
         }
@@ -257,7 +254,6 @@ public class GetRequest extends ContainerRequest {
     public  GetRequest(
     Long id,
     Long nextJobId,
-    JobStorage jobStorage,
     long creationTime,
     long lifetime,
     int stateId,
@@ -281,7 +277,6 @@ public class GetRequest extends ContainerRequest {
     )  throws java.sql.SQLException {
         super( id,
         nextJobId,
-        jobStorage,
         creationTime,
         lifetime,
         stateId,

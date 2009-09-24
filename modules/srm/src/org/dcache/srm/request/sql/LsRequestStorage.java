@@ -209,7 +209,6 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage{
                 int offset=set.getInt(next_index++);
                 return new  LsRequest(ID,
                                       NEXTJOBID,
-                                      this,
                                       CREATIONTIME,
                                       LIFETIME,
                                       STATE,

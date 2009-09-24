@@ -262,7 +262,6 @@ public class GetFileRequest extends FileRequest {
     Configuration configuration,
     String url,
     long lifetime,
-    JobStorage jobStorage,
     AbstractStorageElement storage,
     int maxNumberOfRetries
     
@@ -271,7 +270,6 @@ public class GetFileRequest extends FileRequest {
             requestCredentalId, 
             configuration, 
             lifetime, 
-            jobStorage,
             maxNumberOfRetries);
         say("GetFileRequest, requestId="+requestId+" fileRequestId = "+getId());
         try {
@@ -291,7 +289,6 @@ public class GetFileRequest extends FileRequest {
     public GetFileRequest(
     Long id,
     Long nextJobId,
-    JobStorage jobStorage,
     long creationTime,
     long lifetime,
     int stateId,
@@ -313,7 +310,6 @@ public class GetFileRequest extends FileRequest {
     ) throws java.sql.SQLException {
         super(id,
         nextJobId,
-        jobStorage,
         creationTime,
         lifetime,
         stateId,
