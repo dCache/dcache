@@ -91,20 +91,24 @@ public class RecordConvert {
         public static AuthorizationRecord gPlazmaToAuthorizationRecord(Map<NameRolePair, gPlazmaAuthorizationRecord> user_auths) {
 
           AuthorizationRecord authrec = new AuthorizationRecord();
+          gPlazmaAuthorizationRecord gauthrec;
           Iterator<NameRolePair> nameRolesIter = user_auths.keySet().iterator();
-          NameRolePair firstPair = nameRolesIter.hasNext() ? nameRolesIter.next() : null;
-          gPlazmaAuthorizationRecord gauthrec = user_auths.get(firstPair);
-          if (gauthrec == null) return authrec;
+          NameRolePair firstNameAndRole = nameRolesIter.hasNext() ? nameRolesIter.next() : null;
+          authrec.setName(firstNameAndRole==null ? null : firstNameAndRole.getName());
+          for( NameRolePair nameAndRole : user_auths.keySet()) {
+            gauthrec = user_auths.get(nameAndRole);
+            if(gauthrec!=null) {
+                authrec.setIdentity(gauthrec.getUsername());
+                authrec.setUid(gauthrec.getUID());
+                authrec.setPriority(gauthrec.getPriority());
+                authrec.setHome(gauthrec.getHome());
+                authrec.setRoot(gauthrec.getRoot());
+                authrec.setReadOnly(gauthrec.isReadOnly());
+                break;
+            }
+          }
 
-          authrec.setIdentity(gauthrec.getUsername());
-          authrec.setName(firstPair.getName());
-          authrec.setUid(gauthrec.getUID());
-          authrec.setPriority(gauthrec.getPriority());
-          authrec.setHome(gauthrec.getHome());
-          authrec.setRoot(gauthrec.getRoot());
-          authrec.setReadOnly(gauthrec.isReadOnly());
-
-          List<GroupList> grplistcoll = new LinkedList<GroupList>();
+        List<GroupList> grplistcoll = new LinkedList<GroupList>();
         //Set<gPlazmaAuthorizationRecord> gauth_records = new LinkedHashSet<gPlazmaAuthorizationRecord>(user_auths.values());
         for( NameRolePair nameAndRole : user_auths.keySet()) {
             GroupList grplist = new GroupList();
