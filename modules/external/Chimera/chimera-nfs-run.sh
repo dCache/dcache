@@ -5,17 +5,30 @@
 
 PORTMAP_PORT=111
 
-if [  -z ${ourHomeDir} ]
+if [ "x" = "x${ourHomeDir}" ]
 then
     ourHomeDir=/opt/d-cache
 fi
 
-log=/var/log/chimera-nfsv3.log
-pfile=/var/run/chimera-nfsv3.pid
-
 . ${ourHomeDir}/classes/extern.classpath
 . ${ourHomeDir}/config/dCacheSetup
 
+if [ "x" = "x${logArea}" ]
+then
+    logArea=/var/log
+fi
+if [ "x" = "x${log}" ]
+then
+    log=${logArea}/chimera-nfsv3.log
+fi
+if [ "x" = "x${pidDir}" ]
+then
+    pidDir=/var/run
+fi
+if [ "x" = "x${pfile}" ]
+then
+    pfile=${pidDir}/chimera-nfsv3.pid
+fi
 
 #  A handy wrapper to allow us to delay continuing until some event has
 #  happened.  A function is called to check whether the event has happened yet.
