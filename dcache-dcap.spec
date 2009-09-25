@@ -11,7 +11,6 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-build
 Source: %{name}.src.tgz
 BuildRequires: make
 BuildRequires: gcc
-BuildRequires: openssl
 Provides: dcache-dcap
 # Commenting out VDT as its not a fixed dependency
 #BuildRequires: vdt_globus_essentials
@@ -42,6 +41,7 @@ This package contains the client library dcachedcap header files.
 Summary: dCache GSI Tunnel
 Group: Applications/System
 Requires: libdcap
+BuildRequires: openssl-devel
 %description -n libdcap-tunnel-gsi
 This package contains the gsi tunnel plugin library used by dcachedcap.
 This library is dynamically loaded at run time.
@@ -50,6 +50,7 @@ This library is dynamically loaded at run time.
 Summary: dCache GSI Tunnel
 Group: Applications/System
 Requires: libdcap
+BuildRequires: krb5-devel
 %description -n libdcap-tunnel-krb
 This package contains the gsi tunnel plugin library used by dcachedcap.
 This library is dynamically loaded at run time.
