@@ -165,7 +165,6 @@ import org.dcache.auth.persistence.AuthRecordPersistenceManager;
 import diskCacheV111.vehicles.transferManager.RemoteGsiftpDelegateUserCredentialsMessage;
 import gplazma.authz.AuthorizationException;
 import gplazma.authz.AuthorizationController;
-import gplazma.authz.util.X509CertUtil;
 import gplazma.authz.util.NameRolePair;
 import gplazma.authz.records.gPlazmaAuthorizationRecord;
 import dmg.cells.nucleus.*;
@@ -354,10 +353,15 @@ public class GPLAZMA extends CellAdapter {
       for( NameRolePair nameAndRole : user_auths.keySet()) {
           sb.append(nameAndRole.getName()+nameAndRole.getRole()).append(" mapped as: ");
           gPlazmaAuthorizationRecord record = user_auths.get(nameAndRole);
-          sb.append(record.getUsername()).append(" ").
-             append(record.getUID()).append(" ").
-             append(record.getGIDs()).append(" ").
-             append(record.getRoot());
+          if(record!=null) {
+              sb.append(record.getUsername()).append(" ").
+                      append(record.getUID()).append(" ").
+                      append(Arrays.toString(record.getGIDs())).append(" ").
+                      append(record.getRoot());
+          } else {
+              sb.append("null");
+          }
+          sb.append("\n");
       }
       
       return sb.toString();
@@ -983,16 +987,7 @@ public class GPLAZMA extends CellAdapter {
       }
 
       if(log.isDebugEnabled()) {
-          for( NameRolePair nameAndRole : user_auths.keySet()) {
-              StringBuilder sb = new StringBuilder("authorized ");
-              sb.append(nameAndRole.getName()+nameAndRole.getRole()).append(" as: ");
-              gPlazmaAuthorizationRecord record = user_auths.get(nameAndRole);
-              sb.append(record.getUsername()).append(" ").
-                      append(record.getUID()).append(" ").
-                      append(Arrays.toString(record.getGIDs())).append(" ").
-                      append(record.getRoot());
-              log.debug(sb);
-          }
+          logAuthzMessage(user_auths);
       }
 
     return user_auths;
@@ -1048,16 +1043,7 @@ public class GPLAZMA extends CellAdapter {
     }
 
       if(log.isDebugEnabled()) {
-          for( NameRolePair nameAndRole : user_auths.keySet()) {
-              StringBuilder sb = new StringBuilder("authorized ");
-              sb.append(nameAndRole.getName()+nameAndRole.getRole()).append(" as: ");
-              gPlazmaAuthorizationRecord record = user_auths.get(nameAndRole);
-              sb.append(record.getUsername()).append(" ").
-                      append(record.getUID()).append(" ").
-                      append(Arrays.toString(record.getGIDs())).append(" ").
-                      append(record.getRoot());
-              log.debug(sb);
-          }
+          logAuthzMessage(user_auths);
       }
     return user_auths;
   }
@@ -1122,16 +1108,7 @@ public class GPLAZMA extends CellAdapter {
       }
 
       if(log.isDebugEnabled()) {
-          for( NameRolePair nameAndRole : user_auths.keySet()) {
-              StringBuilder sb = new StringBuilder("authorized ");
-              sb.append(nameAndRole.getName()+nameAndRole.getRole()).append(" as: ");
-              gPlazmaAuthorizationRecord record = user_auths.get(nameAndRole);
-              sb.append(record.getUsername()).append(" ").
-                      append(record.getUID()).append(" ").
-                      append(Arrays.toString(record.getGIDs())).append(" ").
-                      append(record.getRoot());
-              log.debug(sb);
-          }
+          logAuthzMessage(user_auths);
       }
 
     return user_auths;
@@ -1170,5 +1147,21 @@ public class GPLAZMA extends CellAdapter {
     return target;
   }
 
+    private void logAuthzMessage(Map <NameRolePair, gPlazmaAuthorizationRecord> user_auths) {
+        for( NameRolePair nameAndRole : user_auths.keySet()) {
+            StringBuilder sb = new StringBuilder("authorized ");
+            sb.append(nameAndRole.getName()+nameAndRole.getRole()).append(" as: ");
+            gPlazmaAuthorizationRecord record = user_auths.get(nameAndRole);
+            if(record!=null) {
+                sb.append(record.getUsername()).append(" ").
+                        append(record.getUID()).append(" ").
+                        append(Arrays.toString(record.getGIDs())).append(" ").
+                        append(record.getRoot());
+            } else {
+                sb.append("null");
+            }
+            log.debug(sb);
+        }
+    }
 
 }
