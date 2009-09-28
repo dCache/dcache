@@ -104,7 +104,8 @@ public class VORoleMapAuthzPlugin extends RecordMappingPlugin {
         try {
             getLogger().info("Requesting mapping for User with DN and role: " + identity);
             user_name = mapUsername(voRoleMapHandler, identity);
-            if(user_name==null) {
+            // Check for wildcard DN
+            if(user_name==null && role!=null) {
                 identity = "*".concat(role);
                 user_name = mapUsername(voRoleMapHandler, identity);
             }
