@@ -247,7 +247,7 @@ public class StateComposite implements StateComponent {
 				visitor.visitCompositePreSkipDescend( path, branchMetadata);
 
 				StateComponent child = _children.get( childName);
-				StatePath childStartPath = start != null ? start.childPath() : null;
+				StatePath childStartPath = start.childPath();
 				child.acceptVisitor( buildChildPath( path, childName), childStartPath, visitor);
 
 				visitor.visitCompositePostSkipDescend( path, branchMetadata);
@@ -281,8 +281,7 @@ public class StateComposite implements StateComponent {
 			if (!itr.hasNext())
 				visitor.visitCompositePreLastDescend( path, branchMetadata);
 
-			StatePath childStartPath = start != null ? start.childPath() : null;
-			child.acceptVisitor( buildChildPath( path, childName), childStartPath, visitor);
+			child.acceptVisitor( buildChildPath( path, childName), null, visitor);
 		}
 
 		visitor.visitCompositePostDescend( path, branchMetadata);
