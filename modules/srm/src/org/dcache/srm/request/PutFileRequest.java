@@ -136,7 +136,6 @@ public class PutFileRequest extends FileRequest {
             String url,
             long size,
             long lifetime,
-            AbstractStorageElement storage,
             int maxNumberOfRetires,
             String spaceReservationId,
             TRetentionPolicy retentionPolicy,
@@ -234,21 +233,21 @@ public class PutFileRequest extends FileRequest {
     }
 
     public void say(String s) {
-        if(storage != null) {
-            storage.log("PutFileRequest #"+/*getFileId()+*/": "+s);
+        if(getStorage() != null) {
+            getStorage().log("PutFileRequest #"+/*getFileId()+*/": "+s);
         }
 
     }
 
     public void esay(String s) {
-        if(storage != null) {
-            storage.elog("PutFileRequest #"+/*getFileId()+*/": "+s);
+        if(getStorage() != null) {
+            getStorage().elog("PutFileRequest #"+/*getFileId()+*/": "+s);
         }
     }
 
     public void esay(Throwable t) {
-        if(storage != null) {
-            storage.elog(t);
+        if(getStorage() != null) {
+            getStorage().elog(t);
         }
     }
 
@@ -351,7 +350,7 @@ public class PutFileRequest extends FileRequest {
             return false;
         }
         SRMUser user = (SRMUser) getUser();
-        boolean canwrite =storage.canWrite(user,fileId,fmd,parentFileId,parentFmd,
+        boolean canwrite =getStorage().canWrite(user,fileId,fmd,parentFileId,parentFmd,
                 ((PutRequest)getRequest()).isOverwrite());
         say("PutFileRequest  storage.canWrite() returned "+canwrite);
         return  canwrite;
@@ -463,7 +462,7 @@ public class PutFileRequest extends FileRequest {
         firstDcapTurl = request.getFirstDcapTurl();
         if(firstDcapTurl == null) {
             try {
-                String turl = storage.getPutTurl((SRMUser)request.getUser(),getPath(),
+                String turl = getStorage().getPutTurl((SRMUser)request.getUser(),getPath(),
                         request.protocols);
                 GlobusURL g_turl = new GlobusURL(turl);
                 if(g_turl.getProtocol().equals("dcap")) {
@@ -478,7 +477,7 @@ public class PutFileRequest extends FileRequest {
 
         try {
 
-            String turl =storage.getPutTurl(request.getUser(),getPath(), firstDcapTurl);
+            String turl =getStorage().getPutTurl(request.getUser(),getPath(), firstDcapTurl);
             return new GlobusURL(turl);
         } catch(MalformedURLException murle) {
             esay(murle);
@@ -536,7 +535,7 @@ public class PutFileRequest extends FileRequest {
                 //(not in ftp root for example) this will throw exception
                 // we do not care about the return value yet
                 PutRequest request = (PutRequest) getJob(requestId);
-                String[] supported_prots = storage.supportedPutProtocols();
+                String[] supported_prots = getStorage().supportedPutProtocols();
                 boolean found_supp_prot=false;
                 mark1:
                     for(int i=0; i< supported_prots.length;++i) {
@@ -566,7 +565,7 @@ public class PutFileRequest extends FileRequest {
                         setState(State.ASYNCWAIT, "calling Storage.prepareToPut()");
                     }
                 }
-                storage.prepareToPut(getUser(),path,callbacks,
+                getStorage().prepareToPut(getUser(),path,callbacks,
                         ((PutRequest)getRequest()).isOverwrite());
                 return;
             }
@@ -604,14 +603,16 @@ public class PutFileRequest extends FileRequest {
 		    }
 	    }
 	    
-	    if (configuration.isReserve_space_implicitely()&&spaceReservationId == null) { 
-		    synchronized(this) {
-			    State state = getState();
+            if (configuration.isReserve_space_implicitely()&&spaceReservationId == null) {
+                State state;
+                long remaining_lifetime;
+                synchronized(this) {
+                    state = getState();
 			    if(!State.isFinalState(state)) {
 				    setState(State.ASYNCWAIT,"reserving space");
 			    }
 		    }
-		    long remaining_lifetime = lifetime - ( System.currentTimeMillis() -creationTime);
+		    remaining_lifetime = lifetime - ( System.currentTimeMillis() -creationTime);
 		    SrmReserveSpaceCallbacks callbacks = new PutReserveSpaceCallbacks(getId());
 		    //
 		    //the following code allows the inheritance of the
@@ -628,7 +629,7 @@ public class PutFileRequest extends FileRequest {
 			    accessLatency = parentFmd.retentionPolicyInfo.getAccessLatency();
 		    }
 		    say("reserving space, size="+(size==0?1L:size));
-		    storage.srmReserveSpace(
+                getStorage().srmReserveSpace(
 			    getUser(),
 			    size==0?1L:size,
 			    remaining_lifetime,
@@ -648,7 +649,7 @@ public class PutFileRequest extends FileRequest {
 		    }
 		    long remaining_lifetime = lifetime - ( System.currentTimeMillis() -creationTime);
 		    SrmUseSpaceCallbacks  callbacks = new PutUseSpaceCallbacks(getId());
-		    storage.srmMarkSpaceAsBeingUsed(getUser(),
+                getStorage().srmMarkSpaceAsBeingUsed(getUser(),
 						    spaceReservationId,
 						    getPath(),
 						    size==0?1:size,
@@ -703,7 +704,7 @@ public class PutFileRequest extends FileRequest {
                     spaceMarkedAsBeingUsed ) {
                 SrmCancelUseOfSpaceCallbacks callbacks =
                         new PutCancelUseOfSpaceCallbacks(getId());
-                storage.srmUnmarkSpaceAsBeingUsed(user,
+                getStorage().srmUnmarkSpaceAsBeingUsed(user,
                         spaceReservationId,getPath(),
                         callbacks);
 
@@ -712,7 +713,7 @@ public class PutFileRequest extends FileRequest {
                 say("storage.releaseSpace("+spaceReservationId+"\"");
                 SrmReleaseSpaceCallbacks callbacks =
                         new PutReleaseSpaceCallbacks(this.getId());
-                storage.srmReleaseSpace(  user,
+                getStorage().srmReleaseSpace(  user,
                         spaceReservationId,
                         (Long)null, //release all of space we reserved
                         callbacks);
@@ -1552,7 +1553,7 @@ public class PutFileRequest extends FileRequest {
             return remainingLifetime;
         }
         SRMUser user =(SRMUser) getUser();
-        return storage.srmExtendReservationLifetime(user,spaceToken,newLifetime);
+        return getStorage().srmExtendReservationLifetime(user,spaceToken,newLifetime);
 
 
     }

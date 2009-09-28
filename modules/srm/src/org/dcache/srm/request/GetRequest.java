@@ -241,7 +241,7 @@ public class GetRequest extends ContainerRequest {
         for(int i = 0; i<len; ++i) {
             GetFileRequest fileRequest =
             new GetFileRequest(getId(),requestCredentialId,
-            configuration, surls[i],  lifetime,  storage,max_number_of_retries);
+            configuration, surls[i],  lifetime,  max_number_of_retries);
             
             fileRequests[i] = fileRequest;
         }
@@ -345,7 +345,7 @@ public class GetRequest extends ContainerRequest {
         say("proccessing get request");
         String supported_protocols[];
         try {
-            supported_protocols = storage.supportedGetProtocols();
+            supported_protocols = getStorage().supportedGetProtocols();
         }
         catch(org.dcache.srm.SRMException srme) {
             esay(" protocols are not supported");

@@ -86,6 +86,7 @@ import org.dcache.srm.request.sql.RequestsPropertyStorage;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SRMInvalidRequestException;
+import org.dcache.srm.SRM;
 
 /**
  *
@@ -375,5 +376,14 @@ public abstract class Request extends Job {
          return Long.toString(user.getId());
     }
 
+    /**
+     * @return the storage
+     */
+    public final AbstractStorageElement getStorage() {
+        if(storage == null) {
+            storage = SRM.getSRM().getStorage();
+        }
+        return storage;
+    }
     
 }

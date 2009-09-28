@@ -515,6 +515,14 @@ public class SRM {
     }
 
     /**
+     * Get the storage that this srm is working with
+     * @return the storage
+     */
+    public final AbstractStorageElement getStorage() {
+        return storage;
+    }
+
+    /**
      * @return the abstractStorageElementCounters
      */
     public RequestCounters<Method> getAbstractStorageElementCounters() {

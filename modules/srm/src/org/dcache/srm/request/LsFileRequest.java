@@ -34,7 +34,6 @@ public class LsFileRequest extends FileRequest {
                              Configuration configuration,
                              org.apache.axis.types.URI url,
                              long lifetime,
-                             AbstractStorageElement storage,
                              int maxNumberOfRetries) throws Exception {
 
                 super(request.getId(),
@@ -92,20 +91,20 @@ public class LsFileRequest extends FileRequest {
         }
 
         public void say(String s) {
-                if(storage != null) {
-                        storage.log("LsFileRequest reqId #"+requestId+" ls#"+getId()+": "+s);
+                if(getStorage() != null) {
+                        getStorage().log("LsFileRequest reqId #"+requestId+" ls#"+getId()+": "+s);
                 }
         }
 
         public void esay(String s) {
-                if(storage != null) {
-                        storage.elog("LsFileRequest reqId #"+requestId+" ls#"+getId()+": "+s);
+                if(getStorage() != null) {
+                        getStorage().elog("LsFileRequest reqId #"+requestId+" ls#"+getId()+": "+s);
                 }
         }
 
         public void esay(Throwable t) {
-                if(storage != null) {
-                        storage.elog(t);
+                if(getStorage() != null) {
+                        getStorage().elog(t);
                 }
         }
 
@@ -315,7 +314,7 @@ public class LsFileRequest extends FileRequest {
                                                                      " exceeded. Try to narrow down with count and use offset to get complete listing \n");
                         }
                 }
-                FileMetaData fmd = storage.getFileMetaData(user, path,parent_fmd);
+                FileMetaData fmd = getStorage().getFileMetaData(user, path,parent_fmd);
                 TMetaDataPathDetail metaDataPathDetail =
                         new TMetaDataPathDetail();
                 metaDataPathDetail.setLifetimeAssigned(new Integer(-1));
@@ -445,7 +444,7 @@ public class LsFileRequest extends FileRequest {
                         }
                 }
                 if (metaDataPathDetail.getType() == TFileType.DIRECTORY && depth<request.getNumOfLevels()) {
-                        java.io.File dirFiles[] = storage.listDirectoryFiles(user,path,fmd);
+                        java.io.File dirFiles[] = getStorage().listDirectoryFiles(user,path,fmd);
                         TMetaDataPathDetail dirMetaDataPathDetails[]=null;
                         if(dirFiles != null && dirFiles.length >0) {
                                 int end   = dirFiles.length;
@@ -547,7 +546,7 @@ public class LsFileRequest extends FileRequest {
                         say("file type is Unknown");
                 }
                 if (file.length()==1) {
-                        FileMetaData fmd = storage.getFileMetaData(user, path, null);
+                        FileMetaData fmd = getStorage().getFileMetaData(user, path, null);
                         metaDataPathDetail.setSize(new org.apache.axis.types.UnsignedLong(fmd.size));
                 }
                 else {

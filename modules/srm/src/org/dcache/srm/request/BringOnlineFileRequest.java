@@ -123,7 +123,6 @@ public class BringOnlineFileRequest extends FileRequest {
     Configuration configuration,
     String url,
     long lifetime,
-    AbstractStorageElement storage,
     int maxNumberOfRetries
     
     ) throws Exception {
@@ -203,21 +202,21 @@ public class BringOnlineFileRequest extends FileRequest {
     }
     
     public void say(String s) {
-        if(storage != null) {
-            storage.log("BringOnlineFileRequest reqId #"+requestId+" file#"+getId()+": "+s);
+        if(getStorage() != null) {
+            getStorage().log("BringOnlineFileRequest reqId #"+requestId+" file#"+getId()+": "+s);
         }
         
     }
     
     public void esay(String s) {
-        if(storage != null) {
-            storage.elog("BringOnlineFileRequest eqId #"+requestId+" file#"+getId()+": "+s);
+        if(getStorage() != null) {
+            getStorage().elog("BringOnlineFileRequest eqId #"+requestId+" file#"+getId()+": "+s);
         }
     }
     
     public void esay(Throwable t) {
-        if(storage != null) {
-            storage.elog(t);
+        if(getStorage() != null) {
+            getStorage().elog(t);
         }
     }
     
@@ -255,7 +254,7 @@ public class BringOnlineFileRequest extends FileRequest {
         }
         SRMUser user =(SRMUser) getUser();
         say("BringOnlineFileRequest calling storage.canRead()");
-        return storage.canRead(user,fileId,fileMetaData);
+        return getStorage().canRead(user,fileId,fileMetaData);
     }
     
     
@@ -449,7 +448,7 @@ public class BringOnlineFileRequest extends FileRequest {
             say("this file request's request is  "+request);
             //this will fail if the protocols are not supported
             if(request.protocols != null && request.protocols.length > 0) {
-                String[] supported_prots = storage.supportedGetProtocols();
+                String[] supported_prots = getStorage().supportedGetProtocols();
                 boolean found_supp_prot=false;
                 mark1:
                 for(String supported_protocol: supported_prots) {
@@ -474,7 +473,7 @@ public class BringOnlineFileRequest extends FileRequest {
             //storage.getGetTurl(getUser(),path,request.protocols);
             say("storage.prepareToGet("+path+",...)");
             GetFileInfoCallbacks callbacks = new GetCallbacks(getId());
-            storage.getFileInfo(getUser(),path,callbacks);
+            getStorage().getFileInfo(getUser(),path,callbacks);
         }
         catch(Exception e) {
             esay(e);
@@ -493,8 +492,8 @@ public class BringOnlineFileRequest extends FileRequest {
                 //convert to millis
                 desiredPinLifetime *= 1000;
             }
-                
-            storage.pinFile(getUser(),
+
+            getStorage().pinFile(getUser(),
                 fileId, 
                 getRequest().getClient_host(),
                 fileMetaData, 
@@ -524,7 +523,7 @@ public class BringOnlineFileRequest extends FileRequest {
                 UnpinCallbacks callbacks = new TheUnpinCallbacks(this.getId());
                 say("state changed to final state, unpinning fileId= "+ fileId+" pinId = "+pinId);
                 try {
-                    storage.unPinFile(getUser(),fileId, callbacks, pinId);
+                    getStorage().unPinFile(getUser(),fileId, callbacks, pinId);
                 }
                 catch (SRMInvalidRequestException ire) {
                     esay(ire);
@@ -567,7 +566,7 @@ public class BringOnlineFileRequest extends FileRequest {
             TheUnpinCallbacks callbacks = new TheUnpinCallbacks(this.getId());
             say("srmReleaseFile, unpinning fileId= "+ 
                     fileId+" pinId = "+pinId);
-            storage.unPinFile(getUser(),fileId, callbacks, pinId);
+            getStorage().unPinFile(getUser(),fileId, callbacks, pinId);
             try {   
                 callbacks.waitCompleteion(60000); //one minute
                 if(callbacks.success) {
@@ -667,7 +666,7 @@ public class BringOnlineFileRequest extends FileRequest {
             return newLifetime;
         }
         SRMUser user =(SRMUser) getUser();
-        storage.extendPinLifetime(user,fileId,pinId,newLifetime);
+        getStorage().extendPinLifetime(user,fileId,pinId,newLifetime);
         return newLifetime;
     }
     

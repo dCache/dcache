@@ -58,7 +58,7 @@ public class LsRequest extends ContainerRequest {
                                                   configuration,
                                                   request.getArrayOfSURLs().getUrlArray()[i],
                                                   lifetime,
-                                                  storage,max_number_of_retries);
+                                                  max_number_of_retries);
                 }
                 if(configuration.isAsynchronousLs()) {
                     storeInSharedMemory();

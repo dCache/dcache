@@ -288,7 +288,7 @@ public abstract class FileRequest extends Job {
     }
     
     public void say(String s) {
-        storage.log("FileRequest reqId # "+requestId+" fileId # "+getId()+" : "+s);
+        getStorage().log("FileRequest reqId # "+requestId+" fileId # "+getId()+" : "+s);
     }
     
     public void esay(String s) {
@@ -300,7 +300,7 @@ public abstract class FileRequest extends Job {
          
         storage.elog(claass+"reqId # "+request.getRequestId()+" fileId # "+fileRequestId+" : "+s);
          */
-        storage.elog("FileRequest reqId #"+requestId+" id #"+getId()+" :"+s);
+        getStorage().elog("FileRequest reqId #"+requestId+" id #"+getId()+" :"+s);
         
     }
     
@@ -317,8 +317,8 @@ public abstract class FileRequest extends Job {
     }
 
     public void esay(Throwable t) {
-        storage.elog("FileRequest reqId #"+requestId+" id #"+getId()+" Throwable:"+t);
-        storage.elog(t);
+        getStorage().elog("FileRequest reqId #"+requestId+" id #"+getId()+" Throwable:"+t);
+        getStorage().elog(t);
     }
     
     
@@ -485,5 +485,15 @@ public abstract class FileRequest extends Job {
              return "unknown";
          }
      }
+
+     /**
+     * @return the storage
+     */
+    public final AbstractStorageElement getStorage() {
+        if(storage == null) {
+            storage = SRM.getSRM().getStorage();
+        }
+        return storage;
+    }
 
 }

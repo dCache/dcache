@@ -142,7 +142,6 @@ public class BringOnlineRequest extends ContainerRequest {
                     configuration, 
                     surls[i],  
                     lifetime, 
-                    storage,
                     max_number_of_retries);
             
             fileRequests[i] = fileRequest;
@@ -253,7 +252,7 @@ public class BringOnlineRequest extends ContainerRequest {
         say("proccessing get request");
         String supported_protocols[];
         try {
-            supported_protocols = storage.supportedGetProtocols();
+            supported_protocols = getStorage().supportedGetProtocols();
         }
         catch(org.dcache.srm.SRMException srme) {
             esay(" protocols are not supported");
@@ -469,7 +468,7 @@ public class BringOnlineRequest extends ContainerRequest {
                         SRMUser user =(SRMUser) getUser();
                         long id =getId();
                         BringOnlineFileRequest.unpinBySURLandRequestId(
-                            storage, user, id, surl_string);
+                            getStorage(),user, id, surl_string);
                         TSURLReturnStatus surlStatus = new TSURLReturnStatus();
                         TReturnStatus surlReturnStatus = new TReturnStatus();
                         surlReturnStatus.setStatusCode(TStatusCode.SRM_SUCCESS);

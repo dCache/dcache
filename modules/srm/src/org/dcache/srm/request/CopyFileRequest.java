@@ -153,7 +153,6 @@ public class CopyFileRequest extends FileRequest {
 			       String to_url,
 			       String spaceToken,
 			       long lifetime,
-			       AbstractStorageElement storage,
 			       int max_number_of_retries) throws Exception {
 		super(requestId, 
 		      requestCredentalId,
@@ -246,20 +245,20 @@ public class CopyFileRequest extends FileRequest {
 	}
     
 	public void say(String s) {
-		if(storage != null) {
-			storage.log("CopyFileRequest #"+getId()+": "+s);
+		if(getStorage() != null) {
+			getStorage().log("CopyFileRequest #"+getId()+": "+s);
 		}
 	}
     
 	public void esay(String s) {
-		if(storage != null) {
-			storage.elog("CopyFileRequest #"+getId()+": "+s);
+		if(getStorage() != null) {
+			getStorage().elog("CopyFileRequest #"+getId()+": "+s);
 		}
 	}
 	
 	public void esay(Throwable t) {
-		if(storage != null) {
-			storage.elog(t);
+		if(getStorage() != null) {
+			getStorage().elog(t);
 		}
 	}
 	
@@ -453,7 +452,7 @@ public class CopyFileRequest extends FileRequest {
 			   to.getProtocol().equalsIgnoreCase("ftp") ||
 			   to.getProtocol().equalsIgnoreCase("dcap")) {
 				//need to add support for getting
-				String fromturlstr = storage.getGetTurl(getUser(),local_from_path,new String[]
+				String fromturlstr = getStorage().getGetTurl(getUser(),local_from_path,new String[]
 					{"gsiftp","http","ftp"});
 				from = new GlobusURL(fromturlstr);
 			}
@@ -463,7 +462,7 @@ public class CopyFileRequest extends FileRequest {
 			   from.getProtocol().equalsIgnoreCase("http") ||
 			   from.getProtocol().equalsIgnoreCase("ftp") ||
 			   from.getProtocol().equalsIgnoreCase("dcap")) {
-				String toturlstr = storage.getPutTurl(getUser(),local_to_path,new String[]
+				String toturlstr = getStorage().getPutTurl(getUser(),local_to_path,new String[]
 					{"gsiftp","http","ftp"});
 				to = new GlobusURL(toturlstr);
 			}
@@ -484,7 +483,7 @@ public class CopyFileRequest extends FileRequest {
 		say("copying from local to local ");
         FileMetaData fmd ;
         try {
-            fmd = storage.getFileMetaData(getUser(), local_from_path);
+            fmd = getStorage().getFileMetaData(getUser(), local_from_path);
         } catch (SRMException srme) {
             try {
                 synchronized (this) {
@@ -515,7 +514,7 @@ public class CopyFileRequest extends FileRequest {
 			}
 			PutCallbacks callbacks = new PutCallbacks(this.getId());
 			say("calling storage.prepareToPut("+local_to_path+")");
-			storage.prepareToPut(getUser(),
+			getStorage().prepareToPut(getUser(),
 					     local_to_path,
 					     callbacks,
 					     ((CopyRequest)getRequest()).isOverwrite());
@@ -587,7 +586,7 @@ public class CopyFileRequest extends FileRequest {
 
 			SrmReserveSpaceCallbacks callbacks =
                     new TheReserveSpaceCallbacks (getId());
-			storage.srmReserveSpace(
+			getStorage().srmReserveSpace(
 				getUser(),
 				size==0?1L:size,
 				remaining_lifetime,
@@ -609,7 +608,7 @@ public class CopyFileRequest extends FileRequest {
 			long remaining_lifetime =
                     lifetime - ( System.currentTimeMillis() -creationTime);
 			SrmUseSpaceCallbacks  callbacks = new CopyUseSpaceCallbacks(getId());
-			storage.srmMarkSpaceAsBeingUsed(getUser(),
+			getStorage().srmMarkSpaceAsBeingUsed(getUser(),
 							spaceReservationId,
 							local_to_path,
 							size==0?1:size,
@@ -619,7 +618,7 @@ public class CopyFileRequest extends FileRequest {
 			return;
 		}
 
-        storage.localCopy(getUser(),local_from_path,local_to_path);
+        getStorage().localCopy(getUser(),local_from_path,local_to_path);
         setStateToDone();
         return;
 	}
@@ -639,7 +638,7 @@ public class CopyFileRequest extends FileRequest {
 			}
 			PutCallbacks callbacks = new PutCallbacks(this.getId());
 			say("calling storage.prepareToPut("+local_to_path+")");
-			storage.prepareToPut(getUser(), 
+			getStorage().prepareToPut(getUser(),
 					     local_to_path, 
 					     callbacks,
 					     ((CopyRequest)getRequest()).isOverwrite());
@@ -673,8 +672,8 @@ public class CopyFileRequest extends FileRequest {
                 spaceReservationId=Long.toString(toParentFmd.spaceTokens[0]);
 		}
 
-		if (configuration.isReserve_space_implicitely()&&spaceReservationId == null) { 
-			synchronized(this) {
+		if (configuration.isReserve_space_implicitely()&&spaceReservationId == null) {
+                    synchronized(this) {
 				State state = getState();
 				if(!State.isFinalState(state)) {
 					setState(State.ASYNCWAIT,"reserving space");
@@ -682,7 +681,7 @@ public class CopyFileRequest extends FileRequest {
 				else {
 					throw new org.dcache.srm.scheduler.FatalJobFailure("request state is a final state");
 				}
-			}
+                   }
 			long remaining_lifetime = lifetime - ( System.currentTimeMillis() -creationTime);
 			say("reserving space, size="+(size==0?1L:size));
 			//
@@ -700,7 +699,7 @@ public class CopyFileRequest extends FileRequest {
 				accessLatency = toParentFmd.retentionPolicyInfo.getAccessLatency();
 			}
 			SrmReserveSpaceCallbacks callbacks = new TheReserveSpaceCallbacks (getId());
-			storage.srmReserveSpace(
+			getStorage().srmReserveSpace(
 				getUser(), 
 				size==0?1L:size, 
 				remaining_lifetime, 
@@ -720,7 +719,7 @@ public class CopyFileRequest extends FileRequest {
 			}
 			long remaining_lifetime = lifetime - ( System.currentTimeMillis() -creationTime);
 			SrmUseSpaceCallbacks  callbacks = new CopyUseSpaceCallbacks(getId());
-			storage.srmMarkSpaceAsBeingUsed(getUser(),
+			getStorage().srmMarkSpaceAsBeingUsed(getUser(),
 							spaceReservationId,
 							local_to_path,
 							size==0?1:size,
@@ -741,7 +740,7 @@ public class CopyFileRequest extends FileRequest {
 			}
 			TheCopyCallbacks copycallbacks = new TheCopyCallbacks(getId());
 			if(spaceReservationId != null) {
-				transferId = storage.getFromRemoteTURL(getUser(),
+				transferId = getStorage().getFromRemoteTURL(getUser(),
 								       from_turl.getURL(),
 								       local_to_path, 
 								       getUser(),
@@ -752,7 +751,7 @@ public class CopyFileRequest extends FileRequest {
 				
 			} 
 			else {
-				transferId = storage.getFromRemoteTURL(getUser(),
+				transferId = getStorage().getFromRemoteTURL(getUser(),
 								       from_turl.getURL(),
 								       local_to_path, 
 								       getUser(),
@@ -769,7 +768,7 @@ public class CopyFileRequest extends FileRequest {
 		// transfer id is not null and we are scheduled
 		// there was some kind of error durign the transfer
 		else {
-			storage.killRemoteTransfer(transferId);
+			getStorage().killRemoteTransfer(transferId);
 			transferId = null;
 			throw new org.dcache.srm.scheduler.NonFatalJobFailure(transferError);
 		}
@@ -816,7 +815,7 @@ public class CopyFileRequest extends FileRequest {
 			say("copying using storage.putToRemoteTURL");
 			RequestCredential credential = getCredential();
 			TheCopyCallbacks copycallbacks = new TheCopyCallbacks(getId());
-			transferId = storage.putToRemoteTURL(getUser(),
+			transferId = getStorage().putToRemoteTURL(getUser(),
 							     local_from_path,
 							     to_turl.getURL(),
 							     getUser(),
@@ -830,7 +829,7 @@ public class CopyFileRequest extends FileRequest {
 		// transfer id is not null and we are scheduled
 		// there was some kind of error durign the transfer
 		else {
-			storage.killRemoteTransfer(transferId);
+			getStorage().killRemoteTransfer(transferId);
 			transferId = null;
 			throw new org.dcache.srm.scheduler.NonFatalJobFailure(transferError);
 		}
@@ -1056,7 +1055,7 @@ public class CopyFileRequest extends FileRequest {
 		State state = getState();
 		if(State.isFinalState(state)) {
 			if( transferId != null)           {
-				storage.killRemoteTransfer(transferId);
+				getStorage().killRemoteTransfer(transferId);
 			}
                         SRMUser user ;
                         try {
@@ -1068,7 +1067,7 @@ public class CopyFileRequest extends FileRequest {
 			if(spaceReservationId != null && weReservedSpace) {
 				say("storage.releaseSpace("+spaceReservationId+"\"");
 				SrmReleaseSpaceCallbacks callbacks = new TheReleaseSpaceCallbacks(this.getId());
-				storage.srmReleaseSpace(  user,
+				getStorage().srmReleaseSpace(  user,
 							  spaceReservationId,
 							  null,
 							  callbacks);
@@ -1078,7 +1077,7 @@ public class CopyFileRequest extends FileRequest {
 			   spaceMarkedAsBeingUsed ) {
 				SrmCancelUseOfSpaceCallbacks callbacks =
 					new CopyCancelUseOfSpaceCallbacks(getId());
-				storage.srmUnmarkSpaceAsBeingUsed(user,
+				getStorage().srmUnmarkSpaceAsBeingUsed(user,
 								  spaceReservationId,local_to_path,
 								  callbacks);
 			}
@@ -1828,7 +1827,7 @@ public class CopyFileRequest extends FileRequest {
 			return remainingLifetime;
 		}
 		SRMUser user =(SRMUser) getUser();
-		return storage.srmExtendReservationLifetime(user,spaceToken,newLifetime);
+		return getStorage().srmExtendReservationLifetime(user,spaceToken,newLifetime);
 	}
 	
 	public static class CopyUseSpaceCallbacks implements SrmUseSpaceCallbacks {

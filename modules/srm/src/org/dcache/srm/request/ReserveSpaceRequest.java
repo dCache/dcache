@@ -344,11 +344,11 @@ public class ReserveSpaceRequest extends Request {
     
     
     public void say(String s) {
-        storage.log("ReserveSpaceRequest id # "+getId()+" :"+s);
+        getStorage().log("ReserveSpaceRequest id # "+getId()+" :"+s);
     }
     
     public void esay(String s) {
-        storage.elog("ReserveSpaceRequest id #"+getId()+" :"+s);
+        getStorage().elog("ReserveSpaceRequest id #"+getId()+" :"+s);
     }
     
     public RequestCredential getCredential() {
@@ -364,8 +364,8 @@ public class ReserveSpaceRequest extends Request {
     }
     
     public void esay(Throwable t) {
-        storage.elog("ReserveSpaceRequest id #"+getId()+" Throwable:"+t);
-        storage.elog(t);
+        getStorage().elog("ReserveSpaceRequest id #"+getId()+" Throwable:"+t);
+        getStorage().elog(t);
     }
     
     
@@ -393,7 +393,7 @@ public class ReserveSpaceRequest extends Request {
     public void run() throws NonFatalJobFailure, FatalJobFailure {
         try{
             SrmReserveSpaceCallbacks callbacks = new SrmReserveSpaceCallbacks(this.getId());
-            storage.srmReserveSpace(
+            getStorage().srmReserveSpace(
                     getUser(),
                     sizeInBytes,
                     spaceReservationLifetime,

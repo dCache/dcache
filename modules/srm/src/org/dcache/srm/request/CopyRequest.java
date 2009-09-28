@@ -219,7 +219,7 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
                 requestCredentialId,
                 configuration,from_urls[i],to_urls[i],
                 spaceToken,
-                lifetime,storage, max_number_of_retries  );
+                lifetime, max_number_of_retries  );
             fileRequests[i] = fileRequest;
         }
         this.callerSrmProtocol = callerSrmProtocol;
@@ -374,19 +374,19 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
     
     
     public void say(String words) {
-        storage.log("CopyRequest reqId # "+getRequestNum()+
+        getStorage().log("CopyRequest reqId # "+getRequestNum()+
         " : "+words);
     }
     
     public void esay(String words) {
-        storage.elog("CopyRequest reqId # "+getRequestNum()+
+        getStorage().elog("CopyRequest reqId # "+getRequestNum()+
         words);
     }
     
     public void esay(Throwable t) {
-        storage.elog("CopyRequest reqId # "+getRequestNum()+
+        getStorage().elog("CopyRequest reqId # "+getRequestNum()+
         "error : ");
-        storage.elog(t);
+        getStorage().elog(t);
     }
     
     
@@ -433,7 +433,7 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
             }
         }
         else {
-            from_url_is_local = storage.isLocalTransferUrl(from_urls[0].getURL());
+            from_url_is_local = getStorage().isLocalTransferUrl(from_urls[0].getURL());
         }
         
         if(to_url_is_srm) {
@@ -445,7 +445,7 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
             }
         }
         else {
-            to_url_is_local = storage.isLocalTransferUrl(to_urls[0].getURL());
+            to_url_is_local = getStorage().isLocalTransferUrl(to_urls[0].getURL());
         }
         
         say(" from_url_is_srm = "+from_url_is_srm);
@@ -467,7 +467,7 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
         	RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
         	QOSTicket qosTicket = qosPlugin.createTicket(
                     credential.getCredentialName(),
-                    (storage.getFileMetaData((SRMUser)getUser(),cfr.getFromPath())).size,
+                    (getStorage().getFileMetaData((SRMUser)getUser(),cfr.getFromPath())).size,
 		    from_urls[i].getURL(),
                     from_urls[i].getPort(),
                     from_urls[i].getPort(),
@@ -531,36 +531,36 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
             remoteSrmGet = true;
             if(callerSrmProtocol == null || callerSrmProtocol == SRMProtocol.V1_1) {
                 try {
-                    getter_putter  =  new  RemoteTurlGetterV1( storage, credential,
-                    remoteSurlsUniqueArray,
-                    protocols,this,
+                    getter_putter  =  new  RemoteTurlGetterV1( getStorage(),credential, remoteSurlsUniqueArray,
+                    protocols,
+                    this,
                     configuration.getCopyRetryTimeout(),2,configuration.isConnect_to_wsdl());
                     getter_putter.getInitialRequest();
                     remoteSrmProtocol = SRMProtocol.V1_1;
                 }
                 catch(SRMException srme) {
                     esay("connecting to server using version 1.1 protocol failed, trying version 2.1.1");
-                    getter_putter  =  new  RemoteTurlGetterV2( storage, credential,
-                    remoteSurlsUniqueArray,
-                    protocols,this,
+                    getter_putter  =  new  RemoteTurlGetterV2( getStorage(),credential, remoteSurlsUniqueArray,
+                    protocols,
+                    this,
                     configuration.getCopyRetryTimeout(),2,this.getRemainingLifetime());
                     getter_putter.getInitialRequest();
                     remoteSrmProtocol = SRMProtocol.V2_1;
                 }
             } else if ( callerSrmProtocol == SRMProtocol.V2_1) {
                 try{
-                    getter_putter  =  new  RemoteTurlGetterV2( storage, credential,
-                    remoteSurlsUniqueArray,
-                    protocols,this,
+                    getter_putter  =  new  RemoteTurlGetterV2( getStorage(),credential, remoteSurlsUniqueArray,
+                    protocols,
+                    this,
                     configuration.getCopyRetryTimeout(),2,this.getRemainingLifetime());
                     getter_putter.getInitialRequest();
                     remoteSrmProtocol = SRMProtocol.V2_1;
                 }
                 catch(SRMException srme) {
                     esay("connecting to server using version 2.1.1 protocol failed, trying version 1.1");
-                    getter_putter  =  new  RemoteTurlGetterV1( storage, credential,
-                    remoteSurlsUniqueArray,
-                    protocols,this,
+                    getter_putter  =  new  RemoteTurlGetterV1( getStorage(),credential, remoteSurlsUniqueArray,
+                    protocols,
+                    this,
                     configuration.getCopyRetryTimeout(),2,configuration.isConnect_to_wsdl());
                     getter_putter.getInitialRequest();
                     remoteSrmProtocol = SRMProtocol.V1_1;
@@ -689,7 +689,7 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
         for(int i =0 ; i<length;++i) {
             Long fileRequestId = (Long) remoteSurlToFileReqIds.get(remoteSurlsUniqueArray[i]);
             CopyFileRequest cfr = (CopyFileRequest)getFileRequest(fileRequestId);
-            sizes[i] = (storage.getFileMetaData(getUser(),cfr.getFromPath())).size;
+            sizes[i] = (getStorage().getFileMetaData(getUser(),cfr.getFromPath())).size;
             say("getTURLs: local size  returned by storage.getFileMetaData is "+sizes[i]);
             cfr.setSize(sizes[i]);
             dests[i] = cfr.getToURL();
@@ -702,19 +702,19 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
         RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
        if(callerSrmProtocol == null || callerSrmProtocol == SRMProtocol.V1_1) {
            try {
-                getter_putter  = new  RemoteTurlPutterV1(storage ,  credential,
-                dests, sizes,
-                protocols,this,configuration.getCopyRetryTimeout(),2,configuration.isConnect_to_wsdl());
+                getter_putter  = new  RemoteTurlPutterV1(getStorage(),credential ,  dests,
+                sizes, protocols,
+                this,configuration.getCopyRetryTimeout(),2,configuration.isConnect_to_wsdl());
                 getter_putter.getInitialRequest();
                 remoteSrmProtocol = SRMProtocol.V1_1;
             }
             catch(SRMException srme) {
                 esay("connecting to server using version 1.1 protocol failed, trying version 2.1.1");
                 getter_putter  =  new  RemoteTurlPutterV2( 
-                storage, 
-                credential, 
-                dests, sizes, 
-                protocols,this,
+                getStorage(),credential,
+                dests, 
+                sizes, protocols,
+                this,
                 configuration.getCopyRetryTimeout(),
                 2,
                 this.getRemainingLifetime(),
@@ -729,9 +729,9 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
         } else if ( callerSrmProtocol == SRMProtocol.V2_1) {
            try {
                 getter_putter  =  new  RemoteTurlPutterV2( 
-                storage, credential, 
-                dests, sizes, 
-                protocols,this,
+                getStorage(),credential, dests,
+                sizes, protocols,
+                this,
                 configuration.getCopyRetryTimeout(),2,this.getRemainingLifetime(),
                 storageType,
                 targetRetentionPolicy,
@@ -743,9 +743,9 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
             }
             catch(SRMException srme) {
                 esay("connecting to server using version 2.1.1 protocol failed, trying version 1.1");
-                getter_putter  = new  RemoteTurlPutterV1(storage ,  credential,
-                dests, sizes,
-                protocols,this,configuration.getCopyRetryTimeout(),2,configuration.isConnect_to_wsdl());
+                getter_putter  = new  RemoteTurlPutterV1(getStorage(),credential ,  dests,
+                sizes, protocols,
+                this,configuration.getCopyRetryTimeout(),2,configuration.isConnect_to_wsdl());
                 getter_putter.getInitialRequest();
                 remoteSrmProtocol = SRMProtocol.V1_1;
             }
@@ -914,24 +914,21 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
                     int remoteFileId = Integer.parseInt(remoteFileIdString);
                     TurlGetterPutterV1.staticSetFileStatus(getCredential(),SURL,
                     remoteRequestId, remoteFileId,"Done",
-                    configuration.getCopyRetryTimeout(),configuration.getCopyMaxNumOfRetries(),
-                    storage,configuration.isConnect_to_wsdl());
+                configuration.getCopyRetryTimeout(),configuration.getCopyMaxNumOfRetries(),getStorage(),configuration.isConnect_to_wsdl());
                 } else if( remoteSrmProtocol == SRMProtocol.V2_1) {
                     if(remoteSrmGet) 
                     {
                        RemoteTurlGetterV2.staticReleaseFile(getCredential(),
                                SURL, 
                                remoteRequestIdString,
-                               configuration.getCopyRetryTimeout(),
-                               configuration.getCopyMaxNumOfRetries(),
-                               storage);
+                           configuration.getCopyRetryTimeout(),
+                           configuration.getCopyMaxNumOfRetries(),getStorage());
                     } else {
                         RemoteTurlPutterV2.staticPutDone(getCredential(), 
                                SURL, 
                                remoteRequestIdString, 
-                               configuration.getCopyRetryTimeout(),
-                               configuration.getCopyMaxNumOfRetries(),
-                               storage);
+                           configuration.getCopyRetryTimeout(),
+                           configuration.getCopyMaxNumOfRetries(),getStorage());
                     }
                     
                 } else {

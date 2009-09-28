@@ -871,7 +871,7 @@ public abstract class ContainerRequest extends Request {
      * message
      */
     public void say(String words) {
-        storage.log("Request id="+getId()+": "+words);
+        getStorage().log("Request id="+getId()+": "+words);
     }
 
 
@@ -881,7 +881,7 @@ public abstract class ContainerRequest extends Request {
      *error message
      */
     public void esay(String words) {
-        storage.elog("Request id="+getId()+": "+words);
+        getStorage().elog("Request id="+getId()+": "+words);
     }
 
     /**
@@ -890,8 +890,8 @@ public abstract class ContainerRequest extends Request {
      * an instance of throwable
      */
     public void esay(Throwable t) {
-        storage.elog("Request id="+getId()+" error: ");
-        storage.elog(t);
+        getStorage().elog("Request id="+getId()+" error: ");
+        getStorage().elog(t);
     }
 
     /**

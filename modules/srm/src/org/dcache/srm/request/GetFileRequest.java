@@ -262,7 +262,6 @@ public class GetFileRequest extends FileRequest {
     Configuration configuration,
     String url,
     long lifetime,
-    AbstractStorageElement storage,
     int maxNumberOfRetries
     
     ) throws Exception {
@@ -345,21 +344,21 @@ public class GetFileRequest extends FileRequest {
     }
     
     public void say(String s) {
-        if(storage != null) {
-            storage.log("GetFileRequest reqId #"+requestId+" file#"+getId()+": "+s);
+        if(getStorage() != null) {
+            getStorage().log("GetFileRequest reqId #"+requestId+" file#"+getId()+": "+s);
         }
         
     }
     
     public void esay(String s) {
-        if(storage != null) {
-            storage.elog("GetFileRequest eqId #"+requestId+" file#"+getId()+": "+s);
+        if(getStorage() != null) {
+            getStorage().elog("GetFileRequest eqId #"+requestId+" file#"+getId()+": "+s);
         }
     }
     
     public void esay(Throwable t) {
-        if(storage != null) {
-            storage.elog(t);
+        if(getStorage() != null) {
+            getStorage().elog(t);
         }
     }
     
@@ -465,7 +464,7 @@ public class GetFileRequest extends FileRequest {
         }
         SRMUser user =(SRMUser) getUser();
         say("GetFileRequest calling storage.canRead()");
-        return storage.canRead(user,fileId,fileMetaData);
+        return getStorage().canRead(user,fileId,fileMetaData);
     }
     
     
@@ -578,7 +577,7 @@ public class GetFileRequest extends FileRequest {
             firstDcapTurl = request.getFirstDcapTurl();
             if(firstDcapTurl == null) {
                 try {
-                    String turl = storage.getGetTurl(getUser(),
+                    String turl = getStorage().getGetTurl(getUser(),
                     getPath(),
                     request.protocols);
                     if(turl == null) {
@@ -600,7 +599,7 @@ public class GetFileRequest extends FileRequest {
         
         try {
             
-            String turl =storage.getGetTurl(getUser(),getPath(), firstDcapTurl);
+            String turl =getStorage().getGetTurl(getUser(),getPath(), firstDcapTurl);
             if(turl == null) {
                 return null;
             }
@@ -710,7 +709,7 @@ public class GetFileRequest extends FileRequest {
             GetRequest request = (GetRequest) Job.getJob(requestId);
             say("this file request's request is  "+request);
             //this will fail if the protocols are not supported
-            String[] supported_prots = storage.supportedGetProtocols();
+            String[] supported_prots = getStorage().supportedGetProtocols();
             boolean found_supp_prot=false;
             mark1:
             for(int i=0; i< supported_prots.length;++i) {
@@ -727,7 +726,7 @@ public class GetFileRequest extends FileRequest {
             //storage.getGetTurl(getUser(),path,request.protocols);
             say("storage.prepareToGet("+path+",...)");
             GetFileInfoCallbacks callbacks = new GetCallbacks(getId());
-            storage.getFileInfo(getUser(),path,callbacks);
+            getStorage().getFileInfo(getUser(),path,callbacks);
         }
         catch(Exception e) {
             esay(e);
@@ -740,7 +739,7 @@ public class GetFileRequest extends FileRequest {
             
             PinCallbacks callbacks = new ThePinCallbacks(getId());
             say("storage.pinFile("+fileId+",...)");
-            storage.pinFile(getUser(),
+            getStorage().pinFile(getUser(),
                 fileId, 
                 getRequest().getClient_host(),
                 fileMetaData, lifetime, 
@@ -773,7 +772,7 @@ public class GetFileRequest extends FileRequest {
                     esay (ire) ;
                     return;
                 }
-                storage.unPinFile(user,fileId, callbacks, pinId);
+                getStorage().unPinFile(user,fileId, callbacks, pinId);
             }
         }
     }
@@ -846,7 +845,7 @@ public class GetFileRequest extends FileRequest {
             return newLifetime;
         }
         SRMUser user =(SRMUser) getUser();
-        return storage.extendPinLifetime(user,fileId,pinId,newLifetime);
+        return getStorage().extendPinLifetime(user,fileId,pinId,newLifetime);
     }
     
 

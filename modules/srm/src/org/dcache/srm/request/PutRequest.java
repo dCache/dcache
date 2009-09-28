@@ -149,7 +149,7 @@ public class PutRequest extends ContainerRequest{
             configuration,
             destUrls[i],sizes[i],
             lifetime,
-            storage,max_number_of_retries,
+            max_number_of_retries,
             spaceToken,
             retentionPolicy,
             accessLatency
@@ -246,22 +246,22 @@ public class PutRequest extends ContainerRequest{
     
     
     public void say(String words) {
-        storage.log("PutRequestHandler : "+words);
+        getStorage().log("PutRequestHandler : "+words);
     }
     
     public void esay(String words) {
-        storage.elog("PutRequestHandler error: "+words);
+        getStorage().elog("PutRequestHandler error: "+words);
     }
     public void esay(Throwable t) {
-        storage.elog("PutRequestHandler error:");
-        storage.elog(t);
+        getStorage().elog("PutRequestHandler error:");
+        getStorage().elog(t);
     }
     
     public void proccessRequest() {
         say("proccessing put request");
         String supported_protocols[];
         try {
-            supported_protocols = storage.supportedGetProtocols();
+            supported_protocols = getStorage().supportedGetProtocols();
         }
         catch(org.dcache.srm.SRMException srme) {
             esay(" protocols are not supported");
