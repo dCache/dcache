@@ -321,7 +321,7 @@ public class AuthorizationController {
     }
     
     public Map <NameRolePair, gPlazmaAuthorizationRecord>
-        authorize(String subjectDN, Iterable <String> roles, X509Certificate[] chain, String desiredUserName, String serviceUrl, Socket socket)
+        authorize(String subjectDN, Collection <String> roles, X509Certificate[] chain, String desiredUserName, String serviceUrl, Socket socket)
             throws AuthorizationException {
         Map <NameRolePair, gPlazmaAuthorizationRecord> records = new LinkedHashMap <NameRolePair, gPlazmaAuthorizationRecord>();
         
@@ -358,6 +358,10 @@ public class AuthorizationController {
         }
 
         // Indicate denial
+        if(authexceptions==null) {
+            String denied = AuthorizationPlugin.DENIED_MESSAGE + " for " + subjectDN + " and roles " + roles.toString();
+            authexceptions = new AuthorizationException(denied);
+        }
         throw authexceptions;
     }
     
