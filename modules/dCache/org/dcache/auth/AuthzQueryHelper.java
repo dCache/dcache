@@ -170,16 +170,7 @@ public class AuthzQueryHelper {
                             authmessage = (AuthenticationMessage) authobj;
                             Map <NameRolePair, gPlazmaAuthorizationRecord> user_auths = authmessage.getgPlazmaAuthzMap();
                             if(log.isDebugEnabled()) {
-                                for( NameRolePair nameAndRole : user_auths.keySet()) {
-                                    StringBuilder sb = new StringBuilder("authorized ");
-                                    sb.append(nameAndRole.getName()+nameAndRole.getRole()).append(" as: ");
-                                    gPlazmaAuthorizationRecord record = user_auths.get(nameAndRole);
-                                    sb.append(record.getUsername()).append(" ").
-                                            append(record.getUID()).append(" ").
-                                            append(Arrays.toString(record.getGIDs())).append(" ").
-                                            append(record.getRoot());
-                                    log.debug(sb);
-                                }
+                                logAuthzMessage(user_auths, log);
                             }
                         }
                     } catch (IOException ioe) {
@@ -263,16 +254,7 @@ public class AuthzQueryHelper {
                 authmessage = (AuthenticationMessage) authobj;
                 Map <NameRolePair, gPlazmaAuthorizationRecord> user_auths = authmessage.getgPlazmaAuthzMap();
                 if(log.isDebugEnabled()) {
-                    for( NameRolePair nameAndRole : user_auths.keySet()) {
-                        StringBuilder sb = new StringBuilder("authorized ");
-                        sb.append(nameAndRole.getName()+nameAndRole.getRole()).append(" as: ");
-                        gPlazmaAuthorizationRecord record = user_auths.get(nameAndRole);
-                        sb.append(record.getUsername()).append(" ").
-                                append(record.getUID()).append(" ").
-                                append(Arrays.toString(record.getGIDs())).append(" ").
-                                append(record.getRoot());
-                        log.debug(sb);
-                    }
+                    logAuthzMessage(user_auths, log);
                 }
             } else {
                 if( authobj instanceof NoRouteToCellException ) {
@@ -326,16 +308,7 @@ public class AuthzQueryHelper {
                 }
                 Map <NameRolePair, gPlazmaAuthorizationRecord> user_auths = authmessage.getgPlazmaAuthzMap();
                 if(log.isDebugEnabled()) {
-                    for( NameRolePair nameAndRole : user_auths.keySet()) {
-                        StringBuilder sb = new StringBuilder("authorized ");
-                        sb.append(nameAndRole.getName()+nameAndRole.getRole()).append(" as: ");
-                        gPlazmaAuthorizationRecord record = user_auths.get(nameAndRole);
-                        sb.append(record.getUsername()).append(" ").
-                                append(record.getUID()).append(" ").
-                                append(Arrays.toString(record.getGIDs())).append(" ").
-                                append(record.getRoot());
-                        log.debug(sb);
-                    }
+                    logAuthzMessage(user_auths, log);
                 }
             } else {
                 if( authobj instanceof Throwable )
@@ -358,5 +331,19 @@ public class AuthzQueryHelper {
         }
 
         return authmessage;
+    }
+
+    public static void logAuthzMessage(Map <NameRolePair, gPlazmaAuthorizationRecord> user_auths, Logger log) {
+        for( NameRolePair nameAndRole : user_auths.keySet()) {
+            StringBuilder sb = new StringBuilder("authorized ");
+            sb.append(nameAndRole.toString()).append(" as: ");
+            gPlazmaAuthorizationRecord record = user_auths.get(nameAndRole);
+            if(record!=null) {
+                sb.append(record.toShortString());
+            } else {
+                sb.append("null");
+            }
+            log.debug(sb);
+        }
     }
 }

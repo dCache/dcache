@@ -53,4 +53,12 @@ public class NameRolePair implements Serializable {
         if(name==null) return role.hashCode();
         return name.hashCode()^ role.hashCode();
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb = (name!=null) ? sb.append(name) : sb;
+        sb = (role!=null) ? sb.append(role) : sb;
+        return sb.toString();
+    }
 }

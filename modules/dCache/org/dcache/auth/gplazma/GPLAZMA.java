@@ -160,6 +160,7 @@ COPYRIGHT STATUS:
 package org.dcache.auth.gplazma;
 
 import org.dcache.auth.AuthorizationRecord;
+import org.dcache.auth.AuthzQueryHelper;
 import diskCacheV111.vehicles.*;
 import org.dcache.auth.persistence.AuthRecordPersistenceManager;
 import diskCacheV111.vehicles.transferManager.RemoteGsiftpDelegateUserCredentialsMessage;
@@ -351,16 +352,13 @@ public class GPLAZMA extends CellAdapter {
       Map <NameRolePair, gPlazmaAuthorizationRecord> user_auths =  authorize(principal, roles, null, 0);
       StringBuilder sb = new StringBuilder();
       for( NameRolePair nameAndRole : user_auths.keySet()) {
-          sb.append(nameAndRole.getName()+nameAndRole.getRole()).append(" mapped as: ");
+          sb.append(nameAndRole.toString()).append(" mapped as: ");
           gPlazmaAuthorizationRecord record = user_auths.get(nameAndRole);
           if(record!=null) {
-              sb.append(record.getUsername()).append(" ").
-                      append(record.getUID()).append(" ").
-                      append(Arrays.toString(record.getGIDs())).append(" ").
-                      append(record.getRoot());
-          } else {
-              sb.append("null");
-          }
+                sb.append(record.toShortString());
+            } else {
+                sb.append("null");
+            }
           sb.append("\n");
       }
       
@@ -987,7 +985,7 @@ public class GPLAZMA extends CellAdapter {
       }
 
       if(log.isDebugEnabled()) {
-          logAuthzMessage(user_auths);
+          AuthzQueryHelper.logAuthzMessage(user_auths, log);
       }
 
     return user_auths;
@@ -1043,7 +1041,7 @@ public class GPLAZMA extends CellAdapter {
     }
 
       if(log.isDebugEnabled()) {
-          logAuthzMessage(user_auths);
+          AuthzQueryHelper.logAuthzMessage(user_auths, log);
       }
     return user_auths;
   }
@@ -1108,7 +1106,7 @@ public class GPLAZMA extends CellAdapter {
       }
 
       if(log.isDebugEnabled()) {
-          logAuthzMessage(user_auths);
+          AuthzQueryHelper.logAuthzMessage(user_auths, log);
       }
 
     return user_auths;
@@ -1146,22 +1144,5 @@ public class GPLAZMA extends CellAdapter {
     say("Using " + name + " : " + target);
     return target;
   }
-
-    private void logAuthzMessage(Map <NameRolePair, gPlazmaAuthorizationRecord> user_auths) {
-        for( NameRolePair nameAndRole : user_auths.keySet()) {
-            StringBuilder sb = new StringBuilder("authorized ");
-            sb.append(nameAndRole.getName()+nameAndRole.getRole()).append(" as: ");
-            gPlazmaAuthorizationRecord record = user_auths.get(nameAndRole);
-            if(record!=null) {
-                sb.append(record.getUsername()).append(" ").
-                        append(record.getUID()).append(" ").
-                        append(Arrays.toString(record.getGIDs())).append(" ").
-                        append(record.getRoot());
-            } else {
-                sb.append("null");
-            }
-            log.debug(sb);
-        }
-    }
 
 }
