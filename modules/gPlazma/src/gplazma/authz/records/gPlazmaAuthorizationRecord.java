@@ -1,6 +1,7 @@
 package gplazma.authz.records;
 
 import java.io.Serializable;
+import java.util.Arrays;
 
 public class gPlazmaAuthorizationRecord extends AuthorizationRecordBase implements Serializable
 {
@@ -63,6 +64,17 @@ public class gPlazmaAuthorizationRecord extends AuthorizationRecordBase implemen
         sb.append("           Home = ").append(getHome()).append('\n');
         sb.append("           Root = ").append(getRoot()).append('\n');
         sb.append("         FsRoot = ").append(getFsRoot()).append('\n');
+
+        return sb.toString();
+    }
+
+    public String toShortString()
+    {
+        StringBuffer sb = new StringBuffer();
+        sb.append(getUsername()).append(" ").
+                append(getUID()).append(" ").
+                append(Arrays.toString(getGIDs())).append(" ").
+                append(getRoot());
 
         return sb.toString();
     }
