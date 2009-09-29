@@ -71,8 +71,10 @@ if [ "$user" ]; then
         chown "$user" "$pid"
     fi
 
-    # To preserve white space, we need to quote each argument
-    param="${fork:+-f} ${pid:+-p \"$pid\"} ${restart:+-r \"$restart\"} ${delay:+-d \"$delay\"}"
+    # To preserve white space, we need to quote each argument.  Notice
+    # that ${x:+-x "$x"} doesn't work on Solaris due to the space in
+    # the expression.
+    param="${fork:+-f} ${pid:+-p} ${pid:+\"$pid\"} ${restart:+-r} ${restart:+\"$restart\"} ${delay:+-d} ${delay:+\"$delay\"}"
     for i in "$@"; do
         param="$param \"$i\""
     done
