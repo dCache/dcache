@@ -905,7 +905,7 @@ public class LocationManager extends CellAdapter {
        private void startConnector(final String remoteDomain)
            throws Exception
        {
-         String cellName  = "c*";
+         String cellName  = "c-"+remoteDomain+"*";
          String cellClass = "dmg.cells.network.LocationManagerConnector";
 
          String clientKey = _args.getOpt("clientKey") ;
