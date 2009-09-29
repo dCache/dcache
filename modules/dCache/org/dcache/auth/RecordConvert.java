@@ -114,14 +114,15 @@ public class RecordConvert {
             GroupList grplist = new GroupList();
             List<Group> grpcoll = new LinkedList<Group>();
             gauthrec = user_auths.get(nameAndRole);
-            if(gauthrec!=null) {
-                int[] GIDs = gauthrec.getGIDs();
-                for (int gid : GIDs) {
-                    Group grp = new Group();
-                    grp.setGroupList(grplist);
-                    grp.setGid(gid);
-                    grpcoll.add(grp);
-                }
+            if(gauthrec==null) {
+                continue;
+            }
+            int[] GIDs = gauthrec.getGIDs();
+            for (int gid : GIDs) {
+                Group grp = new Group();
+                grp.setGroupList(grplist);
+                grp.setGid(gid);
+                grpcoll.add(grp);
             }
             grplist.setGroups(grpcoll);
             grplist.setAttribute(nameAndRole.getRole());
