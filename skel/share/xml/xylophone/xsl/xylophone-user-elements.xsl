@@ -40,6 +40,13 @@
 <!--+
     |  This file contains definitions for how to evaluate elements found
     |  within the attr element.
+    |
+    |  These elements may appear within an object element or a class
+    |  element.  If it's within a class, then the corresponding
+    |  object element isn't known, so the depth within the object
+    |  tree cannot be calculated automatically.  This is important
+    |  for the path-stack, so an explicit depth must be
+    |  passed.
     +-->
 
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
@@ -55,11 +62,13 @@
     |
     +-->
 <xsl:template match="attr" mode="eval-attr">
-  <xsl:param name="rel-path"/>
+  <xsl:param name="depth" select="count(ancestor-or-self::object)"/>
+  <xsl:param name="path-stack"/>
   <xsl:param name="list-item"/>
 
   <xsl:apply-templates mode="eval-attr">
-    <xsl:with-param name="rel-path" select="$rel-path"/>
+    <xsl:with-param name="path-stack" select="$path-stack"/>
+    <xsl:with-param name="depth" select="$depth"/>
     <xsl:with-param name="list-item" select="$list-item"/>
   </xsl:apply-templates>
 </xsl:template>
@@ -93,8 +102,18 @@
     |  assumed.
     +-->
 <xsl:template match="lookup" mode="eval-attr">
-  <xsl:param name="rel-path"/>
+  <xsl:param name="depth"/>
+  <xsl:param name="path-stack"/>
   <xsl:param name="list-item"/>
+
+  <!-- Extract our rel-path -->
+  <xsl:variable name="rel-path">
+    <xsl:call-template name="path-stack-find-path">
+      <xsl:with-param name="path-stack" select="$path-stack"/>
+      <xsl:with-param name="depth" select="$depth"/>
+    </xsl:call-template>
+  </xsl:variable>
+
 
   <!-- Figure out what our default should be -->
   <xsl:variable name="default-result">
@@ -140,7 +159,8 @@
 	  <!-- Calculate the path from child elements -->
           <xsl:with-param name="path">
             <xsl:apply-templates mode="eval-attr">
-              <xsl:with-param name="rel-path" select="$rel-path"/>
+              <xsl:with-param name="path-stack" select="$path-stack"/>
+	      <xsl:with-param name="depth" select="$depth"/>
               <xsl:with-param name="list-item" select="$list-item"/>
 	    </xsl:apply-templates>
           </xsl:with-param>
@@ -220,12 +240,14 @@
     |
     +-->
 <xsl:template match="scale" mode="eval-attr">
-  <xsl:param name="rel-path"/>
+  <xsl:param name="depth"/>
+  <xsl:param name="path-stack"/>
   <xsl:param name="list-item"/>
 
   <xsl:variable name="value">
     <xsl:apply-templates mode="eval-attr">
-      <xsl:with-param name="rel-path" select="$rel-path"/>
+      <xsl:with-param name="path-stack" select="$path-stack"/>
+      <xsl:with-param name="depth" select="$depth"/>
       <xsl:with-param name="list-item" select="$list-item"/>
     </xsl:apply-templates>
   </xsl:variable>
@@ -299,18 +321,17 @@
     |
     |  Look up the RDN of a parent element
     |
+    |  NB.  This will only work if within an <object/> element.
+    |       Specifically, it will not work within a class.
     +-->
 <xsl:template match="parent-rdn" mode="eval-attr">
-  <xsl:param name="rel-path"/>
+  <xsl:param name="path-stack"/>
   <xsl:param name="list-item"/>
 
-  <!-- 
-   |  This might be tricky! Ideally, we figure out whether we should
-   |  pass rel-path as we iterate upward.
-   -->
-
-  <xsl:apply-templates select="ancestor::object[@rdn=current()/@rdn][1]" mode="emit-RDN">
-    <xsl:with-param name="rel-path" select="$rel-path"/>
+  <!-- Select the nearest ancestor object that has a matching rdn -->
+  <xsl:apply-templates select="ancestor::object[@rdn=current()/@rdn][1]"
+		       mode="emit-RDN-for-attribute">
+    <xsl:with-param name="path-stack" select="$path-stack"/>
     <xsl:with-param name="list-item" select="$list-item"/>
   </xsl:apply-templates>
 </xsl:template>
@@ -323,13 +344,15 @@
     |  wrapper around the equals sign.
     +-->
 <xsl:template match="other-rdn" mode="eval-attr">
-  <xsl:param name="rel-path"/>
+  <xsl:param name="depth" select="count(ancestor-or-self::object)"/>
+  <xsl:param name="path-stack"/>
   <xsl:param name="list-item"/>
 
   <xsl:value-of select="concat(@rdn,'=')"/>
 
   <xsl:apply-templates mode="eval-attr">
-    <xsl:with-param name="rel-path"/>
+    <xsl:with-param name="path-stack" select="$path-stack"/>
+    <xsl:with-param name="depth" select="$depth"/>
     <xsl:with-param name="list-item" select="$list-item"/>
   </xsl:apply-templates>
 </xsl:template>
@@ -344,13 +367,15 @@
     |
     +-->
 <xsl:template match="sum" mode="eval-attr">
-  <xsl:param name="rel-path"/>
+  <xsl:param name="depth"/>
+  <xsl:param name="path-stack"/>
   <xsl:param name="list-item"/>
 
   <!-- Expand terms as a result tree fragment with term elements -->
   <xsl:variable name="sumTerms">
     <xsl:apply-templates select="term" mode="eval-sum-terms">
-      <xsl:with-param name="rel-path" select="$rel-path"/>
+      <xsl:with-param name="path-stack" select="$path-stack"/>
+      <xsl:with-param name="depth" select="$depth"/>
       <xsl:with-param name="list-item" select="$list-item"/>
     </xsl:apply-templates>
   </xsl:variable>
@@ -365,12 +390,14 @@
     |  structure.
     +-->
 <xsl:template match="term" mode="eval-sum-terms">
-  <xsl:param name="rel-path"/>
+  <xsl:param name="depth"/>
+  <xsl:param name="path-stack"/>
   <xsl:param name="list-item"/>
 
   <xsl:variable name="result">
     <xsl:apply-templates mode="eval-attr">
-      <xsl:with-param name="rel-path" select="$rel-path"/>
+      <xsl:with-param name="path-stack" select="$path-stack"/>
+      <xsl:with-param name="depth" select="$depth"/>
       <xsl:with-param name="list-item" select="$list-item"/>
     </xsl:apply-templates>
   </xsl:variable>
@@ -389,8 +416,18 @@
     |
     +-->
 <xsl:template match="count" mode="eval-attr">
-  <xsl:param name="rel-path"/>
+  <xsl:param name="depth"/>
+  <xsl:param name="path-stack"/>
   <xsl:param name="list-item"/>
+
+    <!-- Extract our rel-path -->
+  <xsl:variable name="rel-path">
+    <xsl:call-template name="path-stack-find-path">
+      <xsl:with-param name="path-stack" select="$path-stack"/>
+      <xsl:with-param name="depth" select="$depth"/>
+    </xsl:call-template>
+  </xsl:variable>
+
 
   <!-- First try with rel-path prefix -->
   <xsl:variable name="rel-value">
@@ -470,13 +507,16 @@
     |   Apply one or more string-altering operations.
     +-->
 <xsl:template match="map" mode="eval-attr">
-  <xsl:param name="rel-path"/>
+  <xsl:param name="depth"/>
+  <xsl:param name="path-stack"/>
   <xsl:param name="list-item"/>
+
 
   <!-- Evaluate text before any mappings -->
   <xsl:variable name="before">
     <xsl:apply-templates mode="eval-attr">
-      <xsl:with-param name="rel-path" select="$rel-path"/>
+      <xsl:with-param name="path-stack" select="$path-stack"/>
+      <xsl:with-param name="depth" select="$depth"/>
       <xsl:with-param name="list-item" select="$list-item"/>
     </xsl:apply-templates>
   </xsl:variable>

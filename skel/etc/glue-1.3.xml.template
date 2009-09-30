@@ -185,31 +185,33 @@
 
           <!-- Publish "access protocols" -->
           <object rdn="GlueSEAccessProtocolLocalID"
-		          select="dCache/doors/door"
+		          select="/d:dCache/d:doors/d:door"
 		          classes="GlueSETop GlueSEAccessProtocol GlueKey GlueSchemaVersion">
             <attr name="GlueChunkKey"><parent-rdn rdn="GlueSEUniqueID"/></attr>
 
             <!-- Never publish SRM here -->
-            <suppress test="SRM"><lookup path="protocol/metric[name=family]"/></suppress>
+            <suppress test="SRM"><lookup path="d:protocol/d:metric[@name='family']"/></suppress>
 
             <!-- Don't publish any dcap or xrootd doors -->
-            <suppress test="dcap"><lookup path="protocol/metric[name=family]"/></suppress>
-            <suppress test="Xrootd"><lookup path="protocol/metric[name=family]"/></suppress>
+            <suppress test="dcap"><lookup path="d:protocol/d:metric[@name='family']"/></suppress>
+            <suppress test="Xrootd"><lookup path="d:protocol/d:metric[@name='family']"/></suppress>
 
             <!-- Uncomment the next line to suppress publishing gsidcap -->
-<!--        <suppress test="gsidcap"><lookup path="protocol/metric[name=family]"/></suppress>	    -->
+<!--        <suppress test="gsidcap"><lookup path="d:protocol/d:metric[@name='family']"/></suppress>	    -->
           </object>
+
 
           <!-- Publish "control protocols" (i.e., SRM) -->
           <object rdn="GlueSEControlProtocolLocalID"
-		          select="dCache/doors/door"
+		          select="/d:dCache/d:doors/d:door"
 		          select-mode="default-suppress"
                   classes="GlueSETop GlueSEControlProtocol GlueKey GlueSchemaVersion">
             <attr name="GlueChunkKey"><parent-rdn rdn="GlueSEUniqueID"/></attr>
 
             <!-- Only publish the SRM door as a control protocol. -->
-            <allow test="SRM"><lookup path="protocol/metric[name=family]"/></allow>
+            <allow test="SRM"><lookup path="d:protocol/d:metric[@name='family']"/></allow>
           </object>
+
 
           <!-- Publish GlueSA's for non-SRM clients and Glue v1.2 -->
           <object rdn="GlueSALocalID"
@@ -226,23 +228,23 @@
             |   i.e. not underneath GlueSE.
             +-->
         <object rdn="GlueServiceUniqueID" 
-		        select="dCache/doors/door"
+		        select="/d:dCache/d:doors/d:door"
                 select-mode="default-suppress"
                 classes="GlueTop GlueKey GlueSchemaVersion GlueService">
 
           <!-- Publish only SRM interface -->
-          <allow test="SRM"><lookup path="protocol/metric[name=family]"/></allow>
+          <allow test="SRM"><lookup path="d:protocol/d:metric[@name='family']"/></allow>
 
           <!-- The UniqueID *must* be the end-point, although this is a broken requirement -->
-          <attr name="GlueServiceUniqueID">httpg://<lookup path="interfaces/interface[0]/metric[name=FQDN]"/>:<lookup path="metric[name=port]"/>/srm/managerv2</attr>
+          <attr name="GlueServiceUniqueID">httpg://<lookup path="d:interfaces/d:interface[d:metric[@name='order']=1]/d:metric[@name='FQDN']"/>:<lookup path="d:metric[@name='port']"/>/srm/managerv2</attr>
 
           <!-- GlueServiceName is a human-readable string -->
-          <attr name="GlueServiceName"><constant id="SITE-UNIQUE-ID"/>-<lookup path="protocol/metric[name=family]"/>-2.2.0</attr>
+          <attr name="GlueServiceName"><constant id="SITE-UNIQUE-ID"/>-<lookup path="d:protocol/d:metric[@name='family']"/>-2.2.0</attr>
 
           <attr name="GlueServiceType">SRM</attr>
           <attr name="GlueServiceVersion">2.2.0</attr>
 
-          <attr name="GlueServiceEndpoint">httpg://<lookup path="interfaces/interface[0]/metric[name=FQDN]"/>:<lookup path="metric[name=port]"/>/srm/managerv2</attr>
+          <attr name="GlueServiceEndpoint">httpg://<lookup path="d:interfaces/d:interface[d:metric[@name='order']=1]/d:metric[@name='FQDN']"/>:<lookup path="d:metric[@name='port']"/>/srm/managerv2</attr>
 
           <!-- GlueServiceURI does not need to be published -->
           <!-- GlueServiceAccessPointURL does not need to be published -->
@@ -255,7 +257,7 @@
 
           <!-- Report the start time of the corresponding cell -->
           <attr name="GlueServiceStartTime">
-            <lookup default="1970-01-01T00:00:00Z" child="path">/dCache/domains/domain[name=<lookup path="metric[name=domain]"/>]/cells/cell[name=<lookup path="metric[name=cell]"/>]/created/metric[name=ISO-8601]</lookup>
+            <lookup default="1970-01-01T00:00:00Z" child="path">/d:dCache/d:domains/d:domain[@name='<lookup path="d:metric[@name='domain']"/>']/d:cells/d:cell[@name='<lookup path="d:metric[@name='cell']"/>']/d:created/d:metric[@name='ISO-8601']</lookup>
           </attr>
 
           <!-- Our list of supported VOs -->
@@ -307,13 +309,13 @@
 
       <attr name="GlueSEImplementationVersion">
         <map name="cell-version-to-dcache-version">
-          <lookup path="/dCache/domains/domain[name=dCacheDomain]/cells/cell[name=PoolManager]/version/metric[name=release]"/>
+          <lookup path="/d:dCache/d:domains/d:domain[@name='dCacheDomain']/d:cells/d:cell[@name='PoolManager']/d:version/d:metric[@name='release']"/>
         </map>
       </attr>
 
       <attr name="GlueSETotalOnlineSize">
         <scale to-integer="round" factor="bytes-to-gigabytes">
-          <lookup default="0" path="/dCache/summary/pools/space/metric[name=total]"/>
+          <lookup default="0" path="/d:dCache/d:summary/d:pools/d:space/d:metric[@name='total']"/>
         </scale>
       </attr>
 
@@ -321,16 +323,16 @@
         <scale to-integer="round" factor="bytes-to-gigabytes">
           <sum>
             <term>
-              <lookup default="0" path="/dCache/summary/pools/space/metric[name=total]"/>
+              <lookup default="0" path="/d:dCache/d:summary/d:pools/d:space/d:metric[@name='total']"/>
             </term>
             <term>
               <scale factor="negative">
-                <lookup default="0" path="/dCache/summary/pools/space/metric[name=free]"/>
+                <lookup default="0" path="/d:dCache/d:summary/d:pools/d:space/d:metric[@name='free']"/>
               </scale>
             </term>
             <term>
               <scale factor="negative">
-                <lookup default="0" path="/dCache/summary/pools/space/metric[name=removable]"/>
+                <lookup default="0" path="/d:dCache/d:summary/d:pools/d:space/d:metric[@name='removable']"/>
               </scale>
             </term>
           </sum>
@@ -355,19 +357,19 @@
 
       <attr name="GlueSEAccessProtocolType">
         <map name="door-type-to-access-proto-type">
-            <lookup path="protocol/metric[name=family]"/>
+            <lookup path="d:protocol/d:metric[@name='family']"/>
         </map>
       </attr>
 
       <!-- The first interface ("interface[0]") is always the primary one. -->
       <attr name="GlueSEAccessProtocolEndpoint">
-        <lookup path="protocol/metric[name=family]"/>://<lookup path="interfaces/interface[0]/metric[name=FQDN]"/>:<lookup path="metric[name=port]"/>
+        <lookup path="d:protocol/d:metric[@name='family']"/>://<lookup path="d:interfaces/d:interface[d:metric[@name='order']=1]/d:metric[@name='FQDN']"/>:<lookup path="d:metric[@name='port']"/>
       </attr>
       
       <!-- Hardcode value, based on protocol family -->
       <attr name="GlueSEAccessProtocolMaxStreams">
         <map name="door-family-to-max-streams">
-          <lookup path="protocol/metric[name=family]"/>
+          <lookup path="d:protocol/d:metric[@name='family']"/>
         </map>
       </attr>
 
@@ -377,14 +379,14 @@
       <!-- Hardcoded value, based on protocol family -->
       <attr name="GlueSEAccessProtocolVersion">
         <map name="door-family-to-version">
-          <lookup path="protocol/metric[name=family]"/>
+          <lookup path="d:protocol/d:metric[@name='family']"/>
         </map>
       </attr>
 
-      <attr name="GlueSEAccessProtocolPort"><lookup path="metric[name=port]"/></attr>
+      <attr name="GlueSEAccessProtocolPort"><lookup path="d:metric[@name='port']"/></attr>
 
       <attr not-empty="1" name="GlueSEAccessProtocolSupportedSecurity">
-        <map name="door-family-to-GSI"><lookup path="protocol/metric[name=family]"/></map>
+        <map name="door-family-to-GSI"><lookup path="d:protocol/d:metric[@name='family']"/></map>
       </attr>
     </class>
 
@@ -398,20 +400,27 @@
 
       <attr name="GlueSEControlProtocolType">
         <map name="door-family-to-ctrl-proto-type">
-          <lookup path="protocol/metric[name=family]"/>
+          <lookup path="d:protocol/d:metric[@name='family']"/>
         </map>
       </attr>
 
-      <attr name="GlueSEControlProtocolEndpoint">httpg://<lookup path="interfaces/interface[0]/metric[name=FQDN]"/>:<lookup path="metric[name=port]"/>/srm/managerv2</attr>
+      <attr name="GlueSEControlProtocolEndpoint">httpg://<lookup path="d:interfaces/d:interface[d:metric[@name='order']=1]/d:metric[@name='FQDN']"/>:<lookup path="d:metric[@name='port']"/>/srm/managerv2</attr>
  
       <!-- For now we hard-code this, which is wrong -->
       <attr name="GlueSEControlProtocolVersion">2.2.0</attr>
 
       <!-- This should depend in whether it is SRM v1.1 or SRM v2.2 -->
-      <attr name="GlueSEControlProtocolCapability">space allocation</attr>
+      <!-- We make these dependent on whether the SrmSpaceManager is running -->
 
-      <!-- Hard-coding this is probably OK -->
-      <attr name="GlueSEControlProtocolCapability">space management</attr>
+      <!-- This monster 'select' ensures we emit the attribute only if the SrmSpaceManager is running. -->
+      <attr select="/d:dCache/d:domains/d:domain[@name=/d:dCache/d:domains/d:domain[@name='dCacheDomain']/d:routing/d:named-cells/d:cell[@name='SrmSpaceManager']/d:domainref/@name]/d:cells/d:cell[@name='SrmSpaceManager']"
+            name="GlueSEControlProtocolCapability">space allocation</attr>
+      <attr select="/d:dCache/d:domains/d:domain[@name=/d:dCache/d:domains/d:domain[@name='dCacheDomain']/d:routing/d:named-cells/d:cell[@name='SrmSpaceManager']/d:domainref/@name]/d:cells/d:cell[@name='SrmSpaceManager']"
+            name="GlueSEControlProtocolCapability">space manager</attr>
+
+      <!-- Similarly, we emit a GlueSEControlProtocolCapability attribute with value "file pinning" only if the PinManager is running -->
+      <attr select="/d:dCache/d:domains/d:domain[@name=/d:dCache/d:domains/d:domain[@name='dCacheDomain']/d:routing/d:named-cells/d:cell[@name='PinManager']/d:domainref/@name]/d:cells/d:cell[@name='PinManager']"
+            name="GlueSEControlProtocolCapability">file pinning</attr>
     </class>
 
 
@@ -435,7 +444,7 @@
 
       <attr name="GlueSATotalOnlineSize">
         <scale to-integer="round" factor="bytes-to-gigabytes">
-          <lookup default="0" child="path">/dCache/poolgroups/poolgroup[name=<item/>]/space/metric[name=total]</lookup>
+          <lookup default="0" child="path">/d:dCache/d:poolgroups/d:poolgroup[@name='<item/>']/d:space/d:metric[@name='total']</lookup>
         </scale>
       </attr>
 
@@ -444,16 +453,16 @@
         <scale to-integer="round" factor="bytes-to-gigabytes">
           <sum>
             <term>
-              <lookup default="0" child="path">/dCache/poolgroups/poolgroup[name=<item/>]/space/metric[name=total]</lookup>
+              <lookup default="0" child="path">/d:dCache/d:poolgroups/d:poolgroup[@name='<item/>']/d:space/d:metric[@name='total']</lookup>
             </term>
             <term>
               <scale factor="negative">
-                <lookup default="0" child="path">/dCache/poolgroups/poolgroup[name=<item/>]/space/metric[name=free]</lookup>
+                <lookup default="0" child="path">/d:dCache/d:poolgroups/d:poolgroup[@name='<item/>']/d:space/d:metric[@name='free']</lookup>
               </scale>
             </term>
             <term>
               <scale factor="negative">
-                <lookup default="0" child="path">/dCache/poolgroups/poolgroup[name=<item/>]/space/metric[name=removable]</lookup>
+                <lookup default="0" child="path">/d:dCache/d:poolgroups/d:poolgroup[@name='<item/>']/d:space/d:metric[@name='removable']</lookup>
               </scale>
             </term>
           </sum>
@@ -470,10 +479,10 @@
         <scale to-integer="round" factor="bytes-to-gigabytes">
           <sum>
             <term>
-              <lookup default="0" child="path">/dCache/poolgroups/poolgroup[name=<item/>]/space/metric[name=free]</lookup>
+              <lookup default="0" child="path">/d:dCache/d:poolgroups/d:poolgroup[@name='<item/>']/d:space/d:metric[@name='free']</lookup>
             </term>
             <term>
-              <lookup default="0" child="path">/dCache/poolgroups/poolgroup[name=<item/>]/space/metric[name=removable]</lookup>
+              <lookup default="0" child="path">/d:dCache/d:poolgroups/d:poolgroup[@name='<item/>']/d:space/d:metric[@name='removable']</lookup>
             </term>
           </sum>
         </scale>
@@ -514,16 +523,16 @@
         <scale to-integer="round" factor="bytes-to-kilobytes">
           <sum>
             <term>
-              <lookup default="0" child="path">/dCache/poolgroups/poolgroup[name=<item/>]/space/metric[name=total]</lookup>
+              <lookup default="0" child="path">/d:dCache/d:poolgroups/d:poolgroup[@name='<item/>']/d:space/d:metric[@name='total']</lookup>
             </term>
             <term>
               <scale factor="negative">
-                <lookup default="0" child="path">/dCache/poolgroups/poolgroup[name=<item/>]/space/metric[name=free]</lookup>
+                <lookup default="0" child="path">/d:dCache/d:poolgroups/d:poolgroup[@name='<item/>']/d:space/d:metric[@name='free']</lookup>
               </scale>
             </term>
             <term>
               <scale factor="negative">
-                <lookup default="0" child="path">/dCache/poolgroups/poolgroup[name=<item/>]/space/metric[name=removable]</lookup>
+                <lookup default="0" child="path">/d:dCache/d:poolgroups/d:poolgroup[@name='<item/>']/d:space/d:metric[@name='removable']</lookup>
               </scale>
             </term>
           </sum>
@@ -535,10 +544,10 @@
         <scale to-integer="round" factor="bytes-to-kilobytes">
           <sum>
             <term>
-              <lookup default="0" child="path">/dCache/poolgroups/poolgroup[name=<item/>]/space/metric[name=free]</lookup>
+              <lookup default="0" child="path">/d:dCache/d:poolgroups/d:poolgroup[@name='<item/>']/d:space/d:metric[@name='free']</lookup>
             </term>
             <term>
-              <lookup default="0" child="path">/dCache/poolgroups/poolgroup[name=<item/>]/space/metric[name=removable]</lookup>
+              <lookup default="0" child="path">/d:dCache/d:poolgroups/d:poolgroup[@name='<item/>']/d:space/d:metric[@name='removable']</lookup>
             </term>
           </sum>
         </scale>
