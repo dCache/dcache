@@ -77,12 +77,10 @@ check_timeout_envar()
 	if( !closeTimeOut_set ) {
 		if(validate_env_variable(ENVAR_TIMEOUT,&timeout_val)) {
 			closeTimeOut = timeout_val;
-			printf(" ENVAR_TIMEOUT %d \n", timeout_val);
 		}
 	}
 	if(validate_env_variable(ENVAR_TIMEOUT_OVERRIDE,&timeout_val)) {
 		closeTimeOut = timeout_val;
-		printf(" ENVAR_TIMEOUT_OVERRIDE %d \n", timeout_val);
 	}
 }
 
