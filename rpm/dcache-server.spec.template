@@ -94,5 +94,6 @@ fi
 %config(noreplace) /opt/d-cache/etc/dcachesrm-gplazma.policy
 %config /opt/d-cache/config/*.batch
 %config(noreplace) /opt/d-cache/etc/srm_setup.env
+%config(noreplace) /opt/d-cache/etc/tc-config.xml
 %changelog
 

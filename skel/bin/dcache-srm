@@ -79,7 +79,10 @@ case $cmd1 in
             exit 4
           fi
         fi
-
+        if [ "${RUN_WITH_TERRACOTTA:-false}" = "true" -o "${RUN_WITH_TERRACOTTA:-false}" = "yes" ] ; then
+            .  $TC_INSTALL_DIR/bin/dso-env.sh -q
+            export JAVA_OPTS="$JAVA_OPTS $TC_JAVA_OPTS"
+        fi
         ${TOMCAT_BASE_PATH}/apache-tomcat-5.5.20/bin/startup.sh
         RETVAL=$?
         echo

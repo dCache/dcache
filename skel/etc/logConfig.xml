@@ -95,8 +95,14 @@
     <appender-ref ref="axis-trace"/>
   </category>
 
+  <category name="org.dcache.srm">
+    <priority value="ERROR"/>
+    <appender-ref ref="detailed"/>
+  </category>
+
   <category name="dmg.cells.nucleus">
     <priority value="WARN"/>
+    <appender-ref ref="detailed"/>
   </category>
 
 
