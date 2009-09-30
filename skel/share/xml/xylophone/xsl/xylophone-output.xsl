@@ -49,18 +49,38 @@
 
 
 <!--+
-    |  Output a generic LDIF attribute.  This may wrap if it's too long.
+    |  Output a generic LDIF attribute.  Characters in value will be escaped
+    |  if necessary.  The line will will be wrapped wrap if it's too long.
     +-->
 <xsl:template name="output-attribute">
   <xsl:param name="key"/>
   <xsl:param name="value" select="'UNDEFINEDVALUE'"/>
 
-  <xsl:call-template name="output-line">
-    <xsl:with-param name="text"><xsl:value-of select="$key"/>: <xsl:value-of select="$value"/></xsl:with-param>
+  <xsl:call-template name="output-raw-attribute">
+    <xsl:with-param name="key" select="$key"/>
+    <xsl:with-param name="value">
+      <xsl:call-template name="markup-attribute-value">
+	<xsl:with-param name="value" select="$value"/>
+      </xsl:call-template>
+    </xsl:with-param>
   </xsl:call-template>
 </xsl:template>
 
 
+
+<!--+
+    |  Output a raw keyword-value pair.  No escaping will be done of
+    |  the attibute but long lines will be wrapped.  This is to
+    |  allow emitting correct DN values.
+    +-->
+<xsl:template name="output-raw-attribute">
+  <xsl:param name="key"/>
+  <xsl:param name="value" select="'UNDEFINEDVALUE'"/>
+
+  <xsl:call-template name="output-line">
+    <xsl:with-param name="text" select="concat($key,': ', $value)"/>
+  </xsl:call-template>
+</xsl:template>
 
 
 <!--+

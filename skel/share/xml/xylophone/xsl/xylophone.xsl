@@ -42,11 +42,13 @@
     |  Xylophone - convert XML data into LDIF
     |
     |  Parameters
-    |    info-src:  the URI for the dynamic XML data
+    |    xml-src-uri:  the URI for the dynamic XML data
     +-->
 
 <xsl:stylesheet version="1.0"
-                xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+		xmlns:date="http://exslt.org/dates-and-times"
+		extension-element-prefixes="date">
 
 
 <!-- TODO: what is the MIME media type for LDIF?  This seems poorly
@@ -64,6 +66,7 @@
 <xsl:include href="xylophone-import.xsl"/>
 <xsl:include href="xylophone-user-elements.xsl"/>
 <xsl:include href="xylophone-path.xsl"/>
+<xsl:include href="xylophone-markup.xsl"/>
 
 
 <!--+
@@ -81,6 +84,8 @@
     |  Output the preamble at the start of the LDIF file.
     +-->
 <xsl:template name="output-preamble">
+
+  <!-- Empty comment line -->
   <xsl:call-template name="output-comment"/>
 
   <xsl:call-template name="output-comment">
@@ -94,6 +99,22 @@
   <xsl:call-template name="output-comment">
     <xsl:with-param name="text">XSLT processing using <xsl:value-of select="concat(system-property('xsl:vendor'), ' ', system-property('xsl:version'))"/> (<xsl:value-of select="system-property('xsl:vendor-url')"/>)</xsl:with-param>
   </xsl:call-template>
+
+  <!-- Add the timestamp -->
+  <xsl:choose>
+    <xsl:when test="function-available('date:date-time')">
+      <xsl:call-template name="output-comment">
+	<xsl:with-param name="text">
+	  <xsl:value-of select="concat(' at: ', date:date-time())" />
+	</xsl:with-param>
+      </xsl:call-template>
+    </xsl:when>
+
+    <xsl:otherwise>
+      <!-- Implementation has no date-time() function. -->
+    </xsl:otherwise>
+  </xsl:choose>
+
 
   <!-- Empty comment line -->
   <xsl:call-template name="output-comment"/>
