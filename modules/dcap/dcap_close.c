@@ -1,4 +1,5 @@
 /*
+
  *   DCAP - dCache Access Protocol client interface
  *
  *   Copyright (C) 2000,2004 DESY Hamburg DMG-Division.
@@ -10,16 +11,84 @@
  *
  */
  
- 
 /*
  * $Id: dcap_close.c,v 1.8 2004-12-01 14:25:39 tigran Exp $
  */
 
 #include "dcap_shared.h"
+#include "dcap.h"
+#define ENVAR_TIMEOUT  "DCACHE_CLOSE_TIMEOUT_DEFAULT"
+#define ENVAR_TIMEOUT_OVERRIDE  "DCACHE_CLOSE_TIMEOUT_OVERRIDE"
+#define ENVAR_TIMEOUT_VALUE_BASE   10
 
 extern int dc_real_fsync( struct vsp_node *);
 
-static unsigned int closeTimeOut = 0;
+static int closeTimeOut_set, parsed_timeout;
+
+static unsigned int closeTimeOut;
+/**
+ *  Check if the environment variable ENVAR_TIMEOUT is set.  If so,
+ *  and the value is valid, then the value is used to set
+ *  closeTimeOut.
+ *
+ *  This will always override any value set by client-code via
+ *  dc_setCloseTimeout().  This is deliberate and in keeping with
+ *  other dcap library environment variables.
+ *
+ *  This function is idempotence: it may be run multiple times with
+ *  the same effect as running it once.
+ */
+
+
+int 
+validate_env_variable(char* timeout_var, long* timeout_val) 
+{
+	char *timeout_str, *end;
+	timeout_str = getenv(timeout_var);
+	if( timeout_str == NULL || *timeout_str == '\0') {
+		return 0;
+	}
+
+	*timeout_val = strtol( timeout_str, &end, ENVAR_TIMEOUT_VALUE_BASE);
+	if( end == timeout_str) {
+		dc_debug( DC_INFO, "Invalid value for %s environment variable",timeout_var);
+		return 0;
+	}
+	if( *end != '\0') {
+       		dc_debug( DC_INFO, "Ignoring trailing garbage at end of %s value.", timeout_var);
+	}
+	if( *timeout_val < 0) {
+	        dc_debug( DC_INFO, "Negative numbers are not allowed for %s environment variable.", timeout_var);
+		return 0;
+	}
+	return 1;
+}
+
+void
+check_timeout_envar()
+{
+	long timeout_val;
+	if( parsed_timeout) {
+		return;
+	}
+
+	/* Ensure we process the enviroment variable only once */
+	parsed_timeout = 1;
+	if( !closeTimeOut_set ) {
+		if(validate_env_variable(ENVAR_TIMEOUT,&timeout_val)) {
+			closeTimeOut = timeout_val;
+			printf(" ENVAR_TIMEOUT %d \n", timeout_val);
+		}
+	}
+	if(validate_env_variable(ENVAR_TIMEOUT_OVERRIDE,&timeout_val)) {
+		closeTimeOut = timeout_val;
+		printf(" ENVAR_TIMEOUT_OVERRIDE %d \n", timeout_val);
+	}
+}
+
+
+
+
 
 int
 dc_close(int fd)
@@ -81,6 +150,7 @@ dc_close(int fd)
 		closemsg[1] = htonl(IOCMD_CLOSE); /* actual command */
 
 		dc_debug(DC_IO, "Sending CLOSE for fd:%d ID:%d.", node->dataFd, node->queueID);
+		check_timeout_envar();
 		dcap_set_alarm(closeTimeOut > 0 ? closeTimeOut : DCAP_IO_TIMEOUT/4);
 		tmp = sendDataMessage(node, (char *) closemsg, msglen*sizeof(int32_t), ASCII_OK, NULL);
 		/* FIXME: error detection missing */
@@ -194,7 +264,8 @@ void dc_closeAll()
 }
 
 void dc_setCloseTimeout(unsigned int t)
-{
+{	
+	closeTimeOut_set = 1;
 	closeTimeOut = t;
 }
 
