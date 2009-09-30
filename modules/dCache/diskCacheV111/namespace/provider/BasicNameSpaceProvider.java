@@ -89,24 +89,24 @@ public class BasicNameSpaceProvider
         _attChecksumImpl = new AttributeChecksumBridge(this);
 
         String accessLatensyOption = args.getOpt("DefaultAccessLatency");
-            if( accessLatensyOption != null && accessLatensyOption.length() > 0) {
-                /*
-                 * IllegalArgumentException thrown if option is invalid
-                 */
-                _defaultAccessLatency = AccessLatency.getAccessLatency(accessLatensyOption);
-            }else{
-                _defaultAccessLatency = StorageInfo.DEFAULT_ACCESS_LATENCY;
-            }
+        if( accessLatensyOption != null && accessLatensyOption.length() > 0) {
+            /*
+             * IllegalArgumentException thrown if option is invalid
+             */
+            _defaultAccessLatency = AccessLatency.getAccessLatency(accessLatensyOption);
+        }else{
+            _defaultAccessLatency = StorageInfo.DEFAULT_ACCESS_LATENCY;
+        }
 
-            String retentionPolicyOption = args.getOpt("DefaultRetentionPolicy");
-            if( retentionPolicyOption != null && retentionPolicyOption.length() > 0) {
-                /*
-                 * IllegalArgumentException thrown if option is invalid
-                 */
-                _defaultRetentionPolicy = RetentionPolicy.getRetentionPolicy(retentionPolicyOption);
-            }else{
-                _defaultRetentionPolicy = StorageInfo.DEFAULT_RETENTION_POLICY;
-            }
+        String retentionPolicyOption = args.getOpt("DefaultRetentionPolicy");
+        if( retentionPolicyOption != null && retentionPolicyOption.length() > 0) {
+            /*
+             * IllegalArgumentException thrown if option is invalid
+             */
+            _defaultRetentionPolicy = RetentionPolicy.getRetentionPolicy(retentionPolicyOption);
+        }else{
+            _defaultRetentionPolicy = StorageInfo.DEFAULT_RETENTION_POLICY;
+        }
 
         //
         // get the extractor
@@ -125,8 +125,8 @@ public class BasicNameSpaceProvider
             PnfsFile pf = new PnfsFile(_mountPoint);
             if( ! (pf.isDirectory() && pf.isPnfs() ) )
                 throw new
-                IllegalArgumentException(
-                "not a pnfs directory: "+_mountPoint);
+                    IllegalArgumentException(
+                                             "not a pnfs directory: "+_mountPoint);
             _virtualMountPoints = PnfsFile.getVirtualMountPoints(new File(_mountPoint));
 
         }else{
@@ -138,7 +138,7 @@ public class BasicNameSpaceProvider
         }
         if( _virtualMountPoints.isEmpty() )
             throw new
-            Exception("No mountpoints left ... ");
+                Exception("No mountpoints left ... ");
 
         for( PnfsFile.VirtualMountPoint vmp: _virtualMountPoints ){
 
@@ -158,13 +158,13 @@ public class BasicNameSpaceProvider
         String defaultServerName = _args.getOpt("defaultPnfsServer") ;
 
         if( ( _pathManager.getServerCount() > 2  ) &&
-        ( ( defaultServerName == null ) ||
-        ( defaultServerName.equals("")   ) ) )
+            ( ( defaultServerName == null ) ||
+              ( defaultServerName.equals("")   ) ) )
             throw new
-            IllegalArgumentException("No default server specified") ;
+                IllegalArgumentException("No default server specified") ;
 
         if( ( defaultServerName != null ) &&
-        ( ! defaultServerName.equals("*") ) )
+            ( ! defaultServerName.equals("*") ) )
             _pathManager.setDefaultServerName( defaultServerName ) ;
 
         if (_logNameSpace.isDebugEnabled()) {
@@ -225,7 +225,7 @@ public class BasicNameSpaceProvider
     {
         if (_logNameSpace.isDebugEnabled()) {
             _logNameSpace.debug("add cache location " + cacheLocation + " for "
-                    + pnfsId);
+                                + pnfsId);
         }
         try {
             PnfsFile  pf = _pathManager.getFileByPnfsId( pnfsId );
@@ -243,7 +243,7 @@ public class BasicNameSpaceProvider
 
         if (_logNameSpace.isDebugEnabled()) {
             _logNameSpace.debug("clearCacheLocation : " + cacheLocation
-                    + " for " + pnfsId);
+                                + " for " + pnfsId);
         }
         try {
             PnfsFile  pf = _pathManager.getFileByPnfsId( pnfsId );
@@ -255,18 +255,18 @@ public class BasicNameSpaceProvider
 
             if( cacheLocation.equals("*") ) {
 
-           		List<String> cacheLocations = ci.getCacheLocations();
+                List<String> cacheLocations = ci.getCacheLocations();
 
-           		if(!cacheLocations.isEmpty()) {
-    	        	for( String location: cacheLocations) {
-    	                 ci.clearCacheLocation( location );
+                if(!cacheLocations.isEmpty()) {
+                    for( String location: cacheLocations) {
+                        ci.clearCacheLocation( location );
     	            }
                     ci.writeCacheInfo(pf);
                 }
 
             }else{
                 if( ci.clearCacheLocation( cacheLocation ) )
-                       ci.writeCacheInfo(pf);
+                    ci.writeCacheInfo(pf);
             }
 
             if( ci.getCacheLocations().isEmpty() ){
@@ -276,11 +276,11 @@ public class BasicNameSpaceProvider
                 CacheInfo.CacheFlags flags = ci.getFlags() ;
                 String deletable = flags.get("d") ;
                 if( ( removeIfLast  ) ||
-                ( ( deletable != null ) && deletable.startsWith("t") ) ){
+                    ( ( deletable != null ) && deletable.startsWith("t") ) ){
 
                     if (_logNameSpace.isDebugEnabled()) {
                         _logNameSpace.debug("clearCacheLocation : deleting "
-                                + pnfsId + " from filesystem");
+                                            + pnfsId + " from filesystem");
                     }
                     this.deleteEntry(subject, pnfsId);
 
@@ -297,7 +297,7 @@ public class BasicNameSpaceProvider
 
         String globalPath = name;
         if(_logNameSpace.isDebugEnabled() ) {
-        	_logNameSpace.debug("create PNFS entry for "+globalPath);
+            _logNameSpace.debug("create PNFS entry for "+globalPath);
         }
 
         PnfsFile pf        = null ;
@@ -308,7 +308,7 @@ public class BasicNameSpaceProvider
             localPath = _pathManager.globalToLocal(globalPath) ;
             pf = new PnfsFile( localPath ) ;
         }catch(Exception ie ){
-        	_logNameSpace.error("failed to map global path to local: " + globalPath, ie);
+            _logNameSpace.error("failed to map global path to local: " + globalPath, ie);
             throw new IllegalArgumentException( "g2l match failed : "+ie.getMessage());
         }
 
@@ -362,7 +362,7 @@ public class BasicNameSpaceProvider
         }
 
         if(_logNameSpace.isDebugEnabled() ) {
-        	_logNameSpace.debug("Created new entry ["+globalPath+"], id: " + pnfsId.toString());
+            _logNameSpace.debug("Created new entry ["+globalPath+"], id: " + pnfsId.toString());
         }
         return pf.getPnfsId() ;
     }
@@ -461,31 +461,31 @@ public class BasicNameSpaceProvider
 
     public String pnfsidToPath(Subject subject, PnfsId pnfsId) throws CacheException {
 
-     PnfsFile pnfsFile = _pathManager.getFileByPnfsId(pnfsId);
-     if(pnfsFile == null) {
-         throw new FileNotFoundCacheException(pnfsId.toString() + " not found");
-     }
+        PnfsFile pnfsFile = _pathManager.getFileByPnfsId(pnfsId);
+        if(pnfsFile == null) {
+            throw new FileNotFoundCacheException(pnfsId.toString() + " not found");
+        }
 
-     try {
-     String pnfsPath = pathfinder( pnfsId ) ;
-       String domain = pnfsId.getDomain() ;
-       PnfsFile.VirtualMountPoint vmp = _pathManager.getVmpByDomain(domain);
-       if( vmp == null )
-          throw new
-          IllegalArgumentException("Can't find default VMP");
+        try {
+            String pnfsPath = pathfinder( pnfsId ) ;
+            String domain = pnfsId.getDomain() ;
+            PnfsFile.VirtualMountPoint vmp = _pathManager.getVmpByDomain(domain);
+            if( vmp == null )
+                throw new
+                    IllegalArgumentException("Can't find default VMP");
 
 
 
-          String pvm = vmp.getVirtualPnfsPath() ;
-          if( ! pnfsPath.startsWith(pvm) )
-             throw new
-             IllegalArgumentException("PnfsId not in scope of vmp : "+pvm);
-          return vmp.getVirtualGlobalPath()+pnfsPath.substring(pvm.length());
+            String pvm = vmp.getVirtualPnfsPath() ;
+            if( ! pnfsPath.startsWith(pvm) )
+                throw new
+                    IllegalArgumentException("PnfsId not in scope of vmp : "+pvm);
+            return vmp.getVirtualGlobalPath()+pnfsPath.substring(pvm.length());
 
-     }catch ( Exception e) {
-        _logNameSpace.error("!! Problem determining path of "+pnfsId);
-        _logNameSpace.error(e);
-     }
+        }catch ( Exception e) {
+            _logNameSpace.error("!! Problem determining path of "+pnfsId);
+            _logNameSpace.error(e);
+        }
         return pnfsFile.getPath();
 
     }
@@ -494,16 +494,16 @@ public class BasicNameSpaceProvider
 
         PnfsFile pnfsFile = null;
         try {
-	        String localPath = _pathManager.globalToLocal( path );
+            String localPath = _pathManager.globalToLocal( path );
 
-	        if( followLinks ) {
-	            File localFile = new File( localPath );
-	            pnfsFile = new PnfsFile(localFile.getAbsolutePath());
-	        }else {
-	            pnfsFile = new PnfsFile(localPath);
-	        }
+            if( followLinks ) {
+                File localFile = new File( localPath );
+                pnfsFile = new PnfsFile(localFile.getAbsolutePath());
+            }else {
+                pnfsFile = new PnfsFile(localPath);
+            }
         }catch(NoSuchElementException nse) {
-        	throw new FileNotFoundCacheException("path " +path+" not found");
+            throw new FileNotFoundCacheException("path " +path+" not found");
         }
 
         return pnfsFile.getPnfsId();
@@ -832,7 +832,7 @@ public class BasicNameSpaceProvider
 
             if( _servers.isEmpty() ) {
                 throw new
-                NoSuchElementException("Emtpy server list" ) ;
+                    NoSuchElementException("Emtpy server list" ) ;
             }
 
             PnfsFile.VirtualMountPoint vmp = virtualMountPoints.get(0);
@@ -850,7 +850,7 @@ public class BasicNameSpaceProvider
 
             if( vmp == null ) {
                 throw new
-                NoSuchElementException("No server found for : "+domain ) ;
+                    NoSuchElementException("No server found for : "+domain ) ;
             }
 
             return vmp ;
@@ -866,8 +866,8 @@ public class BasicNameSpaceProvider
         }
         public PnfsFile getFileByPnfsId(PnfsId pnfsId) throws CacheException {
             return PnfsFile.getFileByPnfsId(
-            getMountPointByPnfsId(pnfsId) ,
-            pnfsId ) ;
+                                            getMountPointByPnfsId(pnfsId) ,
+                                            pnfsId ) ;
         }
         public String getDefaultServerName(){ return _defaultServerName ; }
         public void setDefaultServerName( String serverName )throws NoSuchElementException{
@@ -927,7 +927,7 @@ public class BasicNameSpaceProvider
     	            }catch(NumberFormatException ignored){/* bad values ignored */}
                 }
             }
-        // TODO: handle file not found
+            // TODO: handle file not found
         }catch(Exception eee ){
             _logNameSpace.error( "Error obtaining 'l' flag for getSimulatedFilesize : "+eee ) ;
             simulatedFileSize =  -1 ;
@@ -944,13 +944,13 @@ public class BasicNameSpaceProvider
         try{
 
             File metafile = new File( mp , ".(getattr)("+pnfsId.getId()+")" ) ;
-        	br = new BufferedReader(
-        	        new FileReader( metafile ) ) ;
+            br = new BufferedReader(
+                                    new FileReader( metafile ) ) ;
 
             String line = br.readLine() ;
             if( line == null ) {
                 throw new
-                IOException("Can't read meta : "+pnfsId )  ;
+                    IOException("Can't read meta : "+pnfsId )  ;
             }
 
             StringTokenizer st = new StringTokenizer( line , ":" ) ;
@@ -985,27 +985,27 @@ public class BasicNameSpaceProvider
                 int filetype = perm & ST_FILE_FMT ;
 
                 meta.setFileType( filetype == ST_REGULAR ,
-                filetype == ST_DIRECTORY ,
-                filetype == ST_SYMLINK    ) ;
+                                  filetype == ST_DIRECTORY ,
+                                  filetype == ST_SYMLINK    ) ;
 
                 meta.setTimes( aTime *1000, mTime *1000, cTime *1000) ;
 
                 if (_logNameSpace.isDebugEnabled()) {
                     _logNameSpace.debug("getFileMetaData of " + pnfsId + " -> "
-                            + meta);
+                                        + meta);
                 }
 
                 return meta ;
 
             }catch(NoSuchElementException nse) {
                 throw new
-                IOException("Illegal meta data format : "+pnfsId+" ("+line+")" ) ;
+                    IOException("Illegal meta data format : "+pnfsId+" ("+line+")" ) ;
             }catch(NumberFormatException eee ){
                 throw new
-                IOException("Illegal meta data format : "+pnfsId+" ("+line+")" ) ;
+                    IOException("Illegal meta data format : "+pnfsId+" ("+line+")" ) ;
             }
         }catch(FileNotFoundException fnf ) {
-//        	throw new FileNotFoundCacheException("no such file or directory " + pnfsId.getId() );
+            //        	throw new FileNotFoundCacheException("no such file or directory " + pnfsId.getId() );
             boolean deleted = PnfsFile.isDeleted(pnfsId);
             if (deleted)
                 throw new FileNotFoundCacheException("no such file or directory " + pnfsId.getId() );
@@ -1021,20 +1021,20 @@ public class BasicNameSpaceProvider
     }
 
     private void setFileMetaData( File mp , PnfsId pnfsId , int level,  FileMetaData newMetaData)
-    throws CacheException {
+        throws CacheException {
 
         String hexTime = Long.toHexString( System.currentTimeMillis() / 1000L ) ;
         int l = hexTime.length() ;
         if( l > 8 )hexTime = hexTime.substring(l-8) ;
         StringBuilder sb = new StringBuilder(128);
         sb.append(".(pset)(").append(pnfsId.getId()).append(")(attr)(").
-        append(level).append(")(").
-        append(Integer.toOctalString(0100000|toUnixMode(newMetaData))).append(":").
-        append(newMetaData.getUid()).append(":").
-        append(newMetaData.getGid()).append(":").
-        append(hexTime).append(":").
-        append(hexTime).append(":").
-        append(hexTime).append(")") ;
+            append(level).append(")(").
+            append(Integer.toOctalString(0100000|toUnixMode(newMetaData))).append(":").
+            append(newMetaData.getUid()).append(":").
+            append(newMetaData.getGid()).append(":").
+            append(hexTime).append(":").
+            append(hexTime).append(":").
+            append(hexTime).append(")") ;
 
         File metaFile = new File( mp , sb.toString() ) ;
 
@@ -1166,47 +1166,47 @@ public class BasicNameSpaceProvider
 
         return sb.toString();
     }
-   private String pathfinder( PnfsId pnfsId ) throws CacheException {
-       List<String> list = new ArrayList<String>() ;
-       String    pnfs = pnfsId.getId() ;
-       File mp = _pathManager.getMountPointByPnfsId( pnfsId ) ;
-       String name ;
-       while( true ){
-          try{
-             if( ( name = nameOf( mp , pnfs ) ) == null )break ;
-             list.add( name ) ;
-             if( ( pnfs = parentOf( mp , pnfs ) ) == null )break ;
-          }catch(Exception ee ){
-             break ;
-          }
-       }
-       if( list.size() == 0 )
-         throw new
-         FileNotFoundCacheException( pnfsId.toString() + " not found" ) ;
+    private String pathfinder( PnfsId pnfsId ) throws CacheException {
+        List<String> list = new ArrayList<String>() ;
+        String    pnfs = pnfsId.getId() ;
+        File mp = _pathManager.getMountPointByPnfsId( pnfsId ) ;
+        String name ;
+        while( true ){
+            try{
+                if( ( name = nameOf( mp , pnfs ) ) == null )break ;
+                list.add( name ) ;
+                if( ( pnfs = parentOf( mp , pnfs ) ) == null )break ;
+            }catch(Exception ee ){
+                break ;
+            }
+        }
+        if( list.size() == 0 )
+            throw new
+                FileNotFoundCacheException( pnfsId.toString() + " not found" ) ;
 
-       StringBuilder sb = new StringBuilder() ;
-       for( int i = list.size() - 1 ; i >= 0 ; i-- ){
-          sb.append("/").append(list.get(i)) ;
-       }
-       return sb.toString() ;
+        StringBuilder sb = new StringBuilder() ;
+        for( int i = list.size() - 1 ; i >= 0 ; i-- ){
+            sb.append("/").append(list.get(i)) ;
+        }
+        return sb.toString() ;
     }
 
     private String nameOf( File mp , String pnfsId )
         throws IOException
     {
-       File file = new File( mp , ".(nameof)("+pnfsId+")" ) ;
+        File file = new File( mp , ".(nameof)("+pnfsId+")" ) ;
 
-       if (_logNameSpace.isInfoEnabled() ) {
-           _logNameSpace.info("nameof for pnfsid " + pnfsId);
-       }
+        if (_logNameSpace.isInfoEnabled() ) {
+            _logNameSpace.info("nameof for pnfsid " + pnfsId);
+        }
 
-       BufferedReader br = null;
-       try{
-    	   br = new BufferedReader(new FileReader( file ) ) ;
-          return br.readLine() ;
-       }finally{
-          if( br != null) try{ br.close() ; }catch(IOException ee){ /* to late to react */}
-       }
+        BufferedReader br = null;
+        try{
+            br = new BufferedReader(new FileReader( file ) ) ;
+            return br.readLine() ;
+        }finally{
+            if( br != null) try{ br.close() ; }catch(IOException ee){ /* to late to react */}
+        }
     }
     private String parentOf( File mp , String pnfsId ) throws IOException {
 
@@ -1214,14 +1214,14 @@ public class BasicNameSpaceProvider
             _logNameSpace.info("parent for pnfsid " + pnfsId);
         }
 
-       File file = new File( mp , ".(parent)("+pnfsId+")" ) ;
-       BufferedReader br = null;
-       try{
-    	   br = new BufferedReader(new FileReader( file ) ) ;
-          return br.readLine() ;
-       }finally{
-          if( br != null) try{ br.close() ; }catch(IOException ee){ /* to late to react */}
-       }
+        File file = new File( mp , ".(parent)("+pnfsId+")" ) ;
+        BufferedReader br = null;
+        try{
+            br = new BufferedReader(new FileReader( file ) ) ;
+            return br.readLine() ;
+        }finally{
+            if( br != null) try{ br.close() ; }catch(IOException ee){ /* to late to react */}
+        }
     }
 
     public PnfsId getParentOf(Subject subject, PnfsId pnfsId) throws CacheException
@@ -1342,90 +1342,90 @@ public class BasicNameSpaceProvider
         try {
             for (FileAttribute attribute : attr.getDefinedAttributes()) {
                 switch (attribute) {
-                    case ACCESS_LATENCY:
-                        cacheInfo = getCacheInfo(pf, cacheInfo);
+                case ACCESS_LATENCY:
+                    cacheInfo = getCacheInfo(pf, cacheInfo);
+                    cacheInfo.getFlags().put(ACCESS_LATENCY_FLAG,
+                                             attr.getAccessLatency().toString());
+                    break;
+                case RETENTION_POLICY:
+                    cacheInfo = getCacheInfo(pf, cacheInfo);
+                    cacheInfo.getFlags().put(RETENTION_POLICY_FLAG,
+                                             attr.getRetentionPolicy().toString());
+                    break;
+                case DEFAULT_ACCESS_LATENCY:
+                    cacheInfo = getCacheInfo(pf, cacheInfo);
+                    /* update the value only if someone did not
+                     * set it yet
+                     */
+                    if (cacheInfo.getFlags().get(ACCESS_LATENCY_FLAG) == null) {
+                        dir = getParentPnfsFile(mountpoint, pf, dir);
                         cacheInfo.getFlags().put(ACCESS_LATENCY_FLAG,
-                                attr.getAccessLatency().toString());
-                        break;
-                    case RETENTION_POLICY:
-                        cacheInfo = getCacheInfo(pf, cacheInfo);
+                                                 getAccessLatencyForDirectory(dir).toString());
+                    }
+                    break;
+                case DEFAULT_RETENTION_POLICY:
+                    cacheInfo = getCacheInfo(pf, cacheInfo);
+                    /* update the value only if someone did not
+                     * set it yet
+                     */
+                    if (cacheInfo.getFlags().get(RETENTION_POLICY_FLAG) == null) {
+                        dir = getParentPnfsFile(mountpoint, pf, dir);
                         cacheInfo.getFlags().put(RETENTION_POLICY_FLAG,
-                                attr.getRetentionPolicy().toString());
-                        break;
-                    case DEFAULT_ACCESS_LATENCY:
+                                                 getRetentionPolicyForDirectory(dir).toString());
+                    }
+                    break;
+                case SIZE:
+                    long size = attr.getSize();
+                    if( size > FILE_SIZE_2GB) {
                         cacheInfo = getCacheInfo(pf, cacheInfo);
-                        /* update the value only if someone did not
-                         * set it yet
-                         */
-                        if (cacheInfo.getFlags().get(ACCESS_LATENCY_FLAG) == null) {
-                            dir = getParentPnfsFile(mountpoint, pf, dir);
-                            cacheInfo.getFlags().put(ACCESS_LATENCY_FLAG,
-                                                     getAccessLatencyForDirectory(dir).toString());
+                        cacheInfo.getFlags().put("l", Long.toString(size));
+                        pf.setLength(1);
+                    }else{
+                        pf.setLength(size);
+                    }
+                    break;
+                case CHECKSUM:
+                    cacheInfo = getCacheInfo(pf, cacheInfo);
+
+                    for(Checksum sum: attr.getChecksums() ) {
+                        String flagName;
+                        if( sum.getType() == ChecksumType.ADLER32 ) {
+                            flagName = "c";
+                        } else {
+                            flagName = "uc";
                         }
-                        break;
-                    case DEFAULT_RETENTION_POLICY:
-                        cacheInfo = getCacheInfo(pf, cacheInfo);
-                        /* update the value only if someone did not
-                         * set it yet
-                         */
-                        if (cacheInfo.getFlags().get(RETENTION_POLICY_FLAG) == null) {
-                            dir = getParentPnfsFile(mountpoint, pf, dir);
-                            cacheInfo.getFlags().put(RETENTION_POLICY_FLAG,
-                                                     getRetentionPolicyForDirectory(dir).toString());
+                        ChecksumCollection collection = new ChecksumCollection(cacheInfo.getFlags().get(flagName));
+
+                        String currentValue = collection.get(sum.getType().getType());
+                        if( currentValue != null && sum.getValue() != null) {
+                            if( !currentValue.equals(sum.getValue())) {
+                                throw new CacheException(CacheException.INVALID_ARGS,
+                                                         "Checksum mismatch");
+                            }
+                            continue;
                         }
-                        break;
-                    case SIZE:
-                        long size = attr.getSize();
-                        if( size > FILE_SIZE_2GB) {
+                        collection.put(sum.getType().getType(), sum.getValue());
+                        cacheInfo.getFlags().put(flagName, collection.serialize());
+                    }
+                    break;
+                case LOCATIONS:
+                    for (String location: attr.getLocations()) {
+                        if (_cacheLocationProvider != this) {
+                            _cacheLocationProvider.addCacheLocation(subject, pnfsId, location);
+                        } else {
                             cacheInfo = getCacheInfo(pf, cacheInfo);
-                            cacheInfo.getFlags().put("l", Long.toString(size));
-                            pf.setLength(1);
-                        }else{
-                            pf.setLength(size);
+                            cacheInfo.addCacheLocation(location);
                         }
-                        break;
-                    case CHECKSUM:
-                        cacheInfo = getCacheInfo(pf, cacheInfo);
-
-                        for(Checksum sum: attr.getChecksums() ) {
-                            String flagName;
-                            if( sum.getType() == ChecksumType.ADLER32 ) {
-                                flagName = "c";
-                            } else {
-                                flagName = "uc";
-                            }
-                            ChecksumCollection collection = new ChecksumCollection(cacheInfo.getFlags().get(flagName));
-
-                            String currentValue = collection.get(sum.getType().getType());
-                            if( currentValue != null && sum.getValue() != null) {
-                                if( !currentValue.equals(sum.getValue())) {
-                                    throw new CacheException(CacheException.INVALID_ARGS,
-                                           "Checksum mismatch");
-                                }
-                                continue;
-                            }
-                            collection.put(sum.getType().getType(), sum.getValue());
-                            cacheInfo.getFlags().put(flagName, collection.serialize());
-                        }
-                        break;
-                    case LOCATIONS:
-                        for (String location: attr.getLocations()) {
-                            if (_cacheLocationProvider != this) {
-                                _cacheLocationProvider.addCacheLocation(subject, pnfsId, location);
-                            } else {
-                                cacheInfo = getCacheInfo(pf, cacheInfo);
-                                cacheInfo.addCacheLocation(location);
-                            }
-                        }
-                        break;
-                    case FLAGS:
-                        cacheInfo = getCacheInfo(pf, cacheInfo);
-                        for(Map.Entry<String, String> flag: attr.getFlags().entrySet()) {
-                            cacheInfo.getFlags().put(flag.getKey(), flag.getValue());
-                        }
-                        break;
-                   default:
-                       throw new UnsupportedOperationException("Attribute " + attribute + " not supported yet.");
+                    }
+                    break;
+                case FLAGS:
+                    cacheInfo = getCacheInfo(pf, cacheInfo);
+                    for(Map.Entry<String, String> flag: attr.getFlags().entrySet()) {
+                        cacheInfo.getFlags().put(flag.getKey(), flag.getValue());
+                    }
+                    break;
+                default:
+                    throw new UnsupportedOperationException("Attribute " + attribute + " not supported yet.");
                 }
             }
 
