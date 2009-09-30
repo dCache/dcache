@@ -97,7 +97,6 @@ public abstract class Request extends Job {
     private SRMUser user;
     public Request(SRMUser user,
     Long requestCredentalId,
-    Configuration configuration,
     int max_number_of_retries,
     long max_update_period,
     long lifetime,
@@ -106,8 +105,6 @@ public abstract class Request extends Job {
         ) throws Exception{
         super(lifetime,max_number_of_retries);
         this.credentialId = requestCredentalId;
-        this.storage = configuration.getStorage();
-        this.configuration = configuration;
         this.max_update_period = max_update_period;
         this.description = description;
         this.client_host = client_host;
@@ -138,9 +135,7 @@ public abstract class Request extends Job {
     boolean should_updateretryDeltaTime,
     String description,
     String client_host,
-    String statusCodeString,
-    Configuration configuration
-    ) {
+    String statusCodeString) {
         super(id,
         nextJobId,
         creationTime,
@@ -152,8 +147,6 @@ public abstract class Request extends Job {
         numberOfRetries,maxNumberOfRetries,
         lastStateTransitionTime,
         jobHistoryArray);
-        this.configuration = configuration;
-        this.storage = configuration.getStorage();
         this.credentialId = credentialId;
         this.retryDeltaTime = retryDeltaTime;
         this.should_updateretryDeltaTime = should_updateretryDeltaTime;
@@ -168,7 +161,7 @@ public abstract class Request extends Job {
     
     
     /** general srm server configuration settings */
-    protected Configuration configuration;
+    private Configuration configuration;
 
     
     
@@ -240,7 +233,7 @@ public abstract class Request extends Job {
     private String description;
     
     public void addDebugHistoryEvent(String description) {
-        if(configuration.isJdbcLogRequestHistoryInDBEnabled()) {
+        if(getConfiguration().isJdbcLogRequestHistoryInDBEnabled()) {
             addHistoryEvent( description);
         }
     }
@@ -385,5 +378,18 @@ public abstract class Request extends Job {
         }
         return storage;
     }
+
+    
+    /** 
+     * @return the configuration
+     */
+    public final Configuration getConfiguration() {
+        if(configuration == null) {
+            configuration = SRM.getSRM().getConfiguration();
+        }   
+        return configuration;
+    }   
+
+
     
 }

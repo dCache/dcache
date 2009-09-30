@@ -263,7 +263,6 @@ public class SrmPrepareToPut {
                     sizes,
                     wantPermanent,
                     protocols,
-                    configuration,
                     lifetime,
                     configuration.getGetRetryTimeout(),
                     configuration.getGetMaxNumOfRetries(),

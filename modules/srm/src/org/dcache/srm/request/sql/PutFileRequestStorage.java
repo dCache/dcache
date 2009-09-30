@@ -229,7 +229,6 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage {
         REQUESTID,
         CREDENTIALID,
         STATUSCODE,
-        configuration,
         SURL,
         TURL,
         FILEID,
@@ -237,8 +236,7 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage {
         SPACERESERVATIONID,
         SIZE,
         retentionPolicy,
-        accessLatency
-        );
+        accessLatency);
     }
     
     public String getFileRequestCreateTableFields() {

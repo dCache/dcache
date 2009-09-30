@@ -227,7 +227,6 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage{
                                       DESCRIPTION,
                                       CLIENTHOST,
                                       STATUSCODE,
-                                      configuration,
                                       explanation,
                                       longFormat,
                                       numOfLevels,

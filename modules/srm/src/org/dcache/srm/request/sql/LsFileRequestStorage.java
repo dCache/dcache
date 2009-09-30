@@ -79,7 +79,6 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage {
                                          REQUESTID,
                                          CREDENTIALID,
                                          STATUSCODE,
-                                         configuration,
                                          SURL);
         }
 

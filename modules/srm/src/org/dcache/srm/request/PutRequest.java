@@ -111,7 +111,6 @@ public class PutRequest extends ContainerRequest{
     long[] sizes,
     boolean[] wantPermanent,
     String[] protocols,
-    Configuration configuration,
     long lifetime,
     long max_update_period,
     int max_number_of_retries,
@@ -124,7 +123,6 @@ public class PutRequest extends ContainerRequest{
         
         super(user,
                 requestCredentialId,
-                configuration, 
                 max_number_of_retries,
                 max_update_period,
                 lifetime,
@@ -146,7 +144,6 @@ public class PutRequest extends ContainerRequest{
             
             PutFileRequest fileRequest = new PutFileRequest(getId(),
             requestCredentialId,
-            configuration,
             destUrls[i],sizes[i],
             lifetime,
             max_number_of_retries,
@@ -182,7 +179,6 @@ public class PutRequest extends ContainerRequest{
     String description,
     String client_host,
     String statusCodeString,
-    Configuration configuration,
     String[] protocols
     ) throws java.sql.SQLException {
         super( id,
@@ -204,8 +200,7 @@ public class PutRequest extends ContainerRequest{
         should_updateretryDeltaTime,
         description,
         client_host,
-        statusCodeString,
-        configuration );
+        statusCodeString);
         this.protocols = protocols;
         
     }
@@ -467,9 +462,9 @@ public class PutRequest extends ContainerRequest{
     }
     
     public boolean isOverwrite() {
-        if(configuration.isOverwrite()) {
+        if(getConfiguration().isOverwrite()) {
             if(overwriteMode == null) {
-                return configuration.isOverwrite_by_default();
+                return getConfiguration().isOverwrite_by_default();
             }
             return overwriteMode.equals(TOverwriteMode.ALWAYS);
         }

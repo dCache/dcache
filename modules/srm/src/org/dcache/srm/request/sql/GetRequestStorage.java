@@ -289,9 +289,7 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage{
                 DESCRIPTION,
                 CLIENTHOST,
                 STATUSCODE,
-                configuration,
-                protocols
-                );
+                protocols);
         
     }
     

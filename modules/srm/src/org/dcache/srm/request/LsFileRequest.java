@@ -31,14 +31,12 @@ public class LsFileRequest extends FileRequest {
 
         public LsFileRequest(LsRequest request,
                              Long  requestCredentalId,
-                             Configuration configuration,
                              org.apache.axis.types.URI url,
                              long lifetime,
                              int maxNumberOfRetries) throws Exception {
 
                 super(request.getId(),
                       requestCredentalId,
-                      configuration,
                       lifetime,
                       maxNumberOfRetries);
                 this.request=request;
@@ -62,7 +60,6 @@ public class LsFileRequest extends FileRequest {
                 Long requestId,
                 Long  requestCredentalId,
                 String statusCodeString,
-                Configuration configuration,
                 String SURL)
                 throws java.sql.SQLException {
                 super(id,
@@ -79,8 +76,7 @@ public class LsFileRequest extends FileRequest {
                       jobHistoryArray,
                       requestId,
                       requestCredentalId,
-                      statusCodeString,
-                      configuration);
+                      statusCodeString);
                 try {
                         this.surl = new org.apache.axis.types.URI(SURL);
                 }

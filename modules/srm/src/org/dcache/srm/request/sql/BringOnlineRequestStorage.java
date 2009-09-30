@@ -241,9 +241,7 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
                         DESCRIPTION,
                         CLIENTHOST,
                         STATUSCODE,
-                        configuration,
-                        protocols
-                        );
+                        protocols);
 
     }
     

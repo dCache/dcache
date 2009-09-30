@@ -230,7 +230,6 @@ public class SrmPrepareToGet {
                     new  GetRequest(user,credential.getId(),
                     surls,
                     protocols,
-                    configuration,
                     lifetime,
                     configuration.getGetRetryTimeout(),
                     configuration.getGetMaxNumOfRetries(),

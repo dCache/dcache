@@ -288,9 +288,7 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage{
                 DESCRIPTION,
                 CLIENTHOST,
                 STATUSCODE,
-                configuration,
-                protocols
-                );
+                protocols);
         
     }
     

@@ -259,7 +259,6 @@ public class GetFileRequest extends FileRequest {
     /** Creates new FileRequest */
     public GetFileRequest(Long requestId,
     Long  requestCredentalId,
-    Configuration configuration,
     String url,
     long lifetime,
     int maxNumberOfRetries
@@ -267,7 +266,6 @@ public class GetFileRequest extends FileRequest {
     ) throws Exception {
         super(requestId,
             requestCredentalId, 
-            configuration, 
             lifetime, 
             maxNumberOfRetries);
         say("GetFileRequest, requestId="+requestId+" fileRequestId = "+getId());
@@ -300,8 +298,7 @@ public class GetFileRequest extends FileRequest {
     JobHistory[] jobHistoryArray,
     Long requestId,
     Long  requestCredentalId,
-    String statusCodeString,            
-    Configuration configuration,
+    String statusCodeString,
     String SURL,
     String TURL,
     String fileId,
@@ -321,8 +318,7 @@ public class GetFileRequest extends FileRequest {
         jobHistoryArray,
         requestId,
         requestCredentalId,
-        statusCodeString,            
-        configuration);
+        statusCodeString);
         
         try {
             this.surl = new GlobusURL(SURL);
@@ -625,7 +621,7 @@ public class GetFileRequest extends FileRequest {
         try {
             if(fileId == null) {
                 try {
-                    if(!Tools.sameHost(configuration.getSrmhost(),
+                    if(!Tools.sameHost(getConfiguration().getSrmhost(),
                     getSurl().getHost())) {
                         String error ="surl is not local : "+getSurl().getURL();
                         esay(error);

@@ -120,7 +120,6 @@ public class BringOnlineFileRequest extends FileRequest {
     /** Creates new FileRequest */
     public BringOnlineFileRequest(Long requestId,
     Long  requestCredentalId,
-    Configuration configuration,
     String url,
     long lifetime,
     int maxNumberOfRetries
@@ -128,7 +127,6 @@ public class BringOnlineFileRequest extends FileRequest {
     ) throws Exception {
         super(requestId,
                 requestCredentalId, 
-                configuration, 
                 lifetime, 
                 maxNumberOfRetries);
         say("BringOnlineFileRequest, requestId="+requestId+" fileRequestId = "+getId());
@@ -161,8 +159,7 @@ public class BringOnlineFileRequest extends FileRequest {
     JobHistory[] jobHistoryArray,
     Long requestId,
     Long  requestCredentalId,
-    String statusCodeString,            
-    Configuration configuration,
+    String statusCodeString,
     String SURL,
     String fileId,
     String pinId
@@ -181,9 +178,7 @@ public class BringOnlineFileRequest extends FileRequest {
         jobHistoryArray,
         requestId,
         requestCredentalId,
-        statusCodeString,
-        configuration
-        );
+        statusCodeString);
         
         try {
             this.surl = new GlobusURL(SURL);
@@ -360,7 +355,7 @@ public class BringOnlineFileRequest extends FileRequest {
         try {
             if(fileId == null) {
                 try {
-                    if(!Tools.sameHost(configuration.getSrmhost(),
+                    if(!Tools.sameHost(getConfiguration().getSrmhost(),
                     getSurl().getHost())) {
                         String error ="surl is not local : "+getSurl().getURL();
                         esay(error);

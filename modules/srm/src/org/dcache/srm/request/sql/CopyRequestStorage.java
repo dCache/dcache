@@ -304,9 +304,7 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage{
                         STATUSCODE,
                         storageType,
                         retentionPolicy,
-                        accessLatency,
-                        configuration
-                        );
+                        accessLatency);
 
     }
     

@@ -215,7 +215,6 @@ public class GetRequest extends ContainerRequest {
     Long requestCredentialId,
     String[] surls,
     String[] protocols,
-    Configuration configuration,
     long lifetime,
     long max_update_period,
     int max_number_of_retries,
@@ -224,7 +223,6 @@ public class GetRequest extends ContainerRequest {
     ) throws Exception {
         super(user,
                 requestCredentialId,
-                configuration, 
                 max_number_of_retries,
                 max_update_period,
                 lifetime,
@@ -240,8 +238,7 @@ public class GetRequest extends ContainerRequest {
         fileRequests = new FileRequest[len];
         for(int i = 0; i<len; ++i) {
             GetFileRequest fileRequest =
-            new GetFileRequest(getId(),requestCredentialId,
-            configuration, surls[i],  lifetime,  max_number_of_retries);
+            new GetFileRequest(getId(),requestCredentialId, surls[i],  lifetime,  max_number_of_retries);
             
             fileRequests[i] = fileRequest;
         }
@@ -272,7 +269,6 @@ public class GetRequest extends ContainerRequest {
     String description,
     String client_host,
     String statusCodeString,
-    Configuration configuration,
     String[] protocols
     )  throws java.sql.SQLException {
         super( id,
@@ -294,8 +290,7 @@ public class GetRequest extends ContainerRequest {
         should_updateretryDeltaTime,
         description,
         client_host,
-        statusCodeString,
-        configuration );
+        statusCodeString);
         this.protocols = protocols;
         
     }

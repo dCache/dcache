@@ -108,7 +108,6 @@ public class BringOnlineRequest extends ContainerRequest {
     Long requestCredentialId,
     String[] surls,
     String[] protocols,
-    Configuration configuration,
     long lifetime,
     long desiredOnlineLifetimeInSeconds,
     long max_update_period,
@@ -117,7 +116,6 @@ public class BringOnlineRequest extends ContainerRequest {
     String client_host
     ) throws Exception {
         super(user,requestCredentialId,
-            configuration, 
             max_number_of_retries,
             max_update_period,
             lifetime,
@@ -138,8 +136,7 @@ public class BringOnlineRequest extends ContainerRequest {
         for(int i = 0; i<len; ++i) {
             BringOnlineFileRequest fileRequest =
             new BringOnlineFileRequest(getId(),
-                    requestCredentialId,
-                    configuration, 
+                    requestCredentialId, 
                     surls[i],  
                     lifetime, 
                     max_number_of_retries);
@@ -173,7 +170,6 @@ public class BringOnlineRequest extends ContainerRequest {
     String description,
     String client_host,
     String statusCodeString,
-    Configuration configuration,
     String[] protocols
    )  throws java.sql.SQLException {
         super( id,
@@ -195,8 +191,7 @@ public class BringOnlineRequest extends ContainerRequest {
         should_updateretryDeltaTime,
         description,
         client_host,
-        statusCodeString,
-        configuration );
+        statusCodeString);
         this.protocols = protocols;
        
     }

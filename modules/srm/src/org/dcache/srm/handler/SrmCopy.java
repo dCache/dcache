@@ -166,7 +166,6 @@ public class SrmCopy {
                     from_urls,
                     to_urls,
                     spaceToken,
-                    configuration,
                     lifetime,
                     configuration.getCopyRetryTimeout(),
                     configuration.getCopyMaxNumOfRetries(),

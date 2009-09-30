@@ -260,9 +260,7 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage {
                 ACCESSLATENCY,
                 DESCRIPTION,
                 CLIENTHOST,
-                STATUSCODE,
-                configuration
-                );
+                STATUSCODE);
     }
     
     public String getTableName() {

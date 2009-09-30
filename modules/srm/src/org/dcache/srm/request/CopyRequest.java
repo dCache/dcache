@@ -169,7 +169,6 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
     String[] from_urls,
     String[] to_urls,
     String spaceToken,
-    Configuration configuration,
     long lifetime,
     long max_update_period,
     int max_number_of_retries,
@@ -183,7 +182,6 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
     ) throws Exception{
         super(user,
             requestCredentialId,
-                configuration,
                 max_number_of_retries,
                 max_update_period,
                 lifetime,
@@ -191,23 +189,23 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
                 client_host);
         java.util.ArrayList prot_list = new java.util.ArrayList(4);
                 
-        if(configuration.isUseGsiftpForSrmCopy()) {
+        if(getConfiguration().isUseGsiftpForSrmCopy()) {
             prot_list.add("gsiftp");
         }
-        if(configuration.isUseHttpForSrmCopy()) {
+        if(getConfiguration().isUseHttpForSrmCopy()) {
             prot_list.add("http");
         }
-        if(configuration.isUseDcapForSrmCopy()) {
+        if(getConfiguration().isUseDcapForSrmCopy()) {
             prot_list.add("dcap");
         }
-        if(configuration.isUseFtpForSrmCopy()) {
+        if(getConfiguration().isUseFtpForSrmCopy()) {
             prot_list.add("ftp");
         }
         
         protocols = (String[]) prot_list.toArray(new String[0]);
         int reqs_num = from_urls.length;
         if(reqs_num != to_urls.length) {
-            configuration.getStorage().elog("Request createCopyRequest : "+
+            getConfiguration().getStorage().elog("Request createCopyRequest : "+
             "unequal number of elements in url arrays");
             throw new IllegalArgumentException(
             "unequal number of elements in url arrays");
@@ -216,15 +214,14 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
         for(int i = 0; i<reqs_num; ++i) {
             CopyFileRequest fileRequest = 
                 new CopyFileRequest(getId(),
-                requestCredentialId,
-                configuration,from_urls[i],to_urls[i],
+                requestCredentialId,from_urls[i],to_urls[i],
                 spaceToken,
                 lifetime, max_number_of_retries  );
             fileRequests[i] = fileRequest;
         }
         this.callerSrmProtocol = callerSrmProtocol;
-        if (configuration.getQosPluginClass()!=null)
-        	this.qosPlugin = QOSPluginFactory.createInstance(configuration);
+        if (getConfiguration().getQosPluginClass()!=null)
+        	this.qosPlugin = QOSPluginFactory.createInstance(getConfiguration());
         this.storageType = storageType;
         this.targetAccessLatency = targetAccessLatency;
         this.targetRetentionPolicy = targetRetentionPolicy;
@@ -260,9 +257,7 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
     String statusCodeString,
     TFileStorageType storageType,
     TRetentionPolicy targetRetentionPolicy,
-    TAccessLatency targetAccessLatency,
-    Configuration configuration
-    )  throws java.sql.SQLException {
+    TAccessLatency targetAccessLatency)  throws java.sql.SQLException {
         super( id,
         nextJobId,
         creationTime,
@@ -282,27 +277,26 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
         should_updateretryDeltaTime,
         description,
         client_host,
-        statusCodeString,
-        configuration);
+        statusCodeString);
         
         java.util.ArrayList prot_list = new java.util.ArrayList(4);
         
-        if(configuration.isUseGsiftpForSrmCopy()) {
+        if(getConfiguration().isUseGsiftpForSrmCopy()) {
             prot_list.add("gsiftp");
         }
-        if(configuration.isUseHttpForSrmCopy()) {
+        if(getConfiguration().isUseHttpForSrmCopy()) {
             prot_list.add("http");
         }
-        if(configuration.isUseDcapForSrmCopy()) {
+        if(getConfiguration().isUseDcapForSrmCopy()) {
             prot_list.add("dcap");
         }
-        if(configuration.isUseFtpForSrmCopy()) {
+        if(getConfiguration().isUseFtpForSrmCopy()) {
             prot_list.add("ftp");
         }
         
         protocols = (String[]) prot_list.toArray(new String[0]);
-        if (configuration.getQosPluginClass()!=null)
-        	this.qosPlugin = QOSPluginFactory.createInstance(configuration);
+        if (getConfiguration().getQosPluginClass()!=null)
+        	this.qosPlugin = QOSPluginFactory.createInstance(getConfiguration());
         this.storageType = storageType;
         this.targetAccessLatency = targetAccessLatency;
         this.targetRetentionPolicy = targetRetentionPolicy;
@@ -425,10 +419,10 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
         to_url_is_local = false;
         
         if(from_url_is_srm) {
-            int srm_port = configuration.getPort();
+            int srm_port = getConfiguration().getPort();
             int from_url_port = from_urls[0].getPort();
             if(srm_port == from_url_port) {
-                from_url_is_local = Tools.sameHost(configuration.getSrmhost(),
+                from_url_is_local = Tools.sameHost(getConfiguration().getSrmhost(),
                 from_urls[0].getHost());
             }
         }
@@ -437,10 +431,10 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
         }
         
         if(to_url_is_srm) {
-            int srm_port = configuration.getPort();
+            int srm_port = getConfiguration().getPort();
             int to_url_port = to_urls[0].getPort();
             if(srm_port == to_url_port) {
-                to_url_is_local = Tools.sameHost(configuration.getSrmhost(),
+                to_url_is_local = Tools.sameHost(getConfiguration().getSrmhost(),
                 to_urls[0].getHost());
             }
         }
@@ -534,7 +528,7 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
                     getter_putter  =  new  RemoteTurlGetterV1( getStorage(),credential, remoteSurlsUniqueArray,
                     protocols,
                     this,
-                    configuration.getCopyRetryTimeout(),2,configuration.isConnect_to_wsdl());
+                    getConfiguration().getCopyRetryTimeout(),2,getConfiguration().isConnect_to_wsdl());
                     getter_putter.getInitialRequest();
                     remoteSrmProtocol = SRMProtocol.V1_1;
                 }
@@ -543,7 +537,7 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
                     getter_putter  =  new  RemoteTurlGetterV2( getStorage(),credential, remoteSurlsUniqueArray,
                     protocols,
                     this,
-                    configuration.getCopyRetryTimeout(),2,this.getRemainingLifetime());
+                    getConfiguration().getCopyRetryTimeout(),2,this.getRemainingLifetime());
                     getter_putter.getInitialRequest();
                     remoteSrmProtocol = SRMProtocol.V2_1;
                 }
@@ -552,7 +546,7 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
                     getter_putter  =  new  RemoteTurlGetterV2( getStorage(),credential, remoteSurlsUniqueArray,
                     protocols,
                     this,
-                    configuration.getCopyRetryTimeout(),2,this.getRemainingLifetime());
+                    getConfiguration().getCopyRetryTimeout(),2,this.getRemainingLifetime());
                     getter_putter.getInitialRequest();
                     remoteSrmProtocol = SRMProtocol.V2_1;
                 }
@@ -561,7 +555,7 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
                     getter_putter  =  new  RemoteTurlGetterV1( getStorage(),credential, remoteSurlsUniqueArray,
                     protocols,
                     this,
-                    configuration.getCopyRetryTimeout(),2,configuration.isConnect_to_wsdl());
+                    getConfiguration().getCopyRetryTimeout(),2,getConfiguration().isConnect_to_wsdl());
                     getter_putter.getInitialRequest();
                     remoteSrmProtocol = SRMProtocol.V1_1;
                 }
@@ -704,7 +698,7 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
            try {
                 getter_putter  = new  RemoteTurlPutterV1(getStorage(),credential ,  dests,
                 sizes, protocols,
-                this,configuration.getCopyRetryTimeout(),2,configuration.isConnect_to_wsdl());
+                this,getConfiguration().getCopyRetryTimeout(),2,getConfiguration().isConnect_to_wsdl());
                 getter_putter.getInitialRequest();
                 remoteSrmProtocol = SRMProtocol.V1_1;
             }
@@ -715,7 +709,7 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
                 dests, 
                 sizes, protocols,
                 this,
-                configuration.getCopyRetryTimeout(),
+                getConfiguration().getCopyRetryTimeout(),
                 2,
                 this.getRemainingLifetime(),
                 storageType,
@@ -732,7 +726,7 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
                 getStorage(),credential, dests,
                 sizes, protocols,
                 this,
-                configuration.getCopyRetryTimeout(),2,this.getRemainingLifetime(),
+                getConfiguration().getCopyRetryTimeout(),2,this.getRemainingLifetime(),
                 storageType,
                 targetRetentionPolicy,
                 targetAccessLatency,
@@ -745,7 +739,7 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
                 esay("connecting to server using version 2.1.1 protocol failed, trying version 1.1");
                 getter_putter  = new  RemoteTurlPutterV1(getStorage(),credential ,  dests,
                 sizes, protocols,
-                this,configuration.getCopyRetryTimeout(),2,configuration.isConnect_to_wsdl());
+                this,getConfiguration().getCopyRetryTimeout(),2,getConfiguration().isConnect_to_wsdl());
                 getter_putter.getInitialRequest();
                 remoteSrmProtocol = SRMProtocol.V1_1;
             }
@@ -914,21 +908,21 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
                     int remoteFileId = Integer.parseInt(remoteFileIdString);
                     TurlGetterPutterV1.staticSetFileStatus(getCredential(),SURL,
                     remoteRequestId, remoteFileId,"Done",
-                configuration.getCopyRetryTimeout(),configuration.getCopyMaxNumOfRetries(),getStorage(),configuration.isConnect_to_wsdl());
+                getConfiguration().getCopyRetryTimeout(),getConfiguration().getCopyMaxNumOfRetries(),getStorage(),getConfiguration().isConnect_to_wsdl());
                 } else if( remoteSrmProtocol == SRMProtocol.V2_1) {
                     if(remoteSrmGet) 
                     {
                        RemoteTurlGetterV2.staticReleaseFile(getCredential(),
                                SURL, 
                                remoteRequestIdString,
-                           configuration.getCopyRetryTimeout(),
-                           configuration.getCopyMaxNumOfRetries(),getStorage());
+                           getConfiguration().getCopyRetryTimeout(),
+                           getConfiguration().getCopyMaxNumOfRetries(),getStorage());
                     } else {
                         RemoteTurlPutterV2.staticPutDone(getCredential(), 
                                SURL, 
                                remoteRequestIdString, 
-                           configuration.getCopyRetryTimeout(),
-                           configuration.getCopyMaxNumOfRetries(),getStorage());
+                           getConfiguration().getCopyRetryTimeout(),
+                           getConfiguration().getCopyMaxNumOfRetries(),getStorage());
                     }
                     
                 } else {
@@ -1324,9 +1318,9 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
     }
     
     public boolean isOverwrite() {
-        if(configuration.isOverwrite()) {
+        if(getConfiguration().isOverwrite()) {
             if(overwriteMode == null) {
-                return configuration.isOverwrite_by_default();
+                return getConfiguration().isOverwrite_by_default();
             }
             return overwriteMode.equals(TOverwriteMode.ALWAYS);
         }

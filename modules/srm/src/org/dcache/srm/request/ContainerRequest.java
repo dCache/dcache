@@ -295,26 +295,13 @@ public abstract class ContainerRequest extends Request {
      */
     public ContainerRequest(SRMUser user,
     Long requestCredentalId,
-    Configuration configuration,
     int max_number_of_retries,
     long max_update_period,
     long lifetime,
     String description,
     String client_host) throws Exception{
-        /*
-        if(requestsproperties == null)
-        {
-            requestsproperties = new RequestsPropertyStorage( configuration.getJdbcUrl(),
-        configuration.getJdbcClass(),
-        configuration.getJdbcUser(),
-        configuration.getJdbcPass(),
-        configuration.getNextRequestIdStorageTable()
-        );
-        }
-        */
          super(user ,
          requestCredentalId,
-         configuration,
          max_number_of_retries,
          max_update_period,
          lifetime,
@@ -350,9 +337,7 @@ public abstract class ContainerRequest extends Request {
     boolean should_updateretryDeltaTime,
     String description,
     String client_host,
-    String statusCodeString,
-    Configuration configuration
-    ) {
+    String statusCodeString) {
      super(     id,
      nextJobId,
      creationTime,
@@ -371,9 +356,7 @@ public abstract class ContainerRequest extends Request {
      should_updateretryDeltaTime,
      description,
      client_host,
-     statusCodeString,
-     configuration
-     );
+     statusCodeString);
         this.fileRequests = fileRequests;
     }
 

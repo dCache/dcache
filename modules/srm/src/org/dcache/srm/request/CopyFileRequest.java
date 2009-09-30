@@ -148,7 +148,6 @@ public class CopyFileRequest extends FileRequest {
     
 	public CopyFileRequest(Long requestId,
 			       Long  requestCredentalId,
-			       Configuration configuration,
 			       String from_url,
 			       String to_url,
 			       String spaceToken,
@@ -156,7 +155,7 @@ public class CopyFileRequest extends FileRequest {
 			       int max_number_of_retries) throws Exception {
 		super(requestId, 
 		      requestCredentalId,
-                    configuration, lifetime, max_number_of_retries);
+                    lifetime, max_number_of_retries);
 		say("CopyFileRequest");
 		this.from_url = from_url;
 		this.to_url = to_url;
@@ -185,8 +184,7 @@ public class CopyFileRequest extends FileRequest {
 		JobHistory[] jobHistoryArray,
 		Long requestId,
 		Long requestCredentalId,
-		String statusCodeString,            
-		Configuration configuration,
+		String statusCodeString,
 		String FROMURL,
 		String TOURL,
 		String FROMTURL,
@@ -215,8 +213,7 @@ public class CopyFileRequest extends FileRequest {
 		      jobHistoryArray,
 		      requestId,
 		      requestCredentalId,
-		      statusCodeString,            
-		      configuration);
+		      statusCodeString);
 		this.from_url = FROMURL;
 		this.to_url = TOURL;
 		try {
@@ -549,7 +546,7 @@ public class CopyFileRequest extends FileRequest {
                 spaceReservationId=Long.toString(toParentFmd.spaceTokens[0]);
 		}
 
-		if (configuration.isReserve_space_implicitely() &&
+		if (getConfiguration().isReserve_space_implicitely() &&
                 spaceReservationId == null) {
 			synchronized(this) {
 				State state = getState();
@@ -672,7 +669,7 @@ public class CopyFileRequest extends FileRequest {
                 spaceReservationId=Long.toString(toParentFmd.spaceTokens[0]);
 		}
 
-		if (configuration.isReserve_space_implicitely()&&spaceReservationId == null) {
+		if (getConfiguration().isReserve_space_implicitely()&&spaceReservationId == null) {
                     synchronized(this) {
 				State state = getState();
 				if(!State.isFinalState(state)) {
@@ -840,7 +837,7 @@ public class CopyFileRequest extends FileRequest {
 		try {
 			if(from_turl != null && from_turl.getProtocol().equalsIgnoreCase("dcap")  ||
 			   to_turl != null && to_turl.getProtocol().equalsIgnoreCase("dcap") ||
-			   configuration.isUseUrlcopyScript()) {
+			   getConfiguration().isUseUrlcopyScript()) {
 				try {
 					runScriptCopy();
 					return;
@@ -897,16 +894,16 @@ public class CopyFileRequest extends FileRequest {
 	public void scriptCopy(GlobusURL from, GlobusURL to, GSSCredential credential) throws Exception {
 		String proxy_file = null;
 		try {
-			String command = configuration.getTimeout_script();
-			command=command+" "+configuration.getTimeout();
-			command=command+" "+configuration.getUrlcopy();
+			String command = getConfiguration().getTimeout_script();
+			command=command+" "+getConfiguration().getTimeout();
+			command=command+" "+getConfiguration().getUrlcopy();
 			//command=command+" -username "+ user.getName();
-			command = command+" -debug "+configuration.isDebug();
+			command = command+" -debug "+getConfiguration().isDebug();
 			if(credential != null) {
 				try {
 					byte [] data = ((ExtendedGSSCredential)(credential)).export(
 						ExtendedGSSCredential.IMPEXP_OPAQUE);
-					proxy_file = configuration.getProxies_directory()+
+					proxy_file = getConfiguration().getProxies_directory()+
 						"/proxy_"+credential.hashCode()+"_at_"+unique_current_time();
 					say("saving credential "+credential.getName().toString()+
 					    " in proxy_file "+proxy_file);
@@ -926,15 +923,15 @@ public class CopyFileRequest extends FileRequest {
 				command = command+" -x509_user_key "+proxy_file;
 				command = command+" -x509_user_cert "+proxy_file;
 			}
-			int tcp_buffer_size = configuration.getTcp_buffer_size();
+			int tcp_buffer_size = getConfiguration().getTcp_buffer_size();
 			if(tcp_buffer_size > 0) {
 				command = command+" -tcp_buffer_size "+tcp_buffer_size;
 			}
-			int buffer_size = configuration.getBuffer_size();
+			int buffer_size = getConfiguration().getBuffer_size();
 			if(buffer_size > 0) {
 				command = command+" -buffer_size "+buffer_size;
 			}
-			int parallel_streams = configuration.getParallel_streams();
+			int parallel_streams = getConfiguration().getParallel_streams();
 			if(parallel_streams > 0) {
 				command = command+" -parallel_streams "+parallel_streams;
 			}
@@ -979,7 +976,7 @@ public class CopyFileRequest extends FileRequest {
 				command = command +
 					" -dst_userpasswd "+to_pwd;
 			}
-			String gsiftpclient = configuration.getGsiftpclinet();
+			String gsiftpclient = getConfiguration().getGsiftpclinet();
 			if(gsiftpclient != null) {
 				command = command +
 					" -use-kftp "+
@@ -1072,7 +1069,7 @@ public class CopyFileRequest extends FileRequest {
 							  null,
 							  callbacks);
 			}
-			if(configuration.isReserve_space_implicitely() &&
+			if(getConfiguration().isReserve_space_implicitely() &&
 			   spaceReservationId != null &&
 			   spaceMarkedAsBeingUsed ) {
 				SrmCancelUseOfSpaceCallbacks callbacks =
@@ -1817,7 +1814,7 @@ public class CopyFileRequest extends FileRequest {
 		}
 		String spaceToken =spaceReservationId;
 		
-		if(!configuration.isReserve_space_implicitely() ||
+		if(!getConfiguration().isReserve_space_implicitely() ||
 		   spaceToken == null ||
 		   !weReservedSpace) {
 			return extendLifetimeMillis(newLifetime);      

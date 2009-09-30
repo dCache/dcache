@@ -185,7 +185,6 @@ public class SrmBringOnline {
                     credential.getId(),
                     surls,
                     protocols,
-                    configuration,
                     lifetime,
                     desiredLietimeInSeconds,
                     configuration.getGetRetryTimeout(),

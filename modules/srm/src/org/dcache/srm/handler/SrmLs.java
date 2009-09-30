@@ -158,7 +158,6 @@ public class SrmLs {
                         LsRequest r = new LsRequest(user,
                                                     credential.getId(),
                                                     request,
-                                                    configuration,
                                                     3600*1000,
                                                     configuration.getLsRetryTimeout(),
                                                     configuration.getLsMaxNumOfRetries(),

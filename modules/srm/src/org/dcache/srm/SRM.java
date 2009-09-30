@@ -764,7 +764,6 @@ public class SRM {
                     from_urls,
                     to_urls,
                     null, // no space reservation in v1
-                    configuration,
                     lifetime,
                     configuration.getCopyRetryTimeout(),
                     configuration.getCopyMaxNumOfRetries(),
@@ -833,7 +832,7 @@ public class SRM {
             }
             ContainerRequest r =
                     new GetRequest(user, credential.getId(),
-                    surls, protocols, configuration,
+                    surls, protocols,
                     configuration.getGetLifetime(),
                     configuration.getGetRetryTimeout(),
                     configuration.getGetMaxNumOfRetries(),
@@ -1088,7 +1087,7 @@ public class SRM {
             ContainerRequest r = new PutRequest(user,
                     credential.getId(),
                     sources, dests_urls, sizes,
-                    wantPerm, protocols, configuration, configuration.getPutLifetime(),
+                    wantPerm, protocols, configuration.getPutLifetime(),
                     configuration.getPutRetryTimeout(),
                     configuration.getPutMaxNumOfRetries(),
                     clientHost,
@@ -1756,7 +1755,7 @@ public class SRM {
      * Getter for property configuration.
      * @return Value of property configuration.
      */
-    public org.dcache.srm.util.Configuration getConfiguration() {
+    public final Configuration getConfiguration() {
         return configuration;
     }
 

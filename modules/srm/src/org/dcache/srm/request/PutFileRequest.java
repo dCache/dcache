@@ -132,7 +132,6 @@ public class PutFileRequest extends FileRequest {
     /** Creates new FileRequest */
     public PutFileRequest(Long requestId,
             Long requestCredentalId,
-            Configuration configuration,
             String url,
             long size,
             long lifetime,
@@ -143,7 +142,6 @@ public class PutFileRequest extends FileRequest {
             ) throws Exception {
         super(requestId,
                 requestCredentalId,
-                configuration,
                 lifetime,
                 maxNumberOfRetires);
         say("constructor url = "+url+")");
@@ -182,7 +180,6 @@ public class PutFileRequest extends FileRequest {
             Long requestId,
             Long requestCredentalId,
             String statusCodeString,
-            Configuration configuration,
             String SURL,
             String TURL,
             String fileId,
@@ -206,9 +203,7 @@ public class PutFileRequest extends FileRequest {
                 jobHistoryArray,
                 requestId,
                 requestCredentalId,
-                statusCodeString,
-                configuration
-                );
+                statusCodeString);
 
         try {
             this.surl = new GlobusURL(SURL);
@@ -517,7 +512,7 @@ public class PutFileRequest extends FileRequest {
                     parentFileId == null) {
 
                 addDebugHistoryEvent("selecting transfer protocol");
-                if(!Tools.sameHost(configuration.getSrmhost(),
+                if(!Tools.sameHost(getConfiguration().getSrmhost(),
                         getSurl().getHost())) {
                     String error ="surl is not local : "+getSurl().getURL();
                     synchronized(this) {
@@ -545,7 +540,7 @@ public class PutFileRequest extends FileRequest {
                             break mark1;
                         }
                     }
-                    }
+                }
 
                 if(!found_supp_prot) {
                     throw new org.dcache.srm.scheduler.FatalJobFailure("transfer protocols not supported");
@@ -603,7 +598,7 @@ public class PutFileRequest extends FileRequest {
 		    }
 	    }
 	    
-            if (configuration.isReserve_space_implicitely()&&spaceReservationId == null) {
+            if (getConfiguration().isReserve_space_implicitely()&&spaceReservationId == null) {
                 State state;
                 long remaining_lifetime;
                 synchronized(this) {
@@ -699,7 +694,7 @@ public class PutFileRequest extends FileRequest {
          }
         if(State.isFinalState(state)) {
             say("space reservation is "+spaceReservationId);
-            if(configuration.isReserve_space_implicitely() &&
+            if(getConfiguration().isReserve_space_implicitely() &&
                     spaceReservationId != null &&
                     spaceMarkedAsBeingUsed ) {
                 SrmCancelUseOfSpaceCallbacks callbacks =
@@ -1542,7 +1537,7 @@ public class PutFileRequest extends FileRequest {
         }
         String spaceToken =spaceReservationId;
 
-        if(!configuration.isReserve_space_implicitely() ||
+        if(!getConfiguration().isReserve_space_implicitely() ||
            spaceToken == null ||
            !weReservedSpace) {
             return extendLifetimeMillis(newLifetime);

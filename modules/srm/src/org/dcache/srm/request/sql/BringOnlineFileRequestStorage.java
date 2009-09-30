@@ -105,11 +105,9 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage {
             REQUESTID,
             CREDENTIALID,
             STATUSCODE,
-            configuration,
             SURL,
             FILEID,
-            PINID
-            );
+            PINID);
     }
     
     public String getFileRequestCreateTableFields() {

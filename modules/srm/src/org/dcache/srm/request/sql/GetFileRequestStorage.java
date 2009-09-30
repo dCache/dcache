@@ -196,12 +196,10 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage {
             REQUESTID,
             CREDENTIALID,
             STATUSCODE,
-            configuration,
             SURL,
             TURL,
             FILEID,
-            PINID
-            );
+            PINID);
     }
     
     public String getFileRequestCreateTableFields() {

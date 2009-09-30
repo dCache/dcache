@@ -232,7 +232,6 @@ public class ReserveSpaceRequest extends Request {
     public ReserveSpaceRequest(
             Long  requestCredentalId,
             SRMUser user,
-            Configuration configuration,
             long lifetime,
             int maxNumberOfRetries,
             long sizeInBytes ,
@@ -241,17 +240,8 @@ public class ReserveSpaceRequest extends Request {
             TAccessLatency accessLatency,
             String description,
             String clienthost) throws Exception {
-        /*Request(String userId,
-    Long requestCredentalId,
-    JobStorage requestJobsStorage,
-    Configuration configuration,
-    int max_number_of_retries,
-    long max_update_period,
-    long lifetime,
-    String description)*/
               super(user,
               requestCredentalId,
-              configuration,
               maxNumberOfRetries,
               0,
               lifetime,
@@ -300,18 +290,7 @@ public class ReserveSpaceRequest extends Request {
             String accessLatency,
             String description,
             String clienthost,
-            String statusCodeString,
-            Configuration configuration
-            ) {
-                /*
-                 *protected Request(
-                    Long credentialId,
-                    int retryDeltaTime,
-                    boolean should_updateretryDeltaTime,
-                    String description,
-                    Configuration configuration
-                    )
-                 */
+            String statusCodeString) {
                 super(id,
                 nextJobId,
                 creationTime,  
@@ -330,8 +309,7 @@ public class ReserveSpaceRequest extends Request {
                 false,
                 description,
                 clienthost,
-                statusCodeString,
-                configuration);
+                statusCodeString);
         this.sizeInBytes = sizeInBytes;
         this.spaceToken = spaceToken;
         

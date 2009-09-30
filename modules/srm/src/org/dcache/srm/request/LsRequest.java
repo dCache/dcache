@@ -36,14 +36,12 @@ public class LsRequest extends ContainerRequest {
         public LsRequest(SRMUser user,
                          Long requestCredentialId,
                          SrmLsRequest request,
-                         Configuration configuration,
                          long lifetime,
                          long max_update_period,
                          int max_number_of_retries,
                          String client_host ) throws Exception {
                 super(user,
                       requestCredentialId,
-                      configuration,
                       max_number_of_retries,
                       max_update_period,
                       lifetime,
@@ -55,12 +53,11 @@ public class LsRequest extends ContainerRequest {
                         fileRequests[i] =
                                 new LsFileRequest(this,
                                                   requestCredentialId,
-                                                  configuration,
                                                   request.getArrayOfSURLs().getUrlArray()[i],
                                                   lifetime,
                                                   max_number_of_retries);
                 }
-                if(configuration.isAsynchronousLs()) {
+                if(getConfiguration().isAsynchronousLs()) {
                     storeInSharedMemory();
         }
         }
@@ -85,8 +82,7 @@ public class LsRequest extends ContainerRequest {
                 boolean should_updateretryDeltaTime,
                 String description,
                 String client_host,
-                String statusCodeString,
-                Configuration configuration, 
+                String statusCodeString, 
                 String explanation,
                 boolean longFormat,
                 int numOfLevels,
@@ -111,8 +107,7 @@ public class LsRequest extends ContainerRequest {
                       should_updateretryDeltaTime,
                       description,
                       client_host,
-                      statusCodeString,
-                      configuration );
+                      statusCodeString);
                 this.explanation=explanation;
                 this.longFormat=longFormat;
                 this.numOfLevels=numOfLevels;

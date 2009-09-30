@@ -155,7 +155,6 @@ public class SrmReserveSpace {
                new ReserveSpaceRequest(
                 credential.getId(),
                 user,
-                configuration,
                 requestLifetime*1000L,
                 3,
                 sizeInBytes,

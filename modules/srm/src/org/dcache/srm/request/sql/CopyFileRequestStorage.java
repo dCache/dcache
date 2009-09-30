@@ -249,9 +249,8 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage {
             REQUESTID,
             CREDENTIALID,
             STATUSCODE,
-            configuration,
             FROMURL,
-             TOURL,
+            TOURL,
              FROMTURL,
              TOTURL,
              FROMLOCALPATH,
@@ -262,8 +261,7 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage {
              REMOTEREQUESTID,
              REMOTEFILEID,
              SPACERESERVATIONID,
-             TRANSFERID
-            );
+             TRANSFERID);
     }
     
     public String getFileRequestCreateTableFields() {

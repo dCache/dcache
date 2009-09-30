@@ -211,7 +211,7 @@ public abstract class FileRequest extends Job {
     //pointer to underlying storage
     protected AbstractStorageElement storage;
     //srm configuration
-    protected Configuration configuration;
+    private Configuration configuration;
     //error message if error, or just information message
 
     private QOSTicket qosTicket;
@@ -228,13 +228,10 @@ public abstract class FileRequest extends Job {
     
    /** Creates new FileRequest */
     protected FileRequest(Long requestId,
-    Long  requestCredentalId,
-    Configuration configuration,long lifetime,
+    Long  requestCredentalId,long lifetime,
     int maxNumberOfRetries) throws Exception {
         super(lifetime, maxNumberOfRetries);
         this.credentialId = requestCredentalId;
-        this.configuration = configuration;
-        this.storage = configuration.getStorage();
         this.requestId = requestId;
         say("created");
         
@@ -258,9 +255,7 @@ public abstract class FileRequest extends Job {
     JobHistory[] jobHistoryArray,
     Long requestId,
     Long  requestCredentalId,
-    String statusCodeString,
-    Configuration configuration
-    ) {
+    String statusCodeString) {
         super(id,
         nextJobId,
         creationTime,  lifetime,
@@ -271,8 +266,6 @@ public abstract class FileRequest extends Job {
         lastStateTransitionTime,
         jobHistoryArray);
         this.credentialId = requestCredentalId;
-        this.configuration = configuration;
-        this.storage = configuration.getStorage();
         this.requestId = requestId;
         this.statusCode = statusCodeString==null
                 ?null
@@ -282,7 +275,7 @@ public abstract class FileRequest extends Job {
     }
     
     public void addDebugHistoryEvent(String description) {
-        if(configuration.isJdbcLogRequestHistoryInDBEnabled()) {
+        if(getConfiguration().isJdbcLogRequestHistoryInDBEnabled()) {
             addHistoryEvent( description);
         }
     }
@@ -495,5 +488,15 @@ public abstract class FileRequest extends Job {
         }
         return storage;
     }
+
+    /** 
+     * @return the configuration
+     */
+    public final Configuration getConfiguration() {
+        if(configuration == null) {
+            configuration = SRM.getSRM().getConfiguration();
+        }   
+        return configuration;
+    }   
 
 }
