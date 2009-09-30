@@ -158,7 +158,7 @@ procStart() {
      fi
 
      rm -f "$stopFile"
-     /bin/sh ${ourHomeDir}/share/lib/daemon ${user:+-u} "$user" -r "${stopFile}" -d "${delay}" -f -p "${pidFile}" -o "${logfile}" "${java}" ${java_options}
+     /bin/sh ${ourHomeDir}/share/lib/daemon ${user:+-u} ${user:+"$user"} -r "${stopFile}" -d "${delay}" -f -p "${pidFile}" -o "${logfile}" "${java}" ${java_options}
 
      printf "Starting ${domainName} "
      for c in 6 5 4 3 2 1 0 ; do
