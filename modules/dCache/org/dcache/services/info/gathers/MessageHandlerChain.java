@@ -31,7 +31,7 @@ import dmg.cells.nucleus.UOID;
  * 
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class MessageHandlerChain implements MessageMetadataRepository<UOID>, MessageSender {
+public class MessageHandlerChain implements MessageMetadataRepository<UOID>, MessageSender, CellMessageAnswerable {
 
 	/** The period between successive flushes of ancient metadata, in milliseconds */
 	private static final long METADATA_FLUSH_THRESHOLD = 3600000; // 1 hour
@@ -119,48 +119,10 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>, Mes
 	 */
 	public void sendMessage( long ttl, CellMessageAnswerable handler, CellMessage envelope) throws SerializationException {
         putMetricTTL( envelope.getUOID(), ttl);
-
-		try {
-			if( handler == null)
-				_endpoint.sendMessage( envelope);
-			else
-				_endpoint.sendMessage( envelope, handler, STANDARD_TIMEOUT);
-		} catch( NoRouteToCellException e) {
-			_log.info( "No route to cell " + envelope.getDestinationAddress());
-			remove( envelope.getUOID());
-			return;
-		}
+        _endpoint.sendMessage( envelope, handler != null ? handler : this, STANDARD_TIMEOUT);
 	}
 
 
-	/**
-	 * Process an incoming message using registered MessageHandlers.
-	 * @param msg the incoming message's payload
-	 * @return true if the message was handled, false otherwise.
-	 */
-	public boolean handleMessage( CellMessage msg) {
-		Object messagePayload = msg.getMessageObject();
-		
-		if( !(messagePayload instanceof Message)) {
-			if( _log.isDebugEnabled())
-				_log.debug( "Received msg where payload is not instanceof Message");
-
-			return false;
-		}
-
-        if( !containsMetricTTL( msg.getLastUOID())) {
-            _log.error( "Attempt to add metrics without recorded metric TTL for msg " + msg);
-            return false;
-        }
-
-		for( MessageHandler mh : _messageHandler)
-			if( mh.handleMessage( (Message) messagePayload, getMetricTTL( msg.getLastUOID())))
-				return true;
-		
-		return false;		
-	}
-
-	
 	/**
 	 * Add a standard set of handlers for reply Messages
 	 */
@@ -255,5 +217,42 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>, Mes
         }
 
         _nextFlushOldMetadata = new Date( System.currentTimeMillis() + METADATA_FLUSH_PERIOD);
+    }
+
+
+    /*
+     * The following three methods implement CellMessageAnswerable interface for
+     * Message methods.
+     */
+
+    @Override
+    public void answerArrived(CellMessage request, CellMessage answer) {
+        Object messagePayload = answer.getMessageObject();
+
+        if( !(messagePayload instanceof Message)) {
+            _log.debug( "Received msg where payload is not instanceof Message");
+            return;
+        }
+
+        if( !containsMetricTTL( request.getLastUOID())) {
+            _log.error( "Attempt to add metrics without recorded metric TTL for msg " + request);
+            return;
+        }
+
+        for( MessageHandler mh : _messageHandler)
+            if( mh.handleMessage( (Message) messagePayload, getMetricTTL( request.getLastUOID())))
+            return;
+    }
+
+    @Override
+    public void answerTimedOut(CellMessage request) {
+        remove( request.getLastUOID());
+        _log.info("Message timed out");
+    }
+
+    @Override
+    public void exceptionArrived(CellMessage request, Exception exception) {
+        remove( request.getLastUOID());
+        _log.error( "Received remote exception: ", exception);
     }
 }
