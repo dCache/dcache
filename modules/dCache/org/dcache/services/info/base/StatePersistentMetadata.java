@@ -146,7 +146,7 @@ public class StatePersistentMetadata {
 
 		this.add( StatePath.parsePath("summary.reservations.by-VO.*"), branchMetadata("VO", "name"));
         this.add( StatePath.parsePath("summary.reservations.by-VO.*.by-description.*"), branchMetadata("reservation-group", "description"));
-        this.add( StatePath.parsePath("summary.reservations.by-VO.*.by-description.*.id.*.reservations.*"), branchMetadata("reservation", "id"));
+        this.add( StatePath.parsePath("summary.reservations.by-VO.*.by-description.*.reservations.*"), branchMetadata("reservation", "id"));
 
 		this.add( StatePath.parsePath("units.*"), branchMetadata( "unit", "name"));
 		this.add( StatePath.parsePath("units.*.unitgroups.*"), branchMetadata( "unitgroupref", "ref"));
