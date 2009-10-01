@@ -107,7 +107,7 @@ public class LoginBrokerHandler
         for (int i = 0; i < addresses.length; i++) {
             InetAddress addr = addresses[i];
 
-            String host = addr.getHostName();
+            String host = addr.getCanonicalHostName();
             if( !addr.isLinkLocalAddress() && !addr.isLoopbackAddress() &&
                 !addr.isSiteLocalAddress() && !addr.isMulticastAddress()) {
                 _hosts[nextExternalIfIndex++] = host;
