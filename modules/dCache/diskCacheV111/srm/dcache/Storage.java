@@ -915,8 +915,9 @@ public class Storage
         }
         handler.setProtocolFamily(getOption("protocolFamily", "SRM"));
         handler.setProtocolVersion(getOption("protocolVersion", "0.1"));
+        handler.setProtocolEngine(Storage.this.getClass().getName());
         try {
-            handler.setUpdateTime(getLongOption("brokerUpdateTime", 5*60*1000));
+            handler.setUpdateTime(getLongOption("brokerUpdateTime", 5*60));
         } catch (NumberFormatException e) {
             _log.fatal("Failed to parse brokerUpdateTime: " +
                        e.getMessage());
@@ -937,6 +938,7 @@ public class Storage
                 }
             });
         handler.setExecutor(_executor);
+        handler.setCellEndpoint(this);
         handler.start();
 
         addCommandListener(handler);
