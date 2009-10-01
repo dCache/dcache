@@ -277,8 +277,7 @@ public class InfoProvider extends CellAdapter {
 			return;
 		}
 
-		if( !_msgHandlerChain.handleMessage( msg))
-			_log.warn( "Unable to handle incoming message from: " + msg.getSourceAddress());
+		_log.warn( "Unable to handle incoming message from: " + msg.getSourceAddress());
 	}
 
 	/**
