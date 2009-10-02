@@ -601,6 +601,10 @@ public class ChimeraNameSpaceProvider
             case ACCESS_LATENCY:
                 attributes.setAccessLatency(diskCacheV111.util.AccessLatency.getAccessLatency(_fs.getAccessLatency(inode).getId()));
                 break;
+            case ACCESS_TIME:
+                stat = inode.statCache();
+                attributes.setAccessTime(stat.getATime());
+                break;
             case RETENTION_POLICY:
                 attributes.setRetentionPolicy(diskCacheV111.util.RetentionPolicy.getRetentionPolicy(_fs.getRetentionPolicy(inode).getId()));
                 break;

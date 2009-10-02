@@ -11,6 +11,7 @@ import static org.dcache.acl.enums.FileAttribute.*;
 public enum FileAttribute {
 
     ACCESS_LATENCY,
+    ACCESS_TIME,
     ACL,
     CHECKSUM,
     CREATION_TIME,
@@ -40,6 +41,8 @@ public enum FileAttribute {
         switch (this) {
         case ACL:
             return FATTR4_ACL;
+        case ACCESS_TIME:
+            return FATTR4_TIME_ACCESS;
         case CREATION_TIME:
             return FATTR4_TIME_CREATE;
         case MODE:

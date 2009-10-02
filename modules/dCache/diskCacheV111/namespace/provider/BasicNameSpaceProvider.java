@@ -1259,6 +1259,10 @@ public class BasicNameSpaceProvider
                     cacheInfo = getCacheInfo(pf, cacheInfo);
                     attributes.setAccessLatency(AccessLatency.getAccessLatency(cacheInfo.getFlags().get(ACCESS_LATENCY_FLAG)));
                     break;
+                case ACCESS_TIME:
+                    meta = getFileMetaData(subject, pnfsId, meta);
+                    attributes.setAccessTime(meta.getLastAccessedTime());
+                    break;
                 case RETENTION_POLICY:
                     cacheInfo = getCacheInfo(pf, cacheInfo);
                     attributes.setRetentionPolicy(RetentionPolicy.getRetentionPolicy(cacheInfo.getFlags().get(ACCESS_LATENCY_FLAG)));

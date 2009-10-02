@@ -48,6 +48,11 @@ public class FileAttributes implements Serializable {
     private long _size;
 
     /**
+     * file's last access time
+     */
+    private long _atime;
+
+    /**
      * file's last modification time
      */
     private long _mtime;
@@ -140,6 +145,12 @@ public class FileAttributes implements Serializable {
         return _accessLatency;
     }
 
+    public long getAccessTime()
+    {
+        guard(ACCESS_TIME);
+        return _atime;
+    }
+
     public ACL getAcl()
     {
         guard(ACL);
@@ -212,6 +223,12 @@ public class FileAttributes implements Serializable {
     {
         guard(STORAGEINFO);
         return _storageInfo;
+    }
+
+    public void setAccessTime(long atime)
+    {
+        define(ACCESS_TIME);
+        _atime = atime;
     }
 
     public void setAccessLatency(AccessLatency accessLatency) {
