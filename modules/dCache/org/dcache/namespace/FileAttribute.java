@@ -27,6 +27,7 @@ public enum FileAttribute {
     RETENTION_POLICY,
     SIZE,
     STORAGECLASS,
+    STORAGEINFO,
     TYPE,
     PNFSID;
 

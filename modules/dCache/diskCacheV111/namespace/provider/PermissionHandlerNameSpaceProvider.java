@@ -295,6 +295,24 @@ public class PermissionHandlerNameSpaceProvider
     }
 
     @Override
+    public FileAttributes getFileAttributes(Subject subject, PnfsId pnfsId,
+                                            Set<FileAttribute> attr)
+        throws CacheException
+    {
+        if (!Subjects.isRoot(subject) && attr.contains(STORAGEINFO)) {
+            FileAttributes attributes =
+                getFileAttributesForPermissionHandler(pnfsId, TYPE);
+
+            if (attributes.getFileType() != DIR &&
+                _handler.canReadFile(subject, attributes) != ACCESS_ALLOWED) {
+                throw new PermissionDeniedCacheException("Access denied: " + pnfsId.toString());
+            }
+        }
+
+        return super.getFileAttributes(subject, pnfsId, attr);
+    }
+
+    @Override
     public void setFileMetaData(Subject subject, PnfsId pnfsId,
                                 FileMetaData metaData)
         throws CacheException

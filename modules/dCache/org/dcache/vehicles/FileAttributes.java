@@ -5,6 +5,7 @@ import org.dcache.acl.ACL;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.StorageInfo;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -92,7 +93,7 @@ public class FileAttributes implements Serializable {
     private Collection<String> _locations;
 
     /**
-     * Key value map of flags acossiated with the file.
+     * Key value map of flags associated with the file.
      */
     private Map<String, String> _flags;
 
@@ -100,6 +101,11 @@ public class FileAttributes implements Serializable {
      * The unique PNFS ID of a file.
      */
     private PnfsId _pnfsId;
+
+    /**
+     * The storage info of a file.
+     */
+    private StorageInfo _storageInfo;
 
     /** Throws IllegalStateException if attribute is not defined. */
     private void guard(FileAttribute attribute)
@@ -113,6 +119,11 @@ public class FileAttributes implements Serializable {
     private void define(FileAttribute attribute)
     {
         _definedAttributes.add(attribute);
+    }
+
+    public boolean isDefined(FileAttribute attribute)
+    {
+        return _definedAttributes.contains(attribute);
     }
 
     /**
@@ -195,6 +206,12 @@ public class FileAttributes implements Serializable {
     {
         guard(PNFSID);
         return _pnfsId;
+    }
+
+    public StorageInfo getStorageInfo()
+    {
+        guard(STORAGEINFO);
+        return _storageInfo;
     }
 
     public void setAccessLatency(AccessLatency accessLatency) {
@@ -282,5 +299,11 @@ public class FileAttributes implements Serializable {
     {
         define(PNFSID);
         _pnfsId = pnfsId;
+    }
+
+    public void setStorageInfo(StorageInfo storageInfo)
+    {
+        define(STORAGEINFO);
+        _storageInfo = storageInfo;
     }
 }

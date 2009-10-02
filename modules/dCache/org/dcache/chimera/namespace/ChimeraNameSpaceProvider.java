@@ -584,7 +584,7 @@ public class ChimeraNameSpaceProvider
 
     private FileAttributes getFileAttributes(Subject subject, FsInode inode,
                                              Set<FileAttribute> attr)
-        throws IOException, ChimeraFsException, ACLException
+        throws IOException, ChimeraFsException, ACLException, CacheException
     {
         FileAttributes attributes = new FileAttributes();
         Stat stat;
@@ -666,6 +666,9 @@ public class ChimeraNameSpaceProvider
                 break;
             case PNFSID:
                 attributes.setPnfsId(new PnfsId(inode.toString()));
+                break;
+            case STORAGEINFO:
+                attributes.setStorageInfo(_extractor.getStorageInfo(inode));
                 break;
             default:
                 throw new UnsupportedOperationException("Attribute " + attribute + " not supported yet.");

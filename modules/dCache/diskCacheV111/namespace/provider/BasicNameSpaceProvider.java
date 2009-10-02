@@ -1317,6 +1317,9 @@ public class BasicNameSpaceProvider
                 case PNFSID:
                     attributes.setPnfsId(pnfsId);
                     break;
+                case STORAGEINFO:
+                    attributes.setStorageInfo(getStorageInfo(subject, pnfsId));
+                    break;
                 default:
                     throw new UnsupportedOperationException("Attribute " + attribute + " not supported yet.");
                 }

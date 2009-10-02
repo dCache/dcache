@@ -2018,6 +2018,11 @@ public class PnfsManagerV3 extends CellAdapter
                     _nameSpaceProvider.getFileAttributes(subject,
                                                          pnfsId,
                                                          requested);
+
+                if (attrs.isDefined(FileAttribute.STORAGEINFO)) {
+                    attrs.getStorageInfo().setKey("path", message.getPnfsPath());
+                }
+
                 message.setFileAttributes(attrs);
             }
             message.setSucceeded();
