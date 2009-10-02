@@ -209,12 +209,12 @@ public abstract class FileRequest extends Job {
     protected Long credentialId;
     
     //pointer to underlying storage
-    protected AbstractStorageElement storage;
+    private transient AbstractStorageElement storage;
     //srm configuration
-    private Configuration configuration;
+    private transient Configuration configuration;
     //error message if error, or just information message
 
-    private QOSTicket qosTicket;
+    private transient QOSTicket qosTicket;
 
     private static final long serialVersionUID = -5737484917461810463L;
     

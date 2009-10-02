@@ -144,7 +144,8 @@ public abstract class Request extends Job {
         errorMessage,
         scheduelerId,
         schedulerTimeStamp,
-        numberOfRetries,maxNumberOfRetries,
+        numberOfRetries,
+        maxNumberOfRetries,
         lastStateTransitionTime,
         jobHistoryArray);
         this.credentialId = credentialId;
@@ -203,7 +204,7 @@ public abstract class Request extends Job {
      * class that gives us an interface to the
      * underlying storage system
      */
-    protected AbstractStorageElement storage;
+    private transient AbstractStorageElement storage;
     /**
      * Status code from version 2.2
      * provides a better description of 

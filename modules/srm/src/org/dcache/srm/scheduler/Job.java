@@ -221,6 +221,7 @@ import org.dcache.srm.SRMReleasedException;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.util.JDC;
+
 /**
  *
  * @author  timur
@@ -266,15 +267,22 @@ public abstract class Job  {
     private long lastStateTransitionTime = System.currentTimeMillis();
     
     private static final Set jobStorages = new HashSet();
-    private List jobHistory = new ArrayList();
-    private JobIdGenerator generator;
+    private final List jobHistory = new ArrayList();
+    private transient JobIdGenerator generator;
     
-    private TimerTask retryTimer;
+    private transient TimerTask retryTimer;
     
     private static boolean storeInSharedMemoryCache =true;
     private static final SharedMemoryCache sharedMemoryCache =
             new SharedMemoryCache();
 
+    private static final long serialVersionUID = 2690583464813886836L;
+
+    private transient boolean savedInFinalState;
+
+    private transient JDC jdc;
+
+  
     public static final void registerJobStorage(JobStorage jobStorage) {
         synchronized(jobStorages) {
             jobStorages.add(jobStorage);
@@ -375,14 +383,6 @@ public abstract class Job  {
         sharedMemoryCache.updateSharedMemoryChache(this);
     }
     
-    private static final long serialVersionUID = 2690583464813886836L;
-    
-    // this method is called whenever the state of the job changes, or when the job's
-    // place in queue changes, so the
-    private boolean savedInFinalState = false;
-
-	private JDC jdc;
-
    private JobStorage getJobStorage() {
        return JobStorageFactory.getJobStorageFactory().getJobStorage(this);
    }

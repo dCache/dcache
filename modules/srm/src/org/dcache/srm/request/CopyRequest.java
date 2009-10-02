@@ -145,24 +145,21 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
     private GlobusURL toTURLs;
     private RequestStatus toRS;
     private int number_of_file_reqs;
-    //
-    // Reading of and Modifications to both of these hash sets
-    // will be synchronized on waitingFromTURLsFileReqs
-    //
-    private OneToManyMap remoteSurlToFileReqIds = new OneToManyMap();
-    private TurlGetterPutter getter_putter;
     private HashSet putters = new HashSet();
     
     public String[] protocols;
     private SRMProtocol callerSrmProtocol;
     private SRMProtocol remoteSrmProtocol;
     private boolean remoteSrmGet;
-    private QOSPlugin qosPlugin = null; 
     private TFileStorageType storageType;
     private TRetentionPolicy targetRetentionPolicy;
     private TAccessLatency targetAccessLatency;
     private TOverwriteMode overwriteMode;
     private String targetSpaceToken;
+
+    private transient OneToManyMap remoteSurlToFileReqIds = new OneToManyMap();
+    private transient TurlGetterPutter getter_putter;
+    private transient QOSPlugin qosPlugin = null;
     
     public CopyRequest( SRMUser user,
     Long requestCredentialId,
