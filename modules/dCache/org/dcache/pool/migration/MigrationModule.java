@@ -328,12 +328,14 @@ public class MigrationModule
                                   String defaultSourceMode,
                                   String defaultTargetMode,
                                   String defaultRefresh,
-                                  String defaultPins)
+                                  String defaultPins,
+                                  boolean defaultVerify)
         throws IllegalArgumentException, NumberFormatException
     {
         String exclude = args.getOpt("exclude");
         boolean permanent = (args.getOpt("permanent") != null);
         boolean eager = (args.getOpt("eager") != null);
+        boolean verify = (args.getOpt("verify") != null) || defaultVerify;
         String sourceMode = args.getOpt("smode");
         String targetMode = args.getOpt("tmode");
         String select = args.getOpt("select");
@@ -397,7 +399,8 @@ public class MigrationModule
                               Integer.valueOf(refresh) * 1000,
                               permanent,
                               eager,
-                              mustMovePins);
+                              mustMovePins,
+                              verify);
 
         if (definition.targetMode.state == CacheEntryMode.State.DELETE
             || definition.targetMode.state == CacheEntryMode.State.REMOVABLE) {
@@ -459,6 +462,11 @@ public class MigrationModule
         "that is, the lifetime of sticky bits is extended, but never reduced,\n" +
         "and cached can be changed to precious, but never the opposite.\n\n" +
 
+        "Transfers are subject to the checksum computiton policy of the\n" +
+        "target pool. Thus checksums are verified if and only if the target\n" +
+        "pool is configured to do so. For existing replicas, the checksum is\n" +
+        "only verified if the verify option was specified on the migration job.\n\n" +
+
         "Jobs can be marked permanent. Permanent jobs never terminate and\n" +
         "are stored in the pool setup file with the 'save' command. Permanent\n" +
         "jobs watch the repository for state changes and copy any replicas\n" +
@@ -469,7 +477,22 @@ public class MigrationModule
 
         "Syntax:\n" +
         "  copy [options] <target> ...\n\n" +
-        "Options:\n" +
+        "Filter options:\n" +
+        "  -accessed=<n>|[<n>]..[<m>]\n"+
+        "          Only copy replicas accessed n seconds ago, or accessed\n" +
+        "          within the given, possibly open-ended, interval. E.g.\n" +
+        "          -accessed=0..60 matches files accessed within the last\n" +
+        "          minute; -accesed=60.. matches files accessed one minute\n" +
+        "          or more ago.\n" +
+        "  -al=ONLINE|NEARLINE\n" +
+        "          Only copy replicas with the given access latency.\n" +
+        "  -pnfsid=<pnfsid>[,<pnfsid>] ...\n" +
+        "          Only copy replicas with one of the given PNFS IDs.\n" +
+        "  -rp=CUSTODIAL|REPLICA|OUTPUT\n" +
+        "          Only copy replicas with the given retention policy.\n" +
+        "  -size=<n>|[<n>]..[<m>]\n"+
+        "          Only copy replicas with size n, or a size within the\n" +
+        "          given, possibly open-ended, interval.\n" +
         "  -state=cached|precious\n" +
         "          Only copy replicas in the given state.\n"+
         "  -sticky[=<owner>[,<owner>...]]\n" +
@@ -477,22 +500,17 @@ public class MigrationModule
         "          the list of owners. A sticky flag for each owner must be\n" +
         "          present for the replica to be selected.\n" +
         "  -storage=<class>\n" +
-        "          Only copy replicas with the given storage class.\n" +
-        "  -pnfsid=<pnfsid>[,<pnfsid>] ...\n" +
-        "          Only copy replicas with one of the given PNFS IDs.\n" +
-        "  -accessed=<n>|[<n>]..[<m>]\n"+
-        "          Only copy replicas accessed n seconds ago, or accessed\n" +
-        "          within the given, possibly open-ended, interval. E.g.\n" +
-        "          -accessed=0..60 matches files accessed within the last\n" +
-        "          minute; -accesed=60.. matches files accessed one minute\n" +
-        "          or more ago.\n" +
-        "  -size=<n>|[<n>]..[<m>]\n"+
-        "          Only copy replicas with size n, or a size within the\n" +
-        "          given, possibly open-ended, interval.\n" +
-        "  -al=ONLINE|NEARLINE\n" +
-        "          Only copy replicas with the given access latency.\n" +
-        "  -rp=CUSTODIAL|REPLICA|OUTPUT\n" +
-        "          Only copy replicas with the given retention policy.\n" +
+        "          Only copy replicas with the given storage class.\n\n" +
+        "Transfer options:\n" +
+        "  -concurrency=<concurrency>\n" +
+        "          Specifies how many concurrent transfers to perform.\n" +
+        "          Defaults to 1.\n" +
+        "  -pins=move|keep\n" +
+        "          Controls how sticky flags owned by the pin manager are handled:\n" +
+        "          move:\n" +
+        "              Ask pin manager to move pins to the target pool.\n" +
+        "          keep:\n" +
+        "              Keep pin on the source pool.\n" +
         "  -smode=same|cached|precious|removable|delete[+<owner>[(<lifetime>)] ...]\n" +
         "          Update the local replica to the given mode after transfer:\n" +
         "          same:\n" +
@@ -521,12 +539,18 @@ public class MigrationModule
         "              marks it precious.\n" +
         "          An optional list of sticky flags can be specified. The\n" +
         "          lifetime is in seconds.\n" +
-        "  -pins=move|keep\n" +
-        "          Controls how sticky flags owned by the pin manager is handled:\n" +
-        "          move:\n" +
-        "              Ask pin manager to move pins to the target pool.\n" +
-        "          keep:\n" +
-        "              Keep pin on the source pool.\n" +
+        "  -verify\n" +
+        "          Force checksum computation when an existing target is updated.\n\n" +
+        "Target options:\n" +
+        "  -eager\n" +
+        "          Copy replicas rather than retrying when pools with\n" +
+        "          existing replicas fail to respond.\n" +
+        "  -exclude=<pattern>[,<pattern>...]\n" +
+        "          Exclude target pools matching any of the patterns. Single\n" +
+        "          character (?) and multi character (*) wildcards may be used.\n" +
+        "  -refresh=<time>\n" +
+        "          Specifies the period in seconds of when target pool information\n" +
+        "          is queried from the pool manager. The default is 300 seconds.\n" +
         "  -select=proportional|best|random\n" +
         "          Determines how a pool is selected from the set of target pools:\n" +
         "          proportional:\n" +
@@ -539,19 +563,8 @@ public class MigrationModule
         "          The default is 'proportional'.\n" +
         "  -target=pool|pgroup|link\n" +
         "          Determines the interpretation of the target names. The\n" +
-        "          default is 'pool'.\n" +
-        "  -refresh=<time>\n" +
-        "          Specifies the period in seconds of when target pool information\n" +
-        "          is queried from the pool manager. The default is 300 seconds.\n" +
-        "  -exclude=<pattern>[,<pattern>...]\n" +
-        "          Exclude target pools matching any of the patterns. Single\n" +
-        "          character (?) and multi character (*) wildcards may be used.\n" +
-        "  -concurrency=<concurrency>\n" +
-        "          Specifies how many concurrent transfers to perform.\n" +
-        "          Defaults to 1.\n" +
-        "  -eager\n" +
-        "          Copy replicas rather than retrying when pools with\n" +
-        "          existing replicas fail to respond.\n" +
+        "          default is 'pool'.\n\n" +
+        "Lifetime options:\n" +
         "  -permanent\n" +
         "          Mark job as permanent.\n";
 //         "  -dry-run\n" +
@@ -560,7 +573,7 @@ public class MigrationModule
     public synchronized String ac_migration_copy_$_1_99(Args args)
         throws IllegalArgumentException, NumberFormatException
     {
-        int id = copy(args, "proportional", "pool", "same", "same", "300", "keep");
+        int id = copy(args, "proportional", "pool", "same", "same", "300", "keep", false);
         String command = "migration copy " + args.toString();
         _commands.put(_jobs.get(id), command);
         return getJobSummary(id);
@@ -570,11 +583,11 @@ public class MigrationModule
     public final static String fh_migration_move =
         "Moves replicas to other pools. The source replica is deleted.\n" +
         "Accepts the same options as 'migration copy'. Corresponds to\n\n" +
-        "     migration copy -smode=delete -tmode=same -pins=move\n";
+        "     migration copy -smode=delete -tmode=same -pins=move -verify\n";
     public String ac_migration_move_$_1_99(Args args)
         throws IllegalArgumentException, NumberFormatException
     {
-        int id = copy(args, "proportional", "pool", "delete", "same", "300", "move");
+        int id = copy(args, "proportional", "pool", "delete", "same", "300", "move", true);
         String command = "migration move " + args.toString();
         _commands.put(_jobs.get(id), command);
         return getJobSummary(id);
@@ -589,7 +602,7 @@ public class MigrationModule
     public String ac_migration_cache_$_1_99(Args args)
         throws IllegalArgumentException, NumberFormatException
     {
-        int id = copy(args, "proportional", "pool", "same", "cached", "300", "keep");
+        int id = copy(args, "proportional", "pool", "same", "cached", "300", "keep", false);
         String command = "migration cache " + args.toString();
         _commands.put(_jobs.get(id), command);
         return getJobSummary(id);

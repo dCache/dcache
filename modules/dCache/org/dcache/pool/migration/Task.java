@@ -287,6 +287,8 @@ public class Task
      */
     private synchronized void initiateCopy(CellPath target)
     {
+        boolean computeChecksumOnUpdate =
+            _job.getDefinition().computeChecksumOnUpdate;
         PnfsId pnfsId = _entry.getPnfsId();
         StorageInfo storageInfo = _entry.getStorageInfo();
         _target = target;
@@ -297,7 +299,7 @@ public class Task
                                                        storageInfo,
                                                        getTargetState(),
                                                        getTargetStickyRecords(),
-                                                       false),
+                                                       computeChecksumOnUpdate),
                    PoolMigrationCopyReplicaMessage.class,
                    new Callback("copy_"));
     }
