@@ -2499,43 +2499,91 @@ public class Storage
     }
 
     public void advisoryDelete(final SRMUser user, final String path,
-        AdvisoryDeleteCallbacks callbacks) {
+                               final AdvisoryDeleteCallbacks callback)
+    {
         _log.debug("Storage.advisoryDelete");
 
-        if(callbacks == null) {
-            callbacks =
-                    new AdvisoryDeleteCallbacks() {
-                public void AdvisoryDeleteFailed(String reason) {
-                    _log.error(" advisoryDelete("+user+","+path+") GetStorageInfoFailed: "+reason);
-                }
-
-
-                public void AdvisoryDeleteSuccesseded(){
-                    _log.debug(" advisoryDelete("+user+","+path+") AdvisoryDeleteSuccesseded");
-                }
-
-                public void Exception(Exception e){
-                    _log.error(" advisoryDelete("+user+","+path+") Exception :"+e);
-                }
-
-                public void Timeout(){
-                    _log.error(" advisoryDelete("+user+","+path+") timeout");
-                }
-
-                public void Error(String error){
-                    _log.error(" advisoryDelete("+user+","+path+") Error:" + error);
-                }
-            };
+        /* If not enabled, we are allowed to silently ignore the call.
+         */
+        if (!config.isAdvisoryDelete()) {
+            if (callback != null) {
+                callback.AdvisoryDeleteSuccesseded();
+            }
+            return;
         }
 
-        String actualPnfsPath= srm_root+"/"+path;
-        AdvisoryDeleteCompanion.advisoryDelete(
-                (AuthorizationRecord)user,
-                actualPnfsPath,
-                callbacks,
-                this,
-                config.isAdvisoryDelete());
+        RemoveFileCallbacks removeFileCallback;
+        if (callback != null) {
+            removeFileCallback = new RemoveFileCallbacks() {
+                    public void RemoveFileSucceeded()
+                    {
+                        callback.AdvisoryDeleteSuccesseded();
+                    }
 
+                    public void RemoveFileFailed(String reason)
+                    {
+                        callback.AdvisoryDeleteFailed(reason);
+                    }
+
+                    public void FileNotFound(String error)
+                    {
+                        callback.AdvisoryDeleteFailed(error);
+                    }
+
+                    public void Exception(Exception e)
+                    {
+                        callback.Exception(e);
+                    }
+
+                    public void Timeout()
+                    {
+                        callback.Timeout();
+                    }
+
+                    public void PermissionDenied()
+                    {
+                        callback.AdvisoryDeleteFailed("Permission denied");
+                    }
+                };
+        } else {
+            removeFileCallback = new RemoveFileCallbacks() {
+                    public void RemoveFileSucceeded()
+                    {
+                        _log.debug("advisoryDelete("+user+","+path+") succeeded");
+                    }
+
+                    public void RemoveFileFailed(String reason)
+                    {
+                        _log.error("advisoryDelete("+user+","+path+") failed: "+reason);
+                    }
+
+                    public void FileNotFound(String error)
+                    {
+                        _log.info("advisoryDelete("+user+","+path+") failed: "+error);
+                    }
+
+                    public void Exception(Exception e)
+                    {
+                        _log.error("advisoryDelete("+user+","+path+") Exception :"+e);
+                    }
+
+                    public void Timeout()
+                    {
+                        _log.error("advisoryDelete("+user+","+path+") timeout");
+                    }
+
+                    public void PermissionDenied()
+                    {
+                        _log.warn("advisoryDelete("+user+","+path+"): Permission denied");
+                    }
+                };
+        }
+
+        RemoveFileCompanion.removeFile((AuthorizationRecord) user,
+                                       getFullPath(path),
+                                       removeFileCallback,
+                                       _pnfsStub,
+                                       this);
     }
 
     public void removeFile(final SRMUser user,
