@@ -710,6 +710,8 @@ public class ChimeraNameSpaceProvider
 
         StorageInfo dir = null;
         FsInode inode = new FsInode(_fs, pnfsId.toIdString());
+        Stat stat = null;
+
         try {
 
             for (FileAttribute attribute : attr.getDefinedAttributes()) {
@@ -722,7 +724,20 @@ public class ChimeraNameSpaceProvider
                         }
                         break;
                     case SIZE:
-                        _fs.setFileSize(inode, attr.getSize());
+                        if (stat == null) stat = inode.statCache();
+                        stat.setSize(attr.getSize());
+                        break;
+                    case MODE:
+                        if (stat == null) stat = inode.statCache();
+                        stat.setMode(attr.getMode());
+                        break;
+                    case OWNER:
+                        if (stat == null) stat = inode.statCache();
+                        stat.setUid(attr.getOwner());
+                        break;
+                    case OWNER_GROUP:
+                        if (stat == null) stat = inode.statCache();
+                        stat.setGid(attr.getGroup());
                         break;
                     case CHECKSUM:
                         for(Checksum sum: attr.getChecksums() ) {
@@ -775,8 +790,12 @@ public class ChimeraNameSpaceProvider
                     default:
                         throw new UnsupportedOperationException("Attribute " + attribute + " not supported yet.");
                 }
-
             }
+
+            if (stat != null) {
+                inode.setStat(stat);
+            }
+
         } catch (FileNotFoundHimeraFsException e) {
             throw new FileNotFoundCacheException(e.getMessage());
         } catch (ChimeraFsException e) {

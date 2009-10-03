@@ -447,8 +447,11 @@ public class BasicNameSpaceProvider
         if (metaData.isUserPermissionsSet()) {
 
             File mountPoint = _pathManager.getMountPointByPnfsId(pnfsId);
+            int uid = metaData.getUid();
+            int gid = metaData.getGid();
+            int mode = toUnixMode(metaData);
             for (int level = 0; level < 2; level++) {
-                this.setFileMetaData(mountPoint, pnfsId, level, metaData);
+                this.setAccessRights(mountPoint, pnfsId, level, uid, gid, mode);
             }
 
         }
@@ -1020,7 +1023,7 @@ public class BasicNameSpaceProvider
 
     }
 
-    private void setFileMetaData( File mp , PnfsId pnfsId , int level,  FileMetaData newMetaData)
+    private void setAccessRights(File mp, PnfsId pnfsId, int level, int uid, int gid, int mode)
         throws CacheException {
 
         String hexTime = Long.toHexString( System.currentTimeMillis() / 1000L ) ;
@@ -1029,9 +1032,9 @@ public class BasicNameSpaceProvider
         StringBuilder sb = new StringBuilder(128);
         sb.append(".(pset)(").append(pnfsId.getId()).append(")(attr)(").
             append(level).append(")(").
-            append(Integer.toOctalString(0100000|toUnixMode(newMetaData))).append(":").
-            append(newMetaData.getUid()).append(":").
-            append(newMetaData.getGid()).append(":").
+            append(Integer.toOctalString(0100000|mode)).append(":").
+            append(uid).append(":").
+            append(gid).append(":").
             append(hexTime).append(":").
             append(hexTime).append(":").
             append(hexTime).append(")") ;
@@ -1075,7 +1078,7 @@ public class BasicNameSpaceProvider
              */
 
             FileMetaData actualMetaData = getFileMetaData(mp, pnfsId);
-            if (!actualMetaData.equalsPermissions(newMetaData)) {
+            if (actualMetaData.getMode() != mode) {
                 _logNameSpace.warn("IO exception [" + ioe.getMessage() + "] in setFileMetaData [" + pnfsId + "]. This is likely due to a known race condition in PNFS.");
             }
         }
@@ -1345,9 +1348,10 @@ public class BasicNameSpaceProvider
         File mountpoint = _pathManager.getMountPointByPnfsId(pnfsId);
         PnfsFile dir = null;
         CacheInfo cacheInfo = null;
+        Set<FileAttribute> definedAttributes = attr.getDefinedAttributes();
 
         try {
-            for (FileAttribute attribute : attr.getDefinedAttributes()) {
+            for (FileAttribute attribute: definedAttributes) {
                 switch (attribute) {
                 case ACCESS_LATENCY:
                     cacheInfo = getCacheInfo(pf, cacheInfo);
@@ -1431,6 +1435,12 @@ public class BasicNameSpaceProvider
                         cacheInfo.getFlags().put(flag.getKey(), flag.getValue());
                     }
                     break;
+                case MODE:
+                case OWNER:
+                case OWNER_GROUP:
+                    /* These are updated below.
+                     */
+                    break;
                 default:
                     throw new UnsupportedOperationException("Attribute " + attribute + " not supported yet.");
                 }
@@ -1438,6 +1448,41 @@ public class BasicNameSpaceProvider
 
             if( cacheInfo != null ) {
                 cacheInfo.writeCacheInfo(pf);
+            }
+
+            /* MODE, GID and UID are updated together.
+             */
+            if (definedAttributes.contains(FileAttribute.MODE) ||
+                definedAttributes.contains(FileAttribute.OWNER) ||
+                definedAttributes.contains(FileAttribute.OWNER_GROUP)) {
+
+                int mode, uid, gid;
+                FileMetaData meta = null;
+
+                if (definedAttributes.contains(FileAttribute.MODE)) {
+                    mode = attr.getMode();
+                } else {
+                    meta = getFileMetaData(subject, pnfsId, meta);
+                    mode = meta.getMode();
+                }
+
+                if (definedAttributes.contains(FileAttribute.OWNER)) {
+                    uid = attr.getOwner();
+                } else {
+                    meta = getFileMetaData(subject, pnfsId, meta);
+                    uid = meta.getUid();
+                }
+
+                if (definedAttributes.contains(FileAttribute.OWNER_GROUP)) {
+                    gid = attr.getGroup();
+                } else {
+                    meta = getFileMetaData(subject, pnfsId, meta);
+                    gid = meta.getGid();
+                }
+
+                for (int level = 0; level < 2; level++) {
+                    setAccessRights(mountpoint, pnfsId, level, uid, gid, mode);
+                }
             }
         }catch(IOException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
