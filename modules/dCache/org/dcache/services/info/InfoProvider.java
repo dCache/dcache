@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.concurrent.ExecutionException;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
@@ -15,6 +16,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 
 import org.apache.log4j.Logger;
+import org.dcache.cells.AbstractCell;
 import org.dcache.services.info.base.BadStatePathException;
 import org.dcache.services.info.base.State;
 import org.dcache.services.info.base.StateMaintainer;
@@ -34,7 +36,8 @@ import org.dcache.services.info.serialisation.XmlSerialiser;
 
 import org.dcache.vehicles.InfoGetSerialisedDataMessage;
 
-public class InfoProvider extends CellAdapter {
+public class InfoProvider extends AbstractCell {
+
 
 	private static Logger _log = Logger.getLogger(InfoProvider.class);
 
@@ -104,39 +107,45 @@ public class InfoProvider extends CellAdapter {
 
 
 
-	public InfoProvider(String name, String argstr) {
+    /**
+     * Create a new cell with specified name and taking the supplied arguments
+     * @param cellName
+     * @param args
+     * @throws InterruptedException
+     * @throws ExecutionException
+     */
+    public InfoProvider( String cellName, String args) throws InterruptedException, ExecutionException {
+        super( cellName, args);
 
-		super(name, argstr, false);
+        if( _instance == null)
+            _instance = this;
+        else
+            _log.warn( "Duplicate InfoProvider detected.");
 
-        setPrintoutLevel( CellNucleus.PRINT_CELL |
-                          CellNucleus.PRINT_ERROR_CELL ) ;
+        /*
+         * Build our list of possible serialisers.
+         */
+        _availableSerialisers = new HashMap<String,StateSerialiser>();
+        addSerialiser( new XmlSerialiser());
+        addSerialiser( new SimpleTextSerialiser());
+        addSerialiser( new PrettyPrintTextSerialiser());
 
-		_log.info( "InfoProvider starting...");
+        useInterpreter( true );
+        buildMessageHandlerChain();
+        startDgaScheduler();
+        addDefaultConduits();
+        addDefaultWatchers();
+        startConduits();
 
-		if( _instance == null)
-			_instance = this;
-		else {
-			_log.warn( "Duplicate InfoProvider detected.");
-		}
+        doInit();
+    }
 
-		/**
-		 * Build our list of possible serialisers.
-		 */
-		_availableSerialisers = new HashMap<String,StateSerialiser>();
-		addSerialiser( new XmlSerialiser());
-		addSerialiser( new SimpleTextSerialiser());
-		addSerialiser( new PrettyPrintTextSerialiser());
+    @Override
+    public void init() {
+        _log.info( "InfoProvider starting...");
+        export();
+    }
 
-		useInterpreter( true );
-	    buildMessageHandlerChain();
-	    startDgaScheduler();
-		addDefaultConduits();
-		addDefaultWatchers();
-	    startConduits();
-
-		start();  // Go, go gadget InfoProvider
-		export();
-	}
 
 
 	/**
