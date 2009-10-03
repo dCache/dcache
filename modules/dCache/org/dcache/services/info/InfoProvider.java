@@ -143,7 +143,6 @@ public class InfoProvider extends AbstractCell {
     @Override
     public void init() {
         _log.info( "InfoProvider starting...");
-        export();
     }
 
 
