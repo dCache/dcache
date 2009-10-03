@@ -36,4 +36,4 @@ create dmg.cells.network.TopoCell topo "none -update=100"
 ##  ---- Info Cell: broadcasting to "civilisation"
 ##
 
-create  org.dcache.services.info.InfoProvider info
+create  org.dcache.services.info.InfoProvider info "-export"
