@@ -201,6 +201,7 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.scheduler;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.beans.PropertyChangeSupport;
 import java.beans.PropertyChangeListener;
 import java.util.Timer;
@@ -216,6 +217,7 @@ import java.sql.Connection;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.sql.SQLException;
 import org.dcache.srm.SRMAbortedException;
 import org.dcache.srm.SRMReleasedException;
 import org.dcache.srm.SRMException;
@@ -266,7 +268,8 @@ public abstract class Job  {
     protected int maxNumberOfRetries;
     private long lastStateTransitionTime = System.currentTimeMillis();
 
-    private static final Set jobStorages = new HashSet();
+    private static final CopyOnWriteArrayList<JobStorage> jobStorages =
+        new CopyOnWriteArrayList<JobStorage>();
     private final List jobHistory = new ArrayList();
     private transient JobIdGenerator generator;
 
@@ -343,22 +346,20 @@ public abstract class Job  {
      * NEED TO CALL THIS METHOD FROM THE CONCRETE SUBCLASS
      * RESTORE CONSTRUCTOR
      */
-    private synchronized final void expireRestoredJobOrCreateExperationTimer()  {
-
-        if(state != State.CANCELED &&
-        state != State.DONE &&
-        state != State.FAILED) {
+    private synchronized final void expireRestoredJobOrCreateExperationTimer()
+    {
+        if (state != State.CANCELED &&
+            state != State.DONE &&
+            state != State.FAILED) {
             long expiration_time = creationTime + lifetime;
             long new_lifetime = expiration_time - System.currentTimeMillis();
 
-            if (new_lifetime <= 0) {
-                if (!LifetimeExpiration.contains(id)) {
-                    say("restore constructor, calling expireJob on Job with Id="+id);
-                    expireJob(this);
-                }
-            } else {
-                LifetimeExpiration.schedule(id, new_lifetime);
-            }
+            /* We schedule a timer even if the job has already
+             * expired.  This is to avoid a restore loop in which
+             * expiring a job during restore causes the job to be read
+             * recursively.
+             */
+            LifetimeExpiration.schedule(id, Math.min(0, new_lifetime));
         }
     }
 
@@ -449,34 +450,16 @@ public abstract class Job  {
         job = sharedMemoryCache.getJob(jobId);
 
         boolean restoredFromDb=false;
-        if(job == null) {
-            JobStorage jobStoragesArray[];
-            synchronized(jobStorages) {
-                jobStoragesArray =
-                (JobStorage[])jobStorages.toArray(new JobStorage[0]);
-            }
-
-
-            for(int i = 0; i<jobStoragesArray.length; ++i) {
-
-                if(_con == null)
-                {
-                    try{
-                        job = (Job) jobStoragesArray[i].getJob(jobId);
+        if (job == null) {
+            for (JobStorage storage: jobStorages) {
+                try {
+                    if(_con == null) {
+                        job = storage.getJob(jobId);
+                    } else {
+                        job = storage.getJob(jobId, _con);
                     }
-                    catch(java.sql.SQLException sqle){
-                        sqle.printStackTrace();
-                    }
-                }
-                else
-                {
-                    try {
-                        job = (Job) jobStoragesArray[i].getJob(jobId,_con);
-                    }
-                    catch(java.sql.SQLException sqle){
-                        sqle.printStackTrace();
-                    }
-
+                } catch (SQLException e){
+                    _log.error("Failed to read job", e);
                 }
                 if(job != null) {
                     restoredFromDb = true;
