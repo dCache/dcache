@@ -226,6 +226,8 @@ dcacheInstallGetNameSpaceType()
     logmessage INFO "NAMESPACE=${NODE_CONFIG_NAMESPACE}"
     nameServerFormat="pnfs"
     logmessage WARNING "Defaulting node_config to pnfs. This behaviour will change in future dCache releases."
+  else
+    nameServerFormat=$NODE_CONFIG_NAMESPACE
   fi
   RET=$nameServerFormat
 }
@@ -548,7 +550,7 @@ dcacheInstallChimeraMountPoints()
   if contains chimeraDomain $DOMAINS; then
       /etc/init.d/portmap restart    
       dcacheInstallChimeraMountPointServer
-  elif isNameSpaceMountNeedeed $DOMAINS; then
+  elif isNameSpaceMountNeeded $DOMAINS; then
       dcacheInstallChimeraMountPointServer
   fi  
   
