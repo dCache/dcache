@@ -27,6 +27,7 @@ usage()
     echo "   -d=<path to dcache installation>   default is /opt/d-cache"
     echo
     echo "Valid commands are:"
+    echo "   condrestart [<domain or service> ...]"
     echo "   dump heap [--force] <domain> <file>"
     echo "   dump threads [<domain or service> ...]"
     echo "   pool create <size> <directory>"
@@ -300,7 +301,9 @@ case "$1" in
 
         reverse $domains; domains_backward="$RET"
         for domain in $domains_backward; do
-            runDomain $domain stop
+            if getPidOfDomain $domain; then
+                runDomain $domain stop
+            fi
         done
 
         rm -f $DCACHE_LOCK
@@ -312,7 +315,9 @@ case "$1" in
 
         reverse $domains; domains_backward="$RET"
         for domain in $domains_backward; do
-            runDomain $domain stop
+            if getPidOfDomain $domain; then
+                runDomain $domain stop
+            fi
         done
 
         if isNameSpaceMountNeeded $domains; then
@@ -320,6 +325,24 @@ case "$1" in
         fi
 
         for domain in $domains; do
+            runDomain $domain start
+        done
+        ;;
+
+    condrestart)
+        shift
+        domains=$(printExpandedServiceAndDomainList $*)
+
+        reverse $domains; domains_backward="$RET"
+        for domain in $domains_backward; do
+            if getPidOfDomain $domain; then
+		running_domains="$running_domains $domain"
+                runDomain $domain stop
+            fi
+        done
+
+        reverse $running_domains; domains_to_start="$RET"
+        for domain in $domains_to_start; do
             runDomain $domain start
         done
         ;;
