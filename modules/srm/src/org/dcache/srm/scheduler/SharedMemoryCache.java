@@ -28,7 +28,7 @@ public class SharedMemoryCache {
     /**
      * This set is used to keep the Jobs that are in active
      * (Non final) state in memory
-     * If the SRM application runs in the Terracotta clustered inviroment,
+     * If the SRM application runs in the Terracotta clustered environment,
      * the Set is used as a root, so all jobs that are added to this
      * cache are shared between all instances of the SRM servers.
      *
@@ -37,7 +37,7 @@ public class SharedMemoryCache {
             new ReentrantReadWriteLock();
     private  final ReadLock sharedMemoryReadLock = sharedMemoryReadWriteLock.readLock();
     private  final WriteLock sharedMemoryWriteLock = sharedMemoryReadWriteLock.writeLock();
-    private  Map<Long,Job> sharedMemoryChache =
+    private  Map<Long,Job> sharedMemoryCache =
             new HashMap<Long,Job>();
 
    public  void updateSharedMemoryChache(Job job) {
@@ -47,16 +47,16 @@ public class SharedMemoryCache {
         State state = job.getState();
         sharedMemoryWriteLock.lock();
         try {
-            boolean cached =sharedMemoryChache.containsKey(job.getId());
+            boolean cached =sharedMemoryCache.containsKey(job.getId());
             _log.debug("updateSharedMemoryChache for job ="+job+
                     " state="+state+ " cached ="+cached);
             if(cached  && state.isFinalState()) {
                 _log.debug("removing job #"+job.getId() +" from memory cache");
-                sharedMemoryChache.remove(job.getId());
+                sharedMemoryCache.remove(job.getId());
             }
             if(!cached && !state.isFinalState()) {
                 _log.debug("putting job #"+job.getId() +" to memory cache");
-                sharedMemoryChache.put(job.getId(),job);
+                sharedMemoryCache.put(job.getId(),job);
             }
         } finally {
             sharedMemoryWriteLock.unlock();
@@ -69,7 +69,7 @@ public class SharedMemoryCache {
         _log.debug("getJob ( "+jobId + " ) ");
        sharedMemoryReadLock.lock();
        try {
-            return sharedMemoryChache.get(jobId);
+            return sharedMemoryCache.get(jobId);
         } finally {
             sharedMemoryReadLock.unlock();
         }
@@ -80,14 +80,19 @@ public class SharedMemoryCache {
     * removes all values from the cache
     */
     public void clearCache() {
-        sharedMemoryChache.clear();
+        sharedMemoryWriteLock.lock();
+        try {
+            sharedMemoryCache.clear();
+        }finally{
+            sharedMemoryWriteLock.unlock();
+        }
     }
 
-    public Set<Job> getJobs(Class jobType) {
+    public Set<Job> getJobs(Class<? extends Job> jobType) {
        sharedMemoryReadLock.lock();
        try {
            Set<Job> results = new HashSet<Job>();
-           for(Job job: sharedMemoryChache.values()) {
+           for(Job job: sharedMemoryCache.values()) {
                if(job.getClass().equals(jobType)) {
                    results.add(job);
                }
