@@ -201,6 +201,7 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.scheduler;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.beans.PropertyChangeSupport;
 import java.beans.PropertyChangeListener;
 import java.util.Timer;
@@ -217,6 +218,7 @@ import org.dcache.srm.Logger;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.sql.SQLException;
 import org.dcache.srm.SRMAbortedException;
 import org.dcache.srm.SRMReleasedException;
 import org.dcache.srm.SRMException;
@@ -264,7 +266,8 @@ public abstract class Job  {
     private Logger logger;
     private long lastStateTransitionTime = System.currentTimeMillis();
     
-    private static final Set jobStorages = new HashSet();
+    private static final CopyOnWriteArrayList<JobStorage> jobStorages =
+        new CopyOnWriteArrayList<JobStorage>();
     private List jobHistory = new ArrayList();
     private JobIdGenerator generator;
     
@@ -339,24 +342,22 @@ public abstract class Job  {
      * NEED TO CALL THIS METHOD FROM THE CONCRETE SUBCLASS
      * RESTORE CONSTRUCTOR
      */
-    private synchronized final void expireRestoredJobOrCreateExperationTimer()  {
-        
+    private synchronized final void expireRestoredJobOrCreateExperationTimer()
+    {
         if(state != State.CANCELED &&
         state != State.DONE &&
         state != State.FAILED) {
             long expiration_time = creationTime + lifetime;
             long new_lifetime = expiration_time - System.currentTimeMillis();
 
-            if (new_lifetime <= 0) {
-                if (!LifetimeExpiration.contains(id)) {
-                    say("restore constructor, calling expireJob on Job with Id="+id);
-                    expireJob(this);
+            /* We schedule a timer even if the job has already
+             * expired.  This is to avoid a restore loop in which
+             * expiring a job during restore causes the job to be read
+             * recursively.
+             */
+            LifetimeExpiration.schedule(id, Math.min(0, new_lifetime));
                 }
-            } else {
-                LifetimeExpiration.schedule(id, new_lifetime);
             }
-        }        
-    }
     
     /** Creates a new instance of Job */
     
@@ -448,35 +449,19 @@ public abstract class Job  {
             }
         }
         
-        JobStorage jobStoragesArray[];
-        synchronized(jobStorages) {
-            jobStoragesArray =
-            (JobStorage[])jobStorages.toArray(new JobStorage[0]);
-        }
-        
         Job job = null;
         
-        for(int i = 0; i<jobStoragesArray.length; ++i) {
-            
-            if(_con == null)
-            {
+        for (JobStorage storage: jobStorages) {
                 try{
-                    job = (Job) jobStoragesArray[i].getJob(jobId);
+                if (_con == null) {
+                    job = storage.getJob(jobId);
+                } else {
+                    job = storage.getJob(jobId,_con);
                 }
-                catch(java.sql.SQLException sqle){
-                    sqle.printStackTrace();
-                }
-            }
-            else
-            {
-                try {
-                    job = (Job) jobStoragesArray[i].getJob(jobId,_con);
-                }
-                catch(java.sql.SQLException sqle){
-                    sqle.printStackTrace();
+            } catch(SQLException e) {
+                _log.error("Failed to read job", e);
                 }
                 
-            }
             if(job != null) {
                 break;
             }
