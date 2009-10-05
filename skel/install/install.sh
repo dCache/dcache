@@ -685,6 +685,8 @@ dcacheInstallGetNameSpaceType()
     logmessage INFO "NAMESPACE=${nameServerFormat}"
     nameServerFormat="pnfs"
     logmessage WARNING "Defaulting node_config to pnfs. This behaviour will change in future dCache releases."
+  else
+    nameServerFormat=$NODE_CONFIG_NAMESPACE
   fi
   RET=$nameServerFormat
 }
