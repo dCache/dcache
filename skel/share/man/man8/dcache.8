@@ -36,8 +36,8 @@ obtain a list of configured domains and services.
 
 .TP
 .B stop [SERVICE|DOMAIN]...
-Stops configured services. If one or more services or domains
-are specified, only those services or domains are stopped. See the
+Stops running services. If one or more services or domains are
+specified, only those services or domains are stopped. See the
 description of the \fBstatus\fR and \fBservices\fR commands on how to
 obtain a list of configured domains and services.
 
@@ -45,6 +45,13 @@ obtain a list of configured domains and services.
 .B restart [SERVICE|DOMAIN]...
 Restarts configured services. If one or more services or domains
 are specified, only those services or domains are restarted. See the
+description of the \fBstatus\fR and \fBservices\fR commands on how to
+obtain a list of configured domains and services.
+
+.TP
+.B condrestart [SERVICE|DOMAIN]...
+Restarts running services.  If one or more services or domains are
+specified, only those services or domains are restarted. See the
 description of the \fBstatus\fR and \fBservices\fR commands on how to
 obtain a list of configured domains and services.
 
