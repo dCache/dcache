@@ -136,28 +136,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -170,10 +170,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -183,10 +183,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -201,6 +201,7 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.scheduler;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.beans.PropertyChangeSupport;
 import java.beans.PropertyChangeListener;
 import java.util.Timer;
@@ -217,6 +218,7 @@ import org.dcache.srm.Logger;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.sql.SQLException;
 import org.dcache.srm.SRMAbortedException;
 import org.dcache.srm.SRMReleasedException;
 import org.dcache.srm.SRMException;
@@ -226,50 +228,51 @@ import org.dcache.srm.util.JDC;
  * @author  timur
  */
 public abstract class Job  {
-    
-    private static final org.apache.log4j.Logger _log = 
+
+    private static final org.apache.log4j.Logger _log =
         org.apache.log4j.Logger.getLogger(Job.class);
 
     // this is the map from jobIds to jobs
     // job ids are referenced from jobs
     // jobs are wrapped into WeakReferences to prevent
     // creation hard references to jobIdsA
-    
+
     private static final Map weakJobStorage =
     Collections.synchronizedMap(new WeakHashMap());
-    
+
     private final Semaphore lock = new Semaphore(1);
-    
+
     //this is used to build the queue of jobs.
     protected Long nextJobId;
-    
+
     protected final Long id;
 
     private static PropertyChangeSupport jobsSupport = new PropertyChangeSupport(Job.class);
-    
+
     private volatile State state = State.PENDING;
     protected StringBuffer errorMessage=new StringBuffer();
-    
+
     protected int priority =0;
     protected String schedulerId;
     protected long schedulerTimeStamp;
-    
-    
+
+
     protected long creationTime = System.currentTimeMillis();
-    
+
     protected long lifetime;
-    
+
     protected int numberOfRetries = 0;
     protected int maxNumberOfRetries;
     private Logger logger;
     private long lastStateTransitionTime = System.currentTimeMillis();
-    
-    private static final Set jobStorages = new HashSet();
+
+    private static final CopyOnWriteArrayList<JobStorage> jobStorages =
+        new CopyOnWriteArrayList<JobStorage>();
     private List jobHistory = new ArrayList();
     private JobIdGenerator generator;
-    
+
     private TimerTask retryTimer;
-    
+
 
     public static final void registerJobStorage(JobStorage jobStorage) {
         synchronized(jobStorages) {
@@ -277,10 +280,10 @@ public abstract class Job  {
         }
         //jobsSupport.firePropertyChange(new JobStorageAddedEvent(jobStorage));
     }
-    
-    
+
+
     // this constructor is used for restoring the job from permanent storage
-    // should be called through the Job.getJob only, otherwise the expireRestoredJobOrCreateExperationTimer 
+    // should be called through the Job.getJob only, otherwise the expireRestoredJobOrCreateExperationTimer
     // will never be called
     // we can not call it from the constructor, since this may lead to recursive job restoration
     // leading to the exhaust of the pool of database connections
@@ -288,7 +291,7 @@ public abstract class Job  {
     long lifetime,int stateId,String errorMessage,
     String schedulerId,
     long schedulerTimestamp,
-    int numberOfRetries, 
+    int numberOfRetries,
     int maxNumberOfRetries,
     long lastStateTransitionTime,
     JobHistory[] jobHistoryArray,
@@ -334,38 +337,36 @@ public abstract class Job  {
             }
         }
     }
-    
+
     /**
      * NEED TO CALL THIS METHOD FROM THE CONCRETE SUBCLASS
      * RESTORE CONSTRUCTOR
      */
-    private synchronized final void expireRestoredJobOrCreateExperationTimer()  {
-        
+    private synchronized final void expireRestoredJobOrCreateExperationTimer()
+    {
         if(state != State.CANCELED &&
         state != State.DONE &&
         state != State.FAILED) {
             long expiration_time = creationTime + lifetime;
             long new_lifetime = expiration_time - System.currentTimeMillis();
 
-            if (new_lifetime <= 0) {
-                if (!LifetimeExpiration.contains(id)) {
-                    say("restore constructor, calling expireJob on Job with Id="+id);
-                    expireJob(this);
+            /* We schedule a timer even if the job has already
+             * expired.  This is to avoid a restore loop in which
+             * expiring a job during restore causes the job to be read
+             * recursively.
+             */
+            LifetimeExpiration.schedule(id, Math.min(0, new_lifetime));
                 }
-            } else {
-                LifetimeExpiration.schedule(id, new_lifetime);
             }
-        }        
-    }
-    
+
     /** Creates a new instance of Job */
-    
-    public Job(long lifetime, 
+
+    public Job(long lifetime,
               JobStorage jobStorage,
               int maxNumberOfRetries,
               JobIdGenerator generator,
               Logger logger) {
-        
+
         if(jobStorage == null) {
             throw new NullPointerException(" job storage is null");
         }
@@ -373,7 +374,7 @@ public abstract class Job  {
         this.jobStorage = jobStorage;
         this.generator = generator;
         id = generator.getNextId();
-        
+
         this.lifetime = lifetime;
         this.maxNumberOfRetries = maxNumberOfRetries;
 
@@ -381,24 +382,24 @@ public abstract class Job  {
         synchronized (weakJobStorage) {
             weakJobStorage.put(id, new WeakReference(this));
         }
-        jobHistory.add( new JobHistory(generator.nextLong(),state,"created",lastStateTransitionTime));        
+        jobHistory.add( new JobHistory(generator.nextLong(),state,"created",lastStateTransitionTime));
     }
-    
-    
-    
+
+
+
     private  JobStorage jobStorage;
-    
+
     private static final long serialVersionUID = 2690583464813886836L;
-    
+
     // this method is called whenever the state of the job changes, or when the job's
     // place in queue changes, so the
     private boolean savedInFinalState = false;
 
 	private JDC jdc;
-    
+
     public void saveJob()  {
-        //  by making sure that the saving of the job in final state happens 
-        // only once 
+        //  by making sure that the saving of the job in final state happens
+        // only once
         // we hope to eliminate the dubplicate key error
         if(savedInFinalState){
             return;
@@ -409,12 +410,12 @@ public abstract class Job  {
             savedInFinalState = isFinalState;
         } catch(Throwable t) {
             // if saving fails we do not want to fail the request
-            
+
             esay(t);
-            
+
         }
     }
-    
+
     public void say(String s) {
         if(logger != null) {
             logger.log(" Job id="+id+" :"+ s);
@@ -425,17 +426,17 @@ public abstract class Job  {
             logger.elog(" Job id="+id+" error :"+ s);
         }
     }
-    
+
     public void esay(Throwable t) {
         if(logger != null) {
             logger.elog(t);
         }
     }
-    
+
     public static final Job getJob(Long jobId) {
          return getJob ( jobId, null);
     }
-    
+
     public static final Job getJob(Long jobId, Connection _con) {
         synchronized(weakJobStorage) {
             Object o = weakJobStorage.get(jobId);
@@ -447,41 +448,25 @@ public abstract class Job  {
                 }
             }
         }
-        
-        JobStorage jobStoragesArray[];
-        synchronized(jobStorages) {
-            jobStoragesArray =
-            (JobStorage[])jobStorages.toArray(new JobStorage[0]);
-        }
-        
+
         Job job = null;
-        
-        for(int i = 0; i<jobStoragesArray.length; ++i) {
-            
-            if(_con == null)
-            {
-                try{
-                    job = (Job) jobStoragesArray[i].getJob(jobId);
+
+        for (JobStorage storage: jobStorages) {
+            try {
+                if (_con == null) {
+                    job = storage.getJob(jobId);
+                } else {
+                    job = storage.getJob(jobId,_con);
                 }
-                catch(java.sql.SQLException sqle){
-                    sqle.printStackTrace();
-                }
+            } catch(SQLException e) {
+                _log.error("Failed to read job", e);
             }
-            else
-            {
-                try {
-                    job = (Job) jobStoragesArray[i].getJob(jobId,_con);
-                }
-                catch(java.sql.SQLException sqle){
-                    sqle.printStackTrace();
-                }
-                
-            }
-            if(job != null) {
+
+            if (job != null) {
                 break;
             }
         }
-        //since we do not synchronize  on the jobStorages or the job class 
+        //since we do not synchronize  on the jobStorages or the job class
         // in this method, some other thread could have got to the same point, and created
         // an instance of the job for the same job id
         // but we always want the same instance to be available to ewveryone
@@ -499,12 +484,12 @@ public abstract class Job  {
                 }
             }
             if (job != null)
-            {                
+            {
                 //System.out.println("storring job in weakJobStorage, ");
                 weakJobStorage.put(job.id,new WeakReference(job));
             }
         }
-        
+
         if(job != null) {
             //System.out.println("calling job.expireRestoredJobOrCreateExperationTimer();" );
             job.expireRestoredJobOrCreateExperationTimer();
@@ -513,37 +498,37 @@ public abstract class Job  {
         }
         throw new IllegalArgumentException("jobId = "+jobId+" does not correspond to any known job");
     }
-    
-    
-    public Job(JobStorage jobStorage, 
+
+
+    public Job(JobStorage jobStorage,
         int maxNumberOfRetries,
          JobIdGenerator generator, Logger logger) {
         this(12*60*60*1000,jobStorage,maxNumberOfRetries,generator,logger);// 12 hours is the default lifetime
-        
+
     }
-    
-    
+
+
     public static void addClassStateChangeListener(PropertyChangeListener listener) {
         jobsSupport.addPropertyChangeListener(listener);
     }
-    
+
     /** Performs state transition checking the legality first.
      * @param state
      */
     public State getState() {
         return state;
     }
-    
+
     /**this is not thread safe, whoever calls this, should synchronize on the job
     */
     public void setState(State state,String description) throws
     IllegalStateTransition {
         setState(state,description,true);
-        
+
     }
     //if save is false
     // we do not save state in database
-    // the caller of the save state 
+    // the caller of the save state
     // needs to call save then
     //this is not thread safe, whoever calls this, should synchronize on the job
     public void setState(State state,String description, boolean save) throws
@@ -660,11 +645,11 @@ public abstract class Job  {
             old = this.state;
             this.state = state;
             lastStateTransitionTime = System.currentTimeMillis();
-            
+
             synchronized(jobHistory) {
                 jobHistory.add( new JobHistory(generator.nextLong(),state,description,lastStateTransitionTime));
-            }     
-            
+            }
+
             if( errorMessage.length()== 0) {
                   errorMessage.append(description);
             } else {
@@ -673,19 +658,19 @@ public abstract class Job  {
                  errorMessage.append(" appended:\n");
                  errorMessage.append(description);
             }
- 
+
         if(state == State.RETRYWAIT)
         {
             inclreaseNumberOfRetries();
         }
-            
+
         if(schedulerId != null) {
             Scheduler scheduler =   Scheduler.getScheduler(schedulerId);
             if(scheduler != null) {
                 scheduler.stateChanged(this, old, state);
             }
         }
-        
+
         if(state == State.FAILED ||
         state == State.DONE ||
         state == State.CANCELED) {
@@ -696,14 +681,14 @@ public abstract class Job  {
             if(schedulerId == null) {
                 throw new IllegalStateTransition("Scheduler ID is null");
             }
-            
+
         }
         stateChanged(old);
         if(save) {
             saveJob();
         }
     }
-    
+
     public void tryToReady() {
       if(schedulerId != null) {
             Scheduler scheduler =   Scheduler.getScheduler(schedulerId);
@@ -712,14 +697,14 @@ public abstract class Job  {
             }
         }
     }
-    
+
     /** Getter for property errorMessage.
      * @return Value of property errorMessage.
      *
      */
-    
+
     public java.lang.String getErrorMessage() {
-        
+
         StringBuffer errorMessage = new StringBuffer();
         synchronized(jobHistory) {
             if(!jobHistory.isEmpty()) {
@@ -736,9 +721,9 @@ public abstract class Job  {
                 for( Iterator i = jobHistory.iterator(); i.hasNext();) {
                     JobHistory nextHistoryElement = (JobHistory)i.next();
                     State nexthistoryElState = nextHistoryElement.getState();
-                    if(nexthistoryElState == State.FAILED || 
-                    nexthistoryElState == State.CANCELED || 
-                    nexthistoryElState == State.RETRYWAIT || 
+                    if(nexthistoryElState == State.FAILED ||
+                    nexthistoryElState == State.CANCELED ||
+                    nexthistoryElState == State.RETRYWAIT ||
                     nexthistoryElState == State.DONE  ) {
                      errorMessage.append(" at ");
                      errorMessage.append(new java.util.Date(nextHistoryElement.getTransitionTime()));
@@ -751,12 +736,12 @@ public abstract class Job  {
        }
        return errorMessage.toString();
     }
-    
+
     public void addHistoryEvent(String description){
         synchronized(jobHistory) {
             jobHistory.add( new JobHistory(generator.nextLong(),state,description, System.currentTimeMillis()));
         }
-        
+
     }
      public java.lang.String getHistory() {
         StringBuffer historyString = new StringBuffer();
@@ -774,23 +759,23 @@ public abstract class Job  {
        return historyString.toString();
     }
 
-  
+
      public Iterator getHistoryIterator() {
-         
+
         synchronized(jobHistory) {
-            return new ArrayList(jobHistory).iterator(); 
+            return new ArrayList(jobHistory).iterator();
         }
     }
-     
+
     public abstract void run() throws NonFatalJobFailure, FatalJobFailure;
-    
+
     //implementation should not block in this method
     // this method should make sure that the job is saved in the
     // job's storage (instance of Jon.JobStorage (possibly in a database )
     protected abstract void stateChanged(State oldState);
-    
-    
-    
+
+
+
     /** Getter for property numberOfRetries.
      * @return Value of property numberOfRetries.
      *
@@ -798,7 +783,7 @@ public abstract class Job  {
     public final int getNumberOfRetries() {
         return numberOfRetries;
     }
-    
+
     /** Setter for property numberOfRetries.
      * @param numberOfRetries New value of property numberOfRetries.
      *
@@ -806,22 +791,22 @@ public abstract class Job  {
     private final void inclreaseNumberOfRetries() {
         numberOfRetries++;
     }
-    
+
     /** Getter for property retry_timer.
      * @return Value of property retry_timer.
      *
-     */   
+     */
     java.util.TimerTask getRetryTimer() {
         return retryTimer;
     }
-    
-   
+
+
     /** Getter for property creator.
      * @return Value of property creator.
      *
      */
     public abstract String getSubmitterId();
-    
+
     /** Getter for property priority.
      * @return Value of property priority.
      *
@@ -829,7 +814,7 @@ public abstract class Job  {
     public int getPriority() {
         return priority;
     }
-    
+
     /** Setter for property priority.
      * @param priority New value of property priority.
      *
@@ -841,14 +826,14 @@ public abstract class Job  {
         }
         this.priority = priority;
     }
-    
+
     public String toString() {
         return "Job ID="+id+" state="+state+
         " created on "+
         (new java.util.Date(creationTime)).toString()+
         " by ["+getSubmitterId()+"]";
     }
-    
+
     /** Getter for property id.
      * @return Value of property id.
      *
@@ -864,7 +849,7 @@ public abstract class Job  {
     public Long getNextJobId() {
         return nextJobId;
     }
-    
+
     /** Setter for property nextJobId.
      * @param nextJobId New value of property nextJobId.
      *
@@ -873,7 +858,7 @@ public abstract class Job  {
         this.nextJobId = nextJobId;
         saveJob();
     }
-    
+
     /** Getter for property schedulerId.
      * @return Value of property schedulerId.
      *
@@ -881,7 +866,7 @@ public abstract class Job  {
     public java.lang.String getSchedulerId() {
         return schedulerId;
     }
-    
+
     /** Setter for property schedulerId.
      * @param schedulerId New value of property schedulerId.
      *
@@ -898,13 +883,13 @@ public abstract class Job  {
             // even if the jbbc monitoring log is disabled,
             // as we use scheduler id to identify who this job belongs to.
             try {
-                this.jobStorage.saveJob(this,true);        
+                this.jobStorage.saveJob(this,true);
             }catch (java.sql.SQLException sqle) {
                 esay(sqle);
             }
         }
     }
-    
+
     /** Getter for property schedulerTimeStamp.
      * @return Value of property schedulerTimeStamp.
      *
@@ -912,7 +897,7 @@ public abstract class Job  {
     public long getSchedulerTimeStamp() {
         return schedulerTimeStamp;
     }
-    
+
     public synchronized long extendLifetimeMillis(long newLifetimeInMillis) throws SRMException {
         if(State.isFinalState(state)){
             if(state == State.CANCELED) {
@@ -923,7 +908,7 @@ public abstract class Job  {
                 throw new SRMException("can't extend lifetime, job state is "+state);
             }
         }
-        
+
         long remainingLifetime = getRemainingLifetime();
         if(remainingLifetime >=newLifetimeInMillis) {
             return remainingLifetime;
@@ -931,22 +916,22 @@ public abstract class Job  {
 
         if (!LifetimeExpiration.cancel(id)) {
             throw new SRMException (" job expiration has started already ");
-        }        
+        }
         LifetimeExpiration.schedule(id, newLifetimeInMillis);
 
         return 0;
     }
-    
-    private static class LifetimeExpiration extends TimerTask 
+
+    private static class LifetimeExpiration extends TimerTask
     {
-        static private Map<Long,LifetimeExpiration> _instances = 
+        static private Map<Long,LifetimeExpiration> _instances =
             new HashMap<Long,LifetimeExpiration>();
 
         static private Timer _timer = new Timer();
-        
+
         private Long _id;
 
-        static synchronized public void schedule(Long id, long time) 
+        static synchronized public void schedule(Long id, long time)
         {
             if (!_instances.containsKey(id)) {
                 LifetimeExpiration task = new LifetimeExpiration(id);
@@ -970,17 +955,17 @@ public abstract class Job  {
             }
         }
 
-        static synchronized private void remove(Long id) 
+        static synchronized private void remove(Long id)
         {
-            _instances.remove(id);            
+            _instances.remove(id);
         }
 
-        private LifetimeExpiration(Long id) 
+        private LifetimeExpiration(Long id)
         {
             _id = id;
         }
-        
-        public void run() 
+
+        public void run()
         {
             remove(_id);
             try {
@@ -992,7 +977,7 @@ public abstract class Job  {
             }
         }
     }
-    
+
     public static final void expireJob(Job job) {
         try {
             synchronized(job)
@@ -1013,7 +998,7 @@ public abstract class Job  {
             return;
         }
     }
-    
+
     /** Getter for property maxNumberOfRetries.
      * @return Value of property maxNumberOfRetries.
      *
@@ -1021,7 +1006,7 @@ public abstract class Job  {
     public int getMaxNumberOfRetries() {
         return maxNumberOfRetries;
     }
-    
+
     /** Setter for property maxNumberOfRetries.
      * @param maxNumberOfRetries New value of property maxNumberOfRetries.
      *
@@ -1029,7 +1014,7 @@ public abstract class Job  {
     public void setMaxNumberOfRetries(int maxNumberOfRetries) {
         this.maxNumberOfRetries = maxNumberOfRetries;
     }
-    
+
     /**
      * Getter for property creationTime.
      * @return Value of property creationTime.
@@ -1037,7 +1022,7 @@ public abstract class Job  {
     public long getCreationTime() {
         return creationTime;
     }
-    
+
     /**
      * Getter for property lifetime.
      * @return Value of property lifetime.
@@ -1045,7 +1030,7 @@ public abstract class Job  {
     public long getLifetime() {
         return lifetime;
     }
-    
+
     public long getRemainingLifetime() {
         if(State.isFinalState(this.state)) {
             return 0;
@@ -1054,7 +1039,7 @@ public abstract class Job  {
                 lifetime - System.currentTimeMillis();
         return remianingLifetime >0?remianingLifetime:0;
     }
-     
+
     /**
      * if the job that has been scheduled for execution at some point in the past\
      * and then was restored and put in the restored state
@@ -1084,8 +1069,8 @@ public abstract class Job  {
         }
 
     }
-    
-    
+
+
     public long getLastStateTransitionTime(){
         return lastStateTransitionTime;
     }
@@ -1093,7 +1078,7 @@ public abstract class Job  {
     public Semaphore getLock() {
           return lock;
     }
-    
+
     public static class JobHistory implements java.lang.Comparable {
         private long id;
         private State state;
@@ -1106,7 +1091,7 @@ public abstract class Job  {
             this.description = description;
             this.transitionTime = transitionTime;
         }
-        
+
         /**
          * Getter for property state.
          * @return Value of property state.
@@ -1114,7 +1099,7 @@ public abstract class Job  {
         public org.dcache.srm.scheduler.State getState() {
             return state;
         }
-        
+
         /**
          * Getter for property id.
          * @return Value of property id.
@@ -1122,7 +1107,7 @@ public abstract class Job  {
         public long getId() {
             return id;
         }
-        
+
        /**
          * Getter for property transitionTime.
          * @return Value of property transitionTime.
@@ -1130,7 +1115,7 @@ public abstract class Job  {
         public long getTransitionTime() {
             return transitionTime;
         }
-        
+
         /**
          * Getter for property description.
          * @return Value of property description.
@@ -1141,17 +1126,17 @@ public abstract class Job  {
             }
             return description;
         }
-        
+
         public int compareTo(Object o) {
             if(o == null || !(o instanceof JobHistory)) {
                 return -1;
             }
             long oTransitionTime = ((JobHistory)o).getTransitionTime();
-            return transitionTime < oTransitionTime? 
+            return transitionTime < oTransitionTime?
                     -1:
                     (transitionTime == oTransitionTime? 0: 1);
         }
-        
+
         public boolean equals(Object o) {
             if(o == null || !(o instanceof JobHistory)) {
                 return false;
@@ -1159,7 +1144,7 @@ public abstract class Job  {
             JobHistory jobHistory = (JobHistory) o;
             return jobHistory.id == id;
         }
-        
+
    /**
      * Returns a hash code for this <code>Long</code>. The result is
      * the exclusive OR of the two halves of the primitive
@@ -1168,15 +1153,15 @@ public abstract class Job  {
      * <blockquote><pre>
      * (int)(this.getId()^(this.getId()&gt;&gt;&gt;32))
      * </pre></blockquote>
-     * 
-     * implementation is based on <code>Long</code> implementation of 
+     *
+     * implementation is based on <code>Long</code> implementation of
      * <code>hashCode()</code>
      * @return  a hash code value for this object.
      */
         public int hashCode() {
             return (int)(id ^ (id >>> 32));
         }
-        
+
         public String toString() {
             StringBuffer sb = new StringBuffer();
             sb.append("JobHistory[");
@@ -1193,12 +1178,12 @@ public abstract class Job  {
         public void setSaved() {
             this.saved = true;
         }
-        
+
     }
 
     public void setRetryTimer(TimerTask retryTimer) {
         this.retryTimer = retryTimer;
-    }   
+    }
 
 	public JDC getJdc() {
         return this.jdc;
