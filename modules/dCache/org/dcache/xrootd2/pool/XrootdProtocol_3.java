@@ -21,6 +21,7 @@ import java.util.Enumeration;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellEndpoint;
@@ -153,6 +154,14 @@ public class XrootdProtocol_3
     private static final int DEFAULT_PER_CHANNEL_LIMIT = 16 * (1 << 20);
     private static final int DEFAULT_TOTAL_LIMIT = 64 * (1 << 20);
     private static final int[] DEFAULT_PORTRANGE = { 20000, 25000 };
+
+    /**
+     * Timeout in milliseconds for establishing a connection with the
+     * client. When an xrootd client is redirected to a pool, we
+     * expect the client to connect to the pool within this amount of
+     * time.
+     */
+    private static final long CONNECT_TIMEOUT = 300000; // 5 min
 
     /**
      * The minimum number of bytes to increment the space
@@ -386,6 +395,18 @@ public class XrootdProtocol_3
             sendAddressToDoor(address.getPort());
 
             _log.debug("Waiting for server shutdown");
+
+            /* When an xrootd client is redirected to a pool, we
+             * expect the client to connect within a reasonable amount
+             * of time. Otherwise we kill the mover.
+             */
+            try {
+                _closeLatch.await(CONNECT_TIMEOUT, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                if (_clientChannel == null) {
+                    throw e;
+                }
+            }
 
             _closeLatch.await();
         } finally {
