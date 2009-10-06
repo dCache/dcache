@@ -9,28 +9,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -43,10 +43,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -56,10 +56,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -129,7 +129,7 @@ public class PutCompanion implements CellMessageAnswerable {
     private static final int FINAL_STATE=8;
     private static final int PASSIVELY_WAITING_FOR_DIRECTORY_INFO_MESSAGE=9;
     private volatile int state=INITIAL_STATE;
-    
+
     private dmg.cells.nucleus.CellAdapter cell;
     private PrepareToPutCallbacks callbacks;
     private CellMessage request = null;
@@ -143,13 +143,13 @@ public class PutCompanion implements CellMessageAnswerable {
     private FileMetaData fileFMD;
     private long creationTime = System.currentTimeMillis();
     private long lastOperationTime = creationTime;
-    
+
     private void say(String words_of_wisdom) {
         if(cell!=null) {
             cell.say(toString()+words_of_wisdom);
         }
     }
-    
+
     private void esay(String words_of_despare) {
         if(cell!=null) {
             cell.esay(toString()+words_of_despare);
@@ -162,7 +162,7 @@ public class PutCompanion implements CellMessageAnswerable {
         }
     }
     /** Creates a new instance of StageAndPinCompanion */
-    
+
     private PutCompanion(AuthorizationRecord user,
     String path,
     PrepareToPutCallbacks callbacks,
@@ -179,7 +179,7 @@ public class PutCompanion implements CellMessageAnswerable {
 
         say(" constructor path = "+path+" overwrite="+overwrite);
     }
-    
+
      public void answerArrived( final CellMessage req , final CellMessage answer ) {
         diskCacheV111.util.ThreadManager.execute(new Runnable() {
             public void run() {
@@ -187,7 +187,7 @@ public class PutCompanion implements CellMessageAnswerable {
             }
         });
     }
-    
+
     private void processMessage( CellMessage req , CellMessage answer ) {
         say("answerArrived("+req+","+answer+")");
         request = req;
@@ -221,7 +221,7 @@ public class PutCompanion implements CellMessageAnswerable {
                 }
                 esay(this.toString()+" got unexpected PnfsGetStorageInfoMessage "+
                 " : "+storage_info_msg+" ; Ignoring");
-                
+
             }
             else if( message instanceof PnfsGetFileMetaDataMessage ) {
                 PnfsGetFileMetaDataMessage metadata_msg =
@@ -234,7 +234,7 @@ public class PutCompanion implements CellMessageAnswerable {
                 esay(this.toString()+" got unexpected PnfsGetFileMetaDataMessage "+
                 " : "+metadata_msg+" ; Ignoring");
             }
-            
+
         }
         else {
             esay(this.toString()+" got unknown object "+
@@ -243,7 +243,7 @@ public class PutCompanion implements CellMessageAnswerable {
             " : "+o) ;
         }
     }
-    
+
     public void fileInfoArrived(
     PnfsGetStorageInfoMessage storage_info_msg) {
         if(storage_info_msg.getReturnCode() == 0) {
@@ -265,7 +265,7 @@ public class PutCompanion implements CellMessageAnswerable {
                 return ;
             }
         } else {
-            
+
             String fileName = (String) pathItems.get(pathItems.size()-1);
             if(fileName.length() >PNFS_MAX_FILE_NAME_LENGTH) {
                 callbacks.Error("File name is too long");
@@ -274,18 +274,18 @@ public class PutCompanion implements CellMessageAnswerable {
             say("file does not exist, now get info for directory");
         }
         // next time we will go into different path
-        
+
         //
         //this is how we get the directory containing this path
         //
         current_dir_depth = pathItems.size();
         askPnfsForParentInfo();
     }
-    
+
     public void directoryInfoArrived(
     PnfsGetFileMetaDataMessage metadata_msg) {
         try{
-        
+
         if(metadata_msg.getReturnCode() != 0) {
             if(state == RECEIVED_CREATE_DIRECTORY_RESPONSE_MESSAGE) {
                 String error = "directory creation failed: "+getCurrentDirPath()+" reason: "+
@@ -309,18 +309,18 @@ public class PutCompanion implements CellMessageAnswerable {
             }
         }
         unregisterCreator(metadata_msg);
-        
+
         StorageInfo storageInfo = null;
         if(metadata_msg instanceof PnfsGetStorageInfoMessage) {
-            PnfsGetStorageInfoMessage storage_info_msg  = 
+            PnfsGetStorageInfoMessage storage_info_msg  =
                 (PnfsGetStorageInfoMessage) metadata_msg;
             storageInfo = storage_info_msg.getStorageInfo() ;
             say("storageInfo = "+storageInfo );
         }
-        
+
         diskCacheV111.util.FileMetaData dirFmd =
         metadata_msg.getMetaData();
-        
+
         if(dirFmd == null) {
             String error ="internal error: file metadata is null for directory: "+metadata_msg.getPnfsPath();
                 esay(error);
@@ -328,7 +328,7 @@ public class PutCompanion implements CellMessageAnswerable {
                 callbacks.GetStorageInfoFailed(error);
                 return;
         }
-        
+
         if(!dirFmd.isDirectory()) {
             String error ="file "+metadata_msg.getPnfsPath()+
             " is not a directory";
@@ -337,7 +337,7 @@ public class PutCompanion implements CellMessageAnswerable {
                 callbacks.InvalidPathError(error);
                 return;
         }
-        
+
         say("file is a directory");
         PnfsId dirPnfsId = metadata_msg.getPnfsId();
         String dirFileId = dirPnfsId.toString();
@@ -348,9 +348,9 @@ public class PutCompanion implements CellMessageAnswerable {
             say(" got  srm_dirFmd.retentionPolicyInfo.AccessLatency ="+srm_dirFmd.retentionPolicyInfo.getAccessLatency());
             say(" got  srm_dirFmd.retentionPolicyInfo.RetentionPolicy ="+srm_dirFmd.retentionPolicyInfo.getRetentionPolicy());
             say(" got  srm_dirFmd.spaceTokens ="+(srm_dirFmd.spaceTokens!=null?srm_dirFmd.spaceTokens[0]:"NONE"));
-        }   
+        }
         if((pathItems.size() -1 ) >current_dir_depth) {
-            
+
             if(Storage._canWrite(user,null,null,dirFileId,srm_dirFmd,overwrite)) {
                 createNextDirectory(srm_dirFmd);
                 return;
@@ -380,34 +380,34 @@ public class PutCompanion implements CellMessageAnswerable {
             throw re;
         }
     }
-    
-    /** 
+
+    /**
 	This code was added to perform the automatic creation of the directories
 	the permissions and ownership is inherited from the parent path
      */
     private void createNextDirectory(FileMetaData parentFmd) {
         current_dir_depth++;
         String newDirPath = getCurrentDirPath();
-        
+
 	int uid = user.getUid();
 	int gid = user.getGid();
 	int perm = 0755;
-	
-	if ( parentFmd != null ) { 
+
+	if ( parentFmd != null ) {
 		uid = Integer.parseInt(parentFmd.owner);
 		gid = Integer.parseInt(parentFmd.group);
 		perm = parentFmd.permMode;
 	}
 
         say("attempting to create "+newDirPath+" with uid="+uid+" gid="+gid);
-        
+
         PnfsGetStorageInfoMessage dirMsg
         = new PnfsCreateDirectoryMessage(newDirPath,uid,gid,perm) ;
         state = WAITING_FOR_CREATE_DIRECTORY_RESPONSE_MESSAGE;
-        
+
         dirMsg.setReplyRequired(true);
-        
-        
+
+
         try {
             cell.sendMessage( new CellMessage(
             new CellPath("PnfsManager") ,
@@ -422,7 +422,7 @@ public class PutCompanion implements CellMessageAnswerable {
         }
         lastOperationTime = System.currentTimeMillis();
     }
-    
+
     private String getCurrentDirPath() {
         if(pathItems != null) {
             return FsPath.toString(pathItems.subList(0, current_dir_depth));
@@ -435,7 +435,7 @@ public class PutCompanion implements CellMessageAnswerable {
         }
         return "";
     }
-    
+
     private void askPnfsForParentInfo() {
         if(current_dir_depth <= 1 ) {
             String error = "we reached the root of the directories, none of the elements exist from the pnfs manager point of vieww, we do not have permission to create this directory tree: "+path;
@@ -443,7 +443,7 @@ public class PutCompanion implements CellMessageAnswerable {
             callbacks.AuthorizationError(error);
             return;
         }
-        
+
         current_dir_depth--;
         String directory = getCurrentDirPath();
         if(!registerCreatorOrWaitForCreation(directory, this)) {
@@ -459,7 +459,7 @@ public class PutCompanion implements CellMessageAnswerable {
         if(current_dir_depth == (pathItems.size() -1)) {
             metadataMsg =
             new PnfsGetStorageInfoMessage() ;
-            
+
         } else {
 
             metadataMsg =
@@ -483,7 +483,7 @@ public class PutCompanion implements CellMessageAnswerable {
         }
         lastOperationTime= System.currentTimeMillis();
     }
-    
+
     public void exceptionArrived( CellMessage request , Exception exception ) {
         esay("exceptionArrived "+exception+" for request "+request);
         unregisterAndFailCreator("exceptionArrived "+exception+" for request "+request);
@@ -494,29 +494,29 @@ public class PutCompanion implements CellMessageAnswerable {
         unregisterAndFailCreator("answerTimedOut for request "+request);
         callbacks.Timeout();
     }
-    
+
     public String toString() {
         StringBuffer sb = new StringBuffer();
         toString(sb,false);
         return sb.toString();
     }
-    
+
     public void toString(StringBuffer sb, boolean longFormat) {
-        
+
         sb.append("PutCompanion: ");
         sb.append(" p=\"").append(path);
         sb.append("\" s=\"").append(getStateString());
         sb.append("\" d=\"").append(current_dir_depth);
         sb.append("\" created:").append(new Date(creationTime).toString());
         sb.append("\" lastOperation:").append(new Date(lastOperationTime).toString());
-        
+
        if (state == WAITING_FOR_DIRECTORY_INFO_MESSAGE ||
             state == WAITING_FOR_CREATE_DIRECTORY_RESPONSE_MESSAGE) {
             try {
                for( int i = current_dir_depth;
                          i<pathItems.size();
                        ++i) {
-                    String pnfsPath = getCurrentDirPath(i); 
+                    String pnfsPath = getCurrentDirPath(i);
                     sb.append("\n it is creating/getting info for path=").append(pnfsPath);
                     Set waitingSet = this.waitingForCreators.getValues(pnfsPath);
                     if(waitingSet != null) {
@@ -533,7 +533,7 @@ public class PutCompanion implements CellMessageAnswerable {
                         }
                     }
                     else {
-                       sb.append(" num of waiting companions: 0");   
+                       sb.append(" num of waiting companions: 0");
                     }
                 }
             } catch(Exception e) {
@@ -541,10 +541,10 @@ public class PutCompanion implements CellMessageAnswerable {
             }
        }
     }
-    
+
    private String getStateString() {
         switch (state) {
-            case INITIAL_STATE: 
+            case INITIAL_STATE:
                 return "INITIAL_STATE";
             case WAITING_FOR_FILE_INFO_MESSAGE:
                 return "WAITING_FOR_FILE_INFO_MESSAGE";
@@ -567,25 +567,25 @@ public class PutCompanion implements CellMessageAnswerable {
 
         }
     }
-    
+
     public static void PrepareToPutFile(AuthorizationRecord user,
     String path,
     PrepareToPutCallbacks callbacks,
     CellAdapter cell,
     boolean recursive_directory_creation,
     boolean overwrite) {
-        
+
         if(user == null) {
             callbacks.AuthorizationError("user unknown, can not write");
             return;
         }
-        
+
         FsPath pnfsPathFile = new FsPath(path);
         String pnfsPath = pnfsPathFile.toString();
         if(pnfsPath == null) {
             throw new IllegalArgumentException(" FileRequest does not specify path!!!");
         }
-        
+
         PnfsGetStorageInfoMessage storageInfoMsg =
         new PnfsGetStorageInfoMessage() ;
         storageInfoMsg.setPnfsPath( pnfsPath ) ;
@@ -596,8 +596,8 @@ public class PutCompanion implements CellMessageAnswerable {
         cell,
         recursive_directory_creation,
         overwrite);
-        
-        
+
+
         try {
             companion.state= WAITING_FOR_FILE_INFO_MESSAGE;
             cell.sendMessage( new CellMessage(
@@ -611,7 +611,7 @@ public class PutCompanion implements CellMessageAnswerable {
             callbacks.GetStorageInfoFailed("can not contact pnfs manger: "+ee.toString());
         }
     }
-    
+
     public void removeThisFromDirectoryCreators() {
         synchronized(directoryCreators) {
             while(directoryCreators.containsValue(this)) {
@@ -626,10 +626,10 @@ public class PutCompanion implements CellMessageAnswerable {
             }
         }
     }
-    
+
     private static HashMap directoryCreators = new HashMap();
     private OneToManyMap waitingForCreators = new OneToManyMap();
-    
+
     public static void listDirectoriesWaitingForCreation(StringBuffer sb, boolean longformat) {
         synchronized( directoryCreators) {
             Set directories = directoryCreators.keySet();
@@ -640,11 +640,11 @@ public class PutCompanion implements CellMessageAnswerable {
                 sb.append("\n creating/getting info companion:");
                 creatorCompanion.toString(sb,longformat);
              }
-        }                
+        }
     }
-    
+
     public static void failCreatorsForPath(String pnfsPath, StringBuffer sb) {
-        PutCompanion creatorCompanion  =   
+        PutCompanion creatorCompanion  =
             (PutCompanion)directoryCreators.get(pnfsPath);
         if(creatorCompanion == null) {
             sb.append("no creators for path ").append(pnfsPath).append("found");
@@ -654,10 +654,10 @@ public class PutCompanion implements CellMessageAnswerable {
         sb.append("Done");
         return;
     }
-    
+
      private static boolean registerCreatorOrWaitForCreation(String pnfsPath,
     PutCompanion thisCreator) {
-        long creater_operTime=0; 
+        long creater_operTime=0;
         long currentTime=0;
         PutCompanion creatorCompanion = null;
         synchronized( directoryCreators) {
@@ -678,25 +678,25 @@ public class PutCompanion implements CellMessageAnswerable {
                 return true;
             }
         }
-        
+
         if(creatorCompanion != null &&
             currentTime - creater_operTime > creatorCompanion.PNFS_TIMEOUT ) {
             creatorCompanion.unregisterAndFailCreator("pnfs manager timeout");
         }
         return false;
     }
-    
-    
+
+
     private static void unregisterCreator(String pnfsPath,PutCompanion thisCreator,
     PnfsGetFileMetaDataMessage message) {
         HashSet  removed = new HashSet();
-        
+
         synchronized( directoryCreators) {
             if(directoryCreators.containsValue(thisCreator)) {
                 thisCreator.say("unregisterCreator("+
                 pnfsPath+","+thisCreator+")"
                 );
-                
+
                 directoryCreators.remove(pnfsPath);
             }
             while(thisCreator.waitingForCreators.containsKey(pnfsPath)) {
@@ -706,7 +706,7 @@ public class PutCompanion implements CellMessageAnswerable {
                 removed.add(o);
             }
         }
-        
+
         for(Iterator i = removed.iterator(); i.hasNext();) {
             PutCompanion waitingcompanion =  (PutCompanion) i.next();
             thisCreator.say("  unregisterCreator("+
@@ -716,13 +716,13 @@ public class PutCompanion implements CellMessageAnswerable {
         }
         thisCreator.say(" unregisterCreator("+
         pnfsPath+","+thisCreator+") returning");
-        
+
     }
-    
+
     private void unregisterCreator( PnfsGetFileMetaDataMessage message) {
         unregisterCreator(this.getCurrentDirPath(), this, message);
     }
-    
+
     private void unregisterAndFailCreator(String error) {
         if(pathItems != null) {
             //directory creation failed, notify all waiting on this companion
@@ -735,18 +735,18 @@ public class PutCompanion implements CellMessageAnswerable {
             callbacks.Error(error);
         }
     }
-    
-    
+
+
     private static void unregisterAndFailCreator(String pnfsPath,PutCompanion thisCreator,
     String error) {
         HashSet  removed = new HashSet();
-        
+
         synchronized( directoryCreators) {
             if(directoryCreators.containsValue(thisCreator)) {
                 thisCreator.esay(" unregisterAndFailCreator("+
                 pnfsPath+","+thisCreator+")"
                 );
-                
+
                 directoryCreators.remove(pnfsPath);
             }
             while(thisCreator.waitingForCreators.containsKey(pnfsPath)) {
@@ -756,7 +756,7 @@ public class PutCompanion implements CellMessageAnswerable {
                 removed.add(o);
             }
         }
-        
+
         for(Iterator i = removed.iterator(); i.hasNext();) {
             PutCompanion waitingcompanion =  (PutCompanion) i.next();
             thisCreator.esay(" unregisterAndFailCreator("+
@@ -766,7 +766,7 @@ public class PutCompanion implements CellMessageAnswerable {
         }
         thisCreator.esay(" unregisterAndFailCreator("+
         pnfsPath+","+thisCreator+") returning");
-        
+
     }
 
 }
