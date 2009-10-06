@@ -206,13 +206,11 @@ import java.beans.PropertyChangeSupport;
 import java.beans.PropertyChangeListener;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.Map;
 import java.lang.ref.WeakReference;
-import java.util.Collections;
 import java.sql.Connection;
 import java.util.List;
 import java.util.ArrayList;
@@ -239,8 +237,8 @@ public abstract class Job  {
     // jobs are wrapped into WeakReferences to prevent
     // creation hard references to jobIdsA
 
-    private static final Map weakJobStorage =
-    Collections.synchronizedMap(new WeakHashMap());
+    private static final Map<Long, WeakReference<Job>> weakJobStorage =
+            new WeakHashMap<Long, WeakReference<Job>>();
 
     private final Semaphore lock = new Semaphore(1);
 
@@ -269,8 +267,9 @@ public abstract class Job  {
 
     private static final CopyOnWriteArrayList<JobStorage> jobStorages =
         new CopyOnWriteArrayList<JobStorage>();
-    private List jobHistory = new ArrayList();
-    private JobIdGenerator generator;
+
+    private final List<JobHistory> jobHistory = new ArrayList<JobHistory>();
+    private transient JobIdGenerator generator;
 
     private TimerTask retryTimer;
 
@@ -322,10 +321,8 @@ public abstract class Job  {
         this.maxNumberOfRetries = maxNumberOfRetries;
         this.lastStateTransitionTime = lastStateTransitionTime;
         if(jobHistoryArray != null) {
-            java.util.Arrays.sort(jobHistoryArray,new java.util.Comparator(){
-                 public int compare(java.lang.Object o1,java.lang.Object o2) {
-                     JobHistory jobHistory1 = (JobHistory)o1;
-                     JobHistory jobHistory2 = (JobHistory)o2;
+            java.util.Arrays.sort(jobHistoryArray,new java.util.Comparator<JobHistory>(){
+                 public int compare(JobHistory jobHistory1 , JobHistory jobHistory2) {
                      long  transitionTime1 = jobHistory1.getTransitionTime();
                      long  transitionTime2 = jobHistory2.getTransitionTime();
                      if(transitionTime1<transitionTime2) { return -1  ;}
@@ -376,7 +373,7 @@ public abstract class Job  {
 
         LifetimeExpiration.schedule(id, lifetime);
         synchronized (weakJobStorage) {
-            weakJobStorage.put(id, new WeakReference(this));
+            weakJobStorage.put(id, new WeakReference<Job>(this));
         }
         jobHistory.add( new JobHistory(nextLong(),state,"created",lastStateTransitionTime));
     }
@@ -437,12 +434,11 @@ public abstract class Job  {
     public static final Job getJob(Long jobId, Connection _con)
             throws SRMInvalidRequestException  {
         synchronized(weakJobStorage) {
-            Object o = weakJobStorage.get(jobId);
-            if(o!= null) {
-                WeakReference ref = (WeakReference) o;
-                Object o1 = ref.get();
+            WeakReference<Job> ref = weakJobStorage.get(jobId);
+            if(ref!= null) {
+                Job o1 = ref.get();
                 if(o1 != null) {
-                    return (Job) o1;
+                    return o1;
                 }
             }
         }
@@ -481,22 +477,21 @@ public abstract class Job  {
         // the object stored by the winner is the one we want to return
         //System.out.println("checking weakJobStorage");
         synchronized(weakJobStorage) {
-            Object o = weakJobStorage.get(jobId);
-            if(o!= null) {
-                WeakReference ref = (WeakReference) o;
-                Object o1 = ref.get();
+            WeakReference<Job> ref = weakJobStorage.get(jobId);
+            if(ref!= null) {
+                Job o1 = ref.get();
                 if(o1 != null) {
                 //System.out.println("found job in weakJobStorage, returning");
-                    return (Job) o1;
+                    return o1;
                 }
             }
 
             if (job != null)
             {
                 //System.out.println("storring job in weakJobStorage, ");
-                weakJobStorage.put(job.id,new WeakReference(job));
+                weakJobStorage.put(job.id,new WeakReference<Job>(job));
                 sharedMemoryCache.updateSharedMemoryChache(job);
-        }
+            }
         }
 
         if(job != null && restoredFromDb) {
@@ -694,9 +689,7 @@ public abstract class Job  {
         if(!old.isFinalState() && state.isFinalState()) {
             sharedMemoryCache.updateSharedMemoryChache(this);
         }
-        if(!old.isFinalState() && state.isFinalState()) {
-            sharedMemoryCache.updateSharedMemoryChache(this);
-        }
+
         stateChanged(old);
         if(save) {
             saveJob();
@@ -722,8 +715,7 @@ public abstract class Job  {
         StringBuffer errorsb = new StringBuffer();
         synchronized(jobHistory) {
             if(!jobHistory.isEmpty()) {
-                JobHistory nextHistoryElement = (JobHistory)
-                    jobHistory.get(jobHistory.size() -1);
+                JobHistory nextHistoryElement = jobHistory.get(jobHistory.size() -1);
                 State nexthistoryElState = nextHistoryElement.getState();
                 errorsb.append(" at ");
                 errorsb.append(new java.util.Date(nextHistoryElement.getTransitionTime()));
@@ -760,8 +752,7 @@ public abstract class Job  {
      public String getHistory() {
         StringBuffer historyString = new StringBuffer();
         synchronized(jobHistory) {
-            for( Iterator i = jobHistory.iterator(); i.hasNext();) {
-                 JobHistory nextHistoryElement = (JobHistory)i.next();
+            for( JobHistory nextHistoryElement: jobHistory ) {
                  historyString.append(" at ");
                  historyString.append(new java.util.Date(nextHistoryElement.getTransitionTime()));
                  historyString.append(" state ").append(nextHistoryElement.getState());
@@ -1124,7 +1115,7 @@ public abstract class Job  {
           return lock;
     }
 
-    public static class JobHistory implements java.lang.Comparable {
+    public static class JobHistory implements java.lang.Comparable<JobHistory> {
         private long id;
         private State state;
         private long transitionTime;
@@ -1172,11 +1163,9 @@ public abstract class Job  {
             return description;
         }
 
-        public int compareTo(Object o) {
-            if(o == null || !(o instanceof JobHistory)) {
-                return -1;
-            }
-            long oTransitionTime = ((JobHistory)o).getTransitionTime();
+        public int compareTo(JobHistory o)  {
+
+            long oTransitionTime = o.getTransitionTime();
             return transitionTime < oTransitionTime?
                     -1:
                     (transitionTime == oTransitionTime? 0: 1);
@@ -1254,7 +1243,7 @@ public abstract class Job  {
 
 
 
-    public static Set<Job> getActiveJobs(Class type) {
+    public static Set<Job> getActiveJobs(Class<? extends Job> type) {
         return sharedMemoryCache.getJobs(type);
     }
 
