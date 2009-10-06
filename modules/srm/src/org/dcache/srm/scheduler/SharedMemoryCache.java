@@ -48,7 +48,7 @@ public class SharedMemoryCache {
         sharedMemoryWriteLock.lock();
         try {
             boolean cached =sharedMemoryCache.containsKey(job.getId());
-            _log.debug("updateSharedMemoryChache for job ="+job+
+            _log.debug("updateSharedMemoryChache for job ="+job.getId()+
                     " state="+state+ " cached ="+cached);
             if(cached  && state.isFinalState()) {
                 _log.debug("removing job #"+job.getId() +" from memory cache");
