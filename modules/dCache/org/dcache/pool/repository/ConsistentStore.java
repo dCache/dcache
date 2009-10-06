@@ -3,6 +3,7 @@ package org.dcache.pool.repository;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 
 import org.apache.log4j.Logger;
 import org.dcache.pool.classic.ChecksumModuleV1;
@@ -11,6 +12,7 @@ import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.MetaDataStore;
 import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.meta.EmptyMetaDataStore;
+import org.dcache.vehicles.FileAttributes;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
@@ -46,7 +48,7 @@ public class ConsistentStore
     private final static String FILE_NOT_FOUND_MSG =
         "Recovering: Removed %1$s because name space entry was deleted";
     private final static String UPDATE_SIZE_MSG =
-        "Recovering: Set size of %1$s in PNFS to %2$d";
+        "Recovering: Setting size of %1$s in PNFS to %2$d";
     private final static String PRECIOUS_MSG =
         "Recovering: Marked %1$s precious";
     private final static String CACHED_MSG =
@@ -62,6 +64,7 @@ public class ConsistentStore
     private final FileStore _fileStore;
     private final MetaDataStore _importStore;
     private final ChecksumModuleV1 _checksumModule;
+    private String _poolName;
 
     public ConsistentStore(PnfsHandler pnfsHandler,
                            ChecksumModuleV1 checksumModule,
@@ -87,6 +90,19 @@ public class ConsistentStore
         if (!(_importStore instanceof EmptyMetaDataStore)) {
             _log.warn(String.format("NOTICE: Importing any missing meta data from %s. This should only be used to convert an existing repository and never as a permanent setup.", _importStore));
         }
+    }
+
+    public void setPoolName(String poolName)
+    {
+        if (poolName == null || poolName.isEmpty()) {
+            throw new IllegalArgumentException("Invalid pool name");
+        }
+        _poolName = poolName;
+    }
+
+    public String getPoolName()
+    {
+        return _poolName;
     }
 
     /**
@@ -161,11 +177,11 @@ public class ConsistentStore
                     return null;
                 }
 
-                /* Make sure that the copy is registered in PNFS. This
-                 * may fail with FILE_NOT_FOUND if the file was
-                 * already deleted.
+                /* We try to replay file registration for BROKEN files.
                  */
-                _pnfsHandler.addCacheLocation(id);
+                if (state == EntryState.BROKEN) {
+                    state = EntryState.FROM_CLIENT;
+                }
 
                 /* In particular with the file backend, it could
                  * happen that the SI file was deleted outside of
@@ -208,15 +224,28 @@ public class ConsistentStore
                                                       null, null);
                 }
 
+                /* We always register the file location.
+                 */
+                FileAttributes fileAttributes = new FileAttributes();
+                fileAttributes.setLocations(Collections.singleton(_poolName));
+
                 /* Update the size in the storage info and in PNFS if
-                 * file size is unknown.
+                 * file size is unknown. We initialize access latency
+                 * and retention policy at the same time.
                  */
                 if (state == EntryState.FROM_CLIENT && info.getFileSize() == 0) {
-                    _pnfsHandler.setFileSize(id, length);
+                    fileAttributes.setSize(length);
+                    fileAttributes.setAccessLatency(info.getAccessLatency());
+                    fileAttributes.setRetentionPolicy(info.getRetentionPolicy());
                     info.setFileSize(length);
                     entry.setStorageInfo(info);
                     _log.warn(String.format(UPDATE_SIZE_MSG, id, length));
                 }
+
+                /* Update file size, location, access_latency and
+                 * retention_policy within namespace (pnfs or chimera).
+                 */
+                _pnfsHandler.setFileAttributes(id, fileAttributes);
 
                 /* If not already precious or cached, we move the entry to
                  * the target state of a newly uploaded file.
