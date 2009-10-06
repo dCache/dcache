@@ -722,7 +722,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
         }
 
         @Override
-        public void noroute() {
+        public synchronized void noroute() {
             try {
                  _logNamespace.warn("Pool " + _poolName + " is down.");
                 _poolsBlackList.put(_poolName, System.currentTimeMillis());
@@ -732,7 +732,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
         }
 
         @Override
-        public void timeout() {
+        public synchronized void timeout() {
             try {
                 _logNamespace.warn("remove message to " + _poolName + " timed out.");
                 _poolsBlackList.put(_poolName, System.currentTimeMillis());
