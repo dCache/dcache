@@ -1274,6 +1274,10 @@ public class BasicNameSpaceProvider
                     meta = getFileMetaData(subject, pnfsId, meta);
                     attributes.setSize(meta.getFileSize());
                     break;
+                case CREATION_TIME:
+                    meta = getFileMetaData(subject, pnfsId, meta);
+                    attributes.setCreationTime(meta.getCreationTime());
+                    break;
                 case MODIFICATION_TIME:
                     meta = getFileMetaData(subject, pnfsId, meta);
                     attributes.setModificationTime(meta.getLastModifiedTime());

@@ -48,6 +48,11 @@ public class FileAttributes implements Serializable {
     private long _size;
 
     /**
+     * file's creation time
+     */
+    private long _creationTime;
+
+    /**
      * file's last access time
      */
     private long _atime;
@@ -186,6 +191,15 @@ public class FileAttributes implements Serializable {
     }
 
     /**
+     * Get file's creation time.
+     * @return time in milliseconds since 1 of January 1970 00:00.00
+     */
+    public long getCreationTime() {
+        guard(CREATION_TIME);
+        return _creationTime;
+    }
+
+    /**
      * Get file's last modification time.
      * @return time in milliseconds since 1 of January 1970 00:00.00
      */
@@ -270,6 +284,11 @@ public class FileAttributes implements Serializable {
     public void setMode(int mode) {
         define(MODE);
         _mode = mode;
+    }
+
+    public void setCreationTime(long creationTime) {
+        define(CREATION_TIME);
+        _creationTime = creationTime;
     }
 
     public void setModificationTime(long mtime) {
