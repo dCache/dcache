@@ -94,181 +94,97 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.srm.dcache;
 
-import dmg.cells.nucleus.CellAdapter;
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellMessageAnswerable;
+import java.net.InetAddress;
 
 import diskCacheV111.util.PnfsId;
-//import org.dcache.srm.util.PnfsFileId;
-
-import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
-import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
-//import diskCacheV111.vehicles.PoolSetStickyMessage;
 import diskCacheV111.vehicles.PinManagerPinMessage;
-import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.vehicles.Message;
-import diskCacheV111.vehicles.DCapProtocolInfo;
 
-//import org.dcache.srm.util.FileRequest;
-//import org.dcache.srm.security.AuthorizationRecord;
-import java.net.InetAddress;
 import org.dcache.auth.AuthorizationRecord;
 import org.dcache.srm.PinCallbacks;
-import diskCacheV111.srm.FileMetaData;
+import org.dcache.cells.CellStub;
+import org.dcache.cells.MessageCallback;
+import org.dcache.cells.ThreadManagerMessageCallback;
 
-/**
- *
- * @author  timur
- */
-/**
- * this class does all the dcache specific work needed for staging and pinning a
- * file represented by a path. It notifies the caller about each next stage
- * of the process via a StageAndPinCompanionCallbacks interface.
- * Boolean functions of the callback interface need to return true in order for
- * the process to continue
- */
-public class PinCompanion implements CellMessageAnswerable {
+import org.apache.log4j.Logger;
 
-    private static final int INITIAL_STATE=0;
-    private static final int SENT_PIN_MGR_PIN_MSG = 5;
-    private static final int RECEIVED_PIN_MGR_PIN_MSG = 6;
-    private volatile int  state = INITIAL_STATE;
-    private dmg.cells.nucleus.CellAdapter cell;
-    private PinCallbacks callbacks;
-    private CellMessage request = null;
-    private String fileId;
-    private AuthorizationRecord user;
+import static diskCacheV111.util.CacheException.*;
 
-    private void say(String words_of_wisdom) {
-        if(cell!=null) {
-            cell.say(" StageAndPinCompanion : "+words_of_wisdom);
-        }
-    }
+public class PinCompanion
+    implements MessageCallback<PinManagerPinMessage>
+{
+    private final static Logger _log = Logger.getLogger(PinCompanion.class);
 
-    private void esay(String words_of_despare) {
-        if(cell!=null) {
-            cell.esay(" StageAndPinCompanion : "+words_of_despare);
-        }
-    }
-    /** Creates a new instance of StageAndPinCompanion */
+    private final PinCallbacks callbacks;
+    private final String fileId;
 
-    private PinCompanion(AuthorizationRecord user,String fileId,  PinCallbacks callbacks,CellAdapter cell) {
-        this.user = user;
+    private PinCompanion(String fileId, PinCallbacks callbacks)
+    {
         this.fileId = fileId;
-        this.cell = cell;
         this.callbacks = callbacks;
-        say(" constructor ");
     }
 
-    public void answerArrived( final CellMessage req , final CellMessage answer ) {
-        say("answerArrived");
-        diskCacheV111.util.ThreadManager.execute(new Runnable() {
-            public void run() {
-                processMessage(req,answer);
-            }
-        });
+    public void success(PinManagerPinMessage message)
+    {
+        callbacks.Pinned(message.getPinRequestId());
     }
 
-    private void processMessage( CellMessage req , CellMessage answer ) {
-        say("answerArrived");
-        request = req;
-        Object o = answer.getMessageObject();
-        if(o instanceof Message) {
-            Message message = (Message)answer.getMessageObject() ;
-            if( message instanceof PinManagerPinMessage ) {
-                if(state != SENT_PIN_MGR_PIN_MSG) {
-                    esay("received PinManagerPinMessage, state ="+state);
-                    return;
-                }
-                state = RECEIVED_PIN_MGR_PIN_MSG;
-                PinManagerPinMessage pinResponse =
-                (PinManagerPinMessage)message;
-                pinManagerPinMessageArrived(pinResponse);
-            }
-            else {
-                esay(this.toString()+" got unknown message "+
-                " : "+message.getErrorObject());
+    public void failure(int rc, Object error)
+    {
+        switch (rc) {
+        case TIMEOUT:
+            _log.error(error.toString());
+            callbacks.Timeout();
+            break;
 
-                callbacks.Error( this.toString()+" got unknown message "+
-                " : "+message.getErrorObject()) ;
-            }
-        }
-        else {
-            esay(this.toString()+" got unknown object "+
-            " : "+o);
-            callbacks.Error(this.toString()+" got unknown object "+
-            " : "+o) ;
+        default:
+            _log.error(String.format("Pinning failed for %s [rc=%d,msg=%s]", fileId, rc, error));
+
+            String reason =
+                String.format("Failed to pin file [rc=%d,msg=%s]",
+                              rc, error);
+            callbacks.PinningFailed(reason);
+            break;
         }
     }
 
-
-    private void pinManagerPinMessageArrived(PinManagerPinMessage pinResponse) {
-        say(" message is PinManagerPinMessage");
-        if(pinResponse.getReturnCode() != 0) {
-            esay("PinRequest Failed");
-            callbacks.PinningFailed(pinResponse.getErrorObject().toString());
-            return ;
-        }
-        say("pinned");
-        callbacks.Pinned(pinResponse.getPinRequestId());
+    public void noroute()
+    {
+        failure(TIMEOUT, "No route to PinManager");
     }
 
-    public void exceptionArrived( CellMessage request , Exception exception ) {
-        esay("exceptionArrived "+exception+" for request "+request);
-        callbacks.Exception(exception);
-    }
-    public void answerTimedOut( CellMessage request ) {
-        esay("answerTimedOut for request "+request);
-        callbacks.Timeout();
-    }
-    public String toString() {
-
-        return this.getClass().getName()+" "+
-        fileId;
+    public void timeout()
+    {
+        failure(TIMEOUT, "Pinning timed out");
     }
 
-    public static void pinFile(
-    AuthorizationRecord user,
-    String fileId,
-    String clientHost,
-    PinCallbacks callbacks,
-    DcacheFileMetaData dfmd,
-    long pinLifetime,
-    long requestId,
-    CellAdapter cell) {
-        cell.say("PinCompanion.pinFile("+fileId+")");
-        PnfsId pnfsId = new PnfsId(fileId);
+    public String toString()
+    {
+        return getClass().getName() + "[" + fileId + "]";
+    }
 
+    public static void pinFile(AuthorizationRecord user,
+                               String fileId,
+                               String clientHost,
+                               PinCallbacks callbacks,
+                               DcacheFileMetaData dfmd,
+                               long pinLifetime,
+                               long requestId,
+                               CellStub pinManagerStub)
+    {
+        _log.debug("PinCompanion.pinFile(" + fileId + ")");
 
-        PinCompanion companion = new PinCompanion(user,fileId,
-        callbacks,cell);
-
+        PinCompanion companion =
+            new PinCompanion(fileId, callbacks);
         PinManagerPinMessage pinRequest =
-        new PinManagerPinMessage( pnfsId ,
-            clientHost,
-            pinLifetime,requestId) ;
+            new PinManagerPinMessage(new PnfsId(fileId),
+                                     clientHost,
+                                     pinLifetime,
+                                     requestId);
         pinRequest.setAuthorizationRecord(user);
         pinRequest.setStorageInfo(dfmd.getStorageInfo());
-        pinRequest.setReplyRequired(true);
-        companion.state = SENT_PIN_MGR_PIN_MSG;
-        try {
-            cell.sendMessage(
-            new CellMessage(
-            new CellPath( "PinManager") ,
-            pinRequest ) ,
-            true , true,
-            companion,
-            60*60*1000
-            );
-            //say("StageAndPinCompanion: recordAsPinned");
-            //rr.recordAsPinned (_fr,true);
-        }catch(Exception ee ) {
-            cell.esay(ee);
-            callbacks.PinningFailed(ee.toString());
-            return ;
-        }
-    }
 
+        pinManagerStub.send(pinRequest, PinManagerPinMessage.class,
+                            new ThreadManagerMessageCallback(companion));
+    }
 }
 

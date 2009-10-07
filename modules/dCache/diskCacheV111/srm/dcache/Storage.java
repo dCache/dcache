@@ -1512,7 +1512,7 @@ public class Storage
         PinCompanion.pinFile((AuthorizationRecord)user,
             fileId,
             clientHost,
-            callbacks, dfmd, pinLifetime, requestId, this);
+            callbacks, dfmd, pinLifetime, requestId, _pinManagerStub);
     }
 
     public void unPinFile(SRMUser user,String fileId,
