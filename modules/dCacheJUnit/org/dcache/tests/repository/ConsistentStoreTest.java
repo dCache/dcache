@@ -18,6 +18,8 @@ import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.tests.cells.CellAdapterHelper;
 import org.dcache.tests.cells.GenericMockCellHelper;
+import org.dcache.vehicles.PnfsSetFileAttributes;
+import org.dcache.vehicles.FileAttributes;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsHandler;
@@ -106,12 +108,10 @@ public class ConsistentStoreTest {
        PnfsGetStorageInfoMessage getStorageInfoMessage = new PnfsGetStorageInfoMessage(pnfsId);
        getStorageInfoMessage.setStorageInfo(info);
 
-       PnfsAddCacheLocationMessage addCacheLocationMessage = new PnfsAddCacheLocationMessage(pnfsId, "ConsistentStoreTestCell");
-       PnfsSetLengthMessage setSize = new PnfsSetLengthMessage(pnfsId, inode.stat().getSize());
+       PnfsSetFileAttributes setFileAttributesMessage = new PnfsSetFileAttributes(pnfsId, new FileAttributes());
 
        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), getStorageInfoMessage);
-       GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), addCacheLocationMessage);
-       GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), setSize);
+       GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), setFileAttributesMessage);
 
        final AtomicBoolean messageSent = new AtomicBoolean(false);
        GenericMockCellHelper.MessageAction action = new GenericMockCellHelper.MessageAction() {
@@ -122,7 +122,7 @@ public class ConsistentStoreTest {
             }
         };
 
-       GenericMockCellHelper.registerAction("PnfsManager", PnfsSetLengthMessage.class,action );
+       GenericMockCellHelper.registerAction("PnfsManager", PnfsSetFileAttributes.class,action );
        MetaDataRecord repositoryEntry = _repositoryEntryHealer.get(pnfsId);
 
        assertFalse("Entry not recovered", repositoryEntry.getState() ==
@@ -149,12 +149,11 @@ public class ConsistentStoreTest {
         PnfsGetStorageInfoMessage getStorageInfoMessage = new PnfsGetStorageInfoMessage(pnfsId);
         getStorageInfoMessage.setReply(CacheException.FILE_NOT_FOUND, "file not found");
 
-        PnfsAddCacheLocationMessage addCacheLocationMessage = new PnfsAddCacheLocationMessage(pnfsId, "ConsistentStoreTestCell");
-
-        addCacheLocationMessage.setReply(CacheException.FILE_NOT_FOUND, "file not found");
+        PnfsSetFileAttributes setFileAttributesMessage = new PnfsSetFileAttributes(pnfsId, new FileAttributes());
+        setFileAttributesMessage.setReply(CacheException.FILE_NOT_FOUND, "file not found");
 
        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), getStorageInfoMessage);
-       GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), addCacheLocationMessage);
+       GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), setFileAttributesMessage);
 
 
        MetaDataRecord repositoryEntry = _repositoryEntryHealer.get(pnfsId);
