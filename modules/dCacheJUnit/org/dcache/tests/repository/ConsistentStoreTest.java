@@ -18,6 +18,7 @@ import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.tests.cells.CellAdapterHelper;
 import org.dcache.tests.cells.GenericMockCellHelper;
+import org.dcache.vehicles.FileAttributes;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsHandler;
@@ -74,7 +75,9 @@ public class ConsistentStoreTest {
        e.setStorageInfo(info);
 
        PnfsGetStorageInfoMessage getStorageInfoMessage = new PnfsGetStorageInfoMessage(pnfsId);
-       getStorageInfoMessage.setStorageInfo(info);
+       FileAttributes attributes = new FileAttributes();
+       attributes.setStorageInfo(info);
+       getStorageInfoMessage.setFileAttributes(attributes);
        PnfsAddCacheLocationMessage addCacheLocationMessage = new PnfsAddCacheLocationMessage(pnfsId, "ConsistentStoreTestCell");
 
 
@@ -104,7 +107,9 @@ public class ConsistentStoreTest {
        e.setStorageInfo(info);
 
        PnfsGetStorageInfoMessage getStorageInfoMessage = new PnfsGetStorageInfoMessage(pnfsId);
-       getStorageInfoMessage.setStorageInfo(info);
+       FileAttributes attributes = new FileAttributes();
+       attributes.setStorageInfo(info);
+       getStorageInfoMessage.setFileAttributes(attributes);
 
        PnfsAddCacheLocationMessage addCacheLocationMessage = new PnfsAddCacheLocationMessage(pnfsId, "ConsistentStoreTestCell");
        PnfsSetLengthMessage setSize = new PnfsSetLengthMessage(pnfsId, inode.stat().getSize());
@@ -202,7 +207,9 @@ public class ConsistentStoreTest {
        e.setStorageInfo(info);
 
        PnfsGetStorageInfoMessage getStorageInfoMessage = new PnfsGetStorageInfoMessage(pnfsId);
-       getStorageInfoMessage.setStorageInfo(info);
+       FileAttributes attributes = new FileAttributes();
+       attributes.setStorageInfo(info);
+       getStorageInfoMessage.setFileAttributes(attributes);
 
 
        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), getStorageInfoMessage);
@@ -231,7 +238,9 @@ public class ConsistentStoreTest {
 
        PnfsGetStorageInfoMessage getStorageInfoMessage = new PnfsGetStorageInfoMessage(pnfsId);
 
-       getStorageInfoMessage.setStorageInfo(info);
+       FileAttributes attributes = new FileAttributes();
+       attributes.setStorageInfo(info);
+       getStorageInfoMessage.setFileAttributes(attributes);
 
        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), getStorageInfoMessage);
 
@@ -264,8 +273,9 @@ public class ConsistentStoreTest {
        e.setStorageInfo(info);
 
        PnfsGetStorageInfoMessage getStorageInfoMessage = new PnfsGetStorageInfoMessage(pnfsId);
-       getStorageInfoMessage.setStorageInfo(info);
-
+       FileAttributes attributes = new FileAttributes();
+       attributes.setStorageInfo(info);
+       getStorageInfoMessage.setFileAttributes(attributes);
 
        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), getStorageInfoMessage);
 

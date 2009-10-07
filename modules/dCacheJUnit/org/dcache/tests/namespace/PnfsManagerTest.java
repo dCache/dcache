@@ -47,6 +47,7 @@ import diskCacheV111.vehicles.PnfsSetStorageInfoMessage;
 import diskCacheV111.vehicles.StorageInfo;
 import java.net.URI;
 import org.dcache.vehicles.PnfsGetFileAttributes;
+import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.FileAttribute;
 
 public class PnfsManagerTest {
@@ -187,7 +188,7 @@ public class PnfsManagerTest {
 
         PnfsGetFileMetaDataMessage pnfsGetFileMetaDataMessage = new PnfsGetFileMetaDataMessage(pnfsCreateEntryMessage.getPnfsId());
 
-       _pnfsManager.getFileMetaData(pnfsGetFileMetaDataMessage);
+       _pnfsManager.getFileAttributes(pnfsGetFileMetaDataMessage);
        assertTrue("file still exist after removing last location entry", pnfsGetFileMetaDataMessage.getReturnCode() == CacheException.FILE_NOT_FOUND );
     }
 
@@ -222,7 +223,7 @@ public class PnfsManagerTest {
     public void testGetStoreInfoNonExist() {
 
         PnfsGetStorageInfoMessage pnfsGetStorageInfoMessage = new PnfsGetStorageInfoMessage(new PnfsId("000000000000000000000000000000000001"));
-        _pnfsManager.getStorageInfo(pnfsGetStorageInfoMessage);
+        _pnfsManager.getFileAttributes(pnfsGetStorageInfoMessage);
 
         assertTrue("get storageInfo of non existing file should return FILE_NOT_FOUND", pnfsGetStorageInfoMessage.getReturnCode() == CacheException.FILE_NOT_FOUND );
 
@@ -315,7 +316,7 @@ public class PnfsManagerTest {
 
         FsInode rootInode = _fs.path2inode("/pnfs");
         PnfsGetStorageInfoMessage pnfsGetStorageInfoMessage = new PnfsGetStorageInfoMessage(new PnfsId(rootInode.toString()));
-        _pnfsManager.getStorageInfo(pnfsGetStorageInfoMessage);
+        _pnfsManager.getFileAttributes(pnfsGetStorageInfoMessage);
 
         // I don't know yet what is expected reply, but not NPE !
     }
@@ -393,7 +394,7 @@ public class PnfsManagerTest {
 
         PnfsGetStorageInfoMessage pnfsGetStorageInfoMessage =
             new PnfsGetStorageInfoMessage(pnfsCreateEntryMessage.getPnfsId());
-        _pnfsManager.getStorageInfo(pnfsGetStorageInfoMessage);
+        _pnfsManager.getFileAttributes(pnfsGetStorageInfoMessage);
 
         assertEquals("failed to get storageInfo for flushed files", 0,pnfsGetStorageInfoMessage.getReturnCode() );
 
@@ -438,7 +439,7 @@ public class PnfsManagerTest {
     }
 
     @Test
-    public void testGetCombinedAttrbutesNonExist() {
+    public void testGetCombinedAttributesNonExist() {
 
         PnfsGetFileAttributes message =
             new PnfsGetFileAttributes(new PnfsId("000000000000000000000000000000000001"),

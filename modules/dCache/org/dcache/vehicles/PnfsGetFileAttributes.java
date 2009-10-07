@@ -14,8 +14,8 @@ public class PnfsGetFileAttributes extends PnfsMessage {
 
     private static final long serialVersionUID = -6750531802534981651L;
 
-    private FileAttributes _fileAttributes;
-    private Set<FileAttribute> _attributes;
+    protected FileAttributes _fileAttributes;
+    protected Set<FileAttribute> _attributes;
 
     /**
      * Construct request by PnfsId.
@@ -65,5 +65,14 @@ public class PnfsGetFileAttributes extends PnfsMessage {
      */
     public Set<FileAttribute> getRequestedAttributes() {
         return _attributes;
+    }
+
+    @Override
+    public String toString()
+    {
+        return super.toString() + ";" +
+            ((_fileAttributes == null)
+             ? "[noMetaData]"
+             : _fileAttributes.toString());
     }
 }

@@ -42,6 +42,7 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.util.Args;
 import org.dcache.tests.util.CurrentThreadExceutorHelper;
+import org.dcache.vehicles.FileAttributes;
 
 import static org.junit.Assert.*;
 
@@ -131,7 +132,9 @@ public class HsmRestoreTest {
         _storageInfo.setIsNew(false);
 
         PnfsGetStorageInfoMessage storageInfoMessage = new PnfsGetStorageInfoMessage(pnfsId);
-        storageInfoMessage.setStorageInfo(_storageInfo);
+        FileAttributes attributes = new FileAttributes();
+        attributes.setStorageInfo(_storageInfo);
+        storageInfoMessage.setFileAttributes(attributes);
         GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), storageInfoMessage, true);
 
 
@@ -210,7 +213,9 @@ public class HsmRestoreTest {
         _storageInfo.setIsNew(false);
 
         PnfsGetStorageInfoMessage storageInfoMessage = new PnfsGetStorageInfoMessage(pnfsId);
-        storageInfoMessage.setStorageInfo(_storageInfo);
+        FileAttributes attributes = new FileAttributes();
+        attributes.setStorageInfo(_storageInfo);
+        storageInfoMessage.setFileAttributes(attributes);
         GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), storageInfoMessage, true);
 
 
@@ -297,7 +302,9 @@ public class HsmRestoreTest {
         _storageInfo.setIsNew(false);
 
         PnfsGetStorageInfoMessage storageInfoMessage = new PnfsGetStorageInfoMessage(pnfsId);
-        storageInfoMessage.setStorageInfo(_storageInfo);
+        FileAttributes attributes = new FileAttributes();
+        attributes.setStorageInfo(_storageInfo);
+        storageInfoMessage.setFileAttributes(attributes);
         GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), storageInfoMessage, true);
 
 
@@ -381,7 +388,9 @@ public class HsmRestoreTest {
         _storageInfo.setIsNew(false);
 
         PnfsGetStorageInfoMessage storageInfoMessage = new PnfsGetStorageInfoMessage(pnfsId);
-        storageInfoMessage.setStorageInfo(_storageInfo);
+        FileAttributes attributes = new FileAttributes();
+        attributes.setStorageInfo(_storageInfo);
+        storageInfoMessage.setFileAttributes(attributes);
         GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), storageInfoMessage, true);
 
 

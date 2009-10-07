@@ -1003,13 +1003,13 @@ public class PnfsManagerV3 extends CellAdapter
                  * we also ought to be allowed to read it here. Hence
                  * we use ROOT as the subject.
                  */
-                StorageInfo info =
-                    _nameSpaceProvider.getStorageInfo(ROOT, pnfsId);
-
-
-                pnfsMessage.setStorageInfo( info ) ;
-                pnfsMessage.setMetaData(_nameSpaceProvider.getFileMetaData(pnfsMessage.getSubject(), pnfsId));
-
+                Set<FileAttribute> requested =
+                    pnfsMessage.getRequestedAttributes();
+                FileAttributes attrs =
+                    _nameSpaceProvider.getFileAttributes(ROOT,
+                                                         pnfsId,
+                                                         requested);
+                pnfsMessage.setFileAttributes(attrs);
             }catch(Exception eeee){
                 esay( "Can't determine storageInfo : "+eeee ) ;
             }
@@ -1045,24 +1045,34 @@ public class PnfsManagerV3 extends CellAdapter
             try{
                 say( "Trying to get storageInfo for "+pnfsId) ;
 
+                Set<FileAttribute> requested =
+                    pnfsMessage.getRequestedAttributes();
+                requested.add(FileAttribute.STORAGEINFO);
+
                 /* If we were allowed to create the entry above, then
                  * we also ought to be allowed to read it here. Hence
                  * we use ROOT as the subject.
                  */
-                StorageInfo info =
-                    _nameSpaceProvider.getStorageInfo(ROOT, pnfsId);
+                FileAttributes attrs =
+                    _nameSpaceProvider.getFileAttributes(ROOT,
+                                                         pnfsId,
+                                                         requested);
 
                 /*
                  * store current values of access latency and retention policy
                  */
+                StorageInfo info = attrs.getStorageInfo();
                 info.isSetAccessLatency(true);
                 info.isSetRetentionPolicy(true);
-                _nameSpaceProvider.setStorageInfo(pnfsMessage.getSubject(), pnfsId, info, NameSpaceProvider.SI_OVERWRITE);
+                _nameSpaceProvider.setStorageInfo(pnfsMessage.getSubject(),
+                                                  pnfsId,
+                                                  info,
+                                                  NameSpaceProvider.SI_OVERWRITE);
 
                 info.isSetAccessLatency(false);
                 info.isSetRetentionPolicy(false);
 
-                info.setKey("path", pnfsMessage.getPath() );
+                info.setKey("path", pnfsMessage.getPath());
 
                 /*
                  * due to legacy use of level to probe isNew() and while storing default
@@ -1071,8 +1081,7 @@ public class PnfsManagerV3 extends CellAdapter
                  */
                 info.setIsNew(true);
 
-                pnfsMessage.setStorageInfo( info ) ;
-                pnfsMessage.setMetaData(_nameSpaceProvider.getFileMetaData(ROOT, pnfsId));
+                pnfsMessage.setFileAttributes(attrs);
 
             }catch(Exception eeee){
                 esay( "Can't determine storageInfo : "+eeee ) ;
@@ -1097,67 +1106,6 @@ public class PnfsManagerV3 extends CellAdapter
 
         }catch(FileNotFoundCacheException fnf) {
         	// file is gone.....
-        	pnfsMessage.setFailed( CacheException.FILE_NOT_FOUND , fnf.getMessage() ) ;
-        }catch(CacheException ee ){
-            esay( "Failed : "+ee ) ;
-            pnfsMessage.setFailed( ee.getRc() , ee.getMessage() ) ;
-        }catch(Exception iee ){
-            esay( "Failed : "+iee ) ;
-            esay(iee);
-            pnfsMessage.setFailed( CacheException.UNEXPECTED_SYSTEM_EXCEPTION , iee.getMessage() ) ;
-        }
-
-    }
-
-    public void getStorageInfo( PnfsGetStorageInfoMessage pnfsMessage ){
-        Subject subject = pnfsMessage.getSubject();
-        try{
-            PnfsId pnfsId = populatePnfsId(pnfsMessage);
-            say( "getStorageInfo : "+pnfsId ) ;
-
-            StorageInfo info = _nameSpaceProvider.getStorageInfo(subject, pnfsId);
-            pnfsMessage.setStorageInfo(info ) ;
-            pnfsMessage.setSucceeded() ;
-            say( "Storage info "+info ) ;
-            pnfsMessage.setMetaData( _nameSpaceProvider.getFileMetaData(pnfsMessage.getSubject(), pnfsId));
-            if (pnfsMessage.isChecksumsRequested()) {
-                pnfsMessage.setChecksums(_nameSpaceProvider.getChecksums(pnfsMessage.getSubject(), pnfsId));
-            }
-
-        }catch(FileNotFoundCacheException fnf) {
-        	pnfsMessage.setFailed( CacheException.FILE_NOT_FOUND , fnf.getMessage() ) ;
-        }catch(CacheException ee ){
-            //
-            // won't use esay here because this is not really an error. Some
-            // services are using this trick just to findout if the file exists,
-            // where it is fine that it doesn't.
-            //
-            say( "Failed : "+ee ) ;
-            pnfsMessage.setFailed( ee.getRc() , ee.getMessage() ) ;
-        }catch(Exception iee ){
-            esay( "Failed : "+iee ) ;
-            esay(iee);
-            pnfsMessage.setFailed( CacheException.UNEXPECTED_SYSTEM_EXCEPTION , iee.getMessage() ) ;
-        }
-
-    }
-
-    public void getFileMetaData( PnfsGetFileMetaDataMessage pnfsMessage ){
-        boolean resolve = pnfsMessage.resolve() ;
-        Subject subject = pnfsMessage.getSubject();
-        try{
-            PnfsId pnfsId = populatePnfsId(pnfsMessage);
-            say( "getFileMetaData : "+pnfsId ) ;
-
-            pnfsMessage.setSucceeded() ;
-            pnfsMessage.setMetaData( _nameSpaceProvider.getFileMetaData(subject,  pnfsId));
-
-            if (pnfsMessage.isChecksumsRequested()) {
-                pnfsMessage.setChecksums(_nameSpaceProvider.getChecksums(pnfsMessage.getSubject(), pnfsId));
-            }
-
-
-        }catch(FileNotFoundCacheException fnf ) {
         	pnfsMessage.setFailed( CacheException.FILE_NOT_FOUND , fnf.getMessage() ) ;
         }catch(CacheException ee ){
             esay( "Failed : "+ee ) ;
@@ -1712,14 +1660,8 @@ public class PnfsManagerV3 extends CellAdapter
         else if (pnfsMessage instanceof PnfsDeleteEntryMessage){
             deleteEntry((PnfsDeleteEntryMessage)pnfsMessage);
         }
-        else if (pnfsMessage instanceof PnfsGetStorageInfoMessage){
-            getStorageInfo((PnfsGetStorageInfoMessage)pnfsMessage);
-        }
         else if (pnfsMessage instanceof PnfsSetStorageInfoMessage){
             setStorageInfo((PnfsSetStorageInfoMessage)pnfsMessage);
-        }
-        else if (pnfsMessage instanceof PnfsGetFileMetaDataMessage){
-            getFileMetaData((PnfsGetFileMetaDataMessage)pnfsMessage);
         }
         else if (pnfsMessage instanceof PnfsSetFileMetaDataMessage){
             setFileMetaData((PnfsSetFileMetaDataMessage)pnfsMessage);

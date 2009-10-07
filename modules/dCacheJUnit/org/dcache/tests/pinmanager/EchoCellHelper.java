@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.ArrayList;
 import org.dcache.cells.Option;
 import org.dcache.cells.AbstractCell;
+import org.dcache.vehicles.FileAttributes;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
@@ -97,7 +98,9 @@ public class EchoCellHelper extends AbstractCell  {
             if(message instanceof PnfsGetStorageInfoMessage) {
                 PnfsGetStorageInfoMessage pnfsGetStorageInfo =
                     (PnfsGetStorageInfoMessage) message;
-                pnfsGetStorageInfo.setStorageInfo(new GenericStorageInfo());
+                FileAttributes attributes = new FileAttributes();
+                attributes.setStorageInfo(new GenericStorageInfo());
+                pnfsGetStorageInfo.setFileAttributes(attributes);
 
             } else if (message instanceof PnfsGetCacheLocationsMessage) {
                 PnfsGetCacheLocationsMessage pnfsGetCacheLocations =

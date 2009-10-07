@@ -4,7 +4,15 @@ package diskCacheV111.util;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Set;
+import java.util.EnumSet;
+
 import org.dcache.namespace.FileType;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.vehicles.FileAttributes;
+
+import static org.dcache.namespace.FileType.*;
+import static org.dcache.namespace.FileAttribute.*;
 
 public class FileMetaData implements Serializable {
 
@@ -140,6 +148,61 @@ public class FileMetaData implements Serializable {
         _isGroupPermissionSet = true;
         _isWorldPermissionSet = true;
 
+    }
+
+    public FileMetaData(FileAttributes attributes)
+    {
+        for (FileAttribute attribute: attributes.getDefinedAttributes()) {
+            switch (attribute) {
+            case OWNER:
+                setUid(attributes.getOwner());
+                break;
+
+            case OWNER_GROUP:
+                setGid(attributes.getGroup());
+                break;
+
+            case MODE:
+                int mode = attributes.getMode();
+                setUserPermissions(new Permissions((mode >> 6) & 0x7));
+                setGroupPermissions(new Permissions((mode >> 3) & 0x7));
+                setWorldPermissions(new Permissions(mode & 0x7));
+                break;
+
+            case TYPE:
+                switch (attributes.getFileType()) {
+                case DIR:
+                    setFileType(false, true, false);
+                    break;
+                case REGULAR:
+                    setFileType(true, false, false);
+                    break;
+                case LINK:
+                    setFileType(false, false, true);
+                    break;
+                case SPECIAL:
+                    setFileType(false, false, false);
+                    break;
+                }
+                break;
+
+            case SIZE:
+                setSize(attributes.getSize());
+                break;
+
+            case CREATION_TIME:
+                _created = attributes.getCreationTime();
+                break;
+
+            case ACCESS_TIME:
+                setLastAccessedTime(attributes.getAccessTime());
+                break;
+
+            case MODIFICATION_TIME:
+                setLastModifiedTime(attributes.getModificationTime());
+                break;
+            }
+        }
     }
 
     /**
@@ -414,4 +477,14 @@ public class FileMetaData implements Serializable {
         return 17; // to force collections to check with equals()
     }
 
+
+    /**
+     * Returns the set of FileAttributes that FileMetaData can
+     * represent.
+     */
+    public static Set<FileAttribute> getKnownFileAttributes()
+    {
+        return EnumSet.of(OWNER, OWNER_GROUP, MODE, TYPE, SIZE,
+                          CREATION_TIME, ACCESS_TIME, MODIFICATION_TIME);
+    }
 }
