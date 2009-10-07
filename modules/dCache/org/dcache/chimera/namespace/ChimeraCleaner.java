@@ -33,6 +33,9 @@ import org.dcache.cells.CellStub;
 import org.dcache.cells.MessageCallback;
 import org.dcache.commons.util.SqlHelper;
 
+import javax.sql.DataSource;
+
+import com.mchange.v2.c3p0.DataSources;
 /**
  * @author Irina Kozlova
  * @version 22 Oct 2007
@@ -59,7 +62,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
     // how many files will be processed at once, default 100 :
     private int _processAtOnce = 100;
 
-    private Connection _dbConnection;
+    private DataSource _dbConnectionDataSource;
 
     private final static String POOLUP_MESSAGE =
         diskCacheV111.vehicles.PoolManagerPoolUpMessage.class.getName();
@@ -110,9 +113,9 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
 
         DbConnectionInfo dbinfo = config.getDbInfo(0);
         /*
-         * TODO: make use of c3po db connection pool
+         * make use of c3po db connection pool
          */
-        _dbConnection = dbInit(dbinfo.getDBurl(), dbinfo.getDBdrv(), dbinfo.getDBuser(), dbinfo.getDBpass() );
+        this.dbInit(dbinfo.getDBurl(), dbinfo.getDBdrv(), dbinfo.getDBuser(), dbinfo.getDBpass() );
 
         try {
 
@@ -173,9 +176,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
         start();
     }
 
-    private static Connection dbInit(String jdbcUrl, String jdbcClass, String user, String pass ) throws SQLException {
-
-        Connection dbConnection = null;
+    void dbInit(String jdbcUrl, String jdbcClass, String user, String pass ) throws SQLException {
 
         if ((jdbcUrl == null) || (jdbcClass == null) || (user == null)
                 || (pass == null) ) {
@@ -187,12 +188,13 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
             // Add driver to JDBC
             Class.forName(jdbcClass);
 
-            dbConnection = DriverManager.getConnection(jdbcUrl, user, pass);
+            DataSource unpooled = DataSources.unpooledDataSource(jdbcUrl, user, pass);
+            _dbConnectionDataSource = DataSources.pooledDataSource( unpooled );
 
             if (_logNamespace.isDebugEnabled()){
-            	_logNamespace.debug("Database connection with jdbcUrl="
+                _logNamespace.debug("Database connection with jdbcUrl="
                             + jdbcUrl + "; user=" + user + "; pass=" + pass);
-        	}
+            }
 
         } catch (SQLException sqe) {
             _logNamespace.error("Failed to connect to database: " + sqe);
@@ -202,7 +204,6 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
             throw new SQLException(ex.toString());
         }
 
-        return dbConnection;
     }
 
     @Override
@@ -226,7 +227,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
         	try {
 
                 // get list of pool names from the trash_table
-                List<String> poolListDB = getPoolList(_dbConnection);
+                List<String> poolListDB = getPoolList();
 
                 if (_logNamespace.isDebugEnabled()){
                 	_logNamespace.debug("List of Pools from the trash-table : "+ poolListDB);
@@ -313,19 +314,19 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
      * getPoolList
      * returns a list of pools (pool names) from the trash-table
      *
-     * @param dbConnection
      * @throws java.sql.SQLException
      * @return list of pools (pool names)
      */
 
-    List<String> getPoolList(Connection dbConnection) throws SQLException {
+    List<String> getPoolList() throws SQLException {
 
+        Connection dbConnection = null;
         List<String> poollist = new ArrayList<String>();
 
         ResultSet rs = null;
         PreparedStatement stGetPoolList = null;
         try {
-
+            dbConnection = _dbConnectionDataSource.getConnection();
             stGetPoolList = dbConnection.prepareStatement(sqlGetPoolList);
 
             rs = stGetPoolList.executeQuery();
@@ -340,6 +341,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
         } finally {
             SqlHelper.tryToClose(rs);
             SqlHelper.tryToClose(stGetPoolList);
+            SqlHelper.tryToClose(dbConnection);
         }
 
         return poollist;
@@ -359,26 +361,25 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
      * Delete entries from the trash-table.
      * Pool name and the file names are input parameters.
      *
-     * @param dbConnection
      * @param poolname name of the pool
      * @param filelist file list for this pool
      *
      */
 
-    void removeFiles(Connection dbConnection, String poolname, String[] filelist) {
+    void removeFiles(String poolname, String[] filelist) {
 
         /*
          * FIXME: we send remove to the broadcaster even if we failed to
          * remove a record from the DB.
          */
         informBroadcaster(filelist);
-
+        Connection dbConnection = null;
         PreparedStatement stRemoveFiles = null;
 
         for (String filename: filelist) {
 
             try {
-
+                dbConnection = _dbConnectionDataSource.getConnection();
                 stRemoveFiles = dbConnection.prepareStatement(sqlRemoveFiles);
 
                 stRemoveFiles.setString(1, poolname);
@@ -388,6 +389,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
                 _logNamespace.error("Failed to remove entries frm DB: " + e.getMessage());
             } finally {
                 SqlHelper.tryToClose(stRemoveFiles);
+                SqlHelper.tryToClose(dbConnection);
             }
 
         }
@@ -411,7 +413,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
 
             //only if pool is not in poolsBlackPool start cleaning
             if (! _poolsBlackList.containsKey(thisPool)) {
-            cleanPoolComplete(_dbConnection, thisPool);
+            cleanPoolComplete(thisPool);
             }
 
         }
@@ -477,13 +479,13 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
      * cleanPoolComplete
      * delete all files from the pool 'poolName' found in the trash-table for this pool
      *
-     * @param dbConnection
      * @param poolName name of the pool
      * @throws java.sql.SQLException
      * @throws java.lang.InterruptedException
      */
-    void cleanPoolComplete(Connection dbConnection, String poolName) throws SQLException, InterruptedException {
+    void cleanPoolComplete(String poolName) throws SQLException, InterruptedException {
 
+        Connection dbConnection = null;
         List<String> filePartList = new ArrayList<String>();
 
         if(_logNamespace.isDebugEnabled()) {
@@ -493,7 +495,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
         ResultSet rs = null;
         PreparedStatement stGetFileListForPool = null;
         try {
-
+            dbConnection = _dbConnectionDataSource.getConnection();
             stGetFileListForPool = dbConnection.prepareStatement(sqlGetFileListForPool);
 
             stGetFileListForPool.setString(1, poolName);
@@ -523,6 +525,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
         } finally {
             SqlHelper.tryToClose(rs);
             SqlHelper.tryToClose(stGetFileListForPool);
+            SqlHelper.tryToClose(dbConnection);
         }
 
     }
@@ -555,7 +558,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
     public static String hh_rundelete = " # run Cleaner ";
     public String ac_rundelete(Args args) throws Exception {
 
-        List<String> tmpPoolList = getPoolList(_dbConnection);
+        List<String> tmpPoolList = getPoolList();
         runDelete(tmpPoolList.toArray(new String[tmpPoolList.size()]));
 
         return "";
@@ -604,15 +607,15 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
     public String ac_remove_file_$_1(Args args) throws Exception {
 
         String filePnfsID = args.argv(0);
-
+        Connection dbConnection = null;
         List<String> removeFile = new ArrayList<String>(1);
         removeFile.add(filePnfsID);
 
         ResultSet rs = null;
         PreparedStatement stGetPoolsForFile = null;
         try {
-
-            stGetPoolsForFile = _dbConnection.prepareStatement(sqlGetPoolsForFile);
+            dbConnection = _dbConnectionDataSource.getConnection();
+            stGetPoolsForFile = dbConnection.prepareStatement(sqlGetPoolsForFile);
             stGetPoolsForFile.setString(1, filePnfsID);
             rs = stGetPoolsForFile.executeQuery();
 
@@ -624,6 +627,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
         } finally {
             SqlHelper.tryToClose(rs);
             SqlHelper.tryToClose(stGetPoolsForFile);
+            SqlHelper.tryToClose(dbConnection);
         }
       return "";
 
@@ -634,7 +638,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
 
         String poolName = args.argv(0);
         if (! _poolsBlackList.containsKey(poolName)) {
-        cleanPoolComplete(_dbConnection, poolName);
+        cleanPoolComplete(poolName);
         return "";
         } else {
             return "This pool is not available for the moment and therefore will not be cleaned.";
@@ -697,7 +701,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
         @Override
         public synchronized void success(PoolRemoveFilesMessage message) {
             try {
-                removeFiles(_dbConnection, _poolName, _filesToRemove );
+                removeFiles(_poolName, _filesToRemove );
             }finally{
                 notifyAll();
             }
@@ -714,7 +718,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
                     okRemoved_coll.removeAll(Arrays.asList(notRemoved));
 
                     String[] okRemoved = okRemoved_coll.toArray(new String[okRemoved_coll.size()]);
-                    removeFiles(_dbConnection, _poolName, okRemoved);
+                    removeFiles(_poolName, okRemoved);
                 }
             } finally {
                 notifyAll();
