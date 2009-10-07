@@ -352,7 +352,7 @@ public abstract class Job  {
              * expiring a job during restore causes the job to be read
              * recursively.
              */
-            LifetimeExpiration.schedule(id, Math.min(0, new_lifetime));
+            LifetimeExpiration.schedule(id, Math.max(0, new_lifetime));
         }
     }
 
