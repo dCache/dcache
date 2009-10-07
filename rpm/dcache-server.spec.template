@@ -22,8 +22,10 @@ Provides: dCachePostInstallConfigurationScripts
 Provides: d-cache-core <= @Version@
 Provides: d-cache-opt <= @Version@
 AutoReqProv: no
-#Requires: j2re >= 1.4.2
-#Prereq: j2re
+Requires: java >= 1.5
+Requires:  jpackage-utils
+BuildRequires: java-devel >= 1.6.0
+BuildRequires:  jpackage-utils
 
 License: Free
 Group: Applications/System
