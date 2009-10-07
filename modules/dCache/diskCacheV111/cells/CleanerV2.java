@@ -1294,8 +1294,7 @@ public class CleanerV2 extends CellAdapter implements Runnable {
    private synchronized void getGlobalLock() throws Exception {
        boolean result = _globalLock.createNewFile() ;
        if( ! result )
-         throw new
-         IllegalStateException("operation locked");
+         throw new IllegalStateException("File exists: " + _globalLock.getAbsoluteFile());
   }
    @Override
 public void messageArrived( CellMessage message ){
