@@ -129,11 +129,16 @@ for i in $SRM_PATH/lib/globus/*.jar
   SRM_CP=$SRM_CP:$i
 done
 
-
 for i in $SRM_PATH/lib/axis/*.jar
   do
   SRM_CP=$SRM_CP:$i
 done
+
+for i in $SRM_PATH/lib/log4j/*.jar
+  do
+  SRM_CP=$SRM_CP:$i
+done
+
 
 for i in $SRM_PATH/lib/security/*.jar
   do
