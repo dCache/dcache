@@ -24,6 +24,7 @@ import dmg.util.CommandException;
 import dmg.util.CommandExitException;
 import dmg.util.KeepAliveListener;
 import dmg.util.StreamEngine;
+import java.io.IOException;
 
 /**
   * @author Patrick Fuhrmann
@@ -38,7 +39,6 @@ import dmg.util.StreamEngine;
 public class      DCapDoor
        extends    CellAdapter
        implements Runnable, KeepAliveListener           {
-
 
     private StreamEngine   _engine;
     private BufferedReader _in;
@@ -459,7 +459,9 @@ public class      DCapDoor
 		say("Close socket");
 		_engine.getSocket().close();
 	    }
-	} catch (Exception ee) { ; }
+        } catch (IOException e) {
+            esay("DcapDoor: got I/O exception closing socket:" + e.getMessage());
+        }
 
     }
 
