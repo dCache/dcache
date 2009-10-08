@@ -539,7 +539,7 @@
 
         <!-- JDBC -->
         <mkdir dir="${server.bin.dir}/classes/jdbc-drivers" />
-        <copy file="${libDir}/postgres-jdbc/postgresql-8.1-405.jdbc3.jar" todir="${server.bin.dir}/classes/jdbc-drivers" />
+        <copy file="${libDir}/postgres-jdbc/postgresql-8.4-701.jdbc3.jar" todir="${server.bin.dir}/classes/jdbc-drivers" />
 
         <!-- DBCP for Replica Manager -->
         <copy file="${libDir}/dbcp/commons-dbcp.jar" todir="${server.bin.dir}/classes/jdbc-drivers" />
