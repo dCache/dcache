@@ -17,12 +17,9 @@ import diskCacheV111.services.authorization.GplazmaService;
 import diskCacheV111.poolManager.RequestContainerV5;
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 
-import java.security.Principal;
 import java.util.*;
-import java.util.regex.PatternSyntaxException;
 import java.io.*;
 import java.net.*;
-
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
@@ -39,8 +36,6 @@ import org.dcache.acl.enums.AccessType;
 import org.dcache.acl.enums.AuthType;
 import org.dcache.acl.enums.FileAttribute;
 
-import com.sun.security.auth.UnixNumericGroupPrincipal;
-import com.sun.security.auth.UnixNumericUserPrincipal;
 import javax.security.auth.Subject;
 
 /**
@@ -209,7 +204,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
         if( poolRetryValue != null )
             try{
                 _poolRetry = Long.parseLong(poolRetryValue) * 1000L ;
-            }catch(Exception ee ){
+            }catch(NumberFormatException ee ){
                 _cell.esay("Problem in setting PoolRetry Value : "+ee ) ;
             }
         _cell.say("PoolRetry timer set to "+(_poolRetry/1000L)+" seconds");
