@@ -79,8 +79,8 @@ public class SrmGetRequestSummary {
             logger.error(srme);
             response = getFailedResponse(srme.toString());
         } catch(IllegalStateTransition ist) {
-            logger.error(ist);
-            response = getFailedResponse(ist.toString());
+            logger.error("Illegal State Transition : " +ist.getMessage());
+            response = getFailedResponse("Illegal State Transition : " +ist.getMessage());
         }
         
         return response;

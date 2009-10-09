@@ -211,23 +211,9 @@ public class LsFileRequest extends FileRequest {
                                 }
                         }
                         catch(IllegalStateTransition ist) {
-                                esay("can not set fail state:"+ist);
+                                esay("Illegal State Transition : " +ist.getMessage());
                         }
                 }
-//                 finally {
-//                         try {
-//                                 synchronized(this) {
-//                                         State state = getState();
-//                                         if(!State.isFinalState(state)) {
-//                                                 setState(State.READY,
-//                                                          State.READY.toString());
-//                                         }
-//                                 }
-//                         }
-//                         catch(IllegalStateTransition ist) {
-//                                 esay("can not set fail state:"+ist);
-//                         }
-//                 }
         }
         
 
@@ -292,7 +278,7 @@ public class LsFileRequest extends FileRequest {
                                 setState(State.DONE,State.DONE.toString());
                         }
                         catch(IllegalStateTransition ist) {                                                               
-                                 esay("can not set state to DONE");                                                      
+                                 esay("Illegal State Transition : " +ist.getMessage());
                         }                                                                                                 
                 }
                 return metaDataPathDetail;

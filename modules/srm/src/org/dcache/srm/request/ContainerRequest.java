@@ -522,20 +522,14 @@ public abstract class ContainerRequest extends Request {
 
             if(!running_req && !ready_req ){
                 rs.state = "Failed";
-                synchronized(this) {
-                    State state = getState();
-                    if(!State.isFinalState(state)) {
-                        stopUpdating();
-                        try
-                        {
-                            setState(State.FAILED,
-			    rs.errorMessage);
-                        }
-                        catch(IllegalStateTransition ist)
-                        {
-                            esay(ist);
-                        }
-                    }
+                try
+                {
+                    setState(State.FAILED, rs.errorMessage);
+                    stopUpdating();
+                }
+                catch(IllegalStateTransition ist)
+                {
+                    esay("Illegal State Transition : " +ist.getMessage());
                 }
             }
 
@@ -543,39 +537,27 @@ public abstract class ContainerRequest extends Request {
         } else if (running_req || ready_req) {
             rs.state = "Active";
         } else if (done_req) {
-           synchronized(this) {
-
-            State state = getState();
-            if(!State.isFinalState(state)) {
+            try
+            {
+                setState(State.DONE,"All files are done");
                 stopUpdating();
-                try
-                {
-                    setState(State.DONE,"All files are done");
-                }
-                catch(IllegalStateTransition ist)
-                {
-                    esay(ist);
-                }
             }
-           }
+            catch(IllegalStateTransition ist)
+            {
+                esay("Illegal State Transition : " +ist.getMessage());
+            }
             rs.state = "Done";
         } else {
             esay("request state is unknown or no files in request!!!");
-           synchronized(this) {
-
-            State state = getState();
-            if(!State.isFinalState(state)) {
-                stopUpdating();
-                try
-                {
-                    setState(State.FAILED,"request state is unknown or no files in request!!!");
-                }
-                catch(IllegalStateTransition ist)
-                {
-                    esay(ist);
-                }
+            stopUpdating();
+            try
+            {
+                setState(State.FAILED,"request state is unknown or no files in request!!!");
             }
-           }
+            catch(IllegalStateTransition ist)
+            {
+                esay("Illegal State Transition : " +ist.getMessage());
+            }
             rs.state = "Failed";
         }
 

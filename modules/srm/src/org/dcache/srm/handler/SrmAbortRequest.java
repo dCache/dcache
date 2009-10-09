@@ -83,8 +83,8 @@ public class SrmAbortRequest {
             logger.error(srme);
             response = getFailedResponse(srme.toString());
         } catch(IllegalStateTransition ist) {
-            logger.error(ist);
-            response = getFailedResponse(ist.toString());
+            logger.error("Illegal State Transition : " +ist.getMessage());
+            response = getFailedResponse("Illegal State Transition : " +ist.getMessage());
         }
         
         return response;
@@ -136,11 +136,9 @@ public class SrmAbortRequest {
             ((ContainerRequest)job).getTReturnStatus();
         }
         
-        synchronized(job) {
-            State state = job.getState();
-            if(!State.isFinalState(state)) {
-                job.setState(State.CANCELED,"SrmAbortRequest called");
-            }
+        State state = job.getState();
+        if(!State.isFinalState(state)) {
+            job.setState(State.CANCELED,"SrmAbortRequest called");
         }
         TReturnStatus status = new TReturnStatus();
         status.setStatusCode(TStatusCode.SRM_SUCCESS);

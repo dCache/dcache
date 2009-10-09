@@ -300,9 +300,9 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
 					say("putting job in a priority thread queue, which might block, job#"+job.getId());
 					job.setState(State.PRIORITYTQUEUED, "in priority thread queue");
 					if(!priorityThreadQueue.offer(job,0))
-                                        {
-                                            job.setState(State.FAILED,"Priority Thread Queue is full. Failing request");
-                                        }
+                    {
+                        job.setState(State.FAILED,"Priority Thread Queue is full. Failing request");
+                    }
 					say("done putting job in a priority thread queue");
 				}
 				return;
@@ -685,22 +685,14 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
             // cann't add any more jobs to ready state
             return;
         }
-        synchronized(job)
-        {
-            /*
-             ** let the stateChanged() always remove the jobs from the queue
-             */
-            State state = job.getState();
-            if(state != State.RQUEUED ) {
+        try {
+            job.setState(State.READY,"execution succeeded");
 
-            }
-            try {
-                job.setState(State.READY,"execution succeeded");
+        }
+        catch(IllegalStateTransition ist) {
+            //nothing more we can do here
+            esay("Illegal State Transition : " +ist.getMessage());
 
-            }
-            catch(IllegalStateTransition ist) {
-                //nothing we can do here
-            }
         }
     }
 
@@ -849,7 +841,7 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
                             job.saveJob();
                         }
                         catch( IllegalStateTransition ist) {
-                            esay(ist.toString());
+                            esay("Illegal State Transition : " +ist.getMessage());
                             return;
                         }
                     }
@@ -862,7 +854,7 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
                                 job.saveJob();
                             }
                             catch( IllegalStateTransition ist) {
-                                esay(ist.toString());
+                                esay("Illegal State Transition : " +ist.getMessage());
                                 return;
                             }
                     }
@@ -908,12 +900,12 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
                                     job.setState(State.FAILED,"InterruptedException while putting on the ready queue");
                                 }
                                 catch( IllegalStateTransition ist) {
-                                    esay(ist.toString());
+                                    esay("Illegal State Transition : " +ist.getMessage());
                                     return;
                                 }
                             }
                             catch( IllegalStateTransition ist) {
-                                esay(ist.toString());
+                                esay("Illegal State Transition : " +ist.getMessage());
                                 return;
                             }
                         }
@@ -930,7 +922,7 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
                                         " nonfatal error ["+t.toString()+"] retrying");
                                 }
                                 catch( IllegalStateTransition ist) {
-                                    esay(ist.toString());
+                                    esay("Illegal State Transition : " +ist.getMessage());
                                     return;
                                 }
                                 Scheduler.this.startRetryTimer(job);
@@ -942,7 +934,7 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
                                     "number of retries exceeded: "+failure.toString());
                                 }
                                 catch( IllegalStateTransition ist) {
-                                    esay(ist.toString());
+                                    esay("Illegal State Transition : " +ist.getMessage());
                                     return;
                                 }
                                 return;
@@ -957,7 +949,7 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
 
                             }
                             catch( IllegalStateTransition ist) {
-                                esay(ist.toString());
+                                esay("Illegal State Transition : " +ist.getMessage());
                                 return;
                             }
                             return;
@@ -971,7 +963,7 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
 
                             }
                             catch( IllegalStateTransition ist) {
-                                esay(ist.toString());
+                                esay("Illegal State Transition : " +ist.getMessage());
                                 return;
                             }
                             return;
@@ -1018,27 +1010,23 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
                         //schedule(job);
                     }
                     catch(InterruptedException ie) {
-                        synchronized (job) {
-                            try {
-                                job.setState(State.FAILED,
-                                "scheduler is interrupted");
-                            }
-                            catch(IllegalStateTransition ist) {
-                                esay(ist);
-                            }
+                        try {
+                            job.setState(State.FAILED,
+                            "scheduler is interrupted");
+                        }
+                        catch(IllegalStateTransition ist) {
+                            esay("Illegal State Transition : " +ist.getMessage());
                         }
                     }
                     catch(IllegalStateTransition ist) {
-                        synchronized(job) {
-                            esay("can not retry:");
-                            esay(ist);
-                            try {
-                                    job.setState(State.FAILED,
-                                    "scheduler is interrupted");
-                            }
-                            catch(IllegalStateTransition ist1) {
-                                esay(ist1);
-                            }
+                        esay("can not retry:");
+                        esay("Illegal State Transition : " +ist.getMessage());
+                        try {
+                                job.setState(State.FAILED,
+                                "scheduler is interrupted");
+                        }
+                        catch(IllegalStateTransition ist1) {
+                            esay("Illegal State Transition : " +ist1.getMessage());
                         }
                     }
                 }
@@ -1227,7 +1215,7 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
                             " while re scheduling  the saved job ");
                         }
                         catch( IllegalStateTransition ist) {
-                            esay(ist);
+                            esay("Illegal State Transition : " +ist.getMessage());
                         }
                     }
                 }

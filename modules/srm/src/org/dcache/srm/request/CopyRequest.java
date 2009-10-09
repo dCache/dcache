@@ -314,18 +314,12 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
         say("Proccessing request");
         if(fileRequests == null || fileRequests.length == 0) {
             try {
-                synchronized(this)
-                {
-
-                    State state = this.getState();
-                    if(State.isFinalState(state)) {
-                        setState(State.FAILED,"Request contains zero file requests");
-                    }
-                }
+                setState(State.FAILED,"Request contains zero file requests");
                 return;
             }
-            catch(Exception e) {
-                esay(e);
+            catch(IllegalStateTransition ist)
+            {
+                esay("Illegal State Transition : " +ist.getMessage());
             }
             
         }
@@ -343,17 +337,11 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
             catch(MalformedURLException murle) {
                 esay(murle);
                 try {
-                    synchronized(this)
-                    {
-                        
-                        State state = this.getState();
-                        if(state != State.CANCELED && state != State.FAILED && state != State.DONE ) {
-                            setState(State.FAILED, murle.toString());
-                        }
-                    }
+                    setState(State.FAILED, murle.toString());
                 }
-                catch(Exception e) {
-                    esay(e);
+                catch(IllegalStateTransition ist)
+                {
+                    esay("Illegal State Transition : " +ist.getMessage());
                 }
                 return;
                 
@@ -799,15 +787,11 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
                     esay(e);
                     esay("failed to schedule CopyFileRequest " +cfr);
                     try {
-                        synchronized(cfr) {
-                            State cfr_state = cfr.getState();
-                            if(cfr_state != State.CANCELED && cfr_state != State.FAILED && cfr_state != State.DONE ) {
-                                cfr.setState(State.FAILED,"failed to schedule CopyFileRequest " +cfr +" rasaon: "+e);
-                            }
-                        }
+                        cfr.setState(State.FAILED,"failed to schedule CopyFileRequest " +cfr +" rasaon: "+e);
                     }
-                    catch(Exception e1) {
-                        esay(e1);
+                    catch(IllegalStateTransition ist)
+                    {
+                        esay("Illegal State Transition : " +ist.getMessage());
                     }
                 }
                 remoteSurlToFileReqIds.remove(SURL,cfr_ids[i]);
@@ -836,16 +820,11 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
                     else {
                         error = "retrieval of \"to\" TURL failed with error "+reason;
                     }
-                    synchronized(cfr) {
-                        State cfr_state = cfr.getState();
-                        if(cfr_state != State.CANCELED && cfr_state != State.FAILED && cfr_state != State.DONE ) {
-                            esay(error);
-                            cfr.setState(State.FAILED,error);
-                        }
-                    }
+                    esay(error);
+                    cfr.setState(State.FAILED,error);
                 }
                 catch(IllegalStateTransition ist) {
-                    esay(ist);
+                    esay("Illegal State Transition : " +ist.getMessage());
                 }
                 cfr.saveJob();
                 
@@ -876,17 +855,11 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
                         else {
                             error = "retrieval of \"to\" TURL failed with error "+reason;
                         }
-                        synchronized(cfr)
-                        {
-                            State cfr_state = cfr.getState();
-                            if(cfr_state != State.CANCELED && cfr_state != State.FAILED && cfr_state != State.DONE ) {
-                                esay(error);
-                                cfr.setState(State.FAILED,error);
-                            }
-                        }
+                        esay(error);
+                        cfr.setState(State.FAILED,error);
                     }
                     catch(IllegalStateTransition ist) {
-                        esay(ist);
+                        esay("Illegal State Transition : " +ist.getMessage());
                     }
                     cfr.saveJob();
                     remoteSurlToFileReqIds.remove(SURL,cfr_ids[j]);
@@ -1024,18 +997,12 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
                 }
             }
             
-            synchronized(this) {
-               processingDone = true;
-
-                State state = getState();
-                if(!State.isFinalState(state)) {
-                    if(done) {
-                        setState(State.DONE,"all file request completed");
-                    }
-                    else {
-                        setState(State.ASYNCWAIT, "waiting for files to complete");
-                    }
-                }
+            processingDone = true;
+            if(done) {
+                setState(State.DONE,"all file request completed");
+            }
+            else {
+                setState(State.ASYNCWAIT, "waiting for files to complete");
             }
         }
         catch(org.dcache.srm.scheduler.FatalJobFailure fje) {
@@ -1072,7 +1039,7 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
                     }
                 }
                 catch(IllegalStateTransition ist) {
-                    esay(ist);
+                    esay("Illegal State Transition : " +ist.getMessage());
                 }
             }
            
@@ -1134,13 +1101,10 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
                     }
                 }
                 
-                synchronized(this) {
-
-                    State state = getState();
-                    if(!State.isFinalState(state)) {
-                        if(done) {
-                            setState(State.DONE,"all files requests have completed ");
-                        }
+                State state = getState();
+                if(!State.isFinalState(state)) {
+                    if(done) {
+                        setState(State.DONE,"all files requests have completed ");
                     }
                 }
             }
@@ -1150,17 +1114,14 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
                 esay("setting to done anyway");
                 try
                 {
-                    synchronized(this) {
-
-                        State state = getState();
-                        if(!State.isFinalState(state)) {
-                            setState(State.DONE,e.toString());
-                        }
+                    State state = getState();
+                    if(!State.isFinalState(state)) {
+                        setState(State.DONE,e.toString());
                     }
-                }catch(Exception e1)
+                }
+                catch(IllegalStateTransition ist)
                 {
-                    //nothing we can do here
-                    esay(e1);
+                    esay("Illegal State Transition : " +ist.getMessage());
                 }
             }
         }

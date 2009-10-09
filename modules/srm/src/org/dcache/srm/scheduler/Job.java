@@ -515,20 +515,29 @@ public abstract class Job  {
         return state;
     }
 
-    /**this is not thread safe, whoever calls this, should synchronize on the job
-    */
+    /**
+     *  Changes the state of this job to a new state
+     * @param state
+     * @param description
+     * @throws org.dcache.srm.scheduler.IllegalStateTransition
+     */
     public void setState(State state,String description) throws
     IllegalStateTransition {
         setState(state,description,true);
 
     }
-    //if save is false
-    // we do not save state in database
-    // the caller of the save state
-    // needs to call save then
-    //this is not thread safe, whoever calls this, should synchronize on the job
-    public void setState(State state,String description, boolean save) throws
-    IllegalStateTransition {
+    
+    /**
+     * Changes the state of this job to a new state
+     * @param state
+     * @param description
+     * @param save
+     * if save is false we do not save state in database
+     * the caller of the save state needs to call saveJob then
+     * @throws org.dcache.srm.scheduler.IllegalStateTransition
+     */
+    public synchronized void setState(State state,String description, boolean save) throws
+       IllegalStateTransition {
         State old;
             if(state == this.state) {
                 return;
@@ -716,22 +725,6 @@ public abstract class Job  {
                 errorsb.append(" : ");
                 errorsb.append(nextHistoryElement.getDescription());
             }
-                /*
-                for( Iterator i = jobHistory.iterator(); i.hasNext();) {
-                    JobHistory nextHistoryElement = (JobHistory)i.next();
-                    State nexthistoryElState = nextHistoryElement.getState();
-                    if(nexthistoryElState == State.FAILED ||
-                    nexthistoryElState == State.CANCELED ||
-                    nexthistoryElState == State.RETRYWAIT ||
-                    nexthistoryElState == State.DONE  ) {
-                     errorMessage.append(" at ");
-                     errorMessage.append(new java.util.Date(nextHistoryElement.getTransitionTime()));
-                     errorMessage.append(" state ").append(nexthistoryElState);
-                     errorMessage.append(" : ");
-                     errorMessage.append(nextHistoryElement.getDescription());
-                     errorMessage.append('\n');
-                    }
-                }*/
        }
        return errorsb.toString();
     }
@@ -1026,6 +1019,7 @@ public abstract class Job  {
             }
         }
         catch(IllegalStateTransition ist) {
+            // todo: need to add log when adding logger ("Illegal State Transition : " +ist.getMessage());
             return;
         }
     }

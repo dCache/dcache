@@ -89,8 +89,8 @@ public class SrmAbortFiles {
             logger.error(srme);
             response = getFailedResponse(srme.toString());
         } catch(IllegalStateTransition ist) {
-            logger.error(ist);
-            response = getFailedResponse(ist.toString());
+            logger.error("Illegal State Transition : " +ist.getMessage());
+            response = getFailedResponse("Illegal State Transition : " +ist.getMessage());
         }
         return response;
     }
@@ -156,12 +156,7 @@ public class SrmAbortFiles {
             }
             surl_stings[i] = surls[i].toString();
             FileRequest fileRequest = request.getFileRequestBySurl(surl_stings[i]);
-            synchronized(fileRequest) {
-                State state = fileRequest.getState();
-                if(!State.isFinalState(state)) {
-                    fileRequest.setState(State.CANCELED,"SrmAbortFiles called");
-                }
-            }
+            fileRequest.setState(State.CANCELED,"SrmAbortFiles called");
         }
         
         TReturnStatus status = new TReturnStatus();

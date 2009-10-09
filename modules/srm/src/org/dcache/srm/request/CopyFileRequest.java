@@ -483,15 +483,11 @@ public class CopyFileRequest extends FileRequest {
             fmd = getStorage().getFileMetaData(getUser(), local_from_path);
         } catch (SRMException srme) {
             try {
-                synchronized (this) {
-                    State state = getState();
-                    if (!State.isFinalState(state)) {
-                        setStatusCode(TStatusCode.SRM_INVALID_PATH);
-                        setState(State.FAILED, srme.getMessage());
-                    }
-                }
+                setStateAndStatusCode(State.FAILED,
+                        srme.getMessage(),
+                        TStatusCode.SRM_INVALID_PATH);
             } catch (IllegalStateTransition ist) {
-                esay("can not fail state:" + ist);
+                esay("Illegal State Transition : " +ist.getMessage());
             }
             return;
 
@@ -500,15 +496,7 @@ public class CopyFileRequest extends FileRequest {
 
 		RequestCredential credential = getCredential();
 		if(toFileId == null && toParentFileId == null) {
-			synchronized(this) {
-				State state = getState();
-				if(!State.isFinalState(state)) {
-					setState(State.ASYNCWAIT,"calling storage.prepareToPut");
-				}
-				else {
-					throw new org.dcache.srm.scheduler.FatalJobFailure("request state is a final state");
-				}
-			}
+            setState(State.ASYNCWAIT,"calling storage.prepareToPut");
 			PutCallbacks callbacks = new PutCallbacks(this.getId());
 			say("calling storage.prepareToPut("+local_to_path+")");
 			getStorage().prepareToPut(getUser(),
@@ -548,16 +536,7 @@ public class CopyFileRequest extends FileRequest {
 
 		if (getConfiguration().isReserve_space_implicitely() &&
                 spaceReservationId == null) {
-			synchronized(this) {
-				State state = getState();
-				if(!State.isFinalState(state)) {
-					setState(State.ASYNCWAIT,"reserving space");
-				}
-				else {
-					throw new org.dcache.srm.scheduler.FatalJobFailure("request state is a final state");
-				}
-			}
-
+            setState(State.ASYNCWAIT,"reserving space");
 			long remaining_lifetime =
                     lifetime - ( System.currentTimeMillis() -creationTime);
 			say("reserving space, size="+(size==0?1L:size));
@@ -596,12 +575,7 @@ public class CopyFileRequest extends FileRequest {
 
 		if( spaceReservationId != null &&
 		    !spaceMarkedAsBeingUsed) {
-			synchronized(this) {
-				State state = getState();
-				if(!State.isFinalState(state)) {
-					setState(State.ASYNCWAIT,"marking space as being used");
-				}
-			}
+            setState(State.ASYNCWAIT,"marking space as being used");
 			long remaining_lifetime =
                     lifetime - ( System.currentTimeMillis() -creationTime);
 			SrmUseSpaceCallbacks  callbacks = new CopyUseSpaceCallbacks(getId());
@@ -624,15 +598,7 @@ public class CopyFileRequest extends FileRequest {
 		say("copying from remote to local ");
 		RequestCredential credential = getCredential();
 		if(toFileId == null && toParentFileId == null) {
-			synchronized(this) {
-				State state = getState();
-				if(!State.isFinalState(state)) {
-					setState(State.ASYNCWAIT,"calling storage.prepareToPut");
-				} 
-				else {
-					throw new org.dcache.srm.scheduler.FatalJobFailure("request state is a final state");
-				}
-			}
+			setState(State.ASYNCWAIT,"calling storage.prepareToPut");
 			PutCallbacks callbacks = new PutCallbacks(this.getId());
 			say("calling storage.prepareToPut("+local_to_path+")");
 			getStorage().prepareToPut(getUser(),
@@ -670,15 +636,7 @@ public class CopyFileRequest extends FileRequest {
 		}
 
 		if (getConfiguration().isReserve_space_implicitely()&&spaceReservationId == null) {
-                    synchronized(this) {
-				State state = getState();
-				if(!State.isFinalState(state)) {
-					setState(State.ASYNCWAIT,"reserving space");
-				} 
-				else {
-					throw new org.dcache.srm.scheduler.FatalJobFailure("request state is a final state");
-				}
-                   }
+			setState(State.ASYNCWAIT,"reserving space");
 			long remaining_lifetime = lifetime - ( System.currentTimeMillis() -creationTime);
 			say("reserving space, size="+(size==0?1L:size));
 			//
@@ -708,12 +666,7 @@ public class CopyFileRequest extends FileRequest {
 		}
 		if( spaceReservationId != null &&
 		    !spaceMarkedAsBeingUsed) {
-			synchronized(this) {
-				State state = getState();
-				if(!State.isFinalState(state)) {
-					setState(State.ASYNCWAIT,"marking space as being used");
-				}
-			}
+            setState(State.ASYNCWAIT,"marking space as being used");
 			long remaining_lifetime = lifetime - ( System.currentTimeMillis() -creationTime);
 			SrmUseSpaceCallbacks  callbacks = new CopyUseSpaceCallbacks(getId());
 			getStorage().srmMarkSpaceAsBeingUsed(getUser(),
@@ -726,15 +679,7 @@ public class CopyFileRequest extends FileRequest {
 			return;
 		}
 		if(transferId == null) {
-			synchronized(this) {
-				State state = getState();
-				if(!State.isFinalState(state)) {
-					setState(State.RUNNINGWITHOUTTHREAD,"started remote transfer, waiting completion");
-					}
-				else {
-					throw new org.dcache.srm.scheduler.FatalJobFailure("request state is a final state");
-				}
-			}
+            setState(State.RUNNINGWITHOUTTHREAD,"started remote transfer, waiting completion");
 			TheCopyCallbacks copycallbacks = new TheCopyCallbacks(getId());
 			if(spaceReservationId != null) {
 				transferId = getStorage().getFromRemoteTURL(getUser(),
@@ -772,38 +717,26 @@ public class CopyFileRequest extends FileRequest {
 	}
     
 	private void setStateToDone(){
-		synchronized(this) {
-			State s = getState();
-			if(State.isFinalState(s)) {
-				return;
-			}
-			try {
-				setState(State.DONE, "setStateToDone called");
-                try {
-                    ((CopyRequest)getRequest()).fileRequestCompleted();
-                } catch (SRMInvalidRequestException ire) {
-                    esay(ire);
-                }
-			}
-			catch(IllegalStateTransition ist) {
-				esay(ist);
-			}
-		}
+        try {
+            setState(State.DONE, "setStateToDone called");
+            try {
+                ((CopyRequest)getRequest()).fileRequestCompleted();
+            } catch (SRMInvalidRequestException ire) {
+                esay(ire);
+            }
+        }
+        catch(IllegalStateTransition ist) {
+            esay("setStateToDone: Illegal State Transition : " +ist.getMessage());
+        }
 	}
     
 	private void setStateToFailed(String error) throws Exception {
-		synchronized(this) {
-			State s = getState();
-			if(State.isFinalState(s)) {
-				return;
-			}
-			try {
-				setState(State.FAILED, error);
-			}
-			catch(IllegalStateTransition ist) {
-				esay(ist);
-			}
-		}
+        try {
+            setState(State.FAILED, error);
+        }
+        catch(IllegalStateTransition ist) {
+            esay("setStateToFailed: Illegal State Transition : " +ist.getMessage());
+        }
 		((CopyRequest)getRequest()).fileRequestCompleted();
 	}
     
@@ -1220,16 +1153,13 @@ public class CopyFileRequest extends FileRequest {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				try {
-					synchronized(fr) {
-						State state = fr.getState();
-						if(!State.isFinalState(state)) {
-							fr.setStatusCode(TStatusCode.SRM_DUPLICATION_ERROR);
-							fr.setState(State.FAILED,error_message);
-						}
-					}
+                    fr.setStateAndStatusCode(
+                            State.FAILED,
+                            error_message,
+                            TStatusCode.SRM_DUPLICATION_ERROR);
 				}
 				catch(IllegalStateTransition ist) {
-					fr.esay("can not fail state:"+ist);
+					fr.esay("Illegal State Transition : " +ist.getMessage());
 				}
 				fr.esay("PutCallbacks Timeout");
 			}
@@ -1244,15 +1174,10 @@ public class CopyFileRequest extends FileRequest {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				try {
-					synchronized(fr) {
-						State state = fr.getState();
-						if(!State.isFinalState(state)) {
-							fr.setState(State.FAILED,error_message);
-						}
-					}
+                    fr.setState(State.FAILED,error_message);
 				}
 				catch(IllegalStateTransition ist) {
-					fr.esay("can not fail state:"+ist);
+					fr.esay("Illegal State Transition : " +ist.getMessage());
 				}
 				fr.esay("PutCallbacks Timeout");
 			}
@@ -1267,15 +1192,10 @@ public class CopyFileRequest extends FileRequest {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				try {
-					synchronized(fr) {
-						State state = fr.getState();
-						if(!State.isFinalState(state)) {
-							fr.setState(State.FAILED,error_message);
-						}
-					}
+                    fr.setState(State.FAILED,error_message);
 				}
 				catch(IllegalStateTransition ist) {
-					fr.esay("can not fail state:"+ist);
+					fr.esay("Illegal State Transition : " +ist.getMessage());
 				}
 				fr.esay("PutCallbacks Timeout");
 			}
@@ -1290,16 +1210,10 @@ public class CopyFileRequest extends FileRequest {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				try {
-					synchronized(fr) {
-						
-						State state = fr.getState();
-						if(!State.isFinalState(state)) {
-							fr.setState(State.FAILED,error_message);
-						}
-					}
+                    fr.setState(State.FAILED,error_message);
 				}
 				catch(IllegalStateTransition ist) {
-					fr.esay("can not fail state:"+ist);
+					fr.esay("Illegal State Transition : " +ist.getMessage());
 				}
 				
 				fr.esay("PutCallbacks Timeout");
@@ -1318,10 +1232,7 @@ public class CopyFileRequest extends FileRequest {
 			try {
 				CopyFileRequest fr =  getCopyFileRequest();
 				fr.say("StorageInfoArrived: FileId:"+fileId);
-				State state;
-				synchronized(fr) {
-					state = fr.getState();
-				}
+				State state = fr.getState();
 				if(state == State.ASYNCWAIT) {
 					fr.say("PutCallbacks StorageInfoArrived for file "+fr.getToPath()+" fmd ="+fmd);
 					fr.toFileId = fileId;
@@ -1350,15 +1261,10 @@ public class CopyFileRequest extends FileRequest {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				try {
-					synchronized(fr) {
-						State state = fr.getState();
-						if(!State.isFinalState(state)) {
-							fr.setState(State.FAILED,error_message);
-						}
-					}
+                    fr.setState(State.FAILED,error_message);
 				}
 				catch(IllegalStateTransition ist) {
-					fr.esay("can not fail state:"+ist);
+					fr.esay("Illegal State Transition : " +ist.getMessage());
 				}
 				fr.esay("PutCallbacks Timeout");
 			}
@@ -1373,16 +1279,13 @@ public class CopyFileRequest extends FileRequest {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				try {
-					synchronized(fr) {
-						State state = fr.getState();
-						if(!State.isFinalState(state)) {
-							fr.setStatusCode(TStatusCode.SRM_INVALID_PATH);
-							fr.setState(State.FAILED,error_message);
-						}
-					}
+                    fr.setStateAndStatusCode(
+                            State.FAILED,
+                            error_message,
+                            TStatusCode.SRM_INVALID_PATH);
 				}
 				catch(IllegalStateTransition ist) {
-					fr.esay("can not fail state:"+ist);
+					fr.esay("Illegal State Transition : " +ist.getMessage());
 				}
 				fr.esay("PutCallbacks Timeout");
 			}
@@ -1397,16 +1300,12 @@ public class CopyFileRequest extends FileRequest {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				try {
-					synchronized(fr) {
-						State state = fr.getState();
-						if(!State.isFinalState(state)) {
-							fr.setStatusCode(TStatusCode.SRM_AUTHORIZATION_FAILURE);
-							fr.setState(State.FAILED,error_message);
-						}
-					}
+                    fr.setStateAndStatusCode(State.FAILED,
+                            error_message,
+                            TStatusCode.SRM_AUTHORIZATION_FAILURE);
 				}
 				catch(IllegalStateTransition ist) {
-					fr.esay("can not fail state:"+ist);
+					fr.esay("Illegal State Transition : " +ist.getMessage());
 				}
 				
 				fr.esay("PutCallbacks Timeout");
@@ -1634,15 +1533,10 @@ public class CopyFileRequest extends FileRequest {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				try {
-					synchronized(fr) {
-						State state = fr.getState();
-						if(state != State.DONE && state != State.CANCELED && state != State.FAILED) {
-							fr.setState(State.FAILED,reason);
-						}
-					}
+                    fr.setState(State.FAILED,reason);
 				}
 				catch(IllegalStateTransition ist) {
-					fr.esay("can not fail state:"+ist);
+					fr.esay("Illegal State Transition : " +ist.getMessage());
 				}
 				fr.esay("CopyReserveSpaceCallbacks error: "+ reason);
 			}
@@ -1654,16 +1548,13 @@ public class CopyFileRequest extends FileRequest {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				try {
-					synchronized(fr) {
-						State state = fr.getState();
-						if(state != State.DONE && state != State.CANCELED && state != State.FAILED) {
-							fr.setStatusCode(TStatusCode.SRM_NO_FREE_SPACE);
-							fr.setState(State.FAILED,reason);
-						}
-					}
+                    fr.setStateAndStatusCode(
+                            State.FAILED,
+                            reason,
+                            TStatusCode.SRM_NO_FREE_SPACE);
 				}
 				catch(IllegalStateTransition ist) {
-					fr.esay("can not fail state:"+ist);
+					fr.esay("Illegal State Transition : " +ist.getMessage());
 				}
 				fr.esay("CopyReserveSpaceCallbacks error NoFreeSpace : "+ reason);
 			}
@@ -1676,10 +1567,7 @@ public class CopyFileRequest extends FileRequest {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				fr.say("Space Reserved: spaceReservationToken:"+spaceReservationToken);
-				State state;
-				synchronized(fr) {
-					state = fr.getState();
-				}
+				State state = fr.getState();
 				if(state == State.ASYNCWAIT) {
 					fr.say("CopyReserveSpaceCallbacks Space Reserved for file "+fr.getToPath());
 					fr.setSpaceReservationId(spaceReservationToken);
@@ -1703,15 +1591,10 @@ public class CopyFileRequest extends FileRequest {
 				CopyFileRequest fr = getCopyFileRequest();
 				String error = e.toString();
 				try {
-					synchronized(fr) {
-						State state = fr.getState();
-						if(state != State.DONE && state != State.CANCELED && state != State.FAILED) {
-							fr.setState(State.FAILED,error);
-						}
-					}
+                    fr.setState(State.FAILED,error);
 				}
 				catch(IllegalStateTransition ist) {
-					fr.esay("can not fail state:"+ist);
+					fr.esay("Illegal State Transition : " +ist.getMessage());
 				}
 				fr.esay("CopyReserveSpaceCallbacks exception");
 				fr.esay(e);
@@ -1848,15 +1731,10 @@ public class CopyFileRequest extends FileRequest {
 				CopyFileRequest fr = getCopyFileRequest();
 				String error = e.toString();
 				try {
-					synchronized(fr) {
-						State state = fr.getState();
-						if(!State.isFinalState(state)) {
-							fr.setState(State.FAILED,error);
-						}
-					}
+                    fr.setState(State.FAILED,error);
 				} 
 				catch(IllegalStateTransition ist) {
-					fr.esay("can not fail state:"+ist);
+					fr.esay("Illegal State Transition : " +ist.getMessage());
 				}
 				fr.esay("CopyUseSpaceCallbacks exception");
 				fr.esay(e);
@@ -1870,15 +1748,10 @@ public class CopyFileRequest extends FileRequest {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				try {
-					synchronized(fr) {
-						State state = fr.getState();
-						if(!State.isFinalState(state)) {
-							fr.setState(State.FAILED,reason);
-						}
-					}
+                    fr.setState(State.FAILED,reason);
 				} 
 				catch(IllegalStateTransition ist) {
-					fr.esay("can not fail state:"+ist);
+					fr.esay("Illegal State Transition : " +ist.getMessage());
 				}
 				fr.esay("CopyUseSpaceCallbacks error: "+ reason);
 			} 
@@ -1893,16 +1766,13 @@ public class CopyFileRequest extends FileRequest {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				try {
-					synchronized(fr) {
-						State state = fr.getState();
-						if(!State.isFinalState(state)) {
-							fr.setStatusCode(TStatusCode.SRM_NO_FREE_SPACE);
-							fr.setState(State.FAILED,reason);
-						}
-					}
+                    fr.setStateAndStatusCode(
+                            State.FAILED,
+                            reason,
+                            TStatusCode.SRM_NO_FREE_SPACE);
 				} 
 				catch(IllegalStateTransition ist) {
-					fr.esay("can not fail state:"+ist);
+					fr.esay("Illegal State Transition : " +ist.getMessage());
 				}
 				fr.esay("CopyUseSpaceCallbacks error: "+ reason);
 			} 
@@ -1917,16 +1787,13 @@ public class CopyFileRequest extends FileRequest {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				try {
-					synchronized(fr) {
-						State state = fr.getState();
-						if(!State.isFinalState(state)) {
-							fr.setStatusCode(TStatusCode.SRM_NO_FREE_SPACE);
-							fr.setState(State.FAILED,reason);
-						}
-					}
+                    fr.setStateAndStatusCode(
+                            State.FAILED,
+                            reason,
+                            TStatusCode.SRM_NO_FREE_SPACE);
 				} 
 				catch(IllegalStateTransition ist) {
-					fr.esay("can not fail state:"+ist);
+					fr.esay("Illegal State Transition : " +ist.getMessage());
 				}
 				fr.esay("CopyUseSpaceCallbacks error: "+ reason);
 			} 
@@ -1941,13 +1808,10 @@ public class CopyFileRequest extends FileRequest {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				try {
-					synchronized(fr) {
-						State state = fr.getState();
-						if(!State.isFinalState(state)) {
-							fr.setStatusCode(TStatusCode.SRM_AUTHORIZATION_FAILURE);
-							fr.setState(State.FAILED,reason);
-						}
-					}
+                    fr.setStateAndStatusCode(
+                            State.FAILED,
+                            reason,
+                            TStatusCode.SRM_AUTHORIZATION_FAILURE);
 				} 
 				catch(IllegalStateTransition ist) {
 					fr.esay("can not fail state:"+ist);
@@ -1965,16 +1829,13 @@ public class CopyFileRequest extends FileRequest {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				try {
-					synchronized(fr) {
-						State state = fr.getState();
-						if(!State.isFinalState(state)) {
-							fr.setStatusCode(TStatusCode.SRM_SPACE_LIFETIME_EXPIRED);
-							fr.setState(State.FAILED,reason);
-						}
-					}
+                    fr.setStateAndStatusCode(
+                            State.FAILED,
+                            reason,
+                            TStatusCode.SRM_SPACE_LIFETIME_EXPIRED);
 				} 
 				catch(IllegalStateTransition ist) {
-					fr.esay("can not fail state:"+ist);
+					fr.esay("Illegal State Transition : " +ist.getMessage());
 				}
 				fr.esay("CopyUseSpaceCallbacks error: "+ reason);
 			} 
@@ -1987,10 +1848,7 @@ public class CopyFileRequest extends FileRequest {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				fr.say("Space Marked as Being Used");
-				State state;
-				synchronized(fr) {
-					state = fr.getState();
-				}
+				State state = fr.getState();
 				if(state == State.ASYNCWAIT) {
 					fr.say("CopyUseSpaceCallbacks Space Marked as Being Used for file "+fr.getToURL());
 					fr.setSpaceMarkedAsBeingUsed(true);

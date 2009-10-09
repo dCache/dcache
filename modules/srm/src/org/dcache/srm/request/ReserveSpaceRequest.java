@@ -372,22 +372,16 @@ public class ReserveSpaceRequest extends Request {
         try{
             SrmReserveSpaceCallbacks callbacks = new SrmReserveSpaceCallbacks(this.getId());
             getStorage().srmReserveSpace(
-                    getUser(),
-                    sizeInBytes,
-                    spaceReservationLifetime,
-                    retentionPolicy == null ? null:retentionPolicy.getValue(),
-                    accessLatency == null ? null:accessLatency.getValue(),
-                    getDescription(),
-                    callbacks
-                    );
-            synchronized(this) {
-                
-                State state = getState();
-                if(!State.isFinalState(state)) {
-                    setState(State.ASYNCWAIT,
-                            "waiting Space Reservation completion");
-                }
-            }
+            getUser(),
+            sizeInBytes,
+            spaceReservationLifetime,
+            retentionPolicy == null ? null:retentionPolicy.getValue(),
+            accessLatency == null ? null:accessLatency.getValue(),
+            getDescription(),
+            callbacks
+            );
+            setState(State.ASYNCWAIT,
+                    "waiting Space Reservation completion");
         } catch(Exception e) {
             if(e instanceof NonFatalJobFailure ) {
                 throw (NonFatalJobFailure) e;
@@ -399,15 +393,9 @@ public class ReserveSpaceRequest extends Request {
             esay("can not reserve space: ");
             esay(e);
             try {
-                synchronized(this) {
-                    
-                    State state = getState();
-                    if(!State.isFinalState(state)) {
-                        setState(State.FAILED,e.toString());
-                    }
-                }
+                setState(State.FAILED,e.toString());
             } catch(IllegalStateTransition ist) {
-                esay("can not set fail state:"+ist);
+                esay("Illegal State Transition : " +ist.getMessage());
             }
         }
         
@@ -494,15 +482,9 @@ public class ReserveSpaceRequest extends Request {
                 return;
             }
             try {
-                synchronized(request) {
-                    
-                    State state = request.getState();
-                    if(!State.isFinalState(state)) {
-                        request.setState(State.FAILED,reason);
-                    }
-                }
+                request.setState(State.FAILED,reason);
             } catch(IllegalStateTransition ist) {
-                request.esay("can not fail state:"+ist);
+                request.esay("Illegal State Transition : " +ist.getMessage());
             }
             
             request.esay("ReserveSpace error: "+ reason);
@@ -518,16 +500,9 @@ public class ReserveSpaceRequest extends Request {
             }
             
             try {
-                synchronized(request) {
-                    
-                    State state = request.getState();
-                    if(!State.isFinalState(state)) {
-                        request.setStatusCode(TStatusCode.SRM_NO_FREE_SPACE);
-                        request.setState(State.FAILED,reason);
-                    }
-                }
+                request.setStateAndStatusCode(State.FAILED,reason,TStatusCode.SRM_NO_FREE_SPACE);
             } catch(IllegalStateTransition ist) {
-                request.esay("can not fail state:"+ist);
+                request.esay("Illegal State Transition : " +ist.getMessage());
             }
             
             request.esay("ReserveSpace failed (NoFreeSpace), no free space : "+reason);
@@ -543,15 +518,9 @@ public class ReserveSpaceRequest extends Request {
             }
             
             try {
-                synchronized(request) {
-                    
-                    State state = request.getState();
-                    if(!State.isFinalState(state)) {
-                        request.setState(State.FAILED,e.toString());
-                    }
-                }
+                request.setState(State.FAILED,e.toString());
             } catch(IllegalStateTransition ist) {
-                request.esay("can not fail state:"+ist);
+                request.esay("Illegal State Transition : " +ist.getMessage());
             }
             
             request.esay("ReserveSpace exception: ");
@@ -578,7 +547,7 @@ public class ReserveSpaceRequest extends Request {
                     }
                 }
             } catch(IllegalStateTransition ist) {
-                request.esay(ist);
+                request.esay("Illegal State Transition : " +ist.getMessage());
             }
         }
         

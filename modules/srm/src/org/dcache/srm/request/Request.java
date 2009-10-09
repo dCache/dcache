@@ -81,6 +81,7 @@ import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.scheduler.Scheduler;
+import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.request.sql.RequestsPropertyStorage;
 import org.dcache.srm.v2_2.TStatusCode;
@@ -355,11 +356,16 @@ public abstract class Request extends Job {
         return statusCode==null ? null:statusCode.getValue() ;
     }
 
+    public synchronized void setStateAndStatusCode(
+            State state,
+            String description,
+            TStatusCode statusCode)  throws IllegalStateTransition  {
+        setState(state, description);
+        setStatusCode(statusCode);
+    }
+
     public void setStatusCode(TStatusCode statusCode) {
         this.statusCode = statusCode;
-    }
-    public void setStatusCode(String statusCode) {
-        this.statusCode = statusCode==null?null:TStatusCode.fromString(statusCode);
     }
 
     public String getClient_host() {

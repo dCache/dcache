@@ -369,13 +369,7 @@ public class BringOnlineFileRequest extends FileRequest {
                 say("fileId is null, asking to get a fileId");
                 askFileId();
                 if(fileId == null) {
-                   synchronized(this) {
-
-                        State state = getState();
-                        if(!State.isFinalState(state)) {
-                            setState(State.ASYNCWAIT, "getting file Id");
-                        }
-                   }
+                    setState(State.ASYNCWAIT, "getting file Id");
                     say("BringOnlineFileRequest: waiting async notification about fileId...");
                     return;
                 }
@@ -385,32 +379,21 @@ public class BringOnlineFileRequest extends FileRequest {
             if(pinId == null) {
                 if(!canRead()) {
                     
-                     synchronized(this) {
-                                State state = getState();
-                            if(!State.isFinalState(state)) {
-                                esay( "user "+getUser()+"has no permission to read "+fileId);
-                                try {
-                                    setState(State.FAILED,"user "+
-                                            getUser()+"has no permission to read "+fileId);
-                                }
-                                catch(IllegalStateTransition ist) {
-                                    esay("can not fail state:"+ist);
-                                }
-                            }
-                       }
-                     return;
+                    esay( "user "+getUser()+"has no permission to read "+fileId);
+                    try {
+                        setState(State.FAILED,"user "+
+                                getUser()+"has no permission to read "+fileId);
+                    }
+                    catch(IllegalStateTransition ist) {
+                        esay("Illegal State Transition : " +ist.getMessage());
+                    }
+                    return;
                 }
 
                 say("pinId is null, asking to pin ");
                 pinFile();
                 if(pinId == null) {
-                       synchronized(this) {
-
-                            State state = getState();
-                            if(!State.isFinalState(state)) {
-                                setState(State.ASYNCWAIT,"pinning file");
-                            }
-                       }
+                    setState(State.ASYNCWAIT,"pinning file");
                     say("BringOnlineFileRequest: waiting async notification about pinId...");
                     return;
                 }
@@ -421,7 +404,7 @@ public class BringOnlineFileRequest extends FileRequest {
             throw new FatalJobFailure(ire.toString());
         }
         catch(IllegalStateTransition ist) {
-            throw new NonFatalJobFailure(ist.toString());
+            throw new NonFatalJobFailure("Illegal State Transition : " +ist.getMessage());
         }
         say("PinId is "+pinId+" returning, scheduler should change" +
             " state to \"Ready\"");
@@ -540,21 +523,20 @@ public class BringOnlineFileRequest extends FileRequest {
            surlReturnStatus.setStatus(returnStatus);
            return surlReturnStatus;
         }
-        synchronized(this) {
-            State state = getState();
-            if(!State.isFinalState(state)) {
-                esay("Canceled by the srmReleaseFile");
-                try {
-                    this.setState(State.CANCELED, "Canceled by the srmReleaseFile");
-                } catch (Exception e) {
-                }
-               returnStatus.setExplanation("srmBringOnline for this file has not completed yet,"+
-                        " pending srmBringOnline canceled");
-               returnStatus.setStatusCode(TStatusCode.SRM_FAILURE);
-               surlReturnStatus.setStatus(returnStatus);
-               return surlReturnStatus;
-
+        State state = getState();
+        if(!State.isFinalState(state)) {
+            esay("Canceled by the srmReleaseFile");
+            try {
+                this.setState(State.CANCELED, "Canceled by the srmReleaseFile");
+            } catch (IllegalStateTransition ist) {
+                esay("Illegal State Transition : " +ist.getMessage());
             }
+           returnStatus.setExplanation("srmBringOnline for this file has not completed yet,"+
+                    " pending srmBringOnline canceled");
+           returnStatus.setStatusCode(TStatusCode.SRM_FAILURE);
+           surlReturnStatus.setStatus(returnStatus);
+           return surlReturnStatus;
+
         }
         
         if(fileId != null && pinId != null) {
@@ -690,17 +672,13 @@ public class BringOnlineFileRequest extends FileRequest {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
                 try {
-                   synchronized(fr) {
-
-                        State state = fr.getState();
-                        fr.setStatusCode(TStatusCode.SRM_INVALID_PATH);
-                        if(!State.isFinalState(state)) {
-                            fr.setState(State.FAILED,reason);
-                        }
-                   }
+                    fr.setStateAndStatusCode(
+                            State.FAILED,
+                            reason,
+                            TStatusCode.SRM_INVALID_PATH);
                 }
                 catch(IllegalStateTransition ist) {
-                    fr.esay("can not fail state:"+ist);
+                    fr.esay("Illegal State Transition : " +ist.getMessage());
                 }
                 fr.esay("GetCallbacks error: "+ reason);
             }
@@ -713,16 +691,10 @@ public class BringOnlineFileRequest extends FileRequest {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
                 try {
-                   synchronized(fr) {
-
-                        State state = fr.getState();
-                        if(!State.isFinalState(state)) {
-                            fr.setState(State.FAILED,error);
-                        }
-                   }
+                    fr.setState(State.FAILED,error);
                 }
                 catch(IllegalStateTransition ist) {
-                    fr.esay("can not fail state:"+ist);
+                    fr.esay("Illegal State Transition : " +ist.getMessage());
                 }
                 fr.esay("GetCallbacks error: "+ error);
             }
@@ -735,16 +707,10 @@ public class BringOnlineFileRequest extends FileRequest {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
                 try {
-                   synchronized(fr) {
-
-                        State state = fr.getState();
-                        if(!State.isFinalState(state)) {
-                            fr.setState(State.FAILED,e.toString());
-                        }
-                   }
+                    fr.setState(State.FAILED,e.toString());
                 }
                 catch(IllegalStateTransition ist) {
-                    fr.esay("can not fail state:"+ist);
+                    fr.esay("Illegal State Transition : " +ist.getMessage());
                 }
                 fr.esay("GetCallbacks exception");
                 fr.esay(e);
@@ -758,16 +724,10 @@ public class BringOnlineFileRequest extends FileRequest {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
                 try {
-                   synchronized(fr) {
-
-                        State state = fr.getState();
-                        if(!State.isFinalState(state)) {
-                            fr.setState(State.FAILED,reason);
-                        }
-                   }
+                    fr.setState(State.FAILED,reason);
                 }
                 catch(IllegalStateTransition ist) {
-                    fr.esay("can not fail state:"+ist);
+                    fr.esay("Illegal State Transition : " +ist.getMessage());
                 }
                 
                 fr.esay("GetCallbacks error: "+ reason);
@@ -819,16 +779,10 @@ public class BringOnlineFileRequest extends FileRequest {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
                 try {
-                   synchronized(fr) {
-
-                        State state = fr.getState();
-                        if(!State.isFinalState(state)) {
-                            fr.setState(State.FAILED,"GetCallbacks Timeout");
-                        }
-                   }
+                   fr.setState(State.FAILED,"GetCallbacks Timeout");
                 }
                 catch(IllegalStateTransition ist) {
-                    fr.esay("can not fail state:"+ist);
+                    fr.esay("Illegal State Transition : " +ist.getMessage());
                 }
                 
                 fr.esay("GetCallbacks Timeout");
@@ -862,16 +816,10 @@ public class BringOnlineFileRequest extends FileRequest {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
                 try {
-                   synchronized(fr) {
-
-                        State state = fr.getState();
-                        if(!State.isFinalState(state)) {
-                            fr.setState(State.FAILED,error);
-                        }
-                   }
+                    fr.setState(State.FAILED,error);
                 }
                 catch(IllegalStateTransition ist) {
-                    fr.esay("can not fail state:"+ist);
+                    fr.esay("Illegal State Transition : " +ist.getMessage());
                 }
                 fr.esay("ThePinCallbacks error: "+ error);
             }
@@ -884,16 +832,10 @@ public class BringOnlineFileRequest extends FileRequest {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
                 try {
-                   synchronized(fr) {
-
-                        State state = fr.getState();
-                        if(!State.isFinalState(state)) {
-                            fr.setState(State.FAILED,e.toString());
-                        }
-                   }
+                    fr.setState(State.FAILED,e.toString());
                 }
                 catch(IllegalStateTransition ist) {
-                    fr.esay("can not fail state:"+ist);
+                    fr.esay("Illegal State Transition : " +ist.getMessage());
                 }
                 fr.esay("ThePinCallbacks exception");
                 fr.esay(e);
@@ -910,16 +852,10 @@ public class BringOnlineFileRequest extends FileRequest {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
                 try {
-                   synchronized(fr) {
-
-                        State state = fr.getState();
-                        if(!State.isFinalState(state)) {
-                            fr.setState(State.FAILED,"ThePinCallbacks Timeout");
-                        }
-                   }
+                    fr.setState(State.FAILED,"ThePinCallbacks Timeout");
                 }
                 catch(IllegalStateTransition ist) {
-                    fr.esay("can not fail state:"+ist);
+                    fr.esay("Illegal State Transition : " +ist.getMessage());
                 }
                 
                 fr.esay("GetCallbacks Timeout");
@@ -945,8 +881,8 @@ public class BringOnlineFileRequest extends FileRequest {
             catch(SQLException e) {
                 _log.error("BringOnlineFileRequest failed: " + e.getMessage());
             }
-            catch(IllegalStateTransition e) {
-                _log.error("BringOnlineFileRequest failed: " + e.getMessage());
+            catch(IllegalStateTransition ist) {
+                _log.error("Illegal State Transition : " +ist.getMessage());
             }
         }
         
@@ -957,7 +893,7 @@ public class BringOnlineFileRequest extends FileRequest {
                     fr.setState(State.FAILED,reason);
                 }
                 catch(IllegalStateTransition ist) {
-                    fr.esay("can not fail state:"+ist);
+                    fr.esay("Illegal State Transition : " +ist.getMessage());
                 }
                 
                 fr.esay("ThePinCallbacks error: "+ reason);
@@ -1083,10 +1019,7 @@ public class BringOnlineFileRequest extends FileRequest {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
                 if(fr != null) {
                     fr.say("TheUnpinCallbacks: Unpinned() pinId:"+pinId);
-                    State state;
-                    synchronized(fr ) {
-                        state = fr.getState();
-                    }
+                    State state = fr.getState();
                    if(state == State.ASYNCWAIT) {
                         fr.pinId = pinId;
                         Scheduler scheduler = Scheduler.getScheduler(fr.getSchedulerId());

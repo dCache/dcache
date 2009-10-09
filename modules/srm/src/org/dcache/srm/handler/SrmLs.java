@@ -21,6 +21,7 @@ import org.dcache.srm.request.LsRequest;
 import org.dcache.srm.request.LsFileRequest;
 import org.dcache.srm.request.FileRequest;
 import org.apache.log4j.Logger;
+import org.dcache.srm.scheduler.IllegalStateTransition;
 
 /**
  *
@@ -174,8 +175,12 @@ public class SrmLs {
                         else { 
                                 for (FileRequest fr : r.getFileRequests()) { 
                                         fr.run();
-                                        if (fr.getState()==State.PENDING) { 
-                                                fr.setState(State.DONE,State.DONE.toString());
+                                        try {
+                                            if (fr.getState()==State.PENDING) {
+                                                    fr.setState(State.DONE,State.DONE.toString());
+                                            }
+                                        } catch (IllegalStateTransition ist) {
+                                            logger.error("Illegal State Transition : " +ist.getMessage());
                                         }
                                 }
                                 SrmLsResponse response = new SrmLsResponse();
@@ -187,7 +192,7 @@ public class SrmLs {
                         }
                 }
                 catch (Exception e) {
-                        e.printStackTrace();
+                        logger.error(e);
                         return getFailedResponse(e.toString());
                 }
         }

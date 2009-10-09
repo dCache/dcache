@@ -300,36 +300,28 @@ public class PutFileRequest extends FileRequest {
 
             }
 	    catch(SRMAuthorizationException srme) {
-                String error =srme.getMessage();
-                esay(error);
-                synchronized(this) {
-                    State state1 = getState();
-                    if(state1 != State.DONE && state1 != State.CANCELED && state1 != State.FAILED) {
-                        try {
-                            setStatusCode(TStatusCode.SRM_AUTHORIZATION_FAILURE);
-                            setState(State.FAILED,error);
-                        }
-			catch(Exception e) {
-                            esay("can not fail state:"+e);
-                        }
-                    }
-                }
+            String error =srme.getMessage();
+            esay(error);
+            try {
+                setStateAndStatusCode(State.FAILED,
+                        error,
+                        TStatusCode.SRM_AUTHORIZATION_FAILURE);
             }
+            catch(IllegalStateTransition ist) {
+                esay("Illegal State Transition : " +ist.getMessage());
+            }
+        }
 	    catch(Exception srme) {
                 String error =
 		    "can not obtain turl for file:"+srme;
                 esay(error);
-                synchronized(this) {
-                    State state1 = getState();
-                    if(state1 != State.DONE && state1 != State.CANCELED && state1 != State.FAILED) {
-                        try {
-                            setState(State.FAILED,error);
-                        } catch(Exception e) {
-                            esay("can not fail state:"+e);
-                        }
-                    }
+                try {
+                    setState(State.FAILED,error);
                 }
-
+                catch(IllegalStateTransition ist)
+                {
+                    esay("Illegal State Transition : " +ist.getMessage());
+                }
             }
         }
 
@@ -515,13 +507,7 @@ public class PutFileRequest extends FileRequest {
                 if(!Tools.sameHost(getConfiguration().getSrmhost(),
                         getSurl().getHost())) {
                     String error ="surl is not local : "+getSurl().getURL();
-                    synchronized(this) {
-
-                        State state = getState();
-                        if(!State.isFinalState(state)) {
-                            setState(State.FAILED,error);
-                        }
-                    }
+                    setState(State.FAILED,error);
                     esay("can not prepare to put file request fr :"+this);
                     esay(error);
                     return;
@@ -553,13 +539,7 @@ public class PutFileRequest extends FileRequest {
                     callbacks_set.add(callbacks);
                 }
                **/
-                synchronized(this) {
-
-                    State state = getState();
-                    if(!State.isFinalState(state)) {
-                        setState(State.ASYNCWAIT, "calling Storage.prepareToPut()");
-                    }
-                }
+                setState(State.ASYNCWAIT, "calling Storage.prepareToPut()");
                 getStorage().prepareToPut(getUser(),path,callbacks,
                         ((PutRequest)getRequest()).isOverwrite());
                 return;
@@ -567,17 +547,12 @@ public class PutFileRequest extends FileRequest {
             addDebugHistoryEvent("checking user has permission to  write");
             say("fileId = "+fileId+" parentFileId="+parentFileId);
             if(!canWrite()) {
-                synchronized(this) {
-                    State state = getState();
-                    if(!State.isFinalState(state)) {
-                        String error = "user "+getUser()+"has not permission to write "+surl;
-                        esay( error);
-                        try {
-                            setState(State.FAILED,error);
-                        } catch(IllegalStateTransition ist) {
-                            esay("can not fail state:"+ist);
-                        }
-                    }
+                String error = "user "+getUser()+"has not permission to write "+surl;
+                esay( error);
+                try {
+                    setState(State.FAILED,error);
+                } catch(IllegalStateTransition ist) {
+                    esay("Illegal State Transition : " +ist.getMessage());
                 }
                 return;
 
@@ -598,15 +573,10 @@ public class PutFileRequest extends FileRequest {
 		    }
 	    }
 	    
-            if (getConfiguration().isReserve_space_implicitely()&&spaceReservationId == null) {
-                State state;
-                long remaining_lifetime;
-                synchronized(this) {
-                    state = getState();
-			    if(!State.isFinalState(state)) {
-				    setState(State.ASYNCWAIT,"reserving space");
-			    }
-		    }
+        if (getConfiguration().isReserve_space_implicitely()&&spaceReservationId == null) {
+            State state;
+            long remaining_lifetime;
+            setState(State.ASYNCWAIT,"reserving space");
 		    remaining_lifetime = lifetime - ( System.currentTimeMillis() -creationTime);
 		    SrmReserveSpaceCallbacks callbacks = new PutReserveSpaceCallbacks(getId());
 		    //
@@ -636,12 +606,7 @@ public class PutFileRequest extends FileRequest {
 	    }
 	    if( spaceReservationId != null &&
 		!spaceMarkedAsBeingUsed) {
-		    synchronized(this) {
-			    State state = getState();
-			    if(!State.isFinalState(state)) {
-				    setState(State.ASYNCWAIT,"marking space as being used");
-			    }
-		    }
+            setState(State.ASYNCWAIT,"marking space as being used");
 		    long remaining_lifetime = lifetime - ( System.currentTimeMillis() -creationTime);
 		    SrmUseSpaceCallbacks  callbacks = new PutUseSpaceCallbacks(getId());
                 getStorage().srmMarkSpaceAsBeingUsed(getUser(),
@@ -661,15 +626,10 @@ public class PutFileRequest extends FileRequest {
 		esay(e);
 		String error ="can not prepare to put : "+e;
 		try {
-			synchronized(this) {
-				State state = getState();
-				if(!State.isFinalState(state)) {
-					setState(State.FAILED,error);
-				}
-			}
+            setState(State.FAILED,error);
 		} 
 		catch(IllegalStateTransition ist) {
-			esay("can not faile state:"+ist);
+			esay("Illegal State Transition : " +ist.getMessage());
 		}
 	}
     }
@@ -791,16 +751,12 @@ public class PutFileRequest extends FileRequest {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 try {
-                    synchronized(fr) {
-
-                        State state = fr.getState();
-                        if(state != State.DONE && state != State.CANCELED && state != State.FAILED) {
-                            fr.setStatusCode(TStatusCode.SRM_DUPLICATION_ERROR);
-                            fr.setState(State.FAILED,reason);
-                        }
-                    }
+                    fr.setStateAndStatusCode(
+                            State.FAILED,
+                            reason,
+                            TStatusCode.SRM_DUPLICATION_ERROR);
                 } catch(IllegalStateTransition ist) {
-                    fr.esay("can not fail state:"+ist);
+                    fr.esay("Illegal State Transition : " +ist.getMessage());
                 }
 
                 fr.esay("PutCallbacks error: "+ reason);
@@ -813,15 +769,9 @@ public class PutFileRequest extends FileRequest {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 try {
-                    synchronized(fr) {
-
-                        State state = fr.getState();
-                        if(state != State.DONE && state != State.CANCELED && state != State.FAILED) {
-                            fr.setState(State.FAILED,error);
-                        }
-                    }
+                    fr.setState(State.FAILED,error);
                 } catch(IllegalStateTransition ist) {
-                    fr.esay("can not fail state:"+ist);
+                    fr.esay("Illegal State Transition : " +ist.getMessage());
                 }
 
                 fr.esay("PutCallbacks error: "+ error);
@@ -835,13 +785,7 @@ public class PutFileRequest extends FileRequest {
                 PutFileRequest fr = getPutFileRequest();
                 String error = e.toString();
                 try {
-                    synchronized(fr) {
-
-                        State state = fr.getState();
-                        if(!State.isFinalState(state)) {
-                            fr.setState(State.FAILED,error);
-                        }
-                    }
+                    fr.setState(State.FAILED,error);
                 } catch(IllegalStateTransition ist) {
                     fr.esay("can not fail state:"+ist);
                 }
@@ -856,15 +800,9 @@ public class PutFileRequest extends FileRequest {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 try {
-                    synchronized(fr) {
-
-                        State state = fr.getState();
-                        if(!State.isFinalState(state)) {
-                            fr.setState(State.FAILED,reason);
-                        }
-                    }
+                    fr.setState(State.FAILED,reason);
                 } catch(IllegalStateTransition ist) {
-                    fr.esay("can not fail state:"+ist);
+                    fr.esay("Illegal State Transition : " +ist.getMessage());
                 }
 
                 fr.esay("PutCallbacks error: "+ reason);
@@ -905,15 +843,9 @@ public class PutFileRequest extends FileRequest {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 try {
-                    synchronized(fr) {
-
-                        State state = fr.getState();
-                        if(state != State.DONE && state != State.CANCELED && state != State.FAILED) {
-                            fr.setState(State.FAILED,"PutCallbacks Timeout");
-                        }
-                    }
+                    fr.setState(State.FAILED,"PutCallbacks Timeout");
                 } catch(IllegalStateTransition ist) {
-                    fr.esay("can not fail state:"+ist);
+                    fr.esay("Illegal State Transition : " +ist.getMessage());
                 }
 
                 fr.esay("PutCallbacks Timeout");
@@ -926,16 +858,12 @@ public class PutFileRequest extends FileRequest {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 try {
-                    synchronized(fr) {
-
-                        State state = fr.getState();
-                        if(state != State.DONE && state != State.CANCELED && state != State.FAILED) {
-                            fr.setStatusCode(TStatusCode.SRM_INVALID_PATH);
-                            fr.setState(State.FAILED,reason);
-                        }
-                    }
+                    fr.setStateAndStatusCode(
+                            State.FAILED,
+                            reason,
+                            TStatusCode.SRM_INVALID_PATH);
                 } catch(IllegalStateTransition ist) {
-                    fr.esay("can not fail state:"+ist);
+                    fr.esay("Illegal State Transition : " +ist.getMessage());
                 }
 
                 fr.esay("PutCallbacks error: "+ reason);
@@ -948,16 +876,12 @@ public class PutFileRequest extends FileRequest {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 try {
-                    synchronized(fr) {
-
-                        State state = fr.getState();
-                        if(state != State.DONE && state != State.CANCELED && state != State.FAILED) {
-                            fr.setStatusCode(TStatusCode.SRM_AUTHORIZATION_FAILURE);
-                            fr.setState(State.FAILED,reason);
-                        }
-                    }
+                    fr.setStateAndStatusCode(
+                            State.FAILED,
+                            reason,
+                            TStatusCode.SRM_AUTHORIZATION_FAILURE);
                 } catch(IllegalStateTransition ist) {
-                    fr.esay("can not fail state:"+ist);
+                    fr.esay("Illegal State Transition : " +ist.getMessage());
                 }
 
                 fr.esay("PutCallbacks error: "+ reason);
@@ -990,15 +914,9 @@ public class PutFileRequest extends FileRequest {
                 PutFileRequest fr = getPutFileRequest();
                 String error = e.toString();
                 try {
-                    synchronized(fr) {
-
-                        State state = fr.getState();
-                        if(!State.isFinalState(state)) {
-                            fr.setState(State.FAILED,error);
-                        }
-                    }
+                    fr.setState(State.FAILED,error);
                 } catch(IllegalStateTransition ist) {
-                    fr.esay("can not fail state:"+ist);
+                    fr.esay("Illegal State Transition : " +ist.getMessage());
                 }
                 fr.esay("PutReserveSpaceCallbacks exception");
                 fr.esay(e);
@@ -1011,15 +929,9 @@ public class PutFileRequest extends FileRequest {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 try {
-                    synchronized(fr) {
-
-                        State state = fr.getState();
-                        if(!State.isFinalState(state)) {
-                            fr.setState(State.FAILED,reason);
-                        }
-                    }
+                    fr.setState(State.FAILED,reason);
                 } catch(IllegalStateTransition ist) {
-                    fr.esay("can not fail state:"+ist);
+                    fr.esay("Illegal State Transition : " +ist.getMessage());
                 }
 
                 fr.esay("PutReserveSpaceCallbacks error: "+ reason);
@@ -1032,16 +944,12 @@ public class PutFileRequest extends FileRequest {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 try {
-                    synchronized(fr) {
-
-                        State state = fr.getState();
-                        if(!State.isFinalState(state)) {
-                            fr.setStatusCode(TStatusCode.SRM_NO_FREE_SPACE);
-                            fr.setState(State.FAILED,reason);
-                        }
-                    }
+                    fr.setStateAndStatusCode(
+                            State.FAILED,
+                            reason,
+                            TStatusCode.SRM_NO_FREE_SPACE);
                 } catch(IllegalStateTransition ist) {
-                    fr.esay("can not fail state:"+ist);
+                    fr.esay("Illegal State Transition : " +ist.getMessage());
                 }
 
                 fr.esay("PutReserveSpaceCallbacks error: "+ reason);
@@ -1147,15 +1055,9 @@ public class PutFileRequest extends FileRequest {
                 PutFileRequest fr = getPutFileRequest();
                 String error = e.toString();
                 try {
-                    synchronized(fr) {
-
-                        State state = fr.getState();
-                        if(!State.isFinalState(state)) {
                             fr.setState(State.FAILED,error);
-                        }
-                    }
                 } catch(IllegalStateTransition ist) {
-                    fr.esay("can not fail state:"+ist);
+                    fr.esay("Illegal State Transition : " +ist.getMessage());
                 }
                 fr.esay("PutUseSpaceCallbacks exception");
                 fr.esay(e);
@@ -1168,15 +1070,9 @@ public class PutFileRequest extends FileRequest {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 try {
-                    synchronized(fr) {
-
-                        State state = fr.getState();
-                        if(!State.isFinalState(state)) {
-                            fr.setState(State.FAILED,reason);
-                        }
-                    }
+                    fr.setState(State.FAILED,reason);
                 } catch(IllegalStateTransition ist) {
-                    fr.esay("can not fail state:"+ist);
+                    fr.esay("Illegal State Transition : " +ist.getMessage());
                 }
 
                 fr.esay("PutUseSpaceCallbacks error: "+ reason);
@@ -1191,16 +1087,12 @@ public class PutFileRequest extends FileRequest {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 try {
-                    synchronized(fr) {
-
-                        State state = fr.getState();
-                        if(!State.isFinalState(state)) {
-                            fr.setStatusCode(TStatusCode.SRM_NO_FREE_SPACE);
-                            fr.setState(State.FAILED,reason);
-                        }
-                    }
+                    fr.setStateAndStatusCode(
+                            State.FAILED,
+                            reason,
+                            TStatusCode.SRM_NO_FREE_SPACE);
                 } catch(IllegalStateTransition ist) {
-                    fr.esay("can not fail state:"+ist);
+                    fr.esay("Illegal State Transition : " +ist.getMessage());
                 }
 
                 fr.esay("PutUseSpaceCallbacks error: "+ reason);
@@ -1217,16 +1109,12 @@ public class PutFileRequest extends FileRequest {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 try {
-                    synchronized(fr) {
-
-                        State state = fr.getState();
-                        if(!State.isFinalState(state)) {
-                            fr.setStatusCode(TStatusCode.SRM_NO_FREE_SPACE);
-                            fr.setState(State.FAILED,reason);
-                        }
-                    }
+                    fr.setStateAndStatusCode(
+                            State.FAILED,
+                            reason,
+                            TStatusCode.SRM_NO_FREE_SPACE);
                 } catch(IllegalStateTransition ist) {
-                    fr.esay("can not fail state:"+ist);
+                    fr.esay("Illegal State Transition : " +ist.getMessage());
                 }
 
                 fr.esay("PutUseSpaceCallbacks error: "+ reason);
@@ -1243,16 +1131,12 @@ public class PutFileRequest extends FileRequest {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 try {
-                    synchronized(fr) {
-
-                        State state = fr.getState();
-                        if(!State.isFinalState(state)) {
-                            fr.setStatusCode(TStatusCode.SRM_SPACE_LIFETIME_EXPIRED);
-                            fr.setState(State.FAILED,reason);
-                        }
-                    }
+                    fr.setStateAndStatusCode(
+                            State.FAILED,
+                            reason,
+                            TStatusCode.SRM_SPACE_LIFETIME_EXPIRED);
                 } catch(IllegalStateTransition ist) {
-                    fr.esay("can not fail state:"+ist);
+                    fr.esay("Illegal State Transition : " +ist.getMessage());
                 }
 
                 fr.esay("PutUseSpaceCallbacks error: "+ reason);
@@ -1269,16 +1153,12 @@ public class PutFileRequest extends FileRequest {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 try {
-                    synchronized(fr) {
-
-                        State state = fr.getState();
-                        if(!State.isFinalState(state)) {
-                            fr.setStatusCode(TStatusCode.SRM_AUTHORIZATION_FAILURE);
-                            fr.setState(State.FAILED,reason);
-                        }
-                    }
+                    fr.setStateAndStatusCode(
+                            State.FAILED,
+                            reason,
+                            TStatusCode.SRM_AUTHORIZATION_FAILURE);
                 } catch(IllegalStateTransition ist) {
-                    fr.esay("can not fail state:"+ist);
+                    fr.esay("Illegal State Transition : " +ist.getMessage());
                 }
 
                 fr.esay("PutUseSpaceCallbacks error: "+ reason);

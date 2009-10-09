@@ -177,7 +177,7 @@ public class LsRequest extends ContainerRequest {
                                         }
                                 }
                                 catch(IllegalStateTransition ist) {
-                                        esay(ist);
+                                        esay("Illegal State Transition : " +ist.getMessage());
                                 }
                         }
                 }
@@ -356,7 +356,7 @@ public class LsRequest extends ContainerRequest {
                                        setState(State.DONE,State.DONE.toString());
                                  }
                                  catch(IllegalStateTransition ist) {
-                                         esay("can not set fail state:"+ist);
+                                         esay("Illegal State Transition : " +ist.getMessage());
                                  }
                          }
                         return status;
@@ -390,26 +390,22 @@ public class LsRequest extends ContainerRequest {
                         if (done_req>0) {
                                 status.setStatusCode(TStatusCode.SRM_PARTIAL_SUCCESS);
                                 status.setExplanation("Some SURL requests successfully completed, and some SURL requests failed. Details are on the files status");
-                                 if (!State.isFinalState(getState())) { 
-                                         try { 
-                                                 setState(State.DONE,State.DONE.toString());
-                                         }
-                                         catch(IllegalStateTransition ist) {
-                                                 esay("can not set fail state:"+ist);
-                                         }
+                                 try {
+                                         setState(State.DONE,State.DONE.toString());
+                                 }
+                                 catch(IllegalStateTransition ist) {
+                                         esay("Illegal State Transition : " +ist.getMessage());
                                  }
                                 return status;
                         }
                         else {
                                 status.setStatusCode(TStatusCode.SRM_FAILURE);
                                 status.setExplanation("All ls requests failed in some way or another");
-                                 if (!State.isFinalState(getState())) { 
-                                         try { 
-                                                 setState(State.FAILED,State.FAILED.toString());
-                                         }
-                                         catch(IllegalStateTransition ist) {
-                                                 esay("can not set fail state:"+ist);
-                                         }
+                                 try {
+                                         setState(State.FAILED,State.FAILED.toString());
+                                 }
+                                 catch(IllegalStateTransition ist) {
+                                         esay("Illegal State Transition : " +ist.getMessage());
                                  }
                                 return status;
                         }

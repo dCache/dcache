@@ -78,8 +78,8 @@ public class SrmPutDone {
             logger.error(srme);
             response = getFailedResponse(srme.toString());
         } catch(IllegalStateTransition ist) {
-            logger.error(ist);
-            response = getFailedResponse(ist.toString());
+            logger.error("Illegal State Transition : " +ist.getMessage());
+            response = getFailedResponse("Illegal State Transition : " +ist.getMessage());
         }
         return response;
     }
@@ -155,27 +155,32 @@ public class SrmPutDone {
 						synchronized(fileRequest) { 
 							if ( !State.isFinalState(fileRequest.getState())) {
 								if ( fileRequest.getTurlString()==null) { 
-									fileRequest.setStatusCode(TStatusCode.SRM_INVALID_PATH);
-									fileRequest.setState(State.FAILED,"SrmPutDone called, TURL is not ready");
+									fileRequest.setStateAndStatusCode(State.FAILED,
+                                            "SrmPutDone called, TURL is not ready",
+                                            TStatusCode.SRM_INVALID_PATH);
 									fail_counter++;
 								}
 								else { 
-                                                                    try {
-                                                                        if (storage.exists(user,fileRequest.getPath())) {
-                                                                                fileRequest.setState(State.DONE,"SrmPutDone called");
-										success_counter++;
-									}
-                                                                        else { 
-										fail_counter++;
-										fileRequest.setStatusCode(TStatusCode.SRM_INVALID_PATH);
-										fileRequest.setState(State.FAILED,"SrmPutDone called : file does not exist");
-									}
-                                                                    }
-                                                                    catch (SRMException e) { 
-                                                                        fail_counter++;
-                                                                        fileRequest.setStatusCode(TStatusCode.SRM_FAILURE);
-                                                                        fileRequest.setState(State.FAILED,"SrmPutDone called : " + e.getMessage());
-                                                                    }
+                                    try {
+                                        if (storage.exists(user,fileRequest.getPath())) {
+                                            fileRequest.setState(State.DONE,"SrmPutDone called");
+                                            success_counter++;
+									    }
+                                        else {
+                                            fail_counter++;
+                                            fileRequest.setStateAndStatusCode(
+                                                    State.FAILED,
+                                                    "SrmPutDone called : file does not exist",
+                                                    TStatusCode.SRM_INVALID_PATH);
+                                        }
+                                    }
+                                    catch (SRMException e) {
+                                        fail_counter++;
+                                        fileRequest.setStateAndStatusCode(
+                                                State.FAILED,
+                                                "SrmPutDone called : " + e.getMessage(),
+                                                TStatusCode.SRM_FAILURE);
+                                    }
 								}
 							}
 							else { 
@@ -238,22 +243,26 @@ public class SrmPutDone {
 									fail_counter++;
 								}
 								else { 
-                                                                    try {
-                                                                        if (storage.exists(user,fileRequest.getPath())) {
-                                                                                fileRequest.setState(State.DONE,"SrmPutDone called");
+                                    try {
+                                        if (storage.exists(user,fileRequest.getPath())) {
+                                                fileRequest.setState(State.DONE,"SrmPutDone called");
 										success_counter++;
-									}
-                                                                        else { 
-										fail_counter++;
-										fileRequest.setStatusCode(TStatusCode.SRM_INVALID_PATH);
-										fileRequest.setState(State.FAILED,"SrmPutDone called : file does not exist");
-									}
-                                                                    }
-                                                                    catch (SRMException e) { 
-                                                                        fail_counter++;
-                                                                        fileRequest.setStatusCode(TStatusCode.SRM_FAILURE);
-                                                                        fileRequest.setState(State.FAILED,"SrmPutDone called : "+e.getMessage());
-                                                                    }
+                                        }
+                                        else {
+                                            fail_counter++;
+                                            fileRequest.setStateAndStatusCode(
+                                                    State.FAILED,
+                                                    "SrmPutDone called : file does not exist",
+                                                    TStatusCode.SRM_INVALID_PATH);
+                                        }
+                                    }
+                                    catch (SRMException e) {
+                                        fail_counter++;
+                                        fileRequest.setStateAndStatusCode(
+                                                State.FAILED,
+                                                "SrmPutDone called : "+e.getMessage(),
+                                                TStatusCode.SRM_FAILURE);
+                                    }
 								}
                                                         }
 							else { 

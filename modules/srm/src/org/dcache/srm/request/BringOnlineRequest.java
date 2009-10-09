@@ -293,16 +293,11 @@ public class BringOnlineRequest extends ContainerRequest {
             for(int i = 0 ; i < fileRequests.length; ++i) {
                 try {
                     FileRequest fr = fileRequests[i];
-                    State fr_state = fr.getState();
-                    if(!State.isFinalState(fr_state ))
-                    {
-
-                        say("changing fr#"+fileRequests[i].getId()+" to "+state);
-                            fr.setState(state,"changing file state becase requests state changed");
-                    }
+                    say("changing fr#"+fileRequests[i].getId()+" to "+state);
+                    fr.setState(state,"changing file state becase requests state changed");
                 }
                 catch(IllegalStateTransition ist) {
-                    esay(ist);
+                    esay("Illegal State Transition : " +ist.getMessage());
                 }
             }
            

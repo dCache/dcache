@@ -231,7 +231,7 @@ public class SRM {
             throws java.io.IOException,
             java.sql.SQLException,
             InterruptedException,
-            org.dcache.srm.scheduler.IllegalStateTransition,
+            IllegalStateTransition,
             electric.xml.ParseException {
         this.configuration = config;
         //First of all decorate the storage with counters and
@@ -404,7 +404,7 @@ public class SRM {
             String name) throws java.io.IOException,
             java.sql.SQLException,
             InterruptedException,
-            org.dcache.srm.scheduler.IllegalStateTransition,
+            IllegalStateTransition,
             electric.xml.ParseException {
 
         if(srm != null) {
@@ -1146,11 +1146,11 @@ public class SRM {
             }
             synchronized (fr) {
                 State s = fr.getState();
-                if (s == State.CANCELED || s == State.DONE || s == State.FAILED) {
+                if (s.isFinalState()) {
                     say("can not set status, the file status is already " + s);
                 } else {
                     if (state.equalsIgnoreCase("done") && fr instanceof PutFileRequest &&
-                            (fr.getState() == State.READY || fr.getState() == State.RUNNING)) {
+                            (s == State.READY || s == State.RUNNING)) {
                         PutFileRequest pfr = (PutFileRequest) fr;
                         if (pfr.getTurlString() != null) {
                             try {
@@ -1650,19 +1650,12 @@ public class SRM {
         }
         ContainerRequest r = (ContainerRequest) job;
         try {
-            synchronized (job) {
-                State s = job.getState();
-                if (State.isFinalState(s)) {
-                    sb.append("job state is already " + s + " can not cancel\n");
-                } else {
-                    r.setState(State.CANCELED, "Canceled by admin through cancel command");
-                    sb.append("state changed, no warranty that the proccess will end immediately\n");
-                    sb.append(r.toString(false)).append('\n');
-                }
-            }
+            r.setState(State.CANCELED, "Canceled by admin through cancel command");
+            sb.append("state changed, no guarantee that the proccess will end immediately\n");
+            sb.append(r.toString(false)).append('\n');
         } catch (IllegalStateTransition ist) {
-            sb.append(ist);
-            esay(ist);
+            sb.append("Illegal State Transition : " +ist.getMessage());
+            esay("Illegal State Transition : " +ist.getMessage());
         }
     }
 
@@ -1726,25 +1719,19 @@ public class SRM {
             return;
         }
         for (Long requestId : jobsToKill) {
-            Job job = Job.getJob(requestId);
+            final Job job = Job.getJob(requestId);
             if (job == null || !(job instanceof ContainerRequest)) {
                 esay(" request with reqiest id " + requestId + " is not found\n");
                 continue;
             }
-            final ContainerRequest r = (ContainerRequest) job;
             sb.append("request #" + requestId + " matches pattern=\"" + pattern + "\"; canceling request \n");
             new Thread(new Runnable() {
 
                 public void run() {
-                    synchronized (r) {
-                        try {
-                            State s = r.getState();
-                            if (!State.isFinalState(s)) {
-                                r.setState(State.CANCELED, "Canceled by admin through cancelall command");
-                            }
-                        } catch (IllegalStateTransition ist) {
-                            esay(ist);
-                        }
+                    try {
+                        job.setState(State.CANCELED, "Canceled by admin through cancelall command");
+                    } catch (IllegalStateTransition ist) {
+                        esay("Illegal State Transition : " +ist.getMessage());
                     }
                 }
             }).start();

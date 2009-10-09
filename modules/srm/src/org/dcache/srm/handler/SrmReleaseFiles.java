@@ -107,8 +107,8 @@ public class SrmReleaseFiles {
             logger.error(srme);
             response = getFailedResponse(srme.toString());
         } catch(IllegalStateTransition ist) {
-            logger.error(ist);
-            response = getFailedResponse(ist.toString());
+            logger.error("Illegal State Transition : " +ist.getMessage());
+            response = getFailedResponse("Illegal State Transition : " +ist.getMessage());
         }
         
         return response;
@@ -190,12 +190,7 @@ public class SrmReleaseFiles {
         String surl_strings[] = null;
         if( surls == null ){
             if(request instanceof GetRequest) {
-                synchronized(request) {
-                    State state = request.getState();
-                    if(!State.isFinalState(state)) {
-                        request.setState(State.DONE,"SrmReleaseFiles called");
-                    }
-                }
+                request.setState(State.DONE,"SrmReleaseFiles called");
             } else {
                 BringOnlineRequest bringOnlineRequest = (BringOnlineRequest)request;
                 return bringOnlineRequest.releaseFiles(null,null);
@@ -214,12 +209,7 @@ public class SrmReleaseFiles {
             if(request instanceof GetRequest) {
                 for(int i = 0; i< surls.length; ++i) {
                     FileRequest fileRequest = request.getFileRequestBySurl(surl_strings[i]);
-                    synchronized(fileRequest) {
-                        State state = fileRequest.getState();
-                        if(!State.isFinalState(state)) {
-                            fileRequest.setState(State.DONE,"SrmReleaseFiles called");
-                        }
-                    }
+                    fileRequest.setState(State.DONE,"SrmReleaseFiles called");
                 }
             } else {
                 BringOnlineRequest bringOnlineRequest = (BringOnlineRequest)request;
@@ -395,12 +385,7 @@ public class SrmReleaseFiles {
        Set<GetFileRequest> gfrToRelease = 
             findGetFileRequestBySURLs(surls);
        for (GetFileRequest fileRequest: gfrToRelease) {
-            synchronized(fileRequest) {
-                State state = fileRequest.getState();
-                if(!State.isFinalState(state)) {
-                    fileRequest.setState(State.DONE,"SrmReleaseFiles called");
-                }
-            }
+            fileRequest.setState(State.DONE,"SrmReleaseFiles called");
             TSURLReturnStatus surlReturnStatus =  fileRequest.getTSURLReturnStatus();
             if(surlReturnStatus.getStatus().getStatusCode() == TStatusCode.SRM_RELEASED) {
                 surlReturnStatus.getStatus().setStatusCode(TStatusCode.SRM_SUCCESS);

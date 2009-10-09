@@ -364,9 +364,7 @@ public abstract class FileRequest extends Job {
             {
                 if(status.equalsIgnoreCase("Done")) {
                     State state = getState();
-                    if( state  != State.FAILED &&
-                    state != State.DONE &&
-                    state != State.CANCELED) {
+                    if( !state.isFinalState()) {
                         if(state == State.READY ||
                            state == State.TRANSFERRING ||
                            state == State.RUNNING) {
@@ -389,9 +387,9 @@ public abstract class FileRequest extends Job {
             }
         }
         catch(IllegalStateTransition ist) {
-            String error =  "Can't set Status to "+status+" reason: "+ist;
+            String error =  "Can't set Status to "+status+
+                    " due to Illegal State Transition : " +ist.getMessage();
             esay(error);
-            esay(ist);
             throw new SRMException(error);
         }
         
@@ -438,12 +436,17 @@ public abstract class FileRequest extends Job {
         return statusCode==null ? null:statusCode.getValue() ;
     }
 
+    public synchronized void setStateAndStatusCode(
+            State state,
+            String description,
+            TStatusCode statusCode)  throws IllegalStateTransition  {
+        setState(state, description);
+        setStatusCode(statusCode);
+    }
+
     public void setStatusCode(TStatusCode statusCode) {
         this.statusCode = statusCode;
     }
-    public void setStatusCode(String statusCode) {
-        this.statusCode = statusCode==null?null:TStatusCode.fromString(statusCode);
-    }   
     
     public static String getPath(GlobusURL surl) {
         String path = surl.getPath();
