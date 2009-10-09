@@ -149,7 +149,7 @@ yaim_query_conf_node_dcache_name_server_list()
     RET=""
     if [ -z "$DCACHE_CHIMERA_SERVER" ] ; then
         if [ -z "$DCACHE_PNFS_SERVER" ] ; then
-	    RET=$DCACHE_ADMIN
+            RET=$DCACHE_ADMIN
         else
             RET="$DCACHE_PNFS_SERVER"
         fi
@@ -2065,6 +2065,12 @@ yaim_config_dcache_files_key_value_node_config()
     yaimlog DEBUG "function yaim_config_dcache_files_key_value_node_config start"
     local reusevoms
     local servicesettings
+    local ChimeraNodeTrue
+    local tmptrue
+    local file2update
+    local configFile
+    local admintrue
+    local reusevoms
     configFile=/opt/d-cache/etc/node_config
     # Start processing
     yaim_config_file_update_prepare ${configFile}
@@ -2087,7 +2093,6 @@ yaim_config_dcache_files_key_value_node_config()
         servicesettings="${servicesettings} dcap"
     fi
  
-
     yaim_query_conf_node_gsidcap_door
     tmptrue=$?
     if [ "x${tmptrue}" == "x1" ] ;then
@@ -2121,18 +2126,27 @@ yaim_config_dcache_files_key_value_node_config()
     NameServerTrue=$?
     if [ "${admintrue}${NameServerTrue}" == "11" ] ;then
         yaim_config_file_set_value "${file2update}" "NODE_TYPE" "custom"
-        servicesettings="${servicesettings} admin dir lm pnfs dCache utility"
+        servicesettings="${servicesettings} admin dir lm dCache utility"
     fi
     if [ "${admintrue}${NameServerTrue}" == "00" ] ;then
         yaim_config_file_set_value "${file2update}" "NODE_TYPE" "custom"
     fi
     if [ "${admintrue}${NameServerTrue}" == "01" ] ;then
         yaim_config_file_set_value "${file2update}" "NODE_TYPE" "custom"
-        servicesettings="${servicesettings} dir pnfs"
+        servicesettings="${servicesettings} dir"
     fi
     if [ "${admintrue}${NameServerTrue}" == "10" ] ;then
         yaim_config_file_set_value "${file2update}" "NODE_TYPE" "custom"
-	servicesettings="${servicesettings} admin lm dCache utility"
+        servicesettings="${servicesettings} admin lm dCache utility"
+    fi
+    yaim_query_conf_node_dcache_chimera
+    ChimeraNodeTrue=$?
+    if [ "X${NameServerTrue}" == "X1" ] ;then
+        if [ "X${ChimeraNodeTrue}" == "X1" ] ;then
+            servicesettings="${servicesettings} chimera"
+        else
+            servicesettings="${servicesettings} pnfs"
+        fi
     fi
     yaim_query_conf_node_dcache_name_server_list
     NameServerNode=$RET
@@ -2141,18 +2155,16 @@ yaim_config_dcache_files_key_value_node_config()
     
     yaim_config_file_set_value "${file2update}" "SERVER_ID" "$MY_DOMAIN"
     
-    yaim_query_conf_voms
-    reusevoms=$?
-    if [ "$reusevoms" == "1" ] ; then
-        servicesettings="${servicesettings} gPlazma"
-    fi
-    
     yaim_query_conf_node_dcache_name_type
     nameServerType=${RET}
     if [ "${nameServerType}" == "chimera" ] ; then
         yaim_config_file_set_value "${file2update}" NAMESPACE chimera
-	servicesettings="${servicesettings} chimera"
     fi
+
+    if [ "${nameServerType}" == "pnfs" ] ; then
+        yaim_config_file_set_value "${file2update}" NAMESPACE pnfs
+    fi
+    
     yaim_config_file_set_value "${file2update}" "SERVICES" "${servicesettings}"
     # Finished editng values
     yaim_config_file_update_done ${configFile}
