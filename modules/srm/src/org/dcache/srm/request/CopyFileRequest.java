@@ -84,7 +84,6 @@ import java.io.FileOutputStream;
 import java.io.FileInputStream;
 import diskCacheV111.srm.RequestFileStatus;
 import org.dcache.srm.FileMetaData;
-import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.PrepareToPutCallbacks;
 import org.dcache.srm.SRMException;
 //import org.dcache.srm.ReleaseSpaceCallbacks;

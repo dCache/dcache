@@ -75,12 +75,9 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
-import java.sql.SQLException;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.Job;
-import org.dcache.srm.scheduler.JobStorage;
-import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.request.sql.RequestsPropertyStorage;
