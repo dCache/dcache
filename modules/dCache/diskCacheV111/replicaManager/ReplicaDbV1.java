@@ -191,15 +191,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                 }
             }
             //
-            stmt.executeUpdate("INSERT INTO history_a SELECT pool,pnfsid,datestamp FROM ONLY replicas WHERE pool='" + poolName + "'");  // Save
-                                                                                                                    // into
-                                                                                                                    // history
-                                                                                                                    // table
 //            stmt.execute("COMMIT");
-        } catch (SQLException e) {
-            try { conn.rollback(); } catch (SQLException e1) { }
-            esay("Database access error");
-            e.printStackTrace();
         } finally {
             try { if (null!=pstmt) pstmt.close();  } catch (SQLException e) { }
             if (_conn == null) {
@@ -531,10 +523,6 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
             stmt = (_conn == null) ? conn.createStatement() : _stmt;
             stmt.execute("BEGIN ISOLATION LEVEL SERIALIZABLE");
-            stmt.executeUpdate("INSERT INTO history_b SELECT pool,pnfsid,datestamp FROM ONLY replicas");    // Save
-                                                                                                            // into
-                                                                                                            // history
-                                                                                                            // table
             stmt.executeUpdate("TRUNCATE TABLE replicas, pools, deficient, redundant, excluded");
             stmt.execute("COMMIT");
         } catch (Exception ex) {
@@ -562,10 +550,6 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
             stmt = (_conn == null) ? conn.createStatement() : _stmt;
             stmt.execute("BEGIN ISOLATION LEVEL SERIALIZABLE");
-            stmt.executeUpdate("INSERT INTO history_b SELECT pool,pnfsid,datestamp FROM ONLY replicas WHERE pool='" + poolName + "'");  // Save
-                                                                                                                                        // into
-                                                                                                                                        // history
-                                                                                                                                        // table
             stmt.executeUpdate("DELETE FROM ONLY replicas WHERE pool='" + poolName + "'");
             stmt.executeUpdate("DELETE FROM pools    WHERE pool='" + poolName + "'");
             stmt.execute("COMMIT");
@@ -1024,10 +1008,6 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
             stmt = (_conn == null) ? conn.createStatement() : _stmt;
             stmt.execute("BEGIN ISOLATION LEVEL SERIALIZABLE");
-            stmt.executeUpdate("INSERT INTO history_b SELECT pool,pnfsid,datestamp FROM ONLY replicas WHERE pool='" + poolName + "'");  // Save
-                                                                                                                                        // into
-                                                                                                                                        // history
-                                                                                                                                        // table
             stmt.executeUpdate("DELETE FROM ONLY replicas WHERE pool='" + poolName + "'");
             stmt.execute("COMMIT");
         } catch (Exception ex) {
