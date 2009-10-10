@@ -3,9 +3,7 @@ package org.dcache.srm.request;
 
 import diskCacheV111.srm.RequestFileStatus;
 import org.dcache.srm.FileMetaData;
-import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMUser;
-import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.IllegalStateTransition;
@@ -19,11 +17,9 @@ import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMTooManyResultsException;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.v2_2.*;
-import org.dcache.srm.request.LsRequest;
 import org.dcache.srm.SRMInvalidRequestException;
 
 public class LsFileRequest extends FileRequest {
-        public static final String SFN_STRING="?SFN=";
         private org.apache.axis.types.URI surl;
         TMetaDataPathDetail metaDataPathDetail=null;
         SRMUser user;

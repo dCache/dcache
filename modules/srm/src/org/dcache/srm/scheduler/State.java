@@ -1,33 +1,3 @@
-// $Id$
-// $Log: not supported by cvs2svn $
-// Revision 1.4  2006/04/21 22:58:28  timur
-// we do not need a thread running when we start a remote transfer, but we want to control the number of the transfers, I hope the code accomplishes this now, though an addition of the new job state
-//
-// Revision 1.3  2005/05/04 21:54:52  timur
-// new scheduling policy on restart for put and get request - do not schedule the request if the user does not update its status
-//
-// Revision 1.2  2005/03/30 22:42:11  timur
-// more database schema changes
-//
-// Revision 1.1  2005/01/14 23:07:15  timur
-// moving general srm code in a separate repository
-//
-// Revision 1.5  2004/11/17 21:56:49  timur
-// adding the option which allows to store the pending or running requests in memory, fixed a restore from database bug
-//
-// Revision 1.4  2004/11/09 08:04:48  tigran
-// added SerialVersion ID
-//
-// Revision 1.3  2004/08/06 19:35:25  timur
-// merging branch srm-branch-12_May_2004 into the trunk
-//
-// Revision 1.2.2.2  2004/06/18 22:20:53  timur
-// adding sql database storage for requests
-//
-// Revision 1.2.2.1  2004/06/16 19:44:34  timur
-// added cvs logging tags and fermi copyright headers at the top, removed Copier.java and CopyJob.java
-//
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and

@@ -1,54 +1,3 @@
-// $Id$
-// $Log: not supported by cvs2svn $
-// Revision 1.6  2007/08/03 20:20:40  timur
-// implementing some of the findbug bugs and recommendations, avoid selfassignment, possible nullpointer exceptions, syncronization issues, etc
-//
-// Revision 1.5  2007/01/06 00:23:55  timur
-// merging production branch changes to database layer to improve performance and reduce number of updates
-//
-// Revision 1.4.4.1  2007/01/04 02:58:55  timur
-// changes to database layer to improve performance and reduce number of updates
-//
-// Revision 1.4  2005/10/26 16:37:07  timur
-// move the server classes to SRMServerV1 and SRMServerV2 for easy identification
-//
-// Revision 1.3  2005/10/26 15:00:47  timur
-// make delegation work in case srm copy with srm v1 under Axis/Tomcat
-//
-// Revision 1.2  2005/03/30 22:42:10  timur
-// more database schema changes
-//
-// Revision 1.1  2005/01/14 23:07:14  timur
-// moving general srm code in a separate repository
-//
-// Revision 1.5  2004/11/09 08:04:47  tigran
-// added SerialVersion ID
-//
-// Revision 1.4  2004/10/30 04:19:07  timur
-// Fixed a problem related to the restoration of the job from database
-//
-// Revision 1.3  2004/10/28 02:41:31  timur
-// changed the database scema a little bit, fixed various synchronization bugs in the scheduler, added interactive shell to the File System srm
-//
-// Revision 1.2  2004/08/06 19:35:24  timur
-// merging branch srm-branch-12_May_2004 into the trunk
-//
-// Revision 1.1.2.7  2004/06/23 21:56:01  timur
-// Get Requests are now stored in database, Request Credentials are now stored in database too
-//
-// Revision 1.1.2.6  2004/06/22 01:38:07  timur
-// working on the database part, created persistent storage for getFileRequests, for the next requestId
-//
-// Revision 1.1.2.5  2004/06/18 22:20:52  timur
-// adding sql database storage for requests
-//
-// Revision 1.1.2.4  2004/06/16 22:14:31  timur
-// copy works for mulfile request
-//
-// Revision 1.1.2.3  2004/06/16 19:44:33  timur
-// added cvs logging tags and fermi copyright headers at the top, removed Copier.java and CopyJob.java
-//
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -130,8 +79,6 @@ import java.util.WeakHashMap;
 import java.util.Collections;
 import java.util.Map;
 import java.lang.ref.WeakReference;
-import org.dcache.srm.SRMAuthorization;
-import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.scheduler.JobIdGeneratorFactory;
 import java.sql.SQLException;
 /**

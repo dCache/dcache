@@ -74,27 +74,14 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
-//import org.dcache.srm.AbstractStorageElement;
-//import org.dcache.srm.SRM;
 import diskCacheV111.srm.RequestStatus;
-//import diskCacheV111.srm.RequestFileStatus;
-import diskCacheV111.srm.ISRM;
 import org.globus.util.GlobusURL;
 import java.net.MalformedURLException;
-//import java.net.UnknownHostException;
 import java.io.IOException;
-//import java.lang.Math;
-//import java.io.InputStream;
-//import java.io.InputStreamReader;
-//import java.io.BufferedReader;
-//import java.util.Hashtable;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Date;
-//import java.util.HashMap;
-//import java.util.Map;
 import org.dcache.srm.util.OneToManyMap;
-//import java.util.Iterator;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.util.Configuration;
@@ -105,16 +92,13 @@ import org.dcache.srm.client.RemoteTurlGetterV1;
 import org.dcache.srm.client.RemoteTurlPutterV1;
 import org.dcache.srm.client.RemoteTurlGetterV2;
 import org.dcache.srm.client.RemoteTurlPutterV2;
-import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.IllegalStateTransition;
-//import org.dcache.srm.scheduler.State;
 import java.beans.PropertyChangeListener;
 import org.dcache.srm.client.RequestFailedEvent;
 import org.dcache.srm.client.TURLsGetFailedEvent;
 import org.dcache.srm.client.TURLsArrivedEvent;
-//import org.dcache.srm.util
 import org.dcache.srm.v2_2.*;
 import org.dcache.srm.SRMProtocol;
 import org.dcache.srm.qos.*;
@@ -128,7 +112,6 @@ import org.dcache.srm.SRMReleasedException;
  */
 public class CopyRequest extends ContainerRequest implements PropertyChangeListener {
     
-    private ISRM remoteSRM;
     private boolean from_url_is_srm;
     private boolean to_url_is_srm;
     private boolean from_url_is_gsiftp;

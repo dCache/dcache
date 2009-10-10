@@ -6,8 +6,6 @@
 
 package org.dcache.srm.request;
 import org.dcache.srm.scheduler.JobStorage;
-import org.dcache.srm.scheduler.Job;
-import java.util.Set;
 
 /**
  *

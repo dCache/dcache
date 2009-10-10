@@ -80,8 +80,6 @@ import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMFileRequestNotFoundException;
 import org.dcache.srm.util.Configuration;
-import org.dcache.srm.scheduler.JobStorage;
-import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.State;
 
@@ -242,22 +240,6 @@ public class BringOnlineRequest extends ContainerRequest {
         return copy;
     }
    
-    
-    public void proccessRequest() {
-        say("proccessing get request");
-        String supported_protocols[];
-        try {
-            supported_protocols = getStorage().supportedGetProtocols();
-        }
-        catch(org.dcache.srm.SRMException srme) {
-            esay(" protocols are not supported");
-            esay(srme);
-            //setFailedStatus ("protocols are not supported");
-            return;
-        }
-        
-    }
-    
     public HashSet callbacks_set =  new HashSet();
     
     private static final long serialVersionUID = -3739166738239918248L;

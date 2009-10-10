@@ -1,108 +1,3 @@
-// $Id$
-// $Log: ReserveSpaceRequest.java,v $
-// Revision 1.13  2007/10/19 20:57:04  tdh
-// Merge of caching of gPlazma authorization in srm.
-//
-// Revision 1.12  2007/10/08 18:29:11  timur
-// Fix to the Flavia issue:  Space reservation with retentionpolicy=REPLICA and unspecified accesslatency resolves in reservation of CUSTODIAL-NEARLINE type of space when the access latency optional parameter is not specified. It happens both at Edinburgh and NDGF.The problem was that if either retention policy or access latency were not specified, we used default values for both.
-//
-// Revision 1.11  2007/08/22 20:27:34  timur
-// space manager understand lifetime=-1 as infinite, get-space-tokens does not check ownership
-//
-// Revision 1.10  2007/08/03 15:47:58  timur
-// closing sql statement, implementing hashCode functions, not passing null args, resing classes, not comparing objects using == or !=,  etc, per findbug recommendations
-//
-// Revision 1.9  2007/03/03 00:43:05  timur
-// make srm reserve space and space get metadata return correct values, set status before changing request state, to make it save its value in database
-//
-// Revision 1.8  2007/02/17 05:44:25  timur
-// propagate SRM_NO_FREE_SPACE to reserveSpace, refactored database code a bit
-//
-// Revision 1.7  2007/01/06 00:23:55  timur
-// merging production branch changes to database layer to improve performance and reduce number of updates
-//
-// Revision 1.6  2006/08/23 20:57:26  timur
-// set default values for access latency and retention policy
-//
-// Revision 1.5  2006/08/15 22:06:40  timur
-// got the messages to get through to space manager
-//
-// Revision 1.4  2006/08/07 21:03:59  timur
-// implemented srmStatusOfReserveSpaceRequest
-//
-// Revision 1.3  2006/08/02 22:08:22  timur
-// more work for space management
-//
-// Revision 1.2  2006/08/01 00:09:51  timur
-// more space reservation code
-//
-// Revision 1.1  2006/07/29 18:10:41  timur
-// added schedulable requests for execution reserve space requests
-//
-// Revision 1.9  2006/06/15 20:51:28  moibenko
-// changed method names
-//
-// Revision 1.8  2006/04/26 17:17:55  timur
-// store the history of the state transitions in the database
-//
-// Revision 1.7  2006/04/18 00:53:47  timur
-// added the job execution history storage for better diagnostics and profiling
-//
-// Revision 1.6  2006/04/12 23:16:23  timur
-// storing state transition time in database, storing transferId for copy requests in database, renaming tables if schema changes without asking
-//
-// Revision 1.5  2006/03/23 22:47:33  moibenko
-// included Lambda Station fuctionalitiy
-//
-// Revision 1.4  2005/03/30 22:42:10  timur
-// more database schema changes
-//
-// Revision 1.3  2005/03/11 21:16:25  timur
-// making srm compatible with cern tools again
-//
-// Revision 1.2  2005/03/01 23:10:38  timur
-// Modified the database scema to increase database operations performance and to account for reserved space"and to account for reserved space
-//
-// Revision 1.1  2005/01/14 23:07:14  timur
-// moving general srm code in a separate repository
-//
-// Revision 1.6  2005/01/04 20:09:33  timur
-// correct transfer from transferring to done state
-//
-// Revision 1.5  2004/11/09 08:04:47  tigran
-// added SerialVersion ID
-//
-// Revision 1.4  2004/11/08 23:02:41  timur
-// remote gridftp manager kills the mover when the mover thread is killed,  further modified the srm database handling
-//
-// Revision 1.3  2004/10/28 02:41:30  timur
-// changed the database scema a little bit, fixed various synchronization bugs in the scheduler, added interactive shell to the File System srm
-//
-// Revision 1.2  2004/08/06 19:35:24  timur
-// merging branch srm-branch-12_May_2004 into the trunk
-//
-// Revision 1.1.2.12  2004/08/03 16:37:51  timur
-// removing unneeded dependancies on dcache
-//
-// Revision 1.1.2.11  2004/07/09 01:58:40  timur
-// fixed a syncronization problem, added auto dirs creation for copy function
-//
-// Revision 1.1.2.10  2004/07/02 20:10:24  timur
-// fixed the leak of sql connections, added propogation of srm errors
-//
-// Revision 1.1.2.9  2004/06/23 21:56:00  timur
-// Get Requests are now stored in database, Request Credentials are now stored in database too
-//
-// Revision 1.1.2.8  2004/06/22 01:38:06  timur
-// working on the database part, created persistent storage for getFileRequests, for the next requestId
-//
-// Revision 1.1.2.7  2004/06/18 22:20:52  timur
-// adding sql database storage for requests
-//
-// Revision 1.1.2.6  2004/06/16 19:44:33  timur
-// added cvs logging tags and fermi copyright headers at the top, removed Copier.java and CopyJob.java
-//
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -177,24 +72,13 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
-import java.net.InetAddress;
-import java.net.MalformedURLException;
-
-import diskCacheV111.srm.RequestFileStatus;
-import diskCacheV111.srm.FileMetaData;
-import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.scheduler.FatalJobFailure;
 import org.dcache.srm.scheduler.NonFatalJobFailure;
-import org.globus.util.GlobusURL;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.scheduler.Job;
-import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.scheduler.State;
-import org.dcache.srm.scheduler.Scheduler;
-import org.dcache.srm.SRMException;
 import org.dcache.srm.scheduler.IllegalStateTransition;
-import org.dcache.srm.request.sql.RequestsPropertyStorage;
 import org.dcache.srm.v2_2.TAccessLatency;
 import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TRetentionPolicyInfo;

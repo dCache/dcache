@@ -82,7 +82,6 @@ import org.globus.util.GlobusURL;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.scheduler.Job;
-import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.Tools;
 import org.dcache.srm.GetFileInfoCallbacks;

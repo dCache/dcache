@@ -1,24 +1,3 @@
-// $Id$
-// $Log: not supported by cvs2svn $
-// Revision 1.2.12.1  2007/03/08 23:09:14  timur
-// reduce database usage for cases when monitoring is not enabled
-//
-// Revision 1.2  2005/03/01 23:10:39  timur
-// Modified the database scema to increase database operations performance and to account for reserved space"and to account for reserved space
-//
-// Revision 1.1  2005/01/14 23:07:15  timur
-// moving general srm code in a separate repository
-//
-// Revision 1.3  2004/11/01 20:41:16  timur
-//  fixed the problem causing the exhaust of the jdbc connections
-//
-// Revision 1.2  2004/08/06 19:35:25  timur
-// merging branch srm-branch-12_May_2004 into the trunk
-//
-// Revision 1.1.2.1  2004/06/16 19:44:33  timur
-// added cvs logging tags and fermi copyright headers at the top, removed Copier.java and CopyJob.java
-//
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and

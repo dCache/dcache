@@ -1,15 +1,3 @@
-// $Id$
-// $Log: not supported by cvs2svn $
-// Revision 1.4  2004/11/09 08:04:48  tigran
-// added SerialVersion ID
-//
-// Revision 1.3  2004/08/06 19:35:25  timur
-// merging branch srm-branch-12_May_2004 into the trunk
-//
-// Revision 1.2.2.1  2004/06/16 19:44:34  timur
-// added cvs logging tags and fermi copyright headers at the top, removed Copier.java and CopyJob.java
-//
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
