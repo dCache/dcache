@@ -75,6 +75,8 @@ public class StateMaintainer implements StateUpdateManager {
                 _caretaker.processUpdate( pendingUpdate);
                 _pendingRequestCount.decrementAndGet();
                 checkScheduledExpungeActivity();
+                if( _log.isDebugEnabled())
+                    _log.debug( "finished job to process update " + pendingUpdate);
             }
         });
     }
@@ -85,6 +87,8 @@ public class StateMaintainer implements StateUpdateManager {
         if( !unprocessed.isEmpty())
             _log.info( "Shutting down with " + unprocessed.size() +
                        " pending updates");
+        else
+            _log.debug( "Shutting down without any pending updates");
     }
 
     /**
