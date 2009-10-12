@@ -1337,7 +1337,9 @@ public String command( String c ) throws CommandExitException {
         throws CommandException
     {
         try {
-            return run_reader(new URI(args.argv(0)), args);
+            URI uri = new URI(args.argv(0));
+            args.shift();
+            return run_reader(uri, args);
         } catch (URISyntaxException e) {
             throw new CommandException(43 , e.getMessage());
         }
@@ -1349,7 +1351,9 @@ public String command( String c ) throws CommandExitException {
     public String ac_exec_env_$_1_99(Args args) throws CommandException
     {
         try {
-            return run_reader(new URI("env",  args.argv(0), null), args);
+            URI uri = new URI("env",  args.argv(0), null);
+            args.shift();
+            return run_reader(uri, args);
         } catch (URISyntaxException e) {
             throw new CommandException(43, e.getMessage());
         }
@@ -1361,7 +1365,9 @@ public String command( String c ) throws CommandExitException {
     public String ac_exec_context_$_1_99(Args args) throws CommandException
     {
         try {
-            return run_reader(new URI("context", args.argv(0), null), args);
+            URI uri = new URI("context", args.argv(0), null);
+            args.shift();
+            return run_reader(uri, args);
         } catch (URISyntaxException e) {
             throw new CommandException(43 , e.getMessage());
         }
