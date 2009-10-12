@@ -57,25 +57,52 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     /**
      * Ascii commands supported by this interpreter.
      */
-    enum DcapCommand {
+    private enum DcapCommand {
 
-        hello,
-        byebye,
-        open,
-        check,
-        chgrp,
-        chown,
-        chmod,
-        lstat,
-        mkdir,
-        opendir,
-        ping,
-        rename,
-        rmdir,
-        stage,
-        stat,
-        status,
-        unlink
+        HELLO   ("hello"),
+        BYEBYE  ("byebye"),
+        OPEN    ("open"),
+        CHECK   ("check"),
+        CHGRP   ("chgrp"),
+        CHOWN   ("chown"),
+        CHMOD   ("chmod"),
+        LSTAT   ("lstat"),
+        MKDIR   ("mkdir"),
+        OPENDIR ("opendir"),
+        PING    ("ping"),
+        RENAME  ("rename"),
+        RMDIR   ("rmdir"),
+        STAGE   ("stage"),
+        STAT    ("stat"),
+        STATUS  ("status"),
+        UNLINK  ("unlink");
+
+        private static final long serialVersionUID = 8393273905860276227L;
+
+        private final String _value;
+        private static final Map<String, DcapCommand> _commands =
+                new HashMap<String, DcapCommand>();
+        static {
+            for (DcapCommand command : DcapCommand.values()) {
+                _commands.put(command.getCommand(), command);
+            }
+        }
+
+        DcapCommand(String value) {
+            _value = value;
+        }
+
+        String getCommand() {
+            return _value;
+        }
+
+        static DcapCommand get(String s) {
+            DcapCommand command = _commands.get(s);
+            if(command == null) {
+                throw new IllegalArgumentException("Unsupported command: " + s);
+            }
+            return command;
+        }
     }
 
     private final PrintWriter _out          ;
@@ -2701,10 +2728,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
                 try {
                     _cell.sendMessage(new CellMessage(new CellPath(_pool), message));
-                } catch (SerializationException e) {
-                    _log.error("BUG: serialization failed", e);
                 } catch (NoRouteToCellException e) {
-                    _log.debug("pool " + _pool + " is unreachable");
+                    _log.error("pool " + _pool + " is unreachable");
                 }
             }
             super.removeUs();
@@ -2856,54 +2881,54 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         DcapCommand dcapCommand;
         try {
-            dcapCommand = DcapCommand.valueOf(args.getCommand());
+            dcapCommand = DcapCommand.get(args.getCommand());
         } catch(IllegalArgumentException e) {
             return protocolViolation(sessionId, commandId, args.getName(), 669,
                     "Invalid command '"+ args.getCommand() +"'");
         }
 
         try {
-        switch(dcapCommand) {
-            case hello:
-                return com_hello(sessionId, commandId, args);
-            case byebye:
-                return com_byebye(sessionId, commandId, args);
-            case open:
-                return com_open(sessionId, commandId, args);
-            case check:
-                return com_check(sessionId, commandId, args);
-            case chgrp:
-                return com_chgrp(sessionId, commandId, args);
-            case chown:
-                return com_chown(sessionId, commandId, args);
-            case chmod:
-                return com_chmod(sessionId, commandId, args);
-            case lstat:
-                return com_lstat(sessionId, commandId, args);
-            case mkdir:
-                return com_mkdir(sessionId, commandId, args);
-            case opendir:
-                return com_opendir(sessionId, commandId, args);
-            case ping:
-                return com_ping(sessionId, commandId, args);
-            case rename:
-                return com_rename(sessionId, commandId, args);
-            case rmdir:
-                return com_rmdir(sessionId, commandId, args);
-            case stage:
-                return com_stage(sessionId, commandId, args);
-            case stat:
-                return com_stat(sessionId, commandId, args);
-            case status:
-                return com_status(sessionId, commandId, args);
-            case unlink:
-                return com_unlink(sessionId, commandId, args);
-            default:
-                /*
-                 * just in case we added a new command
-                 */
-                throw new UnsupportedOperationException("command not supported: " + dcapCommand);
-        }
+            switch(dcapCommand) {
+                case HELLO:
+                    return com_hello(sessionId, commandId, args);
+                case BYEBYE:
+                    return com_byebye(sessionId, commandId, args);
+                case OPEN:
+                    return com_open(sessionId, commandId, args);
+                case CHECK:
+                    return com_check(sessionId, commandId, args);
+                case CHGRP:
+                    return com_chgrp(sessionId, commandId, args);
+                case CHOWN:
+                    return com_chown(sessionId, commandId, args);
+                case CHMOD:
+                    return com_chmod(sessionId, commandId, args);
+                case LSTAT:
+                    return com_lstat(sessionId, commandId, args);
+                case MKDIR:
+                    return com_mkdir(sessionId, commandId, args);
+                case OPENDIR:
+                    return com_opendir(sessionId, commandId, args);
+                case PING:
+                    return com_ping(sessionId, commandId, args);
+                case RENAME:
+                    return com_rename(sessionId, commandId, args);
+                case RMDIR:
+                    return com_rmdir(sessionId, commandId, args);
+                case STAGE:
+                    return com_stage(sessionId, commandId, args);
+                case STAT:
+                    return com_stat(sessionId, commandId, args);
+                case STATUS:
+                    return com_status(sessionId, commandId, args);
+                case UNLINK:
+                    return com_unlink(sessionId, commandId, args);
+                default:
+                    /*
+                     * just in case we added a new command
+                     */
+                    throw new UnsupportedOperationException("command not supported: " + dcapCommand);
+            }
         } catch (CommandExitException  e) {
             throw e;
         } catch (CommandException  e) {
@@ -2936,9 +2961,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         for(SessionHandler sh: _sessions.values()) {
             try {
                 sh.removeUs();
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 /*
-                 * we catch all exceptions to be able to remove all sessions
+                 * we catch all RunTimeExceptions to be able to remove all sessions
                  */
                 _log.error("failed to removed session: " + sh, e);
             }
@@ -2980,7 +3005,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             user = new UserAuthRecord("nobody", name, role, true, 0, -1, -1, "/", "/", "/", new HashSet<String>(0)) ;
         }
 
-        _log.debug("Door authenticated for "+
+        _log.info("Door authenticated for "+
                 _user.getName()+"("+_user.getRole()+","+user.UID+","+
                 user.GID+","+_userHome+")");
 
@@ -3014,14 +3039,14 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             synchronized( _messageLock ){
                 handler = _sessions.get( Integer.valueOf((int)reply.getId())) ;
                 if( handler == null ){
-                    _log.error( "Unexpected message for session : "+
+                    _log.warn( "Unexpected message (" + reply.getClass() + ") for session : "+
                     reply.getId() ) ;
                     return ;
                 }
             }
         }else{
-            _log.debug("Unexpected message class "+object.getClass());
-            _log.debug("source = "+msg.getSourceAddress());
+            _log.warn("Unexpected message class "+object.getClass() +
+                    "source = "+msg.getSourceAddress());
             return ;
         }
         if( reply instanceof DoorTransferFinishedMessage ){
@@ -3049,10 +3074,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             ((IoHandler)handler).poolPassiveIoFileMessage( (PoolPassiveIoFileMessage)reply )  ;
 
         } else {
-
-            _log.debug("Unexpected message class "+object.getClass());
-            _log.debug("source = "+msg.getSourceAddress());
-
+            _log.warn("Unexpected message class " + object.getClass() +
+                    "source = " + msg.getSourceAddress());
         }
     }
 

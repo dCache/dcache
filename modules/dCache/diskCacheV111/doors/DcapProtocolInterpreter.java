@@ -3,6 +3,12 @@ package diskCacheV111.doors;
 import dmg.cells.nucleus.CellMessage;
 import java.io.PrintWriter;
 
+/**
+ * DCAP protocol Interpreter. Used By doors to parse ascii commands sent over
+ * the control connection.
+ *
+ * @since 1.9.5-3
+ */
 public interface DcapProtocolInterpreter {
 
     /**
@@ -18,6 +24,6 @@ public interface DcapProtocolInterpreter {
      * Free allocated resources.
      */
     void close();
-    public void messageArrived(CellMessage msg);
+    void messageArrived(CellMessage msg);
     void getInfo( PrintWriter pw );
 }
