@@ -7,7 +7,6 @@ import org.apache.log4j.Logger;
 
 import org.dcache.auth.*;
 import org.dcache.vehicles.AuthorizationMessage;
-import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellPath;
 import dmg.util.Args;
 import gplazma.authz.AuthorizationController;
@@ -15,6 +14,7 @@ import gplazma.authz.AuthorizationException;
 import gplazma.authz.util.NameRolePair;
 import gplazma.authz.records.gPlazmaAuthorizationRecord;
 import diskCacheV111.vehicles.AuthenticationMessage;
+import dmg.cells.nucleus.CellEndpoint;
 
 /*
 * this is a temporary solution to let dcap to talk directly with gPlazma
@@ -37,7 +37,7 @@ public class GplazmaService {
     private String gplazmaPolicyFilePath;
 
     // Only factory method allowed
-    private GplazmaService(CellAdapter caller) throws AuthorizationException {
+    private GplazmaService(CellEndpoint caller) throws AuthorizationException {
 
         Args args = caller.getArgs();
         if( args.getOpt("use-gplazma-authorization-module") != null) {
@@ -78,7 +78,7 @@ public class GplazmaService {
     }
 
 
-    public static GplazmaService getInstance(CellAdapter caller) throws AuthorizationException {
+    public static GplazmaService getInstance(CellEndpoint caller) throws AuthorizationException {
 
         GplazmaService service = INSTANCE.get();
 
@@ -99,7 +99,7 @@ public class GplazmaService {
     }
 
 
-   public UserAuthRecord getUserRecord( CellAdapter cell, String userPrincipal ,String userRole , Args args ) throws AuthorizationException {
+   public UserAuthRecord getUserRecord( CellEndpoint cell, String userPrincipal ,String userRole , Args args ) throws AuthorizationException {
 
         AuthorizationRecord authRecord;
         UserAuthRecord pwdRecord = null;
