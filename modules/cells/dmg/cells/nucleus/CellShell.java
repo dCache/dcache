@@ -1318,115 +1318,54 @@ public String command( String c ) throws CommandExitException {
 
    public final static String fh_exec =
       "exec [<options>] <url> [<args>]\n" +
-      "exec [<options>] context <contextName> [<args>]\n" +
-      "exec [<options>] env <envName> [<args>]\n"+
+      "exec context [<options>] <contextName> [<args>]\n" +
+      "exec env [<options>] <envName> [<args>]\n"+
       "\n"+
       "   Executes the content of an env or context variable or the\n" +
       "   resource identified by the URL.\n"+
-      "    (the -run option will be the default in future releases)\n"+
       "     -shell : opens a new shell for the execution\n"+
-      "     -run   : displays the output of the executed commands\n"+
-      "     Option which can only be used together with -run\n"+
-      "       -nooutput : discard the output of the executed commands\n"+
-      "       okOptions :\n"+
-      "          The ok options determine if or ifnot the command should\n"+
-      "          be executed depending on the value of variables\n"+
-      "       -loop=<variableContextName> : \n"+
-      "          Executes the context/env for each line in <varContextName> as arg\n"+
-      "       -ifok[=<varName>] : run the context/env ONLY if the \n"+
-      "                           specified value of <varName> is '0'\n"+
-      "                           The default <varName> is 'rc'\n"+
-      "       -ifnotok[=<varName>]  : negation of -ifok\n\n" ;
-   public final static String fh_exec_context = fh_exec;
-   public final static String fh_exec_env = fh_exec;
-   public final static String hh_exec_env =
-       "-shell [-run [-ifok|-ifnotok]] <envName> [<args>]" ;
-
+      "     -nooutput : discard the output of the executed commands\n"+
+      "     -loop=<variableContextName> : \n"+
+      "        Executes the block for each line in <varContextName> as arg\n"+
+      "     -ifok[=<varName>] : run the context/env ONLY if the \n"+
+      "                         specified value of <varName> is '0'\n"+
+      "                         The default <varName> is 'rc'\n"+
+      "     -ifnotok[=<varName>]  : negation of -ifok\n\n";
+    public final static String hh_exec =
+        "[-shell] [-nooutput] [-loop=<variable>] [-ifok[=<variable>]|-ifnotok[=<variable>}] <url> [<args>]";
     public String ac_exec_$_1_99(Args args)
         throws CommandException
     {
         try {
-            String url = args.argv(0);
-            Reader reader = open(new URL(url));
-            try {
-                return args.getOpt("run") == null ?
-                    execute_reader(url, reader , args ) :
-                    run_reader(url, reader , args , null ) ;
-            } finally {
-                reader.close();
-            }
-        } catch (IOException e) {
+            return run_reader(new URI(args.argv(0)), args);
+        } catch (URISyntaxException e) {
             throw new CommandException(43 , e.getMessage());
         }
     }
 
-   public String ac_exec_env_$_1_99( Args args ) throws CommandException {
-      String env     = args.argv(0);
-      Object o       = _environment.get( env ) ;
-      if( o == null )
-         throw new CommandException( 66 , "Environment not found : "+env );
+    public final static String fh_exec_env = fh_exec;
+    public final static String hh_exec_env =
+        "[-shell] [-nooutput] [-loop=<variable>] [-ifok[=<variable>]|-ifnotok[=<variable>}] <envName> [<args>]";
+    public String ac_exec_env_$_1_99(Args args) throws CommandException
+    {
+        try {
+            return run_reader(new URI("env",  args.argv(0), null), args);
+        } catch (URISyntaxException e) {
+            throw new CommandException(43, e.getMessage());
+        }
+    }
 
-      Reader reader  = new StringReader( o.toString() ) ;
-
-      return args.getOpt("run") == null ?
-          execute_reader(env, reader , args ) :
-          run_reader(env, reader , args , null ) ;
-   }
-
-   public String hh_exec_context =
-       "-shell -loop=<contextName> [-run [-ifok|-ifnotok]] <contextName> [<args>]" ;
-   public String ac_exec_context_$_1_99( Args args ) throws CommandException {
-      String loopName = args.getOpt("loop");
-      Reader reader  = null ;
-      String context = args.argv(0);
-      if( loopName == null ){
-         try{
-            reader = _nucleus.getDomainContextReader(context) ;
-         }catch(FileNotFoundException e ){
-            throw new CommandException( 66 , "Context not found : "+context )  ;
-         }
-         return args.getOpt("run") == null ?
-             execute_reader(context, reader , args ) :
-             run_reader(context, reader , args , null ) ;
-      }else{
-
-           Reader loopReader = null;
-           StringBuilder result = new StringBuilder();
-			try {
-				loopReader = _nucleus.getDomainContextReader(loopName);
-
-				String line = null;
-
-				BufferedReader bRead = null;
-				try {
-					bRead = new BufferedReader(loopReader);
-					while ((line = bRead.readLine()) != null) {
-						Args altArgs = new Args(line);
-						try {
-							reader = _nucleus.getDomainContextReader(context);
-							result.append(run_reader(context, reader, args, altArgs))
-									.append("\n");
-						} catch (FileNotFoundException e) {
-							throw new CommandException(66,
-									"Context not found : " + context);
-						}
-					}
-				} catch (IOException ioe) {
-					result.append("Problem : ").append(ioe.toString()).append(
-							"\n");
-				} finally {
-					if (bRead != null) try { bRead.close(); } catch (IOException eee) {}
-				}
-
-			} catch (FileNotFoundException e) {
-				throw new CommandException(66, "Context not found : "+ loopName);
-			} finally {
-				if (loopReader != null) try {	loopReader.close();} catch (IOException eee) {}
-			}
-
-           return result.toString() ;
-      }
-   }
+    public final static String fh_exec_context = fh_exec;
+    public final static String hh_exec_context =
+        "[-shell] [-nooutput] [-loop=<variable>] [-ifok[=<variable>]|-ifnotok[=<variable>}] <contextName> [<args>]";
+    public String ac_exec_context_$_1_99(Args args) throws CommandException
+    {
+        try {
+            return run_reader(new URI("context", args.argv(0), null), args);
+        } catch (URISyntaxException e) {
+            throw new CommandException(43 , e.getMessage());
+        }
+    }
 
     private void println(Writer out, String s)
         throws IOException
@@ -1507,27 +1446,10 @@ public String command( String c ) throws CommandExitException {
         }
     }
 
-    private String execute_reader(String source, Reader in, Args args)
+    private String run_reader(URI uri, Args args)
         throws CommandException
     {
-        try {
-            StringWriter out = new StringWriter();
-            CellShell shell  =
-                (args.getOpt("shell") != null)
-                ? new CellShell(_nucleus)
-                : this;
-
-            shell.execute(source, in, out, out, args);
-
-            return (args.getOpt("output") == null) ? null : out.toString();
-        } catch (IOException e) {
-            throw new CommandExitException("I/O error: " + e.getMessage(), 11);
-        }
-    }
-
-    private String run_reader(String source, Reader in, Args args, Args altArgs)
-        throws CommandExitException
-    {
+        String loopName = args.getOpt("loop");
         String var;
         if ((var = args.getOpt("ifok")) != null) {
             if (var.equals("")) {
@@ -1556,14 +1478,46 @@ public String command( String c ) throws CommandExitException {
 
         try {
             StringWriter out = new StringWriter();
-            CellShell shell =
-                (args.getOpt("shell") != null)
-                ? new CellShell(_nucleus)
-                : this ;
 
-            shell.execute(source, in, out, out, (altArgs == null ? args : altArgs));
+            if (loopName == null) {
+                CellShell shell =
+                    (args.getOpt("shell") != null)
+                    ? new CellShell(_nucleus)
+                    : this;
+
+                Reader in = open(uri);
+                try {
+                    shell.execute(uri.toString(), in, out, out, args);
+                } finally {
+                    in.close();
+                }
+            } else {
+                Reader loopReader = _nucleus.getDomainContextReader(loopName);
+                try {
+                    BufferedReader reader = new BufferedReader(loopReader);
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        CellShell shell =
+                            (args.getOpt("shell") != null)
+                            ? new CellShell(_nucleus)
+                            : this;
+
+                        Reader in = open(uri);
+                        try {
+                            shell.execute(uri.toString(), in, out, out,
+                                          new Args(line));
+                        } finally {
+                            in.close();
+                        }
+                    }
+                } finally {
+                    loopReader.close();
+                }
+            }
 
             return (args.getOpt("nooutput") != null) ? "" : out.toString();
+        } catch (FileNotFoundException e) {
+            throw new CommandException(66, "Context not found: "+ loopName);
         } catch (IOException e) {
             throw new CommandExitException("I/O error: " + e.getMessage(), 11);
         }
@@ -1701,7 +1655,7 @@ public String command( String c ) throws CommandExitException {
       "       Protocols :\n"+
       "          env:<environmentVariable>\n"+
       "          context:<contextVariable>\n"+
-      "          context://<cellPath>/<contextVaraible>\n"+
+      "          context://<cellPath>/<contextVariable>\n"+
       "          cell://<cellPath>/<requestString>\n" ;
 
    public String hh_copy = "<fromCellURL> <toCellURL>" ;
@@ -1720,7 +1674,7 @@ public String command( String c ) throws CommandExitException {
 
       String source;
       try {
-          BufferedReader in = new BufferedReader(open(from.toURL()));
+          BufferedReader in = new BufferedReader(open(from));
           try {
               String line;
               StringBuilder sb = new StringBuilder();
@@ -1776,19 +1730,71 @@ public String command( String c ) throws CommandExitException {
        throw new CommandExitException( msg , code ) ;
    }
 
-    private Reader open(URL url)
+    private Reader open(URI uri)
         throws IOException
     {
-        Reader reader;
-        URLConnection con = url.openConnection();
-        if (con instanceof CellUrl.DomainUrlConnection) {
-            CellUrl.DomainUrlConnection dc =
-                (CellUrl.DomainUrlConnection)con;
-            dc.setNucleus(_nucleus) ;
-            dc.setEnvironment(_environment);
-            return dc.getReader();
+        String scheme = uri.getScheme();
+        String ssp = uri.getSchemeSpecificPart();
+
+        if (scheme.equals("context")) {
+            String host = uri.getHost();
+            String path = uri.getPath();
+            if (host == null) {
+                return _nucleus.getDomainContextReader(ssp);
+            } else {
+                if (path == null || path.length() < 2) {
+                    throw new MalformedURLException("Cell URI must be on the form: context://domainname/variable");
+                }
+
+                Object o = getRemoteData("System@" + host,
+                                         "show context " + path.substring(1),
+                                         4000);
+
+                if (o instanceof Exception) {
+                    throw new IOException(o.toString());
+                }
+
+                return new StringReader(o.toString());
+            }
+        } else if (scheme.equals("env")) {
+            Object o = _environment.get(ssp);
+            if (o == null) {
+                throw new IOException("Variable not defined: " + ssp);
+            }
+            return new StringReader(o.toString());
+        } else if (scheme.equals("cell")) {
+            String host = uri.getHost();
+            String path = uri.getPath();
+            if (host == null || path == null || path.length() < 2) {
+                throw new MalformedURLException("Cell URI must be on the form: cell://cellname/command");
+            }
+            Object o = getRemoteData(host, path.substring(1), 4000);
+
+            if (o instanceof Exception) {
+                throw new IOException(o.toString());
+            }
+
+            return new StringReader(o.toString());
         } else {
-            return new InputStreamReader(con.getInputStream());
+            return new InputStreamReader(uri.toURL().openStream());
+        }
+    }
+
+    private Object getRemoteData(String path, String command, long timeout)
+        throws IOException
+    {
+        try {
+            CellMessage answer =
+                _nucleus.sendAndWait(new CellMessage(new CellPath(path),
+                                                     command),
+                                     timeout);
+            if (answer == null)
+                throw new IOException("Request timed out");
+            return answer.getMessageObject();
+        } catch (InterruptedException e) {
+            throw new InterruptedIOException(e.toString());
+        } catch (NoRouteToCellException e){
+            throw new IOException("sendAndWait : " + e);
         }
     }
 }
