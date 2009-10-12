@@ -965,21 +965,14 @@ public class CacheRepositoryV5
         for (StickyRecord record: removed) {
             stickyChanged(entry, record);
         }
+        scheduleExpirationTask(entry);
     }
 
     /**
-     * Schedules an sticky expiration task for an entry.
+     * Schedules an expiration task for a sticky entry.
      */
     private synchronized void scheduleExpirationTask(MetaDataRecord entry)
     {
-        long expire = 0;
-        for (StickyRecord record: entry.stickyRecords()) {
-            if (record.expire() == -1) {
-                return;
-            }
-            expire = Math.max(expire, record.expire());
-        }
-
         /* Cancel previous task.
          */
         PnfsId pnfsId = entry.getPnfsId();
@@ -988,14 +981,27 @@ public class CacheRepositoryV5
             future.cancel(false);
         }
 
-        /* Notice that we schedule an expiration task even if expire
-         * is in the past. This guarantees that we also remove records
-         * that already have expired.
+        /* Find next sticky flag to expire.
          */
-        ExpirationTask task = new ExpirationTask(entry);
-        future = _executor.schedule(task, expire - System.currentTimeMillis(),
-                                    TimeUnit.MILLISECONDS);
-        _tasks.put(pnfsId, future);
+        long expire = Long.MAX_VALUE;
+        for (StickyRecord record: entry.stickyRecords()) {
+            if (record.expire() > -1) {
+                expire = Math.min(expire, record.expire());
+            }
+        }
+
+        /* Schedule a new task. Notice that we schedule an expiration
+         * task even if expire is in the past. This guarantees that we
+         * also remove records that already have expired. We schedule
+         * the task 1 second later than the expiration time to account
+         * for small clock shifts.
+         */
+        if (expire != Long.MAX_VALUE) {
+            ExpirationTask task = new ExpirationTask(entry);
+            future = _executor.schedule(task, expire - System.currentTimeMillis() + 1000,
+                                        TimeUnit.MILLISECONDS);
+            _tasks.put(pnfsId, future);
+        }
     }
 
     // Callbacks for fault notification ////////////////////////////////////
