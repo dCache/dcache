@@ -102,12 +102,18 @@ public class StateMaintainer implements StateUpdateManager {
         if( earliestMetricExpiry == null && _metricExpiryDate == null)
             return;
 
-        if( _metricExpiryDate == null) {
-            scheduleMetricExpunge( earliestMetricExpiry);
-        } else if( !_metricExpiryDate.equals( earliestMetricExpiry)) {
+        if( _metricExpiryDate != null && !_metricExpiryDate.equals( earliestMetricExpiry)) {
+            if( _log.isDebugEnabled()) {
+                Date now = new Date();
+                long delay = _metricExpiryDate.getTime() - now.getTime();
+                _log.debug( "Cancelling existing metric purge, due to take place in " + Double.valueOf( delay/1000.0) + " s");
+            }
             _metricExpiryFuture.cancel( false);
-            scheduleMetricExpunge( earliestMetricExpiry);
+            _metricExpiryDate = null;
         }
+        
+        if( _metricExpiryDate == null)
+            scheduleMetricExpunge( earliestMetricExpiry);
     }
 
     /**
@@ -140,10 +146,15 @@ public class StateMaintainer implements StateUpdateManager {
 
         long delay = whenExpunge.getTime() - System.currentTimeMillis();
 
+        if( _log.isDebugEnabled())
+            _log.debug( "Scheduling next metric purge in " + Double.valueOf( delay/1000.0) + " s");
+
         _metricExpiryFuture = _scheduler.schedule( new Runnable() {
             public void run() {
+                _log.debug( "Starting metric purge");
                 _caretaker.removeExpiredMetrics();
                 scheduleMetricExpunge();
+                _log.debug( "Metric purge completed");
             }
         }, delay, TimeUnit.MILLISECONDS);
     }
