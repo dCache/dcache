@@ -300,6 +300,9 @@ public class NFSv41Door extends AbstractCellComponent implements
     protected void messageArrived(DoorTransferFinishedMessage transferFinishedMessage) {
 
         NFS4ProtocolInfo protocolInfo = (NFS4ProtocolInfo)transferFinishedMessage.getProtocolInfo();
+        if(_log.isDebugEnabled() ) {
+            _log.debug("Mover " + protocolInfo.stateId() + " done.");
+        }
         _ioMessages.remove(protocolInfo.stateId());
     }
 
@@ -465,6 +468,10 @@ public class NFSv41Door extends AbstractCellComponent implements
     @Override
     public void releaseDevice(stateid4 stateid) {
 
+        if(_log.isDebugEnabled()) {
+            _log.debug("Releasing device by stateid: " + stateid);
+        }
+
         PoolIoFileMessage poolIoFileMessage = _ioMessages.remove(stateid);
         if (poolIoFileMessage != null) {
 
@@ -472,7 +479,16 @@ public class NFSv41Door extends AbstractCellComponent implements
                     new PoolMoverKillMessage(poolIoFileMessage.getPoolName(),
                     poolIoFileMessage.getMoverId());
 
-            _poolManagerStub.send(message);
+            if(_log.isDebugEnabled()) {
+                _log.debug("Sending KILL to " + poolIoFileMessage.getMoverId() + "@"
+                    +poolIoFileMessage.getPoolName() );
+            }
+
+            _poolManagerStub.send(new CellPath(poolIoFileMessage.getPoolName()),
+                    message);
+
+        }else{
+            _log.warn("Can't find mover by stateid: " + stateid);
         }
     }
 
