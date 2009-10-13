@@ -1052,24 +1052,7 @@ public class PnfsManagerV3 extends CellAdapter
                 StorageInfo info =
                     _nameSpaceProvider.getStorageInfo(ROOT, pnfsId);
 
-                /*
-                 * store current values of access latency and retention policy
-                 */
-                info.isSetAccessLatency(true);
-                info.isSetRetentionPolicy(true);
-                _nameSpaceProvider.setStorageInfo(pnfsMessage.getSubject(), pnfsId, info, NameSpaceProvider.SI_OVERWRITE);
-
-                info.isSetAccessLatency(false);
-                info.isSetRetentionPolicy(false);
-
                 info.setKey("path", pnfsMessage.getPath() );
-
-                /*
-                 * due to legacy use of level to probe isNew() and while storing default
-                 * access latency and retention policy on create breaking this rule we have to
-                 * fix it.
-                 */
-                info.setIsNew(true);
 
                 pnfsMessage.setStorageInfo( info ) ;
                 pnfsMessage.setMetaData(_nameSpaceProvider.getFileMetaData(ROOT, pnfsId));
