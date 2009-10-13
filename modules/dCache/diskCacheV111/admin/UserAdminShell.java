@@ -404,32 +404,7 @@ public class      UserAdminShell
                   " arrived with message "+result.toString();
 
     }
-    public String hh_space  = "reserve|free <poolName> <bytes>" ;
-    public Object ac_space_$_3( Args args ) throws Exception {
 
-       String mode     = args.argv(0) ;
-       String poolName = args.argv(1) ;
-       long   bytes    = Long.parseLong(args.argv(2));
-
-        try{
-           checkPermission( "pool.*.execute" ) ;
-        }catch( AclException acle ){
-           checkPermission( "pool."+poolName+".execute" ) ;
-        }
-
-        PoolSpaceReservationMessage msg = null ;
-        if( mode.equals("reserve") ){
-            msg = new PoolReserveSpaceMessage( poolName , bytes ) ;
-        }else if( mode.equals("free") ){
-            msg = new PoolFreeSpaceReservationMessage( poolName , bytes ) ;
-        }else
-           throw new
-           IllegalArgumentException("Usage : space reserve|free <poolName> <bytes>");
-
-        Object result = sendObject( poolName , msg ) ;
-
-       return result.toString() ;
-    }
     public String hh_set_sticky = "<pnfsId>|<globalPath> [-target=<target>] [-silent]" ;
     public Object ac_set_sticky_$_1( Args args ) throws Exception {
        return setSticky(

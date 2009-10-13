@@ -156,7 +156,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     private boolean _checkStrict      = true ;
     private long    _poolRetry        = 0L ;
     private String  _hsmManager       = null ;
-    private boolean _doPreallocation  = false ;
 
     private boolean _truncateAllowed  = false ;
     private String  _ioQueueName      = null ;
@@ -240,8 +239,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         _strictSize      = _args.getOpt("strict-size") != null ;
 
         _hsmManager      = _args.getOpt("hsm") ;
-
-        _doPreallocation = _args.getOpt("preallocate-space") != null ;
 
         _startedTS = new Date() ;
         //
@@ -2543,7 +2540,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 _storageInfo           ) ;
             }else if( reply instanceof PoolMgrSelectWritePoolMsg ){
 
-                if( _doPreallocation )handleSpacePreallocation( pool , _storageInfo ) ;
                 poolMessage =
                 new PoolAcceptFileMessage(
                 pool,
@@ -2593,49 +2589,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 }
             }
             setStatus( "WaitingForOpenFile" ) ;
-
-        }
-        private void handleSpacePreallocation( String pool , StorageInfo storageInfo ){
-            String tmp = storageInfo.getKey("alloc-size");
-            long   allocSize = 0L ;
-            if (tmp != null) try {
-                allocSize = Long.parseLong(tmp);
-            } catch (NumberFormatException ee) {
-                /* bad alloc-size ignored*/
-            }
-
-            if( allocSize <= 0L ){
-                _log.debug("Preallocating not defined" ) ;
-                return ;
-            }
-            _log.debug("Preallocating : "+allocSize ) ;
-            try{
-                PoolReserveSpaceMessage space =
-                new PoolReserveSpaceMessage( pool , allocSize ) ;
-
-                CellMessage request = new CellMessage( new CellPath(pool) , space ) ;
-
-                request = _cell.sendAndWait( request , 30000L ) ;
-                if( ( request == null ) ||
-                ! ( request.getMessageObject() instanceof PoolReserveSpaceMessage ) )
-
-                    throw new
-                    Exception("Zero or invalid reply from pool space reservation "+pool ) ;
-
-
-                space = (PoolReserveSpaceMessage)request.getMessageObject() ;
-
-                storageInfo.setKey( "use-preallocated-space" , ""+allocSize ) ;
-
-                _log.debug("Pool "+pool+" now reserving "+space.getReservedSpace() ) ;
-                try{
-                    Thread.sleep(30000L);
-                }catch(InterruptedException eeee){}
-                _log.debug("Preallocation done");
-
-            }catch(Exception ee ){
-                _log.debug("Space preallocation canceled : "+ee ) ;
-            }
 
         }
         public void
