@@ -1,6 +1,20 @@
 #
 # $Id: dcache-client.spec.template,v 1.3 2007-07-05 09:22:06 timur Exp $
 #
+%define krb 0
+%define vdt 0
+%define epel 0
+%{?_with_krb:%define krb 1}
+%{?_with_vdt:%define vdt 1}
+%{?_with_epel:%define epel 1}
+
+%if %vdt || %epel
+%define gsi 1
+%else
+%define gsi 0
+%endif
+
+
 Summary: dCache Client
 Vendor: dCache.org
 Name: dcap
@@ -37,15 +51,24 @@ Requires: libdcap
 %description -n libdcap-devel
 This package contains the client library dcachedcap header files.
 
+%if %gsi
 %package -n libdcap-tunnel-gsi
 Summary: dCache GSI Tunnel
 Group: Applications/System
 Requires: libdcap
 BuildRequires: openssl-devel
+%if %vdt
+BuildRequires: vdt_globus_essentials
+%endif
+%if %epel
+BuildRequires:  globus-gssapi-gsi-devel
+%endif
 %description -n libdcap-tunnel-gsi
 This package contains the gsi tunnel plugin library used by dcachedcap.
 This library is dynamically loaded at run time.
+%endif
 
+%if %krb
 %package -n libdcap-tunnel-krb
 Summary: dCache GSI Tunnel
 Group: Applications/System
@@ -54,6 +77,7 @@ BuildRequires: krb5-devel
 %description -n libdcap-tunnel-krb
 This package contains the gsi tunnel plugin library used by dcachedcap.
 This library is dynamically loaded at run time.
+%endif
 
 %package -n libdcap-tunnel-telnet
 Summary: dCache GSI Tunnel
@@ -64,6 +88,11 @@ This package contains the gsi tunnel plugin library used by dcachedcap.
 This library is dynamically loaded at run time.
 
 %prep
+
+%if %vdt && %epel
+%{error: You cannot build for VDT and EPEL at the same time}
+exit 1
+%endif 
 
 %setup -c
 
@@ -81,11 +110,24 @@ arch=64
 make clean
 make install BIN_PATH=%{buildroot}%{prefix} LIB_PATH=%{buildroot}/${libdir}
 OLDCWD=`pwd`
+
+%if %gsi
 cd security_plugins/gssapi
 make clean
+%if %vdt
 make install ARCH=${arch} LIB_PATH=%{buildroot}/${libdir}
+%else
+make install FLAVOUR= PATH_INCLUDE_GSI=/usr/include/globus LDFLAGS="-shared" LIB_FLAGS="-Bdynamic -L/usr/lib64" LIB_PATH=%{buildroot}/${libdir}
+%endif
+%endif
+
+%if %krb
+cd ${OLDCWD}
+cd security_plugins/gssapi
 make clean
 make -f  Makefile.gss install ARCH=${arch} LIB_PATH=%{buildroot}/${libdir}
+%endif
+
 cd ${OLDCWD}
 cd security_plugins/telnet
 make clean
@@ -134,6 +176,7 @@ rm -rf $RPM_BUILD_ROOT
 %{prefix}/lib/libdcap.a
 %endif
 
+%if %gsi
 %files -n libdcap-tunnel-gsi
 %defattr(-,root,root)
 %ifos Linux
@@ -145,7 +188,9 @@ rm -rf $RPM_BUILD_ROOT
 %else
 %{prefix}/lib/libgsiTunnel.so
 %endif
+%endif
 
+%if %krb
 %files -n libdcap-tunnel-krb
 %defattr(-,root,root)
 %ifos Linux
@@ -156,6 +201,7 @@ rm -rf $RPM_BUILD_ROOT
 %endif
 %else
 %{prefix}/lib/libgssTunnel.so
+%endif
 %endif
 
 %files -n libdcap-tunnel-telnet
