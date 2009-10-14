@@ -162,13 +162,12 @@ public class PoolManagerV5
     public void init()
     {
         String watchdogParam = getArgs().getOpt("watchdog");
-        if (watchdogParam != null) {
-            _watchdog =
-                (watchdogParam.length() > 0)
-                ? new WatchdogThread(watchdogParam)
-                : new WatchdogThread();
-            _log.info("Watchdog : " + _watchdog);
+        if (watchdogParam != null && watchdogParam.length() > 0) {
+            _watchdog = new WatchdogThread(watchdogParam);
+        } else {
+            _watchdog = new WatchdogThread();
         }
+        _log.info("Watchdog : " + _watchdog);
     }
 
     @Override
