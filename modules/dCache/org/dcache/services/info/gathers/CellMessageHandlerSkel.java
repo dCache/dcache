@@ -161,6 +161,6 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
 	 */
 	public void answerTimedOut( CellMessage request) {
 		_log.info("Message timed out");
-		_msgMetadataRepo.remove( request.getUOID());
+		_msgMetadataRepo.remove( request.getLastUOID());
 	}
 }
