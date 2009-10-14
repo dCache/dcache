@@ -443,13 +443,17 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
             for( String linkPool : linkInfo.getPools()) {
                 PaintInfo poolPaintInfo = paintedPools.get( linkPool);
 
-                // Check for an inconsistency bug. Report it and work around
-                // the issue.
+                /*
+                 * It is possible that a pool is accessible from a link yet
+                 * no such pool is known; for example, as the info service is
+                 * "booting up".  We work-around this issue by creating a new
+                 * PaintInfo for for this pool. 
+                 */
                 if( poolPaintInfo == null) {
-                    _log.warn( "Inconsistency in information: pool " +
-                               linkPool + " accessable via link " +
+                    _log.debug( "Inconsistency in information: pool " +
+                               linkPool + " accessible via link " +
                                linkInfo.getId() +
-                               " but not present under poolspace ");
+                               " but not present as a pool");
                     poolPaintInfo = new PaintInfo( linkPool);
                     paintedPools.put( linkPool, poolPaintInfo);
                 }
