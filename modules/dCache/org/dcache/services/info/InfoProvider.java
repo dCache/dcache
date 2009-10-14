@@ -109,7 +109,7 @@ public class InfoProvider extends AbstractCell {
     public InfoProvider( String cellName, String args) throws InterruptedException, ExecutionException {
         super( cellName, args);
 
-        _sum = new StateMaintainer( _state);
+        _sum = new StateMaintainer( _state, getNucleus());
         _state.setStateUpdateManager( _sum);
 
         StateExhibitor exhibitor = _state;

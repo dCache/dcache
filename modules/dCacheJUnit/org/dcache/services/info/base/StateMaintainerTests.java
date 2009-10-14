@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
 
 import org.junit.After;
 import org.junit.Before;
@@ -229,7 +230,7 @@ public class StateMaintainerTests extends InfoBaseTest {
     @Before
     public void setUp() throws InterruptedException {
         _caretaker = new DummyCaretaker();
-        _maintainer = new StateMaintainer( _caretaker);
+        _maintainer = new StateMaintainer( _caretaker, Executors.defaultThreadFactory());
     }
 
     @After

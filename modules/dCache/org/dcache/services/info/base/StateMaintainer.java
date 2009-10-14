@@ -5,10 +5,12 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.log4j.Logger;
+import org.dcache.util.FireAndForgetTask;
 
 /**
  * The StateMaintainer class provides the machinery for processing
@@ -19,6 +21,8 @@ public class StateMaintainer implements StateUpdateManager {
 
     private static final Logger _log = Logger.getLogger( StateMaintainer.class);
 
+    private static final boolean CANCEL_RUNNING_METRIC_EXPUNGE = false;
+
     /** Our scheduler */
     final private ScheduledExecutorService _scheduler;
 
@@ -26,11 +30,12 @@ public class StateMaintainer implements StateUpdateManager {
     final private AtomicInteger _pendingRequestCount = new AtomicInteger();
 
     /** Our link to the business logic for update dCache state */
-    private StateCaretaker _caretaker;
+    private volatile StateCaretaker _caretaker;
 
     /**
      * The Future for the next scheduled metric purge, or null if no such
-     * activity has been scheduled
+     * activity has been scheduled.  Access and updates to this object are
+     * protected by the this (StateMaintainer) object monitor.
      */
     private ScheduledFuture<?> _metricExpiryFuture;
     private Date _metricExpiryDate;
@@ -42,9 +47,9 @@ public class StateMaintainer implements StateUpdateManager {
      *            the StateCaretaker that will undertake the business logic
      *            of updating dCache state.
      */
-    public StateMaintainer( final StateCaretaker caretaker) {
+    public StateMaintainer( final StateCaretaker caretaker, final ThreadFactory threadFactory) {
         _caretaker = caretaker;
-        _scheduler = Executors.newSingleThreadScheduledExecutor();
+        _scheduler = Executors.newSingleThreadScheduledExecutor( threadFactory);
     }
 
     /**
@@ -52,7 +57,7 @@ public class StateMaintainer implements StateUpdateManager {
      * 
      * @param caretaker
      */
-    synchronized void setStateCaretaker( final StateCaretaker caretaker) {
+    void setStateCaretaker( final StateCaretaker caretaker) {
         _caretaker = caretaker;
     }
 
@@ -62,27 +67,32 @@ public class StateMaintainer implements StateUpdateManager {
     }
 
     @Override
-    public synchronized void enqueueUpdate( final StateUpdate pendingUpdate) {
+    public void enqueueUpdate( final StateUpdate pendingUpdate) {
         if( _log.isDebugEnabled())
             _log.debug(  "enqueing job to process update " + pendingUpdate);
 
         _pendingRequestCount.incrementAndGet();
-        _scheduler.submit( new Runnable() {
+        _scheduler.execute( new FireAndForgetTask( new Runnable() {
             @Override
             public void run() {
-                if( _log.isDebugEnabled())
-                    _log.debug(  "starting job to process update " + pendingUpdate);
-                _caretaker.processUpdate( pendingUpdate);
-                _pendingRequestCount.decrementAndGet();
-                checkScheduledExpungeActivity();
-                if( _log.isDebugEnabled())
-                    _log.debug( "finished job to process update " + pendingUpdate);
+                try {
+                    if( _log.isDebugEnabled())
+                        _log.debug(  "starting job to process update " + pendingUpdate);
+
+                    _caretaker.processUpdate( pendingUpdate);
+                    checkScheduledExpungeActivity();
+
+                    if( _log.isDebugEnabled())
+                        _log.debug( "finished job to process update " + pendingUpdate);
+                } finally {
+                    _pendingRequestCount.decrementAndGet();
+                }
             }
-        });
+        }));
     }
 
     @Override
-    public synchronized void shutdown() throws InterruptedException {
+    public void shutdown() throws InterruptedException {
         List<Runnable> unprocessed = _scheduler.shutdownNow();
         if( !unprocessed.isEmpty())
             _log.info( "Shutting down with " + unprocessed.size() +
@@ -106,14 +116,21 @@ public class StateMaintainer implements StateUpdateManager {
         if( earliestMetricExpiry == null && _metricExpiryDate == null)
             return;
 
+        // If the metric expiry date has changed, we try to cancel the update.
         if( _metricExpiryDate != null && !_metricExpiryDate.equals( earliestMetricExpiry)) {
             if( _log.isDebugEnabled()) {
                 Date now = new Date();
                 long delay = _metricExpiryDate.getTime() - now.getTime();
                 _log.debug( "Cancelling existing metric purge, due to take place in " + Double.valueOf( delay/1000.0) + " s");
             }
-            _metricExpiryFuture.cancel( false);
-            _metricExpiryDate = null;
+
+            /*  If the cancel fails (returns false) then the metric expunge is
+             *  currently being processed.  When this completes, a new metric
+             *  expiry job will be scheduled automatically, so we don't need to
+             *  do anything.
+             */
+            if( _metricExpiryFuture.cancel( CANCEL_RUNNING_METRIC_EXPUNGE))
+                _metricExpiryDate = null;
         }
         
         if( _metricExpiryDate == null)
@@ -121,26 +138,15 @@ public class StateMaintainer implements StateUpdateManager {
     }
 
     /**
-     * Create a new scheduled task to expunge metrics. This method doesn't
-     * cancel an existing scheduled task and will always schedule activity.
-     * <p>
-     * This method should be called only when we know the value from
-     * {@link StateCaretaker#getEarliestMetricExpiryDate()} has changed.
-     */
-    synchronized void scheduleMetricExpunge() {
-        scheduleMetricExpunge( _caretaker.getEarliestMetricExpiryDate());
-    }
-
-    /**
      * If whenExpunge is not null then schedule a task to call
      * {@link StateCaretaker#removeExpiredMetrics()} then call
-     * {@link #scheduleMetricExpunge()} to schedule the next metric purge
-     * activity. If whenExpunge is null then nothing happens.
+     * {@link #scheduleScheduleMetricExpunge()} to schedule the next metric
+     * purge activity. If whenExpunge is null then no action is taken.
      * 
      * @param whenExpunge
      *            some time in the future to schedule a task or null.
      */
-    private void scheduleMetricExpunge( final Date whenExpunge) {
+    private synchronized void scheduleMetricExpunge( final Date whenExpunge) {
         _metricExpiryDate = whenExpunge;
 
         if( whenExpunge == null) {
@@ -153,13 +159,26 @@ public class StateMaintainer implements StateUpdateManager {
         if( _log.isDebugEnabled())
             _log.debug( "Scheduling next metric purge in " + Double.valueOf( delay/1000.0) + " s");
 
-        _metricExpiryFuture = _scheduler.schedule( new Runnable() {
+        _metricExpiryFuture = _scheduler.schedule( new FireAndForgetTask( new Runnable() {
             public void run() {
                 _log.debug( "Starting metric purge");
                 _caretaker.removeExpiredMetrics();
                 scheduleMetricExpunge();
                 _log.debug( "Metric purge completed");
             }
-        }, delay, TimeUnit.MILLISECONDS);
+        }), delay, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Create a new scheduled task to expunge metrics.  If the existing metric
+     * expunge job is not finished then nothing is done.  If it is finished
+     * then a new task is submitted.
+     * <p>
+     * This method should only be called when we know the value from
+     * {@link StateCaretaker#getEarliestMetricExpiryDate()} has changed to
+     * avoid creating competing tasks.
+     */
+    synchronized protected void scheduleMetricExpunge() {
+        scheduleMetricExpunge( _caretaker.getEarliestMetricExpiryDate());
     }
 }
