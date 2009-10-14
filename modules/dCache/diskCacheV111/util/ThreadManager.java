@@ -1,22 +1,3 @@
-// $Id: ThreadManager.java,v 1.2 2006-09-25 15:39:12 tdh Exp $
-// $Log: not supported by cvs2svn $
-// Revision 1.1.2.5  2006/09/20 22:00:50  tdh
-// Added commands for info and to set number of threads and timeout value.
-//
-// Revision 1.1.2.4  2006/09/20 20:15:35  tdh
-// Changed newThread method to synchronized.
-//
-// Revision 1.1.2.3  2006/09/20 19:51:03  tdh
-// Added ThreadFactory cability, calling CellNucleus method, and support for non-timed Runnables.
-//
-// Revision 1.1.2.2  2006/09/20 17:39:42  tdh
-// Some refactoring. Added getInstance.
-//
-// Revision 1.1.2.1  2006/09/20 15:12:20  tdh
-// This Cell provides threads to processes running the same domain.
-//
-
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -90,6 +71,7 @@ import dmg.util.Args;
 
 import java.io.*;
 import java.util.concurrent.*;
+import org.apache.log4j.NDC;
 
 
 /**ThreadManager Cell.<br/>
@@ -214,6 +196,9 @@ import java.util.concurrent.*;
                           runnable.run();
                       } finally {
                           CDC.clear();
+                          if( ThreadManager.getExecutor() == null ) {
+                            NDC.remove();
+                          }
                       }
                   }
               };
