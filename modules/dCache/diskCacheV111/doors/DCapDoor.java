@@ -5,14 +5,7 @@ package diskCacheV111.doors ;
 import java.io.BufferedReader;
 import java.io.PrintWriter;
 import java.io.Reader;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.Hashtable;
-import java.util.Map;
 
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.VspArgs;
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
@@ -20,10 +13,11 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellVersion;
 import dmg.security.CellUser;
 import dmg.util.Args;
-import dmg.util.CommandException;
 import dmg.util.CommandExitException;
 import dmg.util.KeepAliveListener;
 import dmg.util.StreamEngine;
+
+import java.util.concurrent.TimeUnit;
 
 /**
   * @author Patrick Fuhrmann
@@ -50,82 +44,14 @@ public class      DCapDoor
     private String         _lastCommand    = "<init>";
     private Reader         _reader         = null;
     private CellNucleus    _nucleus        = null ;
-    private Object         _interpreter    = null ;
     private boolean        _dcapLock       = true ;
     private String         _authenticator  = null ;
-    ////////////////////////////////////////////////////////////
-    //
-    //            The static part
-    //         ---------------------
-    //
-    //       -) unique ID
-    //       -) create the command method hashtable
-    //
-    // ..........................................................
 
-    //
-    // create a hashtable for the client commands
-    //
-    private static Map<String, Method>     __commandHash       = null ;
-    private static Constructor<?>   __interConstructor  = null ;
-    private static Method        __messageArrived    = null ;
-    private static Method        __getInfo           = null ;
-    private final static String  __defaultInterpreterClass =
-             "diskCacheV111.doors.DCapDoorInterpreterV3" ;
-    private synchronized static void
-            loadInterpreter( String className )throws Exception {
+    /**
+     * DCAP command interpreter.
+     */
+    private final DcapProtocolInterpreter _interpreter;
 
-        //
-        // are we already done ?
-        //
-        if( __commandHash != null )return ;
-        Class<?> interClass = Class.forName( className ) ;
-        //
-        // get the constructor
-        //
-        Class<?> [] argClass  = { dmg.cells.nucleus.CellAdapter.class ,
-                               java.io.PrintWriter.class ,
-                               dmg.security.CellUser.class } ;
-        __interConstructor = interClass.getConstructor( argClass ) ;
-        //
-        //  some useful functions
-        //
-        try{
-           Class<?> [] ac = { dmg.cells.nucleus.CellMessage.class } ;
-           __messageArrived = interClass.getMethod( "messageArrived" , ac ) ;
-        }catch(NoSuchMethodException nsme ){}
-        try{
-           Class<?> [] ac = { java.io.PrintWriter.class } ;
-           __getInfo = interClass.getMethod( "getInfo" , ac ) ;
-        }catch(NoSuchMethodException nsme ){}
-        //
-        // create the command hash
-        //
-        __commandHash = new Hashtable<String, Method>() ;
-
-        Method [] all = interClass.getMethods() ;
-        for( int i = 0 ; i < all.length ; i++ ){
-           String name = all[i].getName() ;
-
-           if( name.length() < 5 )continue ;
-
-           if( ! name.startsWith( "com_" ) )continue ;
-
-           Class<?> returnType = all[i].getReturnType() ;
-           if( ! returnType.equals(java.lang.String.class) )
-             continue ;
-
-           Class<?> [] param = all[i].getParameterTypes() ;
-           boolean paramsFit =
-                ( param.length == 3   ) &&
-                param[0].equals(int.class) &&
-                param[1].equals(int.class) &&
-                param[2].equals(diskCacheV111.util.VspArgs.class)     ;
-
-           if( ! paramsFit )continue ;
-           __commandHash.put( name.substring(4) , all[i] ) ;
-        }
-    }
     /////////////////////////////////////////////////////////////////////
     //
     //         the constructor
@@ -149,22 +75,9 @@ public class      DCapDoor
 	   _username = engine.getUserName();
 	   _host     = engine.getInetAddress().toString();
 
-           //
-           // prepare the interpreter ( default or defined )
-           //
-           String className = args.getOpt("interpreter" ) ;
-           className = className == null ?
-                       __defaultInterpreterClass : className ;
-
-           loadInterpreter( className ) ;
-
            _authenticator = args.getOpt("authenticator") ;
            _authenticator = _authenticator == null ?
                             "pam" : _authenticator ;
-
-           Object [] theArgs = new Object[3] ;
-           theArgs[0] = this ;
-           theArgs[1] = _out ;
 
            String user = _username.getName();
            if( args.getOpt("keepPrincipal") == null ){
@@ -186,9 +99,8 @@ public class      DCapDoor
               }
               password = "" ;
            }
-           theArgs[2] = _username;
 
-           _interpreter = __interConstructor.newInstance( theArgs ) ;
+           _interpreter = new DCapDoorInterpreterV3(this, _out, _username);
            addCommandListener(_interpreter);
         }catch(Exception ee ){
            start() ;
@@ -268,7 +180,7 @@ public class      DCapDoor
                while( true ){
                    String lock = (String)_nucleus.getDomainContext().get("dcapLock") ;
                    if( lock == null )break ;
-                   Thread.sleep(5000) ;
+                   TimeUnit.SECONDS.sleep(5);
                }
 
             }catch(InterruptedException iee){
@@ -292,7 +204,7 @@ public class      DCapDoor
                         // The other protocols don't care.
 			//
                         println( "0 0 server byebye" ) ;
-			try{ _out.close(); }catch(Exception ee){}
+                        _out.close();
                         shutdown = true ;
                         say( "ComThread : protocol ended" ) ;
 		    }
@@ -304,7 +216,7 @@ public class      DCapDoor
                        if( Thread.currentThread().isInterrupted() ){
                           say( "ComThread : was interrupted" ) ;
                        }
-                       try{ _out.close(); }catch(Exception ee){}
+                       _out.close();
                        shutdown = true ;
                        esay( "ComThread : got "+e ) ;
                        esay(e);
@@ -340,7 +252,7 @@ public class      DCapDoor
 
        say( "abortCacheProtocol : starting" ) ;
        try{
-            Thread.sleep(10000) ;
+            TimeUnit.SECONDS.sleep(10) ;
        }catch(InterruptedException ie ){
           say( "abortCacheProtocol : interrupted " ) ;
        }
@@ -373,7 +285,7 @@ public class      DCapDoor
                 break ;
                 case __weWereKilledEvent :
                    println( "0 0 server shutdown" ) ;
-                   try{ _out.close() ; }catch(Exception e ){}
+                   _out.close();
                    _state = __AbortCacheProtOnKill ;
                    _nucleus.newThread(
                       new Runnable(){
@@ -453,7 +365,9 @@ public class      DCapDoor
         if( _state != __WeAreFinished )
             say("CleanUp : PANIC : timeout (system left in an undefined state)" ) ;
 	say( "CleanUp : finished" );
-        try{ _out.close() ; }catch(Exception e ){}
+
+        _interpreter.close();
+        _out.close();
 	try {
 	    if (!_engine.getSocket().isClosed()) {
 		say("Close socket");
@@ -469,102 +383,24 @@ public class      DCapDoor
 	_out.flush();
     }
 
-    private synchronized void print( String str ){
-        say( "toclient(print) : "+str ) ;
-	_out.print( str );
-	_out.flush();
-    }
     private int execute( String line ) throws Exception {
 	if( line.equals("") )return 0 ;
 
-        say( "Client command : "+line ) ;
-
-        VspArgs args = null ;
-        //
-        // command syntax preparation
-        //
         try{
-           args = new VspArgs( line ) ;
-        }catch( IllegalArgumentException iae ){
-           //
-           // we don't accept a syntax error at this point.
-           // simply to dangerous.
-           //
-           esay( "Protocol syntax violation : "+line ) ;
-           throw iae ;
-        }
-        int sessionId  = args.getSessionId() ;
-        int commandId  = args.getSubSessionId() ;
-        String name    = args.getName() ;
-        String command = args.getCommand() ;
-        say( "Execute : lookup "+command ) ;
-        Method m = __commandHash.get( command ) ;
-        if( m == null ){
-            protocolViolation(sessionId,commandId,name,669,
-                              "Invalid command '"+line+"'" ) ;
-            return 0 ;
-        }
-        try{
-           Object [] p = new Object[3] ;
-           p[0] = Integer.valueOf(sessionId) ;
-           p[1] = Integer.valueOf(commandId) ;
-           p[2] = args;
 
-           String role = args.getOpt("role");
-           _username.setRole(role);
-
-           String answer = (String)m.invoke( _interpreter , p ) ;
+           String answer = _interpreter.execute(line);
            if( answer != null ){
               say( "Our answer : "+answer ) ;
               println( answer ) ;
            }
 
-        }catch(InvocationTargetException ite){
-           Throwable t = ite.getTargetException() ;
-           if( t instanceof CommandExitException ){
-              return 1 ;
-           }else if( t instanceof CacheException ){
-              CacheException ce =
-                 (CacheException)t ;
-              internalError(sessionId,commandId,name,
-                            ce.getRc() ,
-                            ce.getMessage() ) ;
-              return 0 ;
-           }else if( t instanceof CommandException ){
-              CommandException cse =
-                 (CommandException)t ;
-              protocolViolation(sessionId,commandId,name,
-                                cse.getErrorCode() ,
-                                cse.getErrorMessage() ) ;
-              return 0 ;
-           }else{
-              internalError(sessionId,commandId,name,701,
-                            m.getName()+" : "+t      ) ;
-              return 0 ;
-           }
-        }catch(Throwable t){
-           internalError(sessionId,commandId,name,702,
-                         "Could't invoke "+m.getName()+" : "+t ) ;
-           return 0 ;
+        }catch(CommandExitException e) {
+            return 1;
         }
+
         return 0 ;
     }
-    private void protocolViolation( int sessionId , int commandId , String name ,
-                                    int errorCode , String errorMessage ){
-        String problem = ""+sessionId+" "+commandId+" "+name+" " +
-                         "failed "+errorCode+
-                         " \"protocolViolation : "+errorMessage+"\"" ;
-        println(problem) ;
-        esay(problem) ;
-    }
-    private void internalError( int sessionId , int commandId , String name ,
-                                int errorCode , String errorMessage ){
-        String problem = ""+sessionId+" "+commandId+" "+name+" "+
-                         "failed "+errorCode+
-                         " \"internalError : "+errorMessage+"\"" ;
-        println(problem) ;
-        esay(problem) ;
-    }
+
     ///////////////////////////////////////////////////////////////
     //
     // the stuff which makes us a cell
@@ -581,34 +417,11 @@ public class      DCapDoor
 	pw.println( "         Host  : "+_host );
 	pw.println( " Last Command  : "+_lastCommand );
 	pw.println( " Command Count : "+_commandCounter );
-        if( __getInfo != null ){
-           Object [] args = new Object[1] ;
-           args[0] = pw ;
-           try{
-              __getInfo.invoke( _interpreter , args ) ;
-           }catch( InvocationTargetException ite ){
-              esay( "invoke.getInfo : "+ite.getTargetException() ) ;
-           }catch( Exception e ){
-              esay( "invoke.getInfo : "+e ) ;
-           }
-        }
+        _interpreter.getInfo(pw);
     }
 
     @Override
     public void   messageArrived( CellMessage msg ){
-       if( __messageArrived != null ){
-           Object [] args = new Object[1] ;
-           args[0] = msg ;
-           try{
-              __messageArrived.invoke( _interpreter , args ) ;
-           }catch( InvocationTargetException ite ){
-
-           }catch( Exception e ){
-
-           }
-       }
+        _interpreter.messageArrived(msg);
     }
 }
-
-
-
