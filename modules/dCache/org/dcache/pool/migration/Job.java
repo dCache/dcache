@@ -24,7 +24,6 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.List;
 import java.util.Set;
-import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -351,8 +350,7 @@ public class Job
                                          _configuration.getExecutor(),
                                          _configuration.getPoolName(),
                                          entry,
-                                         _definition.targetMode,
-                                         _definition.mustMovePins);
+                                         _definition);
                     _running.put(pnfsId, task);
                     _statistics.addAttempt();
                     task.run();
@@ -472,31 +470,6 @@ public class Job
         _running.remove(pnfsId);
         _statistics.addCompleted(_sizes.remove(pnfsId));
         schedule();
-    }
-
-    /**
-     * Returns the pool names in the associated pool list.
-     */
-    public Collection<String> getPools()
-    {
-        Collection<String> pools = new HashSet<String>();
-        for (PoolCostPair pair: _definition.poolList.getPools()) {
-            pools.add(pair.path.getCellName());
-        }
-        return pools;
-    }
-
-    /**
-     * Returns a pool from the associated pool list using the
-     * associated pool selection strategy.
-     */
-    public CellPath selectPool()
-        throws NoSuchElementException
-    {
-        List<PoolCostPair> pools = _definition.poolList.getPools();
-        if (pools.isEmpty())
-            throw new NoSuchElementException("No pools available");
-        return _definition.selectionStrategy.select(pools).path;
     }
 
     /** Message handler. Delegates to proper task .*/

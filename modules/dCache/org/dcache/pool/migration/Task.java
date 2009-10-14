@@ -4,6 +4,7 @@ import java.util.TimerTask;
 import java.util.Timer;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.NoSuchElementException;
@@ -51,14 +52,12 @@ public class Task
     private final ScheduledExecutorService _executor;
     private final String _source;
     private final String _pinPrefix;
-    private final boolean _mustMovePins;
+    private final JobDefinition _definition;
 
     private final long _id;
     private final UUID _uuid;
 
     private final CacheEntry _entry;
-
-    private final CacheEntryMode _targetMode;
 
     private ScheduledFuture _timerTask;
     private List<String> _locations = Collections.emptyList();
@@ -71,8 +70,7 @@ public class Task
                 ScheduledExecutorService executor,
                 String source,
                 CacheEntry entry,
-                CacheEntryMode targetMode,
-                boolean mustMovePins)
+                JobDefinition definition)
     {
         _id = _counter.getAndIncrement();
         _uuid = UUID.randomUUID();
@@ -84,15 +82,14 @@ public class Task
         _executor = executor;
         _source = source;
         _entry = entry;
-        _targetMode = targetMode;
-        _mustMovePins = mustMovePins;
+        _definition = definition;
         _pinPrefix =
             _pinManager.getDestinationPath().getDestinationAddress().getCellName();
     }
 
     public boolean getMustMovePins()
     {
-        return _mustMovePins;
+        return _definition.mustMovePins;
     }
 
     public long getId()
@@ -135,21 +132,21 @@ public class Task
     }
 
     /**
-     * Returns the current target pool, if any.
-     */
-    public String getTarget()
-    {
-        return _target == null ? "" : _target.toSmallString();
-    }
-
-    /**
      * Eager tasks copy files if attempts to update existing copies
      * timeout or fail due to communication problems. Other tasks fail
      * in this situation.
      */
     public boolean isEager()
     {
-        return _job.getDefinition().isEager;
+        return _definition.isEager;
+    }
+
+    /**
+     * Returns the current target pool, if any.
+     */
+    synchronized String getTarget()
+    {
+        return _target == null ? "" : _target.toSmallString();
     }
 
     /**
@@ -164,7 +161,7 @@ public class Task
     /** Returns the intended entry state of the target replica. */
     private EntryState getTargetState()
     {
-        switch (_targetMode.state) {
+        switch (_definition.targetMode.state) {
         case SAME:
             return _entry.getState();
         case CACHED:
@@ -180,16 +177,42 @@ public class Task
     private List<StickyRecord> getTargetStickyRecords()
     {
         List<StickyRecord> result = new ArrayList();
-        if (_targetMode.state == CacheEntryMode.State.SAME) {
+        if (_definition.targetMode.state == CacheEntryMode.State.SAME) {
             for (StickyRecord record: _entry.getStickyRecords()) {
                 if (!isPin(record)) {
                     result.add(record);
                 }
             }
         }
-        result.addAll(_targetMode.stickyRecords);
+        result.addAll(_definition.targetMode.stickyRecords);
         return result;
     }
+
+    /**
+     * Returns the pool names in the associated pool list.
+     */
+    private Collection<String> getPools()
+    {
+        Collection<String> pools = new HashSet<String>();
+        for (PoolCostPair pair: _definition.poolList.getPools()) {
+            pools.add(pair.path.getCellName());
+        }
+        return pools;
+    }
+
+    /**
+     * Returns a pool from the pool list using the pool selection
+     * strategy.
+     */
+    private CellPath selectPool()
+        throws NoSuchElementException
+    {
+        List<PoolCostPair> pools = _definition.poolList.getPools();
+        if (pools.isEmpty())
+            throw new NoSuchElementException("No pools available");
+        return _definition.selectionStrategy.select(pools).path;
+    }
+
 
     /** Adds status information about the task to <code>pw</code>. */
     synchronized void getInfo(PrintWriter pw)
@@ -236,10 +259,10 @@ public class Task
      * Sets the list of pools on which a copy of the replica is known
      * to exist.
      */
-    synchronized void setLocations(List<String> locations)
+    private synchronized void setLocations(List<String> locations)
     {
         _locations = new ArrayList(locations);
-        _locations.retainAll(_job.getPools());
+        _locations.retainAll(getPools());
     }
 
     /**
@@ -269,7 +292,7 @@ public class Task
     synchronized void initiateCopy()
     {
         try {
-            initiateCopy(_job.selectPool());
+            initiateCopy(selectPool());
         } catch (NoSuchElementException e) {
             _target = null;
             _executor.execute(new LoggingTask(new Runnable() {
@@ -285,10 +308,9 @@ public class Task
     /**
      * Ask <code>target</code> to copy the file.
      */
-    private synchronized void initiateCopy(CellPath target)
+    private synchronized void
+        initiateCopy(CellPath target)
     {
-        boolean computeChecksumOnUpdate =
-            _job.getDefinition().computeChecksumOnUpdate;
         PnfsId pnfsId = _entry.getPnfsId();
         StorageInfo storageInfo = _entry.getStorageInfo();
         _target = target;
@@ -299,7 +321,7 @@ public class Task
                                                        storageInfo,
                                                        getTargetState(),
                                                        getTargetStickyRecords(),
-                                                       computeChecksumOnUpdate),
+                                                       _definition.computeChecksumOnUpdate),
                    PoolMigrationCopyReplicaMessage.class,
                    new Callback("copy_"));
     }
