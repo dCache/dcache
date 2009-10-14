@@ -409,6 +409,7 @@ public class PoolManagerV5
          */
         boolean changed =
             pool.setSerialId(serial)
+            || pool.isActive() == disabled
             || (newMode.getMode() != oldMode.getMode())
             || !pool.getHsmInstances().equals(poolMessage.getHsmInstances());
 
