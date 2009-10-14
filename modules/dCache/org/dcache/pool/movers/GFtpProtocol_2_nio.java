@@ -16,6 +16,7 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.ClosedByInterruptException;
+import java.nio.channels.UnresolvedAddressException;
 
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
@@ -541,7 +542,12 @@ public class GFtpProtocol_2_nio
              * Active mode, host and port identify the client. Either
              * way, we do not really care.
              */
-            mode.setActive(new InetSocketAddress(host, port));
+
+            try {
+                mode.setActive(new InetSocketAddress(host, port));
+            } catch (UnresolvedAddressException e) {
+                throw new CacheException("Failed to resolve " + host);
+            }
         }
 
  	/* - Parallel transfers in stream mode are not defined.

@@ -8,6 +8,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.FileChannel;
+import java.nio.channels.UnresolvedAddressException;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.HashMap;
@@ -91,10 +92,17 @@ public abstract class Mode extends AbstractMultiplexerListener
     /**
      * Enable active mode. Connections will be made to the given
      * address.
+     *
+     * @throws UnresolvedAddressException if the address is unresolved
      */
-    public void setActive(SocketAddress address)
+    public void setActive(InetSocketAddress address)
+        throws UnresolvedAddressException
     {
         assert _address == null && _channel == null && address != null;
+
+        if (address.isUnresolved()) {
+            throw new UnresolvedAddressException();
+        }
 
         _direction = Direction.Outgoing;
         _address   = address;

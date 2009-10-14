@@ -1260,7 +1260,7 @@ public class PoolV4
                 msg = e.getMessage();
             } catch (RuntimeException e) {
                 rc = CacheException.UNEXPECTED_SYSTEM_EXCEPTION;
-                msg = "Transfer failed due to unexpected exception: " + e.getMessage();
+                msg = "Transfer failed due to unexpected exception: " + e;
             } catch (Exception e) {
                 rc = CacheException.DEFAULT_ERROR_CODE;
                 msg = "Transfer failed: " + e.getMessage();
