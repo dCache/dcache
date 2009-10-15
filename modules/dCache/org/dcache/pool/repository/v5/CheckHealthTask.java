@@ -114,6 +114,11 @@ class CheckHealthTask implements Runnable
             long free = _metaDataStore.getFreeSpace();
             long total = _metaDataStore.getTotalSpace();
 
+            if (total == 0) {
+                _log.debug("Java reported file system size as 0. Skipping file system size check.");
+                return;
+            }
+
             if (total < _account.getTotal()) {
                 _log.warn("The file system containing the data files appears to be smaller than the configured pool size.");
             }
