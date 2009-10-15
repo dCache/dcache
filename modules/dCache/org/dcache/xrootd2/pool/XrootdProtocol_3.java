@@ -37,6 +37,7 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.movers.NetIFContainer;
 
 import static org.dcache.xrootd2.protocol.XrootdProtocol.*;
@@ -400,15 +401,13 @@ public class XrootdProtocol_3
              * expect the client to connect within a reasonable amount
              * of time. Otherwise we kill the mover.
              */
-            try {
-                _closeLatch.await(CONNECT_TIMEOUT, TimeUnit.MILLISECONDS);
-            } catch (InterruptedException e) {
+            if (!_closeLatch.await(CONNECT_TIMEOUT, TimeUnit.MILLISECONDS)) {
                 if (_clientChannel == null) {
-                    throw e;
+                    throw new TimeoutCacheException("No connection from Xrootd client after " +
+                                                    TimeUnit.MILLISECONDS.toSeconds(CONNECT_TIMEOUT) + " seconds. Giving up.");
                 }
+                _closeLatch.await();
             }
-
-            _closeLatch.await();
         } finally {
             _log.debug("Server is down");
             _inProgress = false;
