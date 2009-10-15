@@ -1,9 +1,11 @@
 package org.dcache.services.info.secondaryInfoProviders;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -85,26 +87,30 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
      * PaintInfo object that describes the different access methods for this
      * pool. Pools with the same PaintInfo are members of the same NAS.
      */
-    static private class PaintInfo {
+    static protected class PaintInfo {
+
+        public static final String NAS_NAME_INACCESSIBLE = "inaccessible";
+        public static final String NAS_NAME_TOO_LONG_PREFIX = "complex-";
+        public static final int NAS_NAME_MAX_LENGTH = 100;
 
         /**
          * The Set of LinkInfo.OPERATIONS that we paint a pool on.
          */
-        private static final Set<LinkInfo.OPERATION> CONSIDERED_OPERATIONS =
-                new HashSet<LinkInfo.OPERATION>( Arrays.asList( LinkInfo.OPERATION.READ,
+        private static final Set<LinkInfo.OPERATION> CONSIDERED_OPERATIONS = EnumSet.of( LinkInfo.OPERATION.READ,
                                                                 LinkInfo.OPERATION.WRITE,
-                                                                LinkInfo.OPERATION.CACHE));
+                                                                LinkInfo.OPERATION.CACHE);
 
         /**
          * The Set of LinkInfo.UNIT_TYPES that we paint a pool on.
          */
-        private static final Set<LinkInfo.UNIT_TYPE> CONSIDERED_UNIT_TYPES =
-                new HashSet<LinkInfo.UNIT_TYPE>( Arrays.asList( LinkInfo.UNIT_TYPE.DCACHE,
-                                                                LinkInfo.UNIT_TYPE.STORE));
+        private static final Set<LinkInfo.UNIT_TYPE> CONSIDERED_UNIT_TYPES = EnumSet.of( LinkInfo.UNIT_TYPE.DCACHE,
+                                                                LinkInfo.UNIT_TYPE.STORE);
 
         private final String _poolId;
-        private final Set<String> _access = new HashSet<String>();
         private final Set<String> _links = new HashSet<String>();
+
+        /** The cached copy of the NAS' */
+        private String _nasName;
 
         /** Store all units by unit-type and operation */
         // FIXME the following is ugly
@@ -146,7 +152,8 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
          *            LinkInfoVisitor
          * @param units the Set of unit names.
          */
-        void addAccess( LinkInfo link) {
+        synchronized void addAccess( LinkInfo link) {
+            invalidateNasNameCache();
             for( LinkInfo.OPERATION operation : CONSIDERED_OPERATIONS) {
                 if( !link.isAccessableFor( operation))
                     continue;
@@ -174,24 +181,152 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
                                        String unitName) {
             // Remember this unit.
             _storedUnits.get( unitType).get( operation).add( unitName);
-
-            String thisAccess = unitType + "-" + unitName + "-" + operation;
-            _access.add( thisAccess);
             _links.add( linkName);
         }
 
         /**
-         * Return the name of the NAS this painted pool should be within.
-         * 
-         * @return a unique name for the NAS this PaintInfo is representative
-         *         of.
+         * Calculating the NAS name is a relatively heavy-weight
+         * operation, so we cache the result.  However, sometimes we
+         * need to invalidate this cache so calls to getNasName() will
+         * generate the name afresh.
          */
-        String getNasName() {
-            return Integer.toHexString( _access.hashCode());
+        private void invalidateNasNameCache() {
+            _nasName = null;
         }
 
-        protected Set<String> getAccess() {
-            return _access;
+	/**
+	 * Check whether the nasName cache is currently valid.
+	 */
+        private boolean isNasNameCacheValid() {
+	    return _nasName != null;
+	}
+
+	/**
+	 *  Rebuild the nasName cached value.
+	 */
+	private void buildNasNameCache() {
+	    StringBuilder sb = new StringBuilder();
+
+	    for( LinkInfo.UNIT_TYPE unitType : CONSIDERED_UNIT_TYPES) {
+		StringBuilder unitTypePart = getUnitTypeName( unitType);
+		if( unitTypePart != null) {
+		    if( sb.length() > 0)
+			sb.append(",");
+		    sb.append( unitType.getNasNamePrefix());
+		    sb.append( "{");
+		    sb.append( unitTypePart);
+		    sb.append( "}");
+		}
+	    }
+
+	    if( sb.length() > NAS_NAME_MAX_LENGTH)
+		_nasName = NAS_NAME_TOO_LONG_PREFIX +
+		    Integer.toHexString( sb.toString().hashCode());
+	    else if( sb.length() > 0)
+		_nasName = sb.toString();
+	    else
+		_nasName = NAS_NAME_INACCESSIBLE;
+	}
+
+
+        /**
+         * Return the name of the NAS this painted pool should be
+         * within.
+         * 
+         * @return a unique name for the NAS this PaintInfo is
+         *         representative of.
+         */
+        synchronized String getNasName() {
+            if( !isNasNameCacheValid())
+		buildNasNameCache();
+
+            return _nasName;
+        }
+
+        /**
+         * Build a string that describes the operations and units that select
+         * for that operation for the given UNIT_TYPE.
+         * @param unitType the UNIT_TYPE to generate a string about.
+         * @return a String describing the units that select this pool for the
+         * considered operations, or null if there is none.
+         */
+        private StringBuilder getUnitTypeName( LinkInfo.UNIT_TYPE unitType) {
+
+            //  Build mapping between an operation and the string
+            //  describing the units that select for that operation.
+            Map<LinkInfo.OPERATION,String> operationsUnitsDescription = new HashMap<LinkInfo.OPERATION, String>();
+
+            for( LinkInfo.OPERATION operation : CONSIDERED_OPERATIONS) {
+                String description = getUnitOperationTypeString(unitType, operation);
+                operationsUnitsDescription.put( operation, description);
+            }
+
+            EnumSet<LinkInfo.OPERATION> processedOperations = EnumSet.noneOf( LinkInfo.OPERATION.class);
+
+            // Now build the string describing this unit-type
+            StringBuilder sb = new StringBuilder();
+            for( LinkInfo.OPERATION operation : CONSIDERED_OPERATIONS) {
+                String unitsDescription = operationsUnitsDescription.get(operation);
+
+                if( processedOperations.contains( operation))
+                    continue;
+
+                processedOperations.add( operation);
+
+                if( unitsDescription == null) 
+                    continue;
+
+                if( sb.length() != 0)
+                    sb.append(";");
+
+                sb.append(operation.getNasNamePrefix());
+
+                // Scan remaining operations, looking for those with
+                // the same units description
+                for( LinkInfo.OPERATION otherOperation : EnumSet.complementOf( processedOperations)) {
+                    String otherUnitsDescription = operationsUnitsDescription.get( otherOperation);
+                    if( unitsDescription.equals( otherUnitsDescription)) {
+                        processedOperations.add( otherOperation);
+                        sb.append( otherOperation.getNasNamePrefix());
+                    }
+                }
+
+                sb.append(":");
+
+                sb.append( unitsDescription);
+            }
+
+            return sb.length() != 0 ? sb : null;
+        }
+
+        /**
+         * Generate a comma-separated list of units of the specified type that can select for
+         * this pool when a user undertakes the given operation.
+         * @param unitType
+         * @param operation
+         * @return
+         */
+        private String getUnitOperationTypeString( LinkInfo.UNIT_TYPE unitType, LinkInfo.OPERATION operation) {
+            Set<String> units = _storedUnits.get( unitType).get(operation);
+
+            if( units.size() == 0)
+                return null;
+
+            StringBuilder sb = new StringBuilder();
+
+            List<String> sortedUnits = new ArrayList<String>(units);
+            Collections.sort( sortedUnits);
+
+            boolean isFirstUnit = true;
+            for( String unit : sortedUnits) {
+                if( isFirstUnit)
+                    isFirstUnit = false;
+                else
+                    sb.append(",");
+                sb.append( unit);
+            }
+
+            return sb.toString();
         }
 
         protected Set<String> getLinks() {
@@ -241,22 +376,18 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
 
         @Override
         public int hashCode() {
-            return _access.hashCode() ^ _links.hashCode() ^
-                   _storedUnits.hashCode();
+            return _storedUnits.hashCode();
         }
 
         @Override
         public boolean equals( Object otherObject) {
+            if( this == otherObject)
+                return true;
+
             if( !(otherObject instanceof PaintInfo))
                 return false;
 
             PaintInfo otherPI = (PaintInfo) otherObject;
-
-            if( !_access.equals( otherPI._access))
-                return false;
-
-            if( !_links.equals( otherPI.getLinks()))
-                return false;
 
             if( !_storedUnits.equals( otherPI._storedUnits))
                 return false;

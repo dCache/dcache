@@ -21,6 +21,9 @@ import org.junit.Test;
 // FIXME the tests do not check that pools are partitioned correctly. 
 public class NormalisedAccessSpaceMaintainerTests {
 
+    public static final StatePath PATH_NAS = new StatePath("nas");
+    public static final StatePath PATH_NAS_INACCESSIBLE = PATH_NAS.newChild( NormalisedAccessSpaceMaintainer.PaintInfo.NAS_NAME_INACCESSIBLE);
+
     TestStateExhibitor _exhibitor;
     StateWatcher _watcher;
     QueuingStateUpdateManager _sum;
@@ -87,7 +90,7 @@ public class NormalisedAccessSpaceMaintainerTests {
         // Assert that there is a NAS
         Set<String> expectedPools = new HashSet<String>();
         expectedPools.add( poolName);
-        assertNas( _update, StatePath.parsePath( "nas.0"), expectedPools, new SpaceInfo( 10, 8, 1, 1));
+        assertNas( _update, PATH_NAS_INACCESSIBLE, expectedPools, new SpaceInfo( 10, 8, 1, 1));
     }
 
     /**
@@ -110,7 +113,7 @@ public class NormalisedAccessSpaceMaintainerTests {
         Set<String> expectedPools = new HashSet<String>();
         expectedPools.add( pool1Name);
         expectedPools.add( pool2Name);
-        assertNas( _update, StatePath.parsePath( "nas.0"), expectedPools, new SpaceInfo( 30, 24, 3, 3));
+        assertNas( _update, PATH_NAS_INACCESSIBLE, expectedPools, new SpaceInfo( 30, 24, 3, 3));
     }
 
     /**
@@ -128,7 +131,7 @@ public class NormalisedAccessSpaceMaintainerTests {
 
         Set<String> expectedPools = new HashSet<String>();
         expectedPools.add( poolName);
-        assertNas( _update, StatePath.parsePath( "nas.0"), expectedPools, new SpaceInfo( 10, 6, 2, 2));
+        assertNas( _update, PATH_NAS_INACCESSIBLE, expectedPools, new SpaceInfo( 10, 6, 2, 2));
     }
 
     /**
@@ -149,7 +152,7 @@ public class NormalisedAccessSpaceMaintainerTests {
 
         Set<String> expectedPools = new HashSet<String>();
         expectedPools.add( poolName);
-        assertNas( _update, StatePath.parsePath( "nas.0"), expectedPools, new SpaceInfo( 0, 0, 0, 0));
+        assertNas( _update, PATH_NAS_INACCESSIBLE, expectedPools, new SpaceInfo( 0, 0, 0, 0));
     }
 
     /**
@@ -173,7 +176,7 @@ public class NormalisedAccessSpaceMaintainerTests {
 
         Set<String> expectedPools = new HashSet<String>();
         expectedPools.add( poolName);
-        assertNas( _update, StatePath.parsePath( "nas.0"), expectedPools, poolInfo);
+        assertNas( _update, PATH_NAS_INACCESSIBLE, expectedPools, poolInfo);
     }
 
 
@@ -205,7 +208,7 @@ public class NormalisedAccessSpaceMaintainerTests {
         Set<String> expectedPools = new HashSet<String>();
         expectedPools.add( pool1Name);
         expectedPools.add( pool2Name);
-        assertNas( _update, StatePath.parsePath( "nas.0"), expectedPools, combinedInfo);
+        assertNas( _update, PATH_NAS_INACCESSIBLE, expectedPools, combinedInfo);
     }
 
     @Test
@@ -226,7 +229,7 @@ public class NormalisedAccessSpaceMaintainerTests {
 
         Set<String> expectedPools = new HashSet<String>();
         expectedPools.add( poolName);
-        assertNas( _update, StatePath.parsePath( "nas.0"), expectedPools, poolInfo);
+        assertNas( _update, PATH_NAS_INACCESSIBLE, expectedPools, poolInfo);
     }
 
     @Test
@@ -247,7 +250,7 @@ public class NormalisedAccessSpaceMaintainerTests {
 
         Set<String> expectedPools = new HashSet<String>();
         expectedPools.add( poolName);
-        assertNas( _update, StatePath.parsePath( "nas.0"), expectedPools, poolInfo);
+        assertNas( _update, PATH_NAS_INACCESSIBLE, expectedPools, poolInfo);
     }
 
 
@@ -270,7 +273,7 @@ public class NormalisedAccessSpaceMaintainerTests {
 
         Set<String> expectedPools = new HashSet<String>();
         expectedPools.add( poolName);
-        assertNas( _update, StatePath.parsePath( "nas.0"), expectedPools, poolInfo);
+        assertNas( _update, PATH_NAS_INACCESSIBLE, expectedPools, poolInfo);
     }
 
     @Test
@@ -292,9 +295,99 @@ public class NormalisedAccessSpaceMaintainerTests {
 
         Set<String> expectedPools = new HashSet<String>();
         expectedPools.add( poolName);
-        assertNas( _update, StatePath.parsePath( "nas.2eee0530"), expectedPools, poolInfo);
+
+        assertNas( _update, PATH_NAS.newChild("S{R:dcache@osm}"), expectedPools, poolInfo);
     }
 
+
+    @Test
+    public void testStoreUnitsAddReadWriteLink() {
+        String linkName = "link-1";
+        String poolName = "pool-1";
+
+        SpaceInfo poolInfo = new SpaceInfo( 10, 8, 1, 1);
+
+        StateLocation.putPoolSpaceMetrics( _exhibitor, poolName, poolInfo);
+        StateLocation.putPoolInLink( _exhibitor, linkName, poolName);
+        StateLocation.putUnitInLink( _exhibitor, linkName, LinkInfo.UNIT_TYPE.STORE, "dcache@osm");
+
+        StateLocation.transitionAddsLinkPrefs( _transition, linkName, 2, 5, 5, 0, 0);
+
+        _watcher.trigger( _transition, _update);
+
+        assertEquals( "checking number of purges", 1, _update.countPurges());
+
+        Set<String> expectedPools = new HashSet<String>();
+        expectedPools.add( poolName);
+
+        assertNas( _update, PATH_NAS.newChild("S{RW:dcache@osm}"), expectedPools, poolInfo);
+    }
+
+
+    @Test
+    public void testStoreUnitsAddReadWriteLinkAddReadLink() {
+        String link1Name = "link-1";
+        String link2Name = "link-2";
+        String poolName = "pool-1";
+
+        SpaceInfo poolInfo = new SpaceInfo( 10, 8, 1, 1);
+
+        StateLocation.putPoolSpaceMetrics( _exhibitor, poolName, poolInfo);
+        StateLocation.putPoolInLink( _exhibitor, link1Name, poolName);
+        StateLocation.putUnitInLink( _exhibitor, link1Name, LinkInfo.UNIT_TYPE.STORE, "dcache@osm");
+
+        StateLocation.putPoolInLink( _exhibitor, link2Name, poolName);
+        StateLocation.putUnitInLink( _exhibitor, link2Name, LinkInfo.UNIT_TYPE.STORE, "atlas@osm");
+
+        StateLocation.transitionAddsLinkPrefs( _transition, link1Name, 2, 5, 5, 0, 0);
+        StateLocation.transitionAddsLinkPrefs( _transition, link2Name, 2, 5, 0, 0, 0);
+
+        _watcher.trigger( _transition, _update);
+
+        assertEquals( "checking number of purges", 1, _update.countPurges());
+
+        Set<String> expectedPools = new HashSet<String>();
+        expectedPools.add( poolName);
+        assertNas( _update, PATH_NAS.newChild("S{R:atlas@osm,dcache@osm;W:dcache@osm}"), expectedPools, poolInfo);
+    }
+
+    /*
+     *  ADD TWO POOLS THAT END UP IN DIFFERENT NAS
+     */
+
+    @Test
+    public void testTwoPoolsDifferingInLinks() {
+        String pool1Name = "pool-1";
+        String pool2Name = "pool-2";
+
+        String link1Name = "link-1";
+        String link2Name = "link-2";
+
+        SpaceInfo pool1Info = new SpaceInfo( 10, 8, 1, 1);
+        SpaceInfo pool2Info = new SpaceInfo( 20, 16, 2, 2);
+
+        StateLocation.putPoolSpaceMetrics( _exhibitor, pool1Name, pool1Info);
+        StateLocation.putPoolInLink( _exhibitor, link1Name, pool1Name);
+        StateLocation.putPoolSpaceMetrics( _exhibitor, pool2Name, pool2Info);
+        StateLocation.putPoolInLink( _exhibitor, link2Name, pool2Name);
+
+        // Add the same unit selecting the different links.
+        StateLocation.putUnitInLink( _exhibitor, link1Name, LinkInfo.UNIT_TYPE.STORE, "dcache@osm");
+        StateLocation.putUnitInLink( _exhibitor, link2Name, LinkInfo.UNIT_TYPE.STORE, "dcache@osm");
+
+        StateLocation.transitionAddsLinkPrefs( _transition, link1Name, 2, 5, 0, 0, 0);
+        StateLocation.transitionAddsLinkPrefs( _transition, link2Name, 2, 5, 0, 0, 0);
+
+        _watcher.trigger( _transition, _update);
+
+        Set<String> expectedPools = new HashSet<String>();
+        expectedPools.add( pool1Name);
+        expectedPools.add( pool2Name);
+
+        SpaceInfo combinedSize = new SpaceInfo( pool1Info);
+        combinedSize.add( pool2Info);
+        assertNas( _update, PATH_NAS.newChild("S{R:dcache@osm}"), expectedPools, combinedSize);
+    }
 
 
     /**
@@ -304,7 +397,7 @@ public class NormalisedAccessSpaceMaintainerTests {
         StatePath poolsPath = nasPath.newChild( "pools");
 
         for( String pool : pools)
-            StateLocation.assertUpdateHasBranch( "", update, poolsPath.newChild( pool));
+            StateLocation.assertUpdateHasBranch( "checking for pool " + pool, update, poolsPath.newChild( pool));
 
         StateLocation.assertSpaceMetrics( update, nasPath.newChild( "space"), info);
     }
