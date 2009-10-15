@@ -11,7 +11,7 @@ isNameSpaceMountNeeded() # $* = domains
     for domain in $*; do
         getService $domain
         case "$RET" in
-            gridftp|srm|pnfs)
+            srm|pnfs)
                 return 0
                 ;;
             *)
