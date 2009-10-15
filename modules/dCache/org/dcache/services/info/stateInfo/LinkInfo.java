@@ -17,16 +17,22 @@ public class LinkInfo {
      * are dcache, store, protocol and network.
      */
     public static enum UNIT_TYPE {
-        DCACHE("dcache"), STORE("store"), PROTOCOL("protocol"), NETWORK("net");
+        DCACHE("dcache", "D"), STORE("store", "S"), PROTOCOL("protocol", "P"), NETWORK("net", "N");
 
         private String _pathElement;
+        private String _nasNamePrefix;
 
-        UNIT_TYPE( String pathElement) {
+        UNIT_TYPE( String pathElement, String nasNamePrefix) {
             _pathElement = pathElement;
+            _nasNamePrefix = nasNamePrefix;
         }
 
         public String getPathElement() {
             return _pathElement;
+        }
+        
+        public String getNasNamePrefix() {
+            return _nasNamePrefix;
         }
     }
 
@@ -35,16 +41,22 @@ public class LinkInfo {
      * These are read, write, stage and pool-to-pool destination.
      */
     public static enum OPERATION {
-        READ("read"), WRITE("write"), CACHE("cache"), P2P("p2p");
+        READ("read", "R"), WRITE("write", "W"), CACHE("cache", "C"), P2P("p2p", "P");
 
         private String _pathElement;
+        private String _nasNamePrefix;
 
-        OPERATION( String pathElement) {
+        OPERATION( String pathElement, String nasNamePrefix) {
             _pathElement = pathElement;
+            _nasNamePrefix = nasNamePrefix;
         }
 
         public String getPathElement() {
             return _pathElement;
+        }
+        
+        public String getNasNamePrefix() {
+            return _nasNamePrefix;
         }
     }
 
