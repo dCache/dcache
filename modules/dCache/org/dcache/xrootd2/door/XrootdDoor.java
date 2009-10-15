@@ -417,6 +417,7 @@ public class XrootdDoor
         // initiator (-> table join in Billing DB)
         poolMessage.setInitiator(_transactionPrefix + protocolInfo.getXrootdFileHandle());
         poolMessage.setReplyRequired(true);
+        poolMessage.setId(protocolInfo.getXrootdFileHandle());
 
         // PoolManager must be on the path for return message
         // (DoorTransferFinished)
