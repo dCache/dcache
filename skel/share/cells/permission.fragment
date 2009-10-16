@@ -26,13 +26,13 @@ end
 # permissionHandler is already defined, then the existing value will
 # take precedence.
 eval ${permissionPolicyEnforcementPoint} PnfsManager ==
-exec env permission-check-pnfsmanager.exe -run -ifok
+exec env permission-check-pnfsmanager.exe -ifok
 
 # If ACLs is enabled, then set permissionHandler to both ACL and UNIX
 # PermissionHandlers. If permissionHandler is already defined, then
 # the existing value will take precedence.
 eval ${aclEnabled} true ==
-exec env permission-check-acl-in-doors.exe -run -ifok
+exec env permission-check-acl-in-doors.exe -ifok
 
 # If permissionHandler was not set by any of the previous actions,
 # then we set it to the UnixPermissionHandler here.

@@ -1,39 +1,7 @@
-#
-# $Id: info.batch,v 1.5 2007-03-21 14:11:42 paul Exp $
-#
-
-set printout default 2
-set printout CellGlue none
-
 onerror shutdown
 
+exec -shell file:${ourHomeDir}/share/cells/logging.fragment
+exec -shell file:${ourHomeDir}/share/cells/setup.fragment
+exec -shell file:${ourHomeDir}/share/cells/tunnel.fragment
+exec -shell file:${ourHomeDir}/share/cells/info.cell
 
-check -strong setupFile
-
-copy file:${setupFile} context:setupContext
-
-##
-##  Import the variables into our $context.
-##  Don't overwrite already existing variables.
-##
-
-import context -c setupContext
-
-##
-##   Make sure we got what we need.
-##
-
-#
-#  Cell communication
-#
-exec -run -shell file:${ourHomeDir}/config/tunnel.fragment 
-
-
-#   Run our own local topo cell but don't register it.
-create dmg.cells.network.TopoCell topo "none -update=100"
-
-##
-##  ---- Info Cell: broadcasting to "civilisation"
-##
-
-create  org.dcache.services.info.InfoProvider info "-export"

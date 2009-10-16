@@ -1,0 +1,19 @@
+# Starts ACL-administration cell
+#
+
+exec file:${ourHomeDir}/share/cells/import-arguments-index-0.fragment
+
+# Load permission check related settings
+exec file:${ourHomeDir}/share/cells/permission.fragment
+
+onerror continue
+create org.dcache.acl.AclCell acladmin \
+        "-export \
+         -aclEnabled=${aclEnabled} \
+         -aclTable=${aclTable} \
+         -aclConnDriver=${aclConnDriver} \
+         -aclConnUrl=${aclConnUrl} \
+         -aclConnUser=${aclConnUser} \
+         -aclConnPswd=${aclConnPswd} \
+         "
+onerror shutdown

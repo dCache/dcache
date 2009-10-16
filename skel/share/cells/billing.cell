@@ -1,0 +1,41 @@
+# Billing Cell
+
+exec file:${ourHomeDir}/share/cells/import-arguments-index-0.fragment
+
+# Defaults
+onerror continue
+set context -c billingDb ${ourHomeDir}/billing
+
+#
+#     Additional params, if 'billingToDb' is 'yes'
+define env billingToDb.exe endExe
+  set context -c billingDatabaseHost localhost
+  set context -c billingDbUer srmdcache
+  set context -c billingDbPass srmdcache
+  set context -c billingDbName billing
+  set context -c billingDbPgPassFileName
+  set context -c billingDbCommitRows 100
+  set context -c billingDbCommitIntervalInMilliseconds 30000
+
+  set env -c billingDbParams "\
+        -useSQL \
+        -jdbcUrl=jdbc:postgresql://${billingDatabaseHost}/${billingDbName} \
+        -jdbcDriver=org.postgresql.Driver \
+        -dbUser=${billingDbUer} \
+        -dbPass=${billingDbPass} \
+        -pgPass=${billingDbPgPassFileName} \
+        -dbCommitNumber=${billingDbCommitRows} \
+        -dbCommitTime=${billingDbCommitIntervalInMilliseconds} \
+       "
+endExe
+eval ${billingToDb} yes ==
+exec env billingToDb.exe -ifok
+onerror shutdown
+
+
+create diskCacheV111.cells.BillingCell billing \
+       "${billingDb} \
+        -printMode=2 \
+        ${billingDbParams} \
+       "
+create dmg.cells.network.TopoCell topo "none -update=100 -export"

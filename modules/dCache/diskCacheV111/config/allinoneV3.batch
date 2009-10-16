@@ -63,7 +63,7 @@ define context startPools endDefine
   create diskCacheV111.pools.MultiProtocolPool2 ${0} "${1} -version=3 -${2} -${3} -${4} -${5}"
 endDefine
 #
-exec -run -loop=poolList context startPools
+exec -loop=poolList context startPools
 #
 #    dCap    D o o r
 #

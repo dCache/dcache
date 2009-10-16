@@ -1,0 +1,20 @@
+#
+# HSM cleaner.
+#
+
+exec file:${ourHomeDir}/share/cells/import-arguments-index-0.fragment
+
+# Defaults
+onerror continue
+set context -c hsmCleaner disabled
+set context -c hsmCleanerTrash /opt/pnfsdb/pnfs/trash/1
+set context -c hsmCleanerRepository /opt/pnfsdb/pnfs/trash/1/current
+
+define context hsmcleaner.exe endDefine
+  create org.dcache.services.hsmcleaner.HSMCleaner hsmcleaner
+endDefine
+
+eval ${hsmCleaner} enabled ==
+exec context hsmcleaner.exe -ifok
+
+onerror shutdown

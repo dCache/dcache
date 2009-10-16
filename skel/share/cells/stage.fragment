@@ -15,6 +15,6 @@ end
 # Decide whether to enable the stage PEP
 onerror continue
 eval ${stagePolicyEnforcementPoint} ${0} !=
-exec env stage-disable-pep.exe -run -ifok
+exec env stage-disable-pep.exe -ifok
 onerror shutdown
 

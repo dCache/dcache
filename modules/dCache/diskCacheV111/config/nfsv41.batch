@@ -1,36 +1,6 @@
-#
-# $Id: nfsv41.batch $
-#
-set printout default 2
-set printout CellGlue none
-onerror shutdown
-#
-check -strong setupFile
-#
-copy file:${setupFile} context:setupContext
-#
-#  import the variables into our $context.
-#  don't overwrite already existing variables.
-#
-import context -c setupContext
-#
-#   Make sure we got what we need.
-#
-check -strong serviceLocatorPort serviceLocatorHost 
-
-#
-create dmg.cells.services.RoutingManager  RoutingMgr
-#
-#   The LocationManagerc Part
-#
-create dmg.cells.services.LocationManager lm \
-       "${serviceLocatorHost} ${serviceLocatorPort}"
 onerror shutdown
 
-#
-#    NFSv4.1    D o o r
-#
-create org.dcache.cells.UniversalSpringCell NFSv41 \
-        "classpath:org/dcache/chimera/nfsv41/door/nfsv41.xml -export"
-#
-#
+exec -shell file:${ourHomeDir}/share/cells/logging.fragment
+exec -shell file:${ourHomeDir}/share/cells/setup.fragment
+exec -shell file:${ourHomeDir}/share/cells/tunnel.fragment
+exec -shell file:${ourHomeDir}/share/cells/nfsv41.cell NFSv41

@@ -405,11 +405,6 @@
         <copy file="${dcache.src}/diskCacheV111/config/info.batch" todir="${server.bin.dir}/config" />
         <!--<copy file="${dcache.src}/diskCacheV111/config/aclcell.batch" todir="${server.bin.dir}/config" /> -->
 
-        <!-- batch file fragments  -->
-        <copy file="${dcache.src}/diskCacheV111/config/tunnel.fragment" todir="${server.bin.dir}/config" />
-        <copy file="${dcache.src}/diskCacheV111/config/stage.fragment" todir="${server.bin.dir}/config" />
-        <copy file="${dcache.src}/diskCacheV111/config/permission.fragment" todir="${server.bin.dir}/config" />
-
         <!-- configs  -->
         <copy file="${dcache.src}/diskCacheV111/config/PoolManager.conf" todir="${server.bin.dir}/config" />
         <copy file="${dcache.src}/diskCacheV111/config/lm.config" todir="${server.bin.dir}/config" />

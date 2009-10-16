@@ -1,0 +1,21 @@
+# Starts the Chimera cleaner
+
+exec file:${ourHomeDir}/share/cells/import-arguments-index-0.fragment
+
+# Defaults
+onerror continue
+set context -c cleanerRefresh              120
+set context -c cleanerRecover              240
+set context -c cleanerPoolTimeout          100
+set context -c cleanerProcessFilesPerRun   500
+onerror shutdown
+
+create org.dcache.chimera.namespace.ChimeraCleaner cleaner \
+        "-export \
+         -refresh=${cleanerRefresh} \
+         -recover=${cleanerRecover} \
+         -reportRemove=broadcast \
+         -poolTimeout=${cleanerPoolTimeout}   \
+         -processFilesPerRun=${cleanerProcessFilesPerRun} \
+         -chimeraConfig=${config}/chimera-config.xml \
+  "

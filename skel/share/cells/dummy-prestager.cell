@@ -1,0 +1,17 @@
+# Load arguments into environment
+define env argument-overrides endDefine
+${0}
+${1}
+${2}
+${3}
+${4}
+${5}
+${6}
+${7}
+${8}
+${9}
+endDefine
+
+import env -source=env argument-overrides
+
+create diskCacheV111.hsmControl.DummyStager Prestager "${config}"

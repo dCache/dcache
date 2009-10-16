@@ -1,0 +1,5 @@
+# Load arguments into environment
+
+exec file:${ourHomeDir}/share/cells/import-arguments-index-0.fragment
+
+create diskCacheV111.pools.DirectoryLookUpPool dirLookupPool "-export"

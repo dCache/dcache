@@ -135,7 +135,7 @@ endDefine
 onerror continue
 check -strong trashDb trash
 #
-#exec context -run -shell cleanerRunner -ifok
+#exec context -shell cleanerRunner -ifok
    create diskCacheV111.cells.CleanerV2 cleaner  \
                " -trash=${trash}   \
                  -db=${trashDb}    \
@@ -285,5 +285,5 @@ endDefine
 #
 # oh weia
 #
-exec -run -loop=poolList context startPools
+exec -loop=poolList context startPools
 #

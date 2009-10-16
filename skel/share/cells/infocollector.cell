@@ -1,0 +1,31 @@
+#
+#  ---- Info Collector Cell
+#
+
+exec file:${ourHomeDir}/share/cells/import-arguments-index-0.fragment
+
+# Defaults
+onerror continue
+set context -c infoCollectorPort 22111
+set context -c infoCollectorInterval 180
+onerror shutdown
+
+#
+#          /**
+#            *
+#            *  USAGE :
+#            *     -schema=SCHEMA_TYPE
+#            *     -interval=SLEEP_IN_SECONDS   #  default = 60 seconds
+#            *     -listenPort=TCP_LISTEN_PORT  #  default = 22111
+#            *
+#            */
+#
+create  org.dcache.services.infoCollector.InfoCollector InfoCollector \
+         "default   \
+          -export   \
+          -interval=${infoCollectorInterval} \
+#         -schema=org.dcache.services.infoCollector.GlueSchemaV1_2  \
+          -listenPort=${infoCollectorPort} \
+"
+#
+#

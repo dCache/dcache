@@ -1,0 +1,12 @@
+# Load arguments into environment
+
+exec file:${ourHomeDir}/share/cells/import-arguments-index-0.fragment
+
+check -strong statisticsLocation
+
+create diskCacheV111.services.PoolStatisticsV0 PoolStatistics  \
+     "${statisticsLocation}  \
+#      -create  \
+#      -htmlBase=${statisticsLocation}  \
+      -domain=${thisFqHostname}"
+

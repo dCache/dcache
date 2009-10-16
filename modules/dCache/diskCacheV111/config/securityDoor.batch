@@ -19,7 +19,7 @@ check -strong  adminPort
 #
 #  Cell communication
 #
-exec -run -shell file:${ourHomeDir}/config/tunnel.fragment 
+exec -shell file:${ourHomeDir}/share/cells/tunnel.fragment
 
 create dmg.cells.services.login.LoginManager FTP \
             "${ftpPort} \

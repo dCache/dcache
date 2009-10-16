@@ -1,0 +1,13 @@
+# Creates the PoolManager
+
+exec file:${ourHomeDir}/share/cells/import-arguments-index-0.fragment
+
+# External settings
+exec -shell file:${ourHomeDir}/share/cells/stage.fragment PoolManager
+
+# Start PoolManager
+create org.dcache.cells.UniversalSpringCell PoolManager \
+   "classpath:diskCacheV111/poolManager/poolmanager.xml \
+    -setupFile=${config}/PoolManager.conf \
+    -export \
+    -replyObject"

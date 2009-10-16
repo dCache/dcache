@@ -1,0 +1,4 @@
+# Initializes logging parameters
+
+set printout default 2
+set printout CellGlue none

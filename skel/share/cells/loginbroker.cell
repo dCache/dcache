@@ -1,0 +1,8 @@
+#
+#  --- LoginBroker. It is used by SRM for discovery of
+#      available doors and their loads
+#
+
+exec file:${ourHomeDir}/share/cells/import-arguments-index-0.fragment
+
+create dmg.cells.services.login.LoginBroker LoginBroker "default -export"
