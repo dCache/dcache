@@ -16,6 +16,7 @@ Provides: dcache-dcap
 # Commenting out VDT as its not a fixed dependency
 #BuildRequires: vdt_globus_essentials
 Provides: d-cache-dcap
+Obsoletes: dcache-dcap
 AutoReqProv: no
 License: LGPL
 
@@ -35,6 +36,7 @@ This package contains the client libraries dcachedcap.
 Summary: dCache Client Headers
 Group: Applications/System
 Requires: libdcap
+Obsoletes: dcache-dcap
 %description -n libdcap-devel
 This package contains the client library dcachedcap header files.
 
@@ -42,6 +44,7 @@ This package contains the client library dcachedcap header files.
 Summary: dCache GSI Tunnel
 Group: Applications/System
 Requires: libdcap
+Obsoletes: dcache-dcap
 %description -n libdcap-tunnel-gsi
 This package contains the gsi tunnel plugin library used by dcachedcap.
 This library is dynamically loaded at run time.
@@ -50,6 +53,7 @@ This library is dynamically loaded at run time.
 Summary: dCache GSI Tunnel
 Group: Applications/System
 Requires: libdcap
+Obsoletes: dcache-dcap
 %description -n libdcap-tunnel-krb
 This package contains the gsi tunnel plugin library used by dcachedcap.
 This library is dynamically loaded at run time.
@@ -58,6 +62,7 @@ This library is dynamically loaded at run time.
 Summary: dCache GSI Tunnel
 Group: Applications/System
 Requires: libdcap
+Obsoletes: dcache-dcap
 %description -n libdcap-tunnel-telnet
 This package contains the gsi tunnel plugin library used by dcachedcap.
 This library is dynamically loaded at run time.
