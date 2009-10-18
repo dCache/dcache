@@ -489,61 +489,63 @@ public class CellNucleus implements Runnable, ThreadFactory {
         CDC.setCellsContext(this);
 
         if (Thread.currentThread() == _eventThread) {
-            CellEvent event;
             nsay("messageThread : started");
-
 
             boolean done = false;
             while (!done) {
-
                 try {
-                    event = _eventQueue.take();
+                    CellEvent event = _eventQueue.take();
                     EventLogger.queueEnd(event);
-                } catch (InterruptedException e) {
-                    done = true;
-                    continue;
-                }
 
-                if (event instanceof LastMessageEvent) {
-                    nsay("messageThread : LastMessageEvent arrived");
-                    try {
+                    if (event instanceof LastMessageEvent) {
+                        nsay("messageThread : LastMessageEvent arrived");
                         _cell.messageArrived((MessageEvent)event);
-                    } catch(Throwable nse) {
-                        esay(nse);
-                    }
-                    break;
-                } else if (event instanceof RoutedMessageEvent) {
-                    nsay("messageThread : RoutedMessageEvent arrived");
-                    try {
+                        break;
+                    } else if (event instanceof RoutedMessageEvent) {
+                        nsay("messageThread : RoutedMessageEvent arrived");
                         _cell.messageArrived((RoutedMessageEvent)event);
-                    } catch(Throwable nse) {
-                        esay(nse);
-                    }
-                } else if (event instanceof MessageEvent) {
-                    MessageEvent msgEvent = (MessageEvent) event;
-                    nsay("messageThread : MessageEvent arrived");
-                    CellMessage msg = new CellMessage(msgEvent.getMessage());
-                    CDC.setMessageContext(msg);
-                    try {
-                        //
-                        // deserialize the message
-                        //
-                        if (_logMessages.isDebugEnabled()) {
-                            String messageObject = msg.getMessageObject() == null? "NULL" : msg.getMessageObject().getClass().getName();
-                            _logMessages.debug("nucleusMessageArrived src=" + msg.getSourceAddress() +
-                                               " dest=" + msg.getDestinationAddress() + " [" + messageObject + "] UOID=" + msg.getUOID().toString());
+                    } else if (event instanceof MessageEvent) {
+                        MessageEvent msgEvent = (MessageEvent) event;
+                        nsay("messageThread : MessageEvent arrived");
+                        CellMessage msg;
+                        try {
+                            msg = new CellMessage(msgEvent.getMessage());
+                        } catch (SerializationException e) {
+                            CellMessage envelope = msgEvent.getMessage();
+                            _logCell.fatal(String.format("Discarding a malformed message from %s with UOID %s and session [%s]: %s",
+                                                         envelope.getSourcePath(),
+                                                         envelope.getUOID(),
+                                                         envelope.getSession(),
+                                                         e.getMessage()), e);
+                            continue;
                         }
-                        //
-                        // and deliver it
-                        //
-                        nsay("messageThread : delivering message : "+msg);
-                        _cell.messageArrived(new MessageEvent(msg));
-                        nsay("messageThread : delivering message done : "+msg);
-                    } catch(Throwable nse) {
-                        esay(nse);
-                    } finally {
-                        CDC.clearMessageContext();
+                        CDC.setMessageContext(msg);
+                        try {
+                            //
+                            // deserialize the message
+                            //
+                            if (_logMessages.isDebugEnabled()) {
+                                String messageObject = msg.getMessageObject() == null? "NULL" : msg.getMessageObject().getClass().getName();
+                                _logMessages.debug("nucleusMessageArrived src=" + msg.getSourceAddress() +
+                                                   " dest=" + msg.getDestinationAddress() + " [" + messageObject + "] UOID=" + msg.getUOID().toString());
+                            }
+                            //
+                            // and deliver it
+                            //
+                            nsay("messageThread : delivering message : "+msg);
+                            _cell.messageArrived(new MessageEvent(msg));
+                            nsay("messageThread : delivering message done : "+msg);
+                        } finally {
+                            CDC.clearMessageContext();
+                        }
                     }
+                } catch (InterruptedException e) {
+                    if (_state == REMOVING) {
+                        done = true;
+                    }
+                } catch (Throwable e) {
+                    Thread t = Thread.currentThread();
+                    t.getUncaughtExceptionHandler().uncaughtException(t, e);
                 }
             }
             nsay("messageThread : stopped");
