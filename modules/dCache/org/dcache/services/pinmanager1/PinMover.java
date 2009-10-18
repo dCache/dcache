@@ -99,7 +99,7 @@ class PinMover extends SMCTask
             getCellName()+_dstPoolPin.getId(),
             stickyBitExpiration);
         sendMessage(new CellPath(_dstPoolName), setStickyRequest,
-                    60 * 60 * 1000);
+                    90 * 1000);
     }
 
     void unsetStickyFlags()
@@ -115,7 +115,7 @@ class PinMover extends SMCTask
             new PoolSetStickyMessage(srcPoolName,
             _pnfsId, false,stickyBitName,-1);
             setStickyRequest.setReplyRequired(true);
-            sendMessage(new CellPath(srcPoolName), setStickyRequest,60*60*1000);
+            sendMessage(new CellPath(srcPoolName), setStickyRequest,90*1000);
     }
     boolean pinMoveSucceed()
     {

@@ -97,7 +97,7 @@ class Pinner extends SMCTask
         info("retrieveStorageInfo");
         sendMessage(_pnfsManager,
                     new PnfsGetStorageInfoMessage(_job.getPnfsId()),
-                    60 * 60 * 1000);
+                    5 * 60 * 1000);
     }
 
     void findReadPool()
@@ -147,7 +147,7 @@ class Pinner extends SMCTask
             getCellName()+_pin.getId(),
             stickyBitExpiration);
         sendMessage(new CellPath(_readPoolName), setStickyRequest,
-                    60 * 60 * 1000);
+                    90 * 1000);
     }
 
     void succeed()

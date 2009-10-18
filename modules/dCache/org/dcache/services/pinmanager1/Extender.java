@@ -98,6 +98,6 @@ class Extender extends SMCTask
                 new PoolSetStickyMessage(poolName,
                 _pin.getPnfsId(), true,stickyBitName,_expiration);
             setStickyRequest.setReplyRequired(true);
-            sendMessage(new CellPath(poolName), setStickyRequest,60*60*1000);
+            sendMessage(new CellPath(poolName), setStickyRequest,90*1000);
     }
 }
