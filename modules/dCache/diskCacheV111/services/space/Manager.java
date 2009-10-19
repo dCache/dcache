@@ -292,7 +292,7 @@ public final class Manager
 		}
 	}
 
-	public String hh_update_space_reservation = " [-size=<size>]  [-lifetime=<lifetime>] <spaceToken> \n"+
+	public String hh_update_space_reservation = " [-size=<size>]  [-lifetime=<lifetime>] -vo_group=<vogroup> -vo-role=<vorole> <spaceToken> \n"+
                 "                                                     # set new size and/or lifetime for the space token \n " +
                 "                                                     # valid examples of size: 1000, 100kB, 100KB, 100KiB, 100MB, 100MiB, 100GB, 100GiB, 10.5TB, 100TiB \n" +
                 "                                                     # see http://en.wikipedia.org/wiki/Gigabyte for explanation \n"+
@@ -359,13 +359,52 @@ public final class Manager
 		long reservationId = Long.parseLong(args.argv(0));
                 String sSize     = args.getOpt("size");
                 String sLifetime = args.getOpt("lifetime");
-                if (sLifetime==null&&sSize==null) { 
-                        return "Need to specify at least one option \"-lifetime\" or \"-size\"";
+                String voRole    = args.getOpt("vo_role");
+                String voGroup    = args.getOpt("vo_group");
+                if (sLifetime==null&&
+                    sSize==null&&
+                    voRole==null&&
+                    voGroup==null) {
+                        return "Need to specify at least one option \"-lifetime\", \"-size\" \"-vo_group\" or \"-vo_role\"";
+                }
+                if (voRole!=null||voGroup!=null) {
+                        // check that linkgroup allows these role/group combination
+                        try {
+                                Space space = getSpace(reservationId);
+                                long lid = space.getLinkGroupId();
+                                LinkGroup lg = getLinkGroup(lid);
+                                StringBuilder sb = new StringBuilder();
+                                for (VOInfo info : lg.getVOs()) {
+                                        sb.append(info).append('\n');
+                                }
+                                for (VOInfo info : lg.getVOs()) {
+                                        if (voRole!=null&&!info.getVoRole().equals("*")){
+                                                if (!voRole.equals(info.getVoRole())) {
+                                                        throw new IllegalArgumentException("cannot change voRole to "+voRole+
+                                                                                           ". Supported vogroup:vorole pairs for this spacereservation\n"+
+                                                                                           sb.toString());
+                                                }
+                                        }
+                                        if (voGroup!=null&&!info.getVoGroup().equals("*")){
+                                                if (!voGroup.equals(info.getVoGroup())) {
+                                                        throw new IllegalArgumentException("cannot change voGroup to "+voGroup+
+                                                                                           ". Supported vogroup:vorole pairs for this spacereservation\n"+
+                                                                                           sb.toString());
+                                                }
+                                        }
+                                }
+                        }
+                        catch (SQLException e) {
+                                return e.toString();   
+                        }
+                        catch (Exception  e) {
+                                return e.toString();
+                        }
                 }
 		try {
 			updateSpaceReservation(reservationId,
-					       null,
-					       null,
+					       voGroup,
+					       voRole,
 					       null,
 					       null,
 					       null,
