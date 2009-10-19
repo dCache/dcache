@@ -17,7 +17,7 @@ exec file:${ourHomeDir}/share/cells/permission.fragment
 # Define required variables
 check -strong dCapPort
 
-create dmg.cells.services.login.LoginManager \
+create dmg.cells.services.login.LoginManager ${0} \
             "${dCapPort} \
              -export \
              diskCacheV111.doors.DCapDoor \
