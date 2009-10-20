@@ -20,7 +20,7 @@
   </servers>
    <clients>
     <modules>
-          <module name="tim-tomcat-5.5" version="1.1.0"/>
+          <module name="tim-tomcat-5.5" version="2.0.1"/>
     </modules>
   </clients>
 
@@ -123,6 +123,52 @@
           <honor-transient>true</honor-transient>
         </include>
 
+         <include>
+           <class-expression>org.apache.axis.types.URI</class-expression>
+         </include>
+         <include>
+           <class-expression>org.dcache.srm.v2_2.TMetaDataPathDetail</class-expression>
+         </include>
+         <include>
+           <class-expression>org.dcache.srm.v2_2.TGroupPermission</class-expression>
+         </include>
+         <include>
+            <class-expression>org.dcache.srm.v2_2.TReturnStatus</class-expression>
+         </include>
+         <include>
+            <class-expression>org.dcache.srm.v2_2.TUserPermission</class-expression>
+         </include>
+         <include>
+            <class-expression>org.dcache.srm.v2_2.TGroupPermission</class-expression>
+         </include>
+         <include>
+            <class-expression>org.dcache.srm.v2_2.TPermissionMode</class-expression>
+         </include>
+         <include>
+            <class-expression>org.dcache.srm.v2_2.TFileType</class-expression>
+         </include>
+         <include>
+            <class-expression>org.dcache.srm.v2_2.ArrayOfString</class-expression>
+         </include>
+         <include>
+            <class-expression>org.dcache.srm.v2_2.TFileLocality</class-expression>
+         </include>
+         <include>
+            <class-expression>org.dcache.srm.v2_2.TFileStorageType</class-expression>
+         </include>
+         <include>
+            <class-expression>org.dcache.srm.v2_2.TRetentionPolicy</class-expression>
+         </include>
+         <include>
+            <class-expression>org.dcache.srm.v2_2.TAccessLatency</class-expression>
+         </include>
+         <include>
+            <class-expression>org.dcache.srm.v2_2.TRetentionPolicyInfo</class-expression>
+         </include>
+         <include>
+           <class-expression>org.apache.axis.types.UnsignedLong</class-expression>
+         </include>
+
         <exclude>org.globus..*</exclude>
 
         <include>
@@ -173,7 +219,9 @@
       <additional-boot-jar-classes>
         <include>org.xml.sax.helpers.DefaultHandler</include>
         <include>java.lang.AbstractStringBuilder</include>
-        <include>java.lang.StringBuffer</include>
+        <include>java.lang.StringBuilder</include>
+        <include>java.util.TimeZone</include>
+        <include>sun.util.calendar.ZoneInfo</include>
       </additional-boot-jar-classes> 
 
      </dso>
