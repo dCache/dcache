@@ -130,6 +130,7 @@ void            dc_setTCPReceiveBuffer( int );
 int             init_hostname();
 
 static void     getPortRange();
+static int isActive();
 
 int get_data( struct vsp_node *);
 int get_fin( struct vsp_node *);
@@ -952,7 +953,7 @@ ascii_open_conversation(struct vsp_node * node)
 			}
 
 
-			if( activeClient || (getenv("DCACHE_CLIENT_ACTIVE") != NULL ) ) {
+			if( isActive() ) {
 				sprintf(openStr, "%s -passive", openStr);
 			}
 
@@ -1858,6 +1859,27 @@ static void getPortRange()
 	}
 }
 
+/*
+ * Check active status.
+ *
+ * returns:
+ *     1 if acticive mode is activeted and zero other wise.
+ */
+static int isActive()
+{
+    int rc = activeClient;
+    const char* env =  getenv("DCACHE_CLIENT_ACTIVE");
+    if( (env != NULL) ) {
+        if( strcmp(env, "false") == 0 ) {
+            rc = 0;
+        }else{
+            rc = 1;
+        }
+    }
+
+    dc_debug(DC_INFO, "Client mode: %s", rc == 1 ? "ACTIVE" : "PASSIVE");
+    return rc;
+}
 
 void dc_setClientActive()
 {
