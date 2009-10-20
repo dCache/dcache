@@ -481,7 +481,18 @@
 
 	<xsl:variable name="count">
 	  <xsl:call-template name="count-path">
-	    <xsl:with-param name="path" select="@select"/>
+	    <xsl:with-param name="path">
+	      <xsl:call-template name="combine-paths">
+	        <xsl:with-param name="path" select="@select"/>
+
+                <xsl:with-param name="rel-path">
+		  <xsl:call-template name="path-stack-find-path">
+		    <xsl:with-param name="path-stack" select="$path-stack"/>
+		    <xsl:with-param name="depth" select="$depth"/>
+		  </xsl:call-template>
+		</xsl:with-param>
+	      </xsl:call-template>
+	    </xsl:with-param>
 	  </xsl:call-template>
 	</xsl:variable>
 
@@ -542,7 +553,7 @@
     <!-- Compute a new absolute path -->
     <xsl:variable name="this-attr-path">
       <xsl:call-template name="combine-paths">
-	<xsl:with-param name="path" select="@select"/>
+	<xsl:with-param name="path" select="concat(@select,'[',$count-done-next,']')"/>
 	
 	<xsl:with-param name="rel-path">
 	  <xsl:call-template name="path-stack-find-path">
@@ -552,7 +563,6 @@
 	</xsl:with-param>
       </xsl:call-template>
     </xsl:variable>
-
 
     <!-- Possibly publish this object -->
     <xsl:call-template name="publish-attr"> 
