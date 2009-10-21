@@ -2089,7 +2089,7 @@ public class Storage
                 (AuthorizationRecord)user,
                 actualPnfsPath,
                 callbacks,
-                this);
+                _pnfsStub);
     }
 
     public void prepareToPut(SRMUser user,
