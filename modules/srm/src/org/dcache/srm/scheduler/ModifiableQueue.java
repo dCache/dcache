@@ -77,7 +77,7 @@ package org.dcache.srm.scheduler;
 
 import java.util.List;
 import java.util.LinkedList;
-import java.util.Iterator;
+import java.util.ArrayList;
 import org.dcache.srm.SRMInvalidRequestException;
 /**
  *
@@ -87,7 +87,7 @@ public class ModifiableQueue  {
     String name;
     String scheduler_name;
     private int capacity=1024;
-    private List queue = new LinkedList();
+    private final List<Long> queue = new LinkedList();
     
     /** Creates a new instance of ModifiableQueue */
     public ModifiableQueue(String name, String scheduler_name, int capacity) {
@@ -117,10 +117,10 @@ public class ModifiableQueue  {
                     ////System.out.println(" queue is empty, returning null ");
                     return null;
                 }
-                headId = (Long) queue.get(0);
+                headId =  queue.get(0);
                 //System.out.println("headId is "+headId+" returning job ");
-                return Job.getJob(headId);
-            }
+        }
+        return Job.getJob(headId);
     }
     
     
@@ -132,7 +132,7 @@ public class ModifiableQueue  {
             Long id = null;
             synchronized(queue) {
                 if(!queue.isEmpty()){
-                     id =(Long) queue.remove(0);
+                     id = queue.remove(0);
                      queue.notifyAll();
                 }
                 if(id != null) 
@@ -161,7 +161,7 @@ public class ModifiableQueue  {
             Long id = null;
             synchronized(queue) {
                 if(!queue.isEmpty()){
-                     id =(Long) queue.remove(0);
+                     id = queue.remove(0);
                      queue.notifyAll();
                 }
                 if(id != null) 
@@ -280,39 +280,40 @@ public class ModifiableQueue  {
         public int calculateValue(int queueLength, int queuePosition, Job job);
     }
     
-    public synchronized Job getGreatestValueObject(ValueCalculator calc)  
+    public Job getGreatestValueObject(ValueCalculator calc)  
             throws java.sql.SQLException, SRMInvalidRequestException{
         Job greatestValueJob;
         int greatestValue;
        //System.out.println("QUEUE.getGreatestValueObject()");
+        List<Long> queueCopy;
+
         synchronized(queue) {
             
             if(queue.isEmpty()) {
                //System.out.println("QUEUE.getGreatestValueObject() returns NULL, queue is empty");
                 return null;
             }
-            int size = queue.size();
-            greatestValueJob = Job.getJob((Long)queue.get(0));
-            greatestValue = calc.calculateValue(size,0,greatestValueJob);
-            Job currentJob = greatestValueJob;
-            Long currentJobId = currentJob.getId();
-            //int i=0;
-            //while(currentJob.getNextJobId() != null) {
-            // i++;
-            int index =0;
-            for (Iterator i = queue.iterator(); i.hasNext();){
-                currentJobId = (Long)i.next();
-                currentJob = Job.getJob(currentJobId);
-                int currentValue = calc.calculateValue(size,index,currentJob);
-                if(currentValue > greatestValue) {
-                    greatestValueJob = currentJob;
-                    greatestValue = currentValue;
-                }
-                index++;
-            }
-            //System.out.println("QUEUE.getGreatestValueObject() returns" +greatestValueJob.getId());
-            return greatestValueJob;
+            queueCopy = new ArrayList(queue);
         }
+
+        greatestValueJob =null;
+        greatestValue = Integer.MIN_VALUE;
+        //int i=0;
+        //while(currentJob.getNextJobId() != null) {
+        // i++;
+        int index =0;
+        int size = queueCopy.size();
+        for (Long currentJobId:queueCopy) {
+            Job currentJob = Job.getJob(currentJobId);
+            int currentValue = calc.calculateValue(size,index,currentJob);
+            if(currentValue > greatestValue) {
+                greatestValueJob = currentJob;
+                greatestValue = currentValue;
+            }
+            index++;
+        }
+        //System.out.println("QUEUE.getGreatestValueObject() returns" +greatestValueJob.getId());
+        return greatestValueJob;
     }
     
     public String printQueue()  throws java.sql.SQLException{
@@ -321,6 +322,7 @@ public class ModifiableQueue  {
         printQueue(sb);
         return sb.toString();
     }
+
     public void printQueue(StringBuffer sb)  throws java.sql.SQLException{
         synchronized(queue)
         {
@@ -329,8 +331,8 @@ public class ModifiableQueue  {
                     return;
             }
             int index =0;
-            for (Iterator i = queue.iterator(); i.hasNext();){
-                sb.append("queue element # "+index+" "+i.next()).append('\n');
+            for (Long nextId:queue){
+                sb.append("queue element # "+index+" : "+nextId).append('\n');
                 index++;  
             }
         }
