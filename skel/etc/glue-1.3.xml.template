@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<!-- PRERELEASE Space Token & Installed Capacity VERSION 0.1 -->
-
 <!--+
     |   This file defines how an XML file is converted into LDAP,
     |   specifically, how the XML file that describes dCache's current state
