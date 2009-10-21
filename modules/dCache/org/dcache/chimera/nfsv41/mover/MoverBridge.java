@@ -21,6 +21,7 @@ class MoverBridge {
     private final int _ioMode;
     private final Allocator _allocator;
     private final stateid4 _stateid;
+    private long _allocated;
 
     MoverBridge(ManualMover mover, PnfsId pnfsId, stateid4 stateid, FileChannel fileChannel,
             int  ioMode, Allocator allocator) {
@@ -31,6 +32,7 @@ class MoverBridge {
         _ioMode = ioMode;
         _allocator = allocator;
         _stateid = stateid;
+        _allocated = 0;
     }
 
     /**
@@ -75,6 +77,24 @@ class MoverBridge {
      */
     Allocator getAllocator() {
         return _allocator;
+    }
+
+    /**
+     * Get size of allocated space by mover.
+     *
+     * @return size in bytes.
+     */
+    long getAllocated() {
+        return _allocated;
+    }
+
+    /**
+     * Set allocated space.
+     *
+     * @param allocated bytes.
+     */
+    void setAllocated(long allocated) {
+        _allocated = allocated;
     }
 
 }

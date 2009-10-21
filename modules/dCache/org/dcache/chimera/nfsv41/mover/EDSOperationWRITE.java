@@ -62,8 +62,9 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
             FileChannel fc = moverBridge.getFileChannel();
             IOWriteFile out = new IOWriteFile(fc);
 
-            if( offset + count > fc.size() ) {
+            if( offset + count > moverBridge.getAllocated() ) {
                 moverBridge.getAllocator().allocate(INC_SPACE);
+                moverBridge.setAllocated(moverBridge.getAllocated() + INC_SPACE);
             }
             int bytesWritten = out.write(_args.opwrite.data, offset, count);
 
