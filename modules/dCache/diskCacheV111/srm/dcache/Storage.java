@@ -152,7 +152,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
-import diskCacheV111.services.PermissionHandler;
+import org.dcache.namespace.PermissionHandler;
+import org.dcache.namespace.ChainedPermissionHandler;
+import org.dcache.namespace.PosixPermissionHandler;
+import org.dcache.namespace.ACLPermissionHandler;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMDuplicationException;
@@ -207,6 +210,7 @@ import org.dcache.commons.stats.RequestCounters;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
+import org.dcache.acl.enums.AccessType;
 
 import org.ietf.jgss.GSSCredential;
 
@@ -224,6 +228,8 @@ import javax.naming.directory.InitialDirContext;
 import javax.security.auth.Subject;
 
 import org.apache.log4j.Logger;
+
+import static org.dcache.namespace.FileAttribute.*;
 
 /**
  * SRMCell is the key class that performes communication
@@ -270,6 +276,7 @@ public class Storage
         Executors.newSingleThreadScheduledExecutor();
 
     private PnfsHandler _pnfs;
+    private diskCacheV111.services.PermissionHandler oldPermissionHandler;
     private PermissionHandler permissionHandler;
     private int __pnfsTimeout = 60 ;
     private String loginBrokerName="LoginBroker";
@@ -414,8 +421,10 @@ public class Storage
         _loginBrokerStub.setTimeout(__pnfsTimeout * 1000);
 
         _pnfs = new PnfsHandler(_pnfsStub);
+        oldPermissionHandler =
+            new diskCacheV111.services.PermissionHandler(this, new CellPath(_pnfsManagerName));
         permissionHandler =
-            new PermissionHandler(this, new CellPath(_pnfsManagerName));
+            new ChainedPermissionHandler(new ACLPermissionHandler(), new PosixPermissionHandler());
 
         _httpRootPath = new FsPath(getOption("httpRootPath", "/"));
         _xrootdRootPath = new FsPath(getOption("xrootdRootPath", "/"));
@@ -2202,7 +2211,7 @@ public class Storage
                         _pnfs.getFileMetaDataByPath(parent);
                     parent_util_fmd = parent_filemetadata_msg.getMetaData();
                 }
-                if (!permissionHandler.worldCanRead(
+                if (!oldPermissionHandler.worldCanRead(
                     absolute_path, parent_util_fmd, util_fmd)) {
                     throw new SRMAuthorizationException("getFileMetaData have no read " +
                                                            "permission (or file does not exists) ");
@@ -3414,21 +3423,26 @@ public class Storage
         throws SRMException
     {
         AuthorizationRecord duser = (AuthorizationRecord) user;
+        Subject subject = Subjects.getSubject(duser);
+
         String path = getFullPath(directoryName);
         try {
-            boolean canDelete =
-                permissionHandler.canDeleteDir(duser.getUid(),
-                                               duser.getGid(),
-                                               path);
-            if (!canDelete) {
+            Set<FileAttribute> requestedAttributes = EnumSet.of(TYPE);
+            requestedAttributes.addAll(permissionHandler.getRequiredAttributes());
+            FileAttributes parentAttr =
+                _pnfs.getFileAttributes(FsPath.getParent(path), requestedAttributes);
+            FileAttributes childAttr =
+                _pnfs.getFileAttributes(path, requestedAttributes);
+
+            AccessType canDelete =
+                permissionHandler.canDeleteDir(subject, parentAttr, childAttr);
+            if (canDelete != AccessType.ACCESS_ALLOWED) {
                 _log.warn("Cannot delete directory " + path +
                           ": Permission denied");
                 throw new SRMAuthorizationException("Permission denied");
             }
 
-            FileAttributes attr =
-                _pnfs.getFileAttributes(path, EnumSet.of(FileAttribute.TYPE));
-            if (attr.getFileType() == FileType.LINK)  {
+            if (childAttr.getFileType() == FileType.LINK)  {
                 return null;
             }
         } catch (FileNotFoundCacheException e) {
@@ -3806,39 +3820,33 @@ public class Storage
      *   -1 stands for infinite lifetime
      *
      */
-    public int srmExtendSurlLifetime(SRMUser user,
-        String fileName, int newLifetime) throws SRMException {
-        FileMetaData fmd = getFileMetaData(user,fileName);
-        int uid = Integer.parseInt(fmd.owner);
-        int gid = Integer.parseInt(fmd.group);
-        int permissions = fmd.permMode;
+    public int srmExtendSurlLifetime(SRMUser user, String fileName, int newLifetime)
+        throws SRMException
+    {
+        try {
+            AuthorizationRecord duser = (AuthorizationRecord) user;
+            Subject subject = Subjects.getSubject(duser);
+            PnfsHandler handler = new PnfsHandler(_pnfs, subject);
+            FileAttributes attributes =
+                handler.getFileAttributes(fileName, permissionHandler.getRequiredAttributes());
 
-        if(Permissions.worldCanWrite(permissions)) {
+            if (permissionHandler.canWriteFile(subject, attributes) != AccessType.ACCESS_ALLOWED) {
+                throw new SRMAuthorizationException("Permission denied");
+            }
+
             return -1;
+        } catch (TimeoutCacheException e) {
+            throw new SRMInternalErrorException("Internal name space timeout", e);
+        } catch (NotInTrashCacheException e) {
+            throw new SRMInvalidPathException("Parent path does not exist", e);
+        } catch (FileNotFoundCacheException e) {
+            throw new SRMInvalidPathException("Parent path does not exist", e);
+        } catch (PermissionDeniedCacheException e) {
+            throw new SRMAuthorizationException("Permission denied");
+        } catch (CacheException e) {
+            throw new SRMException(String.format("Operation failed [rc=%d,msg=%s]",
+                                                 e.getRc(), e.getMessage()));
         }
-
-        if(uid == -1 || gid == -1) {
-            throw new SRMAuthorizationException(
-                "User is not authorized to modify this file");
-        }
-
-        if(user == null || (!(user instanceof AuthorizationRecord))) {
-            throw new SRMAuthorizationException(
-                "User is not authorized to modify this file");
-        }
-        AuthorizationRecord duser = (AuthorizationRecord) user;
-
-        if(duser.getGid() == gid && Permissions.groupCanWrite(permissions)) {
-            return -1;
-        }
-
-        if(duser.getUid() == uid && Permissions.userCanWrite(permissions)) {
-            return -1;
-        }
-
-        throw new SRMAuthorizationException(
-            "User is not authorized to modify this file");
-
     }
 
     /**
