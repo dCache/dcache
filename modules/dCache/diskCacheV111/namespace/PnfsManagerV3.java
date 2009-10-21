@@ -1053,6 +1053,8 @@ public class PnfsManagerV3 extends CellAdapter
                     _nameSpaceProvider.getStorageInfo(ROOT, pnfsId);
 
                 info.setKey("path", pnfsMessage.getPath() );
+                info.setKey("uid", Integer.toString(pnfsMessage.getUid()));
+                info.setKey("gid", Integer.toString(pnfsMessage.getGid()));
 
                 pnfsMessage.setStorageInfo( info ) ;
                 pnfsMessage.setMetaData(_nameSpaceProvider.getFileMetaData(ROOT, pnfsId));
@@ -1102,7 +1104,10 @@ public class PnfsManagerV3 extends CellAdapter
             pnfsMessage.setStorageInfo(info ) ;
             pnfsMessage.setSucceeded() ;
             say( "Storage info "+info ) ;
-            pnfsMessage.setMetaData( _nameSpaceProvider.getFileMetaData(pnfsMessage.getSubject(), pnfsId));
+            FileMetaData fileMetaData = _nameSpaceProvider.getFileMetaData(pnfsMessage.getSubject(), pnfsId);
+            pnfsMessage.setMetaData(fileMetaData);
+            info.setKey("uid", Integer.toString(fileMetaData.getUid()));
+            info.setKey("gid", Integer.toString(fileMetaData.getGid()));
             if (pnfsMessage.isChecksumsRequested()) {
                 pnfsMessage.setChecksums(_nameSpaceProvider.getChecksums(pnfsMessage.getSubject(), pnfsId));
             }
