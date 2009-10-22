@@ -456,13 +456,13 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
         }
     }
 
-    public void messageArived(PoolManagerPoolUpMessage poolUpMessage) {
+    public void messageArrived(PoolManagerPoolUpMessage poolUpMessage) {
 
         String poolName = poolUpMessage.getPoolName();
 
         /*
          * Keep track of pools statuses:
-         *     remove rool from the black list in case of new status is enabled.
+         *     remove pool from the black list in case of new status is enabled.
          *     put a pool into black list if new status is disabled.
          */
 
