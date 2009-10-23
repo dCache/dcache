@@ -91,9 +91,10 @@ import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
 import diskCacheV111.vehicles.PnfsCreateDirectoryMessage;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.PoolSetStickyMessage;
-import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.DCapProtocolInfo;
+import org.dcache.vehicles.FileAttributes;
+import org.dcache.namespace.FileType;
 
 import java.net.InetAddress;
 import java.util.List;
@@ -234,19 +235,17 @@ public class PutCompanion implements CellMessageAnswerable
         }
     }
 
-    public void fileInfoArrived(
-    PnfsGetStorageInfoMessage storage_info_msg) {
+    public void fileInfoArrived(PnfsGetStorageInfoMessage storage_info_msg)
+    {
         if(storage_info_msg.getReturnCode() == 0) {
             if(overwrite)  {
-               diskCacheV111.util.FileMetaData fmd =
-                storage_info_msg.getMetaData();
-               PnfsId pnfsId = storage_info_msg.getPnfsId();
-                fileId = pnfsId.toString();
-                fileFMD = Storage.getFileMetaData(user,path,pnfsId,null,fmd);
+                FileAttributes attributes =
+                    storage_info_msg.getFileAttributes();
+                attributes.setPnfsId(storage_info_msg.getPnfsId());
+                fileFMD = new DcacheFileMetaData(attributes);
+                fileId = fileFMD.fileId;
             } else {
                 _log.warn("GetStorageInfoFailed: file exists, cannot write ");
-                StorageInfo storageinfo=  storage_info_msg.getStorageInfo();
-                diskCacheV111.util.FileMetaData fmd = storage_info_msg.getMetaData();
                 callbacks.DuplicationError(" file exists ");
                 return ;
             }
@@ -296,26 +295,10 @@ public class PutCompanion implements CellMessageAnswerable
         }
         unregisterCreator(metadata_msg);
 
-        StorageInfo storageInfo = null;
-        if(metadata_msg instanceof PnfsGetStorageInfoMessage) {
-            PnfsGetStorageInfoMessage storage_info_msg  =
-                (PnfsGetStorageInfoMessage) metadata_msg;
-            storageInfo = storage_info_msg.getStorageInfo() ;
-            _log.debug("storageInfo = "+storageInfo );
-        }
+        FileAttributes attributes = metadata_msg.getFileAttributes();
+        attributes.setPnfsId(metadata_msg.getPnfsId());
 
-        diskCacheV111.util.FileMetaData dirFmd =
-        metadata_msg.getMetaData();
-
-        if(dirFmd == null) {
-            String error ="internal error: file metadata is null for directory: "+metadata_msg.getPnfsPath();
-                _log.error(error);
-                unregisterAndFailCreator(error);
-                callbacks.GetStorageInfoFailed(error);
-                return;
-        }
-
-        if(!dirFmd.isDirectory()) {
+        if (attributes.getFileType() != FileType.DIR) {
             String error ="file "+metadata_msg.getPnfsPath()+
             " is not a directory";
                 _log.error(error);
@@ -325,10 +308,7 @@ public class PutCompanion implements CellMessageAnswerable
         }
 
         _log.debug("file is a directory");
-        PnfsId dirPnfsId = metadata_msg.getPnfsId();
-        String dirFileId = dirPnfsId.toString();
-        _log.debug(" calling Storage.getFileMetaData()");
-        FileMetaData srm_dirFmd = Storage.getFileMetaData(user,path,dirPnfsId,storageInfo,dirFmd);
+        FileMetaData srm_dirFmd = new DcacheFileMetaData(attributes);
         _log.debug(" got  srm_dirFmd.retentionPolicyInfo ="+srm_dirFmd.retentionPolicyInfo);
         if(srm_dirFmd.retentionPolicyInfo != null) {
             _log.debug(" got  srm_dirFmd.retentionPolicyInfo.AccessLatency ="+srm_dirFmd.retentionPolicyInfo.getAccessLatency());
@@ -337,7 +317,7 @@ public class PutCompanion implements CellMessageAnswerable
         }
         if((pathItems.size() -1 ) >current_dir_depth) {
 
-            if(Storage._canWrite(user,null,null,dirFileId,srm_dirFmd,overwrite)) {
+            if(Storage._canWrite(user,null,null,srm_dirFmd.fileId,srm_dirFmd,overwrite)) {
                 createNextDirectory(srm_dirFmd);
                 return;
             }
@@ -350,8 +330,8 @@ public class PutCompanion implements CellMessageAnswerable
             }
         }
         else {
-            if(Storage._canWrite(user,fileId,fileFMD,dirFileId,srm_dirFmd,overwrite)) {
-                callbacks.StorageInfoArrived(fileId,fileFMD,dirFileId,srm_dirFmd);
+            if(Storage._canWrite(user,fileId,fileFMD,srm_dirFmd.fileId,srm_dirFmd,overwrite)) {
+                callbacks.StorageInfoArrived(fileId,fileFMD,srm_dirFmd.fileId,srm_dirFmd);
             }
             else {
                 String error = "user has no permission to write into path "+getCurrentDirPath();

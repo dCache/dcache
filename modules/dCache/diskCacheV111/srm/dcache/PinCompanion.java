@@ -181,7 +181,7 @@ public class PinCompanion
                                      pinLifetime,
                                      requestId);
         pinRequest.setAuthorizationRecord(user);
-        pinRequest.setStorageInfo(dfmd.getStorageInfo());
+        pinRequest.setStorageInfo(dfmd.getFileAttributes().getStorageInfo());
 
         pinManagerStub.send(pinRequest, PinManagerPinMessage.class,
                             new ThreadManagerMessageCallback(companion));

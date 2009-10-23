@@ -91,14 +91,6 @@ COPYRIGHT STATUS:
   documents or software obtained from this server.
  */
 
-
-
-/*
- * StageAndPinCompanion.java
- *
- * Created on January 2, 2003, 2:08 PM
- */
-
 package diskCacheV111.srm.dcache;
 
 import diskCacheV111.util.PnfsId;
@@ -117,30 +109,24 @@ import org.dcache.vehicles.PnfsGetFileAttributes;
 import static diskCacheV111.util.CacheException.*;
 
 public class GetFileInfoCompanion
-    implements MessageCallback<PnfsGetStorageInfoMessage>
+    implements MessageCallback<PnfsGetFileAttributes>
 {
     private final GetFileInfoCallbacks callbacks;
     private final String path;
-    private final AuthorizationRecord user;
 
-    private GetFileInfoCompanion(AuthorizationRecord user,
-                                 String path,
+    private GetFileInfoCompanion(String path,
                                  GetFileInfoCallbacks callbacks)
     {
-        this.user = user;
         this.path = path;
         this.callbacks = callbacks;
     }
 
-    public void success(PnfsGetStorageInfoMessage message)
+    public void success(PnfsGetFileAttributes message)
     {
-        StorageInfo storageInfo = message.getStorageInfo() ;
-        diskCacheV111.util.FileMetaData fmd = message.getMetaData();
-        PnfsId pnfsId = message.getPnfsId();
-        FileMetaData srm_fmd =
-            Storage.getFileMetaData(user, path, pnfsId, storageInfo, fmd);
+        FileMetaData fmd =
+            new DcacheFileMetaData(message.getFileAttributes());
 
-        callbacks.StorageInfoArrived(srm_fmd.fileId, srm_fmd);
+        callbacks.StorageInfoArrived(fmd.fileId, fmd);
     }
 
     public void failure(int rc, Object error)
@@ -188,14 +174,13 @@ public class GetFileInfoCompanion
                                    CellStub pnfsStub)
     {
         GetFileInfoCompanion companion =
-            new GetFileInfoCompanion(user, path, callbacks);
-        PnfsGetStorageInfoMessage msg =
-            new PnfsGetStorageInfoMessage();
-        msg.setPnfsPath(path);
+            new GetFileInfoCompanion(path, callbacks);
+        PnfsGetFileAttributes msg =
+            new PnfsGetFileAttributes(path,
+                                      DcacheFileMetaData.getKnownAttributes());
         msg.setSubject(Subjects.getSubject(user));
-        pnfsStub.send(msg, PnfsGetStorageInfoMessage.class,
+        pnfsStub.send(msg, PnfsGetFileAttributes.class,
                       new ThreadManagerMessageCallback(companion));
     }
-
 }
 

@@ -22,28 +22,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -56,10 +56,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -69,10 +69,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -87,34 +87,169 @@ COPYRIGHT STATUS:
  */
 
 package diskCacheV111.srm.dcache;
-import diskCacheV111.vehicles.StorageInfo;
+
+import java.util.Set;
+import java.util.EnumSet;
+
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.RetentionPolicy;
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.vehicles.StorageInfo;
+
 import org.dcache.auth.AuthorizationRecord;
 import org.dcache.srm.SRMUser;
 import org.apache.log4j.Logger;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.vehicles.FileAttributes;
+import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
+import org.dcache.srm.v2_2.TRetentionPolicyInfo;
+import org.dcache.srm.v2_2.TRetentionPolicy;
+import org.dcache.srm.v2_2.TAccessLatency;
+
+import static org.dcache.namespace.FileAttribute.*;
+
 /**
  *
  * @author  timur
  */
 public class DcacheFileMetaData extends org.dcache.srm.FileMetaData {
     private PnfsId pnfsId;
-    private StorageInfo storageInfo;
-    private diskCacheV111.util.FileMetaData fmd;
+    private FileAttributes attributes;
     private static final Logger logger =  Logger.getLogger(DcacheFileMetaData.class);
-    
+
     /** Creates a new instance of DcacheFileMetaData */
     public DcacheFileMetaData(PnfsId pnfsId) {
         super();
         this.pnfsId = pnfsId;
         this.fileId = pnfsId.toIdString();
     }
-    
-    public  DcacheFileMetaData(PnfsId pnfsId,diskCacheV111.srm.FileMetaData fmd) {
+
+    public DcacheFileMetaData(PnfsId pnfsId,diskCacheV111.srm.FileMetaData fmd) {
         super(fmd);
         this.pnfsId = pnfsId;
         this.fileId = pnfsId.toIdString();
     }
-    
+
+    public DcacheFileMetaData(FileAttributes attributes)
+    {
+        this(attributes.getPnfsId());
+
+        this.attributes = attributes;
+
+        isPinned = false;
+        isPermanent = true;
+        isRegular = false;
+        isDirectory = false;
+        isLink = false;
+
+        for (FileAttribute attribute: attributes.getDefinedAttributes()) {
+            switch (attribute) {
+            case CHECKSUM:
+                /* Find the adler32 checksum. If not found, then take
+                 * some other checksum.
+                 */
+                Set<Checksum> checksums = attributes.getChecksums();
+                for (Checksum checksum: checksums) {
+                    checksumType = checksum.getType().getName().toLowerCase();
+                    checksumValue = checksum.getValue();
+                    if (checksum.getType() == ChecksumType.ADLER32 ) {
+                        break;
+                    }
+                }
+                break;
+
+            case OWNER:
+                owner = Integer.toString(attributes.getOwner());
+                break;
+
+            case OWNER_GROUP:
+                group = Integer.toString(attributes.getGroup());
+                break;
+
+            case MODE:
+                permMode = attributes.getMode();
+                break;
+
+            case TYPE:
+                switch (attributes.getFileType()) {
+                case REGULAR:
+                    isRegular = true;
+                    break;
+                case DIR:
+                    isDirectory = true;
+                    break;
+                case LINK:
+                    isLink = true;
+                    break;
+                case SPECIAL:
+                    break;
+                }
+                break;
+
+            case ACCESS_TIME:
+                lastAccessTime = attributes.getAccessTime();
+                break;
+
+            case MODIFICATION_TIME:
+                lastModificationTime = attributes.getModificationTime();
+                break;
+
+            case CREATION_TIME:
+                creationTime = attributes.getCreationTime();
+                break;
+
+            case SIZE:
+                size = attributes.getSize();
+                break;
+
+            case STORAGEINFO:
+                StorageInfo storage_info =
+                    attributes.getStorageInfo();
+                TRetentionPolicy retention = null;
+                TAccessLatency latency = null;
+                if (storage_info.getRetentionPolicy() != null) {
+		    if(storage_info.getRetentionPolicy().equals(RetentionPolicy.CUSTODIAL)) {
+                        retention = TRetentionPolicy.CUSTODIAL;
+		    }
+		    else if (storage_info.getRetentionPolicy().equals(RetentionPolicy.REPLICA)) {
+                        retention = TRetentionPolicy.REPLICA;
+		    }
+		    else if (storage_info.getRetentionPolicy().equals(RetentionPolicy.OUTPUT)) {
+                        retention = TRetentionPolicy.OUTPUT;
+		    }
+                }
+                if (storage_info.getAccessLatency() != null) {
+		    if(storage_info.getAccessLatency().equals(AccessLatency.ONLINE)) {
+                        latency = TAccessLatency.ONLINE;
+		    }
+		    else if (storage_info.getAccessLatency().equals(AccessLatency.NEARLINE)) {
+                        latency = TAccessLatency.NEARLINE;
+		    }
+                }
+                // RetentionPolicy is non-nillable element of the
+                // TRetentionPolicyInfo, if retetion is null, we shold leave
+                // the whole retentionPolicyInfo null
+                if (retention != null) {
+                    retentionPolicyInfo =
+                        new TRetentionPolicyInfo(retention, latency);
+                }
+                isStored = storage_info.isStored();
+                if (storage_info.getMap() != null) {
+                    String writeToken = storage_info.getMap().get("writeToken");
+		    if (writeToken != null) {
+                        spaceTokens = new long[1];
+                        try {
+                            spaceTokens[0] = Long.parseLong(writeToken);
+                        } catch (NumberFormatException e) {}
+		    }
+                }
+                break;
+            }
+        }
+    }
+
+
     /** Getter for property pnfsId.
      * @return Value of property pnfsId.
      *
@@ -122,39 +257,17 @@ public class DcacheFileMetaData extends org.dcache.srm.FileMetaData {
     public diskCacheV111.util.PnfsId getPnfsId() {
         return pnfsId;
     }
-    
-    /** Getter for property storageInfo.
-     * @return Value of property storageInfo.
-     *
-     */
-    public diskCacheV111.vehicles.StorageInfo getStorageInfo() {
-        return storageInfo;
+
+    public void setFileAttributes(FileAttributes attributes)
+    {
+        this.attributes = attributes;
     }
-    
-    /** Setter for property storageInfo.
-     * @param storageInfo New value of property storageInfo.
-     *
-     */
-    public void setStorageInfo(diskCacheV111.vehicles.StorageInfo storageInfo) {
-        this.storageInfo = storageInfo;
+
+    public FileAttributes getFileAttributes()
+    {
+        return attributes;
     }
-    
-    /** Getter for property fmd.
-     * @return Value of property fmd.
-     *
-     */
-    public diskCacheV111.util.FileMetaData getFmd() {
-        return fmd;
-    }
-    
-    /** Setter for property fmd.
-     * @param fmd New value of property fmd.
-     *
-     */
-    public void setFmd(diskCacheV111.util.FileMetaData fmd) {
-        this.fmd = fmd;
-    }
-    
+
     public  boolean isOwner(SRMUser user) {
         try {
             return Integer.parseInt(owner) == ((AuthorizationRecord) user).getUid();
@@ -164,9 +277,9 @@ public class DcacheFileMetaData extends org.dcache.srm.FileMetaData {
         } catch (ClassCastException  cce) {
             logger.error("user is not a dCacheUser: "+user,cce);
             throw cce;
-        } 
+        }
     }
-    
+
     public boolean isGroupMember(SRMUser user) {
         try {
             return Integer.parseInt(group) == ((AuthorizationRecord) user).getGid();
@@ -176,8 +289,17 @@ public class DcacheFileMetaData extends org.dcache.srm.FileMetaData {
         } catch (ClassCastException  cce) {
             logger.error("user is not a dCacheUser: "+user,cce);
             throw cce;
-        } 
-        
+        }
+
     }
 
+    /**
+     * Returns the set of FileAttributes understood by this class.
+     */
+    public static Set<FileAttribute> getKnownAttributes()
+    {
+        return EnumSet.of(PNFSID, STORAGEINFO, CHECKSUM,
+                          OWNER, OWNER_GROUP, MODE, TYPE, SIZE,
+                          ACCESS_TIME, MODIFICATION_TIME, CREATION_TIME);
+    }
 }

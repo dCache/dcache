@@ -276,7 +276,6 @@ public class Storage
         Executors.newSingleThreadScheduledExecutor();
 
     private PnfsHandler _pnfs;
-    private diskCacheV111.services.PermissionHandler oldPermissionHandler;
     private PermissionHandler permissionHandler;
     private int __pnfsTimeout = 60 ;
     private String loginBrokerName="LoginBroker";
@@ -421,8 +420,6 @@ public class Storage
         _loginBrokerStub.setTimeout(__pnfsTimeout * 1000);
 
         _pnfs = new PnfsHandler(_pnfsStub);
-        oldPermissionHandler =
-            new diskCacheV111.services.PermissionHandler(this, new CellPath(_pnfsManagerName));
         permissionHandler =
             new ChainedPermissionHandler(new ACLPermissionHandler(), new PosixPermissionHandler());
 
@@ -1466,9 +1463,10 @@ public class Storage
             });
     }
 
-    private boolean isCached(StorageInfo storage_info, PnfsId _pnfsId)
+    private boolean isCached(FileAttributes attributes)
     {
          try {
+             StorageInfo storage_info = attributes.getStorageInfo();
              PoolMgrQueryPoolsMsg query =
                  new PoolMgrQueryPoolsMsg(DirectionType.READ,
                                           storage_info.getStorageClass()+"@"+storage_info.getHsm(),
@@ -1484,8 +1482,7 @@ public class Storage
                  readPools.addAll(list);
              }
 
-             List<String> assumedLocations = _pnfs.getCacheLocations(_pnfsId);
-             return !Collections.disjoint(readPools, assumedLocations);
+             return !Collections.disjoint(readPools, attributes.getLocations());
          } catch (CacheException e) {
             _log.warn("isCached(): error receiving message back from PoolManager : " + e);
              return false;
@@ -2109,124 +2106,71 @@ public class Storage
     public void setFileMetaData(SRMUser user, FileMetaData fmd)
         throws SRMException
     {
-        if(!(fmd instanceof DcacheFileMetaData)) {
-            throw new SRMException("Storage.setFileMetaData: " +
-                                   "metadata in not dCacheMetaData");
-        }
-        DcacheFileMetaData dfmd = (DcacheFileMetaData) fmd;
-        _log.info("Storage.setFileMetaData("+dfmd.getFmd()+
-                  " , size="+dfmd.getFmd().getFileSize()+")");
-
-        dfmd.getFmd().setUserPermissions(
-            new diskCacheV111.util.FileMetaData.Permissions(
-                (dfmd.permMode >> 6 ) & 0x7 ) ) ;
-        dfmd.getFmd().setGroupPermissions(
-            new diskCacheV111.util.FileMetaData.Permissions(
-                (dfmd.permMode >> 3 ) & 0x7 )) ;
-        dfmd.getFmd().setWorldPermissions(
-            new diskCacheV111.util.FileMetaData.Permissions(
-                dfmd.permMode  & 0x7 ) ) ;
-
-        long time = System.currentTimeMillis()/1000L;
-        dfmd.getFmd().setLastAccessedTime(time);
-        dfmd.getFmd().setLastModifiedTime(time);
+        AuthorizationRecord duser = (AuthorizationRecord) user;
+        PnfsHandler handler =
+            new PnfsHandler(_pnfs, Subjects.getSubject(duser));
 
         try {
-            PnfsSetFileMetaDataMessage msg =
-                new PnfsSetFileMetaDataMessage(dfmd.getPnfsId());
-            msg.setMetaData(dfmd.getFmd());
-            _pnfsStub.sendAndWait(msg);
+            if (!(fmd instanceof DcacheFileMetaData)) {
+                throw new SRMException("Storage.setFileMetaData: " +
+                                       "metadata in not dCacheMetaData");
+            }
+            DcacheFileMetaData dfmd = (DcacheFileMetaData) fmd;
+            FileAttributes updatedAttributes = new FileAttributes();
+            updatedAttributes.setMode(dfmd.permMode);
+            handler.setFileAttributes(dfmd.getPnfsId(), updatedAttributes);
+
+            FileAttributes attributes = dfmd.getFileAttributes();
+            attributes.setMode(dfmd.permMode);
         } catch (TimeoutCacheException e) {
             throw new SRMInternalErrorException("PnfsManager is unavailable: "
                                                 + e.getMessage(), e);
+        } catch (NotInTrashCacheException e) {
+            throw new SRMInvalidPathException("No such file or directory", e);
+        } catch (FileNotFoundCacheException e) {
+            throw new SRMInvalidPathException("No such file or directory", e);
+        } catch (PermissionDeniedCacheException e) {
+            throw new SRMAuthorizationException("Permission denied");
         } catch (CacheException e) {
             throw new SRMException("SetFileMetaData failed for " + fmd.SURL +
                                    "; return code=" + e.getRc() +
                                    " reason=" + e.getMessage());
-        } catch (InterruptedException e) {
-            throw new SRMException("Request was interrupted", e);
         }
     }
 
-
-    public FileMetaData getFileMetaData(SRMUser user,
-					String path)
-        throws SRMException  {
-        return getFileMetaData(user, path, null);
-    }
 
     public FileMetaData getFileMetaData(SRMUser user,
 					String path,
                                         FileMetaData parentFMD)
-        throws SRMException {
-        _log.debug("getFileMetaData(" + path + ")");
-        String absolute_path = srm_root + "/" + path;
-        diskCacheV111.util.FileMetaData parent_util_fmd = null;
-        if (parentFMD != null && parentFMD instanceof DcacheFileMetaData) {
-            DcacheFileMetaData dfmd = (DcacheFileMetaData)parentFMD;
-            parent_util_fmd = dfmd.getFmd();
-        }
-        AuthorizationRecord duser = null;
-        if (user != null && user instanceof AuthorizationRecord) {
-            duser = (AuthorizationRecord) user;
-        }
-        FsPath parent_path = new FsPath(absolute_path);
-        parent_path.add("..");
-        String parent = parent_path.toString();
-        diskCacheV111.util.FileMetaData util_fmd = null;
-        StorageInfo storage_info = null;
-        PnfsId pnfsId;
-        Set<Checksum> checksums;
-        try {
-            PnfsGetStorageInfoMessage storage_info_msg = null;
-            PnfsGetFileMetaDataMessage filemetadata_msg = null;
-            try {
-                storage_info_msg = _pnfs.getStorageInfoByPath(absolute_path,
-                    true);
-            }
-	    catch (CacheException e) {
-                filemetadata_msg = _pnfs.getFileMetaDataByPath(absolute_path,
-                    true,
-                    true);
-            }
-            if (storage_info_msg != null) {
-                storage_info = storage_info_msg.getStorageInfo();
-                util_fmd = storage_info_msg.getMetaData();
-                pnfsId = storage_info_msg.getPnfsId();
-                checksums = storage_info_msg.getChecksums();
-            }
-	    else if(filemetadata_msg != null) {
-                util_fmd = filemetadata_msg.getMetaData();
-                pnfsId = filemetadata_msg.getPnfsId();
-                checksums = filemetadata_msg.getChecksums();
-            }
-	    else {
-                throw new SRMException(
-                    "could not get storage info or file metadata by path ");
+        throws SRMException
+    {
+        return getFileMetaData(user, path);
+    }
 
-            }
-            if (duser == null) {
-                if (parent_util_fmd == null) {
-                    PnfsGetFileMetaDataMessage parent_filemetadata_msg =
-                        _pnfs.getFileMetaDataByPath(parent);
-                    parent_util_fmd = parent_filemetadata_msg.getMetaData();
-                }
-                if (!oldPermissionHandler.worldCanRead(
-                    absolute_path, parent_util_fmd, util_fmd)) {
-                    throw new SRMAuthorizationException("getFileMetaData have no read " +
-                                                           "permission (or file does not exists) ");
-                }
-            }
+    public FileMetaData getFileMetaData(SRMUser user, String path)
+        throws SRMException
+    {
+        _log.debug("getFileMetaData(" + path + ")");
+        String fullPath = getFullPath(path);
+        FileAttributes attributes;
+        PnfsId pnfsId;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
+        PnfsHandler handler =
+            new PnfsHandler(_pnfs, Subjects.getSubject(duser));
+        try {
+            Set<FileAttribute> requestedAttributes =
+                EnumSet.of(TYPE, LOCATIONS);
+            requestedAttributes.addAll(DcacheFileMetaData.getKnownAttributes());
+            attributes = handler.getFileAttributes(fullPath, requestedAttributes);
+            pnfsId = attributes.getPnfsId();
         } catch (CacheException e) {
             throw new SRMException("could not get storage info by path: " +
                                    e.getMessage(), e);
         }
 
-        FileMetaData fmd =
-            getFileMetaData(user, absolute_path, pnfsId,
-                            storage_info, util_fmd,checksums);
-        if (storage_info != null) {
-		fmd.isCached = isCached(storage_info, pnfsId);
+        FileMetaData fmd = new DcacheFileMetaData(attributes);
+        if (attributes.getFileType() != FileType.DIR) {
+            fmd.isCached = isCached(attributes);
         }
 
 	try {
@@ -2242,10 +2186,10 @@ public class Storage
             }
         } catch (TimeoutCacheException e) {
             _log.error("Failed to retrieve space reservation tokens for file "+
-                       absolute_path+"("+pnfsId+"): SrmSpaceManager timed out");
+                       fullPath+" ("+pnfsId+"): SrmSpaceManager timed out");
         } catch (CacheException e) {
             _log.error("Failed to retrieve space reservation tokens for file "+
-                       absolute_path+"("+pnfsId+"): " + e.getMessage());
+                       fullPath+" ("+pnfsId+"): " + e.getMessage());
         } catch (RuntimeException e) {
 	    _log.fatal("getFileMetaData failed", e);
         } catch (Exception e) {
@@ -2253,149 +2197,6 @@ public class Storage
 	}
         return fmd;
     }
-
-    public static FileMetaData
-        getFileMetaData(SRMUser user,
-                        String absolute_path,
-                        PnfsId pnfsId,
-                        StorageInfo storage_info,
-                        diskCacheV111.util.FileMetaData util_fmd)
-    {
-        return getFileMetaData(user,absolute_path, pnfsId,storage_info, util_fmd, null);
-    }
-
-    public static FileMetaData
-        getFileMetaData(SRMUser user,
-                        String absolute_path,
-                        PnfsId pnfsId,
-                        StorageInfo storage_info,
-                        diskCacheV111.util.FileMetaData util_fmd,
-                        Set<Checksum> checksums)
-    {
-        boolean isRegular = false;
-        boolean isLink = false;
-        boolean isDirectory = false;
-        boolean isPinned = false;
-        boolean isPermanent = true;
-        long creationTime = 0;
-        long lastModificationTime = 0;
-        long lastAccessTime = 0;
-        long size = 0;
-        String group = null;
-        String owner = null;
-        String checksum_type = null;
-        String checksum_value = null;
-        int permissions = 0;
-	boolean isStored=false;
-        DcacheFileMetaData fmd = new DcacheFileMetaData(pnfsId);
-
-        if (util_fmd != null) {
-
-
-            if(checksums != null) {
-                //first try to find the adler32 checksum
-                for(Checksum checksum:checksums) {
-                    if(checksum.getType() ==ChecksumType.ADLER32 ) {
-                        checksum_type = "adler32";
-                        checksum_value = checksum.getValue();
-                    }
-                }
-                //if this failed, but there are other types
-                // use the first one found
-                if(checksum_type == null && !checksums.isEmpty() ) {
-                     Checksum cksum = checksums.iterator().next();
-                     checksum_type = cksum.getType().getName().toLowerCase();
-                     checksum_value = cksum.getValue();
-                }
-            }
-
-            owner=Integer.toString(util_fmd.getUid());
-            group=Integer.toString(util_fmd.getGid());
-            diskCacheV111.util.FileMetaData.Permissions perms =
-                util_fmd.getUserPermissions();
-            permissions = (perms.canRead()    ? 4 : 0) |
-                (perms.canWrite()   ? 2 : 0) |
-                (perms.canExecute() ? 1 : 0) ;
-            permissions <<= 3;
-            perms = util_fmd.getGroupPermissions();
-            permissions |=    (perms.canRead()    ? 4 : 0) |
-                (perms.canWrite()   ? 2 : 0) |
-                (perms.canExecute() ? 1 : 0) ;
-            permissions <<= 3;
-            perms = util_fmd.getWorldPermissions();
-            permissions |=    (perms.canRead()    ? 4 : 0) |
-                (perms.canWrite()   ? 2 : 0) |
-                (perms.canExecute() ? 1 : 0) ;
-            isRegular = util_fmd.isRegularFile();
-            isDirectory = util_fmd.isDirectory();
-            isLink = util_fmd.isSymbolicLink();
-            creationTime=util_fmd.getCreationTime();
-            lastModificationTime=util_fmd.getLastModifiedTime();
-            lastAccessTime=util_fmd.getLastAccessedTime();
-            size = util_fmd.getFileSize();
-            fmd.setFmd(util_fmd);
-        }
-        if (storage_info != null) {
-            size = storage_info.getFileSize();
-	    TRetentionPolicy retention = null;
-	    TAccessLatency latency = null;
-	    if (storage_info.getRetentionPolicy() != null) {
-		    if(storage_info.getRetentionPolicy().equals(RetentionPolicy.CUSTODIAL)) {
-			    retention = TRetentionPolicy.CUSTODIAL;
-		    }
-		    else if (storage_info.getRetentionPolicy().equals(RetentionPolicy.REPLICA)) {
-			    retention = TRetentionPolicy.REPLICA;
-		    }
-		    else if (storage_info.getRetentionPolicy().equals(RetentionPolicy.OUTPUT)) {
-			    retention = TRetentionPolicy.OUTPUT;
-		    }
-            }
-            if (storage_info.getAccessLatency() != null) {
-		    if(storage_info.getAccessLatency().equals(AccessLatency.ONLINE)) {
-			    latency = TAccessLatency.ONLINE;
-		    }
-		    else if (storage_info.getAccessLatency().equals(AccessLatency.NEARLINE)) {
-			    latency = TAccessLatency.NEARLINE;
-		    }
-            }
-            // RetentionPolicy is non-nillable element of the
-            // TRetentionPolicyInfo, if retetion is null, we shold leave
-            // the whole retentionPolicyInfo null
-            if(retention != null) {
-                fmd.retentionPolicyInfo =
-                    new TRetentionPolicyInfo(retention, latency);
-            }
-            fmd.setStorageInfo(storage_info);
-	    isStored=storage_info.isStored();
-	    if(storage_info.getMap()!=null) {
-		    if (storage_info.getMap().get("writeToken")!=null) {
-			    fmd.spaceTokens = new long[1];
-			    try {
-				    fmd.spaceTokens[0] = Long.parseLong(storage_info.getMap().get("writeToken"));
-			    }
-			    catch (Exception e) {}
-		    }
-	    }
-        }
-        fmd.isPinned = isPinned;
-        fmd.isPermanent = isPermanent;
-        fmd.permMode = permissions;
-        fmd.size = size;
-        fmd.SURL = null;
-        fmd.group = group;
-        fmd.owner = owner;
-        fmd.checksumType = checksum_type;
-        fmd.checksumValue = checksum_value;
-        fmd.isDirectory = isDirectory;
-        fmd.isRegular = isRegular;
-        fmd.isLink = isLink;
-        fmd.creationTime = creationTime;
-        fmd.lastAccessTime= lastAccessTime;
-        fmd.lastModificationTime = lastModificationTime;
-	fmd.isStored=isStored;
-        return fmd;
-    }
-
 
     private HashMap idToUserMap = new HashMap();
     private HashMap idToCredentialMap = new HashMap();
@@ -2646,7 +2447,7 @@ public class Storage
             String path = getFullPath(directory);
             String parent = FsPath.getParent(path);
             FileAttributes attr =
-                _pnfs.getFileAttributes(parent, EnumSet.of(FileAttribute.MODE));
+                _pnfs.getFileAttributes(parent, EnumSet.of(MODE));
 
             /* Permission checks are performed by PnfsManager because
              * we specify a Subject for the request.
@@ -2688,7 +2489,7 @@ public class Storage
         try {
             try {
                 FileAttributes attr =
-                    handler.getFileAttributes(toPath, EnumSet.of(FileAttribute.TYPE));
+                    handler.getFileAttributes(toPath, EnumSet.of(TYPE));
 
                 /* We now know the destination exists. In case the
                  * source and destination names are identical, we
@@ -3410,7 +3211,7 @@ public class Storage
 
     /**
      * Provides a directory listing of directoryName if and only if
-     * directoryName is no a symbolic link. As a side effect, the
+     * directoryName is not a symbolic link. As a side effect, the
      * method checks that directoryName can be deleted by the user.
      *
      * @param user The SRMUser performing the operation; this myst be
