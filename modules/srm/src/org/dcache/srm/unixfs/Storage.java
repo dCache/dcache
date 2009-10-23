@@ -81,23 +81,23 @@ public class Storage
   private PrintStream out;
   private PrintStream err;
 
-  public Storage(String gridftphost, 
+  public Storage(String gridftphost,
   int gridftpport,
-  Configuration configuration, 
+  Configuration configuration,
   String stat_cmd,
   String chown_cmd
   ) {
       this(gridftphost, gridftpport, configuration, stat_cmd, chown_cmd,System.out,System.err);
   }
   /** */
-  public Storage(String gridftphost, 
+  public Storage(String gridftphost,
   int gridftpport,
-  Configuration configuration, 
+  Configuration configuration,
   String stat_cmd,
   String chown_cmd,
-  PrintStream out , 
+  PrintStream out ,
   PrintStream err ) {
-      
+
       this.config = configuration;
       if(gridftphost == null) {
           throw new IllegalArgumentException("gridftphost is null");
@@ -107,7 +107,7 @@ public class Storage
       }
       this.gridftphost = gridftphost;
       this.gridftpport = gridftpport;
-      
+
     try {
       myInetAddr = InetAddress.getByName(gridftphost);
     }
@@ -128,7 +128,7 @@ public class Storage
         throw new IllegalArgumentException("stat_cmd=\""+stat_cmd+"\" execution failed with rc = "+return_code);
     }
     this.stat_cmd = stat_cmd;
-    
+
     shell_out = new StringWriter();
     shell_err = new StringWriter();
     return_code = ShellCommandExecuter.execute(chown_cmd+" --help",shell_out, shell_err);
@@ -156,7 +156,7 @@ public class Storage
   /** */
   public String[] supportedGetProtocols()
       throws SRMException {
-      
+
     for( String protocol: getProtocols) {
         dlog("supportedGetProtocols: " + protocol );
     }
@@ -226,7 +226,7 @@ public class Storage
         if(protocols[i].equals("enstore")) {
             return "enstore://"+gridftphost+":"+gridftpport+"/"+filePath;
         }
-	
+
     }
     throw new SRMException("no sutable protocol found");
     /*SRMException srmEx = new SRMException(
@@ -259,15 +259,15 @@ public class Storage
     Long remoteCredentialId) throws SRMException {
           if(!(user instanceof UnixfsUser) ){
               throw new SRMException("user is not instance of UnixfsUser");
-              
+
           }
           UnixfsUser duser = (UnixfsUser)user;
-          
+
           try
           {
             /**@todo # Implement getFromRemoteTURL() method */
               GlobusURL url = new GlobusURL(remoteTURL);
-              if(!url.getProtocol().equalsIgnoreCase("gsiftp") && 
+              if(!url.getProtocol().equalsIgnoreCase("gsiftp") &&
                  !url.getProtocol().equalsIgnoreCase("gridftp") )
               {
                   throw new SRMException("unsupported protocol : "+url.getProtocol());
@@ -277,7 +277,7 @@ public class Storage
                 url.getPort(), config.getTcp_buffer_size(),
                 remoteCredential,this);
               client.setStreamsNum(config.getParallel_streams());
-    	      
+
               try
               {
 		client.gridFTPRead(url.getPath(),actualFilePath , true,true);
@@ -286,7 +286,7 @@ public class Storage
                 client.close();
                 client = null;
             }
-              // now file is copied, we need to change the owner/group to the user's 
+              // now file is copied, we need to change the owner/group to the user's
               changeOwnership(actualFilePath,duser.getUid(),duser.getGid());
 
 
@@ -296,8 +296,8 @@ public class Storage
               elog(e);
               throw new SRMException("remote turl "+remoteTURL+" to local file "+actualFilePath+" transfer failed",e);
           }
-          
-          
+
+
 //    SRMException srmEx = new SRMException(
 //        "Method getFromRemoteTURL() not yet implemented.");
 //    elog(srmEx);
@@ -309,7 +309,7 @@ public class Storage
           try
           {
               GlobusURL url = new GlobusURL(remoteTURL);
-              if(!url.getProtocol().equalsIgnoreCase("gsiftp") && 
+              if(!url.getProtocol().equalsIgnoreCase("gsiftp") &&
                  !url.getProtocol().equalsIgnoreCase("gridftp") )
               {
                   throw new SRMException("unsupported protocol : "+url.getProtocol());
@@ -444,7 +444,7 @@ public class Storage
       StringWriter out = new StringWriter();
       StringWriter err = new StringWriter();
     try {
-       
+
       File file = new File(filePath);
       if(!file.exists()) throw new IOException("file does not exist");
       String command = stat_cmd+" -t "+file.getCanonicalPath();
@@ -509,48 +509,48 @@ public class Storage
         public boolean canRead(SRMUser user, String fileId, FileMetaData fmd) {
             return _canRead(user,fileId,fmd);
         }
-        
+
         public static boolean _canRead(SRMUser user, String fileId, FileMetaData fmd) {
             int uid = Integer.parseInt(fmd.owner);
             int gid = Integer.parseInt(fmd.group);
             int permissions = fmd.permMode;
-            
-            
+
+
             if(permissions == 0 ) {
                 return false;
             }
-            
+
             if(Permissions.worldCanRead(permissions)) {
                 return true;
             }
-            
+
             if(uid == -1 || gid == -1) {
                 return false;
             }
-            
+
             if(user == null || (!(user instanceof UnixfsUser))) {
                 return false;
             }
             UnixfsUser duser = (UnixfsUser) user;
-            
+
             if(duser.getGid() == gid && Permissions.groupCanRead(permissions)) {
                 return true;
             }
-            
+
             if(duser.getUid() == uid && Permissions.userCanRead(permissions)) {
                 return true;
             }
-            
+
             return false;
-            
-            
+
+
         }
-        
-        public boolean canWrite(SRMUser user, String fileId, FileMetaData fmd, 
+
+        public boolean canWrite(SRMUser user, String fileId, FileMetaData fmd,
                 String parentFileId, FileMetaData parentFmd, boolean overwrite) {
             return _canWrite(user,fileId,fmd,parentFileId,parentFmd,overwrite);
         }
-        
+
         public static boolean _canWrite(SRMUser user, String fileId,
                 FileMetaData fmd,String parentFileId, FileMetaData parentFmd,
                 boolean overwrite) {
@@ -558,94 +558,94 @@ public class Storage
             if(fileId != null ) {
                 return false;
             }
-            
+
             if( parentFileId == null) {
                 return false;
             }
             int uid = Integer.parseInt(parentFmd.owner);
             int gid = Integer.parseInt(parentFmd.group);
             int permissions = parentFmd.permMode;
-            
+
             if(permissions == 0 ) {
                 return false;
             }
-            
+
             if(Permissions.worldCanWrite(permissions) &&
             Permissions.worldCanExecute(permissions)) {
                 return true;
             }
-            
+
             if(uid == -1 || gid == -1) {
                 return false;
             }
-            
+
             if(user == null || (!(user instanceof UnixfsUser))) {
                 return false;
             }
             UnixfsUser duser = (UnixfsUser) user;
-            
-            
+
+
             if(duser.getGid() == gid &&
             Permissions.groupCanWrite(permissions) &&
             Permissions.groupCanExecute(permissions)) {
                 return true;
             }
-            
+
             if(duser.getUid() == uid &&
             Permissions.userCanWrite(permissions) &&
             Permissions.userCanExecute(permissions)) {
                 return true;
             }
-            
+
             return false;
-            
-            
+
+
         }
-        
+
         public static boolean _canDelete(SRMUser user, String fileId,FileMetaData fmd) {
             // we can not overwrite file in dcache (at least for now)
             if(fileId == null ) {
                 return false;
             }
-            
+
             int uid = Integer.parseInt(fmd.owner);
             int gid = Integer.parseInt(fmd.group);
             int permissions = fmd.permMode;
-            
+
             if(permissions == 0 ) {
                 return false;
             }
-            
+
             if(Permissions.worldCanWrite(permissions) &&
             Permissions.worldCanExecute(permissions)) {
                 return true;
             }
-            
+
             if(uid == -1 || gid == -1) {
                 return false;
             }
-            
+
             if(user == null || (!(user instanceof UnixfsUser))) {
                 return false;
             }
             UnixfsUser duser = (UnixfsUser) user;
-            
-            
+
+
             if(duser.getGid() == gid &&
             Permissions.groupCanWrite(permissions) &&
             Permissions.groupCanExecute(permissions)) {
                 return true;
             }
-            
+
             if(duser.getUid() == uid &&
             Permissions.userCanWrite(permissions) &&
             Permissions.userCanExecute(permissions)) {
                 return true;
             }
-            
+
             return false;
-            
-            
+
+
         }
 
   /** */
@@ -691,10 +691,10 @@ public class Storage
 
   /** */
   public void pinFile(SRMUser user,
-          String fileId, 
+          String fileId,
           String clientHost,
-          FileMetaData fmd, 
-          long pinLifetime, 
+          FileMetaData fmd,
+          long pinLifetime,
           long requestId,
           PinCallbacks callbacks) {
     /**@todo - pinFile() - check authorization, do timeout */
@@ -712,7 +712,7 @@ public class Storage
       pinned = file.exists();
       log("file exists is "+pinned);
       if( pinned )
-        
+
         pinId = fileId;
       else
         reason = "file does not exist";
@@ -826,7 +826,7 @@ public class Storage
   public void prepareToPut(SRMUser user, String filePath,
                            PrepareToPutCallbacks callbacks,
                            boolean overwrite ) {
-   // the type of callback is already specified in the function declaration                            
+   // the type of callback is already specified in the function declaration
    // if( ! ( callbacks instanceof PrepareToPutCallbacks ) )
    //   throw new java.lang.IllegalArgumentException(
    //       "Method prepareToPut() has wrong callback argument type.");
@@ -856,7 +856,7 @@ public class Storage
           } else {
              String erStr = "file exists, can't overwrite";
             callbacks.GetStorageInfoFailed( erStr );
-             return;              
+             return;
           }
       } else {
         parentPath = file.getParent();  //for error report
@@ -954,11 +954,11 @@ public class Storage
     if( debug )
       elog(t);
   }
-  
+
   private void changeOwnership(String filePath, int uid, int gid) throws IOException {
       StringWriter out = new StringWriter();
       StringWriter err = new StringWriter();
-       
+
       File file = new File(filePath);
       if(!file.exists()) throw new IOException("file does not exist");
       String command = chown_cmd+" "+uid+"."+gid+" "+file.getCanonicalPath();
@@ -971,19 +971,19 @@ public class Storage
       }
 
   }
-  
+
   private static long unique_id = 0;
   private static synchronized final String getUniqueId() {
       return Long.toHexString(unique_id++);
-      
+
   }
   private Map copyThreads = new HashMap();
-  
+
   public String getFromRemoteTURL(SRMUser user, String remoteTURL, String actualFilePath, SRMUser remoteUser, Long remoteCredentialId,  CopyCallbacks callbacks) throws SRMException{
    return this.getFromRemoteTURL( user,  remoteTURL,  actualFilePath,  remoteUser,  remoteCredentialId,  null,0, callbacks);
-  
+
   }
- 
+
   /**
      * @param user User ID
      * @param remoteTURL
@@ -995,16 +995,16 @@ public class Storage
      * @return transfer id
      */
     public String getFromRemoteTURL(
-        final SRMUser user, 
-        final String remoteTURL, 
-        final String actualFilePath, 
-        final SRMUser remoteUser, 
-        final Long remoteCredentialId, 
-        String spaceReservationId, 
-        long size, 
+        final SRMUser user,
+        final String remoteTURL,
+        final String actualFilePath,
+        final SRMUser remoteUser,
+        final Long remoteCredentialId,
+        String spaceReservationId,
+        long size,
         final CopyCallbacks callbacks) throws SRMException{
         Thread t = new Thread(){
-            
+
             public void run() {
                 try
                 {
@@ -1020,7 +1020,7 @@ public class Storage
         };
         String id = getUniqueId();
         log("getFromRemoteTURL assigned id ="+id+"for transfer from "+remoteTURL+" to "+actualFilePath);
-        
+
         copyThreads.put(id, t);
         t.start();
         return id;
@@ -1037,9 +1037,9 @@ public class Storage
      */
     public String putToRemoteTURL(final SRMUser user, final String actualFilePath,final String remoteTURL, final SRMUser remoteUser, final Long remoteCredentialId, final CopyCallbacks callbacks)
     throws SRMException {
-        
+
        Thread t = new Thread(){
-            
+
             public void run() {
                 try
                 {
@@ -1055,12 +1055,12 @@ public class Storage
         };
         String id = getUniqueId();
         log("putToRemoteTURL assigned id ="+id+"for transfer from "+actualFilePath+" to "+remoteTURL);
-        
+
         copyThreads.put(id, t);
         t.start();
         return id;
     }
-   
+
 
   public void killRemoteTransfer(String transferId) {
       Thread t = (Thread) copyThreads.get(transferId);
@@ -1073,23 +1073,23 @@ public class Storage
           t.interrupt();
       }
   }
-  
+
   public void reserveSpace(SRMUser user, long spaceSize, long reservationLifetime, String filename, String host, ReserveSpaceCallbacks callbacks) {
       callbacks.SpaceReserved("dummy", spaceSize);
   }
-  
-  
 
-      public void removeFile(final SRMUser user, 
-			     final String path, 
+
+
+      public void removeFile(final SRMUser user,
+			     final String path,
 			     RemoveFileCallbacks callbacks) {
       }
 
-      public void removeDirectory(final SRMUser user, 
+      public void removeDirectory(final SRMUser user,
 				  final Vector tree)  throws SRMException {
       }
 
-      public void createDirectory(final SRMUser user, 
+      public void createDirectory(final SRMUser user,
 				  final String directory) throws SRMException {
       }
 
@@ -1098,27 +1098,27 @@ public class Storage
          int uid = Integer.parseInt(fmd.owner);
          int gid = Integer.parseInt(fmd.group);
          int permissions = fmd.permMode;
-         
+
          if(permissions == 0 ) {
             throw new SRMException ("permission denied");
          }
-         
+
          if(!Permissions.worldCanRead(permissions)) {
             throw new SRMException ("permission denied");
          }
-         
+
          if(uid == -1 || gid == -1) {
             throw new SRMException ("permission denied");
          }
-         
+
          if(user == null ) {
             throw new SRMException ("permission denied");
          }
-         
+
          if(!fmd.isGroupMember(user)  || ! Permissions.groupCanRead(permissions)) {
             throw new SRMException ("permission denied");
          }
-         
+
          if(!fmd.isOwner(user)  || ! Permissions.userCanRead(permissions)) {
             throw new SRMException ("permission denied");
          }
@@ -1129,38 +1129,38 @@ public class Storage
          return f.list();
 
 	}
-  
+
       public FileMetaData getFileMetaData(SRMUser user, String filePath, FileMetaData parentFMD) throws SRMException {
         /**@todo getFileMetaData() - process exception */
         return _getFileMetaData(user, filePath);
       }
-      
+
       public java.io.File[] listDirectoryFiles(SRMUser user, String directoryName, FileMetaData fileMetaData) throws SRMException {
          FileMetaData fmd = getFileMetaData(user, directoryName);
          int uid = Integer.parseInt(fmd.owner);
          int gid = Integer.parseInt(fmd.group);
          int permissions = fmd.permMode;
-         
+
          if(permissions == 0 ) {
             throw new SRMException ("permission denied");
          }
-         
+
          if(!Permissions.worldCanRead(permissions)) {
             throw new SRMException ("permission denied");
          }
-         
+
          if(uid == -1 || gid == -1) {
             throw new SRMException ("permission denied");
          }
-         
+
          if(user == null ) {
             throw new SRMException ("permission denied");
          }
-         
+
          if(!fmd.isGroupMember(user) || !Permissions.groupCanRead(permissions)) {
             throw new SRMException ("permission denied");
          }
-         
+
          if(!fmd.isOwner(user) || !Permissions.userCanRead(permissions)) {
             throw new SRMException ("permission denied");
          }
@@ -1177,27 +1177,27 @@ public class Storage
          int uid = Integer.parseInt(fmd.owner);
          int gid = Integer.parseInt(fmd.group);
          int permissions = fmd.permMode;
-         
+
          if(permissions == 0 ) {
             throw new SRMException ("permission denied");
          }
-         
+
          if(Permissions.worldCanRead(permissions)) {
             throw new SRMException ("permission denied");
          }
-         
+
          if(uid == -1 || gid == -1) {
             throw new SRMException ("permission denied");
          }
-         
+
          if(user == null ) {
             throw new SRMException ("permission denied");
          }
-         
+
          if(fmd.isGroupMember(user) && Permissions.groupCanRead(permissions)) {
             throw new SRMException ("permission denied");
          }
-         
+
          if(fmd.isOwner(user) && Permissions.userCanRead(permissions)) {
             throw new SRMException ("permission denied");
          }
@@ -1210,7 +1210,7 @@ public class Storage
       }
 
 	public void moveEntry(SRMUser user, String from,
-			       String to) throws SRMException { 
+			       String to) throws SRMException {
 	}
 
     public void srmReserveSpace(SRMUser user, long sizeInBytes, long spaceReservationLifetime, String retentionPolicy, String accessLatency, String description,org.dcache.srm.SrmReserveSpaceCallbacks callbacks) {
@@ -1222,41 +1222,41 @@ public class Storage
     public void srmReleaseSpace(SRMUser user, String spaceToken, Long sizeInBytes, SrmReleaseSpaceCallbacks callbacks) {
     }
 
-    public void srmMarkSpaceAsBeingUsed(SRMUser user, String spaceToken, String fileName, long sizeInBytes, long useLifetime, 
+    public void srmMarkSpaceAsBeingUsed(SRMUser user, String spaceToken, String fileName, long sizeInBytes, long useLifetime,
         boolean overwrite,
         SrmUseSpaceCallbacks callbacks) {
     }
- 
+
 
     /**
-     * 
-     * @param spaceTokens 
-     * @throws org.dcache.srm.SRMException 
-     * @return 
+     *
+     * @param spaceTokens
+     * @throws org.dcache.srm.SRMException
+     * @return
      */
     public TMetaDataSpace[] srmGetSpaceMetaData(SRMUser user, String[] spaceTokens)
         throws SRMException {
         return null;
     }
     /**
-     * 
-     * @param description 
-     * @throws org.dcache.srm.SRMException 
-     * @return 
+     *
+     * @param description
+     * @throws org.dcache.srm.SRMException
+     * @return
      */
     public String[] srmGetSpaceTokens(SRMUser user,String description)
         throws SRMException {
         return null;
     }
-    
+
     public String[] srmGetRequestTokens(SRMUser user,String description)
         throws SRMException{
         return null;
     }
 
     /**
-     * 
-     * 
+     *
+     *
      * @param newLifetime SURL lifetime in seconds
      *   -1 stands for infinite lifetime
      * @return long lifetime left in seconds
@@ -1267,28 +1267,28 @@ public class Storage
         int uid = Integer.parseInt(fmd.owner);
         int gid = Integer.parseInt(fmd.group);
         int permissions = fmd.permMode;
-        
+
         if(Permissions.worldCanWrite(permissions)) {
             return -1;
         }
-        
+
         if(uid == -1 || gid == -1) {
             throw new SRMAuthorizationException("User is not authorized to modify this file");
         }
-        
+
         if(user == null || (!(user instanceof UnixfsUser))) {
             throw new SRMAuthorizationException("User is not authorized to modify this file");
         }
         UnixfsUser duser = (UnixfsUser) user;
-        
+
         if(duser.getGid() == gid && Permissions.groupCanWrite(permissions)) {
             return -1;
         }
-        
+
         if(duser.getUid() == uid && Permissions.userCanWrite(permissions)) {
             return -1;
         }
-        
+
         throw new SRMAuthorizationException("User is not authorized to modify this file");
 
     }
@@ -1300,31 +1300,31 @@ public class Storage
     public long srmExtendReservationLifetime(SRMUser user, String spaceToken, long newReservationLifetime) throws SRMException {
         return newReservationLifetime;
     }
-    
-    public String getStorageBackendVersion() { return "$Revision: 1.35 $"; } 
-    
+
+    public String getStorageBackendVersion() { return "$Revision: 1.35 $"; }
+
     public void unPinFileBySrmRequestId(SRMUser user,String fileId,
         UnpinCallbacks callbacks,
         long srmRequestId)   {
         callbacks.Unpinned(fileId);
     }
-    
+
    /** This method allows to unpin file in the Storage Element,
      * i.e. cancel the requests to have the file in "fast access state"
-     * This method will remove all pins on this file user has permission 
+     * This method will remove all pins on this file user has permission
      * to remove
      * @param user User ID
      * @param fileId Storage Element internal file ID
      * @param callbacks This interface is used for asyncronous notification of SRM of the
      * various actions performed to "unpin" file in the storage
-     * @param srmRequestId id given to the storage  during pinFile operation 
+     * @param srmRequestId id given to the storage  during pinFile operation
      */
     public void unPinFile(SRMUser user,String fileId,
             UnpinCallbacks callbacks) {
         callbacks.Unpinned(fileId);
-        
+
     }
-    public boolean exists(SRMUser user, String path)  throws SRMException { 
+    public boolean exists(SRMUser user, String path)  throws SRMException {
             return true;
     }
 }
