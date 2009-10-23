@@ -4,11 +4,11 @@
 
 const char *getDcapVersion()
 {
-	return VER( 1.9.3-6rc );
+	return VER( version-1-2-44 );
 }
 
 const char *getDcapVersionLong()
 {
-	return VERLONG( 1.9.3-6rc );
+	return VERLONG( version-1-2-44 );
 }
 

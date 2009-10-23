@@ -1797,16 +1797,14 @@ void getRevision( revision *rev )
 {
 	char *version;
 	char *s;
-	
 	version = strdup( getDcapVersion() ); /* for example: version-1-2-23 */
-		
+
 	s = strrchr(version, '-');
-	rev->Min = atoi( s + 1 );	
+	rev->Min = atoi( s + 1 );
 	s[0] = '\0';
-	
+
 	s = strrchr(version, '-');
 	rev->Maj = atoi( s + 1 );
-	
 	free(version);
 }
 
