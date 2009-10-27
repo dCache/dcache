@@ -169,11 +169,6 @@ irixFix=$0
 #   echo "ourHomeDir : ${ourHomeDir}"
    . ${setupFilePath}
 
-   # Sanitycheck for serviceLocatorHost
-   if [ -z "${serviceLocatorHost}" ] || [ "${serviceLocatorHost}" = "SERVER" ]; then
-       echo "serviceLocatorHost in ${setupFilePath} has to be set."
-       exit 4
-   fi
 #
 #
 # split the arguments into the options -<key>=<value> and the

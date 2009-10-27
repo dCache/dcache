@@ -1,7 +1,8 @@
 #
 #   Configure cell communication
 #
-check -strong serviceLocatorHost serviceLocatorPort
+
+exec file:${ourHomeDir}/share/cells/lm-defaults.fragment
 
 set context -c messageBroker cells
 set context -c amqPort 11112

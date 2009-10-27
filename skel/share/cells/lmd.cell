@@ -1,10 +1,6 @@
 
 exec file:${ourHomeDir}/share/cells/import-arguments-index-0.fragment
-
-#
-#   Make sure we got what we need.
-#
-check -strong serviceLocatorPort
+exec file:${ourHomeDir}/share/cells/lm-defaults.fragment
 
 #
 #   The LocationManager Part

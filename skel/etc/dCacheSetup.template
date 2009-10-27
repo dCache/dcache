@@ -57,8 +57,8 @@
 #   This service must support precisely one dCache instance.  This is
 #   usually the admin node.
 #
-serviceLocatorHost=SERVER
-serviceLocatorPort=11111
+# serviceLocatorHost=localhost
+# serviceLocatorPort=11111
 
 #  ---- Port and host used for ActiveMQ broker
 #
