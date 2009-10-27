@@ -114,7 +114,7 @@ public class CellNucleus implements Runnable, ThreadFactory {
             _threads = null;
         }
         _eventQueue  = new LinkedBlockingQueue<CellEvent>();
-        _eventThread = new Thread(_threads, this, "Messages");
+        _eventThread = newThread(this, "Messages");
         _eventThread.start();
 
         nsay("Created : "+name);
@@ -491,8 +491,6 @@ public class CellNucleus implements Runnable, ThreadFactory {
     }
 
     public void run() {
-        CDC.setCellsContext(this);
-
         if (Thread.currentThread() == _eventThread) {
             nsay("messageThread : started");
 
