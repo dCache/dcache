@@ -292,7 +292,7 @@ public final class Manager
 		}
 	}
 
-	public String hh_update_space_reservation = " [-size=<size>]  [-lifetime=<lifetime>] -vo_group=<vogroup> -vo-role=<vorole> <spaceToken> \n"+
+	public String hh_update_space_reservation = " [-size=<size>]  [-lifetime=<lifetime>] [-vog=<vogroup>] [-vor=<vorole>] <spaceToken> \n"+
                 "                                                     # set new size and/or lifetime for the space token \n " +
                 "                                                     # valid examples of size: 1000, 100kB, 100KB, 100KiB, 100MB, 100MiB, 100GB, 100GiB, 10.5TB, 100TiB \n" +
                 "                                                     # see http://en.wikipedia.org/wiki/Gigabyte for explanation \n"+
@@ -359,13 +359,13 @@ public final class Manager
 		long reservationId = Long.parseLong(args.argv(0));
                 String sSize     = args.getOpt("size");
                 String sLifetime = args.getOpt("lifetime");
-                String voRole    = args.getOpt("vo_role");
-                String voGroup    = args.getOpt("vo_group");
+                String voRole      = args.getOpt("vor");
+                String voGroup     = args.getOpt("vog");
                 if (sLifetime==null&&
                     sSize==null&&
                     voRole==null&&
                     voGroup==null) {
-                        return "Need to specify at least one option \"-lifetime\", \"-size\" \"-vo_group\" or \"-vo_role\"";
+                        return "Need to specify at least one option \"-lifetime\", \"-size\" \"-vog\" or \"-vor\"";
                 }
                 if (voRole!=null||voGroup!=null) {
                         // check that linkgroup allows these role/group combination
@@ -373,27 +373,31 @@ public final class Manager
                                 Space space = getSpace(reservationId);
                                 long lid = space.getLinkGroupId();
                                 LinkGroup lg = getLinkGroup(lid);
+                                boolean foundMatch=false;
+                                // this will keep the same group/role
+                                // if one of then is not specified:
+                                if (voGroup==null) voGroup=space.getVoGroup();
+                                if (voRole==null)  voRole=space.getVoRole();
+                                for (VOInfo info : lg.getVOs()) {
+                                        String group = info.getVoGroup();
+                                        String role  = info.getVoRole();
+                                        if ((group.equals(voGroup)||group.equals("*"))&&
+                                            (role.equals(voRole)||role.equals("*"))) {
+                                                foundMatch=true;
+                                                break;
+                                        }
+                                }
+                                if (!foundMatch) {
                                 StringBuilder sb = new StringBuilder();
                                 for (VOInfo info : lg.getVOs()) {
                                         sb.append(info).append('\n');
                                 }
-                                for (VOInfo info : lg.getVOs()) {
-                                        if (voRole!=null&&!info.getVoRole().equals("*")){
-                                                if (!voRole.equals(info.getVoRole())) {
-                                                        throw new IllegalArgumentException("cannot change voRole to "+voRole+
+                                        throw new IllegalArgumentException("cannot change voGroup:voRole to "+
+                                                                           voGroup+":"+voRole+
                                                                                            ". Supported vogroup:vorole pairs for this spacereservation\n"+
                                                                                            sb.toString());
                                                 }
                                         }
-                                        if (voGroup!=null&&!info.getVoGroup().equals("*")){
-                                                if (!voGroup.equals(info.getVoGroup())) {
-                                                        throw new IllegalArgumentException("cannot change voGroup to "+voGroup+
-                                                                                           ". Supported vogroup:vorole pairs for this spacereservation\n"+
-                                                                                           sb.toString());
-                                                }
-                                        }
-                                }
-                        }
                         catch (SQLException e) {
                                 return e.toString();   
                         }
