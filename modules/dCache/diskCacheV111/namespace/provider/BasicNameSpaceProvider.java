@@ -10,6 +10,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.FileFilter;
+import java.io.RandomAccessFile;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -1071,16 +1072,43 @@ public class BasicNameSpaceProvider
          */
 
         try {
-            metaFile.createNewFile() ;
-        }catch(IOException ioe) {
-            /*
-             *  check for new permissions and log if not set.
-             */
+            long delay = 1;
+            while (true) {
+                /* Synchronously create the pset file.
+                 */
+                try {
+                    RandomAccessFile raf =
+                        new RandomAccessFile(metaFile, "rws");
+                    raf.close();
+                    return;
+                } catch (IOException e) {
+                    if (getFileMetaData(mp, pnfsId).getMode() == mode) {
+                        return;
+                    }
+                    _logNameSpace.warn("Failed to set permissions: " +
+                                       e.getMessage());
+                }
 
-            FileMetaData actualMetaData = getFileMetaData(mp, pnfsId);
-            if (actualMetaData.getMode() != mode) {
-                _logNameSpace.warn("IO exception [" + ioe.getMessage() + "] in setFileMetaData [" + pnfsId + "]. This is likely due to a known race condition in PNFS.");
+                /* Don't retry forever.
+                 */
+                if (delay > 1024) {
+                    throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                             "Failed to set permissions");
+                }
+
+                /* Exponential back-off.
+                 */
+                Thread.sleep(delay);
+                delay = delay * 2;
+
+                /* Clear any cached result.
+                 */
+                metaFile.delete();
             }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     "Failed to set permissions: Operation was interrupted");
         }
     }
 
