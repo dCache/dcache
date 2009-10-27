@@ -159,7 +159,7 @@ public class MigrationModuleServer
 
     public Message
         messageArrived(CellMessage envelope, PoolMigrationCopyReplicaMessage message)
-        throws LockedCacheException,UnknownHostException
+        throws LockedCacheException, IOException
     {
         if (message.isReply()) {
             return null;
@@ -271,7 +271,7 @@ public class MigrationModuleServer
         }
 
         public synchronized void start()
-            throws UnknownHostException
+            throws IOException
         {
             EntryState state = _repository.getState(_pnfsId);
             if (state == EntryState.NEW) {

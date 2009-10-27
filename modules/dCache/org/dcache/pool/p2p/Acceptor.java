@@ -60,6 +60,7 @@ class Acceptor implements Runnable
      * Register companion and returns a session ID for this companion.
      */
     synchronized int register(Companion companion)
+        throws IOException
     {
         if (_sessions.isEmpty()) {
             start();
@@ -111,7 +112,6 @@ class Acceptor implements Runnable
      * Returns the socket address on which the acceptor listens.
      */
     synchronized InetSocketAddress getSocketAddress()
-        throws UnknownHostException
     {
         if (_serverChannel == null)
             throw new IllegalStateException("Acceptor not running");
@@ -124,16 +124,32 @@ class Acceptor implements Runnable
      * Starts the acceptor.
      */
     synchronized private void start()
+        throws IOException
     {
         if (_worker == null) {
             try {
                 _serverChannel = ServerSocketChannel.open();
-                _portRange.bind(_serverChannel.socket(), _address);
-                _worker = new Thread(this, "Acceptor");
-                _worker.start();
+                try {
+                    _portRange.bind(_serverChannel.socket(), _address);
+                    _worker = new Thread(this, "Acceptor");
+                    _worker.start();
+                } finally {
+                    /* In case something failed we shut everything down.
+                     */
+                    if (_worker == null) {
+                        try {
+                            _serverChannel.close();
+                        } catch (IOException e) {
+                            _log.warn("Failure closing socket: " + e);
+                        } finally {
+                            _serverChannel = null;
+                        }
+                    }
+                }
             } catch (IOException e) {
                 _error = e.getMessage();
                 _log.error("Problem in opening server socket: " + e);
+                throw e;
             }
         }
     }
@@ -160,6 +176,7 @@ class Acceptor implements Runnable
     public void run()
     {
         try {
+            _error = null;
             while (true) {
                 final Socket socket = _serverChannel.accept().socket();
                 socket.setKeepAlive(true);
