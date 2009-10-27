@@ -1,83 +1,3 @@
-// $Id$
-// $Log: not supported by cvs2svn $
-// Revision 1.15  2007/03/10 00:13:19  timur
-// started work on adding support for optional overwrite
-//
-// Revision 1.14  2007/01/10 23:00:23  timur
-// implemented srmGetRequestTokens, store request description in database, fixed several srmv2 issues
-//
-// Revision 1.13  2006/11/11 01:16:32  timur
-// propagate the StorageType from copy to srmPrepareToPut
-//
-// Revision 1.12  2006/06/21 20:29:52  timur
-// Upgraded code to the latest srmv2.2 wsdl (final)
-//
-// Revision 1.11  2006/06/20 15:42:16  timur
-// initial v2.2 commit, code is based on a week old wsdl, will update the wsdl and code next
-//
-// Revision 1.10  2006/05/01 20:23:06  timur
-// fixed a problems in srmturlGetter/Putter
-//
-// Revision 1.9  2006/03/24 00:22:16  timur
-// regenerated stubs with array wrappers for v2_1
-//
-// Revision 1.8  2006/03/14 17:44:17  timur
-// moving toward the axis 1_3
-//
-// Revision 1.7  2006/02/24 19:40:16  neha
-// changes by Neha- to enable value of command line option 'webservice_path' to override its default value
-//
-// Revision 1.6  2006/02/03 01:43:38  timur
-// make  srm v2 copy work with remote srm v1 and vise versa
-//
-// Revision 1.5  2006/01/31 21:27:06  timur
-// fixed a few srm v2 copy problems
-//
-// Revision 1.4  2006/01/21 01:18:34  timur
-// bug fixes in SrmCopy
-//
-// Revision 1.3  2006/01/19 01:48:21  timur
-// more v2 copy work
-//
-// Revision 1.2  2006/01/11 17:29:50  timur
-// first unetested implmentation of v2 turl getter and putter
-//
-// Revision 1.1  2006/01/10 19:03:37  timur
-// adding srm v2 built in client
-//
-// Revision 1.5  2005/08/29 22:52:04  timur
-// commiting changes made by Neha needed by OSG
-//
-// Revision 1.4  2005/03/24 19:16:18  timur
-// made built in client always delegate credentials, which is required by LBL's DRM
-//
-// Revision 1.3  2005/03/13 21:56:28  timur
-// more changes to restore compatibility
-//
-// Revision 1.2  2005/03/11 21:16:25  timur
-// making srm compatible with cern tools again
-//
-// Revision 1.1  2005/01/14 23:07:14  timur
-// moving general srm code in a separate repository
-//
-// Revision 1.3  2005/01/07 20:55:30  timur
-// changed the implementation of the built in client to use apache axis soap toolkit
-//
-// Revision 1.2  2004/08/06 19:35:22  timur
-// merging branch srm-branch-12_May_2004 into the trunk
-//
-// Revision 1.1.2.6  2004/08/03 16:51:47  timur
-// removing unneeded dependancies on dcache
-//
-// Revision 1.1.2.5  2004/06/30 20:37:23  timur
-// added more monitoring functions, added retries to the srm client part, adapted the srmclientv1 for usage in srmcp
-//
-// Revision 1.1.2.4  2004/06/16 19:44:32  timur
-// added cvs logging tags and fermi copyright headers at the top, removed Copier.java and CopyJob.java
-//
-// Revision 1.1.2.3  2004/06/15 22:15:41  timur
-// added cvs logging tags and fermi copyright headers at the top
-//
 
 /*
 COPYRIGHT STATUS:
@@ -172,7 +92,6 @@ import java.util.Iterator;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.request.RequestCredential;
 import java.beans.PropertyChangeListener;
-import diskCacheV111.srm.server.SRMServerV1;
 import org.dcache.srm.Logger;
 import org.dcache.srm.v2_2.*;
 import org.dcache.srm.util.RequestStatusTool;

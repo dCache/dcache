@@ -123,7 +123,6 @@ import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.request.RequestCredentialStorage;
 import org.dcache.srm.request.sql.RequestsPropertyStorage;
-import diskCacheV111.srm.server.SRMServerV1;
 
 import diskCacheV111.srm.FileMetaData;
 import diskCacheV111.srm.RequestStatus;
@@ -195,7 +194,6 @@ public class SRM {
     private String name;
     private InetAddress host;
     private SRMAuthorization authorization;
-    private SRMServerV1 server;
     private Configuration configuration;
     private RequestCredentialStorage requestCredentialStorage;
     private AbstractStorageElement storage;
@@ -225,14 +223,12 @@ public class SRM {
      * @throws java.sql.SQLException
      * @throws java.lang.InterruptedException
      * @throws org.dcache.srm.scheduler.IllegalStateTransition
-     * @throws electric.xml.ParseException
      */
     private SRM(Configuration config, String name)
             throws java.io.IOException,
             java.sql.SQLException,
             InterruptedException,
-            IllegalStateTransition,
-            electric.xml.ParseException {
+            IllegalStateTransition {
         this.configuration = config;
         //First of all decorate the storage with counters and
         // gauges to measure the performace of storage operations
@@ -364,18 +360,8 @@ public class SRM {
             pool.startVacuumThread(configuration.getVacuum_period_sec() * 1000);
         }
 
-        if (config.isStart_server()) {
-            say("starting http server from the GLUE Soap toolkit");
-            say("if you are ranning srm under Tomcat/Axis, this should be disabled");
-            say("by specification of -start_server=false in srm batch");
-            this.server = new SRMServerV1(this, config.getPort(),
-                    config.getAuthorization(), config, requestCredentialStorage);
-            host = server.getHost();
-        } else {
-            say("option -start_server=false is specified");
-            say("it is assumed srm soap server is running under Tomcat/Axis");
-            host = java.net.InetAddress.getLocalHost();
-        }
+        host = java.net.InetAddress.getLocalHost();
+        
         if (configuration.getSrmhost() == null) {
             configuration.setSrmhost(host.getHostName());
         }
@@ -398,14 +384,12 @@ public class SRM {
      * @throws java.sql.SQLException
      * @throws java.lang.InterruptedException
      * @throws org.dcache.srm.scheduler.IllegalStateTransition
-     * @throws electric.xml.ParseException
      */
     public static synchronized final SRM getSRM(Configuration configuration,
             String name) throws java.io.IOException,
             java.sql.SQLException,
             InterruptedException,
-            IllegalStateTransition,
-            electric.xml.ParseException {
+            IllegalStateTransition {
 
         if(srm != null) {
             return srm;

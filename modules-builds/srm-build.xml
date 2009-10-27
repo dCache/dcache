@@ -70,11 +70,6 @@
         <fileset dir="${libDir}/log4j" includes="*.jar" />
         <pathelement location="${classesDir}/dcache-common.jar" />
         <pathelement location="${libDir}/jdom/jdom.jar" />
-        <pathelement location="${glue.untared}/GLUE-STD.jar" />
-        <pathelement location="${glue.untared}/dom.jar" />
-        <pathelement location="${glue.untared}/jnet.jar" />
-        <pathelement location="${glue.untared}/jsse.jar" />
-        <pathelement location="${glue.untared}/jcert.jar" />
         <pathelement location="${classesDir}/cells.jar" />
 	<pathelement location="${classesDir}/gplazma.jar" />
         <fileset dir="${libDir}/servlet-api/" includes="*.jar" />
@@ -87,7 +82,7 @@
     <!--
         compile srm code
     -->
-    <target name="-srm.compile" unless="srm.jar.upToDate" depends="-prepare,-lib.tomcat.untar,-lib.axis.untar,-lib.glite.untar,-lib.glue.untar">
+    <target name="-srm.compile" unless="srm.jar.upToDate" depends="-prepare,-lib.tomcat.untar,-lib.axis.untar,-lib.glite.untar">
 
         <mkdir dir="${srm.build.dir}" />
         <javac destdir="${srm.build.dir}" classpathref="srm.classpath" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
@@ -123,7 +118,7 @@
     <!--
         compile tomcat specific code
     -->
-    <target name="-srm-tomcat.compile" unless="isUptodate.srm-tomcat.jar" depends="-prepare,-lib.tomcat.untar,-lib.axis.untar,-lib.glue.untar">
+    <target name="-srm-tomcat.compile" unless="isUptodate.srm-tomcat.jar" depends="-prepare,-lib.tomcat.untar,-lib.axis.untar">
 
         <mkdir dir="${srm.build.dir}" />
         <javac destdir="${srm.build.dir}" classpathref="srm.classpath" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">

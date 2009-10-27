@@ -208,15 +208,4 @@ public class ConvertUtil {
         return axisfmds;
     }
 
-    public static diskCacheV111.srm.StorageElementInfo axisSEI2SEI(
-        org.dcache.srm.client.axis1.StorageElementInfo axisSEI ) {
-            if(axisSEI == null) { return null; }
-            diskCacheV111.srm.StorageElementInfo SEI = 
-            new diskCacheV111.srm.StorageElementInfo();
-            SEI.availableSpace = axisSEI.getAvailableSpace();
-            SEI.totalSpace = axisSEI.getTotalSpace();
-            SEI.usedSpace = axisSEI.getUsedSpace();
-             return SEI;
-    }
-
 }

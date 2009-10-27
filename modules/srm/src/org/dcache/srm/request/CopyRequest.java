@@ -496,7 +496,7 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
                     getter_putter  =  new  RemoteTurlGetterV1( getStorage(),credential, remoteSurlsUniqueArray,
                     protocols,
                     this,
-                    getConfiguration().getCopyRetryTimeout(),2,getConfiguration().isConnect_to_wsdl());
+                    getConfiguration().getCopyRetryTimeout(),2);
                     getter_putter.getInitialRequest();
                     remoteSrmProtocol = SRMProtocol.V1_1;
                 }
@@ -523,7 +523,7 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
                     getter_putter  =  new  RemoteTurlGetterV1( getStorage(),credential, remoteSurlsUniqueArray,
                     protocols,
                     this,
-                    getConfiguration().getCopyRetryTimeout(),2,getConfiguration().isConnect_to_wsdl());
+                    getConfiguration().getCopyRetryTimeout(),2);
                     getter_putter.getInitialRequest();
                     remoteSrmProtocol = SRMProtocol.V1_1;
                 }
@@ -666,7 +666,7 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
            try {
                 getter_putter  = new  RemoteTurlPutterV1(getStorage(),credential ,  dests,
                 sizes, protocols,
-                this,getConfiguration().getCopyRetryTimeout(),2,getConfiguration().isConnect_to_wsdl());
+                this,getConfiguration().getCopyRetryTimeout(),2);
                 getter_putter.getInitialRequest();
                 remoteSrmProtocol = SRMProtocol.V1_1;
             }
@@ -707,7 +707,7 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
                 esay("connecting to server using version 2.1.1 protocol failed, trying version 1.1");
                 getter_putter  = new  RemoteTurlPutterV1(getStorage(),credential ,  dests,
                 sizes, protocols,
-                this,getConfiguration().getCopyRetryTimeout(),2,getConfiguration().isConnect_to_wsdl());
+                this,getConfiguration().getCopyRetryTimeout(),2);
                 getter_putter.getInitialRequest();
                 remoteSrmProtocol = SRMProtocol.V1_1;
             }
@@ -861,7 +861,9 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
                     int remoteFileId = Integer.parseInt(remoteFileIdString);
                     TurlGetterPutterV1.staticSetFileStatus(getCredential(),SURL,
                     remoteRequestId, remoteFileId,"Done",
-                getConfiguration().getCopyRetryTimeout(),getConfiguration().getCopyMaxNumOfRetries(),getStorage(),getConfiguration().isConnect_to_wsdl());
+                getConfiguration().getCopyRetryTimeout(),
+                            getConfiguration().getCopyMaxNumOfRetries(),
+                            getStorage());
                 } else if( remoteSrmProtocol == SRMProtocol.V2_1) {
                     if(remoteSrmGet) 
                     {

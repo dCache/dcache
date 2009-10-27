@@ -5,50 +5,23 @@
  */
 
 package org.dcache.srm.security;
-import java.util.Hashtable;
-import electric.net.socket.ISocketFactory;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
-import java.net.SocketImpl;
-import java.net.SocketAddress;
-
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.DataOutputStream;
 import java.io.DataInputStream;
-import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
-import java.security.GeneralSecurityException;
-
-
-//import org.globus.net.GSIServerSocketFactory;
 import org.globus.gsi.GlobusCredential;
-import org.globus.gsi.GlobusCredentialException;
 import org.globus.gsi.TrustedCertificates;
-
-import org.globus.gsi.gssapi.GlobusGSSManagerImpl;
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
-
 import org.globus.gsi.gssapi.net.GssSocket;
-import org.globus.gsi.gssapi.net.GssSocketFactory;
 import org.globus.gsi.gssapi.net.impl.GSIGssSocket;
 import org.globus.gsi.gssapi.auth.AuthorizationException;
 import org.globus.gsi.gssapi.auth.Authorization;
 import org.globus.gsi.GlobusCredentialException;
-
 import org.gridforum.jgss.ExtendedGSSContext;
 import org.gridforum.jgss.ExtendedGSSManager;
-import org.gridforum.jgss.ExtendedGSSCredential;
-
 import org.globus.gsi.GSIConstants;
 import org.globus.gsi.gssapi.GSSConstants;
-
-
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSCredential;

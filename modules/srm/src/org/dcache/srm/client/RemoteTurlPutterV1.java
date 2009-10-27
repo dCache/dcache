@@ -1,42 +1,3 @@
-// $Id$
-// $Log: not supported by cvs2svn $
-// Revision 1.1  2006/01/10 19:03:37  timur
-// adding srm v2 built in client
-//
-// Revision 1.5  2005/08/29 22:52:04  timur
-// commiting changes made by Neha needed by OSG
-//
-// Revision 1.4  2005/03/24 19:16:18  timur
-// made built in client always delegate credentials, which is required by LBL's DRM
-//
-// Revision 1.3  2005/03/13 21:56:28  timur
-// more changes to restore compatibility
-//
-// Revision 1.2  2005/03/11 21:16:25  timur
-// making srm compatible with cern tools again
-//
-// Revision 1.1  2005/01/14 23:07:14  timur
-// moving general srm code in a separate repository
-//
-// Revision 1.3  2005/01/07 20:55:30  timur
-// changed the implementation of the built in client to use apache axis soap toolkit
-//
-// Revision 1.2  2004/08/06 19:35:22  timur
-// merging branch srm-branch-12_May_2004 into the trunk
-//
-// Revision 1.1.2.6  2004/08/03 16:51:47  timur
-// removing unneeded dependancies on dcache
-//
-// Revision 1.1.2.5  2004/06/30 20:37:23  timur
-// added more monitoring functions, added retries to the srm client part, adapted the srmclientv1 for usage in srmcp
-//
-// Revision 1.1.2.4  2004/06/16 19:44:32  timur
-// added cvs logging tags and fermi copyright headers at the top, removed Copier.java and CopyJob.java
-//
-// Revision 1.1.2.3  2004/06/15 22:15:41  timur
-// added cvs logging tags and fermi copyright headers at the top
-//
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -130,7 +91,6 @@ import java.util.Iterator;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.request.RequestCredential;
 import java.beans.PropertyChangeListener;
-import diskCacheV111.srm.server.SRMServerV1;
 
 /**
  *
@@ -158,14 +118,14 @@ public class RemoteTurlPutterV1 extends TurlGetterPutterV1
     RequestCredential credential, String[] SURLs,
     long sizes[],
     String[] protocols,PropertyChangeListener listener,
-    long retry_timeout,int retry_num , boolean connect_to_wsdl) {
-        super(storage,credential,SURLs,protocols, connect_to_wsdl, retry_timeout,retry_num);
+    long retry_timeout,int retry_num ) {
+        super(storage,credential,SURLs,protocols, retry_timeout,retry_num);
         addListener(listener);
         this.sizes = sizes;
    }
     
     protected diskCacheV111.srm.RequestStatus getInitialRequestStatus() 
-        throws IOException,InterruptedException,javax.xml.rpc.ServiceException {
+        throws IOException,InterruptedException {
         boolean[] wantperm =
         new boolean[number_of_file_reqs];
         java.util.Arrays.fill(wantperm,true);

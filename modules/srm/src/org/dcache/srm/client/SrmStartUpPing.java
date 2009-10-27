@@ -12,19 +12,10 @@
 package org.dcache.srm.client;
 
 import org.globus.util.GlobusURL;
-import org.dcache.srm.client.SRMClientV2;
-import org.dcache.srm.security.SslGsiSocketFactory;
 import org.dcache.srm.Logger;
 import org.dcache.srm.v2_2.*;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 
 public class SrmStartUpPing {
 

@@ -58,7 +58,7 @@
     </target>
 
     <!-- init dirs, unpack external libraries -->
-    <target name="-prepare" depends="-init,-lib.tomcat.untar,-lib.axis.untar,-lib.glite.untar,-lib.glue.untar" />
+    <target name="-prepare" depends="-init,-lib.tomcat.untar,-lib.axis.untar,-lib.glite.untar" />
 
     <!--=======================================================================
             import component specific build modules here

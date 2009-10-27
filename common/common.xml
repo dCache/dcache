@@ -107,11 +107,6 @@
         </uptodate>
     </target>
 
-    <target name="-lib.glue.untar" depends="-check.lib.glue.uptodate" unless="lib.glue.uptodate">
-        <echo>Unpacking to ${glue.untared}</echo>
-        <untar src="${glue.tarName}" dest="${unpackTop}" compression="gzip" />
-    </target>
-
     <!--
         generate dcache run-time classpath.
         generate a file with all jar files located in ${server.bin.dir}/classes

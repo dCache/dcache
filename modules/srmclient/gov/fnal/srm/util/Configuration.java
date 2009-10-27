@@ -1359,25 +1359,6 @@ public class Configuration {
 	}
 
         @Option(
-                name = "getStorageElementInfo",
-                description = "gets StorageElementInfo",
-                defaultValue = "false",
-                required=false,
-                log=true
-                )
-                private boolean  getStorageElementInfo;
-
-	public boolean isGetStorageElementInfo() {
-		return getStorageElementInfo;
-	}
-    
-	public void setGetStorageElementInfo(boolean getStorageElementInfo) {
-		this.getStorageElementInfo = getStorageElementInfo;
-	}
-        
-	private String storageElementInfoServerWSDL;
-
-        @Option(
                 name = "retry_timeout",
                 description =  "number of miliseconds to sleep after a failure",
                 defaultValue = "10000",
@@ -1904,13 +1885,6 @@ public class Configuration {
                                                    "full_delegation",
                                                    "h",
                                                    "help");
-		if (getStorageElementInfo) {
-			return
-				"\nUsage: get-storage-element-info [command line options] endpoint-wsdl-url\n\n"+
-				"       default options can be set in configuration file \n"+
-				"       or overriden by the command line options\n\n"+
-				(isHelp()==true?general_options+storage_info_options:storage_info_options);
-		}
 		if (getFileMetaData) {
 			return
 				"\nUsage:get-file-metadata [command line options]  srmurl\n\n"+
@@ -2508,7 +2482,6 @@ public class Configuration {
 		       getFileMetaData ^
 		       advisoryDelete ^
 		       getRequestStatus ^
-		       getStorageElementInfo ^
 		       stage ^
 		       getPermission ^
 		       checkPermission ^
@@ -2590,16 +2563,6 @@ public class Configuration {
                 else if (releaseSpace) { 
                         OptionParser.checkNullOptions(this,"space_token");
                 }
-		else if (getStorageElementInfo) {
-			if (numberOfArguments == 1) { 
-				storageElementInfoServerWSDL = _args.argv(0); 
-			} 
-			else {
-				throw new IllegalArgumentException(
-					"one and only one storage element info server " +
-					"wsdl url should be  specified");
-			}
-		} 
 		else if (reserveSpace) {
                         protocols = readListOfOptions(protocols_list,",");
                         arrayOfClientNetworks = readListOfOptions(array_of_client_networks,",");
@@ -3134,23 +3097,6 @@ public class Configuration {
 	public void setExtendFileLifetimeSurls(java.lang.String surls[]) {
 		this.surls = surls;
 	}
-    
-	/** Getter for property storageElementInfoServerWSDL.
-	 * @return Value of property storageElementInfoServerWSDL.
-	 *
-	 */
-	public java.lang.String getStorageElementInfoServerWSDL() {
-		return storageElementInfoServerWSDL;
-	}
-    
-	/** Setter for property storageElementInfoServerWSDL.
-	 * @param storageElementInfoServerWSDL New value of property storageElementInfoServerWSDL.
-	 *
-	 */
-	public void setStorageElementInfoServerWSDL(java.lang.String storageElementInfoServerWSDL) {
-		this.storageElementInfoServerWSDL = storageElementInfoServerWSDL;
-	}
-    
     
 	public String[] getArrayOfClientNetworks() {
 		return arrayOfClientNetworks;

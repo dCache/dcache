@@ -235,13 +235,11 @@ public class Configuration {
     private String jdbcPass;
     private String jdbcPwdfile;
     private String nextRequestIdStorageTable = "srmnextrequestid";
-    private boolean connect_to_wsdl;
     private boolean reserve_space_implicitely;
     private boolean space_reservation_strict;
     private long storage_info_update_period=5*60*1000;
     private long vacuum_period_sec=60*60;
     private boolean vacuum = true;
-    private boolean start_server=true;
     private String qosPluginClass = null;
     private String qosConfigFile = null;
     private String getPriorityPolicyPlugin="DefaultJobAppraiser";
@@ -583,7 +581,6 @@ public class Configuration {
                 "jdbcPwdfile");
         put(document,root,"nextRequestIdStorageTable", nextRequestIdStorageTable,
                 "nextRequestIdStorageTable");
-        put(document,root,"connect_to_wsdl",new Boolean(connect_to_wsdl).toString()," true or false");
 
         put(document,root,"reserve_space_implicitely",new Boolean(reserve_space_implicitely).toString()," true or false");
         put(document,root,
@@ -851,8 +848,6 @@ public class Configuration {
             jdbcPwdfile= value;
         } else if(name.equals("nextRequestIdStorageTable")) {
             nextRequestIdStorageTable= value;
-        } else if(name.equals("connect_to_wsdl")) {
-            connect_to_wsdl = Boolean.valueOf(value).booleanValue();
         } else if(name.equals("reserve_space_implicitely")) {
             reserve_space_implicitely = Boolean.valueOf(value).booleanValue();
         } else if(name.equals("space_reservation_strict")) {
@@ -1241,21 +1236,6 @@ public class Configuration {
         this.localSRM = localSRM;
     }
 
-    /** Getter for property connect_to_wsdl.
-     * @return Value of property connect_to_wsdl.
-     */
-    public boolean isConnect_to_wsdl() {
-        return connect_to_wsdl;
-    }
-
-    /** Setter for property connect_to_wsdl.
-     * @param connect_to_wsdl New value of property connect_to_wsdl.
-     */
-    public void setConnect_to_wsdl(boolean connect_to_wsdl) {
-        this.connect_to_wsdl = connect_to_wsdl;
-    }
-
-
     public String toString() {
         StringBuffer sb = new StringBuffer();
         sb.append("SRM Configuration:");
@@ -1366,8 +1346,6 @@ public class Configuration {
         sb.append("\n\t\t maximum number of jobs running created");
         sb.append("\n\t\t by the same owner if other jobs are queued =").append(this.copyMaxRunningBySameOwner);
         sb.append("\n\t\t copyRequestRestorePolicy=").append(this.copyRequestRestorePolicy);
-
-        sb.append("\n\tconnect_to_wsdl=").append(this.connect_to_wsdl);
         sb.append("\n\treserve_space_implicitely=").append(this.reserve_space_implicitely);
         sb.append("\n\tspace_reservation_strict=").append(this.space_reservation_strict);
         sb.append("\n\tstorage_info_update_period=").append(this.storage_info_update_period);
@@ -2329,23 +2307,6 @@ public class Configuration {
                     " but received value="+copyRequestRestorePolicy);
         }
     }
-
-    /**
-     * Getter for property start_server.
-     * @return Value of property start_server.
-     */
-    public boolean isStart_server() {
-        return start_server;
-    }
-
-    /**
-     * Setter for property start_server.
-     * @param start_server New value of property start_server.
-     */
-    public void setStart_server(boolean start_server) {
-        this.start_server = start_server;
-    }
-
 
     public String getQosPluginClass() {
     	return qosPluginClass;

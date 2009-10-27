@@ -94,16 +94,7 @@ import diskCacheV111.srm.RequestStatus;
 import diskCacheV111.srm.ISRM;
 import org.dcache.srm.client.SRMClientV1;
 import java.io.IOException;
-
-
-//import gov.fnal.srm.security.GSSSocketFactory;
-//import gov.fnal.srm.security.GSSCipherPlugin;
-//import gov.fnal.srm.security.GssGsiCipherPlugin;
-//import gov.fnal.srm.security.SslGsiSocketFactory;
-
 import org.globus.util.GlobusURL;
-//import org.globus.security.CertUtil;
-import org.dcache.srm.security.SslGsiSocketFactory;
 
 /**
  *
@@ -124,7 +115,6 @@ public abstract class SRMClient {
 	protected String gss_expected_name ="host";
 	protected long retrytimeout=1000;
 	protected int retries = 10;
-	private SslGsiSocketFactory factory;
 	protected Report report;
 	
 	
@@ -217,37 +207,6 @@ public abstract class SRMClient {
       
    }
    
-   public void setGsisslFactories() throws Exception {
-      dsay(" install SslGsiSocketFactory as ssl "+
-         "factory");
-      factory = getGsisslFactories();
-      factory.setDoDelegation(doDelegation);
-      factory.setFullDelegation(fullDelegation);
-      // Below comes from glue
-      // SocketFactories.addFactory("ssl",factory);
-      
-   }
-   
-   public SslGsiSocketFactory  getGsisslFactories() throws Exception {
-      if(configuration.isUseproxy()) {
-         return new org.dcache.srm.security.SslGsiSocketFactory(
-            configuration.getLogger(),
-            configuration.getX509_user_proxy(),
-            null,
-            null,
-            configuration.getX509_user_trusted_certificates());
-      } else {
-         return new org.dcache.srm.security.SslGsiSocketFactory(
-            configuration.getLogger(),
-            null,
-            configuration.getX509_user_cert(),
-            configuration.getX509_user_key(),
-            configuration.getX509_user_trusted_certificates());
-      }
-      
-      
-   }
-   
    public org.ietf.jgss.GSSCredential  getGssCredential()
    throws Exception {
       if(configuration.isUseproxy()) {
@@ -264,14 +223,6 @@ public abstract class SRMClient {
       }
    }
    
-    /*public void setGsiauthFactories() throws Exception
-    {
-        CertUtil.loadDefaultUserProxy ();
-        ISocketFactory factory = new GSSSocketFactory ("ssl",new GssGsiCipherPlugin ());
-        //SocketFactories.addFactory ("tcp", factory);
-        SocketFactories.addFactory ("ssl",factory);
-    }
-     */
    public  void done(RequestStatus rs,ISRM srm) {
       if(rs.fileStatuses != null) {
          for(int i = 0; i< rs.fileStatuses.length;++i) {

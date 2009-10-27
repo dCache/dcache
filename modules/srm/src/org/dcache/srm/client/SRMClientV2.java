@@ -15,23 +15,12 @@
 
 package org.dcache.srm.client;
 
-import org.dcache.srm.security.SslGsiSocketFactory;
-
-
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import org.dcache.srm.v2_2.*;
 import org.globus.util.GlobusURL;
 import org.ietf.jgss.GSSCredential;
-import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.Logger;
-//import org.globus.gsi.gssapi.auth.HostAuthorization;
 import java.rmi.RemoteException;
 
 /**
@@ -42,13 +31,9 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
     private final static String SFN_STRING="?SFN=";
     private int retries;
     private long retrytimeout;
-    private static final String WSDL_POSTFIX = "/srm/managerv1.wsdl";
-    private static final String SERVICE_POSTFIX = "/srm/managerv1";
     
     private org.dcache.srm.v2_2.ISRM axis_isrm;
-    private SslGsiSocketFactory socket_factory;
     private GSSCredential user_cred;
-    private String wsdl_url;
     private String service_url;
     private Logger logger;
     private String host;
@@ -81,7 +66,7 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
 		       boolean full_delegation,
 		       String gss_expected_name,
 		       String webservice_path) 
-	throws IOException,InterruptedException,  javax.xml.rpc.ServiceException  {
+	throws IOException,InterruptedException,javax.xml.rpc.ServiceException {
 	say("constructor: srmurl = "+srmurl+" user_cred= "+ user_cred+" retrytimeout="+retrytimeout+" msec numberofretries="+numberofretries);
         this.retrytimeout = retrytimeout;
         this.retries = numberofretries;

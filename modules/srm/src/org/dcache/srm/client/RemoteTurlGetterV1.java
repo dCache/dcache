@@ -1,42 +1,3 @@
-// $Id$
-// $Log: not supported by cvs2svn $
-// Revision 1.1  2006/01/10 19:03:37  timur
-// adding srm v2 built in client
-//
-// Revision 1.5  2005/08/29 22:52:04  timur
-// commiting changes made by Neha needed by OSG
-//
-// Revision 1.4  2005/03/24 19:16:18  timur
-// made built in client always delegate credentials, which is required by LBL's DRM
-//
-// Revision 1.3  2005/03/13 21:56:28  timur
-// more changes to restore compatibility
-//
-// Revision 1.2  2005/03/11 21:16:25  timur
-// making srm compatible with cern tools again
-//
-// Revision 1.1  2005/01/14 23:07:14  timur
-// moving general srm code in a separate repository
-//
-// Revision 1.3  2005/01/07 20:55:30  timur
-// changed the implementation of the built in client to use apache axis soap toolkit
-//
-// Revision 1.2  2004/08/06 19:35:22  timur
-// merging branch srm-branch-12_May_2004 into the trunk
-//
-// Revision 1.1.2.7  2004/08/03 16:51:47  timur
-// removing unneeded dependancies on dcache
-//
-// Revision 1.1.2.6  2004/06/30 20:37:23  timur
-// added more monitoring functions, added retries to the srm client part, adapted the srmclientv1 for usage in srmcp
-//
-// Revision 1.1.2.5  2004/06/16 19:44:32  timur
-// added cvs logging tags and fermi copyright headers at the top, removed Copier.java and CopyJob.java
-//
-// Revision 1.1.2.4  2004/06/15 22:15:41  timur
-// added cvs logging tags and fermi copyright headers at the top
-//
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -130,14 +91,11 @@ import java.util.Iterator;
 import org.dcache.srm.SRMException;
 import java.beans.PropertyChangeListener;
 import org.dcache.srm.request.RequestCredential;
-import diskCacheV111.srm.server.SRMServerV1;
 /**
  *
  * @author  timur
  */
 public class RemoteTurlGetterV1 extends TurlGetterPutterV1 {
-    
-    private boolean connect_to_wsdl;
     
     
     public void say(String s) {
@@ -156,14 +114,13 @@ public class RemoteTurlGetterV1 extends TurlGetterPutterV1 {
     public RemoteTurlGetterV1(AbstractStorageElement storage,
     RequestCredential credential,String[] surls,
     String[] protocols,PropertyChangeListener listener,
-    long retry_timeout,int retry_num , boolean connect_to_wsdl) {
-        super(storage,credential,surls,protocols,connect_to_wsdl, retry_timeout,retry_num);
-        this.connect_to_wsdl = connect_to_wsdl;
+    long retry_timeout,int retry_num ) {
+        super(storage,credential,surls,protocols, retry_timeout,retry_num);
         addListener(listener);
     }
     
     protected diskCacheV111.srm.RequestStatus getInitialRequestStatus() 
-        throws IOException,InterruptedException, javax.xml.rpc.ServiceException{
+        throws IOException,InterruptedException{
         say("SURLs[0] is "+SURLs[0]);
         return remoteSRM.get(SURLs,protocols);
     }    

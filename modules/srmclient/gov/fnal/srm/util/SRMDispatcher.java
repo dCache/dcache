@@ -73,7 +73,6 @@ import diskCacheV111.srm.RequestFileStatus;
 import diskCacheV111.srm.RequestStatus;
 import diskCacheV111.srm.ISRM;
 import diskCacheV111.srm.IInformationProvider;
-import org.dcache.srm.client.InformationProviderClientV1;
 import org.dcache.srm.security.SslGsiSocketFactory;
 import java.io.IOException;
 import java.io.File;
@@ -320,12 +319,6 @@ public class SRMDispatcher {
 		    System.exit(1);
 		}
 	    } 
-	    else if (conf.isGetStorageElementInfo()) {
-		if(conf.getStorageElementInfoServerWSDL() == null) {
-		    System.err.println("server wsdl url is not specified");
-		    System.exit(1);
-		}
-	    } 
 	    else if (conf.isCopy()||conf.isMove()) {
 		if((conf.getFrom() == null || conf.getTo() == null) &&
 		   conf.getCopyjobfile() == null ) {
@@ -383,31 +376,7 @@ public class SRMDispatcher {
     }
     
     private void work() throws Exception {
-	if (configuration.isGetStorageElementInfo()) {
-	    String wsdl_url    = configuration.getStorageElementInfoServerWSDL();
-	    String service_url = wsdl_url;
-	    if (wsdl_url.endsWith("wsdl")) {
-		service_url = wsdl_url.substring(0,wsdl_url.length()-5);
-	    }
-	    if(service_url.startsWith("https")) {
-		service_url = "httpg"+service_url.substring(5);
-	    }
-	    Logger logger    = configuration.getLogger();
-	    boolean use_axis = !configuration.isConnect_to_wsdl();
-	    InformationProviderClientV1 client;
-	    client= new InformationProviderClientV1(service_url,
-						    getGssCredential(),logger,
-						    configuration.isDelegate(),
-						    configuration.isFull_delegation());
-	    diskCacheV111.srm.StorageElementInfo sei = client.getStorageElementInfo();
-	    if (sei == null) {
-		throw new NullPointerException(" storage element info is null");
-	    }
-	    logger.elog(
-		sei.toString());
-	    return;
-	}
-	else if (configuration.isGetFileMetaData()) {
+    if (configuration.isGetFileMetaData()) {
 	    String[] surl_strings = configuration.getGetFileMetaDataSurls();
 	    int number_of_surls   = surl_strings.length;
 	    GlobusURL[] surls     = new GlobusURL[number_of_surls];
@@ -974,43 +943,6 @@ public class SRMDispatcher {
 	    rc |= DIRECTORY_URL;
 	}
 	return rc;
-    }
-    
-    public org.ietf.jgss.GSSCredential  getGssCredential() throws Exception {
-      if(configuration.isUseproxy()) {
-	  return SslGsiSocketFactory.createUserCredential(configuration.getX509_user_proxy(),
-							  null,
-							  null);
-      } 
-      else {
-	  return SslGsiSocketFactory.createUserCredential(
-	      null,
-	      configuration.getX509_user_cert(),
-            configuration.getX509_user_key());
-      }
-    }
-    
-    public SslGsiSocketFactory  getGsisslFactories() throws Exception {
-	SslGsiSocketFactory factory;
-	if(configuration.isUseproxy()) {
-	    factory =  new SslGsiSocketFactory(
-		configuration.getLogger(),
-		configuration.getX509_user_proxy(),
-		null,
-            null,
-		configuration.getX509_user_trusted_certificates());
-	} 
-	else {
-	    factory =  new SslGsiSocketFactory(
-		configuration.getLogger(),
-		null,
-		configuration.getX509_user_cert(),
-		configuration.getX509_user_key(),
-		configuration.getX509_user_trusted_certificates());
-	}
-      factory.setDoDelegation(configuration.isDelegate());
-      factory.setFullDelegation(configuration.isFull_delegation());
-      return factory;
     }
 }
 

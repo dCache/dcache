@@ -57,11 +57,6 @@
         <fileset dir="${libDir}/terapaths" includes="*.jar" />
         <fileset dir="${libDir}/log4j" includes="*.jar" />
         <pathelement location="${libDir}/jdom/jdom.jar" />
-        <pathelement location="${glue.untared}/GLUE-STD.jar" />
-        <pathelement location="${glue.untared}/dom.jar" />
-        <pathelement location="${glue.untared}/jnet.jar" />
-        <pathelement location="${glue.untared}/jsse.jar" />
-        <pathelement location="${glue.untared}/jcert.jar" />
         <pathelement location="${classesDir}/cells.jar" />
         <fileset dir="${libDir}/servlet-api/" includes="*.jar" />
     </path>
@@ -300,19 +295,6 @@
                 <include name="*.jar" />
             </fileset>
         </copy>
-
-
-
-        <!-- glue -->
-        <mkdir dir="${srmclient.bin.dir}/lib/glue" />
-        <property name="glueVersion" value="glue-srmlib" />
-        <copy todir="${srmclient.bin.dir}/lib/glue">
-            <fileset dir="${glue.untared}">
-                <include name="*.jar" />
-                <exclude name="servlet.jar"/>
-            </fileset>
-        </copy>
-
 
         <!-- jdom -->
         <mkdir dir="${srmclient.bin.dir}/lib/jdom" />

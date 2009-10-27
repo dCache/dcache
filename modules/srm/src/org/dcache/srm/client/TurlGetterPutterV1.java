@@ -1,75 +1,3 @@
-// $Id$
-// $Log: not supported by cvs2svn $
-// Revision 1.4  2006/02/03 01:43:38  timur
-// make  srm v2 copy work with remote srm v1 and vise versa
-//
-// Revision 1.3  2006/01/19 01:48:21  timur
-// more v2 copy work
-//
-// Revision 1.2  2006/01/12 23:38:10  timur
-// first working version of srmCopy
-//
-// Revision 1.1  2006/01/10 19:03:37  timur
-// adding srm v2 built in client
-//
-// Revision 1.7  2005/08/29 22:52:04  timur
-// commiting changes made by Neha needed by OSG
-//
-// Revision 1.6  2005/07/19 01:13:38  leoheska
-// More changes to srm.  Still not finished.
-//
-// Revision 1.5  2005/03/24 19:16:19  timur
-// made built in client always delegate credentials, which is required by LBL's DRM
-//
-// Revision 1.4  2005/03/23 18:10:38  timur
-// more space reservation related changes, need to support it in case of "copy"
-//
-// Revision 1.3  2005/03/13 21:56:29  timur
-// more changes to restore compatibility
-//
-// Revision 1.2  2005/03/11 21:16:25  timur
-// making srm compatible with cern tools again
-//
-// Revision 1.1  2005/01/14 23:07:14  timur
-// moving general srm code in a separate repository
-//
-// Revision 1.6  2005/01/11 18:10:39  timur
-// do not retry setFileStatus
-//
-// Revision 1.5  2005/01/07 20:55:30  timur
-// changed the implementation of the built in client to use apache axis soap toolkit
-//
-// Revision 1.4  2004/10/28 02:41:30  timur
-// changed the database scema a little bit, fixed various synchronization bugs in the scheduler, added interactive shell to the File System srm
-//
-// Revision 1.3  2004/08/30 17:14:48  timur
-// stop updating the status on the remote machine when the copy request is canceled, handle the queues more correctly
-//
-// Revision 1.2  2004/08/06 19:35:22  timur
-// merging branch srm-branch-12_May_2004 into the trunk
-//
-// Revision 1.1.2.10  2004/08/03 16:37:51  timur
-// removing unneeded dependancies on dcache
-//
-// Revision 1.1.2.9  2004/07/29 22:17:29  timur
-// Some functionality for disk srm is working
-//
-// Revision 1.1.2.8  2004/07/12 21:52:05  timur
-// remote srm error handling is improved, minor issues fixed
-//
-// Revision 1.1.2.7  2004/07/09 22:14:54  timur
-// more synchronization problems resloved
-//
-// Revision 1.1.2.6  2004/06/30 20:37:23  timur
-// added more monitoring functions, added retries to the srm client part, adapted the srmclientv1 for usage in srmcp
-//
-// Revision 1.1.2.5  2004/06/16 19:44:32  timur
-// added cvs logging tags and fermi copyright headers at the top, removed Copier.java and CopyJob.java
-//
-// Revision 1.1.2.4  2004/06/15 22:15:41  timur
-// added cvs logging tags and fermi copyright headers at the top
-//
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -166,7 +94,6 @@ import org.dcache.srm.scheduler.*;
 import org.dcache.srm.request.RequestCredential;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
-import diskCacheV111.srm.server.SRMServerV1;
 /**
  *
  * @author  timur
@@ -197,22 +124,18 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
     
     public abstract void esay(Throwable t);
     
-    private boolean connect_to_wsdl;
-    
     private long retry_timout;
     private int retry_num;
     
     /** Creates a new instance of RemoteTurlGetter */
     public TurlGetterPutterV1(AbstractStorageElement storage,
     RequestCredential credential, String[] SURLs,
-    String[] protocols,boolean connect_to_wsdl,long retry_timeout,int retry_num ) {
+    String[] protocols,long retry_timeout,int retry_num ) {
         super(storage,credential, protocols);
         this.SURLs = SURLs;
         this.number_of_file_reqs = SURLs.length;
-        this.connect_to_wsdl = connect_to_wsdl;
         this.retry_num = retry_num;
         this.retry_timout = retry_timeout;
-        this.connect_to_wsdl = connect_to_wsdl;
         say("TurlGetterPutter, number_of_file_reqs = "+number_of_file_reqs);
     }
     
@@ -222,23 +145,11 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
             return;
         }
         try {
-            if(connect_to_wsdl) {
-                //use old client using the mind electric's glue soap tool
-                remoteSRM = new SRMClientV1(
-                new GlobusURL(SURLs[0]),
-                SRMServerV1.getSocketFactory(),
-                credential.getDelegatedCredential(), 
-                retry_timout,retry_num,storage);
-            }
-            else
-            {
-                //use new client using the apache axis soap tool
-                remoteSRM = new SRMClientV1(
-                new GlobusURL(SURLs[0]),
-                credential.getDelegatedCredential(), 
-                retry_timout,retry_num,storage,true,true,"host","srm/managerv1");
-
-            }
+            //use new client using the apache axis soap tool
+            remoteSRM = new SRMClientV1(
+            new GlobusURL(SURLs[0]),
+            credential.getDelegatedCredential(),
+            retry_timout,retry_num,storage,true,true,"host","srm/managerv1");
         }
         catch(Exception e) {
             throw new SRMException("failed to connect to "+SURLs[0],e);
@@ -554,23 +465,15 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
         String status,
         long retry_timeout,
         int retry_num,
-        Logger logger, boolean connect_to_wsdl) throws Exception
+        Logger logger) throws Exception
     {
         
         diskCacheV111.srm.ISRM remoteSRM; 
-        if(connect_to_wsdl) {
-            remoteSRM = new SRMClientV1(new GlobusURL(surl),
-                SRMServerV1.getSocketFactory(), 
-                credential.getDelegatedCredential(),
-                retry_timeout, retry_num,logger);
-        }
-        else
-        {
-            remoteSRM = new SRMClientV1(new GlobusURL(surl),
-                credential.getDelegatedCredential(),
-                retry_timeout, retry_num,logger,true,true,"host","srm/managerv1");
-            
-        }
+        
+        // todo: extact web service path from surl if ?SFN= is present
+        remoteSRM = new SRMClientV1(new GlobusURL(surl),
+            credential.getDelegatedCredential(),
+            retry_timeout, retry_num,logger,true,true,"host","srm/managerv1");
         
         remoteSRM.setFileStatus(requestID,fileId,status);
 

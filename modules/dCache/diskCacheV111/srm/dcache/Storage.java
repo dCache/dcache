@@ -491,9 +491,6 @@ public class Storage
 
         config.setSrmhost(getOption("srmhost",config.getSrmhost()));
 
-        config.setStart_server(isOptionSetToTrueOrYes("start_server",
-            config.isStart_server()) );
-
         config.setDebug(isOptionSetToTrueOrYes("debug", config.isDebug()));
         tmpstr =  _args.getOpt("usekftp");
         if(tmpstr != null && tmpstr.equalsIgnoreCase("true")) {
@@ -670,8 +667,6 @@ public class Storage
             getIntOption("copy-req-max-num-of-running-by-same-owner",
             config.getCopyMaxRunningBySameOwner()));
 
-        config.setConnect_to_wsdl(isOptionSetToTrueOrYes("connect-to-wsdl",
-            config.isConnect_to_wsdl()));
         config.setStorage_info_update_period( getLongOption(
             "storage-info-update-period",
             config.getStorage_info_update_period()));
