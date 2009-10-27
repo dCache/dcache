@@ -1376,9 +1376,9 @@ public class BasicNameSpaceProvider
                         break;
                     case SIZE:
                         long size = attr.getSize();
+                        cacheInfo = getCacheInfo(pf, cacheInfo);
+                        cacheInfo.getFlags().put("l", Long.toString(size));
                         if( size > FILE_SIZE_2GB) {
-                            cacheInfo = getCacheInfo(pf, cacheInfo);
-                            cacheInfo.getFlags().put("l", Long.toString(size));
                             pf.setLength(1);
                         }else{
                             pf.setLength(size);
