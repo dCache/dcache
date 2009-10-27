@@ -189,6 +189,7 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.util.LoginBrokerHandler;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
+import org.dcache.util.Interval;
 import org.dcache.util.list.DirectoryListSource;
 import org.dcache.util.list.DirectoryListPrinter;
 import org.dcache.util.list.DirectoryEntry;
@@ -3330,6 +3331,89 @@ public class Storage
         try {
             _listSource.printDirectory(subject, printer, path, null, null);
             return result.toArray(new String[0]);
+        } catch (TimeoutCacheException e) {
+            throw new SRMInternalErrorException("Internal name space timeout", e);
+        } catch (InterruptedException e) {
+            throw new SRMInternalErrorException("List aborted by administrator", e);
+        } catch (NotDirCacheException e) {
+            throw new SRMInvalidPathException("Not a directory", e);
+        } catch (FileNotFoundCacheException e) {
+            throw new SRMInvalidPathException("No such file or directory", e);
+        } catch (NotInTrashCacheException e) {
+            throw new SRMInvalidPathException("No such file or directory", e);
+        } catch (PermissionDeniedCacheException e) {
+            throw new SRMAuthorizationException("Permission denied", e);
+        } catch (CacheException e) {
+            throw new SRMException(String.format("List failed [rc=%d,msg=%s]",
+                                                 e.getRc(), e.getMessage()));
+        }
+    }
+
+    @Override
+    public List<FileMetaData>
+        listDirectory(SRMUser user, String directory, final boolean verbose,
+                      int offset, int count)
+        throws SRMException
+    {
+        /* Which attributes to fetch depends on whether we are
+         * requested to perform a verbose listing.
+         */
+        final Set<FileAttribute> required = EnumSet.of(TYPE, LOCATIONS);
+        required.addAll(DcacheFileMetaData.getKnownAttributes());
+        if (!verbose) {
+            required.remove(LOCATIONS);
+            required.remove(STORAGEINFO);
+        }
+
+        final String prefix =
+            !directory.endsWith("/") ? directory + "/" : directory;
+        final List<FileMetaData> result = new ArrayList<FileMetaData>();
+        DirectoryListPrinter printer =
+            new DirectoryListPrinter()
+            {
+                public Set<FileAttribute> getRequiredAttributes()
+                {
+                    return required;
+                }
+
+                public void print(FileAttributes dirAttr, DirectoryEntry entry)
+                {
+                    FileAttributes attributes = entry.getFileAttributes();
+                    PnfsId pnfsId = attributes.getPnfsId();
+                    DcacheFileMetaData fmd = new DcacheFileMetaData(attributes);
+                    fmd.SURL = prefix + entry.getName();
+
+                    if (verbose && attributes.getFileType() != FileType.DIR) {
+                        fmd.isCached = isCached(attributes);
+
+                        try {
+                            GetFileSpaceTokensMessage msg =
+                                new GetFileSpaceTokensMessage(pnfsId);
+                            msg = _spaceManagerStub.sendAndWait(msg);
+                            fmd.spaceTokens = msg.getSpaceTokens();
+                        } catch (TimeoutCacheException e) {
+                            _log.error("Failed to retrieve space tokens for "
+                                       + pnfsId + ": SrmSpaceManager timed out");
+                        } catch (CacheException e) {
+                            _log.error("Failed to retrieve space tokens for "
+                                       + pnfsId + ": " + e.getMessage());
+                        } catch (InterruptedException e) {
+                            /* Propagate the interrupt to the caller.
+                             */
+                            Thread.currentThread().interrupt();
+                        }
+                    }
+
+                    result.add(fmd);
+                }
+            };
+
+        try {
+            File path = new File(getFullPath(directory));
+            Subject subject = Subjects.getSubject((AuthorizationRecord) user);
+            _listSource.printDirectory(subject, printer, path, null,
+                                       new Interval(offset, offset + count - 1));
+            return result;
         } catch (TimeoutCacheException e) {
             throw new SRMInternalErrorException("Internal name space timeout", e);
         } catch (InterruptedException e) {

@@ -199,6 +199,7 @@ import diskCacheV111.srm.StorageElementInfo;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import java.util.Vector;
+import java.util.List;
 import org.dcache.srm.v2_2.TMetaDataSpace;
 
 
@@ -689,6 +690,40 @@ public interface AbstractStorageElement extends Logger{
      * @return
      */
     public java.io.File[] listDirectoryFiles(SRMUser user,String directoryName,FileMetaData fileMetaData) throws SRMException;
+
+    /**
+     * Lists directory contents. The contents is provided as a list of
+     * FileMetaData objects, with one FileMetaDataObject per directory
+     * entry.
+     *
+     * The path of each file is provided in the SURL field of the
+     * FileMetaDataObject. The <code>directory</code> parameter is a
+     * prefix of all paths and hence the SURL field is not a complete
+     * SURL.
+     *
+     * If verbose listing is requested, additional fields such as the
+     * spaceTokens and isCached fields of the FileMetaData object will
+     * be filled. Those fields may be more expensive to retrieve.
+     *
+     * @param user The user requesting the list operation
+     * @param directory The path of the directory to list
+     * @param verbose Whether to include fields that are expensive to
+     *                retrieve
+     * @param offset The first entry in the directory to retrieve
+     * @param count The maximum number of entries to retrieve
+     * @return The directory contents as a list of FileMetaData objects.
+     * @throws SRMInternalErrorException if the operation timed out or
+     *         was aborted for other internal reasons.
+     * @throws SRMInvalidPathException if <code>directory</code> does
+     *         not exist or is not a directory.
+     * @throws SRMAuthorizationException if <code>user</code> does not have
+     *         permission to list <code>directory</code>.
+     * @throws SRMException for other failures.
+     */
+    List<FileMetaData>
+        listDirectory(SRMUser user, String directory, boolean verbose,
+                      int offset, int count)
+        throws SRMException;
 
     /**
      *
