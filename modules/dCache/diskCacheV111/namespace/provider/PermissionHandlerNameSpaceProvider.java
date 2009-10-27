@@ -19,8 +19,10 @@ import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.namespace.NameSpaceProvider;
 import org.dcache.util.Checksum;
 import org.dcache.util.Glob;
+import org.dcache.util.Interval;
 import org.dcache.auth.Subjects;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.namespace.ListHandler;
 import org.dcache.namespace.PermissionHandler;
 import org.dcache.vehicles.FileAttributes;
 import static org.dcache.acl.enums.AccessType.*;
@@ -29,8 +31,8 @@ import static org.dcache.namespace.FileAttribute.*;
 
 /**
  * A decorator for NameSpaceProvider which acts as a policy
- * enforcement point. A PermissionHandler is used as a policision
- * decision point.
+ * enforcement point. A PermissionHandler is used as a policy decision
+ * point.
  *
  * Only a subset of the methods of NameSpaceProvider are protected:
  *
@@ -86,7 +88,7 @@ public class PermissionHandlerNameSpaceProvider
             File parent = file.getParentFile();
 
             PnfsId parentId =
-                super.pathToPnfsid(subject, parent.toString(), true);
+                pathToPnfsid(subject, parent.toString(), true);
             FileAttributes attributes =
                 getFileAttributesForPermissionHandler(parentId);
             if (isDirectory) {
@@ -139,7 +141,7 @@ public class PermissionHandlerNameSpaceProvider
             File parent = file.getParentFile();
 
             PnfsId fileId =
-                super.pathToPnfsid(subject, file.toString(), false);
+                pathToPnfsid(subject, file.toString(), false);
             PnfsId parentId =
                 super.pathToPnfsid(subject, parent.toString(), true);
 
@@ -194,7 +196,7 @@ public class PermissionHandlerNameSpaceProvider
         PnfsId newParentId;
         try {
             newParentId =
-                super.pathToPnfsid(subject, newParent.toString(), true);
+                pathToPnfsid(subject, newParent.toString(), true);
         } catch (FileNotFoundCacheException e) {
             throw new NotDirCacheException("No such directory: " +
                                            newParent.toString());
@@ -229,7 +231,7 @@ public class PermissionHandlerNameSpaceProvider
              * permission for the destination name.
              */
             PnfsId destId =
-                super.pathToPnfsid(subject, newName, false);
+                pathToPnfsid(subject, newName, false);
             FileAttributes destAttributes =
                 getFileAttributesForPermissionHandler(destId, TYPE);
             if (destAttributes.getFileType() == DIR) {
@@ -347,4 +349,20 @@ public class PermissionHandlerNameSpaceProvider
         super.setFileAttributes(subject, pnfsId, attr);
     }
 
+    @Override
+    public void list(Subject subject, String path, Glob glob, Interval range,
+                     Set<FileAttribute> attrs, ListHandler handler)
+        throws CacheException
+    {
+        if (!Subjects.isRoot(subject)) {
+            PnfsId pnfsId = pathToPnfsid(subject, path, true);
+            FileAttributes attributes =
+                getFileAttributesForPermissionHandler(pnfsId);
+            if (_handler.canListDir(subject, attributes) != ACCESS_ALLOWED) {
+                throw new PermissionDeniedCacheException("Access denied: " +
+                                                         path);
+            }
+        }
+        super.list(subject, path, glob, range, attrs, handler);
+    }
 }
