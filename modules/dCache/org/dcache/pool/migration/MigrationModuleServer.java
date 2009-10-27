@@ -6,7 +6,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.ExecutorService;
-import java.net.UnknownHostException;
 import java.io.File;
 import java.io.IOException;
 
@@ -164,7 +163,7 @@ public class MigrationModuleServer
 
     public Message
         messageArrived(CellMessage envelope, PoolMigrationCopyReplicaMessage message)
-        throws UnknownHostException
+        throws IOException
     {
         if (message.isReply()) {
             return null;
@@ -293,7 +292,7 @@ public class MigrationModuleServer
         }
 
         public synchronized void start()
-            throws UnknownHostException
+            throws IOException
         {
             EntryState state = _repository.getState(_pnfsId);
             if (state == EntryState.NEW) {

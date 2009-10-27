@@ -7,14 +7,13 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.net.InetSocketAddress;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.SyncFailedException;
 import java.io.File;
 import java.io.RandomAccessFile;
-import java.net.UnknownHostException;
+import java.net.BindException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -114,7 +113,7 @@ class Companion
      * @param targetState The repository state used for the new replica
      * @param stickyRecords The sticky flags used for the new replica
      * @param callback    Callback to which success or failure is reported
-     * @throws UnknownHostException if the host address could not be found
+     * @throws IOException if the P2P socket could not be opened
      */
     Companion(ScheduledExecutorService executor,
               Acceptor acceptor,
@@ -128,7 +127,7 @@ class Companion
               EntryState targetState,
               List<StickyRecord> stickyRecords,
               CacheFileAvailable callback)
-        throws UnknownHostException
+        throws IOException
     {
         _fsm = new CompanionContext(this);
 
@@ -149,16 +148,28 @@ class Companion
 
         _id = _acceptor.register(this);
 
-        /* Determine address that source pool should connect to. If
-         * the acceptor listens on a wildcard address, then we use the
-         * local host name to select an address.
-         */
-        InetSocketAddress address = _acceptor.getSocketAddress();
-        if (address.getAddress().isAnyLocalAddress()) {
-            address = new InetSocketAddress(InetAddress.getLocalHost(),
-                                            address.getPort());
+        boolean success = false;
+        try {
+            /* Determine address that source pool should connect to. If
+             * the acceptor listens on a wildcard address, then we use the
+             * local host name to select an address.
+             */
+            InetSocketAddress address = _acceptor.getSocketAddress();
+            if (address == null) {
+                throw new BindException("P2P socket is not bound");
+            }
+
+            if (address.getAddress().isAnyLocalAddress()) {
+                address = new InetSocketAddress(InetAddress.getLocalHost(),
+                                                address.getPort());
+            }
+            _address = address;
+            success = true;
+        } finally {
+            if (!success) {
+                _acceptor.unregister(_id);
+            }
         }
-        _address = address;
 
         synchronized (this) {
             _fsm.start();
@@ -317,8 +328,7 @@ class Companion
     private void runIO(DataInputStream in, DataOutputStream out,
                        File file, long filesize)
         throws IOException, CacheException, InterruptedException,
-               UnknownHostException, NoSuchAlgorithmException,
-               NoRouteToCellException
+               NoSuchAlgorithmException, NoRouteToCellException
     {
         MessageDigest digest =
             _checksumModule.checkOnTransfer()

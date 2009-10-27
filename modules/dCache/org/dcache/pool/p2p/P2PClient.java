@@ -3,6 +3,7 @@
 package org.dcache.pool.p2p;
 
 import java.io.PrintWriter;
+import java.io.IOException;
 import java.net.UnknownHostException;
 import java.net.InetSocketAddress;
 import java.util.Map;
@@ -197,7 +198,7 @@ public class P2PClient
                                          EntryState targetState,
                                          List<StickyRecord> stickyRecords,
                                          CacheFileAvailable callback)
-        throws UnknownHostException
+        throws IOException
     {
         if (getCellEndpoint() == null)
             throw new IllegalStateException("Endpoint not initialized");
@@ -323,7 +324,7 @@ public class P2PClient
 
     public static final String hh_pp_get_file = "<pnfsId> <pool>";
     public synchronized String ac_pp_get_file_$_2(Args args)
-        throws CacheException, UnknownHostException
+        throws CacheException, IOException
     {
         PnfsId pnfsId = new PnfsId(args.argv(0));
         String pool = args.argv(1);

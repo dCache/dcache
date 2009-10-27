@@ -1622,7 +1622,7 @@ public class PoolV4
     }
 
     public DelayedReply messageArrived(Pool2PoolTransferMsg msg)
-        throws CacheException, UnknownHostException
+        throws CacheException, IOException
     {
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED_P2P_CLIENT)) {
             _log.warn("Pool2PoolTransferMsg request rejected due to "
