@@ -10,6 +10,7 @@ import java.util.concurrent.Future;
 import java.lang.reflect.InvocationTargetException;
 
 import org.dcache.util.ReflectionUtils;
+import org.dcache.util.CDCThreadFactory;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
@@ -166,42 +167,35 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
         }
     }
 
-    /**
-     * Simple utility thread factory that creates threads in the
-     * calling thread's ThreadGroup.
-     */
-    static class SimpleThreadFactory implements ThreadFactory {
-        public Thread newThread(Runnable r) {
-            return new Thread(r);
-        }
-    }
-
     public SimpleJobScheduler(String name) {
-        this(new SimpleThreadFactory(), name);
+        this(Executors.defaultThreadFactory(), name);
     }
 
     public SimpleJobScheduler(String name, boolean fifo) {
-        this(new SimpleThreadFactory(), name, fifo);
+        this(Executors.defaultThreadFactory(), name, fifo);
     }
 
     public SimpleJobScheduler(ThreadFactory factory, String name) {
         this(factory, name, true);
     }
 
-    public SimpleJobScheduler(final ThreadFactory factory, String name, boolean fifo) {
+    public SimpleJobScheduler(ThreadFactory factory, String name, boolean fifo)
+    {
         _name = name;
         _fifo = fifo;
         for (int i = 0; i < _queues.length; i++) {
             _queues[i] = new LinkedList<SJob>();
         }
 
-        _jobExecutor = Executors.newCachedThreadPool(new ThreadFactory() {
-                public Thread newThread(Runnable r) {
-                    Thread t = factory.newThread(r);
-                    t.setName(_name + "-worker");
-                    return t;
-                }
-            });
+        _jobExecutor =
+            Executors.newCachedThreadPool(new CDCThreadFactory(factory) {
+                    public Thread newThread(Runnable r)
+                    {
+                        Thread t = super.newThread(r);
+                        t.setName(_name + "-worker");
+                        return t;
+                    }
+                });
 
         _worker = factory.newThread(this);
         _worker.setName(_name);
