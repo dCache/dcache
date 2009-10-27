@@ -314,7 +314,6 @@ public abstract class Job  {
         // a shared cache by a different instance of SRM
         // in a cluster
         job = sharedMemoryCache.getJob(jobId);
-
         boolean restoredFromDb=false;
         if (job == null) {
             for (JobStorage storage: jobStorages) {
@@ -345,23 +344,21 @@ public abstract class Job  {
             if(ref!= null) {
                 Job o1 = ref.get();
                 if(o1 != null) {
-                //System.out.println("found job in weakJobStorage, returning");
                     return o1;
                 }
             }
 
             if (job != null)
             {
-                //System.out.println("storring job in weakJobStorage, ");
                 weakJobStorage.put(job.id,new WeakReference<Job>(job));
                 sharedMemoryCache.updateSharedMemoryChache(job);
             }
         }
 
-        if(job != null && restoredFromDb) {
-            //System.out.println("calling job.expireRestoredJobOrCreateExperationTimer();" );
-            job.expireRestoredJobOrCreateExperationTimer();
-            //System.out.println("returning job ");
+        if(job != null ) {
+            if(restoredFromDb) {
+                job.expireRestoredJobOrCreateExperationTimer();
+            }
             return job;
         }
         throw new SRMInvalidRequestException("jobId = "+jobId+" does not correspond to any known job");
