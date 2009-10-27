@@ -802,9 +802,10 @@ public class RequestContainerV5
                         break;
 
                     case QUERYING:
-                        _log.info("CheckFilePingHandler : requests died");
                         /* No reply since last query.
                          */
+                        _log.info("CheckFilePingHandler : request died");
+                        stop();
                         errorHandler();
                         break;
 
