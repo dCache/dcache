@@ -3,9 +3,13 @@ package diskCacheV111.util;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.Executors;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CDC;
+
+import org.dcache.util.CDCThreadFactory;
 
 /**
  *
@@ -23,29 +27,26 @@ public class ThreadPoolNG implements ThreadPool {
     private static final int MAX_SIZE = Integer.MAX_VALUE;
     private static final long KEEP_ALIVE = 60L;
 
-	private final ThreadPoolExecutor _executor;
+    private final ThreadPoolExecutor _executor;
 
-	public ThreadPoolNG(CellAdapter cell) {
-		// we can get all options from batch file
-		_executor = new ThreadPoolExecutor(
-					CORE_SIZE,
-					MAX_SIZE,
-					KEEP_ALIVE,
-					TimeUnit.SECONDS,
-					new SynchronousQueue<Runnable>() , // backend queue
-					cell.getNucleus() // thread factory
-					// + rejection policy
-				);
-	}
+    public ThreadPoolNG(CellAdapter cell)
+    {
+        this(cell.getNucleus());
+    }
 
     public ThreadPoolNG()
     {
-        // we can get all options from batch file
+        this(Executors.defaultThreadFactory());
+    }
+
+    private ThreadPoolNG(ThreadFactory factory)
+    {
         _executor = new ThreadPoolExecutor(CORE_SIZE,
                                            MAX_SIZE,
                                            KEEP_ALIVE,
                                            TimeUnit.SECONDS,
-                                           new SynchronousQueue<Runnable>());
+                                           new SynchronousQueue<Runnable>(),
+                                           new CDCThreadFactory(factory));
     }
 
 
