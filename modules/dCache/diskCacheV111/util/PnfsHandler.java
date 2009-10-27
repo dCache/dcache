@@ -485,7 +485,7 @@ public class PnfsHandler
 	 * @throws CacheException
 	 */
 	public String getPathByPnfsId(PnfsId pnfsID) throws CacheException {
-		return pnfsRequest(new PnfsMapPathMessage(pnfsID)).getPnfsPath();
+		return pnfsRequest(new PnfsMapPathMessage(pnfsID)).getGlobalPath();
 	}
 
 	/**
