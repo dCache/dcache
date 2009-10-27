@@ -582,7 +582,8 @@ public class GridftpClient
         try {
             _client.sendCksmValue(myType,_cksmValue);
         } catch ( Exception ex ){
-            esay("Was not able to send checksum value:"+ex.toString());
+            // send cksm error is often expected for non dCache sites
+            say("Was not able to send checksum value:"+ex.toString());
         }
     }
 
