@@ -9,7 +9,7 @@ import java.text.MessageFormat;
 
 public class GIDMapFileHandler {
 
-  static Logger log = Logger.getLogger(GIDMapFileHandler.class.getName());
+  private static final Logger log = Logger.getLogger(GIDMapFileHandler.class);
   private static final String GIDMAP_FILENAME ="grid-gidmap";
   private HashMap gidMap = new HashMap();
   private static HashMap gidMap_static;

@@ -1,7 +1,6 @@
 package gplazma.authz;
 
 import gplazma.authz.plugins.AuthorizationPlugin;
-import gplazma.authz.plugins.LoggingPlugin;
 import gplazma.authz.plugins.vorolemap.VORoleMapAuthzPlugin;
 import gplazma.authz.plugins.gridmapfile.GridMapFileAuthzPlugin;
 import gplazma.authz.plugins.samlquery.XACMLAuthorizationPlugin;
@@ -15,7 +14,7 @@ import org.apache.log4j.*;
 
 public class AuthorizationPluginLoader {
 
-    static Logger log = Logger.getLogger(AuthorizationPluginLoader.class.getSimpleName());
+    private static final Logger log = Logger.getLogger(AuthorizationPluginLoader.class);
 
     private AuthorizationConfig authConfig;
     private Vector pluginPriorityConfig;
@@ -190,8 +189,6 @@ public class AuthorizationPluginLoader {
             if(plugin == null) {
                 log.error("Plugin is null and cannot be added.");
             } else {
-                //forwardLogLevel(plugin);
-                if(plugin instanceof LoggingPlugin) ((LoggingPlugin)plugin).setLogLevel(log.getLevel());
                 l.add(plugin);
             }
         } catch (Exception e ) {

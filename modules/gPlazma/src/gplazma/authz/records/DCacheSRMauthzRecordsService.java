@@ -14,7 +14,7 @@ import java.lang.reflect.Method;
  */
 
 public class DCacheSRMauthzRecordsService {
-    static Logger log = Logger.getLogger(DCacheSRMauthzRecordsService.class.getSimpleName());
+    private static final Logger log = Logger.getLogger(DCacheSRMauthzRecordsService.class);
 
     private static final String STORAGE_AUTHZ_FILENAME="storage-authzdb";
     private static final String PWD_RECORD_MARKER="passwd ";

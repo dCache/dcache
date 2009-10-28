@@ -12,24 +12,23 @@ import fnal.vox.security.ReadWriteSocket;
 import gplazma.authz.AuthorizationException;
 import gplazma.authz.records.gPlazmaAuthorizationRecord;
 import gplazma.authz.plugins.AuthorizationPlugin;
-import gplazma.authz.plugins.LoggingPlugin;
 
 /**
  *
  * @author Ted Hesselroth
  */
 
-public class SAZAuthorizationPlugin extends LoggingPlugin {
+public class SAZAuthorizationPlugin extends AuthorizationPlugin {
 
   private long authRequestID=0;
   private ReadWriteSocket rwSocket;
-  static Logger log = Logger.getLogger(SAZAuthorizationPlugin.class.getSimpleName());
+  private static final Logger log = Logger.getLogger(SAZAuthorizationPlugin.class);
   private static String logpattern = "%d{MM/dd HH:mm:ss,SSS} %m%n";
   private static PatternLayout loglayout = new PatternLayout(logpattern);
 
   public SAZAuthorizationPlugin(long authRequestID) throws AuthorizationException {
     super(authRequestID);
-    getLogger().info("saz plugin now loaded");
+    log.info("saz plugin now loaded");
   }
 
   public void setLogLevel	(String level) {

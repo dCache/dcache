@@ -21,7 +21,7 @@ import gplazma.authz.AuthorizationController;
  */
 
 public class GridMapFileHandler {
-  static Logger log = Logger.getLogger(GridMapFileHandler.class.getSimpleName());
+  private static final Logger log = Logger.getLogger(GridMapFileHandler.class);
   private static String logpattern = "%d{MM/dd HH:mm:ss,SSS} %C{1} authRequestID ";
 
     private static final String GRIDMAP_FILENAME="grid-mapfile";

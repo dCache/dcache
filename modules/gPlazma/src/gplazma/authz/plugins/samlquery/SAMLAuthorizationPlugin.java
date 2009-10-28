@@ -23,6 +23,7 @@ import gplazma.authz.AuthorizationException;
 import gplazma.authz.util.X509CertUtil;
 import gplazma.authz.records.gPlazmaAuthorizationRecord;
 import gplazma.authz.plugins.RecordMappingPlugin;
+import org.apache.log4j.Logger;
 
 /**
  *
@@ -30,7 +31,8 @@ import gplazma.authz.plugins.RecordMappingPlugin;
  */
 
 public abstract class SAMLAuthorizationPlugin extends RecordMappingPlugin {
-
+    
+    private static final Logger logger = Logger.getLogger(SAMLAuthorizationPlugin.class);
     private String mappingServiceURL;
     private GlobusCredential serviceCredential;
     private String targetServiceName;
@@ -102,7 +104,7 @@ public abstract class SAMLAuthorizationPlugin extends RecordMappingPlugin {
         this.context = context;
         this.desiredUserName = desiredUserName;
 
-        getLogger().debug("Extracting Subject DN and Role from GSSContext");
+        logger.debug("Extracting Subject DN and Role from GSSContext");
 
         String gssIdentity;
         String fqanValue;
@@ -111,14 +113,14 @@ public abstract class SAMLAuthorizationPlugin extends RecordMappingPlugin {
             extendedcontext = (ExtendedGSSContext) context;
         }
         else {
-            getLogger().error("Received context not instance of ExtendedGSSContext, Plugin exiting ...");
+            logger.error("Received context not instance of ExtendedGSSContext, Plugin exiting ...");
             return null;
         }
 
         try {
             gssIdentity = context.getSrcName().toString();
         } catch (GSSException gsse) {
-            getLogger().error("Caught GSSException in getting DN " + gsse);
+            logger.error("Caught GSSException in getting DN " + gsse);
             return null;
         }
 
@@ -126,7 +128,7 @@ public abstract class SAMLAuthorizationPlugin extends RecordMappingPlugin {
             Iterator<String> fqans = X509CertUtil.getFQANsFromContext(extendedcontext).iterator();
             fqanValue = fqans.hasNext() ? fqans.next() : "";
         } catch (Exception gsse) {
-            getLogger().error("Caught Exception in extracting group and role " + gsse);
+            logger.error("Caught Exception in extracting group and role " + gsse);
             return null;
         }
 

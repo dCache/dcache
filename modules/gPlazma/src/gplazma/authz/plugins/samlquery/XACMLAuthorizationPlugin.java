@@ -30,11 +30,12 @@ import org.glite.voms.VOMSAttribute;
 public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
 
     private static HashMap<String, TimedLocalId> UsernameMap = new HashMap();
+    private static final Logger logger = Logger.getLogger(XACMLAuthorizationPlugin.class);
 
 
     public XACMLAuthorizationPlugin(String mappingServiceURL, String storageAuthzPath, long authRequestID) {
         super(mappingServiceURL, storageAuthzPath, authRequestID);
-        getLogger().info("xacml-vo-mapping plugin now loaded for URL " + mappingServiceURL);
+        logger.info("xacml-vo-mapping plugin now loaded for URL " + mappingServiceURL);
     }
 
     public gPlazmaAuthorizationRecord authorize(String X509Subject, String fqan, X509Certificate[] chain, String desiredUserName, String serviceUrl, Socket socket)
@@ -64,7 +65,7 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
         try {
             X509SubjectIssuer = X509CertUtil.getSubjectX509Issuer(chain);
         } catch (Exception e) {
-            getLogger().warn("Could not determine subject-x509-issuer : " + e.getMessage());
+            logger.warn("Could not determine subject-x509-issuer : " + e.getMessage());
         }
 
         VOMSAttribute vomsAttr=null;
@@ -81,7 +82,7 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
             resourceX509ID = getTargetServiceName();
         }
         catch (Exception e) {
-            getLogger().error("Exception in finding targetServiceName : " + e);
+            logger.error("Exception in finding targetServiceName : " + e);
             throw new AuthorizationException(e.toString());
         }
 
@@ -91,7 +92,7 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
             if( tlocalId!=null && tlocalId.age() < getCacheLifetime() &&
                     tlocalId.sameServiceName(resourceX509ID) &&
                     tlocalId.sameDesiredUserName(desiredUserName)) {
-                getLogger().info("Using cached mapping for User with DN: " + X509Subject + " and Role " + fqan + " with Desired user name: " + desiredUserName);
+                logger.info("Using cached mapping for User with DN: " + X509Subject + " and Role " + fqan + " with Desired user name: " + desiredUserName);
 
                 return getgPlazmaAuthorizationRecord(tlocalId.getLocalId(), X509Subject, fqan);
             }
@@ -101,7 +102,7 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
             String[] hosts = HostUtil.getHosts();
             resourceDNSHostName = hosts.length>0 ? hosts[0] : null;
         } catch (Exception e) {
-            getLogger().error("Exception in finding targetServiceName : " + e);
+            logger.error("Exception in finding targetServiceName : " + e);
             throw new AuthorizationException(e.toString());
         }
 
@@ -109,13 +110,13 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
             resourceX509Issuer = getTargetServiceIssuer();
         }
         catch (Exception e) {
-            getLogger().error("Exception in finding targetServiceIssuer : " + e);
+            logger.error("Exception in finding targetServiceIssuer : " + e);
             throw new AuthorizationException(e.toString());
         }
 
-        getLogger().info("Requesting mapping for User with DN: " + X509Subject + " and Role " + fqan + " with Desired user name: " + desiredUserName);
+        logger.info("Requesting mapping for User with DN: " + X509Subject + " and Role " + fqan + " with Desired user name: " + desiredUserName);
 
-        getLogger().debug("Mapping Service URL configuration: " + getMappingServiceURL());
+        logger.debug("Mapping Service URL configuration: " + getMappingServiceURL());
         try {
             xacmlClient = new MapCredentialsClient();
             xacmlClient.setX509Subject(X509Subject);
@@ -137,7 +138,7 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
             xacmlClient.setRequestedaction(requestedaction);
             xacmlClient.setRSL_string(RSL_string);
         } catch (Exception e) {
-            getLogger().error("Exception in XACML mapping client instantiation: " + e);
+            logger.error("Exception in XACML mapping client instantiation: " + e);
             throw new AuthorizationException(e.toString());
         }
 
@@ -145,13 +146,13 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
             localId = xacmlClient.mapCredentials(getMappingServiceURL());
         }
         catch (Exception e ) {
-            getLogger().error(" Exception occurred in mapCredentials: " + e);
+            logger.error(" Exception occurred in mapCredentials: " + e);
             throw new AuthorizationException(e.toString());
         }
 
         if (localId == null) {
             String denied = DENIED_MESSAGE + ": No XACML mapping retrieved service for DN " + X509Subject + " and role " + fqan;
-            getLogger().warn(denied);
+            logger.warn(denied);
             throw new AuthorizationException(denied);
         }
 
@@ -159,7 +160,7 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
 
         if(gauthrec==null) {
             String denied = DENIED_MESSAGE + ": No authorization record found for username " + localId.getUserName() + " mapped from " + X509Subject + " and role " + fqan;
-            getLogger().warn(denied);
+            logger.warn(denied);
             throw new AuthorizationException(denied);
         }
 
@@ -173,16 +174,16 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
         String username = localId.getUserName();
 
         if(username!=null) {
-            getLogger().info("xacml-vo-mapping service returned Username: " + username);
+            logger.info("xacml-vo-mapping service returned Username: " + username);
             gPlazmaAuthorizationRecord gauthrec = getgPlazmaAuthorizationRecord(username, subjectDN, role);
             return gauthrec;
         } else {
             if(localId.getUID() == null || localId.getGID() == null) {
                 String denied = DENIED_MESSAGE + ": XACML mapping returned a null username and no uid or gid for DN " + subjectDN + " amd role " + role;
-                getLogger().warn(denied);
+                logger.warn(denied);
                 throw new AuthorizationException(denied);
             } else {
-                getLogger().info("xacml-vo-mapping service returned uid:primarygid " + localId.getUID() + ":" + localId.getGID());
+                logger.info("xacml-vo-mapping service returned uid:primarygid " + localId.getUID() + ":" + localId.getGID());
             }
         }
 
@@ -191,7 +192,7 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
 
         if(gauthrec==null) {
             String denied = DENIED_MESSAGE + ": No authorization record found for username " + username + " mapped from DN " + subjectDN + " and role " + role;
-            getLogger().warn(denied);
+            logger.warn(denied);
             throw new AuthorizationException(denied);
         }
 
@@ -201,13 +202,13 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
             gid = Integer.decode(localId.getGID());
         } catch (NumberFormatException nfe) {
             String denied = DENIED_MESSAGE + ":  could not be decoded to an integer";
-            getLogger().warn(denied);
+            logger.warn(denied);
             throw new AuthorizationException(denied);
         }
 
         if (gauthrec.getUID() != uid || gauthrec.getGID() != gid) {
             String denied = DENIED_MESSAGE + ": uid or gid from mapping service did not match uid or gid of authorization record";
-            getLogger().warn(denied);
+            logger.warn(denied);
             throw new AuthorizationException(denied);
         }
 

@@ -30,7 +30,7 @@ import gplazma.authz.plugins.RecordMappingPlugin;
  */
 
 public class VORoleMapAuthzPlugin extends RecordMappingPlugin {
-
+    private static final Logger logger = Logger.getLogger(VORoleMapAuthzPlugin.class);
     private String gridVORoleMapPath;
     private long authRequestID=0;
     gPlazmaAuthorizationRecord authRecord;
@@ -46,7 +46,7 @@ public class VORoleMapAuthzPlugin extends RecordMappingPlugin {
             throws AuthorizationException {
         super(storageAuthzPath, authRequestID);
         this.gridVORoleMapPath = gridVORoleMapPath;
-        getLogger().info("grid-vorolemap plugin will use " + gridVORoleMapPath);
+        logger.info("grid-vorolemap plugin will use " + gridVORoleMapPath);
     }
 
     public gPlazmaAuthorizationRecord authorize(GSSContext context, String desiredUserName, String serviceUrl, Socket socket)
@@ -59,14 +59,14 @@ public class VORoleMapAuthzPlugin extends RecordMappingPlugin {
             extendedcontext = (ExtendedGSSContext) context;
         }
         else {
-            getLogger().error("Received context not instance of ExtendedGSSContext, Plugin exiting ...");
+            logger.error("Received context not instance of ExtendedGSSContext, Plugin exiting ...");
             return null;
         }
 
         try {
             gssIdentity = context.getSrcName().toString();
         } catch (GSSException gsse) {
-            getLogger().error("Caught GSSException in getting DN " + gsse);
+            logger.error("Caught GSSException in getting DN " + gsse);
             return null;
         }
 
@@ -74,7 +74,7 @@ public class VORoleMapAuthzPlugin extends RecordMappingPlugin {
             Iterator<String> fqans = X509CertUtil.getFQANsFromContext(extendedcontext).iterator();
             fqanValue = fqans.hasNext() ? fqans.next() : "";
         } catch (Exception e) {
-            getLogger().error("Caught Exception in extracting group and role " + e);
+            logger.error("Caught Exception in extracting group and role " + e);
             return null;
         }
 
@@ -92,17 +92,17 @@ public class VORoleMapAuthzPlugin extends RecordMappingPlugin {
 
         try {
             voRoleMapHandler = new VORoleMapHandler(gridVORoleMapPath, getAuthRequestID());
-            voRoleMapHandler.setLogLevel(getLogger().getLevel());
+            voRoleMapHandler.setLogLevel(logger.getLevel());
         } catch(Exception ase) {
-            getLogger().error("Exception in reading authz-vorole-mapping configuration file: ");
-            getLogger().error(gridVORoleMapPath + " " + ase);
+            logger.error("Exception in reading authz-vorole-mapping configuration file: ");
+            logger.error(gridVORoleMapPath + " " + ase);
             throw new AuthorizationException(ase.toString());
         }
 
-        if (desiredUserName == null) getLogger().debug("Desired Username not requested. Will attempt a mapping.");
+        if (desiredUserName == null) logger.debug("Desired Username not requested. Will attempt a mapping.");
         // Do even if username is requested, in order to check blacklist
         try {
-            getLogger().info("Requesting mapping for User with DN and role: " + identity);
+            logger.info("Requesting mapping for User with DN and role: " + identity);
             user_name = mapUsername(voRoleMapHandler, identity);
             // Check for wildcard DN
             if(user_name==null && role!=null) {
@@ -112,11 +112,11 @@ public class VORoleMapAuthzPlugin extends RecordMappingPlugin {
         } catch(Exception e) {
             throw new AuthorizationException(e.toString());
         }
-        if (desiredUserName == null) getLogger().info("Subject DN + Grid Vo Role are mapped to Username: " + user_name);
+        if (desiredUserName == null) logger.info("Subject DN + Grid Vo Role are mapped to Username: " + user_name);
 
         if (user_name == null) {
             String denied = DENIED_MESSAGE + ": Cannot determine Username from grid-vorolemap for DN " + subjectDN + " and role " + role;
-            getLogger().warn(denied);
+            logger.warn(denied);
             throw new AuthorizationException(denied);
         }
         if (user_name.equals("-")) {
@@ -125,7 +125,7 @@ public class VORoleMapAuthzPlugin extends RecordMappingPlugin {
         }
 
         if (desiredUserName != null) {
-            getLogger().debug("Desired Username requested as: " +desiredUserName);
+            logger.debug("Desired Username requested as: " +desiredUserName);
             try {
                 user_name = mapUsername(voRoleMapHandler, identity, desiredUserName);
                 if(user_name==null) {
@@ -137,7 +137,7 @@ public class VORoleMapAuthzPlugin extends RecordMappingPlugin {
             }
             if (user_name == null) {
                 String denied = DENIED_MESSAGE + ": Requested username " + desiredUserName + " not found for " + subjectDN + " and role " + role;
-                getLogger().warn(denied);
+                logger.warn(denied);
                 throw new AuthorizationException(denied);
             }
             if (user_name.equals("-")) {

@@ -139,7 +139,7 @@ import gplazma.authz.util.NameRolePair;
 
 public class AuthorizationController {
     
-    static Logger log = Logger.getLogger(AuthorizationController.class.getSimpleName());
+    private static final Logger log = Logger.getLogger(AuthorizationController.class);
     private AuthorizationConfig authConfig=null;
     private AuthorizationPluginLoader plugin_loader;
 
@@ -258,7 +258,6 @@ public class AuthorizationController {
             try {
                 sazclient = new SAZAuthorizationPlugin(authRequestID);
                 //plugin_loader.forwardLogLevel(sazclient);
-                sazclient.setLogLevel(log.getLevel());
                 context= HostUtil.getServiceContext(service_cert, service_key, trusted_cacerts);
                 //context=getUserContext("/tmp/x509up_u500");
                 sazsocket = X509CertUtil.getGsiClientSocket(authConfig.getSazServerHost(),
@@ -420,24 +419,6 @@ public class AuthorizationController {
         plugin_loader.setLogLevel(log.getLevel());
     }
 
-    /*
-    public void setLogLevel(String level) {
-        if (level==null) {
-            log.error("setLogLevel called with null argument. Log level not changed.");
-            return;
-        }
-        
-        String newlevel = level.toUpperCase();
-        if( newlevel.equals("DEBUG") ||
-                newlevel.equals("INFO")  ||
-                newlevel.equals("WARN")  ||
-                newlevel.equals("ERROR")  )
-            loglevel = newlevel;
-        else
-            log.error("Log level not set. Allowed values are DEBUG, INFO, WARN, ERROR.");
-    }
-    */
-    
     public void setUseSAZ(boolean boolarg) {
         use_saz = boolarg;
     }

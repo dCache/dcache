@@ -19,7 +19,7 @@ import java.lang.*;
 
 public class AuthorizationConfig {
 
-    static Logger log = Logger.getLogger(AuthorizationConfig.class.getSimpleName());
+    private static final Logger log = Logger.getLogger(AuthorizationConfig.class);
     private long authRequestID;
 
     private String authConfigFileName;

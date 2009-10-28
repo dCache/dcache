@@ -192,7 +192,7 @@ import java.security.cert.X509Certificate;
  **/
 public class GPLAZMA extends CellAdapter {
 
-  static Logger log = Logger.getLogger(GPLAZMA.class.getName());
+  private static final Logger log = Logger.getLogger(GPLAZMA.class);
 
   /** Location of gss files **/
   private String service_key           = "/etc/grid-security/hostkey.pem";
@@ -255,15 +255,6 @@ public class GPLAZMA extends CellAdapter {
       gplazmaPolicyFilePath = setParam("gplazma-authorization-module-policy", gplazmaPolicyFilePath); //todo: use Opts instead.
 
       System.setProperty("dmg.cells.nucleus.send_session", "true");
-      String level = _opt.getOpt("log-level") ;
-      if(level==null || level.length()==0) {
-        if((getNucleus().getPrintoutLevel() & CellNucleus.PRINT_CELL) ==0)
-          ac_set_LogLevel_$_1(new Args(new String[]{"WARN"}));
-        else
-          ac_set_LogLevel_$_1(new Args(new String[]{"DEBUG"}));
-      } else {
-        ac_set_LogLevel_$_1(new Args(new String[]{level}));
-      }
 
       authzPersistenceManager =
           new AuthRecordPersistenceManager(
@@ -686,7 +677,6 @@ public class GPLAZMA extends CellAdapter {
       //NDC.inherit(parent_stack);
       CDC.clearMessageContext();
       CDC.setMessageContext(msg);
-
       if(skip_processing) {
         returnNullMessage();
         return;
@@ -952,7 +942,6 @@ public class GPLAZMA extends CellAdapter {
 
       try {
         authServ = new AuthorizationController(gplazmaPolicyFilePath, authRequestID);
-        authServ.setLogLevel(log.getLevel());
       }
       catch( Exception e ) {
         throw new AuthorizationException("authRequestID " + authRequestID + " Authorization service failed to initialize: " + e);
@@ -984,7 +973,7 @@ public class GPLAZMA extends CellAdapter {
         }
       }
 
-      if(log.isDebugEnabled()) {
+      if(log.isInfoEnabled()) {
           AuthzQueryHelper.logAuthzMessage(user_auths, log);
       }
 
@@ -1008,7 +997,6 @@ public class GPLAZMA extends CellAdapter {
 
     try {
       authServ = new AuthorizationController(gplazmaPolicyFilePath, authRequestID);
-      authServ.setLogLevel(log.getLevel());
     }
     catch( Exception e ) {
       throw new AuthorizationException("authRequestID " + authRequestID + " Authorization service failed to initialize: " + e);
@@ -1040,7 +1028,7 @@ public class GPLAZMA extends CellAdapter {
       }
     }
 
-      if(log.isDebugEnabled()) {
+      if(log.isInfoEnabled()) {
           AuthzQueryHelper.logAuthzMessage(user_auths, log);
       }
     return user_auths;
@@ -1070,7 +1058,6 @@ public class GPLAZMA extends CellAdapter {
 
       try {
         authServ = new AuthorizationController(gplazmaPolicyFilePath, authRequestID);
-        authServ.setLogLevel(log.getLevel());
       }
       catch( Exception e ) {
         throw new AuthorizationException("Authorization service failed to initialize: " + e);
@@ -1105,7 +1092,7 @@ public class GPLAZMA extends CellAdapter {
         }
       }
 
-      if(log.isDebugEnabled()) {
+      if(log.isInfoEnabled()) {
           AuthzQueryHelper.logAuthzMessage(user_auths, log);
       }
 

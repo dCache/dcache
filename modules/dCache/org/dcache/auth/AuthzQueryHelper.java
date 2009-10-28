@@ -31,7 +31,7 @@ import diskCacheV111.vehicles.transferManager.RemoteGsiftpDelegateUserCredential
 import dmg.cells.nucleus.*;
 
 public class AuthzQueryHelper {
-    static Logger log = Logger.getLogger(AuthzQueryHelper.class.getSimpleName());
+    private static final Logger log = Logger.getLogger(AuthzQueryHelper.class);
 
     long authRequestID;
     private static final Random random = new Random();
@@ -341,9 +341,9 @@ public class AuthzQueryHelper {
             if(record!=null) {
                 sb.append(record.toShortString());
             } else {
-                sb.append("null");
+                sb.append("NOT AUTHORIZED");
             }
-            log.debug(sb);
+            log.info(sb);
         }
     }
 }

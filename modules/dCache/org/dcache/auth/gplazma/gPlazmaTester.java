@@ -34,7 +34,7 @@ import diskCacheV111.vehicles.AuthenticationMessage;
  */
 public class gPlazmaTester extends CellAdapter {
 
-    static Logger log = Logger.getLogger(GPLAZMA.class.getSimpleName());
+    private static final Logger log = Logger.getLogger(GPLAZMA.class);
 
     /** Location of gss files **/
     private String service_key           = "/etc/grid-security/hostkey.pem";

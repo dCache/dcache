@@ -1,4 +1,5 @@
 package gplazma.authz.plugins;
+import org.apache.log4j.Logger;
 
 /**
  * Created by IntelliJ IDEA.
@@ -7,7 +8,8 @@ package gplazma.authz.plugins;
  * Time: 3:47:17 PM
  * To change this template use File | Settings | File Templates.
  */
-public abstract class CachingPlugin extends LoggingPlugin {
+public abstract class CachingPlugin extends AuthorizationPlugin {
+    private static final Logger logger = Logger.getLogger(CachingPlugin.class);
 
     long cache_lifetime=0;
 
@@ -20,7 +22,7 @@ public abstract class CachingPlugin extends LoggingPlugin {
         try {
             setCacheLifetime(Long.decode(lifetime_str).longValue()*1000);
         } catch (NumberFormatException nfe) {
-            getLogger().error("Could not format saml-vo-mapping-cache-lifetime=" + lifetime_str + " as long integer.");
+            logger.error("Could not format saml-vo-mapping-cache-lifetime=" + lifetime_str + " as long integer.");
         }
     }
 

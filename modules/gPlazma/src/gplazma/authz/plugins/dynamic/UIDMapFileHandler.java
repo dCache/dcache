@@ -9,7 +9,7 @@ import java.text.MessageFormat;
 
 public class UIDMapFileHandler {
 
-  static Logger log = Logger.getLogger(UIDMapFileHandler.class.getName());
+  private static final Logger log = Logger.getLogger(UIDMapFileHandler.class);
   private static final String UIDMAP_FILENAME ="grid-uidmap";
   private HashMap uidMap = new HashMap();
   private static HashMap uidMap_static;

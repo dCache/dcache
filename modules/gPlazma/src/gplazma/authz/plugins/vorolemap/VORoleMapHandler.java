@@ -20,7 +20,7 @@ import gplazma.authz.AuthorizationController;
  */
 
 public class VORoleMapHandler {
-  static Logger log = Logger.getLogger(VORoleMapHandler.class.getSimpleName());
+  private static final Logger log = Logger.getLogger(VORoleMapHandler.class);
   private static String logpattern = "%d{MM/dd HH:mm:ss,SSS} %C{1} authRequestID ";
 
   private static final String GRID_VOROLE_AUTHZ_DB="grid-vorolemap";

@@ -35,7 +35,7 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
     
     private Map<Long,AuthorizationRecord> authRecCache  = 
         new HashMap<Long,AuthorizationRecord>();
-    private static Logger _logJpa = 
+    private static final Logger _logJpa =
             Logger.getLogger( AuthRecordPersistenceManager.class);
     EntityManager em ;
     public AuthRecordPersistenceManager(String propertiesFile) throws IOException {
