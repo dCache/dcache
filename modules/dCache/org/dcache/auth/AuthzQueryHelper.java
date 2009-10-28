@@ -127,8 +127,7 @@ public class AuthzQueryHelper {
         String authcellname = cellpath.getCellName();
         try {
             GSSName GSSIdentity = serviceContext.getSrcName();
-            CellMessage m = new CellMessage(cellpath, deleginfo);
-            m = caller.sendAndWait(m, cell_message_timeout) ;
+            CellMessage m = sendAndWaitGPlazmaRequest(cellpath, caller, deleginfo);
             if(m==null) {
                 throw new AuthorizationException("authRequestID " + authRequestID + " Message to " + authcellname + " timed out for authentification of " + GSSIdentity);
             }
@@ -234,8 +233,7 @@ public class AuthzQueryHelper {
 
         String authcellname = cellpath.getCellName();
         try {
-            CellMessage m = new CellMessage(cellpath, dnInfo);
-            m = caller.sendAndWait(m, cell_message_timeout) ;
+            CellMessage m = sendAndWaitGPlazmaRequest(cellpath,caller, dnInfo);
             if(m==null) {
                 throw new AuthorizationException("authRequestID " + authRequestID + " Message to " + authcellname + " timed out for authentification of " + dnInfo.getDN() + " and roles " + dnInfo.getFQANs());
             }
@@ -289,8 +287,7 @@ public class AuthzQueryHelper {
 
         String authcellname = cellpath.getCellName();
         try {
-            CellMessage m = new CellMessage(cellpath, x509info);
-            m = caller.sendAndWait(m, cell_message_timeout);
+            CellMessage m = sendAndWaitGPlazmaRequest(cellpath,caller, x509info);
             if(m==null) {
                 String subjectDN = X509CertUtil.getSubjectFromX509Chain(chain, false);
                 throw new AuthorizationException("authRequestID " + authRequestID + " Message to " + authcellname + " timed out for authorization of " + subjectDN);
@@ -345,5 +342,31 @@ public class AuthzQueryHelper {
             }
             log.info(sb);
         }
+    }
+
+    private CellMessage sendAndWaitGPlazmaRequest(CellPath cellpath,
+            CellEndpoint caller, Object load)
+            throws InterruptedException,
+            SerializationException,
+            NoRouteToCellException {
+        // extract current session
+        Object cdcSession = CDC.getSession();
+        StringBuilder sb = new StringBuilder();
+        if (cdcSession != null) {
+            sb.append(cdcSession);
+        }
+
+        //add current authRequestId
+        sb.append(":authId:").append(authRequestID);
+
+        //set new session
+        CDC.setSession(sb.toString());
+        sb = null;
+        CellMessage envelop = new CellMessage(cellpath, load);
+        envelop = caller.sendAndWait(envelop, cell_message_timeout);
+
+        //restore original session
+        CDC.setSession(cdcSession);
+        return envelop;
     }
 }
