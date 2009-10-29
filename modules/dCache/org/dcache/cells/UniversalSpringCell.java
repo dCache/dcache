@@ -749,7 +749,7 @@ public class UniversalSpringCell
 
             Properties properties = new Properties();
             String arguments =
-                args.toString().replaceAll("-?\\$\\{.*\\}", "");
+                args.toString().replaceAll("-\\$\\{[0-9]+\\}", "");
             properties.setProperty("arguments", arguments);
             properties.setProperty("thisCell", getCellName());
             properties.setProperty("thisDomain", getCellDomainName());
