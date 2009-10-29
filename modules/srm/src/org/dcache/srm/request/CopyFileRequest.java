@@ -95,7 +95,6 @@ import org.globus.util.GlobusURL;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.IllegalStateTransition;
-import org.dcache.srm.util.Configuration;
 //import org.dcache.srm.SRMException;
 import org.dcache.srm.scheduler.Job;
 //import org.dcache.srm.scheduler.JobCreator;
@@ -118,7 +117,7 @@ import org.apache.log4j.Logger;
  * @author  timur
  * @version
  */
-public class CopyFileRequest extends FileRequest {
+public final class CopyFileRequest extends FileRequest {
     
     private static final Logger logger = Logger.getLogger(CopyFileRequest.class);
 	private String from_url;
@@ -130,9 +129,8 @@ public class CopyFileRequest extends FileRequest {
 	private long size = 0;
 	private String fromFileId;
 	private String toFileId;
-	public FileMetaData toFmd;
-	public String toParentFileId;
-	public FileMetaData toParentFmd;
+	private String toParentFileId;
+	private transient FileMetaData toParentFmd;
 	private String remoteRequestId;
 	private String remoteFileId;
 	private String transferId;
@@ -269,9 +267,9 @@ public class CopyFileRequest extends FileRequest {
 	public RequestFileStatus getRequestFileStatus() {
 		RequestFileStatus rfs = new RequestFileStatus();
 		rfs.fileId = getId().intValue();
-		rfs.SURL = from_url;
+		rfs.SURL = getFrom_url();
 		rfs.size = 0;
-		rfs.TURL = to_url;
+		rfs.TURL = getTo_url();
 		State state = getState();
 		if(state == State.DONE) {
 			rfs.state = "Done";
@@ -293,15 +291,25 @@ public class CopyFileRequest extends FileRequest {
 	}
 	
 	public String getToURL() {
-		return to_url;
+        rlock();
+        try {
+            return getTo_url();
+        } finally {
+            runlock();
+        }
 	}
     
 	public String getFromURL() {
-		return from_url;
+        rlock();
+        try {
+            return getFrom_url();
+        } finally {
+            runlock();
+        }
 	}
     
 	public String getFromPath() throws java.net.MalformedURLException {
-		String path = new GlobusURL(from_url).getPath();
+		String path = new GlobusURL(getFrom_url()).getPath();
 		int indx=path.indexOf(SFN_STRING);
 		if( indx != -1) {
 			path=path.substring(indx+SFN_STRING.length());
@@ -314,7 +322,7 @@ public class CopyFileRequest extends FileRequest {
 	}
     
 	public String getToPath() throws java.net.MalformedURLException {
-		String path = new GlobusURL(to_url).getPath();
+		String path = new GlobusURL(getTo_url()).getPath();
 		int indx=path.indexOf(SFN_STRING);
 		if( indx != -1) {
 			path=path.substring(indx+SFN_STRING.length());
@@ -330,52 +338,83 @@ public class CopyFileRequest extends FileRequest {
 	 * @return Value of property from_turl.
 	 */
 	public org.globus.util.GlobusURL getFrom_turl() {
-		return from_turl;
+        rlock();
+        try {
+            return from_turl;
+        } finally {
+            runlock();
+        }
 	}
     
 	/** Setter for property from_turl.
 	 * @param from_turl New value of property from_turl.
 	 */
 	public void setFrom_turl(org.globus.util.GlobusURL from_turl) {
-		this.from_turl = from_turl;
+        wlock();
+        try {
+            this.from_turl = from_turl;
+        } finally {
+            wunlock();
+        }
 	}
     
 	/** Getter for property to_turl.
 	 * @return Value of property to_turl.
 	 */
 	public org.globus.util.GlobusURL getTo_turl() {
-		return to_turl;
+        rlock();
+        try {
+            return to_turl;
+        } finally {
+            runlock();
+        }
 	}
 	
 	/** Setter for property to_turl.
 	 * @param to_turl New value of property to_turl.
 	 */
 	public void setTo_turl(org.globus.util.GlobusURL to_turl) {
-		this.to_turl = to_turl;
+        wlock();
+        try {
+            this.to_turl = to_turl;
+        } finally {
+            wunlock();
+        }
 	}
 	
 	/** Getter for property size.
 	 * @return Value of property size.
 	 */
 	public long getSize() {
-		return size;
+        rlock();
+        try {
+            return size;
+        } finally {
+            runlock();
+        }
 	}
 	
 	/** Setter for property size.
 	 * @param size New value of property size.
 	 */
 	public void setSize(long size) {
-		this.size = size;
+        rlock();
+        try {
+            this.size = size;
+        } finally {
+            runlock();
+        }
 	}
-	
+
+    @Override
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
 		sb.append(" CopyFileRequest ");
 		sb.append(" id =").append(getId());
-		sb.append(" FromSurl=").append(from_url);
-		sb.append(" FromTurl=").append(from_turl==null?"null":from_turl.getURL());
-		sb.append(" toSurl=").append(to_url);
-		sb.append(" toTurl=").append(to_turl==null?"null":to_turl.getURL());
+		sb.append(" FromSurl=").append(getFrom_url());
+		sb.append(" FromTurl=").append(getFrom_turl()==null?"null":getFrom_turl().getURL());
+		sb.append(" toSurl=").append(getTo_url());
+		sb.append(" toTurl=").append(getTo_turl()==null?"null":getTo_turl().getURL());
 		return sb.toString();
 	}
 	
@@ -383,28 +422,48 @@ public class CopyFileRequest extends FileRequest {
 	 * @return Value of property absolute_local_from_path.
 	 */
 	public String getLocal_from_path() {
-		return local_from_path;
+        rlock();
+        try {
+            return local_from_path;
+        } finally {
+            runlock();
+        }
 	}
 	
 	/** Setter for property absolute_local_from_path.
 	 * @param absolute_local_from_path New value of property absolute_local_from_path.
 	 */
 	public void setLocal_from_path(String local_from_path) {
-		this.local_from_path = local_from_path;
+        wlock();
+        try {
+            this.local_from_path = local_from_path;
+        } finally {
+            wunlock();
+        }
 	}
 	
 	/** Getter for property absolute_local_to_path.
 	 * @return Value of property absolute_local_to_path.
 	 */
 	public String getLocal_to_path() {
-		return local_to_path;
+        rlock();
+        try {
+            return local_to_path;
+        } finally {
+            runlock();
+        }
 	}
 	
 	/** Setter for property absolute_local_to_path.
 	 * @param absolute_local_to_path New value of property absolute_local_to_path.
 	 */
 	public void setLocal_to_path( String local_to_path) {
-		this.local_to_path = local_to_path;
+        wlock();
+        try {
+            this.local_to_path = local_to_path;
+        } finally {
+            wunlock();
+        }
 	}
 	
 	/** Getter for property toFileId.
@@ -412,7 +471,12 @@ public class CopyFileRequest extends FileRequest {
 	 *
 	 */
 	public String getToFileId() {
-		return toFileId;
+        rlock();
+        try {
+            return toFileId;
+        } finally {
+            runlock();
+        }
 	}
 	
 	/** Setter for property toFileId.
@@ -420,7 +484,12 @@ public class CopyFileRequest extends FileRequest {
 	 *
 	 */
 	public void setToFileId(String toFileId) {
-		this.toFileId = toFileId;
+        wlock();
+        try {
+            this.toFileId = toFileId;
+        } finally {
+            wunlock();
+        }
 	}
 	
 	/** Getter for property fromFileId.
@@ -428,7 +497,13 @@ public class CopyFileRequest extends FileRequest {
 	 *
 	 */
 	public String getFromFileId() {
-		return fromFileId;
+        rlock();
+        try {
+            return fromFileId;
+        } finally {
+            runlock();
+        }
+
 	}
 	
 	/** Setter for property fromFileId.
@@ -436,29 +511,35 @@ public class CopyFileRequest extends FileRequest {
 	 *
 	 */
 	public void setFromFileId(String fromFileId) {
-		this.fromFileId = fromFileId;
+        wlock();
+        try {
+            this.fromFileId = fromFileId;
+        } finally {
+            wunlock();
+        }
+
 	}
 	
 	private void runScriptCopy() throws Exception {
-		GlobusURL from =from_turl;
-		GlobusURL to = to_turl;
-		if(from == null && local_from_path != null ) {
+		GlobusURL from =getFrom_turl();
+		GlobusURL to = getTo_turl();
+		if(from == null && getLocal_from_path() != null ) {
 			if(to.getProtocol().equalsIgnoreCase("gsiftp") ||
 			   to.getProtocol().equalsIgnoreCase("http") ||
 			   to.getProtocol().equalsIgnoreCase("ftp") ||
 			   to.getProtocol().equalsIgnoreCase("dcap")) {
 				//need to add support for getting
-				String fromturlstr = getStorage().getGetTurl(getUser(),local_from_path,new String[]
+				String fromturlstr = getStorage().getGetTurl(getUser(),getLocal_from_path(),new String[]
 					{"gsiftp","http","ftp"});
 				from = new GlobusURL(fromturlstr);
 			}
 		}
-		if(to == null && local_to_path != null) {
+		if(to == null && getLocal_to_path() != null) {
 			if(from.getProtocol().equalsIgnoreCase("gsiftp") ||
 			   from.getProtocol().equalsIgnoreCase("http") ||
 			   from.getProtocol().equalsIgnoreCase("ftp") ||
 			   from.getProtocol().equalsIgnoreCase("dcap")) {
-				String toturlstr = getStorage().getPutTurl(getUser(),local_to_path,new String[]
+				String toturlstr = getStorage().getPutTurl(getUser(),getLocal_to_path(),new String[]
 					{"gsiftp","http","ftp"});
 				to = new GlobusURL(toturlstr);
 			}
@@ -479,7 +560,7 @@ public class CopyFileRequest extends FileRequest {
 		say("copying from local to local ");
         FileMetaData fmd ;
         try {
-            fmd = getStorage().getFileMetaData(getUser(), local_from_path);
+            fmd = getStorage().getFileMetaData(getUser(),getLocal_from_path());
         } catch (SRMException srme) {
             try {
                 setStateAndStatusCode(State.FAILED,
@@ -494,12 +575,11 @@ public class CopyFileRequest extends FileRequest {
         size = fmd.size;
 
 		RequestCredential credential = getCredential();
-		if(toFileId == null && toParentFileId == null) {
+		if(getToFileId() == null && getToParentFileId() == null) {
             setState(State.ASYNCWAIT,"calling storage.prepareToPut");
 			PutCallbacks callbacks = new PutCallbacks(this.getId());
-			say("calling storage.prepareToPut("+local_to_path+")");
-			getStorage().prepareToPut(getUser(),
-					     local_to_path,
+			say("calling storage.prepareToPut("+getLocal_to_path()+")");
+			getStorage().prepareToPut(getUser(),getLocal_to_path(),
 					     callbacks,
 					     ((CopyRequest)getRequest()).isOverwrite());
 			say("callbacks.waitResult()");
@@ -525,16 +605,16 @@ public class CopyFileRequest extends FileRequest {
 			((CopyRequest)getRequest()).getTargetAccessLatency();
 		TRetentionPolicy retentionPolicy =
 			((CopyRequest)getRequest()).getTargetRetentionPolicy();
-		if (spaceReservationId==null &&
+		if (getSpaceReservationId()==null &&
             retentionPolicy==null&&
             accessLatency==null &&
-            toParentFmd.spaceTokens!=null &&
-            toParentFmd.spaceTokens.length>0 ) {
-                spaceReservationId=Long.toString(toParentFmd.spaceTokens[0]);
+            getToParentFmd().spaceTokens!=null &&
+            getToParentFmd().spaceTokens.length>0 ) {
+                setSpaceReservationId(Long.toString(getToParentFmd().spaceTokens[0]));
 		}
 
 		if (getConfiguration().isReserve_space_implicitely() &&
-                spaceReservationId == null) {
+                getSpaceReservationId() == null) {
             setState(State.ASYNCWAIT,"reserving space");
 			long remaining_lifetime =
                     lifetime - ( System.currentTimeMillis() -creationTime);
@@ -544,9 +624,9 @@ public class CopyFileRequest extends FileRequest {
 			// retention policy from the directory metatada
 			//
 			if(retentionPolicy == null && 
-               toParentFmd!= null &&
-               toParentFmd.retentionPolicyInfo != null ) {
-				retentionPolicy = toParentFmd.retentionPolicyInfo.getRetentionPolicy();
+               getToParentFmd()!= null &&
+               getToParentFmd().retentionPolicyInfo != null ) {
+				retentionPolicy = getToParentFmd().retentionPolicyInfo.getRetentionPolicy();
 			}
 
 			//
@@ -554,9 +634,9 @@ public class CopyFileRequest extends FileRequest {
 			// access latency from the directory metatada
 			//
 			if(accessLatency == null && 
-               toParentFmd != null &&
-               toParentFmd.retentionPolicyInfo != null ) {
-				accessLatency = toParentFmd.retentionPolicyInfo.getAccessLatency();
+               getToParentFmd() != null &&
+               getToParentFmd().retentionPolicyInfo != null ) {
+				accessLatency = getToParentFmd().retentionPolicyInfo.getAccessLatency();
 			}
 
 			SrmReserveSpaceCallbacks callbacks =
@@ -572,15 +652,13 @@ public class CopyFileRequest extends FileRequest {
 			return;
 		}
 
-		if( spaceReservationId != null &&
-		    !spaceMarkedAsBeingUsed) {
+		if( getSpaceReservationId() != null &&
+		    !isSpaceMarkedAsBeingUsed()) {
             setState(State.ASYNCWAIT,"marking space as being used");
 			long remaining_lifetime =
                     lifetime - ( System.currentTimeMillis() -creationTime);
 			SrmUseSpaceCallbacks  callbacks = new CopyUseSpaceCallbacks(getId());
-			getStorage().srmMarkSpaceAsBeingUsed(getUser(),
-							spaceReservationId,
-							local_to_path,
+			getStorage().srmMarkSpaceAsBeingUsed(getUser(),getSpaceReservationId(),getLocal_to_path(),
 							size==0?1:size,
 							remaining_lifetime,
 							((CopyRequest)getRequest()).isOverwrite(),
@@ -588,7 +666,7 @@ public class CopyFileRequest extends FileRequest {
 			return;
 		}
 
-        getStorage().localCopy(getUser(),local_from_path,local_to_path);
+        getStorage().localCopy(getUser(),getLocal_from_path(), getLocal_to_path());
         setStateToDone();
         return;
 	}
@@ -596,12 +674,11 @@ public class CopyFileRequest extends FileRequest {
 	private void runRemoteToLocalCopy() throws Exception {
 		say("copying from remote to local ");
 		RequestCredential credential = getCredential();
-		if(toFileId == null && toParentFileId == null) {
+		if(getToFileId() == null && getToParentFileId() == null) {
 			setState(State.ASYNCWAIT,"calling storage.prepareToPut");
 			PutCallbacks callbacks = new PutCallbacks(this.getId());
-			say("calling storage.prepareToPut("+local_to_path+")");
-			getStorage().prepareToPut(getUser(),
-					     local_to_path, 
+			say("calling storage.prepareToPut("+getLocal_to_path()+")");
+			getStorage().prepareToPut(getUser(),getLocal_to_path(),
 					     callbacks,
 					     ((CopyRequest)getRequest()).isOverwrite());
 			say("callbacks.waitResult()");
@@ -626,15 +703,15 @@ public class CopyFileRequest extends FileRequest {
 			((CopyRequest)getRequest()).getTargetAccessLatency();
 		TRetentionPolicy retentionPolicy =
 			((CopyRequest)getRequest()).getTargetRetentionPolicy();
-		if (spaceReservationId==null &&
+		if (getSpaceReservationId()==null &&
             retentionPolicy==null&&
             accessLatency==null &&
-            toParentFmd.spaceTokens!=null &&
-            toParentFmd.spaceTokens.length>0 ) {
-                spaceReservationId=Long.toString(toParentFmd.spaceTokens[0]);
+            getToParentFmd().spaceTokens!=null &&
+            getToParentFmd().spaceTokens.length>0 ) {
+                setSpaceReservationId(Long.toString(getToParentFmd().spaceTokens[0]));
 		}
 
-		if (getConfiguration().isReserve_space_implicitely()&&spaceReservationId == null) {
+		if (getConfiguration().isReserve_space_implicitely()&&getSpaceReservationId() == null) {
 			setState(State.ASYNCWAIT,"reserving space");
 			long remaining_lifetime = lifetime - ( System.currentTimeMillis() -creationTime);
 			say("reserving space, size="+(size==0?1L:size));
@@ -642,15 +719,15 @@ public class CopyFileRequest extends FileRequest {
 			//the following code allows the inheritance of the 
 			// retention policy from the directory metatada
 			//
-			if(retentionPolicy == null && toParentFmd!= null && toParentFmd.retentionPolicyInfo != null ) {
-				retentionPolicy = toParentFmd.retentionPolicyInfo.getRetentionPolicy();
+			if(retentionPolicy == null && getToParentFmd()!= null && getToParentFmd().retentionPolicyInfo != null ) {
+				retentionPolicy = getToParentFmd().retentionPolicyInfo.getRetentionPolicy();
 			}
 			//
 			//the following code allows the inheritance of the 
 			// access latency from the directory metatada
 			//
-			if(accessLatency == null && toParentFmd != null && toParentFmd.retentionPolicyInfo != null ) {
-				accessLatency = toParentFmd.retentionPolicyInfo.getAccessLatency();
+			if(accessLatency == null && getToParentFmd() != null && getToParentFmd().retentionPolicyInfo != null ) {
+				accessLatency = getToParentFmd().retentionPolicyInfo.getAccessLatency();
 			}
 			SrmReserveSpaceCallbacks callbacks = new TheReserveSpaceCallbacks (getId());
 			getStorage().srmReserveSpace(
@@ -663,41 +740,27 @@ public class CopyFileRequest extends FileRequest {
 				callbacks);
 			return;
 		}
-		if( spaceReservationId != null &&
-		    !spaceMarkedAsBeingUsed) {
+		if( getSpaceReservationId() != null &&
+		    !isSpaceMarkedAsBeingUsed()) {
             setState(State.ASYNCWAIT,"marking space as being used");
 			long remaining_lifetime = lifetime - ( System.currentTimeMillis() -creationTime);
 			SrmUseSpaceCallbacks  callbacks = new CopyUseSpaceCallbacks(getId());
-			getStorage().srmMarkSpaceAsBeingUsed(getUser(),
-							spaceReservationId,
-							local_to_path,
+			getStorage().srmMarkSpaceAsBeingUsed(getUser(),getSpaceReservationId(),getLocal_to_path(),
 							size==0?1:size,
 							remaining_lifetime,
 							((CopyRequest)getRequest()).isOverwrite(),
 							callbacks );
 			return;
 		}
-		if(transferId == null) {
+		if(getTransferId() == null) {
             setState(State.RUNNINGWITHOUTTHREAD,"started remote transfer, waiting completion");
 			TheCopyCallbacks copycallbacks = new TheCopyCallbacks(getId());
-			if(spaceReservationId != null) {
-				transferId = getStorage().getFromRemoteTURL(getUser(),
-								       from_turl.getURL(),
-								       local_to_path, 
-								       getUser(),
-								       credential.getId(), 
-								       spaceReservationId.toString(),
-								       size,
-								       copycallbacks);
+			if(getSpaceReservationId() != null) {
+				setTransferId(getStorage().getFromRemoteTURL(getUser(), getFrom_turl().getURL(), getLocal_to_path(), getUser(), credential.getId(), getSpaceReservationId().toString(), size, copycallbacks));
 				
 			} 
 			else {
-				transferId = getStorage().getFromRemoteTURL(getUser(),
-								       from_turl.getURL(),
-								       local_to_path, 
-								       getUser(),
-								       credential.getId(),
-								       copycallbacks);
+				setTransferId(getStorage().getFromRemoteTURL(getUser(), getFrom_turl().getURL(), getLocal_to_path(), getUser(), credential.getId(), copycallbacks));
 			}
 			long remaining_lifetime = 
 				this.getCreationTime() + 
@@ -709,9 +772,9 @@ public class CopyFileRequest extends FileRequest {
 		// transfer id is not null and we are scheduled
 		// there was some kind of error durign the transfer
 		else {
-			getStorage().killRemoteTransfer(transferId);
-			transferId = null;
-			throw new org.dcache.srm.scheduler.NonFatalJobFailure(transferError);
+			getStorage().killRemoteTransfer(getTransferId());
+			setTransferId(null);
+			throw new org.dcache.srm.scheduler.NonFatalJobFailure(getTransferError());
 		}
 	}
     
@@ -740,17 +803,11 @@ public class CopyFileRequest extends FileRequest {
 	}
     
 	private void runLocalToRemoteCopy() throws Exception {
-		if(transferId == null) {
+		if(getTransferId() == null) {
 			say("copying using storage.putToRemoteTURL");
 			RequestCredential credential = getCredential();
 			TheCopyCallbacks copycallbacks = new TheCopyCallbacks(getId());
-			transferId = getStorage().putToRemoteTURL(getUser(),
-							     local_from_path,
-							     to_turl.getURL(),
-							     getUser(),
-							     credential.getId(),
-							     copycallbacks);
-			long remaining_lifetime = this.getCreationTime() + this.getLifetime() -System.currentTimeMillis() ;
+			setTransferId(getStorage().putToRemoteTURL(getUser(), getLocal_from_path(), getTo_turl().getURL(), getUser(), credential.getId(), copycallbacks));
 			setState(State.RUNNINGWITHOUTTHREAD,"started remote transfer, waiting completion");
 			saveJob();
 			return;
@@ -758,17 +815,17 @@ public class CopyFileRequest extends FileRequest {
 		// transfer id is not null and we are scheduled
 		// there was some kind of error durign the transfer
 		else {
-			getStorage().killRemoteTransfer(transferId);
-			transferId = null;
-			throw new org.dcache.srm.scheduler.NonFatalJobFailure(transferError);
+			getStorage().killRemoteTransfer(getTransferId());
+			setTransferId(null);
+			throw new org.dcache.srm.scheduler.NonFatalJobFailure(getTransferError());
 		}
 	}
     
 	public void run() throws NonFatalJobFailure, FatalJobFailure{
 		say("copying " );
 		try {
-			if(from_turl != null && from_turl.getProtocol().equalsIgnoreCase("dcap")  ||
-			   to_turl != null && to_turl.getProtocol().equalsIgnoreCase("dcap") ||
+			if(getFrom_turl() != null && getFrom_turl().getProtocol().equalsIgnoreCase("dcap")  ||
+			   getTo_turl() != null && getTo_turl().getProtocol().equalsIgnoreCase("dcap") ||
 			   getConfiguration().isUseUrlcopyScript()) {
 				try {
 					runScriptCopy();
@@ -779,21 +836,21 @@ public class CopyFileRequest extends FileRequest {
 					esay("copying using script failed, trying java");
 				}
 			}
-			if(local_to_path != null && local_from_path != null) {
+			if(getLocal_to_path() != null && getLocal_from_path() != null) {
                 runLocalToLocalCopy();
 				return;
 			}
-			if(local_to_path != null && from_turl != null) {
+			if(getLocal_to_path() != null && getFrom_turl() != null) {
 				runRemoteToLocalCopy();
 				return;
 			}
-			if(to_turl != null && local_from_path != null) {
+			if(getTo_turl() != null && getLocal_from_path() != null) {
 				runLocalToRemoteCopy();
 				return;
 			}
-			if(from_turl != null && to_turl != null) {
-				URL fromURL = new URL(from_turl.getURL());
-				URL toURL   = new URL(to_turl.getURL());
+			if(getFrom_turl() != null && getTo_turl() != null) {
+				URL fromURL = new URL(getFrom_turl().getURL());
+				URL toURL   = new URL(getTo_turl().getURL());
 				javaUrlCopy(fromURL,toURL);
 				say("copy succeeded");
 				setStateToDone();
@@ -983,8 +1040,8 @@ public class CopyFileRequest extends FileRequest {
 	protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
 		State state = getState();
 		if(State.isFinalState(state)) {
-			if( transferId != null)           {
-				getStorage().killRemoteTransfer(transferId);
+			if( getTransferId() != null)           {
+				getStorage().killRemoteTransfer(getTransferId());
 			}
                         SRMUser user ;
                         try {
@@ -993,29 +1050,26 @@ public class CopyFileRequest extends FileRequest {
                             esay(ire);
                             return;
                         }
-			if(spaceReservationId != null && weReservedSpace) {
-				say("storage.releaseSpace("+spaceReservationId+"\"");
+			if(getSpaceReservationId() != null && isWeReservedSpace()) {
+				say("storage.releaseSpace("+getSpaceReservationId()+"\"");
 				SrmReleaseSpaceCallbacks callbacks = new TheReleaseSpaceCallbacks(this.getId());
-				getStorage().srmReleaseSpace(  user,
-							  spaceReservationId,
+				getStorage().srmReleaseSpace(  user,getSpaceReservationId(),
 							  null,
 							  callbacks);
 			}
 			if(getConfiguration().isReserve_space_implicitely() &&
-			   spaceReservationId != null &&
-			   spaceMarkedAsBeingUsed ) {
+			   getSpaceReservationId() != null &&
+			   isSpaceMarkedAsBeingUsed() ) {
 				SrmCancelUseOfSpaceCallbacks callbacks =
 					new CopyCancelUseOfSpaceCallbacks(getId());
-				getStorage().srmUnmarkSpaceAsBeingUsed(user,
-								  spaceReservationId,local_to_path,
-								  callbacks);
+				getStorage().srmUnmarkSpaceAsBeingUsed(user,getSpaceReservationId(),getLocal_to_path(),callbacks);
 			}
-			if( remoteRequestId != null ) {
-				if(local_from_path != null ) {
-					remoteFileRequestDone(to_url,remoteRequestId,remoteFileId);
+			if( getRemoteRequestId() != null ) {
+				if(getLocal_from_path() != null ) {
+					remoteFileRequestDone(getTo_url(),getRemoteRequestId(), getRemoteFileId());
 				}
 				else {
-					remoteFileRequestDone(from_url,remoteRequestId,remoteFileId);
+					remoteFileRequestDone(getFrom_url(),getRemoteRequestId(), getRemoteFileId());
 				}
 			}
 		}
@@ -1037,57 +1091,182 @@ public class CopyFileRequest extends FileRequest {
 	 *
 	 */
 	public String getRemoteFileId() {
-		return remoteFileId;
+        rlock();
+        try {
+            return remoteFileId;
+        } finally {
+            runlock();
+        }
 	}
 	/** Getter for property remoteRequestId.
 	 * @return Value of property remoteRequestId.
 	 *
 	 */
 	public String getRemoteRequestId() {
-		return remoteRequestId;
+        rlock();
+        try {
+            return remoteRequestId;
+        } finally {
+            runlock();
+        }
 	}
 	/**
 	 * Getter for property from_url.
 	 * @return Value of property from_url.
 	 */
 	public java.lang.String getFrom_url() {
-		return from_url;
+        rlock();
+        try {
+            return from_url;
+        } finally {
+            runlock();
+        }
+
 	}
 	/**
 	 * Getter for property to_url.
 	 * @return Value of property to_url.
 	 */
 	public java.lang.String getTo_url() {
-		return to_url;
+        rlock();
+        try {
+            return to_url;
+        } finally {
+            runlock();
+        }
 	}
 	/**
 	 * Setter for property remoteRequestId.
 	 * @param remoteRequestId New value of property remoteRequestId.
 	 */
 	public void setRemoteRequestId(String remoteRequestId) {
-		this.remoteRequestId = remoteRequestId;
+        wlock();
+        try {
+            this.remoteRequestId = remoteRequestId;
+        } finally {
+            wunlock();
+        }
 	}
 	/**
 	 * Setter for property remoteFileId.
 	 * @param remoteFileId New value of property remoteFileId.
 	 */
 	public void setRemoteFileId(String remoteFileId) {
-		this.remoteFileId = remoteFileId;
+        wlock();
+        try {
+            this.remoteFileId = remoteFileId;
+        } finally {
+            wunlock();
+        }
 	}
 	/**
 	 * Getter for property spaceReservationId.
 	 * @return Value of property spaceReservationId.
 	 */
 	public String getSpaceReservationId() {
-		return spaceReservationId;
+        rlock();
+        try {
+            return spaceReservationId;
+        } finally {
+            runlock();
+        }
 	}
 	/**
 	 * Setter for property spaceReservationId.
 	 * @param spaceReservationId New value of property spaceReservationId.
 	 */
 	public void setSpaceReservationId(String spaceReservationId) {
-		this.spaceReservationId = spaceReservationId;
+        wlock();
+        try {
+            this.spaceReservationId = spaceReservationId;
+        } finally {
+            wunlock();
+        }
 	}
+
+    /**
+     * @return the toParentFileId
+     */
+    private String getToParentFileId() {
+        rlock();
+        try {
+            return toParentFileId;
+        } finally {
+            runlock();
+        }
+    }
+
+    /**
+     * @param toParentFileId the toParentFileId to set
+     */
+    private void setToParentFileId(String toParentFileId) {
+        wlock();
+        try {
+            this.toParentFileId = toParentFileId;
+        } finally {
+            wunlock();
+        }
+    }
+
+    /**
+     * @return the toParentFmd
+     */
+    private FileMetaData getToParentFmd() {
+        rlock();
+        try {
+            return toParentFmd;
+        } finally {
+            runlock();
+        }
+    }
+
+    /**
+     * @param toParentFmd the toParentFmd to set
+     */
+    private void setToParentFmd(FileMetaData toParentFmd) {
+        wlock();
+        try {
+           this.toParentFmd = toParentFmd;
+        } finally {
+            wunlock();
+        }
+    }
+
+    /**
+     * @param transferId the transferId to set
+     */
+    private void setTransferId(String transferId) {
+        wlock();
+        try {
+            this.transferId = transferId;
+        } finally {
+            wunlock();
+        }
+    }
+
+    /**
+     * @return the transferError
+     */
+    private Exception getTransferError() {
+        rlock();
+        try {
+            return transferError;
+        } finally {
+            runlock();
+        }
+    }
+
+    /**
+     * @param transferError the transferError to set
+     */
+    private void setTransferError(Exception transferError) {
+        wlock();
+        try {
+            this.transferError = transferError;
+        } finally {
+            wunlock();
+        }
+    }
 	
 	private static class PutCallbacks implements PrepareToPutCallbacks {
 		Long fileRequestJobId;
@@ -1234,10 +1413,9 @@ public class CopyFileRequest extends FileRequest {
 				State state = fr.getState();
 				if(state == State.ASYNCWAIT) {
 					fr.say("PutCallbacks StorageInfoArrived for file "+fr.getToPath()+" fmd ="+fmd);
-					fr.toFileId = fileId;
-					fr.toFmd = fmd;
-					fr.toParentFileId = parentFileId;
-					fr.toParentFmd = parentFmd;
+					fr.setToFileId(fileId);
+					fr.setToParentFileId(parentFileId);
+					fr.setToParentFmd(parentFmd);
 					Scheduler scheduler = Scheduler.getScheduler(fr.getSchedulerId());
 					try {
 						scheduler.schedule(fr);
@@ -1320,8 +1498,6 @@ public class CopyFileRequest extends FileRequest {
 		private Long fileRequestJobId;
 		private boolean completed = false;
 		private boolean success = false;
-		private String error_message;
-		private boolean isTimeout = false;
 		
 		public TheCopyCallbacks ( Long fileRequestJobId ) {
 			this.fileRequestJobId = fileRequestJobId;
@@ -1344,8 +1520,6 @@ public class CopyFileRequest extends FileRequest {
 				else {
 					completed = true;
 					success = false;
-					isTimeout = true;
-					error_message = "CopyCallbacks wait timeout expired";
 					return false;
 				}
 				current = System.currentTimeMillis(); 
@@ -1386,7 +1560,7 @@ public class CopyFileRequest extends FileRequest {
                 logger.error(ire);
                 return;
             }
-			copyFileRequest.transferError = e;
+			copyFileRequest.setTransferError(e);
 			copyFileRequest.esay("copy failed:");
 			copyFileRequest.esay(e);
 			State state =  copyFileRequest.getState();
@@ -1413,14 +1587,14 @@ public class CopyFileRequest extends FileRequest {
 		copyRequestFileStatus.setRemainingFileLifetime(new Integer((int)(getRemainingLifetime()/1000)));
 		org.apache.axis.types.URI to_surl;
 		org.apache.axis.types.URI from_surl;
-		try { to_surl= new URI(to_url);
+		try { to_surl= new URI(getTo_url());
 		}
 		catch (Exception e) { 
 			esay(e);
 			throw new java.sql.SQLException("wrong surl format");
 		}
 		try { 
-			from_surl=new URI(from_url);
+			from_surl=new URI(getFrom_url());
 		}
 		catch (Exception e) { 
 			esay(e);
@@ -1497,19 +1671,39 @@ public class CopyFileRequest extends FileRequest {
 	}
 
 	public boolean isWeReservedSpace() {
-		return weReservedSpace;
+        rlock();
+        try {
+            return weReservedSpace;
+        } finally {
+            runlock();
+        }
 	}
 	
 	public void setWeReservedSpace(boolean weReservedSpace) {
-		this.weReservedSpace = weReservedSpace;
+        wlock();
+        try {
+    		this.weReservedSpace = weReservedSpace;
+        } finally {
+            wunlock();
+        }
 	}
     
 	public boolean isSpaceMarkedAsBeingUsed() {
-		return spaceMarkedAsBeingUsed;
+        rlock();
+        try {
+    		return spaceMarkedAsBeingUsed;
+        } finally {
+            runlock();
+        }
 	}
     
 	public void setSpaceMarkedAsBeingUsed(boolean spaceMarkedAsBeingUsed) {
-		this.spaceMarkedAsBeingUsed = spaceMarkedAsBeingUsed;
+        wlock();
+        try {
+    		this.spaceMarkedAsBeingUsed = spaceMarkedAsBeingUsed;
+        } finally {
+            wunlock();
+        }
 	}
     
 	public static class TheReserveSpaceCallbacks implements SrmReserveSpaceCallbacks {
@@ -1570,7 +1764,7 @@ public class CopyFileRequest extends FileRequest {
 				if(state == State.ASYNCWAIT) {
 					fr.say("CopyReserveSpaceCallbacks Space Reserved for file "+fr.getToPath());
 					fr.setSpaceReservationId(spaceReservationToken);
-					fr.weReservedSpace = true;
+					fr.setWeReservedSpace(true);
 					Scheduler scheduler = Scheduler.getScheduler(fr.getSchedulerId());
 					try {
 						scheduler.schedule(fr);
@@ -1694,11 +1888,11 @@ public class CopyFileRequest extends FileRequest {
 		if(remainingLifetime >= newLifetime) {
 			return remainingLifetime;
 		}
-		String spaceToken =spaceReservationId;
+		String spaceToken =getSpaceReservationId();
 		
 		if(!getConfiguration().isReserve_space_implicitely() ||
 		   spaceToken == null ||
-		   !weReservedSpace) {
+		   !isWeReservedSpace()) {
 			return extendLifetimeMillis(newLifetime);      
 		} 
 		newLifetime = extendLifetimeMillis(newLifetime);

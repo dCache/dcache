@@ -3,11 +3,8 @@ package org.dcache.srm.request;
 import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SRMException;
-import org.dcache.srm.util.Configuration;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.State;
-
-
 import org.dcache.srm.v2_2.SrmLsRequest;
 import org.dcache.srm.v2_2.SrmLsResponse;
 import org.dcache.srm.v2_2.SrmStatusOfLsRequestResponse;
@@ -20,16 +17,15 @@ import org.dcache.srm.util.RequestStatusTool;
 
 
 
-public class LsRequest extends ContainerRequest {
+public final class LsRequest extends ContainerRequest {
 
-        int offset=0;
-        int count=0;
-        int maxNumOfResults=100;
-        int numberOfResults=0;
-        int numOfLevels=1;
-        int maxNumberOfLevels=100;
-        boolean longFormat=false;
-        String explanation;
+        private final int offset;
+        private final int count;
+        private int maxNumOfResults=100;
+        private int numberOfResults=0;
+        private final int numOfLevels;
+        private final boolean longFormat;
+        private String explanation;
 
         public LsRequest(SRMUser user,
                          Long requestCredentialId,
@@ -37,7 +33,12 @@ public class LsRequest extends ContainerRequest {
                          long lifetime,
                          long max_update_period,
                          int max_number_of_retries,
-                         String client_host ) throws Exception {
+                         String client_host,
+                         int count,
+                         int offset,
+                         int numOfLevels,
+                         boolean longFormat,
+                         int maxNumOfResults ) throws Exception {
                 super(user,
                       requestCredentialId,
                       max_number_of_retries,
@@ -45,6 +46,11 @@ public class LsRequest extends ContainerRequest {
                       lifetime,
                       "Ls request",
                       client_host);
+                this.count = count;
+                this.offset = offset;
+                this.numOfLevels = numOfLevels;
+                this.longFormat = longFormat;
+                this.maxNumOfResults = maxNumOfResults;
                 int len = request.getArrayOfSURLs().getUrlArray().length;
                 fileRequests = new FileRequest[len];
                 for(int i = 0; i<len; ++i) {
@@ -111,9 +117,6 @@ public class LsRequest extends ContainerRequest {
                 this.numOfLevels=numOfLevels;
                 this.count=count;
                 this.offset=offset;
-                for (FileRequest fr : fileRequests) { 
-                        ((LsFileRequest)fr).setLsRequest(this);
-                }
         }
 
         public FileRequest getFileRequestBySurl(String surl)
@@ -181,7 +184,7 @@ public class LsRequest extends ContainerRequest {
                 }
         }
 
-        public synchronized final SrmLsResponse getSrmLsResponse()
+        public final SrmLsResponse getSrmLsResponse()
                 throws SRMException ,java.sql.SQLException {
                 SrmLsResponse response = new SrmLsResponse();
                 response.setReturnStatus(getTReturnStatus());
@@ -192,7 +195,7 @@ public class LsRequest extends ContainerRequest {
                 return response;
         }
 
-        public synchronized final SrmStatusOfLsRequestResponse getSrmStatusOfLsRequestResponse()
+        public final SrmStatusOfLsRequestResponse getSrmStatusOfLsRequestResponse()
                 throws SRMException, java.sql.SQLException {
                 SrmStatusOfLsRequestResponse response = new SrmStatusOfLsRequestResponse();
                 response.setReturnStatus(getTReturnStatus());
@@ -217,80 +220,103 @@ public class LsRequest extends ContainerRequest {
                 return detail;
         }
 
-        public synchronized boolean increaseResultsNumAndContinue(){
-                if(numberOfResults > maxNumOfResults) {
+        public final boolean increaseResultsNumAndContinue(){
+            wlock();
+            try {
+                if(getNumberOfResults() > getMaxNumOfResults()) {
                         return false;
                 }
-                numberOfResults++;
+                setNumberOfResults(getNumberOfResults() + 1);
                 return true;
+            } finally {
+                wunlock();
+            }
         }
 
-        public synchronized boolean checkCounter(){
-                if (numberOfResults > count && count!=0) {
+        public final boolean checkCounter(){
+            wlock();
+            try {
+                if (getNumberOfResults() > getCount() && getCount()!=0) {
                         return false;
                 }
                 return true;
+            } finally {
+                wunlock();
+            }
         }
 
         public TRequestType getRequestType() {
                 return TRequestType.LS;
         }
 
-        public void setCount(int count) {
-                this.count=count;
-        }
-
         public int getCount(){
-                return count;
-        }
-
-        public void setOffset(int offset) {
-                this.offset=offset;
+               // final, no need to synchronize
+                 return count;
         }
 
         public int getOffset(){
-                return offset;
-        }
-
-        public void setNumOfLevels(int number_of_levels){
-                this.numOfLevels=number_of_levels;
+              // final, no need to synchronize
+                 return offset;
         }
 
         public int getNumOfLevels() {
-                return numOfLevels;
-        }
-
-        public void setLongFormat(boolean yes){
-                this.longFormat = yes;
+              // final, no need to synchronize
+                 return numOfLevels;
         }
 
         public boolean getLongFormat() {
-                return longFormat;
-        }
-
-        public void setMaxNumOfResults(int max_number_of_results){
-                this.maxNumOfResults=max_number_of_results;
+                return isLongFormat();
         }
 
         public int getMaxNumOfResults() {
+            rlock();
+            try {
                 return maxNumOfResults;
+            } finally {
+                runlock();
+            }
+
         }
 
         public void setErrorMessage(String txt) {
+            wlock();
+            try {
                 errorMessage.append(txt);
+            } finally {
+                wunlock();
+            }
         }
 
+        @Override
         public String getErrorMessage() {
+            rlock();
+            try {
                 return errorMessage.toString();
+            } finally {
+                runlock();
+            }
         }
 
         public String getExplanation() {
+            rlock();
+            try {
                 return explanation;
+            } finally {
+                runlock();
+            }
         }
 
         public void setExplanation(String txt) {
+            wlock();
+            try {
                 this.explanation=txt;
+            } finally {
+                wunlock();
+            }
+
         }
+
+        @Override
         public synchronized final TReturnStatus getTReturnStatus()  {
                 getRequestStatus();
                 TReturnStatus status = new TReturnStatus();
@@ -313,7 +339,6 @@ public class LsRequest extends ContainerRequest {
                 int done_req             = 0;
                 int got_exception        = 0;
                 int auth_failure         = 0;
-                boolean failure = false;
                 for(FileRequest fr : fileRequests) {
                         TReturnStatus fileReqRS = fr.getReturnStatus();
                         TStatusCode fileReqSC   = fileReqRS.getStatusCode();
@@ -326,15 +351,12 @@ public class LsRequest extends ContainerRequest {
                                 }
                                 else if (fileReqSC == TStatusCode.SRM_ABORTED) {
                                         canceled_req++;
-                                        failure=true;
                                 }
                                 else if (fileReqSC == TStatusCode.SRM_AUTHORIZATION_FAILURE) {
                                         auth_failure++;
-                                        failure=true;
                                 }
                                 else if (RequestStatusTool.isFailedFileRequestStatus(fileReqRS)) {
                                         failed_req++;
-                                        failure=true;
                                 }
                                 else  {
                                         done_req++;
@@ -343,7 +365,6 @@ public class LsRequest extends ContainerRequest {
                         catch (Exception e) {
                                 esay(e);
                                 got_exception++;
-                                failure=true;
                         }
                 }
                 if (done_req == len ) {
@@ -415,8 +436,9 @@ public class LsRequest extends ContainerRequest {
                 return null;
         }
 
+        @Override
         public String toString() { 
-                       return toString(false);
+               return toString(false);
         }
         
         public String toString(boolean longformat) { 
@@ -448,5 +470,37 @@ public class LsRequest extends ContainerRequest {
                 }
                 return sb.toString();
         }
+
+    /**
+     * @return the numberOfResults
+     */
+    private int getNumberOfResults() {
+        rlock();
+        try {
+            return numberOfResults;
+        } finally {
+            runlock();
+        }
+    }
+
+    /**
+     * @param numberOfResults the numberOfResults to set
+     */
+    private void setNumberOfResults(int numberOfResults) {
+        wlock();
+        try {
+            this.numberOfResults = numberOfResults;
+        } finally {
+            wunlock();
+        }
+    }
+
+    /**
+     * @return the longFormat
+     */
+    private boolean isLongFormat() {
+        // final, no need to synchronize
+        return longFormat;
+    }
 
 }

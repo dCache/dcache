@@ -71,7 +71,6 @@ COPYRIGHT STATUS:
  */
 
 package org.dcache.srm.scheduler;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.beans.PropertyChangeSupport;
 import java.beans.PropertyChangeListener;
@@ -92,6 +91,10 @@ import org.dcache.srm.SRMReleasedException;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.util.JDC;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
+
 
 /**
  *
@@ -102,8 +105,6 @@ public abstract class Job  {
     private static final org.apache.log4j.Logger _log =
         org.apache.log4j.Logger.getLogger(Job.class);
 
-    private static final long DEFAULT_JOB_LIFETIME_MILLIS= 12*60*60*1000; //12 hours
-
     // this is the map from jobIds to jobs
     // job ids are referenced from jobs
     // jobs are wrapped into WeakReferences to prevent
@@ -111,8 +112,6 @@ public abstract class Job  {
 
     private static final Map<Long, WeakReference<Job>> weakJobStorage =
             new WeakHashMap<Long, WeakReference<Job>>();
-
-    private final Semaphore lock = new Semaphore(1);
 
     //this is used to build the queue of jobs.
     protected Long nextJobId;
@@ -122,14 +121,14 @@ public abstract class Job  {
     private static PropertyChangeSupport jobsSupport = new PropertyChangeSupport(Job.class);
 
     private volatile State state = State.PENDING;
-    protected StringBuffer errorMessage=new StringBuffer();
+    protected StringBuilder errorMessage=new StringBuilder();
 
     protected int priority =0;
     protected String schedulerId;
     protected long schedulerTimeStamp;
 
 
-    protected long creationTime = System.currentTimeMillis();
+    protected final long creationTime;
 
     protected long lifetime;
 
@@ -144,7 +143,6 @@ public abstract class Job  {
 
     private transient TimerTask retryTimer;
 
-    private static boolean storeInSharedMemoryCache =true;
     private static final SharedMemoryCache sharedMemoryCache =
             new SharedMemoryCache();
 
@@ -154,6 +152,9 @@ public abstract class Job  {
 
     private transient JDC jdc;
 
+    private final ReentrantReadWriteLock reentrantReadWriteLock =
+            new ReentrantReadWriteLock();
+    private final WriteLock writeLock = reentrantReadWriteLock.writeLock();
 
     public static final void registerJobStorage(JobStorage jobStorage) {
         synchronized(jobStorages) {
@@ -213,20 +214,21 @@ public abstract class Job  {
      * NEED TO CALL THIS METHOD FROM THE CONCRETE SUBCLASS
      * RESTORE CONSTRUCTOR
      */
-    private synchronized final void expireRestoredJobOrCreateExperationTimer()
-    {
-        if (state != State.CANCELED &&
-            state != State.DONE &&
-            state != State.FAILED) {
-            long expiration_time = creationTime + lifetime;
-            long new_lifetime = expiration_time - System.currentTimeMillis();
-
-            /* We schedule a timer even if the job has already
-             * expired.  This is to avoid a restore loop in which
-             * expiring a job during restore causes the job to be read
-             * recursively.
-             */
-            LifetimeExpiration.schedule(id, Math.max(0, new_lifetime));
+    private final void expireRestoredJobOrCreateExperationTimer()  {
+        wlock();
+        try {
+            if( ! state.isFinalState() ) {
+                long newLifetime = 
+                        creationTime + lifetime - System.currentTimeMillis();
+                /* We schedule a timer even if the job has already
+                 * expired.  This is to avoid a restore loop in which
+                 * expiring a job during restore causes the job to be read
+                 * recursively.
+                 */
+                LifetimeExpiration.schedule(id, Math.max(0, newLifetime));
+            }
+        } finally {
+            wunlock();
         }
     }
 
@@ -236,7 +238,7 @@ public abstract class Job  {
               int maxNumberOfRetries) {
 
         id = nextId();
-
+        creationTime = System.currentTimeMillis();
         this.lifetime = lifetime;
         this.maxNumberOfRetries = maxNumberOfRetries;
 
@@ -261,13 +263,14 @@ public abstract class Job  {
     }
 
     public void saveJob(boolean force)  {
-        //  by making sure that the saving of the job in final state happens
-        // only once
-        // we hope to eliminate the dubplicate key error
-        if(savedInFinalState){
-            return;
-        }
+        wlock();
         try {
+            //  by making sure that the saving of the job in final state happens
+            // only once
+            // we hope to eliminate the dubplicate key error
+            if(savedInFinalState){
+                return;
+            }
             boolean isFinalState = State.isFinalState(this.getState());
             getJobStorage().saveJob(this, isFinalState || force);
             savedInFinalState = isFinalState;
@@ -276,9 +279,10 @@ public abstract class Job  {
 
             esay(t);
 
-        }
+        } finally {
+            wunlock();
+       }
     }
-
     public void say(String s) {
         _log.debug(" Job id="+id+" :"+ s);
         }
@@ -380,7 +384,12 @@ public abstract class Job  {
      * @param state
      */
     public State getState() {
-        return state;
+        rlock();
+        try {
+            return state;
+        } finally {
+            runlock();
+        }
     }
 
     /**
@@ -389,7 +398,7 @@ public abstract class Job  {
      * @param description
      * @throws org.dcache.srm.scheduler.IllegalStateTransition
      */
-    public void setState(State state,String description) throws
+    public final void setState(State state,String description) throws
     IllegalStateTransition {
         setState(state,description,true);
 
@@ -404,13 +413,14 @@ public abstract class Job  {
      * the caller of the save state needs to call saveJob then
      * @throws org.dcache.srm.scheduler.IllegalStateTransition
      */
-    public synchronized void setState(State state,String description, boolean save) throws
+    public final void setState(State state,String description, boolean save) throws
        IllegalStateTransition {
-        State old;
+        wlock();
+        try {
+            State old;
             if(state == this.state) {
                 return;
             }
-
             if(this.state == State.PENDING) {
                 if(
                 state != State.DONE &&
@@ -519,9 +529,7 @@ public abstract class Job  {
             this.state = state;
             lastStateTransitionTime = System.currentTimeMillis();
 
-            synchronized(jobHistory) {
-                jobHistory.add( new JobHistory(nextLong(),state,description,lastStateTransitionTime));
-            }
+            jobHistory.add( new JobHistory(nextLong(),state,description,lastStateTransitionTime));
 
             if( errorMessage.length()== 0) {
                   errorMessage.append(description);
@@ -532,42 +540,61 @@ public abstract class Job  {
                  errorMessage.append(description);
             }
 
-        if(state == State.RETRYWAIT)
-        {
-            inclreaseNumberOfRetries();
-        }
-
-        if(schedulerId != null) {
-            Scheduler scheduler =   Scheduler.getScheduler(schedulerId);
-            if(scheduler != null) {
-                scheduler.stateChanged(this, old, state);
-            }
-        }
-
-        if(state == State.FAILED ||
-        state == State.DONE ||
-        state == State.CANCELED) {
-            LifetimeExpiration.cancel(id);
-            schedulerId = null;
-        }
-        else {
-            if(schedulerId == null) {
-                throw new IllegalStateTransition("Scheduler ID is null");
+            if(state == State.RETRYWAIT) {
+                inclreaseNumberOfRetries();
             }
 
-        }
-        if(!old.isFinalState() && state.isFinalState()) {
-            sharedMemoryCache.updateSharedMemoryChache(this);
-        }
+            if(schedulerId != null) {
+                Scheduler scheduler =   Scheduler.getScheduler(schedulerId);
+                if(scheduler != null) {
+                    scheduler.stateChanged(this, old, state);
+                }
+            }
 
-        stateChanged(old);
-        if(save) {
-            saveJob();
+            if(state.isFinalState()) {
+                LifetimeExpiration.cancel(id);
+                schedulerId = null;
+            }
+            else {
+                if(schedulerId == null) {
+                    throw new IllegalStateTransition("Scheduler ID is null");
+                }
+            }
+            if(!old.isFinalState() && state.isFinalState()) {
+                 sharedMemoryCache.updateSharedMemoryChache(this);
+            }
+            stateChanged(old);
+            if(save) {
+                saveJob();
+            }
+        } finally {
+            wunlock();
         }
     }
-
+    /**
+     * Try to change the state of the job to READY. the request into the ready state
+     */
     public void tryToReady() {
-      if(schedulerId != null) {
+        /*
+         * The job should be readied, only if the job's scheduler's
+         * count of the "ready" jobs is bellow the maximum allowed number of the
+         * Ready jobs. If the job is replicated in multiple jvm's,
+         * the job might not have a scheduler associated with it in this jvm,
+         * then in this jvm nothing needs to happen. Whatever clastering
+         * mechanizm used needs to makes sure that if this method is called in
+         * an instance that is different from the one where the job was
+         * originally scheduled leads to the call of the invocation of the same
+         * method in the instance of jvm where the job was orignally
+         * scheduled, and where the scheduler is  non-null.
+         * In case of terracotta it is achived by including this method in the
+         * "distributed-method" section of the configuration file  :
+         *       <distributed-methods>
+         *          <method-expression>
+         *            void org.dcache.srm.scheduler.Job.tryToReady()
+         *          </method-expression>
+         *       <method-expression>
+         */
+        if(schedulerId != null) {
             Scheduler scheduler =   Scheduler.getScheduler(schedulerId);
             if(scheduler != null) {
                 scheduler.tryToReadyJob(this);
@@ -582,8 +609,9 @@ public abstract class Job  {
 
     public String getErrorMessage() {
 
-        StringBuffer errorsb = new StringBuffer();
-        synchronized(jobHistory) {
+        StringBuilder errorsb = new StringBuilder();
+        rlock();
+        try {
             if(!jobHistory.isEmpty()) {
                 JobHistory nextHistoryElement = jobHistory.get(jobHistory.size() -1);
                 State nexthistoryElState = nextHistoryElement.getState();
@@ -593,36 +621,46 @@ public abstract class Job  {
                 errorsb.append(" : ");
                 errorsb.append(nextHistoryElement.getDescription());
             }
+       } finally {
+           runlock();
        }
        return errorsb.toString();
     }
 
     public void addHistoryEvent(String description){
-        synchronized(jobHistory) {
+        wlock();
+        try {
             jobHistory.add( new JobHistory(nextLong(),state,description, System.currentTimeMillis()));
+        } finally {
+            wunlock();
         }
 
     }
      public String getHistory() {
-        StringBuffer historyString = new StringBuffer();
-        synchronized(jobHistory) {
+        StringBuilder historyStringBuillder = new StringBuilder();
+        rlock();
+        try {
             for( JobHistory nextHistoryElement: jobHistory ) {
-                 historyString.append(" at ");
-                 historyString.append(new java.util.Date(nextHistoryElement.getTransitionTime()));
-                 historyString.append(" state ").append(nextHistoryElement.getState());
-                 historyString.append(" : ");
-                 historyString.append(nextHistoryElement.getDescription());
-                 historyString.append('\n');
+                 historyStringBuillder.append(" at ");
+                 historyStringBuillder.append(new java.util.Date(nextHistoryElement.getTransitionTime()));
+                 historyStringBuillder.append(" state ").append(nextHistoryElement.getState());
+                 historyStringBuillder.append(" : ");
+                 historyStringBuillder.append(nextHistoryElement.getDescription());
+                 historyStringBuillder.append('\n');
             }
+        } finally {
+            runlock();
         }
-       return historyString.toString();
+       return historyStringBuillder.toString();
     }
 
 
      public Iterator getHistoryIterator() {
-
-        synchronized(jobHistory) {
+        rlock();
+        try {
             return new ArrayList(jobHistory).iterator();
+        } finally {
+            runlock();
         }
     }
 
@@ -640,7 +678,12 @@ public abstract class Job  {
      *
      */
     public final int getNumberOfRetries() {
-        return numberOfRetries;
+        wlock();
+        try {
+            return numberOfRetries;
+        } finally {
+            wunlock();
+        }
     }
 
     /** Setter for property numberOfRetries.
@@ -648,7 +691,12 @@ public abstract class Job  {
      *
      */
     private final void inclreaseNumberOfRetries() {
-        numberOfRetries++;
+        wlock();
+        try {
+            numberOfRetries++;
+        } finally {
+            wunlock();
+        }
     }
 
     /** Getter for property retry_timer.
@@ -671,7 +719,12 @@ public abstract class Job  {
      *
      */
     public int getPriority() {
-        return priority;
+        rlock();
+        try {
+            return priority;
+        } finally {
+            runlock();
+        }
     }
 
     /** Setter for property priority.
@@ -679,18 +732,28 @@ public abstract class Job  {
      *
      */
     public void setPriority(int priority) {
-        if(priority <0) {
-            throw new IllegalArgumentException(
-            "priority should be greater than or equal to zero");
+        wlock();
+        try {
+            if(priority <0) {
+                throw new IllegalArgumentException(
+                "priority should be greater than or equal to zero");
+            }
+            this.priority = priority;
+        } finally {
+            wunlock();
         }
-        this.priority = priority;
     }
 
     public String toString() {
-        return "Job ID="+id+" state="+state+
-        " created on "+
-        (new java.util.Date(creationTime)).toString()+
-        " by ["+getSubmitterId()+"]";
+        rlock();
+        try {
+            return "Job ID="+id+" state="+state+
+            " created on "+
+            (new java.util.Date(creationTime)).toString()+
+            " by ["+getSubmitterId()+"]";
+        } finally {
+            runlock();
+        }
     }
 
     /** Getter for property id.
@@ -706,7 +769,12 @@ public abstract class Job  {
      *
      */
     public Long getNextJobId() {
-        return nextJobId;
+        rlock();
+        try {
+            return nextJobId;
+        } finally {
+            runlock();
+        }
     }
 
     /** Setter for property nextJobId.
@@ -714,8 +782,13 @@ public abstract class Job  {
      *
      */
     public void setNextJobId(Long nextJobId) {
-        this.nextJobId = nextJobId;
-        saveJob();
+        wlock();
+        try {
+            this.nextJobId = nextJobId;
+            saveJob();
+        } finally {
+            wunlock();
+        }
     }
 
     /** Getter for property schedulerId.
@@ -723,7 +796,12 @@ public abstract class Job  {
      *
      */
     public String getSchedulerId() {
-        return schedulerId;
+        rlock();
+        try {
+            return schedulerId;
+        } finally {
+            runlock();
+        }
     }
 
     /** Setter for property schedulerId.
@@ -731,23 +809,28 @@ public abstract class Job  {
      *
      */
     public void setScheduler(String schedulerId,long schedulerTimeStamp) {
-        //  check if the values have indeed changed
-        // If they are the same, we do not need to do anythign.
-        if(this.schedulerTimeStamp != schedulerTimeStamp ||
-           this.schedulerId != null && schedulerId == null ||
-           schedulerId != null && !schedulerId.equals(this.schedulerId)) {
+        wlock() ;
+        try {
+            //  check if the values have indeed changed
+            // If they are the same, we do not need to do anythign.
+            if(this.schedulerTimeStamp != schedulerTimeStamp ||
+               this.schedulerId != null && schedulerId == null ||
+               schedulerId != null && !schedulerId.equals(this.schedulerId)) {
 
-            this.schedulerTimeStamp = schedulerTimeStamp;
-            this.schedulerId = schedulerId;
+                this.schedulerTimeStamp = schedulerTimeStamp;
+                this.schedulerId = schedulerId;
 
-            // we need to save job every time the scheduler is set
-            // even if the jbbc monitoring log is disabled,
-            // as we use scheduler id to identify who this job belongs to.
-            try {
-                    getJobStorage().saveJob(this,true);
-            }catch (java.sql.SQLException sqle) {
-                esay(sqle);
+                // we need to save job every time the scheduler is set
+                // even if the jbbc monitoring log is disabled,
+                // as we use scheduler id to identify who this job belongs to.
+                try {
+                        getJobStorage().saveJob(this,true);
+                }catch (java.sql.SQLException sqle) {
+                    esay(sqle);
+                }
             }
+        } finally {
+            wunlock();
         }
     }
 
@@ -756,31 +839,41 @@ public abstract class Job  {
      *
      */
     public long getSchedulerTimeStamp() {
-        return schedulerTimeStamp;
+        rlock();
+        try {
+            return schedulerTimeStamp;
+        } finally {
+            runlock();
+        }
     }
 
-    public synchronized long extendLifetimeMillis(long newLifetimeInMillis) throws SRMException {
-        if(State.isFinalState(state)){
-            if(state == State.CANCELED) {
-                throw new SRMAbortedException("can't extend lifetime, job was aborted");
-            } else if(state == State.DONE) {
-                throw new SRMReleasedException("can't extend lifetime, job has finished");
-            } else {
-                throw new SRMException("can't extend lifetime, job state is "+state);
+    public long extendLifetimeMillis(long newLifetimeInMillis) throws SRMException {
+        wlock();
+        try {
+            if(State.isFinalState(state)){
+                if(state == State.CANCELED) {
+                    throw new SRMAbortedException("can't extend lifetime, job was aborted");
+                } else if(state == State.DONE) {
+                    throw new SRMReleasedException("can't extend lifetime, job has finished");
+                } else {
+                    throw new SRMException("can't extend lifetime, job state is "+state);
+                }
             }
-        }
 
-        long remainingLifetime = getRemainingLifetime();
-        if(remainingLifetime >=newLifetimeInMillis) {
-            return remainingLifetime;
-        }
+            long remainingLifetime = getRemainingLifetime();
+            if(remainingLifetime >=newLifetimeInMillis) {
+                return remainingLifetime;
+            }
 
-        if (!LifetimeExpiration.cancel(id)) {
-            throw new SRMException (" job expiration has started already ");
-        }
-        LifetimeExpiration.schedule(id, newLifetimeInMillis);
+            if (!LifetimeExpiration.cancel(id)) {
+                throw new SRMException (" job expiration has started already ");
+            }
+            LifetimeExpiration.schedule(id, newLifetimeInMillis);
 
-        return 0;
+            return 0;
+        } finally {
+            wunlock();
+        }
     }
 
     /**
@@ -872,8 +965,8 @@ public abstract class Job  {
 
     public static final void expireJob(Job job) {
         try {
-            synchronized(job)
-            {
+            job.wlock();
+            try {
                 job.say("expiring job id="+job.getId());
                 if(job.state == State.READY ||
                 job.state == State.TRANSFERRING) {
@@ -884,6 +977,8 @@ public abstract class Job  {
                     return;
                 }
                 job.setState(State.FAILED,"lifetime expired");
+            } finally {
+                job.wunlock();
             }
         }
         catch(IllegalStateTransition ist) {
@@ -897,7 +992,12 @@ public abstract class Job  {
      *
      */
     public int getMaxNumberOfRetries() {
-        return maxNumberOfRetries;
+        rlock();
+        try {
+            return maxNumberOfRetries;
+        } finally {
+            runlock();
+        }
     }
 
     /** Setter for property maxNumberOfRetries.
@@ -905,7 +1005,12 @@ public abstract class Job  {
      *
      */
     public void setMaxNumberOfRetries(int maxNumberOfRetries) {
-        this.maxNumberOfRetries = maxNumberOfRetries;
+        wlock();
+        try {
+            this.maxNumberOfRetries = maxNumberOfRetries;
+        } finally {
+            wunlock();
+        }
     }
 
     /**
@@ -921,16 +1026,26 @@ public abstract class Job  {
      * @return Value of property lifetime.
      */
     public long getLifetime() {
-        return lifetime;
+        rlock();
+        try {
+            return lifetime;
+        } finally {
+            runlock();
+        }
     }
 
     public long getRemainingLifetime() {
-        if(State.isFinalState(this.state)) {
-            return 0;
+        wlock();
+        try {
+            if(State.isFinalState(this.state)) {
+                return 0;
+            }
+            long remianingLifetime = creationTime+
+                    lifetime - System.currentTimeMillis();
+            return remianingLifetime >0?remianingLifetime:0;
+        } finally {
+            wunlock();
         }
-        long remianingLifetime = creationTime+
-                lifetime - System.currentTimeMillis();
-        return remianingLifetime >0?remianingLifetime:0;
     }
 
     /**
@@ -943,6 +1058,8 @@ public abstract class Job  {
      * of the job, thus confirming their existance).
      */
     public void scheduleIfRestored() {
+        wlock();
+        try {
          if(getState() == State.RESTORED) {
                 if(schedulerId != null) {
                     Scheduler scheduler = Scheduler.getScheduler(schedulerId);
@@ -957,17 +1074,19 @@ public abstract class Job  {
                     }
                 }
             }
-
-
+        } finally {
+            wunlock();
+        }
     }
 
 
     public long getLastStateTransitionTime(){
-        return lastStateTransitionTime;
-    }
-
-    public Semaphore getLock() {
-          return lock;
+        rlock();
+        try {
+            return lastStateTransitionTime;
+        } finally {
+            runlock();
+        }
     }
 
     public static class JobHistory implements java.lang.Comparable<JobHistory> {
@@ -1086,14 +1205,19 @@ public abstract class Job  {
     /**
      * This is the initial call to schedule the job for execution
      */
-    public synchronized void schedule() throws InterruptedException,IllegalStateTransition
+    public void schedule() throws InterruptedException,IllegalStateTransition
     {
+        wlock();
+        try{
             if(!State.PENDING.equals(state)) {
                 throw new IllegalStateException("State is not pending");
             }
             Scheduler scheduler = SchedulerFactory.getSchedulerFactory().getScheduler(this);
             this.setScheduler(scheduler.getId(), 0);
             scheduler.schedule(this);
+        } finally {
+            wunlock();
+        }
     }
 
 
@@ -1102,4 +1226,27 @@ public abstract class Job  {
         return sharedMemoryCache.getJobs(type);
     }
 
+    public final void wlock() {
+        writeLock.lock();
+    }
+
+    public final void wunlock() {
+        writeLock.unlock();
+    }
+
+    public final void rlock() {
+        // Terracotta currently does not support upgrading read lock to
+        // write lock. So we use write logs everywhere.
+        // See bug at
+        // https://jira.terracotta.org/jira/browse/CDV-787
+        writeLock.lock();
+    }
+
+    public final void runlock() {
+        // Terracotta currently does not support upgrading read lock to
+        // write lock. So we use write logs everywhere.
+        // See bug at
+        // https://jira.terracotta.org/jira/browse/CDV-787
+        writeLock.unlock();
+    }
 }

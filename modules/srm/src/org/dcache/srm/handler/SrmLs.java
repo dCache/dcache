@@ -162,12 +162,12 @@ public class SrmLs {
                                                     3600*1000,
                                                     configuration.getLsRetryTimeout(),
                                                     configuration.getLsMaxNumOfRetries(),
-                                                    client_host);
-                        r.setCount(count);
-                        r.setOffset(offset);
-                        r.setNumOfLevels(numOfLevels);
-                        r.setLongFormat(longFormat);
-                        r.setMaxNumOfResults(max_results_num);
+                                                    client_host,
+                                                    count,
+                                                    offset,
+                                                    numOfLevels,
+                                                    longFormat,
+                                                    max_results_num);
                         if (configuration.isAsynchronousLs()) { 
                                 r.schedule();
                                 return r.getSrmLsResponse();

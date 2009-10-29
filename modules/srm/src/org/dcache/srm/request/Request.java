@@ -160,7 +160,7 @@ public abstract class Request extends Job {
     
     
     /** general srm server configuration settings */
-    private Configuration configuration;
+    private transient Configuration configuration;
 
     
     
@@ -172,13 +172,7 @@ public abstract class Request extends Job {
 
 
     
-    /**
-     * this is called every time user gets RequestStatus
-     * so the next time user waits longer (up to MAX_RETRY_TIME secs)
-     * if nothing has been happening for a while
-     * The algoritm of incrising retryDeltaTime is absolutely arbitrary
-     */
-    protected int i = 0;
+    protected int cyclicUpdateCounter = 0;
 
     protected long max_update_period = 10*60*60;
 
@@ -223,8 +217,13 @@ public abstract class Request extends Job {
      * Getter for property credentialId.
      * @return Value of property credentialId.
      */
-    public Long getCredentialId() {
-        return credentialId;
+    public final Long getCredentialId() {
+        rlock();
+        try {
+            return credentialId;
+        } finally {
+            runlock();
+        }
     }
 
     public abstract String getMethod();
@@ -265,17 +264,18 @@ public abstract class Request extends Job {
     }
 
     
-    public SRMUser getSRMUser() {
-        return user;
-    }
-
-   
     /**
      * Getter for property retryDeltaTime.
      * @return Value of property retryDeltaTime.
      */
     public int getRetryDeltaTime() {
-        return retryDeltaTime;
+        rlock();
+        try {
+            return retryDeltaTime;
+        } finally {
+            runlock();
+        }
+
     }
 
     
@@ -285,7 +285,12 @@ public abstract class Request extends Job {
      * srm user
      */
     public SRMUser getUser() {
-    return user;
+        rlock();
+        try {
+            return user;
+        } finally {
+            runlock();
+        }
     }
 
     
@@ -294,7 +299,12 @@ public abstract class Request extends Job {
      * @return Value of property should_updateretryDeltaTime.
      */
     public boolean isShould_updateretryDeltaTime() {
-        return should_updateretryDeltaTime;
+        rlock();
+        try {
+            return should_updateretryDeltaTime;
+        } finally {
+            runlock();
+        }
     }
 
     
@@ -302,7 +312,12 @@ public abstract class Request extends Job {
      * reset retryDeltaTime to 1
      */
     public void resetRetryDeltaTime() {
-        retryDeltaTime = 1;
+        wlock();
+        try {
+            retryDeltaTime = 1;
+        } finally {
+            wunlock();
+        }
     }
 
     //public abstract void schedule(Scheduler scheduler) throws InterruptedException, IllegalStateTransition, SQLException;
@@ -313,64 +328,120 @@ public abstract class Request extends Job {
      * set retry delta time to 1
      */
     public void stopUpdating() {
-        retryDeltaTime = 1;
-        should_updateretryDeltaTime = false;
+        wlock();
+        try {
+            retryDeltaTime = 1;
+            should_updateretryDeltaTime = false;
+        } finally {
+            wunlock();
+        }
     }
 
+    /**
+     * updateRetryDeltaTime is called every time user gets RequestStatus
+     * so the next time user waits longer (up to MAX_RETRY_TIME secs)
+     * if nothing has been happening for a while
+     * The algoritm of incrising retryDeltaTime is absolutely arbitrary
+     */
     
     protected void updateRetryDeltaTime() {
-        if (should_updateretryDeltaTime && i == 0) {
-            
-            if(retryDeltaTime <100) {
-                retryDeltaTime +=3;
+        wlock();
+        try {
+            if (should_updateretryDeltaTime && cyclicUpdateCounter == 0) {
+
+                if(retryDeltaTime <100) {
+                    retryDeltaTime +=3;
+                }
+                else if(retryDeltaTime <300) {
+                    retryDeltaTime +=6;
+                }
+                else {
+                    retryDeltaTime *= 2;
+                }
+                if (retryDeltaTime > max_update_period) {
+                    retryDeltaTime = (int) max_update_period;
+                }
             }
-            else if(retryDeltaTime <300) {
-                retryDeltaTime +=6;
-            }
-            else {
-                retryDeltaTime *= 2;
-            }
-            if (retryDeltaTime > max_update_period) {
-                retryDeltaTime = (int) max_update_period;
-            }
+            cyclicUpdateCounter = (cyclicUpdateCounter+1)%5;
+        } finally {
+            wunlock();
         }
-        i = (i+1)%5;
     }
 
     public final String getDescription() {
-        return description;
+        rlock();
+        try {
+            return description;
+        } finally {
+            runlock();
+        }
     }
 
     public final void setDescription(String description) {
-        this.description = description;
+        wlock();
+        try {
+            this.description = description;
+        } finally {
+            wunlock();
+        }
     }
 
     public TStatusCode getStatusCode() {
-        return statusCode;
+        rlock();
+        try {
+            return statusCode;
+        } finally {
+            runlock();
+        }
     }
 
     public String getStatusCodeString() {
-        return statusCode==null ? null:statusCode.getValue() ;
+        rlock();
+        try {
+            return statusCode==null ? null:statusCode.getValue() ;
+        } finally {
+            runlock();
+        }
     }
 
-    public synchronized void setStateAndStatusCode(
+    public final void setStateAndStatusCode(
             State state,
             String description,
             TStatusCode statusCode)  throws IllegalStateTransition  {
-        setState(state, description);
-        setStatusCode(statusCode);
+        wlock();
+        try {
+            setState(state, description);
+            setStatusCode(statusCode);
+        } finally {
+            wunlock();
+        }
     }
 
     public void setStatusCode(TStatusCode statusCode) {
-        this.statusCode = statusCode;
+        wlock();
+        try {
+            this.statusCode = statusCode;
+        } finally {
+            wunlock();
+        }
     }
 
     public String getClient_host() {
-        return client_host;
+        rlock();
+        try {
+            return client_host;
+        } finally {
+            runlock();
+        }
     }
     
     public String getSubmitterId() {
-         return Long.toString(user.getId());
+        rlock();
+        try {
+            return Long.toString(user.getId());
+        } finally {
+            runlock();
+        }
     }
 
     /**

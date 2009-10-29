@@ -101,13 +101,13 @@ import org.apache.log4j.Logger;
  * @author  timur
  * @version
  */
-public class ReserveSpaceRequest extends Request {
+public final class ReserveSpaceRequest extends Request {
     private static final Logger logger =
             Logger.getLogger (ReserveSpaceRequest.class);
     
     private long sizeInBytes ;
-    private TRetentionPolicy retentionPolicy =null;
-    private TAccessLatency accessLatency = null;
+    private final TRetentionPolicy retentionPolicy;
+    private final TAccessLatency accessLatency;
     private String spaceToken;
     private long spaceReservationLifetime;
     
@@ -133,14 +133,8 @@ public class ReserveSpaceRequest extends Request {
               clienthost);
         
         this.sizeInBytes = sizeInBytes ;
-        if(retentionPolicy != null ) {
-            this.retentionPolicy = retentionPolicy;
-        }
-        
-        if( accessLatency != null) {
-            this.accessLatency = accessLatency;
-        }
-        
+        this.retentionPolicy = retentionPolicy;
+        this.accessLatency = accessLatency;
         this.spaceReservationLifetime = spaceReservationLifetime;
         storeInSharedMemory();
         say("created");
@@ -213,24 +207,12 @@ public class ReserveSpaceRequest extends Request {
         getStorage().elog("ReserveSpaceRequest id #"+getId()+" :"+s);
     }
     
-    public RequestCredential getCredential() {
-        return RequestCredential.getRequestCredential(credentialId);
-    }
-    
-    /**
-     * Getter for property credentialId.
-     * @return Value of property credentialId.
-     */
-    public Long getCredentialId() {
-        return credentialId;
-    }
-    
     public void esay(Throwable t) {
         getStorage().elog("ReserveSpaceRequest id #"+getId()+" Throwable:"+t);
         getStorage().elog(t);
     }
     
-    
+    @Override
     public String toString() {
         return toString(false);
     }
@@ -286,36 +268,54 @@ public class ReserveSpaceRequest extends Request {
     }
     
     public SrmStatusOfReserveSpaceRequestResponse getSrmStatusOfReserveSpaceRequestResponse() {
-        SrmStatusOfReserveSpaceRequestResponse response = 
-                new SrmStatusOfReserveSpaceRequestResponse();
-        response.setReturnStatus(getTReturnStatus());
-        response.setRetentionPolicyInfo(new TRetentionPolicyInfo(retentionPolicy, accessLatency));
-        response.setSpaceToken(getSpaceToken());
-        response.setSizeOfTotalReservedSpace(new UnsignedLong(sizeInBytes) );
-        response.setSizeOfGuaranteedReservedSpace(new UnsignedLong(sizeInBytes));
-        response.setLifetimeOfReservedSpace(new Integer((int)(spaceReservationLifetime/1000L)));
-        return response;
+        rlock();
+        try {
+            SrmStatusOfReserveSpaceRequestResponse response =
+                    new SrmStatusOfReserveSpaceRequestResponse();
+            response.setReturnStatus(getTReturnStatus());
+            response.setRetentionPolicyInfo(new TRetentionPolicyInfo(retentionPolicy, accessLatency));
+            response.setSpaceToken(getSpaceToken());
+            response.setSizeOfTotalReservedSpace(new UnsignedLong(sizeInBytes) );
+            response.setSizeOfGuaranteedReservedSpace(new UnsignedLong(sizeInBytes));
+            response.setLifetimeOfReservedSpace(new Integer((int)(spaceReservationLifetime/1000L)));
+            return response;
+        } finally {
+            runlock();
+        }
         
     }
     
     public SrmReserveSpaceResponse getSrmReserveSpaceResponse() {
-        SrmReserveSpaceResponse response = new SrmReserveSpaceResponse();
-        response.setReturnStatus(getTReturnStatus());
-        response.setRetentionPolicyInfo(new TRetentionPolicyInfo(retentionPolicy, accessLatency));
-        response.setRequestToken(String.valueOf(getId()));
-        response.setSpaceToken(getSpaceToken());
-        response.setSizeOfTotalReservedSpace(new UnsignedLong(sizeInBytes) );
-        response.setSizeOfGuaranteedReservedSpace(new UnsignedLong(sizeInBytes));
-        response.setLifetimeOfReservedSpace(new Integer((int)(spaceReservationLifetime/1000L)));
-        return response;
+        rlock();
+        try {
+            SrmReserveSpaceResponse response = new SrmReserveSpaceResponse();
+            response.setReturnStatus(getTReturnStatus());
+            response.setRetentionPolicyInfo(new TRetentionPolicyInfo(retentionPolicy, accessLatency));
+            response.setRequestToken(String.valueOf(getId()));
+            response.setSpaceToken(getSpaceToken());
+            response.setSizeOfTotalReservedSpace(new UnsignedLong(sizeInBytes) );
+            response.setSizeOfGuaranteedReservedSpace(new UnsignedLong(sizeInBytes));
+            response.setLifetimeOfReservedSpace(new Integer((int)(spaceReservationLifetime/1000L)));
+            return response;
+        } finally {
+            runlock();
+        }
     }
     
-    public synchronized final TReturnStatus getTReturnStatus()   {
+    public final TReturnStatus getTReturnStatus()   {
         TReturnStatus status = new TReturnStatus();
-        status.setExplanation(getErrorMessage());
-        State state = getState();
-        if(getStatusCode() != null) {
-            status.setStatusCode(getStatusCode());
+        rlock();
+        State state;
+        TStatusCode statusCode;
+        try {
+            status.setExplanation(getErrorMessage());
+            state = getState();
+            statusCode = getStatusCode() ;
+        } finally {
+            runlock();
+        }
+        if(statusCode != null) {
+            status.setStatusCode(statusCode);
         }
         else if(state == State.FAILED) {
             status.setStatusCode(TStatusCode.SRM_FAILURE);
@@ -419,62 +419,84 @@ public class ReserveSpaceRequest extends Request {
                 logger.error(ire);
                 return;
             }
+            request.wlock();
             try {
-                synchronized(request) {
-                    
-                    State state = request.getState();
-                    if(!State.isFinalState(state)) {
-                        
-                        request.setSpaceToken(spaceReservationToken);
-                        request.setSizeInBytes(reservedSpaceSize);
-                        request.setState(State.DONE,"space reservation succeeded" );
-                    }
+                State state = request.getState();
+                if(!State.isFinalState(state)) {
+
+                    request.setSpaceToken(spaceReservationToken);
+                    request.setSizeInBytes(reservedSpaceSize);
+                    request.setState(State.DONE,"space reservation succeeded" );
                 }
             } catch(IllegalStateTransition ist) {
                 request.esay("Illegal State Transition : " +ist.getMessage());
+            } finally {
+                wunlock();
             }
         }
         
     }
     
     public long getSizeInBytes() {
-        return sizeInBytes;
+        rlock();
+        try {
+            return sizeInBytes;
+        } finally {
+            runlock();
+        }
     }
     
     public void setSizeInBytes(long sizeInBytes) {
-        this.sizeInBytes = sizeInBytes;
+        wlock();
+        try {
+            this.sizeInBytes = sizeInBytes;
+        } finally {
+            wunlock();
+        }
     }
     
     public TRetentionPolicy getRetentionPolicy() {
         return retentionPolicy;
     }
     
-    public void setRetentionPolicy(TRetentionPolicy retentionPolicy) {
-        this.retentionPolicy = retentionPolicy;
-    }
-    
     public TAccessLatency getAccessLatency() {
         return accessLatency;
     }
     
-    public void setAccessLatency(TAccessLatency accessLatency) {
-        this.accessLatency = accessLatency;
-    }
-       
     public String getSpaceToken() {
-        return spaceToken;
+        rlock();
+        try {
+            return spaceToken;
+        } finally {
+            runlock();
+        }
     }
     
     public void setSpaceToken(String spaceToken) {
-        this.spaceToken = spaceToken;
+        wlock();
+        try {
+            this.spaceToken = spaceToken;
+        } finally {
+            wunlock();
+        }
     }
     
     public long getSpaceReservationLifetime() {
-        return spaceReservationLifetime;
+        rlock();
+        try {
+            return spaceReservationLifetime;
+        } finally {
+            runlock();
+        }
     }
     
     public void setSpaceReservationLifetime(long spaceReservationLifetime) {
-        this.spaceReservationLifetime = spaceReservationLifetime;
+        wlock();
+        try {
+            this.spaceReservationLifetime = spaceReservationLifetime;
+        } finally {
+            wunlock();
+        }
     }
     
     public String getMethod(){

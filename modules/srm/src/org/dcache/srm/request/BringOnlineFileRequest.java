@@ -82,7 +82,6 @@ import org.globus.util.GlobusURL;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.scheduler.Job;
-import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.Tools;
 import org.dcache.srm.GetFileInfoCallbacks;
 import org.dcache.srm.PinCallbacks;
@@ -105,14 +104,14 @@ import org.dcache.srm.SRMInvalidRequestException;
  * @author  timur
  * @version
  */
-public class BringOnlineFileRequest extends FileRequest {
+public final class BringOnlineFileRequest extends FileRequest {
     private final static Logger _log = Logger.getLogger(BringOnlineFileRequest.class);
     
     // the globus url class created from surl_string
     private GlobusURL surl;
     private String pinId;
     private String fileId;
-    private FileMetaData fileMetaData;
+    private transient FileMetaData fileMetaData;
     
     private static final long serialVersionUID = -9155373723705753177L;
     
@@ -215,45 +214,76 @@ public class BringOnlineFileRequest extends FileRequest {
     }
     
     public void setPinId(String pinId) {
-        this.pinId = pinId;
+        wlock();
+        try {
+            this.pinId = pinId;
+        } finally {
+            wunlock();
+        }
     }
     
     public String getPinId() {
-        return pinId;
+        rlock();
+        try {
+            return pinId;
+        } finally {
+            runlock();
+        }
     }
     
     public boolean isPinned() {
-        return pinId != null;
+        rlock();
+        try {
+            return getPinId() != null;
+        } finally {
+            runlock();
+        }
+
     }
     
     
     
     public String getPath() {
-        return getPath(surl);
+        return getPath(getSurl());
     }
     
     
     public GlobusURL getSurl() {
-        return surl;
+        rlock();
+        try {
+            return surl;
+        } finally {
+            runlock();
+        }
     }
     
     
     public String getSurlString() {
-        return surl.getURL();
+        rlock();
+        try {
+            return getSurl().getURL();
+        } finally {
+            runlock();
+        }
     }
     
     public boolean canRead() throws SRMInvalidRequestException {
-        if(fileId == null) {
+        if(getFileId() == null) {
             return false;
         }
         SRMUser user =(SRMUser) getUser();
         say("BringOnlineFileRequest calling storage.canRead()");
-        return getStorage().canRead(user,fileId,fileMetaData);
+        return getStorage().canRead(user,getFileId(),fileMetaData);
     }
     
     
     public String getFileId() {
-        return fileId;
+        rlock();
+        try {
+            return fileId;
+        } finally {
+            runlock();
+        }
     }
     
     
@@ -339,20 +369,20 @@ public class BringOnlineFileRequest extends FileRequest {
         return surlReturnStatus;
     }
     
- 
+    @Override
     public String toString() {
         StringBuffer sb = new StringBuffer();
         sb.append(" BringOnlineFileRequest ");
         sb.append(" id =").append(getId());
-        sb.append(" SURL=").append(surl.getURL());
+        sb.append(" SURL=").append(getSurl().getURL());
         
         return sb.toString();
     }
     
-    public synchronized void run() throws NonFatalJobFailure, FatalJobFailure {
+    public final void run() throws NonFatalJobFailure, FatalJobFailure {
         say("run()");
         try {
-            if(fileId == null) {
+            if(getFileId() == null) {
                 try {
                     if(!Tools.sameHost(getConfiguration().getSrmhost(),
                     getSurl().getHost())) {
@@ -367,21 +397,21 @@ public class BringOnlineFileRequest extends FileRequest {
                 }
                 say("fileId is null, asking to get a fileId");
                 askFileId();
-                if(fileId == null) {
+                if(getFileId() == null) {
                     setState(State.ASYNCWAIT, "getting file Id");
                     say("BringOnlineFileRequest: waiting async notification about fileId...");
                     return;
                 }
             }
-            say("fileId = "+fileId);
+            say("fileId = "+getFileId());
             
-            if(pinId == null) {
+            if(getPinId() == null) {
                 if(!canRead()) {
                     
-                    esay( "user "+getUser()+"has no permission to read "+fileId);
+                    esay( "user "+getUser()+"has no permission to read "+getFileId());
                     try {
                         setState(State.FAILED,"user "+
-                                getUser()+"has no permission to read "+fileId);
+                                getUser()+"has no permission to read "+getFileId());
                     }
                     catch(IllegalStateTransition ist) {
                         esay("Illegal State Transition : " +ist.getMessage());
@@ -391,7 +421,7 @@ public class BringOnlineFileRequest extends FileRequest {
 
                 say("pinId is null, asking to pin ");
                 pinFile();
-                if(pinId == null) {
+                if(getPinId() == null) {
                     setState(State.ASYNCWAIT,"pinning file");
                     say("BringOnlineFileRequest: waiting async notification about pinId...");
                     return;
@@ -405,7 +435,7 @@ public class BringOnlineFileRequest extends FileRequest {
         catch(IllegalStateTransition ist) {
             throw new NonFatalJobFailure("Illegal State Transition : " +ist.getMessage());
         }
-        say("PinId is "+pinId+" returning, scheduler should change" +
+        say("PinId is "+getPinId()+" returning, scheduler should change" +
             " state to \"Ready\"");
         
     }
@@ -462,7 +492,7 @@ public class BringOnlineFileRequest extends FileRequest {
         try {
             
             PinCallbacks callbacks = new ThePinCallbacks(getId());
-            say("storage.pinFile("+fileId+",...)");
+            say("storage.pinFile("+getFileId()+",...)");
             long desiredPinLifetime =
                 ((BringOnlineRequest)getRequest()).getDesiredOnlineLifetimeInSeconds();
             if(desiredPinLifetime != -1) {
@@ -470,9 +500,8 @@ public class BringOnlineFileRequest extends FileRequest {
                 desiredPinLifetime *= 1000;
             }
 
-            getStorage().pinFile(getUser(),
-                fileId, 
-                getRequest().getClient_host(),
+            getStorage().pinFile(getUser(), 
+                getFileId(),getRequest().getClient_host(),
                 fileMetaData, 
                 desiredPinLifetime, 
                 getRequestId().longValue() ,
@@ -496,11 +525,11 @@ public class BringOnlineFileRequest extends FileRequest {
             }
         }
         if(state == State.CANCELED || state == State.FAILED ) {
-            if(fileId != null && pinId != null) {
+            if(getFileId() != null && getPinId() != null) {
                 UnpinCallbacks callbacks = new TheUnpinCallbacks(this.getId());
-                say("state changed to final state, unpinning fileId= "+ fileId+" pinId = "+pinId);
+                say("state changed to final state, unpinning fileId= "+ getFileId()+" pinId = "+getPinId());
                 try {
-                    getStorage().unPinFile(getUser(),fileId, callbacks, pinId);
+                    getStorage().unPinFile(getUser(),getFileId(),callbacks, getPinId());
                 }
                 catch (SRMInvalidRequestException ire) {
                     esay(ire);
@@ -538,15 +567,15 @@ public class BringOnlineFileRequest extends FileRequest {
 
         }
         
-        if(fileId != null && pinId != null) {
+        if(getFileId() != null && getPinId() != null) {
             TheUnpinCallbacks callbacks = new TheUnpinCallbacks(this.getId());
             say("srmReleaseFile, unpinning fileId= "+ 
-                    fileId+" pinId = "+pinId);
-            getStorage().unPinFile(getUser(),fileId, callbacks, pinId);
+                    getFileId()+" pinId = "+getPinId());
+            getStorage().unPinFile(getUser(),getFileId(),callbacks, getPinId());
             try {   
                 callbacks.waitCompleteion(60000); //one minute
                 if(callbacks.success) {
-                    pinId = null;
+                    setPinId(null);
                     this.saveJob();
                     returnStatus.setStatusCode(TStatusCode.SRM_SUCCESS);
                     surlReturnStatus.setStatus(returnStatus);
@@ -581,7 +610,7 @@ public class BringOnlineFileRequest extends FileRequest {
         if(getStatusCode() != null) {
             returnStatus.setStatusCode(getStatusCode());
         } else if(state == State.DONE) {
-            if(pinId != null) {
+            if(getPinId() != null) {
                 returnStatus.setStatusCode(TStatusCode.SRM_SUCCESS);
             }  else {
                 returnStatus.setStatusCode(TStatusCode.SRM_RELEASED);
@@ -638,12 +667,31 @@ public class BringOnlineFileRequest extends FileRequest {
         if(remainingLifetime >= newLifetime) {
             return remainingLifetime;
         }
-        if(pinId == null) {
+        if(getPinId() == null) {
             return newLifetime;
         }
         SRMUser user =(SRMUser) getUser();
-        getStorage().extendPinLifetime(user,fileId,pinId,newLifetime);
+        getStorage().extendPinLifetime(user,getFileId(), getPinId(),newLifetime);
         return newLifetime;
+    }
+
+    /**
+     * @param surl the surl to set
+     */
+    private void setSurl(GlobusURL surl) {
+        this.surl = surl;
+    }
+
+    /**
+     * @param fileId the fileId to set
+     */
+    private void setFileId(String fileId) {
+        wlock();
+        try {
+            this.fileId = fileId;
+        } finally {
+            wunlock();
+        }
     }
     
     
@@ -753,7 +801,7 @@ public class BringOnlineFileRequest extends FileRequest {
                 }
                 
                 if(state == State.ASYNCWAIT || state == State.RUNNING) {
-                    fr.fileId = fileId;
+                    fr.setFileId(fileId);
                     fr.fileMetaData = fileMetaData;
                     if(state == State.ASYNCWAIT) {
                         Scheduler scheduler = Scheduler.getScheduler(fr.getSchedulerId());
@@ -866,11 +914,10 @@ public class BringOnlineFileRequest extends FileRequest {
         
         public void Pinned(String pinId) {
             try {
-                BringOnlineFileRequest fr = getBringOnlineFileRequest();
-                State state;
+               BringOnlineFileRequest fr = getBringOnlineFileRequest();
                fr.say("ThePinCallbacks: Pinned() pinId:"+pinId);
                 synchronized(fr ) {
-                    fr.pinId = pinId;
+                    fr.setPinId(pinId);
                     fr.setState(State.DONE," file is pinned, pinId="+pinId);
                 }
             }
@@ -1020,7 +1067,7 @@ public class BringOnlineFileRequest extends FileRequest {
                     fr.say("TheUnpinCallbacks: Unpinned() pinId:"+pinId);
                     State state = fr.getState();
                    if(state == State.ASYNCWAIT) {
-                        fr.pinId = pinId;
+                        fr.setPinId(pinId);
                         Scheduler scheduler = Scheduler.getScheduler(fr.getSchedulerId());
                         try {
                             scheduler.schedule(fr);

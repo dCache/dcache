@@ -79,7 +79,6 @@ import java.util.HashSet;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMFileRequestNotFoundException;
-import org.dcache.srm.util.Configuration;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.State;
 
@@ -96,7 +95,7 @@ import org.apache.axis.types.URI;
 /*
  * @author  timur
  */
-public class BringOnlineRequest extends ContainerRequest {
+public final class BringOnlineRequest extends ContainerRequest {
     /** array of protocols supported by client or server (copy) */
     protected String[] protocols;
     private long desiredOnlineLifetimeInSeconds;
@@ -272,10 +271,9 @@ public class BringOnlineRequest extends ContainerRequest {
         if(State.isFinalState(state)) {
             
             say("get request state changed to "+state);
-            for(int i = 0 ; i < fileRequests.length; ++i) {
+            for(FileRequest fr: fileRequests) {
                 try {
-                    FileRequest fr = fileRequests[i];
-                    say("changing fr#"+fileRequests[i].getId()+" to "+state);
+                    say("changing fr#"+fr.getId()+" to "+state);
                     fr.setState(state,"changing file state becase requests state changed");
                 }
                 catch(IllegalStateTransition ist) {
@@ -289,7 +287,7 @@ public class BringOnlineRequest extends ContainerRequest {
     
 
         
-    public synchronized final SrmBringOnlineResponse getSrmBringOnlineResponse()  
+    public  final SrmBringOnlineResponse getSrmBringOnlineResponse()  
     throws SRMException ,java.sql.SQLException {
         //say("getRequestStatus()");
         SrmBringOnlineResponse response = new SrmBringOnlineResponse();
@@ -308,7 +306,7 @@ public class BringOnlineRequest extends ContainerRequest {
     }
     
 
-    public synchronized final SrmStatusOfBringOnlineRequestResponse 
+    public final SrmStatusOfBringOnlineRequestResponse 
             getSrmStatusOfBringOnlineRequestResponse()  
     throws SRMException, java.sql.SQLException {
         //say("getRequestStatus()");
@@ -316,7 +314,7 @@ public class BringOnlineRequest extends ContainerRequest {
     }
     
     
-    public synchronized final SrmStatusOfBringOnlineRequestResponse 
+    public final SrmStatusOfBringOnlineRequestResponse 
             getSrmStatusOfBringOnlineRequestResponse(
             String[] surls)  
     throws SRMException, java.sql.SQLException {
@@ -528,7 +526,12 @@ public class BringOnlineRequest extends ContainerRequest {
     }
 
     public long getDesiredOnlineLifetimeInSeconds() {
-        return desiredOnlineLifetimeInSeconds;
+        rlock();
+        try {
+            return desiredOnlineLifetimeInSeconds;
+        } finally {
+            runlock();
+        }
     }
 
 }

@@ -323,26 +323,31 @@ public abstract class FileRequest extends Job {
     }
     
     public String toString(boolean longformat) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(" FileRequest ");
-        sb.append(" id =").append(getId());
-        sb.append(" job priority  =").append(getPriority());
-
-        sb.append(" crteator priority  =");
+        rlock();
         try {
-            sb.append(getUser().getPriority());
-        } catch (SRMInvalidRequestException ire) {
-            sb.append("Unknown");
+            StringBuilder sb = new StringBuilder();
+            sb.append(" FileRequest ");
+            sb.append(" id =").append(getId());
+            sb.append(" job priority  =").append(getPriority());
+
+            sb.append(" crteator priority  =");
+            try {
+                sb.append(getUser().getPriority());
+            } catch (SRMInvalidRequestException ire) {
+                sb.append("Unknown");
+            }
+            sb.append(" state=").append(getState());
+            if(longformat) {
+                sb.append('\n').append(getRequestFileStatus());
+                sb.append('\n').append("status code = ").append(getStatusCode());
+                sb.append('\n').append("error message = ").append(getErrorMessage());
+                 sb.append('\n').append("History of State Transitions: \n");
+                sb.append(getHistory());
+            }
+            return sb.toString();
+        } finally {
+            wunlock();
         }
-        sb.append(" state=").append(getState());
-        if(longformat) {
-            sb.append('\n').append(getRequestFileStatus());
-            sb.append('\n').append("status code = ").append(getStatusCode());
-            sb.append('\n').append("error message = ").append(getErrorMessage());
-             sb.append('\n').append("History of State Transitions: \n");
-            sb.append(getHistory());
-        }
-        return sb.toString();
     }
     
     public boolean equals(Object o) {
@@ -360,8 +365,8 @@ public abstract class FileRequest extends Job {
     public void setStatus(String status) throws SRMException, java.sql.SQLException {
         say("("+status+")");
         try {
-            synchronized(this)
-            {
+            wlock();
+            try {
                 if(status.equalsIgnoreCase("Done")) {
                     State state = getState();
                     if( !state.isFinalState()) {
@@ -384,6 +389,8 @@ public abstract class FileRequest extends Job {
                     throw new SRMException(error);
 
                 }
+            } finally {
+                wunlock();
             }
         }
         catch(IllegalStateTransition ist) {
@@ -408,7 +415,12 @@ public abstract class FileRequest extends Job {
      * @return Value of property requestId.
      */
     public Long getRequestId() {
-        return requestId;
+        rlock();
+        try {
+            return requestId;
+        } finally {
+            wunlock();
+        }
     } 
     
     public void setQOSTicket(QOSTicket qosTicket) {
@@ -429,23 +441,43 @@ public abstract class FileRequest extends Job {
     public abstract long extendLifetime(long newLifetime) throws SRMException ;
 
     public TStatusCode getStatusCode() {
-        return statusCode;
+        rlock();
+        try {
+            return statusCode;
+        } finally {
+            runlock();
+        }
     }
 
      public String getStatusCodeString() {
-        return statusCode==null ? null:statusCode.getValue() ;
+         rlock();
+         try {
+            return statusCode==null ? null:statusCode.getValue() ;
+         } finally {
+             runlock();
+         }
     }
 
-    public synchronized void setStateAndStatusCode(
+    public final void setStateAndStatusCode(
             State state,
             String description,
             TStatusCode statusCode)  throws IllegalStateTransition  {
-        setState(state, description);
-        setStatusCode(statusCode);
+        wlock();
+        try {
+            setState(state, description);
+            setStatusCode(statusCode);
+        } finally {
+            wunlock();
+        }
     }
 
     public void setStatusCode(TStatusCode statusCode) {
-        this.statusCode = statusCode;
+        wlock();
+        try {
+            this.statusCode = statusCode;
+        } finally {
+            wunlock();
+        }
     }
     
     public static String getPath(GlobusURL surl) {

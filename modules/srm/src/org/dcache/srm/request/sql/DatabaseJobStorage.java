@@ -87,7 +87,6 @@ import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.JDC;
 import org.dcache.srm.Logger;
-import java.util.concurrent.Semaphore;
 import org.dcache.commons.util.SqlHelper;
 /**
  *
@@ -413,7 +412,6 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
         if(!saveifmonitoringisdesabled && !logHistory) {
             return;
         }
-        final Semaphore lock = job.getLock(); 
         final long jobId = job.getId().longValue();
         final String historyTableName =  getHistoryTableName();
         final Iterator historyIterator = job.getHistoryIterator();
@@ -430,7 +428,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
              public void execute(Connection connection) throws SQLException {
                 boolean locked = false;
                 try {
-                       lock.acquire();
+                       job.rlock();
                        locked = true;
 
                     int result = 0;
@@ -536,12 +534,9 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                         }
                     }
                 }
-                catch (InterruptedException ie) {
-                    innersay("interrupted");
-                }
                 finally {
                     if(locked) {
-                        lock.release();
+                        job.runlock();
                     }
                 }
             }

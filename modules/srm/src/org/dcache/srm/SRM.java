@@ -945,8 +945,8 @@ public class SRM {
             say("getRequestStatus() received Request  ");
             if (r != null) {
                 // we found one make sure it is the same  user
-                SRMUser req_user = r.getSRMUser();
-                if (req_user == null || req_user.equals(user)) {
+                SRMUser requestUser = r.getUser();
+                if (requestUser == null || requestUser.equals(user)) {
                     // say(" getRequestStatus() request found, returns request file status");
                     // and return the request status
                     RequestStatus rs = r.getRequestStatus();
@@ -954,7 +954,7 @@ public class SRM {
                     return rs;
                 } else {
                     return createFailedRequestStatus("getRequestStatus(): request #" + requestId +
-                            " owned by "+req_user+" does not belong to user " + user, requestId);
+                            " owned by "+requestUser+" does not belong to user " + user, requestId);
                 }
             }
             return createFailedRequestStatus("getRequestStatus() request #" + requestId +

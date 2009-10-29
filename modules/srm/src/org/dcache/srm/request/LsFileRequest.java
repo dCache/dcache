@@ -4,7 +4,6 @@ package org.dcache.srm.request;
 import diskCacheV111.srm.RequestFileStatus;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.SRMUser;
-import org.dcache.srm.util.Configuration;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.NonFatalJobFailure;
@@ -19,11 +18,9 @@ import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.v2_2.*;
 import org.dcache.srm.SRMInvalidRequestException;
 
-public class LsFileRequest extends FileRequest {
+public final class LsFileRequest extends FileRequest {
         private org.apache.axis.types.URI surl;
-        TMetaDataPathDetail metaDataPathDetail=null;
-        SRMUser user;
-        LsRequest request;
+        private TMetaDataPathDetail metaDataPathDetail;
 
         public LsFileRequest(LsRequest request,
                              Long  requestCredentalId,
@@ -35,9 +32,7 @@ public class LsFileRequest extends FileRequest {
                       requestCredentalId,
                       lifetime,
                       maxNumberOfRetries);
-                this.request=request;
                 this.surl=url;
-                user=getUser();
         }
 
         public LsFileRequest(
@@ -79,7 +74,6 @@ public class LsFileRequest extends FileRequest {
                 catch(org.apache.axis.types.URI.MalformedURIException murle) {
                         throw new IllegalArgumentException(murle.toString());
                 }
-                this.request=null;
         }
 
         public void say(String s) {
@@ -154,60 +148,55 @@ public class LsFileRequest extends FileRequest {
                         metaDataPathDetail =
                                 getMetaDataPathDetail(path,
                                                           0,
-                                                          request.getOffset(),
-                                                          request.getCount(),
+                                                          ((LsRequest)getRequest()).getOffset(),
+                                                          ((LsRequest)getRequest()).getCount(),
                                                           null);
                 }
                 catch (Exception e) {
+                        wlock();
                         try {
-                                synchronized(this) {
+                                setStatusCode(TStatusCode.SRM_FAILURE);
+                                TReturnStatus status=null;
+                                if (e instanceof SRMInternalErrorException) {
+                                        status = new TReturnStatus(TStatusCode.SRM_FAILURE, e.getMessage());
                                         setStatusCode(TStatusCode.SRM_FAILURE);
-                                        TReturnStatus status=null;
-                                        synchronized(request) {
-                                                if (e instanceof SRMInternalErrorException) {
-                                                        status = new TReturnStatus(TStatusCode.SRM_FAILURE, e.getMessage());
-                                                        setStatusCode(TStatusCode.SRM_FAILURE);
-                                                }
-                                                else if (e instanceof SRMTooManyResultsException) {
-                                                        status = new TReturnStatus(TStatusCode.SRM_FAILURE, e.getMessage());
-                                                        request.setStatusCode(TStatusCode.SRM_TOO_MANY_RESULTS);
-                                                        request.setExplanation(e.getMessage());
-                                                }
-                                                else if (e instanceof SRMAuthorizationException) {
-                                                        status =  new TReturnStatus(TStatusCode.SRM_AUTHORIZATION_FAILURE, e.getMessage());
-                                                        setStatusCode(TStatusCode.SRM_AUTHORIZATION_FAILURE);
-                                                }
-                                                else {
-                                                        status = new TReturnStatus(TStatusCode.SRM_INVALID_PATH, e.getMessage());
-                                                        setStatusCode(TStatusCode.SRM_INVALID_PATH);
-                                                }
-                                        }
-                                        metaDataPathDetail =  new TMetaDataPathDetail(path,
-                                                                                      status,
-                                                                                      null,
-                                                                                      null,
-                                                                                      null,
-                                                                                      null,
-                                                                                      null,
-                                                                                      null,
-                                                                                      null,
-                                                                                      null,
-                                                                                      null,
-                                                                                      null,
-                                                                                      null,
-                                                                                      null,
-                                                                                      null,
-                                                                                      null,
-                                                                                      null,
-                                                                                      null);
-                                        State state = getState();
-                                        if(!State.isFinalState(state)) {
-                                                setState(State.FAILED,e.toString());
-                                        }
                                 }
+                                else if (e instanceof SRMTooManyResultsException) {
+                                        status = new TReturnStatus(TStatusCode.SRM_TOO_MANY_RESULTS, e.getMessage());
+                                        setStatusCode(TStatusCode.SRM_TOO_MANY_RESULTS);
+                                }
+                                else if (e instanceof SRMAuthorizationException) {
+                                        status =  new TReturnStatus(TStatusCode.SRM_AUTHORIZATION_FAILURE, e.getMessage());
+                                        setStatusCode(TStatusCode.SRM_AUTHORIZATION_FAILURE);
+                                }
+                                else {
+                                        status = new TReturnStatus(TStatusCode.SRM_INVALID_PATH, e.getMessage());
+                                        setStatusCode(TStatusCode.SRM_INVALID_PATH);
+                                }
+                                metaDataPathDetail =  new TMetaDataPathDetail(path,
+                                                                              status,
+                                                                              null,
+                                                                              null,
+                                                                              null,
+                                                                              null,
+                                                                              null,
+                                                                              null,
+                                                                              null,
+                                                                              null,
+                                                                              null,
+                                                                              null,
+                                                                              null,
+                                                                              null,
+                                                                              null,
+                                                                              null,
+                                                                              null,
+                                                                              null);
+                                setState(State.FAILED,e.toString());
                         }
                         catch(IllegalStateTransition ist) {
                                 esay("Illegal State Transition : " +ist.getMessage());
+                        } finally {
+                            wunlock();
                         }
                 }
         }
@@ -286,13 +275,13 @@ public class LsFileRequest extends FileRequest {
                                                          int count,
                                                          FileMetaData parent_fmd)
                 throws SRMException,org.apache.axis.types.URI.MalformedURIException {
-                synchronized(request) {
-                        if(!request.increaseResultsNumAndContinue()) {
-                                throw new SRMTooManyResultsException("max results number of "+request.getMaxNumOfResults()+
-                                                                     " exceeded. Try to narrow down with count and use offset to get complete listing \n");
-                        }
+                if(!((LsRequest)getRequest()).increaseResultsNumAndContinue()) {
+                        throw new SRMTooManyResultsException("max results number of "+
+                            ((LsRequest)getRequest()).getMaxNumOfResults()+
+                            " exceeded. Try to narrow down with count and use" +
+                            " offset to get complete listing \n");
                 }
-                FileMetaData fmd = getStorage().getFileMetaData(user, path,parent_fmd);
+                FileMetaData fmd = getStorage().getFileMetaData(getUser(), path,parent_fmd);
                 TMetaDataPathDetail metaDataPathDetail =
                         new TMetaDataPathDetail();
                 metaDataPathDetail.setLifetimeAssigned(new Integer(-1));
@@ -397,7 +386,7 @@ public class LsFileRequest extends FileRequest {
                 //   [litvinse@uqbar Desktop]$ ls blah
                 //   ls: blah: Permission denied
                 //
-                if(!canRead(user,fmd)) {
+                if(!canRead(getUser(),fmd)) {
                         if (depth>0) {
                                 if (fmd.isDirectory) {
                                         returnStatus.setStatusCode(TStatusCode.SRM_AUTHORIZATION_FAILURE);
@@ -412,17 +401,16 @@ public class LsFileRequest extends FileRequest {
                                 }
                         }
                 }
-                synchronized(request) {
-                        //
-                        // check if the number of entries does not exceed count
-                        //
-                        if (!request.checkCounter()) {
-                                metaDataPathDetail.setStatus(returnStatus);
-                                return metaDataPathDetail;
-                        }
+                //
+                // check if the number of entries does not exceed count
+                //
+                if (!((LsRequest)getRequest()).checkCounter()) {
+                        metaDataPathDetail.setStatus(returnStatus);
+                        return metaDataPathDetail;
                 }
-                if (metaDataPathDetail.getType() == TFileType.DIRECTORY && depth<request.getNumOfLevels()) {
-                        java.io.File dirFiles[] = getStorage().listDirectoryFiles(user,path,fmd);
+                if (metaDataPathDetail.getType() == TFileType.DIRECTORY && 
+                        depth<((LsRequest)getRequest()).getNumOfLevels()) {
+                        java.io.File dirFiles[] = getStorage().listDirectoryFiles(getUser(),path,fmd);
                         TMetaDataPathDetail dirMetaDataPathDetails[]=null;
                         if(dirFiles != null && dirFiles.length >0) {
                                 int end   = dirFiles.length;
@@ -437,11 +425,11 @@ public class LsFileRequest extends FileRequest {
                                                 String subpath = path+'/'+dirFiles[j].getName();
                                                 try {
                                                         TMetaDataPathDetail dirMetaDataPathDetail;
-                                                        if (request.getLongFormat()) {
+                                                        if (((LsRequest)getRequest()).getLongFormat()) {
                                                                 dirMetaDataPathDetail = getMetaDataPathDetail(subpath, depth+1,offset,count,fmd);
                                                         }
                                                         else {
-                                                                if(depth+1>=request.getNumOfLevels()||dirFiles[j].isFile()) {
+                                                                if(depth+1>=((LsRequest)getRequest()).getNumOfLevels()||dirFiles[j].isFile()) {
                                                                         dirMetaDataPathDetail =  getMinimalMetaDataPathDetail(subpath,dirFiles[j]);
                                                                 }
                                                                 else {
@@ -454,10 +442,8 @@ public class LsFileRequest extends FileRequest {
                                                         if (srme instanceof SRMTooManyResultsException) {
                                                                 returnStatus.setStatusCode(TStatusCode.SRM_FAILURE);
                                                                 returnStatus.setExplanation(srme.getMessage());
-                                                                synchronized(request) {
-                                                                        request.setStatusCode(TStatusCode.SRM_TOO_MANY_RESULTS);
-                                                                        request.setExplanation(srme.getMessage());
-                                                                }
+                                                                ((LsRequest)getRequest()).setStatusCode(TStatusCode.SRM_TOO_MANY_RESULTS);
+                                                                ((LsRequest)getRequest()).setExplanation(srme.getMessage());
                                                                 metaDataPathDetail.setArrayOfSubPaths(new ArrayOfTMetaDataPathDetail(dirMetaDataPathDetails));
                                                                 metaDataPathDetail.setStatus(returnStatus);
                                                                 return metaDataPathDetail;
@@ -494,11 +480,11 @@ public class LsFileRequest extends FileRequest {
         public TMetaDataPathDetail getMinimalMetaDataPathDetail(String path,
                                                                 java.io.File file)
                 throws SRMException,org.apache.axis.types.URI.MalformedURIException {
-                synchronized(request){
-                        if(!request.increaseResultsNumAndContinue()) {
-                                throw new SRMTooManyResultsException("max results number of "+request.getMaxNumOfResults()+
-                                                                     " exceeded. Try to narrow down with count and use offset to get complete listing \n");
-                        }
+                if(!((LsRequest)getRequest()).increaseResultsNumAndContinue()) {
+                        throw new SRMTooManyResultsException("max results number of "+
+                                ((LsRequest)getRequest()).getMaxNumOfResults()+
+                                " exceeded. Try to narrow down with count and use " +
+                                "offset to get complete listing \n");
                 }
                 TMetaDataPathDetail metaDataPathDetail =
                         new TMetaDataPathDetail();
@@ -524,7 +510,7 @@ public class LsFileRequest extends FileRequest {
                         say("file type is Unknown");
                 }
                 if (file.length()==1) {
-                        FileMetaData fmd = getStorage().getFileMetaData(user, path, null);
+                        FileMetaData fmd = getStorage().getFileMetaData(getUser(), path, null);
                         metaDataPathDetail.setSize(new org.apache.axis.types.UnsignedLong(fmd.size));
                 }
                 else {
@@ -576,17 +562,12 @@ public class LsFileRequest extends FileRequest {
                 }
         }
 
-        public LsRequest getLsRequest() { 
-                return request;
-        }
-
-        public void setLsRequest(LsRequest request) { 
-                this.request=request;
-        }
-
+        @Override
         public String toString() {
                 return toString(false);
         }
+
+        @Override
         public String toString(boolean longformat) {
                 StringBuilder sb = new StringBuilder();
                 sb.append(" FileRequest ");

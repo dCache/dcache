@@ -100,7 +100,7 @@ public abstract class ContainerRequest extends Request {
     // therefore we need to synchronize the recept of dcap turls
     private String firstDcapTurl;
 
-     protected FileRequest[] fileRequests;
+    protected FileRequest[] fileRequests;
 
 
     /*
@@ -184,25 +184,30 @@ public abstract class ContainerRequest extends Request {
 
 
     public  FileRequest getFileRequest(int fileRequestId){
-        if(fileRequests == null) {
-            throw new NullPointerException("fileRequestId is null");
-        }
-        for(int i =0; i<fileRequests.length;++i) {
-            if(fileRequests[i].getId().equals(new Long(fileRequestId))) {
-                return fileRequests[i];
+        rlock();
+        try {
+            if(fileRequests == null) {
+                throw new NullPointerException("fileRequestId is null");
             }
+            for(FileRequest fileRequest: fileRequests) {
+                if(fileRequest.getId().equals(new Long(fileRequestId))) {
+                    return fileRequest;
+                }
+            }
+            throw new IllegalArgumentException("FileRequest fileRequestId ="+fileRequestId+"does not belong to this Request" );
+        } finally {
+            runlock();
         }
-        throw new IllegalArgumentException("FileRequest fileRequestId ="+fileRequestId+"does not belong to this Request" );
 
     }
 
-    public FileRequest getFileRequest(Long fileRequestId)  throws java.sql.SQLException{
+    public final FileRequest getFileRequest(Long fileRequestId){
         if(fileRequestId == null) {
             return null;
         }
-        for(int i =0; i<fileRequests.length;++i) {
-            if(fileRequests[i].getId().equals(fileRequestId)) {
-                return fileRequests[i];
+        for(FileRequest fileRequest: fileRequests) {
+            if(fileRequest.getId().equals(fileRequestId)) {
+                return fileRequest;
             }
         }
         return null;
@@ -219,15 +224,6 @@ public abstract class ContainerRequest extends Request {
      */
     public abstract int getNumOfFileRequest();
 
-    /**
-     * get file request by the file request id
-     * @param fileRequestNum
-     * file req id
-     * @return
-     * file request
-     */
-    //public abstract FileRequest getFileRequest(int fileRequestId);
-
 
 
     /**
@@ -242,7 +238,12 @@ public abstract class ContainerRequest extends Request {
      * first dcap turl
      */
     public String getFirstDcapTurl() {
-        return firstDcapTurl;
+        rlock();
+        try {
+            return firstDcapTurl;
+        } finally {
+            runlock();
+        }
     }
     /**
      * stores the first dcap turl
@@ -255,7 +256,12 @@ public abstract class ContainerRequest extends Request {
      * first dcap turl
      */
     public void setFirstDcapTurl(String s) {
-        firstDcapTurl = s;
+        wlock();
+        try {
+            firstDcapTurl = s;
+        } finally {
+            wunlock();
+        }
     }
 
     public abstract String getMethod();
@@ -270,15 +276,21 @@ public abstract class ContainerRequest extends Request {
 
     private void getRequestStatusCalled() {
         scheduleIfRestored();
-        int len = getNumOfFileRequest();
-        for(int i = 0; i< len; ++i) {
-            FileRequest fr =fileRequests[i];
+        for(FileRequest fr: fileRequests) {
             fr.scheduleIfRestored();
         }
         updateRetryDeltaTime();
     }
 
-    public synchronized final RequestStatus getRequestStatus() {
+    public final RequestStatus getRequestStatus() {
+        // we used to synchronize on this container request here, but
+        // it does not make sence as the file requests are being processed
+        // by multiple threads,  and synchronizing here can cause a deadlock
+        // once all field access is made sycnhronized and file request need to
+        // access container request fields
+        // we can rely on the fact that
+        // once file request reach their final state, this state does not change
+        // so the combined logic
         getRequestStatusCalled();
         //say("getRequestStatus()");
         RequestStatus rs = new RequestStatus();
@@ -292,40 +304,36 @@ public abstract class ContainerRequest extends Request {
         //say("getRequestStatus() rs.errorMessage="+rs.errorMessage );
         int len = getNumOfFileRequest();
         rs.fileStatuses = new RequestFileStatus[len];
-        boolean failed_req = false;
-        boolean pending_req = false;
-        boolean running_req = false;
-        boolean ready_req = false;
-        boolean done_req = false;
+        boolean haveFailedRequests = false;
+        boolean havePendingRequests = false;
+        boolean haveRunningRequests = false;
+        boolean haveReadyRequests = false;
+        boolean haveDoneRequests = false;
         String fr_error="";
         for(int i = 0; i< len; ++i) {
-            //say("getRequestStatus() getFileRequest("+fileRequestsIds[i]+" );");
             FileRequest fr =fileRequests[i];
-            //say("getRequestStatus() received FileRequest frs");
             RequestFileStatus rfs = fr.getRequestFileStatus();
-            //say("getRequestStatus()  calling frs.getRequestFileStatus()");
             if(rfs == null){
-                failed_req = true;
+                haveFailedRequests = true;
                 fr_error += "RequestFileStatus is null : fr.errorMessage= [ "+fr.getErrorMessage()+"]\n";
                 continue;
             }
             rs.fileStatuses[i] = rfs;
             String state = rfs.state;
-            //say("getRequestStatus() rs.fileStatuses["+i+"] received with id="+rfs.fileId );
             if(state.equals("Pending")) {
-                pending_req = true;
+                havePendingRequests = true;
             }
             else if(state.equals("Running")) {
-                running_req = true;
+                haveRunningRequests = true;
             }
             else if(state.equals("Ready")) {
-                ready_req = true;
+                haveReadyRequests = true;
             }
             else if(state.equals("Done")) {
-                done_req = true;
+                haveDoneRequests = true;
             }
             else if(state.equals("Failed")) {
-                failed_req = true;
+                haveFailedRequests = true;
                 fr_error += "RequestFileStatus#"+rfs.fileId+" failed with error:[ "+fr.getErrorMessage()+"]\n";
             }
             else {
@@ -334,15 +342,18 @@ public abstract class ContainerRequest extends Request {
             }
         }
 
-        if(failed_req){
+        if(haveFailedRequests){
             rs.errorMessage += "\n"+fr_error;
         }
 
-        if (pending_req) {
+        if (havePendingRequests) {
             rs.state = "Pending";
-        } else if(failed_req) {
+        } else if(haveFailedRequests) {
 
-            if(!running_req && !ready_req ){
+            if(!haveRunningRequests && !haveReadyRequests ){
+                // no running, no ready and  no peding  requests
+                // there are only failed requests
+                // we can fail this request
                 rs.state = "Failed";
                 try
                 {
@@ -356,9 +367,10 @@ public abstract class ContainerRequest extends Request {
             }
 
 
-        } else if (running_req || ready_req) {
+        } else if (haveRunningRequests || haveReadyRequests) {
             rs.state = "Active";
-        } else if (done_req) {
+        } else if (haveDoneRequests) {
+            // all requests are done
             try
             {
                 setState(State.DONE,"All files are done");
@@ -370,6 +382,9 @@ public abstract class ContainerRequest extends Request {
             }
             rs.state = "Done";
         } else {
+            // we should never be here, but we have this block
+            // in case request is restored with no files in it
+
             esay("request state is unknown or no files in request!!!");
             stopUpdating();
             try
@@ -402,23 +417,38 @@ public abstract class ContainerRequest extends Request {
         return rs;
     }
 
-    public synchronized TReturnStatus getTReturnStatus()  {
+    public TReturnStatus getTReturnStatus()  {
         //
         // We want everthing that getRequestStatus does to happen
         //
         getRequestStatus();
 
-        //say("getTRequestStatus() " );
         TReturnStatus status = new TReturnStatus();
 
-       if(getStatusCode() != null) {
-            status.setStatusCode(getStatusCode());
-            say("getTReturnStatus() assigned status.statusCode : "+status.getStatusCode());
-            status.setExplanation(getErrorMessage());
-            say("getTReturnStatus() assigned status.explanation : "+status.getExplanation());
-            return status;
-       }
+        rlock();
+        try {
+           
 
+           if(getStatusCode() != null) {
+                status.setStatusCode(getStatusCode());
+                say("getTReturnStatus() assigned status.statusCode : "+status.getStatusCode());
+                status.setExplanation(getErrorMessage());
+                say("getTReturnStatus() assigned status.explanation : "+status.getExplanation());
+                return status;
+           }
+        } finally {
+            runlock();
+        }
+
+        // we used to synchronize on this container request here, but
+        // it does not make sence as the file requests are being processed
+        // by multiple threads,  and synchronizing here can cause a deadlock
+        // once all field access is made sycnhronized and file request need to
+        // access container request fields
+        // we can rely on the fact that
+        // once file request reach their final state, this state does not change
+        // so the combined logic
+        
         int len = getNumOfFileRequest();
 
         if (len == 0) {
@@ -441,8 +471,8 @@ public abstract class ContainerRequest extends Request {
         int running_req          = 0;
         int ready_req            = 0;
         int done_req             = 0;
-	int got_exception        = 0;
-	boolean failure = false;
+        int got_exception        = 0;
+        boolean failure = false;
         for(int i = 0; i< len; ++i) {
             FileRequest fr =fileRequests[i];
             TReturnStatus fileReqRS = fr.getReturnStatus();
@@ -465,19 +495,19 @@ public abstract class ContainerRequest extends Request {
                 }
                 else if(fileReqSC == TStatusCode.SRM_ABORTED) {
                      canceled_req++;
-		     failure=true;
+                     failure=true;
                 }
                 else if(fileReqSC == TStatusCode.SRM_NO_FREE_SPACE) {
                     failed_no_free_space++;
-		    failure=true;
-		}
+                    failure=true;
+                }
                 else if(fileReqSC == TStatusCode.SRM_SPACE_LIFETIME_EXPIRED) {
                     failed_space_expired++;
-		    failure=true;
+                    failure=true;
                 }
                 else if(RequestStatusTool.isFailedFileRequestStatus(fileReqRS)) {
                     failed_req++;
-		    failure=true;
+                    failure=true;
                 }
                 else {
                     esay("File Request StatusCode is unknown!!! state  == "+fr.getState());
@@ -486,92 +516,92 @@ public abstract class ContainerRequest extends Request {
             }catch (Exception e) {
                 esay(e);
                 got_exception++;
-		failure=true;
+                failure=true;
             }
         }
 
         status.setExplanation(getErrorMessage());
 
-	if (canceled_req == len ) {
-	    status.setStatusCode(TStatusCode.SRM_ABORTED);
-	    say("assigned status.statusCode : "+status.getStatusCode());
-	    say("assigned status.explanation : "+status.getExplanation());
-	    return status;
-	}
+        if (canceled_req == len ) {
+            status.setStatusCode(TStatusCode.SRM_ABORTED);
+            say("assigned status.statusCode : "+status.getStatusCode());
+            say("assigned status.explanation : "+status.getExplanation());
+            return status;
+        }
 
-	if (failed_req==len || got_exception==len) {
-	    status.setStatusCode(TStatusCode.SRM_FAILURE);
-	    say("assigned status.statusCode : "+status.getStatusCode());
-	    say("assigned status.explanation : "+status.getExplanation());
-	    return status;
-	}
-	if (ready_req==len || done_req==len || ready_req+done_req==len ) {
-	    if (failure) {
-		status.setStatusCode(TStatusCode.SRM_PARTIAL_SUCCESS);
-		say("assigned status.statusCode : "+status.getStatusCode());
-		say("assigned status.explanation : "+status.getExplanation());
-		return status;
-	    }
-	    else {
-		status.setStatusCode(TStatusCode.SRM_SUCCESS);
-		say("assigned status.statusCode : "+status.getStatusCode());
-		say("assigned status.explanation : "+status.getExplanation());
-		return status;
-	    }
-	}
-	if (pending_req==len) {
-	    status.setStatusCode(TStatusCode.SRM_REQUEST_QUEUED);
-	    say("assigned status.statusCode : "+status.getStatusCode());
-	    say("assigned status.explanation : "+status.getExplanation());
-	    return status;
-	}
-	// SRM space is not enough to hold all requested SURLs for free. (so me thinks one fails - all fail)
-	if (failed_no_free_space>0) {
-	    status.setStatusCode(TStatusCode.SRM_NO_FREE_SPACE);
-	    say("assigned status.statusCode : "+status.getStatusCode());
-	    say("assigned status.explanation : "+status.getExplanation());
-	    return status;
-	}
-	// space associated with the targetSpaceToken is expired. (so me thinks one fails - all fail)
-	if (failed_space_expired>0) {
-	    status.setStatusCode(TStatusCode.SRM_SPACE_LIFETIME_EXPIRED);
-	    say("assigned status.statusCode : "+status.getStatusCode());
-	    say("assigned status.explanation : "+status.getExplanation());
-	    return status;
-	}
-	// we still have work to do:
-	if (running_req > 0 || pending_req > 0) {
-	    status.setStatusCode(TStatusCode.SRM_REQUEST_INPROGRESS);
-	    say("assigned status.statusCode : "+status.getStatusCode());
-	    say("assigned status.explanation : "+status.getExplanation());
-	    return status;
-	}
-	else {
-	    // all are done here
-	    if (failure) {
-		if (ready_req > 0 || done_req > 0 ) {
-		    //some succeeded some not
-		    status.setStatusCode(TStatusCode.SRM_PARTIAL_SUCCESS);
-		    say("assigned status.statusCode : "+status.getStatusCode());
-		    say("assigned status.explanation : "+status.getExplanation());
-		    return status;
-		}
-		else {
-		    //none succeeded
-		    status.setStatusCode(TStatusCode.SRM_FAILURE);
-		    say("assigned status.statusCode : "+status.getStatusCode());
-		    say("assigned status.explanation : "+status.getExplanation());
-		    return status;
-		}
-	    }
-	    else {
-		    //no single failure - we should not get to this piece if code
-		    status.setStatusCode(TStatusCode.SRM_SUCCESS);
-		    say("assigned status.statusCode : "+status.getStatusCode());
-		    say("assigned status.explanation : "+status.getExplanation());
-		    return status;
-	    }
-	}
+        if (failed_req==len || got_exception==len) {
+            status.setStatusCode(TStatusCode.SRM_FAILURE);
+            say("assigned status.statusCode : "+status.getStatusCode());
+            say("assigned status.explanation : "+status.getExplanation());
+            return status;
+        }
+        if (ready_req==len || done_req==len || ready_req+done_req==len ) {
+            if (failure) {
+            status.setStatusCode(TStatusCode.SRM_PARTIAL_SUCCESS);
+            say("assigned status.statusCode : "+status.getStatusCode());
+            say("assigned status.explanation : "+status.getExplanation());
+            return status;
+            }
+            else {
+            status.setStatusCode(TStatusCode.SRM_SUCCESS);
+            say("assigned status.statusCode : "+status.getStatusCode());
+            say("assigned status.explanation : "+status.getExplanation());
+            return status;
+            }
+        }
+        if (pending_req==len) {
+            status.setStatusCode(TStatusCode.SRM_REQUEST_QUEUED);
+            say("assigned status.statusCode : "+status.getStatusCode());
+            say("assigned status.explanation : "+status.getExplanation());
+            return status;
+        }
+        // SRM space is not enough to hold all requested SURLs for free. (so me thinks one fails - all fail)
+        if (failed_no_free_space>0) {
+            status.setStatusCode(TStatusCode.SRM_NO_FREE_SPACE);
+            say("assigned status.statusCode : "+status.getStatusCode());
+            say("assigned status.explanation : "+status.getExplanation());
+            return status;
+        }
+        // space associated with the targetSpaceToken is expired. (so me thinks one fails - all fail)
+        if (failed_space_expired>0) {
+            status.setStatusCode(TStatusCode.SRM_SPACE_LIFETIME_EXPIRED);
+            say("assigned status.statusCode : "+status.getStatusCode());
+            say("assigned status.explanation : "+status.getExplanation());
+            return status;
+        }
+        // we still have work to do:
+        if (running_req > 0 || pending_req > 0) {
+            status.setStatusCode(TStatusCode.SRM_REQUEST_INPROGRESS);
+            say("assigned status.statusCode : "+status.getStatusCode());
+            say("assigned status.explanation : "+status.getExplanation());
+            return status;
+        }
+        else {
+            // all are done here
+            if (failure) {
+            if (ready_req > 0 || done_req > 0 ) {
+                //some succeeded some not
+                status.setStatusCode(TStatusCode.SRM_PARTIAL_SUCCESS);
+                say("assigned status.statusCode : "+status.getStatusCode());
+                say("assigned status.explanation : "+status.getExplanation());
+                return status;
+            }
+            else {
+                //none succeeded
+                status.setStatusCode(TStatusCode.SRM_FAILURE);
+                say("assigned status.statusCode : "+status.getStatusCode());
+                say("assigned status.explanation : "+status.getExplanation());
+                return status;
+            }
+            }
+            else {
+                //no single failure - we should not get to this piece if code
+                status.setStatusCode(TStatusCode.SRM_SUCCESS);
+                say("assigned status.statusCode : "+status.getStatusCode());
+                say("assigned status.explanation : "+status.getExplanation());
+                return status;
+            }
+        }
     }
 	
 
@@ -582,12 +612,17 @@ public abstract class ContainerRequest extends Request {
         summary.setRequestToken(getId().toString());
         int total_num = getNumOfFileRequest();
         summary.setTotalNumFilesInRequest(Integer.valueOf(total_num));
-
         int num_of_failed=0;
         int num_of_completed = 0;
         int num_of_waiting = 0;
         for(int i = 0; i< total_num; ++i) {
-            FileRequest fr =fileRequests[i];
+            FileRequest fr;
+            rlock();
+            try {
+                fr = fileRequests[i];
+            } finally {
+                runlock();
+            }
             TReturnStatus fileReqRS = fr.getReturnStatus();
             TStatusCode fileReqSC = fileReqRS.getStatusCode();
             try{
@@ -640,6 +675,7 @@ public abstract class ContainerRequest extends Request {
      * @return
      * result of the check
      */
+    @Override
     public boolean equals(Object o) {
         if(o == this) {
             return true;
@@ -648,6 +684,7 @@ public abstract class ContainerRequest extends Request {
         return false;
     }
 
+    @Override
     public int hashCode() {
         return getId().hashCode();
     }

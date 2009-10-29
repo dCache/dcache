@@ -82,7 +82,6 @@ import org.dcache.srm.SRMUser;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMAuthorizationException;
 import org.globus.util.GlobusURL;
-import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.Tools;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.Scheduler;
@@ -109,7 +108,7 @@ import org.dcache.srm.v2_2.TRetentionPolicy;
  * @author  timur
  * @version
  */
-public class PutFileRequest extends FileRequest {
+public final class PutFileRequest extends FileRequest {
 
     // this is surl path
     private GlobusURL surl;
@@ -118,8 +117,8 @@ public class PutFileRequest extends FileRequest {
     // parent directory info
     private String fileId;
     private String parentFileId;
-    private FileMetaData fmd;
-    private FileMetaData parentFmd;
+    private transient FileMetaData fmd;
+    private transient FileMetaData parentFmd;
     private String spaceReservationId;
     private boolean weReservedSpace;
     private TAccessLatency accessLatency ;//null by default
@@ -245,31 +244,62 @@ public class PutFileRequest extends FileRequest {
     }
 
 
-    public String getFileId() {
-        return fileId;
+    public final String getFileId() {
+        rlock();
+        try {
+            return fileId;
+        } finally {
+            runlock();
+        }
     }
 
-    public void setSize(long size) {
-        this.size = size;
+    public final void setSize(long size) {
+        wlock();
+        try {
+            this.size = size;
+        } finally {
+            wunlock();
+        }
     }
 
-    public long getSize() {
-        return size;
+    public final long getSize() {
+        rlock();
+        try {
+            return size;
+        } finally {
+            runlock();
+        }
     }
 
 
-    private void setTurl(String turl_string) throws java.net.MalformedURLException {
-        this.turl = new GlobusURL(turl_string);
+    private final void setTurl(String turl_string) throws java.net.MalformedURLException {
+       wlock();
+       try {
+            this.setTurl(new GlobusURL(turl_string));
+       } finally {
+           wunlock();
+       }
     }
 
 
 
-    public GlobusURL getSurl() {
-        return surl;
+    public final GlobusURL getSurl() {
+        rlock();
+        try {
+            return surl;
+       } finally {
+           runlock();
+       }
     }
 
-    public String getPath() {
-        String path = surl.getPath();
+    public final String getPath() {
+        String path;
+        rlock();
+        try {
+            path = getSurl().getPath();
+        } finally {
+            runlock();
+        }
         int indx=path.indexOf(SFN_STRING);
         if( indx != -1) {
 
@@ -283,60 +313,71 @@ public class PutFileRequest extends FileRequest {
     }
 
 
-    public String getSurlString() {
-        return surl.getURL().toString();
+    public final String getSurlString() {
+        rlock();
+        try {
+             return getSurl().getURL().toString();
+       } finally {
+           runlock();
+       }
     }
 
 
 
     public String getTurlString() {
-        State state = getState();
-        if(turl == null && (state == State.READY ||
-			    state == State.TRANSFERRING)) {
-            try {
-                turl = getTURL();
+        wlock();
+        try {
+            State state = getState();
+            if(getTurl() == null && (state == State.READY ||
+                    state == State.TRANSFERRING)) {
+                try {
+                    setTurl(getTURL());
 
-            }
-	    catch(SRMAuthorizationException srme) {
-            String error =srme.getMessage();
-            esay(error);
-            try {
-                setStateAndStatusCode(State.FAILED,
-                        error,
-                        TStatusCode.SRM_AUTHORIZATION_FAILURE);
-            }
-            catch(IllegalStateTransition ist) {
-                esay("Illegal State Transition : " +ist.getMessage());
-            }
-        }
-	    catch(Exception srme) {
-                String error =
-		    "can not obtain turl for file:"+srme;
+                }
+            catch(SRMAuthorizationException srme) {
+                String error =srme.getMessage();
                 esay(error);
                 try {
-                    setState(State.FAILED,error);
+                    setStateAndStatusCode(State.FAILED,
+                            error,
+                            TStatusCode.SRM_AUTHORIZATION_FAILURE);
                 }
-                catch(IllegalStateTransition ist)
-                {
+                catch(IllegalStateTransition ist) {
                     esay("Illegal State Transition : " +ist.getMessage());
                 }
             }
-        }
+            catch(Exception srme) {
+                    String error =
+                "can not obtain turl for file:"+srme;
+                    esay(error);
+                    try {
+                        setState(State.FAILED,error);
+                    }
+                    catch(IllegalStateTransition ist)
+                    {
+                        esay("Illegal State Transition : " +ist.getMessage());
+                    }
+                }
+            }
 
-        if(turl!= null) {
-            return turl.getURL().toString();
+            if(getTurl()!= null) {
+                return getTurl().getURL().toString();
+            }
+        } finally {
+            wunlock();
         }
         return null;
     }
 
 
-    public boolean canWrite() throws SRMInvalidRequestException {
-        if(fileId == null && parentFileId == null) {
+    private boolean canWrite() throws SRMInvalidRequestException {
+        if(getFileId() == null && getParentFileId() == null) {
             return false;
         }
+
         SRMUser user = (SRMUser) getUser();
-        boolean canwrite =getStorage().canWrite(user,fileId,fmd,parentFileId,parentFmd,
-                ((PutRequest)getRequest()).isOverwrite());
+        boolean canwrite =getStorage().canWrite(user,getFileId(),getFmd(),
+                getParentFileId(),getParentFmd(), ((PutRequest) getRequest()).isOverwrite());
         say("PutFileRequest  storage.canWrite() returned "+canwrite);
         return  canwrite;
     }
@@ -402,8 +443,8 @@ public class PutFileRequest extends FileRequest {
             fileStatus.setTransferURL(transferURL);
 
         }
-        fileStatus.setEstimatedWaitTime(new Integer(getRequest().getRetryDeltaTime()));
-        fileStatus.setRemainingPinLifetime(new Integer((int)getRemainingLifetime()/1000));
+        fileStatus.setEstimatedWaitTime(getRequest().getRetryDeltaTime());
+        fileStatus.setRemainingPinLifetime((int)getRemainingLifetime()/1000);
         TReturnStatus returnStatus = getReturnStatus();
         if(TStatusCode.SRM_SPACE_LIFETIME_EXPIRED.equals(returnStatus.getStatusCode())) {
             //SRM_SPACE_LIFETIME_EXPIRED is illeal on the file level,
@@ -442,7 +483,7 @@ public class PutFileRequest extends FileRequest {
 
     private GlobusURL getTURL() throws SRMException, java.sql.SQLException {
         String firstDcapTurl = null;
-        PutRequest request = (PutRequest) Job.getJob(requestId);
+        PutRequest request = (PutRequest)  getRequest();
         // do not synchronize on request, since it might cause deadlock
         firstDcapTurl = request.getFirstDcapTurl();
         if(firstDcapTurl == null) {
@@ -498,8 +539,8 @@ public class PutFileRequest extends FileRequest {
         String  path = getPath();
 
         try {
-            if(fileId == null &&
-                    parentFileId == null) {
+            if(getFileId() == null &&
+                    getParentFileId() == null) {
 
                 addDebugHistoryEvent("selecting transfer protocol");
                 if(!Tools.sameHost(getConfiguration().getSrmhost(),
@@ -532,20 +573,15 @@ public class PutFileRequest extends FileRequest {
 
                 //storage.getPutTurl(getUser(),path,request.protocols);
                 PutCallbacks callbacks = new PutCallbacks(this.getId());
-              /*  synchronized(callbacks_set)
-                {
-                    callbacks_set.add(callbacks);
-                }
-               **/
                 setState(State.ASYNCWAIT, "calling Storage.prepareToPut()");
                 getStorage().prepareToPut(getUser(),path,callbacks,
                         ((PutRequest)getRequest()).isOverwrite());
                 return;
             }
             addDebugHistoryEvent("checking user has permission to  write");
-            say("fileId = "+fileId+" parentFileId="+parentFileId);
+            say("fileId = "+getFileId()+" parentFileId="+getParentFileId());
             if(!canWrite()) {
-                String error = "user "+getUser()+"has not permission to write "+surl;
+                String error = "user "+getUser()+"has not permission to write "+getSurl();
                 esay( error);
                 try {
                     setState(State.FAILED,error);
@@ -556,14 +592,14 @@ public class PutFileRequest extends FileRequest {
 
             }
 	    long defaultSpaceReservationId=0;
-	    if (parentFmd.spaceTokens!=null) { 
-		    if (parentFmd.spaceTokens.length>0) { 
-			    defaultSpaceReservationId=parentFmd.spaceTokens[0];
+	    if (getParentFmd().spaceTokens!=null) {
+		    if (getParentFmd().spaceTokens.length>0) {
+			    defaultSpaceReservationId=getParentFmd().spaceTokens[0];
 		    }
 	    }
-	    if (spaceReservationId==null) { 
+	    if (getSpaceReservationId()==null) {
 		    if (defaultSpaceReservationId!=0) {
-			    if(retentionPolicy==null&&accessLatency==null) { 
+			    if( getRetentionPolicy()==null&&getAccessLatency()==null) {
 				    StringBuffer sb = new StringBuffer();
 				    sb.append(defaultSpaceReservationId);
 				    spaceReservationId=sb.toString();
@@ -571,8 +607,7 @@ public class PutFileRequest extends FileRequest {
 		    }
 	    }
 	    
-        if (getConfiguration().isReserve_space_implicitely()&&spaceReservationId == null) {
-            State state;
+        if (getConfiguration().isReserve_space_implicitely()&&getSpaceReservationId() == null) {
             long remaining_lifetime;
             setState(State.ASYNCWAIT,"reserving space");
 		    remaining_lifetime = lifetime - ( System.currentTimeMillis() -creationTime);
@@ -581,36 +616,35 @@ public class PutFileRequest extends FileRequest {
 		    //the following code allows the inheritance of the
 		    // retention policy from the directory metatada
 		    //
-		    if(retentionPolicy == null && parentFmd != null && parentFmd.retentionPolicyInfo != null ) {
-			    retentionPolicy = parentFmd.retentionPolicyInfo.getRetentionPolicy();
+		    if( getRetentionPolicy() == null && getParentFmd() != null && getParentFmd().retentionPolicyInfo != null ) {
+                setRetentionPolicy(getParentFmd().retentionPolicyInfo.getRetentionPolicy());
 		    }
 		    //
 		    //the following code allows the inheritance of the
 		    // access latency from the directory metatada
 		    //
-		    if(accessLatency == null && parentFmd != null && parentFmd.retentionPolicyInfo != null ) {
-			    accessLatency = parentFmd.retentionPolicyInfo.getAccessLatency();
+		    if( getAccessLatency() == null && getParentFmd() != null && getParentFmd().retentionPolicyInfo != null ) {
+			    setAccessLatency(getParentFmd().retentionPolicyInfo.getAccessLatency());
 		    }
-		    say("reserving space, size="+(size==0?1L:size));
+		    say("reserving space, size="+(getSize()==0?1L:getSize()));
                 getStorage().srmReserveSpace(
 			    getUser(),
-			    size==0?1L:size,
+			    getSize()==0?1L:getSize(),
 			    remaining_lifetime,
-			    retentionPolicy ==null ? null: retentionPolicy.getValue(),
-			    accessLatency == null? null:accessLatency.getValue(),
+			    getRetentionPolicy() ==null ? null: getRetentionPolicy().getValue(),
+			    getAccessLatency() == null? null:getAccessLatency().getValue(),
 				    null,
 			    callbacks);
 		    return;
 	    }
-	    if( spaceReservationId != null &&
-		!spaceMarkedAsBeingUsed) {
+	    if( getSpaceReservationId() != null &&
+		!   isSpaceMarkedAsBeingUsed()) {
             setState(State.ASYNCWAIT,"marking space as being used");
 		    long remaining_lifetime = lifetime - ( System.currentTimeMillis() -creationTime);
 		    SrmUseSpaceCallbacks  callbacks = new PutUseSpaceCallbacks(getId());
                 getStorage().srmMarkSpaceAsBeingUsed(getUser(),
-						    spaceReservationId,
-						    getPath(),
-						    size==0?1:size,
+						    getSpaceReservationId(),getPath(),
+						    getSize()==0?1:getSize(),
 						    remaining_lifetime,
 						    ((PutRequest)getRequest()).isOverwrite(),
 							    callbacks );
@@ -651,23 +685,21 @@ public class PutFileRequest extends FileRequest {
              return;
          }
         if(State.isFinalState(state)) {
-            say("space reservation is "+spaceReservationId);
+            say("space reservation is "+getSpaceReservationId());
             if(getConfiguration().isReserve_space_implicitely() &&
-                    spaceReservationId != null &&
-                    spaceMarkedAsBeingUsed ) {
+                    getSpaceReservationId() != null &&
+                    isSpaceMarkedAsBeingUsed() ) {
                 SrmCancelUseOfSpaceCallbacks callbacks =
                         new PutCancelUseOfSpaceCallbacks(getId());
-                getStorage().srmUnmarkSpaceAsBeingUsed(user,
-                        spaceReservationId,getPath(),
+                getStorage().srmUnmarkSpaceAsBeingUsed(user,getSpaceReservationId(),getPath(),
                         callbacks);
 
             }
-            if(spaceReservationId != null && weReservedSpace) {
-                say("storage.releaseSpace("+spaceReservationId+"\"");
+            if(getSpaceReservationId() != null && isWeReservedSpace()) {
+                say("storage.releaseSpace("+getSpaceReservationId()+"\"");
                 SrmReleaseSpaceCallbacks callbacks =
                         new PutReleaseSpaceCallbacks(this.getId());
-                getStorage().srmReleaseSpace(  user,
-                        spaceReservationId,
+                getStorage().srmReleaseSpace(  user,getSpaceReservationId(),
                         (Long)null, //release all of space we reserved
                         callbacks);
 
@@ -679,24 +711,39 @@ public class PutFileRequest extends FileRequest {
      * Getter for property parentFileId.
      * @return Value of property parentFileId.
      */
-    public java.lang.String getParentFileId() {
-        return parentFileId;
+    public final String getParentFileId() {
+        rlock();
+        try {
+            return parentFileId;
+        } finally {
+            runlock();
+        }
     }
 
     /**
      * Getter for property spaceReservationId.
      * @return Value of property spaceReservationId.
      */
-    public java.lang.String getSpaceReservationId() {
-        return spaceReservationId;
+    public final String getSpaceReservationId() {
+        rlock();
+        try {
+            return spaceReservationId;
+        } finally {
+            runlock();
+        }
     }
 
     /**
      * Setter for property spaceReservationId.
      * @param spaceReservationId New value of property spaceReservationId.
      */
-    public void setSpaceReservationId(java.lang.String spaceReservationId) {
-        this.spaceReservationId = spaceReservationId;
+    public final void setSpaceReservationId(java.lang.String spaceReservationId) {
+        wlock();
+        try {
+            this.spaceReservationId = spaceReservationId;
+        } finally {
+            wunlock();
+        }
     }
 
     public TReturnStatus getReturnStatus() {
@@ -704,7 +751,8 @@ public class PutFileRequest extends FileRequest {
 
         State state = getState();
 
- 	returnStatus.setExplanation(state.toString());
+     	returnStatus.setExplanation(state.toString());
+
         if(getStatusCode() != null) {
             returnStatus.setStatusCode(getStatusCode());
         } else if(state == State.DONE) {
@@ -728,6 +776,114 @@ public class PutFileRequest extends FileRequest {
             returnStatus.setStatusCode(TStatusCode.SRM_REQUEST_QUEUED);
         }
         return returnStatus;
+    }
+
+    /**
+     * @param fileId the fileId to set
+     */
+    public final void setFileId(String fileId) {
+        wlock();
+        try {
+            this.fileId = fileId;
+        } finally {
+            wunlock();
+        }
+    }
+
+    /**
+     * @param parentFileId the parentFileId to set
+     */
+    public final void setParentFileId(String parentFileId) {
+        wlock();
+        try {
+            this.parentFileId = parentFileId;
+        } finally {
+            wunlock();
+        }
+    }
+
+    /**
+     * @param surl the surl to set
+     */
+    public final void setSurl(GlobusURL surl) {
+        wlock();
+        try {
+            this.surl = surl;
+        } finally {
+            wunlock();
+        }
+    }
+
+    /**
+     * @return the turl
+     */
+    public final GlobusURL getTurl() {
+        rlock();
+        try {
+            return turl;
+        } finally {
+            runlock();
+        }
+    }
+
+    /**
+     * @param turl the turl to set
+     */
+    public final void setTurl(GlobusURL turl) {
+        wlock();
+        try {
+            this.turl = turl;
+        } finally {
+            wunlock();
+        }
+    }
+
+    /**
+     * @return the fmd
+     */
+    private  final FileMetaData getFmd() {
+        rlock();
+        try {
+            return fmd;
+        } finally {
+            runlock();
+        }
+    }
+
+    /**
+     * @param fmd the fmd to set
+     */
+    private final void setFmd(FileMetaData fmd) {
+        wlock();
+        try {
+            this.fmd = fmd;
+        } finally {
+            wunlock();
+        }
+    }
+
+    /**
+     * @return the parentFmd
+     */
+    private final FileMetaData getParentFmd() {
+        rlock();
+        try {
+            return parentFmd;
+        } finally {
+            runlock();
+        }
+    }
+
+    /**
+     * @param parentFmd the parentFmd to set
+     */
+    private final void setParentFmd(FileMetaData parentFmd) {
+        wlock();
+        try {
+            this.parentFmd = parentFmd;
+        } finally {
+            wunlock();
+        }
     }
 
     private static class PutCallbacks implements PrepareToPutCallbacks {
@@ -814,16 +970,13 @@ public class PutFileRequest extends FileRequest {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 fr.say("StorageInfoArrived: FileId:"+fileId);
-                State state;
-                synchronized(fr) {
-                    state = fr.getState();
-                }
+                State state = fr.getState();
                 if(state == State.ASYNCWAIT) {
                     fr.say("PutCallbacks StorageInfoArrived for file "+fr.getSurlString());
-                    fr.fileId = fileId;
-                    fr.fmd = fmd;
-                    fr.parentFileId = parentFileId;
-                    fr.parentFmd = parentFmd;
+                    fr.setFileId(fileId);
+                    fr.setFmd(fmd);
+                    fr.setParentFileId(parentFileId);
+                    fr.setParentFmd(parentFmd);
 
                     Scheduler scheduler = Scheduler.getScheduler(fr.getSchedulerId());
                     try {
@@ -1170,10 +1323,7 @@ public class PutFileRequest extends FileRequest {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 fr.say("Space Marked as Being Used");
-                State state;
-                synchronized(fr) {
-                    state = fr.getState();
-                }
+                State state = fr.getState();
                 if(state == State.ASYNCWAIT) {
                     fr.say("PutUseSpaceCallbacks Space Marked as Being Used for file "+fr.getSurlString());
                     fr.setSpaceMarkedAsBeingUsed(true);
@@ -1259,18 +1409,6 @@ public class PutFileRequest extends FileRequest {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 fr.setSpaceReservationId(null);
-                /*
-                 * releaseSpace is called when the file request  is already
-                 * in a final state
-                 */
-                /*
-                 try {
-                    //fr.setState(State.FAILED);
-                }
-                catch(IllegalStateTransition ist) {
-                    //fr.esay("can not fail state:"+ist);
-                }
-                 */
                 fr.esay("TheReleaseSpaceCallbacks error: "+ error);
             } catch(Exception e) {
                 e.printStackTrace();
@@ -1281,18 +1419,6 @@ public class PutFileRequest extends FileRequest {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 fr.setSpaceReservationId(null);
-                /*
-                 * releaseSpace is called when the file request  is already
-                 * in a final state
-                 */
-                /*
-                try {
-                    //fr.setState(State.FAILED);
-                }
-                catch(IllegalStateTransition ist) {
-                    //fr.esay("can not fail state:"+ist);
-                }
-                 */
                 fr.esay("TheReleaseSpaceCallbacks exception");
                 fr.esay(e);
             } catch(Exception e1) {
@@ -1307,19 +1433,6 @@ public class PutFileRequest extends FileRequest {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 fr.setSpaceReservationId(null);
-                /*
-                 * releaseSpace is called when the file request  is already
-                 * in a final state
-                 */
-                /*
-                try {
-                    //fr.setState(State.FAILED);
-                }
-                catch(IllegalStateTransition ist) {
-                    //fr.esay("can not fail state:"+ist);
-                }
-                 */
-
                 fr.esay("TheReleaseSpaceCallbacks Timeout");
             } catch(Exception e) {
                 e.printStackTrace();
@@ -1340,19 +1453,6 @@ public class PutFileRequest extends FileRequest {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 fr.setSpaceReservationId(null);
-                /*
-                 * releaseSpace is called when the file request  is already
-                 * in a final state
-                 */
-                /*
-                try {
-                    //fr.setState(State.FAILED);
-                }
-                catch(IllegalStateTransition ist) {
-                    //fr.esay("can not fail state:"+ist);
-                }
-                 */
-
                 fr.esay("TheReleaseSpaceCallbacks error: "+ reason+" ignoring, could have been all used up");
             } catch(Exception e) {
                 e.printStackTrace();
@@ -1361,36 +1461,76 @@ public class PutFileRequest extends FileRequest {
 
     }
 
-    public boolean isWeReservedSpace() {
-        return weReservedSpace;
+    public final boolean isWeReservedSpace() {
+        rlock();
+        try {
+            return weReservedSpace;
+        } finally {
+            runlock();
+        }
     }
 
-    public void setWeReservedSpace(boolean weReservedSpace) {
-        this.weReservedSpace = weReservedSpace;
+    public final void setWeReservedSpace(boolean weReservedSpace) {
+        wlock();
+        try {
+            this.weReservedSpace = weReservedSpace;
+        } finally {
+            wunlock();
+        }
     }
 
-    public boolean isSpaceMarkedAsBeingUsed() {
-        return spaceMarkedAsBeingUsed;
+    public final boolean isSpaceMarkedAsBeingUsed() {
+        rlock();
+        try {
+            return spaceMarkedAsBeingUsed;
+        } finally {
+            runlock();
+        }
     }
 
-    public void setSpaceMarkedAsBeingUsed(boolean spaceMarkedAsBeingUsed) {
-        this.spaceMarkedAsBeingUsed = spaceMarkedAsBeingUsed;
+    public final void setSpaceMarkedAsBeingUsed(boolean spaceMarkedAsBeingUsed) {
+        wlock();
+        try {
+            this.spaceMarkedAsBeingUsed = spaceMarkedAsBeingUsed;
+        } finally {
+            wunlock();
+        }
     }
 
-    public TAccessLatency getAccessLatency() {
-        return accessLatency;
+    public final TAccessLatency getAccessLatency() {
+        rlock();
+        try {
+            return accessLatency;
+        } finally {
+            runlock();
+        }
     }
 
-    public void setAccessLatency(TAccessLatency accessLatency) {
-        this.accessLatency = accessLatency;
+    public final void setAccessLatency(TAccessLatency accessLatency) {
+        wlock();
+        try {
+            this.accessLatency = accessLatency;
+        } finally {
+            wunlock();
+        }
     }
 
-    public TRetentionPolicy getRetentionPolicy() {
-        return retentionPolicy;
+    public final TRetentionPolicy getRetentionPolicy() {
+        rlock();
+        try {
+            return retentionPolicy;
+        } finally {
+            runlock();
+        }
     }
 
-    public void setRetentionPolicy(TRetentionPolicy retentionPolicy) {
-        this.retentionPolicy = retentionPolicy;
+    public final void setRetentionPolicy(TRetentionPolicy retentionPolicy) {
+        wlock();
+        try {
+            this.retentionPolicy = retentionPolicy;
+        } finally {
+            wunlock();
+        }
     }
 
     /**
@@ -1413,11 +1553,11 @@ public class PutFileRequest extends FileRequest {
         if(remainingLifetime >= newLifetime) {
             return remainingLifetime;
         }
-        String spaceToken =spaceReservationId;
+        String spaceToken =getSpaceReservationId();
 
         if(!getConfiguration().isReserve_space_implicitely() ||
            spaceToken == null ||
-           !weReservedSpace) {
+           !isWeReservedSpace()) {
             return extendLifetimeMillis(newLifetime);
         }
         newLifetime = extendLifetimeMillis(newLifetime);
@@ -1432,169 +1572,3 @@ public class PutFileRequest extends FileRequest {
     }
 
 }
-
-// $Log: not supported by cvs2svn $
-// Revision 1.43  2007/10/03 20:33:02  litvinse
-// throw SRMAuthorisation exeption in getTurl
-//
-// Revision 1.42  2007/09/19 22:41:29  timur
-// Default access latency and retention policy is now based on directory AccessLatency and RetentionPolicy tags if these are present
-//
-// Revision 1.41  2007/09/14 21:11:43  timur
-// rename srmSpaceManager option into srmImplicitSpaceManagerEnabled, make its value set to yes by default is srmSpaceManagerEnabled=yes and always set to no if srmImplicitSpaceManagerEnabled=no
-//
-// Revision 1.40  2007/09/13 19:14:30  timur
-// return SRM AUTHORIZATION or INVALID PATH errors instead of generic SRM_FAILURE in several instances
-//
-// Revision 1.39  2007/08/03 15:47:58  timur
-// closing sql statement, implementing hashCode functions, not passing null args, resing classes, not comparing objects using == or !=,  etc, per findbug recommendations
-//
-// Revision 1.38  2007/06/18 21:44:58  timur
-// better reporting of the expired space reservations
-//
-// Revision 1.37  2007/05/15 01:50:55  timur
-// if no space is available, return SRM_NO_FREE_SPACE
-//
-// Revision 1.36  2007/04/11 23:34:42  timur
-// Propagate SrmNoFreeSpace and SrmSpaceReleased errors in case of useSpace function
-//
-// Revision 1.35  2007/03/10 00:13:20  timur
-// started work on adding support for optional overwrite
-//
-// Revision 1.34  2007/03/03 00:43:05  timur
-// make srm reserve space and space get metadata return correct values, set status before changing request state, to make it save its value in database
-//
-// Revision 1.33  2007/02/20 01:37:56  timur
-// more changes to report status according to the spec and make ls report lifetime as -1 (infinite)
-//
-// Revision 1.32  2007/02/17 05:44:25  timur
-// propagate SRM_NO_FREE_SPACE to reserveSpace, refactored database code a bit
-//
-// Revision 1.31  2007/02/10 04:46:15  timur
-//  first version of SrmExtendFileLifetime
-//
-// Revision 1.29  2007/01/11 22:33:09  timur
-// fixed bugs: not accounting for possible null values and making correct sql statement
-//
-// Revision 1.28  2007/01/10 23:00:24  timur
-// implemented srmGetRequestTokens, store request description in database, fixed several srmv2 issues
-//
-// Revision 1.27  2006/10/10 20:59:57  timur
-// more changes for srmBringOnline
-//
-// Revision 1.26  2006/10/04 21:20:33  timur
-// different calculation of the v2.2 status
-//
-// Revision 1.25  2006/08/25 00:18:15  timur
-// space reservation and synchronization issue resolution
-//
-// Revision 1.24  2006/08/18 22:05:32  timur
-// srm usage of space by srmPrepareToPut implemented
-//
-// Revision 1.23  2006/08/08 15:33:34  timur
-// do not return SRM_REQUEST_SUSPENDED status
-//
-// Revision 1.22  2006/08/07 21:03:59  timur
-// implemented srmStatusOfReserveSpaceRequest
-//
-// Revision 1.21  2006/07/10 22:03:28  timur
-// updated some of the error codes
-//
-// Revision 1.20  2006/06/21 20:29:53  timur
-// Upgraded code to the latest srmv2.2 wsdl (final)
-//
-// Revision 1.19  2006/06/20 15:42:17  timur
-// initial v2.2 commit, code is based on a week old wsdl, will update the wsdl and code next
-//
-// Revision 1.18  2006/04/26 17:17:55  timur
-// store the history of the state transitions in the database
-//
-// Revision 1.17  2006/04/18 00:53:47  timur
-// added the job execution history storage for better diagnostics and profiling
-//
-// Revision 1.16  2006/04/12 23:16:23  timur
-// storing state transition time in database, storing transferId for copy requests in database, renaming tables if schema changes without asking
-//
-// Revision 1.15  2006/03/31 23:26:59  timur
-// better error reporting
-//
-// Revision 1.14  2006/03/14 17:44:19  timur
-// moving toward the axis 1_3
-//
-// Revision 1.13  2006/02/02 01:27:16  timur
-// better error propagation to the user
-//
-// Revision 1.12  2005/12/12 22:35:47  timur
-// more work on srmPrepareToGet and related srm v2 functions
-//
-// Revision 1.11  2005/11/04 22:23:31  timur
-// if file size is not known (0) do not reserve space for it  and do not reject it in gridftp transfer
-//
-// Revision 1.10  2005/10/07 22:57:16  timur
-// work for srm v2
-//
-// Revision 1.9  2005/10/03 19:02:40  timur
-// space release failure should not case transfer failures, if the transfer succeded
-//
-// Revision 1.8  2005/05/12 21:42:00  timur
-// use AbstractStorageElement.getSupported[Get/Put]Protocols() to determine supported protocols and not getTurl
-//
-// Revision 1.7  2005/03/30 22:42:10  timur
-// more database schema changes
-//
-// Revision 1.6  2005/03/23 18:10:38  timur
-// more space reservation related changes, need to support it in case of "copy"
-//
-// Revision 1.5  2005/03/11 21:16:26  timur
-// making srm compatible with cern tools again
-//
-// Revision 1.4  2005/03/09 23:20:49  timur
-// more database checks, more space reservation code
-//
-// Revision 1.3  2005/03/01 23:10:38  timur
-// Modified the database scema to increase database operations performance and to account for reserved space"and to account for reserved space
-//
-// Revision 1.2  2005/02/02 22:19:30  timur
-// make sure we call canRead/Write of the storage when performing get/put
-//
-// Revision 1.1  2005/01/14 23:07:14  timur
-// moving general srm code in a separate repository
-//
-// Revision 1.6  2004/11/09 08:04:47  tigran
-// added SerialVersion ID
-//
-// Revision 1.5  2004/11/08 23:02:41  timur
-// remote gridftp manager kills the mover when the mover thread is killed,  further modified the srm database handling
-//
-// Revision 1.4  2004/10/30 04:19:07  timur
-// Fixed a problem related to the restoration of the job from database
-//
-// Revision 1.3  2004/10/28 02:41:31  timur
-// changed the database scema a little bit, fixed various synchronization bugs in the scheduler, added interactive shell to the File System srm
-//
-// Revision 1.2  2004/08/06 19:35:24  timur
-// merging branch srm-branch-12_May_2004 into the trunk
-//
-// Revision 1.1.2.11  2004/08/03 16:37:51  timur
-// removing unneeded dependancies on dcache
-//
-// Revision 1.1.2.10  2004/07/12 21:52:06  timur
-// remote srm error handling is improved, minor issues fixed
-//
-// Revision 1.1.2.9  2004/07/02 20:10:24  timur
-// fixed the leak of sql connections, added propogation of srm errors
-//
-// Revision 1.1.2.8  2004/06/30 20:37:24  timur
-// added more monitoring functions, added retries to the srm client part, adapted the srmclientv1 for usage in srmcp
-//
-// Revision 1.1.2.7  2004/06/24 23:03:07  timur
-// put requests, put file requests and copy file requests are now stored in database, copy requests need more work
-//
-// Revision 1.1.2.6  2004/06/22 01:38:06  timur
-// working on the database part, created persistent storage for getFileRequests, for the next requestId
-//
-// Revision 1.1.2.5  2004/06/16 19:44:33  timur
-// added cvs logging tags and fermi copyright headers at the top, removed Copier.java and CopyJob.java
-//
-
-
