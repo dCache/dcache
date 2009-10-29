@@ -550,8 +550,6 @@ public class PoolManagerV5
         DirectionType accessType = msg.getAccessType();
         msg.setPoolList(PoolPreferenceLevel.fromPoolPreferenceLevelToList(
            _selectionUnit.match(accessType,
-                                msg.getStoreUnitName(),
-                                msg.getDCacheUnitName(),
                                 msg.getNetUnitName(),
                                 msg.getProtocolUnitName(),
                                 msg.getStorageInfo(),

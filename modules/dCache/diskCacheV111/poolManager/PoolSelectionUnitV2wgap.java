@@ -63,12 +63,12 @@ public class PoolSelectionUnitV2wgap extends PoolSelectionUnitV2 {
     }
 
 
-    public PoolPreferenceLevel[] match(DirectionType type, String storeUnitName,
-            String dCacheUnitName, String netUnitName, String protocolUnitName,
+    @Override
+    public PoolPreferenceLevel[] match(DirectionType type, String netUnitName, String protocolUnitName,
             StorageInfo storageInfo, String linkGroupName) {
 
           PoolPreferenceLevel[] result = 
-              super.match (type, storeUnitName, dCacheUnitName, netUnitName, 
+              super.match (type,  netUnitName,
 			   protocolUnitName, storageInfo, linkGroupName); 
 
           if (type == DirectionType.WRITE) { 

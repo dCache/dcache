@@ -30,6 +30,7 @@ import dmg.util.CommandSyntaxException;
 
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.pools.PoolV2Mode;
+import diskCacheV111.vehicles.GenericStorageInfo;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.AbstractCellComponent;
 
@@ -1144,9 +1145,12 @@ public class PoolSelectionUnitV2
     /**
      * @Guarded by _psuReadLock
      */
-    public PoolPreferenceLevel[] match(DirectionType type, String storeUnitName,
-            String dCacheUnitName, String netUnitName, String protocolUnitName,
+    @Override
+    public PoolPreferenceLevel[] match(DirectionType type,  String netUnitName, String protocolUnitName,
             StorageInfo storageInfo, String linkGroupName) {
+
+        String storeUnitName = storageInfo.getStorageClass()+"@"+storageInfo.getHsm();
+        String dCacheUnitName = storageInfo.getCacheClass();
 
         if( _logPoolSelection.isDebugEnabled() ) {
 
@@ -1645,13 +1649,15 @@ public class PoolSelectionUnitV2
     public String hh_psu_match = "[-linkGroup=<linkGroup>] read|cache|write|p2p <storeUnit>|* <dCacheUnit>|* <netUnit>|* <protocolUnit>|* ";
 
     public String ac_psu_match_$_5(Args args) throws Exception {
+
         try {
             long start = System.currentTimeMillis();
+            StorageInfo si = storageInfoOf(args.argv(1), args.argv(2));
+
             PoolPreferenceLevel[] list = match(args.argv(0).equals("*") ? DirectionType.ANY
-                    : DirectionType.valueOf(args.argv(0).toUpperCase()), args.argv(1).equals("*") ? null : args
-                    .argv(1), args.argv(2).equals("*") ? null : args.argv(2),
+                    : DirectionType.valueOf(args.argv(0).toUpperCase()),
                     args.argv(3).equals("*") ? null : args.argv(3), args
-                            .argv(4).equals("*") ? null : args.argv(4), null,
+                            .argv(4).equals("*") ? null : args.argv(4), si,
                     args.getOpt("linkGroup"));
             start = System.currentTimeMillis() - start;
 
@@ -2191,10 +2197,11 @@ public class PoolSelectionUnitV2
 
     public Object ac_psux_match_$_5(Args args) throws Exception {
 
-        PoolPreferenceLevel[] list = match(DirectionType.valueOf(args.argv(0).toUpperCase()), args.argv(1).equals(
-                "*") ? null : args.argv(1), args.argv(2).equals("*") ? null
-                : args.argv(2), args.argv(3).equals("*") ? null : args.argv(3),
-                args.argv(4).equals("*") ? null : args.argv(4), null, args.getOpt("linkGroup"));
+        StorageInfo si = storageInfoOf(args.argv(1), args.argv(2));
+
+        PoolPreferenceLevel[] list = match(DirectionType.valueOf(args.argv(0).toUpperCase()),
+                args.argv(3).equals("*") ? null : args.argv(3),
+                args.argv(4).equals("*") ? null : args.argv(4), si, args.getOpt("linkGroup"));
         return list;
     }
 
@@ -3338,5 +3345,35 @@ public class PoolSelectionUnitV2
         }
 
         return pools;
+    }
+
+    /**
+     * Create a {@link StorageInfo} corresponding to given store unit and cacheClass
+     *
+     * @param storeUnit
+     * @param cacheClass
+     * @return StorageInfo
+     * @throws IllegalArgumentException if store unit format do not match to
+     * x:y@z or equal to '*'
+     */
+    public static StorageInfo storageInfoOf(String storeUnit, String cacheClass)
+        throws IllegalArgumentException {
+        StorageInfo si;
+
+        if (storeUnit.equals("*")) {
+            si = new GenericStorageInfo();
+        } else {
+
+            String[] unitParts = storeUnit.split("@");
+            if (unitParts.length != 2) {
+                throw new IllegalArgumentException("Invalid format: expected<x:y@z> got <" + storeUnit + ">");
+            }
+            si = new GenericStorageInfo(unitParts[1], unitParts[0]);
+        }
+
+        if (!cacheClass.equals("*")) {
+            si.setCacheClass(cacheClass);
+        }
+        return si;
     }
 }

@@ -157,8 +157,7 @@ public interface PoolSelectionUnit  {
    public SelectionPool getPool( String poolName , boolean create ) ;
    public SelectionLink getLinkByName( String linkName ) throws NoSuchElementException ;
    public PoolPreferenceLevel []
-            match( DirectionType type ,
-                   String store , String dcache , String net , String protocol,
+            match( DirectionType type, String net , String protocol,
                    StorageInfo info, String linkGroup ) ;
    public String [] getActivePools() ;
    public String [] getDefinedPools( boolean enabledOnly ) ;

@@ -232,9 +232,6 @@ public class PoolMonitorV5
             throw new
             CacheException(189,"Storage Info not available");
 
-         String hsm          = _storageInfo.getHsm() ;
-         String storageClass = _storageInfo.getStorageClass() ;
-         String cacheClass   = _storageInfo.getCacheClass() ;
          String hostName     = _protocolInfo instanceof IpProtocolInfo  ?((IpProtocolInfo)_protocolInfo).getHosts()[0] : null ;
          String protocolString = _protocolInfo.getProtocol() + "/" + _protocolInfo.getMajorVersion() ;
          //
@@ -265,8 +262,6 @@ public class PoolMonitorV5
          //
          PoolPreferenceLevel [] level =
              _selectionUnit.match( DirectionType.READ ,
-                                   storageClass+"@"+hsm ,
-                                   cacheClass ,
                                    hostName ,
                                    protocolString ,
                                    _storageInfo,
@@ -352,9 +347,6 @@ public class PoolMonitorV5
            throws CacheException, InterruptedException
        {
 
-         String hsm          = storageInfo.getHsm() ;
-         String storageClass = storageInfo.getStorageClass() ;
-         String cacheClass   = storageInfo.getCacheClass() ;
          String hostName     =
                     protocolInfo instanceof IpProtocolInfo ?
                     ((IpProtocolInfo)protocolInfo).getHosts()[0] :
@@ -363,8 +355,6 @@ public class PoolMonitorV5
 
          PoolPreferenceLevel [] level =
              _selectionUnit.match( mode ,
-                                   storageClass+"@"+hsm ,
-                                   cacheClass ,
                                    hostName ,
                                    protocolInfo.getProtocol()+"/"+protocolInfo.getMajorVersion() ,
                                    storageInfo,
@@ -458,9 +448,6 @@ public class PoolMonitorV5
                             long         filesize)
            throws CacheException, InterruptedException
        {
-         String hsm          = storageInfo.getHsm() ;
-         String storageClass = storageInfo.getStorageClass() ;
-         String cacheClass   = storageInfo.getCacheClass() ;
          String  hostName    =
                     protocolInfo instanceof IpProtocolInfo ?
                     ((IpProtocolInfo)protocolInfo).getHosts()[0] :
@@ -468,8 +455,6 @@ public class PoolMonitorV5
          int  maxDepth      = 9999 ;
          PoolPreferenceLevel [] level =
              _selectionUnit.match( DirectionType.WRITE ,
-                                   storageClass+"@"+hsm ,
-                                   cacheClass ,
                                    hostName ,
                                    protocolInfo.getProtocol()+"/"+protocolInfo.getMajorVersion() ,
                                    storageInfo,
@@ -480,8 +465,7 @@ public class PoolMonitorV5
          if( level.length == 0 )
             throw new
             CacheException( 19 ,
-                             "No write pools configured for <"+
-                             storageClass+"@"+hsm+">" ) ;
+                             "No write pools configured for <"+ storageInfo +">" ) ;
 
          List<PoolCostCheckable> costs = null ;
 
@@ -499,8 +483,7 @@ public class PoolMonitorV5
          if( costs == null || costs.size() == 0 )
             throw new
             CacheException( 20 ,
-                            "No write pool available for <"+
-                            storageClass+"@"+hsm+">" ) ;
+                            "No write pool available for <"+ storageInfo +">" ) ;
 
          sortByCost( costs , true , parameter ) ;
 
