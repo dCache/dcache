@@ -7,6 +7,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -219,40 +220,78 @@ public class PnfsFile extends File  {
          return new File( dirString , ".(use)("+level+")("+getName()+")" ) ;
       }
    }
-   public PnfsId getPnfsId() throws FileNotFoundCacheException  {
+
+    public PnfsId getPnfsId() throws CacheException
+    {
         if (_pnfsId != null)
             return _pnfsId;
+
+        if(!exists()) {
+            throw new FileNotFoundCacheException("path " +this+" not found");
+        }
+
         String dirString = getParent();
         if (dirString == null) {
             throw new FileNotFoundCacheException("path " +this+" not found");
         }
 
         File f = new File(dirString, ".(id)(" + getName() + ")");
-
-        BufferedReader r = null;
+        String idString;
         try {
-            r = new BufferedReader(new FileReader(f), 32);
-            String idString = r.readLine();
-            if (idString == null) {
-                throw new FileNotFoundCacheException("path " +this+" not found ( empty id file )");
-            }
-            return new PnfsId(idString);
-        } catch( FileNotFoundException fnf) {
-            throw new FileNotFoundCacheException("path " +this+" not found ( "+ f.getName() +" )");
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new FileNotFoundCacheException("path " +this+" not found ( " + e.getMessage() + " )");
-        } finally {
-            if (r != null) {
+            try {
+                idString = readLine(f);
+            } catch (FileNotFoundException e) {
+                /* Some OSes have a negative directory entry cache. Since
+                 * the .(id) file is created as a side effect of creating
+                 * other files, we need to flush the cache. Attempting to
+                 * create the file will achieve this. The operation always
+                 * fails so we ignore the exception.
+                 */
                 try {
-                    r.close();
-                } catch (IOException ii) {
-                    // ignored
+                    f.createNewFile();
+                } catch (IOException ignored) {
                 }
+
+                /* Now try to read it again.
+                 */
+                try {
+                    idString = readLine(f);
+                } catch (FileNotFoundException ee) {
+                    throw new FileNotFoundCacheException("File not found");
+                }
+
+                _logNameSpace.warn("First attempt to retrieve PNFS ID of " +
+                                   this + " failed. Second attempt succeeded " +
+                                   "after clearing negative cache entry. " +
+                                   "This is caused by a known PNFS problem.");
             }
+        } catch (IOException e) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     "Failed to read PNFS ID of file: " +
+                                     e.getMessage());
         }
 
+        if (idString == null) {
+            throw new FileNotFoundCacheException("Path " +this+" not found (empty id file)");
+        }
+        return new PnfsId(idString);
     }
+
+    private static String readLine(File file)
+        throws IOException
+    {
+        RandomAccessFile raf = new RandomAccessFile(file, "r");
+        try {
+            return raf.readLine();
+        } finally {
+            try {
+                raf.close();
+            } catch (IOException e) {
+                _logNameSpace.warn("Failed to close file [" + file + "]: ", e);
+            }
+        }
+    }
+
    public String [] getTags(){
       if( _pnfsId == null ){
          return _getRealTags() ;
