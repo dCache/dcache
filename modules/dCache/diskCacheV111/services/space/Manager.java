@@ -4356,7 +4356,7 @@ public final class Manager
                                                 logger.debug("selectPool: file is not found, no prior reservations for this file, calling reserveAndUseSpace()");
                                         }
                                         file = reserveAndUseSpace(pnfsPath,
-                                                                  selectPool.getPnfsId(),
+                                                                  null,
                                                                   selectPool.getFileSize(),
                                                                   al,
                                                                   rp,
