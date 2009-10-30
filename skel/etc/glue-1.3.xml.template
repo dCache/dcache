@@ -614,6 +614,34 @@
               </map>
             </attr>
 
+            <!-- We repeat publishing the access rules with the deprecated
+                 format as a work-around for a bug present in lcg-infosites.
+                 For details, see:
+                     https://savannah.cern.ch/bugs/?57787
+                  -->
+            <attr name="GlueSAAccessControlBaseRule"
+                  not-empty="1"
+                  select="d:units/d:store/d:write/d:unitref"><map
+                    name="unit-to-VO">
+                <lookup path="@name"/>
+              </map>
+            </attr>
+            <attr name="GlueSAAccessControlBaseRule"
+                  not-empty="1"
+                  select="d:units/d:store/d:read/d:unitref"><map
+                    name="unit-to-VO">
+                <lookup path="@name"/>
+              </map>
+            </attr>
+            <attr name="GlueSAAccessControlBaseRule"
+                  not-empty="1"
+                  select="d:units/d:store/d:stage/d:unitref"><map
+                      name="unit-to-VO">
+                <lookup path="@name"/>
+              </map>
+            </attr>
+
+
             <!-- Publish a hard-coded ReservedOnlineSize of zero since
                  this is a "Storage Area representing an unreserved
                  space." (from WLCG Installed Capacity document) -->
