@@ -83,7 +83,6 @@
     <property name="channelFactory" ref="channelFactory"/>
     <property name="connectionTracker" ref="connectionTracker"/>
     <property name="door" ref="door"/>
-    <property name="loginBrokerHandler" ref="lb"/>
   </bean>
 
   <bean id="pnfs" class="diskCacheV111.util.PnfsHandler">
@@ -132,6 +131,7 @@
     <property name="protocolEngine" value="org.dcache.xrootd2.door.XrootdDoor"/>
     <property name="protocolVersion" value="2.4"/>
     <property name="protocolFamily" value="root"/>
+    <property name="port" value="${xrootdPort}"/>
     <property name="loginBroker">
       <bean class="dmg.cells.nucleus.CellPath">
         <constructor-arg value="${loginBroker}"/>

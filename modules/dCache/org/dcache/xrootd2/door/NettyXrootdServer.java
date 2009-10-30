@@ -24,8 +24,6 @@ import org.dcache.xrootd2.core.XrootdRequestHandler;
 import org.dcache.xrootd2.core.ConnectionTracker;
 import org.dcache.xrootd2.protocol.XrootdProtocol;
 
-import org.dcache.util.LoginBrokerHandler;
-
 import diskCacheV111.util.FsPath;
 
 /**
@@ -39,7 +37,6 @@ public class NettyXrootdServer
     private XrootdDoor _door;
     private ChannelFactory _channelFactory;
     private ConnectionTracker _connectionTracker;
-    private LoginBrokerHandler _loginBrokerHandler;
 
     public int getPort()
     {
@@ -71,43 +68,8 @@ public class NettyXrootdServer
         _door = door;
     }
 
-    public void setLoginBrokerHandler(LoginBrokerHandler handler)
-    {
-        _loginBrokerHandler = handler;
-    }
-
-    private InetAddress[] getInetAddresses()
-    {
-        try {
-            Enumeration<NetworkInterface> ifList =
-                NetworkInterface.getNetworkInterfaces();
-
-            ArrayList<InetAddress> v = new ArrayList();
-            while (ifList.hasMoreElements()) {
-                NetworkInterface ne = ifList.nextElement();
-
-                Enumeration<InetAddress> ipList = ne.getInetAddresses();
-                while (ipList.hasMoreElements()) {
-                    InetAddress ia = ipList.nextElement();
-                    // Currently we do not handle ipv6
-                    if (ia instanceof Inet4Address && !ia.isLoopbackAddress()) {
-                        v.add(ia);
-                    }
-                }
-            }
-            return v.toArray(new InetAddress[v.size()]);
-        } catch (SocketException e) {
-            return new InetAddress[0];
-        }
-     }
-
     public void init()
     {
-        if (_loginBrokerHandler != null) {
-            _loginBrokerHandler.setPort(_port);
-            _loginBrokerHandler.setAddresses(getInetAddresses());
-        }
-
         ServerBootstrap bootstrap = new ServerBootstrap(_channelFactory);
         bootstrap.setOption("child.tcpNoDelay", true);
         bootstrap.setOption("child.keepAlive", true);

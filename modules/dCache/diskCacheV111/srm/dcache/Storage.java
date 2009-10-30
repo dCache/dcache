@@ -931,7 +931,7 @@ public class Storage
                        e.getMessage());
         }
 
-        handler.setAddresses(InetAddress.getAllByName(InetAddress.getLocalHost().getHostName()));
+        handler.setAddresses(Arrays.asList(InetAddress.getAllByName(InetAddress.getLocalHost().getHostName())));
         handler.setPort(config.getPort());
 
         handler.setLoad(new LoginBrokerHandler.LoadProvider() {

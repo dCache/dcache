@@ -3,9 +3,11 @@ package org.dcache.util;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.List;
 
 import java.io.PrintWriter;
 import java.net.InetAddress;
+import java.net.SocketException;
 
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
@@ -34,10 +36,20 @@ public class LoginBrokerHandler
     private long   _brokerUpdateTime = 5 * 60;
     private double _brokerUpdateThreshold = 0.1;
     private LoadProvider _load = new FixedLoad(0.0);
-    private String[] _hosts = new String[0];
+    private String[] _hosts;
     private int _port;
     private ScheduledExecutorService _executor;
     private ScheduledFuture _task;
+
+    public LoginBrokerHandler()
+    {
+        try {
+            setAddresses(NetworkUtils.getLocalAddressesV4());
+        } catch (SocketException e) {
+            _log.fatal("Failed to obtain the IP addresses of this host: " +
+                       e.getMessage());
+        }
+    }
 
     public final static String hh_lb_set_update = "<updateTime/sec>";
     public synchronized String ac_lb_set_update_$_1(Args args)
@@ -55,7 +67,7 @@ public class LoginBrokerHandler
 
     private synchronized void sendUpdate()
     {
-        if (_loginBroker == null) {
+        if (_loginBroker == null || _hosts == null) {
             return;
         }
 
@@ -93,20 +105,18 @@ public class LoginBrokerHandler
 
     }
 
-    public synchronized void setAddresses(InetAddress[] addresses)
+    public synchronized void setAddresses(List<InetAddress> addresses)
     {
-        _hosts = new String[addresses.length];
+        _hosts = new String[addresses.size()];
 
         /**
          *  Add addresses ensuring preferred ordering: external
          *  addresses are before any internal interface addresses.
          */
         int nextExternalIfIndex = 0;
-        int nextInternalIfIndex = addresses.length - 1;
+        int nextInternalIfIndex = addresses.size() - 1;
 
-        for (int i = 0; i < addresses.length; i++) {
-            InetAddress addr = addresses[i];
-
+        for (InetAddress addr: addresses) {
             String host = addr.getCanonicalHostName();
             if( !addr.isLinkLocalAddress() && !addr.isLoopbackAddress() &&
                 !addr.isSiteLocalAddress() && !addr.isMulticastAddress()) {
