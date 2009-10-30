@@ -942,11 +942,16 @@
             <lookup path="d:protocol/d:metric[@name='family']"/>
           </allow>
 
+
           <!-- The GlueService's UniqueID MUST be the URI of the end-point.
                This is acknowledged as a broken requirement, but it
-               persists. -->
-          <attr name="GlueServiceUniqueID">httpg://<lookup
-              path="d:interfaces/d:interface[d:metric[@name='order']=1]/d:metric[@name='FQDN']"/>:<lookup
+               persists.  To support DNS aliases we may need to
+               publish something other than the self-discovered (public)
+               FQDN of the interface.  Currently, the SE-UNIQUE-ID 
+               MUST be the SRM's FQDN.  We use this here to support
+               aliases  -->
+          <attr name="GlueServiceUniqueID">httpg://<constant
+              id="SE-UNIQUE-ID"/>:<lookup
               path="d:metric[@name='port']"/>/srm/managerv2</attr>
 
           <!-- GlueServiceName is a human-readable string -->
@@ -958,8 +963,10 @@
           <attr name="GlueServiceType">SRM</attr>
           <attr name="GlueServiceVersion">2.2.0</attr>
 
-          <attr name="GlueServiceEndpoint">httpg://<lookup
-            path="d:interfaces/d:interface[d:metric[@name='order']=1]/d:metric[@name='FQDN']"/>:<lookup
+          <!-- as above, we use the fact that the SRM FQDN must be
+               the SRM FQDN to support DNS aliases -->
+          <attr name="GlueServiceEndpoint">httpg://<constant
+            id="SE-UNIQUE-ID"/>:<lookup
             path="d:metric[@name='port']"/>/srm/managerv2</attr>
 
           <!-- When should we publish something other than "OK" ? -->
@@ -1156,11 +1163,12 @@
         </map>
       </attr>
 
-      <!-- Publish the URI.  The interfaces are ordered (with the order
-           metric) indicating some preference. Order 1 will always be
-           have a public-accessible FQDN, if any interface does -->
-      <attr name="GlueSEControlProtocolEndpoint">httpg://<lookup
-          path="d:interfaces/d:interface[d:metric[@name='order']=1]/d:metric[@name='FQDN']"/>:<lookup
+      <!-- Publish the URI.  To support DNS aliases we may need to
+           publish something other than the self-discovered (public)
+           FQDN of the interface.  Currently, the SE-UNIQUE-ID 
+           MUST be the SRM's FQDN.  We use this here to support
+           aliases  -->
+      <attr name="GlueSEControlProtocolEndpoint">httpg://<constant id="SE-UNIQUE-ID"/>:<lookup
           path="d:metric[@name='port']"/>/srm/managerv2</attr>
 
       <!-- For now we hard-code this, which is wrong -->
