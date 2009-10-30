@@ -62,22 +62,25 @@
 
   <xsl:variable name="full-path" select="concat(&quot;document('&quot;,$xml-src-uri,&quot;')/&quot;,$path)"/>
 
-  <xsl:variable name="result">
+
+
+  <!-- Check whether the path points to something valid -->
+  <xsl:variable name="valid-path">
     <xsl:choose>
+
+      <!-- Try with EXSLT (xsltproc, xalan) -->
+      <xsl:when test="function-available('dyn:evaluate')">
+	<xsl:value-of select="boolean(dyn:evaluate($full-path))"/>
+      </xsl:when>
 
       <!-- Try with Saxon 6.5.5 -->
       <xsl:when test="function-available('saxon655:evaluate')">
-	<xsl:value-of select="saxon655:evaluate($full-path)"/>
+	<xsl:value-of select="boolean(saxon655:evaluate($full-path))"/>
       </xsl:when>
 
       <!-- Try with Saxon v9 -->
       <xsl:when test="function-available('saxon9:evaluate')">
-	<xsl:value-of select="saxon9:evaluate($full-path)"/>
-      </xsl:when>
-
-      <!-- Try with EXSLT (xsltproc, xalan) -->
-      <xsl:when test="function-available('dyn:evaluate')">
-	<xsl:value-of select="dyn:evaluate($full-path)"/>
+	<xsl:value-of select="boolean(saxon9:evaluate($full-path))"/>
       </xsl:when>
 
       <!-- Flag this as a problem -->
@@ -87,9 +90,32 @@
     </xsl:choose>
   </xsl:variable>
 
+
+  <!-- Emit the output -->
   <xsl:choose>
-    <xsl:when test="$result">
-      <xsl:value-of select="$result"/>
+    <xsl:when test="$valid-path = 'true'">
+
+      <!-- Emit the expansion from the given XPath -->
+      <xsl:choose>
+	<!-- Try with EXSLT (xsltproc, xalan) -->
+	<xsl:when test="function-available('dyn:evaluate')">
+	  <xsl:value-of select="dyn:evaluate($full-path)"/>
+	</xsl:when>
+
+	<!-- Try with Saxon 6.5.5 -->
+	<xsl:when test="function-available('saxon655:evaluate')">
+	  <xsl:value-of select="saxon655:evaluate($full-path)"/>
+	</xsl:when>
+
+	<!-- Try with Saxon v9 -->
+	<xsl:when test="function-available('saxon9:evaluate')">
+	  <xsl:value-of select="saxon9:evaluate($full-path)"/>
+	</xsl:when>
+
+	<xsl:otherwise>
+	  <!-- We've already flagged this problem, just emit nothing -->
+	</xsl:otherwise>
+      </xsl:choose>
     </xsl:when>
 
     <xsl:otherwise>
