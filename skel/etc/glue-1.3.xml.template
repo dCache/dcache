@@ -615,8 +615,9 @@
             </object>
 
 
-            <attr name="GlueSALocalID">nas-<lookup
-                path="@id"/>
+            <attr name="GlueSALocalID">nas-<map name="GlueSALocalID-BDII-workaround">
+                <lookup path="@id"/>
+              </map>
             </attr>
 
             <attr name="GlueSAName">Storage accessible via <lookup
@@ -1279,6 +1280,26 @@
         +-->
     <map name="cell-version-to-dcache-version">
       <sub match="production-" replace-with=""/>
+    </map>
+
+    <!-- RFC 2253 describes how LDAP DNs should escape certain characters.
+         Unfortunately, BDII is not RFC 2253 compliant; including a
+         escape-required character in the attribute value that is to
+         become part of an object's DN results in BDII alternatively
+         publishing and suppressing publication of that object.  This is
+         described in bug:
+
+         https://savannah.cern.ch/bugs/?57840
+
+         Currently, this problem is only manifest for the GlueSA objects
+         used to provide information on installed capacity: the NAS
+         auto-generated names can include a comma if the set of pools
+         is shared between two or more store units.
+
+         Here we introduce a work-around: we map all the comma
+         characters to colon characters. -->
+    <map name="GlueSALocalID-BDII-workaround">
+      <translate from="," to=":"/>
     </map>
   </mapping>
 
