@@ -100,6 +100,33 @@
         |   an attached HSM should use "tape".
         +-->
     <constant id="DCACHE-ARCHITECTURE">UNDEFINEDVALUE</constant>
+
+
+    <!--+
+        |  A site will typically have multiple resource-level BDIIs,
+        |  a single site-level BDII and zero or more top-level BDIIs.
+        |  The site-level BDII is periodically updated with information
+        |  from the various resource-level BDII.
+        |
+        |  Most sites will deploy a resource-level BDII for each dCache
+        |  instance.  The output from running the info provider script
+        |  is injected into this BDII.  If the BDII is on a dCache head
+        |  node then the BDII is very likely a resource-level BDII.  This
+        |  is the default for YAIM based installations.
+        |
+        |  It is also possible to inject information directly into the
+        |  site-level BDII.  This removes the need to have a resource-level
+        |  BDII; however, the site-level BDII requires LDIF that has a
+        |  slightly different structure.
+        |
+        |  If the LDIF output is for a resource-level BDII then the
+        |  DIT-PARENT constant below should have the value: resource.
+        |  If the LDIF output is for a site-level BDII then it should
+        |  have the same value as the SITE-UNIQUE-ID constant above.
+        |
+        |  If you are unsure, leave this as "resource"
+        +-->
+    <constant id="DIT-PARENT">resource</constant>
   </constants>
 
 
@@ -300,7 +327,9 @@
       <attr name="o">grid</attr>
 
       <object rdn="mds-vo-name" hidden="1">
-        <attr name="mds-vo-name">resource</attr>
+        <attr name="mds-vo-name">
+	  <constant id="DIT-PARENT"/>
+	</attr>
 
 
         <!-- Publish the Top-level GlueSE object -->
