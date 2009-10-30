@@ -589,6 +589,13 @@
                 </map>
               </suppress>
 
+              <!-- Avoid publishing anything that doesn't have a VO -->
+              <suppress test="" check="is">
+                <map name="unit-to-VO">
+                  <lookup path="@name"/>
+                </map>
+              </suppress>
+
               <attr name="GlueVOInfoLocalID">
                 <lookup path="@name"/>
               </attr>
