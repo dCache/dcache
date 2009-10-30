@@ -575,7 +575,7 @@
               +-->
           <object rdn="GlueSALocalID"
                   select="/d:dCache/d:nas/d:nas"
-                  classes="GlueSATop GlueSA GlueSAAccessControlBase GlueSchemaVersion">
+                  classes="GlueSATop GlueSA GlueSAAccessControlBase GlueSAState GlueSchemaVersion">
 
             <!-- Publish a VOInfo object for write units -->
             <object rdn="GlueVOInfoLocalID"
@@ -737,6 +737,64 @@
 	    <attr name="GlueSATotalNearlineSize">0</attr>
 	    <attr name="GlueSAUsedNearlineSize">0</attr>
 	    <attr name="GlueSAFreeNearlineSize">0</attr>
+
+
+            <!--  The lcg-infosites tool allows the display of information
+                  about a Site's StorageElement.  It does this by querying
+                  the GlueSAStateUsedSpace and GlueSAStateAvailableSpace
+                  attributes.
+
+                  Unfortunately, both attributes are deprecated and have
+                  been superseded by the eight GlueSA*Size attributes.  This
+                  bug has been reported:
+
+                  https://savannah.cern.ch/bugs/?57799
+
+                  As a work-around, we publish GlueSAStateAvailableSpace
+                  and GlueSAStateUsedSpace -->
+
+            <!-- Publish State.UsedSpace as Total - (Free + Removable),
+                 in kiloBytes -->
+            <attr name="GlueSAStateUsedSpace">
+              <scale to-integer="round" factor="bytes-to-kilobytes">
+                <sum>
+                  <term>
+                    <lookup default="0"
+                            child="path">d:space/d:metric[@name='total']</lookup>
+                  </term>
+                  <term>
+                    <scale factor="negative">
+                      <lookup default="0"
+                              child="path">d:space/d:metric[@name='free']</lookup>
+                    </scale>
+                  </term>
+                  <term>
+                    <scale factor="negative">
+                      <lookup default="0"
+                              child="path">d:space/d:metric[@name='removable']</lookup>
+                    </scale>
+                  </term>
+                </sum>
+              </scale>
+            </attr>
+
+            <!-- Publish State.AvailableSpace as Free + Removable,
+                 in kiloBytes -->
+            <attr name="GlueSAStateAvailableSpace">
+              <scale to-integer="round" factor="bytes-to-kilobytes">
+                <sum>
+                  <term>
+                    <lookup default="0"
+                            child="path">d:space/d:metric[@name='free']</lookup>
+                  </term>
+                  <term>
+                    <lookup default="0"
+                            child="path">d:space/d:metric[@name='removable']</lookup>
+                  </term>
+                </sum>
+              </scale>
+            </attr>
+
 
             <attr name="GlueSACapability">InstalledOnlineCapability=<scale
                   to-integer="round"
