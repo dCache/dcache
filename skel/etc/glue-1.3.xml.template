@@ -1321,10 +1321,10 @@
          auto-generated names can include a comma if the set of pools
          is shared between two or more store units.
 
-         Here we introduce a work-around: we map all the comma
-         characters to colon characters. -->
+         Here we introduce a work-around: we map all escapable characters
+         to the colon character. -->
     <map name="GlueSALocalID-BDII-workaround">
-      <translate from="," to=":"/>
+      <translate from="&quot;,+;&lt;>" to="::::::"/>
     </map>
   </mapping>
 
