@@ -918,7 +918,10 @@
 
 
         <!--+
-            |   PUBLISH SRM GLUE SERVICE OBJECT
+            |   PUBLISH SRM AS GlueService
+            |
+            |   We must publish the SRM as a GlueService.  We also
+            |   publish it as a GlueSEControlProtocol further up.
             |
             |    GlueSite
             |     |
@@ -979,6 +982,20 @@
           <!-- Our list of supported VOs -->
           <attr name="GlueServiceAccessControlBaseRule"
                 list="SRM-supported-VOs">VO:<item/></attr>
+
+
+	  <!-- FTS ignores GlueServiceAccessControlBaseRule attributes.
+               This bug is described here:
+
+                   https://savannah.cern.ch/bugs/?57827
+
+               The work-around is to publish the values as
+               GlueServiceAccessControlRule attributes.  This attribute
+               is not documented *at all* in Glue v1.3 and is marked
+               deprecated in the LDAP schema (it's a hang-over from pre-
+               glue v1.2 days, circa 2004!) -->
+          <attr name="GlueServiceAccessControlRule"
+                list="SRM-supported-VOs"><item/></attr>
 
           <attr name="GlueForeignKey">
             <other-rdn rdn="GlueSiteUniqueID">
