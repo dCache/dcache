@@ -2026,12 +2026,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 //
                 PoolMgrQueryPoolsMsg query =
                   new PoolMgrQueryPoolsMsg( DirectionType.READ,
-                _storageInfo.getStorageClass()+"@"+
-                _storageInfo.getHsm() ,
-                _storageInfo.getCacheClass() ,
                 _protocolName ,
                 _destination ,
-                null ) ;
+                _storageInfo ) ;
 
                 CellMessage checkMessage = new CellMessage( _poolMgrPath , query ) ;
                 setStatus("Waiting for reply from PoolManager");

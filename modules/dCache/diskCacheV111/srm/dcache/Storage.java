@@ -1465,11 +1465,9 @@ public class Storage
              StorageInfo storage_info = attributes.getStorageInfo();
              PoolMgrQueryPoolsMsg query =
                  new PoolMgrQueryPoolsMsg(DirectionType.READ,
-                                          storage_info.getStorageClass()+"@"+storage_info.getHsm(),
-                                          storage_info.getCacheClass(),
                                           "*/*",
                                           config.getSrmhost(),
-                                          null);
+                                          storage_info);
 
              _log.debug("isCached: Waiting for PoolMgrQueryPoolsMsg reply from PoolManager");
              query = _poolManagerStub.sendAndWait(query);
