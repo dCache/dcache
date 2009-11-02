@@ -9,7 +9,8 @@ package gplazma.authz.plugins;
  */
 public abstract class CachingPlugin extends LoggingPlugin {
 
-    long cache_lifetime=0;
+    // we want caching to be enabled by default
+    long cache_lifetime=30000;
 
     public CachingPlugin(long authRequestID) {
         super(authRequestID);
