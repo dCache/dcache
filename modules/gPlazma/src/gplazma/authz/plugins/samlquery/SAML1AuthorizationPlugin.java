@@ -23,7 +23,7 @@ import gplazma.authz.AuthorizationException;
  */
 public class SAML1AuthorizationPlugin extends SAMLAuthorizationPlugin {
 
-    private static HashMap<String, TimedLocalId> UsernameMap = new HashMap();
+    private static final HashMap<String, TimedLocalId> UsernameMap = new HashMap();
 
     public SAML1AuthorizationPlugin(String mappingServiceURL, String storageAuthzPath, long authRequestID) {
         super(mappingServiceURL, storageAuthzPath, authRequestID);
@@ -45,53 +45,54 @@ public class SAML1AuthorizationPlugin extends SAMLAuthorizationPlugin {
             getLogger().error("Exception in finding targetServiceName : " + e);
             throw new AuthorizationException(e.toString());
         }
+        synchronized(UsernameMap) {
+          String key = subjectDN;
+          if(getCacheLifetime()>0) {
+              key = (role==null) ? key : key.concat(role);
+              TimedLocalId tlocalId = getUsernameMapping(key);
+              if( tlocalId!=null && tlocalId.age() < getCacheLifetime() &&
+                      tlocalId.sameServiceName(serviceName) &&
+                      tlocalId.sameDesiredUserName(desiredUserName)) {
+                  getLogger().info("Using cached mapping for User with DN: " + subjectDN + " and Role " + role + " with Desired user name: " + desiredUserName);
 
-        String key = subjectDN;
-        if(getCacheLifetime()>0) {
-            key = (role==null) ? key : key.concat(role);
-            TimedLocalId tlocalId = getUsernameMapping(key);
-            if( tlocalId!=null && tlocalId.age() < getCacheLifetime() &&
-                    tlocalId.sameServiceName(serviceName) &&
-                    tlocalId.sameDesiredUserName(desiredUserName)) {
-                getLogger().info("Using cached mapping for User with DN: " + subjectDN + " and Role " + role + " with Desired user name: " + desiredUserName);
+                  gPlazmaAuthorizationRecord gauthrec = getgPlazmaAuthorizationRecord(tlocalId.getLocalId(), subjectDN, role);
+                  if (gauthrec!=null) {
+                      gauthrec.setSubjectDN(subjectDN);
+                      gauthrec.setFqan(role);
+                  }
+                  return gauthrec;
+              }
+          }
 
-                gPlazmaAuthorizationRecord gauthrec = getgPlazmaAuthorizationRecord(tlocalId.getLocalId(), subjectDN, role);
-                if (gauthrec!=null) {
-                    gauthrec.setSubjectDN(subjectDN);
-                    gauthrec.setFqan(role);
-                }
-                return gauthrec;
-            }
+          getLogger().info("Requesting mapping for User with DN: " + subjectDN + " and Role " + role + " with Desired user name: " + desiredUserName);
+
+          getLogger().debug("Mapping Service URL configuration: " + getMappingServiceURL());
+          try {
+              URL mappingServiceURLobject = new URL(getMappingServiceURL());
+              authVO = new PRIMAAuthzModule(mappingServiceURLobject);
+          }
+          catch (Exception e) {
+              getLogger().error("Exception in VO mapping client instantiation: " + e);
+              throw new AuthorizationException(e.toString());
+          }
+
+          try {
+              localId = authVO.mapCredentials(subjectDN, role, serviceName, desiredUserName);
+          }
+          catch (Exception e ) {
+              getLogger().error(" Exception occurred in mapCredentials: " + e);
+              //e.printStackTrace();
+              throw new AuthorizationException(e.toString());
+          }
+
+          if (localId == null) {
+              String denied = DENIED_MESSAGE + ": No mapping retrieved service for DN " + subjectDN + " and role " + role;
+              getLogger().warn(denied);
+              throw new AuthorizationException(denied);
+          }
+
+          if(getCacheLifetime()>0) putUsernameMapping(key, new TimedLocalId(localId, serviceName, desiredUserName));
         }
-
-        getLogger().info("Requesting mapping for User with DN: " + subjectDN + " and Role " + role + " with Desired user name: " + desiredUserName);
-
-        getLogger().debug("Mapping Service URL configuration: " + getMappingServiceURL());
-        try {
-            URL mappingServiceURLobject = new URL(getMappingServiceURL());
-            authVO = new PRIMAAuthzModule(mappingServiceURLobject);
-        }
-        catch (Exception e) {
-            getLogger().error("Exception in VO mapping client instantiation: " + e);
-            throw new AuthorizationException(e.toString());
-        }
-
-        try {
-            localId = authVO.mapCredentials(subjectDN, role, serviceName, desiredUserName);
-        }
-        catch (Exception e ) {
-            getLogger().error(" Exception occurred in mapCredentials: " + e);
-            //e.printStackTrace();
-            throw new AuthorizationException(e.toString());
-        }
-
-        if (localId == null) {
-            String denied = DENIED_MESSAGE + ": No mapping retrieved service for DN " + subjectDN + " and role " + role;
-            getLogger().warn(denied);
-            throw new AuthorizationException(denied);
-        }
-
-        if(getCacheLifetime()>0) putUsernameMapping(key, new TimedLocalId(localId, serviceName, desiredUserName));
 
         gPlazmaAuthorizationRecord gauthrec = getgPlazmaAuthorizationRecord(localId, subjectDN, role);
         if (gauthrec!=null) {

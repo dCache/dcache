@@ -217,7 +217,7 @@ kpwdFile=${ourHomeDir}/etc/dcache.kpwd
 gplazmaPolicy=${ourHomeDir}/etc/dcachesrm-gplazma.policy
 #
 #gPlazmaNumberOfSimutaneousRequests  30
-#gPlazmaRequestTimeout               30
+#gPlazmaRequestTimeout               180
 #
 #useGPlazmaAuthorizationModule=false
 #useGPlazmaAuthorizationCell=true
