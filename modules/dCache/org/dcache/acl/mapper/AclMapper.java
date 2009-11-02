@@ -82,9 +82,8 @@ public class AclMapper {
             permACL.setDefMsk(def_msk);
             permACL.setAllowMsk(allow_msk);
 
-        } catch (Exception e) {
+        } catch (ACLException e) {
             logger.error(e.getMessage());
-
         } finally {
             if ( logger.isDebugEnabled() )
                 logger.debug("Getted Permission: " + (rsType == null ? permACL.toString() : permACL.asString(rsType)));
@@ -93,16 +92,11 @@ public class AclMapper {
     }
 
     public static Permission[] getPermissions(Subject subject, Origin origin, Owner[] owners, ACL[] acls) {
-        Permission[] perms = null;
-        try {
-            final int len = acls.length;
-            perms = new Permission[len];
-            for (int index = 0; index < len; index++)
-                perms[index] = getPermission(subject, origin, owners[index], acls[index]);
+        int len = acls.length;
+        Permission[] perms = new Permission[len];
+        for (int index = 0; index < len; index++)
+            perms[index] = getPermission(subject, origin, owners[index], acls[index]);
 
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-        }
         return perms;
     }
 
