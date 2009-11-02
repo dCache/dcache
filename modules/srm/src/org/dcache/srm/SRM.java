@@ -1138,13 +1138,12 @@ public class SRM {
                         PutFileRequest pfr = (PutFileRequest) fr;
                         if (pfr.getTurlString() != null) {
                             try {
-                                FileMetaData fmd = storage.getFileMetaData(user, pfr.getPath());
-                                if (fmd == null) {
-                                    pfr.setState(State.FAILED, "file transfer was not performed on SURL");
-                                } else {
+                                if (storage.exists(user, pfr.getPath())) {
                                     fr.setStatus(state);
+                                } else {
+                                    pfr.setState(State.FAILED, "file transfer was not performed on SURL");
                                 }
-                            } catch (Exception srme) {
+                            } catch (SRMException srme) {
                                 pfr.setState(State.FAILED, "file transfer was not performed on SURL");
                             }
                         }
