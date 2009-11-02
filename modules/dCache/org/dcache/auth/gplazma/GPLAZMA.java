@@ -229,7 +229,7 @@ public class GPLAZMA extends CellAdapter {
 
   /** Elapsed time in seconds after which an authentication request is canceled.
    *  Includes both the time on the queue and the time for actual request processing. **/
-  public static int DELAY_CANCEL_TIME = 15;
+  public int DELAY_CANCEL_TIME = 180;
 
   /** Cancel time in milliseconds **/
   private long toolong = 1000*DELAY_CANCEL_TIME;
@@ -711,7 +711,6 @@ public class GPLAZMA extends CellAdapter {
           AuthorizationMessage authzm = new AuthorizationMessage(authnm);
           AuthorizationRecord authrec = authzm.getAuthorizationRecord();
           long id = authrec.getId();
-
           AuthorizationRecord r=null;
           try {
               do {
@@ -719,14 +718,15 @@ public class GPLAZMA extends CellAdapter {
                   r = authzPersistenceManager.find(authrec.getId());
               } while (r!=null && !r.equals(authrec));
           } catch (Exception e) {
-              log.error(e.getMessage() + " " + e.getCause());
+              log.error(e);
           }
           if (r==null) {
+            log.debug("auth object not found in database, persisting ");
             authzPersistenceManager.persist(authrec);
           }
 
       } catch (Exception ae) {
-        log.error(ae.getMessage());
+        log.error(ae);
         writethis = ae;
       }
 

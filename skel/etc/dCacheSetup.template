@@ -284,7 +284,7 @@ pidDir=/var/run
 gplazmaPolicy=${ourHomeDir}/etc/dcachesrm-gplazma.policy
 #
 #gPlazmaNumberOfSimutaneousRequests  30
-#gPlazmaRequestTimeout               30
+#gPlazmaRequestTimeout               180
 #
 #useGPlazmaAuthorizationModule=false
 #useGPlazmaAuthorizationCell=true
