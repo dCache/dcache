@@ -216,7 +216,7 @@ public class SRM {
     private RrdRequestCounters rrdSrmRequestCounters;
     private static SRM srm;
     /**
-     * Creates a new instance of SRM 
+     * Creates a new instance of SRM
      * @param config
      * @param name
      * @throws java.io.IOException
@@ -361,7 +361,7 @@ public class SRM {
         }
 
         host = java.net.InetAddress.getLocalHost();
-        
+
         if (configuration.getSrmhost() == null) {
             configuration.setSrmhost(host.getHostName());
         }
@@ -1649,7 +1649,7 @@ public class SRM {
         cancelAllRequest(sb, pattern, getGetRequestScheduler(), getGetStorage());
     }
 
-    public void cancelAllBringOnlineRequest(StringBuffer sb, String pattern) 
+    public void cancelAllBringOnlineRequest(StringBuffer sb, String pattern)
             throws java.sql.SQLException, SRMInvalidRequestException {
 
         cancelAllRequest(sb, pattern, getBringOnlineRequestScheduler(), getBringOnlineStorage());
@@ -1661,7 +1661,7 @@ public class SRM {
         cancelAllRequest(sb, pattern, getPutRequestScheduler(), getPutStorage());
     }
 
-    public void cancelAllCopyRequest(StringBuffer sb, String pattern) 
+    public void cancelAllCopyRequest(StringBuffer sb, String pattern)
             throws java.sql.SQLException, SRMInvalidRequestException {
 
         cancelAllRequest(sb, pattern, getCopyRequestScheduler(), getCopyStorage());
