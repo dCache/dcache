@@ -11,7 +11,8 @@ import org.apache.log4j.Logger;
 public abstract class CachingPlugin extends AuthorizationPlugin {
     private static final Logger logger = Logger.getLogger(CachingPlugin.class);
 
-    long cache_lifetime=0;
+    // we want caching to be enabled by default
+    long cache_lifetime=30000;
 
     public CachingPlugin(long authRequestID) {
         super(authRequestID);

@@ -9,7 +9,7 @@ set context -c srmDbName          dcache
 set context -c srmDbUser          srmdcache
 set context -c srmDbPassword      srmdcache
 set context -c gPlazmaNumberOfSimutaneousRequests  30
-set context -c gPlazmaRequestTimeout               30
+set context -c gPlazmaRequestTimeout               180
 set context -c gplazmaPolicy     ${ourHomeDir}/etc/dcachesrm-gplazma.policy
 onerror shutdown
 
