@@ -115,15 +115,19 @@ public class AclMapper {
             return null;
 
         boolean isAddressMatches;
-        try { // TODO: draft(quick) exception handling
+        if (origin == null) {
+            isAddressMatches = true;
+        } else {
+          try { // TODO: draft(quick) exception handling
             isAddressMatches = InetAddressMatcher.matches(ace.getAddressMsk(), origin.getAddress());
 //
 //			isAddressMatches = (origin.getAddressType() == InetAddressType.IPv4 ?
 //					Inet4AddressMatcher.matches(ace.getAddressMsk(), origin.getAddress())
 //					: Inet6AddressMatcher.matches(ace.getAddressMsk(), origin.getAddress()));
 
-        } catch (UnknownHostException e) {
+          } catch (UnknownHostException e) {
             throw new ACLException("Get Permission", "UnknownHostException" + e);
+          }
         }
 
         // match this ace only if origin.address matches to an address mask
@@ -151,13 +155,19 @@ public class AclMapper {
             break;
 
         case ANONYMOUS:
-            if ( origin.getAuthType() == AuthType.ORIGIN_AUTHTYPE_WEAK )
+            if ( origin != null && origin.getAuthType() == AuthType.ORIGIN_AUTHTYPE_WEAK ) {
                 perm = new Permission(ace.getAccessMsk(), ace.getType().getValue());
+            } else if (origin == null) {
+                perm = new Permission(ace.getAccessMsk(), ace.getType().getValue());
+            }
             break;
 
         case AUTHENTICATED:
-            if ( origin.getAuthType() == AuthType.ORIGIN_AUTHTYPE_STRONG )
+            if ( origin != null && origin.getAuthType() == AuthType.ORIGIN_AUTHTYPE_STRONG ) {
                 perm = new Permission(ace.getAccessMsk(), ace.getType().getValue());
+            } else if (origin == null) {
+                perm = new Permission(ace.getAccessMsk(), ace.getType().getValue());
+            }
             break;
 
         case USER:
