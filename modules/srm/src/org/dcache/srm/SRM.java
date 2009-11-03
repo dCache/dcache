@@ -947,7 +947,6 @@ public class SRM {
                 // we found one make sure it is the same  user
                 SRMUser requestUser = r.getUser();
                 if (requestUser == null || requestUser.equals(user)) {
-                    // say(" getRequestStatus() request found, returns request file status");
                     // and return the request status
                     RequestStatus rs = r.getRequestStatus();
                     say("obtained request status, returning rs for request id=" + requestId);

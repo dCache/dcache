@@ -333,7 +333,6 @@ public final class PutRequest extends ContainerRequest{
      
     public final SrmPrepareToPutResponse getSrmPrepareToPutResponse()
     throws SRMException ,java.sql.SQLException {
-        //say("getRequestStatus()");
         SrmPrepareToPutResponse response = new SrmPrepareToPutResponse();
        // getTReturnStatus should be called before we get the
        // statuses of the each file, as the call to the
@@ -351,14 +350,12 @@ public final class PutRequest extends ContainerRequest{
     
     public final SrmStatusOfPutRequestResponse getSrmStatusOfPutRequestResponse()  
     throws SRMException, java.sql.SQLException {
-        //say("getRequestStatus()");
             return getSrmStatusOfPutRequestResponse(null);
     }
     
     public  final SrmStatusOfPutRequestResponse getSrmStatusOfPutRequestResponse(
             String[] surls)  
     throws SRMException, java.sql.SQLException {
-        //say("getRequestStatus()");
         SrmStatusOfPutRequestResponse response = new SrmStatusOfPutRequestResponse();
 
         // getTReturnStatus should be called before we get the
@@ -391,16 +388,12 @@ public final class PutRequest extends ContainerRequest{
             = new TPutRequestFileStatus[len];
         if(surls == null) {
             for(int i = 0; i< len; ++i) {
-                //say("getRequestStatus() getFileRequest("+fileRequestsIds[i]+" );");
                 PutFileRequest fr =(PutFileRequest)fileRequests[i];
-                //say("getRequestStatus() received FileRequest frs");
                 putFileStatuses[i] = fr.getTPutRequestFileStatus();
             }
         } else {
             for(int i = 0; i< len; ++i) {
-                //say("getRequestStatus() getFileRequest("+fileRequestsIds[i]+" );");
                 PutFileRequest fr =(PutFileRequest)getFileRequestBySurl(surls[i]);
-                //say("getRequestStatus() received FileRequest frs");
                 putFileStatuses[i] = fr.getTPutRequestFileStatus();
             }
             
@@ -430,16 +423,12 @@ public final class PutRequest extends ContainerRequest{
             String fr_error="";
             if(surls == null) {
                 for(int i = 0; i< len; ++i) {
-                    //say("getRequestStatus() getFileRequest("+fileRequestsIds[i]+" );");
                     PutFileRequest fr =(PutFileRequest)fileRequests[i];
-                    //say("getRequestStatus() received FileRequest frs");
                     surlLReturnStatuses[i] = fr.getTSURLReturnStatus();
                 }
             } else {
                 for(int i = 0; i< len; ++i) {
-                    //say("getRequestStatus() getFileRequest("+fileRequestsIds[i]+" );");
                     PutFileRequest fr =(PutFileRequest)getFileRequestBySurl(surls[i]);
-                    //say("getRequestStatus() received FileRequest frs");
                     surlLReturnStatuses[i] = fr.getTSURLReturnStatus();
                 }
 

@@ -1062,16 +1062,12 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
              new TCopyRequestFileStatus[len];
             if(fromurls == null) {
                 for(int i = 0; i< len; ++i) {
-                    //say("getRequestStatus() getFileRequest("+fileRequestsIds[i]+" );");
                     CopyFileRequest fr =(CopyFileRequest)fileRequests[i];
-                    //say("getRequestStatus() received FileRequest frs");
                     copyRequestFileStatuses[i] = fr.getTCopyRequestFileStatus();
                 }
             } else {
                 for(int i = 0; i< len; ++i) {
-                    //say("getRequestStatus() getFileRequest("+fileRequestsIds[i]+" );");
                     CopyFileRequest fr = getFileRequestBySurls(fromurls[i],tourls[i]);
-                    //say("getRequestStatus() received FileRequest frs");
                     copyRequestFileStatuses[i] = fr.getTCopyRequestFileStatus();
                 }
 
@@ -1124,16 +1120,12 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
         }
         if(surls == null) {
             for(int i = 0; i< len; ++i) {
-                //say("getRequestStatus() getFileRequest("+fileRequestsIds[i]+" );");
                 CopyFileRequest fr =(CopyFileRequest)fileRequests[i];
-                //say("getRequestStatus() received FileRequest frs");
                 surlLReturnStatuses[i] = fr.getTSURLReturnStatus( null);
             }
         } else {
             for(int i = 0; i< len; ++i) {
-                //say("getRequestStatus() getFileRequest("+fileRequestsIds[i]+" );");
                 CopyFileRequest fr =(CopyFileRequest)getFileRequestBySurl(surls[i]);
-                //say("getRequestStatus() received FileRequest frs");
                 surlLReturnStatuses[i] = fr.getTSURLReturnStatus(surls[i]);
             }
 

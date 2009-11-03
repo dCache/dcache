@@ -296,7 +296,6 @@ public final class GetRequest extends ContainerRequest {
         
     public final SrmPrepareToGetResponse getSrmPrepareToGetResponse()  
     throws SRMException ,java.sql.SQLException {
-        //say("getRequestStatus()");
         SrmPrepareToGetResponse response = new SrmPrepareToGetResponse();
         // getTReturnStatus should be called before we get the
        // statuses of the each file, as the call to the 
@@ -320,14 +319,12 @@ public final class GetRequest extends ContainerRequest {
     
     public final SrmStatusOfGetRequestResponse getSrmStatusOfGetRequestResponse()  
     throws SRMException, java.sql.SQLException {
-        //say("getRequestStatus()");
         return getSrmStatusOfGetRequestResponse(null);
     }
     
     public final SrmStatusOfGetRequestResponse getSrmStatusOfGetRequestResponse(
             String[] surls)  
     throws SRMException, java.sql.SQLException {
-        //say("getRequestStatus()");
         SrmStatusOfGetRequestResponse response = new SrmStatusOfGetRequestResponse();
         // getTReturnStatus should be called before we get the
        // statuses of the each file, as the call to the 
@@ -373,16 +370,12 @@ public final class GetRequest extends ContainerRequest {
                 = new TGetRequestFileStatus[len];
             if(surls == null) {
                 for(int i = 0; i< len; ++i) {
-                    //say("getRequestStatus() getFileRequest("+fileRequestsIds[i]+" );");
                     GetFileRequest fr =(GetFileRequest)fileRequests[i];
-                    //say("getRequestStatus() received FileRequest frs");
                     getFileStatuses[i] = fr.getTGetRequestFileStatus();
                 }
             } else {
                 for(int i = 0; i< len; ++i) {
-                    //say("getRequestStatus() getFileRequest("+fileRequestsIds[i]+" );");
                     GetFileRequest fr =(GetFileRequest)getFileRequestBySurl(surls[i]);
-                    //say("getRequestStatus() received FileRequest frs");
                     getFileStatuses[i] = fr.getTGetRequestFileStatus();
                 }
 
@@ -413,16 +406,12 @@ public final class GetRequest extends ContainerRequest {
             }
             if(surls == null) {
                 for(int i = 0; i< len; ++i) {
-                    //say("getRequestStatus() getFileRequest("+fileRequestsIds[i]+" );");
                     GetFileRequest fr =(GetFileRequest)fileRequests[i];
-                    //say("getRequestStatus() received FileRequest frs");
                     surlLReturnStatuses[i] = fr.getTSURLReturnStatus();
                 }
             } else {
                 for(int i = 0; i< len; ++i) {
-                    //say("getRequestStatus() getFileRequest("+fileRequestsIds[i]+" );");
                     GetFileRequest fr =(GetFileRequest)getFileRequestBySurl(surls[i]);
-                    //say("getRequestStatus() received FileRequest frs");
                     surlLReturnStatuses[i] = fr.getTSURLReturnStatus();
                 }
 

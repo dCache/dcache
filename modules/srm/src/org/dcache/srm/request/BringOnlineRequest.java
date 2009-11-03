@@ -289,7 +289,6 @@ public final class BringOnlineRequest extends ContainerRequest {
         
     public  final SrmBringOnlineResponse getSrmBringOnlineResponse()  
     throws SRMException ,java.sql.SQLException {
-        //say("getRequestStatus()");
         SrmBringOnlineResponse response = new SrmBringOnlineResponse();
       // getTReturnStatus should be called before we get the
        // statuses of the each file, as the call to the 
@@ -309,7 +308,6 @@ public final class BringOnlineRequest extends ContainerRequest {
     public final SrmStatusOfBringOnlineRequestResponse 
             getSrmStatusOfBringOnlineRequestResponse()  
     throws SRMException, java.sql.SQLException {
-        //say("getRequestStatus()");
         return getSrmStatusOfBringOnlineRequestResponse(null);
     }
     
@@ -318,7 +316,6 @@ public final class BringOnlineRequest extends ContainerRequest {
             getSrmStatusOfBringOnlineRequestResponse(
             String[] surls)  
     throws SRMException, java.sql.SQLException {
-        //say("getRequestStatus()");
         SrmStatusOfBringOnlineRequestResponse response = 
                 new SrmStatusOfBringOnlineRequestResponse();
       // getTReturnStatus should be called before we get the
@@ -356,16 +353,12 @@ public final class BringOnlineRequest extends ContainerRequest {
             = new TBringOnlineRequestFileStatus[len];
         if(surls == null) {
             for(int i = 0; i< len; ++i) {
-                //say("getRequestStatus() getFileRequest("+fileRequestsIds[i]+" );");
                 BringOnlineFileRequest fr =(BringOnlineFileRequest)fileRequests[i];
-                //say("getRequestStatus() received FileRequest frs");
                 getFileStatuses[i] = fr.getTGetRequestFileStatus();
             }
         } else {
             for(int i = 0; i< len; ++i) {
-                //say("getRequestStatus() getFileRequest("+fileRequestsIds[i]+" );");
                 BringOnlineFileRequest fr =(BringOnlineFileRequest)getFileRequestBySurl(surls[i]);
-                //say("getRequestStatus() received FileRequest frs");
                 getFileStatuses[i] = fr.getTGetRequestFileStatus();
             }
             
@@ -386,16 +379,12 @@ public final class BringOnlineRequest extends ContainerRequest {
         }
         if(surls == null) {
             for(int i = 0; i< len; ++i) {
-                //say("getRequestStatus() getFileRequest("+fileRequestsIds[i]+" );");
                 BringOnlineFileRequest fr =(BringOnlineFileRequest)fileRequests[i];
-                //say("getRequestStatus() received FileRequest frs");
                 surlLReturnStatuses[i] = fr.getTSURLReturnStatus();
             }
         } else {
             for(int i = 0; i< len; ++i) {
-                //say("getRequestStatus() getFileRequest("+fileRequestsIds[i]+" );");
                 BringOnlineFileRequest fr =(BringOnlineFileRequest)getFileRequestBySurl(surls[i]);
-                //say("getRequestStatus() received FileRequest frs");
                 surlLReturnStatuses[i] = fr.getTSURLReturnStatus();
             }
             
@@ -419,19 +408,15 @@ public final class BringOnlineRequest extends ContainerRequest {
         if(surls == null) {
             say("releaseFiles, surls is null, releasing all "+len+" files");
             for(int i = 0; i< len; ++i) {
-                //say("getRequestStatus() getFileRequest("+fileRequestsIds[i]+" );");
                 BringOnlineFileRequest fr =(BringOnlineFileRequest)fileRequests[i];
-                //say("getRequestStatus() received FileRequest frs");
                 surlLReturnStatuses[i] = fr.releaseFile();
             }
         } else {
             for(int i = 0; i< len; ++i) {
-                //say("getRequestStatus() getFileRequest("+fileRequestsIds[i]+" );");
                 BringOnlineFileRequest fr = null;
                say("releaseFiles, releasing file "+surl_strings[i]);
                 try{
                     fr =(BringOnlineFileRequest)getFileRequestBySurl(surl_strings[i]);
-                    //say("getRequestStatus() received FileRequest frs");
                 } catch (SRMFileRequestNotFoundException sfrnfe ) {
                     try {
                         String surl_string = surl_strings[i];
