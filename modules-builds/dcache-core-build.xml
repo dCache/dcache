@@ -399,6 +399,7 @@
         <copy file="${dcache.src}/diskCacheV111/config/chimera.batch" todir="${server.bin.dir}/config" />
         <copy file="${dcache.src}/diskCacheV111/config/nfsv41.batch" todir="${server.bin.dir}/config" />
         <copy file="${dcache.src}/diskCacheV111/config/info.batch" todir="${server.bin.dir}/config" />
+        <copy file="${dcache.src}/diskCacheV111/config/webadmin.batch" todir="${server.bin.dir}/config" />
         <!--<copy file="${dcache.src}/diskCacheV111/config/aclcell.batch" todir="${server.bin.dir}/config" /> -->
 
         <!-- configs  -->
