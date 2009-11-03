@@ -749,14 +749,16 @@ public class CellNucleus implements Runnable, ThreadFactory {
             }     // end of : msg != null
         }        // end of : ce instanceof MessageEvent
 
-        try {
-            EventLogger.queueBegin(ce);
-            _eventQueue.put(ce);
-        } catch (InterruptedException e) {
-            nesay("addToEventQueue : failed to add : "+e);
-        }
+        EventLogger.queueBegin(ce);
 
+        /* _eventQueue is an unbounded queue and hence always has
+         * spare capacity. Thus the add method is guaranteed to
+         * succeed. In contrast to the put method, add cannot fail
+         * with an InterruptedException.
+         */
+        _eventQueue.add(ce);
     }
+
     void sendKillEvent(KillEvent ce) {
         nsay("sendKillEvent : received "+ce);
         _killEvent  = ce;
