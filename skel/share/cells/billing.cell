@@ -5,6 +5,7 @@ exec file:${ourHomeDir}/share/cells/import-arguments-index-0.fragment
 # Defaults
 onerror continue
 set context -c billingDb ${ourHomeDir}/billing
+set context -c billingDisableTxt
 
 #
 #     Additional params, if 'billingToDb' is 'yes'
@@ -36,6 +37,7 @@ onerror shutdown
 create diskCacheV111.cells.BillingCell billing \
        "${billingDb} \
         -printMode=2 \
+        ${billingDisableTxt} \
         ${billingDbParams} \
        "
 create dmg.cells.network.TopoCell topo "none -update=100 -export"

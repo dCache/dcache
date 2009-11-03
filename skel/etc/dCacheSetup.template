@@ -1091,6 +1091,8 @@ logArea=/var/log
 #   The directory within which the billing logs are to be written.
 #
 billingDb=${ourHomeDir}/billing
+#   EXPERT: Uncomment to disable billing into the plain files
+#billingDisableTxt=-noTXT
 
 #  ---- Store billing data in database
 #

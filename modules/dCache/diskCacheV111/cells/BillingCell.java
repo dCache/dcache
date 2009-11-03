@@ -25,6 +25,7 @@ public class BillingCell extends CellAdapter {
     private final Map<String, long[]>     _poolStatistics = new HashMap<String, long[]>() ;
     private final Map<String, Map<String, long[]>>     _poolStorageMap = new HashMap<String, Map<String, long[]>>() ;
     private BillingDB   _sqlLog    = null;
+    private boolean     _txtLog    = true;
     private long        _communicationTimeout = 40000L ;
 
     private int         _printMode = 0 ;
@@ -43,13 +44,16 @@ public class BillingCell extends CellAdapter {
        try{
           if( _args.argc() < 1 )
             throw new
-            IllegalArgumentException("Usage : ... <billingDb> -printMode=<n> [-timeout=<timeoutInSecound>] [-useSQL ...]") ;
+            IllegalArgumentException("Usage : ... <billingDb> -printMode=<n> [-timeout=<timeoutInSecound>] [-noTXT -useSQL ...]") ;
 
           _billingDb = new File(_args.argv(0)) ;
           if( ( ! _billingDb.isDirectory() ) || ( ! _billingDb.canWrite() ) )
             throw new
             IllegalArgumentException("<"+_args.argv(0)+"> doesn't exits or not writeable") ;
 
+           if( _args.getOpt("noTXT") != null ) {
+               _txtLog = false;
+           }
           if( _args.getOpt("useSQL") != null ) {
              try{
                 _sqlLog = new BillingDB(_args);
@@ -284,6 +288,9 @@ public class BillingCell extends CellAdapter {
              ex.printStackTrace();
           }
        }
+
+        if (!_txtLog) return;
+
        String fileNameExtention = null ;
        if( _printMode == 0 ){
            _currentDb = _billingDb ;
