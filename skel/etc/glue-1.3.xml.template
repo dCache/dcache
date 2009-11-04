@@ -1053,9 +1053,10 @@
         <constant id="DCACHE-ARCHITECTURE"/>
       </attr>
 
-      <attr name="GlueSEImplementationVersion">
+      <attr name="GlueSEImplementationVersion" not-empty="1">
         <map name="cell-version-to-dcache-version">
-          <lookup path="/d:dCache/d:domains/d:domain[@name='dCacheDomain']/d:cells/d:cell[@name='PoolManager']/d:version/d:metric[@name='release']"/>
+          <lookup default="UNDEFINEDVALUE"
+		  path="/d:dCache/d:domains/d:domain[@name='dCacheDomain']/d:cells/d:cell[@name='PoolManager']/d:version/d:metric[@name='release']"/>
         </map>
       </attr>
 
