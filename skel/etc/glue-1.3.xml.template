@@ -639,6 +639,10 @@
                     name="unit-to-VO">
                 <lookup path="@name"/>
               </map>
+              <suppress test=""><map name="unit-to-VO">
+                  <lookup path="@name"/>
+                </map>
+	      </suppress>
             </attr>
 
             <!-- Publish those VOs that can read -->
@@ -647,6 +651,10 @@
                     name="unit-to-VO">
                 <lookup path="@name"/>
               </map>
+              <suppress test=""><map name="unit-to-VO">
+                  <lookup path="@name"/>
+                </map>
+	      </suppress>
             </attr>
 
             <!-- Publish those VOs that can stage from tape -->
@@ -655,6 +663,10 @@
                       name="unit-to-VO">
                 <lookup path="@name"/>
               </map>
+              <suppress test=""><map name="unit-to-VO">
+                  <lookup path="@name"/>
+                </map>
+	      </suppress>
             </attr>
 
             <!-- We repeat publishing the access rules with the deprecated
@@ -819,6 +831,10 @@
                     name="unit-to-VO">
                 <lookup path="@name"/>
               </map>
+              <suppress test=""><map name="unit-to-VO">
+                  <lookup path="@name"/>
+                </map>
+	      </suppress>
             </attr>
 
             <attr select="d:units/d:store/d:read/d:unitref"
@@ -826,6 +842,10 @@
                     name="unit-to-VO">
                 <lookup path="@name"/>
               </map>
+              <suppress test=""><map name="unit-to-VO">
+                  <lookup path="@name"/>
+                </map>
+	      </suppress>
             </attr>
 
             <attr select="d:units/d:store/d:write/d:unitref"
@@ -833,6 +853,10 @@
                     name="unit-to-VO">
                 <lookup path="@name"/>
               </map>
+              <suppress test=""><map name="unit-to-VO">
+                  <lookup path="@name"/>
+                </map>
+	      </suppress>
             </attr>
 
             <attr name="GlueChunkKey">
