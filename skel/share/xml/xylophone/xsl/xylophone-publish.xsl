@@ -651,9 +651,16 @@
     </xsl:call-template>
   </xsl:variable>
 
+  <!-- Check for suppress elements -->
+  <xsl:variable name="suppress-result">
+    <xsl:apply-templates select="suppress" mode="eval-predicate">
+      <xsl:with-param name="path-stack" select="$path-stack"/>
+      <xsl:with-param name="list-item" select="$list-item"/>
+    </xsl:apply-templates>
+  </xsl:variable>
 
   <!-- Publish, unless it is empty and we should suppress empty output -->
-  <xsl:if test="not(@not-empty) or @not-empty = '0' or normalize-space($value)">
+  <xsl:if test="(not(@not-empty) or @not-empty = '0' or normalize-space($value)) and not(normalize-space($suppress-result))">
     <xsl:call-template name="output-attribute">
       <xsl:with-param name="key" select="$name"/>
       <xsl:with-param name="value" select="$value"/>

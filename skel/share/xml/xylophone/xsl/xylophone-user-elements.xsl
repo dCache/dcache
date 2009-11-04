@@ -313,6 +313,9 @@
 </xsl:template>
 
 
+<!-- When in mode eval-attr we ignore any suppress elements -->
+<xsl:template match="suppress" mode="eval-attr"/>
+
 
 
 <!--+
