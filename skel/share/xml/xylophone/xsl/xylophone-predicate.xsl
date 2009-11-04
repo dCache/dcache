@@ -64,7 +64,7 @@
   <xsl:param name="depth" select="count(ancestor-or-self::object)"/>
 
   <xsl:variable name="data">
-    <xsl:apply-templates select="*" mode="eval-attr">
+    <xsl:apply-templates select="*|text()" mode="eval-attr">
       <xsl:with-param name="path-stack" select="$path-stack"/>
       <xsl:with-param name="depth" select="$depth"/>
       <xsl:with-param name="list-item" select="$list-item"/>
