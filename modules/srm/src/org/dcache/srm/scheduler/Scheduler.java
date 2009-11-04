@@ -1510,12 +1510,12 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
     }
 
     public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         getInfo(sb);
         return sb.toString();
     }
 
-    public void getInfo(StringBuffer sb) {
+    public void getInfo(StringBuilder sb) {
         sb.append("Scheduler id="+id).append('\n');
         sb.append("          useFairness="+useFairness).append('\n');
         sb.append("          asyncWaitJobsNum="+getTotalAsyncWait()).append('\n');
@@ -1560,15 +1560,15 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
         }
     }
 
-    public void printThreadQueue(StringBuffer sb) throws SQLException {
+    public void printThreadQueue(StringBuilder sb) throws SQLException {
         sb.append("ThreadQueue :\n");
         threadQueue.printQueue(sb);
     }
-    public void printPriorityThreadQueue(StringBuffer sb)  throws SQLException {
+    public void printPriorityThreadQueue(StringBuilder sb)  throws SQLException {
         sb.append("PriorityThreadQueue :\n");
         priorityThreadQueue.printQueue(sb);
     }
-    public void printReadyQueue(StringBuffer sb)  throws SQLException {
+    public void printReadyQueue(StringBuilder sb)  throws SQLException {
         sb.append("ReadyQueue :\n");
         readyQueue.printQueue(sb);
     }

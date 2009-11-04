@@ -146,7 +146,7 @@ public class Main extends CommandInterpreter implements  Runnable {
 
            
         public void getInfo( java.io.PrintWriter printWriter ) {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             sb.append("SRM Cell");
             sb.append(" storage info ");
             sb.append('\n');
@@ -175,7 +175,7 @@ public class Main extends CommandInterpreter implements  Runnable {
         public String ac_cancel_$_1(Args args) {
             try {
                 Long id = new Long(args.argv(0));
-                StringBuffer sb = new StringBuffer();
+                StringBuilder sb = new StringBuilder();
                 srm.cancelRequest(sb, id);
                 return sb.toString();
             }catch (Exception e) {
@@ -193,7 +193,7 @@ public class Main extends CommandInterpreter implements  Runnable {
                 boolean put=args.getOpt("put") != null;
                 boolean copy=args.getOpt("copy") != null;
                 boolean longformat = args.getOpt("l") != null;
-                StringBuffer sb = new StringBuffer();
+                StringBuilder sb = new StringBuilder();
                 if(args.argc() == 1) {
                     try {
                         Long reqId = new Long(args.argv(0));
@@ -242,7 +242,7 @@ public class Main extends CommandInterpreter implements  Runnable {
                 boolean put=args.getOpt("put") != null;
                 boolean copy=args.getOpt("copy") != null;
                 boolean longformat = args.getOpt("l") != null;
-                StringBuffer sb = new StringBuffer();
+                StringBuilder sb = new StringBuilder();
                  
                 if( !get && !put && !copy ) {
                     get=true;
@@ -298,7 +298,7 @@ public class Main extends CommandInterpreter implements  Runnable {
                 copy=true;
                 
             }
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             if(get) {
                 sb.append("Get Requests:\n");
                 srm.listLatestCompletedGetRequests(sb, max_count);

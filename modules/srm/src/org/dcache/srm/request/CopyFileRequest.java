@@ -405,18 +405,28 @@ public final class CopyFileRequest extends FileRequest {
             runlock();
         }
 	}
-
-    @Override
-	public String toString() {
-		StringBuffer sb = new StringBuffer();
-		sb.append(" CopyFileRequest ");
-		sb.append(" id =").append(getId());
-		sb.append(" FromSurl=").append(getFrom_url());
-		sb.append(" FromTurl=").append(getFrom_turl()==null?"null":getFrom_turl().getURL());
-		sb.append(" toSurl=").append(getTo_url());
-		sb.append(" toTurl=").append(getTo_turl()==null?"null":getTo_turl().getURL());
-		return sb.toString();
-	}
+    public void toString(StringBuilder sb, boolean longformat) {
+        sb.append(" CopyFileRequest ");
+        sb.append(" id:").append(getId());
+        sb.append(" priority:").append(getPriority());
+        sb.append(" creator priority:");
+        try {
+            sb.append(getUser().getPriority());
+        } catch (SRMInvalidRequestException ire) {
+            sb.append("Unknown");
+        }
+        sb.append(" state:").append(getState());
+        if(longformat) {
+            sb.append(" fromSurl:").append(getFrom_url());
+            sb.append(" fromTurl:").append(getFrom_turl()==null?"null":getFrom_turl().getURL());
+            sb.append(" toSurl:").append(getTo_url());
+            sb.append(" toTurl:").append(getTo_turl()==null?"null":getTo_turl().getURL());
+            sb.append('\n').append("   status code:").append(getStatusCode());
+            sb.append('\n').append("   error message:").append(getErrorMessage());
+            sb.append('\n').append("   History of State Transitions: \n");
+            sb.append(getHistory());
+        }
+    }
 	
 	/** Getter for property absolute_local_from_path.
 	 * @return Value of property absolute_local_from_path.

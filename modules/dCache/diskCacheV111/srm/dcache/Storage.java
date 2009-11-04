@@ -949,7 +949,7 @@ public class Storage
     }
 
     public void getInfo( java.io.PrintWriter printWriter ) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("SRM Cell");
         sb.append(" storage info : ");
         StorageElementInfo info = getStorageElementInfo();
@@ -1064,7 +1064,7 @@ public class Storage
     public String ac_cancel_$_1(Args args) {
         try {
             Long id = Long.valueOf(args.argv(0));
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             srm.cancelRequest(sb, id);
             return sb.toString();
         } catch (SRMInvalidRequestException ire) {
@@ -1096,7 +1096,7 @@ public class Storage
                 ls=true;
             }
             String pattern = args.argv(0);
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             if(get) {
                 _log.debug("calling srm.cancelAllGetRequest(\""+pattern+"\")");
                 srm.cancelAllGetRequest(sb, pattern);
@@ -1142,7 +1142,7 @@ public class Storage
             boolean reserve=args.getOpt("reserve") != null;
             boolean ls=args.getOpt("ls") != null;
             boolean longformat = args.getOpt("l") != null;
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             if(args.argc() == 1) {
                 try {
                     Long reqId = Long.valueOf(args.argv(0));
@@ -1162,32 +1162,26 @@ public class Storage
                 if(get) {
                     sb.append("Get Requests:\n");
                     srm.listGetRequests(sb);
-                    sb.append('\n');
                 }
                 if(put) {
                     sb.append("Put Requests:\n");
                     srm.listPutRequests(sb);
-                    sb.append('\n');
                 }
                 if(copy) {
                     sb.append("Copy Requests:\n");
                     srm.listCopyRequests(sb);
-                    sb.append('\n');
                 }
                 if(copy) {
                     sb.append("Bring Online Requests:\n");
                     srm.listBringOnlineRequests(sb);
-                    sb.append('\n');
                 }
                 if(reserve) {
                     sb.append("Reserve Space Requests:\n");
                     srm.listReserveSpaceRequests(sb);
-                    sb.append('\n');
                 }
                 if(ls) {
                     sb.append("Ls Requests:\n");
                     srm.listLsRequests(sb);
-                    sb.append('\n');
                 }
             }
             return sb.toString();
@@ -1208,7 +1202,7 @@ public class Storage
             boolean copy=args.getOpt("copy") != null;
             boolean bring=args.getOpt("bring") != null;
             boolean longformat = args.getOpt("l") != null;
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
 
             if( !get && !put && !copy && !bring && !ls ) {
                 get=true;
@@ -1280,7 +1274,7 @@ public class Storage
             copy=true;
 
         }
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         if(get) {
             sb.append("Get Requests:\n");
             srm.listLatestCompletedGetRequests(sb, max_count);
@@ -1325,7 +1319,7 @@ public class Storage
             }
             job.setPriority(priority);
             job.setPriority(priority);
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             srm.listRequest(sb, requestId, true);
             return sb.toString();
         } catch (RuntimeException e) {
@@ -1408,7 +1402,7 @@ public class Storage
       public String ac_dir_creators_ls_$_0(Args args) {
         try {
             boolean longformat = args.getOpt("l") != null;
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             PutCompanion.listDirectoriesWaitingForCreation(sb,longformat);
             return sb.toString();
          } catch(Throwable t) {
@@ -1422,7 +1416,7 @@ public class Storage
       public String ac_cancel_dir_creation_$_1(Args args) {
         try {
             String pnfsPath = args.argv(0);
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             PutCompanion.failCreatorsForPath(pnfsPath,sb);
             return sb.toString();
          } catch(Throwable t) {

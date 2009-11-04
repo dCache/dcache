@@ -318,38 +318,8 @@ public abstract class FileRequest extends Job {
     public abstract RequestFileStatus getRequestFileStatus() ;
     
     public abstract TReturnStatus getReturnStatus();
-    public String toString() {
-     return toString(false);
-    }
-    
-    public String toString(boolean longformat) {
-        rlock();
-        try {
-            StringBuilder sb = new StringBuilder();
-            sb.append(" FileRequest ");
-            sb.append(" id =").append(getId());
-            sb.append(" job priority  =").append(getPriority());
 
-            sb.append(" crteator priority  =");
-            try {
-                sb.append(getUser().getPriority());
-            } catch (SRMInvalidRequestException ire) {
-                sb.append("Unknown");
-            }
-            sb.append(" state=").append(getState());
-            if(longformat) {
-                sb.append('\n').append(getRequestFileStatus());
-                sb.append('\n').append("status code = ").append(getStatusCode());
-                sb.append('\n').append("error message = ").append(getErrorMessage());
-                 sb.append('\n').append("History of State Transitions: \n");
-                sb.append(getHistory());
-            }
-            return sb.toString();
-        } finally {
-            wunlock();
-        }
-    }
-    
+    @Override
     public boolean equals(Object o) {
         if(o == this) {
             return true;
@@ -357,7 +327,8 @@ public abstract class FileRequest extends Job {
         
         return false;
     }
-    
+
+    @Override
     public int hashCode() {
         return getId().hashCode();
     }

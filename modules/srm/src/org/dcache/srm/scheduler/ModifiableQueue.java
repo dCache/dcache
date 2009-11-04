@@ -318,12 +318,12 @@ public class ModifiableQueue  {
     
     public String printQueue()  throws java.sql.SQLException{
         
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         printQueue(sb);
         return sb.toString();
     }
 
-    public void printQueue(StringBuffer sb)  throws java.sql.SQLException{
+    public void printQueue(StringBuilder sb)  throws java.sql.SQLException{
         synchronized(queue)
         {
             if(queue.isEmpty()) {

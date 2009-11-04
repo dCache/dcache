@@ -462,12 +462,12 @@ public class PutCompanion implements CellMessageAnswerable
     }
 
     public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         toString(sb,false);
         return sb.toString();
     }
 
-    public void toString(StringBuffer sb, boolean longFormat) {
+    public void toString(StringBuilder sb, boolean longFormat) {
 
         sb.append("PutCompanion: ");
         sb.append(" p=\"").append(path);
@@ -594,7 +594,7 @@ public class PutCompanion implements CellMessageAnswerable
         new HashMap<String,PutCompanion>();
     private OneToManyMap waitingForCreators = new OneToManyMap();
 
-    public static void listDirectoriesWaitingForCreation(StringBuffer sb, boolean longformat)
+    public static void listDirectoriesWaitingForCreation(StringBuilder sb, boolean longformat)
     {
         synchronized (directoryCreators) {
             for (Map.Entry<String,PutCompanion> entry: directoryCreators.entrySet()) {
@@ -607,7 +607,7 @@ public class PutCompanion implements CellMessageAnswerable
         }
     }
 
-    public static void failCreatorsForPath(String pnfsPath, StringBuffer sb) {
+    public static void failCreatorsForPath(String pnfsPath, StringBuilder sb) {
         PutCompanion creatorCompanion = directoryCreators.get(pnfsPath);
         if(creatorCompanion == null) {
             sb.append("no creators for path ").append(pnfsPath).append("found");

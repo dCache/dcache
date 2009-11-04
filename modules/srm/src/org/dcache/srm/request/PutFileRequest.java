@@ -324,6 +324,7 @@ public final class PutFileRequest extends FileRequest {
 
 
 
+
     public String getTurlString() {
         wlock();
         try {
@@ -511,21 +512,36 @@ public final class PutFileRequest extends FileRequest {
         }
     }
 
-
-    public String toString() {
-        StringBuffer sb = new StringBuffer();
-        sb.append(" PutFileRequest # ").append(getId());
-        sb.append("\n          State =").append(getState());
-        sb.append("\n           SURL   =").append(getSurlString());
-        sb.append("\n           size   =").append(getSize());
-        try{
-            sb.append("\n           TURL   =").append(getTurlString());
-        } catch(Exception e) {
-            sb.append("\n           TURL   =<error ").append(e).append('>');
+    @Override
+    public void toString(StringBuilder sb, boolean longformat) {
+        sb.append(" GetFileRequest ");
+        sb.append(" id:").append(getId());
+        sb.append(" priority:").append(getPriority());
+        sb.append(" creator priority:");
+        try {
+            sb.append(getUser().getPriority());
+        } catch (SRMInvalidRequestException ire) {
+            sb.append("Unknown");
         }
-
-        return sb.toString();
+        State state = getState();
+        sb.append(" state:").append(state);
+        if(longformat) {
+            sb.append('\n').append("   SURL: ").append(getSurl().getURL());
+            sb.append('\n').append("   TURL: ").append(getTurlString());
+            sb.append('\n').append("   size: ").append(getSize());
+            sb.append('\n').append("   AccessLatency: ").append(getAccessLatency());
+            sb.append('\n').append("   RetentionPolicy: ").append(getRetentionPolicy());
+            sb.append('\n').append("   spaceReservation: ").append(getSpaceReservationId());
+            sb.append('\n').append("   isReservedByUs: ").append(isWeReservedSpace());
+            sb.append('\n').append("   isSpaceMarkedAsBeingUsed: ").
+                    append(isSpaceMarkedAsBeingUsed());
+            sb.append('\n').append("   status code:").append(getStatusCode());
+            sb.append('\n').append("   error message:").append(getErrorMessage());
+            sb.append('\n').append("   History of State Transitions: \n");
+            sb.append(getHistory());
+        }
     }
+
 
     public void done() {
     }

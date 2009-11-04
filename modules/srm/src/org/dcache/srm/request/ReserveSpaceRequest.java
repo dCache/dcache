@@ -213,20 +213,28 @@ public final class ReserveSpaceRequest extends Request {
     }
     
     @Override
-    public String toString() {
-        return toString(false);
-    }
-    
-    public String toString(boolean longformat) {
-        StringBuffer sb = new StringBuffer();
+    public void toString(StringBuilder sb, boolean longformat) {
         sb.append(" ReserveSpaceRequest ");
         sb.append(" id =").append(getId());
+        sb.append(" created: ").append(getUser());
+        sb.append(" spaceToken: ").append(getSpaceToken());
         sb.append(" state=").append(getState());
         if(longformat) {
+            sb.append("\ncredential: \"").append(getCredential()).
+                append("\"\n");
+            sb.append("\nsubmitted: ").
+                append(new java.util.Date(getCreationTime()));
+            sb.append("\nexpires: ").
+                append(new java.util.Date(
+                    getCreationTime() +getLifetime()));
+            sb.append("\nstatus code: ").append(getStatusCode());
+            sb.append("\nerror message: ").append(getErrorMessage());
+            sb.append('\n').append("   lifetime: ").append(getSpaceReservationLifetime());
+            sb.append('\n').append("   AccessLatency: ").append(getAccessLatency());
+            sb.append('\n').append("   RetentionPolicy: ").append(getRetentionPolicy());
             sb.append('\n').append("History of State Transitions: \n");
             sb.append(getHistory());
         }
-        return sb.toString();
     }
     
     

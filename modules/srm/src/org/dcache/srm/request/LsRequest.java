@@ -437,12 +437,7 @@ public final class LsRequest extends ContainerRequest {
         }
 
         @Override
-        public String toString() { 
-               return toString(false);
-        }
-        
-        public String toString(boolean longformat) { 
-                StringBuilder sb = new StringBuilder();
+        public void toString(StringBuilder sb, boolean longformat) {
                 sb.append(getMethod()).append("Request #").append(getId()).append(" created by ").append(getUser());
                 sb.append(" with credentials : ").append(getCredential()).append(" state = ").append(getState());
                 sb.append("\n SURL(s) : ");
@@ -460,15 +455,11 @@ public final class LsRequest extends ContainerRequest {
                         sb.append("\n History of State Transitions: \n");
                         sb.append(getHistory());
                         for(FileRequest fr: fileRequests) {
-                                LsFileRequest lsfr = (LsFileRequest) fr;
-                                sb.append("\n").append(lsfr.getSurlString());
-                                sb.append("\n    status code  for file ").append(fr.getId()).append(":").append(fr.getStatusCode());
-                                sb.append("\n    error message for file ").append(fr.getId()).append(fr.getErrorMessage());
-                                sb.append("\n    History of State Transitions for file ").append(fr.getId()).append(": \n");
-                                sb.append(fr.getHistory());
+                                fr.toString(sb,longformat);
                         }
+                } else {
+                    sb.append(" number of surls in request:").append(fileRequests.length);
                 }
-                return sb.toString();
         }
 
     /**

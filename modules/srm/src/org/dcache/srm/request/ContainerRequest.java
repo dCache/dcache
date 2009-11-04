@@ -729,39 +729,34 @@ public abstract class ContainerRequest extends Request {
     }
      */
 
-
-    public String toString() {
-        return toString(false);
-    }
-
-    public String toString(boolean longformat) {
+    public void toString(StringBuilder sb, boolean longformat) {
         try {
-            String s = getMethod()+"Request #"+getId()+" created by "+getUser()+
-            " with credentials : "+getCredential()+
-            " state = "+getState();
+            sb.append(getMethod());
+            sb.append(" id: ").append(getId());
+            sb.append(" created: ").append(getUser());
+            sb.append(" state: ").append(getState());
 
             if(longformat) {
-                s += '\n'+ getRequestStatus().toString();
-                s += '\n'+"status code = "+ getStatusCode();
-                s += '\n'+"error message = "+ getErrorMessage();
-                s += "\n History of State Transitions: \n";
-                s += getHistory();
-                for(int i = 0; i<fileRequests.length; ++i){
-                    FileRequest fr = fileRequests[i];
-                    s += "\n    status code  for file "+
-                    fr.getId()+":"+ fr.getStatusCode();
-                    s += "\n    error message for file "+
-                    fr.getId()+":"+ fr.getErrorMessage();
-                    s += "\n    History of State Transitions for file "+
-                    fr.getId()+": \n";
-                    s += fr.getHistory();
+                sb.append("\ncredential: \"").append(getCredential()).
+                        append("\"\n");
+                sb.append("\nsubmitted: ").
+                        append(new java.util.Date(getCreationTime()));
+                sb.append("\nexpires: ").
+                        append(new java.util.Date(
+                        getCreationTime() +getLifetime()));
+                sb.append("\nstatus code: ").append(getStatusCode());
+                sb.append("\nerror message: ").append(getErrorMessage());
+                sb.append("\nHistory of State Transitions: \n");
+                sb.append(getHistory());
+                for(FileRequest fr:fileRequests) {
+                    sb.append("\n");
+                    fr.toString(sb, longformat);
                 }
-
+            } else {
+                sb.append(" number of files:").append(fileRequests.length);
             }
-            return s;
         }catch(Exception e) {
             esay(e);
-            return e.toString();
         }
 
     }

@@ -88,13 +88,13 @@ public class SharedMemoryCache {
         }
     }
 
-    public Set<Job> getJobs(Class<? extends Job> jobType) {
+    public <T extends Job> Set<T> getJobs(Class<T> jobType) {
        sharedMemoryReadLock.lock();
        try {
-           Set<Job> results = new HashSet<Job>();
+           Set<T> results = new HashSet<T>();
            for(Job job: sharedMemoryCache.values()) {
                if(job.getClass().equals(jobType)) {
-                   results.add(job);
+                   results.add((T)job);
                }
            }
            return results;

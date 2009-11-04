@@ -562,33 +562,26 @@ public final class LsFileRequest extends FileRequest {
                 }
         }
 
-        @Override
-        public String toString() {
-                return toString(false);
+    @Override
+    public void toString(StringBuilder sb, boolean longformat) {
+        sb.append(" LsFileRequest ");
+        sb.append(" id:").append(getId());
+        sb.append(" priority:").append(getPriority());
+        sb.append(" creator priority:");
+        try {
+            sb.append(getUser().getPriority());
+        } catch (SRMInvalidRequestException ire) {
+            sb.append("Unknown");
         }
-
-        @Override
-        public String toString(boolean longformat) {
-                StringBuilder sb = new StringBuilder();
-                sb.append(" FileRequest ");
-                sb.append(" id =").append(getId());
-                sb.append(" job priority  =").append(getPriority());
-                sb.append(" crteator priority  =");
-                try {
-                    sb.append(getUser().getPriority());
-                } catch (SRMInvalidRequestException ire) {
-                    sb.append("unknown");
-                }
-                sb.append(" state=").append(getState());
-                if(longformat) {
-                        sb.append('\n').append(getSurlString());
-                        sb.append('\n').append("status code = ").append(getStatusCode());
-                        sb.append('\n').append("error message = ").append(getErrorMessage());
-                        sb.append('\n').append("History of State Transitions: \n");
-                        sb.append(getHistory());
-                }
-                return sb.toString();
+        State state = getState();
+        sb.append(" state:").append(state);
+        if(longformat) {
+            sb.append('\n').append("   SURL: ").append(getSurl());
+            sb.append('\n').append("   status code:").append(getStatusCode());
+            sb.append('\n').append("   error message:").append(getErrorMessage());
+            sb.append('\n').append("   History of State Transitions: \n");
+            sb.append(getHistory());
         }
-      
+    }
 }
 

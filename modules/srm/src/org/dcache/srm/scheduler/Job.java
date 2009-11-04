@@ -744,18 +744,6 @@ public abstract class Job  {
         }
     }
 
-    public String toString() {
-        rlock();
-        try {
-            return "Job ID="+id+" state="+state+
-            " created on "+
-            (new java.util.Date(creationTime)).toString()+
-            " by ["+getSubmitterId()+"]";
-        } finally {
-            runlock();
-        }
-    }
-
     /** Getter for property id.
      * @return Value of property id.
      *
@@ -1222,7 +1210,7 @@ public abstract class Job  {
 
 
 
-    public static Set<Job> getActiveJobs(Class<? extends Job> type) {
+    public static <T extends Job> Set<T > getActiveJobs(Class<T> type) {
         return sharedMemoryCache.getJobs(type);
     }
 
@@ -1249,4 +1237,17 @@ public abstract class Job  {
         // https://jira.terracotta.org/jira/browse/CDV-787
         writeLock.unlock();
     }
+
+    @Override
+    public final String toString() {
+        return toString(false);
+    }
+
+     public final String toString(boolean longformat) {
+        StringBuilder sb = new StringBuilder();
+        toString(sb,longformat);
+        return sb.toString();
+    }
+    
+    public abstract void toString(StringBuilder sb, boolean longformat);
 }
