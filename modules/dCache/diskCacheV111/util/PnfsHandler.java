@@ -11,6 +11,7 @@ import org.apache.log4j.Logger;
 
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
 
 import diskCacheV111.vehicles.CacheStatistics;
 import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
@@ -132,33 +133,55 @@ public class PnfsHandler
         _subject = subject;
     }
 
+    /**
+     * Sends a PnfsMessage to PnfsManager.
+     *
+     * @throws NoRouteToCellException if the PnfsManager could not be reached
+     */
     public void send(PnfsMessage msg)
+        throws NoRouteToCellException
     {
-        if (_cellStub == null)
+        if (_cellStub == null) {
             throw new IllegalStateException("Missing endpoint");
+        }
 
         if (_subject != null) {
             msg.setSubject(_subject);
         }
+
         _cellStub.send(msg);
     }
 
-   //
-   //
-   public void clearCacheLocation( String pnfsId ){
+    /**
+     * Sends a PnfsMessage notification to PnfsManager. No reply is
+     * expected for a notification and no failure is reported if the
+     * message could not be delivered.
+     */
+    public void notify(PnfsMessage msg)
+    {
+        try {
+            msg.setReplyRequired(false);
+            send(msg);
+        } catch (NoRouteToCellException e) {
+            _logNameSpace.warn("Failed to deliver message " +
+                               msg.getClass().getSimpleName() +
+                               " to PnfsManager: " + e.getMessage());
+        }
+    }
 
-       send( new PnfsClearCacheLocationMessage(
-                           pnfsId,
-                           _poolName)
-           ) ;
+    //
+    //
+    public void clearCacheLocation(String pnfsId)
+    {
+        notify(new PnfsClearCacheLocationMessage(pnfsId, _poolName));
+    }
 
-   }
    public void clearCacheLocation( PnfsId pnfsId ){
        clearCacheLocation( pnfsId , false  );
    }
    public void clearCacheLocation( PnfsId pnfsId , boolean removeIfLast  ){
 
-       send( new PnfsClearCacheLocationMessage(
+       notify( new PnfsClearCacheLocationMessage(
                            pnfsId,
                            _poolName,
                            removeIfLast)
@@ -167,7 +190,7 @@ public class PnfsHandler
    }
    public void clearCacheLocation( PnfsId pnfsId , String poolName ){
 
-       send( new PnfsClearCacheLocationMessage(
+       notify( new PnfsClearCacheLocationMessage(
                            pnfsId,
                            poolName)
            ) ;
@@ -282,7 +305,7 @@ public class PnfsHandler
    public void pnfsSetFileMetaData( PnfsId pnfsId, FileMetaData meta) {
        PnfsSetFileMetaDataMessage msg =  new PnfsSetFileMetaDataMessage( pnfsId );
        msg.setMetaData( meta );
-       send(msg );
+       notify(msg );
        return;
    }
 
@@ -465,7 +488,7 @@ public class PnfsHandler
                 new PnfsFlagMessage( pnfsId ,flag , PnfsFlagMessage.FlagOperation.SET ) ;
        flagMessage.setReplyRequired( false );
        flagMessage.setValue(value);
-       send(flagMessage);
+       notify(flagMessage);
    }
 
    public void fileFlushed(PnfsId pnfsId, StorageInfo storageInfo ) throws CacheException {

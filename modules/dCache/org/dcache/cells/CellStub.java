@@ -186,7 +186,7 @@ public class CellStub
      *       timeout occured, or the object in the reply was of the
      *       wrong type.
      */
-    public <T extends Serializable> T 
+    public <T extends Serializable> T
                       sendAndWait(CellPath path, Object msg, Class<T> type)
         throws CacheException, InterruptedException
     {
@@ -260,7 +260,8 @@ public class CellStub
     /**
      * Sends <code>message</code> to <code>destination</code>.
      */
-    public void send(Serializable message) 
+    public void send(Serializable message)
+        throws NoRouteToCellException
     {
         if (_destination == null) {
             throw new IllegalStateException("Destination must be specified");
@@ -272,15 +273,10 @@ public class CellStub
     /**
      * Sends <code>message</code> to <code>destination</code>.
      */
-    public void send(CellPath destination, Serializable message) 
+    public void send(CellPath destination, Serializable message)
+        throws NoRouteToCellException
     {
-        try {
-            _endpoint.sendMessage(new CellMessage(destination, message));
-        } catch (NoRouteToCellException e) {
-            /*
-             * caller have to be prepared that message can be lost.
-             */
-        }
+        _endpoint.sendMessage(new CellMessage(destination, message));
     }
 
     /**
