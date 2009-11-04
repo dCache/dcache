@@ -1367,13 +1367,16 @@ public class PnfsManagerV3 extends CellAdapter
         private final CellPath _requestor;
         private final PnfsListDirectoryMessage _msg;
         private final long _delay;
+        private final UOID _uoid;
         private long _deadline;
 
-        public ListHandlerImpl(CellPath requestor, PnfsListDirectoryMessage msg,
+        public ListHandlerImpl(CellPath requestor, UOID uoid,
+                               PnfsListDirectoryMessage msg,
                                long initialDelay, long delay)
         {
             _msg = msg;
             _requestor = requestor;
+            _uoid = uoid;
             _delay = delay;
             _deadline =
                 (delay == Long.MAX_VALUE)
@@ -1387,7 +1390,9 @@ public class PnfsManagerV3 extends CellAdapter
             _msg.setReply();
 
             try {
-                sendMessage(new CellMessage(_requestor, _msg));
+                CellMessage envelope = new CellMessage(_requestor, _msg);
+                envelope.setLastUOID(_uoid);
+                sendMessage(envelope);
             } catch (NoRouteToCellException e){
                 /* We cannot cancel, so log and ignore.
                  */
@@ -1426,7 +1431,8 @@ public class PnfsManagerV3 extends CellAdapter
             CellPath source = (CellPath)envelope.getSourcePath().clone();
             source.revert();
             ListHandler handler =
-                new ListHandlerImpl(source, msg, initialDelay, delay);
+                new ListHandlerImpl(source, envelope.getUOID(),
+                                    msg, initialDelay, delay);
             _nameSpaceProvider.list(msg.getSubject(), path,
                                     msg.getPattern(),
                                     msg.getRange(),
