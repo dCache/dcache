@@ -13,6 +13,7 @@ import java.io.File;
 import java.io.IOException;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
@@ -101,9 +102,16 @@ public class ListDirectoryHandler
         try {
             msg.setSubject(subject);
             _replies.put(uuid, stream);
-             stream.put(_pnfs.pnfsRequest(msg));
+            _pnfs.send(msg);
+            stream.waitForMoreEntries();
             success = true;
             return stream;
+        } catch (NoRouteToCellException e) {
+            /* No route to PnfsManager is essentially no different
+             * than not getting a reply, so we advertise it with the
+             * same exception.
+             */
+            throw new TimeoutCacheException(e.getMessage());
         } finally {
             if (!success) {
                 _replies.remove(uuid);
@@ -174,6 +182,8 @@ public class ListDirectoryHandler
                 }
                 if (stream != null) {
                     stream.put(reply);
+                } else {
+                    _log.warn("Received list result for an unknown request. Directory listing was possibly incomplete.");
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
