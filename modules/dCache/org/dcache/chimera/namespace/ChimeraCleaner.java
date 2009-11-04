@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellVersion;
+import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 
 import org.dcache.chimera.DbConnectionInfo;
@@ -541,17 +542,22 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
 
         if( _broadcasterStub == null ) return ;
 
-        PoolRemoveFilesMessage msg = new PoolRemoveFilesMessage("") ;
-        msg.setFiles( fileList ) ;
+        try {
+            PoolRemoveFilesMessage msg = new PoolRemoveFilesMessage("") ;
+            msg.setFiles( fileList ) ;
 
-        /*
-         * no rely required
-         */
-        msg.setReplyRequired(false);
+            /*
+             * no rely required
+             */
+            msg.setReplyRequired(false);
 
-        _broadcasterStub.send( msg ) ;
-        _logNamespace.debug("have broadcasted 'remove files' message to " +
-                _broadcasterStub.getDestinationPath());
+            _broadcasterStub.send( msg ) ;
+            _logNamespace.debug("have broadcasted 'remove files' message to " +
+                                _broadcasterStub.getDestinationPath());
+        } catch (NoRouteToCellException e) {
+            _logNamespace.debug("Failed to broadcast 'remove files' message: " +
+                                e.getMessage());
+        }
      }
 
     ////////////////////////////////////////////////////////////////////////////

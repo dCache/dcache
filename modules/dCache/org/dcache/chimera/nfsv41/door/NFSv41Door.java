@@ -58,6 +58,7 @@ import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
 import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
 import diskCacheV111.vehicles.StorageInfo;
+import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.util.Args;
@@ -99,7 +100,7 @@ public class NFSv41Door extends AbstractCellComponent implements
      * The usual timeout for NFS ops. is 30s.
      * We will use a bit shorter (27s) one to avoid retries.
      */
-    private final static int NFS_REPLY_TIMEOUT = 27000; 
+    private final static int NFS_REPLY_TIMEOUT = 27000;
 
     /**
      * nfsv4 server engine
@@ -232,7 +233,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     /*
      * Handle reply from the pool that mover actually started.
-     * 
+     *
      * If the pools is not know yet, create a mapping between pool name
      * and NFSv4.1 device id. Finally, notify waiting request that we have got
      * the reply for LAYOUTGET
@@ -336,10 +337,10 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     /**
      * ask pool manager for a file
-     * 
+     *
      * On successful reply from pool manager corresponding O request will be sent
      * to the pool to start a NFS mover.
-     * 
+     *
      * @throws ChimeraNFSException in case of NFS friendly errors ( like ACCESS )
      * @throws IOException in case of any other errors
      */
@@ -413,11 +414,11 @@ public class NFSv41Door extends AbstractCellComponent implements
 
             /*
              * FIXME;
-             * 
+             *
              * usually RPC request will timeout in 30s.
              * We have to handle this cases and return LAYOUTTRYLATER
              * or GRACE.
-             * 
+             *
              */
         NFS4IoDevice device;
         stateid4 stateid = protocolInfo.stateId();
@@ -484,8 +485,12 @@ public class NFSv41Door extends AbstractCellComponent implements
                     +poolIoFileMessage.getPoolName() );
             }
 
-            _poolManagerStub.send(new CellPath(poolIoFileMessage.getPoolName()),
-                    message);
+            try {
+                _poolManagerStub.send(new CellPath(poolIoFileMessage.getPoolName()),
+                                      message);
+            } catch (NoRouteToCellException e) {
+                _log.error("Failed to kill mover: " + e.getMessage());
+            }
 
         }else{
             _log.warn("Can't find mover by stateid: " + stateid);
