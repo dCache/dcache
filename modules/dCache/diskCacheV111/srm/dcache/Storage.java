@@ -2685,51 +2685,6 @@ public class Storage
 
     }
 
-    public static boolean _canDelete(SRMUser user, String fileId,
-        FileMetaData fmd) {
-        // we can not overwrite file in dcache (at least for now)
-        if(fileId == null ) {
-            return false;
-        }
-
-        PnfsId pnfsId = new PnfsId(fileId);
-        int uid = Integer.parseInt(fmd.owner);
-        int gid = Integer.parseInt(fmd.group);
-        int permissions = fmd.permMode;
-
-        if(permissions == 0 ) {
-            return false;
-        }
-
-        if(Permissions.worldCanWrite(permissions)) {
-            return true;
-        }
-
-        if(uid == -1 || gid == -1) {
-            return false;
-        }
-
-        if(user == null || (!(user instanceof AuthorizationRecord))) {
-            return false;
-        }
-        AuthorizationRecord duser = (AuthorizationRecord) user;
-
-
-        if(duser.getGid() == gid &&
-                Permissions.groupCanWrite(permissions) ) {
-            return true;
-        }
-
-        if(duser.getUid() == uid &&
-                Permissions.userCanWrite(permissions) ) {
-            return true;
-        }
-
-        return false;
-
-
-    }
-
     /**
      * @param user User ID
      * @param remoteTURL
