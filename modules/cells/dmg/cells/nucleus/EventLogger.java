@@ -44,7 +44,7 @@ public class EventLogger
     static public void deliverBegin(CellMessage envelope)
     {
         if (deliver.isInfoEnabled()) {
-            deliver.info(String.format("event=%s_BEGIN uoid=%s lastuoid=%s session=%s message=%s source=%s destination=%s",
+            deliver.info(String.format("event=%s uoid=%s lastuoid=%s session=%s message=%s source=%s destination=%s",
                                        DELIVER_BEGIN,
                                        envelope.getUOID(), envelope.getLastUOID(),
                                        toString(envelope.getSession()),
