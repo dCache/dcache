@@ -224,6 +224,30 @@
         <include>sun.util.calendar.ZoneInfo</include>
       </additional-boot-jar-classes> 
 
+    <!-- This section specifies methods to invoke in a distributed
+         fashion via Terracotta DSO. When a method matching one of the
+         patterns here is invoked in one JVM, Terracotta DSO will
+         cause it to be invoked simultaneously in all JVMs throughout
+         the Terracotta cluster. This is often used for 'event listener'
+         methods (for example, those used by Swing), to make sure that
+         all JVMs throughout the cluster are informed when a particular
+         event occurs. -->
+      <distributed-methods>
+        <!-- An AspectWerkz-compatible method specification expression
+           denoting which method(s) to distribute. -->
+        <!-- An optional attribute run-on-all-nodes (default value "true")
+           can be set to false to execute distributed only on those nodes
+           that already have a reference to the object on which the method
+           is called -->
+        <method-expression>
+          void org.dcache.srm.scheduler.Job.tryToReady()
+        </method-expression>
+        <method-expression>
+          void org.dcache.srm.scheduler.Job.notifySchedulerOfStateChange(..)
+        </method-expression>
+      </distributed-methods>
+
+
      </dso>
   </application>
 

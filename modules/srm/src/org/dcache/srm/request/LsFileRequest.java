@@ -118,10 +118,6 @@ public final class LsFileRequest extends FileRequest {
                 RequestFileStatus rfs;
                 rfs = new RequestFileStatus();
                 State state = getState();
-                 if(state == State.RQUEUED) {
-                         tryToReady();
-                         state = getState();
-                 }
                  if(state == State.DONE) {
                          rfs.state = "Done";
                  }

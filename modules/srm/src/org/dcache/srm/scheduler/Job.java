@@ -544,12 +544,7 @@ public abstract class Job  {
                 inclreaseNumberOfRetries();
             }
 
-            if(schedulerId != null) {
-                Scheduler scheduler =   Scheduler.getScheduler(schedulerId);
-                if(scheduler != null) {
-                    scheduler.stateChanged(this, old, state);
-                }
-            }
+            notifySchedulerOfStateChange(old, state);
 
             if(state.isFinalState()) {
                 LifetimeExpiration.cancel(id);
@@ -575,6 +570,15 @@ public abstract class Job  {
      * Try to change the state of the job to READY. the request into the ready state
      */
     public void tryToReady() {
+        rlock();
+        try {
+            if(state != State.RQUEUED) {
+                return;
+            }
+        } finally {
+            runlock();
+        }
+
         /*
          * The job should be readied, only if the job's scheduler's
          * count of the "ready" jobs is bellow the maximum allowed number of the
@@ -1212,6 +1216,43 @@ public abstract class Job  {
 
     public static <T extends Job> Set<T > getActiveJobs(Class<T> type) {
         return sharedMemoryCache.getJobs(type);
+    }
+
+    /**
+     * Notifies the scheduler of the this job of a  change
+     * of the state from old to new
+     * @param oldState
+     * @param newState
+     */
+    private void notifySchedulerOfStateChange(State oldState, State newState) {
+        /*
+         * The state change needs to be correctly accounted by the scheduler that
+         * executes this job. This is done by call to scheduler's stateChanged
+         * method. If the job is replicated in multiple jvm's, the job might have
+         * a scheduler associated with it in different jvm.
+         * Then in this jvm call to stateChanged should not take place.
+         * Insted whatever clastering mechanizm is used needs to makes sure that
+         * if this method is also called in an instance where the job was
+         * originally scheduled and where the Scheduler.getScheduler(schedulerId)
+         * will return non null result.
+         * In case of terracotta it is achived by including this method in the
+         * "distributed-method" section of the configuration file  :
+         *       <distributed-methods>
+         *          <method-expression>
+         *            void org.dcache.srm.scheduler.Job.notifySchedulerOfStateChange(..)
+         *          </method-expression>
+         *       <method-expression>
+         *
+         */
+
+         if (schedulerId != null) {
+            Scheduler scheduler = Scheduler.getScheduler(schedulerId);
+            if (scheduler != null) {
+                _log.debug("notifySchedulerOfStateChange calls " +
+                        "scheduler.stateChanged()");
+                scheduler.stateChanged(this, oldState, newState);
+            }
+        }
     }
 
     public final void wlock() {

@@ -292,16 +292,13 @@ public abstract class ContainerRequest extends Request {
         // once file request reach their final state, this state does not change
         // so the combined logic
         getRequestStatusCalled();
-        //say("getRequestStatus()");
         RequestStatus rs = new RequestStatus();
         rs.requestId = getRequestNum();
-        //say("getRequestStatus() rs.requestId="+rs.requestId );
         rs.errorMessage = getErrorMessage();
         if(rs.errorMessage == null)
         {
             rs.errorMessage="";
         }
-        //say("getRequestStatus() rs.errorMessage="+rs.errorMessage );
         int len = getNumOfFileRequest();
         rs.fileStatuses = new RequestFileStatus[len];
         boolean haveFailedRequests = false;
@@ -312,6 +309,7 @@ public abstract class ContainerRequest extends Request {
         String fr_error="";
         for(int i = 0; i< len; ++i) {
             FileRequest fr =fileRequests[i];
+            fr.tryToReady();
             RequestFileStatus rfs = fr.getRequestFileStatus();
             if(rfs == null){
                 haveFailedRequests = true;
@@ -404,16 +402,11 @@ public abstract class ContainerRequest extends Request {
             rs.errorMessage="";
         }
 
-
         rs.type = getMethod();
-        //say("getRequestStatus() rs.type = "+rs.type);
         rs.retryDeltaTime = retryDeltaTime;
         rs.submitTime = new java.util.Date(getCreationTime());
         rs.finishTime = new java.util.Date(getCreationTime() +getLifetime() );
-        //say("getRequestStatus() calling updateRetryDeltaTime()");
-
         rs.startTime = new java.util.Date(System.currentTimeMillis()+retryDeltaTime*1000);
-        //say("getRequestStatus() returning");
         return rs;
     }
 
