@@ -71,12 +71,12 @@ public class OpenRequest extends AbstractRequestMessage
         return opaque;
     }
 
-    public Map getOpaqueMap() throws ParseException
+    public Map<String,String> getOpaqueMap() throws ParseException
     {
         if (opaque == null) {
             return Collections.emptyMap();
         } else {
-            Map map = new HashMap();
+            Map<String,String> map = new HashMap<String,String>();
             int tokenStart;
             int tokenEnd = 0;
 
@@ -88,15 +88,12 @@ public class OpenRequest extends AbstractRequestMessage
                 }
 
                 int delimiter = opaque.indexOf("=",tokenStart);
-
-                if (delimiter == -1) {
-                    throw new ParseException("wrong delemiter found. Should be 'key=value'");
+                if (delimiter == -1 || delimiter >= tokenEnd) {
+                    throw new ParseException("Opaque information is missing a value for variable " + opaque.substring(tokenStart, tokenEnd));
                 }
 
                 map.put(opaque.substring(tokenStart, delimiter),
                         opaque.substring(delimiter + 1, tokenEnd));
-
-
             }
 
             return map;
