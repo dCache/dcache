@@ -1341,7 +1341,7 @@ public class SRM {
     }
 
     public void listGetRequests(StringBuffer sb) throws java.sql.SQLException {
-        listRequests(sb, getGetRequestScheduler(), getStorage);
+        listRequests(sb,GetRequest.class);
     }
 
     public Set getGetRequestIds(SRMUser user, String description) throws java.sql.SQLException {
@@ -1444,7 +1444,7 @@ public class SRM {
     }
 
     public void listPutRequests(StringBuffer sb) throws java.sql.SQLException {
-        listRequests(sb, getPutRequestScheduler(), putStorage);
+        listRequests(sb,PutRequest.class);
     }
 
     public Set getPutRequestIds(SRMUser user, String description) throws java.sql.SQLException {
@@ -1522,7 +1522,7 @@ public class SRM {
     }
 
     public void listCopyRequests(StringBuffer sb) throws java.sql.SQLException {
-        listRequests(sb, getCopyRequestScheduler(), copyStorage);
+        listRequests(sb,CopyRequest.class);
     }
 
     public Set getCopyRequestIds(SRMUser user, String description) throws java.sql.SQLException {
@@ -1600,7 +1600,7 @@ public class SRM {
     }
 
     public void listBringOnlineRequests(StringBuffer sb) throws java.sql.SQLException {
-        listRequests(sb, getBringOnlineRequestScheduler(), bringOnlineStorage);
+        listRequests(sb,BringOnlineRequest.class);
     }
 
     public Set getBringOnlineRequestIds(SRMUser user, String description) throws java.sql.SQLException {
@@ -1682,26 +1682,17 @@ public class SRM {
                 getScheduler(requestType);
     }
     public void listReserveSpaceRequests(StringBuffer sb) throws java.sql.SQLException {
-        listRequests(sb, getReserveSpaceScheduler(), reserveSpaceRequestStorage);
+        listRequests(sb,ReserveSpaceRequest.class);
     }
 
     public void listLsRequests(StringBuffer sb) throws java.sql.SQLException {
-        listRequests(sb, getLsRequestScheduler(), lsRequestStorage);
+        listRequests(sb,LsRequest.class);
     }
 
-    private void listRequests(StringBuffer sb,
-            Scheduler scheduler,
-            DatabaseRequestStorage storage) throws java.sql.SQLException {
-        Set activeRequestIds =
-                storage.getActiveRequestIds(scheduler.getId());
-        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long) i.next();
-            try {
-                Request r = (Request) Request.getRequest(requestId);
-                sb.append(r).append('\n');
-            } catch (SRMInvalidRequestException ire) {
-                logger.error(ire);
-            }
+    private void listRequests(StringBuffer sb,Class clazz) throws java.sql.SQLException {
+        Set<Job> jobs = Job.getActiveJobs(clazz);
+        for (Job job:jobs) {
+            sb.append(job).append('\n');
         }
     }
 
