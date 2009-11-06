@@ -243,7 +243,7 @@ fi
 # if old tomcat exists, stop it and move it
 if [ -e ${TOMCAT_PATH} ] ; then
   OLD_TOMCAT=${TOMCAT_PATH}.${RANDOM}
-  ${TOMCAT_PATH}/bin/shutdown.sh
+  ${TOMCAT_PATH}/bin/shutdown.sh > /dev/null 2>&1
   if [ "$DELETE_OLD_AXIS_TOMCAT" = "true" ] ; then
     logmessage WARNING "deleting previous version of Tomcat at ${TOMCAT_PATH}"
     rm -rf ${TOMCAT_PATH}
