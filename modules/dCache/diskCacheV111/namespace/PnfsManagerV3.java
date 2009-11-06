@@ -1060,6 +1060,8 @@ public class PnfsManagerV3 extends CellAdapter
 
                 StorageInfo info = attrs.getStorageInfo();
                 info.setKey("path", pnfsMessage.getPath());
+                info.setKey("uid", Integer.toString(pnfsMessage.getUid()));
+                info.setKey("gid", Integer.toString(pnfsMessage.getGid()));
 
                 pnfsMessage.setFileAttributes(attrs);
 
@@ -1949,6 +1951,8 @@ public class PnfsManagerV3 extends CellAdapter
 
                 if (attrs.isDefined(FileAttribute.STORAGEINFO)) {
                     attrs.getStorageInfo().setKey("path", message.getPnfsPath());
+                    attrs.getStorageInfo().setKey("uid",  Integer.toString(attrs.getOwner()));
+                    attrs.getStorageInfo().setKey("gid", Integer.toString(attrs.getGroup()));
                 }
 
                 message.setFileAttributes(attrs);
