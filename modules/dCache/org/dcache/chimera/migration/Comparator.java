@@ -11,12 +11,16 @@ import org.dcache.chimera.namespace.ChimeraNameSpaceProvider;
 
 import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.namespace.provider.BasicNameSpaceProvider;
+import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
 import dmg.util.Args;
 
 public class Comparator {
+
+    static int idErrCount = 0;
+    static boolean showAllErrors;
 
 	/**
 	 * An Exception thrown when a mismatch is discovered.
@@ -174,7 +178,7 @@ public class Comparator {
 		}
 
 		String file = parsedArgs.argv( 0);
-		boolean showAllErrors = parsedArgs.isOneCharOption( 'k');
+		showAllErrors = parsedArgs.isOneCharOption( 'k');
 
 		String pnfsArgs = "diskCacheV111.util.GenericInfoExtractor "
 				+ "-delete-registration=dummyLocation -delete-registration-jdbcDrv=foo "
@@ -192,7 +196,7 @@ public class Comparator {
 		NameSpaceProvider pnfsStorageInfoProvider = new BasicNameSpaceProvider(
 				new Args(pnfsArgs), null);
 
-		int idCount = 0, idErrCount = 0;
+		int idCount = 0;
 
 
 		BufferedReader br = null;
@@ -232,11 +236,11 @@ public class Comparator {
                     FileMetaData pnfsFileMetaData = pnfsNamespace.getFileMetaData(Subjects.ROOT, pnfsid);
                     assertEquals( pnfsid.toString(), chimeraMetaData, pnfsFileMetaData);
                 } catch (MismatchException e) {
-                    idErrCount++;
-                    if( showAllErrors)
-                        System.out.println( "\n" + e.getMessage());
-                    else
-                        throw e;
+                    genericHandleException(e, pnfsid);
+                } catch (CacheException e) {
+                    genericHandleException(e, pnfsid);
+                } catch (IllegalArgumentException e) {
+                    genericHandleException(e, pnfsid);
                 }
 
                 try {
@@ -244,20 +248,24 @@ public class Comparator {
                     StorageInfo pnfsStorageInfo = pnfsStorageInfoProvider.getStorageInfo(Subjects.ROOT, pnfsid);
                     assertEquals( pnfsid.toString(), chimeraStorageInfo, pnfsStorageInfo);
                 } catch (MismatchException e) {
-                    if( showAllErrors)
-                        System.out.println( "\n" + e.getMessage());
-                    else
-                        throw e;
+                    genericHandleException(e, pnfsid);
+                } catch (CacheException e) {
+                    genericHandleException(e, pnfsid);
+                } catch (IllegalArgumentException e) {
+                    genericHandleException(e, pnfsid);
                 }
 			}
 		} catch (IOException e) {
-			System.out.println("\nCannot read file: " + e.getMessage());
+			System.err.println("Cannot read file: " + e.getMessage());
 			System.exit(2);
 		} catch (MismatchException e) {
-			System.out.println("\n" + e.getMessage());
 			System.exit(1);
+		} catch (CacheException e) {
+		    System.exit(1);
+		} catch ( IllegalArgumentException e) {
+		    System.exit(1);
 		} catch (Exception e) {
-			System.out.println("");
+			System.out.println();
 			e.printStackTrace();
 			System.exit(2);
 		} finally {
@@ -270,5 +278,23 @@ public class Comparator {
 
 		System.out.println("\n\n" + idCount + " IDs verified, " +
 		                   (idErrCount == 0 ? "all OK." : (idErrCount + " failures.")));
+	}
+
+
+	/**
+	 * Generic handler of exceptions: depending on showAllErrors this method will either
+	 * log the exception or re-throw it.
+	 * @param e the Exception that has just been caught
+	 * @throws Exception if showAllErrors is false
+	 */
+	private static void genericHandleException( Exception e, PnfsId pnfsid) throws Exception {
+        idErrCount++;
+
+        String exceptionLabel = (e instanceof MismatchException) ? "" : (e.getClass().getSimpleName() + " ");
+
+	    System.err.println( "[" + pnfsid + "] " + exceptionLabel + e.getMessage());
+
+	    if( !showAllErrors)
+            throw e;
 	}
 }
