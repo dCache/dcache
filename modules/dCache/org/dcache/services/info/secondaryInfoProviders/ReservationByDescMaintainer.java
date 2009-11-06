@@ -46,8 +46,11 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher {
             StatePath.parsePath( "summary.reservations.by-VO");
 
     private static final String PREDICATE_PATHS[] =
-            { "reservations.*", "reservations.*.space.*",
-             "reservations.*.description", "reservations.*.state" };
+            { "reservations.*",
+              "reservations.*.space.*",
+              "reservations.*.description",
+              "reservations.*.state",
+              "reservations.*.authorisation.group"};
 
     /**
      * Information aggregated over all reservations with the same description

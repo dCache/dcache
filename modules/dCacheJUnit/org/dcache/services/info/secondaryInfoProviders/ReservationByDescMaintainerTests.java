@@ -97,6 +97,53 @@ public class ReservationByDescMaintainerTests {
         ids.add( id);
         assertList( "reservations list", expectedSummary.newChild( "reservations"), ids);
     }
+    
+    @Test
+    public void testReservationTransitionUpdatesVo() {
+        String id = "id";
+        
+        String oldVo = "atlas";
+        String oldGroup = "/" + oldVo;
+        String oldRole = "";
+        String oldFQAN = oldGroup;
+        
+        String description = "SCRATCH";
+
+        long total = 10;
+        long used = 2;
+        long allocated = 1;
+        long free = 7;
+
+        StateLocation.putReservationAuth( _exhibitor, id, oldFQAN, oldGroup, oldRole);
+        StateLocation.putReservationDescription( _exhibitor, id, description);
+        StateLocation.putReservationSpace( _exhibitor, id, total, used, allocated, free);
+        StateLocation.putReservationState( _exhibitor, id, ReservationInfo.State.RESERVED);
+
+        String newVo = "cms";
+        String newGroup = "/" + newVo;
+        String newFQAN = newGroup;
+        String newRole = "";
+
+        StateLocation.transitionAddsReservationAuth( _transition, 4, id, newFQAN, newGroup, newRole);
+
+        _watcher.trigger( _transition, _update);
+        
+        // SIP should purge the old atlas information
+        assertEquals( "Check number of purges", 1, _update.countPurges());
+
+        // Check that new summary is created with the new VO.
+        
+        StatePath expectedSummaryBase = SUMMARY_RESERVATIONS_BY_VO.newChild( newVo).newChild( "by-description").newChild( description);
+
+        assertStringMetric( "checking new vo summary", expectedSummaryBase.newChild( "vo"), newVo);
+        
+        StatePath expectedSummarySpace = expectedSummaryBase.newChild( "space");
+        
+        assertIntegerMetric( "checking total", expectedSummarySpace.newChild( "total"), total);
+        assertIntegerMetric( "checking used", expectedSummarySpace.newChild( "used"), used);
+        assertIntegerMetric( "checking allocated", expectedSummarySpace.newChild( "allocated"), allocated);
+        assertIntegerMetric( "checking free", expectedSummarySpace.newChild( "free"), free);
+    }
 
     @Test
     public void testReservationTransitionUpdatesSpaceMetric() {
