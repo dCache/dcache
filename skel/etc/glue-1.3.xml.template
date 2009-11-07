@@ -328,8 +328,8 @@
 
       <object rdn="mds-vo-name" hidden="1">
         <attr name="mds-vo-name">
-	  <constant id="DIT-PARENT"/>
-	</attr>
+          <constant id="DIT-PARENT"/>
+        </attr>
 
 
         <!-- Publish the Top-level GlueSE object -->
@@ -482,13 +482,17 @@
                  dCache info service to group on AL & RP too. -->
 
             <attr name="GlueSAAccessLatency">
-              <lookup child="path">/d:dCache/d:reservations/d:reservation[@reservation-id='<lookup
+              <map name="dCache-ALRP-values-to-Glue">
+                <lookup child="path">/d:dCache/d:reservations/d:reservation[@reservation-id='<lookup
                   path="d:reservations/d:reservation[1]/@id"/>']/d:metric[@name='access-latency']</lookup>
+              </map>
             </attr>
 
             <attr name="GlueSARetentionPolicy">
-              <lookup child="path">/d:dCache/d:reservations/d:reservation[@reservation-id='<lookup
+              <map name="dCache-ALRP-values-to-Glue">
+                <lookup child="path">/d:dCache/d:reservations/d:reservation[@reservation-id='<lookup
                   path="d:reservations/d:reservation[1]/@id"/>']/d:metric[@name='retention-policy']</lookup>
+              </map>
             </attr>
 
             <attr name="GlueSAAccessControlBaseRule">VO:<lookup
@@ -537,8 +541,8 @@
 
             <!-- We hard-code 0 to avoid SRM reservations from being
                  included in any accounting -->
-            <attr name="GlueSACapability">InstalledOnlineCapability=0</attr>
-            <attr name="GlueSACapability">InstalledNearlineCapability=0</attr>
+            <attr name="GlueSACapability">InstalledOnlineCapacity=0</attr>
+            <attr name="GlueSACapability">InstalledNearlineCapacity=0</attr>
 
             <!-- We also mark that this is a SRM reservation.  This may be
                  useful information-->
@@ -816,7 +820,7 @@
             </attr>
 
 
-            <attr name="GlueSACapability">InstalledOnlineCapability=<scale
+            <attr name="GlueSACapability">InstalledOnlineCapacity=<scale
                   to-integer="round"
                   factor="bytes-to-gigabytes">
                 <lookup default="0"
@@ -824,7 +828,7 @@
               </scale>
             </attr>
 
-            <attr name="GlueSACapability">InstalledNearlineCapability=0</attr>
+            <attr name="GlueSACapability">InstalledNearlineCapacity=0</attr>
 
             <attr select="d:units/d:store/d:stage/d:unitref"
                   name="GlueSACapability">dCacheCanStage=VO:<map
@@ -936,7 +940,7 @@
 	    <attr name="GlueSAUsedNearlineSize">0</attr>
 	    <attr name="GlueSAFreeNearlineSize">0</attr>
 
-          <attr name="GlueSACapability">InstalledOnlineCapability=<scale
+          <attr name="GlueSACapability">InstalledOnlineCapacity=<scale
                   to-integer="round" factor="bytes-to-gigabytes">
               <map name="VO-to-offline-disk">
                 <item/>
@@ -944,7 +948,7 @@
             </scale>
           </attr>
 
-          <attr name="GlueSACapability">InstalledNearlineCapability=0</attr>
+          <attr name="GlueSACapability">InstalledNearlineCapacity=0</attr>
         </object>
 
 
@@ -1134,7 +1138,6 @@
     <class name="GlueSEAccessProtocol">
 
       <attr name="GlueSEAccessProtocolLocalID"><lookup path="@name"/></attr>
-      <attr name="GlueSEAccessProtocolAccessTime">0</attr>
 
       <attr name="GlueSEAccessProtocolType">
         <map name="door-type-to-access-proto-type">
@@ -1166,10 +1169,6 @@
         <map name="door-family-to-version">
           <lookup path="d:protocol/d:metric[@name='family']"/>
         </map>
-      </attr>
-
-      <attr name="GlueSEAccessProtocolPort">
-        <lookup path="d:metric[@name='port']"/>
       </attr>
 
       <attr not-empty="1" name="GlueSEAccessProtocolSupportedSecurity">
@@ -1329,6 +1328,7 @@
       <sub match="gsidcap" replace-with="1.0"/>
       <sub match="dcap"    replace-with="1.0"/>
       <sub match="Xrootd"  replace-with="2.7"/>
+      <sub match="root"    replace-with="2.7"/>
     </map>
 
     <!--+
@@ -1357,6 +1357,14 @@
          to the colon character. -->
     <map name="GlueSALocalID-BDII-workaround">
       <translate from="&quot;,+;&lt;>" to="::::::"/>
+    </map>
+
+    <map name="dCache-ALRP-values-to-Glue">
+      <sub match="REPLICA"   replace-with="Replica"/>
+      <sub match="OUTPUT"    replace-with="Output"/>
+      <sub match="CUSTODIAL" replace-with="Custodial"/>
+      <sub match="ONLINE"    replace-with="Online"/>
+      <sub match="NEARLINE"  replace-with="Nearline"/>
     </map>
   </mapping>
 
