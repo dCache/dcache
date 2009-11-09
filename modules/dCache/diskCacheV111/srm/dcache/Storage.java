@@ -2175,10 +2175,18 @@ public class Storage
         } catch (TimeoutCacheException e) {
             _log.error("Failed to retrieve space reservation tokens for file "+
                        fullPath+" ("+pnfsId+"): SrmSpaceManager timed out");
+
         } catch (CacheException e) {
-            _log.error("Failed to retrieve space reservation tokens for file "+
-                       fullPath+" ("+pnfsId+"): " + e.getMessage());
-        } catch (RuntimeException e) {
+            if (e.getRc()!=0) {
+                _log.error("Failed to retrieve space reservation tokens for file "+
+                           fullPath+"("+pnfsId+"): " + e.getMessage());
+            }
+            else {
+                if (_log.isDebugEnabled()) {
+                    _log.debug("Failed to retrieve space reservation tokens for file "+
+                               fullPath+"("+pnfsId+"): " + e.getMessage());
+                }
+            }        } catch (RuntimeException e) {
 	    _log.fatal("getFileMetaData failed", e);
         } catch (Exception e) {
 	    _log.warn("getFileMetaData failed: " + e);

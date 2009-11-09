@@ -3276,14 +3276,15 @@ public final class Manager
 		}
 		catch(SpaceException se) {
                         if(spaceManagerEnabled) {
-                                logger.error("SpaceException: "+se.getMessage()); 
+                                logger.error("SpaceException: "+se.getMessage());
+                                spaceMessage.setFailed(-2,se);
                         }
-                        else { 
+                        else {
                                 if (logger.isDebugEnabled()) {
-                                        logger.error("SpaceException: "+se.getMessage()); 
+                                        logger.error("SpaceException: "+se.getMessage());
                                 }
+                                spaceMessage.setFailed(0,se);
                         }
-			spaceMessage.setFailed(-2,se);
 		}
 		catch(Throwable t) {
 			logger.error(t.getMessage(),t);
@@ -3748,6 +3749,7 @@ public final class Manager
 	}
 
 	private void transferToBeStarted(PoolAcceptFileMessage poolRequest){
+		if (!spaceManagerEnabled) return;
 		PnfsId pnfsId = poolRequest.getPnfsId();
                 if (logger.isDebugEnabled()) {
                         logger.debug("transferToBeStarted("+pnfsId+")");
@@ -3865,7 +3867,7 @@ public final class Manager
 	}
 
 	private void transferFinished(DoorTransferFinishedMessage finished) throws Exception {
-		if ( !spaceManagerEnabled) return;
+		if (!spaceManagerEnabled) return;
 		boolean weDeleteStoredFileRecord = deleteStoredFileRecord;
 		PnfsId pnfsId = finished.getPnfsId();
 		StorageInfo storageInfo = finished.getStorageInfo();
