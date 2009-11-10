@@ -215,6 +215,18 @@ public class CheckStagePermissionTests {
         authorise( TEST_DN, TEST_FQAN_STRING);
         assertFalse( "check pattern .* : user's DN does not match, staging not allowed", _check.canPerformStaging( USER_TEST2_DN, USER_TEST1_FQAN_STRING));
     }
+
+    @Test
+    public void testStringNullFqan() throws PatternSyntaxException, IOException {
+        authorise( VALID_DN, null);
+        assertTrue( "user with DN and FQAN=null staging when DN is in file", _check.canPerformStaging( VALID_DN, (String)null ));
+    }
+
+    @Test
+    public void testStringNullFqan2() throws PatternSyntaxException, IOException {
+        authorise( VALID_DN, VALID_FQAN_STRING);
+        assertFalse( "user with DN and FQAN=null cannot stage when DN and FQAN is in file", _check.canPerformStaging( VALID_DN, (String)null));
+    }
     /////////////////////
 
     private void authorise( String dn, String voms) throws IOException {
