@@ -11,25 +11,15 @@
 package diskCacheV111.services;
 
 import dmg.cells.nucleus.*;
-import dmg.cells.network.*;
-import dmg.util.*;
-
-import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.PnfsFile;
-
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
 import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.vehicles.PoolSetStickyMessage;
-
-import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
-import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.PoolMgrSelectPoolMsg;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
 import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
@@ -37,38 +27,16 @@ import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.PoolDeliverFileMessage;
-import diskCacheV111.vehicles.DoorMessage;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
-import diskCacheV111.vehicles.transferManager.RemoteGsiftpTransferProtocolInfo;
 import diskCacheV111.vehicles.transferManager.RemoteGsiftpTransferManagerMessage;
-import diskCacheV111.vehicles.transferManager.RemoteGsiftpDelegateUserCredentialsMessage;
 import diskCacheV111.vehicles.transferManager.TransferManagerMessage;
 import diskCacheV111.vehicles.transferManager.TransferFailedMessage;
 import diskCacheV111.vehicles.transferManager.TransferCompleteMessage;
 import diskCacheV111.vehicles.transferManager.CancelTransferMessage;
 import diskCacheV111.vehicles.IpProtocolInfo;
-import diskCacheV111.vehicles.spaceManager.SpaceManagerGetInfoAndLockReservationMessage;
-import diskCacheV111.vehicles.spaceManager.SpaceManagerUtilizedSpaceMessage;
-import diskCacheV111.vehicles.spaceManager.SpaceManagerUnlockSpaceMessage;
-
-import java.io.PrintWriter;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Collections;
-import java.util.Hashtable;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.Iterator;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 import diskCacheV111.doors.FTPTransactionLog;
-import javax.jdo.JDOHelper;
 
 public class TransferManagerHandler implements CellMessageAnswerable {
 	private TransferManager manager;
@@ -113,7 +81,6 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 	private IpProtocolInfo protocol_info;
 	private String spaceReservationId;
 	private transient Long size;
-	private transient SpaceManagerGetInfoAndLockReservationMessage spaceInfo;
 	private transient boolean space_reservation_strict;
 	private long creationTime;
 	private long lifeTime;
@@ -319,28 +286,6 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 				esay(this.toString()+" got unexpected PoolIoFileMessage "+
 				     " : "+first_pool_reply+" ; Ignoring");
 			}
-			else if (message instanceof SpaceManagerGetInfoAndLockReservationMessage) {
-				SpaceManagerGetInfoAndLockReservationMessage spaceInfo=
-					(SpaceManagerGetInfoAndLockReservationMessage)message;
-				if( state == WAITING_FOR_SPACE_INFO_STATE) {
-					setState(RECEIVED_SPACE_INFO_STATE);
-					spaceInfoArrived(spaceInfo);
-					return;
-				}
-				esay(this.toString()+" got unexpected SpaceManagerGetInfoAndLockReservationMessage "+
-				     " : "+spaceInfo+" ; Ignoring");
-			}
-			else if (message instanceof SpaceManagerGetInfoAndLockReservationMessage) {
-				SpaceManagerGetInfoAndLockReservationMessage spaceInfo=
-					(SpaceManagerGetInfoAndLockReservationMessage)message;
-				if( state == WAITING_FOR_SPACE_INFO_STATE) {
-					setState(RECEIVED_SPACE_INFO_STATE);
-					spaceInfoArrived(spaceInfo);
-					return;
-				}
-				esay(this.toString()+" got unexpected SpaceManagerGetInfoAndLockReservationMessage "+
-				     " : "+spaceInfo+" ; Ignoring");
-			}
 			else if (message instanceof PnfsDeleteEntryMessage) {
 				PnfsDeleteEntryMessage deleteReply = (PnfsDeleteEntryMessage) message;
 				if ( state == WAITING_FOR_PNFS_ENTRY_DELETE ) {
@@ -412,41 +357,8 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 			return ;
 		}
 	}
-/**      */
-	public void spaceInfoArrived(SpaceManagerGetInfoAndLockReservationMessage spaceInfo) {
-		say("spaceInfo = "+spaceInfo);
-		if( spaceInfo.getReturnCode() != 0 ) {
-			sendErrorReply(5, new
-				       CacheException( "Space Manager error: "+
-						       spaceInfo.getErrorObject() ) );
-			return;
-		}
-		this.spaceInfo = spaceInfo;
-		this.locked    = true;
-		pool           = spaceInfo.getPool();
-		this.state     = WAITING_FOR_PNFS_INFO_STATE;
-		manager.persist(this);
-		say("Positive reply from Space Manager: space reserved at "+pool);
-		PnfsGetStorageInfoMessage sInfo = new PnfsGetStorageInfoMessage() ;
-		sInfo.setPnfsPath( pnfsPath ) ;
-		manager.persist(this);
-		try {
-			manager.sendMessage(new CellMessage(new CellPath(manager.getPnfsManagerName()),
-						    sInfo),
-				    true,
-				    true,
-				    this,
-				    manager.getPnfsManagerTimeout()*1000
-				);
-		}
-		catch(Exception ee ) {
-			esay(ee);
-			transferRequest.setFailed(2, ee);
-			return ;
-		}
-		return ;
-	}
-/**      */
+
+    /**      */
 	public void createEntryResponseArrived(PnfsCreateEntryMessage create) {
         	if(create.getReturnCode() == 0) {
 			created = true;
@@ -456,52 +368,33 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 			sendErrorReply(5, "failed to create pnfs entry: "+create.getErrorObject());
 			return;
 		}
-		if(false){ // Timur: this code is not needed anymore: (spaceReservationId != null){
-			SpaceManagerGetInfoAndLockReservationMessage   spaceReservationInfo =
-				new SpaceManagerGetInfoAndLockReservationMessage(Long.parseLong(spaceReservationId));
-			setState(WAITING_FOR_SPACE_INFO_STATE);
-			manager.persist(this);
-			try {
-				manager.sendMessage(new CellMessage(new CellPath(manager.getSpaceManagerName()),
-							    spaceReservationInfo ) ,
-					    true ,
-					    true,
-					    this,
-					    manager.getSpaceManagerTimeout()*1000
-					);
-				return;
-			}
-			catch(Exception ee ) {
-				esay(ee);
-				sendErrorReply(4,ee);
-				return ;
-			}
-		}
-                storageInfo  = create.getStorageInfo();
+
+        storageInfo  = create.getStorageInfo();
 		metadata =
-			create.getMetaData();
-       		pnfsId        = create.getPnfsId();
-                if(storageInfo == null || metadata == null || pnfsId == null) {
-                    PnfsGetStorageInfoMessage sInfo = new PnfsGetStorageInfoMessage() ;
-                    sInfo.setPnfsPath( pnfsPath ) ;
-                    setState(WAITING_FOR_PNFS_INFO_STATE);
-                    manager.persist(this);
-                    try {
-                            manager.sendMessage(new CellMessage(new CellPath(manager.getPnfsManagerName()),
-                                                        sInfo),
-                                        true,
-                                        true,
-                                        this,
-                                        manager.getPnfsManagerTimeout()*1000
-                                    );
-                    }
-                    catch(Exception ee ) {
-                            esay(ee);
-                            transferRequest.setFailed(2, ee);
-                            return ;
-                    }
-                    return;
-                }
+        create.getMetaData();
+        pnfsId        = create.getPnfsId();
+        if(storageInfo == null || metadata == null || pnfsId == null) {
+            PnfsGetStorageInfoMessage sInfo = new PnfsGetStorageInfoMessage() ;
+            sInfo.setPnfsPath( pnfsPath ) ;
+            setState(WAITING_FOR_PNFS_INFO_STATE);
+            manager.persist(this);
+            try {
+                    manager.sendMessage(new CellMessage(
+                            new CellPath(manager.getPnfsManagerName()),
+                                sInfo),
+                            true,
+                            true,
+                            this,
+                            manager.getPnfsManagerTimeout()*1000
+                        );
+            }
+            catch(Exception ee ) {
+                    esay(ee);
+                    transferRequest.setFailed(2, ee);
+                    return ;
+            }
+            return;
+        }
 		pnfsIdString  = pnfsId.toString();
 		info.setPnfsId(pnfsId);
                 checkPermissionAndSelectPool();
@@ -596,10 +489,6 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 			sendErrorReply(4,ioe);
 			return ;
 		}
-		if(store && spaceInfo != null){
-			startMoverOnThePool();
-			return;
-		}
 		Thread current = Thread.currentThread();
                 long size =transferRequest.getSize() == null ? 0L: transferRequest.getSize().longValue();
 		PoolMgrSelectPoolMsg request =
@@ -652,19 +541,6 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 	}
 /**      */
 	public void startMoverOnThePool() {
-		if(store && spaceInfo != null) {
-			storageInfo.setKey("use-preallocated-space",
-					   Long.toString(spaceInfo.getAvailableLockedSize()));
-			esay("setting storage info key use-preallocated-space to "+
-			     spaceInfo.getAvailableLockedSize());
-			if(space_reservation_strict) {
-				esay("setting storage info key use-max-space to "+
-				     spaceInfo.getAvailableLockedSize());
-				storageInfo.setKey("use-max-space",
-						   Long.toString(spaceInfo.getAvailableLockedSize()));
-			}
-
-		}
 		PoolIoFileMessage poolMessage = store ?
 			(PoolIoFileMessage)
 			new PoolAcceptFileMessage(
@@ -731,30 +607,6 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 
 	}
 /**      */
-	public void releaseSpace() {
-		if(spaceInfo != null) {
-			say("releaseSpace() space token="+spaceInfo.getSpaceToken()+
-			    " size= "+spaceInfo.getAvailableLockedSize());
-			SpaceManagerUnlockSpaceMessage unlockSpace =
-				new SpaceManagerUnlockSpaceMessage(spaceInfo.getSpaceToken(),
-								   spaceInfo.getAvailableLockedSize());
-			try {
-				manager.sendMessage(new CellMessage(new CellPath("SpaceManager") ,
-							    unlockSpace
-						    ));
-			}
-			catch (Exception e) {
-				String errmsg = "Can't send message to SpaceManager "+e;
-				esay(errmsg);
-				esay(e) ;
-			}
-			spaceInfo = null;
-		}
-		else {
-			say("releaseSpace() space info is null, do nothing");
-		}
-	}
-/**      */
 
 	public void deletePnfsEntry() {
 		if ( state==RECEIVED_PNFS_CHECK_BEFORE_DELETE_STATE) {
@@ -812,32 +664,10 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 	public void poolDoorMessageArrived(DoorTransferFinishedMessage doorMessage) {
 		say("poolDoorMessageArrived, doorMessage.getReturnCode()="+doorMessage.getReturnCode());
 		if(doorMessage.getReturnCode() != 0 ) {
-			releaseSpace();
 			sendErrorReply(8,"tranfer failed :"+doorMessage.getErrorObject());
 			return;
 		}
-		if(store && spaceInfo != null) {
-			long utilized = doorMessage.getStorageInfo().getFileSize();
-			say("reply.getStorageInfo().getFileSize()="+utilized);
-			if(utilized > spaceInfo.getAvailableLockedSize()) {
-				utilized = spaceInfo.getAvailableLockedSize();
-			}
-			say("set utilized to "+utilized);
-			SpaceManagerUtilizedSpaceMessage utilizedSpace =
-				new SpaceManagerUtilizedSpaceMessage(spaceInfo.getSpaceToken(),utilized);
-			try {
-				manager.sendMessage(new CellMessage(
-						    new CellPath("SpaceManager") ,
-						    utilizedSpace
-						    ));
-			}
-			catch (Exception e) {
-				String errmsg = "Can't send message to SpaceManager "+e;
-				esay(errmsg);
-				esay(e) ;
-			}
-			spaceInfo = null;
-		}
+
 		DoorTransferFinishedMessage finished = (DoorTransferFinishedMessage) doorMessage;
 		if(store && tlog != null) {
 			tlog.middle(finished.getStorageInfo().getFileSize());
@@ -868,10 +698,6 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 			}
 		}
 
-		if(store && locked && spaceInfo != null) {
-			esay(" we locked the space in spaceManager, unlocking: ");
-			releaseSpace();
-		}
 
 		if(tlog != null) {
 			tlog.error("getFromRemoteGsiftpUrl failed: state = "+state+
@@ -923,11 +749,6 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 		boolean cancelTimer=_cancelTimer;
 
 		esay("sending error reply, reply code="+replyCode+" errorObject="+errorObject+" for "+toString(true));
-
-		if(store && locked && spaceInfo != null) {
-			esay(" we locked the space in spaceManager, unlocking: ");
-			releaseSpace();
-		}
 
 		if(tlog != null) {
 			tlog.error("getFromRemoteGsiftpUrl failed: state = "+state+
@@ -1028,7 +849,6 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 		if(moverId != null) {
 			killMover(this.pool,moverId.intValue());
 		}
-		releaseSpace();
 		sendErrorReply(24, new java.io.IOException("canceled"));
 	}
 /**      */
@@ -1037,7 +857,6 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 		if(moverId != null) {
 			killMover(this.pool,moverId.intValue());
 		}
-		releaseSpace();
 		sendErrorReply(24, new java.io.IOException("timed out while waiting for mover reply"),false);
 	}
 /**      */
@@ -1046,7 +865,6 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 		if(moverId != null) {
 			killMover(this.pool,moverId.intValue());
 		}
-		releaseSpace();
 		sendErrorReply(24, new java.io.IOException("canceled"));
 	}
 /**      */

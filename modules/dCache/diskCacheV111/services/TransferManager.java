@@ -10,52 +10,22 @@
 package diskCacheV111.services;
 
 import dmg.cells.nucleus.*;
-import dmg.cells.network.*;
 import dmg.util.*;
-
-import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.PnfsFile;
-
 import diskCacheV111.vehicles.Message;
-import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
-import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
 import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.vehicles.PoolSetStickyMessage;
-
-import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.vehicles.PnfsCreateEntryMessage;
-import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
-import diskCacheV111.vehicles.PoolMgrSelectPoolMsg;
-import diskCacheV111.vehicles.PoolMoverKillMessage;
-import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
-import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.PoolDeliverFileMessage;
-import diskCacheV111.vehicles.DoorMessage;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
-import diskCacheV111.vehicles.transferManager.RemoteGsiftpTransferProtocolInfo;
-import diskCacheV111.vehicles.transferManager.RemoteGsiftpTransferManagerMessage;
-import diskCacheV111.vehicles.transferManager.RemoteGsiftpDelegateUserCredentialsMessage;
 import diskCacheV111.vehicles.transferManager.TransferManagerMessage;
-import diskCacheV111.vehicles.transferManager.TransferFailedMessage;
-import diskCacheV111.vehicles.transferManager.TransferCompleteMessage;
 import diskCacheV111.vehicles.transferManager.CancelTransferMessage;
 import diskCacheV111.vehicles.IpProtocolInfo;
-import diskCacheV111.vehicles.spaceManager.SpaceManagerGetInfoAndLockReservationMessage;
-import diskCacheV111.vehicles.spaceManager.SpaceManagerUtilizedSpaceMessage;
-import diskCacheV111.vehicles.spaceManager.SpaceManagerUnlockSpaceMessage;
 import java.io.PrintWriter;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.Collections;
 import java.util.Hashtable;
 import java.util.HashSet;
 import java.util.Set;
@@ -65,17 +35,13 @@ import java.util.Iterator;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.Properties;
-import diskCacheV111.doors.FTPTransactionLog;
-
 import org.dcache.srm.request.sql.RequestsPropertyStorage;
 import org.dcache.srm.scheduler.JobIdGeneratorFactory;
 import org.dcache.srm.scheduler.JobIdGenerator;
-
 import diskCacheV111.util.Pgpass;
 import javax.jdo.JDOHelper;
 import javax.jdo.PersistenceManager;
 import javax.jdo.PersistenceManagerFactory;
-import javax.jdo.Query;
 import javax.jdo.Transaction;
 /**
  *

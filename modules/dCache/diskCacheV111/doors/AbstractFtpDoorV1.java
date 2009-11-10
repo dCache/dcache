@@ -121,9 +121,6 @@ import dmg.util.CommandExitException;
 import dmg.util.Args;
 import dmg.util.StreamEngine;
 
-import diskCacheV111.vehicles.spaceManager.SpaceManagerGetInfoAndLockReservationByPathMessage;
-import diskCacheV111.vehicles.spaceManager.SpaceManagerUtilizedSpaceMessage;
-import diskCacheV111.vehicles.spaceManager.SpaceManagerUnlockSpaceMessage;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.IoDoorInfo;
 import diskCacheV111.vehicles.IoDoorEntry;
@@ -835,12 +832,6 @@ public abstract class AbstractFtpDoorV1
         ProxyAdapter adapter;
 
         /**
-         * Information about the corresponding space reservation for
-         * current store operation.
-         */
-        SpaceManagerGetInfoAndLockReservationByPathMessage spaceReservationInfo;
-
-        /**
          * Task that periodically generates performance markers. May
          * be null.
          */
@@ -1494,25 +1485,6 @@ public abstract class AbstractFtpDoorV1
                     }
                 }
 
-                if(_transfer.spaceReservationInfo != null) {
-                    long utilized = reply.getStorageInfo().getFileSize();
-                    info("FTP Door: new file is " + utilized + " bytes");
-                    if(utilized > _transfer.spaceReservationInfo.getAvailableLockedSize()) {
-                        utilized = _transfer.spaceReservationInfo.getAvailableLockedSize();
-                    }
-                    debug("FTP door: new file utilized " + utilized +
-                          " bytes of the space reservation");
-                    SpaceManagerUtilizedSpaceMessage utilizedSpace =
-                        new SpaceManagerUtilizedSpaceMessage(_transfer.spaceReservationInfo.getSpaceToken(),utilized);
-
-                    try {
-                        sendMessage(new CellMessage(new CellPath("SpaceManager"),
-                                                    utilizedSpace));
-                    } catch (NoRouteToCellException e) {
-                        error("FTP Door: can't send message to Space " +
-                              "Manager: " + e.getMessage());
-                    }
-                }
                 StorageInfo storageInfo = reply.getStorageInfo();
                 if (_tLog != null) {
                     _tLog.middle(storageInfo.getFileSize());
@@ -2980,22 +2952,6 @@ public abstract class AbstractFtpDoorV1
             //in the userprincipal spot
             startTlog(_transfer.path, "write");
             debug("FTP Door: store: _tLog begin done");
-            if (_space_reservation_enabled) {
-                info("FTP Door: store requesting space reservation info from Space Manager");
-                _transfer.state = "waiting for space reservation info";
-                _transfer.spaceReservationInfo =
-                    sendAndWait(new CellPath("SpaceManager"),
-                                new SpaceManagerGetInfoAndLockReservationByPathMessage(_transfer.path),
-                                _spaceManagerTimeout * 1000);
-                debug("FTP Door: reservation info from Space Manager for " +
-                      "store = " + _transfer.spaceReservationInfo);
-
-                if (_space_reservation_strict && _transfer.spaceReservationInfo == null) {
-                    throw new FTPCommandException(550, "Space retrieval failure or Space not reserved for this path: " + _transfer.path);
-                }
-            }  else {  // space reservation is not enabled
-                info("FTP Door: store: space reservation is turned off.");
-            }
 
             /* Check if the user has permission to create the file.
              */
@@ -3286,81 +3242,9 @@ public abstract class AbstractFtpDoorV1
             }
         }
 
-        /* Find a pool suitable for the transfer. If space reservation
-         * is used, then we already got a pool. Space reservation will
-         * only be used when writing.
-         */
-        if (_transfer.spaceReservationInfo != null) {
-            assert isWrite;
-
-            String value =
-                String.valueOf(_transfer.spaceReservationInfo.getAvailableLockedSize());
-            _transfer.pool = _transfer.spaceReservationInfo.getPool();
-            warn("FTP Door: setting storage info key " +
-                 "'use-preallocated-space' to " + value);
-            storageInfo.setKey("use-preallocated-space", value);
-
-            if (_space_reservation_strict) {
-                warn("FTP door: setting storage info key 'use-max-space' to " +
-                     value);
-                storageInfo.setKey("use-max-space", value);
-            }
-        } else {
-            _transfer.state = "waiting for pool selection by PoolManager";
-            VOInfo voInfo = null;
-            if(_pwdRecord != null ) {
-                String group = _pwdRecord.getGroup();
-                String role = _pwdRecord.getRole();
-                if(group != null && role != null) {
-                    voInfo =new VOInfo(group, role);
-                }
-            }
-            GFtpProtocolInfo protocolInfo =
-                new GFtpProtocolInfo("GFtp",
-                                     version,
-                                     0,
-                                     client.getAddress().getHostAddress(),
-                                     client.getPort(),
-                                     parallelStart,
-                                     parallelMin,
-                                     parallelMax,
-                                     bufSize, 0, 0,
-                                     voInfo);
-
-            PoolMgrSelectPoolMsg request;
-            if (isWrite) {
-                request = new PoolMgrSelectWritePoolMsg(_transfer.pnfsId,
-                                                        storageInfo,
-                                                        protocolInfo,
-                                                        0L);
-            } else {   //transfer: 'retrieve'
-                Subject subject = getSubject();
-                int allowedStates =
-                    _checkStagePermission.canPerformStaging(subject)
-                    ? RequestContainerV5.allStates
-                    : RequestContainerV5.allStatesExceptStage;
-                request = new PoolMgrSelectReadPoolMsg(_transfer.pnfsId,
-                                                       storageInfo,
-                                                       protocolInfo,
-                                                       0L,
-                                                       allowedStates);
-                request.setSubject(subject);
-            }
-            request.setPnfsPath(_transfer.path);
-            request = sendAndWait(new CellPath(_poolManager), request,
-                                  _poolManagerTimeout * 1000);
-
-            // use the updated StorageInfo from the PoolManager/SpaceManager
-            storageInfo = request.getStorageInfo();
-
-            _transfer.pool = request.getPoolName();
-        }
-
-        /* Construct protocol info. For backward compatibility, when
-         * an adapter could be used we put the adapter address into
-         * the protocol info (this behaviour is consistent with dCache
-         * 1.7).
-         */
+        // Find a pool suitable for the transfer.
+         
+        _transfer.state = "waiting for pool selection by PoolManager";
         VOInfo voInfo = null;
         if(_pwdRecord != null ) {
             String group = _pwdRecord.getGroup();
@@ -3369,7 +3253,59 @@ public abstract class AbstractFtpDoorV1
                 voInfo =new VOInfo(group, role);
             }
         }
-        GFtpProtocolInfo protocolInfo;
+        GFtpProtocolInfo protocolInfo =
+            new GFtpProtocolInfo("GFtp",
+                                 version,
+                                 0,
+                                 client.getAddress().getHostAddress(),
+                                 client.getPort(),
+                                 parallelStart,
+                                 parallelMin,
+                                 parallelMax,
+                                 bufSize, 0, 0,
+                                 voInfo);
+
+        PoolMgrSelectPoolMsg request;
+        if (isWrite) {
+            request = new PoolMgrSelectWritePoolMsg(_transfer.pnfsId,
+                                                    storageInfo,
+                                                    protocolInfo,
+                                                    0L);
+        } else {   //transfer: 'retrieve'
+            Subject subject = getSubject();
+            int allowedStates =
+                _checkStagePermission.canPerformStaging(subject)
+                ? RequestContainerV5.allStates
+                : RequestContainerV5.allStatesExceptStage;
+            request = new PoolMgrSelectReadPoolMsg(_transfer.pnfsId,
+                                                   storageInfo,
+                                                   protocolInfo,
+                                                   0L,
+                                                   allowedStates);
+            request.setSubject(subject);
+        }
+        request.setPnfsPath(_transfer.path);
+        request = sendAndWait(new CellPath(_poolManager), request,
+                              _poolManagerTimeout * 1000);
+
+        // use the updated StorageInfo from the PoolManager/SpaceManager
+        storageInfo = request.getStorageInfo();
+
+        _transfer.pool = request.getPoolName();
+
+        /* Construct protocol info. For backward compatibility, when
+         * an adapter could be used we put the adapter address into
+         * the protocol info (this behaviour is consistent with dCache
+         * 1.7).
+         */
+        voInfo = null;
+        if(_pwdRecord != null ) {
+            String group = _pwdRecord.getGroup();
+            String role = _pwdRecord.getRole();
+            if(group != null && role != null) {
+                voInfo =new VOInfo(group, role);
+            }
+        }
         if (_transfer.adapter != null) {
             protocolInfo =
                 new GFtpProtocolInfo("GFtp",
@@ -3559,20 +3495,6 @@ public abstract class AbstractFtpDoorV1
                 } catch (NoRouteToCellException e) {
                     error("FTP Door: Transfer error. Can't send message to " +
                           _transfer.pool + ": " + e.getMessage());
-                }
-            }
-
-            if (_transfer.spaceReservationInfo != null) {
-                try {
-                    SpaceManagerUnlockSpaceMessage unlockSpace =
-                        new SpaceManagerUnlockSpaceMessage
-                        (_transfer.spaceReservationInfo.getSpaceToken(),
-                         _transfer.spaceReservationInfo.getAvailableLockedSize());
-                    sendMessage(new CellMessage(new CellPath("SpaceManager"),
-                                                unlockSpace ));
-                } catch (NoRouteToCellException e) {
-                    error("FTP Door: abortTransfer: cannot send " +
-                          "message to SpaceManager: no route to cell.");
                 }
             }
 

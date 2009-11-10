@@ -604,59 +604,6 @@ public interface AbstractStorageElement extends Logger{
      */
 
 
-
-    /**
-     * This was used for explicit space reservation, not a new type of reservation
-     * Reserves spaceSize bytes of the space for storage of file with the path filename
-     * for future transfer from the host. <br>
-     * The storage will invoke methods of the callback interface
-     * to syncronously notify of the srm about the results of the reservation.
-     * @param user User ID
-     * @param spaceSize size of the space to be released
-     * @param reservationLifetime lifetime of reservation in milliseconds
-     * @param host - name of the host from which the client connects
-     * @param callbacks - inteface used by the storage  for feedback
-     *    to the srm about progress of reservation
-     * @see org.dcache.srm.ReserveSpaceCallbacks
-     */
-    public void reserveSpace(
-            SRMUser user,
-            long spaceSize,
-            long reservationLifetime,
-            String filename,
-            String host,
-            ReserveSpaceCallbacks callbacks);
-
-    /**
-     * This was used for explicit space reservation, not a new type of reservation
-     * Release spaceSize bytes of the reserved space identified with the token
-     * This method returns via callbacks the size of the
-     * space released in the "pool" (pool is a space storage part that can be
-     * utilized in a continuous manner. In case of dcache pool is a
-     * dcache pool) and the name (unique string  id) of the pool.
-     * @param user User ID
-     * @param spaceSize size of the space to be released
-     * @param reservationToken identifier of the space
-     * @param callbacks This interface is used for asyncronous notification of SRM of the
-     * various actions performed to release space in the storage
-     */
-    public void releaseSpace( SRMUser user, long spaceSize, String spaceToken, ReleaseSpaceCallbacks callbacks);
-
-    /**
-     * This was used for explicit space reservation, not a new type of reservation
-     * Release all of the space identified with the token
-     * This method returns via callbacks the size of the
-     * space released in the "pool" (pool is a space storage part that can be
-     * utilized in a continuous manner. In case of dcache pool is a
-     * dcache pool) and the name (unique string  id) of the pool.
-     * @param user User ID
-     * @param reservationToken identifier of the space
-     * @param callbacks This interface is used for asyncronous notification of SRM of the
-     * various actions performed to release space in the storage
-     */
-    public void releaseSpace( SRMUser user,  String spaceToken, ReleaseSpaceCallbacks callbacks);
-
-
     /** This method returns the information about the Storage Element
      * @param user User ID
      * @throws SRMException
