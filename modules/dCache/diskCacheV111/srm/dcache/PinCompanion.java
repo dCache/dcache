@@ -1,24 +1,3 @@
-// $Id$
-// $Log: not supported by cvs2svn $
-// Revision 1.6  2006/09/25 20:30:58  timur
-// modify srm companions and srm cell to use ThreadManager
-//
-// Revision 1.5  2005/08/15 18:19:43  timur
-// new PinManager first working version, needs more testing
-//
-// Revision 1.4  2005/03/11 21:17:28  timur
-// making srm compatible with cern tools again
-//
-// Revision 1.3  2005/01/25 05:17:31  timur
-// moving general srm stuff into srm repository
-//
-// Revision 1.2  2004/08/06 19:35:23  timur
-// merging branch srm-branch-12_May_2004 into the trunk
-//
-// Revision 1.1.2.3  2004/06/15 22:15:42  timur
-// added cvs logging tags and fermi copyright headers at the top
-//
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
