@@ -77,7 +77,7 @@ import diskCacheV111.vehicles.StorageInfo;
 public class PinManager extends AbstractCell implements Runnable  {
 
     private static final Logger logger = Logger.getLogger(PinManager.class);
-    
+
     @Option(
         name = "expirationFrequency",
         description = "Frequency of running pin expiration routine",
@@ -448,7 +448,7 @@ public class PinManager extends AbstractCell implements Runnable  {
         debug("forceUnpinning "+pin);
         Collection<PinRequest> pinRequests = pin.getRequests();
         if(pinRequests.isEmpty()) {
-            PinManagerJob job = 
+            PinManagerJob job =
                 new PinManagerJobImpl(PinManagerJobType.UNPIN,
                     null,
                     null,
@@ -463,7 +463,7 @@ public class PinManager extends AbstractCell implements Runnable  {
         else {
             for(PinRequest pinRequest: pinRequests) {
                 try {
-                    PinManagerJob job = 
+                    PinManagerJob job =
                             new PinManagerJobImpl(PinManagerJobType.UNPIN,
                             null,null,pin.getPnfsId(),0,null,null,null,null);
                     job.setPinRequestId(pinRequest.getId());
@@ -619,7 +619,7 @@ public class PinManager extends AbstractCell implements Runnable  {
             else if(pin.getState().equals(PinManagerPinState.INITIAL)) {
                 info("pinning will begin, store this request in pinRequestToJobMap");
                 pinRequestToJobMap.put(pinRequest.getId(),job);
-                
+
                 //start a new pinner
                 db.updatePin(pin.getId(),null,null,PinManagerPinState.PINNING);
                 db.commitDBOperations();
@@ -635,7 +635,8 @@ public class PinManager extends AbstractCell implements Runnable  {
                          allowedStates =
                                  _checkStagePermission.canPerformStaging(
                                  job.getAuthorizationRecord().getName(),
-                                 job.getAuthorizationRecord().getVoRole()) ?
+                                 (job.getAuthorizationRecord().getGroupLists()==null)?
+                                  "":job.getAuthorizationRecord().getGroupLists().get(0).getAttribute()) ?
                                      RequestContainerV5.allStates :
                                      RequestContainerV5.allStatesExceptStage;
                      } catch (PatternSyntaxException ex) {
@@ -816,7 +817,7 @@ public class PinManager extends AbstractCell implements Runnable  {
                 //otherwise we might not see the request in database
                 // if processing succeeds before the commit is executed
                 // (a race condition )
-                PinManagerJob job = 
+                PinManagerJob job =
                     new PinManagerJobImpl(PinManagerJobType.UNPIN,
                         null,
                         null,
@@ -973,7 +974,7 @@ public class PinManager extends AbstractCell implements Runnable  {
                     break;
                 }
             }
-            
+
             if(pinRequest == null) {
                 job.returnFailedResponse("extend: pin request with id = "+job.getPinRequestId()+
                         " is not found");
@@ -1150,7 +1151,7 @@ public class PinManager extends AbstractCell implements Runnable  {
         PnfsId pnfsId = unpinRequest.getPnfsId();
         Long srmRequestId = unpinRequest.getSrmRequestId();
         AuthorizationRecord authRec = unpinRequest.getAuthorizationRecord();
-        PinManagerJob job = 
+        PinManagerJob job =
                 new PinManagerJobImpl(PinManagerJobType.UNPIN,
                 cellMessage,
                 unpinRequest,
@@ -1167,7 +1168,7 @@ public class PinManager extends AbstractCell implements Runnable  {
         if(unpinRequest.getPinRequestId() != null){
             pinRequestId = Long.parseLong(unpinRequest.getPinRequestId());
         }
-        
+
         job.setPinRequestId(pinRequestId);
 
         if(pinRequestId == null && srmRequestId == null ) {
@@ -1229,7 +1230,7 @@ public class PinManager extends AbstractCell implements Runnable  {
                            "just deleting the request");
                     db.deletePinRequest(pinRequestId);
                 } else{
-                    
+
                     pinRequestIdLong = pinRequestId;
                     pinRequestToUnpinJobMap.put(
                             pinRequestIdLong,job);
@@ -1246,7 +1247,7 @@ public class PinManager extends AbstractCell implements Runnable  {
                     // if processing succeeds before the commit is executed
                     // (a race condition )
 
-                    PinManagerJob unpinJob = 
+                    PinManagerJob unpinJob =
                         new PinManagerJobImpl(PinManagerJobType.UNPIN,
                             null,
                             null,
@@ -1315,7 +1316,7 @@ public class PinManager extends AbstractCell implements Runnable  {
                 db.commitDBOperations();
             }
         }
-        
+
         db.initDBConnection();
         Long pinRequestIdLong = null;
         try {
@@ -1331,7 +1332,7 @@ public class PinManager extends AbstractCell implements Runnable  {
                      pin.getState().equals(PinManagerPinState.PINNING)) {
                     job.returnFailedResponse("pin request with id = "+job.getPinRequestId()+
                                 " is not pinned yet");
-                    
+
                     return;
                 } else {
                     job.returnFailedResponse("pin request with id = "+job.getPinRequestId()+
@@ -1372,7 +1373,7 @@ public class PinManager extends AbstractCell implements Runnable  {
             if(job.getPinManagerMessage() != null &&
                     job.getPinManagerMessage().getReplyRequired() ) {
                 pinRequestIdLong = new Long(job.getPinRequestId());
-                
+
                 pinRequestToUnpinJobMap.put(
                         pinRequestIdLong,job);
                 job.getPinManagerMessage().setReplyRequired(false);
@@ -1386,7 +1387,7 @@ public class PinManager extends AbstractCell implements Runnable  {
             // otherwise we might not see the request in database
             // if processing succeeds before the commit is executed
             // (a race condition )
-            PinManagerJob unpinJob = 
+            PinManagerJob unpinJob =
                 new PinManagerJobImpl(PinManagerJobType.UNPIN,
                     null,
                     null,
@@ -1403,7 +1404,7 @@ public class PinManager extends AbstractCell implements Runnable  {
             db.rollbackDBOperations();
             job.returnFailedResponse(pdbe);
             if(job.getPinManagerMessage()  != null) {
-                
+
                 if(pinRequestIdLong != null) {
                     job.getPinManagerMessage().setReplyRequired(true);
                     pinRequestToUnpinJobMap.remove(pinRequestIdLong);
@@ -1532,7 +1533,7 @@ public class PinManager extends AbstractCell implements Runnable  {
 
         for(PinRequest pinRequest:expiredPinRequests) {
            debug("expiring pin request "+pinRequest);
-           PinManagerJob job = 
+           PinManagerJob job =
                    new PinManagerJobImpl(PinManagerJobType.UNPIN,
                    null,null,pinRequest.getPin().getPnfsId(),
                    0,pinRequest.getAuthorizationRecord(),null,null,null);
@@ -1866,7 +1867,7 @@ public class PinManager extends AbstractCell implements Runnable  {
         // in the new pool
         db.updatePin(dstPin.getId(),null,null,
         PinManagerPinState.UNPINNING);
-        PinManagerJob unpinJob = 
+        PinManagerJob unpinJob =
             new PinManagerJobImpl(PinManagerJobType.UNPIN,
                 null,
                 null,
@@ -2096,7 +2097,7 @@ public class PinManager extends AbstractCell implements Runnable  {
                 pinManagerMessage.setPinRequestId(pinRequestId.toString());
             }
         }
-        
+
         public void setReplyRequired(boolean isRequired) {
             if(pinManagerMessage != null) {
                 pinManagerMessage.setReplyRequired(isRequired);
@@ -2116,12 +2117,12 @@ public class PinManager extends AbstractCell implements Runnable  {
             }
 
         }
-        
+
         public void returnFailedResponse(Object reason) {
             failResponse(reason,1);
             returnResponse();
         }
-        
+
         public void returnResponse( ) {
             info("returnResponse");
              state = PinManagerJobState.COMPLETED;

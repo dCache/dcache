@@ -76,6 +76,8 @@ public class CheckStagePermission {
         if ( fileNeedsRereading() )
             rereadConfig();
 
+        if (fqan==null) fqan="";
+
         return userMatchesPredicates(dn, fqan);
     }
 
