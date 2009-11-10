@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+
+
+  <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    <description>Imported configuration data</description>
+    <property name="location" value="domaincontext:"/>
+    <property name="properties">
+      <value>
+        webdavPnfsTimeout=120000
+        webdavPoolManagerTimeout=300000
+        webdavPoolTimeout=10000
+        webdavPort=80
+        webdavRootPath=/
+        webdavAllowedPaths=/
+        webdavReadOnly=true
+        webdavAllowAnonymous=true
+        webdavIoQueue=
+        pnfsmanager=PnfsManager
+        poolmanager=PoolManager
+        loginBrokerUpdateTime=30
+        loginBrokerUpdateThreshold=0.1
+        loginBroker=LoginBroker
+      </value>
+    </property>
+  </bean>
+
+<!--
+  <bean id="milton-resource-factory"
+        class="com.ettrema.http.fs.FileSystemResourceFactory">
+    <property name="root" value="/"/>
+  </bean>
+-->
+
+  <bean id="pnfs-stub" class="org.dcache.cells.CellStub">
+    <description>PnfsManager communication stub</description>
+    <property name="destination" value="${pnfsmanager}"/>
+    <property name="timeout" value="${webdavPnfsTimeout}"/>
+  </bean>
+
+  <bean id="pool-manager-stub" class="org.dcache.cells.CellStub">
+    <description>PoolManager communication stub</description>
+    <property name="destination" value="${poolmanager}"/>
+    <property name="timeout" value="${webdavPoolManagerTimeout}"/>
+  </bean>
+
+  <bean id="pool-stub" class="org.dcache.cells.CellStub">
+    <description>Pool communication stub</description>
+    <property name="timeout" value="${webdavPoolTimeout}"/>
+  </bean>
+
+  <bean id="list-handler" class="org.dcache.util.list.ListDirectoryHandler">
+    <description>Client stub for directory listing</description>
+    <constructor-arg>
+      <bean class="diskCacheV111.util.PnfsHandler">
+        <constructor-arg ref="pnfs-stub"/>
+      </bean>
+    </constructor-arg>
+  </bean>
+
+  <bean id="scheduled-thread-pool"
+        class="java.util.concurrent.Executors"
+        factory-method="newSingleThreadScheduledExecutor"
+        destroy-method="shutdown">
+    <description>Thread pool for scheduled activities</description>
+  </bean>
+
+  <bean id="lb" class="org.dcache.util.LoginBrokerHandler"
+        init-method="start"
+        destroy-method="stop">
+    <description>Registers the door with a LoginBroker</description>
+    <property name="executor" ref="scheduled-thread-pool"/>
+    <property name="updateTime" value="${loginBrokerUpdateTime}"/>
+    <property name="updateThreshold" value="${loginBrokerUpdateThreshold}"/>
+    <property name="protocolEngine" value="org.dcache.webdav.DcacheResourceFactory"/>
+    <property name="protocolVersion" value="1.1"/>
+    <property name="protocolFamily" value="http"/>
+    <property name="port" value="${webdavPort}"/>
+    <property name="loginBroker">
+      <bean class="dmg.cells.nucleus.CellPath">
+        <constructor-arg value="${loginBroker}"/>
+      </bean>
+    </property>
+  </bean>
+
+  <bean id="security-filter" class="org.dcache.webdav.SecurityFilter">
+    <description>Handles authorization for the WebDAV door</description>
+    <property name="readOnly" value="${webdavReadOnly}"/>
+    <property name="allowAnonymous" value="${webdavAllowAnonymous}"/>
+  </bean>
+
+  <bean id="response-handler"
+        class="com.bradmcevoy.http.DefaultResponseHandler">
+    <description>Generates WebDAV responses</description>
+  </bean>
+
+  <bean id="resource-factory" class="org.dcache.webdav.DcacheResourceFactory"
+        init-method="init">
+    <description>Exposes dCache resources to Milton WebDAV library</description>
+    <property name="securityManager">
+      <bean class="org.dcache.webdav.NullSecurityManager"/>
+    </property>
+    <property name="pnfsStub" ref="pnfs-stub"/>
+    <property name="poolManagerStub" ref="pool-manager-stub"/>
+    <property name="poolStub" ref="pool-stub"/>
+    <property name="listHandler" ref="list-handler"/>
+    <property name="rootPath" value="${webdavRootPath}"/>
+    <property name="allowedPaths" value="${webdavAllowedPaths}"/>
+    <property name="ioQueue" value="${webdavIoQueue}"/>
+  </bean>
+
+  <bean id="milton" class="com.bradmcevoy.http.HttpManager">
+    <description>Implementation of the WebDAV protocol</description>
+    <constructor-arg ref="resource-factory"/>
+    <constructor-arg ref="response-handler"/>
+    <property name="filters">
+      <list>
+        <ref bean="security-filter"/>
+      </list>
+    </property>
+  </bean>
+
+  <bean id="jetty" class="org.eclipse.jetty.server.Server"
+        init-method="start" destroy-method="stop">
+
+    <description>Embedded HTTP server</description>
+
+    <property name="connectors">
+      <list>
+        <bean id="http-connector"
+              class="org.eclipse.jetty.server.nio.SelectChannelConnector">
+          <property name="port" value="${webdavPort}"/>
+        </bean>
+        <!--bean id="https-connector"
+              class="org.eclipse.jetty.security.SslSelectChannelConnector">
+          <property name="port" value="443"/>
+          <property name="keystore" value="/opt/d-cache/etc/keystore"/>
+          <property name="password" value="dcache"/>
+          <property name="truststore" value="/opt/d-cache/etc/truststore"/>
+          <property name="trustPassword" value="dcache"/>
+          <property name="wantClientAuth" value="true"/>
+        </bean-->
+      </list>
+    </property>
+
+    <property name="handler">
+      <bean id="handlers" class="org.eclipse.jetty.server.handler.HandlerList">
+        <property name="handlers">
+          <list>
+            <bean class="org.dcache.webdav.MiltonHandler">
+              <property name="httpManager" ref="milton"/>
+            </bean>
+            <bean class="org.eclipse.jetty.server.handler.DefaultHandler"/>
+          </list>
+        </property>
+      </bean>
+    </property>
+  </bean>
+</beans>

@@ -1,0 +1,117 @@
+package org.dcache.webdav;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Collections;
+import java.io.OutputStream;
+import java.io.IOException;
+
+import com.bradmcevoy.http.Resource;
+import com.bradmcevoy.http.CollectionResource;
+import com.bradmcevoy.http.GetableResource;
+import com.bradmcevoy.http.DeletableResource;
+import com.bradmcevoy.http.MakeCollectionableResource;
+import com.bradmcevoy.http.Auth;
+import com.bradmcevoy.http.Range;
+import com.bradmcevoy.http.exceptions.NotAuthorizedException;
+import com.bradmcevoy.http.exceptions.ConflictException;
+
+import diskCacheV111.util.FsPath;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
+
+import org.dcache.vehicles.FileAttributes;
+
+/**
+ * Exposes dCache directories as resources in the Milton WebDAV
+ * framework.
+ */
+public class DcacheDirectoryResource
+    extends DcacheResource
+    implements CollectionResource, GetableResource, DeletableResource,
+               MakeCollectionableResource
+{
+    public DcacheDirectoryResource(DcacheResourceFactory factory,
+                                   FsPath path, FileAttributes attributes)
+    {
+        super(factory, path, attributes);
+    }
+
+    @Override
+    public Resource child(String childName)
+    {
+        FsPath fchild = new FsPath(_path, childName);
+        return _factory.getResource(fchild);
+    }
+
+    @Override
+    public List<? extends Resource> getChildren()
+    {
+        try {
+            return _factory.list(_path);
+        } catch (FileNotFoundCacheException e) {
+            return Collections.emptyList();
+        } catch (CacheException e) {
+            //TODO
+            throw new RuntimeException(e);
+        } catch (InterruptedException e) {
+            //TODO
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void sendContent(OutputStream out, Range range,
+                            Map<String,String> params, String contentType)
+        throws IOException, NotAuthorizedException
+    {
+        try {
+            _factory.list(_path, out);
+        } catch (CacheException e) {
+            //TODO
+            throw new RuntimeException(e);
+        } catch (InterruptedException e) {
+            //TODO
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public Long getMaxAgeSeconds(Auth auth)
+    {
+        return null;
+    }
+
+    @Override
+    public String getContentType(String accepts)
+    {
+        return "text/html";
+    }
+
+    @Override
+    public Long getContentLength()
+    {
+        return null;
+    }
+
+    @Override
+    public void delete()
+    {
+        try {
+            _factory.deleteDirectory(_attributes.getPnfsId(), _path);
+        } catch (CacheException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public CollectionResource createCollection(String newName)
+        throws NotAuthorizedException, ConflictException
+    {
+        try {
+            return _factory.makeDirectory(new FsPath(_path, newName));
+        } catch (CacheException e) {
+            throw new RuntimeException(e);
+        }
+    }
+}

@@ -436,8 +436,8 @@ public class PnfsHandler
         deletePnfsEntry(pnfsid, path, EnumSet.allOf(FileType.class));
     }
 
-    private void deletePnfsEntry(PnfsId pnfsid, String path,
-                                 Set<FileType> allowed)
+    public void deletePnfsEntry(PnfsId pnfsid, String path,
+                                Set<FileType> allowed)
         throws CacheException
     {
         pnfsRequest(new PnfsDeleteEntryMessage(pnfsid, path, allowed));

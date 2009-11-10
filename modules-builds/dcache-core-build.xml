@@ -91,6 +91,7 @@
         <fileset dir="${libDir}/activemq/" includes="*.jar" />
         <fileset dir="${libDir}/slf4j/" includes="*.jar" />
         <fileset dir="${libDir}/servlet-api/" includes="*.jar" />
+        <fileset dir="${libDir}/milton/" includes="*.jar" />
         <fileset dir="${libDir}/jetty/" includes="*.jar" />
         <pathelement location="${libDir}/smc/statemap.jar" />
         <pathelement location="${libDir}/persistence/persistence-api-1.0.jar" />
@@ -399,6 +400,7 @@
         <copy file="${dcache.src}/diskCacheV111/config/chimera.batch" todir="${server.bin.dir}/config" />
         <copy file="${dcache.src}/diskCacheV111/config/nfsv41.batch" todir="${server.bin.dir}/config" />
         <copy file="${dcache.src}/diskCacheV111/config/info.batch" todir="${server.bin.dir}/config" />
+        <copy file="${dcache.src}/diskCacheV111/config/webdav.batch" todir="${server.bin.dir}/config" />
         <copy file="${dcache.src}/diskCacheV111/config/webadmin.batch" todir="${server.bin.dir}/config" />
         <!--<copy file="${dcache.src}/diskCacheV111/config/aclcell.batch" todir="${server.bin.dir}/config" /> -->
 
@@ -529,6 +531,14 @@
         <mkdir dir="${server.bin.dir}/classes/jetty/" />
         <copy todir="${server.bin.dir}/classes/jetty">
             <fileset dir="${libDir}/jetty/">
+                <include name="*.jar" />
+            </fileset>
+        </copy>
+
+        <!-- Milton -->
+        <mkdir dir="${server.bin.dir}/classes/milton/" />
+        <copy todir="${server.bin.dir}/classes/milton">
+            <fileset dir="${libDir}/milton/">
                 <include name="*.jar" />
             </fileset>
         </copy>

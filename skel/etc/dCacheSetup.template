@@ -1334,3 +1334,73 @@ statisticsLocation=${ourHomeDir}/statistics
 #
 #stageConfigurationFilePath=${ourHomeDir}/config/StageConfiguration.conf
 #stagePolicyEnforcementPoint=doors
+
+
+
+#  -----------------------------------------------------------------------
+#       WebDAV 
+#  -----------------------------------------------------------------------
+
+#  ---- PnfsManager timeout
+#
+#   Specifies the timeout in milliseconds for communication with the
+#   PnfsManager.
+#
+#webdavPnfsTimeout=120000
+
+#  ---- PoolManager timeout
+#
+#   Specifies the timeout in milliseconds for communication with the
+#   PoolManager.
+#
+#webdavPoolManagerTimeout=300000
+
+#  ---- Pool timeout
+#
+#   Specifies the timeout in milliseconds for communication with
+#   pools.
+#
+#webdavPoolTimeout=10000
+
+#  ---- TCP port for WebDAV door
+#
+#   Specifies the TCP port on which the WebDAV door accepts connections.
+#
+#webdavPort=80
+
+#  ---- Root path of WebDAV door
+#
+#   Specifies the root directory which is exposed through the WebDAV
+#   door.
+# 
+#webdavRootPath=/
+
+#  ---- Paths to which are accessible throuh WebDAV
+#
+#   Describes which directories are accessible through
+#   WebDAV. Multiple directories are separates by a colon.
+#
+#webdavAllowedPaths=/
+
+#  ---- Paths to which are accessible throuh WebDAV
+#
+#   When set to true, only read only operations are allowed through
+#   WebDAV.
+#
+#webdavReadOnly=true
+
+#  ---- Whether anonymous access is allowed through WebDAV
+#
+#   When set to true, anonymous access to world accessible files and
+#   directories is allowed. When set to false, authentication is
+#   required.
+#
+#webdavAllowAnonymous=true
+
+#  ---- Mover queue
+#
+#   The mover queue on the pool to which WebDAV transfers will be
+#   scheduled.
+#
+#webdavIoQueue=
+

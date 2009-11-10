@@ -24,6 +24,12 @@ public class FsPath {
         this(path._list);
     }
 
+    public FsPath(FsPath path, String child)
+    {
+        this(path._list);
+        addSingleItem(child);
+    }
+
     public FsPath(List<String> list)
     {
         _list = new ArrayList(list);
@@ -98,6 +104,19 @@ public class FsPath {
         return (o instanceof FsPath) && _list.equals(((FsPath) o)._list);
     }
 
+    /**
+     * Returns the simple name of the path, that is, the last path
+     * element.
+     */
+    public String getName()
+    {
+        if (_list.isEmpty()) {
+            return "";
+        } else {
+            return _list.get(_list.size() - 1);
+        }
+    }
+
     public FsPath getParent()
     {
         if (isEmpty()) {
@@ -119,7 +138,7 @@ public class FsPath {
         }
         return true;
     }
-    
+
     /**
      * Returns the parent path of a path.
      */

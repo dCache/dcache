@@ -1,0 +1,3 @@
+create org.dcache.cells.UniversalSpringCell ${0} \
+   "classpath:org/dcache/webdav/webdav.xml \
+    -export "
