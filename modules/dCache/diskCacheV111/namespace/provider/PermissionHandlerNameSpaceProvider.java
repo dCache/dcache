@@ -266,13 +266,15 @@ public class PermissionHandlerNameSpaceProvider
             File file = new File(path);
             File parent = file.getParentFile();
 
-            PnfsId parentId =
-                super.pathToPnfsid(subject, parent.toString(), true);
+            if (parent != null) {
+                PnfsId parentId =
+                    super.pathToPnfsid(subject, parent.toString(), true);
 
-            FileAttributes attributes =
-                getFileAttributesForPermissionHandler(parentId);
-            if (_handler.canLookup(subject, attributes) != ACCESS_ALLOWED) {
-                throw new PermissionDeniedCacheException("Access denied: " + path);
+                FileAttributes attributes =
+                    getFileAttributesForPermissionHandler(parentId);
+                if (_handler.canLookup(subject, attributes) != ACCESS_ALLOWED) {
+                    throw new PermissionDeniedCacheException("Access denied: " + path);
+                }
             }
         }
 
