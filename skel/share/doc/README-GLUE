@@ -185,20 +185,27 @@ dCache, which may prevent clients from working correctly.
 The Java-based info provider has two configuration files and a
 symbolic link within GIP.  They are:
 
-  o    file: /opt/lcg/var/gip/ldif/lcg-info-static-se.conf
+  o    file: /opt/lcg/var/gip/ldif/lcg-info-static-SE.ldif
 
-  o    file: /opt/lcg/var/gip/ldif/lcg-info-static-dse.conf
+  o    file: /opt/lcg/var/gip/ldif/lcg-info-static-dSE.ldif
 
   o    symbolic link: /opt/glite/etc/gip/plugin to
        /opt/d-cache/jobs/infoDynamicSE-plugin-dcache.
 
-The two files (lcg-info-static-se.conf and lcg-info-static-dse.conf)
+The two files (lcg-info-static-SE.ldif and lcg-info-static-dSE.ldif)
 may appear within a different directory if the static_dir variable is
 configured.  You can find the static_dir variable in either
 /opt/glite/etc/gip/glite-info-generic.conf or
 /opt/lcg/etc/lcg-info-generic.conf
 
 Delete the above three entries.
+
+The directory defined in the static_dir variable
+(/opt/lcg/var/gip/ldif by default) may contain other static LDIF
+entries that are relics of previous info-providers.  These may have
+filenames like static-file-SE.ldif.
+
+Delete any files that contain information about dCache.
 
 The infoProvider component of dCache, located within the
 infoProviderDomain, collects information for the
