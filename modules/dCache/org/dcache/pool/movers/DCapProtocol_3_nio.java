@@ -35,6 +35,7 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.util.Checksum;
 import diskCacheV111.util.ChecksumFactory;
+import java.util.UUID;
 
 
 public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
@@ -447,7 +448,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                 new  InetSocketAddress(InetAddress.getLocalHost(),
                                        pcp.getLocalPort());
 
-            byte[] challenge = (getCellName() + "@" + getCellDomainName() + ":" +_lastTransferred).getBytes();
+            byte[] challenge = UUID.randomUUID().toString().getBytes();
             PoolPassiveIoFileMessage msg = new PoolPassiveIoFileMessage("pool", socketAddress, challenge);
             msg.setId(dcap.getSessionId());
             say("waiting for client to connect ("+
