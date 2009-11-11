@@ -634,13 +634,13 @@ public abstract class TransferManager extends CellAdapter {
 		if( isWrite ) {
 			poolMessage =         new PoolAcceptFileMessage(
 				pool,
-				pnfsId.toString(),
+				pnfsId,
 				protocolInfo,
 				storageInfo);
 		} else {
 			poolMessage =        new PoolDeliverFileMessage(
 				pool,
-				pnfsId.toString() ,
+				pnfsId,
 				protocolInfo ,
 				storageInfo     );
 		}

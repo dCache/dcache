@@ -545,13 +545,13 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 			(PoolIoFileMessage)
 			new PoolAcceptFileMessage(
 				pool,
-				pnfsId.toString() ,
+				pnfsId,
 				protocol_info ,
 				storageInfo     ):
 			(PoolIoFileMessage)
 			new PoolDeliverFileMessage(
 				pool,
-				pnfsId.toString() ,
+				pnfsId,
 				protocol_info ,
 				storageInfo     );
 

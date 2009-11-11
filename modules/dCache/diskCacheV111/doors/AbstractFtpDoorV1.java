@@ -4003,12 +4003,12 @@ public abstract class AbstractFtpDoorV1
         PoolIoFileMessage poolMessage;
         if (isWrite) {
             poolMessage = new PoolAcceptFileMessage(transfer.pool,
-                                                    transfer.pnfsId.toString(),
+                                                    transfer.pnfsId,
                                                     protocolInfo,
                                                     storageInfo);
         } else {
             poolMessage = new PoolDeliverFileMessage(transfer.pool,
-                                                     transfer.pnfsId.toString(),
+                                                     transfer.pnfsId,
                                                      protocolInfo,
                                                      storageInfo);
         }

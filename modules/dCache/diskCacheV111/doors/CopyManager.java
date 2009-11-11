@@ -995,7 +995,7 @@ public class CopyManager extends CellAdapter {
         {
             poolMessage =         new PoolAcceptFileMessage(
                 pool,
-                pnfsId.toString() ,
+                pnfsId ,
                 protocolInfo ,
                 storageInfo     );
         }
@@ -1003,7 +1003,7 @@ public class CopyManager extends CellAdapter {
         {
             poolMessage =        new PoolDeliverFileMessage(
                 pool,
-                pnfsId.toString() ,
+                pnfsId ,
                 protocolInfo ,
                 storageInfo     );
         }

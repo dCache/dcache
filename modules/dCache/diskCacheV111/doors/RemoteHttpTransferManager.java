@@ -805,7 +805,7 @@ public class RemoteHttpTransferManager extends CellAdapter {
         {
             poolMessage =         new PoolAcceptFileMessage(
                 pool,
-                pnfsId.toString() ,
+                pnfsId,
                 protocolInfo ,
                 storageInfo     );
         }
@@ -813,7 +813,7 @@ public class RemoteHttpTransferManager extends CellAdapter {
         {
             poolMessage =        new PoolDeliverFileMessage(
                 pool,
-                pnfsId.toString() ,
+                pnfsId ,
                 protocolInfo ,
                 storageInfo     );
         }

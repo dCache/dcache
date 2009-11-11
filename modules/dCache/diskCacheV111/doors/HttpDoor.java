@@ -414,14 +414,14 @@ public class HttpDoor extends CellAdapter  implements Runnable
          (PoolIoFileMessage)
          new PoolAcceptFileMessage(
                               pool,
-                              pnfsId.toString() ,
+                              pnfsId,
                               protocolInfo ,
                   storageInfo     )
          :
          (PoolIoFileMessage)
          new PoolDeliverFileMessage(
                               pool,
-                              pnfsId.toString() ,
+                              pnfsId,
                               protocolInfo ,
                   storageInfo     );
 

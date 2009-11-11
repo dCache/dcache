@@ -406,8 +406,8 @@ public class XrootdDoor
         _log.info("Trying pool " + pool + " for " + (isWrite ? "Write" : "Read"));
         PoolIoFileMessage poolMessage =
             isWrite
-            ? (PoolIoFileMessage) new PoolAcceptFileMessage(pool, pnfsId.toString(), protocolInfo, storageInfo)
-            : (PoolIoFileMessage) new PoolDeliverFileMessage(pool, pnfsId.toString(), protocolInfo, storageInfo);
+            ? (PoolIoFileMessage) new PoolAcceptFileMessage(pool, pnfsId, protocolInfo, storageInfo)
+            : (PoolIoFileMessage) new PoolDeliverFileMessage(pool, pnfsId, protocolInfo, storageInfo);
 
 
         // specify the desired mover queue
