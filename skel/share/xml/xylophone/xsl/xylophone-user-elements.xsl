@@ -374,16 +374,32 @@
   <xsl:param name="path-stack"/>
   <xsl:param name="list-item"/>
 
-  <!-- Expand terms as a result tree fragment with term elements -->
-  <xsl:variable name="sumTerms">
-    <xsl:apply-templates select="term" mode="eval-sum-terms">
-      <xsl:with-param name="path-stack" select="$path-stack"/>
-      <xsl:with-param name="depth" select="$depth"/>
-      <xsl:with-param name="list-item" select="$list-item"/>
-    </xsl:apply-templates>
-  </xsl:variable>
+  <xsl:choose>
+    <xsl:when test="@path">
+      <xsl:call-template name="sum-path">
+	<xsl:with-param name="rel-path">
+	  <xsl:call-template name="path-stack-find-path">
+	    <xsl:with-param name="path-stack" select="$path-stack"/>
+	    <xsl:with-param name="depth" select="$depth"/>
+	  </xsl:call-template>
+	</xsl:with-param>
+      </xsl:call-template>
 
-  <xsl:value-of select="sum(exsl:node-set($sumTerms)/term)"/>
+    </xsl:when>
+
+    <xsl:otherwise>
+      <!-- Expand terms as a result tree fragment with term elements -->
+      <xsl:variable name="sumTerms">
+	<xsl:apply-templates select="term" mode="eval-sum-terms">
+	  <xsl:with-param name="path-stack" select="$path-stack"/>
+	  <xsl:with-param name="depth" select="$depth"/>
+	  <xsl:with-param name="list-item" select="$list-item"/>
+	</xsl:apply-templates>
+      </xsl:variable>
+
+      <xsl:value-of select="sum(exsl:node-set($sumTerms)/term)"/>
+    </xsl:otherwise>
+  </xsl:choose>
 </xsl:template>
 
 
