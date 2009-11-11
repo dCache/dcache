@@ -4,6 +4,8 @@
 
 package diskCacheV111.util;
 
+import java.util.Arrays;
+
 public class DCapProrocolChallenge {
 
 	private int _sessionID;
@@ -22,32 +24,22 @@ public class DCapProrocolChallenge {
      *
      */
 
-	@Override
-    public boolean equals(Object otherChallenge) {
+    @Override
+    public boolean equals(Object other) {
 
-		boolean equals = false;
+        if( other == this) return true;
 
-		if( otherChallenge instanceof  DCapProrocolChallenge ) {
-			if(_sessionID == ((DCapProrocolChallenge)otherChallenge).session() ) {
-				if( _challenge.length == ((DCapProrocolChallenge)otherChallenge).challenge().length ) {
-					byte[] challengeToCompare = ((DCapProrocolChallenge)otherChallenge).challenge();
-					for(int i = 0; i < _challenge.length; i++) {
-						if(_challenge[i] != challengeToCompare[i] ) {
-							return false;
-						}
-					}
-					equals = true;
-				}
-			}
-		}
+        if ( !(other instanceof DCapProrocolChallenge)) return false;
 
-		return equals;
+        DCapProrocolChallenge otherChallenge = (DCapProrocolChallenge) other;
 
-	}
+        return _sessionID == otherChallenge.session() &&
+            Arrays.equals(_challenge, otherChallenge.challenge());
+    }
 
     @Override
     public int hashCode() {
-        return this.toString().hashCode();
+        return Arrays.hashCode(_challenge);
     }
 
 	public int session() { return _sessionID; }
