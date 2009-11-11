@@ -3330,7 +3330,7 @@ public class Storage
                 accessLatency,
                 description,
                 callbacks,
-                this);
+                _spaceManagerStub);
     }
 
 
@@ -3351,7 +3351,7 @@ public class Storage
                 longSpaceToken,
                 releaseSizeInBytes,
                 callbacks,
-                this);
+                _spaceManagerStub);
     }
 
     public void srmMarkSpaceAsBeingUsed(SRMUser user,
@@ -3380,7 +3380,7 @@ public class Storage
                 useLifetime,
                 overwrite,
                 callbacks,
-                this);
+                _spaceManagerStub);
     }
 
     public void srmUnmarkSpaceAsBeingUsed(
@@ -3403,7 +3403,7 @@ public class Storage
                 longSpaceToken,
                 fsPath.toString(),
                 callbacks,
-                this);
+                _spaceManagerStub);
     }
 
     /**
