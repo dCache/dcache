@@ -60,9 +60,19 @@
   <xsl:param name="path"/>
   <xsl:param name="default"/>
 
-  <xsl:variable name="full-path" select="concat(&quot;document('&quot;,$xml-src-uri,&quot;')/&quot;,$path)"/>
+  <!-- We allow the XML src to be overwritten with the xml-src-uri attribute -->
+  <xsl:variable name="src">
+    <xsl:choose>
+      <xsl:when test="@xml-src-uri">
+       <xsl:value-of select="@xml-src-uri"/>
+      </xsl:when>
+      <xsl:otherwise>
+      <xsl:value-of select="$xml-src-uri"/>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:variable>
 
-
+  <xsl:variable name="full-path" select="concat(&quot;document('&quot;,$src,&quot;')/&quot;,$path)"/>
 
   <!-- Check whether the path points to something valid -->
   <xsl:variable name="valid-path">
@@ -137,6 +147,18 @@
   <xsl:param name="path"/>
   <xsl:param name="rel-path"/>
 
+  <!-- We allow the XML src to be overwritten with the xml-src-uri attribute -->
+  <xsl:variable name="src">
+   <xsl:choose>
+      <xsl:when test="@xml-src-uri">
+	<xsl:value-of select="@xml-src-uri"/>
+      </xsl:when>
+      <xsl:otherwise>
+	<xsl:value-of select="$xml-src-uri"/>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:variable>
+
   <!-- Calculate the absolute path -->
   <xsl:variable name="abs-path">
     <xsl:call-template name="combine-paths">
@@ -145,7 +167,7 @@
     </xsl:call-template>
   </xsl:variable>
 
-  <xsl:variable name="full-path" select="concat('document($xml-src-uri)/',$abs-path)"/>
+  <xsl:variable name="full-path" select="concat('document($src)/',$abs-path)"/>
 
   <xsl:choose>
     <!-- Support for Saxon 6.5.5 -->
@@ -161,6 +183,64 @@
     <!-- Support for EXSLT-supporting processors (e.g., xsltproc, xalan) -->
     <xsl:when test="function-available('dyn:evaluate')">
       <xsl:value-of select="count(dyn:evaluate($full-path))"/>
+    </xsl:when>
+
+    <!-- Flag this as a problem -->
+    <xsl:otherwise>
+      <xsl:message>You are using an XSLT processor without evaluate() support.</xsl:message>
+    </xsl:otherwise>
+  </xsl:choose>
+
+</xsl:template>
+
+
+<!--+
+    |
+    |  Path-based sum
+    |
+    |  Support for calculating the sum of elements selecting by specifying an XPath.
+    |
+    +-->
+<xsl:template name="sum-path">
+  <xsl:param name="rel-path"/>
+
+  <!-- We allow the XML src to be overwritten with the xml-src-uri attribute -->
+  <xsl:variable name="src">
+    <xsl:choose>
+      <xsl:when test="@xml-src-uri">
+	<xsl:value-of select="@xml-src-uri"/>
+      </xsl:when>
+      <xsl:otherwise>
+	<xsl:value-of select="$xml-src-uri"/>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:variable>
+
+  <!-- Calculate the absolute path -->
+  <xsl:variable name="abs-path">
+    <xsl:call-template name="combine-paths">
+      <xsl:with-param name="path" select="@path"/>
+      <xsl:with-param name="rel-path" select="$rel-path"/>
+    </xsl:call-template>
+  </xsl:variable>
+
+  <!-- Full path includes the external document reference -->
+  <xsl:variable name="full-path" select="concat('document($src)',$abs-path)"/>
+
+  <xsl:choose>
+    <!-- Support for Saxon 6.5.5 -->
+    <xsl:when test="function-available('saxon655:evaluate')">
+      <xsl:value-of select="sum(saxon655:evaluate($full-path))"/>
+    </xsl:when>
+    
+    <!-- Support for Saxon v9 -->
+    <xsl:when test="function-available('saxon9:evaluate')">
+      <xsl:value-of select="sum(saxon9:evaluate($full-path))"/>
+    </xsl:when>
+
+    <!-- Support for EXSLT-supporting processors (e.g., xsltproc, xalan) -->
+    <xsl:when test="function-available('dyn:evaluate')">
+      <xsl:value-of select="sum(dyn:evaluate($full-path))"/>
     </xsl:when>
 
     <!-- Flag this as a problem -->
