@@ -2086,7 +2086,7 @@ public class Storage
                 (AuthorizationRecord)user,
                 actualPnfsPath,
                 callbacks,
-                this,
+                _pnfsStub,
                 config.isRecursiveDirectoryCreation(),
                 overwrite);
     }

@@ -74,11 +74,9 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.srm.dcache;
 
-import dmg.cells.nucleus.CellAdapter;
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellMessageAnswerable;
-
+import org.dcache.cells.CellStub;
+import org.dcache.cells.MessageCallback;
+import org.dcache.cells.ThreadManagerMessageCallback;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 import org.dcache.auth.AuthorizationRecord;
@@ -89,14 +87,9 @@ import org.dcache.srm.util.Constants;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
 import diskCacheV111.vehicles.PnfsCreateDirectoryMessage;
-import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
-import diskCacheV111.vehicles.PoolSetStickyMessage;
-import diskCacheV111.vehicles.Message;
-import diskCacheV111.vehicles.DCapProtocolInfo;
+import diskCacheV111.vehicles.PnfsMessage;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.FileType;
-
-import java.net.InetAddress;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -104,24 +97,15 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.Date;
-
+import org.dcache.auth.Subjects;
 import org.apache.log4j.Logger;
 
 /**
  *
  * @author  timur
  */
-/**
- * this class does all the dcache specific work needed for staging and pinning a
- * file represented by a path. It notifies the caller about each next stage
- * of the process via a StageAndPinCompanionCallbacks interface.
- * Boolean functions of the callback interface need to return true in order for
- * the process to continue
- * The code was added that performs the automatic creation of the directories.
- *
- */
 
-public class PutCompanion implements CellMessageAnswerable
+public class PutCompanion implements MessageCallback<PnfsMessage>
 {
     private final static Logger _log = Logger.getLogger(PutCompanion.class);
 
@@ -138,9 +122,8 @@ public class PutCompanion implements CellMessageAnswerable
     private static final int PASSIVELY_WAITING_FOR_DIRECTORY_INFO_MESSAGE=9;
     private volatile int state=INITIAL_STATE;
 
-    private CellAdapter cell;
+    private CellStub pnfsStub;
     private PrepareToPutCallbacks callbacks;
-    private CellMessage request = null;
     private String path;
     private boolean recursive_directory_creation;
     private List pathItems=null;
@@ -157,12 +140,12 @@ public class PutCompanion implements CellMessageAnswerable
     private PutCompanion(AuthorizationRecord user,
     String path,
     PrepareToPutCallbacks callbacks,
-    CellAdapter cell,
+    CellStub pnfsStub,
     boolean recursive_directory_creation,
     boolean overwrite) {
         this.user =  user;
         this.path = path;
-        this.cell = cell;
+        this.pnfsStub = pnfsStub;
         this.callbacks = callbacks;
         this.recursive_directory_creation = recursive_directory_creation;
         this.overwrite = overwrite;
@@ -171,92 +154,114 @@ public class PutCompanion implements CellMessageAnswerable
         _log.debug(" constructor path = "+path+" overwrite="+overwrite);
     }
 
-     public void answerArrived( final CellMessage req , final CellMessage answer ) {
-        diskCacheV111.util.ThreadManager.execute(new Runnable() {
-            public void run() {
-                processMessage(req,answer);
+    public void success(PnfsMessage message) {
+        _log.debug(this.toString()+" successful reply arrived: "+message);
+        if( message instanceof PnfsCreateDirectoryMessage) {
+            PnfsCreateDirectoryMessage create_directory_response =
+            (PnfsCreateDirectoryMessage)message;
+            if( state == WAITING_FOR_CREATE_DIRECTORY_RESPONSE_MESSAGE) {
+                state = RECEIVED_CREATE_DIRECTORY_RESPONSE_MESSAGE;
+                directoryInfoArrived(create_directory_response);
+                return;
             }
-        });
+            _log.error(this.toString()+" got unexpected PnfsCreateDirectoryMessage "+
+                       " : "+create_directory_response+" ; Ignoring");
+        }
+        else if( message instanceof PnfsGetStorageInfoMessage ) {
+            PnfsGetStorageInfoMessage storage_info_msg =
+            (PnfsGetStorageInfoMessage)message;
+            if(state == WAITING_FOR_FILE_INFO_MESSAGE) {
+                state = RESEIVED_FILE_INFO_MESSAGE;
+                fileInfoArrived(storage_info_msg);
+                return;
+            } else if(state == WAITING_FOR_DIRECTORY_INFO_MESSAGE) {
+                state = RECEIVED_DIRECTORY_INFO_MESSAGE;
+                directoryInfoArrived(storage_info_msg);
+                return;
+            }
+            _log.error(this.toString()+" got unexpected PnfsGetStorageInfoMessage "+
+                       " : "+storage_info_msg+" ; Ignoring");
+
+        }
+        else if( message instanceof PnfsGetFileMetaDataMessage ) {
+            PnfsGetFileMetaDataMessage metadata_msg =
+            (PnfsGetFileMetaDataMessage)message;
+            if(state == WAITING_FOR_DIRECTORY_INFO_MESSAGE) {
+                state = RECEIVED_DIRECTORY_INFO_MESSAGE;
+                directoryInfoArrived(metadata_msg);
+                return;
+            }
+            _log.error(this.toString()+" got unexpected PnfsGetFileMetaDataMessage "+
+                       " : "+metadata_msg+" ; Ignoring");
+        }
     }
 
-    private void processMessage( CellMessage req , CellMessage answer ) {
-        _log.debug("answerArrived("+req+","+answer+")");
-        request = req;
-        Object o = answer.getMessageObject();
-        if(o instanceof Message) {
-            Message message = (Message)answer.getMessageObject() ;
-            // note that PnfsCreateDirectoryMessage is a subclass
-            // of PnfsGetStorageInfoMessage
-            if( message instanceof PnfsCreateDirectoryMessage) {
-                PnfsCreateDirectoryMessage create_directory_response =
-                (PnfsCreateDirectoryMessage)message;
-                if( state == WAITING_FOR_CREATE_DIRECTORY_RESPONSE_MESSAGE) {
-                    state = RECEIVED_CREATE_DIRECTORY_RESPONSE_MESSAGE;
-                    directoryInfoArrived(create_directory_response);
-                    return;
-                }
-                _log.error(this.toString()+" got unexpected PnfsCreateDirectoryMessage "+
-                           " : "+create_directory_response+" ; Ignoring");
-            }
-            else if( message instanceof PnfsGetStorageInfoMessage ) {
-                PnfsGetStorageInfoMessage storage_info_msg =
-                (PnfsGetStorageInfoMessage)message;
-                if(state == WAITING_FOR_FILE_INFO_MESSAGE) {
+        public void failure(int rc, Object error) {
+        _log.debug(this.toString()+" failed reply arrived, rc:"+rc+" error:"+error);
+        if( state == WAITING_FOR_CREATE_DIRECTORY_RESPONSE_MESSAGE) {
+            state = RECEIVED_CREATE_DIRECTORY_RESPONSE_MESSAGE;
+                String errorString = "directory creation failed: "+getCurrentDirPath()+" reason: "+
+                error;
+                unregisterAndFailCreator(errorString);
+                //  notify all waiting of error (on all levels)
+                //   unregisterCreator(pnfsPath, this, message);
+                callbacks.Error(errorString);
+                return;
+        } else if(state == WAITING_FOR_FILE_INFO_MESSAGE) {
                     state = RESEIVED_FILE_INFO_MESSAGE;
-                    fileInfoArrived(storage_info_msg);
-                    return;
-                } else if(state == WAITING_FOR_DIRECTORY_INFO_MESSAGE) {
-                    state = RECEIVED_DIRECTORY_INFO_MESSAGE;
-                    directoryInfoArrived(storage_info_msg);
-                    return;
-                }
-                _log.error(this.toString()+" got unexpected PnfsGetStorageInfoMessage "+
-                           " : "+storage_info_msg+" ; Ignoring");
-
-            }
-            else if( message instanceof PnfsGetFileMetaDataMessage ) {
-                PnfsGetFileMetaDataMessage metadata_msg =
-                (PnfsGetFileMetaDataMessage)message;
-                if(state == WAITING_FOR_DIRECTORY_INFO_MESSAGE) {
-                    state = RECEIVED_DIRECTORY_INFO_MESSAGE;
-                    directoryInfoArrived(metadata_msg);
-                    return;
-                }
-                _log.error(this.toString()+" got unexpected PnfsGetFileMetaDataMessage "+
-                           " : "+metadata_msg+" ; Ignoring");
-            }
-
-        }
-        else {
-            _log.error(this.toString()+" got unknown object "+
-                       " : "+o);
-            callbacks.Error(this.toString()+" got unknown object "+
-            " : "+o) ;
-        }
-    }
-
-    public void fileInfoArrived(PnfsGetStorageInfoMessage storage_info_msg)
-    {
-        if(storage_info_msg.getReturnCode() == 0) {
-            if(overwrite)  {
-                FileAttributes attributes =
-                    storage_info_msg.getFileAttributes();
-                attributes.setPnfsId(storage_info_msg.getPnfsId());
-                fileFMD = new DcacheFileMetaData(attributes);
-                fileId = fileFMD.fileId;
-            } else {
-                _log.warn("GetStorageInfoFailed: file exists, cannot write ");
-                callbacks.DuplicationError(" file exists ");
-                return ;
-            }
-        } else {
-
             String fileName = (String) pathItems.get(pathItems.size()-1);
             if(fileName.length() >PNFS_MAX_FILE_NAME_LENGTH) {
                 callbacks.Error("File name is too long");
                 return;
             }
             _log.debug("file does not exist, now get info for directory");
+
+            // next time we will go into different path
+
+            //
+            //this is how we get the directory containing this path
+            //
+            current_dir_depth = pathItems.size();
+            askPnfsForParentInfo();
+        } else if(state == WAITING_FOR_DIRECTORY_INFO_MESSAGE) {
+                    state = RECEIVED_DIRECTORY_INFO_MESSAGE;
+                if(recursive_directory_creation) {
+                    askPnfsForParentInfo();
+                    return;
+                }
+                String errorString = "GetStorageInfoFailed message.getReturnCode () != 0," +
+                        " error="+error;
+                unregisterAndFailCreator(errorString);
+                _log.error(errorString);
+                callbacks.GetStorageInfoFailed("GetStorageInfoFailed PnfsGetStorageInfoMessage.getReturnCode () != 0 => parrent directory does not exist");
+                return ;
+        }
+     }
+
+    public void noroute() {
+        _log.error(this.toString()+" No Route to PnfsManager");
+        unregisterAndFailCreator("No Route to PnfsManager");
+        callbacks.Error("No Route to PnfsManager");
+    }
+
+    public void timeout() {
+        _log.error(this.toString()+" PnfsManager request Timed Out");
+        unregisterAndFailCreator("PnfsManager request Timed Out");
+        callbacks.Timeout();
+    }
+
+    public void fileInfoArrived(PnfsGetStorageInfoMessage storage_info_msg)
+    {
+        if(overwrite)  {
+            FileAttributes attributes =
+                storage_info_msg.getFileAttributes();
+            attributes.setPnfsId(storage_info_msg.getPnfsId());
+            fileFMD = new DcacheFileMetaData(attributes);
+            fileId = fileFMD.fileId;
+        } else {
+            _log.warn("GetStorageInfoFailed: file exists, cannot write ");
+            callbacks.DuplicationError(" file exists ");
+            return ;
         }
         // next time we will go into different path
 
@@ -270,76 +275,53 @@ public class PutCompanion implements CellMessageAnswerable
     public void directoryInfoArrived(
     PnfsGetFileMetaDataMessage metadata_msg) {
         try{
+            unregisterCreator(metadata_msg);
 
-        if(metadata_msg.getReturnCode() != 0) {
-            if(state == RECEIVED_CREATE_DIRECTORY_RESPONSE_MESSAGE) {
-                String error = "directory creation failed: "+getCurrentDirPath()+" reason: "+
-                metadata_msg.getErrorObject();
-                unregisterAndFailCreator(error);
-                //  notify all waiting of error (on all levels)
-                //   unregisterCreator(pnfsPath, this, message);
-                callbacks.Error(error);
-                return;
+            FileAttributes attributes = metadata_msg.getFileAttributes();
+            attributes.setPnfsId(metadata_msg.getPnfsId());
+
+            if (attributes.getFileType() != FileType.DIR) {
+                String error ="file "+metadata_msg.getPnfsPath()+
+                " is not a directory";
+                    _log.error(error);
+                    unregisterAndFailCreator(error);
+                    callbacks.InvalidPathError(error);
+                    return;
             }
-            if(state == RECEIVED_DIRECTORY_INFO_MESSAGE) {
-                if(recursive_directory_creation) {
-                    askPnfsForParentInfo();
+
+            _log.debug("file is a directory");
+            FileMetaData srm_dirFmd = new DcacheFileMetaData(attributes);
+            _log.debug(" got  srm_dirFmd.retentionPolicyInfo ="+srm_dirFmd.retentionPolicyInfo);
+            if(srm_dirFmd.retentionPolicyInfo != null) {
+                _log.debug(" got  srm_dirFmd.retentionPolicyInfo.AccessLatency ="+srm_dirFmd.retentionPolicyInfo.getAccessLatency());
+                _log.debug(" got  srm_dirFmd.retentionPolicyInfo.RetentionPolicy ="+srm_dirFmd.retentionPolicyInfo.getRetentionPolicy());
+                _log.debug(" got  srm_dirFmd.spaceTokens ="+(srm_dirFmd.spaceTokens!=null?srm_dirFmd.spaceTokens[0]:"NONE"));
+            }
+            if((pathItems.size() -1 ) >current_dir_depth) {
+
+                if(Storage._canWrite(user,null,null,srm_dirFmd.fileId,srm_dirFmd,overwrite)) {
+                    createNextDirectory(srm_dirFmd);
                     return;
                 }
-                String error = "GetStorageInfoFailed message.getReturnCode () != 0";
-                unregisterAndFailCreator(error);
-                _log.error(error);
-                callbacks.GetStorageInfoFailed("GetStorageInfoFailed PnfsGetStorageInfoMessage.getReturnCode () != 0 => parrent directory does not exist");
-                return ;
-            }
-        }
-        unregisterCreator(metadata_msg);
-
-        FileAttributes attributes = metadata_msg.getFileAttributes();
-        attributes.setPnfsId(metadata_msg.getPnfsId());
-
-        if (attributes.getFileType() != FileType.DIR) {
-            String error ="file "+metadata_msg.getPnfsPath()+
-            " is not a directory";
-                _log.error(error);
-                unregisterAndFailCreator(error);
-                callbacks.InvalidPathError(error);
-                return;
-        }
-
-        _log.debug("file is a directory");
-        FileMetaData srm_dirFmd = new DcacheFileMetaData(attributes);
-        _log.debug(" got  srm_dirFmd.retentionPolicyInfo ="+srm_dirFmd.retentionPolicyInfo);
-        if(srm_dirFmd.retentionPolicyInfo != null) {
-            _log.debug(" got  srm_dirFmd.retentionPolicyInfo.AccessLatency ="+srm_dirFmd.retentionPolicyInfo.getAccessLatency());
-            _log.debug(" got  srm_dirFmd.retentionPolicyInfo.RetentionPolicy ="+srm_dirFmd.retentionPolicyInfo.getRetentionPolicy());
-            _log.debug(" got  srm_dirFmd.spaceTokens ="+(srm_dirFmd.spaceTokens!=null?srm_dirFmd.spaceTokens[0]:"NONE"));
-        }
-        if((pathItems.size() -1 ) >current_dir_depth) {
-
-            if(Storage._canWrite(user,null,null,srm_dirFmd.fileId,srm_dirFmd,overwrite)) {
-                createNextDirectory(srm_dirFmd);
-                return;
+                else {
+                    String error = "path does not exist and user has no permissions to create it";
+                    _log.warn(error);
+                    unregisterAndFailCreator(error);
+                    callbacks.InvalidPathError(error);
+                    return;
+                }
             }
             else {
-                String error = "path does not exist and user has no permissions to create it";
-                _log.warn(error);
-                unregisterAndFailCreator(error);
-                callbacks.InvalidPathError(error);
+                if(Storage._canWrite(user,fileId,fileFMD,srm_dirFmd.fileId,srm_dirFmd,overwrite)) {
+                    callbacks.StorageInfoArrived(fileId,fileFMD,srm_dirFmd.fileId,srm_dirFmd);
+                }
+                else {
+                    String error = "user has no permission to write into path "+getCurrentDirPath();
+                    _log.warn(error);
+                    callbacks.AuthorizationError(error);
+                }
                 return;
             }
-        }
-        else {
-            if(Storage._canWrite(user,fileId,fileFMD,srm_dirFmd.fileId,srm_dirFmd,overwrite)) {
-                callbacks.StorageInfoArrived(fileId,fileFMD,srm_dirFmd.fileId,srm_dirFmd);
-            }
-            else {
-                String error = "user has no permission to write into path "+getCurrentDirPath();
-                _log.warn(error);
-                callbacks.AuthorizationError(error);
-            }
-            return;
-        }
         }
         catch(java.lang.RuntimeException re) {
             _log.error(re, re);
@@ -375,12 +357,8 @@ public class PutCompanion implements CellMessageAnswerable
 
 
         try {
-            cell.sendMessage( new CellMessage(
-            new CellPath("PnfsManager") ,
-            dirMsg ) ,
-            true , true ,
-            this ,
-            PNFS_TIMEOUT) ;
+            pnfsStub.send(dirMsg,PnfsMessage.class, 
+                    new ThreadManagerMessageCallback(this) );
         }
         catch(Exception ee ) {
             _log.error(ee);
@@ -435,12 +413,8 @@ public class PutCompanion implements CellMessageAnswerable
 
         try {
             state = WAITING_FOR_DIRECTORY_INFO_MESSAGE;
-            cell.sendMessage( new CellMessage(
-            new CellPath("PnfsManager") ,
-            metadataMsg ) ,
-            true , true ,
-            this ,
-            PNFS_TIMEOUT) ;
+            pnfsStub.send(metadataMsg, PnfsMessage.class, 
+                    new ThreadManagerMessageCallback(this) );
         }
         catch(Exception ee ) {
             _log.error(ee);
@@ -448,17 +422,6 @@ public class PutCompanion implements CellMessageAnswerable
             callbacks.GetStorageInfoFailed(ee.toString());
         }
         lastOperationTime= System.currentTimeMillis();
-    }
-
-    public void exceptionArrived( CellMessage request , Exception exception ) {
-        _log.error("exceptionArrived "+exception+" for request "+request);
-        unregisterAndFailCreator("exceptionArrived "+exception+" for request "+request);
-        callbacks.Exception(exception);
-}
-    public void answerTimedOut( CellMessage request ) {
-        _log.error("answerTimedOut for request "+request);
-        unregisterAndFailCreator("answerTimedOut for request "+request);
-        callbacks.Timeout();
     }
 
     public String toString() {
@@ -536,7 +499,7 @@ public class PutCompanion implements CellMessageAnswerable
     public static void PrepareToPutFile(AuthorizationRecord user,
     String path,
     PrepareToPutCallbacks callbacks,
-    CellAdapter cell,
+    CellStub pnfsStub,
     boolean recursive_directory_creation,
     boolean overwrite) {
 
@@ -554,25 +517,23 @@ public class PutCompanion implements CellMessageAnswerable
         PnfsGetStorageInfoMessage storageInfoMsg =
         new PnfsGetStorageInfoMessage() ;
         storageInfoMsg.setPnfsPath( pnfsPath ) ;
+        //storageInfoMsg.setSubject(Subjects.getSubject(user));
+
         PutCompanion companion = new PutCompanion(
         user,
         path,
         callbacks,
-        cell,
+        pnfsStub,
         recursive_directory_creation,
         overwrite);
-
-
+       _log.debug("sending " +storageInfoMsg+" to PnfsManager");
         try {
             companion.state= WAITING_FOR_FILE_INFO_MESSAGE;
-            cell.sendMessage( new CellMessage(
-            new CellPath("PnfsManager") ,
-            storageInfoMsg ) ,
-            true , true ,
-            companion ,
-            PNFS_TIMEOUT) ;
+            pnfsStub.send(storageInfoMsg, PnfsMessage.class,
+            new ThreadManagerMessageCallback(companion) ) ;
         }
         catch(Exception ee ) {
+            _log.error(ee);
             callbacks.GetStorageInfoFailed("can not contact pnfs manger: "+ee.toString());
         }
     }
@@ -590,7 +551,7 @@ public class PutCompanion implements CellMessageAnswerable
         }
     }
 
-    private static Map<String,PutCompanion> directoryCreators =
+    private static final Map<String,PutCompanion> directoryCreators =
         new HashMap<String,PutCompanion>();
     private OneToManyMap waitingForCreators = new OneToManyMap();
 
