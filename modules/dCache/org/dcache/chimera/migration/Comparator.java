@@ -5,163 +5,15 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import org.dcache.auth.Subjects;
 
 import org.dcache.chimera.namespace.ChimeraNameSpaceProvider;
 
 import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.namespace.provider.BasicNameSpaceProvider;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.StorageInfo;
 import dmg.util.Args;
 
 public class Comparator {
-
-    static int idErrCount = 0;
-    static boolean showAllErrors;
-
-	/**
-	 * An Exception thrown when a mismatch is discovered.
-	 */
-	public static class MismatchException extends Exception {
-		private static final long serialVersionUID = 1L;
-
-		public MismatchException(String msg) {
-			super(msg);
-		}
-	}
-
-	/**
-	 * Check whether two StorageInfo objects (one supplied by Chimera, the other by PNFS) are equal.
-	 *
-	 * @param pnfsId  The string describing the PNFS ID.  This is used only to create a suitable message for Exceptions
-	 * @param chimeraStorageInfo the StorageInfo from Chimera
-	 * @param pnfsStorageInfo the StorageInfo from PNFS
-	 * @throws MismatchException if StorageInfos are not equal.
-	 */
-	public static void assertEquals(String pnfsId,
-			StorageInfo chimeraStorageInfo, StorageInfo pnfsStorageInfo)
-			throws MismatchException {
-
-		if( chimeraStorageInfo == null && pnfsStorageInfo == null)
-			return;
-
-		if( chimeraStorageInfo == null)
-			throw new MismatchException( "ID "+pnfsId+" has null Chimera StorageInfo");
-
-		if( pnfsStorageInfo == null)
-			throw new MismatchException( "ID "+pnfsId+" has null PNFS StorageInfo");
-
-		if ( chimeraStorageInfo.equals(pnfsStorageInfo))
-			return;
-
-		StringBuilder sb = new StringBuilder();
-		sb.append("ID " + pnfsId
-				+ " failed consistency check for Storage Info.\n");
-		sb.append("\tPNFS:\n");
-		sb.append("\t\t" + pnfsStorageInfo.toString() + "\n");
-		sb.append("\tChimera:\n");
-		sb.append("\t\t" + chimeraStorageInfo.toString() + "\n");
-
-		throw new MismatchException(sb.toString());
-	}
-
-	/**
-	 * Check whether two FileMetaData objects (one supplied by Chimera, the other by PNFS) are equal.
-	 *
-	 * @param pnfsId The string describing the PNFS ID.  This is used only to create a suitable message for Exceptions.
-	 * @param chimeraMetaData the FileMetaData from Chimera
-	 * @param pnfsMetaData the FileMetaData from PNFS
-	 * @throws MismatchException if FileMetaData are not equal.
-	 */
-	public static void assertEquals(String pnfsId,
-			FileMetaData chimeraMetaData, FileMetaData pnfsMetaData)
-			throws MismatchException {
-
-		if( chimeraMetaData == null && pnfsMetaData == null)
-			return;
-
-		if( chimeraMetaData == null)
-			throw new MismatchException( "ID "+pnfsId+" has null Chimera FileMetaData");
-
-		if( pnfsMetaData == null)
-			throw new MismatchException( "ID "+pnfsId+" has null PNFS FileMetaData");
-
-		if ( chimeraMetaData.equals(pnfsMetaData))
-			return;
-
-		StringBuilder sb = new StringBuilder();
-		sb.append("ID " + pnfsId
-				+ " failed consistency check for File Metadata.\n");
-		sb.append("\tPNFS:\n");
-		sb.append("\t\t" + pnfsMetaData.toString() + "\n");
-		sb.append("\tChimera:\n");
-		sb.append("\t\t" + chimeraMetaData.toString() + "\n");
-
-		/**
-		 * Here we explain the differences between the two FileMetaData objects.
-		 */
-		sb.append("\nDifferences:\n");
-		if (pnfsMetaData.getGid() != chimeraMetaData.getGid())
-			sb.append("\tgid: " + pnfsMetaData.getGid() + " != "
-					+ chimeraMetaData.getGid() + "\n");
-
-		if (pnfsMetaData.getUid() != chimeraMetaData.getUid())
-			sb.append("\tuid: " + pnfsMetaData.getUid() + " != "
-					+ chimeraMetaData.getUid() + "\n");
-
-		if (pnfsMetaData.isDirectory() != chimeraMetaData.isDirectory())
-			sb.append("\tdirectory: " + pnfsMetaData.isDirectory() + " != "
-					+ chimeraMetaData.isDirectory() + "\n");
-
-		if (pnfsMetaData.isSymbolicLink() != chimeraMetaData.isSymbolicLink())
-			sb.append("\tsym-link: " + pnfsMetaData.isSymbolicLink() + " != "
-					+ chimeraMetaData.isSymbolicLink() + "\n");
-
-		if (pnfsMetaData.isRegularFile() != chimeraMetaData.isRegularFile())
-			sb.append("\tregular file: " + pnfsMetaData.isRegularFile()
-					+ " != " + chimeraMetaData.isRegularFile() + "\n");
-
-		if (pnfsMetaData.getFileSize() != chimeraMetaData.getFileSize())
-			sb.append("\tsize: " + pnfsMetaData.getFileSize() + " != "
-					+ chimeraMetaData.getFileSize() + "\n");
-
-		if (!pnfsMetaData.getUserPermissions().equals(
-				chimeraMetaData.getUserPermissions()))
-			sb.append("\tuser permissions: "
-					+ pnfsMetaData.getUserPermissions() + " != "
-					+ chimeraMetaData.getUserPermissions() + "\n");
-
-		if (!pnfsMetaData.getGroupPermissions().equals(
-				chimeraMetaData.getGroupPermissions()))
-			sb.append("\tgroup permissions: "
-					+ pnfsMetaData.getGroupPermissions() + " != "
-					+ chimeraMetaData.getGroupPermissions() + "\n");
-
-		if (!pnfsMetaData.getWorldPermissions().equals(
-				chimeraMetaData.getWorldPermissions()))
-			sb.append("\tworld permissions: "
-					+ pnfsMetaData.getWorldPermissions() + " != "
-					+ chimeraMetaData.getWorldPermissions() + "\n");
-
-		if (pnfsMetaData.getCreationTime() != chimeraMetaData.getCreationTime())
-			sb.append("\tcreation-time: " + pnfsMetaData.getCreationTime()
-					+ " != " + chimeraMetaData.getCreationTime() + "\n");
-
-		if (pnfsMetaData.getLastAccessedTime() != chimeraMetaData
-				.getLastAccessedTime())
-			sb.append("\tlast-accessed: " + pnfsMetaData.getLastAccessedTime()
-					+ " != " + chimeraMetaData.getLastAccessedTime() + "\n");
-
-		if (pnfsMetaData.getLastModifiedTime() != chimeraMetaData
-				.getLastModifiedTime())
-			sb.append("\tlast-modified: " + pnfsMetaData.getLastModifiedTime()
-					+ " != " + chimeraMetaData.getLastModifiedTime() + "\n");
-
-		throw new MismatchException(sb.toString());
-	}
 
 	public static void main(String args[]) throws Exception {
 
@@ -178,7 +30,7 @@ public class Comparator {
 		}
 
 		String file = parsedArgs.argv( 0);
-		showAllErrors = parsedArgs.isOneCharOption( 'k');
+		boolean showAllErrors = parsedArgs.isOneCharOption( 'k');
 
 		String pnfsArgs = "diskCacheV111.util.GenericInfoExtractor "
 				+ "-delete-registration=dummyLocation -delete-registration-jdbcDrv=foo "
@@ -191,13 +43,9 @@ public class Comparator {
 		NameSpaceProvider pnfsNamespace = new BasicNameSpaceProvider(new Args(
 				pnfsArgs), null);
 
-		NameSpaceProvider chimeraStorageInfoProvider = new ChimeraNameSpaceProvider(
-				new Args(chimeraArgs), null);
-		NameSpaceProvider pnfsStorageInfoProvider = new BasicNameSpaceProvider(
-				new Args(pnfsArgs), null);
-
-		int idCount = 0;
-
+		PnfsIdValidator checkFileMetaData = new FileMetaDataComparator( System.err, chimeraNamespace, pnfsNamespace);
+        PnfsIdValidator checkStorageInfo = new StorageInfoComparator( System.err, chimeraNamespace, pnfsNamespace);
+		PnfsIdValidator combinedComparator = new CombinedComparator( checkFileMetaData, checkStorageInfo);
 
 		BufferedReader br = null;
 
@@ -207,6 +55,8 @@ public class Comparator {
             System.out.println("\nCouldn't find file " + file);
             System.exit(2);
         }
+
+        int idCount = 0, errorCount = 0;
 
 		try {
 			String rawLine;
@@ -231,42 +81,14 @@ public class Comparator {
 
 				PnfsId pnfsid = new PnfsId(trimmedLine);
 
-                try {
-                    FileMetaData chimeraMetaData = chimeraNamespace.getFileMetaData(Subjects.ROOT, pnfsid);
-                    FileMetaData pnfsFileMetaData = pnfsNamespace.getFileMetaData(Subjects.ROOT, pnfsid);
-                    assertEquals( pnfsid.toString(), chimeraMetaData, pnfsFileMetaData);
-                } catch (MismatchException e) {
-                    genericHandleException(e, pnfsid);
-                } catch (CacheException e) {
-                    genericHandleException(e, pnfsid);
-                } catch (IllegalArgumentException e) {
-                    genericHandleException(e, pnfsid);
-                }
-
-                try {
-                    StorageInfo chimeraStorageInfo = chimeraStorageInfoProvider.getStorageInfo(Subjects.ROOT, pnfsid);
-                    StorageInfo pnfsStorageInfo = pnfsStorageInfoProvider.getStorageInfo(Subjects.ROOT, pnfsid);
-                    assertEquals( pnfsid.toString(), chimeraStorageInfo, pnfsStorageInfo);
-                } catch (MismatchException e) {
-                    genericHandleException(e, pnfsid);
-                } catch (CacheException e) {
-                    genericHandleException(e, pnfsid);
-                } catch (IllegalArgumentException e) {
-                    genericHandleException(e, pnfsid);
-                }
+				if( !combinedComparator.isOK( pnfsid)) {
+				    errorCount++;
+				    if( !showAllErrors)
+				        break;
+				}
 			}
 		} catch (IOException e) {
 			System.err.println("Cannot read file: " + e.getMessage());
-			System.exit(2);
-		} catch (MismatchException e) {
-			System.exit(1);
-		} catch (CacheException e) {
-		    System.exit(1);
-		} catch ( IllegalArgumentException e) {
-		    System.exit(1);
-		} catch (Exception e) {
-			System.out.println();
-			e.printStackTrace();
 			System.exit(2);
 		} finally {
 			try {
@@ -276,25 +98,7 @@ public class Comparator {
 			}
 		}
 
-		System.out.println("\n\n" + idCount + " IDs verified, " +
-		                   (idErrCount == 0 ? "all OK." : (idErrCount + " failures.")));
-	}
-
-
-	/**
-	 * Generic handler of exceptions: depending on showAllErrors this method will either
-	 * log the exception or re-throw it.
-	 * @param e the Exception that has just been caught
-	 * @throws Exception if showAllErrors is false
-	 */
-	private static void genericHandleException( Exception e, PnfsId pnfsid) throws Exception {
-        idErrCount++;
-
-        String exceptionLabel = (e instanceof MismatchException) ? "" : (e.getClass().getSimpleName() + " ");
-
-	    System.err.println( "[" + pnfsid + "] " + exceptionLabel + e.getMessage());
-
-	    if( !showAllErrors)
-            throw e;
+		System.out.println("\n" + idCount + " IDs verified, " +
+		                   (errorCount == 0 ? "all OK." : (errorCount + " failures.")));
 	}
 }
