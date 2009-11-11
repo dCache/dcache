@@ -646,7 +646,7 @@
               <suppress test=""><map name="unit-to-VO">
                   <lookup path="@name"/>
                 </map>
-	      </suppress>
+              </suppress>
             </attr>
 
             <!-- Publish those VOs that can read -->
@@ -658,7 +658,7 @@
               <suppress test=""><map name="unit-to-VO">
                   <lookup path="@name"/>
                 </map>
-	      </suppress>
+              </suppress>
             </attr>
 
             <!-- Publish those VOs that can stage from tape -->
@@ -670,13 +670,15 @@
               <suppress test=""><map name="unit-to-VO">
                   <lookup path="@name"/>
                 </map>
-	      </suppress>
+              </suppress>
             </attr>
 
             <!-- We repeat publishing the access rules with the deprecated
-                 format as a work-around for a bug present in lcg-infosites.
-                 For details, see:
+                 format as a work-around for a bug present in:
+                   lcg-infosites:
                      https://savannah.cern.ch/bugs/?57787
+                   SAM:
+                     https://savannah.cern.ch/bugs/?57919
                   -->
             <attr name="GlueSAAccessControlBaseRule"
                   not-empty="1"
@@ -756,23 +758,23 @@
               </scale>
             </attr>
 
-	    <!-- We are required to publish these attributes -->
-	    <attr name="GlueSAReservedNearlineSize">0</attr>
-	    <attr name="GlueSATotalNearlineSize">0</attr>
-	    <attr name="GlueSAUsedNearlineSize">0</attr>
-	    <attr name="GlueSAFreeNearlineSize">0</attr>
+            <!-- We are required to publish these attributes -->
+            <attr name="GlueSAReservedNearlineSize">0</attr>
+            <attr name="GlueSATotalNearlineSize">0</attr>
+            <attr name="GlueSAUsedNearlineSize">0</attr>
+            <attr name="GlueSAFreeNearlineSize">0</attr>
 
 
-            <!--  The lcg-infosites tool allows the display of information
-                  about a Site's StorageElement.  It does this by querying
-                  the GlueSAStateUsedSpace and GlueSAStateAvailableSpace
-                  attributes.
+            <!--  The StorageAreaState attributes (GlueSAStateAvailableSpace
+                  and GlueSAStateUsedSpace) are both marked as deprecated in
+                  Glue v1.3.  They have been superseded by the eight
+                  GlueSA*Size attributes.
 
-                  Unfortunately, both attributes are deprecated and have
-                  been superseded by the eight GlueSA*Size attributes.  This
-                  bug has been reported:
-
-                  https://savannah.cern.ch/bugs/?57799
+                  Unfortunately, various tools continue to use this attribute
+                    lcg-infosites:
+                      https://savannah.cern.ch/bugs/?57799
+                    SAM:
+                      https://savannah.cern.ch/bugs/?57918
 
                   As a work-around, we publish GlueSAStateAvailableSpace
                   and GlueSAStateUsedSpace -->
