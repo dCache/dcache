@@ -432,14 +432,6 @@ sshPort=${portBase}124
 #   This should be for debug use only.
 #telnetPort=${portBase}123
 
-#  ---- Transfer / TCP Buffer Size
-#
-#   Do not change unless you know what you are doing.
-#
-bufferSize=1048576
-tcpBufferSize=1048576
-
-
 
 #  -----------------------------------------------------------------------
 #        Maintenance Module Setup
