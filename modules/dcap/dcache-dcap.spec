@@ -19,7 +19,7 @@ Summary: dCache Client
 Vendor: dCache.org
 Name: dcap
 Version: 1.9.3
-Release: 6rc
+Release: 8rc
 Prefix: /opt/d-cache/dcap
 BuildRoot: %{_tmppath}/%{name}-%{version}-build
 Source: %{name}.src.tgz
