@@ -19,7 +19,7 @@ Summary: dCache Client
 Vendor: dCache.org
 Name: dcap
 Version: 1.9.3
-Release: 6rc
+Release: 7
 Prefix: /opt/d-cache/dcap
 BuildRoot: %{_tmppath}/%{name}-%{version}-build
 Source: %{name}.src.tgz
@@ -51,7 +51,6 @@ This package contains the client libraries dcachedcap.
 Summary: dCache Client Headers
 Group: Applications/System
 Requires: libdcap
-Obsoletes: dcache-dcap
 %description -n libdcap-devel
 This package contains the client library dcachedcap header files.
 
@@ -60,7 +59,6 @@ This package contains the client library dcachedcap header files.
 Summary: dCache GSI Tunnel
 Group: Applications/System
 Requires: libdcap
-Obsoletes: dcache-dcap
 BuildRequires: openssl-devel
 %if %vdt
 BuildRequires: vdt_globus_essentials
@@ -78,7 +76,6 @@ This library is dynamically loaded at run time.
 Summary: dCache GSI Tunnel
 Group: Applications/System
 Requires: libdcap
-Obsoletes: dcache-dcap
 BuildRequires: krb5-devel
 %description -n libdcap-tunnel-krb
 This package contains the gsi tunnel plugin library used by dcachedcap.
@@ -89,7 +86,6 @@ This library is dynamically loaded at run time.
 Summary: dCache GSI Tunnel
 Group: Applications/System
 Requires: libdcap
-Obsoletes: dcache-dcap
 %description -n libdcap-tunnel-telnet
 This package contains the gsi tunnel plugin library used by dcachedcap.
 This library is dynamically loaded at run time.
@@ -124,7 +120,7 @@ make clean
 %if %vdt
 make install ARCH=${arch} LIB_PATH=%{buildroot}/${libdir}
 %else
-make install FLAVOUR= PATH_INCLUDE_GSI=/usr/include/globus LDFLAGS="-shared" LIB_FLAGS="-Bdynamic -L/usr/lib64" LIB_PATH=%{buildroot}/${libdir}
+make install FLAVOUR= LDFLAGS=-shared LIB_FLAGS="-Bdynamic -L%{_libdir}" LIB_PATH=%{buildroot}/${libdir} CFLAGS="-g -DGSIGSS -fPIC -I%{_includedir}/globus -I%{_libdir}/globus/include"
 %endif
 %endif
 
