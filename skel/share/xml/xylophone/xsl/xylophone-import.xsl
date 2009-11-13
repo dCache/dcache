@@ -60,11 +60,11 @@
   <xsl:param name="path"/>
   <xsl:param name="default"/>
 
-  <!-- We allow the XML src to be overwritten with the xml-src-uri attribute -->
+  <!-- We allow the XML src to be overwritten with the xml-src attribute -->
   <xsl:variable name="src">
     <xsl:choose>
-      <xsl:when test="@xml-src-uri">
-       <xsl:value-of select="@xml-src-uri"/>
+      <xsl:when test="@xml-src">
+       <xsl:value-of select="/xylophone/locations/location[@name=current()/@xml-src]"/>
       </xsl:when>
       <xsl:otherwise>
       <xsl:value-of select="$xml-src-uri"/>
@@ -150,8 +150,8 @@
   <!-- We allow the XML src to be overwritten with the xml-src-uri attribute -->
   <xsl:variable name="src">
    <xsl:choose>
-      <xsl:when test="@xml-src-uri">
-	<xsl:value-of select="@xml-src-uri"/>
+      <xsl:when test="@xml-src">
+	<xsl:value-of select="/xylophone/locations/location[@name=current()/@xml-src]"/>
       </xsl:when>
       <xsl:otherwise>
 	<xsl:value-of select="$xml-src-uri"/>
@@ -207,8 +207,8 @@
   <!-- We allow the XML src to be overwritten with the xml-src-uri attribute -->
   <xsl:variable name="src">
     <xsl:choose>
-      <xsl:when test="@xml-src-uri">
-	<xsl:value-of select="@xml-src-uri"/>
+      <xsl:when test="@xml-src">
+	<xsl:value-of select="/xylophone/locations/location[@name=current()/@xml-src]"/>
       </xsl:when>
       <xsl:otherwise>
 	<xsl:value-of select="$xml-src-uri"/>
