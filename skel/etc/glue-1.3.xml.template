@@ -311,6 +311,32 @@
   </mapping>
 
 
+  <!--+
+      |  Location of tape accounting information
+      |
+      |  The information about a site's tape usage that WLCG would like
+      |  published cannot come from dCache, so must be supplied by the
+      |  site.
+      |
+      |  This info-provider expects that this information is in a separate
+      |  file.  The anticipation is that the site admin writes a small
+      |  script that creates the file with up-to-date information.  A
+      |  description of this file's format is in the tape-info-empty.xml
+      |  file.
+      |
+      |  If you are a site with tape storage that is to be published,
+      |  change the location below to:
+      |
+      |    /var/opt/dcache/tape-info.xml
+      |
+      |  and ensure that that file exists with up-to-date information.
+      |
+      |  If you are a site without tape storage then do not alter the path.
+      +-->
+  <locations>
+    <location name="tape-info">/opt/d-cache/share/xml/tape-info-empty.xml</location>
+  </locations>
+
 
   <!--+
       |    YOU SHOULD NOT NEED TO EDIT ANYTHING BELOW THIS POINT.
@@ -840,7 +866,7 @@
               <suppress test=""><map name="unit-to-VO">
                   <lookup path="@name"/>
                 </map>
-	      </suppress>
+              </suppress>
             </attr>
 
             <attr select="d:units/d:store/d:read/d:unitref"
@@ -851,7 +877,7 @@
               <suppress test=""><map name="unit-to-VO">
                   <lookup path="@name"/>
                 </map>
-	      </suppress>
+              </suppress>
             </attr>
 
             <attr select="d:units/d:store/d:write/d:unitref"
@@ -862,95 +888,235 @@
               <suppress test=""><map name="unit-to-VO">
                   <lookup path="@name"/>
                 </map>
-	      </suppress>
+              </suppress>
             </attr>
 
             <attr name="GlueChunkKey">
               <parent-rdn rdn="GlueSEUniqueID"/>
             </attr>
           </object>
-        </object>
+
+          <!--+
+              |    PUBLISH NEARLINE STORAGE
+              |
+              |    We wish to publish tape accounting information.  WLCG
+              |    requires that this information take into account tape
+              |    compression; therefore, we cannot use any component
+              |    within dCache to figure out nearline information.
+              |
+              |    Published information must come from an external source.
+              |    This external source is an XML file tape-info.xml, which
+              |    is at a fixed location.  The default contents of this
+              |    file will publish no nearline space, but the site-admin
+              |    may override the file with the information they wish to
+              |    publish.
+              |
+              |    The file allows publishing of zero or more "collections".
+              |    Each collection is published as a GlueSA object.  The
+              |    collection may be assigned to one (or more) VOs, which
+              |    will be reflected by that GlueSA's ACBR attributes.  The
+              |    tapes may be writable by some (usually all) of those VOs
+              |    In this case, a VOInfo object is created that describes
+              |    how to write into that particular collection.
+              |
+              |    GlueSE
+              |     :
+              |     +- GlueSA     |- Repeated for each collection.
+              |     |   :
+              |     |   +- VOInfo  |- Repeated for each VO mentioned within
+              |     |              |  the collection's write-path element
+              |     :
+              +-->
+          <object rdn="GlueSALocalID"
+                  xml-src="tape-info"
+                  select="/tape-info/collection"
+                  classes="GlueSATop GlueSA GlueSAAccessControlBase GlueSAState GlueSchemaVersion">
+
+            <!-- Publish a VOInfo object for each vo in write-paths -->
+            <object rdn="GlueVOInfoLocalID"
+                    xml-src="tape-info"
+                    select="write-paths/vo"
+                    classes="GlueVOInfo GlueSchemaVersion GlueKey">
+              <attr name="GlueVOInfoLocalID">
+                <lookup xml-src="tape-info"
+                        path="@name"/>
+              </attr>
+
+              <attr name="GlueVOInfoPath">
+                <lookup xml-src="tape-info"
+                        path="."/>
+              </attr>
+
+              <attr name="GlueChunkKey">
+                <parent-rdn rdn="GlueSALocalID"/>
+              </attr>
+
+              <attr name="GlueChunkKey">
+                <parent-rdn rdn="GlueSEUniqueID"/>
+              </attr>
+
+              <attr name="GlueVOInfoAccessControlBaseRule">VO:<lookup
+                        xml-src="tape-info"
+                        path="@name"/></attr>
+            </object>
+
+            <attr name="GlueSALocalID">tape-<lookup xml-src="tape-info"
+                                               path="@id"/></attr>
+
+            <attr name="GlueSAName"
+                  not-empty="1"><lookup xml-src="tape-info"
+                                        path="name"/></attr>
+
+            <attr name="GlueSAReservedNearlineSize">
+              <scale to-integer="round"
+                     factor="bytes-to-gigabytes">
+                <lookup xml-src="tape-info"
+                        default="0"
+                        path="space/reserved"/>
+              </scale>
+            </attr>
+
+            <attr name="GlueSATotalNearlineSize">
+              <scale to-integer="round"
+                     factor="bytes-to-gigabytes">
+                <lookup xml-src="tape-info"
+                        default="0"
+                        path="space/total"/>
+              </scale>
+            </attr>
+
+            <attr name="GlueSAUsedNearlineSize">
+              <scale to-integer="round"
+                     factor="bytes-to-gigabytes">
+                <lookup default="0"
+                        xml-src="tape-info"
+                        path="space/used"/>
+              </scale>
+            </attr>
+
+            <attr name="GlueSAFreeNearlineSize">
+              <scale to-integer="round"
+                     factor="bytes-to-gigabytes">
+                <sum>
+                  <term>
+                    <lookup xml-src="tape-info"
+                            default="0"
+                            path="space/total"/>
+                  </term>
+                  <term>
+                    <scale factor="negative">
+                      <lookup default="0"
+                              xml-src="tape-info"
+                              path="space/used"/>
+                    </scale>
+                  </term>
+                </sum>
+              </scale>
+            </attr>
+
+            <attr name="GlueSAReservedOnlineSize">0</attr>
+            <attr name="GlueSAUsedOnlineSize">0</attr>
+            <attr name="GlueSAFreeOnlineSize">0</attr>
+            <attr name="GlueSAFreeOnlineSize">0</attr>
+
+            <attr name="GlueSAAccessControlBaseRule"
+                  xml-src="tape-info"
+                  select="for/vo">VO:<lookup xml-src="tape-info"
+                                             path="."/></attr>
+
+            <attr name="GlueSACapability">InstalledOnlineCapacity=0</attr>
+            <attr name="GlueSACapability">InstalledNearlineCapacity=<scale
+                    to-integer="round"
+                    factor="bytes-to-gigabytes">
+                <lookup xml-src="tape-info"
+                        default="0"
+                        path="space/reserved"/>
+              </scale>
+	    </attr>
+          </object>
 
 
-        <!--+
-            |    PUBLISH OFFLINE DISK STORAGE
-            |
-            |    WLCG allows for publishing storage that is part of a
-            |    storage element but that, for whatever reason, is not
-            |    accessible.  This might include pools that are not yet
-            |    commissioned.
-            |
-            |    The intention is to allow GlueSAReservedOnlineSize to carry
-            |    this information.  Its value should be the sum of
-            |    GlueSATotalOnlineSize and whatever is currently offline.
-            |    So, if all storage in a GlueSA is currently available,
-            |    GlueSAReservedOnlineSize == GlueSATotalOnlineSize.
-            |
-            |    However, if a GlueSA represents "unreserved" capacity then
-            |    GlueSAReservedOnlineSize must be zero: the attribute can
-            |    only be non-zero if the GlueSA represents capacity
-            |    "reserved" for a VO.  This most likely means SRM space
-            |    reservations.  Since SRM reservations have late binding
-            |    in dCache, we can't publish offline storage against some
-            |    existing SRM reservation.
-            |
-            |    So, we take use another tactic: we publish new GlueSA
-            |    objects.  These will hold information about only the offline
-            |    data, but are (nominally) assigned to a VO using an
-            |    ACBR attribute.  We leave out the VOInfo object so not
-            |    to confuse broken clients that don't check the GlueSA
-            |    GlueSATotalOnlineSize.
-            |
-            |    GlueSE
-            |     :
-            |     +- GlueSA      |- Repeated for each VO with offline storage
-            |     :
-            +-->
-        <object rdn="GlueSALocalID"
-                list="SRM-supported-VOs"
-                classes="GlueSATop GlueSA GlueSAAccessControlBase GlueSchemaVersion">
+          <!--+
+              |    PUBLISH OFFLINE DISK STORAGE
+              |
+              |    WLCG allows for publishing storage that is part of a
+              |    storage element but that, for whatever reason, is not
+              |    accessible.  This might include pools that are not yet
+              |    commissioned.
+              |
+              |    The intention is to allow GlueSAReservedOnlineSize to carry
+              |    this information.  Its value should be the sum of
+              |    GlueSATotalOnlineSize and whatever is currently offline.
+              |    So, if all storage in a GlueSA is currently available,
+              |    GlueSAReservedOnlineSize == GlueSATotalOnlineSize.
+              |
+              |    However, if a GlueSA represents "unreserved" capacity then
+              |    GlueSAReservedOnlineSize must be zero: the attribute can
+              |    only be non-zero if the GlueSA represents capacity
+              |    "reserved" for a VO.  This most likely means SRM space
+              |    reservations.  Since SRM reservations have late binding
+              |    in dCache, we can't publish offline storage against some
+              |    existing SRM reservation.
+              |
+              |    So, we take use another tactic: we publish new GlueSA
+              |    objects.  These will hold information about only the offline
+              |    data, but are (nominally) assigned to a VO using an
+              |    ACBR attribute.  We leave out the VOInfo object so not
+              |    to confuse broken clients that don't check the GlueSA
+              |    GlueSATotalOnlineSize.
+              |
+              |    GlueSE
+              |     :
+              |     +- GlueSA      |- Repeated for each VO with offline storage
+              |     :
+              +-->
+          <object rdn="GlueSALocalID"
+                  list="SRM-supported-VOs"
+                  classes="GlueSATop GlueSA GlueSAAccessControlBase GlueSchemaVersion">
 
-          <!-- Suppress publishing any object if there's no map entry -->
-          <suppress test="0"
-                    check="equal">
-            <map name="VO-to-offline-disk">
-              <item/>
-            </map>
-          </suppress>
-
-          <attr name="GlueSALocalID">OL-<item/></attr>
-          <attr name="GlueSAName">Offline storage for VO <item/></attr>
-
-          <attr name="GlueSAAccessControlBaseRule">VO:<item/></attr>
-
-          <attr name="GlueSAReservedOnlineSize">
-            <scale to-integer="round"
-                   factor="bytes-to-gigabytes">
+            <!-- Suppress publishing any object if there's no map entry -->
+            <suppress test="0"
+                      check="equal">
               <map name="VO-to-offline-disk">
                 <item/>
               </map>
-            </scale>
-          </attr>
+            </suppress>
 
-          <attr name="GlueSATotalOnlineSize">0</attr>
-          <attr name="GlueSAUsedOnlineSize">0</attr>
-          <attr name="GlueSAFreeOnlineSize">0</attr>
+            <attr name="GlueSALocalID">OL-<item/></attr>
+            <attr name="GlueSAName">Offline storage for VO <item/></attr>
 
-	    <!-- We are required to publish these attributes -->
-	    <attr name="GlueSAReservedNearlineSize">0</attr>
-	    <attr name="GlueSATotalNearlineSize">0</attr>
-	    <attr name="GlueSAUsedNearlineSize">0</attr>
-	    <attr name="GlueSAFreeNearlineSize">0</attr>
+            <attr name="GlueSAAccessControlBaseRule">VO:<item/></attr>
 
-          <attr name="GlueSACapability">InstalledOnlineCapacity=<scale
-                  to-integer="round" factor="bytes-to-gigabytes">
-              <map name="VO-to-offline-disk">
-                <item/>
-              </map>
-            </scale>
-          </attr>
+            <attr name="GlueSAReservedOnlineSize">
+              <scale to-integer="round"
+                     factor="bytes-to-gigabytes">
+                <map name="VO-to-offline-disk">
+                  <item/>
+                </map>
+              </scale>
+            </attr>
 
-          <attr name="GlueSACapability">InstalledNearlineCapacity=0</attr>
+            <attr name="GlueSATotalOnlineSize">0</attr>
+            <attr name="GlueSAUsedOnlineSize">0</attr>
+            <attr name="GlueSAFreeOnlineSize">0</attr>
+
+            <!-- We are required to publish these attributes -->
+            <attr name="GlueSAReservedNearlineSize">0</attr>
+            <attr name="GlueSATotalNearlineSize">0</attr>
+            <attr name="GlueSAUsedNearlineSize">0</attr>
+            <attr name="GlueSAFreeNearlineSize">0</attr>
+
+            <attr name="GlueSACapability">InstalledOnlineCapacity=<scale
+                    to-integer="round" factor="bytes-to-gigabytes">
+                <map name="VO-to-offline-disk">
+                  <item/>
+                </map>
+              </scale>
+            </attr>
+
+            <attr name="GlueSACapability">InstalledNearlineCapacity=0</attr>
+          </object>
+
         </object>
 
 
@@ -984,7 +1150,7 @@
                This is acknowledged as a broken requirement, but it
                persists.  To support DNS aliases we may need to
                publish something other than the self-discovered (public)
-               FQDN of the interface.  Currently, the SE-UNIQUE-ID 
+               FQDN of the interface.  Currently, the SE-UNIQUE-ID
                MUST be the SRM's FQDN.  We use this here to support
                aliases  -->
           <attr name="GlueServiceUniqueID">httpg://<constant
@@ -1122,8 +1288,19 @@
       </attr>
 
       <!-- We must publish Nearline sizes -->
-      <attr name="GlueSETotalNearlineSize">0</attr>
-      <attr name="GlueSEUsedNearlineSize">0</attr>
+      <attr name="GlueSETotalNearlineSize">
+        <scale to-integer="round" factor="bytes-to-gigabytes">
+          <sum xml-src="tape-info"
+               path="/tape-info/collection/space/total"/>
+        </scale>
+      </attr>
+
+      <attr name="GlueSEUsedNearlineSize">
+        <scale to-integer="round" factor="bytes-to-gigabytes">
+          <sum xml-src="tape-info"
+               path="/tape-info/collection/space/used"/>
+        </scale>
+      </attr>
 
       <attr name="GlueForeignKey">
         <other-rdn rdn="GlueSiteUniqueID">
@@ -1198,7 +1375,7 @@
 
       <!-- Publish the URI.  To support DNS aliases we may need to
            publish something other than the self-discovered (public)
-           FQDN of the interface.  Currently, the SE-UNIQUE-ID 
+           FQDN of the interface.  Currently, the SE-UNIQUE-ID
            MUST be the SRM's FQDN.  We use this here to support
            aliases  -->
       <attr name="GlueSEControlProtocolEndpoint">httpg://<constant id="SE-UNIQUE-ID"/>:<lookup
