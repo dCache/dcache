@@ -1,0 +1,191 @@
+<?xml version="1.0"?>
+
+<!--+
+    |  This file is an empty tape-info file with comments
+    |  describing how to create a version of this file that
+    |  contains information about your site.
+    |
+    |  Leave this file alone!
+    |
+    |  If you have any near-line storage that needs
+    |  accounting for, write a script that (re-)generates
+    |  this file's content at a different location.  The
+    |  recommended location for this file is:
+    |
+    |    /var/opt/dcache/tape-info.xml
+    |
+    |  You must update the "tape-info" location option within
+    |
+    |    /opt/d-cache/etc/glue-1.3.xml
+    |
+    |  accordingly.
+    +-->
+
+
+<!--+
+    |   A "tape-info" element may have zero or more
+    |   "collection" child XML elements.  If there are no
+    |   "collection" elements (as with this file) then no
+    |   tape accounting information will be reported.
+    +-->
+<tape-info>
+
+  <!--+
+      |   A "collection" XML element represents a logical
+      |   collection of tape usage.  It represents the
+      |   near-line capacity that we wish to account for as a
+      |   single unit.
+      |
+      |   Each "collection" XML element must have a "id" XML
+      |   attribute.  The "id" attribute value must be unique
+      |   within the file and it must be consistent over
+      |   successive versions of the file; if the file is
+      |   updated then the "collection" element representing
+      |   the same set of tapes must have the same "id".
+      |
+      |   Apart from being unique and consistent, the "id"
+      |   attribute value must avoid certain characters.
+      |   Space is generally OK, but leading and trailing
+      |   space must be avoided; also, the "id" value must
+      |   avoid any of the following characters:
+      |
+      |       , + " \ < > = ; #
+      |
+      |   The "collection" XML element may have a single
+      |   "name" child XML element.  If present, this should
+      |   have a description of the collection that is
+      |   meaningful to someone.
+      |
+      |   The "collection" XML element must have a single
+      |   "space" XML child element.  This represents the
+      |   accounting information about this collection.
+      |
+      |   Inside the "space" XML element there must be
+      |   precisely three child XML elements: "reserved",
+      |   "total" and "used".  These child elements each
+      |   contain a number representing some aspect of the
+      |   near-line capacity, measured in bytes.  They have
+      |   the following semantics:
+      |
+      |      Total: this is the combined native capacity of
+      |             all the tapes currently accessible.
+      |
+      |      Used:  tape usage, after taking compression into
+      |             account.  If a 2 GiB file suffers a 50%
+      |             compression when stored on tape then the
+      |             file contributes 1 GiB to the Used value.
+      |
+      |      Reserved: Total + the combined native capacity
+      |             of any tapes that should be associated
+      |             with this collection but are not
+      |             currently available.  Examples of such
+      |             tapes are those that are on order or
+      |             tapes that are currently being repaired.
+      |
+      |   The following constraints must be observed:
+      |
+      |       Reserved value >= Total value,
+      |       Total value >= Used value.
+      |
+      |   The "for" XML element is a child of the
+      |   "collection" XML element.  It lists for whom the
+      |   near-line capacity is provided.  This list is
+      |   expressed as a series of "vo" XML elements,
+      |   children of the "for" XML element, where the value
+      |   of the XML element is the VO's name.
+      |
+      |   Some (possibly all) of the VOs listed in the "for"
+      |   XML element may be able to write into the near-line
+      |   storage.  To represent this, the "collection" XML
+      |   element may have a single "write-paths" XML element.
+      |
+      |   If no VO can write into the near-line storage
+      |   represented by a collection then the "write-paths"
+      |   XML element should be omitted.
+      |
+      |   The "write-paths" XML element has one or more "vo"
+      |   XML elements as children.  The value of these "vo"
+      |   elements is the path that that VO must use to
+      |   write into the near-line storage represented by
+      |   the "collection" element.  Each "vo" XML element
+      |   must have a "name" XML attribute with the VO's name.
+      |
+      |   Here is a complete example tape-info:
+      |
+      |   <tape-info>
+      |       <collection id="unallocated">
+      |           <name>Unallocated tape pool</name>
+      |
+      |           <space>
+      |               <reserved>100000000</reserved>
+      |               <total>100000000</total>
+      |               <used>0</used>
+      |           </space>
+      |
+      |           <for>
+      |               <vo>atlas</vo>
+      |               <vo>cms</vo>
+      |               <vo>lhcb</vo>
+      |               <vo>alice</vo>
+      |           </for>
+      |       </collection>
+      |
+      |       <collection id="atlas">
+      |           <name>Tapes for ATLAS</name>
+      |
+      |           <space>
+      |               <reserved>100000000</reserved>
+      |               <total>100000000</total>
+      |               <used>5000</used>
+      |           </space>
+      |
+      |           <for>
+      |               <vo>atlas</vo>
+      |           </for>
+      |
+      |           <write-paths>
+      |               <vo name="atlas">/pnfs/example.org/data/atlas/tape</vo>
+      |           </write-paths>
+      |       </collection>
+      |
+      |       <collection id="cms">
+      |           <name>Tapes for CMS</name>
+      |
+      |           <space>
+      |               <reserved>100000000</reserved>
+      |               <total>100000000</total>
+      |               <used>5000</used>
+      |           </space>
+      |
+      |           <for>
+      |               <vo>atlas</vo>
+      |           </for>
+      |
+      |           <write-paths>
+      |               <vo name="cms">/pnfs/example.org/data/cms/archive</vo>
+      |           </write-paths>
+      |       </collection>
+      |
+      |       <collection id="lhcb-alice">
+      |           <name>Tapes for LHCb and Alice</name>
+      |
+      |           <space>
+      |               <reserved>100000000</reserved>
+      |               <total>100000000</total>
+      |               <used>5000</used>
+      |           </space>
+      |
+      |           <for>
+      |               <vo>alice</vo>
+      |               <vo>lhcb</vo>
+      |           </for>
+      |
+      |           <write-paths>
+      |               <vo name="alice">/pnfs/example.org/data/alice/d0t1</vo>
+      |               <vo name="lhcb">/pnfs/example.org/data/lhcb/archive</vo>
+      |           </write-paths>
+      |       </collection>
+      |
+      |   </tape-info>
+      +-->
+</tape-info>
