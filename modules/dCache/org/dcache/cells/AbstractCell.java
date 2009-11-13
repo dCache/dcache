@@ -20,6 +20,7 @@ import dmg.util.Args;
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.UOID;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.Reply;
@@ -791,4 +792,20 @@ public class AbstractCell extends CellAdapter
             }
         }
     }
+    
+    /**
+     * A static version of the getCellVersion method.  This method is called
+     * by reflection in
+     * {@link dmg.cells.services.login.LoginManager#getCellVersion}
+     * @return
+     */
+    public static CellVersion getStaticCellVersion(){
+        return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision$" );
+    }
+    
+    @Override
+    public  CellVersion getCellVersion(){
+        return getStaticCellVersion() ;
+    }
+
 }
