@@ -35,7 +35,8 @@ public class RequestStatusTool {
            if(statusCode == null) {
                 throw new SRMException(" null status code");
            }
-           return 
+           return
+               statusCode != TStatusCode.SRM_PARTIAL_SUCCESS &&
                statusCode != TStatusCode.SRM_REQUEST_INPROGRESS &&
                statusCode != TStatusCode.SRM_REQUEST_QUEUED &&
                statusCode != TStatusCode.SRM_REQUEST_SUSPENDED &&
