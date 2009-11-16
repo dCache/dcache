@@ -3,15 +3,15 @@
 <!--+
     | Copyright (c) 2008, Deutsches Elektronen-Synchrotron (DESY)
     | All rights reserved.
-    | 
+    |
     | Redistribution and use in source and binary forms, with
     | or without modification, are permitted provided that the
     | following conditions are met:
-    | 
+    |
     |   o  Redistributions of source code must retain the above
     |      copyright notice, this list of conditions and the
     |      following disclaimer.
-    | 
+    |
     |   o  Redistributions in binary form must reproduce the
     |      above copyright notice, this list of conditions and
     |      the following disclaimer in the documentation and/or
@@ -90,7 +90,7 @@
     |  available and takes precedence over other methods and declarations.
     |  It allows only for a static default value.
     |
-    |  The second method is to specify the "child" attribute with the 
+    |  The second method is to specify the "child" attribute with the
     |  value of "default".  This allows a computed default value.
     |
     |  The child attribute may also given the value "path".  If so and
@@ -155,7 +155,7 @@
 	<!-- Calculate the absolute path -->
 	<xsl:call-template name="combine-paths">
 	  <xsl:with-param name="rel-path" select="$rel-path"/>
-	  
+
 	  <!-- Calculate the path from child elements -->
           <xsl:with-param name="path">
             <xsl:apply-templates mode="eval-attr">
@@ -190,7 +190,7 @@
 	<xsl:call-template name="eval-path">
 	  <xsl:with-param name="path" select="substring($path,2)"/>
 	  <xsl:with-param name="default" select="$default-result"/>
-	</xsl:call-template>	
+	</xsl:call-template>
       </xsl:when>
 
       <!-- Other paths are assumed to be relative to current context -->
@@ -259,11 +259,11 @@
       <xsl:variable name="factor">
 	<xsl:value-of select="/xylophone/scale/factor[@name=current()/@factor]"/>
       </xsl:variable>
-      
+
       <xsl:variable name="mode">
 	<xsl:value-of select="/xylophone/scale/factor[@name=current()/@factor]/@mode"/>
       </xsl:variable>
-  
+
       <xsl:variable name="result">
 	<xsl:choose>
 	  <xsl:when test="$mode = 'divide'">
@@ -307,7 +307,7 @@
     </xsl:when>
 
     <xsl:otherwise>
-      <xsl:message>Unknown "factor" attribute value &quot;<xsl:value-of select="@factor"/>&quot; in scale element.</xsl:message>      
+      <xsl:message>Unknown "factor" attribute value &quot;<xsl:value-of select="@factor"/>&quot; in scale element.</xsl:message>
     </xsl:otherwise>
   </xsl:choose>
 </xsl:template>
@@ -316,6 +316,8 @@
 <!-- When in mode eval-attr we ignore any suppress elements -->
 <xsl:template match="suppress" mode="eval-attr"/>
 
+<!-- When in mode eval-attr we ignore any unique elements -->
+<xsl:template match="unique" mode="eval-attr"/>
 
 
 <!--+
@@ -483,7 +485,7 @@
       <xsl:text>0</xsl:text>
     </xsl:otherwise>
   </xsl:choose>
-  
+
 </xsl:template>
 
 
@@ -498,7 +500,7 @@
 
   <xsl:choose>
     <xsl:when test="@id">
-      
+
       <!-- Now we look up this constant value -->
       <xsl:choose>
 	<xsl:when test="/xylophone/constants/constant[@id=current()/@id][1]">
