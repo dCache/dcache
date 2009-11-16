@@ -626,6 +626,16 @@
                 </map>
               </suppress>
 
+	      <!-- Ensure the combination of VO and path is unique -->
+	      <unique>
+                <map name="unit-to-VO">
+                  <lookup path="@name"/>
+                </map>
+                <map name="unit-to-path">
+                  <lookup path="@name"/>
+                </map>
+	      </unique>
+
               <attr name="GlueVOInfoLocalID">
                 <lookup path="@name"/>
               </attr>
@@ -673,6 +683,11 @@
                   <lookup path="@name"/>
                 </map>
               </suppress>
+	      <unique>
+		<map name="unit-to-VO">
+		  <lookup path="@name"/>
+		</map>
+	      </unique>
             </attr>
 
             <!-- Publish those VOs that can read -->
@@ -685,6 +700,11 @@
                   <lookup path="@name"/>
                 </map>
               </suppress>
+	      <unique>
+		<map name="unit-to-VO">
+		  <lookup path="@name"/>
+		</map>
+	      </unique>
             </attr>
 
             <!-- Publish those VOs that can stage from tape -->
@@ -697,6 +717,11 @@
                   <lookup path="@name"/>
                 </map>
               </suppress>
+	      <unique>
+		<map name="unit-to-VO">
+		  <lookup path="@name"/>
+		</map>
+	      </unique>
             </attr>
 
             <!-- We repeat publishing the access rules with the deprecated
@@ -712,6 +737,11 @@
                     name="unit-to-VO">
                 <lookup path="@name"/>
               </map>
+	      <unique>
+		<map name="unit-to-VO">
+		  <lookup path="@name"/>
+		</map>
+	      </unique>
             </attr>
             <attr name="GlueSAAccessControlBaseRule"
                   not-empty="1"
@@ -719,6 +749,11 @@
                     name="unit-to-VO">
                 <lookup path="@name"/>
               </map>
+	      <unique>
+		<map name="unit-to-VO">
+		  <lookup path="@name"/>
+		</map>
+	      </unique>
             </attr>
             <attr name="GlueSAAccessControlBaseRule"
                   not-empty="1"
@@ -726,6 +761,11 @@
                       name="unit-to-VO">
                 <lookup path="@name"/>
               </map>
+	      <unique>
+		<map name="unit-to-VO">
+		  <lookup path="@name"/>
+		</map>
+	      </unique>
             </attr>
 
 
@@ -867,6 +907,11 @@
                   <lookup path="@name"/>
                 </map>
               </suppress>
+	      <unique>
+		<map name="unit-to-VO">
+                  <lookup path="@name"/>
+                </map>
+	      </unique>
             </attr>
 
             <attr select="d:units/d:store/d:read/d:unitref"
@@ -878,6 +923,11 @@
                   <lookup path="@name"/>
                 </map>
               </suppress>
+	      <unique>
+		<map name="unit-to-VO">
+                  <lookup path="@name"/>
+                </map>
+	      </unique>
             </attr>
 
             <attr select="d:units/d:store/d:write/d:unitref"
@@ -889,6 +939,11 @@
                   <lookup path="@name"/>
                 </map>
               </suppress>
+	      <unique>
+		<map name="unit-to-VO">
+                  <lookup path="@name"/>
+                </map>
+	      </unique>
             </attr>
 
             <attr name="GlueChunkKey">
