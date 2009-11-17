@@ -506,45 +506,7 @@ public class Storage
     return new File(fileId);
   }
 
-        public boolean canRead(SRMUser user, String fileId, FileMetaData fmd) {
-            return _canRead(user,fileId,fmd);
-        }
 
-        public static boolean _canRead(SRMUser user, String fileId, FileMetaData fmd) {
-            int uid = Integer.parseInt(fmd.owner);
-            int gid = Integer.parseInt(fmd.group);
-            int permissions = fmd.permMode;
-
-
-            if(permissions == 0 ) {
-                return false;
-            }
-
-            if(Permissions.worldCanRead(permissions)) {
-                return true;
-            }
-
-            if(uid == -1 || gid == -1) {
-                return false;
-            }
-
-            if(user == null || (!(user instanceof UnixfsUser))) {
-                return false;
-            }
-            UnixfsUser duser = (UnixfsUser) user;
-
-            if(duser.getGid() == gid && Permissions.groupCanRead(permissions)) {
-                return true;
-            }
-
-            if(duser.getUid() == uid && Permissions.userCanRead(permissions)) {
-                return true;
-            }
-
-            return false;
-
-
-        }
 
         public boolean canWrite(SRMUser user, String fileId, FileMetaData fmd,
                 String parentFileId, FileMetaData parentFmd, boolean overwrite) {

@@ -2532,49 +2532,6 @@ public class Storage
         }
     }
 
-    public boolean canRead(SRMUser user, String fileId, FileMetaData fmd) {
-        return _canRead(user,fileId,fmd);
-    }
-
-    public static boolean _canRead(SRMUser user, String fileId, FileMetaData fmd) {
-        PnfsId pnfsId = new PnfsId(fileId);
-        int uid = Integer.parseInt(fmd.owner);
-        int gid = Integer.parseInt(fmd.group);
-        int permissions = fmd.permMode;
-
-        if(pnfsId == null) {
-            return false;
-        }
-
-        if(permissions == 0 ) {
-            return false;
-        }
-
-        if(Permissions.worldCanRead(permissions)) {
-            return true;
-        }
-
-        if(uid == -1 || gid == -1) {
-            return false;
-        }
-
-        if(user == null || (!(user instanceof AuthorizationRecord))) {
-            return false;
-        }
-        AuthorizationRecord duser = (AuthorizationRecord) user;
-
-        if(duser.getGid() == gid && Permissions.groupCanRead(permissions)) {
-            return true;
-        }
-
-        if(duser.getUid() == uid && Permissions.userCanRead(permissions)) {
-            return true;
-        }
-
-        return false;
-
-
-    }
 
     // To do:  extract common functionality from this and _canRead
     //         into another method.

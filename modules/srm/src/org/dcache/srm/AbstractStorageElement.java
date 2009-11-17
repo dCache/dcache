@@ -563,13 +563,6 @@ public interface AbstractStorageElement extends Logger{
             String to) throws SRMException;
 
 
-    /** This method tells if the specified file can be read
-     * @param user User ID
-     * @param fileId SE internal file ID
-     * @param fmd File metadata received from getFileMetaData
-     * @return Boolean T/F
-     */
-    public boolean canRead(SRMUser user,String fileId,FileMetaData fmd);
 
     /** This method tells if the specified file can be written
      * @param user User ID

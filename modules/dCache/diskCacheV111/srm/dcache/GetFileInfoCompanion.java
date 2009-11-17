@@ -1,30 +1,3 @@
-// $Id$
-// $Log: not supported by cvs2svn $
-// Revision 1.8  2006/09/25 20:30:58  timur
-// modify srm companions and srm cell to use ThreadManager
-//
-// Revision 1.7  2005/10/07 22:59:46  timur
-// work towards v2
-//
-// Revision 1.6  2005/05/04 20:22:20  timur
-//  better error if file not found
-//
-// Revision 1.5  2005/04/28 13:13:03  timur
-// make more meaningfull error messade for prepare to get error
-//
-// Revision 1.4  2005/03/11 21:17:28  timur
-// making srm compatible with cern tools again
-//
-// Revision 1.3  2005/01/25 05:17:31  timur
-// moving general srm stuff into srm repository
-//
-// Revision 1.2  2004/08/06 19:35:22  timur
-// merging branch srm-branch-12_May_2004 into the trunk
-//
-// Revision 1.1.2.4  2004/06/15 22:15:42  timur
-// added cvs logging tags and fermi copyright headers at the top
-//
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -93,10 +66,6 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.srm.dcache;
 
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
-
 import org.dcache.cells.CellStub;
 import org.dcache.cells.MessageCallback;
 import org.dcache.cells.ThreadManagerMessageCallback;
@@ -105,7 +74,6 @@ import org.dcache.auth.Subjects;
 import org.dcache.srm.GetFileInfoCallbacks;
 import org.dcache.srm.FileMetaData;
 import org.dcache.vehicles.PnfsGetFileAttributes;
-
 import static diskCacheV111.util.CacheException.*;
 
 public class GetFileInfoCompanion
@@ -163,6 +131,7 @@ public class GetFileInfoCompanion
         failure(TIMEOUT, "Timeout");
     }
 
+    @Override
     public String toString()
     {
         return getClass().getName() + "[" + path + "]";
