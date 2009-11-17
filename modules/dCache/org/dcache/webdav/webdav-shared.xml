@@ -27,6 +27,11 @@
     <property name="timeout" value="${webdavGplazmaTimeout}"/>
   </bean>
 
+  <bean id="billing-stub" class="org.dcache.cells.CellStub">
+    <description>Billing communication stub</description>
+    <property name="destination" value="billing"/>
+  </bean>
+
   <bean id="list-handler" class="org.dcache.util.list.ListDirectoryHandler">
     <description>Client stub for directory listing</description>
     <constructor-arg>
@@ -84,6 +89,7 @@
     <property name="pnfsStub" ref="pnfs-stub"/>
     <property name="poolManagerStub" ref="pool-manager-stub"/>
     <property name="poolStub" ref="pool-stub"/>
+    <property name="billingStub" ref="billing-stub"/>
     <property name="listHandler" ref="list-handler"/>
     <property name="rootPath" value="${webdavRootPath}"/>
     <property name="allowedPaths" value="${webdavAllowedPaths}"/>

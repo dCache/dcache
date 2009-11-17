@@ -75,8 +75,6 @@ public class DcacheFileResource
             switch (request.getMethod()) {
             case GET:
                 return _factory.getReadUrl(_path, _attributes.getPnfsId());
-            case PUT:
-                return _factory.getWriteUrl(_path, _attributes.getPnfsId());
             default:
                 return null;
             }

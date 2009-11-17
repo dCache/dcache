@@ -5,9 +5,12 @@ import java.util.Map;
 import java.util.Collections;
 import java.io.OutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InterruptedIOException;
 
 import com.bradmcevoy.http.Resource;
 import com.bradmcevoy.http.CollectionResource;
+import com.bradmcevoy.http.PutableResource;
 import com.bradmcevoy.http.GetableResource;
 import com.bradmcevoy.http.DeletableResource;
 import com.bradmcevoy.http.MakeCollectionableResource;
@@ -28,7 +31,7 @@ import org.dcache.vehicles.FileAttributes;
  */
 public class DcacheDirectoryResource
     extends DcacheResource
-    implements CollectionResource, GetableResource, DeletableResource,
+    implements PutableResource, GetableResource, DeletableResource,
                MakeCollectionableResource
 {
     public DcacheDirectoryResource(DcacheResourceFactory factory,
@@ -57,6 +60,21 @@ public class DcacheDirectoryResource
         } catch (InterruptedException e) {
             //TODO
             throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public Resource createNew(String newName, InputStream inputStream,
+                              Long length, String contentType)
+        throws IOException
+    {
+        try {
+            FsPath path = new FsPath(_path, newName);
+            return _factory.createFile(_attributes, path, inputStream, length);
+        } catch (CacheException e) {
+            throw new IOException(e.getMessage(), e);
+        } catch (InterruptedException e) {
+            throw new InterruptedIOException("Transfer was interrupted");
         }
     }
 
@@ -109,7 +127,8 @@ public class DcacheDirectoryResource
         throws NotAuthorizedException, ConflictException
     {
         try {
-            return _factory.makeDirectory(new FsPath(_path, newName));
+            return _factory.makeDirectory(_attributes,
+                                          new FsPath(_path, newName));
         } catch (CacheException e) {
             throw new RuntimeException(e);
         }

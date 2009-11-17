@@ -8,9 +8,17 @@ import java.util.EnumSet;
 import java.util.Date;
 import java.util.Collections;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.io.File;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
+import java.net.ServerSocket;
+import java.net.InetAddress;
 import javax.security.auth.Subject;
 import java.security.AccessController;
 
@@ -20,6 +28,8 @@ import com.bradmcevoy.http.ResourceFactory;
 import com.bradmcevoy.http.SecurityManager;
 import com.bradmcevoy.http.XmlWriter;
 
+import com.sun.security.auth.UserPrincipal;
+
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
@@ -27,6 +37,7 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.HttpDoorUrlInfoMessage;
 import diskCacheV111.vehicles.HttpProtocolInfo;
+import diskCacheV111.vehicles.GFtpProtocolInfo;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.PoolMgrSelectPoolMsg;
@@ -35,7 +46,12 @@ import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.PoolDeliverFileMessage;
+import diskCacheV111.vehicles.PoolMoverKillMessage;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
+import diskCacheV111.vehicles.DoorTransferFinishedMessage;
+import diskCacheV111.vehicles.IoDoorInfo;
+import diskCacheV111.vehicles.IoDoorEntry;
+import diskCacheV111.vehicles.DoorRequestInfoMessage;
 
 import org.dcache.cells.CellStub;
 import org.dcache.cells.CellMessageReceiver;
@@ -44,11 +60,14 @@ import org.dcache.acl.Origin;
 import org.dcache.auth.Subjects;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.util.CacheExceptionFactory;
 import org.dcache.util.list.DirectoryListPrinter;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.ListDirectoryHandler;
 
+import dmg.util.Args;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.CollectionFactory;
 
 import org.apache.log4j.Logger;
@@ -67,16 +86,58 @@ public class DcacheResourceFactory
     private static final Logger _log =
         Logger.getLogger(DcacheResourceFactory.class);
 
-    private static final Set<FileAttribute> FILE_ATTRIBUTES =
-        EnumSet.of(TYPE, PNFSID, CREATION_TIME, MODIFICATION_TIME, SIZE);
+    private static final Set<FileAttribute> REQUIRED_ATTRIBUTES =
+        EnumSet.of(TYPE, PNFSID, CREATION_TIME, MODIFICATION_TIME, SIZE,
+                   MODE, OWNER, OWNER_GROUP);
 
-    private final Map<PnfsId,List<LinkedBlockingQueue>> _redirectTable =
+    private static final int FILE_UMASK = 0644;
+    private static final int FILE_UMASK_ANONYMOUS = 0666;
+    private static final int DIRECTORY_UMASK = 0755;
+    private static final int DIRECTORY_UMASK_ANONYMOUS = 0777;
+
+    private static final String PROTOCOL_INFO_NAME = "Http";
+    private static final int PROTOCOL_INFO_MAJOR_VERSION = 1;
+    private static final int PROTOCOL_INFO_MINOR_VERSION = 1;
+    private static final int PROTOCOL_INFO_UNKNOWN_PORT = 0;
+
+    private static final String RELAY_PROTOCOL_INFO_NAME = "GFtp";
+    private static final int RELAY_PROTOCOL_INFO_MAJOR_VERSION = 1;
+    private static final int RELAY_PROTOCOL_INFO_MINOR_VERSION = 0;
+    private static final int RELAY_PROTOCOL_INFO_STREAMS = 1;
+    private static final int RELAY_PROTOCOL_INFO_BUFFERSIZE = 0;
+    private static final int RELAY_PROTOCOL_INFO_OFFSET = 0;
+    private static final int RELAY_PROTOCOL_INFO_SIZE = 0;
+
+
+    /**
+     * Map used to map pool redirect messages to blocking queues used
+     * to hand over the redirection URL to the proper transfer
+     * request. All access must be synchronized on the monitor of the
+     * map.
+     */
+    private final Map<PnfsId,List<LinkedBlockingQueue<String>>> _redirectTable =
         CollectionFactory.newHashMap();
+
+    /**
+     * In progress write transfers.
+     */
+    private final Set<Transfer> _transfers =
+        new ConcurrentSkipListSet<Transfer>();
+
+    /**
+     * In progress write transfers with a mover.
+     */
+    private final Map<PnfsId,Transfer> _movers =
+        CollectionFactory.newConcurrentHashMap();
 
     private ListDirectoryHandler _list;
 
+    private long _killTimeout = 1000;
+    private long _transferConfirmationTimeout = 60000;
+    private int _bufferSize = 65536;
     private CellStub _poolStub;
     private CellStub _poolManagerStub;
+    private CellStub _billingStub;
     private PnfsHandler _pnfs;
     private SecurityManager _securityManager;
     private String _ioQueue;
@@ -89,6 +150,36 @@ public class DcacheResourceFactory
     public DcacheResourceFactory()
     {
         _securityManager = new NullSecurityManager();
+    }
+
+    public long getKillTimeout()
+    {
+        return _killTimeout;
+    }
+
+    public void setKillTimeout(long timeout)
+    {
+        _killTimeout = timeout;
+    }
+
+    public long getTransferConfirmationTimeout()
+    {
+        return _transferConfirmationTimeout;
+    }
+
+    public void setTransferConfirmationTimeout(long timeout)
+    {
+        _transferConfirmationTimeout = timeout;
+    }
+
+    public int getBufferSize()
+    {
+        return _bufferSize;
+    }
+
+    public void setBufferSize(int bufferSize)
+    {
+        _bufferSize = bufferSize;
     }
 
     /**
@@ -178,6 +269,14 @@ public class DcacheResourceFactory
     }
 
     /**
+     * Sets the cell stub for billing communication.
+     */
+    public void setBillingStub(CellStub stub)
+    {
+        _billingStub = stub;
+    }
+
+    /**
      * Sets the ListDirectoryHandler used for directory listing.
      */
     public void setListHandler(ListDirectoryHandler list)
@@ -243,7 +342,7 @@ public class DcacheResourceFactory
         try {
             PnfsHandler pnfs = new PnfsHandler(_pnfs, getSubject());
             FileAttributes attributes =
-                pnfs.getFileAttributes(path.toString(), FILE_ATTRIBUTES);
+                pnfs.getFileAttributes(path.toString(), REQUIRED_ATTRIBUTES);
             return getResource(path, attributes);
         } catch (FileNotFoundCacheException e) {
             return null;
@@ -269,6 +368,74 @@ public class DcacheResourceFactory
     }
 
     /**
+     * Creates a new file. The door will relay all data to a pool
+     * using a GridFTP mode S data connection.
+     */
+    public DcacheResource
+        createFile(FileAttributes parent, FsPath path,
+                   InputStream inputStream, Long length)
+        throws CacheException, InterruptedException, IOException
+    {
+        Subject subject = getSubject();
+
+        WriteTransfer transfer =
+            new WriteTransfer(subject, path, new PnfsHandler(_pnfs, subject));
+        _transfers.add(transfer);
+        try {
+            boolean success = false;
+            transfer.createNameSpaceEntry(parent);
+            try {
+                PnfsId pnfsid = transfer.getPnfsId();
+                transfer.setLength(length);
+                transfer.selectPool();
+                transfer.openServerChannel();
+                _movers.put(pnfsid, transfer);
+                try {
+                    transfer.startMover();
+                    try {
+                        transfer.relayData(inputStream);
+                        if (!transfer.join(_transferConfirmationTimeout)) {
+                            throw new CacheException("Missing transfer confirmation from pool");
+                        }
+                    } finally {
+                        transfer.setStatus(null);
+                        transfer.killMover();
+                    }
+                } finally {
+                    _movers.remove(pnfsid);
+                    transfer.closeServerChannel();
+                }
+
+                transfer.notifyBilling(0, "");
+                success = true;
+            } finally {
+                if (!success) {
+                    transfer.deleteNameSpaceEntry();
+                }
+            }
+        } catch (CacheException e) {
+            transfer.notifyBilling(e.getRc(), e.getMessage());
+            throw e;
+        } catch (InterruptedException e) {
+            transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                   "Transfer interrupted");
+            throw e;
+        } catch (IOException e) {
+            transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                   e.getMessage());
+            throw e;
+        } catch (RuntimeException e) {
+            transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                   e.getMessage());
+            throw e;
+        } finally {
+            _transfers.remove(transfer);
+        }
+
+        return getResource(path);
+    }
+
+    /**
      * Performs a directory listing returning a list of Resource
      * objects.
      */
@@ -281,7 +448,7 @@ public class DcacheResourceFactory
             {
                 public Set<FileAttribute> getRequiredAttributes()
                 {
-                    return FILE_ATTRIBUTES;
+                    return REQUIRED_ATTRIBUTES;
                 }
 
                 public void print(FileAttributes dirAttr, DirectoryEntry entry)
@@ -364,14 +531,23 @@ public class DcacheResourceFactory
     /**
      * Create a new directory.
      */
-    public DcacheDirectoryResource makeDirectory(FsPath path)
+    public DcacheDirectoryResource
+        makeDirectory(FileAttributes parent, FsPath path)
         throws CacheException
     {
-        PnfsHandler pnfs = new PnfsHandler(_pnfs, getSubject());
+        Subject subject = getSubject();
+        long[] uids = Subjects.getUids(subject);
+        long[] gids = Subjects.getGids(subject);
+        int uid = (uids.length > 0) ? (int) uids[0] : parent.getOwner();
+        int gid = (gids.length > 0) ? (int) gids[0] : parent.getGroup();
+        int umask =
+            (uids.length > 0) ? DIRECTORY_UMASK : DIRECTORY_UMASK_ANONYMOUS;
+        PnfsHandler pnfs = new PnfsHandler(_pnfs, subject);
         PnfsCreateEntryMessage reply =
-            pnfs.createPnfsDirectory(path.toString());
+            pnfs.createPnfsDirectory(path.toString(), uid, gid,
+                                     umask & parent.getMode());
         FileAttributes attributes =
-            pnfs.getFileAttributes(reply.getPnfsId(), FILE_ATTRIBUTES);
+            pnfs.getFileAttributes(reply.getPnfsId(), REQUIRED_ATTRIBUTES);
 
         return new DcacheDirectoryResource(this, path, attributes);
     }
@@ -404,8 +580,11 @@ public class DcacheResourceFactory
         String address = origin.getAddress().getHostAddress();
 
         HttpProtocolInfo protocol_info =
-            new HttpProtocolInfo("Http", 1, 1,
-                                 address, 0,
+            new HttpProtocolInfo(PROTOCOL_INFO_NAME,
+                                 PROTOCOL_INFO_MAJOR_VERSION,
+                                 PROTOCOL_INFO_MINOR_VERSION,
+                                 address,
+                                 PROTOCOL_INFO_UNKNOWN_PORT,
                                  _cellName, _domainName, path.toString());
         String pool = askForPool(pnfsid,
                                  storage_info,
@@ -419,46 +598,29 @@ public class DcacheResourceFactory
     }
 
     /**
-     * Returns a write URL for a file.
-     *
-     * @param path The full path of the file.
-     * @param pnfsid The PNFS ID of the file.
-     */
-    public String getWriteUrl(FsPath path, PnfsId pnfsid)
-        throws CacheException, InterruptedException
-    {
-//         PnfsHandler pnfs = new PnfsHandler(_pnfs, subject);
-//         StorageInfo storage_info =
-//             pnfs.getStorageInfoByPnfsId(pnfsid).getStorageInfo();
-//         Origin origin = Subjects.getOrigin(subject);
-
-//         HttpProtocolInfo protocol_info =
-//             new HttpProtocolInfo("Http", 1, 1, origin.getHostAddress(), 0, _cellName,
-//                                  _domainName, path.toString());
-//         String pool = askForPool(pnfsid,
-//                                  storage_info,
-//                                  protocol_info,
-//                                  true); /* true for write */
-//         return askForFile(pool,
-//                           pnfsid,
-//                           storage_info,
-//                           protocol_info,
-//                           true); /* true for write */
-        throw new UnsupportedOperationException("Not implemented");
-    }
-
-    /**
      * Message handler for redirect messages from the pools.
      */
     public void messageArrived(HttpDoorUrlInfoMessage message)
     {
         synchronized (_redirectTable) {
-            List<LinkedBlockingQueue> list =
+            List<LinkedBlockingQueue<String>> list =
                 _redirectTable.get(new PnfsId(message.getPnfsId()));
             if (list != null) {
                 assert !list.isEmpty();
                 list.get(0).offer(message.getUrl());
             }
+        }
+    }
+
+    /**
+     * Message handler for transfer completion messages from the
+     * pools.
+     */
+    public void messageArrived(DoorTransferFinishedMessage message)
+    {
+        Transfer transfer = _movers.get(message.getPnfsId());
+        if (transfer != null) {
+            transfer.finished(message);
         }
     }
 
@@ -524,11 +686,11 @@ public class DcacheResourceFactory
         path.add(pool);
 
         LinkedBlockingQueue<String> queue = new LinkedBlockingQueue<String>();
-        List<LinkedBlockingQueue> list;
+        List<LinkedBlockingQueue<String>> list;
         synchronized (_redirectTable) {
             list = _redirectTable.get(pnfsId);
             if (list == null) {
-                list = new ArrayList<LinkedBlockingQueue>();
+                list = new ArrayList<LinkedBlockingQueue<String>>();
                 _redirectTable.put(pnfsId, list);
             }
             list.add(queue);
@@ -581,5 +743,377 @@ public class DcacheResourceFactory
     private Subject getSubject()
     {
         return Subject.getSubject(AccessController.getContext());
+    }
+
+    public final static String hh_get_door_info = "[-binary]";
+    public Object ac_get_door_info(Args args)
+    {
+        IoDoorInfo doorInfo = new IoDoorInfo(_cellName, _domainName);
+        doorInfo.setProtocol("HTTP", "1.1");
+        doorInfo.setOwner("");
+        doorInfo.setProcess("");
+        doorInfo.setIoDoorEntries(_transfers.toArray(new IoDoorEntry[0]));
+        return (args.getOpt("binary") != null) ? doorInfo : doorInfo.toString();
+    }
+
+    /**
+     * Encapulates information about a transfer.
+     */
+    private class Transfer implements Comparable<Transfer>
+    {
+        protected final long _startedAt;
+        protected final long _sessionId;
+        protected final FsPath _path;
+        protected final Subject _subject;
+        private String _pool;
+        private Integer _moverId;
+        private PnfsId _pnfsid;
+        private String _status;
+        private CacheException _error;
+
+        Transfer(Subject subject, FsPath path)
+        {
+            _subject = subject;
+            _path = path;
+            _startedAt = System.currentTimeMillis();
+            _sessionId = 0; //FIXME
+        }
+
+        @Override
+        public int compareTo(Transfer o)
+        {
+            return o.hashCode() - hashCode();
+        }
+
+        synchronized void setStatus(String status)
+        {
+            _status = status;
+        }
+
+        synchronized void setPnfsId(PnfsId pnfsid)
+        {
+            _pnfsid = pnfsid;
+        }
+
+        synchronized PnfsId getPnfsId()
+        {
+            return _pnfsid;
+        }
+
+        synchronized void setMoverId(Integer moverId)
+        {
+            _moverId = moverId;
+        }
+
+        synchronized Integer getMoverId()
+        {
+            return _moverId;
+        }
+
+        synchronized void setPool(String pool)
+        {
+            _pool = pool;
+        }
+
+        synchronized String getPool()
+        {
+            return _pool;
+        }
+
+        synchronized void finished(DoorTransferFinishedMessage msg)
+        {
+            _moverId = null;
+            if (msg.getReturnCode() != 0) {
+                _error = CacheExceptionFactory.exceptionOf(msg);
+            }
+            notifyAll();
+        }
+
+        synchronized boolean join(long millis)
+            throws CacheException, InterruptedException
+        {
+            long deadline = System.currentTimeMillis() + millis;
+            while (_moverId != null && System.currentTimeMillis() < deadline) {
+                wait(deadline - System.currentTimeMillis());
+            }
+
+            if (_error != null) {
+                throw _error;
+            }
+
+            return _moverId == null;
+        }
+
+        synchronized IoDoorEntry getIoDoorEntry()
+        {
+            Origin origin = Subjects.getOrigin(_subject);
+            return new IoDoorEntry(_sessionId,
+                                   _pnfsid,
+                                   _pool,
+                                   _status,
+                                   _startedAt,
+                                   origin.getAddress().getHostAddress());
+        }
+    }
+
+    private class WriteTransfer extends Transfer
+    {
+        private final PnfsHandler _pnfs;
+        private StorageInfo _storageInfo;
+        private ServerSocketChannel _serverChannel;
+        private int _uid;
+        private int _gid;
+
+        WriteTransfer(Subject subject, FsPath path, PnfsHandler pnfs)
+        {
+            super(subject, path);
+            _pnfs = pnfs;
+        }
+
+        void createNameSpaceEntry(FileAttributes parent)
+            throws CacheException
+        {
+            setStatus("PnfsManager: Creating name space entry");
+            try {
+                long[] uids = Subjects.getUids(_subject);
+                long[] gids = Subjects.getGids(_subject);
+                _uid = (uids.length > 0) ? (int) uids[0] : parent.getOwner();
+                _gid = (gids.length > 0) ? (int) gids[0] : parent.getGroup();
+                int umask =
+                    (uids.length > 0) ? FILE_UMASK : FILE_UMASK_ANONYMOUS;
+                PnfsCreateEntryMessage msg =
+                    _pnfs.createPnfsEntry(_path.toString(), _uid, _gid,
+                                          umask & parent.getMode());
+                setPnfsId(msg.getPnfsId());
+                _storageInfo = msg.getStorageInfo();
+            } finally {
+                setStatus(null);
+            }
+        }
+
+        void setLength(Long length)
+        {
+            if (length != null) {
+                _storageInfo.setFileSize(length);
+            }
+        }
+
+        void selectPool()
+            throws CacheException, InterruptedException
+        {
+            setStatus("PoolManager: Selecting pool");
+            try {
+                Origin origin = Subjects.getOrigin(_subject);
+                String address = origin.getAddress().getHostAddress();
+                HttpProtocolInfo protocolInfo =
+                    new HttpProtocolInfo(PROTOCOL_INFO_NAME,
+                                         PROTOCOL_INFO_MAJOR_VERSION,
+                                         PROTOCOL_INFO_MINOR_VERSION,
+                                         address,
+                                         PROTOCOL_INFO_UNKNOWN_PORT,
+                                         _cellName, _domainName,
+                                         _path.toString());
+                setPool(askForPool(getPnfsId(), _storageInfo, protocolInfo, true));
+            } finally {
+                setStatus(null);
+            }
+        }
+
+        synchronized void openServerChannel()
+            throws IOException
+        {
+            _serverChannel = ServerSocketChannel.open();
+            try {
+                _serverChannel.socket().bind(null);
+            } catch (IOException e) {
+                _serverChannel.close();
+                _serverChannel = null;
+                throw e;
+            }
+        }
+
+        synchronized void closeServerChannel()
+            throws IOException
+        {
+            if (_serverChannel != null) {
+                _serverChannel.close();
+                _serverChannel = null;
+            }
+        }
+
+        synchronized ServerSocketChannel getServerChannel()
+        {
+            return _serverChannel;
+        }
+
+        void startMover()
+            throws CacheException, InterruptedException
+        {
+            String pool = getPool();
+            setStatus("Pool " + pool + ": Creating mover");
+            try {
+                /* For now we use GridFTP mode S to stream the data to
+                 * the pool.
+                 */
+                ServerSocket socket = getServerChannel().socket();
+                String address = socket.getInetAddress().getHostAddress();
+                int port = socket.getLocalPort();
+                GFtpProtocolInfo protocolInfo =
+                    new GFtpProtocolInfo(RELAY_PROTOCOL_INFO_NAME,
+                                         RELAY_PROTOCOL_INFO_MAJOR_VERSION,
+                                         RELAY_PROTOCOL_INFO_MINOR_VERSION,
+                                         address, port,
+                                         RELAY_PROTOCOL_INFO_STREAMS,
+                                         RELAY_PROTOCOL_INFO_STREAMS,
+                                         RELAY_PROTOCOL_INFO_STREAMS,
+                                         RELAY_PROTOCOL_INFO_BUFFERSIZE,
+                                         RELAY_PROTOCOL_INFO_OFFSET,
+                                         RELAY_PROTOCOL_INFO_SIZE, null);
+
+                PoolIoFileMessage message =
+                    new PoolAcceptFileMessage(pool, getPnfsId(),
+                                              protocolInfo, _storageInfo);
+                message.setIoQueueName(_ioQueue);
+
+                /* As always, PoolIoFileMessage has to be sent via the
+                 * PoolManager (which could be the SpaceManager).
+                 */
+                CellPath poolPath =
+                    (CellPath) _poolManagerStub.getDestinationPath().clone();
+                poolPath.add(pool);
+
+                setMoverId(_poolStub.sendAndWait(poolPath, message).getMoverId());
+            } finally {
+                setStatus(null);
+            }
+        }
+
+        void relayData(InputStream inputStream)
+            throws IOException
+        {
+            setStatus("Mover " + getPool() + "/" + getMoverId() +
+                      ": Waiting for data connection");
+            try {
+                SocketChannel channel = getServerChannel().accept();
+                try {
+                    closeServerChannel();
+
+                    setStatus("Mover " + getPool() + "/" + getMoverId() +
+                              ": Receiving data");
+
+                    /* Relay the data to the pool.
+                     */
+                    byte[] buffer = new byte[_bufferSize];
+                    int read;
+                    while ((read = inputStream.read(buffer)) > -1) {
+                        ByteBuffer outputBuffer =
+                            ByteBuffer.wrap(buffer, 0, read);
+                        while (outputBuffer.remaining() > 0) {
+                            channel.write(outputBuffer);
+                        }
+                    }
+                } finally {
+                    channel.close();
+                }
+            } finally {
+                setStatus(null);
+            }
+        }
+
+        void killMover()
+        {
+            Integer moverId = getMoverId();
+            if (moverId != null) {
+                String pool = getPool();
+                setStatus("Mover " + pool + "/" + moverId + ": Killing mover");
+                try {
+                    /* Kill the mover.
+                     */
+                    PoolMoverKillMessage message =
+                        new PoolMoverKillMessage(pool, moverId);
+                    message.setReplyRequired(false);
+                    _poolStub.send(new CellPath(pool), message);
+
+                    /* To reduce the risk of orphans when using PNFS, we wait
+                     * for the transfer confirmation.
+                     */
+                    join(_killTimeout);
+                } catch (CacheException e) {
+                    // Not surprising that the pool reported a failure
+                    // when we killed the mover.
+                    _log.debug("Killed mover and pool reported: " +
+                               e.getMessage());
+                } catch (InterruptedException e) {
+                    _log.warn("Failed to kill mover " + pool + "/" + moverId
+                              + ": " + e.getMessage());
+                    Thread.currentThread().interrupt();
+                } catch (NoRouteToCellException e) {
+                    _log.error("Failed to kill mover " + pool + "/" + moverId
+                               + ": " + e.getMessage());
+                } finally {
+                    setStatus(null);
+                }
+            }
+        }
+
+        void deleteNameSpaceEntry()
+        {
+            PnfsId pnfsId = getPnfsId();
+            if (pnfsId != null) {
+                setStatus("PnfsManager: Deleting name space entry");
+                try {
+                    _pnfs.deletePnfsEntry(pnfsId, _path.toString());
+                } catch (CacheException e) {
+                    _log.error("Failed to delete file after failed upload: " +
+                               _path + " (" + pnfsId + "): " + e.getMessage());
+                } finally {
+                    setStatus(null);
+                }
+            }
+        }
+
+        synchronized void finished(DoorTransferFinishedMessage msg)
+        {
+            super.finished(msg);
+            if (_serverChannel != null) {
+                try {
+                    _serverChannel.close();
+                } catch (IOException e) {
+                    _log.error("Failed to close pool connection: " +
+                               e.getMessage());
+                }
+            }
+        }
+
+        void notifyBilling(int code, String s)
+        {
+            try {
+                Origin origin = Subjects.getOrigin(_subject);
+                String owner = Subjects.getDn(_subject);
+                if (owner == null)  {
+                    Set<UserPrincipal> principals =
+                        _subject.getPrincipals(UserPrincipal.class);
+                    if (!principals.isEmpty()) {
+                        owner = principals.iterator().next().getName();
+                    }
+                }
+
+                DoorRequestInfoMessage msg =
+                    new DoorRequestInfoMessage(_cellName + "@" + _domainName);
+                msg.setOwner(owner);
+                msg.setGid(_uid);
+                msg.setUid(_gid);
+                msg.setPath(_path.toString());
+                msg.setTransactionTime(_startedAt);
+                msg.setClient(origin.getAddress().getHostAddress());
+                msg.setPnfsId(getPnfsId());
+                msg.setResult(code, s);
+                msg.setStorageInfo(_storageInfo);
+                _billingStub.send(msg);
+            } catch (NoRouteToCellException e) {
+                _log.error("Failed to register transfer in billing: " +
+                           e.getMessage());
+            }
+        }
     }
 }
