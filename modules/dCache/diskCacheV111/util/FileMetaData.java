@@ -7,6 +7,8 @@ import java.util.Date;
 
 public class FileMetaData implements Serializable {
 
+    private final static String DATE_FORMAT = "MM.dd-HH:mm:ss";
+
     /*
      * each field has value and isSetXXX
      */
@@ -31,9 +33,6 @@ public class FileMetaData implements Serializable {
     private boolean _isRegular = true;
     private boolean _isDirectory = false;
     private boolean _isLink = false;
-
-    private static final SimpleDateFormat __formatter = new SimpleDateFormat(
-            "MM.dd-HH:mm:ss");
 
     private Permissions _user = new Permissions();
     private Permissions _group = new Permissions();
@@ -345,12 +344,13 @@ public class FileMetaData implements Serializable {
 
     @Override
     public String toString() {
+        SimpleDateFormat formatter = new SimpleDateFormat(DATE_FORMAT);
         return "["
                 + (_isDirectory ? "d" : _isLink ? "l" : _isRegular ? "-" : "x")
                 + _user + _group + _world + ";" + _uid + ";" + _gid + "]"
-                + "[c=" + __formatter.format(new Date(_created)) + ";m="
-                + __formatter.format(new Date(_lastModified)) + ";a="
-                + __formatter.format(new Date(_lastAccessed)) + "]";
+                + "[c=" + formatter.format(new Date(_created)) + ";m="
+                + formatter.format(new Date(_lastModified)) + ";a="
+                + formatter.format(new Date(_lastAccessed)) + "]";
     }
 
     @Override
