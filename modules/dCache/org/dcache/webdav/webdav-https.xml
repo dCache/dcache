@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+
+  <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    <description>Imported configuration data</description>
+    <property name="location" value="domaincontext:"/>
+    <property name="properties">
+      <value>
+        webdavPnfsTimeout=120000
+        webdavPoolManagerTimeout=300000
+        webdavPoolTimeout=10000
+        webdavGplazmaTimeout=180000
+        webdavPort=2880
+        webdavRootPath=/
+        webdavAllowedPaths=/
+        webdavReadOnly=false
+        webdavAnonymousAccess=NONE
+        webdavIoQueue=
+        webdavKeyStore=/etc/grid-security/hostcert.p12
+        webdavKeyStorePassword=dcache
+        webdavTrustStore=/etc/grid-security/truststore.jks
+        webdavTrustStorePassword=dcache
+        webdavWantClientAuth=true
+        webdavNeedClientAuth=false
+        pnfsmanager=PnfsManager
+        poolmanager=PoolManager
+        gplazma=gPlazma
+        loginBrokerUpdateTime=30
+        loginBrokerUpdateThreshold=0.1
+        loginBroker=LoginBroker
+        useGPlazmaAuthorizationCell=true
+        useGPlazmaAuthorizationModule=false
+      </value>
+    </property>
+  </bean>
+
+  <import resource="webdav-shared.xml"/>
+
+  <bean id="jetty" class="org.eclipse.jetty.server.Server"
+        init-method="start" destroy-method="stop">
+
+    <description>Embedded HTTPS server</description>
+
+    <property name="connectors">
+      <list>
+        <bean class="org.eclipse.jetty.server.ssl.SslSelectChannelConnector">
+          <property name="port" value="${webdavPort}"/>
+          <property name="keystore" value="${webdavKeyStore}"/>
+          <property name="keystoreType" value="PKCS12"/>
+          <property name="password" value="${webdavKeyStorePassword}"/>
+          <property name="truststore" value="${webdavTrustStore}"/>
+          <property name="trustPassword" value="${webdavTrustStorePassword}"/>
+          <property name="wantClientAuth" value="${webdavWantClientAuth}"/>
+          <property name="needClientAuth" value="${webdavNeedClientAuth}"/>
+        </bean>
+      </list>
+    </property>
+
+    <property name="handler">
+      <bean id="handlers" class="org.eclipse.jetty.server.handler.HandlerList">
+        <property name="handlers">
+          <list>
+            <bean class="org.dcache.webdav.MiltonHandler">
+              <property name="httpManager" ref="milton"/>
+            </bean>
+            <bean class="org.eclipse.jetty.server.handler.DefaultHandler"/>
+          </list>
+        </property>
+      </bean>
+    </property>
+  </bean>
+</beans>

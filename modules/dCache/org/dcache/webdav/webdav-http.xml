@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+
+  <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    <description>Imported configuration data</description>
+    <property name="location" value="domaincontext:"/>
+    <property name="properties">
+      <value>
+        webdavPnfsTimeout=120000
+        webdavPoolManagerTimeout=300000
+        webdavPoolTimeout=10000
+        webdavGplazmaTimeout=180000
+        webdavPort=2880
+        webdavRootPath=/
+        webdavAllowedPaths=/
+        webdavReadOnly=false
+        webdavAnonymousAccess=READONLY
+        webdavIoQueue=
+        pnfsmanager=PnfsManager
+        poolmanager=PoolManager
+        gplazma=gPlazma
+        loginBrokerUpdateTime=30
+        loginBrokerUpdateThreshold=0.1
+        loginBroker=LoginBroker
+        useGPlazmaAuthorizationCell=true
+        useGPlazmaAuthorizationModule=false
+      </value>
+    </property>
+  </bean>
+
+  <import resource="webdav-shared.xml"/>
+
+  <bean id="jetty" class="org.eclipse.jetty.server.Server"
+        init-method="start" destroy-method="stop">
+
+    <description>Embedded HTTP server</description>
+
+    <property name="connectors">
+      <list>
+        <bean class="org.eclipse.jetty.server.nio.SelectChannelConnector">
+          <property name="port" value="${webdavPort}"/>
+        </bean>
+      </list>
+    </property>
+
+    <property name="handler">
+      <bean id="handlers" class="org.eclipse.jetty.server.handler.HandlerList">
+        <property name="handlers">
+          <list>
+            <bean class="org.dcache.webdav.MiltonHandler">
+              <property name="httpManager" ref="milton"/>
+            </bean>
+            <bean class="org.eclipse.jetty.server.handler.DefaultHandler"/>
+          </list>
+        </property>
+      </bean>
+    </property>
+  </bean>
+</beans>
