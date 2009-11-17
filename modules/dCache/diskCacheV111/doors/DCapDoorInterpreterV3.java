@@ -2664,6 +2664,11 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             }else{
                 sendReply( "doorTransferArrived" , reply ) ;
             }
+
+            /*
+             * mover is already gone
+             */
+            _moverId = null;
             removeUs() ;
             setStatus( "<done>" ) ;
         }
