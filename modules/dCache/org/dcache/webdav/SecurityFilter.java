@@ -6,14 +6,23 @@ import com.bradmcevoy.http.Request;
 import com.bradmcevoy.http.Response;
 import com.bradmcevoy.http.ServletRequest;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.security.auth.Subject;
+import java.security.cert.X509Certificate;
+import java.security.PrivilegedAction;
 import java.net.UnknownHostException;
 import java.net.InetAddress;
+import java.util.Arrays;
 
-import javax.security.auth.Subject;
-import java.security.PrivilegedAction;
-
+import org.dcache.cells.CellStub;
 import org.dcache.acl.Origin;
 import org.dcache.acl.enums.AuthType;
+import org.dcache.auth.AuthzQueryHelper;
+import org.dcache.auth.Subjects;
+import org.dcache.auth.RecordConvert;
+
+import gplazma.authz.AuthorizationController;
+import gplazma.authz.AuthorizationException;
 
 import org.apache.log4j.Logger;
 
@@ -41,24 +50,30 @@ public class SecurityFilter implements Filter
 {
     private final Logger _log = Logger.getLogger(SecurityFilter.class);
 
+    private static final String X509_CERTIFICATE_ATTRIBUTE =
+        "javax.servlet.request.X509Certificate";
+
+    /**
+     * Defines which operations are allowed for anonymous access.
+     */
+    public enum AnonymousAccess
+    {
+        NONE, READONLY, FULL
+    }
+
     private String _realm;
     private boolean _isReadOnly;
-    private boolean _allowAnonymous;
+    private AnonymousAccess _anonymousAccess;
+    private CellStub _gPlazmaStub;
+    private String _gPlazmaPolicyFilePath;
+    private boolean _useGplazmaCell;
+    private boolean _useGplazmaModule;
 
     @Override
-    public void process(final FilterChain chain,
+    public void process(final FilterChain filterChain,
                         final Request request,
                         final Response response)
     {
-        /* We don't support authentication right now, so anonymous
-         * access is the only thing we can provide.
-         */
-        if (!_allowAnonymous) {
-            response.setStatus(Response.Status.SC_UNAUTHORIZED);
-            response.setAuthenticateHeader(getRealm());
-            return;
-        }
-
         /* Only a subset of the HTTP methods are allowed in read-only
          * mode.
          */
@@ -75,10 +90,71 @@ public class SecurityFilter implements Filter
             }
         }
 
-        /* Perform authentication. Currently only the Origin is used.
+        /* Perform authentication.
          */
-        Subject subject = new Subject();
-        String address = ServletRequest.getRequest().getRemoteAddr();
+        Subject subject = null;
+
+        HttpServletRequest servletRequest = ServletRequest.getRequest();
+        Object object =
+            servletRequest.getAttribute(X509_CERTIFICATE_ATTRIBUTE);
+        if (object instanceof X509Certificate[]) {
+            X509Certificate[] chain = (X509Certificate[]) object;
+
+            if (_useGplazmaCell) {
+                try {
+                    AuthzQueryHelper helper =
+                        new AuthzQueryHelper(_gPlazmaStub);
+                    subject =
+                        Subjects.getSubject(RecordConvert.gPlazmaToAuthorizationRecord(helper.authorize(chain, null).getgPlazmaAuthzMap()));
+                } catch (AuthorizationException e) {
+                    _log.info("Failed to authorize through gPlazma cell: "
+                              + e.getMessage());
+                }
+            }
+
+            if (subject == null && _useGplazmaModule) {
+                try {
+                    AuthorizationController authCtrl
+                        = new AuthorizationController(_gPlazmaPolicyFilePath);
+                    subject =
+                        Subjects.getSubject(RecordConvert.gPlazmaToAuthorizationRecord(authCtrl.authorize(chain, null, null, null)));
+                } catch (AuthorizationException e) {
+                    _log.info("Failed to authorize through gPlazma module: "
+                              + e.getMessage());
+                }
+            }
+        }
+
+        /* If we don't have a subject by now, then we will try
+         * anonymous access.
+         */
+        if (subject == null) {
+            switch (request.getMethod()) {
+            case GET:
+            case HEAD:
+            case OPTIONS:
+            case PROPFIND:
+                if (_anonymousAccess == AnonymousAccess.NONE) {
+                    response.setStatus(Response.Status.SC_UNAUTHORIZED);
+                    response.setAuthenticateHeader(getRealm());
+                    return;
+                }
+                break;
+            default:
+                if (_anonymousAccess != AnonymousAccess.FULL) {
+                    response.setStatus(Response.Status.SC_UNAUTHORIZED);
+                    response.setAuthenticateHeader(getRealm());
+                    return;
+                }
+                break;
+            }
+
+            subject = new Subject();
+        }
+
+        /* Add the origin of the request to the subject.
+         */
+        String address = servletRequest.getRemoteAddr();
         try {
             Origin origin =
                 new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
@@ -94,7 +170,7 @@ public class SecurityFilter implements Filter
                 @Override
                 public Void run()
                 {
-                    chain.process(request, response);
+                    filterChain.process(request, response);
                     return null;
                 }
             });
@@ -126,18 +202,51 @@ public class SecurityFilter implements Filter
         _isReadOnly = isReadOnly;
     }
 
-    public boolean getAllowAnonymous()
+    public AnonymousAccess getAnonymousAccess()
     {
-        return _allowAnonymous;
+        return _anonymousAccess;
     }
 
     /**
-     * Specifies whether anonymous requests are allowed. If set to
-     * true, an anonymous user can access to world accessible files
-     * and directories.
+     * Specifies which anonymous requests are allowed.
      */
-    public void setAllowAnonymous(boolean anonymous)
+    public void setAnonymousAccess(AnonymousAccess anonymousAccess)
     {
-        _allowAnonymous = anonymous;
+        _anonymousAccess = anonymousAccess;
+    }
+
+    public void setGplazmaStub(CellStub stub)
+    {
+        _gPlazmaStub = stub;
+    }
+
+    public void setGPlazmaPolicyFilePath(String path)
+    {
+        _gPlazmaPolicyFilePath = path;
+    }
+
+    public String getGPlazmaPolicyFilePath()
+    {
+        return _gPlazmaPolicyFilePath;
+    }
+
+    public void setUseGplazmaCell(boolean useCell)
+    {
+        _useGplazmaCell = useCell;
+    }
+
+    public boolean getUseGplazmaCell()
+    {
+        return _useGplazmaCell;
+    }
+
+    public void setUseGplazmaModule(boolean useModule)
+    {
+        _useGplazmaModule = useModule;
+    }
+
+    public boolean getUseGplazmaModule()
+    {
+        return _useGplazmaModule;
     }
 }
