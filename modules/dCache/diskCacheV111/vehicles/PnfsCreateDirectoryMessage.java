@@ -2,6 +2,10 @@
 
 package diskCacheV111.vehicles;
 
+import org.dcache.namespace.FileAttribute;
+import java.util.Set;
+
+
 public class PnfsCreateDirectoryMessage extends PnfsCreateEntryMessage {
     
     private static final long serialVersionUID = 2081981117629353921L;
@@ -11,5 +15,12 @@ public class PnfsCreateDirectoryMessage extends PnfsCreateEntryMessage {
     }
     public PnfsCreateDirectoryMessage(String path, int uid, int gid, int mode){
         super(path,uid,gid,mode);
+    }
+    public PnfsCreateDirectoryMessage(String path,
+            int uid,
+            int gid,
+            int mode,
+            Set<FileAttribute> attr){
+        super(path,uid,gid,mode,attr);
     }
 }

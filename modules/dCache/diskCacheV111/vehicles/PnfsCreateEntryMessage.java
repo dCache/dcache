@@ -2,6 +2,9 @@
 
 package diskCacheV111.vehicles;
 
+import org.dcache.namespace.FileAttribute;
+import java.util.Set;
+
 public class PnfsCreateEntryMessage extends PnfsGetStorageInfoMessage {
 
     private String      _path        = null;
@@ -10,16 +13,31 @@ public class PnfsCreateEntryMessage extends PnfsGetStorageInfoMessage {
     private static final long serialVersionUID = -8197311585737333341L;
 
     public PnfsCreateEntryMessage(String path){
-	_path = path;
-	setReplyRequired(true);
+        _path = path;
+        setReplyRequired(true);
     }
     public PnfsCreateEntryMessage(String path, int uid , int gid , int mode ){
 	_path = path;
         _uid  = uid ;
         _gid  = gid ;
         _mode = mode ;
-	setReplyRequired(true);
+        setReplyRequired(true);
     }
+
+    public PnfsCreateEntryMessage(String path,
+            int uid ,
+            int gid ,
+            int mode,
+            Set<FileAttribute> attr){
+        super(attr);
+        _path = path;
+        _uid  = uid ;
+        _gid  = gid ;
+        _mode = mode ;
+        setReplyRequired(true);
+    }
+
+
     public String getPath(){
 	return _path;
     }

@@ -2084,6 +2084,7 @@ public class Storage
         String actualPnfsPath = srm_root+"/"+filePath;
         PutCompanion.PrepareToPutFile(
                 (AuthorizationRecord)user,
+                permissionHandler,
                 actualPnfsPath,
                 callbacks,
                 _pnfsStub,
@@ -2570,10 +2571,6 @@ public class Storage
 
 
 
-    public boolean canWrite(SRMUser user, String fileId, FileMetaData fmd,
-        String parentFileId, FileMetaData parentFmd, boolean overwrite) {
-        return _canWrite(user,fileId,fmd,parentFileId,parentFmd,overwrite);
-    }
 
     public static boolean _canWrite(SRMUser user,
             String fileId,

@@ -573,12 +573,6 @@ public interface AbstractStorageElement extends Logger{
      * 2param overwrite is true, allow overwrite of existing files
      * @return Boolean T/F
      */
-    public boolean canWrite(SRMUser user,
-            String fileId,
-            FileMetaData fmd,
-            String parentFileId,
-            FileMetaData parentFmd,
-            boolean overwrite);
 
     /** This method returns via callbacks the size of the
      * space reserved in the "pool" (pool is a space storage part that can be

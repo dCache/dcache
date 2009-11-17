@@ -22,6 +22,12 @@ public class PnfsGetStorageInfoMessage extends PnfsGetFileMetaDataMessage {
         _attributes.add(STORAGEINFO);
     }
 
+    public PnfsGetStorageInfoMessage(Set<FileAttribute> attr)
+    {
+        super(attr);
+        _attributes.add(STORAGEINFO);
+    }
+
     public PnfsGetStorageInfoMessage(String pnfsId)
     {
         super(pnfsId);

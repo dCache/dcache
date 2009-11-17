@@ -1,5 +1,3 @@
-// $Id$
-// $Log: not supported by cvs2svn $
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -78,7 +76,6 @@ import org.dcache.cells.CellStub;
 import org.dcache.cells.MessageCallback;
 import org.dcache.cells.ThreadManagerMessageCallback;
 import diskCacheV111.util.FsPath;
-import diskCacheV111.util.PnfsId;
 import org.dcache.auth.AuthorizationRecord;
 import org.dcache.srm.util.OneToManyMap;
 import org.dcache.srm.PrepareToPutCallbacks;
@@ -98,6 +95,9 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.Date;
 import org.dcache.auth.Subjects;
+import javax.security.auth.Subject;
+import org.dcache.namespace.PermissionHandler;
+import org.dcache.acl.enums.AccessType;
 import org.apache.log4j.Logger;
 
 /**
@@ -105,7 +105,7 @@ import org.apache.log4j.Logger;
  * @author  timur
  */
 
-public class PutCompanion implements MessageCallback<PnfsMessage>
+public final class PutCompanion implements MessageCallback<PnfsMessage>
 {
     private final static Logger _log = Logger.getLogger(PutCompanion.class);
 
@@ -129,21 +129,27 @@ public class PutCompanion implements MessageCallback<PnfsMessage>
     private List pathItems=null;
     private int current_dir_depth = -1;
     private AuthorizationRecord user;
+    private Subject userSubject;
     private boolean overwrite;
     private String fileId;
     private FileMetaData fileFMD;
     private long creationTime = System.currentTimeMillis();
     private long lastOperationTime = creationTime;
+    private PermissionHandler permissionHandler;
 
     /** Creates a new instance of StageAndPinCompanion */
 
     private PutCompanion(AuthorizationRecord user,
+    Subject userSubject,
+    PermissionHandler permissionHandler,
     String path,
     PrepareToPutCallbacks callbacks,
     CellStub pnfsStub,
     boolean recursive_directory_creation,
     boolean overwrite) {
         this.user =  user;
+        this.userSubject = userSubject;
+        this.permissionHandler = permissionHandler;
         this.path = path;
         this.pnfsStub = pnfsStub;
         this.callbacks = callbacks;
@@ -229,11 +235,13 @@ public class PutCompanion implements MessageCallback<PnfsMessage>
                     askPnfsForParentInfo();
                     return;
                 }
-                String errorString = "GetStorageInfoFailed message.getReturnCode () != 0," +
-                        " error="+error;
+                String errorString = "GetStorageInfoFailed message.getReturnCode" +
+                        " () != 0, error="+error;
                 unregisterAndFailCreator(errorString);
                 _log.error(errorString);
-                callbacks.GetStorageInfoFailed("GetStorageInfoFailed PnfsGetStorageInfoMessage.getReturnCode () != 0 => parrent directory does not exist");
+                callbacks.GetStorageInfoFailed("GetStorageInfoFailed " +
+                        "PnfsGetStorageInfoMessage.getReturnCode () != 0 => " +
+                        "parrent directory does not exist");
                 return ;
         }
      }
@@ -252,19 +260,26 @@ public class PutCompanion implements MessageCallback<PnfsMessage>
 
     public void fileInfoArrived(PnfsGetStorageInfoMessage storage_info_msg)
     {
-        if(overwrite)  {
-            FileAttributes attributes =
-                storage_info_msg.getFileAttributes();
-            attributes.setPnfsId(storage_info_msg.getPnfsId());
-            fileFMD = new DcacheFileMetaData(attributes);
-            fileId = fileFMD.fileId;
-        } else {
-            _log.warn("GetStorageInfoFailed: file exists, cannot write ");
-            callbacks.DuplicationError(" file exists ");
+        if(!overwrite)  {
+            _log.warn("file exists, overwrite is not allowed ");
+            callbacks.DuplicationError(" file exists, overwrite is not allowed ");
             return ;
         }
-        // next time we will go into different path
 
+        FileAttributes attributes =
+            storage_info_msg.getFileAttributes();
+        attributes.setPnfsId(storage_info_msg.getPnfsId());
+        AccessType canOverwriteFile =
+                  permissionHandler.canWriteFile(userSubject,
+                  attributes);
+        if(canOverwriteFile != AccessType.ACCESS_ALLOWED ) {
+            _log.warn("file exists, overwrite permission denied ");
+            callbacks.DuplicationError(" file exists, overwrite permission denied  ");
+            return ;
+        }
+
+        fileFMD = new DcacheFileMetaData(attributes);
+        fileId = fileFMD.fileId;
         //
         //this is how we get the directory containing this path
         //
@@ -291,20 +306,29 @@ public class PutCompanion implements MessageCallback<PnfsMessage>
 
             _log.debug("file is a directory");
             FileMetaData srm_dirFmd = new DcacheFileMetaData(attributes);
-            _log.debug(" got  srm_dirFmd.retentionPolicyInfo ="+srm_dirFmd.retentionPolicyInfo);
+            _log.debug(" got  srm_dirFmd.retentionPolicyInfo ="+
+                    srm_dirFmd.retentionPolicyInfo);
             if(srm_dirFmd.retentionPolicyInfo != null) {
-                _log.debug(" got  srm_dirFmd.retentionPolicyInfo.AccessLatency ="+srm_dirFmd.retentionPolicyInfo.getAccessLatency());
-                _log.debug(" got  srm_dirFmd.retentionPolicyInfo.RetentionPolicy ="+srm_dirFmd.retentionPolicyInfo.getRetentionPolicy());
-                _log.debug(" got  srm_dirFmd.spaceTokens ="+(srm_dirFmd.spaceTokens!=null?srm_dirFmd.spaceTokens[0]:"NONE"));
+                _log.debug(" got  srm_dirFmd.retentionPolicyInfo.AccessLatency ="+
+                        srm_dirFmd.retentionPolicyInfo.getAccessLatency());
+                _log.debug(" got  srm_dirFmd.retentionPolicyInfo.RetentionPolicy ="+
+                        srm_dirFmd.retentionPolicyInfo.getRetentionPolicy());
+                _log.debug(" got  srm_dirFmd.spaceTokens ="+
+                        (srm_dirFmd.spaceTokens!=null?
+                            srm_dirFmd.spaceTokens[0]:"NONE"));
             }
             if((pathItems.size() -1 ) >current_dir_depth) {
 
-                if(Storage._canWrite(user,null,null,srm_dirFmd.fileId,srm_dirFmd,overwrite)) {
+                AccessType canCreateSubDir =
+                        permissionHandler.canCreateSubDir(userSubject,
+                        attributes);
+                if(canCreateSubDir == AccessType.ACCESS_ALLOWED) {
                     createNextDirectory(srm_dirFmd);
                     return;
                 }
                 else {
-                    String error = "path does not exist and user has no permissions to create it";
+                    String error = "path does not exist and user has no " +
+                            "permissions to create it";
                     _log.warn(error);
                     unregisterAndFailCreator(error);
                     callbacks.InvalidPathError(error);
@@ -312,14 +336,22 @@ public class PutCompanion implements MessageCallback<PnfsMessage>
                 }
             }
             else {
-                if(Storage._canWrite(user,fileId,fileFMD,srm_dirFmd.fileId,srm_dirFmd,overwrite)) {
-                    callbacks.StorageInfoArrived(fileId,fileFMD,srm_dirFmd.fileId,srm_dirFmd);
-                }
-                else {
-                    String error = "user has no permission to write into path "+getCurrentDirPath();
+                 AccessType canCreateFile =
+                          permissionHandler.canCreateFile(userSubject,
+                          attributes);
+                if(canCreateFile != AccessType.ACCESS_ALLOWED ) {
+                    String error = "user has no permission to create file "+
+                            getCurrentDirPath();
                     _log.warn(error);
                     callbacks.AuthorizationError(error);
+                    return;
+
                 }
+
+                callbacks.StorageInfoArrived(fileId,
+                        fileFMD,
+                        srm_dirFmd.fileId,
+                        srm_dirFmd);
                 return;
             }
         }
@@ -337,20 +369,21 @@ public class PutCompanion implements MessageCallback<PnfsMessage>
         current_dir_depth++;
         String newDirPath = getCurrentDirPath();
 
-	int uid = user.getUid();
-	int gid = user.getGid();
-	int perm = 0755;
+        int uid = user.getUid();
+        int gid = user.getGid();
+        int perm = 0755;
 
-	if ( parentFmd != null ) {
-		uid = Integer.parseInt(parentFmd.owner);
-		gid = Integer.parseInt(parentFmd.group);
-		perm = parentFmd.permMode;
-	}
+        if ( parentFmd != null ) {
+            uid = Integer.parseInt(parentFmd.owner);
+            gid = Integer.parseInt(parentFmd.group);
+            perm = parentFmd.permMode;
+        }
 
         _log.info("attempting to create "+newDirPath+" with uid="+uid+" gid="+gid);
 
         PnfsGetStorageInfoMessage dirMsg
-        = new PnfsCreateDirectoryMessage(newDirPath,uid,gid,perm) ;
+        = new PnfsCreateDirectoryMessage(newDirPath,uid,gid,perm,
+                permissionHandler.getRequiredAttributes()) ;
         state = WAITING_FOR_CREATE_DIRECTORY_RESPONSE_MESSAGE;
 
         dirMsg.setReplyRequired(true);
@@ -382,7 +415,10 @@ public class PutCompanion implements MessageCallback<PnfsMessage>
 
     private void askPnfsForParentInfo() {
         if(current_dir_depth <= 1 ) {
-            String error = "we reached the root of the directories, none of the elements exist from the pnfs manager point of vieww, we do not have permission to create this directory tree: "+path;
+            String error = "we reached the root of the directories, " +
+                    "none of the elements exist from the pnfs manager " +
+                    "point of view, we do not have permission to create " +
+                    "this directory tree: "+path;
             unregisterAndFailCreator(error);
             callbacks.AuthorizationError(error);
             return;
@@ -402,28 +438,24 @@ public class PutCompanion implements MessageCallback<PnfsMessage>
         PnfsGetFileMetaDataMessage metadataMsg;
         if(current_dir_depth == (pathItems.size() -1)) {
             metadataMsg =
-            new PnfsGetStorageInfoMessage() ;
+            new PnfsGetStorageInfoMessage(
+                    permissionHandler.getRequiredAttributes()) ;
 
         } else {
 
             metadataMsg =
-            new PnfsGetFileMetaDataMessage() ;
+            new PnfsGetFileMetaDataMessage(
+                    permissionHandler.getRequiredAttributes()) ;
         }
         metadataMsg.setPnfsPath( directory ) ;
-
-        try {
-            state = WAITING_FOR_DIRECTORY_INFO_MESSAGE;
-            pnfsStub.send(metadataMsg, PnfsMessage.class, 
-                    new ThreadManagerMessageCallback(this) );
-        }
-        catch(Exception ee ) {
-            _log.error(ee);
-            unregisterAndFailCreator(ee.toString());
-            callbacks.GetStorageInfoFailed(ee.toString());
-        }
+        metadataMsg.setSubject(userSubject);
+        state = WAITING_FOR_DIRECTORY_INFO_MESSAGE;
+        pnfsStub.send(metadataMsg, PnfsMessage.class,
+                new ThreadManagerMessageCallback(this) );
         lastOperationTime= System.currentTimeMillis();
     }
 
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         toString(sb,false);
@@ -436,8 +468,8 @@ public class PutCompanion implements MessageCallback<PnfsMessage>
         sb.append(" p=\"").append(path);
         sb.append("\" s=\"").append(getStateString());
         sb.append("\" d=\"").append(current_dir_depth);
-        sb.append("\" created:").append(new Date(creationTime).toString());
-        sb.append("\" lastOperation:").append(new Date(lastOperationTime).toString());
+        sb.append("\" created:").append(new Date(creationTime));
+        sb.append("\" lastOperation:").append(new Date(lastOperationTime));
 
        if (state == WAITING_FOR_DIRECTORY_INFO_MESSAGE ||
             state == WAITING_FOR_CREATE_DIRECTORY_RESPONSE_MESSAGE) {
@@ -446,7 +478,8 @@ public class PutCompanion implements MessageCallback<PnfsMessage>
                          i<pathItems.size();
                        ++i) {
                     String pnfsPath = getCurrentDirPath(i);
-                    sb.append("\n it is creating/getting info for path=").append(pnfsPath);
+                    sb.append("\n it is creating/getting info for path=");
+                    sb.append(pnfsPath);
                     Set<PutCompanion> waitingSet =
                         this.waitingForCreators.getValues(pnfsPath);
                     if(waitingSet != null) {
@@ -457,7 +490,8 @@ public class PutCompanion implements MessageCallback<PnfsMessage>
                             }
                         }
                         else {
-                            sb.append(" num of waiting companions:").append(waitingSet.size());
+                            sb.append(" num of waiting companions:");
+                            sb.append(waitingSet.size());
                         }
                     }
                     else {
@@ -497,11 +531,12 @@ public class PutCompanion implements MessageCallback<PnfsMessage>
     }
 
     public static void PrepareToPutFile(AuthorizationRecord user,
-    String path,
-    PrepareToPutCallbacks callbacks,
-    CellStub pnfsStub,
-    boolean recursive_directory_creation,
-    boolean overwrite) {
+        PermissionHandler permissionHandler,
+        String path,
+        PrepareToPutCallbacks callbacks,
+        CellStub pnfsStub,
+        boolean recursive_directory_creation,
+        boolean overwrite) {
 
         if(user == null) {
             callbacks.AuthorizationError("user unknown, can not write");
@@ -511,31 +546,30 @@ public class PutCompanion implements MessageCallback<PnfsMessage>
         FsPath pnfsPathFile = new FsPath(path);
         String pnfsPath = pnfsPathFile.toString();
         if(pnfsPath == null) {
-            throw new IllegalArgumentException(" FileRequest does not specify path!!!");
+            throw new IllegalArgumentException(
+                    " FileRequest does not specify path!!!");
         }
 
         PnfsGetStorageInfoMessage storageInfoMsg =
-        new PnfsGetStorageInfoMessage() ;
+        new PnfsGetStorageInfoMessage(
+                permissionHandler.getRequiredAttributes());
         storageInfoMsg.setPnfsPath( pnfsPath ) ;
-        //storageInfoMsg.setSubject(Subjects.getSubject(user));
-
+        Subject userSubject = Subjects.getSubject(user);
+        storageInfoMsg.setSubject(userSubject);
         PutCompanion companion = new PutCompanion(
-        user,
-        path,
-        callbacks,
-        pnfsStub,
-        recursive_directory_creation,
-        overwrite);
-       _log.debug("sending " +storageInfoMsg+" to PnfsManager");
-        try {
-            companion.state= WAITING_FOR_FILE_INFO_MESSAGE;
-            pnfsStub.send(storageInfoMsg, PnfsMessage.class,
-            new ThreadManagerMessageCallback(companion) ) ;
-        }
-        catch(Exception ee ) {
-            _log.error(ee);
-            callbacks.GetStorageInfoFailed("can not contact pnfs manger: "+ee.toString());
-        }
+            user,
+            userSubject,
+            permissionHandler,
+            path,
+            callbacks,
+            pnfsStub,
+            recursive_directory_creation,
+            overwrite);
+        _log.debug("sending " +storageInfoMsg+" to PnfsManager");
+        companion.state= WAITING_FOR_FILE_INFO_MESSAGE;
+        pnfsStub.send(storageInfoMsg,
+                PnfsMessage.class,
+                new ThreadManagerMessageCallback(companion) ) ;
     }
 
     public void removeThisFromDirectoryCreators()
@@ -555,7 +589,8 @@ public class PutCompanion implements MessageCallback<PnfsMessage>
         new HashMap<String,PutCompanion>();
     private OneToManyMap waitingForCreators = new OneToManyMap();
 
-    public static void listDirectoriesWaitingForCreation(StringBuilder sb, boolean longformat)
+    public static void listDirectoriesWaitingForCreation(StringBuilder sb,
+            boolean longformat)
     {
         synchronized (directoryCreators) {
             for (Map.Entry<String,PutCompanion> entry: directoryCreators.entrySet()) {
@@ -588,14 +623,17 @@ public class PutCompanion implements MessageCallback<PnfsMessage>
             if(directoryCreators.containsKey(pnfsPath)) {
                 creatorCompanion = directoryCreators.get(pnfsPath);
                 creatorCompanion.waitingForCreators.put(pnfsPath, thisCreator);
-                _log.debug("registerCreatorOrWaitForCreation("+pnfsPath+","+thisCreator+")"+
-                " directoryCreators already contains the creator for the path, store and return false"
+                _log.debug("registerCreatorOrWaitForCreation("+pnfsPath+","+
+                        thisCreator+")"+
+                " directoryCreators already contains the creator for the path," +
+                        " store and return false"
                 );
                 creater_operTime = creatorCompanion.lastOperationTime;
                 currentTime = System.currentTimeMillis();
             }
             else {
-                _log.debug("registerCreatorOrWaitForCreation("+pnfsPath+","+thisCreator+")"+
+                _log.debug("registerCreatorOrWaitForCreation("+pnfsPath+","+
+                        thisCreator+")"+
                 " storing this creator"
                 );
                 directoryCreators.put(pnfsPath,thisCreator);
@@ -604,7 +642,7 @@ public class PutCompanion implements MessageCallback<PnfsMessage>
         }
 
         if(creatorCompanion != null &&
-            currentTime - creater_operTime > creatorCompanion.PNFS_TIMEOUT ) {
+            currentTime - creater_operTime > PNFS_TIMEOUT ) {
             creatorCompanion.unregisterAndFailCreator("pnfs manager timeout");
         }
         return false;
@@ -658,8 +696,9 @@ public class PutCompanion implements MessageCallback<PnfsMessage>
     }
 
 
-    private static void unregisterAndFailCreator(String pnfsPath,PutCompanion thisCreator,
-    String error) {
+    private static void unregisterAndFailCreator(String pnfsPath,
+            PutCompanion thisCreator,
+            String error) {
         Set<PutCompanion> removed = new HashSet<PutCompanion>();
 
         synchronized( directoryCreators) {
