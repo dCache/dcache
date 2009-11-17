@@ -9,6 +9,7 @@ import org.globus.gsi.gssapi.net.impl.GSIGssSocket;
 import org.dcache.vehicles.gPlazmaDelegationInfo;
 import org.dcache.vehicles.AuthorizationMessage;
 import org.dcache.srm.security.SslGsiSocketFactory;
+import org.dcache.cells.CellStub;
 import org.apache.log4j.Logger;
 import gplazma.authz.AuthorizationException;
 import gplazma.authz.records.gPlazmaAuthorizationRecord;
@@ -21,352 +22,325 @@ import java.net.UnknownHostException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.IOException;
-import java.util.*;
+import java.io.Serializable;
+import java.util.Random;
+import java.util.Map;
+import java.util.List;
 
+import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.AuthenticationMessage;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.DNInfo;
 import diskCacheV111.vehicles.X509Info;
 import diskCacheV111.vehicles.transferManager.RemoteGsiftpDelegateUserCredentialsMessage;
-import dmg.cells.nucleus.*;
 
-public class AuthzQueryHelper {
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.CDC;
+
+public class AuthzQueryHelper
+{
     private static final Logger log = Logger.getLogger(AuthzQueryHelper.class);
 
-    long authRequestID;
+    private long authRequestID;
     private static final Random random = new Random();
     private CellEndpoint caller;
     private boolean delegate_to_gplazma=false;
-    private long cell_message_timeout;
     private int delegation_timeout=60000;
+    private CellStub gPlazmaStub;
 
-    public AuthzQueryHelper(CellEndpoint caller)
-    throws AuthorizationException {
-        this(caller, 180000L);
+    public AuthzQueryHelper(CellEndpoint endpoint)
+        throws AuthorizationException
+    {
+        this(endpoint, random.nextInt(Integer.MAX_VALUE));
     }
 
-    public AuthzQueryHelper(CellEndpoint caller, long msg_timeout)
-    throws AuthorizationException {
-        this(random.nextInt(Integer.MAX_VALUE), caller, msg_timeout);
+    public AuthzQueryHelper(CellEndpoint endpoint, long authRequestID)
+        throws AuthorizationException
+    {
+        this(new CellStub(endpoint, new CellPath("gPlazma"), 180000L),
+             authRequestID);
     }
 
-    public AuthzQueryHelper(long authRequestID, CellEndpoint caller, long msg_timeout)
-    throws AuthorizationException {
-        this.authRequestID=authRequestID;
-        this.caller = caller;
-        this.cell_message_timeout = msg_timeout;
+    public AuthzQueryHelper(CellStub stub)
+        throws AuthorizationException
+    {
+        this(stub, random.nextInt(Integer.MAX_VALUE));
     }
 
-    public void setDelegateToGplazma(boolean boolarg) {
-        delegate_to_gplazma = boolarg;
+    public AuthzQueryHelper(CellStub stub, long authRequestID)
+        throws AuthorizationException
+    {
+        this.authRequestID = authRequestID;
+        this.gPlazmaStub = stub;
     }
 
-    public void setDelegationTimeout(int deleg_t) {
-        delegation_timeout = deleg_t;
+    public void setDelegateToGplazma(boolean delegate)
+    {
+        delegate_to_gplazma = delegate;
     }
 
-    public int getDelegationTimeout() {
+    public boolean getDelegateToGplazma()
+    {
+        return delegate_to_gplazma;
+    }
+
+    public void setDelegationTimeout(int timeout)
+    {
+        delegation_timeout = timeout;
+    }
+
+    public int getDelegationTimeout()
+    {
         return delegation_timeout;
     }
 
     // Called on requesting cell
     //
-    public AuthenticationMessage authorize(GSSContext serviceContext, String user, CellPath cellpath, CellEndpoint caller) throws AuthorizationException {
-
-        gPlazmaDelegationInfo deleginfo = new gPlazmaDelegationInfo(authRequestID, user, new Long(0));
-
-        return  authorize(serviceContext, deleginfo, cellpath, caller);
+    public AuthenticationMessage
+        authorize(GSSContext serviceContext, String user)
+        throws AuthorizationException
+    {
+        gPlazmaDelegationInfo deleginfo =
+            new gPlazmaDelegationInfo(authRequestID, user, Long.valueOf(0));
+        return authorize(serviceContext, deleginfo);
     }
 
-    public AuthenticationMessage authorize(GSSContext serviceContext, CellPath cellpath, CellEndpoint caller) throws AuthorizationException {
-
-        gPlazmaDelegationInfo deleginfo = new gPlazmaDelegationInfo(authRequestID, null, new Long(0));
-
-        return  authorize(serviceContext, deleginfo, cellpath, caller);
+    public AuthenticationMessage authorize(GSSContext serviceContext)
+        throws AuthorizationException
+    {
+        gPlazmaDelegationInfo deleginfo =
+            new gPlazmaDelegationInfo(authRequestID, null, Long.valueOf(0));
+        return authorize(serviceContext, deleginfo);
     }
 
-    public AuthorizationMessage getAuthorization(GSSContext serviceContext, CellPath cellpath, CellEndpoint caller) throws AuthorizationException {
-
-        gPlazmaDelegationInfo deleginfo = new gPlazmaDelegationInfo(authRequestID, null, new Long(0));
-
-        AuthenticationMessage authmessage = authorize(serviceContext, deleginfo, cellpath, caller);
-
+    public AuthorizationMessage getAuthorization(GSSContext serviceContext)
+        throws AuthorizationException
+    {
+        gPlazmaDelegationInfo deleginfo =
+            new gPlazmaDelegationInfo(authRequestID, null, Long.valueOf(0));
+        AuthenticationMessage authmessage =
+            authorize(serviceContext, deleginfo);
         return new AuthorizationMessage(authmessage);
     }
 
-    public AuthenticationMessage authorize(GSSContext serviceContext, gPlazmaDelegationInfo deleginfo, CellPath cellpath, CellEndpoint caller) throws AuthorizationException {
-
-        if(!delegate_to_gplazma) {
-            //if (do_saz) {
-            X509Certificate[] chain;
-
-            ExtendedGSSContext extendedcontext;
-
-            if (serviceContext instanceof ExtendedGSSContext) {
-                extendedcontext = (ExtendedGSSContext) serviceContext;
-            } else {
+    public AuthenticationMessage
+        authorize(GSSContext serviceContext, gPlazmaDelegationInfo deleginfo)
+        throws AuthorizationException
+    {
+        if (!delegate_to_gplazma) {
+            if (!(serviceContext instanceof ExtendedGSSContext)) {
                 log.error("Received context not instance of ExtendedGSSContext, AuthorizationController exiting ...");
                 return null;
             }
 
             try {
-                chain = (X509Certificate[]) extendedcontext.inquireByOid(GSSConstants.X509_CERT_CHAIN);
-            } catch(org.ietf.jgss.GSSException gsse ) {
-                log.error(" Error extracting X509 chain from GSSContext: " +gsse);
-                throw new AuthorizationException(gsse.toString());
+                ExtendedGSSContext extendedcontext =
+                    (ExtendedGSSContext) serviceContext;
+                X509Certificate[] chain =
+                    (X509Certificate[]) extendedcontext.inquireByOid(GSSConstants.X509_CERT_CHAIN);
+                return authorize(chain, deleginfo.getUser()); //todo add getSrcName to args
+            } catch (GSSException e) {
+                log.error("Error extracting X509 chain from GSSContext: " + e);
+                throw new AuthorizationException(e);
             }
-
-            return authorize(chain, deleginfo.getUser(), cellpath, caller); //todo add getSrcName to args
-            //}
-
-            //return
         }
 
-        AuthenticationMessage authmessage = null;
-
-        String authcellname = cellpath.getCellName();
         try {
             GSSName GSSIdentity = serviceContext.getSrcName();
-            CellMessage m = sendAndWaitGPlazmaRequest(cellpath, caller, deleginfo);
-            if(m==null) {
-                throw new AuthorizationException("authRequestID " + authRequestID + " Message to " + authcellname + " timed out for authentification of " + GSSIdentity);
+            RemoteGsiftpDelegateUserCredentialsMessage reply =
+                sendAndWaitGPlazmaRequest(deleginfo, RemoteGsiftpDelegateUserCredentialsMessage.class);
+
+            if (reply.getId() != authRequestID) {
+                throw new AuthorizationException("authRequestID " + authRequestID + " delegation failed: mismatch with returned authRequestID " + reply.getId());
             }
 
-
-            Object obj = m.getMessageObject();
-            if(obj instanceof RemoteGsiftpDelegateUserCredentialsMessage) {
-                if(((Message) obj).getId()!=authRequestID) {
-                    throw new AuthorizationException("authRequestID " + authRequestID + " delegation failed: mismatch with returned authRequestID " + ((Message) obj).getId());
-                }
-                GSIGssSocket authsock=null;
-
-                try {
-
-                    authsock = SslGsiSocketFactory.delegateCredential(
-                            InetAddress.getByName(((RemoteGsiftpDelegateUserCredentialsMessage) obj).getHost()),
-                            ((RemoteGsiftpDelegateUserCredentialsMessage) obj).getPort(),
-                            //ExtendedGSSManager.getInstance().createCredential(GSSCredential.INITIATE_ONLY),
-                            serviceContext.getDelegCred(),
-                            false);
-                    //say(this.toString() + " delegation appears to have succeeded");
-                } catch ( UnknownHostException uhe ) {
-                    throw new AuthorizationException("authRequestID " + authRequestID + " unknown host exception in delegation " + uhe);
-                } catch(Exception e) {
-                    throw new AuthorizationException("authRequestID " + authRequestID + " delegation failed for authentification of " + GSSIdentity + " " + e);
-                }
-
-                Object authobj=null;
-                if(authsock!=null) {
-                    try {
-                        authsock.setSoTimeout(delegation_timeout);
-                        InputStream authin = authsock.getInputStream();
-                        ObjectInputStream authstrm = new ObjectInputStream(authin);
-                        authobj = authstrm.readObject();
-                        if(authobj==null) {
-                            throw new AuthorizationException("authRequestID " + authRequestID + " authorization object was null for " + GSSIdentity);
-                        } else {
-                            if( authobj instanceof Exception ) throw (Exception) authobj;
-                            authmessage = (AuthenticationMessage) authobj;
-                            Map <NameRolePair, gPlazmaAuthorizationRecord> user_auths = authmessage.getgPlazmaAuthzMap();
-                            if(log.isDebugEnabled()) {
-                                logAuthzMessage(user_auths, log);
-                            }
-                        }
-                    } catch (IOException ioe) {
-                        throw new AuthorizationException("authRequestID " + authRequestID + " could not receive authorization object for " + GSSIdentity + " " + ioe);
-                    } catch (ClassCastException cce) {
-                        throw new AuthorizationException("authRequestID " + authRequestID + " incorrect class for authorization object for " + GSSIdentity + " " + cce);
-                    } finally {
-                        authsock.close();
-                    }
-
-                } else {
-                    throw new AuthorizationException("authRequestID " + authRequestID + " socket to receive authorization object was null for " + GSSIdentity);
-                }
-
-            } else {
-                if( obj instanceof NoRouteToCellException)
-                    throw (NoRouteToCellException) obj;
-                if( obj instanceof Throwable )
-                    throw (Throwable) obj;
-            }
-        } catch ( AuthorizationException ase ) {
-            throw ase;
-        } catch ( GSSException gsse ) {
-            throw new AuthorizationException("authRequestID " + authRequestID + " error getting source from context " + gsse);
-        } catch ( NoRouteToCellException nre ) {
-            throw new AuthorizationException("authRequestID " + authRequestID + nre);
-        } catch ( InterruptedException ie ) {
-            throw new AuthorizationException("authRequestID " + authRequestID + " message thread was interrupted " + ie);
-        } catch ( ClassNotFoundException cnfe ) {
-            throw new AuthorizationException("authRequestID " + authRequestID + " class of object returned from " + authcellname + " not found " + cnfe);
-        } catch ( Throwable t ) {
-            throw new AuthorizationException("authRequestID " + authRequestID + " received exception \"" + t.getMessage() + "\" at " + t.getStackTrace()[0]);
-        }
-
-        return authmessage;
-    }
-
-    public AuthenticationMessage authorize(String subjectDN, List<String> roles, CellPath cellpath, CellEndpoint caller) throws AuthorizationException {
-        DNInfo dnInfo = new DNInfo(subjectDN, roles, authRequestID);
-        return authorize(dnInfo, cellpath, caller);
-    }
-
-    public AuthenticationMessage authorize(String subjectDN, String role, CellPath cellpath, CellEndpoint caller) throws AuthorizationException {
-        DNInfo dnInfo = new DNInfo(subjectDN, role, authRequestID);
-        return authorize(dnInfo, cellpath, caller);
-    }
-
-    public AuthenticationMessage authorize(String subjectDN, List<String> roles, String user, CellPath cellpath, CellEndpoint caller) throws AuthorizationException {
-        DNInfo dnInfo = new DNInfo(subjectDN, roles, user, authRequestID);
-        return authorize(dnInfo, cellpath, caller);
-    }
-
-    public AuthenticationMessage authorize(String subjectDN, String role, String user, CellPath cellpath, CellEndpoint caller) throws AuthorizationException {
-        DNInfo dnInfo = new DNInfo(subjectDN, role, user, authRequestID);
-        return authorize(dnInfo, cellpath, caller);
-    }
-
-    public AuthenticationMessage authorize(DNInfo dnInfo, CellPath cellpath, CellEndpoint caller) throws AuthorizationException {
-
-        AuthenticationMessage authmessage = null;
-
-        String authcellname = cellpath.getCellName();
-        try {
-            CellMessage m = sendAndWaitGPlazmaRequest(cellpath,caller, dnInfo);
-            if(m==null) {
-                throw new AuthorizationException("authRequestID " + authRequestID + " Message to " + authcellname + " timed out for authentification of " + dnInfo.getDN() + " and roles " + dnInfo.getFQANs());
+            GSIGssSocket authsock;
+            try {
+                authsock =
+                    SslGsiSocketFactory.delegateCredential(InetAddress.getByName(reply.getHost()),
+                                                           reply.getPort(),
+                                                           serviceContext.getDelegCred(),
+                                                           false);
+            } catch (UnknownHostException e) {
+                throw new AuthorizationException("authRequestID " + authRequestID + " unknown host exception in delegation", e);
+            } catch (Exception e) {
+                throw new AuthorizationException("authRequestID " + authRequestID + " delegation failed for authentification of " + GSSIdentity, e);
             }
 
-            Object authobj = m.getMessageObject();
-            if (authobj==null) {
-                throw new AuthorizationException(
-                        "authRequestID " + authRequestID +
-                        " authorization object was null for " +
-                        dnInfo.getDN() + " and roles " + dnInfo.getFQANs());
+            if (authsock == null) {
+                throw new AuthorizationException("authRequestID " + authRequestID + " socket to receive authorization object was null for " + GSSIdentity);
             }
-            else if(authobj instanceof AuthenticationMessage) {
-                if(((AuthenticationMessage) authobj).getAuthRequestID()!=authRequestID) {
-                    throw new AuthorizationException("authRequestID " + authRequestID + " delegation failed: mismatch with returned authRequestID " + ((Message) authobj).getId());
+
+            try {
+                authsock.setSoTimeout(delegation_timeout);
+                InputStream authin = authsock.getInputStream();
+                ObjectInputStream authstrm = new ObjectInputStream(authin);
+                Object authobj = authstrm.readObject();
+                if (authobj == null) {
+                    throw new AuthorizationException("authRequestID " + authRequestID + " authorization object was null for " + GSSIdentity);
                 }
-                authmessage = (AuthenticationMessage) authobj;
+
+                if (authobj instanceof Exception) {
+                    Exception e = (Exception) authobj;
+                    throw new AuthorizationException("authRequestID " + authRequestID + " received exception \"" + e.getMessage() + "\"", e);
+                }
+
+                AuthenticationMessage authmessage =
+                    (AuthenticationMessage) authobj;
                 Map <NameRolePair, gPlazmaAuthorizationRecord> user_auths = authmessage.getgPlazmaAuthzMap();
-                if(log.isDebugEnabled()) {
-                    logAuthzMessage(user_auths, log);
+                logAuthzMessage(user_auths, log);
+                return authmessage;
+            } catch (IOException e) {
+                throw new AuthorizationException("authRequestID " + authRequestID + " could not receive authorization object for " + GSSIdentity, e);
+            } catch (ClassCastException e) {
+                throw new AuthorizationException("authRequestID " + authRequestID + " incorrect class for authorization object for " + GSSIdentity, e);
+            } finally {
+                try {
+                    authsock.close();
+                } catch (IOException e) {
+                    log.warn("Unexpected failure to close socket", e);
                 }
-            } else {
-                if( authobj instanceof NoRouteToCellException ) {
-                    throw (NoRouteToCellException) authobj;
-                }
-                if( authobj instanceof Throwable ) {
-                    throw (Throwable) authobj;
-                }
-                throw new AuthorizationException("unknown type of authobj");
             }
-        } catch ( AuthorizationException ase ) {
-            throw ase;
-        } catch ( GSSException gsse ) {
-            throw new AuthorizationException("authRequestID " + authRequestID + " error getting source from context " + gsse);
-        } catch ( NoRouteToCellException nre ) {
-            throw new AuthorizationException("authRequestID " + authRequestID + nre);
-        } catch ( InterruptedException ie ) {
-            throw new AuthorizationException("authRequestID " + authRequestID + " message thread was interrupted " + ie);
-        } catch ( ClassNotFoundException cnfe ) {
-            throw new AuthorizationException("authRequestID " + authRequestID + " class of object returned from " + authcellname + " not found " + cnfe);
-        } catch ( Throwable t ) {
-            throw new AuthorizationException("authRequestID " + authRequestID + " received exception \"" + t.getMessage() + "\" at " + t.getStackTrace()[0]);
+        } catch (CacheException e) {
+            throw new AuthorizationException("authRequestID " + authRequestID + " " + e.getMessage(), e);
+        } catch (GSSException e) {
+            throw new AuthorizationException("authRequestID " + authRequestID + " error getting source from context", e);
+        } catch (InterruptedException e) {
+            throw new AuthorizationException("authRequestID " + authRequestID + " message thread was interrupted", e);
+        } catch (ClassNotFoundException e) {
+            throw new AuthorizationException("authRequestID " + authRequestID + " class of object returned from " + gPlazmaStub.getDestinationPath() + " not found", e);
         }
-
-        return authmessage;
     }
 
-    public AuthenticationMessage authorize(X509Certificate[] chain, String user, CellPath cellpath, CellEndpoint caller) throws AuthorizationException {
+    public AuthenticationMessage authorize(String subjectDN, List<String> roles)
+        throws AuthorizationException
+    {
+        return authorize(new DNInfo(subjectDN, roles, authRequestID));
+    }
 
-        AuthenticationMessage authmessage = null;
+    public AuthenticationMessage authorize(String subjectDN, String role)
+        throws AuthorizationException
+    {
+        return authorize(new DNInfo(subjectDN, role, authRequestID));
+    }
+
+    public AuthenticationMessage
+        authorize(String subjectDN, List<String> roles, String user)
+        throws AuthorizationException
+    {
+        return authorize(new DNInfo(subjectDN, roles, user, authRequestID));
+    }
+
+    public AuthenticationMessage
+        authorize(String subjectDN, String role, String user)
+        throws AuthorizationException
+    {
+        return authorize(new DNInfo(subjectDN, role, user, authRequestID));
+    }
+
+    public AuthenticationMessage authorize(DNInfo dnInfo)
+        throws AuthorizationException
+    {
+        try {
+            AuthenticationMessage reply =
+                sendAndWaitGPlazmaRequest(dnInfo, AuthenticationMessage.class);
+            if (reply.getAuthRequestID() != authRequestID) {
+                throw new AuthorizationException("authRequestID " + authRequestID + " delegation failed: mismatch with returned authRequestID " + reply.getId());
+            }
+            Map <NameRolePair, gPlazmaAuthorizationRecord> user_auths =
+                reply.getgPlazmaAuthzMap();
+            logAuthzMessage(user_auths, log);
+            return reply;
+        } catch (CacheException e) {
+            throw new AuthorizationException("authRequestID " + authRequestID + " " + e.getMessage(), e);
+        } catch (InterruptedException e) {
+            throw new AuthorizationException("authRequestID " + authRequestID + " message thread was interrupted", e);
+        }
+    }
+
+    public AuthenticationMessage authorize(X509Certificate[] chain, String user)
+        throws AuthorizationException
+    {
         X509Info x509info = new X509Info(chain, user, authRequestID);
 
-        String authcellname = cellpath.getCellName();
         try {
-            CellMessage m = sendAndWaitGPlazmaRequest(cellpath,caller, x509info);
-            if(m==null) {
-                String subjectDN = X509CertUtil.getSubjectFromX509Chain(chain, false);
-                throw new AuthorizationException("authRequestID " + authRequestID + " Message to " + authcellname + " timed out for authorization of " + subjectDN);
+            AuthenticationMessage reply =
+                sendAndWaitGPlazmaRequest(x509info, AuthenticationMessage.class);
+            if (reply.getAuthRequestID() != authRequestID) {
+                throw new AuthorizationException("authRequestID " + authRequestID + " authentication failed: mismatch with returned authRequestID " + reply.getId());
             }
-
-            Object authobj = m.getMessageObject();
-            if(authobj==null) {
-                String subjectDN = X509CertUtil.getSubjectFromX509Chain(chain, false);
-                throw new AuthorizationException("authRequestID " + authRequestID + " authorization object was null for " + subjectDN);
-            }
-            if(authobj instanceof AuthenticationMessage) {
-                authmessage = (AuthenticationMessage) authobj;
-                if(authmessage.getAuthRequestID()!=authRequestID) {
-                    throw new AuthorizationException("authRequestID " + authRequestID + " authentication failed: mismatch with returned authRequestID " + ((Message) authobj).getId());
-                }
-                Map <NameRolePair, gPlazmaAuthorizationRecord> user_auths = authmessage.getgPlazmaAuthzMap();
-                if(log.isDebugEnabled()) {
-                    logAuthzMessage(user_auths, log);
-                }
-            } else {
-                if( authobj instanceof Throwable )
-                    throw (Throwable) authobj;
-                else
-                    throw new AuthorizationException("authRequestID " + authRequestID + " incorrect class for authorization object");
-            }
-        } catch ( AuthorizationException ase ) {
-            throw ase;
-        } catch ( GSSException gsse ) {
-            throw new AuthorizationException("authRequestID " + authRequestID + " error getting source from context " + gsse);
-        } catch ( NoRouteToCellException nre ) {
-            throw new AuthorizationException("authRequestID " + authRequestID + nre);
-        } catch ( InterruptedException ie ) {
-            throw new AuthorizationException("authRequestID " + authRequestID + " message thread was interrupted " + ie);
-        } catch ( ClassNotFoundException cnfe ) {
-            throw new AuthorizationException("authRequestID " + authRequestID + " class of object returned from " + authcellname + " not found " + cnfe);
-        } catch ( Throwable t ) {
-            throw new AuthorizationException("authRequestID " + authRequestID + " received exception \"" + t.getMessage() + "\" at " + t.getStackTrace()[0]);
-        }
-
-        return authmessage;
-    }
-
-    public static void logAuthzMessage(Map <NameRolePair, gPlazmaAuthorizationRecord> user_auths, Logger log) {
-        for( NameRolePair nameAndRole : user_auths.keySet()) {
-            StringBuilder sb = new StringBuilder("authorized ");
-            sb.append(nameAndRole.toString()).append(" as: ");
-            gPlazmaAuthorizationRecord record = user_auths.get(nameAndRole);
-            if(record!=null) {
-                sb.append(record.toShortString());
-            } else {
-                sb.append("NOT AUTHORIZED");
-            }
-            log.info(sb);
+            Map <NameRolePair, gPlazmaAuthorizationRecord> user_auths =
+                reply.getgPlazmaAuthzMap();
+            logAuthzMessage(user_auths, log);
+            return reply;
+        } catch (CacheException e) {
+            throw new AuthorizationException("authRequestID " + authRequestID + " " + e.getMessage(), e);
+        } catch (InterruptedException e) {
+            throw new AuthorizationException("authRequestID " + authRequestID + " message thread was interrupted", e);
         }
     }
 
-    private CellMessage sendAndWaitGPlazmaRequest(CellPath cellpath,
-            CellEndpoint caller, Object load)
-            throws InterruptedException,
-            SerializationException,
-            NoRouteToCellException {
-        // extract current session
+    public static void
+        logAuthzMessage(Map <NameRolePair, gPlazmaAuthorizationRecord> user_auths,
+                        Logger log)
+    {
+        if (log.isDebugEnabled()) {
+            for (NameRolePair nameAndRole: user_auths.keySet()) {
+                StringBuilder sb = new StringBuilder("authorized ");
+                sb.append(nameAndRole.toString()).append(" as: ");
+                gPlazmaAuthorizationRecord record = user_auths.get(nameAndRole);
+                if (record != null) {
+                    sb.append(record.toShortString());
+                } else {
+                    sb.append("NOT AUTHORIZED");
+                }
+                log.debug(sb);
+            }
+        }
+    }
+
+    private <T extends Serializable>
+                       T sendAndWaitGPlazmaRequest(Serializable load,
+                                                   Class<T> type)
+        throws AuthorizationException, CacheException, InterruptedException
+    {
         Object cdcSession = CDC.getSession();
-        StringBuilder sb = new StringBuilder();
-        if (cdcSession != null) {
-            sb.append(cdcSession);
+        try {
+            StringBuilder sb = new StringBuilder();
+            if (cdcSession != null) {
+                sb.append(cdcSession);
+            }
+
+            // Add current authRequestId. FIXME: This is a miss use of
+            // session IDs.
+            sb.append(":authId:").append(authRequestID);
+            CDC.setSession(sb.toString());
+
+            // FIXME: Since the gPlazma cell does not follow the
+            // dCache message conventions, we cannot rely on CellStub
+            // doing all the error handling. We have to do part of it
+            // here.
+            Serializable reply =
+                gPlazmaStub.sendAndWait(load, Serializable.class);
+            if (type.isInstance(reply)) {
+                if (reply instanceof Message) {
+                    Message msg = (Message) reply;
+                    int rc = msg.getReturnCode();
+                    if (rc != 0) {
+                        throw new CacheException(rc, String.valueOf(msg.getErrorObject()));
+                    }
+                }
+                return (T) reply;
+            } else if (reply instanceof AuthorizationException) {
+                throw (AuthorizationException) reply;
+            } else {
+                throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                         reply.toString());
+            }
+        } finally {
+            //restore original session
+            CDC.setSession(cdcSession);
         }
-
-        //add current authRequestId
-        sb.append(":authId:").append(authRequestID);
-
-        //set new session
-        CDC.setSession(sb.toString());
-        sb = null;
-        CellMessage envelop = new CellMessage(cellpath, load);
-        envelop = caller.sendAndWait(envelop, cell_message_timeout);
-
-        //restore original session
-        CDC.setSession(cdcSession);
-        return envelop;
     }
 }

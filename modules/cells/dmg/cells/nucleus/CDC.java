@@ -109,11 +109,12 @@ public class CDC
      * Sets the session in the MDC for the calling thread.
      *
      * @param session Session identifier. Must implement Serializable
+     * if not null.
      * @throws SerializationException if session is not Serializable
      */
     static public void setSession(Object session)
     {
-        if (!(session instanceof Serializable)) {
+        if (session != null && !(session instanceof Serializable)) {
             throw new SerializationException("Session identifier is not serializable");
         }
 

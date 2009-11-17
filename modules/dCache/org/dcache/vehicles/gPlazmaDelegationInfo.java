@@ -1,12 +1,16 @@
 package org.dcache.vehicles;
 
+import java.io.Serializable;
+
 /**
  * gPlazmaDelegationInfo.java
  * User: tdh
  * Date: Sep 16, 2008
  * Time: 10:24:46 AM
  */
-public class gPlazmaDelegationInfo {
+public class gPlazmaDelegationInfo implements Serializable
+{
+    static final long serialVersionUID = 4259453276083475709L;
 
     private long id;
     private String user=null;

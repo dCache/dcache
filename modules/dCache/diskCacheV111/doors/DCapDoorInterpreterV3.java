@@ -191,7 +191,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         if( _authorizationStrong || _authorizationRequired ) {
 
             try {
-                _authService = GplazmaService.getInstance(_cell);
+                _authService = new GplazmaService(_cell);
             } catch (AuthorizationException e) {
                 /*
                  * for not policy is unclear for me:
@@ -272,7 +272,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         String check = (String)_cell.getDomainContext().get("dCapDoor-check");
         if( check != null )_checkStrict = check.equals("strict") ;
-        
+
         _origin = new Origin((_authorizationStrong || _authorizationRequired) ? AuthType.ORIGIN_AUTHTYPE_STRONG : AuthType.ORIGIN_AUTHTYPE_WEAK, "0");
         _log.debug("Origin: " + _origin.toString());
 
@@ -2946,7 +2946,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         if( _authService != null ) {
             try {
-                user = _authService.getUserRecord(_cell, name, role, _cell.getArgs());
+                user = _authService.getUserRecord(name, role);
                 _voInfo = new VOInfo(user.getGroup(), user.getRole() );
             } catch (AuthorizationException e) {
                 user = new UserAuthRecord("nobody", name, role, true, 0, -1, -1, "/", "/", "/", new HashSet<String>(0)) ;

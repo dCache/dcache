@@ -50,9 +50,6 @@ public class gPlazmaTester extends CellAdapter {
     /** Whether to use the gPlazma cell for authorization **/
     protected boolean _use_gplazmaAuthzCell=true;
 
-    /** Cell path for GPLAZMA **/
-    protected CellPath gPlazmaCellPath = new CellPath("gPlazma");
-
     /** Number of authorizations tested **/
     private long numtests=0;
 
@@ -233,7 +230,7 @@ public class gPlazmaTester extends CellAdapter {
                 authHelper = new AuthzQueryHelper(this);
                 //authHelper.setDelegateToGplazma(_delegate_to_gplazma);
                 log.info("Requesting authorization with context call");
-                authRecord =  authHelper.getAuthorization(test_context, new CellPath("gPlazma"), this).getAuthorizationRecord();
+                authRecord =  authHelper.getAuthorization(test_context).getAuthorizationRecord();
             } catch( Exception e ) {
                 log.error("authorization through gPlazma cell failed: " + e.getMessage());
                 authRecord = null;
@@ -254,7 +251,7 @@ public class gPlazmaTester extends CellAdapter {
                 authHelper = new AuthzQueryHelper(this);
                 //authHelper.setDelegateToGplazma(_delegate_to_gplazma);
                 log.info(CDC.getSession().toString() + " Requesting authorization with certificate chain call");
-                AuthenticationMessage authmessage = authHelper.authorize(chain, null, gPlazmaCellPath, this);
+                AuthenticationMessage authmessage = authHelper.authorize(chain, null);
                 authRecord =  new AuthorizationMessage(authmessage).getAuthorizationRecord();
             } catch( Exception e ) {
                 log.error("authorization through gPlazma cell failed: " + e.getMessage());

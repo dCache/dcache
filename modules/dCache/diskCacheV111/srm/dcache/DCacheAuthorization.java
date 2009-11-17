@@ -73,28 +73,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -107,10 +107,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -120,10 +120,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -162,17 +162,17 @@ import java.util.LinkedList;
  * @author  timur
  */
 public final class DCacheAuthorization implements SRMAuthorization {
-    
+
       static Random random;
       static {
         random = new Random();
       }
-    
+
     private static  org.apache.log4j.Logger _logAuth =
              org.apache.log4j.Logger.getLogger(DCacheAuthorization.class);
     private static DCacheAuthorization srmauthorization;
     private String kAuthFileName;
-    private String gplazmaPolicyFilePath; 
+    private String gplazmaPolicyFilePath;
     private boolean use_gplazmaAuthzModule=false;
 	private boolean use_gplazmaAuthzCell=false;
     protected boolean delegate_to_gplazma=false;
@@ -183,11 +183,11 @@ public final class DCacheAuthorization implements SRMAuthorization {
 
 
     //constructor being used
-    private DCacheAuthorization(boolean use_gplazmaAuthzCell, 
-            boolean delegate_to_gplazma, 
-            boolean use_gplazmaAuthzModule, 
-            String kAuthFileName, 
-            String gplazmaPolicyFilePath, 
+    private DCacheAuthorization(boolean use_gplazmaAuthzCell,
+            boolean delegate_to_gplazma,
+            boolean use_gplazmaAuthzModule,
+            String kAuthFileName,
+            String gplazmaPolicyFilePath,
             CellAdapter parentcell,
             AuthRecordPersistenceManager authRecordPersistenceManager) {
        this.use_gplazmaAuthzCell=use_gplazmaAuthzCell;
@@ -198,7 +198,7 @@ public final class DCacheAuthorization implements SRMAuthorization {
        this.parentcell = parentcell;
        this.authRecordPersistenceManager = authRecordPersistenceManager;
     }
-	
+
     /** Performs authorization checks. Throws
      * <code>SRMAuthorizationException</code> if the authorization fails.
      * Otherwise, the function completes normally.
@@ -256,7 +256,7 @@ public final class DCacheAuthorization implements SRMAuthorization {
             }
 
             user_rec = authRecordPersistenceManager.persist(user_rec);
-            
+
             if(cache_lifetime>0) {
                 putUsernameMapping(requestCredentialId, new TimedAuthorizationRecord(user_rec, name));
             }
@@ -267,12 +267,12 @@ public final class DCacheAuthorization implements SRMAuthorization {
           throw new SRMAuthorizationException("username is null");
         }
         return user_rec;
-        
+
     }
-    
+
     private AuthorizationRecord authorize(String secureId,String name)
     throws SRMAuthorizationException {
-        
+
         if(name==null) {
             name = getUserNameByGlobusId(secureId);
         }
@@ -280,7 +280,7 @@ public final class DCacheAuthorization implements SRMAuthorization {
         AuthorizationRecord authrec = convertLegacyToNewAuthRec(legacyauthrec);
         return authrec;
     }
-	
+
     private AuthorizationRecord authorize(GSSContext serviceContext,String name)
     throws SRMAuthorizationException {
         AuthzQueryHelper authHelper;
@@ -290,7 +290,7 @@ public final class DCacheAuthorization implements SRMAuthorization {
           try {
             authHelper = new AuthzQueryHelper(parentcell);
             authHelper.setDelegateToGplazma(delegate_to_gplazma);
-            authRecord =  authHelper.getAuthorization(serviceContext, new CellPath("gPlazma"), parentcell).getAuthorizationRecord();
+            authRecord =  authHelper.getAuthorization(serviceContext).getAuthorizationRecord();
           } catch (AuthorizationException ase) {
             if(!use_gplazmaAuthzModule) {
               throw new SRMAuthorizationException(ase.getMessage());
@@ -316,7 +316,7 @@ public final class DCacheAuthorization implements SRMAuthorization {
         }
         return authRecord;
     }
-    
+
     private String getUserNameByGlobusId(String globusId)
     throws SRMAuthorizationException {
         KAuthFile authf = null;
@@ -334,7 +334,7 @@ public final class DCacheAuthorization implements SRMAuthorization {
         }
         return username;
     }
-    
+
     private UserAuthRecord getUserRecord(String username,String globusId)
     throws SRMAuthorizationException {
         KAuthFile authf = null;
@@ -346,12 +346,12 @@ public final class DCacheAuthorization implements SRMAuthorization {
             throw new SRMAuthorizationException(ioe.toString());
         }
         UserAuthRecord userRecord = authf.getUserRecord(username);
-        
+
         if(userRecord == null) {
             throw new SRMAuthorizationException(
             "user "+username+" is not found");
         }
-        
+
         if(!userRecord.hasSecureIdentity(globusId)) {
             throw new SRMAuthorizationException(
             "srm authorization failed for user "+username+"with GlobusId="+globusId);
@@ -359,46 +359,46 @@ public final class DCacheAuthorization implements SRMAuthorization {
         //users.put(username,userRecord);
         return userRecord;
     }
-	
+
     public static SRMAuthorization getDCacheAuthorization(
-            boolean use_gplazmaAuthzCell, 
-            boolean delegate_to_gplazma, 
-            boolean use_gplazmaAuthzModule, 
-            String gplazmaPolicyFilePath, 
-            String cache_lifetime_str, 
-            String kAuthFileName, 
+            boolean use_gplazmaAuthzCell,
+            boolean delegate_to_gplazma,
+            boolean use_gplazmaAuthzModule,
+            String gplazmaPolicyFilePath,
+            String cache_lifetime_str,
+            String kAuthFileName,
             CellAdapter parentcell,
             AuthRecordPersistenceManager authRecordPersistenceManager) {
         if(srmauthorization == null) {
             srmauthorization = new DCacheAuthorization(
-                    use_gplazmaAuthzCell, 
-                    delegate_to_gplazma, 
-                    use_gplazmaAuthzModule, 
-                    kAuthFileName, 
-                    gplazmaPolicyFilePath, 
+                    use_gplazmaAuthzCell,
+                    delegate_to_gplazma,
+                    use_gplazmaAuthzModule,
+                    kAuthFileName,
+                    gplazmaPolicyFilePath,
                     parentcell,
                     authRecordPersistenceManager);
         }
         if(!use_gplazmaAuthzModule) {
             if(!srmauthorization.kAuthFileName.equals(kAuthFileName)) {
                 srmauthorization = new DCacheAuthorization(
-                        use_gplazmaAuthzCell, 
-                        delegate_to_gplazma, 
-                        use_gplazmaAuthzModule, 
-                        kAuthFileName, 
-                        gplazmaPolicyFilePath, 
+                        use_gplazmaAuthzCell,
+                        delegate_to_gplazma,
+                        use_gplazmaAuthzModule,
+                        kAuthFileName,
+                        gplazmaPolicyFilePath,
                         parentcell,
                         authRecordPersistenceManager);
-            } 
+            }
         }
         else {
             if(!srmauthorization.gplazmaPolicyFilePath.equals(gplazmaPolicyFilePath)) {
                 srmauthorization = new DCacheAuthorization(
-                        use_gplazmaAuthzCell, 
-                        delegate_to_gplazma, 
-                        use_gplazmaAuthzModule, 
-                        kAuthFileName, 
-                        gplazmaPolicyFilePath, 
+                        use_gplazmaAuthzCell,
+                        delegate_to_gplazma,
+                        use_gplazmaAuthzModule,
+                        kAuthFileName,
+                        gplazmaPolicyFilePath,
                         parentcell,
                         authRecordPersistenceManager);
             }
@@ -456,8 +456,8 @@ public final class DCacheAuthorization implements SRMAuthorization {
       return (desiredUserName.equals(requestDesiredUserName));
     }
   }
-  
-  
+
+
   public static AuthorizationRecord convertLegacyToNewAuthRec(
       UserAuthRecord legacyAuthRec) {
         AuthorizationRecord authRec = new AuthorizationRecord();

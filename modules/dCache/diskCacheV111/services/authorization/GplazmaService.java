@@ -1,6 +1,5 @@
 package diskCacheV111.services.authorization;
 
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.*;
 
 import org.apache.log4j.Logger;
@@ -27,19 +26,16 @@ public class GplazmaService {
     private static final Logger _logAuth = Logger.getLogger("logger.org.dcache.authorization." + GplazmaService.class.getName());
 
 
-    private static final AtomicReference<GplazmaService> INSTANCE = new AtomicReference<GplazmaService>();
-
     private final boolean _use_gplazmaAuthzModule;
     private final boolean _use_gplazmaAuthzCell;
     private AuthzQueryHelper _authHelp;
     private AuthorizationController _authServ;
-    private final CellPath _gPlazmaCell;
     private String gplazmaPolicyFilePath;
 
-    // Only factory method allowed
-    private GplazmaService(CellEndpoint caller) throws AuthorizationException {
-
-        Args args = caller.getArgs();
+    public GplazmaService(CellEndpoint endpoint)
+        throws AuthorizationException
+    {
+        Args args = endpoint.getArgs();
         if( args.getOpt("use-gplazma-authorization-module") != null) {
             _use_gplazmaAuthzModule=
             args.getOpt("use-gplazma-authorization-module").equalsIgnoreCase("true");
@@ -65,42 +61,15 @@ public class GplazmaService {
         }
 
         if( _use_gplazmaAuthzCell ) {
-            _authHelp = new AuthzQueryHelper(caller);
+            _authHelp = new AuthzQueryHelper(endpoint);
         }else{
             gplazmaPolicyFilePath = args.getOpt("gplazma-authorization-module-policy");
         }
-
-
-        /*
-         * TODO: configurable in batch file
-         */
-        _gPlazmaCell = new CellPath("gPlazma");
     }
 
-
-    public static GplazmaService getInstance(CellEndpoint caller) throws AuthorizationException {
-
-        GplazmaService service = INSTANCE.get();
-
-        if( service == null ) {
-
-            /*
-             * at this point some other thread may already have updated the reference,
-             * but it's OK with us, while we do not require true singleton. In the worst
-             * case on 'extra' instances will be created, but only one will be used.
-             */
-
-            INSTANCE.compareAndSet(null, new GplazmaService(caller));
-            service = INSTANCE.get();
-        }
-
-        return service;
-
-    }
-
-
-   public UserAuthRecord getUserRecord( CellEndpoint cell, String userPrincipal ,String userRole , Args args ) throws AuthorizationException {
-
+   public UserAuthRecord getUserRecord(String userPrincipal ,String userRole)
+       throws AuthorizationException
+    {
         AuthorizationRecord authRecord;
         UserAuthRecord pwdRecord = null;
 
@@ -110,7 +79,7 @@ public class GplazmaService {
 
         if( _use_gplazmaAuthzCell ) {
             // cell
-            AuthenticationMessage authmessage = _authHelp.authorize(userPrincipal, userRole, _gPlazmaCell, cell);
+            AuthenticationMessage authmessage = _authHelp.authorize(userPrincipal, userRole);
             AuthorizationMessage authzmsg = new AuthorizationMessage(authmessage);
             authRecord = authzmsg.getAuthorizationRecord();
         }else{

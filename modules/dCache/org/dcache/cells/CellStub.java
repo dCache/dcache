@@ -34,6 +34,18 @@ public class CellStub
     {
     }
 
+    public CellStub(CellEndpoint endpoint, CellPath destination)
+    {
+        setCellEndpoint(endpoint);
+        setDestinationPath(destination);
+    }
+
+    public CellStub(CellEndpoint endpoint, CellPath destination, long timeout)
+    {
+        this(endpoint, destination);
+        setTimeout(timeout);
+    }
+
     @Override
     public void setCellEndpoint(CellEndpoint endpoint)
     {
@@ -166,7 +178,8 @@ public class CellStub
      *       timeout occured, or the object in the reply was of the
      *       wrong type.
      */
-    public <T extends Serializable> T sendAndWait(Object msg, Class<T> type)
+    public <T extends Serializable> T
+                      sendAndWait(Serializable msg, Class<T> type)
         throws CacheException, InterruptedException
     {
         return sendAndWait(_destination, msg, type);
@@ -186,8 +199,9 @@ public class CellStub
      *       timeout occured, or the object in the reply was of the
      *       wrong type.
      */
-    public <T extends Serializable> T
-                      sendAndWait(CellPath path, Object msg, Class<T> type)
+    public <T extends Serializable> T sendAndWait(CellPath path,
+                                                  Serializable msg,
+                                                  Class<T> type)
         throws CacheException, InterruptedException
     {
         CellMessage replyMessage;
@@ -231,7 +245,8 @@ public class CellStub
      * of type <code>type</code>. The result is delivered to
      * <code>callback</code>.
      */
-    public <T extends Serializable> void send(Object message, Class<T> type,
+    public <T extends Serializable> void send(Serializable message,
+                                              Class<T> type,
                                               MessageCallback<T> callback)
     {
         if (_destination == null)
@@ -246,7 +261,8 @@ public class CellStub
      * <code>callback</code>.
      */
     public <T extends Serializable> void send(CellPath destination,
-                                              Object message, Class<T> type,
+                                              Serializable message,
+                                              Class<T> type,
                                               MessageCallback<T> callback)
     {
         if (message instanceof Message) {

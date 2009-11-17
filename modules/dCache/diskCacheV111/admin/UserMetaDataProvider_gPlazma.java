@@ -14,6 +14,7 @@ import gplazma.authz.AuthorizationException;
 import gplazma.authz.util.NameRolePair;
 import gplazma.authz.records.gPlazmaAuthorizationRecord;
 import org.dcache.auth.*;
+import org.dcache.cells.CellStub;
 import org.dcache.vehicles.AuthorizationMessage;
 import diskCacheV111.vehicles.AuthenticationMessage;
 
@@ -164,7 +165,7 @@ public class UserMetaDataProvider_gPlazma implements UserMetaDataProvider {
             AuthorizationRecord authRecord;
         	if(_use_gplazmaAuthzCell ) {
         		// cell
-                AuthenticationMessage authnm = _authHelper.authorize(userPrincipal, userRole, new CellPath("gPlazma"), _cell);
+                AuthenticationMessage authnm = _authHelper.authorize(userPrincipal, userRole);
                 AuthorizationMessage authzm = new AuthorizationMessage(authnm);
                 authRecord = authzm.getAuthorizationRecord();
         	}else{
