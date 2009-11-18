@@ -34,7 +34,7 @@ set context -c billingDb ${ourHomeDir}/billing
 #     Additional params, if 'billingToDb' is 'yes'
 define env billingToDb.exe endExe
   set context -c billingDatabaseHost localhost
-  set context -c billingDbUer srmdcache
+  set context -c billingDbUser srmdcache
   set context -c billingDbPass srmdcache
   set context -c billingDbName billing
   set context -c billingDbPgPassFileName 
@@ -45,7 +45,7 @@ define env billingToDb.exe endExe
         -useSQL \
         -jdbcUrl=jdbc:postgresql://${billingDatabaseHost}/${billingDbName} \
         -jdbcDriver=org.postgresql.Driver \
-        -dbUser=${billingDbUer} \
+        -dbUser=${billingDbUser} \
         -dbPass=${billingDbPass} \
         -pgPass=${billingDbPgPassFileName} \
         -dbCommitNumber=${billingDbCommitRows} \

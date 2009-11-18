@@ -202,7 +202,7 @@ keyBase=${ourHomeDir}/config
 kpwdFile=${ourHomeDir}/etc/dcache.kpwd
 
 #  ---- Location of PID files
-# 
+#
 #   Do not change unless you know what you are doing.
 #
 pidDir=/var/run
@@ -1079,7 +1079,7 @@ billingDb=${ourHomeDir}/billing
 #   EXPERT: First is default if billingToDb=no, second for billingToDb=yes
 
 #billingDatabaseHost=localhost
-#billingDbUer=srmdcache
+#billingDbUser=srmdcache
 #billingDbPass=srmdcache
 #billingDbName=billing
 #billingDbCommitRows=100
