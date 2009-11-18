@@ -72,6 +72,7 @@ import dmg.util.Args;
 import java.io.*;
 import java.util.concurrent.*;
 import org.dcache.util.CDCThreadFactory;
+import org.dcache.util.FireAndForgetTask;
 
 import org.apache.log4j.NDC;
 
@@ -185,7 +186,7 @@ import org.apache.log4j.NDC;
           if (executor == null) {
               new Thread(task).start();
           } else {
-              executor.execute(task);
+              executor.execute(new FireAndForgetTask(task));
           }
       }
 
@@ -211,7 +212,7 @@ import org.apache.log4j.NDC;
           if (executor == null) {
               new Thread(wrapper).start();
           } else {
-              executor.execute(wrapper);
+              executor.execute(new FireAndForgetTask(wrapper));
           }
       }
 
