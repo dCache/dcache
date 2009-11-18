@@ -3208,13 +3208,21 @@ public class Storage
         /* Which attributes to fetch depends on whether we are
          * requested to perform a verbose listing.
          */
-        final Set<FileAttribute> required = EnumSet.of(TYPE, LOCATIONS);
-        required.addAll(DcacheFileMetaData.getKnownAttributes());
-        if (!verbose) {
-            required.remove(LOCATIONS);
-            required.remove(STORAGEINFO);
+        final Set<FileAttribute> required = EnumSet.of(TYPE);
+        if (verbose) {
+            required.addAll(DcacheFileMetaData.getKnownAttributes());
         }
-
+        else {
+            required.add(SIZE);
+            //
+            // NB, the four lines below will be revisited as soon as the issue
+            // of not specifying PNFS will go away
+            //
+            required.add(PNFSID);
+            required.add(OWNER);
+            required.add(OWNER_GROUP);
+            required.add(MODE);
+        }
         final String prefix =
             !directory.endsWith("/") ? directory + "/" : directory;
         final List<FileMetaData> result = new ArrayList<FileMetaData>();
