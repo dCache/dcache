@@ -334,8 +334,7 @@ public class RemoteTurlGetterV2 extends TurlGetterPutter {
 
             while(!pendingSurlsToIndex.isEmpty()) {
                 long estimatedWaitInSeconds = Integer.MAX_VALUE;
-                for(int i = 0 ; i<len;++i) {
-                    TGetRequestFileStatus getRequestFileStatus = getRequestFileStatuses[i];
+                for( TGetRequestFileStatus getRequestFileStatus:getRequestFileStatuses) {
                     org.apache.axis.types.URI surl = getRequestFileStatus.getSourceSURL();
                     if(surl == null) {
                         esay("invalid getRequestFileStatus, surl is null");
