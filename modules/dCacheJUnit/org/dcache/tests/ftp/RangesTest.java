@@ -2,8 +2,8 @@ package org.dcache.tests.ftp;
 
 import org.junit.Test;
 
-import diskCacheV111.util.Range;
-import diskCacheV111.util.Ranges;
+import org.dcache.commons.util.Range;
+import org.dcache.commons.util.Ranges;
 
 public class RangesTest extends junit.framework.TestCase {
 
