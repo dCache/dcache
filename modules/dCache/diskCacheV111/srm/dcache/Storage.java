@@ -104,6 +104,9 @@ import org.dcache.srm.SrmUseSpaceCallbacks;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.security.SslGsiSocketFactory;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.DirNotExistsCacheException;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
 import diskCacheV111.vehicles.PnfsCreateDirectoryMessage;
 import diskCacheV111.vehicles.PnfsRenameMessage;
@@ -2152,16 +2155,27 @@ public class Storage
             requestedAttributes.addAll(DcacheFileMetaData.getKnownAttributes());
             attributes = handler.getFileAttributes(fullPath, requestedAttributes);
             pnfsId = attributes.getPnfsId();
-        } catch (CacheException e) {
+        } 
+        catch (TimeoutCacheException e) {
+            throw new SRMInternalErrorException(e.getMessage(), e);
+        }
+        catch (PermissionDeniedCacheException e) {
+            throw new SRMAuthorizationException(e.getMessage(),e);
+        }
+        catch (DirNotExistsCacheException e) {
+            throw new SRMInvalidPathException(e.getMessage(),e);
+        }
+        catch (FileNotFoundCacheException e) {
+            throw new SRMInvalidPathException(e.getMessage(),e);
+        }
+        catch (CacheException e) {
             throw new SRMException("could not get storage info by path: " +
                                    e.getMessage(), e);
         }
-
         FileMetaData fmd = new DcacheFileMetaData(attributes);
         if (attributes.getFileType() != FileType.DIR) {
             fmd.isCached = isCached(attributes);
         }
-
 	try {
 	    GetFileSpaceTokensMessage msg =
                 new GetFileSpaceTokensMessage(pnfsId);
@@ -2187,7 +2201,8 @@ public class Storage
                     _log.debug("Failed to retrieve space reservation tokens for file "+
                                fullPath+"("+pnfsId+"): " + e.getMessage());
                 }
-            }        } catch (RuntimeException e) {
+            }        
+        } catch (RuntimeException e) {
 	    _log.fatal("getFileMetaData failed", e);
         } catch (Exception e) {
 	    _log.warn("getFileMetaData failed: " + e);
@@ -3668,4 +3683,5 @@ public class Storage
         FsPath fullPath = new FsPath(srm_root + "/" + path);
         return fullPath.toString();
     }
+    
 }
