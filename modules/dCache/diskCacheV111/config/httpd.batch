@@ -34,7 +34,8 @@ set context -c billingDb ${ourHomeDir}/billing
 #     Additional params, if 'billingToDb' is 'yes'
 define env billingToDb.exe endExe
   set context -c billingDatabaseHost localhost
-  set context -c billingDbUser srmdcache
+  set context -c billingDbUer srmdcache
+  set context -c billingDbUser ${billingDbUer}
   set context -c billingDbPass srmdcache
   set context -c billingDbName billing
   set context -c billingDbPgPassFileName 
