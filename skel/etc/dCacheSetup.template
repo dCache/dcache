@@ -1105,7 +1105,7 @@ billingDb=${ourHomeDir}/billing
 #   EXPERT: First is default if billingToDb=no, second for billingToDb=yes
 
 #billingDatabaseHost=localhost
-#billingDbUer=srmdcache
+#billingDbUser=srmdcache
 #billingDbPass=srmdcache
 #billingDbName=billing
 #billingDbCommitRows=100
