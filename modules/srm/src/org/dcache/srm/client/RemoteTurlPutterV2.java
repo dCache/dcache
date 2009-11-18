@@ -289,8 +289,7 @@ public class RemoteTurlPutterV2 extends TurlGetterPutter
 
             while(!pendingSurlsToIndex.isEmpty()) {
                 long estimatedWaitInSeconds = Integer.MAX_VALUE;
-                for(int i = 0 ; i<len;++i) {
-                    TPutRequestFileStatus putRequestFileStatus = putRequestFileStatuses[i];
+                for(TPutRequestFileStatus putRequestFileStatus: putRequestFileStatuses) {
                     org.apache.axis.types.URI surl = putRequestFileStatus.getSURL();
                     if(surl == null) {
                         esay("invalid putRequestFileStatus, surl is null");
@@ -322,7 +321,7 @@ public class RemoteTurlPutterV2 extends TurlGetterPutter
                             String turl = putRequestFileStatus.getTransferURL().toString();
                             int indx = ((Integer) pendingSurlsToIndex.remove(surl_string)).intValue();
                             // in case of put we do not need the size from the destination
-                           notifyOfTURL(SURLs[i], turl,requestToken,null,null);
+                           notifyOfTURL(SURLs[indx], turl,requestToken,null,null);
                         continue;
                     }
                     if(putRequestFileStatus.getEstimatedWaitTime() != null &&
