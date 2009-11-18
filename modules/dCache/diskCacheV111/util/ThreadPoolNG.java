@@ -10,6 +10,7 @@ import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CDC;
 
 import org.dcache.util.CDCThreadFactory;
+import org.dcache.util.FireAndForgetTask;
 
 /**
  *
@@ -77,7 +78,7 @@ public class ThreadPoolNG implements ThreadPool {
                 }
             };
 
-        _executor.execute(wrapper);
+        _executor.execute(new FireAndForgetTask(wrapper));
     }
 
 	public void setMaxThreadCount(int maxThreadCount)

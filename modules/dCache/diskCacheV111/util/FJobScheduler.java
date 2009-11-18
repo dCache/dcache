@@ -8,6 +8,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.lang.reflect.InvocationTargetException;
+import org.dcache.util.FireAndForgetTask;
 
 public class FJobScheduler implements JobScheduler, Runnable {
     public static final int LOW = 0;
@@ -100,7 +101,7 @@ public class FJobScheduler implements JobScheduler, Runnable {
         }
 
         public synchronized void start() {
-            _future = _jobExecutor.submit(_runnable);
+            _future = _jobExecutor.submit(new FireAndForgetTask(_runnable));
             _status = ACTIVE;
         }
 

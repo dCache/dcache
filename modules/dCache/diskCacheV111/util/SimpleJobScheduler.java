@@ -11,6 +11,7 @@ import java.lang.reflect.InvocationTargetException;
 
 import org.dcache.util.ReflectionUtils;
 import org.dcache.util.CDCThreadFactory;
+import org.dcache.util.FireAndForgetTask;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
@@ -93,7 +94,7 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
         }
 
         public synchronized void start() {
-            _future = _jobExecutor.submit(this);
+            _future = _jobExecutor.submit(new FireAndForgetTask(this));
             _status = ACTIVE;
         }
 
