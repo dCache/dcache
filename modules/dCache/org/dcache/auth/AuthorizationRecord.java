@@ -25,6 +25,8 @@ import static javax.persistence.CascadeType.ALL;
 import static javax.persistence.FetchType.EAGER;
 import org.dcache.srm.SRMUser;
 import diskCacheV111.util.FQAN;
+import javax.security.auth.Subject;
+
 /**
  *
  * @author Timur, Ted
@@ -369,5 +371,10 @@ public class AuthorizationRecord implements Serializable, SRMUser{
             gidIntArray[i] = gids.get(i);
         }
         return gidIntArray;
+    }
+
+    @Transient
+    public Subject getSubject() {
+        return Subjects.getSubject(this);
     }
 }

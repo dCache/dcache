@@ -1,5 +1,6 @@
 package diskCacheV111.vehicles.transferManager;
 import diskCacheV111.vehicles.Message;
+import org.dcache.auth.AuthorizationRecord;
 /**
  * @author Patrick F.
  * @author Timur Perelmutov. timur@fnal.gov
@@ -13,9 +14,7 @@ public abstract class TransferManagerMessage extends Message {
     public static final int POOL_FAILURE=3;
     
     static final long serialVersionUID = -5532348977012216312L;
-    private String user;
-    private int    uid = 0;
-    private int    gid = 0;
+    private AuthorizationRecord user;
     //in case of store space might be reserved and
     // size of filw might be know
     private String spaceReservationId;
@@ -29,18 +28,16 @@ public abstract class TransferManagerMessage extends Message {
     private Long credentialId;
     
     public TransferManagerMessage(
-            String user,
-            int uid,
-            int gid,
+            AuthorizationRecord user,
             String pnfsPath,
             String remoteUrl,
             boolean store,
             Long credentialId) {
-        this(user,uid,gid, pnfsPath, remoteUrl, store, credentialId,null,false,null);
+        this(user, pnfsPath, remoteUrl, store, credentialId,null,false,null);
     }
     
-    public TransferManagerMessage(String user,
-            int uid, int gid, String pnfsPath,
+    public TransferManagerMessage(AuthorizationRecord user,
+            String pnfsPath,
             String remoteUrl,
             boolean store,
             Long credentialId,
@@ -49,8 +46,6 @@ public abstract class TransferManagerMessage extends Message {
             ) {
         super();
         this.user = user;
-        this.uid = uid;
-        this.gid = gid;
         this.pnfsPath = pnfsPath;
         this.remoteUrl = remoteUrl;
         this.store = store;
@@ -65,8 +60,6 @@ public abstract class TransferManagerMessage extends Message {
         super();
         setId(original.getId());
         this.user = original.user;
-        this.uid = original.uid;
-        this.gid = original.gid;
         this.pnfsPath = original.pnfsPath;
         this.remoteUrl = original.remoteUrl;
         this.store = original.store;
@@ -85,21 +78,8 @@ public abstract class TransferManagerMessage extends Message {
     /** Getter for property user.
      * @return Value of property user.
      */
-    public String getUser() {
+    public AuthorizationRecord getUser() {
         return user;
-    }
-    /** Getter for property uid.
-     * @return Value of property uid.
-     */
-    public int getUid() {
-        return uid;
-    }
-    
-    /** Getter for property gid.
-     * @return Value of property gid.
-     */
-    public int getGid() {
-        return gid;
     }
     
     /** Getter for property store.

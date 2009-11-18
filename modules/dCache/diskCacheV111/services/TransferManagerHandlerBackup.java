@@ -12,8 +12,6 @@ package diskCacheV111.services;
 
 
 public class TransferManagerHandlerBackup {
-	private int uid;
-	private int gid;
 	private String pnfsPath;
 	boolean store;
 	boolean created;
@@ -39,8 +37,6 @@ public class TransferManagerHandlerBackup {
 		pnfsPath     = handler.getPnfsPath();
 		pnfsIdString = handler.getPnfsIdString();
 		pool         = handler.getPool();
-		uid          = handler.getUid();
-		gid          = handler.getGid();
 		store        = handler.getStore();
 		created      = handler.getCreated();
 		locked       = handler.getLocked();

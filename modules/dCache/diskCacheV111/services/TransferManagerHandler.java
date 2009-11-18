@@ -37,13 +37,19 @@ import diskCacheV111.vehicles.IpProtocolInfo;
 import java.io.IOException;
 import java.util.Iterator;
 import diskCacheV111.doors.FTPTransactionLog;
+import org.apache.log4j.Logger;
+import org.dcache.namespace.PermissionHandler;
+import org.dcache.namespace.ChainedPermissionHandler;
+import org.dcache.namespace.PosixPermissionHandler;
+import org.dcache.namespace.ACLPermissionHandler;
+import org.dcache.vehicles.FileAttributes;
+import org.dcache.acl.enums.AccessType;
+
 
 public class TransferManagerHandler implements CellMessageAnswerable {
 	private TransferManager manager;
 	private TransferManagerMessage transferRequest;
 	private CellPath sourcePath;
-	private int uid;
-	private int gid;
 	private String pnfsPath;
 	private transient String parentDir;
 	boolean store;
@@ -55,7 +61,7 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 	transient boolean locked = false;
 	private String pool;
 	private FTPTransactionLog tlog;
-	private diskCacheV111.util.FileMetaData metadata;
+    private FileAttributes fileAttributes;
 	public static final int INITIAL_STATE=0;
 	public static final int WAITING_FOR_PNFS_INFO_STATE=1;
 	public static final int RECEIVED_PNFS_INFO_STATE=2;
@@ -91,9 +97,8 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 	private transient Object _errorObject;
 	private transient boolean _cancelTimer;
 	private DoorRequestInfoMessage info;
+    private PermissionHandler permissionHandler;
 
-	private TransferManagerHandler() {
-	}
 /**      */
 	public TransferManagerHandler(TransferManager tManager,
 				      TransferManagerMessage message,
@@ -111,16 +116,14 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 		this.transferRequest = message;
 		Long longId          = new Long(id);
 
-		uid      = transferRequest.getUid();
-		gid      = transferRequest.getGid();
 		pnfsPath = transferRequest.getPnfsPath();
 		store    = transferRequest.isStore();
 		remoteUrl= transferRequest.getRemoteURL();
                 credentialId = transferRequest.getCredentialId();
-        info.setGid(gid);
-        info.setUid(uid);
+        info.setGid(transferRequest.getUser().getGid());
+        info.setUid(transferRequest.getUser().getUid());
         info.setPath(pnfsPath);
-        info.setOwner(transferRequest.getUser());
+        info.setOwner(transferRequest.getUser().getName());
         info.setTimeQueued(-System.currentTimeMillis());
         info.setMessageType("request");
         this.sourcePath = sourcePath;
@@ -134,8 +137,9 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 		try {
 			if(manager.getLogRootName() != null) {
 				tlog = new FTPTransactionLog(manager.getLogRootName(),manager);
-				String user_info = transferRequest.getUser()+
-					"("+uid +"."+gid+")";
+				String user_info = transferRequest.getUser().getName()+
+					"("+transferRequest.getUser().getUid() +"."+
+                    transferRequest.getUser().getGid()+")";
 				String rw = store?"write":"read";
 				java.net.InetAddress remoteaddr =
 					java.net.InetAddress.getByName(
@@ -154,6 +158,10 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 			manager.addActiveTransfer(longId,this);
 		}
 		setState(INITIAL_STATE);
+        permissionHandler =
+            new ChainedPermissionHandler(
+                new ACLPermissionHandler(),
+                new PosixPermissionHandler());
 	}
 
 /**      */
@@ -180,12 +188,14 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 		parentDir = pnfsPath.substring(0,last_slash_pos);
 		PnfsGetFileMetaDataMessage sInfo;
 		if(store) {
-			sInfo = new PnfsGetFileMetaDataMessage() ;
+			sInfo = new PnfsGetFileMetaDataMessage(
+                    permissionHandler.getRequiredAttributes()) ;
 			sInfo.setPnfsPath( parentDir ) ;
 			setState(WAITING_FOR_PNFS_PARENT_INFO_STATE);
 		}
 		else {
-			sInfo = new PnfsGetStorageInfoMessage() ;
+			sInfo = new PnfsGetStorageInfoMessage(
+                    permissionHandler.getRequiredAttributes()) ;
 			sInfo.setPnfsPath( pnfsPath ) ;
 			setState(WAITING_FOR_PNFS_INFO_STATE);
 		}
@@ -241,7 +251,7 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 					(PnfsGetFileMetaDataMessage)message;
 				if(state == WAITING_FOR_PNFS_PARENT_INFO_STATE) {
 					setState(RECEIVED_PNFS_PARENT_INFO_STATE);
-					parentInfoArrived(storage_metadata);
+					parentDirectorMetadataArrived(storage_metadata);
 					return;
 				}
 				else if ( state == WAITING_FOR_PNFS_CHECK_BEFORE_DELETE_STATE ) {
@@ -315,31 +325,33 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 	public void exceptionArrived(CellMessage request, Exception exception) {
 	}
 /**      */
-	public void parentInfoArrived(PnfsGetFileMetaDataMessage file_metadata) {
+	public void parentDirectorMetadataArrived(PnfsGetFileMetaDataMessage file_metadata) {
 		say("parentInfoArrived(TransferManagerHandler)");
 		if(file_metadata.getReturnCode() != 0) {
 			sendErrorReply(3,  new java.io.IOException(
 					       "can't get metadata for parent directory "+parentDir));
 			return;
 		}
-		diskCacheV111.util.FileMetaData metadata =
-			file_metadata.getMetaData();
-		boolean can_write = (metadata.getUid() == uid) &&
-			metadata.getUserPermissions().canWrite() &&
-			metadata.getUserPermissions().canExecute();
+        FileAttributes attributes = file_metadata.getFileAttributes();
+        attributes.setPnfsId(file_metadata.getPnfsId());
 
-		can_write |= (metadata.getGid() == gid ) &&
-			metadata.getGroupPermissions().canWrite() &&
-			metadata.getGroupPermissions().canExecute();
-
-		can_write |= metadata.getWorldPermissions().canWrite() &&
-			metadata.getWorldPermissions().canExecute();
-		if(!can_write) {
+        AccessType canCreateFile =
+                  permissionHandler.canCreateFile(
+                      transferRequest.getUser().getSubject(),
+                      attributes);
+        if(canCreateFile != AccessType.ACCESS_ALLOWED ) {
+            say("user has no permission to write to directory "+parentDir);
 			sendErrorReply(3,  new java.io.IOException(
-					       "user has no permission to write to directory"+parentDir));
+					       "user has no permission to write to directory "+parentDir));
 			return;
-		}
-		PnfsCreateEntryMessage create = new PnfsCreateEntryMessage( pnfsPath , uid , gid , 0644 ) ;
+        }
+
+		PnfsCreateEntryMessage create = new PnfsCreateEntryMessage(
+                pnfsPath ,
+                getUid(),
+                getGid() ,
+                0644,
+                permissionHandler.getRequiredAttributes()) ;
 		setState(WAITING_FOR_PNFS_ENTRY_CREATION_INFO_STATE);
 		manager.persist(this);
 		try {
@@ -370,11 +382,12 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 		}
 
         storageInfo  = create.getStorageInfo();
-		metadata =
+		fileAttributes = create.getFileAttributes();
         create.getMetaData();
         pnfsId        = create.getPnfsId();
-        if(storageInfo == null || metadata == null || pnfsId == null) {
-            PnfsGetStorageInfoMessage sInfo = new PnfsGetStorageInfoMessage() ;
+        if(storageInfo == null || fileAttributes == null || pnfsId == null) {
+            PnfsGetStorageInfoMessage sInfo = new PnfsGetStorageInfoMessage(
+                    permissionHandler.getRequiredAttributes()) ;
             sInfo.setPnfsPath( pnfsPath ) ;
             setState(WAITING_FOR_PNFS_INFO_STATE);
             manager.persist(this);
@@ -436,31 +449,31 @@ public class TransferManagerHandler implements CellMessageAnswerable {
                     storageInfo  = storage_info_msg.getStorageInfo();
                 }
 
-                if(metadata == null) {
-                    metadata =
-                            storage_info_msg.getMetaData();
+                if(fileAttributes == null) {
+                    fileAttributes =
+                            storage_info_msg.getFileAttributes();
                 }
-		say("storageInfoArrived(uid="+uid+" gid="+gid+" pnfsid="+pnfsId+" storageInfo="+storageInfo+" metadata="+metadata);
+		say("storageInfoArrived(uid="+
+                transferRequest.getUser().getUid()+
+                " gid="+transferRequest.getUser().getGid()+
+                " pnfsid="+pnfsId+" storageInfo="+storageInfo+
+                " fileAttributes="+fileAttributes);
                 checkPermissionAndSelectPool();
 
         }
 
         public void checkPermissionAndSelectPool() {
 		if(store) {
-			boolean can_write = (metadata.getUid() == uid) &&
-				metadata.getUserPermissions().canWrite() ;
-			//say("user can write="+can_write);
-			can_write |= (metadata.getGid() == gid ) &&
-				metadata.getGroupPermissions().canWrite();
-			//say("user/group can write="+can_write);
-			can_write |= metadata.getWorldPermissions().canWrite();
-			//say("user/group/world can write="+can_write);
+			boolean can_write =  
+                AccessType.ACCESS_ALLOWED  ==permissionHandler.canWriteFile(
+                     transferRequest.getUser().getSubject(),
+                     fileAttributes);
 			if(!can_write) {
 				sendErrorReply(3,  new java.io.IOException(
 						       "user has no permission to write to file"+pnfsPath));
 				return;
 			}
-			if(metadata.getFileSize() != 0 && !manager.isOverwrite()) {
+			if(fileAttributes.getSize() != 0 && !manager.isOverwrite()) {
 				sendErrorReply(3,  new java.io.IOException(
 						       "file size is not 0, user has no permission to write to file"+pnfsPath));
 				return;
@@ -468,11 +481,10 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 			}
 		}
 		else {
-			boolean can_read = (metadata.getUid() == uid) &&
-				metadata.getUserPermissions().canRead();
-			can_read |= (metadata.getGid() == gid ) &&
-				metadata.getGroupPermissions().canRead();
-			can_read |= metadata.getWorldPermissions().canRead();
+			boolean can_read =
+                AccessType.ACCESS_ALLOWED  ==permissionHandler.canReadFile(
+                     transferRequest.getUser().getSubject(),
+                     fileAttributes);
 			if(!can_read) {
 				sendErrorReply(3,  new java.io.IOException(
 						       "user has no permission to read file "+pnfsPath));
@@ -887,8 +899,7 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 			return sb.toString();
 		}
 		sb.append("\n  state=").append(state);
-		sb.append("\n  uid=").append(uid);
-		sb.append("    gid=").append(gid);
+		sb.append("\n  user=").append(transferRequest.getUser());
 		if(pnfsId != null) {
 			sb.append("\n   pnfsId=").append(pnfsId);
 		}
@@ -950,8 +961,8 @@ public class TransferManagerHandler implements CellMessageAnswerable {
             System.out.println("This is a main in handler");
         }
 
-	public int getUid() { return uid; }
-	public int getGid() { return gid; }
+	public int getUid() { return transferRequest.getUser().getUid(); }
+	public int getGid() { return transferRequest.getUser().getGid(); }
 	public String getPnfsPath() { return pnfsPath; }
 	public boolean getStore() { return store; }
 	public boolean getCreated() { return created; }

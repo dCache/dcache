@@ -2796,9 +2796,7 @@ public class Storage
 
             if (store && spaceReservationId != null && size != null) {
                 gsiftpTransferRequest =
-                    new RemoteGsiftpTransferManagerMessage(duser.getName(),
-                                                           duser.getUid(),
-                                                           duser.getGid(),
+                    new RemoteGsiftpTransferManagerMessage(duser,
                                                            remoteTURL,
                                                            actualFilePath,
                                                            store,
@@ -2812,9 +2810,7 @@ public class Storage
                                                            );
             } else {
                 gsiftpTransferRequest =
-                    new RemoteGsiftpTransferManagerMessage(duser.getName(),
-                                                           duser.getUid(),
-                                                           duser.getGid(),
+                    new RemoteGsiftpTransferManagerMessage(duser,
                                                            remoteTURL,
                                                            actualFilePath,
                                                            store,

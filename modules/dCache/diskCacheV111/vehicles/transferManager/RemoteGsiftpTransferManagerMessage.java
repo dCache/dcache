@@ -1,4 +1,5 @@
 package diskCacheV111.vehicles.transferManager;
+import org.dcache.auth.AuthorizationRecord;
 /**
  * @author Patrick F.
  * @author Timur Perelmutov. timur@fnal.gov
@@ -18,23 +19,7 @@ public class RemoteGsiftpTransferManagerMessage extends TransferManagerMessage {
     private String credentialName;
 
     public RemoteGsiftpTransferManagerMessage(
-            String user,
-            int uid,
-            int gid,
-            String gsiftpUrl,
-            String pnfsPath,
-            boolean store,
-            Long credentialId,
-            int bufferSize,
-            int tcpBufferSize) {
-	this(user, uid, gid, gsiftpUrl, pnfsPath, store, credentialId, "Unknown",
-             bufferSize, tcpBufferSize);
-    }
-
-    public RemoteGsiftpTransferManagerMessage(
-            String user,
-            int uid,
-            int gid,
+            AuthorizationRecord user,
             String gsiftpUrl,
             String pnfsPath,
             boolean store,
@@ -42,7 +27,7 @@ public class RemoteGsiftpTransferManagerMessage extends TransferManagerMessage {
             String credentialName,
             int bufferSize,
             int tcpBufferSize) {
-        super(user, uid, gid, pnfsPath,gsiftpUrl, store,credentialId);
+        super(user, pnfsPath,gsiftpUrl, store,credentialId);
         if(bufferSize <=0 ) {
             throw new IllegalArgumentException(
                     "illegal buffer size "+bufferSize);
@@ -53,28 +38,9 @@ public class RemoteGsiftpTransferManagerMessage extends TransferManagerMessage {
         this.pnfsPath = pnfsPath;
         this.store = store;
     }
-    
-    public RemoteGsiftpTransferManagerMessage(
-            String user,
-            int uid,
-            int gid,
-            String gsiftpUrl,
-            String pnfsPath,
-            boolean store,
-            Long credentialId,
-            int bufferSize,
-            int tcpBufferSize,
-            String spaceReservationId,
-            boolean spaceReservationStrict,
-            Long size) {
-        this(user, uid, gid, gsiftpUrl, pnfsPath, store, credentialId, "Unknown",
-             bufferSize, tcpBufferSize, spaceReservationId, spaceReservationStrict, size);
-    }
 
     public RemoteGsiftpTransferManagerMessage(
-            String user,
-            int uid,
-            int gid,
+            AuthorizationRecord user,
             String gsiftpUrl,
             String pnfsPath,
             boolean store,
@@ -86,8 +52,6 @@ public class RemoteGsiftpTransferManagerMessage extends TransferManagerMessage {
             boolean spaceReservationStrict,
             Long size) {
         super(user,
-                uid,
-                gid,
                 pnfsPath,
                 gsiftpUrl,
                 store,
