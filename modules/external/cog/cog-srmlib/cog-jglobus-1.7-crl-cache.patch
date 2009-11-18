@@ -1,89 +1,77 @@
---- /tmp/jglobus/src/org/globus/gsi/CertificateRevocationLists.java	2008-02-27 06:34:31.000000000 +0100
-+++ jglobus/src/org/globus/gsi/CertificateRevocationLists.java	2009-11-09 22:39:42.940947758 +0100
-@@ -225,8 +225,21 @@
-     private static class DefaultCertificateRevocationLists 
-         extends CertificateRevocationLists {
- 
--        public void refresh() {
-+        private final long lifetime;
-+        private long lastRefresh;
-+
-+        public DefaultCertificateRevocationLists()
-+        {
-+            lifetime =
-+                CoGProperties.getDefault().getDelegationKeyCacheLifetime();
-+        }
-+
-+        public synchronized void refresh() {
-+            long now = System.currentTimeMillis();
-+            if (lastRefresh + lifetime <= now) {
--            reload(getDefaultCRLLocations());
-+                reload(getDefaultCRLLocations());
-+                lastRefresh = now;
-+            }
-         }
- 
-         private static synchronized String getDefaultCRLLocations() {
---- /tmp/jglobus/src/org/globus/common/CoGProperties.java	2009-06-29 18:54:05.000000000 +0200
-+++ jglobus/src/org/globus/common/CoGProperties.java	2009-11-09 22:42:01.657004409 +0100
-@@ -60,6 +60,9 @@
-     public static final String DELEGATION_KEY_CACHE_LIFETIME =
-         "org.globus.jglobus.delegation.cache.lifetime";
-     
-+    public static final String CRL_CACHE_LIFETIME =
-+        "org.globus.jglobus.crl.cache.lifetime";
-+
-     public static final String MDSHOST = "localhost";
-     public static final String MDSPORT = "2135";
-     public static final String BASEDN  = "Mds-Vo-name=local, o=Grid";
-@@ -507,7 +510,7 @@
-     /**
-      * Returns the delegation key cache lifetime for all delegations from this
-      * JVM. If this property is not set or set to zero or less, no caching is done. The
--     * value is the number of seconds the key/pair is cached.
-+     * value is the number of milliseconds the key/pair is cached.
-      * @return
-      */
-     public int getDelegationKeyCacheLifetime() {
-@@ -535,6 +538,41 @@
-         return valueInt;
-     }
- 
-+    /**
-+     * Returns the CRL cache lifetime. If this property is not set or
-+     * set to zero or less, no caching is done. The value is the
-+     * number of milliseconds the CRLs are cached without checking for
-+     * modifications on disk.
-+     *
-+     * @throws NumberFormatException if the cache lifetime property
-+     *         could not be parsed
-+     * @return the CRL cache lifetime in milliseconds
-+     */
-+    public long getCRLCacheLifetime()
-+        throws NumberFormatException {
-+
-+        long value = 0;
-+
-+        String property = getProperty(CRL_CACHE_LIFETIME);
-+        if (property != null && property.length() > 0) {
-+            long parsedValue  = Long.parseLong(property);
-+            if (parsedValue > 0) {
-+                value = parsedValue;
-+            }
-+        }
-+
-+        // System property takes precedence
-+        property = System.getProperty(CRL_CACHE_LIFETIME);
-+        if (property != null && property.length() > 0) {
-+            long parsedValue = Long.parseLong(property);
-+            if (parsedValue > 0) {
-+                value = parsedValue;
-+            }
-+        }
-+
-+        return value;
-+    }
-+
-     public String getSecureRandomProvider() {
- 	String value = System.getProperty("org.globus.random.provider");
- 	if (value != null) {
+? build
+? crl.patch
+? lib/ldap.jar
+? lib/ldapbp.jar
+? lib/ldapsec.jar
+Index: src/org/globus/common/CoGProperties.java
+===================================================================
+RCS file: /home/dsl/cog/CVS/jglobus/src/org/globus/common/CoGProperties.java,v
+retrieving revision 1.16
+diff -r1.16 CoGProperties.java
+62a63,65
+>     public static final String CRL_CACHE_LIFETIME =
+>         "org.globus.jglobus.crl.cache.lifetime";
+> 
+510c513
+<      * value is the number of seconds the key/pair is cached.
+---
+>      * value is the number of milliseconds the key/pair is cached.
+537a541,576
+> 
+>     /**
+>      * Returns the CRL cache lifetime. If this property is not set or
+>      * set to zero or less, no caching is done. The value is the
+>      * number of milliseconds the CRLs are cached without checking for
+>      * modifications on disk.
+>      *
+>      * @throws NumberFormatException if the cache lifetime property
+>      *         could not be parsed
+>      * @return the CRL cache lifetime in milliseconds
+>      */
+>     public long getCRLCacheLifetime()
+>         throws NumberFormatException {
+> 
+>         long value = 0;
+> 
+>         String property = getProperty(CRL_CACHE_LIFETIME);
+>         if (property != null && property.length() > 0) {
+>             long parsedValue  = Long.parseLong(property);
+>             if (parsedValue > 0) {
+>                 value = parsedValue;
+>             }
+>         }
+> 
+>         // System property takes precedence
+>         property = System.getProperty(CRL_CACHE_LIFETIME);
+>         if (property != null && property.length() > 0) {
+>             long parsedValue = Long.parseLong(property);
+>             if (parsedValue > 0) {
+>                 value = parsedValue;
+>             }
+>         }
+> 
+>         return value;
+>     }
+> 
+Index: src/org/globus/gsi/CertificateRevocationLists.java
+===================================================================
+RCS file: /home/dsl/cog/CVS/jglobus/src/org/globus/gsi/CertificateRevocationLists.java,v
+retrieving revision 1.11
+diff -r1.11 CertificateRevocationLists.java
+227a228,235
+>          private final long lifetime;
+>          private long lastRefresh;
+> 
+>          public DefaultCertificateRevocationLists() {
+>              lifetime =
+>                  CoGProperties.getDefault().getCRLCacheLifetime();
+>          }
+>  
+229c237,241
+<             reload(getDefaultCRLLocations());
+---
+>              long now = System.currentTimeMillis();
+>              if (lastRefresh + lifetime <= now) {
+> 		 reload(getDefaultCRLLocations());
+> 	     }
+> 	     lastRefresh = now;
