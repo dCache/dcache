@@ -53,7 +53,7 @@ public class PoolCostInfo implements java.io.Serializable {
         public int getQueued(){ return _queued ; }
         public void modifyQueue( int diff ){
 
-           int total = _active + _queued + diff ;
+            int total = Math.max(0, _active + _queued + diff);
 
            _active = Math.min( total , _maxActive ) ;
 
