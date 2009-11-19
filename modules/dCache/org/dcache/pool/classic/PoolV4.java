@@ -1594,7 +1594,7 @@ public class PoolV4
             mover_kill(kill.getMoverId(), false);
             kill.setSucceeded();
         } catch (NoSuchElementException e) {
-            _log.error(e);
+            _log.info(e);
             kill.setReply(1, e);
         }
         return kill;
