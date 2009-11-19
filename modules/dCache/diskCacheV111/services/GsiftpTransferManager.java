@@ -6,63 +6,32 @@
 
 package diskCacheV111.services;
 
-import dmg.cells.nucleus.*;
-import dmg.cells.network.*;
-import dmg.util.*;
-
-import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.PnfsFile;
 import org.globus.util.GlobusURL;
-
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellPath;
 import diskCacheV111.vehicles.Message;
-import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
-import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.vehicles.PoolSetStickyMessage;
-
-import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.vehicles.PnfsCreateEntryMessage;
-import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.transferManager.RemoteGsiftpTransferProtocolInfo;
-import diskCacheV111.vehicles.PoolMgrSelectPoolMsg;
-import diskCacheV111.vehicles.PoolMoverKillMessage;
-import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
-import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
-import diskCacheV111.vehicles.PoolIoFileMessage;
-import diskCacheV111.vehicles.PoolAcceptFileMessage;
-import diskCacheV111.vehicles.PoolDeliverFileMessage;
-import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.transferManager.RemoteGsiftpTransferManagerMessage;
 import diskCacheV111.vehicles.transferManager.RemoteGsiftpDelegateUserCredentialsMessage;
 import diskCacheV111.vehicles.IpProtocolInfo;
-import java.io.PrintWriter;
-import java.io.IOException;
 import java.net.InetAddress;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.Iterator;
+import org.apache.log4j.Logger;
 
 /**
  *
  * @author  timur
  */
 public class GsiftpTransferManager extends TransferManager{
+    private static final Logger log = Logger.getLogger(GsiftpTransferManager.class);
 
     public boolean _messageArrived(CellMessage cellMessage ) {
        Object object = cellMessage.getMessageObject();
 
        	if (! (object instanceof Message) ){
-	    say("Unexpected message class "+object.getClass());
-	    return false;
-	}
-
-        Message transferMessage = (Message)object ;
-
+            log.debug("Unexpected message class "+object.getClass());
+            return false;
+        }
+       
         if(object instanceof RemoteGsiftpDelegateUserCredentialsMessage)
         {
             try
@@ -72,7 +41,7 @@ public class GsiftpTransferManager extends TransferManager{
             }
             catch(Exception e)
             {
-                esay(e);
+                log.error(e);
                 return false;
             }
         }
@@ -110,8 +79,8 @@ public class GsiftpTransferManager extends TransferManager{
             "RemoteGsiftpTransfer",
             1,1,hosts,0,
             gridftpurlString,
-            _nucleus.getCellName(),
-            _nucleus.getCellDomainName(),
+            getCellName(),
+            getCellDomainName(),
             transferRequest.getId(),
             callerId,
             remGsiftpTransferRequest.getBufferSize(),
@@ -133,11 +102,11 @@ public class GsiftpTransferManager extends TransferManager{
         long id = deleg_req.getId();
         TransferManagerHandler h = getHandler(id);
         if(h == null) {
-            esay("hanldeDelegateMessage: can't fid handler # "+id);
+            log.error("hanldeDelegateMessage: can't fid handler # "+id);
             return;
         }
         CellPath src_cell_path = h.getRequestSourcePath();
-        say("forwarding delegate crededtial message message to "+src_cell_path );
+        log.debug("forwarding delegate crededtial message message to "+src_cell_path );
 	sendMessage(new CellMessage(src_cell_path,deleg_req));
 
     }

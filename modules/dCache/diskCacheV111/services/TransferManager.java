@@ -9,8 +9,12 @@
 
 package diskCacheV111.services;
 
-import dmg.cells.nucleus.*;
-import dmg.util.*;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.CellVersion;
+import dmg.util.Args;
+import dmg.util.CommandException;
+import org.dcache.cells.AbstractCell;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.StorageInfo;
@@ -43,12 +47,13 @@ import javax.jdo.JDOHelper;
 import javax.jdo.PersistenceManager;
 import javax.jdo.PersistenceManagerFactory;
 import javax.jdo.Transaction;
+import org.apache.log4j.Logger;
 /**
  *
  * @author  timur
  */
-public abstract class TransferManager extends CellAdapter {
-
+public abstract class TransferManager extends AbstractCell {
+    private static final Logger log = Logger.getLogger(TransferManager.class);
 	private String jdbcUrl="jdbc:postgresql://localhost/srmdcache";
 	private String jdbcDriver="org.postgresql.Driver";
 	private String user="srmdcache";
@@ -57,7 +62,7 @@ public abstract class TransferManager extends CellAdapter {
 
 	private PersistenceManager pm;
 
-	public HashSet activeTransfersIDs = new HashSet();
+	public final HashSet activeTransfersIDs = new HashSet();
 	private HashMap activeTransfersIDsToHandlerMap = new HashMap();
 	private int max_transfers = 30;
 	private int num_transfers = 0;
@@ -71,7 +76,6 @@ public abstract class TransferManager extends CellAdapter {
 	protected String poolManager ="PoolManager";
 	protected String pnfsManager = "PnfsManager";
 	protected String spaceManager = "SpaceManager";
-	protected CellNucleus  _nucleus ;
 	private CellPath poolMgrPath;
 	private boolean overwrite=false;
 	private boolean do_database_logging=false;
@@ -85,7 +89,7 @@ public abstract class TransferManager extends CellAdapter {
 	private String _ioQueueName = null; // multi io queue option
 	private JobIdGenerator idGenerator;
 
-	public HashSet justRequestedIDs =  new HashSet();
+	public final HashSet justRequestedIDs =  new HashSet();
         private String poolProxy ;
 
 
@@ -93,8 +97,8 @@ public abstract class TransferManager extends CellAdapter {
 
 	/**      */
 	public TransferManager(String cellName, String argString) throws Exception {
-		super(cellName,TransferManager.class.getName(), argString,false);
-		say("Calling constructor(TransferManager) : "+cellName);
+		super(cellName, argString);
+		log.debug("Calling constructor(TransferManager) : "+cellName);
 		Args _args = new Args(argString);
 
 		jdbcUrl    = _args.getOpt("jdbcUrl");
@@ -115,7 +119,7 @@ public abstract class TransferManager extends CellAdapter {
 			} else if (db_log.equalsIgnoreCase("false") || db_log.equalsIgnoreCase("f")) {
 				setDbLogging(false);
 			} else {
-				esay("Unrecognized value of \"doDbLog\" option : "+db_log+" , ignored");
+				log.error("Unrecognized value of \"doDbLog\" option : "+db_log+" , ignored");
 			}
 		}
 
@@ -132,10 +136,10 @@ public abstract class TransferManager extends CellAdapter {
 				idGenerator=null;
 			}
 		} catch (Exception e) {
-			esay("Failed to initialize Data Base connection to generate nextTransferId using default values");
-			esay("jdbcUrl="+jdbcUrl+" jdbcDriver="+jdbcDriver+" dbUser="+user+" dbPass="+pass+" pgPass="+pwdfile);
+			log.error("Failed to initialize Data Base connection to generate nextTransferId using default values");
+			log.error("jdbcUrl="+jdbcUrl+" jdbcDriver="+jdbcDriver+" dbUser="+user+" dbPass="+pass+" pgPass="+pwdfile);
 			idGenerator=null;
-			//esay(e);
+			//logString.error(e);
 		}
 
 		if ( doDbLogging() == true ) {
@@ -172,9 +176,9 @@ public abstract class TransferManager extends CellAdapter {
 					JDOHelper.getPersistenceManagerFactory(properties);
 				pm = pmf.getPersistenceManager();
 			} catch (Exception e) {
-				esay("Failed to initialize Data Base connection using default values");
-				esay("jdbcUrl="+jdbcUrl+" jdbcDriver="+jdbcDriver+" dbUser="+user+" dbPass="+pass+" pgPass="+pwdfile);
-				esay(e);
+				log.error("Failed to initialize Data Base connection using default values");
+				log.error("jdbcUrl="+jdbcUrl+" jdbcDriver="+jdbcDriver+" dbUser="+user+" dbPass="+pass+" pgPass="+pwdfile);
+				log.error(e);
 				pm = null;
 				setDbLogging(false);
 			}
@@ -190,8 +194,8 @@ public abstract class TransferManager extends CellAdapter {
 				maxNumberOfDeleteRetries =Integer.parseInt(tmpstr);
 			}
 			catch (Exception e) {
-				esay("Failed to initialize maxNumberOfDeleteRetriesm, using default value "+maxNumberOfDeleteRetries);
-				esay(e);
+				log.error("Failed to initialize maxNumberOfDeleteRetriesm, using default value "+maxNumberOfDeleteRetries);
+				log.error(e);
 			}
 		}
 		tmpstr = _args.getOpt("pool_manager_timeout");
@@ -229,22 +233,23 @@ public abstract class TransferManager extends CellAdapter {
 		_ioQueueName = ( _ioQueueName == null ) || ( _ioQueueName.length() == 0 ) ? null : _ioQueueName ;
 
                 poolProxy = _args.getOpt("poolProxy");
-                say("Pool Proxy "+( poolProxy == null ? "not set" : ( "set to "+poolProxy ) ) );
+                log.debug("Pool Proxy "+( poolProxy == null ? "not set" : ( "set to "+poolProxy ) ) );
 		poolMgrPath     = new CellPath( poolManager ) ;
-		_nucleus  = getNucleus() ;
 		useInterpreter(true);
 		getNucleus().export();
 		start() ;
 	}
 	/**      */
+    @Override
 	public  CellVersion getCellVersion(){ return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision: 1.38 $" ); }
 
+    @Override
 	public void getInfo( PrintWriter printWriter ) {
 		StringBuffer sb = new StringBuffer();
 		sb.append("    "+getClass().getName()+"\n");
 		sb.append("---------------------------------\n");
 		sb.append("Name   : ").
-			append(_nucleus.getCellName());
+			append(getCellName());
 		sb.append("\njdbcClass : ").append(jdbcDriver).append('\n');
 		sb.append("\njdbcUrl : ").append(jdbcUrl).append('\n');
 		sb.append("\njdbcUser : ").append(user).append('\n');
@@ -283,19 +288,19 @@ public abstract class TransferManager extends CellAdapter {
 	/**      */
 	public String hh_set_dblogging = "<true/false switch db loggin on/off>" ;
 	public String ac_set_dblogging_$_1( Args args )throws CommandException {
-		String log = args.argv(0) ;
+		String logString = args.argv(0) ;
 		StringBuffer sb = new StringBuffer();
-		if (log.equalsIgnoreCase("true") || log.equalsIgnoreCase("t")) {
+		if (logString.equalsIgnoreCase("true") || logString.equalsIgnoreCase("t")) {
 			setDbLogging(true);
 			sb.append("remote ftp transaction db logging is on\n");
-		} else if ( log.equalsIgnoreCase("false") || log.equalsIgnoreCase("f")) {
+		} else if ( logString.equalsIgnoreCase("false") || logString.equalsIgnoreCase("f")) {
 			setDbLogging(false);
 			sb.append("remote ftp transaction db logging is off\n");
 		} else {
-			return "unrecognized value : \""+log+"\" only true or false are allowed";
+			return "unrecognized value : \""+logString+"\" only true or false are allowed";
 		}
 		if (doDbLogging()==true && pm==null) {
-			sb.append(_nucleus.getCellName()+" has been started w/ db logging disabed\n");
+			sb.append(getCellName()+" has been started w/ db logging disabed\n");
 			sb.append("Attempting to initialize JDO Peristsency Manager using parameters provided at startup\n");
 			try {
 				Properties properties = new Properties();
@@ -321,7 +326,7 @@ public abstract class TransferManager extends CellAdapter {
 				pm = pmf.getPersistenceManager();
 				sb.append("Success...\n");
 			} catch (Exception e) {
-                                esay(e);
+                log.error(e);
 				sb.append("Failure...\n");
 				sb.append("setting doDbLog back to false. \n");
 				sb.append("Try to set correct Jdbc driver, username or password for DB connection.\n");
@@ -346,8 +351,8 @@ public abstract class TransferManager extends CellAdapter {
 			maxNumberOfDeleteRetries =Integer.parseInt(tmpstr);
 		}
 		catch (Exception e) {
-			esay("Failed to initialize maxNumberOfDeleteRetries, using default value "+maxNumberOfDeleteRetries);
-			esay(e);
+			log.error("Failed to initialize maxNumberOfDeleteRetries, using default value "+maxNumberOfDeleteRetries);
+			log.error(e);
 			sb.append("Failed to initialize maxNumberOfDeleteRetries, using default value "+maxNumberOfDeleteRetries+"\n");
 			sb.append(e.getMessage());
 			return sb.toString();
@@ -385,9 +390,9 @@ public abstract class TransferManager extends CellAdapter {
                 idGenerator = RequestsPropertyStorage.
                         getJobIdGeneratorFactory().getJobIdGenerator();
 		} catch (Exception e) {
-			esay("Failed to initialize Data Base connection to generate nextTransferId\n");
+			log.error("Failed to initialize Data Base connection to generate nextTransferId\n");
 			idGenerator=null;
-			esay(e);
+			log.error(e);
 			return "Failed to initialize Data Base connection to generate nextTransferId\n";
 		}
 		return "OK";
@@ -516,7 +521,7 @@ public abstract class TransferManager extends CellAdapter {
 					String stringid=longid.toString();
 					Matcher m = p.matcher(stringid.toString());
 					if( m.matches()) {
-						say("pattern: \""+args.argv(0)+"\" matches id=\""+stringid+"\"");
+						log.debug("pattern: \""+args.argv(0)+"\" matches id=\""+stringid+"\"");
 						TransferManagerHandler transferHandler =
 							(TransferManagerHandler)
 							activeTransfersIDsToHandlerMap.get(longid);
@@ -527,7 +532,7 @@ public abstract class TransferManager extends CellAdapter {
 							handlersToKill.add(transferHandler);
 						}
 					} else {
-						say("pattern: \""+args.argv(0)+"\" does not match id=\""+stringid+"\"");
+						log.debug("pattern: \""+args.argv(0)+"\" does not match id=\""+stringid+"\"");
 					}
 				}
 			}
@@ -543,7 +548,7 @@ public abstract class TransferManager extends CellAdapter {
 			}
 			return sb.toString();
 		} catch(Exception e) {
-			esay(e);
+			log.error(e);
 			return e.toString();
 		}
 	}
@@ -560,17 +565,19 @@ public abstract class TransferManager extends CellAdapter {
 	}
 	/**      */
 	public abstract boolean _messageArrived(CellMessage cellMessage ) ;
+
+    @Override
 	public void messageArrived( CellMessage cellMessage ) {
-		say("messageArrived(TransferManager)");
+		log.debug("messageArrived(TransferManager)");
 		Object object = cellMessage.getMessageObject();
 		if (! (object instanceof Message) ){
-			say("Unexpected message class "+object.getClass());
+			log.debug("Unexpected message class "+object.getClass());
 			return;
 		}
 		Message transferMessage = (Message)object ;
 		boolean replyRequired = transferMessage.getReplyRequired() ;
-		say("Message messageArrived ["+object.getClass()+"]="+object.toString());
-		say("Message messageArrived source = "+cellMessage.getSourceAddress());
+		log.debug("Message messageArrived ["+object.getClass()+"]="+object.toString());
+		log.debug("Message messageArrived source = "+cellMessage.getSourceAddress());
 		if (_messageArrived(cellMessage)) {
 			return;
 		} else if (object instanceof DoorTransferFinishedMessage) {
@@ -580,7 +587,7 @@ public abstract class TransferManager extends CellAdapter {
 				h.poolDoorMessageArrived((DoorTransferFinishedMessage)object );
 				return;
 			} else {
-				esay("can not find handler with id="+id);
+				log.error("can not find handler with id="+id);
 			}
 		} else if(transferMessage instanceof CancelTransferMessage) {
 			CancelTransferMessage cancel = (CancelTransferMessage)object;
@@ -590,7 +597,7 @@ public abstract class TransferManager extends CellAdapter {
 				h.cancel(cancel );
 				return;
 			} else {
-				esay("can not find handler with id="+id);
+				log.error("can not find handler with id="+id);
 			}
 		} else if(transferMessage instanceof TransferManagerMessage) {
 			if(new_transfer()) {
@@ -604,17 +611,17 @@ public abstract class TransferManager extends CellAdapter {
 		}
 		if( replyRequired ) {
 			try {
-				say("Sending reply "+transferMessage);
+				log.debug("Sending reply "+transferMessage);
 				cellMessage.revertDirection();
 				sendMessage(cellMessage);
 			} catch (Exception e) {
-				esay("Can't reply message : "+e);
+				log.error("Can't reply message : "+e);
 			}
 		}
 	}
 	/**      */
 	private void handleTransfer(TransferManagerMessage message, CellPath sourcePath) {
-		say("handleTransfer(TransferManager)");
+		log.debug("handleTransfer(TransferManager)");
 		TransferManagerHandler h = new TransferManagerHandler(this,message,sourcePath);
 		h.handle();
 		return;
@@ -626,9 +633,9 @@ public abstract class TransferManager extends CellAdapter {
 				ProtocolInfo protocolInfo ,
 				boolean      isWrite,
 				long id) throws CacheException {
-		say("askForFile(TransferManager) "+pool+" "+pnfsId.toString());
-		say("Trying pool "+pool+" for "+(isWrite?"Write":"Read"));
-		say("Trying pool "+pool+" for "+(isWrite?"Write":"Read"));
+		log.debug("askForFile(TransferManager) "+pool+" "+pnfsId.toString());
+		log.debug("Trying pool "+pool+" for "+(isWrite?"Write":"Read"));
+		log.debug("Trying pool "+pool+" for "+(isWrite?"Write":"Read"));
 
 		PoolIoFileMessage poolMessage ;
 		if( isWrite ) {
@@ -666,7 +673,7 @@ public abstract class TransferManager extends CellAdapter {
 					   poolTimeout*1000
 				) ;
 		} catch(Exception e) {
-			esay(e);
+			log.error(e);
 			throw new CacheException(e.toString());
 		}
 		if( reply == null)
@@ -681,7 +688,7 @@ public abstract class TransferManager extends CellAdapter {
 		if (poolReply.getReturnCode() != 0)
 			throw new
 				CacheException( "Pool error: "+poolReply.getErrorObject() ) ;
-		say("Pool "+pool+" will deliver file "+pnfsId +" mover id is "+poolReply.getMoverId());
+		log.debug("Pool "+pool+" will deliver file "+pnfsId +" mover id is "+poolReply.getMoverId());
 		return poolReply.getMoverId();
 	}
 	/**      */
@@ -694,13 +701,13 @@ public abstract class TransferManager extends CellAdapter {
 	}
 	/**      */
 	private synchronized boolean new_transfer()  {
-			say("new_transfer() num_transfers = "+num_transfers+
+			log.debug("new_transfer() num_transfers = "+num_transfers+
 			    " max_transfers="+max_transfers);
 			if(num_transfers == max_transfers) {
-				say("new_transfer() returns false");
+				log.debug("new_transfer() returns false");
 				return false;
 			}
-			say("new_transfer() INCREMENT and return true");
+			log.debug("new_transfer() INCREMENT and return true");
 			num_transfers++;
 			return true;
 		}
@@ -710,7 +717,7 @@ public abstract class TransferManager extends CellAdapter {
 	}
 	/**      */
 	public synchronized void finish_transfer() {
-		say("finish_transfer() num_transfers = "+num_transfers+" DECREMENT");
+		log.debug("finish_transfer() num_transfers = "+num_transfers+" DECREMENT");
 		num_transfers--;
 	}
 	/**      */
@@ -719,9 +726,9 @@ public abstract class TransferManager extends CellAdapter {
 			try {
 				nextMessageID=idGenerator.nextLong();
 			} catch (Exception e)  {
-				esay("Having trouble getting getNextMessageID from DB");
-				esay(e);
-				esay("will nullify requestsPropertyStorage");
+				log.error("Having trouble getting getNextMessageID from DB");
+				log.error(e);
+				log.error("will nullify requestsPropertyStorage");
 				idGenerator=null;
 				getNextMessageID();
 			}
@@ -753,15 +760,15 @@ public abstract class TransferManager extends CellAdapter {
 		final Long lid = new Long(id);
 		TimerTask tt = new TimerTask() {
 				public void run() {
-					esay("timer for handler "+lid+" has expired, killing");
+					log.error("timer for handler "+lid+" has expired, killing");
 					Object o = moverTimeoutTimerTasks.remove(lid);
 					if(o == null) {
-						esay("TimerTask.run(): timer task for handler Id="+lid+" not found in moverTimoutTimerTasks hashtable");
+						log.error("TimerTask.run(): timer task for handler Id="+lid+" not found in moverTimoutTimerTasks hashtable");
 						return;
 					}
 					TransferManagerHandler handler = getHandler(lid.longValue());
 					if(handler == null) {
-						esay("TimerTask.run(): timer task for handler Id="+lid+" could not find handler !!!");
+						log.error("TimerTask.run(): timer task for handler Id="+lid+" could not find handler !!!");
 						return;
 					}
 					handler.timeout();
@@ -781,10 +788,10 @@ public abstract class TransferManager extends CellAdapter {
 		final Long lid = new Long(id);
 		Object o = moverTimeoutTimerTasks.remove(lid);
 		if(o == null) {
-			esay("stopTimer(): timer not found for Id="+id);
+			log.error("stopTimer(): timer not found for Id="+id);
 			return;
 		}
-		say("canceling the mover timer for handler id "+id);
+		log.debug("canceling the mover timer for handler id "+id);
 		TimerTask tt = (TimerTask)o;
 		tt.cancel();
 	}
@@ -794,18 +801,21 @@ public abstract class TransferManager extends CellAdapter {
 				      TransferManagerHandler handler) {
 		activeTransfersIDs.add(id);
 		activeTransfersIDsToHandlerMap.put(id,handler);
-		if (doDbLogging() && pm !=null) {
-			synchronized(pm) {
-				Transaction tx = pm.currentTransaction();
+        // pm is not final, so better make a final local copy
+        // before we synchronize on it and use it
+        final PersistenceManager persistanceManager = pm;
+		if (doDbLogging() && persistanceManager !=null) {
+			synchronized(persistanceManager) {
+				Transaction tx = persistanceManager.currentTransaction();
 				try {
 					tx.begin();
-					pm.makePersistent(handler);
+					persistanceManager.makePersistent(handler);
 					// Detach the handler for use
 					// working_handler = (TransferManagerHandler)pm.detachCopy(handler);
 					tx.commit();
-					say("Recording new handler into database.");
+					log.debug("Recording new handler into database.");
 				} catch (Exception e) {
-					esay(e);
+					log.error(e);
 				} finally {
 					rollbackIfActive(tx);
 				}
@@ -818,19 +828,22 @@ public abstract class TransferManager extends CellAdapter {
 		TransferManagerHandler handler =
 			(TransferManagerHandler)
 			activeTransfersIDsToHandlerMap.get(id);
-		if (doDbLogging() && pm!=null) {
-			synchronized(pm) {
+        // pm is not final, so better make a final local copy
+        // before we synchronize on it and use it
+        final PersistenceManager persistanceManager = pm;
+		if (doDbLogging() && persistanceManager!=null) {
+			synchronized(persistanceManager) {
 				TransferManagerHandlerBackup handlerBackup = new TransferManagerHandlerBackup(handler);
-				Transaction tx = pm.currentTransaction();
+				Transaction tx = persistanceManager.currentTransaction();
 				try {
 					tx.begin();
-					pm.makePersistent(handler);
-					pm.deletePersistent(handler);
-					pm.makePersistent(handlerBackup);
+					persistanceManager.makePersistent(handler);
+					persistanceManager.deletePersistent(handler);
+					persistanceManager.makePersistent(handlerBackup);
 					tx.commit();
-					say("handler removed from db");
+					log.debug("handler removed from db");
 				} catch (Exception e) {
-					esay(e);
+					log.error(e);
 				} finally {
 					rollbackIfActive(tx);
 				}
@@ -918,17 +931,20 @@ public abstract class TransferManager extends CellAdapter {
 	}
 
 	public void persist(Object o) {
-		if (doDbLogging() && pm!=null) {
-			synchronized(pm) {
-				Transaction tx = pm.currentTransaction();
+        // pm is not final, so better make a final local copy
+        // before we synchronize on it and use it
+        final PersistenceManager persistanceManager = pm;
+		if (doDbLogging() && persistanceManager!=null) {
+			synchronized(persistanceManager) {
+				Transaction tx = persistanceManager.currentTransaction();
 				try {
 					tx.begin();
-					pm.makePersistent(o);
+					persistanceManager.makePersistent(o);
 					tx.commit();
-					say("["+o.toString()+"]: Recording new state of handler into database.");
+					log.debug("["+o.toString()+"]: Recording new state of handler into database.");
 				} catch (Exception e) {
-					esay("["+o.toString()+"]: failed to persist obhject "+o.toString());
-					esay(e);
+					log.error("["+o.toString()+"]: failed to persist obhject "+o.toString());
+					log.error(e);
 				} finally {
 					rollbackIfActive(tx);
 				}
