@@ -1,6 +1,6 @@
 package org.dcache.tests.poolmanager;
 
-import diskCacheV111.poolManager.CostModule;
+import diskCacheV111.poolManager.CostModuleV1;
 
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolV2Mode;
@@ -11,7 +11,7 @@ import dmg.cells.nucleus.CellPath;
 public class PoolCostInfoHelper {
 
 
-    public static void setCost(CostModule cm, String pool,long total , long free , long precious , long removable ){
+    public static void setCost(CostModuleV1 cm, String pool,long total , long free , long precious , long removable ){
 
 
         PoolV2Mode poolMode = new PoolV2Mode(PoolV2Mode.ENABLED);
@@ -25,10 +25,7 @@ public class PoolCostInfoHelper {
         PoolManagerPoolUpMessage poolUpMessage = new PoolManagerPoolUpMessage(pool,
                 serialId, poolMode, poolCost);
 
-        CellMessage cellMessage  = new CellMessage( new CellPath("CostModule"), poolUpMessage);
-
-        cm.messageArrived(cellMessage);
-
+        cm.messageArrived(poolUpMessage);
     }
 
 }
