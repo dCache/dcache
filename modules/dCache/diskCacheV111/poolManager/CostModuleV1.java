@@ -107,6 +107,7 @@ public class CostModuleV1
 
     public CostModuleV1()
     {
+        _handlers.addMessageListener(this);
     }
 
     public void setCostCalculationEngine(CostCalculationEngine engine)
