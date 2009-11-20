@@ -147,7 +147,7 @@ public class RequestExecutionTimeGauge {
 
         Formatter formatter = new Formatter(sb);
 
-        formatter.format("%-34s %12d±%10f %12d %12d %12d %12d %12d",
+        formatter.format("%-34s %12d\u00B1%10f %12d %12d %12d %12d %12d",
                 aName, averageExecutionTime,getStandardError(),
                 minExecutionTime,maxExecutionTime, 
                 getStandardDeviation(), updateNum, updatePeriod);

@@ -370,7 +370,7 @@ class CellGlue {
 
     /**
      * Returns a named cell. This method also returns cells that have
-     * been ḱilled, but which are not dead yet.
+     * been killed, but which are not dead yet.
      *
      * @param cellName the name of the cell
      * @return The cell with the given name or null if there is no such
