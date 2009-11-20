@@ -13,6 +13,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.HttpConnectionHandler;
 import diskCacheV111.util.HttpByteRange;
 import org.dcache.pool.repository.Allocator;
+import org.dcache.util.PortRange;
 
 import dmg.cells.nucleus.*;
 import java.io.*;
@@ -43,8 +44,21 @@ public class HttpProtocol_1 implements MoverProtocol
     private long timeout_time;
     private long start_transfer_time    = System.currentTimeMillis();
 
+    /**
+     * Port range to use.
+     */
+    protected final PortRange _portRange;
+
     public HttpProtocol_1(CellEndpoint cell) {
         _cell = cell;
+
+        String range = System.getProperty("org.globus.tcp.port.range");
+        if (range != null) {
+            _portRange = PortRange.valueOf(range);
+        } else {
+            _portRange = new PortRange(0);
+        }
+
         say("HttpProtocol_1 created");
     }
 
@@ -72,16 +86,14 @@ public class HttpProtocol_1 implements MoverProtocol
                 throw new  CacheException(44, "protocol info not HttpProtocolInfo");
             }
         this.diskFile = diskFile;
-        ServerSocket ss= null;
-        try
-            {
-                ss = new ServerSocket(0);
-            }
-        catch(IOException ioe)
-            {
-                esay("exception while trying to create a server socket : "+ioe);
-                throw ioe;
-            }
+        ServerSocket ss;
+        try {
+            ss = new ServerSocket();
+            _portRange.bind(ss);
+        } catch(IOException ioe) {
+            esay("exception while trying to create a server socket : "+ioe);
+            throw ioe;
+        }
         starttime = System.currentTimeMillis();
         this.httpserver = ss;
 
