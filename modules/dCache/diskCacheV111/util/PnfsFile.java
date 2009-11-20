@@ -18,19 +18,64 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 import java.util.Vector;
+import java.util.Set;
+import java.util.EnumSet;
 
 import org.apache.log4j.Logger;
 
 import diskCacheV111.namespace.provider.EmptyTrash;
 import diskCacheV111.namespace.provider.Trash;
 
-public class PnfsFile extends File  {
+import org.dcache.namespace.FileType;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.vehicles.FileAttributes;
+import static org.dcache.namespace.FileAttribute.*;
 
-   private PnfsId  _pnfsId     = null ;
-   private FileMetaData  _meta = null ;
-   private static Trash _trash = new EmptyTrash("empty trash");
+public class PnfsFile extends File
+{
+    private static final long serialVersionUID = -5470614764547228403L;
 
-   private static final Logger _logNameSpace =  Logger.getLogger("logger.dev.org.dcache.namespace." + PnfsFile.class.getName());
+    private static Trash _trash = new EmptyTrash("empty trash");
+
+    private static final Logger _logNameSpace =
+        Logger.getLogger("logger.dev.org.dcache.namespace." + PnfsFile.class.getName());
+
+    //
+    // taken from linux stat man page
+    //
+    private static final int ST_FILE_FMT  = 0170000 ;
+    private static final int ST_REGULAR   = 0100000 ;
+    private static final int ST_DIRECTORY = 0040000 ;
+    private static final int ST_SYMLINK   = 0120000 ;
+    private static final int ST_PERMISSION = 00777;
+
+
+    //
+    // various constants for interpreting a .(getattr) line
+    //
+    private final static int MODE_INDEX = 0;
+    private final static int UID_INDEX = 1;
+    private final static int GID_INDEX = 2;
+    private final static int ACCESS_TIME_INDEX = 3;
+    private final static int MODIFICATION_TIME_INDEX = 4;
+    private final static int CREATION_TIME_INDEX = 5;
+    private final static int NUMBER_OF_FIELDS_IN_GETATTR = 6;
+
+    private final static int ACCESS_TIME_FACTOR = 1000;
+    private final static int MODIFICATION_TIME_FACTOR = 1000;
+    private final static int CREATION_TIME_FACTOR = 1000;
+    private final static int MODE_BASE = 8;
+    private final static int UID_BASE = 10;
+    private final static int GID_BASE = 10;
+    private final static int ACCESS_TIME_BASE = 16;
+    private final static int MODIFICATION_TIME_BASE = 16;
+    private final static int CREATION_TIME_BASE = 16;
+
+    public final static Set<FileAttribute> GETATTR_ATTRIBUTES =
+        EnumSet.of(ACCESS_TIME, CREATION_TIME, MODIFICATION_TIME,
+                   MODE, OWNER, OWNER_GROUP, TYPE);
+
+    private PnfsId  _pnfsId;
 
     static private String getCanonicalPath(File f)
         throws CacheException
@@ -55,74 +100,97 @@ public class PnfsFile extends File  {
        _pnfsId   = id ;
    }
 
-   @Override
-   public boolean exists(){
-      if( _pnfsId == null )return super.exists() ;
-      try{
-         _meta = getFileMetaData( new File(getParent()) , _pnfsId ) ;
-      }catch(Exception ee ){
-         return false ;
-      }
-      if( _meta.isSymbolicLink() )return true ;
-      return super.exists() ;
-   }
+    @Override
+    public boolean exists()
+    {
+        if (_pnfsId != null) {
+            try {
+                FileAttributes attributes = new FileAttributes();
+                readGetAttr(new File(getParent()), attributes);
+                if (attributes.getFileType() == FileType.LINK)
+                    return true;
+            } catch (Exception e) {
+                return false;
+            }
+        }
+        return super.exists();
+    }
 
-    //
-    // taken from linux stat man page
-    //
-    private static final int ST_FILE_FMT  = 0170000 ;
-    private static final int ST_REGULAR   = 0100000 ;
-    private static final int ST_DIRECTORY = 0040000 ;
-    private static final int ST_SYMLINK   = 0120000 ;
+    /**
+     * Fills in the attributes that are available in the .(getattr)
+     * file. Those are the attributes in GETATTR_ATTRIBUTES.
+     */
+    public void readGetAttr(File mp, FileAttributes attributes)
+        throws CacheException, IOException
+    {
+        PnfsId pnfsId = getPnfsId();
+        File metafile = new File(mp, ".(getattr)(" + pnfsId.getId() + ")");
+        RandomAccessFile raf = new RandomAccessFile(metafile, "r");
+        try {
+            String line = raf.readLine();
+            if (line == null) {
+                throw new CacheException("Cannot read meta [" + pnfsId +"]");
+            }
 
-    private static final long serialVersionUID = -5470614764547228403L;
+            try {
+                String[] s = line.split(":");
+                if (s.length < NUMBER_OF_FIELDS_IN_GETATTR) {
+                    throw new IOException("Illegal meta data format : " +
+                                          pnfsId + " (" + line + ")");
+                }
 
-   public static FileMetaData getFileMetaData( File mp , PnfsId pnfsId )throws Exception{
-       File metafile = new File( mp , ".(getattr)("+pnfsId.getId()+")" ) ;
-       File orgfile  = new File( mp , ".(access)("+pnfsId.getId()+")" ) ;
+                int mode =
+                    Integer.parseInt(s[MODE_INDEX], MODE_BASE);
+                int uid =
+                    Integer.parseInt(s[UID_INDEX], UID_BASE);
+                int gid =
+                    Integer.parseInt(s[GID_INDEX], GID_BASE);
+                long accessTime =
+                    Long.parseLong(s[ACCESS_TIME_INDEX],
+                                   ACCESS_TIME_BASE);
+                long modificationTime =
+                    Long.parseLong(s[MODIFICATION_TIME_INDEX],
+                                   MODIFICATION_TIME_BASE);
+                long creationTime =
+                    Long.parseLong(s[CREATION_TIME_INDEX],
+                                   CREATION_TIME_BASE);
 
-       long filesize = orgfile.length() ;
+                switch (mode & ST_FILE_FMT) {
+                case ST_REGULAR:
+                    attributes.setFileType(FileType.REGULAR);
+                    break;
+                case ST_DIRECTORY:
+                    attributes.setFileType(FileType.DIR);
+                    break;
+                case ST_SYMLINK:
+                    attributes.setFileType(FileType.LINK);
+                    break;
+                default:
+                    attributes.setFileType(FileType.SPECIAL);
+                    break;
+                }
 
-       BufferedReader br = null ;
-       try{
-
-          br = new BufferedReader( new FileReader( metafile ) ,128) ;
-
-          String line = br.readLine() ;
-          if( line == null )
-            throw new
-            IOException("Can't read meta : "+pnfsId )  ;
-          StringTokenizer st = new StringTokenizer( line , ":" ) ;
-          try{
-             int perm = Integer.parseInt( st.nextToken() , 8 ) ;
-             int uid  = Integer.parseInt( st.nextToken() ) ;
-             int gid  = Integer.parseInt( st.nextToken() ) ;
-
-             long aTime = Long.parseLong( st.nextToken() , 16 ) ;
-             long mTime = Long.parseLong( st.nextToken() , 16 ) ;
-             long cTime = Long.parseLong( st.nextToken() , 16 ) ;
-
-             FileMetaData meta = new FileMetaData( uid , gid , perm ) ;
-
-             meta.setSize( filesize ) ;
-
-             int filetype = perm & ST_FILE_FMT ;
-
-             meta.setFileType( filetype == ST_REGULAR ,
-                               filetype == ST_DIRECTORY ,
-                               filetype == ST_SYMLINK    ) ;
-
-             meta.setTimes( aTime *1000, mTime *1000, cTime *1000) ;
-
-             return meta ;
-          }catch(Exception eee ){
-             throw new
-             IOException("Illegal meta data format : "+pnfsId+" ("+line+")" ) ;
-          }
-       }finally{
-          try{ if( br != null) br.close() ; }catch(IOException ee){ /* to late to react */}
-       }
-   }
+                attributes.setMode(mode & ST_PERMISSION);
+                attributes.setOwner(uid);
+                attributes.setGroup(gid);
+                attributes.setAccessTime(accessTime * ACCESS_TIME_FACTOR);
+                attributes.setModificationTime(modificationTime * MODIFICATION_TIME_FACTOR);
+                attributes.setCreationTime(creationTime * CREATION_TIME_FACTOR);
+            } catch (NumberFormatException e){
+                throw new IOException("Illegal meta data format: " +
+                                      pnfsId + " (" + line + ")");
+            }
+        } catch (FileNotFoundException e) {
+            boolean deleted = PnfsFile.isDeleted(pnfsId);
+            if (deleted) {
+                throw new FileNotFoundCacheException("No such file or directory [" + pnfsId + "]");
+            } else {
+                throw new NotInTrashCacheException("Not in trash: " + pnfsId);
+            }
+        } finally {
+            raf.close();
+        }
+    }
 
    public boolean isPnfs(){
       if( isDirectory() ){

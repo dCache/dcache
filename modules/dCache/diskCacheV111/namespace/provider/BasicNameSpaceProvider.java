@@ -20,6 +20,8 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.Collections;
 import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
@@ -46,7 +48,6 @@ import dmg.cells.nucleus.CellNucleus;
 import dmg.util.Args;
 import dmg.util.CollectionFactory;
 import org.dcache.namespace.FileAttribute;
-import org.dcache.namespace.FileType;
 import org.dcache.namespace.ListHandler;
 import org.dcache.util.ChecksumType;
 import org.dcache.vehicles.FileAttributes;
@@ -56,6 +57,7 @@ import org.dcache.acl.handler.singleton.AclHandler;
 import javax.security.auth.Subject;
 
 import static org.dcache.auth.Subjects.ROOT;
+import static org.dcache.namespace.FileAttribute.*;
 
 public class BasicNameSpaceProvider
     implements NameSpaceProvider
@@ -427,20 +429,11 @@ public class BasicNameSpaceProvider
         }
     }
 
-
-    public FileMetaData getFileMetaData(Subject subject, PnfsId pnfsId) throws CacheException {
-
-        FileMetaData fileMetaData;
-
-        fileMetaData = getFileMetaData( _pathManager.getMountPointByPnfsId(pnfsId) , pnfsId ) ;
-
-        /*
-         *  we do not catch any exception here, while we can not react on it
-         *  ( FileNotFoundException )
-         *  The caller will do it
-         */
-
-        return fileMetaData;
+    public FileMetaData getFileMetaData(Subject subject, PnfsId pnfsId)
+        throws CacheException
+    {
+        Set<FileAttribute> attributes = FileMetaData.getKnownFileAttributes();
+        return new FileMetaData(getFileAttributes(subject, pnfsId, attributes));
     }
 
     public void setFileMetaData(Subject subject, PnfsId pnfsId, FileMetaData metaData) throws CacheException {
@@ -895,135 +888,6 @@ public class BasicNameSpaceProvider
 
 
 
-    //
-    // taken from linux stat man page
-    //
-    private static final int ST_FILE_FMT  = 0170000 ;
-    private static final int ST_REGULAR   = 0100000 ;
-    private static final int ST_DIRECTORY = 0040000 ;
-    private static final int ST_SYMLINK   = 0120000 ;
-
-
-
-
-    private long getSimulatedFilesize( PnfsId pnfsId ){
-
-    	long simulatedFileSize = -1;
-
-        try{
-
-            PnfsFile  pf     = _pathManager.getFileByPnfsId( pnfsId );
-
-            /*
-             * there is no simulated file size for directories
-             */
-            if( pf.isFile() ) {
-                CacheInfo cinfo  = new CacheInfo( pf ) ;
-                CacheInfo.CacheFlags flags = cinfo.getFlags() ;
-
-
-
-                String simulatedFileSizeString = flags.get("l");
-
-                if( simulatedFileSizeString != null ) {
-    	            try{
-    	            	simulatedFileSize =  Long.parseLong(simulatedFileSizeString);
-    	            }catch(NumberFormatException ignored){/* bad values ignored */}
-                }
-            }
-            // TODO: handle file not found
-        }catch(Exception eee ){
-            _logNameSpace.error( "Error obtaining 'l' flag for getSimulatedFilesize : "+eee ) ;
-            simulatedFileSize =  -1 ;
-        }
-
-        return  simulatedFileSize;
-    }
-
-
-
-    private FileMetaData getFileMetaData( File mp , PnfsId pnfsId )throws CacheException{
-        BufferedReader br = null;
-
-        try{
-
-            File metafile = new File( mp , ".(getattr)("+pnfsId.getId()+")" ) ;
-            br = new BufferedReader(
-                                    new FileReader( metafile ) ) ;
-
-            String line = br.readLine() ;
-            if( line == null ) {
-                throw new
-                    IOException("Can't read meta : "+pnfsId )  ;
-            }
-
-            StringTokenizer st = new StringTokenizer( line , ":" ) ;
-
-            try{
-                int perm = Integer.parseInt( st.nextToken() , 8 ) ;
-                int uid  = Integer.parseInt( st.nextToken() ) ;
-                int gid  = Integer.parseInt( st.nextToken() ) ;
-
-                long aTime = Long.parseLong( st.nextToken() , 16 ) ;
-                long mTime = Long.parseLong( st.nextToken() , 16 ) ;
-                long cTime = Long.parseLong( st.nextToken() , 16 ) ;
-
-                FileMetaData meta = new FileMetaData( uid , gid , perm ) ;
-
-                File orgfile  = new File( mp , ".(access)("+pnfsId.getId()+")" ) ;
-                long filesize = orgfile.length() ;
-
-                /**
-                 *  1 is the magic number indicating that a file is >= 2GiB, so we need
-                 *  to look up the filesize in level-2 metadata.   NB. We also lookup when
-                 *  filesize is zero. This is deliberate.  It is needed to work around
-                 *  potential failure to write filesize in PNFS.
-                 */
-                if( filesize <= 1L) {
-                    long simFilesize = getSimulatedFilesize( pnfsId ) ;
-                    filesize = (simFilesize < 0L) ? filesize : simFilesize;
-                }
-
-                meta.setSize(  filesize);
-
-                int filetype = perm & ST_FILE_FMT ;
-
-                meta.setFileType( filetype == ST_REGULAR ,
-                                  filetype == ST_DIRECTORY ,
-                                  filetype == ST_SYMLINK    ) ;
-
-                meta.setTimes( aTime *1000, mTime *1000, cTime *1000) ;
-
-                if (_logNameSpace.isDebugEnabled()) {
-                    _logNameSpace.debug("getFileMetaData of " + pnfsId + " -> "
-                                        + meta);
-                }
-
-                return meta ;
-
-            }catch(NoSuchElementException nse) {
-                throw new
-                    IOException("Illegal meta data format : "+pnfsId+" ("+line+")" ) ;
-            }catch(NumberFormatException eee ){
-                throw new
-                    IOException("Illegal meta data format : "+pnfsId+" ("+line+")" ) ;
-            }
-        }catch(FileNotFoundException fnf ) {
-            //        	throw new FileNotFoundCacheException("no such file or directory " + pnfsId.getId() );
-            boolean deleted = PnfsFile.isDeleted(pnfsId);
-            if (deleted)
-                throw new FileNotFoundCacheException("no such file or directory " + pnfsId.getId() );
-            else
-                throw new CacheException(CacheException.NOT_IN_TRASH, "Not in trash: " + pnfsId.toString());
-        } catch (IOException e) {
-            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                     e.getMessage());
-        }finally{
-            if(br != null)try{ br.close() ; }catch(IOException ee){/* too late to react */}
-        }
-
-    }
-
     private void setAccessRights(File mp, PnfsId pnfsId, int level, int uid, int gid, int mode)
         throws CacheException {
 
@@ -1082,7 +946,7 @@ public class BasicNameSpaceProvider
                     raf.close();
                     return;
                 } catch (IOException e) {
-                    if (getFileMetaData(mp, pnfsId).getMode() == mode) {
+                    if (getFileAttributes(null, pnfsId, EnumSet.of(MODE)).getMode() == mode) {
                         return;
                     }
                     _logNameSpace.warn("Failed to set permissions: " +
@@ -1273,7 +1137,6 @@ public class BasicNameSpaceProvider
     {
         PnfsFile pf = _pathManager.getFileByPnfsId(pnfsId);
         CacheInfo cacheInfo = null;
-        FileMetaData meta = null;
         FileAttributes attributes = new FileAttributes();
 
         try {
@@ -1290,33 +1153,33 @@ public class BasicNameSpaceProvider
                     cacheInfo = getCacheInfo(pf, cacheInfo);
                     attributes.setAccessLatency(AccessLatency.getAccessLatency(cacheInfo.getFlags().get(ACCESS_LATENCY_FLAG)));
                     break;
-                case ACCESS_TIME:
-                    meta = getFileMetaData(subject, pnfsId, meta);
-                    attributes.setAccessTime(meta.getLastAccessedTime());
-                    break;
                 case RETENTION_POLICY:
                     cacheInfo = getCacheInfo(pf, cacheInfo);
                     attributes.setRetentionPolicy(RetentionPolicy.getRetentionPolicy(cacheInfo.getFlags().get(ACCESS_LATENCY_FLAG)));
                     break;
                 case SIZE:
-                    meta = getFileMetaData(subject, pnfsId, meta);
-                    attributes.setSize(meta.getFileSize());
-                    break;
-                case CREATION_TIME:
-                    meta = getFileMetaData(subject, pnfsId, meta);
-                    attributes.setCreationTime(meta.getCreationTime());
-                    break;
-                case MODIFICATION_TIME:
-                    meta = getFileMetaData(subject, pnfsId, meta);
-                    attributes.setModificationTime(meta.getLastModifiedTime());
-                    break;
-                case OWNER:
-                    meta = getFileMetaData(subject, pnfsId, meta);
-                    attributes.setOwner(meta.getUid());
-                    break;
-                case OWNER_GROUP:
-                    meta = getFileMetaData(subject, pnfsId, meta);
-                    attributes.setGroup(meta.getGid());
+                    long filesize = pf.length();
+
+                    /**
+                     *  1 is the magic number indicating that a file
+                     *  is >= 2GiB, so we need to look up the filesize
+                     *  in level-2 metadata.  NB. We also lookup when
+                     *  filesize is zero. This is deliberate.  It is
+                     *  needed to work around potential failure to
+                     *  write filesize in PNFS.
+                     */
+                    if (filesize <= 1L && pf.isFile()) {
+                        cacheInfo = getCacheInfo(pf, cacheInfo);
+                        String s = cacheInfo.getFlags().get("l");
+                        if (s != null) {
+                            try {
+                                filesize =  Long.parseLong(s);
+                            } catch (NumberFormatException ignored) {
+                                /* bad values ignored */
+                            }
+                        }
+                    }
+                    attributes.setSize(filesize);
                     break;
                 case CHECKSUM:
                     attributes.setChecksums(_attChecksumImpl.getChecksums(subject, pnfsId));
@@ -1337,31 +1200,30 @@ public class BasicNameSpaceProvider
                     }
                     attributes.setFlags(flags);
                     break;
-                case TYPE:
-                    meta = getFileMetaData(subject, pnfsId, meta);
-                    if (meta.isRegularFile()) {
-                        attributes.setFileType(FileType.REGULAR);
-                    } else if (meta.isDirectory()) {
-                        attributes.setFileType(FileType.DIR);
-                    } else if (meta.isSymbolicLink()) {
-                        attributes.setFileType(FileType.LINK);
-                    } else {
-                        attributes.setFileType(FileType.SPECIAL);
-                    }
-                    break;
-                case MODE:
-                    meta = getFileMetaData(subject, pnfsId, meta);
-                    attributes.setMode(meta.getMode());
-                    break;
                 case PNFSID:
                     attributes.setPnfsId(pnfsId);
                     break;
                 case STORAGEINFO:
                     attributes.setStorageInfo(getStorageInfo(subject, pnfsId));
                     break;
+                case ACCESS_TIME:
+                case CREATION_TIME:
+                case MODIFICATION_TIME:
+                case MODE:
+                case OWNER:
+                case OWNER_GROUP:
+                case TYPE:
+                    /* These are processed below.
+                     */
+                    break;
                 default:
                     throw new UnsupportedOperationException("Attribute " + attribute + " not supported yet.");
                 }
+            }
+
+            if (!Collections.disjoint(attr, PnfsFile.GETATTR_ATTRIBUTES)) {
+                pf.readGetAttr(_pathManager.getMountPointByPnfsId(pnfsId),
+                               attributes);
             }
             return attributes;
         } catch (ACLException e) {
