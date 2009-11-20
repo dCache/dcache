@@ -116,9 +116,8 @@ public class FileMetaDataComparator implements PnfsIdValidator {
             _pw.println( "\t" + _nsp1Name + ":");
             _pw.println( "\t\t" + fmd1);
             _pw.println( "\t" + _nsp2Name + ":");
-            _pw.println( "\t\t" + _nsp2Name);
+            _pw.println( "\t\t" + fmd2);
 
-            _pw.println();
             emitDifferences( fmd1, fmd2);
         }
 
@@ -133,51 +132,51 @@ public class FileMetaDataComparator implements PnfsIdValidator {
          * Here we explain the differences between the two FileMetaData
          * objects. Sometimes it isn't obvious.
          */
-        _pw.println( "Differences:\n");
+        _pw.println( "\tDifferences:");
         if( fmd1.getGid() != fmd2.getGid())
-            _pw.println( "\tgid: " + fmd1.getGid() + " != " + fmd2.getGid());
+            _pw.println( "\t\tgid: " + fmd1.getGid() + " != " + fmd2.getGid());
 
         if( fmd1.getUid() != fmd2.getUid())
-            _pw.println( "\tuid: " + fmd1.getUid() + " != " + fmd2.getUid());
+            _pw.println( "\t\tuid: " + fmd1.getUid() + " != " + fmd2.getUid());
 
         if( fmd1.isDirectory() != fmd2.isDirectory())
-            _pw.println( "\tdirectory: " + fmd1.isDirectory() + " != " +
+            _pw.println( "\t\tdirectory: " + fmd1.isDirectory() + " != " +
                          fmd2.isDirectory());
 
         if( fmd1.isSymbolicLink() != fmd2.isSymbolicLink())
-            _pw.println( "\tsym-link: " + fmd1.isSymbolicLink() + " != " +
+            _pw.println( "\t\tsym-link: " + fmd1.isSymbolicLink() + " != " +
                          fmd2.isSymbolicLink());
 
         if( fmd1.isRegularFile() != fmd2.isRegularFile())
-            _pw.println( "\tregular file: " + fmd1.isRegularFile() + " != " +
+            _pw.println( "\t\tregular file: " + fmd1.isRegularFile() + " != " +
                          fmd2.isRegularFile());
 
         if( fmd1.getFileSize() != fmd2.getFileSize())
-            _pw.println( "\tsize: " + fmd1.getFileSize() + " != " +
+            _pw.println( "\t\tsize: " + fmd1.getFileSize() + " != " +
                          fmd2.getFileSize());
 
         if( !fmd1.getUserPermissions().equals( fmd2.getUserPermissions()))
-            _pw.println( "\tuser permissions: " + fmd1.getUserPermissions() +
+            _pw.println( "\t\tuser permissions: " + fmd1.getUserPermissions() +
                          " != " + fmd2.getUserPermissions());
 
         if( !fmd1.getGroupPermissions().equals( fmd2.getGroupPermissions()))
-            _pw.println( "\tgroup permissions: " + fmd1.getGroupPermissions() +
+            _pw.println( "\t\tgroup permissions: " + fmd1.getGroupPermissions() +
                          " != " + fmd2.getGroupPermissions());
 
         if( !fmd1.getWorldPermissions().equals( fmd2.getWorldPermissions()))
-            _pw.println( "\tworld permissions: " + fmd1.getWorldPermissions() +
+            _pw.println( "\t\tworld permissions: " + fmd1.getWorldPermissions() +
                          " != " + fmd2.getWorldPermissions());
 
         if( fmd1.getCreationTime() != fmd2.getCreationTime())
-            _pw.println( "\tcreation-time: " + fmd1.getCreationTime() + " != " +
+            _pw.println( "\t\tcreation-time: " + fmd1.getCreationTime() + " != " +
                          fmd2.getCreationTime());
 
         if( fmd1.getLastAccessedTime() != fmd2.getLastAccessedTime())
-            _pw.println( "\tlast-accessed: " + fmd1.getLastAccessedTime() +
+            _pw.println( "\t\tlast-accessed: " + fmd1.getLastAccessedTime() +
                          " != " + fmd2.getLastAccessedTime());
 
         if( fmd1.getLastModifiedTime() != fmd2.getLastModifiedTime())
-            _pw.println( "\tlast-modified: " + fmd1.getLastModifiedTime() +
+            _pw.println( "\t\tlast-modified: " + fmd1.getLastModifiedTime() +
                          " != " + fmd2.getLastModifiedTime());
     }
 
