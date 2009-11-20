@@ -100,7 +100,7 @@ public class RequestExecutionTimeGauges<T> {
     public String  toString() {
        StringBuilder sb = new StringBuilder();
         Formatter formatter = new Formatter(sb);
-        formatter.format("%-36s %23s %12s %12s %12s %12s %12s", name,"average±stderr(ms)",
+        formatter.format("%-36s %23s %12s %12s %12s %12s %12s", name,"average\u00B1stderr(ms)",
                 "min(ms)", "max(ms)","STD(ms)", "Sampes","SampingPeriod(ms)");
         formatter.flush();
         formatter.close();
