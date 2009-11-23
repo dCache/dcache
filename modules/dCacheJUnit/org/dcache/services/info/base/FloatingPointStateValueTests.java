@@ -9,7 +9,7 @@ import java.util.TreeSet;
 
 import org.junit.Test;
 
-public class FloatingPointStateValueTests extends InfoBaseTest {
+public class FloatingPointStateValueTests extends InfoBaseTestHelper {
 	
 	private static final double TEST_FLOATS[] = { 0, 0.01, 1, 10, 100};
 

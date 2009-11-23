@@ -28,7 +28,7 @@ import org.dcache.vehicles.FileAttributes;
 import diskCacheV111.util.PnfsId;
 import static org.dcache.namespace.FileAttribute.*;
 
-public class ACLPermissionHandlerTest2
+public class ACLPermissionHandlerSecondTest
 {
     private static final int UID = 111, GID = 1000;
 

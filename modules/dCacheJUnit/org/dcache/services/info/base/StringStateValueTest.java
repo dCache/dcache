@@ -14,7 +14,7 @@ import org.junit.Test;
  * 
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class StringStateValueTest extends InfoBaseTest {
+public class StringStateValueTest extends InfoBaseTestHelper {
 	
 	private static final String[] TEST_STRINGS = { null, "", "foo", "bar", "baz"}; 
 	

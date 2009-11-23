@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class PoolSelectionUnit {
+public class PoolSelectionUnitTest {
 
     private final PoolSelectionUnitV2 _psu = new PoolSelectionUnitV2();
     private final CommandInterpreter _ci = new CommandInterpreter(_psu);

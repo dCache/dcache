@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
-public class StateValueTests extends InfoBaseTest {
+public class StateValueTests extends InfoBaseTestHelper {
 
 	/** The tolerance of time comparisons, in milliseconds. */
 	private static final long TIME_TOLERANCE = 500;
