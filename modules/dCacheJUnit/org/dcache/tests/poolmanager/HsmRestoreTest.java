@@ -47,13 +47,15 @@ import static org.junit.Assert.*;
 
 public class HsmRestoreTest {
 
+    private static int _counter = 0;
+//    retry intervall of RequestContainer for test purposes lowered
+    private static final int RETRY_INTERVAL = 5;
 
-    private static GenericMockCellHelper _cell = new GenericMockCellHelper("HsmRestoreTest", "-threadPool=org.dcache.tests.util.CurrentThreadExceutorHelper");
-
+    private GenericMockCellHelper _cell = null;
     private PoolMonitorV5 _poolMonitor;
     private CostModuleV1 _costModule ;
     private PoolSelectionUnit _selectionUnit;
-    private PartitionManager _partitionManager = new PartitionManager();
+    private PartitionManager _partitionManager;
     private PnfsHandler      _pnfsHandler;
     private RequestContainerV5 _rc;
 
@@ -67,7 +69,10 @@ public class HsmRestoreTest {
     @Before
     public void setUp() throws Exception {
         Logger.getRootLogger().setLevel(Level.DEBUG);
+        _counter = _counter + 1;
+        _cell= new GenericMockCellHelper("HsmRestoreTest" + _counter, "-threadPool=org.dcache.tests.util.CurrentThreadExceutorHelper");
 
+        _partitionManager = new PartitionManager();
         _partitionManager.setCellEndpoint(_cell);
         _selectionUnit = new PoolSelectionUnitV2();
         _costModule = new CostModuleV1();
@@ -87,14 +92,14 @@ public class HsmRestoreTest {
          * allow stage
          */
         _partitionManager.ac_rc_set_stage_$_1_2(new Args("on"));
-        _rc = new RequestContainerV5();
+        _rc = new RequestContainerV5(RETRY_INTERVAL);
         _rc.setPoolSelectionUnit(_selectionUnit);
         _rc.setPoolMonitor(_poolMonitor);
         _rc.setPartitionManager(_partitionManager);
         _rc.setThreadPool(new CurrentThreadExceutorHelper(_cell));
         _rc.setCellEndpoint(_cell);
         _rc.ac_rc_set_retry_$_1(new Args("0"));
-
+        _rc.setStageConfigurationFile(null);
         __messages = new ArrayList<CellMessage>();
     }
 
@@ -439,7 +444,7 @@ public class HsmRestoreTest {
         /*
          * request container retry timeout
          */
-        Thread.sleep(62000);
+        Thread.sleep(50);
 
         assertEquals("Three stage requests where expected", 3,
                      stageRequests1.get() + stageRequests2.get());

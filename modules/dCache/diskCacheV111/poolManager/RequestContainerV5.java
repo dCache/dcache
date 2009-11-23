@@ -79,7 +79,8 @@ public class RequestContainerV5
     private static final int SAME_HOST_RETRY_NEVER      = 0 ;
     private static final int SAME_HOST_RETRY_BESTEFFORT = 1 ;
     private static final int SAME_HOST_RETRY_NOTCHECKED = 2 ;
-
+    /** value in milliseconds */
+    private static final int DEFAULT_RETRY_INTERVAL = 60000;
 
     private final Map<UOID, PoolRequestHandler>     _messageHash   = new HashMap<UOID, PoolRequestHandler>() ;
     private final Map<String, PoolRequestHandler>   _handlerHash   = new HashMap<String, PoolRequestHandler>() ;
@@ -109,6 +110,8 @@ public class RequestContainerV5
     private final Map<PnfsId, CacheException>            _selections       = new HashMap<PnfsId, CacheException>() ;
     private PartitionManager   _partitionManager ;
     private long               _checkFilePingTimer = 10 * 60 * 1000 ;
+    /** value in milliseconds */
+    private final int _stagingRetryInterval;
 
     /**
      * define host selection behavior on restore retry
@@ -151,9 +154,14 @@ public class RequestContainerV5
        }
     }
 
+    public RequestContainerV5( int stagingRetryInterval) {
+        _stagingRetryInterval = stagingRetryInterval;
+        new Thread(this,"Container-ticker").start();
+    }
+
     public RequestContainerV5()
     {
-       new Thread(this,"Container-ticker").start();
+        this( DEFAULT_RETRY_INTERVAL);
     }
 
     public void setPoolSelectionUnit(PoolSelectionUnit selectionUnit)
@@ -200,7 +208,7 @@ public class RequestContainerV5
        try{
           while( ! Thread.interrupted() ){
 
-             Thread.sleep(60000) ;
+             Thread.sleep(_stagingRetryInterval) ;
 
              List<PoolRequestHandler> list = null ;
              synchronized( _handlerHash ){
