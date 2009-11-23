@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class InfoBaseTest {
+public class InfoBaseTestHelper {
 
 	private static final long TIME_TOLLERANCE = 500;
 

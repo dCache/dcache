@@ -23,7 +23,7 @@ import org.junit.Test;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class StateCompositeTest extends InfoBaseTest {
+public class StateCompositeTest extends InfoBaseTestHelper {
 
 	static final String BRANCH_EPHEMERAL_NAME = "ephemeral-branch";
 	static final String BRANCH_MORTAL_NAME = "mortal-branch";

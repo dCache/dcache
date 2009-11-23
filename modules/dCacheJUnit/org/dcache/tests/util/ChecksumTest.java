@@ -7,7 +7,7 @@ import static org.junit.Assert.*;
 import diskCacheV111.util.Checksum;
 import diskCacheV111.util.Adler32;
 
-public class ChecksumTestCase {
+public class ChecksumTest {
 
     private final byte[] _input = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 

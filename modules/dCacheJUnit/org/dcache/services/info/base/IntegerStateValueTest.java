@@ -9,7 +9,7 @@ import java.util.TreeSet;
 
 import org.junit.Test;
 
-public class IntegerStateValueTest extends InfoBaseTest {
+public class IntegerStateValueTest extends InfoBaseTestHelper {
 	
 	private static final int TEST_INTEGERS[] = {-2, -1, 0, 1, 2 };
 	private static final int TEST_DURATIONS[] = {-1, 0, 1, 2 };

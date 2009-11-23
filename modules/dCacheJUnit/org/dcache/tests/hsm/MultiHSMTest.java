@@ -13,7 +13,7 @@ import diskCacheV111.util.EnstoreLocationExtractor;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
 
-public class MultiHSM extends junit.framework.TestCase {
+public class MultiHSMTest extends junit.framework.TestCase {
 
 	
 	/**

@@ -7,7 +7,7 @@ import java.util.Map;
 
 import org.junit.Test;
 
-public class BooleanStateValueTests extends InfoBaseTest {
+public class BooleanStateValueTests extends InfoBaseTestHelper {
 
 	/**
 	 * A simple visitor to test that acceptVisitor works as expected.

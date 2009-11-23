@@ -9,7 +9,7 @@ import org.dcache.services.info.base.StatePath;
 import java.util.Set;
 import java.util.TreeSet;
 
-public class StatePathTest extends InfoBaseTest {
+public class StatePathTest extends InfoBaseTestHelper {
 
 	// The number of elements in the array must be prime for stride to work
 	private static final String PATH_ELEMENTS[] = {"foo", "bar", "baz"};

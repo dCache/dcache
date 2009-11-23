@@ -47,7 +47,7 @@ import javax.security.auth.Subject;
  *
  */
 
-public class TestjUnitACL {
+public class ACLTest {
 
     private static Connection _conn;
 

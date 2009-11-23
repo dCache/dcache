@@ -16,7 +16,7 @@ import org.junit.Test;
 /**
  * A set of tests to check that the StateMaintainer works as expected.
  */
-public class StateMaintainerTests extends InfoBaseTest {
+public class StateMaintainerTests extends InfoBaseTestHelper {
 
     static final StatePath METRIC_PATH = StatePath.parsePath( "branch-1.metric");
 
