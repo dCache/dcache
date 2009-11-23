@@ -12,6 +12,8 @@ Source: %{name}.src.tgz
 BuildRequires: make
 BuildRequires: gcc
 BuildRequires: openssl
+Provides: dcap
+#Provdes dcache-dcap for backwards compatibility
 Provides: dcache-dcap
 # Commenting out VDT as its not a fixed dependency
 #BuildRequires: vdt_globus_essentials
