@@ -9,6 +9,7 @@ import java.util.Set;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import diskCacheV111.poolManager.PoolPreferenceLevel;
@@ -20,8 +21,10 @@ import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.util.Args;
 import dmg.util.CommandException;
+import dmg.util.CommandExitException;
 import dmg.util.CommandInterpreter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 
@@ -260,13 +263,15 @@ public class PoolSelectionUnitTest {
 
 
         _ci.command("psu set allpoolsactive off");
-        StorageInfo si = PoolSelectionUnitV2.storageInfoOf("*", "*");
+
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.READ,  // operation
+                                                      "*@*",   // storage unit
+                                                      null,    // dCache unit
                                                       "131.169.214.149", // net unit
                                                       null,  // protocol
-                                                      si,
+                                                      null,  // map
                                                       null); // linkGroup
 
 
@@ -287,13 +292,15 @@ public class PoolSelectionUnitTest {
 
 
         _ci.command("psu set allpoolsactive on");
-        StorageInfo si = PoolSelectionUnitV2.storageInfoOf("*", "*");
+
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.READ,  // operation
+                                                      "*@*",   // storage unit
+                                                      null,    // dCache unit
                                                       "131.169.214.149", // net unit
                                                       null,  // protocol
-                                                      si,
+                                                      null,  // map
                                                       null); // linkGroup
 
         assertEquals("Only default read link have to be triggered", 1, preference.length);
@@ -310,13 +317,15 @@ public class PoolSelectionUnitTest {
 
 
         _ci.command("psu set allpoolsactive on");
-        StorageInfo si = PoolSelectionUnitV2.storageInfoOf("*", "*");
+
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.WRITE,  // operation
+                                                      "*@*",   // storage unit
+                                                      null,    // dCache unit
                                                       "131.169.214.149", // net unit
                                                       null,  // protocol
-                                                      si,
+                                                      null,  // map
                                                       null); // linkGroup
 
         assertEquals("Only default write link have to be triggered", 1, preference.length);
@@ -332,13 +341,15 @@ public class PoolSelectionUnitTest {
 
 
         _ci.command("psu set allpoolsactive on");
-        StorageInfo si = PoolSelectionUnitV2.storageInfoOf("h1:u1@osm", "*");
+
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.WRITE,  // operation
+                                                      "h1:u1@osm",   // storage unit
+                                                      null,    // dCache unit
                                                       "131.169.214.149", // net unit
                                                       null,  // protocol
-                                                      si,
+                                                      null,  // map
                                                       null); // linkGroup
 
         assertEquals("H1 write link and default write link have to be triggered", 2, preference.length);
@@ -354,13 +365,15 @@ public class PoolSelectionUnitTest {
 
 
         _ci.command("psu set allpoolsactive on");
-        StorageInfo si = PoolSelectionUnitV2.storageInfoOf("h1:u1@osm", "*");
+
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.READ,  // operation
+                                                      "h1:u1@osm",   // storage unit
+                                                      null,    // dCache unit
                                                       "131.169.214.149", // net unit
                                                       null,  // protocol
-                                                      si,
+                                                      null,  // map
                                                       null); // linkGroup
 
         assertEquals("H1 read link and default read link have to be triggered", 2, preference.length);
@@ -377,14 +390,15 @@ public class PoolSelectionUnitTest {
 
         _ci.command("psu set allpoolsactive on");
         _ci.command("psu set disabled h1-read");
-        StorageInfo si = PoolSelectionUnitV2.storageInfoOf("h1:u1@osm", "*");
 
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.READ,  // operation
+                                                      "h1:u1@osm",   // storage unit
+                                                      null,    // dCache unit
                                                       "131.169.214.149", // net unit
                                                       null,  // protocol
-                                                      si,
+                                                      null,  // map
                                                       null); // linkGroup
 
         assertEquals("H1 read link and default read link have to be triggered", 2, preference.length);
@@ -430,14 +444,15 @@ public class PoolSelectionUnitTest {
         _ci.command("psu set allpoolsactive on");
         _ci.command(new Args("psu create linkGroup h1-link-group"));
         _ci.command(new Args("psu addto linkGroup h1-link-group h1-read-link" ) );
-        StorageInfo si = PoolSelectionUnitV2.storageInfoOf("h1:u1@osm", "*");
 
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.READ,  // operation
+                                                      "h1:u1@osm",   // storage unit
+                                                      null,    // dCache unit
                                                       "131.169.214.149", // net unit
                                                       null,  // protocol
-                                                      si,
+                                                      null,  // map
                                                       "h1-link-group"); // linkGroup
 
         assertEquals("Only h1 read link have to be triggered", 1, preference.length);
@@ -467,9 +482,11 @@ public class PoolSelectionUnitTest {
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.CACHE,  // operation
+                                                      "h1:u1@osm",   // storage unit
+                                                      null,    // dCache unit
                                                       "131.169.214.149", // net unit
                                                       null,  // protocol
-                                                      storageInfo,
+                                                      storageInfo,  // map
                                                       "h1-link-group"); // linkGroup
 
         assertEquals("Only h1 cache link have to be triggered", 1, preference.length);
@@ -487,13 +504,14 @@ public class PoolSelectionUnitTest {
 
         _ci.command("psu set allpoolsactive on");
         _ci.command("psu set pool h1-read rdonly");
-        StorageInfo si = PoolSelectionUnitV2.storageInfoOf("h1:u1@osm", "*");
 
         PoolPreferenceLevel[] preference =
             _psu.match(DirectionType.P2P,  // operation
+                       "h1:u1@osm",   // storage unit
+                       null,    // dCache unit
                        "131.169.214.149", // net unit
                        null,  // protocol
-                       si,
+                       null,  // map
                        null); // linkGroup
 
         List<String> pools = new ArrayList<String>();
