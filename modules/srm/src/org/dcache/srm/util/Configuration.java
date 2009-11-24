@@ -104,8 +104,8 @@ import javax.xml.transform.stream.StreamResult;
 //import java.io.File;
 import java.io.IOException;
 import java.io.FileWriter;
-import org.dcache.srm.qos.*;
-
+import java.util.Set;
+import java.util.HashSet;
 //
 // just testing cvs
 //
@@ -151,7 +151,23 @@ public class Configuration {
     private String proxies_directory = "../proxies";
     private int timeout=60*60; //one hour
     private String timeout_script="../scripts/timeout.sh";
-    private String srmhost=null;
+    /**
+     * Host to use in the surl (srm url) of the
+     * local file, when giving the info (metadata) to srm clients
+     */
+    private String srmHost;
+    /**
+     * A host part of the srm url (surl) is used to determine if the surl
+     * references file in this storage system.
+     * In case of the copy operation, srm needs to be able to tell the
+     * local surl from the remote one.
+     * Also SRM needs to  refuse to perform operations on non local srm urls
+     * This collection cosists of hosts that are cosidered local by this srm server.
+     * This parameter has to be a collection because in case of the multihomed
+     * or distributed server it may have more than one network name.
+     *
+     */
+    private final Set<String> localSrmHosts=new HashSet<String>();
     private AbstractStorageElement storage;
     private SRMAuthorization authorization;
     private SRM localSRM;
@@ -322,12 +338,13 @@ public class Configuration {
                 set(node_name,text_value);
             }
         }
-        if(srmhost == null) {
-            //System.out.println("srmhost = null, detecting");
+        synchronized(localSrmHosts) {
             try {
-                srmhost = java.net.InetAddress.getLocalHost().getCanonicalHostName();
+                localSrmHosts.add(
+                        java.net.InetAddress.getLocalHost().
+                        getCanonicalHostName());
             } catch(IOException ioe) {
-                srmhost = "localhost";
+                localSrmHosts.add("localhost");
             }
         }
 
@@ -387,10 +404,6 @@ public class Configuration {
                 "timeout in seconds, how long to wait for the completeon of the transfer via external client, should the external client be used for the MSS to MSS transfers");
         put(document,root,"timeout_script",timeout_script ,
                 "location of the timeout script");
-
-        put(document,root,"srmhost",srmhost ,
-                "hostname of the server, will be detected automatically if it is null");
-
         put(document,root,"getReqTQueueSize",Integer.toString(getReqTQueueSize),
                 "getReqTQueueSize");
         put(document,root,"getThreadPoolSize",Integer.toString(getThreadPoolSize),
@@ -661,8 +674,6 @@ public class Configuration {
             timeout= Integer.parseInt(value);
         } else if(name.equals("timeout_script")) {
             timeout_script= value;
-        } else if(name.equals("srmhost")) {
-            srmhost = value;
         } else if(name.equals("getReqTQueueSize")) {
             getReqTQueueSize= Integer.parseInt(value);
         } else if(name.equals("getThreadPoolSize")) {
@@ -1180,18 +1191,43 @@ public class Configuration {
         this.timeout_script = timeout_script;
     }
 
-    /** Getter for property srmhost.
-     * @return Value of property srmhost.
+    /** 
+     * this method returns collection of the local srm hosts.
+     * A host part of the srm url (surl) is used to determine if the surl
+     * references file in this storage system.
+     * In case of the copy operation, srm needs to be able to tell the
+     * local surl from the remote one.
+     * Also SRM needs to  refuse to perform operations on non local srm urls
+     * This collection cosists of hosts that are cosidered local by this srm server.
+     * This parameter has to be a collection because in case of the multihomed
+     * or distributed server it may have more than one network name.
+     *
+     * @return set of local srmhosts.
      */
-    public java.lang.String getSrmhost() {
-        return srmhost;
+    public Set<String> getSrmHosts() {
+        synchronized(localSrmHosts) {
+            Set<String> srmhostsCopy = new HashSet<String>(localSrmHosts);
+            return srmhostsCopy;
+        }
     }
 
-    /** Setter for property srmhost.
-     * @param srmhost New value of property srmhost.
+    /** 
+     * This method adds values to the collection of the local srm hosts.
+     * A host part of the srm url (surl) is used to determine if the surl
+     * references file in this storage system.
+     * In case of the copy operation, srm needs to be able to tell the
+     * local surl from the remote one.
+     * Also SRM needs to  refuse to perform operations on non local srm urls
+     * This collection cosists of hosts that are cosidered local by this srm server.
+     * This parameter has to be a collection because in case of the multihomed
+     * or distributed server it may have more than one network name.
+     *
+     * @param srmhost additional value of srmhost.
      */
-    public void setSrmhost(java.lang.String srmhost) {
-        this.srmhost = srmhost;
+    public void addSrmHost(java.lang.String srmhost) {
+        synchronized(localSrmHosts) {
+            localSrmHosts.add(srmhost);
+        }
     }
 
     /** Getter for property storage.
@@ -1260,7 +1296,11 @@ public class Configuration {
         sb.append("\n\turlcopy timeout in seconds=").append(this.timeout);
         sb.append("\n\tproxies directory=").append(this.proxies_directory);
         sb.append("\n\tport=").append(this.port);
-        sb.append("\n\tsrmhost=").append(this.srmhost);
+        sb.append("\n\tsrmHost=").append(getSrmHost());
+        sb.append("\n\tlocalSrmHosts=");
+        for(String host:this.getSrmHosts()) {
+            sb.append(host).append(", ");
+        }
         sb.append("\n\tkpwdfile=").append(this.kpwdfile);
         sb.append("\n\tuse_gplazmaAuthzCellFlag=").append(this.use_gplazmaAuthzCellFlag);
         sb.append("\n\tdelegateToGplazmaFlag=").append(this.delegateToGplazmaFlag);
@@ -2710,6 +2750,20 @@ public class Configuration {
      */
     public void setSrmGaugeRrdDirectory(String srmGaugeRrdDirectory) {
         this.srmGaugeRrdDirectory = srmGaugeRrdDirectory;
+    }
+
+    /**
+     * @return the srmHost
+     */
+    public String getSrmHost() {
+        return srmHost;
+    }
+
+    /**
+     * @param srmHost the srmHost to set
+     */
+    public void setSrmHost(String srmHost) {
+        this.srmHost = srmHost;
     }
 
 

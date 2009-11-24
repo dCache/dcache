@@ -459,7 +459,8 @@ public class Storage
         elog(ioe);
         throw new SRMException("can't get the FileMetaData",ioe);
     }
-    FileMetaData fmd = new UnixfsFileMetaData(filePath,config.getSrmhost(),
+    FileMetaData fmd = new UnixfsFileMetaData(filePath,
+        config.getSrmHost(),
         config.getPort(),
         null,
         out.getBuffer().toString());

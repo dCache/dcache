@@ -415,6 +415,32 @@ dCapGsiPort=${portBase}128
 srmPort=8443
 xrootdPort=1094
 
+#------ SRM Network Identities------------------------------------------------
+
+#------------------srmHost----------------------------------------------------
+# For certain operations srm needs to know its domain name.
+# The variable "srmHost" can be used to override the default value.
+# If this value is not set, the value is detected automatically and
+# it is equivalent to the output of the unix hostname program
+# ----------------------------------------------------------------------------
+# srmHost=SRMHOST.SRMDOMAIN
+
+#------------------localSrmHosts----------------------------------------------
+# A host part of the srm url (surl) is used to determine if the surl
+# references file in this storage system.
+# In case of the copy operation, srm needs to be able to tell the
+# local surl from the remote one.
+# Also SRM needs to  refuse to perform operations on non local srm urls
+# localSrmHosts is a comma separated list of hosts that will be cosidered
+# local by this srm server.
+# This parameter might need to be defined as a list because in case of the
+# multihomed or distributed server it may have more than one network name.
+# If localSrmHosts is not specified, srmHost will be used
+# ----------------------------------------------------------------------------
+
+# localSrmHosts=HOST1.DOMAIN1,HOST2.DOMAIN1
+
+
 #  ---- GridFTP port range
 #
 #   Do not change unless you know what you are doing.

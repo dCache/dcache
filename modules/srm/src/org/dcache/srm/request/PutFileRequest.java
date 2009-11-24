@@ -517,7 +517,7 @@ public final class PutFileRequest extends FileRequest {
                     getParentFileId() == null) {
 
                 addDebugHistoryEvent("selecting transfer protocol");
-                if(!Tools.sameHost(getConfiguration().getSrmhost(),
+                if(!Tools.sameHost(getConfiguration().getSrmHosts(),
                         getSurl().getHost())) {
                     String error ="surl is not local : "+getSurl().getURL();
                     setState(State.FAILED,error);

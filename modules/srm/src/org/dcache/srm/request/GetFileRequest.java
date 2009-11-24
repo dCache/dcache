@@ -503,7 +503,7 @@ public final class GetFileRequest extends FileRequest {
         try {
             if(getFileId() == null) {
                 try {
-                    if(!Tools.sameHost(getConfiguration().getSrmhost(),
+                    if(!Tools.sameHost(getConfiguration().getSrmHosts(),
                     getSurl().getHost())) {
                         String error ="surl is not local : "+getSurl().getURL();
                         _log.error(error);

@@ -71,45 +71,28 @@ COPYRIGHT STATUS:
 package diskCacheV111.srm.dcache;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
-import dmg.cells.nucleus.CellAdapter;
 import org.dcache.cells.AbstractCell;
+import org.dcache.cells.Option;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.ExceptionEvent;
-import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.NoRouteToCellException;
 import org.dcache.cells.CellStub;
-
 import dmg.util.Args;
-
 import dmg.cells.services.login.LoginBrokerInfo;
-
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FsPath;
-
-import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
-
-import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.PoolMgrQueryPoolsMsg;
-import diskCacheV111.vehicles.PnfsSetFileMetaDataMessage;
-import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import org.dcache.auth.AuthorizationRecord;
 import org.dcache.srm.SrmCancelUseOfSpaceCallbacks;
 import org.dcache.srm.SrmReleaseSpaceCallbacks;
 import org.dcache.srm.SrmUseSpaceCallbacks;
-
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.security.SslGsiSocketFactory;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileNotFoundCacheException;
-import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.DirNotExistsCacheException;
-import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
-import diskCacheV111.vehicles.PnfsCreateDirectoryMessage;
-import diskCacheV111.vehicles.PnfsRenameMessage;
 import diskCacheV111.vehicles.transferManager.
     RemoteGsiftpTransferManagerMessage;
 import diskCacheV111.vehicles.transferManager.
@@ -119,7 +102,6 @@ import diskCacheV111.vehicles.transferManager.CancelTransferMessage;
 import diskCacheV111.vehicles.transferManager.TransferCompleteMessage;
 import diskCacheV111.vehicles.transferManager.TransferFailedMessage;
 import diskCacheV111.vehicles.CopyManagerMessage;
-import diskCacheV111.vehicles.PnfsFlagMessage;
 import diskCacheV111.vehicles.PoolManagerGetPoolListMessage;
 import diskCacheV111.vehicles.PinManagerExtendLifetimeMessage;
 import diskCacheV111.services.space.message.ExtendLifetime;
@@ -127,16 +109,13 @@ import diskCacheV111.services.space.message.GetFileSpaceTokensMessage;
 import diskCacheV111.pools.PoolCellInfo;
 import diskCacheV111.pools.PoolCostInfo;
 import org.globus.util.GlobusURL;
-
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.net.Socket;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.sql.SQLException;
-
 import java.util.Random;
 import java.util.Vector;
 import java.util.List;
@@ -155,6 +134,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.TimeoutException;
 import org.dcache.namespace.PermissionHandler;
 import org.dcache.namespace.ChainedPermissionHandler;
 import org.dcache.namespace.PosixPermissionHandler;
@@ -169,11 +149,8 @@ import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.GetFileInfoCallbacks;
 import org.dcache.srm.PrepareToPutCallbacks;
-import org.dcache.srm.ReleaseSpaceCallbacks;
-import org.dcache.srm.ReserveSpaceCallbacks;
 import org.dcache.srm.PrepareToPutInSpaceCallbacks;
 import org.dcache.srm.SrmReserveSpaceCallbacks;
-import org.dcache.srm.SRMUser;
 import diskCacheV111.srm.StorageElementInfo;
 import org.dcache.srm.AdvisoryDeleteCallbacks;
 import org.dcache.srm.RemoveFileCallbacks;
@@ -190,8 +167,6 @@ import org.dcache.srm.v2_2.TAccessLatency;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.util.LoginBrokerHandler;
-import org.dcache.util.Checksum;
-import org.dcache.util.ChecksumType;
 import org.dcache.util.Interval;
 import org.dcache.util.list.DirectoryListSource;
 import org.dcache.util.list.DirectoryListPrinter;
@@ -204,33 +179,24 @@ import diskCacheV111.services.space.message.GetSpaceTokens;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.util.NotInTrashCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
-import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.FileExistsCacheException;
 import org.dcache.auth.persistence.AuthRecordPersistenceManager;
 import org.dcache.auth.Subjects;
-import org.dcache.commons.stats.RequestCounters;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.acl.enums.AccessType;
-
 import org.ietf.jgss.GSSCredential;
-
-
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
-
 import java.io.File;
-
-import java.util.concurrent.TimeoutException;
 import javax.naming.NamingException;
 import javax.naming.NamingEnumeration;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.security.auth.Subject;
-
 import org.apache.log4j.Logger;
 
 import static org.dcache.namespace.FileAttribute.*;
@@ -299,13 +265,20 @@ public class Storage
 
     private final LoginBrokerHandler _loginBrokerHandler;
 
+
     private final DirectoryListSource _listSource;
+
+    @Option(
+        name = "localSrmHosts",
+        description = "comma separated list of hosts"
+    )
+    protected String localSrmHosts;
 
     // public static SRM getSRMInstance(String xmlConfigPath)
     public static SRM getSRMInstance(final String[] dCacheParams,
             long timeout)
             throws InterruptedException,
-            java.util.concurrent.TimeoutException
+            TimeoutException
     {
 
         _log.info("Here are the params/args to go to dCache: " + Arrays.toString(dCacheParams));
@@ -329,6 +302,7 @@ public class Storage
                         "about to call Domain.main()");
                 new Thread() {
 
+                    @Override
                     public void run() {
 
                         // Calling the main method and passing some
@@ -492,8 +466,18 @@ public class Storage
         config.setParallel_streams(getIntOption("parallel_streams",
             config.getParallel_streams()));
 
-        config.setSrmhost(getOption("srmhost",config.getSrmhost()));
+        config.setSrmHost(getOption("srmHost",
+                java.net.InetAddress.getLocalHost().getCanonicalHostName()));
 
+        if(localSrmHosts != null &&
+           localSrmHosts.trim().length() >0 ) {
+
+            for(String aHost:localSrmHosts.split(",")) {
+             config.addSrmHost(aHost);
+            }
+        } else {
+            config.addSrmHost(config.getSrmHost());
+        }
         config.setDebug(isOptionSetToTrueOrYes("debug", config.isDebug()));
         tmpstr =  _args.getOpt("usekftp");
         if(tmpstr != null && tmpstr.equalsIgnoreCase("true")) {
@@ -951,6 +935,7 @@ public class Storage
         return handler;
     }
 
+    @Override
     public void getInfo( java.io.PrintWriter printWriter ) {
         StringBuilder sb = new StringBuilder();
         sb.append("SRM Cell");
@@ -978,6 +963,7 @@ public class Storage
         _loginBrokerHandler.getInfo( printWriter ) ;
     }
 
+    @Override
     public CellVersion getCellVersion(){
         return new CellVersion(
         diskCacheV111.util.Version.getVersion(),"$Revision$" );
@@ -1463,7 +1449,7 @@ public class Storage
              PoolMgrQueryPoolsMsg query =
                  new PoolMgrQueryPoolsMsg(DirectionType.READ,
                                           "*/*",
-                                          config.getSrmhost(),
+                                          config.getSrmHost(),
                                           storage_info);
 
              _log.debug("isCached: Waiting for PoolMgrQueryPoolsMsg reply from PoolManager");
@@ -1906,7 +1892,7 @@ public class Storage
         return selectHost(loginBrokerInfos);
     }
 
-    private Random rand = new Random();
+    private final Random rand = new Random();
 
     int numDoorInRanSelection=3;
 
@@ -2020,7 +2006,7 @@ public class Storage
                     javax.naming.directory.Attribute attr =
                             (javax.naming.directory.Attribute)ae.next();
                     String attrID = attr.getID();
-                    java.util.List l = new java.util.ArrayList();
+                    List l = new ArrayList();
                     for (NamingEnumeration e = attr.getAll();
                          e.hasMoreElements();) {
                         String literalip = (String)e.nextElement();
@@ -2058,7 +2044,7 @@ public class Storage
                 String host = "";
                 for (Iterator itr = entrySet.iterator(); itr.hasNext();) {
                     Map.Entry e = (Map.Entry)itr.next();
-                    host = (String)((java.util.ArrayList)e.getValue()).get(0);
+                    host = (String)((ArrayList)e.getValue()).get(0);
                 }
                 return host;
             } catch (Exception e) {
@@ -2210,8 +2196,8 @@ public class Storage
         return fmd;
     }
 
-    private HashMap idToUserMap = new HashMap();
-    private HashMap idToCredentialMap = new HashMap();
+    private final Map idToUserMap = new HashMap();
+    private final Map idToCredentialMap = new HashMap();
 
     private String getUserById(long id) {
         _log.debug("getDcacheUserById("+id+")");

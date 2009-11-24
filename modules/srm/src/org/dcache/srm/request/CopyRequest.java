@@ -380,7 +380,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                 int from_url_port = from_urls[0].getPort();
                 if(srm_port == from_url_port) {
                     from_url_is_local =
-                            Tools.sameHost(getConfiguration().getSrmhost(),
+                            Tools.sameHost(getConfiguration().getSrmHosts(),
                             from_urls[0].getHost());
                 }
             }
@@ -394,7 +394,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                 int to_url_port = to_urls[0].getPort();
                 if(srm_port == to_url_port) {
                     to_url_is_local = Tools.sameHost(
-                            getConfiguration().getSrmhost(),
+                            getConfiguration().getSrmHosts(),
                             to_urls[0].getHost());
                 }
             }

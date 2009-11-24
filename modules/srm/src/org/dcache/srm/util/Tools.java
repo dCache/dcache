@@ -8,6 +8,7 @@ package org.dcache.srm.util;
 import java.net.InetAddress;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Set;
 /**
  *
  * @author  timur
@@ -20,19 +21,23 @@ public class Tools {
     
     public static final boolean sameHost(String host1, String host2) 
         throws java.net.UnknownHostException {
-        //System.out.println("sameHost("+host1+","+ host2+")");
-        InetAddress[] host1_addrs = InetAddress.getAllByName(host1);
-        InetAddress[] host2_addrs = InetAddress.getAllByName(host2);
-        
-        for(int indx1 = 0; indx1 < host1_addrs.length ; ++indx1) {
-            for(int indx2 = 0; indx2 < host2_addrs.length ; ++indx2) {
-               //System.out.println("sameHost("+host1+","+ host2+") comparing "+
-               //host1_addrs[indx1]+" and "+host2_addrs[indx2]);
-
-                if(host1_addrs[indx1].equals(host2_addrs[indx2])) {
-                //System.out.println("sameHost("+host1+","+ host2+") returns true");
+        InetAddress[] host1Addrs = InetAddress.getAllByName(host1);
+        InetAddress[] host2Addrs = InetAddress.getAllByName(host2);
+        for(InetAddress host1Addr: host1Addrs) {
+            for(InetAddress host2Addr: host2Addrs) {
+                if(host1Addr.equals(host2Addr)) {
                     return true;
                 }
+            }
+        }
+        return false;
+    }
+    
+    public static final boolean sameHost(Set<String> hosts, String host2 )
+        throws java.net.UnknownHostException {
+        for(String host1:hosts) {
+            if(sameHost(host1,host2)) {
+                return true;
             }
         }
         //System.out.println("sameHost("+host1+","+ host2+") returns false");

@@ -362,9 +362,7 @@ public class SRM {
 
         host = java.net.InetAddress.getLocalHost();
 
-        if (configuration.getSrmhost() == null) {
-            configuration.setSrmhost(host.getHostName());
-        }
+        configuration.addSrmHost(host.getCanonicalHostName());
         try {
             Thread.sleep(5);
         } catch (InterruptedException ie) {
@@ -609,7 +607,7 @@ public class SRM {
         for (int i = 0; i < SURLS.length; ++i) {
             try {
                 GlobusURL gurl = new GlobusURL(SURLS[i]);
-                if (!Tools.sameHost(configuration.getSrmhost(),
+                if (!Tools.sameHost(configuration.getSrmHosts(),
                         gurl.getHost())) {
                     String error = "advisoryDelete: surl is not local : " + gurl.getURL();
                     esay(error);
@@ -887,7 +885,7 @@ public class SRM {
         for (int i = 0; i < len; ++i) {
             try {
                 GlobusURL url = new GlobusURL(SURLS[i]);
-                if (!Tools.sameHost(configuration.getSrmhost(),
+                if (!Tools.sameHost(configuration.getSrmHosts(),
                         url.getHost())) {
                     String error = "getFileMetaData: surl is not local : " + url.getURL();
                     esay(error);
@@ -1035,7 +1033,7 @@ public class SRM {
             }
         }
 
-        srmprefix = "srm://" + configuration.getSrmhost() +
+        srmprefix = "srm://" + configuration.getSrmHost() +
                 ":" + configuration.getPort() + "/";
 
         for (int i = 0; i < len; ++i) {

@@ -18,6 +18,8 @@ check -strong srmPort
 #
 onerror continue
 
+set context -c srmHost
+set context -c localSrmHosts
 set context -c srmVersion         version1
 set context -c srmDbHost          localhost
 set context -c srmDatabaseHost    ${srmDbHost}
