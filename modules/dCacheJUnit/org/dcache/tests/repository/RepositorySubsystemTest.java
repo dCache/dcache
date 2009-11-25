@@ -675,7 +675,7 @@ public class RepositorySubsystemTest
         assertFalse(repository.getEntry(id2).isSticky());
         repository.setSticky(id2, "system", now + 500, true);
         assertTrue(repository.getEntry(id2).isSticky());
-        Thread.currentThread().sleep(700);
+        Thread.currentThread().sleep(600 + CacheRepositoryV5.EXPIRATION_CLOCKSHIFT_EXTRA_TIME);
         assertFalse(repository.getEntry(id2).isSticky());
     }
 

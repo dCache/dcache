@@ -316,10 +316,9 @@ java.io.Serializable {
         if( other.getCacheClass() == null && this.getCacheClass() != null ) return false;
         if( other.getCacheClass() != null && this.getCacheClass() == null ) return false;
 
-        /**
-         *  We deliberately choose not to test _keyHash, since the use of any information
-         *  populated by PnfsManager in this field is deprecated.
-         */
+        if( !(other._keyHash.equals(this._keyHash))) {
+            return false;
+        }
 
         if( other.getFileSize() != this.getFileSize() ) return false;
         if( !other.getStorageClass().equals(this.getStorageClass())) return false;
