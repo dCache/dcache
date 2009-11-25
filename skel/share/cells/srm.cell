@@ -104,7 +104,8 @@ set context -c srmVacuumPeriod   21600
 
 set context -c pnfsSrmPath                      /
 set context -c xrootdRootPath                   /
-set context -c httpRootPath                     /
+set context -c webdavRootPath                   /
+set context -c httpRootPath                     ${webdavRootPath}
 
 set context -c srmPoolManagerTimeout   300
 set context -c srmPoolTimeout          300

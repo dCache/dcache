@@ -1771,7 +1771,7 @@ public class Storage
         String transferPath;
         if (protocol.equals("gsiftp")) {
             transferPath = stripRootPath(userRoot, fullPath);
-        } else if (protocol.equals("http")) {
+        } else if (protocol.equals("http") || protocol.equals("https")) {
             transferPath = stripRootPath(_httpRootPath, fullPath);
         } else if (protocol.equals("root")) {
             transferPath = stripRootPath(_xrootdRootPath, fullPath);
@@ -2141,7 +2141,7 @@ public class Storage
             requestedAttributes.addAll(DcacheFileMetaData.getKnownAttributes());
             attributes = handler.getFileAttributes(fullPath, requestedAttributes);
             pnfsId = attributes.getPnfsId();
-        } 
+        }
         catch (TimeoutCacheException e) {
             throw new SRMInternalErrorException(e.getMessage(), e);
         }
@@ -2187,7 +2187,7 @@ public class Storage
                     _log.debug("Failed to retrieve space reservation tokens for file "+
                                fullPath+"("+pnfsId+"): " + e.getMessage());
                 }
-            }        
+            }
         } catch (RuntimeException e) {
 	    _log.fatal("getFileMetaData failed", e);
         } catch (Exception e) {
@@ -3673,5 +3673,5 @@ public class Storage
         FsPath fullPath = new FsPath(srm_root + "/" + path);
         return fullPath.toString();
     }
-    
+
 }
