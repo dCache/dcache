@@ -164,7 +164,7 @@ public class SrmPrepareToGet {
             }
         }
 
-        String[] supportedProtocols = storage.supportedPutProtocols();
+        String[] supportedProtocols = storage.supportedGetProtocols();
         boolean foundMatchedProtocol=false;
         for(int i=0;i<supportedProtocols.length;i++){
              for(int j=0; j<protocols.length; ++j) {
@@ -174,7 +174,6 @@ public class SrmPrepareToGet {
              }
 	     }
 	}
-
 
 	if (!foundMatchedProtocol) {
 

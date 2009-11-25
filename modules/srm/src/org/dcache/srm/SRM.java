@@ -906,7 +906,7 @@ public class SRM {
         // create a request object
         try {
             say("get(): user = " + user);
-            String[] supportedProtocols = storage.supportedPutProtocols();
+            String[] supportedProtocols = storage.supportedGetProtocols();
             boolean foundMatchedProtocol = false;
             for (String supportedProtocol : supportedProtocols) {
                 for (String protocol : protocols) {
