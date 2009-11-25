@@ -30,6 +30,7 @@ public enum FileAttribute {
     STORAGECLASS,
     STORAGEINFO,
     TYPE,
+    SIMPLE_TYPE,
     PNFSID;
 
     /**

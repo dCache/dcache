@@ -655,6 +655,7 @@ public class ChimeraNameSpaceProvider
                 }
                 attributes.setFlags(flags);
                 break;
+            case SIMPLE_TYPE:
             case TYPE:
                 stat = inode.statCache();
                 UnixPermission perm = new UnixPermission(stat.getMode());

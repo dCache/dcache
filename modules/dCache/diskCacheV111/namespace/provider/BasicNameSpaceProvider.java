@@ -47,6 +47,7 @@ import diskCacheV111.vehicles.StorageInfo;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.util.Args;
 import dmg.util.CollectionFactory;
+import org.dcache.namespace.FileType;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.ListHandler;
 import org.dcache.util.ChecksumType;
@@ -80,6 +81,12 @@ public class BasicNameSpaceProvider
 
     private final static String ACCESS_LATENCY_FLAG = "al";
     private final static String RETENTION_POLICY_FLAG = "rp";
+
+    /**
+     * Attributes supported by SimpleAttributsListFilter.
+     */
+    private final static Set<FileAttribute> SIMPLE_ATTRIBUTES =
+        EnumSet.of(SIMPLE_TYPE, SIZE, MODIFICATION_TIME);
 
     /** Creates a new instance of BasicNameSpaceProvider */
     public BasicNameSpaceProvider(Args args, CellNucleus nucleus) throws Exception {
@@ -1398,14 +1405,17 @@ public class BasicNameSpaceProvider
      *
      * The filter always returns false, thus ensuring that we do not
      * construct the full array of all files in the directory.
+     *
+     * ListFilter is an abstract base class. Subclasses have different
+     * strategies for querying additional attributes.
      */
-    private class ListFilter implements FileFilter
+    private abstract class ListFilter implements FileFilter
     {
         private final Pattern _pattern;
         private final ListHandler _handler;
-        private final Set<FileAttribute> _attributes;
         private final Interval _range;
         private long _counter = 0;
+        protected final Set<FileAttribute> _attributes;
 
         public ListFilter(Pattern pattern,
                           Interval range,
@@ -1418,21 +1428,16 @@ public class BasicNameSpaceProvider
             _attributes = attributes;
         }
 
+        protected abstract FileAttributes getAttributes(File file)
+            throws CacheException;
+
         public boolean accept(File file)
         {
             String name = file.getName();
             if ((_pattern == null || _pattern.matcher(name).matches()) &&
                 (_range == null || _range.contains(_counter++))) {
                 try {
-                    if (_attributes.isEmpty()) {
-                        _handler.addEntry(name, null);
-                    } else {
-                        PnfsId id =
-                            pathToPnfsid(ROOT, file.toString(), true);
-                        FileAttributes attr =
-                            getFileAttributes(ROOT, id, _attributes);
-                        _handler.addEntry(name, attr);
-                    }
+                    _handler.addEntry(name, getAttributes(file));
                 } catch (CacheException e) {
                     /* Deleting a file during a list operation is not
                      * an error.
@@ -1449,6 +1454,94 @@ public class BasicNameSpaceProvider
         }
     }
 
+    /**
+     * ListFilter which only collects file names.
+     */
+    private class NameOnlyListFilter extends ListFilter
+    {
+        public NameOnlyListFilter(Pattern pattern,
+                                  Interval range,
+                                  ListHandler handler)
+        {
+            super(pattern, range, EnumSet.noneOf(FileAttribute.class), handler);
+        }
+
+        protected FileAttributes getAttributes(File file)
+        {
+            return null;
+        }
+    }
+
+    /**
+     * ListFilter which only supports SIMPLE_TYPE and SIZE attributes.
+     */
+    private class SimpleAttributesListFilter extends ListFilter
+    {
+        public SimpleAttributesListFilter(Pattern pattern,
+                                          Interval range,
+                                          Set<FileAttribute> attributes,
+                                          ListHandler handler)
+        {
+            super(pattern, range, attributes, handler);
+        }
+
+        protected FileAttributes getAttributes(File file)
+            throws CacheException
+        {
+            FileAttributes attr = new FileAttributes();
+            if (_attributes.contains(SIZE)) {
+                long size = file.length();
+                if (size <= 1) {
+                    /* Fall back to the expensive query.
+                     */
+                    PnfsId id = pathToPnfsid(ROOT, file.toString(), true);
+                    attr = getFileAttributes(ROOT, id, EnumSet.of(SIZE));
+                } else {
+                    attr.setSize(size);
+                }
+            }
+
+            if (_attributes.contains(SIMPLE_TYPE)) {
+                if (file.isFile()) {
+                    attr.setFileType(FileType.REGULAR);
+                } else if (file.isDirectory()) {
+                    attr.setFileType(FileType.DIR);
+                } else {
+                    attr.setFileType(FileType.SPECIAL);
+                }
+            }
+
+            if (_attributes.contains(MODIFICATION_TIME)) {
+                attr.setModificationTime(file.lastModified());
+            }
+
+            return attr;
+        }
+    }
+
+    /**
+     * ListFilter which supports all attributes supported by the
+     * getFileAttributes method.
+     */
+    private class ManyAttributesListFilter extends ListFilter
+    {
+        public ManyAttributesListFilter(Pattern pattern,
+                                        Interval range,
+                                        Set<FileAttribute> attributes,
+                                        ListHandler handler)
+        {
+            super(pattern, range, attributes, handler);
+        }
+
+        protected FileAttributes getAttributes(File file)
+            throws CacheException
+        {
+            PnfsId id = pathToPnfsid(ROOT, file.toString(), true);
+            return getFileAttributes(ROOT, id, _attributes);
+        }
+    }
+
+
     @Override
     public void list(Subject subject, String path, Glob glob, Interval range,
                      Set<FileAttribute> attrs, ListHandler handler)
@@ -1464,7 +1557,20 @@ public class BasicNameSpaceProvider
         }
 
         Pattern pattern = (glob == null) ? null : glob.toPattern();
-        File[] list = file.listFiles(new ListFilter(pattern, range, attrs, handler));
+
+        ListFilter filter;
+        if (attrs.isEmpty()) {
+            filter =
+                new NameOnlyListFilter(pattern, range, handler);
+        } else if (SIMPLE_ATTRIBUTES.containsAll(attrs)) {
+            filter =
+                new SimpleAttributesListFilter(pattern, range, attrs, handler);
+        } else {
+            filter =
+                new ManyAttributesListFilter(pattern, range, attrs, handler);
+        }
+
+        File[] list = file.listFiles(filter);
         if (list == null) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                      "IO Error");

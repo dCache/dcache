@@ -73,7 +73,7 @@ public class PnfsFile extends File
 
     public final static Set<FileAttribute> GETATTR_ATTRIBUTES =
         EnumSet.of(ACCESS_TIME, CREATION_TIME, MODIFICATION_TIME,
-                   MODE, OWNER, OWNER_GROUP, TYPE);
+                   MODE, OWNER, OWNER_GROUP, SIMPLE_TYPE, TYPE);
 
     private PnfsId  _pnfsId;
 
