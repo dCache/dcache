@@ -52,6 +52,11 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
         try {
 
             MoverBridge moverBridge = _activeIO.get( _args.opwrite.stateid);
+            if (moverBridge == null) {
+                throw new ChimeraNFSException(nfsstat4.NFS4ERR_BAD_STATEID,
+                        "No mover associated with given stateid");
+            }
+
             if( (moverBridge.getIoMode() & MoverProtocol.WRITE) != MoverProtocol.WRITE ) {
                 throw new ChimeraNFSException(nfsstat4.NFS4ERR_PERM, "an attermp to write without IO mode enabled");
             }

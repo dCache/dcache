@@ -45,6 +45,10 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
             int count = _args.opread.count.value.value;
 
             MoverBridge moverBridge = _activeIO.get(_args.opread.stateid);
+            if(moverBridge == null) {
+                throw new ChimeraNFSException(nfsstat4.NFS4ERR_BAD_STATEID,
+                        "No mover associated with given stateid");
+            }
 
             ByteBuffer bb = ByteBuffer.allocate(count);
 
