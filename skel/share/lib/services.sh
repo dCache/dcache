@@ -36,6 +36,10 @@ printDomains() # $1 = service
             printf "%s" "gridftp-${hostname}Domain "
             ;;
 
+        webdav)
+            printf "%s" "webdav-${hostname}Domain "
+            ;;
+
         gsidcap)
             printf "%s" "gsidcap-${hostname}Domain "
             ;;
@@ -251,6 +255,10 @@ getService() # $1 = domain name
 
             gridftp-*Domain)
                 RET="gridftp"
+                ;;
+
+            webdav-*Domain)
+                RET="webdav"
                 ;;
 
             gsidcap-*Domain)

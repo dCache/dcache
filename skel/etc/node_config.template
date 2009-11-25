@@ -57,7 +57,7 @@ NODE_TYPE=
 #
 #    dcap, gPlazma, xrootd, gridftp, gsidcap, srm, admin, 
 #    infoProvider, chimera, pnfs, httpd, utility, dir, info,
-#    statistics, lm, dCache, replica
+#    statistics, lm, dCache, replica, webdav
 #
 #  or any domain name prefix. These services are started in addition
 #  to the services selected by the NODE_TYPE parameter.
