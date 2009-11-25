@@ -9,19 +9,19 @@
         <property name="location" value="domaincontext:"/>
         <property name="properties">
             <value>
-                nfsPoolManager=PoolManager
-                nfsPoolManagerTimeout=28000
+                poolManager=PoolManager
+                poolManagerTimeout=28000
+                pnfsManager=PnfsManager
+                pnfsManagerTimeout=28000
                 chimeraConfig=${ourHomeDir}/config/chimera-config.xml
-                DefaultRetentionPolicy=REPLICA
-                DefaultAccessLatency=ONLINE
             </value>
         </property>
     </bean>
 
     <bean id="poolManagerStub" class="org.dcache.cells.CellStub">
         <description>Pool manager cell stub</description>
-        <property name="timeout" value="${nfsPoolManagerTimeout}"/>
-        <property name="destination" value="${nfsPoolManager}"/>
+        <property name="timeout" value="${poolManagerTimeout}"/>
+        <property name="destination" value="${poolManager}"/>
     </bean>
 
     <bean id="chimeraXmlConfig" class="java.io.File">
@@ -47,31 +47,22 @@
         </constructor-arg>
     </bean>
 
-    <bean id="defaultAccessLatency" class="diskCacheV111.util.AccessLatency"
-    factory-method="getAccessLatency">
-        <description>Default Access Latency for newly created files</description>
-        <constructor-arg value="${DefaultAccessLatency}"/>
-    </bean>
-
-    <bean id="defaultRetentionPolicy" class="diskCacheV111.util.RetentionPolicy"
-    factory-method="getRetentionPolicy">
-        <description>Default Retention Policy for newly created files</description>
-        <constructor-arg value="${DefaultRetentionPolicy}"/>
-    </bean>
-
-    <bean id="extractor" class="org.dcache.chimera.namespace.ChimeraOsmStorageInfoExtractor">
-        <description>Storage Info Extractor</description>
-        <constructor-arg ref="defaultRetentionPolicy"/>
-        <constructor-arg ref="defaultAccessLatency"/>
+    <bean id="pnfs" class="diskCacheV111.util.PnfsHandler">
+        <description>PNFS manager client module</description>
+        <constructor-arg>
+            <bean class="dmg.cells.nucleus.CellPath">
+                <constructor-arg value="${pnfsManager}"/>
+            </bean>
+        </constructor-arg>
     </bean>
 
     <bean id="door" class="org.dcache.chimera.nfsv41.door.NFSv41Door"
         init-method="init">
         <description>dCache implementation of NFSv4.1 MDS (door)</description>
         <property name="poolManagerStub" ref="poolManagerStub"/>
+        <property name="pnfsHandler" ref="pnfs"/>
         <property name="fileSystemProvider" ref="fileSystem"/>
         <property name="exportFile" ref="export" />
-        <property name="chimeraStorageInfoExtractable" ref="extractor" />
     </bean>
 
 </beans>

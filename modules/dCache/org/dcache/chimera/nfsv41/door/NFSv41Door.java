@@ -29,7 +29,6 @@ import org.apache.log4j.Logger;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FsInode;
-import org.dcache.chimera.namespace.ChimeraStorageInfoExtractable;
 import org.dcache.chimera.nfs.ExportFile;
 import org.dcache.chimera.nfs.v4.DeviceID;
 import org.dcache.chimera.nfs.v4.DeviceManager;
@@ -47,6 +46,7 @@ import org.dcache.chimera.nfs.v4.xdr.stateid4;
 import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
@@ -114,6 +114,8 @@ public class NFSv41Door extends AbstractCellComponent implements
      */
     private CellStub _poolManagerStub;
 
+    private PnfsHandler _pnfsHandler;
+
     /**
      * Grizzly thread controller
      */
@@ -124,6 +126,10 @@ public class NFSv41Door extends AbstractCellComponent implements
         _poolManagerStub = stub;
     }
 
+    public void setPnfsHandler(PnfsHandler pnfs) {
+        _pnfsHandler = pnfs;
+    }
+
     private FileSystemProvider _fileFileSystemProvider;
     public void setFileSystemProvider(FileSystemProvider fs) {
         _fileFileSystemProvider = fs;
@@ -132,12 +138,6 @@ public class NFSv41Door extends AbstractCellComponent implements
     private ExportFile _exportFile;
     public void setExportFile(ExportFile export) {
         _exportFile = export;
-    }
-
-    /** storage info extractor */
-    private ChimeraStorageInfoExtractable _storageInfoExctractor;
-    public void setChimeraStorageInfoExtractable(ChimeraStorageInfoExtractable extractor) {
-        _storageInfoExctractor = extractor;
     }
 
     public void init() throws Exception {
@@ -349,10 +349,8 @@ public class NFSv41Door extends AbstractCellComponent implements
             throws IOException {
 
         try {
-
-            StorageInfo storageInfo = _storageInfoExctractor.getStorageInfo(inode);
-
             PnfsId pnfsId = new PnfsId(inode.toString());
+            StorageInfo storageInfo = _pnfsHandler.getStorageInfo(pnfsId.getId());
 
             NFS4ProtocolInfo protocolInfo = new NFS4ProtocolInfo(clientIp, stateid);
             protocolInfo.door(new CellPath(this.getCellName(), this
