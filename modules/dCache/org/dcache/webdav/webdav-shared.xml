@@ -48,24 +48,6 @@
     <description>Thread pool for scheduled activities</description>
   </bean>
 
-  <bean id="lb" class="org.dcache.util.LoginBrokerHandler"
-        init-method="start"
-        destroy-method="stop">
-    <description>Registers the door with a LoginBroker</description>
-    <property name="executor" ref="scheduled-thread-pool"/>
-    <property name="updateTime" value="${loginBrokerUpdateTime}"/>
-    <property name="updateThreshold" value="${loginBrokerUpdateThreshold}"/>
-    <property name="protocolEngine" value="org.dcache.webdav.DcacheResourceFactory"/>
-    <property name="protocolVersion" value="1.1"/>
-    <property name="protocolFamily" value="http"/>
-    <property name="port" value="${webdavPort}"/>
-    <property name="loginBroker">
-      <bean class="dmg.cells.nucleus.CellPath">
-        <constructor-arg value="${loginBroker}"/>
-      </bean>
-    </property>
-  </bean>
-
   <bean id="security-filter" class="org.dcache.webdav.SecurityFilter">
     <description>Handles authorization for the WebDAV door</description>
     <property name="readOnly" value="${webdavReadOnly}"/>

@@ -33,6 +33,24 @@
 
   <import resource="webdav-shared.xml"/>
 
+  <bean id="lb" class="org.dcache.util.LoginBrokerHandler"
+        init-method="start"
+        destroy-method="stop">
+    <description>Registers the door with a LoginBroker</description>
+    <property name="executor" ref="scheduled-thread-pool"/>
+    <property name="updateTime" value="${loginBrokerUpdateTime}"/>
+    <property name="updateThreshold" value="${loginBrokerUpdateThreshold}"/>
+    <property name="protocolEngine" value="org.dcache.webdav.DcacheResourceFactory"/>
+    <property name="protocolVersion" value="1.1"/>
+    <property name="protocolFamily" value="http"/>
+    <property name="port" value="${webdavPort}"/>
+    <property name="loginBroker">
+      <bean class="dmg.cells.nucleus.CellPath">
+        <constructor-arg value="${loginBroker}"/>
+      </bean>
+    </property>
+  </bean>
+
   <bean id="jetty" class="org.eclipse.jetty.server.Server"
         init-method="start" destroy-method="stop">
 
