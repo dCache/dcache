@@ -63,6 +63,12 @@ public class CacheRepositoryV5
     extends AbstractCellComponent
     implements Repository
 {
+    /**
+    * time in millisecs added to each sticky expiration task
+    * We schedule the task later than the expiration time to account
+    * for small clock shifts.
+    */    
+    public static final long EXPIRATION_CLOCKSHIFT_EXTRA_TIME = 1000L;
     private final static Logger _log =
         Logger.getLogger(CacheRepositoryV5.class);
 
@@ -992,14 +998,12 @@ public class CacheRepositoryV5
 
         /* Schedule a new task. Notice that we schedule an expiration
          * task even if expire is in the past. This guarantees that we
-         * also remove records that already have expired. We schedule
-         * the task 1 second later than the expiration time to account
-         * for small clock shifts.
-         */
+         * also remove records that already have expired.
+        */
         if (expire != Long.MAX_VALUE) {
             ExpirationTask task = new ExpirationTask(entry);
-            future = _executor.schedule(task, expire - System.currentTimeMillis() + 1000,
-                                        TimeUnit.MILLISECONDS);
+            future = _executor.schedule(task, expire - System.currentTimeMillis()
+                    + EXPIRATION_CLOCKSHIFT_EXTRA_TIME, TimeUnit.MILLISECONDS);
             _tasks.put(pnfsId, future);
         }
     }

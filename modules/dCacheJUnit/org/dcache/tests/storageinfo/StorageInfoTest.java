@@ -202,7 +202,7 @@ public class StorageInfoTest {
         StorageInfo otherInfo = new GenericStorageInfo("osm", "h1:raw");
         otherInfo.setKey("not bla", "bla");
 
-        assertFalse("not equal by file size storageInfo pass", storageInfo.equals(otherInfo) );
+        assertFalse("not equal by map storageInfo pass", storageInfo.equals(otherInfo) );
     }
 
 
