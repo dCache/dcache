@@ -1584,9 +1584,16 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 }else{
 
                     try {
-                        _pnfs.deletePnfsEntry( path );
-                        sendRemoveInfoToBilling( path );
-                        sb.append("ok");
+                         if (_permissionHandler.canDeleteFile(_pnfsId, _subject, _origin) != AccessType.ACCESS_ALLOWED) {
+                            sb.append("failed 19 \"Permission denied\" EACCES");
+                            sendReply("fileMetaDataAvailable", 19, "failed 19 \"Permission denied to remove file\" EACCES");
+                            return;
+                          }
+                          _pnfs.deletePnfsEntry( path );
+                          sendRemoveInfoToBilling( path );
+                          sb.append("ok");
+                   }catch( ACLException e) {
+                       sb.append("failed 21 \"" + e.getMessage() + "\"");
                     }catch( CacheException e) {
                         sb.append("failed 22 \"" + e.getMessage() + "\"");
                     }
