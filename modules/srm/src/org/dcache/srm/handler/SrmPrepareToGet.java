@@ -33,8 +33,8 @@ import org.apache.axis.types.URI.MalformedURIException;
  * @author  timur
  */
 public class SrmPrepareToGet {
-    
-    private static Logger logger = 
+
+    private static Logger logger =
             Logger.getLogger(SrmPrepareToGet.class);
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement storage;
@@ -70,7 +70,7 @@ public class SrmPrepareToGet {
             throw new NullPointerException("configuration is null");
         }
         }
-    
+
     boolean longFormat =false;
     String servicePathAndSFNPart = "";
     int port;
@@ -87,14 +87,14 @@ public class SrmPrepareToGet {
             logger.error(srme);
             response = getFailedResponse(srme.toString());
         }
-        
+
         return response;
     }
-    
+
     public static final SrmPrepareToGetResponse getFailedResponse(String error) {
         return getFailedResponse(error,null);
     }
-    
+
     public static final SrmPrepareToGetResponse getFailedResponse(String error,TStatusCode statusCode) {
         if(statusCode == null) {
             statusCode =TStatusCode.SRM_FAILURE;
@@ -106,9 +106,9 @@ public class SrmPrepareToGet {
         srmPrepareToGetResponse.setReturnStatus(status);
         return srmPrepareToGetResponse;
     }
-    
+
     private static final String[] emptyArr = new String[0];
-    
+
     /**
      * implementation of srm ls
      */
@@ -120,7 +120,7 @@ public class SrmPrepareToGet {
             protocols =
                     request.getTransferParameters().getArrayOfTransferProtocols().getStringArray();
         }
-        
+
         protocols = Tools.trimStringArray(protocols);
 
         if(protocols == null || protocols.length <1) {
@@ -129,15 +129,15 @@ public class SrmPrepareToGet {
 
         if(request.getTransferParameters() != null &&
                 request.getTransferParameters().getArrayOfClientNetworks() != null ) {
-            String[] clientNetworks = 
+            String[] clientNetworks =
                 request.getTransferParameters().getArrayOfClientNetworks().getStringArray();
-            if(clientNetworks != null && 
+            if(clientNetworks != null &&
                 clientNetworks.length >0 &&
                 clientNetworks[0] != null) {
                 client_host = clientNetworks[0];
             }
         }
-        
+
         TGetFileRequest [] fileRequests = null;
         if(request.getArrayOfFileRequests() != null ) {
             fileRequests = request.getArrayOfFileRequests().getRequestArray();
@@ -165,12 +165,12 @@ public class SrmPrepareToGet {
 	     }
 	}
 
-	
-	if (!foundMatchedProtocol) { 
-            
+
+	if (!foundMatchedProtocol) {
+
 	    TReturnStatus status = new TReturnStatus();
  	    status.setStatusCode(TStatusCode.SRM_NOT_SUPPORTED);
-            StringBuffer errorsb = 
+            StringBuffer errorsb =
                 new StringBuffer("Protocol(s) specified not supported: [ ");
 	    for(String protocol:protocols) {
                 errorsb.append(protocol).append(' ');
@@ -182,8 +182,8 @@ public class SrmPrepareToGet {
  	    org.dcache.srm.v2_2.TGetRequestFileStatus[] statusArray = new org.dcache.srm.v2_2.TGetRequestFileStatus[fileRequests.length];
  	    for (int i = 0; i < fileRequests.length ; ++i ) {
  		TGetFileRequest fr = fileRequests[i];
- 		if (fr!=null) { 
- 		    if (fr.getSourceSURL()!=null) { 
+ 		if (fr!=null) {
+ 		    if (fr.getSourceSURL()!=null) {
  			TGetRequestFileStatus fileStatus = new TGetRequestFileStatus();
  			TReturnStatus fileReturnStatus = new TReturnStatus();
  			fileReturnStatus.setStatusCode(TStatusCode.SRM_FAILURE);
@@ -198,10 +198,10 @@ public class SrmPrepareToGet {
  	    srmPrepareToGetResponse.setArrayOfFileStatuses(arrayOfFileStatuses);
  	    return srmPrepareToGetResponse;
  	}
-	
-   
 
-        
+
+
+
         for (int i = 0; i < fileRequests.length ; ++i ) {
             TGetFileRequest nextRequest = fileRequests[i];
             if(nextRequest == null ) {
@@ -210,7 +210,7 @@ public class SrmPrepareToGet {
             }
             String nextSurl =null;
             if(nextRequest.getSourceSURL() != null) {
-                
+
                 nextSurl = nextRequest.getSourceSURL().toString();
             }
             if(nextSurl == null) {
@@ -236,12 +236,12 @@ public class SrmPrepareToGet {
                     request.getUserRequestDescription(),
                     client_host);
 
-	    if (request.getStorageSystemInfo()!=null) { 
-		    if ( request.getStorageSystemInfo().getExtraInfoArray()!=null) { 
-			    if (request.getStorageSystemInfo().getExtraInfoArray().length>0) { 
-				    for (int i=0;i<request.getStorageSystemInfo().getExtraInfoArray().length;i++) { 
+	    if (request.getStorageSystemInfo()!=null) {
+		    if ( request.getStorageSystemInfo().getExtraInfoArray()!=null) {
+			    if (request.getStorageSystemInfo().getExtraInfoArray().length>0) {
+				    for (int i=0;i<request.getStorageSystemInfo().getExtraInfoArray().length;i++) {
 					    TExtraInfo extraInfo = request.getStorageSystemInfo().getExtraInfoArray()[i];
-					    if (extraInfo.getKey().equals("priority")) { 
+					    if (extraInfo.getKey().equals("priority")) {
 						    int priority = Integer.parseInt(extraInfo.getValue());
 						    r.setPriority(priority);
 					    }
@@ -249,7 +249,7 @@ public class SrmPrepareToGet {
 			    }
 		    }
 	    }
-	    
+
             r.schedule();
             // RequestScheduler will take care of the rest
             //getRequestScheduler.add(r);
@@ -259,8 +259,8 @@ public class SrmPrepareToGet {
             logger.warn(e);
             return getFailedResponse(e.toString());
         }
-        
+
     }
-    
-    
+
+
 }
