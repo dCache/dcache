@@ -3187,24 +3187,10 @@ public class Storage
                       int offset, int count)
         throws SRMException
     {
-        /* Which attributes to fetch depends on whether we are
-         * requested to perform a verbose listing.
-         */
-        final Set<FileAttribute> required = EnumSet.of(TYPE);
-        if (verbose) {
-            required.addAll(DcacheFileMetaData.getKnownAttributes());
-        }
-        else {
-            required.add(SIZE);
-            //
-            // NB, the four lines below will be revisited as soon as the issue
-            // of not specifying PNFS will go away
-            //
-            required.add(PNFSID);
-            required.add(OWNER);
-            required.add(OWNER_GROUP);
-            required.add(MODE);
-        }
+        final Set<FileAttribute> required =
+            (verbose
+             ? DcacheFileMetaData.getKnownAttributes()
+             : EnumSet.of(SIZE, SIMPLE_TYPE));
         final String prefix =
             !directory.endsWith("/") ? directory + "/" : directory;
         final List<FileMetaData> result = new ArrayList<FileMetaData>();

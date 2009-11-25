@@ -133,7 +133,7 @@ public class DcacheFileMetaData extends org.dcache.srm.FileMetaData {
 
     public DcacheFileMetaData(FileAttributes attributes)
     {
-        this(attributes.getPnfsId());
+        super();
 
         this.attributes = attributes;
 
@@ -145,6 +145,11 @@ public class DcacheFileMetaData extends org.dcache.srm.FileMetaData {
 
         for (FileAttribute attribute: attributes.getDefinedAttributes()) {
             switch (attribute) {
+            case PNFSID:
+                pnfsId = attributes.getPnfsId();
+                fileId = pnfsId.toString();
+                break;
+
             case CHECKSUM:
                 /* Find the adler32 checksum. If not found, then take
                  * some other checksum.
