@@ -4,6 +4,10 @@
 # description: chimera nfs3 startup script
 
 PORTMAP_PORT=111
+PORTMAP_PROGNUM=100000
+
+NFS_PROGNUM=100003
+NFS_VERS=3
 
 if [ "x" = "x${ourHomeDir}" ]
 then
@@ -74,17 +78,12 @@ waitForEvent()
 
 portmapPortPresent()
 {
-    netstat -na | grep [^0-9]$PORTMAP_PORT >/dev/null
-}
-
-portmapAnswersQueries()
-{
-    rpcinfo -p >/dev/null 2>&1
+    rpcinfo -n ${PORTMAP_PORT} -u localhost ${PORTMAP_PROGNUM} >/dev/null
 }
 
 nfsV3ServiceRegistered()
 {
-    rpcinfo -t localhost 100003 3 >/dev/null 2>&1
+    rpcinfo -t localhost ${NFS_PROGNUM} ${NFS_VERS} >/dev/null 2>&1
 }
 
 
@@ -110,9 +109,6 @@ dCacheChimeraStart()
 
   waitForEvent portmapPortPresent "Waiting for portmap port" \
           "Chimera portmap port is taking too long to appear; carrying on"
-
-  waitForEvent portmapAnswersQueries "Waiting for portmap service" \
-          "Chimera portmap is taking too long to appear; carrying on"
 
   waitForEvent nfsV3ServiceRegistered "Waiting for NFS server to register itself" \
           "Chimera is taking too long; giving up."
