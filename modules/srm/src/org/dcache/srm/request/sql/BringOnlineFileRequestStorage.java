@@ -17,7 +17,6 @@ import java.sql.*;
 import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.request.BringOnlineFileRequest;
 import org.dcache.srm.util.Configuration;
-import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.Job;
 
 /**
@@ -48,25 +47,6 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage {
     }
    
         
-    public void say(String s){
-        if(logger != null) {
-           logger.log(" BringOnlineFileRequestStorage: "+s);
-        }
-    }
-    
-    public void esay(String s){
-        if(logger != null) {
-           logger.elog(" BringOnlineFileRequestStorage: "+s);
-        }
-    }
-    
-    public void esay(Throwable t){
-        if(logger != null) {
-           logger.elog(t);
-        }
-    }
-
-    
     protected FileRequest getFileRequest(Connection _con,
         Long ID, 
         Long NEXTJOBID, 
@@ -125,7 +105,8 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage {
     public String getTableName() {
         return TABLE_NAME;
     }
-    
+
+    @Override
     public PreparedStatement[] getAdditionalCreateStatements(Connection connection,
                                                              Job job) throws SQLException { 
         return null;

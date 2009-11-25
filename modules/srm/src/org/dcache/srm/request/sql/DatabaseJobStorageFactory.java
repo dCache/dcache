@@ -10,7 +10,6 @@ import org.dcache.srm.util.Configuration;
 import java.util.Set;
 import java.util.Map;
 import java.util.HashMap;
-import java.sql.SQLException;
 import org.apache.log4j.Logger;
 
 /**
@@ -18,7 +17,8 @@ import org.apache.log4j.Logger;
  * @author timur
  */
 public class DatabaseJobStorageFactory extends JobStorageFactory{
-    private static final Logger logger = Logger.getLogger(DatabaseJobStorageFactory.class);
+    private static final Logger logger =
+            Logger.getLogger(DatabaseJobStorageFactory.class);
     private Map<Class,DatabaseJobStorage> dbJobStorageMap;
 
     public DatabaseJobStorageFactory(Configuration config) {

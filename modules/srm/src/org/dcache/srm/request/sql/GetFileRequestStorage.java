@@ -9,7 +9,6 @@ import java.sql.*;
 import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.request.GetFileRequest;
 import org.dcache.srm.util.Configuration;
-import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.Job;
 
 /**
@@ -137,26 +136,6 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage {
         super(configuration);
     }
    
-        
-    public void say(String s){
-        if(logger != null) {
-           logger.log(" GetFileRequestStorage: "+s);
-        }
-    }
-    
-    public void esay(String s){
-        if(logger != null) {
-           logger.elog(" GetFileRequestStorage: "+s);
-        }
-    }
-    
-    public void esay(Throwable t){
-        if(logger != null) {
-           logger.elog(t);
-        }
-    }
-
-    
     protected FileRequest getFileRequest(Connection _con,
         Long ID, 
         Long NEXTJOBID, 

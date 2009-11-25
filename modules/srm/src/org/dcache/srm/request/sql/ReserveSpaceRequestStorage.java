@@ -7,13 +7,10 @@
 package org.dcache.srm.request.sql;
 
 import org.dcache.srm.request.ReserveSpaceRequest;
-import org.dcache.srm.request.RequestStorage;
 import org.dcache.srm.request.Request;
 import org.dcache.srm.scheduler.Job;
-import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
 import java.sql.*;
-import java.util.Set;
 import org.dcache.srm.SRMUser;
 
 /**
@@ -167,30 +164,9 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage {
         super(configuration);
     }
     
-     
-    public void say(String s){
-        if(logger != null) {
-           logger.log(" ReserveSpaceRequestStorage: "+s);
-        }
-    }
-    
-    public void esay(String s){
-        if(logger != null) {
-           logger.elog(" ReserveSpaceRequestStorage: "+s);
-        }
-    }
-    
-    public void esay(Throwable t){
-        if(logger != null) {
-           logger.elog(t);
-        }
-    }
-
-    
     protected void _dbInit() throws SQLException {
         
     }
-    
     
     public String getRequestCreateTableFields() {
         return

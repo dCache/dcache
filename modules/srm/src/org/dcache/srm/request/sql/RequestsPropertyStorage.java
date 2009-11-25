@@ -1,56 +1,3 @@
-// $Id$
-// $Log: not supported by cvs2svn $
-// Revision 1.7  2007/01/06 00:23:55  timur
-// merging production branch changes to database layer to improve performance and reduce number of updates
-//
-// Revision 1.6  2006/12/13 22:09:04  timur
-// commiting the changes from the branch related to database performance
-//
-// Revision 1.5.2.3  2007/01/04 02:58:55  timur
-// changes to database layer to improve performance and reduce number of updates
-//
-// Revision 1.5.2.2  2006/12/10 01:23:01  timur
-// fixed a bud
-//
-// Revision 1.5  2006/04/26 17:17:56  timur
-// store the history of the state transitions in the database
-//
-// Revision 1.4  2005/03/30 22:42:11  timur
-// more database schema changes
-//
-// Revision 1.3  2005/03/07 22:55:33  timur
-// refined the space reservation call, restored logging of sql commands while debugging the
-// sql performance
-//
-// Revision 1.2  2005/03/01 23:10:39  timur
-// Modified the database scema to increase database operations performance and to account for
-// reserved space"and to account for reserved space
-//
-// Revision 1.1  2005/01/14 23:07:15  timur
-// moving general srm code in a separate repository
-//
-// Revision 1.5  2004/11/10 03:29:00  timur
-// modified the sql code to be compatible with both Cloudescape and postges
-//
-// Revision 1.4  2004/10/30 04:19:07  timur
-// Fixed a problem related to the restoration of the job from database
-//
-// Revision 1.3  2004/10/28 02:41:31  timur
-// changed the database scema a little bit, fixed various synchronization bugs in the
-// scheduler, added interactive shell to the File System srm
-//
-// Revision 1.2  2004/08/06 19:35:25  timur
-// merging branch srm-branch-12_May_2004 into the trunk
-//
-// Revision 1.1.2.1  2004/06/22 01:38:07  timur
-// working on the database part, created persistent storage for getFileRequests,
-// for the next requestId
-//
-// Revision 1.1.2.2  2004/06/16 19:44:33  timur
-// added cvs logging tags and fermi copyright headers at the top, removed
-// Copier.java and CopyJob.java
-//
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -405,7 +352,7 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
             _nextLongBase = nextLongBase+ NEXT_LONG_STEP;
         }
         
-        long nextLong = nextLongBase +(nextLongIncrement++);;
+        long nextLong = nextLongBase +(nextLongIncrement++);
         say(" return nextLong="+nextLong);
         return nextLong;
     }

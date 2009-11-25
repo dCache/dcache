@@ -1,32 +1,3 @@
-// $Id$
-// $Log: not supported by cvs2svn $
-// Revision 1.9  2007/01/10 23:00:25  timur
-// implemented srmGetRequestTokens, store request description in database, fixed several srmv2 issues
-//
-// Revision 1.8  2007/01/06 00:23:55  timur
-// merging production branch changes to database layer to improve performance and reduce number of updates
-//
-// Revision 1.7  2006/10/02 23:29:17  timur
-// implemented srmPing and srmBringOnline (not tested yet), refactored Request.java
-//
-// Revision 1.6.2.1  2007/01/04 02:58:55  timur
-// changes to database layer to improve performance and reduce number of updates
-//
-// Revision 1.6  2006/04/26 17:17:56  timur
-// store the history of the state transitions in the database
-//
-// Revision 1.5  2006/04/12 23:16:23  timur
-// storing state transition time in database, storing transferId for copy requests in database, renaming tables if schema changes without asking
-//
-// Revision 1.4  2005/03/30 22:42:10  timur
-// more database schema changes
-//
-// Revision 1.3  2005/03/09 23:21:17  timur
-// more database checks, more space reservation code
-//
-// Revision 1.2  2005/03/01 23:10:39  timur
-// Modified the database scema to increase database operations performance and to account for reserved space"and to account for reserved space
-//
 /*
  * GetRequestStorage.java
  *
@@ -35,12 +6,10 @@
 
 package org.dcache.srm.request.sql;
 import org.dcache.srm.request.ContainerRequest;
-import org.dcache.srm.request.Request;
 import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.request.CopyRequest;
 import org.dcache.srm.util.Configuration;
 import java.sql.*;
-import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.v2_2.TAccessLatency;
 import org.dcache.srm.v2_2.TRetentionPolicy;
@@ -195,26 +164,6 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage{
         );
     }
         
-    public void say(String s){
-        if(logger != null) {
-           logger.log(" CopyRequestStorage: "+s);
-        }
-    }
-    
-    public void esay(String s){
-        if(logger != null) {
-           logger.elog(" CopyRequestStorage: "+s);
-        }
-    }
-    
-    public void esay(Throwable t){
-        if(logger != null) {
-           logger.elog(t);
-        }
-    }
-    
-
-
     public void dbInit1() throws SQLException {
    }
     

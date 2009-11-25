@@ -34,23 +34,7 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
             throw new IllegalArgumentException("srmUserPersistenceManager == null");
         }
     }
-    public void say(String s){
-        if(logger != null) {
-           logger.log(" DatabaseRequestStorage: "+s);
-        }
-    }
     
-    public void esay(String s){
-        if(logger != null) {
-           logger.elog(" DatabaseRequestStorage: "+s);
-        }
-    }
-    
-    public void esay(Throwable t){
-        if(logger != null) {
-           logger.elog(t);
-        }
-    }    
     public abstract String getRequestCreateTableFields();
     
     public String getCreateTableFields() {

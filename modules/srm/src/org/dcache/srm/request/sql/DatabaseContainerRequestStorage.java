@@ -10,42 +10,24 @@ import org.dcache.srm.request.ContainerRequest;
 import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.request.Request;
 import org.dcache.srm.scheduler.Job;
-import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
 import java.sql.*;
-import java.util.Set;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SRMInvalidRequestException;
+import org.apache.log4j.Logger;
 
 /**
  *
  * @author  timur
  */
 public abstract class DatabaseContainerRequestStorage extends DatabaseRequestStorage {
-    
+   private final static Logger logger =
+            Logger.getLogger(DatabaseContainerRequestStorage.class);
+
     
     /** Creates a new instance of DatabaseContainerRequestStorage */
     public DatabaseContainerRequestStorage(Configuration configuration) throws SQLException {
         super(configuration);
-    }
-    
-     
-    public void say(String s){
-        if(logger != null) {
-           logger.log(" DatabaseRequestStorage: "+s);
-        }
-    }
-    
-    public void esay(String s){
-        if(logger != null) {
-           logger.elog(" DatabaseRequestStorage: "+s);
-        }
-    }
-    
-    public void esay(Throwable t){
-        if(logger != null) {
-           logger.elog(t);
-        }
     }
 
    public abstract String getFileRequestsTableName();
@@ -113,7 +95,7 @@ public abstract class DatabaseContainerRequestStorage extends DatabaseRequestSto
         String sqlStatementString = "SELECT ID FROM " + getFileRequestsTableName() +
         " WHERE RequestID="+ID;
         Statement sqlStatement = _con.createStatement();
-        say("executing statement: "+sqlStatementString);
+        logger.debug("executing statement: "+sqlStatementString);
         ResultSet fileIdsSet = sqlStatement.executeQuery(sqlStatementString);
         java.util.Set utilset = new java.util.HashSet();
         while(fileIdsSet.next()) {
@@ -129,7 +111,7 @@ public abstract class DatabaseContainerRequestStorage extends DatabaseRequestSto
             try {
                 fileRequests[i] = (FileRequest) Job.getJob(fileIds[i],_con);
             } catch (SRMInvalidRequestException ire){
-                logger.elog(ire);
+                logger.error(ire);
             }
         }
         return getContainerRequest(

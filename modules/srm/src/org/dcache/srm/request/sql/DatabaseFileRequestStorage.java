@@ -1,8 +1,3 @@
-// $Id$
-// $Log: not supported by cvs2svn $
-// Revision 1.11  2007/01/06 00:23:55  timur
-// merging production branch changes to database layer to improve performance and reduce number of updates
-//
 /*
  * DatabaseFileRequestStorage.java
  *
@@ -12,14 +7,10 @@
 package org.dcache.srm.request.sql;
 
 import org.dcache.srm.request.FileRequest;
-//import org.dcache.srm.request.FileRequestStorage;
-import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.util.Configuration;
 import java.sql.*;
 import org.dcache.srm.scheduler.State;
 import java.util.Set;
-//import java.util.HashSet;
-//import java.util.Iterator;
 
 /**
  *
@@ -34,24 +25,6 @@ public abstract class DatabaseFileRequestStorage extends DatabaseJobStorage  {
         super(configuration);
     }
      
-    public void say(String s){
-        if(logger != null) {
-           logger.log(" DatabaseFileRequestStorage: "+s);
-        }
-    }
-    
-    public void esay(String s){
-        if(logger != null) {
-           logger.elog(" DatabaseFileRequestStorage: "+s);
-        }
-    }
-    
-    public void esay(Throwable t){
-        if(logger != null) {
-           logger.elog(t);
-        }
-    }
-
     /**
      * empty emplementations
      */

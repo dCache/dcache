@@ -1,6 +1,3 @@
-// $Id$
-// $Log: not supported by cvs2svn $
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -75,7 +72,6 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request.sql;
 import java.sql.*;
-import java.util.Set;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.request.RequestCredentialStorage;
 import org.ietf.jgss.GSSCredential;
@@ -83,18 +79,19 @@ import org.globus.gsi.GlobusCredential;
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
 import org.gridforum.jgss.ExtendedGSSCredential;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import org.dcache.srm.util.Configuration;
-import org.dcache.srm.Logger;
 import java.io.FileWriter;
 import java.io.FileReader;
 import java.io.File;
 import java.io.IOException;
+import org.apache.log4j.Logger;
 /**
  *
  * @author  timur
  */
 public class DatabaseRequestCredentialStorage implements RequestCredentialStorage {
+    private static final Logger logger =
+            Logger.getLogger(DatabaseRequestCredentialStorage.class);
     
    /** Creates a new instance of TestDatabaseJobStorage */
    private final String jdbcUrl;
@@ -108,7 +105,6 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
    protected static final String dateTimeType= " TIMESTAMP ";
    protected static final String booleanType= " INT ";
    private final String credentialsDirectory;
-   protected Logger logger;
    public DatabaseRequestCredentialStorage(    Configuration configuration
       )  throws SQLException {
       this.jdbcUrl = configuration.getJdbcUrl();
@@ -116,35 +112,16 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
       this.user = configuration.getJdbcUser();
       this.pass = configuration.getJdbcPass();
       this.configuration = configuration;
-      this.logger = configuration.getStorage();
       this.credentialsDirectory = configuration.getCredentialsDirectory();
       File dir = new File(credentialsDirectory);
       if(!dir.exists()) {
           dir.mkdir();
       }
       if(!dir.isDirectory() || !dir.canWrite()) {
-          esay("credential directory "+credentialsDirectory+ 
+          logger.error("credential directory "+credentialsDirectory+
                   " does not exist or is not writable");
       }
       dbInit();
-   }
-   
-   public void say(String s){
-      if(logger != null) {
-         logger.log(" DatabaseRequestCredentialStorage: "+s);
-      }
-   }
-   
-   public void esay(String s){
-      if(logger != null) {
-         logger.elog(" DatabaseRequestCredentialStorage: "+s);
-      }
-   }
-   
-   public void esay(Throwable t){
-      if(logger != null) {
-         logger.elog(t);
-      }
    }
    
    public String getTableName() {
@@ -190,14 +167,14 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
          if(!tableRs.next()) {
             try {
                // Table does not exist
-               //say(getTableName()+" does not exits");
+               //logger.debug(getTableName()+" does not exits");
                Statement s = _con.createStatement();
-               say("dbInit trying "+createRequestCredentialTable);
+               logger.debug("dbInit trying "+createRequestCredentialTable);
                int result = s.executeUpdate(createRequestCredentialTable);
                s.close();
             } catch(SQLException sqle) {
-               esay(sqle);
-               esay("relation could already exist");
+               logger.error(sqle);
+               logger.error("relation could already exist");
             }
          }
          // to be fast
@@ -216,7 +193,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
             pool.returnFailedConnection(_con);
             _con = null;
          }
-         esay(ex);
+         logger.error(ex);
          throw new SQLException(ex.toString());
       } finally {
          if(_con != null) {
@@ -305,7 +282,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
                                     set.close();
                             }
                             catch (SQLException e1) { 
-                                    say("Failed to close ResultSet "+e1.getMessage());
+                                    logger.debug("Failed to close ResultSet "+e1.getMessage());
                             }
                     }
                     if ( stmt != null ) { 
@@ -313,7 +290,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
                                     stmt.close();
                             }
                             catch (SQLException e1) { 
-                                    say("Failed to close ResultSet "+e1.getMessage());
+                                    logger.debug("Failed to close ResultSet "+e1.getMessage());
                             }
                     }
                 pool.returnFailedConnection(_con);
@@ -321,7 +298,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
             }
         }
         catch (Exception e) { 
-            esay(e);
+            logger.error(e);
         }
         finally { 
             if (_con != null) { 
@@ -330,7 +307,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
                     set.close();
                 }
                 catch (SQLException e1) { 
-                    say("Failed to close ResultSet "+e1.getMessage());
+                    logger.debug("Failed to close ResultSet "+e1.getMessage());
                 }
             }
                     if ( stmt != null ) { 
@@ -338,7 +315,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
                                     stmt.close();
                             }
                             catch (SQLException e1) { 
-                                    say("Failed to close ResultSet "+e1.getMessage());
+                                    logger.debug("Failed to close ResultSet "+e1.getMessage());
                             }
                     }
                 pool.returnConnection(_con);
@@ -400,13 +377,13 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
           _con.commit();
       }
       catch (SQLException e) {
-          esay(e);
+          logger.error(e);
           if (_con!=null) {
               try { 
                   _con.rollback();
               }
               catch(SQLException e1) { 
-                  say("Failed rollback connection "+e1.getMessage());
+                  logger.debug("Failed rollback connection "+e1.getMessage());
               } 
               pool.returnFailedConnection(_con);
               _con = null;
@@ -419,7 +396,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
           }
       }
       if(result == 0) {
-         //say("update result is 0, calling createRequestCredential()");
+         //logger.debug("update result is 0, calling createRequestCredential()");
          createRequestCredential(requestCredential);
       }
    }
@@ -439,7 +416,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
                }catch(IOException ioe1) {
                }
            }
-           esay(ioe);
+           logger.error(ioe);
        }
 
    }
@@ -484,7 +461,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
            // this is not an error, as the file will
            // written if it is not found
            // so we just make a debug log
-           say("fileNameToGSSCredentilal("+fileName+") failed with "+ioe);
+           logger.debug("fileNameToGSSCredentilal("+fileName+") failed with "+ioe);
        }
        return null;
    }
@@ -497,8 +474,8 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
                new GlobusGSSCredentialImpl(gc, GSSCredential.INITIATE_ONLY);
             return cred;
          } catch(Exception e) {
-            esay("error reading the credentials from database");
-            esay(e);
+            logger.error("error reading the credentials from database");
+            logger.error(e);
          }
       }
       return null;

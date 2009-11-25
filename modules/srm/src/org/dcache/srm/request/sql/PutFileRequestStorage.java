@@ -9,8 +9,6 @@ import java.sql.*;
 import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.request.PutFileRequest;
 import org.dcache.srm.util.Configuration;
-import org.dcache.srm.scheduler.State;
-import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TAccessLatency;
@@ -159,25 +157,6 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage {
         );
     }
     
-        
-    public void say(String s){
-        if(logger != null) {
-           logger.log(" PutFileRequestStorage: "+s);
-        }
-    }
-    
-    public void esay(String s){
-        if(logger != null) {
-           logger.elog(" PutFileRequestStorage: "+s);
-        }
-    }
-    
-    public void esay(Throwable t){
-        if(logger != null) {
-           logger.elog(t);
-        }
-    }
-
     protected FileRequest getFileRequest(
     Connection _con,
     Long ID,

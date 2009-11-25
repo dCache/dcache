@@ -13,22 +13,23 @@
  */
 
 package org.dcache.srm.request.sql;
-import org.dcache.srm.request.Request;
 import org.dcache.srm.request.ContainerRequest;
 import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.request.BringOnlineRequest;
 import org.dcache.srm.util.Configuration;
 import java.sql.*;
-import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.SRMUser;
+import org.apache.log4j.Logger;
 
 /**
  *
  * @author  timur
  */
 public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
-    public static final String TABLE_NAME ="bringonlinerequests";
+   private final static Logger logger =
+            Logger.getLogger(BringOnlineRequestStorage.class);
+     public static final String TABLE_NAME ="bringonlinerequests";
     
     private static final String UPDATE_PREFIX = "UPDATE " + TABLE_NAME + " SET "+
         "NEXTJOBID=?, " +
@@ -138,25 +139,6 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
         super(configuration);
     }
        
-    public void say(String s){
-        if(logger != null) {
-           logger.log(" BringOnlineRequestStorage: "+s);
-        }
-    }
-    
-    public void esay(String s){
-        if(logger != null) {
-           logger.elog(" BringOnlineRequestStorage: "+s);
-        }
-    }
-    
-    public void esay(Throwable t){
-        if(logger != null) {
-           logger.elog(t);
-        }
-    }
-    
- 
     private String getProtocolsTableName()
     {
         return getTableName()+"_protocols";
@@ -210,7 +192,7 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
             String sqlStatementString = "SELECT PROTOCOL FROM " + getProtocolsTableName() +
             " WHERE RequestID='"+ID+"'";
             Statement sqlStatement = _con.createStatement();
-            say("executing statement: "+sqlStatementString);
+            logger.debug("executing statement: "+sqlStatementString);
             ResultSet fileIdsSet = sqlStatement.executeQuery(sqlStatementString);
             java.util.Set utilset = new java.util.HashSet();
             while(fileIdsSet.next()) {
@@ -257,6 +239,7 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
         " (PROTOCOL, RequestID) "+
         " VALUES (?,?)";
 
+    @Override
     public PreparedStatement[] getAdditionalCreateStatements(Connection connection,
                                                              Job job) throws SQLException {
         if(job == null || !(job instanceof BringOnlineRequest)) {

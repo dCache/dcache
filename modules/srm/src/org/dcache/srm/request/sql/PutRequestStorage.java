@@ -6,21 +6,23 @@
 
 package org.dcache.srm.request.sql;
 import org.dcache.srm.request.ContainerRequest;
-import org.dcache.srm.request.Request;
 import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.request.PutRequest;
 import org.dcache.srm.util.Configuration;
 import java.sql.*;
-import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.SRMUser;
+import org.apache.log4j.Logger;
 
 /**
  *
  * @author  timur
  */
 public class PutRequestStorage extends DatabaseContainerRequestStorage{
-    public static final String TABLE_NAME ="putrequests";
+   private final static Logger logger =
+            Logger.getLogger(PutRequestStorage.class);
+   
+     public static final String TABLE_NAME ="putrequests";
     private static final String UPDATE_PREFIX = "UPDATE " + TABLE_NAME + " SET "+
         "NEXTJOBID=?, " +
         "CREATIONTIME=?,  " +
@@ -128,26 +130,6 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage{
                 configuration);
     }
     
-    
-    public void say(String s){
-        if(logger != null) {
-            logger.log(" PutRequestStorage: "+s);
-        }
-    }
-    
-    public void esay(String s){
-        if(logger != null) {
-            logger.elog(" PutRequestStorage: "+s);
-        }
-    }
-    
-    public void esay(Throwable t){
-        if(logger != null) {
-            logger.elog(t);
-        }
-    }
-    
-    
     private String getProtocolsTableName() {
         return getTableName()+"_protocols";
     }
@@ -182,14 +164,14 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage{
             pool.returnConnection(_con);
             _con =null;
          } catch (SQLException sqe) {
-             esay(sqe);
+             logger.error(sqe);
             should_reanamed_old_table = true;
             if(_con != null) {
                 pool.returnFailedConnection(_con);
                 _con = null;
             }
         } catch (Exception ex) {
-            esay(ex);
+            logger.error(ex);
             should_reanamed_old_table = true;
             if(_con != null) {
                 pool.returnFailedConnection(_con);
@@ -207,7 +189,7 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage{
             }
         }
         catch (SQLException sqle) {
-            esay("renameTable  "+protocolsTableName+" failed, might have been removed already, ignoring");
+            logger.error("renameTable  "+protocolsTableName+" failed, might have been removed already, ignoring");
         }
         
         String createProtocolsTable = "CREATE TABLE "+ protocolsTableName+" ( "+
@@ -217,7 +199,7 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage{
                 getTableName() +" (ID) "+
                 " ON DELETE CASCADE"+
                 " )";
-        say("calling createTable for "+protocolsTableName);
+        logger.debug("calling createTable for "+protocolsTableName);
         createTable(protocolsTableName, createProtocolsTable);
         String protocols_columns[] = {
             "RequestID"};
@@ -257,7 +239,7 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage{
         String sqlStatementString = "SELECT PROTOCOL FROM " + getProtocolsTableName() +
                 " WHERE RequestID="+ID;
         Statement sqlStatement = _con.createStatement();
-        say("executing statement: "+sqlStatementString);
+        logger.debug("executing statement: "+sqlStatementString);
         ResultSet fileIdsSet = sqlStatement.executeQuery(sqlStatementString);
         java.util.Set utilset = new java.util.HashSet();
         while(fileIdsSet.next()) {
@@ -308,6 +290,7 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage{
         " (PROTOCOL, RequestID) "+
         " VALUES (?,?)";
 
+    @Override
     public PreparedStatement[] getAdditionalCreateStatements(Connection connection,
                                                              Job job) throws SQLException {
         if(job == null || !(job instanceof PutRequest)) {

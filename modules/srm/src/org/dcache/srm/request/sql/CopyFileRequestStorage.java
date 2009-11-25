@@ -14,8 +14,6 @@ import java.sql.*;
 import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.request.CopyFileRequest;
 import org.dcache.srm.util.Configuration;
-import org.dcache.srm.scheduler.State;
-import org.globus.util.GlobusURL;
 import org.dcache.srm.scheduler.Job;
 
 /**
@@ -177,25 +175,6 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage {
         super(configuration        );
     }
     
-      
-    public void say(String s){
-        if(logger != null) {
-           logger.log(" CopyFileRequestStorage: "+s);
-        }
-    }
-    
-    public void esay(String s){
-        if(logger != null) {
-           logger.elog(" CopyFileRequestStorage: "+s);
-        }
-    }
-    
-    public void esay(Throwable t){
-        if(logger != null) {
-           logger.elog(t);
-        }
-    }
-  
     protected FileRequest getFileRequest(
     Connection _con,
     Long ID,

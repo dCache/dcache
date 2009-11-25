@@ -23,7 +23,7 @@ public class JdbcConnectionPool implements Runnable{
     private static HashSet pools = new HashSet();
     
     private Thread[] execution_threads;
-    private List jdbcTasks = new LinkedList();
+    private final List jdbcTasks = new LinkedList();
     
     private Thread vacuum_thread;
     private long vacuum_period=60*60*1000;//every hour
@@ -94,7 +94,7 @@ public class JdbcConnectionPool implements Runnable{
     }
     
     
-    private Set connections = new HashSet();
+    private final Set connections = new HashSet();
     private int max_connections = 50;
     private int max_connections_out = 50;
     private int connections_out=0;
@@ -225,7 +225,8 @@ public class JdbcConnectionPool implements Runnable{
             _logSql.debug( "returnConnection() took "+elapsed+" ms");
         }
     }
-    
+
+    @Override
     public boolean equals(Object o) {
         if( this == o) {
             return true;
@@ -240,7 +241,8 @@ public class JdbcConnectionPool implements Runnable{
         pool.pass.equals(pass) &&
         pool.user.equals(user) ;
     }
-    
+
+    @Override
     public int hashCode() {
         return jdbcClass.hashCode() ^
         jdbcUrl.hashCode() ^

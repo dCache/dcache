@@ -3,7 +3,6 @@ import java.sql.*;
 import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.request.LsFileRequest;
 import org.dcache.srm.util.Configuration;
-import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.Job;
 
 public class LsFileRequestStorage extends DatabaseFileRequestStorage {
@@ -24,24 +23,6 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage {
         public LsFileRequestStorage(Configuration configuration)
                 throws SQLException {
                 super(configuration);
-        }
-
-        public void say(String s){
-                if(logger != null) {
-                        logger.log(" LsFileRequestStorage: "+s);
-                }
-        }
-
-        public void esay(String s){
-                if(logger != null) {
-                        logger.elog(" LsFileRequestStorage: "+s);
-                }
-        }
-
-        public void esay(Throwable t){
-                if(logger != null) {
-                        logger.elog(t);
-                }
         }
 
         protected FileRequest getFileRequest(Connection connection,

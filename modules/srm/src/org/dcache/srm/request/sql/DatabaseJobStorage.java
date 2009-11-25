@@ -1,6 +1,3 @@
-// $Id$
-// $Log: not supported by cvs2svn $
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -80,19 +77,20 @@ import java.util.HashSet;
 import java.util.Iterator;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.scheduler.Job;
-import org.dcache.srm.scheduler.Job.JobHistory;
 import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.JDC;
-import org.dcache.srm.Logger;
 import org.dcache.commons.util.SqlHelper;
+import org.apache.log4j.Logger;
 /**
  *
  * @author  timur
  */
 public abstract class DatabaseJobStorage implements JobStorage, Runnable {
+    private final static Logger logger =
+            Logger.getLogger(DatabaseJobStorage.class);
     
     protected static final String INDEX_SUFFIX="_idx";
 
@@ -101,7 +99,6 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
     private final String jdbcClass;
     private final String user;
     private final String pass;
-    protected Logger logger;
     protected boolean logHistory;
     protected static final String stringType=" VARCHAR(32672) ";
     protected static final String longType=" BIGINT ";
@@ -121,7 +118,6 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
         this.jdbcClass = configuration.getJdbcClass();
         this.user = configuration.getJdbcUser();
         this.pass = configuration.getJdbcPass();
-        this.logger = configuration.getStorage();
         this.logHistory = configuration.isJdbcLogRequestHistoryInDBEnabled();
         
         dbInit(configuration.isCleanPendingRequestsOnRestart());
@@ -129,23 +125,6 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
         new Thread(this,"update"+getTableName()).start();
     }
     
-    public void say(String s){
-        if(logger != null) {
-           logger.log(" DatabaseJobStorage: "+s);
-        }
-    }
-    
-    public void esay(String s){
-        if(logger != null) {
-           logger.elog(" DatabaseJobStorage: "+s);
-        }
-    }
-    
-    public void esay(Throwable t){
-        if(logger != null) {
-           logger.elog(t);
-        }
-    }
  
    
     public static final String createFileRequestTablePrefix =
@@ -280,7 +259,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                          srmStateTableName+" VALUES ("+
                          states[i].getStateId()+
                          ", '"+states[i].toString()+"' )";
-                        say("executing statement: "+insertState);
+                        logger.debug("executing statement: "+insertState);
                         Statement sqlStatement1 = null;
                         try{
                             sqlStatement1 = _con.createStatement();
@@ -288,7 +267,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                             _con.commit();
                         } catch(SQLException sqle) {
                             //ignoring, state might be already in the table
-                            esay(sqle);
+                            logger.error(sqle);
                         } finally {
                             SqlHelper.tryToClose(sqlStatement1);
                         }
@@ -363,7 +342,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
        if(jobId == null) {
            throw new NullPointerException ("jobId is null");
        }
-        say("executing statement: SELECT * FROM " + getTableName() + " WHERE ID=?" + "("+jobId +")");
+        logger.debug("executing statement: SELECT * FROM " + getTableName() + " WHERE ID=?" + "("+jobId +")");
         PreparedStatement statement =null;
         ResultSet set = null;
         try{
@@ -417,13 +396,11 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
         final Iterator historyIterator = job.getHistoryIterator();
         JdbcConnectionPool.JdbcTask task = 
             new JdbcConnectionPool.JdbcTask() {
+            @Override
              public String toString() {
                             return  "save Job and its history : ";
              }
 
-             public void innersay(String s) {
-                 say(" JdbcTask for Job "+jobId+" :"+s);
-             }
 
              public void execute(Connection connection) throws SQLException {
                 boolean locked = false;
@@ -439,8 +416,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                         connection.commit();
                     }
                     catch(SQLException sqle) {
-                        esay("storage of job="+jobId+" failed with ");
-                        esay(sqle);
+                        logger.error("storage of job="+jobId+" failed with ",sqle);
                         try {
                             connection.rollback();
                         }
@@ -485,8 +461,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                                     connection.commit();
                                 }
                                 catch(SQLException sqle) {
-                                    esay("storageof job="+jobId+" failed with ");
-                                    esay(sqle);
+                                    logger.error("storageof job="+jobId+" failed with ",sqle);
                                     try {
                                         sqlStatement.close();
                                     }
@@ -496,7 +471,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                                     }
                             }
                                             else {
-                                esay("update result is 0, but the record exists, ignore, but the job state might not be saved correctly");
+                                logger.error("update result is 0, but the record exists, ignore, but the job state might not be saved correctly");
                             }
                         }
                     } finally {
@@ -578,7 +553,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             Statement sqlStatement = _con.createStatement();
             String sqlStatementString = "SELECT * FROM " + getTableName() +
             " WHERE SCHEDULERID='"+schedulerId+"'";
-            say("executing statement: "+sqlStatementString);
+            logger.debug("executing statement: "+sqlStatementString);
             ResultSet set = sqlStatement.executeQuery(sqlStatementString);
             while(set.next()) {
                 Long ID = new Long(set.getLong(1));
@@ -610,8 +585,8 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                 set,
                 13 );
                 
-                say("==========> deserialization from database of job id"+job.getId());
-                say("==========> jobs submitter id is "+job.getSubmitterId());
+                logger.debug("==========> deserialization from database of job id"+job.getId());
+                logger.debug("==========> jobs submitter id is "+job.getSubmitterId());
                 jobs.add(job);
             }
             
@@ -640,11 +615,11 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
         java.util.List l = new java.util.ArrayList();
         String select = "SELECT * FROM " +getHistoryTableName()+
         " WHERE JOBID="+jobId;
-        say("executing statement: "+select);
+        logger.debug("executing statement: "+select);
         Statement statement = _con.createStatement();
         ResultSet set = statement.executeQuery(select);
         if(!set.next()) {
-            say("no history elements in table "+getHistoryTableName() +" found, returning NULL");
+            logger.debug("no history elements in table "+getHistoryTableName() +" found, returning NULL");
             statement.close();
             return null;
         }
@@ -661,7 +636,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                         TRANSITIONTIME);
             jh.setSaved();
             l.add(jh);
-            say("found JobHistory:"+jh.toString());
+            logger.debug("found JobHistory:"+jh.toString());
 
         } while (set.next());
         statement.close();
@@ -680,7 +655,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             Statement sqlStatement = _con.createStatement();
             String sqlStatementString = "SELECT ID FROM " + getTableName() +
             " WHERE SCHEDULERID is NULL and State="+State.PENDING.getStateId();
-            say("executing statement: "+sqlStatementString);
+            logger.debug("executing statement: "+sqlStatementString);
             ResultSet set = sqlStatement.executeQuery(sqlStatementString);
             //save in the memory the ids to prevent the exhaust of the connections
             // so we return connections before trying to schedule the pending 
@@ -704,7 +679,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                     _con);
                     scheduler.schedule(job);
                 } catch (SRMInvalidRequestException ire) {
-                    logger.elog(ire);
+                    logger.error(ire);
                 }
             }
         }
@@ -734,7 +709,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
             Statement sqlStatement = _con.createStatement();
             String sqlStatementString = "SELECT ID FROM " + getTableName() +
             " WHERE SCHEDULERID is NULL and State="+State.PENDING.getStateId();
-            say("executing statement: "+sqlStatementString);
+            logger.debug("executing statement: "+sqlStatementString);
             ResultSet set = sqlStatement.executeQuery(sqlStatementString);
             //save in the memory the ids to prevent the exhaust of the connections
             // so we return connections before trying to restore the pending 
@@ -757,7 +732,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
                     Job job = Job.getJob(ID,
                     _con);
                 } catch (SRMInvalidRequestException ire) {
-                    logger.elog(ire);
+                    logger.error(ire);
                 }
                 
             }
@@ -784,7 +759,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
             Statement sqlStatement = _con.createStatement();
             String sqlStatementString = "SELECT ID FROM " + getTableName() +
             " WHERE "+sqlCondition+" ";
-            say("executing statement: "+sqlStatementString);
+            logger.debug("executing statement: "+sqlStatementString);
             ResultSet set = sqlStatement.executeQuery(sqlStatementString);
             while(set.next()) {
                 Long ID = new Long(set.getLong(1));
@@ -827,7 +802,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
                 sqlStatementString += " WHERE SCHEDULERID='"+schedulerId+'\'';
             }
             sqlStatementString += " AND STATE='"+state.getStateId()+"' ";
-            say("executing statement: "+sqlStatementString);
+            logger.debug("executing statement: "+sqlStatementString);
             set = sqlStatement.executeQuery(sqlStatementString);
             while(set.next()) {
                 Long ID = set.getLong(1);
@@ -858,8 +833,8 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
                 LASTSTATETRANSITIONTIME, 
                 set,
                 13 );
-                say("==========> deserialization from database of "+job);
-                say("==========> jobs creator is "+job.getSubmitterId());
+                logger.debug("==========> deserialization from database of "+job);
+                logger.debug("==========> jobs creator is "+job.getSubmitterId());
                 jobs.add(job);
             }
             
@@ -915,17 +890,16 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
                  
                  */
             if(!tableRs.next()) {
-                say("DatabaseMetaData.getTables returned empty result set");
+                logger.debug("DatabaseMetaData.getTables returned empty result set");
                 try {
-                    say(tableName+" does not exits");
+                    logger.debug(tableName+" does not exits");
                     Statement s = _con.createStatement();
-                    say("executing statement: "+createStatement);
+                    logger.debug("executing statement: "+createStatement);
                     int result = s.executeUpdate(createStatement);
                     s.close();
                 }
                 catch(SQLException sqle) {
-                    esay(sqle);
-                    esay("relation could already exist (bug in postgres driver), ignoring");
+                    logger.error("relation could already exist (bug in postgres driver), ignoring",sqle);
                 }
             }
             else if(verify)
@@ -945,13 +919,14 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
                         " has wrong number of fields: "+columnIndex+", should be :"+getColumnNum());
                     }
                 } catch(SQLException sqle) {
-                    esay("Verification failed: "+sqle);
-                    esay("trying to rename the table and create the new one");
+                    logger.error("Verification failed, "+
+                            "trying to rename the table and create the new one",
+                            sqle);
                     renameTable(tableName,_con);
                     reanamed_old_table = true;
                     
                     Statement s = _con.createStatement();
-                    esay("executing statement: "+createStatement);
+                    logger.error("executing statement: "+createStatement);
                     int result = s.executeUpdate(createStatement);
                     s.close();
                 }
@@ -961,7 +936,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
                         " SET STATE="+State.DONE.getStateId()+
                         " WHERE STATE="+State.READY.getStateId();
                     Statement s = _con.createStatement();
-                    say("executing statement: "+sqlStatementString);
+                    logger.debug("executing statement: "+sqlStatementString);
                     int result = s.executeUpdate(sqlStatementString);
                     s.close();
                     sqlStatementString = "UPDATE " + getTableName() +
@@ -970,7 +945,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
                             " STATE !="+State.CANCELED.getStateId()+" AND "+
                             " STATE !="+State.DONE.getStateId();
                     s = _con.createStatement();
-                    say("executing statement: "+sqlStatementString);
+                    logger.debug("executing statement: "+sqlStatementString);
                     result = s.executeUpdate(sqlStatementString);
                     s.close();
             }
@@ -989,7 +964,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
             throw sqe;
         }
         catch (Exception ex) {
-            esay(ex);
+            logger.error(ex);
             if(_con != null) {
                 pool.returnFailedConnection(_con);
                 _con = null;
@@ -1023,7 +998,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
             throw sqe;
         }
         catch (Exception ex) {
-            esay(ex);
+            logger.error(ex);
             if(_con != null) {
                 pool.returnFailedConnection(_con);
                 _con = null;
@@ -1044,7 +1019,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
             String alterStatement = "ALTER TABLE "+oldName+
             " RENAME TO "+oldName+"_RENAMED_ON_"+System.currentTimeMillis();
             Statement s = _con.createStatement();
-            esay("executing statement: "+alterStatement);
+            logger.error("executing statement: "+alterStatement);
             return s.executeUpdate(alterStatement);
          */
         
@@ -1054,7 +1029,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
         // of the new index
             String dropStatement = "DROP TABLE "+oldName+ " CASCADE";
             Statement s = _con.createStatement();
-            esay("executing statement: "+dropStatement);
+            logger.error("executing statement: "+dropStatement);
             int result =  s.executeUpdate(dropStatement);
             s.close();
             return result;
@@ -1091,7 +1066,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
 				}
 			}
 			if (listOfColumnsToBeIndexed.size()==0) { 
-				say("all indexes were already made for table "+tableName);
+				logger.debug("all indexes were already made for table "+tableName);
                                 _con.setAutoCommit(false);
 				pool.returnConnection(_con);
 				_con =null;
@@ -1115,7 +1090,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
 			throw sqe;
 		}
 		catch (Exception ex) {
-			esay(ex);
+			logger.error(ex);
 			if(_con != null) {
 				pool.returnFailedConnection(_con);
 				_con = null;
@@ -1150,7 +1125,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
 			while (index_rset.next()) {
 				String s = index_rset.getString("index_name").toLowerCase();
 				if (indexname.equals(s)){
-                                    say("index "+indexname+" already exists");
+                                    logger.debug("index "+indexname+" already exists");
                                     _con.setAutoCommit(false);
                                     pool.returnConnection(_con);
                                     _con =null;
@@ -1170,7 +1145,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
 			throw sqe;
 		}
 		catch (Exception ex) {
-			esay(ex);
+			logger.error(ex);
 			if(_con != null) {
 				pool.returnFailedConnection(_con);
 				_con = null;
@@ -1193,13 +1168,12 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
         String createIndexStatementText = "CREATE INDEX "+indexName+
             " ON "+tableName+" ("+column_or_expression+")";
         Statement createIndexStatement = _con.createStatement();
-        say("Executing "+createIndexStatementText);
+        logger.debug("Executing "+createIndexStatementText);
         try { 
         	createIndexStatement.executeUpdate(createIndexStatementText);
         }
         catch (Exception e) { 
-        	esay("failed to execute : "+createIndexStatementText);
-        	esay(e);
+        	logger.error("failed to execute : "+createIndexStatementText,e);
         }
         createIndexStatement.close();
     }
@@ -1381,7 +1355,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
                 Thread.sleep(update_period);
             } 
             catch(InterruptedException ie) {
-                esay("database update thread interrupted");
+                logger.error("database update thread interrupted");
                 return;
             }
             long currenttime = System.currentTimeMillis();
@@ -1396,11 +1370,11 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
                         " WHERE CREATIONTIME+LIFETIME < "+
                         cutout_expiration_time;
                         Statement s = _con.createStatement();
-                        //say("executing statement: "+sqlStatementString);
+                        //logger.debug("executing statement: "+sqlStatementString);
                         int result = s.executeUpdate(sqlStatementString);
                         s.close();
                         _con.commit();
-                        //say("deleted "+result+" records ");
+                        //logger.debug("deleted "+result+" records ");
                }
                 catch (SQLException sqe) {
                     if(_con != null) {
@@ -1409,7 +1383,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
                     }
                 }
                 catch (Exception ex) {
-                    esay(ex);
+                    logger.error(ex);
                     if(_con != null) {
                         pool.returnFailedConnection(_con);
                         _con = null;
