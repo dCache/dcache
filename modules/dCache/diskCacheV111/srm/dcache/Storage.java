@@ -3191,6 +3191,9 @@ public class Storage
             (verbose
              ? DcacheFileMetaData.getKnownAttributes()
              : EnumSet.of(SIZE, SIMPLE_TYPE));
+        if (verbose) {
+            required.add(LOCATIONS);
+        }
         final String prefix =
             !directory.endsWith("/") ? directory + "/" : directory;
         final List<FileMetaData> result = new ArrayList<FileMetaData>();
@@ -3205,11 +3208,11 @@ public class Storage
                 public void print(FileAttributes dirAttr, DirectoryEntry entry)
                 {
                     FileAttributes attributes = entry.getFileAttributes();
-                    PnfsId pnfsId = attributes.getPnfsId();
                     DcacheFileMetaData fmd = new DcacheFileMetaData(attributes);
                     fmd.SURL = prefix + entry.getName();
 
                     if (verbose && attributes.getFileType() != FileType.DIR) {
+                        PnfsId pnfsId = attributes.getPnfsId();
                         fmd.isCached = isCached(attributes);
 
                         try {
