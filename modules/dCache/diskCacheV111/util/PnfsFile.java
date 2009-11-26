@@ -877,7 +877,9 @@ public class PnfsFile extends File  {
                      }
                   }
                } catch (IOException e) {
-                   _logNameSpace.debug( "  skipping entry " + fs + " as it triggered IOException: " + e.getMessage());
+                   _logNameSpace.debug( "  skipping entry " + fs + " as it triggered " + e.getClass().getSimpleName() + ": " + e.getMessage());
+               } catch (IllegalArgumentException e) {
+                   _logNameSpace.debug( "  skipping entry " + fs + " as it triggered " + e.getClass().getSimpleName() + ": " + e.getMessage());
                }
             }
       } catch (IOException e) {
