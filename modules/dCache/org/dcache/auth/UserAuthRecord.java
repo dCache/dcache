@@ -6,7 +6,7 @@ import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.Basic;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.Set;
 import java.util.TreeSet;
 
 
@@ -14,7 +14,7 @@ public class UserAuthRecord extends UserAuthBase
 {
     private static final long serialVersionUID = 2212212275053022221L;
 
-    public TreeSet<String> principals;
+    public Set<String> principals;
     public int[] GIDs;
     public int currentGIDindex=0;
 
@@ -28,7 +28,7 @@ public class UserAuthRecord extends UserAuthBase
                           String home,
                           String root,
                           String fsroot,
-                          HashSet<String> principals)
+                          Set<String> principals)
     {
         super(user, DN, fqan, readOnly, priority, uid, (GIDs!=null && GIDs.length>0) ? GIDs[0] : -1, home, root, fsroot);
         this.GIDs = GIDs;
@@ -45,7 +45,7 @@ public class UserAuthRecord extends UserAuthBase
                           String home,
                           String root,
                           String fsroot,
-                          HashSet<String> principals)
+                          Set<String> principals)
     {
         this(user, DN, fqan, readOnly, priority, uid, new int[]{gid}, home, root, fsroot, principals);
     }
@@ -58,7 +58,7 @@ public class UserAuthRecord extends UserAuthBase
                           String home,
                           String root,
                           String fsroot,
-                          HashSet<String> principals)
+                          Set<String> principals)
     {
         super(user, readOnly, uid, (GIDs!=null && GIDs.length>0) ? GIDs[0] : -1, home, root, fsroot);
         this.GIDs = GIDs;
@@ -72,7 +72,7 @@ public class UserAuthRecord extends UserAuthBase
                           String home,
                           String root,
                           String fsroot,
-                          HashSet<String> principals)
+                          Set<String> principals)
     {
         super(user, readOnly, uid, gid, home, root, fsroot);
         this.GIDs = new int[]{gid};
@@ -80,7 +80,7 @@ public class UserAuthRecord extends UserAuthBase
     }
 
     /**
-     * nonprivate default constructor to sutisfy the JPA requirements
+     * nonprivate default constructor to satisfy the JPA requirements
      */
     public UserAuthRecord() {
     }
@@ -198,12 +198,12 @@ public class UserAuthRecord extends UserAuthBase
         principals.add(id);
     }
 
-    public void addSecureIdentities(HashSet<String> ids)
+    public void addSecureIdentities(Set<String> ids)
     {
         principals.addAll(ids);
     }
 
-    public void removeSecureIdentities(HashSet<String> ids)
+    public void removeSecureIdentities(Set<String> ids)
     {
         principals.removeAll(ids);
     }
