@@ -1213,18 +1213,8 @@ public class BasicNameSpaceProvider
                 case STORAGEINFO:
                     attributes.setStorageInfo(getStorageInfo(subject, pnfsId));
                     break;
-                case ACCESS_TIME:
-                case CREATION_TIME:
-                case MODIFICATION_TIME:
-                case MODE:
-                case OWNER:
-                case OWNER_GROUP:
-                case TYPE:
-                    /* These are processed below.
-                     */
-                    break;
                 default:
-                    throw new UnsupportedOperationException("Attribute " + attribute + " not supported yet.");
+                    break;
                 }
             }
 
