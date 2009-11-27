@@ -100,8 +100,6 @@ public class PnfsManagerV3 extends CellAdapter
         _counters.addCounter(PnfsGetFileMetaDataMessage.class);
         _counters.addCounter(PnfsSetFileMetaDataMessage.class);
         _counters.addCounter(PnfsSetLengthMessage.class);
-        _counters.addCounter(PnfsGetCacheStatisticsMessage.class);
-        _counters.addCounter(PnfsUpdateCacheStatisticsMessage.class);
         _counters.addCounter(PnfsMapPathMessage.class);
         _counters.addCounter(PnfsRenameMessage.class);
         _counters.addCounter(PnfsFlagMessage.class);
@@ -129,7 +127,6 @@ public class PnfsManagerV3 extends CellAdapter
     private final Class[] DISCARD_EARLY = {
         PnfsGetCacheLocationsMessage.class,
         PnfsGetStorageInfoMessage.class,
-        PnfsGetCacheStatisticsMessage.class,
         PnfsMapPathMessage.class,
         PnfsGetFileMetaDataMessage.class,
         PnfsGetParentMessage.class,
@@ -1340,17 +1337,6 @@ public class PnfsManagerV3 extends CellAdapter
         }
     }
 
-    public void getCacheStatistics(PnfsGetCacheStatisticsMessage pnfsMessage){
-        PnfsId pnfsId = pnfsMessage.getPnfsId();
-        say("get cache statistics for "+pnfsId);
-        pnfsMessage.setFailed( 5 , "Not supported" ) ;
-    }
-
-    public void updateCacheStatistics(PnfsUpdateCacheStatisticsMessage pnfsMessage){
-        PnfsId pnfsId = pnfsMessage.getPnfsId();
-        say("update cache statistics for "+pnfsId);
-        pnfsMessage.setFailed( 5 , "Not supported" ) ;
-    }
 
     /**
      * PnfsListDirectoryMessages can have more than one reply. This is
@@ -1656,12 +1642,6 @@ public class PnfsManagerV3 extends CellAdapter
         }
         else if (pnfsMessage instanceof PnfsSetLengthMessage){
             setLength((PnfsSetLengthMessage)pnfsMessage);
-        }
-        else if (pnfsMessage instanceof PnfsGetCacheStatisticsMessage){
-            getCacheStatistics((PnfsGetCacheStatisticsMessage)pnfsMessage);
-        }
-        else if (pnfsMessage instanceof PnfsUpdateCacheStatisticsMessage){
-            updateCacheStatistics((PnfsUpdateCacheStatisticsMessage)pnfsMessage);
         }
         else if (pnfsMessage instanceof PnfsMapPathMessage){
             mapPath((PnfsMapPathMessage)pnfsMessage);

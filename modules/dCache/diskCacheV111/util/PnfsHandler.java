@@ -13,7 +13,6 @@ import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
-import diskCacheV111.vehicles.CacheStatistics;
 import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsCreateDirectoryMessage;
@@ -21,7 +20,6 @@ import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
 import diskCacheV111.vehicles.PnfsFlagMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
-import diskCacheV111.vehicles.PnfsGetCacheStatisticsMessage;
 import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PnfsMapPathMessage;
@@ -442,19 +440,6 @@ public class PnfsHandler
     {
         pnfsRequest(new PnfsDeleteEntryMessage(pnfsid, path, allowed));
     }
-
-   public CacheStatistics getCacheStatistics( String pnfsId ) {
-      try{
-         return _getCacheStatistics( pnfsId ) ;
-      }catch(CacheException ce ){
-         return new CacheStatistics( pnfsId ) ;
-      }
-   }
-   public CacheStatistics _getCacheStatistics( String pnfsId )
-          throws CacheException {
-
-       return pnfsRequest( new PnfsGetCacheStatisticsMessage( pnfsId )).getCacheStatistics();
-   }
 
    /**
     * Getter for property __pnfsTimeout.
