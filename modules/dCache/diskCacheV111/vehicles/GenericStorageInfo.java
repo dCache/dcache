@@ -13,9 +13,9 @@ import org.apache.log4j.Logger;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
 
-public class GenericStorageInfo implements StorageInfo,
-java.io.Serializable {
-
+public class GenericStorageInfo
+    implements StorageInfo
+{
     private static Logger _logger = Logger.getLogger( GenericStorageInfo.class);
 
     static final long serialVersionUID = 2089636591513548893L;
@@ -27,8 +27,8 @@ java.io.Serializable {
     private AccessLatency _accessLatency = StorageInfo.DEFAULT_ACCESS_LATENCY;
     private RetentionPolicy _retentionPolicy = StorageInfo.DEFAULT_RETENTION_POLICY;
 
-    private Map<String, String> _keyHash = new HashMap<String, String>();
-    private List<URI> _locations = new ArrayList<URI>();
+    private HashMap<String, String> _keyHash = new HashMap<String, String>();
+    private ArrayList<URI> _locations = new ArrayList<URI>();
     private boolean _setHsm = false;
     private boolean _setStorageClass = false;
     private boolean _setBitFileId = false;
@@ -353,4 +353,17 @@ java.io.Serializable {
 
     }
 
+    @Override
+    public GenericStorageInfo clone()
+    {
+        try {
+            GenericStorageInfo copy = (GenericStorageInfo) super.clone();
+            copy._keyHash = (HashMap<String,String>) copy._keyHash.clone();
+            copy._locations = (ArrayList<URI>) copy._locations.clone();
+            return copy;
+        } catch (CloneNotSupportedException e) {
+            throw new RuntimeException("Failed to clone storage info: " +
+                                       e.getMessage());
+        }
+    }
 }
