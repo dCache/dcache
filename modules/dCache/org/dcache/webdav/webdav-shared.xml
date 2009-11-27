@@ -57,6 +57,10 @@
     <property name="gplazmaStub" ref="gplazma-stub"/>
   </bean>
 
+  <bean id="logging-filter" class="org.dcache.webdav.LoggingFilter">
+    <description>Logs all requests</description>
+  </bean>
+
   <bean id="response-handler"
         class="com.bradmcevoy.http.DefaultResponseHandler">
     <description>Generates WebDAV responses</description>
@@ -85,6 +89,7 @@
     <property name="filters">
       <list>
         <ref bean="security-filter"/>
+        <ref bean="logging-filter"/>
       </list>
     </property>
   </bean>
