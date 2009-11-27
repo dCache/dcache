@@ -1387,7 +1387,7 @@ public class PoolV4
             throws CacheException, NoRouteToCellException
         {
             PnfsId pnfsId = entry.getPnfsId();
-            StorageInfo storageInfo = entry.getStorageInfo();
+            StorageInfo storageInfo = entry.getStorageInfo().clone();
 
             storageInfo.setKey("replication.source", source);
 

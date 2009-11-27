@@ -254,6 +254,25 @@ public class StorageInfoTest {
         assertFalse("not equal by BitfileId storageInfo pass", storageInfo.equals(otherInfo) );
     }
 
+    @Test
+    public void testClone() throws URISyntaxException
+    {
+        StorageInfo storageInfo = new GenericStorageInfo("osm", "h1:raw");
+
+        final String URI_STRING = "osm://osm/&foo=bar";
+
+        storageInfo.setBitfileId("1");
+        storageInfo.addLocation(new URI(URI_STRING));
+        storageInfo.addLocation(new URI(URI_STRING));
+        storageInfo.setKey("bla", "bla");
+        storageInfo.setFileSize(17);
+        storageInfo.setRetentionPolicy(RetentionPolicy.REPLICA);
+        storageInfo.setAccessLatency(AccessLatency.NEARLINE);
+
+        assertTrue("Clone is not equals to original",
+                   storageInfo.equals(storageInfo.clone()));
+    }
+
     private static StorageInfo readStorageInfo(File objIn) throws IOException {
 
         ObjectInputStream in = null;
