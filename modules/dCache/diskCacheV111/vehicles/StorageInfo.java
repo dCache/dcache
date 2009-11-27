@@ -12,27 +12,29 @@ import diskCacheV111.util.AccessLatency;
   *  is extracted out of Pnfs with the help of the
   *  responsible implementation of <strong>StorageInfoExtractor</strong>
   *  according to hsmType.
-  *    
-  * 
+  *
+  *
   *  to represent location of the file with in HSM hierarchical syntax is used:
-  * 
+  *
   *  <strong>[scheme:][//authority][path][?query][#fragment]</strong>
   *  where:
   * 	scheme    : hsm type
   * 	authority : instance id
   * 	path+query: opaque to dCache HSM specific data
-  *  
+  *
   *  example:
   * 	osm://desy-main/?store=h1&bfid=1234
   *		osm://desy-copy/?store=h1_d&bfid=5678
-  * 
-  *  
+  *
+  *
   */
-public interface StorageInfo extends java.io.Serializable {
+public interface StorageInfo
+    extends java.io.Serializable, Cloneable
+{
 
     /**
      * Classic dCache default all files go to tape and can be removed
-     * from the pool afterwards. 
+     * from the pool afterwards.
      */
     public static final AccessLatency DEFAULT_ACCESS_LATENCY = AccessLatency.NEARLINE;
     public static final RetentionPolicy DEFAULT_RETENTION_POLICY = RetentionPolicy.CUSTODIAL;
@@ -47,51 +49,51 @@ public interface StorageInfo extends java.io.Serializable {
       *   The storage class determines the grouping behavior
       *   concerning <strong>deferredWrites</strong> and
       *   <strong>poolSelection</strong>.
-      *   
+      *
       */
     public String getStorageClass() ;
     public void setStorageClass( String newStorageClass);
-    
+
     @Deprecated
     /**
      * use addLocation(URI newLocation);
      */
-    
+
     public void   setBitfileId( String bitfileId ) ;
     @Deprecated
     /**
      * use List<URI> locations();
      */
     public String getBitfileId() ;
-        
+
     /**
-     * 
+     *
      * @return list of know locations
      * @since 1.8
      */
     public List<URI> locations();
-    
+
     /**
      * add a new location for the file
      * @param newLocation
      * @since 1.8
      */
     public void addLocation(URI newLocation);
-    
+
     /**
-     * 
-     * @return true if new location is added and 
+     *
+     * @return true if new location is added and
      * have to be stored by PnfsManager
      * @since 1.8
      */
     public boolean isSetAddLocation();
     public void isSetAddLocation( boolean isSet );
 
-    
+
     /**
       * The 'cacheClass' can be used as alternative to chose the
       * appropriate 'pool'. Pnfs may provide the information
-      * in the 'cacheClass' tag. May return 'null'  if not 
+      * in the 'cacheClass' tag. May return 'null'  if not
       * precified.
       */
     public String getCacheClass() ;
@@ -111,18 +113,18 @@ public interface StorageInfo extends java.io.Serializable {
     public void   setFileSize( long fileSize ) ;
     /**
       * Determines whether the file exists somewhere (cache or HSM)
-      * or not. Currently isCreatedOnly returns true is the 
+      * or not. Currently isCreatedOnly returns true is the
       * size of the level-0 file is not zero.
       */
     public boolean isCreatedOnly() ;
     public void setIsNew(boolean isNew);
     /**
-      * 
+      *
       * @return true if locations list is not empty or ( legacy case )
       * if value was explicit set by setIsStored(true)
-      */        
+      */
     public boolean isStored() ;
-    
+
 	/**
 	 * @Deprecated the result will generated depending on content of locations
 	 */
@@ -135,7 +137,7 @@ public interface StorageInfo extends java.io.Serializable {
       *  found.
       */
     public String  getKey( String key ) ;
-    
+
     /**
      * add/set new value for specified key. If value is null,
      * corresponding entry is removed.
@@ -147,24 +149,24 @@ public interface StorageInfo extends java.io.Serializable {
       * Returns a COPY of the internal key,value map.
       */
     public Map<String, String>     getMap() ;
-    
-    
+
+
     /*
-     * specify which fields have to be updated 
-     */     
-    
+     * specify which fields have to be updated
+     */
+
     public boolean isSetHsm();
     public void isSetHsm( boolean isSet );
-    
+
     public boolean isSetStorageClass();
     public void isSetStorageClass( boolean isSet) ;
-    
+
     public boolean isSetBitFileId();
     public void isSetBitFileId( boolean isSet);
-    
+
     // RetentionPolicy related methods
-    // we use the class RetentionPolicy instead 
-    // of the string value to allow the storage 
+    // we use the class RetentionPolicy instead
+    // of the string value to allow the storage
     // of the numeric values in the underlying pnfs
     // in order to save space in pnfs
     public RetentionPolicy getRetentionPolicy() ;
@@ -173,8 +175,8 @@ public interface StorageInfo extends java.io.Serializable {
     public void isSetRetentionPolicy( boolean isSet );
 
     // AccessLatency related methods
-    // we use the class AccessLatency instead 
-    // of the string value to allow the storage 
+    // we use the class AccessLatency instead
+    // of the string value to allow the storage
     // of the numeric values in the underlying pnfs
     // in order to save space in pnfs
     public AccessLatency getAccessLatency() ;
@@ -182,5 +184,5 @@ public interface StorageInfo extends java.io.Serializable {
     public boolean isSetAccessLatency();
     public void isSetAccessLatency( boolean isSet );
 
-    
-} 
+    public StorageInfo clone();
+}

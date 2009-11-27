@@ -920,7 +920,7 @@ public class HsmStorageHandler2
                 StorageInfo storageInfo;
                 ReadHandle handle = _repository.openEntry(pnfsId);
                 try {
-                    storageInfo = handle.getEntry().getStorageInfo();
+                    storageInfo = handle.getEntry().getStorageInfo().clone();
                     _infoMsg.setStorageInfo(storageInfo);
                     _infoMsg.setFileSize(storageInfo.getFileSize());
                     long now = System.currentTimeMillis();
