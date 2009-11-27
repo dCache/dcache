@@ -13,13 +13,13 @@ import dmg.cells.nucleus.CellPath;
 
 import org.dcache.tests.cells.GenericMockCellHelper;
 
-import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.poolManager.CostModuleV1;
 import diskCacheV111.poolManager.PartitionManager;
 import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnitV2;
 import diskCacheV111.poolManager.PoolMonitorV5.PnfsFileLocation;
+import diskCacheV111.pools.CostCalculationEngine;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.PnfsHandler;
@@ -62,6 +62,7 @@ public class PoolMonitorTest {
         _poolMonitor.setPnfsHandler(_pnfsHandler);
         _poolMonitor.setCostModule(_costModule);
         _poolMonitor.setPartitionManager(_partitionManager);
+        _costModule.setCostCalculationEngine(new CostCalculationEngine("diskCacheV111.pools.CostCalculationV5"));
     }
 
 
@@ -107,10 +108,8 @@ public class PoolMonitorTest {
         PoolManagerPoolUpMessage pool2UpMessage = new PoolManagerPoolUpMessage("pool2",
                 serialId, poolMode, poolCost2);
 
-        CellMessage cellMessage1 = new CellMessage( new CellPath("CostModule"), pool1UpMessage);
-        CellMessage cellMessage2 = new CellMessage( new CellPath("CostModule"), pool2UpMessage);
-        _costModule.messageArrived(cellMessage1);
-        _costModule.messageArrived(cellMessage2);
+        _costModule.messageArrived(pool1UpMessage);
+        _costModule.messageArrived(pool2UpMessage);
 
         /*
          * one pool have the file
