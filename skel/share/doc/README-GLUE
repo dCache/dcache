@@ -279,3 +279,90 @@ file; that is, you will need to edit this file before the published
 value(s) will change.  These values are ones that typically a
 site-admin must choose independently of dCache's current operations.
 
+
+
+Troubleshooting BDII problems
+----
+
+The BDII log files may show entries like:
+
+   ==> slapadd: could not parse entry (line=26)
+   Error nearby dn:
+   GlueVOInfoLocalID=atl[...],o=grid ==>
+   str2entry: invalid value for attributeType GlueSATotalOnlineSize #0
+   (syntax 1.3.6.1.4.1.1466.115.121.1.27)
+
+This kind of problem comes when BDII is attempting to inject new
+information into the OpenLDAP server.  This server is rejecting some
+of that information because it is badly formatted.  In this example,
+"1.3.6.1.4.1.1466.115.121.1.27" is LDAP-speak for "an integer number".
+The offending attribute has a value of "#0", which isn't an integer
+number.
+
+It seems that the "nearby dn" description of the report should be
+ignored.  It is unclear how the decision is made about which object is
+"nearby", but it's usually inaccurate.  Instead, the important piece
+of information is the line number ("line=26" in above).  BDII injects
+fresh information into the OpenLDAP server from a file and the line
+number mentioned in the error message is from this file. 
+
+The following two sections describe how to locate the injection file
+for BDII v4 and v5.  When mentioning file locations, defaults have
+been included in parentheses.  Since many sites deploy BDII with
+minimal changes the default locations are likely correct.
+
+
+
+Locating BDII v4 injection LDIF files:
+
+The default location is /opt/bdii/var/cache/1/GIP.ldif
+
+The file /opt/bdii/etc/bdii.conf contains various configuration
+options for BDII; for example, if this file has the line
+BDII_DIR=/opt/bdii then $bdii_dir is /opt/bdii.
+
+The file $bdii_dir/etc/bdii-update.conf
+(/opt/bdii/etc/bdii-update.conf) contains a list describing methods
+for obtaining LDIF information.  When updating the contents of a
+server, BDII will obtain LDIF information from each source and attempt
+to inject the data into the OpenLDAP server.  bdii-update.conf is
+likely to contain a single line:
+
+    GIP file:///opt/glite/libexec/glite-info-wrapper
+
+Each line has two parts.  The second part is a URI describing how to
+obtain the data.  If the URI starts file:// (as above) then the file
+is executed and the LDIF is taken from the process' stdout.  The first
+part ("GIP" in above example) is used to specify the file-name for the
+combined output ("GIP.ldif") within the $bdii_var_dir/cache directory
+(/opt/bdii/var/cache) hierarchy.
+
+The output from the various sources defined in bdii-update.conf is
+stored as files within the $bdii_var-dir/cache/0 directory
+(/opt/bdii/var/cache/0).  After fresh data is injected, the cache
+directories are moved, so cache/0 becomes cache/1, cache/1 becomes
+cache/2, and so on.  The result is that, after injecting, the LDIF
+output will be in directory $bdii_var-dir/cache/1
+(/opt/bdii/var/cache/1).
+
+
+
+Locating BDII v5 injection LDIF files:
+
+The default location is /var/bdii/old.ldif
+
+As with BDII v4, the file /opt/bdii/etc/bdii.conf contains high-level
+information, such as in which directories information will be stored.
+
+The update process in BDII v5 is different from v4, so the generated
+files are different.  With v5, BDII maintains knowledge of the current
+state of the LDAP server in the file BDII_VAR_DIR/old.ldif
+(/var/bdii/old.ldif).  It uses this information generate a description
+of how to modify the local BDII server (by adding, removing and
+modifying attributes and objects as necessary).
+
+
+
+Once the injection LDIF file is located, the line number may be used
+to discover which object is causing the problem, so enabling further
+investigation.
