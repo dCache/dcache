@@ -32,7 +32,7 @@ public class PnfsSetFileAttributes extends PnfsMessage {
      * @param attr
      */
     public PnfsSetFileAttributes(String path, FileAttributes attr) {
-        super(path);
+        setPnfsPath(path);
         _fileAttributes = attr;
     }
 
