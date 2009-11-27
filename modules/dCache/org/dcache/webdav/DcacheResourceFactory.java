@@ -24,6 +24,7 @@ import java.security.AccessController;
 
 import com.bradmcevoy.http.Resource;
 import com.bradmcevoy.http.Request;
+import com.bradmcevoy.http.HttpManager;
 import com.bradmcevoy.http.ResourceFactory;
 import com.bradmcevoy.http.SecurityManager;
 import com.bradmcevoy.http.XmlWriter;
@@ -496,7 +497,9 @@ public class DcacheResourceFactory
             };
         w.open("html");
         w.open("body");
-        w.begin("h1").open().writeText(path.toString()).close();
+
+        Request request = HttpManager.request();
+        w.begin("h1").open().writeText(request.getAbsolutePath()).close();
         w.open("table");
         _list.printDirectory(getSubject(), printer,
                              new File(path.toString()), null, null);
