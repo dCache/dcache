@@ -525,6 +525,15 @@
                   path="d:metric[@name='vo']"/>
             </attr>
 
+	    <!-- Publish the total size of the space as the ReservedOnlineSize -->
+            <attr name="GlueSAReservedOnlineSize">
+              <scale to-integer="round"
+                     factor="bytes-to-gigabytes">
+                <lookup default="0"
+                        child="path">d:space/d:metric[@name='total']</lookup>
+              </scale>
+	    </attr>
+
             <attr name="GlueSATotalOnlineSize">
               <scale to-integer="round"
                      factor="bytes-to-gigabytes">
@@ -1309,6 +1318,33 @@
           <lookup default="UNDEFINEDVALUE"
 		  path="/d:dCache/d:domains/d:domain[@name='dCacheDomain']/d:cells/d:cell[@name='PoolManager']/d:version/d:metric[@name='release']"/>
         </map>
+      </attr>
+
+      <!-- GlueSESizeTotal and GlueSESizeFree are marked as
+           "deprecated" in Glue-1.3, but Installed Capacity document
+           says we SHOULD publish them -->
+
+      <attr name="GlueSESizeTotal">
+        <scale to-integer="round" factor="bytes-to-gigabytes">
+          <lookup default="0"
+                  path="/d:dCache/d:summary/d:pools/d:space/d:metric[@name='total']"/>
+        </scale>
+      </attr>
+
+      <attr name="GlueSESizeFree">
+        <scale to-integer="round" factor="bytes-to-gigabytes">
+	  <!-- Publish Free as free + removable -->
+          <sum>
+            <term>
+              <lookup default="0"
+                      path="/d:dCache/d:summary/d:pools/d:space/d:metric[@name='free']"/>
+            </term>
+            <term>
+              <lookup default="0"
+                      path="/d:dCache/d:summary/d:pools/d:space/d:metric[@name='removable']"/>
+            </term>
+          </sum>
+        </scale>
       </attr>
 
       <attr name="GlueSETotalOnlineSize">
