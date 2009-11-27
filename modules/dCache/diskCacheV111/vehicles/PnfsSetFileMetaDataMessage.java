@@ -14,10 +14,6 @@ public class PnfsSetFileMetaDataMessage extends PnfsMessage {
        super() ;
        setReplyRequired(false);
     }
-    public PnfsSetFileMetaDataMessage( String pnfsId ){
-        super( pnfsId ) ;
-	setReplyRequired(false);
-    }
     public PnfsSetFileMetaDataMessage( PnfsId pnfsId ){
         super( pnfsId ) ;
 	setReplyRequired(false);

@@ -9,10 +9,6 @@ public class PnfsModifyCacheLocationMessage extends PnfsMessage {
 
     private static final long serialVersionUID = -7996549495498661141L;
     
-    public PnfsModifyCacheLocationMessage(String pnfsId, String poolName){
-	super(pnfsId);
-	_poolName = poolName;
-    }
     public PnfsModifyCacheLocationMessage(PnfsId pnfsId, String poolName){
 	super(pnfsId);
 	_poolName = poolName;

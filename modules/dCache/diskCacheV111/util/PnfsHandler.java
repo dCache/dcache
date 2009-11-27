@@ -167,13 +167,6 @@ public class PnfsHandler
         }
     }
 
-    //
-    //
-    public void clearCacheLocation(String pnfsId)
-    {
-        notify(new PnfsClearCacheLocationMessage(pnfsId, _poolName));
-    }
-
    public void clearCacheLocation( PnfsId pnfsId ){
        clearCacheLocation( pnfsId , false  );
    }
@@ -195,16 +188,6 @@ public class PnfsHandler
 
    }
 
-   public void addCacheLocation( String pnfsId )
-       throws CacheException
-   {
-       pnfsRequest( new PnfsAddCacheLocationMessage(
-                           pnfsId,
-                           _poolName)
-           ) ;
-
-   }
-
    public void addCacheLocation( PnfsId pnfsId )
        throws CacheException
    {
@@ -214,14 +197,7 @@ public class PnfsHandler
            ) ;
 
    }
-   public void setFileSize( String pnfsId , long length )throws CacheException {
 
-       pnfsRequest( new PnfsSetLengthMessage(
-                           new PnfsId(pnfsId),
-                           length  )
-           ) ;
-
-   }
    public void setFileSize( PnfsId pnfsId , long length )throws CacheException {
 
        pnfsRequest( new PnfsSetLengthMessage(
@@ -344,12 +320,7 @@ public class PnfsHandler
    }
    public PnfsGetStorageInfoMessage getStorageInfoByPnfsId( PnfsId pnfsId )
           throws CacheException                {
-      return  pnfsRequest(new PnfsGetStorageInfoMessage( pnfsId.toString() )) ;
-
-   }
-   public StorageInfo getStorageInfo( String pnfsId )
-          throws CacheException                {
-      return pnfsRequest( new PnfsGetStorageInfoMessage( pnfsId )).getStorageInfo() ;
+      return  pnfsRequest(new PnfsGetStorageInfoMessage( pnfsId )) ;
 
    }
 

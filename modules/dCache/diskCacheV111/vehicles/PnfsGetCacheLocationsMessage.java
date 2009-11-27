@@ -15,10 +15,6 @@ public class PnfsGetCacheLocationsMessage extends PnfsMessage {
 	setReplyRequired(true);
     }
 
-    public PnfsGetCacheLocationsMessage(String pnfsId){
-	super(pnfsId);
-	setReplyRequired(true);
-    }
     public PnfsGetCacheLocationsMessage(PnfsId pnfsId){
 	super(pnfsId);
 	setReplyRequired(true);

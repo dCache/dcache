@@ -195,7 +195,7 @@ public class ConsistentStore
                 if (info == null
                     || (state != EntryState.CACHED
                         && state != EntryState.PRECIOUS)) {
-                    info = _pnfsHandler.getStorageInfo(id.toString());
+                    info = _pnfsHandler.getStorageInfoByPnfsId(id).getStorageInfo();
                     entry.setStorageInfo(info);
                     _log.warn(String.format(MISSING_SI_MSG, id));
                 }

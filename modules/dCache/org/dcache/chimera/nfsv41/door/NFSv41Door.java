@@ -350,7 +350,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         try {
             PnfsId pnfsId = new PnfsId(inode.toString());
-            StorageInfo storageInfo = _pnfsHandler.getStorageInfo(pnfsId.getId());
+            StorageInfo storageInfo = _pnfsHandler.getStorageInfoByPnfsId(pnfsId).getStorageInfo();
 
             NFS4ProtocolInfo protocolInfo = new NFS4ProtocolInfo(clientIp, stateid);
             protocolInfo.door(new CellPath(this.getCellName(), this

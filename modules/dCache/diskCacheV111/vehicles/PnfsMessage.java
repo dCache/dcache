@@ -12,9 +12,6 @@ public class PnfsMessage extends Message {
 
     private static final long serialVersionUID = -3686370854772807059L;
 
-    public PnfsMessage(String pnfsId){
-        this( new PnfsId( pnfsId ) );
-    }
     public PnfsMessage(PnfsId pnfsId){
 	_pnfsId = pnfsId ;
     }
@@ -28,9 +25,6 @@ public class PnfsMessage extends Message {
 	return _pnfsId;
     }
 
-    public void setPnfsId(String pnfsId){
-	_pnfsId = new PnfsId(pnfsId);
-    }
     public void setPnfsId(PnfsId pnfsId){
 	_pnfsId = pnfsId ;
     }

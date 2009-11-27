@@ -196,7 +196,7 @@ public class HsmStorageInterpreter
         Thread t = new Thread("rh restore") {
                 public void run() {
                     try {
-                        StorageInfo si = _pnfs.getStorageInfo(pnfsId);
+                        StorageInfo si = _pnfs.getStorageInfoByPnfsId(new PnfsId(pnfsId)).getStorageInfo();
                         _storageHandler.fetch(new PnfsId(pnfsId), si,
                                               block ? cfa : null);
                     } catch (CacheException e) {
