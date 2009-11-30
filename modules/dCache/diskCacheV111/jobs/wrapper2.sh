@@ -234,6 +234,13 @@ if [ ! -f ${jobs}/${lib} ] ; then
    echo "Library not  found : $lib"
    exit 4
 fi
+#
+# in order for the toplink to create and/or use its 
+# scema creation and deletion definition files
+# we need to be in a well known place and the path 
+# to these files is relative to the current working dir
+#
+cd ${ourHomeDir}
 . ${jobs}/${lib}
 x="procSwitch $*"
 eval $x
