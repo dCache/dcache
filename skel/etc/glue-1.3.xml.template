@@ -1316,9 +1316,11 @@
       <attr name="GlueSEImplementationVersion" not-empty="1">
         <map name="cell-version-to-dcache-version">
           <lookup default="UNDEFINEDVALUE"
-		  path="/d:dCache/d:domains/d:domain[@name='dCacheDomain']/d:cells/d:cell[@name='PoolManager']/d:version/d:metric[@name='release']"/>
-        </map>
-      </attr>
+                  path="/d:dCache/d:domains/d:domain[@name='dCacheDomain']/d:cells/d:cell[@name='PoolManager']/d:version/d:metric[@name='release']"/>
+        </map> (ns=<map name="PnfsManager-domain-to-namespace-impl">
+          <lookup default="UNDEFINEDVALUE"
+                  path="/d:dCache/d:domains/d:domain[@name='dCacheDomain']/d:routing/d:named-cells/d:cell[@name='PnfsManager']/d:domainref/@name"/>
+        </map>)</attr>
 
       <!-- GlueSESizeTotal and GlueSESizeFree are marked as
            "deprecated" in Glue-1.3, but Installed Capacity document
@@ -1635,6 +1637,12 @@
       <sub match="CUSTODIAL" replace-with="Custodial"/>
       <sub match="ONLINE"    replace-with="Online"/>
       <sub match="NEARLINE"  replace-with="Nearline"/>
+    </map>
+
+    <map name="PnfsManager-domain-to-namespace-impl">
+      <sub match="pnfsDomain"    replace-with="PNFS"/>
+      <sub match="chimeraDomain" replace-with="Chimera"/>
+      <default value="UNDEFINEDVALUE"/>
     </map>
   </mapping>
 
