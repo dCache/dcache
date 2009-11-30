@@ -71,6 +71,11 @@ procStop() {
 
 case $cmd1 in
   start)
+        # in order for the toplink to create and/or use its
+        # schema creation and deletion definition files
+        # we need to be in a well known place and the path
+        # to these files is relative to the current working dir
+        cd ${ourHomeDir}
         if [ -f ${CATALINA_PID} ] ; then
           x=`cat ${CATALINA_PID}`
           kill -0 $x 1>/dev/null 2>/dev/null
