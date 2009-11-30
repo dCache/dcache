@@ -34,17 +34,64 @@ def processXML ( inFile, outFile, vos, options )
     e.add_element("item").text = vo
   end
   e = doc.elements['//[@name="GlueSA-VOs"]']
-  e.delete_if { true }
-  vos.each do |vo|
-    e.add_element("item").text = vo
+  if e != nil
+    e.delete_if { true }
+    vos.each do |vo|
+      e.add_element("item").text = vo
+    end
   end
   if options.has_key?("NAME-SPACE-PREFIX")
     e = doc.elements['//[@name="VO-name-to-path"]']
-    e.delete_if { true }
-    vos.each do |vo|      
-      e.add_element("sub", { "match" => vo, "replace-with" => options["NAME-SPACE-PREFIX"] + "/" + vo })
+    if e != nil
+      e.delete_if { true }
+      vos.each do |vo|      
+        e.add_element("sub", { "match" => vo, "replace-with" => options["NAME-SPACE-PREFIX"] + "/" + vo })
+      end
+      e.add_element("default", { "value" => "/UNDEFINEDPATH" })
     end
-    e.add_element("default", { "value" => "/UNDEFINEDPATH" })
+  end
+  if options.has_key?("UNIT2VO")
+    e = doc.elements['//[@name="unit-to-VO"]']
+    if e != nil
+      options["UNIT2VO"].each do |mapping|
+        maparray = mapping.split('^')
+        if maparray.length() == 2
+          newe = e.add_element("sub", { "match" => maparray[0], "replace-with" => maparray[1] })
+          e.text = "\n"
+        else
+          print "Error processing mapping '" + mapping + "'/n'"
+        end
+      end
+      e.add_element("sub", { "match" => "*@*", "replace-with" => "" })
+    end
+  end
+  if options.has_key?("VO2PATH")
+    e = doc.elements['//[@name="VO-to-path"]']
+    if e != nil
+      options["VO2PATH"].each do |mapping|
+        maparray = mapping.split('^')
+        if maparray.length() == 2
+          newe = e.add_element("sub", { "match" => maparray[0], "replace-with" => maparray[1] })
+          e.text = "\n"
+        else
+          print "Error processing mapping '" + mapping + "'/n'"
+        end
+      end
+    end
+  end
+  if options.has_key?("UNIT2PATH")
+    e = doc.elements['//[@name="unit-to-path"]']
+    if e != nil
+      options["VO2PATH"].each do |mapping|
+        maparray = mapping.split('^')
+        if maparray.length() == 2
+          newe = e.add_element("sub", { "match" => maparray[0], "replace-with" => maparray[1] })
+          e.text = "\n"
+        else
+          print "Error processing mapping '" + mapping + "'/n'"
+        end
+      end
+    end
   end
   File.open(outFile, "w") { |f| f.puts doc }
 end
@@ -98,6 +145,15 @@ ARGV.options do |o|
               "Name space prefix.",
               "This describes which paths to publish for each VO.")   { |options["NAME-SPACE-PREFIX"]| }
 
+  o.on("-U", "--unit2vo unit1^vo1,unit2^vo2",
+              Array,
+              "Array of Unit-VO mappings")   { |options["UNIT2VO"]| }
+  o.on("-W", "--unit2path unit1^path1,unit2^path2",
+              Array,
+              "Array of Unit-Path mappings")   { |options["UNIT2PATH"]| }
+  o.on("-Y", "--vo2path vo1^path1,vo2^path2",
+              Array,
+              "Array of VO-Path mappings")   { |options["VO2PATH"]| }
 
   # List of arguments.
   o.on("-V","--vos x,y,z", Array, "A 'list' of vo's") { |vos| }
