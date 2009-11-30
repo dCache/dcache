@@ -75,7 +75,6 @@ package org.dcache.srm.request;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.scheduler.FatalJobFailure;
 import org.dcache.srm.scheduler.NonFatalJobFailure;
-import org.dcache.srm.util.Configuration;
 import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.IllegalStateTransition;
@@ -137,7 +136,7 @@ public final class ReserveSpaceRequest extends Request {
         this.accessLatency = accessLatency;
         this.spaceReservationLifetime = spaceReservationLifetime;
         storeInSharedMemory();
-        say("created");
+        logger.debug("created");
         
     }
     
@@ -195,22 +194,9 @@ public final class ReserveSpaceRequest extends Request {
         this.accessLatency = accessLatency == null ?null :TAccessLatency.fromString(accessLatency);
         this.spaceReservationLifetime = spaceReservationLifetime;
         
-        say("restored");
+        logger.debug("restored");
     }
     
-    
-    public void say(String s) {
-        getStorage().log("ReserveSpaceRequest id # "+getId()+" :"+s);
-    }
-    
-    public void esay(String s) {
-        getStorage().elog("ReserveSpaceRequest id #"+getId()+" :"+s);
-    }
-    
-    public void esay(Throwable t) {
-        getStorage().elog("ReserveSpaceRequest id #"+getId()+" Throwable:"+t);
-        getStorage().elog(t);
-    }
     
     @Override
     public void toString(StringBuilder sb, boolean longformat) {
@@ -264,12 +250,12 @@ public final class ReserveSpaceRequest extends Request {
                 throw (FatalJobFailure) e;
             }
             
-            esay("can not reserve space: ");
-            esay(e);
+            logger.error("can not reserve space: ");
+            logger.error(e);
             try {
                 setState(State.FAILED,e.toString());
             } catch(IllegalStateTransition ist) {
-                esay("Illegal State Transition : " +ist.getMessage());
+                logger.error("Illegal State Transition : " +ist.getMessage());
             }
         }
         
@@ -376,10 +362,10 @@ public final class ReserveSpaceRequest extends Request {
             try {
                 request.setState(State.FAILED,reason);
             } catch(IllegalStateTransition ist) {
-                request.esay("Illegal State Transition : " +ist.getMessage());
+                logger.error("Illegal State Transition : " +ist.getMessage());
             }
             
-            request.esay("ReserveSpace error: "+ reason);
+            logger.error("ReserveSpace error: "+ reason);
         }
         
         public void NoFreeSpace(String  reason) {
@@ -394,10 +380,10 @@ public final class ReserveSpaceRequest extends Request {
             try {
                 request.setStateAndStatusCode(State.FAILED,reason,TStatusCode.SRM_NO_FREE_SPACE);
             } catch(IllegalStateTransition ist) {
-                request.esay("Illegal State Transition : " +ist.getMessage());
+                logger.error("Illegal State Transition : " +ist.getMessage());
             }
             
-            request.esay("ReserveSpace failed (NoFreeSpace), no free space : "+reason);
+            logger.error("ReserveSpace failed (NoFreeSpace), no free space : "+reason);
         }
  
         public void ReserveSpaceFailed(Exception e) {
@@ -412,11 +398,10 @@ public final class ReserveSpaceRequest extends Request {
             try {
                 request.setState(State.FAILED,e.toString());
             } catch(IllegalStateTransition ist) {
-                request.esay("Illegal State Transition : " +ist.getMessage());
+              logger.error("Illegal State Transition : " +ist.getMessage());
             }
             
-            request.esay("ReserveSpace exception: ");
-            request.esay(e);
+            logger.error("ReserveSpace exception: ",e);
         }
         
         public void SpaceReserved(String spaceReservationToken, long reservedSpaceSize) {
@@ -437,7 +422,7 @@ public final class ReserveSpaceRequest extends Request {
                     request.setState(State.DONE,"space reservation succeeded" );
                 }
             } catch(IllegalStateTransition ist) {
-                request.esay("Illegal State Transition : " +ist.getMessage());
+                logger.error("Illegal State Transition : " +ist.getMessage());
             } finally {
                 wunlock();
             }

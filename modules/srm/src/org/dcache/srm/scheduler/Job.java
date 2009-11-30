@@ -92,8 +92,8 @@ import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.util.JDC;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
+import org.apache.log4j.Logger;
 
 
 /**
@@ -102,8 +102,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
  */
 public abstract class Job  {
 
-    private static final org.apache.log4j.Logger _log =
-        org.apache.log4j.Logger.getLogger(Job.class);
+    private static final Logger logger = Logger.getLogger(Job.class);
 
     // this is the map from jobIds to jobs
     // job ids are referenced from jobs
@@ -277,23 +276,12 @@ public abstract class Job  {
         } catch(Throwable t) {
             // if saving fails we do not want to fail the request
 
-            esay(t);
+            logger.error(t);
 
         } finally {
             wunlock();
        }
     }
-    public void say(String s) {
-        _log.debug(" Job id="+id+" :"+ s);
-        }
-
-    public void esay(String s) {
-        _log.error(" Job id="+id+" error :"+ s);
-        }
-
-    public void esay(Throwable t) {
-        _log.error(" Job id="+id+" exception", t);
-        }
 
     public static final Job getJob(Long jobId) throws SRMInvalidRequestException{
          return getJob ( jobId, null);
@@ -328,7 +316,7 @@ public abstract class Job  {
                         job = storage.getJob(jobId, _con);
                     }
                 } catch (SQLException e){
-                    _log.error("Failed to read job", e);
+                    logger.error("Failed to read job", e);
                 }
                 if(job != null) {
                     restoredFromDb = true;
@@ -818,7 +806,7 @@ public abstract class Job  {
                 try {
                         getJobStorage().saveJob(this,true);
                 }catch (java.sql.SQLException sqle) {
-                    esay(sqle);
+                    logger.error(sqle);
                 }
             }
         } finally {
@@ -950,7 +938,7 @@ public abstract class Job  {
             } catch (IllegalArgumentException e) {
                 // Job is already gone
             } catch (Exception e) {
-                _log.error("Unexpected exception during job timeout", e);
+                logger.error("Unexpected exception during job timeout", e);
             }
         }
     }
@@ -959,7 +947,7 @@ public abstract class Job  {
         try {
             job.wlock();
             try {
-                job.say("expiring job id="+job.getId());
+                logger.debug("expiring job id="+job.getId());
                 if(job.state == State.READY ||
                 job.state == State.TRANSFERRING) {
                     job.setState(State.DONE,"lifetime expired");
@@ -1137,6 +1125,7 @@ public abstract class Job  {
                     (transitionTime == oTransitionTime? 0: 1);
         }
 
+        @Override
         public boolean equals(Object o) {
             if(o == null || !(o instanceof JobHistory)) {
                 return false;
@@ -1158,10 +1147,12 @@ public abstract class Job  {
      * <code>hashCode()</code>
      * @return  a hash code value for this object.
      */
+        @Override
         public int hashCode() {
             return (int)(id ^ (id >>> 32));
         }
 
+        @Override
         public String toString() {
             StringBuffer sb = new StringBuffer();
             sb.append("JobHistory[");
@@ -1248,7 +1239,7 @@ public abstract class Job  {
          if (schedulerId != null) {
             Scheduler scheduler = Scheduler.getScheduler(schedulerId);
             if (scheduler != null) {
-                _log.debug("notifySchedulerOfStateChange calls " +
+                logger.debug("notifySchedulerOfStateChange calls " +
                         "scheduler.stateChanged()");
                 scheduler.stateChanged(this, oldState, newState);
             }

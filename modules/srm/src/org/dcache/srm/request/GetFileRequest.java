@@ -103,7 +103,7 @@ import org.apache.log4j.Logger;
  * @version
  */
 public final class GetFileRequest extends FileRequest {
-    private final static Logger _log = Logger.getLogger(GetFileRequest.class);
+    private final static Logger logger = Logger.getLogger(GetFileRequest.class);
     
     // the globus url class created from surl_string
     private GlobusURL surl;
@@ -132,10 +132,10 @@ public final class GetFileRequest extends FileRequest {
             requestCredentalId, 
             lifetime, 
             maxNumberOfRetries);
-        _log.debug("GetFileRequest, requestId="+requestId+" fileRequestId = "+getId());
+        logger.debug("GetFileRequest, requestId="+requestId+" fileRequestId = "+getId());
         try {
             surl = new GlobusURL(url);
-            _log.debug("    surl = "+surl.getURL());
+            logger.debug("    surl = "+surl.getURL());
         }
         catch(MalformedURLException murle) {
             throw new IllegalArgumentException(murle.toString());
@@ -295,7 +295,7 @@ public final class GetFileRequest extends FileRequest {
                 }
                 catch(SRMAuthorizationException srmae) {
                     String error =srmae.getMessage();
-                    _log.error(error);
+                    logger.error(error);
                     try {
                         setStateAndStatusCode(
                                 State.FAILED,
@@ -303,19 +303,19 @@ public final class GetFileRequest extends FileRequest {
                                 TStatusCode.SRM_AUTHORIZATION_FAILURE);
                     }
                     catch(IllegalStateTransition ist) {
-                        _log.warn("Illegal State Transition : " +ist.getMessage());
+                        logger.warn("Illegal State Transition : " +ist.getMessage());
                     }
 
                 }
                 catch(Exception srme) {
                     String error =
                     "can not obtain turl for file:"+srme;
-                    _log.error(error);
+                    logger.error(error);
                     try {
                         setState(State.FAILED,error);
                     }
                     catch(IllegalStateTransition ist) {
-                        _log.warn("Illegal State Transition : " +ist.getMessage());
+                        logger.warn("Illegal State Transition : " +ist.getMessage());
                     }
                 }
             }
@@ -378,7 +378,7 @@ public final class GetFileRequest extends FileRequest {
             rfs.state = "Pending";
         }
         
-        //_log.debug(" returning requestFileStatus for "+rfs.toString());
+        //logger.debug(" returning requestFileStatus for "+rfs.toString());
         return rfs;
     }
     
@@ -392,7 +392,7 @@ public final class GetFileRequest extends FileRequest {
         try {
              fileStatus.setSourceSURL(new URI(getSurlString()));
         } catch (Exception e) {
-            _log.error(e);
+            logger.error(e);
             throw new java.sql.SQLException("wrong surl format");
         }
         
@@ -401,7 +401,7 @@ public final class GetFileRequest extends FileRequest {
             try {
             fileStatus.setTransferURL(new URI(turlstring));
             } catch (Exception e) {
-                _log.error(e);
+                logger.error(e);
                 throw new java.sql.SQLException("wrong turl format");
             }
  
@@ -423,7 +423,7 @@ public final class GetFileRequest extends FileRequest {
         try {
             surlReturnStatus.setSurl(new URI(getSurlString()));
         } catch (Exception e) {
-            _log.error(e);
+            logger.error(e);
             throw new java.sql.SQLException("wrong surl format");
         }
         surlReturnStatus.setStatus(returnStatus);
@@ -451,7 +451,7 @@ public final class GetFileRequest extends FileRequest {
                     return g_turl;
                 }
                 catch(MalformedURLException murle) {
-                    _log.error(murle);
+                    logger.error(murle);
                     throw new SRMException(murle.toString());
                 }
             }
@@ -499,62 +499,62 @@ public final class GetFileRequest extends FileRequest {
     }
     
     public synchronized void run() throws NonFatalJobFailure, FatalJobFailure {
-        _log.debug("run()");
+        logger.debug("run()");
         try {
             if(getFileId() == null) {
                 try {
                     if(!Tools.sameHost(getConfiguration().getSrmHosts(),
                     getSurl().getHost())) {
                         String error ="surl is not local : "+getSurl().getURL();
-                        _log.error(error);
+                        logger.error(error);
                         throw new FatalJobFailure(error);
                     }
                 }
                 catch(java.net.UnknownHostException uhe) {
-                    _log.error(uhe);
+                    logger.error(uhe);
                     throw new FatalJobFailure(uhe.toString());
                 }
 
-                _log.debug("fileId is null, asking to get a fileId");
+                logger.debug("fileId is null, asking to get a fileId");
                 askFileId();
                 if(getFileId() == null) {
                     setState(State.ASYNCWAIT, "getting file Id");
-                    _log.debug("GetFileRequest: waiting async notification about fileId...");
+                    logger.debug("GetFileRequest: waiting async notification about fileId...");
                     return;
                 }
             }
-            _log.debug("fileId = "+getFileId());
+            logger.debug("fileId = "+getFileId());
             
             if(getPinId() == null) {
                 // do not check explicitely if we can read the file
                 // this is done by pnfs manager when we call askFileId()
-                _log.debug("pinId is null, asking to pin ");
+                logger.debug("pinId is null, asking to pin ");
                 pinFile();
                 if(getPinId() == null) {
                     setState(State.ASYNCWAIT,"pinning file");
-                    _log.debug("GetFileRequest: waiting async notification about pinId...");
+                    logger.debug("GetFileRequest: waiting async notification about pinId...");
                     return;
                 }
             }
         } catch(IllegalStateTransition ist) {
             throw new NonFatalJobFailure("Illegal State Transition : " +ist.getMessage());
         }
-        _log.info("PinId is "+getPinId()+" returning, scheduler should change state to \"Ready\"");
+        logger.info("PinId is "+getPinId()+" returning, scheduler should change state to \"Ready\"");
         
     }
     
     public void askFileId() throws NonFatalJobFailure, FatalJobFailure {
         try {
             
-            _log.debug(" proccessing the file request id "+getId());
+            logger.debug(" proccessing the file request id "+getId());
             String  path =   getPath();
-            _log.debug(" path is "+path);
+            logger.debug(" path is "+path);
             // if we can not read this path for some reason
             //(not in ftp root for example) this will throw exception
             // we do not care about the return value yet
-            _log.debug("calling Job.getJob("+requestId+")");
+            logger.debug("calling Job.getJob("+requestId+")");
             GetRequest request = (GetRequest) Job.getJob(requestId);
-            _log.debug("this file request's request is  "+request);
+            logger.debug("this file request's request is  "+request);
             //this will fail if the protocols are not supported
             String[] supported_prots = getStorage().supportedGetProtocols();
             boolean found_supp_prot=false;
@@ -571,12 +571,12 @@ public final class GetFileRequest extends FileRequest {
                 throw new FatalJobFailure("transfer protocols not supported");
             }
             //storage.getGetTurl(getUser(),path,request.protocols);
-            _log.debug("storage.prepareToGet("+path+",...)");
+            logger.debug("storage.prepareToGet("+path+",...)");
             GetFileInfoCallbacks callbacks = new GetCallbacks(getId());
             getStorage().getFileInfo(getUser(),path,callbacks);
         }
         catch(Exception e) {
-            _log.error(e);
+            logger.error(e);
             throw new NonFatalJobFailure(e.toString());
         }
     }
@@ -585,37 +585,37 @@ public final class GetFileRequest extends FileRequest {
         try {
             
             PinCallbacks callbacks = new ThePinCallbacks(getId());
-            _log.info("storage.pinFile("+getFileId()+",...)");
+            logger.info("storage.pinFile("+getFileId()+",...)");
             getStorage().pinFile(getUser(), 
                 getFileId(),getRequest().getClient_host(), getFileMetaData(),
                 lifetime,
                     getRequestId().longValue() ,callbacks);
         }
         catch(Exception e) {
-            _log.error(e);
+            logger.error(e);
             throw new NonFatalJobFailure(e.toString());
         }
     }
     
     protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
         State state = getState();
-        _log.debug("State changed from "+oldState+" to "+getState());
+        logger.debug("State changed from "+oldState+" to "+getState());
         if(state == State.READY) {
             try {
                 getRequest().resetRetryDeltaTime();
             } catch (SRMInvalidRequestException ire) {
-                _log.error(ire);
+                logger.error(ire);
             }
         }
         if(State.isFinalState(state)) {
             if(getFileId() != null && getPinId() != null) {
                 UnpinCallbacks callbacks = new TheUninCallbacks(this.getId());
-                _log.info("state changed to final state, unpinning fileId= "+ getFileId()+" pinId = "+getPinId());
+                logger.info("state changed to final state, unpinning fileId= "+ getFileId()+" pinId = "+getPinId());
                 SRMUser user;
                 try {
                     user = getUser();
                 } catch (SRMInvalidRequestException ire) {
-                    _log.error (ire) ;
+                    logger.error (ire) ;
                     return;
                 }
                 getStorage().unPinFile(user,getFileId(),callbacks, getPinId());
@@ -772,12 +772,12 @@ public final class GetFileRequest extends FileRequest {
                         TStatusCode.SRM_INVALID_PATH);
                 }
                 catch(IllegalStateTransition ist) {
-                    _log.warn("Illegal State Transition : " +ist.getMessage());
+                    logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
-                _log.error("GetCallbacks error: "+ reason);
+                logger.error("GetCallbacks error: "+ reason);
             }
             catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
   
@@ -788,12 +788,12 @@ public final class GetFileRequest extends FileRequest {
                     fr.setState(State.FAILED,error);
                 }
                 catch(IllegalStateTransition ist) {
-                    _log.warn("Illegal State Transition : " +ist.getMessage());
+                    logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
-                _log.error("GetCallbacks error: "+ error);
+                logger.error("GetCallbacks error: "+ error);
             }
             catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
         
@@ -804,12 +804,12 @@ public final class GetFileRequest extends FileRequest {
                     fr.setState(State.FAILED,e.toString());
                 }
                 catch(IllegalStateTransition ist) {
-                    _log.warn("Illegal State Transition : " +ist.getMessage());
+                    logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
-                _log.error("GetCallbacks exception",e);
+                logger.error("GetCallbacks exception",e);
             }
             catch(Exception e1) {
-                e1.printStackTrace();
+                logger.error(e1);
             }
         }
         
@@ -820,13 +820,13 @@ public final class GetFileRequest extends FileRequest {
                     fr.setState(State.FAILED,reason);
                 }
                 catch(IllegalStateTransition ist) {
-                    _log.warn("Illegal State Transition : " +ist.getMessage());
+                    logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
                 
-                _log.error("GetCallbacks error: "+ reason);
+                logger.error("GetCallbacks error: "+ reason);
             }
             catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
             
         }
@@ -841,7 +841,7 @@ public final class GetFileRequest extends FileRequest {
                 }
 
                 GetFileRequest fr = getGetFileRequest();
-                _log.debug("StorageInfoArrived: FileId:"+fileId);
+                logger.debug("StorageInfoArrived: FileId:"+fileId);
                 State state ;
                 synchronized(fr) {
                     state = fr.getState();
@@ -857,14 +857,14 @@ public final class GetFileRequest extends FileRequest {
                             scheduler.schedule(fr);
                         }
                         catch(Exception ie) {
-                            _log.error(ie);
+                            logger.error(ie);
                         }
                     }
                 }
                 
             }
             catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }            
         }
         
@@ -876,13 +876,13 @@ public final class GetFileRequest extends FileRequest {
                     fr.setState(State.FAILED,"GetCallbacks Timeout");
                 }
                 catch(IllegalStateTransition ist) {
-                    _log.warn("Illegal State Transition : " +ist.getMessage());
+                    logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
                 
-                _log.error("GetCallbacks Timeout");
+                logger.error("GetCallbacks Timeout");
             }
             catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
         
@@ -913,12 +913,12 @@ public final class GetFileRequest extends FileRequest {
                     fr.setState(State.FAILED,error);
                 }
                 catch(IllegalStateTransition ist) {
-                    _log.warn("Illegal State Transition : " +ist.getMessage());
+                    logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
-                _log.error("ThePinCallbacks error: "+ error);
+                logger.error("ThePinCallbacks error: "+ error);
             }
             catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
         
@@ -929,12 +929,12 @@ public final class GetFileRequest extends FileRequest {
                     fr.setState(State.FAILED,e.toString());
                 }
                 catch(IllegalStateTransition ist) {
-                    _log.warn("Illegal State Transition : " +ist.getMessage());
+                    logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
-                _log.error("ThePinCallbacks exception",e);
+                logger.error("ThePinCallbacks exception",e);
             }
             catch(Exception e1) {
-                e1.printStackTrace();
+                logger.error(e1);
             }
         }
         
@@ -948,13 +948,13 @@ public final class GetFileRequest extends FileRequest {
                     fr.setState(State.FAILED,"ThePinCallbacks Timeout");
                 }
                 catch(IllegalStateTransition ist) {
-                    _log.warn("Illegal State Transition : " +ist.getMessage());
+                    logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
                 
-                _log.error("GetCallbacks Timeout");
+                logger.error("GetCallbacks Timeout");
             }
             catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
         
@@ -965,7 +965,7 @@ public final class GetFileRequest extends FileRequest {
                 synchronized(fr ) {
                     state = fr.getState();
                 }
-                _log.debug("ThePinCallbacks: Pinned() pinId:"+pinId);
+                logger.debug("ThePinCallbacks: Pinned() pinId:"+pinId);
                 if(state == State.ASYNCWAIT || state == State.RUNNING) {
                     fr.setPinId(pinId);
                     if(state == State.ASYNCWAIT) {
@@ -974,13 +974,13 @@ public final class GetFileRequest extends FileRequest {
                             scheduler.schedule(fr);
                         }
                         catch(Exception ie) {
-                            _log.error(ie);
+                            logger.error(ie);
                         }
                     }
                 }
             }
             catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
         
@@ -991,13 +991,13 @@ public final class GetFileRequest extends FileRequest {
                     fr.setState(State.FAILED,reason);
                 }
                 catch(IllegalStateTransition ist) {
-                    _log.warn("Illegal State Transition : " +ist.getMessage());
+                    logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
                 
-                _log.error("ThePinCallbacks error: "+ reason);
+                logger.error("ThePinCallbacks error: "+ reason);
             }
             catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
         
@@ -1032,13 +1032,13 @@ public final class GetFileRequest extends FileRequest {
                     //fr.setState(State.FAILED);
                 }
                 catch(IllegalStateTransition ist) {
-                    //_log.error("can not fail state:"+ist);
+                    //logger.error("can not fail state:"+ist);
                 }
                  */
-                _log.error("TheUninCallbacks error: "+ error);
+                logger.error("TheUninCallbacks error: "+ error);
             }
             catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
         
@@ -1054,13 +1054,13 @@ public final class GetFileRequest extends FileRequest {
                     //fr.setState(State.FAILED);
                 }
                 catch(IllegalStateTransition ist) {
-                    //_log.error("can not fail state:"+ist);
+                    //logger.error("can not fail state:"+ist);
                 }
                  */
-                _log.error("TheUninCallbacks exception",e);
+                logger.error("TheUninCallbacks exception",e);
             }
             catch(Exception e1) {
-                e1.printStackTrace();
+                logger.error(e1);
             }
         }
         
@@ -1079,21 +1079,21 @@ public final class GetFileRequest extends FileRequest {
                     //fr.setState(State.FAILED);
                 }
                 catch(IllegalStateTransition ist) {
-                    //_log.error("can not fail state:"+ist);
+                    //logger.error("can not fail state:"+ist);
                 }
                  */
                 
-                _log.error("TheUninCallbacks Timeout");
+                logger.error("TheUninCallbacks Timeout");
             }
             catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
         
         public void Unpinned(String pinId) {
             try {
                 GetFileRequest fr = getGetFileRequest();
-                _log.debug("TheUninCallbacks: Unpinned() pinId:"+pinId);
+                logger.debug("TheUninCallbacks: Unpinned() pinId:"+pinId);
                 State state = fr.getState();
                if(state == State.ASYNCWAIT) {
                     fr.setPinId(pinId);
@@ -1102,12 +1102,12 @@ public final class GetFileRequest extends FileRequest {
                         scheduler.schedule(fr);
                     }
                     catch(Exception ie) {
-                        _log.error(ie);
+                        logger.error(ie);
                     }
                 }
             }
             catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
         
@@ -1123,14 +1123,14 @@ public final class GetFileRequest extends FileRequest {
                     //fr.setState(State.FAILED);
                 }
                 catch(IllegalStateTransition ist) {
-                    //_log.error("can not fail state:"+ist);
+                    //logger.error("can not fail state:"+ist);
                 }
                  */
                 
-                _log.error("TheUninCallbacks error: "+ reason);
+                logger.error("TheUninCallbacks error: "+ reason);
             }
             catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
         

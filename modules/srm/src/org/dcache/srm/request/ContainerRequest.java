@@ -77,9 +77,9 @@ import org.dcache.srm.util.RequestStatusTool;
 import diskCacheV111.srm.RequestStatus;
 import org.dcache.srm.SRMUser;
 import diskCacheV111.srm.RequestFileStatus;
-import org.dcache.srm.util.Configuration;
 import org.dcache.srm.v2_2.*;
 import org.dcache.srm.SRMException;
+import org.apache.log4j.Logger;
 
 /**
  * This abstract class represents an "SRM request"
@@ -95,6 +95,7 @@ import org.dcache.srm.SRMException;
  */
 
 public abstract class ContainerRequest extends Request {
+    private static final Logger logger = Logger.getLogger(ContainerRequest.class);
     // dcache  requires that once client created a connection to a dcache door,
     // it uses the same door to make all following dcap transfers
     // therefore we need to synchronize the recept of dcap turls
@@ -335,8 +336,8 @@ public abstract class ContainerRequest extends Request {
                 fr_error += "RequestFileStatus#"+rfs.fileId+" failed with error:[ "+fr.getErrorMessage()+"]\n";
             }
             else {
-                esay("File Request state is unknown!!! state  == "+state);
-                esay("fr is "+fr);
+                logger.error("File Request state is unknown!!! state  == "+state);
+                logger.error("fr is "+fr);
             }
         }
 
@@ -360,7 +361,7 @@ public abstract class ContainerRequest extends Request {
                 }
                 catch(IllegalStateTransition ist)
                 {
-                    esay("Illegal State Transition : " +ist.getMessage());
+                    logger.error("Illegal State Transition : " +ist.getMessage());
                 }
             }
 
@@ -376,14 +377,14 @@ public abstract class ContainerRequest extends Request {
             }
             catch(IllegalStateTransition ist)
             {
-                esay("Illegal State Transition : " +ist.getMessage());
+                logger.error("Illegal State Transition : " +ist.getMessage());
             }
             rs.state = "Done";
         } else {
             // we should never be here, but we have this block
             // in case request is restored with no files in it
 
-            esay("request state is unknown or no files in request!!!");
+            logger.error("request state is unknown or no files in request!!!");
             stopUpdating();
             try
             {
@@ -391,7 +392,7 @@ public abstract class ContainerRequest extends Request {
             }
             catch(IllegalStateTransition ist)
             {
-                esay("Illegal State Transition : " +ist.getMessage());
+                logger.error("Illegal State Transition : " +ist.getMessage());
             }
             rs.state = "Failed";
         }
@@ -424,9 +425,9 @@ public abstract class ContainerRequest extends Request {
 
            if(getStatusCode() != null) {
                 status.setStatusCode(getStatusCode());
-                say("getTReturnStatus() assigned status.statusCode : "+status.getStatusCode());
+                logger.debug("getTReturnStatus() assigned status.statusCode : "+status.getStatusCode());
                 status.setExplanation(getErrorMessage());
-                say("getTReturnStatus() assigned status.explanation : "+status.getExplanation());
+                logger.debug("getTReturnStatus() assigned status.explanation : "+status.getExplanation());
                 return status;
            }
         } finally {
@@ -449,8 +450,8 @@ public abstract class ContainerRequest extends Request {
             status.setStatusCode(TStatusCode.SRM_INTERNAL_ERROR);
             status.setExplanation("Could not find (deserialize) files in the request," +
                 " NumOfFileRequest is 0");
-            say("assigned status.statusCode : "+status.getStatusCode());
-            say("assigned status.explanation : "+status.getExplanation());
+            logger.debug("assigned status.statusCode : "+status.getStatusCode());
+            logger.debug("assigned status.explanation : "+status.getExplanation());
             return status;
 
         }
@@ -470,7 +471,7 @@ public abstract class ContainerRequest extends Request {
             FileRequest fr =fileRequests[i];
             TReturnStatus fileReqRS = fr.getReturnStatus();
             TStatusCode fileReqSC   = fileReqRS.getStatusCode();
-            say("getTReturnStatus() file["+i+"] statusCode : "+fileReqSC);
+            logger.debug("getTReturnStatus() file["+i+"] statusCode : "+fileReqSC);
             try{
                 if( fileReqSC == TStatusCode.SRM_REQUEST_QUEUED) {
                     pending_req++;
@@ -503,11 +504,11 @@ public abstract class ContainerRequest extends Request {
                     failure=true;
                 }
                 else {
-                    esay("File Request StatusCode is unknown!!! state  == "+fr.getState());
-                    esay("fr is "+fr);
+                    logger.error("File Request StatusCode is unknown!!! state  == "+fr.getState());
+                    logger.error("fr is "+fr);
                 }
             }catch (Exception e) {
-                esay(e);
+                logger.error(e);
                 got_exception++;
                 failure=true;
             }
@@ -517,56 +518,56 @@ public abstract class ContainerRequest extends Request {
 
         if (canceled_req == len ) {
             status.setStatusCode(TStatusCode.SRM_ABORTED);
-            say("assigned status.statusCode : "+status.getStatusCode());
-            say("assigned status.explanation : "+status.getExplanation());
+            logger.debug("assigned status.statusCode : "+status.getStatusCode());
+            logger.debug("assigned status.explanation : "+status.getExplanation());
             return status;
         }
 
         if (failed_req==len || got_exception==len) {
             status.setStatusCode(TStatusCode.SRM_FAILURE);
-            say("assigned status.statusCode : "+status.getStatusCode());
-            say("assigned status.explanation : "+status.getExplanation());
+            logger.debug("assigned status.statusCode : "+status.getStatusCode());
+            logger.debug("assigned status.explanation : "+status.getExplanation());
             return status;
         }
         if (ready_req==len || done_req==len || ready_req+done_req==len ) {
             if (failure) {
             status.setStatusCode(TStatusCode.SRM_PARTIAL_SUCCESS);
-            say("assigned status.statusCode : "+status.getStatusCode());
-            say("assigned status.explanation : "+status.getExplanation());
+            logger.debug("assigned status.statusCode : "+status.getStatusCode());
+            logger.debug("assigned status.explanation : "+status.getExplanation());
             return status;
             }
             else {
             status.setStatusCode(TStatusCode.SRM_SUCCESS);
-            say("assigned status.statusCode : "+status.getStatusCode());
-            say("assigned status.explanation : "+status.getExplanation());
+            logger.debug("assigned status.statusCode : "+status.getStatusCode());
+            logger.debug("assigned status.explanation : "+status.getExplanation());
             return status;
             }
         }
         if (pending_req==len) {
             status.setStatusCode(TStatusCode.SRM_REQUEST_QUEUED);
-            say("assigned status.statusCode : "+status.getStatusCode());
-            say("assigned status.explanation : "+status.getExplanation());
+            logger.debug("assigned status.statusCode : "+status.getStatusCode());
+            logger.debug("assigned status.explanation : "+status.getExplanation());
             return status;
         }
         // SRM space is not enough to hold all requested SURLs for free. (so me thinks one fails - all fail)
         if (failed_no_free_space>0) {
             status.setStatusCode(TStatusCode.SRM_NO_FREE_SPACE);
-            say("assigned status.statusCode : "+status.getStatusCode());
-            say("assigned status.explanation : "+status.getExplanation());
+            logger.debug("assigned status.statusCode : "+status.getStatusCode());
+            logger.debug("assigned status.explanation : "+status.getExplanation());
             return status;
         }
         // space associated with the targetSpaceToken is expired. (so me thinks one fails - all fail)
         if (failed_space_expired>0) {
             status.setStatusCode(TStatusCode.SRM_SPACE_LIFETIME_EXPIRED);
-            say("assigned status.statusCode : "+status.getStatusCode());
-            say("assigned status.explanation : "+status.getExplanation());
+            logger.debug("assigned status.statusCode : "+status.getStatusCode());
+            logger.debug("assigned status.explanation : "+status.getExplanation());
             return status;
         }
         // we still have work to do:
         if (running_req > 0 || pending_req > 0) {
             status.setStatusCode(TStatusCode.SRM_REQUEST_INPROGRESS);
-            say("assigned status.statusCode : "+status.getStatusCode());
-            say("assigned status.explanation : "+status.getExplanation());
+            logger.debug("assigned status.statusCode : "+status.getStatusCode());
+            logger.debug("assigned status.explanation : "+status.getExplanation());
             return status;
         }
         else {
@@ -575,23 +576,23 @@ public abstract class ContainerRequest extends Request {
             if (ready_req > 0 || done_req > 0 ) {
                 //some succeeded some not
                 status.setStatusCode(TStatusCode.SRM_PARTIAL_SUCCESS);
-                say("assigned status.statusCode : "+status.getStatusCode());
-                say("assigned status.explanation : "+status.getExplanation());
+                logger.debug("assigned status.statusCode : "+status.getStatusCode());
+                logger.debug("assigned status.explanation : "+status.getExplanation());
                 return status;
             }
             else {
                 //none succeeded
                 status.setStatusCode(TStatusCode.SRM_FAILURE);
-                say("assigned status.statusCode : "+status.getStatusCode());
-                say("assigned status.explanation : "+status.getExplanation());
+                logger.debug("assigned status.statusCode : "+status.getStatusCode());
+                logger.debug("assigned status.explanation : "+status.getExplanation());
                 return status;
             }
             }
             else {
                 //no single failure - we should not get to this piece if code
                 status.setStatusCode(TStatusCode.SRM_SUCCESS);
-                say("assigned status.statusCode : "+status.getStatusCode());
-                say("assigned status.explanation : "+status.getExplanation());
+                logger.debug("assigned status.statusCode : "+status.getStatusCode());
+                logger.debug("assigned status.explanation : "+status.getExplanation());
                 return status;
             }
         }
@@ -642,7 +643,7 @@ public abstract class ContainerRequest extends Request {
                     num_of_failed ++;
                 }
             }catch (Exception e) {
-                esay(e);
+                logger.error(e);
                 num_of_failed ++;
             }
         }
@@ -673,7 +674,6 @@ public abstract class ContainerRequest extends Request {
         if(o == this) {
             return true;
         }
-
         return false;
     }
 
@@ -681,46 +681,6 @@ public abstract class ContainerRequest extends Request {
     public int hashCode() {
         return getId().hashCode();
     }
-
-    /**
-     * log a message
-     * @param words
-     * message
-     */
-    public void say(String words) {
-        getStorage().log("Request id="+getId()+": "+words);
-    }
-
-
-    /**
-     * log an error message
-     * @param words
-     *error message
-     */
-    public void esay(String words) {
-        getStorage().elog("Request id="+getId()+": "+words);
-    }
-
-    /**
-     * log an instance of throwable
-     * @param t
-     * an instance of throwable
-     */
-    public void esay(Throwable t) {
-        getStorage().elog("Request id="+getId()+" error: ");
-        getStorage().elog(t);
-    }
-
-    /**
-     * Getter for property fileRequestsIds.
-     * @return Value of property fileRequestsIds.
-     */
-    /*public java.lang.String[] getFileRequestsIds() {
-        String[] copy = new String[fileRequestsIds.length];
-        System.arraycopy(fileRequestsIds, 0, copy, 0, fileRequestsIds.length);
-        return copy;
-    }
-     */
 
     public void toString(StringBuilder sb, boolean longformat) {
         try {
@@ -749,7 +709,7 @@ public abstract class ContainerRequest extends Request {
                 sb.append(" number of files:").append(fileRequests.length);
             }
         }catch(Exception e) {
-            esay(e);
+            logger.error(e);
         }
 
     }

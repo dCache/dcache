@@ -72,7 +72,6 @@ import org.dcache.pool.repository.Allocator;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.Checksum;
 import diskCacheV111.util.ChecksumFactory;
-import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
@@ -89,7 +88,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import org.dcache.srm.Logger;
 import org.dcache.srm.util.GridftpClient.IDiskDataSourceSink;
 import org.dcache.srm.util.GridftpClient;
 import org.dcache.srm.security.SslGsiSocketFactory;
@@ -97,7 +95,6 @@ import org.globus.ftp.Buffer;
 import org.globus.ftp.exception.ClientException;
 import org.globus.ftp.exception.ServerException;
 import org.globus.gsi.gssapi.auth.Authorization;
-import org.globus.gsi.gssapi.auth.AuthorizationException;
 import org.globus.gsi.gssapi.net.GssSocket;
 import org.globus.gsi.gssapi.net.impl.GSIGssSocket;
 import org.globus.gsi.GlobusCredentialException;
@@ -111,9 +108,7 @@ public class RemoteGsiftpTransferProtocol_1
 {
     private final static org.apache.log4j.Logger _log =
         org.apache.log4j.Logger.getLogger(RemoteGsiftpTransferProtocol_1.class);
-    private final static org.apache.log4j.Logger _logSpaceAllocation = org.apache.log4j.Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + DCapProtocol_3_nio.class.getName());
-
-    private final CellEndpoint _cell;
+     private final CellEndpoint _cell;
     private long _starttime;
     private long _timeout_time;
     private PnfsId _pnfsId;
@@ -133,41 +128,9 @@ public class RemoteGsiftpTransferProtocol_1
         org.dcache.srm.util.GridftpClient.setSupportedChecksumTypes(ChecksumFactory.getTypes());
     }
 
-    private final Logger _logger = new Logger() {
-            public synchronized void log(String s)
-            {
-                say(s);
-            }
-
-            public synchronized void elog(String s)
-            {
-                esay(s);
-            }
-
-            public synchronized void elog(Throwable t)
-            {
-                esay(t);
-            }
-        };
-
     public RemoteGsiftpTransferProtocol_1(CellEndpoint cell)
     {
         _cell = cell;
-    }
-
-    private void say(String str)
-    {
-        _log.info(str);
-    }
-
-    private void esay(String str)
-    {
-        _log.error(str);
-    }
-
-    private void esay(Throwable t)
-    {
-        _log.error(t);
     }
 
     private void createFtpClient(RemoteGsiftpTransferProtocolInfo remoteGsiftpProtocolInfo ) throws CacheException,ServerException, ClientException,
@@ -179,7 +142,7 @@ public class RemoteGsiftpTransferProtocol_1
         CellPath cellpath =
             new CellPath(remoteGsiftpProtocolInfo.getGsiftpTranferManagerName(),
                          remoteGsiftpProtocolInfo.getGsiftpTranferManagerDomain());
-        say(" runIO() RemoteGsiftpTranferManager cellpath=" + cellpath);
+        _log.debug(" runIO() RemoteGsiftpTranferManager cellpath=" + cellpath);
 
         ServerSocket ss = null;
         try {
@@ -187,7 +150,7 @@ public class RemoteGsiftpTransferProtocol_1
             //timeout after 5 minutes if credentials not delegated
             ss.setSoTimeout(5 * 60 * 1000);
         } catch (IOException e) {
-            esay("exception while trying to create a server socket : " + e);
+            _log.error("exception while trying to create a server socket : " + e);
             throw e;
         }
 
@@ -198,17 +161,17 @@ public class RemoteGsiftpTransferProtocol_1
                                                            ss.getLocalPort(),
                                                            remoteGsiftpProtocolInfo.getRequestCredentialId());
 
-        say(" runIO() created message");
+        _log.debug(" runIO() created message");
         _cell.sendMessage(new CellMessage(cellpath, cred_request));
-        say("waiting for delegation connection");
+        _log.debug("waiting for delegation connection");
         //timeout after 5 minutes if credentials not delegated
         Socket deleg_socket = ss.accept();
-        say("connected");
+        _log.debug("connected");
         try {
             ss.close();
         } catch (IOException e) {
-            esay("failed to close server socket");
-            esay(e);
+            _log.error("failed to close server socket");
+            _log.error(e);
             // we still can continue, this is non-fatal
         }
         GSSCredential deleg_cred;
@@ -242,12 +205,12 @@ public class RemoteGsiftpTransferProtocol_1
          out.close();
          }catch (Exception e)
          {
-         esay(e);
+         _log.error(e);
          }
         */
 
         if (deleg_cred != null) {
-            say("successfully received user credentials: "
+            _log.debug("successfully received user credentials: "
                 + deleg_cred.getName().toString());
         } else {
             throw new CacheException("delegation request failed");
@@ -256,8 +219,7 @@ public class RemoteGsiftpTransferProtocol_1
         GlobusURL url = new GlobusURL(remoteGsiftpProtocolInfo.getGsiftpUrl());
         _client = new GridftpClient(url.getHost(), url.getPort(),
                                     remoteGsiftpProtocolInfo.getTcpBufferSize(),
-                                    deleg_cred,
-                                    _logger);
+                                    deleg_cred);
         _client.setStreamsNum(remoteGsiftpProtocolInfo.getStreams_num());
         _client.setTcpBufferSize(remoteGsiftpProtocolInfo.getTcpBufferSize());
     }
@@ -274,7 +236,7 @@ public class RemoteGsiftpTransferProtocol_1
                GlobusCredentialException, GSSException
     {
         _pnfsId = pnfsId;
-        say("runIO()\n\tprotocol="
+        _log.debug("runIO()\n\tprotocol="
             + protocol + ",\n\tStorageInfo=" + storage + ",\n\tPnfsId="
             + pnfsId + ",\n\taccess ="
             + (((access & MoverProtocol.WRITE) != 0) ? "WRITE" : "READ"));
@@ -297,7 +259,7 @@ public class RemoteGsiftpTransferProtocol_1
             gridFTPWrite(remoteGsiftpProtocolInfo,
                          storage);
         }
-        say(" runIO() done");
+        _log.debug(" runIO() done");
     }
 
     public long getLastTransferred()
@@ -355,11 +317,11 @@ public class RemoteGsiftpTransferProtocol_1
             GlobusURL src_url = new GlobusURL(protocolInfo.getGsiftpUrl());
             boolean emode = protocolInfo.isEmode();
             long size = _client.getSize(src_url.getPath());
-            say(" received a file size info: " + size +
+            _log.debug(" received a file size info: " + size +
                 " allocating space on the pool");
-            _logSpaceAllocation.debug("ALLOC: " + _pnfsId + " : " + size );
+            _log.debug("ALLOC: " + _pnfsId + " : " + size );
             allocator.allocate(size);
-            say(" allocated space " + size);
+            _log.debug(" allocated space " + size);
             DiskDataSourceSink sink =
                 new DiskDataSourceSink(protocolInfo.getBufferSize(),
                                        false);
@@ -376,7 +338,7 @@ public class RemoteGsiftpTransferProtocol_1
                 }
             }
         } catch (Exception e) {
-            esay(e);
+            _log.error(e);
             throw new CacheException(e.toString());
         }
     }
@@ -385,15 +347,15 @@ public class RemoteGsiftpTransferProtocol_1
                              StorageInfo storage)
         throws CacheException
     {
-        say("gridFTPWrite started");
+        _log.debug("gridFTPWrite started");
 
         try {
             String checksumTypes [] = ChecksumFactory.getTypes(_cell,_pnfsId);
             if ( checksumTypes != null ){
-                say("Will use "+checksumTypes[0]+" for transfer verification of "+_pnfsId);
+                _log.debug("Will use "+checksumTypes[0]+" for transfer verification of "+_pnfsId);
                 _client.setChecksum(checksumTypes[0],null);
             } else {
-                say("PnfsId "+_pnfsId+" does not have checksums");
+                _log.debug("PnfsId "+_pnfsId+" does not have checksums");
             }
 
             GlobusURL dst_url =  new GlobusURL(protocolInfo.getGsiftpUrl());
@@ -408,7 +370,7 @@ public class RemoteGsiftpTransferProtocol_1
                 _client.close();
             }
         } catch (Exception e) {
-            esay(e);
+            _log.error(e);
             throw new CacheException(e.toString());
         }
     }
@@ -440,7 +402,7 @@ public class RemoteGsiftpTransferProtocol_1
 
             return _transferChecksum;
         } catch (IOException e) {
-            esay(e);
+            _log.error(e);
             return null;
         }
     }
@@ -460,17 +422,17 @@ public class RemoteGsiftpTransferProtocol_1
                 _cksmFactory = ChecksumFactory.getFactory(_ftpCksm.type);
                 return _cksmFactory;
             } catch (NoSuchAlgorithmException e) {
-                esay("Checksum algorithm is not supported: " + e.getMessage());
+                _log.error("Checksum algorithm is not supported: " + e.getMessage());
             } catch (NoRouteToCellException e) {
-                esay("Failed to communicate with transfer manager: " + e.getMessage());
+                _log.error("Failed to communicate with transfer manager: " + e.getMessage());
             } catch (GlobusCredentialException e) {
-                esay("Failed to authenticate with FTP server: " + e.getMessage());
+                _log.error("Failed to authenticate with FTP server: " + e.getMessage());
             } catch (GSSException e) {
-                esay("Failed to authenticate with FTP server: " + e.getMessage());
+                _log.error("Failed to authenticate with FTP server: " + e.getMessage());
             } catch (IOException e) {
-                esay("I/O failure talking to FTP server: " + e.getMessage());
+                _log.error("I/O failure talking to FTP server: " + e.getMessage());
             } catch (Exception e) {
-                esay("Failed to negotiate checksum with FTP server: " + e.getMessage());
+                _log.error("Failed to negotiate checksum with FTP server: " + e.getMessage());
             }
         }
         return null;
@@ -522,7 +484,7 @@ public class RemoteGsiftpTransferProtocol_1
         {
             if (_source) {
                 String error = "DiskDataSourceSink is source and write is called";
-                esay(error);
+                _log.error(error);
                 throw new IllegalStateException(error);
             }
 
@@ -546,7 +508,7 @@ public class RemoteGsiftpTransferProtocol_1
 
         public synchronized void close()
         {
-            say("DiskDataSink.close() called");
+            _log.debug("DiskDataSink.close() called");
             _last_transfer_time    = System.currentTimeMillis();
         }
 
@@ -578,7 +540,7 @@ public class RemoteGsiftpTransferProtocol_1
         {
             if (!_source) {
                 String error = "DiskDataSourceSink is sink and read is called";
-                esay(error);
+                _log.error(error);
                 throw new IllegalStateException(error);
             }
 
@@ -601,19 +563,19 @@ public class RemoteGsiftpTransferProtocol_1
                 diskCacheV111.util.Checksum pnfsChecksum = diskCacheV111.util.ChecksumFactory.getFactory(type).createFromPersistentState(_cell, _pnfsId);
                 if ( pnfsChecksum != null ){
                     String hexValue = pnfsChecksum.toHexString();
-                    say(type+" read from pnfs for file "+_pnfsId+" is "+hexValue);
+                    _log.debug(type+" read from pnfs for file "+_pnfsId+" is "+hexValue);
                     return hexValue;
                 }
             }
             catch(Exception e){
-                esay("could not get "+type+" from pnfs:");
-                esay(e);
-                esay("ignoring this error");
+                _log.error("could not get "+type+" from pnfs:");
+                _log.error(e);
+                _log.error("ignoring this error");
 
             }
 
             String hexValue = org.dcache.srm.util.GridftpClient.getCksmValue(_raDiskFile,type);
-            say(type + " for file "+_raDiskFile+" is "+hexValue);
+            _log.debug(type + " for file "+_raDiskFile+" is "+hexValue);
             _raDiskFile.seek(0);
             return hexValue;
         }

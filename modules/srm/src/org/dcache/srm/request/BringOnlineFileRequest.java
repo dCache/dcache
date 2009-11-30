@@ -105,7 +105,8 @@ import org.dcache.srm.SRMInvalidRequestException;
  * @version
  */
 public final class BringOnlineFileRequest extends FileRequest {
-    private final static Logger _log = Logger.getLogger(BringOnlineFileRequest.class);
+    private final static Logger logger =
+            Logger.getLogger(BringOnlineFileRequest.class);
     
     // the globus url class created from surl_string
     private GlobusURL surl;
@@ -127,10 +128,10 @@ public final class BringOnlineFileRequest extends FileRequest {
                 requestCredentalId, 
                 lifetime, 
                 maxNumberOfRetries);
-        _log.debug("BringOnlineFileRequest, requestId="+requestId+" fileRequestId = "+getId());
+        logger.debug("BringOnlineFileRequest, requestId="+requestId+" fileRequestId = "+getId());
         try {
             surl = new GlobusURL(url);
-            _log.debug("    surl = "+surl.getURL());
+            logger.debug("    surl = "+surl.getURL());
         }
         catch(MalformedURLException murle) {
             throw new IllegalArgumentException(murle.toString());
@@ -294,7 +295,7 @@ public final class BringOnlineFileRequest extends FileRequest {
             rfs.state = "Pending";
         }
         
-        //_log.debug(" returning requestFileStatus for "+rfs.toString());
+        //logger.debug(" returning requestFileStatus for "+rfs.toString());
         return rfs;
     }
     
@@ -308,7 +309,7 @@ public final class BringOnlineFileRequest extends FileRequest {
         try {
              fileStatus.setSourceSURL(new URI(getSurlString()));
         } catch (Exception e) {
-            _log.error(e);
+            logger.error(e);
             throw new java.sql.SQLException("wrong surl format");
         }
         
@@ -329,7 +330,7 @@ public final class BringOnlineFileRequest extends FileRequest {
         try {
             surlReturnStatus.setSurl(new URI(getSurlString()));
         } catch (Exception e) {
-            _log.error(e);
+            logger.error(e);
             throw new java.sql.SQLException("wrong surl format");
         }
         surlReturnStatus.setStatus(returnStatus);
@@ -363,48 +364,48 @@ public final class BringOnlineFileRequest extends FileRequest {
     }
 
     public final void run() throws NonFatalJobFailure, FatalJobFailure {
-        _log.debug("run()");
+        logger.debug("run()");
         try {
             if(getFileId() == null) {
                 try {
                     if(!Tools.sameHost(getConfiguration().getSrmHosts(),
                     getSurl().getHost())) {
                         String error ="surl is not local : "+getSurl().getURL();
-                        _log.error(error);
+                        logger.error(error);
                         throw new FatalJobFailure(error);
                     }
                 }
                 catch(java.net.UnknownHostException uhe) {
-                    _log.error(uhe);
+                    logger.error(uhe);
                     throw new FatalJobFailure(uhe.toString());
                 }
-                _log.debug("fileId is null, asking to get a fileId");
+                logger.debug("fileId is null, asking to get a fileId");
                 askFileId();
                 if(getFileId() == null) {
                     setState(State.ASYNCWAIT, "getting file Id");
-                    _log.debug("BringOnlineFileRequest: waiting async notification about fileId...");
+                    logger.debug("BringOnlineFileRequest: waiting async notification about fileId...");
                     return;
                 }
             }
-            _log.debug("fileId = "+getFileId());
+            logger.debug("fileId = "+getFileId());
             
             if(getPinId() == null) {
 
                 // do not check explicitely if we can read the file
                 // this is done by pnfs manager when we call askFileId()
 
-                _log.debug("pinId is null, asking to pin ");
+                logger.debug("pinId is null, asking to pin ");
                 pinFile();
                 if(getPinId() == null) {
                     setState(State.ASYNCWAIT,"pinning file");
-                    _log.debug("BringOnlineFileRequest: waiting async notification about pinId...");
+                    logger.debug("BringOnlineFileRequest: waiting async notification about pinId...");
                     return;
                 }
             }
         } catch(IllegalStateTransition ist) {
             throw new NonFatalJobFailure("Illegal State Transition : " +ist.getMessage());
         }
-        _log.info("PinId is "+getPinId()+" returning, scheduler should change" +
+        logger.info("PinId is "+getPinId()+" returning, scheduler should change" +
             " state to \"Ready\"");
         
     }
@@ -412,16 +413,16 @@ public final class BringOnlineFileRequest extends FileRequest {
     public void askFileId() throws NonFatalJobFailure, FatalJobFailure {
         try {
             
-            _log.debug(" proccessing the file request id "+getId());
+            logger.debug(" proccessing the file request id "+getId());
             String  path =   getPath();
-            _log.debug(" path is "+path);
+            logger.debug(" path is "+path);
             // if we can not read this path for some reason
             //(not in ftp root for example) this will throw exception
             // we do not care about the return value yet
-            _log.debug("calling Job.getJob("+requestId+")");
+            logger.debug("calling Job.getJob("+requestId+")");
             BringOnlineRequest request = (BringOnlineRequest) 
                 Job.getJob(requestId);
-            _log.debug("this file request's request is  "+request);
+            logger.debug("this file request's request is  "+request);
             //this will fail if the protocols are not supported
             if(request.protocols != null && request.protocols.length > 0) {
                 String[] supported_prots = getStorage().supportedGetProtocols();
@@ -447,12 +448,12 @@ public final class BringOnlineFileRequest extends FileRequest {
                 }
             }
             //storage.getGetTurl(getUser(),path,request.protocols);
-            _log.debug("storage.prepareToGet("+path+",...)");
+            logger.debug("storage.prepareToGet("+path+",...)");
             GetFileInfoCallbacks callbacks = new GetCallbacks(getId());
             getStorage().getFileInfo(getUser(),path,callbacks);
         }
         catch(Exception e) {
-            _log.error(e);
+            logger.error(e);
             throw new NonFatalJobFailure(e.toString());
         }
     }
@@ -461,7 +462,7 @@ public final class BringOnlineFileRequest extends FileRequest {
         try {
             
             PinCallbacks callbacks = new ThePinCallbacks(getId());
-            _log.info("storage.pinFile("+getFileId()+",...)");
+            logger.info("storage.pinFile("+getFileId()+",...)");
             long desiredPinLifetime =
                 ((BringOnlineRequest)getRequest()).getDesiredOnlineLifetimeInSeconds();
             if(desiredPinLifetime != -1) {
@@ -477,31 +478,31 @@ public final class BringOnlineFileRequest extends FileRequest {
                 callbacks);
         }
         catch(Exception e) {
-            _log.error(e);
+            logger.error(e);
             throw new NonFatalJobFailure(e.toString());
         }
     }
     
     protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
         State state = getState();
-        _log.debug("State changed from "+oldState+" to "+getState());
+        logger.debug("State changed from "+oldState+" to "+getState());
         if(state == State.READY) {
             try {
                 getRequest().resetRetryDeltaTime();
             }
             catch (SRMInvalidRequestException ire) {
-                _log.error(ire);
+                logger.error(ire);
             }
         }
         if(state == State.CANCELED || state == State.FAILED ) {
             if(getFileId() != null && getPinId() != null) {
                 UnpinCallbacks callbacks = new TheUnpinCallbacks(this.getId());
-                _log.info("state changed to final state, unpinning fileId= "+ getFileId()+" pinId = "+getPinId());
+                logger.info("state changed to final state, unpinning fileId= "+ getFileId()+" pinId = "+getPinId());
                 try {
                     getStorage().unPinFile(getUser(),getFileId(),callbacks, getPinId());
                 }
                 catch (SRMInvalidRequestException ire) {
-                    _log.error(ire);
+                    logger.error(ire);
                     return;
                 }
             }
@@ -514,7 +515,7 @@ public final class BringOnlineFileRequest extends FileRequest {
         try {
             surlReturnStatus.setSurl(new URI(getSurlString()));
         } catch (Exception e) {
-            _log.error(e);
+            logger.error(e);
            returnStatus.setExplanation("wrong surl format");
            returnStatus.setStatusCode(TStatusCode.SRM_INVALID_REQUEST);
            surlReturnStatus.setStatus(returnStatus);
@@ -522,11 +523,11 @@ public final class BringOnlineFileRequest extends FileRequest {
         }
         State state = getState();
         if(!State.isFinalState(state)) {
-            _log.error("Canceled by the srmReleaseFile");
+            logger.error("Canceled by the srmReleaseFile");
             try {
                 this.setState(State.CANCELED, "Canceled by the srmReleaseFile");
             } catch (IllegalStateTransition ist) {
-                _log.warn("Illegal State Transition : " +ist.getMessage());
+                logger.warn("Illegal State Transition : " +ist.getMessage());
             }
            returnStatus.setExplanation("srmBringOnline for this file has not completed yet,"+
                     " pending srmBringOnline canceled");
@@ -538,7 +539,7 @@ public final class BringOnlineFileRequest extends FileRequest {
         
         if(getFileId() != null && getPinId() != null) {
             TheUnpinCallbacks callbacks = new TheUnpinCallbacks(this.getId());
-            _log.debug("srmReleaseFile, unpinning fileId= "+
+            logger.debug("srmReleaseFile, unpinning fileId= "+
                     getFileId()+" pinId = "+getPinId());
             getStorage().unPinFile(getUser(),getFileId(),callbacks, getPinId());
             try {   
@@ -551,7 +552,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                     return surlReturnStatus;
                 }
             } catch( InterruptedException ie) {
-                ie.printStackTrace();
+                logger.error(ie);
             }
             
            
@@ -694,12 +695,12 @@ public final class BringOnlineFileRequest extends FileRequest {
                             TStatusCode.SRM_INVALID_PATH);
                 }
                 catch(IllegalStateTransition ist) {
-                    _log.warn("Illegal State Transition : " +ist.getMessage());
+                    logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
-                _log.error("GetCallbacks error: "+ reason);
+                logger.error("GetCallbacks error: "+ reason);
             }
             catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
         
@@ -710,12 +711,12 @@ public final class BringOnlineFileRequest extends FileRequest {
                     fr.setState(State.FAILED,error);
                 }
                 catch(IllegalStateTransition ist) {
-                    _log.warn("Illegal State Transition : " +ist.getMessage());
+                    logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
-                _log.error("GetCallbacks error: "+ error);
+                logger.error("GetCallbacks error: "+ error);
             }
             catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
         
@@ -726,12 +727,12 @@ public final class BringOnlineFileRequest extends FileRequest {
                     fr.setState(State.FAILED,e.toString());
                 }
                 catch(IllegalStateTransition ist) {
-                    _log.warn("Illegal State Transition : " +ist.getMessage());
+                    logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
-                _log.error("GetCallbacks exception",e);
+                logger.error("GetCallbacks exception",e);
             }
             catch(Exception e1) {
-                e1.printStackTrace();
+                logger.error(e1);
             }
         }
         
@@ -742,13 +743,13 @@ public final class BringOnlineFileRequest extends FileRequest {
                     fr.setState(State.FAILED,reason);
                 }
                 catch(IllegalStateTransition ist) {
-                    _log.warn("Illegal State Transition : " +ist.getMessage());
+                    logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
                 
-                _log.error("GetCallbacks error: "+ reason);
+                logger.error("GetCallbacks error: "+ reason);
             }
             catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
             
         }
@@ -762,7 +763,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                     return;
                 }
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
-                _log.debug("StorageInfoArrived: FileId:"+fileId);
+                logger.debug("StorageInfoArrived: FileId:"+fileId);
                 State state ;
                 synchronized(fr) {
                     state = fr.getState();
@@ -777,14 +778,14 @@ public final class BringOnlineFileRequest extends FileRequest {
                             scheduler.schedule(fr);
                         }
                         catch(Exception ie) {
-                            _log.error(ie);
+                            logger.error(ie);
                         }
                     }
                 }
                 
             }
             catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
             
         }
@@ -797,13 +798,13 @@ public final class BringOnlineFileRequest extends FileRequest {
                    fr.setState(State.FAILED,"GetCallbacks Timeout");
                 }
                 catch(IllegalStateTransition ist) {
-                    _log.warn("Illegal State Transition : " +ist.getMessage());
+                    logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
                 
-                _log.error("GetCallbacks Timeout");
+                logger.error("GetCallbacks Timeout");
             }
             catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
         
@@ -834,12 +835,12 @@ public final class BringOnlineFileRequest extends FileRequest {
                     fr.setState(State.FAILED,error);
                 }
                 catch(IllegalStateTransition ist) {
-                    _log.warn("Illegal State Transition : " +ist.getMessage());
+                    logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
-                _log.error("ThePinCallbacks error: "+ error);
+                logger.error("ThePinCallbacks error: "+ error);
             }
             catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
         
@@ -850,12 +851,12 @@ public final class BringOnlineFileRequest extends FileRequest {
                     fr.setState(State.FAILED,e.toString());
                 }
                 catch(IllegalStateTransition ist) {
-                    _log.warn("Illegal State Transition : " +ist.getMessage());
+                    logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
-                _log.error("ThePinCallbacks exception",e);
+                logger.error("ThePinCallbacks exception",e);
             }
             catch(Exception e1) {
-                e1.printStackTrace();
+                logger.error(e1);
             }
         }
         
@@ -869,33 +870,33 @@ public final class BringOnlineFileRequest extends FileRequest {
                     fr.setState(State.FAILED,"ThePinCallbacks Timeout");
                 }
                 catch(IllegalStateTransition ist) {
-                    _log.warn("Illegal State Transition : " +ist.getMessage());
+                    logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
                 
-                _log.error("GetCallbacks Timeout");
+                logger.error("GetCallbacks Timeout");
             }
             catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
         
         public void Pinned(String pinId) {
             try {
                BringOnlineFileRequest fr = getBringOnlineFileRequest();
-               _log.debug("ThePinCallbacks: Pinned() pinId:"+pinId);
+               logger.debug("ThePinCallbacks: Pinned() pinId:"+pinId);
                 synchronized(fr ) {
                     fr.setPinId(pinId);
                     fr.setState(State.DONE," file is pinned, pinId="+pinId);
                 }
             }
             catch (SRMInvalidRequestException ire) {
-                _log.error("BringOnlineFileRequest failed: " + ire.getMessage());
+                logger.error("BringOnlineFileRequest failed: " + ire.getMessage());
             }
             catch(SQLException e) {
-                _log.error("BringOnlineFileRequest failed: " + e.getMessage());
+                logger.error("BringOnlineFileRequest failed: " + e.getMessage());
             }
             catch(IllegalStateTransition ist) {
-                _log.warn("Illegal State Transition : " +ist.getMessage());
+                logger.warn("Illegal State Transition : " +ist.getMessage());
             }
         }
         
@@ -906,13 +907,13 @@ public final class BringOnlineFileRequest extends FileRequest {
                     fr.setState(State.FAILED,reason);
                 }
                 catch(IllegalStateTransition ist) {
-                    _log.warn("Illegal State Transition : " +ist.getMessage());
+                    logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
                 
-                _log.error("ThePinCallbacks error: "+ reason);
+                logger.error("ThePinCallbacks error: "+ reason);
             }
             catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
         
@@ -949,18 +950,18 @@ public final class BringOnlineFileRequest extends FileRequest {
                     //fr.setState(State.FAILED);
                 }
                 catch(IllegalStateTransition ist) {
-                    //_log.error("can not fail state:"+ist);
+                    //logger.error("can not fail state:"+ist);
                 }
                  */
                 this.error = "TheUnpinCallbacks error: "+ error;
                 if(fr != null) {
-                    _log.error(this.error);
+                    logger.error(this.error);
                 }
                 success = false;
                 done();
             }
             catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
                 done();
             }
         }
@@ -977,18 +978,18 @@ public final class BringOnlineFileRequest extends FileRequest {
                     //fr.setState(State.FAILED);
                 }
                 catch(IllegalStateTransition ist) {
-                    //_log.error("can not fail state:"+ist);
+                    //logger.error("can not fail state:"+ist);
                 }
                  */
                 if(fr != null) {
-                    _log.error("TheUnpinCallbacks exception",e);
+                    logger.error("TheUnpinCallbacks exception",e);
                 }
                 this.error = "TheUninCallbacks exception: "+e.toString();
                 success = false;
                 done();
             }
             catch(Exception e1) {
-                e1.printStackTrace();
+                logger.error(e1);
                 done();
             }
         }
@@ -1008,20 +1009,20 @@ public final class BringOnlineFileRequest extends FileRequest {
                     //fr.setState(State.FAILED);
                 }
                 catch(IllegalStateTransition ist) {
-                    //_log.error("can not fail state:"+ist);
+                    //logger.error("can not fail state:"+ist);
                 }
                  */
                 
                 this.error = "TheUninCallbacks Timeout";
                 if(fr  != null) {
-                    _log.error(this.error);
+                    logger.error(this.error);
                }
                 success = false;
                 done();
                 
             }
             catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
                 done();
             }
         }
@@ -1030,7 +1031,7 @@ public final class BringOnlineFileRequest extends FileRequest {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
                 if(fr != null) {
-                    _log.debug("TheUnpinCallbacks: Unpinned() pinId:"+pinId);
+                    logger.debug("TheUnpinCallbacks: Unpinned() pinId:"+pinId);
                     State state = fr.getState();
                    if(state == State.ASYNCWAIT) {
                         fr.setPinId(pinId);
@@ -1039,7 +1040,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                             scheduler.schedule(fr);
                         }
                         catch(Exception ie) {
-                            _log.error(ie);
+                            logger.error(ie);
                         }
                     }
                 }
@@ -1047,7 +1048,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                 done();
             }
             catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
                 done();
             }
         }
@@ -1064,20 +1065,20 @@ public final class BringOnlineFileRequest extends FileRequest {
                     //fr.setState(State.FAILED);
                 }
                 catch(IllegalStateTransition ist) {
-                    //_log.error("can not fail state:"+ist);
+                    //logger.error("can not fail state:"+ist);
                 }
                  */
                 
                 this.error = "TheUnpinCallbacks error: "+ reason;
                 if(fr  != null) {
-                    _log.error(this.error);
+                    logger.error(this.error);
                 }
                 success = false;
                 done();
 
             }
             catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
                 done();
             }
         }
@@ -1154,7 +1155,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                     
                 }
             } catch( InterruptedException ie) {
-                ie.printStackTrace();
+                logger.error(ie);
                 throw new SRMException("unpinning of "+surl_string+" by SrmRequestId "+id+
                         " got interrupted");
             }
@@ -1191,7 +1192,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                             " took too long");
                 }
             } catch( InterruptedException ie) {
-                ie.printStackTrace();
+                logger.error(ie);
                 throw new SRMException("unpinning of "+surl_string+
                         " got interrupted");
             }

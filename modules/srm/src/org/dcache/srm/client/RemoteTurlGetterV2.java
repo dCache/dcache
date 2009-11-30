@@ -1,78 +1,3 @@
-// $Id$
-// $Log: not supported by cvs2svn $
-// Revision 1.13  2006/06/21 20:29:52  timur
-// Upgraded code to the latest srmv2.2 wsdl (final)
-//
-// Revision 1.12  2006/06/20 15:42:16  timur
-// initial v2.2 commit, code is based on a week old wsdl, will update the wsdl and code next
-//
-// Revision 1.11  2006/05/01 20:23:06  timur
-// fixed a problems in srmturlGetter/Putter
-//
-// Revision 1.10  2006/03/24 00:22:16  timur
-// regenerated stubs with array wrappers for v2_1
-//
-// Revision 1.9  2006/03/14 17:44:17  timur
-// moving toward the axis 1_3
-//
-// Revision 1.8  2006/02/24 19:40:16  neha
-// changes by Neha- to enable value of command line option 'webservice_path' to override its default value
-//
-// Revision 1.7  2006/02/03 01:43:38  timur
-// make  srm v2 copy work with remote srm v1 and vise versa
-//
-// Revision 1.6  2006/01/21 01:18:34  timur
-// bug fixes in SrmCopy
-//
-// Revision 1.5  2006/01/19 01:48:21  timur
-// more v2 copy work
-//
-// Revision 1.4  2006/01/12 23:38:10  timur
-// first working version of srmCopy
-//
-// Revision 1.3  2006/01/11 17:29:50  timur
-// first unetested implmentation of v2 turl getter and putter
-//
-// Revision 1.2  2006/01/10 21:20:52  timur
-// a bit more progress on built in V2 client
-//
-// Revision 1.1  2006/01/10 19:03:37  timur
-// adding srm v2 built in client
-//
-// Revision 1.5  2005/08/29 22:52:04  timur
-// commiting changes made by Neha needed by OSG
-//
-// Revision 1.4  2005/03/24 19:16:18  timur
-// made built in client always delegate credentials, which is required by LBL's DRM
-//
-// Revision 1.3  2005/03/13 21:56:28  timur
-// more changes to restore compatibility
-//
-// Revision 1.2  2005/03/11 21:16:25  timur
-// making srm compatible with cern tools again
-//
-// Revision 1.1  2005/01/14 23:07:14  timur
-// moving general srm code in a separate repository
-//
-// Revision 1.3  2005/01/07 20:55:30  timur
-// changed the implementation of the built in client to use apache axis soap toolkit
-//
-// Revision 1.2  2004/08/06 19:35:22  timur
-// merging branch srm-branch-12_May_2004 into the trunk
-//
-// Revision 1.1.2.7  2004/08/03 16:51:47  timur
-// removing unneeded dependancies on dcache
-//
-// Revision 1.1.2.6  2004/06/30 20:37:23  timur
-// added more monitoring functions, added retries to the srm client part, adapted the srmclientv1 for usage in srmcp
-//
-// Revision 1.1.2.5  2004/06/16 19:44:32  timur
-// added cvs logging tags and fermi copyright headers at the top, removed Copier.java and CopyJob.java
-//
-// Revision 1.1.2.4  2004/06/15 22:15:41  timur
-// added cvs logging tags and fermi copyright headers at the top
-//
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -148,33 +73,21 @@ COPYRIGHT STATUS:
 package org.dcache.srm.client;
 
 import org.dcache.srm.AbstractStorageElement;
-import org.dcache.srm.SRM;
 import org.globus.util.GlobusURL;
-import org.globus.io.urlcopy.UrlCopy;
-import java.net.MalformedURLException;
-import java.net.UnknownHostException;
-import java.net.InetAddress;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.BufferedReader;
-import java.util.Hashtable;
-import java.util.HashSet;
 import java.util.HashMap;
-import java.util.Iterator;
 import org.dcache.srm.SRMException;
 import java.beans.PropertyChangeListener;
 import org.dcache.srm.request.RequestCredential;
-import org.dcache.srm.Logger;
-import org.dcache.srm.v2_2.ISRM;
-import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.v2_2.*;
 import org.dcache.srm.util.RequestStatusTool;
+import org.apache.log4j.Logger;
 /**
  *
  * @author  timur
  */
-public class RemoteTurlGetterV2 extends TurlGetterPutter {
+public final class RemoteTurlGetterV2 extends TurlGetterPutter {
+    private static final Logger logger = Logger.getLogger(RemoteTurlGetterV2.class);
     private Object sync = new Object();
 
     private ISRM srmv2;
@@ -189,19 +102,6 @@ public class RemoteTurlGetterV2 extends TurlGetterPutter {
     long retry_timout;
     int retry_num;
     
-    
-    public void say(String s) {
-        storage.log("RemoteTurlGetterV2 :"+s);
-    }
-    
-    public void esay(String s) {
-        storage.elog("RemoteTurlGetterV2 :"+s);
-    }
-    
-    public void esay(Throwable t) {
-        storage.elog("RemoteTurlGetterV2 exception");
-        storage.elog(t);
-    }
     
     public RemoteTurlGetterV2(AbstractStorageElement storage,
     RequestCredential credential,String[] SURLs,
@@ -229,10 +129,10 @@ public class RemoteTurlGetterV2 extends TurlGetterPutter {
         srmv2.srmReleaseFiles(srmReleaseFilesRequest);
         TReturnStatus returnStatus = srmReleaseFilesResponse.getReturnStatus();
         if(returnStatus == null) {
-            esay("srmReleaseFiles return status is null");
+            logger.error("srmReleaseFiles return status is null");
             return;
         }
-        say("srmReleaseFilesResponse status code="+returnStatus.getStatusCode());
+        logger.debug("srmReleaseFilesResponse status code="+returnStatus.getStatusCode());
         return;
         
     }
@@ -240,17 +140,16 @@ public class RemoteTurlGetterV2 extends TurlGetterPutter {
    public  void getInitialRequest() throws SRMException
    {
         if(number_of_file_reqs == 0) {
-            say("number_of_file_reqs is 0, nothing to do");
+            logger.debug("number_of_file_reqs is 0, nothing to do");
             return;
         }
-        say("SURLs[0] is "+SURLs[0]);
+        logger.debug("SURLs[0] is "+SURLs[0]);
         try {
             GlobusURL srmUrl = new GlobusURL(SURLs[0]);
             srmv2 = new SRMClientV2(srmUrl, 
             credential.getDelegatedCredential(),
             retry_timout,
             retry_num,
-            storage,
             true, 
             true,
             "host",
@@ -292,7 +191,7 @@ public class RemoteTurlGetterV2 extends TurlGetterPutter {
     public void run() {
         
         if(number_of_file_reqs == 0) {
-            say("number_of_file_reqs is 0, nothing to do");
+            logger.debug("number_of_file_reqs is 0, nothing to do");
             return;
         }
         try {
@@ -313,7 +212,7 @@ public class RemoteTurlGetterV2 extends TurlGetterPutter {
                     statusCode+" explanation="+status.getExplanation());
             }
             requestToken = srmPrepareToGetResponse.getRequestToken();
-            say(" srm returned requestToken = "+requestToken);
+            logger.debug(" srm returned requestToken = "+requestToken);
             ArrayOfTGetRequestFileStatus arrayOfTGetRequestFileStatus  =
                 srmPrepareToGetResponse.getArrayOfFileStatuses();
             if(arrayOfTGetRequestFileStatus == null  ) {
@@ -337,12 +236,12 @@ public class RemoteTurlGetterV2 extends TurlGetterPutter {
                 for( TGetRequestFileStatus getRequestFileStatus:getRequestFileStatuses) {
                     org.apache.axis.types.URI surl = getRequestFileStatus.getSourceSURL();
                     if(surl == null) {
-                        esay("invalid getRequestFileStatus, surl is null");
+                        logger.error("invalid getRequestFileStatus, surl is null");
                         continue;
                     }
                     String surl_string = surl.toString();
                     if(!pendingSurlsToIndex.containsKey(surl_string)) {
-                        esay("invalid getRequestFileStatus, surl = "+surl_string+
+                        logger.error("invalid getRequestFileStatus, surl = "+surl_string+
                                 " not found");
                         continue;
                     }
@@ -358,7 +257,7 @@ public class RemoteTurlGetterV2 extends TurlGetterPutter {
                         String error ="retreval of surl "+surl_string+
                                 " failed, status = "+fileStatusCode+
                         " explanation="+fileStatus.getExplanation();
-                        esay(error);
+                        logger.error(error);
                        int indx = ((Integer) pendingSurlsToIndex.remove(surl_string)).
                                intValue();
                         notifyOfFailure(SURLs[indx], error, requestToken, null);
@@ -373,7 +272,7 @@ public class RemoteTurlGetterV2 extends TurlGetterPutter {
                                 size = getRequestFileStatus.getFileSize().longValue();
                             }
                             else {
-                                esay("size is not set in FileStatus for SURL="+SURLs[indx]);
+                                logger.error("size is not set in FileStatus for SURL="+SURLs[indx]);
                             }
                             notifyOfTURL(SURLs[indx], transferUrl, requestToken,null,new Long(size) );
                             haveCompletedFileRequests = true;
@@ -387,7 +286,7 @@ public class RemoteTurlGetterV2 extends TurlGetterPutter {
                 }
 
                 if(pendingSurlsToIndex.isEmpty()) {
-                    say("no more pending transfers, breaking the loop");
+                    logger.debug("no more pending transfers, breaking the loop");
                     break;
                 }
                 // do not wait longer then 60 seconds
@@ -396,7 +295,7 @@ public class RemoteTurlGetterV2 extends TurlGetterPutter {
                 }
                 try {
 
-                    say("sleeping "+estimatedWaitInSeconds+" seconds ...");
+                    logger.debug("sleeping "+estimatedWaitInSeconds+" seconds ...");
                     Thread.sleep(estimatedWaitInSeconds * 1000);
                 }
                 catch(InterruptedException ie) {
@@ -442,7 +341,7 @@ public class RemoteTurlGetterV2 extends TurlGetterPutter {
                 arrayOfTGetRequestFileStatus =
                     srmStatusOfGetRequestResponse.getArrayOfFileStatuses();
                 if(arrayOfTGetRequestFileStatus == null ) {
-                    esay( "incorrect number of RequestFileStatuses");
+                    logger.error( "incorrect number of RequestFileStatuses");
                     throw new IOException("incorrect number of RequestFileStatuses");
                 }
                 
@@ -450,7 +349,7 @@ public class RemoteTurlGetterV2 extends TurlGetterPutter {
 
                 if(getRequestFileStatuses == null ||
                     getRequestFileStatuses.length !=  expectedResponseLength) {
-                    esay( "incorrect number of RequestFileStatuses");
+                    logger.error( "incorrect number of RequestFileStatuses");
                     throw new IOException("incorrect number of RequestFileStatuses");
                 }
 
@@ -469,7 +368,7 @@ public class RemoteTurlGetterV2 extends TurlGetterPutter {
             }
         }
         catch(Exception e) {
-            this.esay(e);
+            logger.error(e);
             notifyOfFailure(e);
             return;
         }
@@ -481,15 +380,13 @@ public class RemoteTurlGetterV2 extends TurlGetterPutter {
     String surl,
     String requestTokenString,
     long retry_timeout,
-    int retry_num,
-    Logger logger) throws Exception
+    int retry_num) throws Exception
     {
         GlobusURL srmUrl = new GlobusURL(surl);
         SRMClientV2 srmv2 = new SRMClientV2(srmUrl, 
         credential.getDelegatedCredential(),
         retry_timeout,
         retry_num,
-        logger,
         true, 
         true,
         "host",
@@ -507,10 +404,10 @@ public class RemoteTurlGetterV2 extends TurlGetterPutter {
         srmv2.srmReleaseFiles(srmReleaseFilesRequest);
         TReturnStatus returnStatus = srmReleaseFilesResponse.getReturnStatus();
         if(returnStatus == null) {
-            logger.elog("srmReleaseFiles return status is null");
+            logger.error("srmReleaseFiles return status is null");
             return;
         }
-        logger.log("srmReleaseFilesResponse status code="+returnStatus.getStatusCode());
+        logger.debug("srmReleaseFilesResponse status code="+returnStatus.getStatusCode());
         return;
     }
     

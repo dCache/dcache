@@ -14,10 +14,11 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.util.RequestStatusTool;
-
-
+import org.apache.log4j.Logger;
 
 public final class LsRequest extends ContainerRequest {
+    private final static Logger logger =
+            Logger.getLogger(LsRequest.class);
 
         private final int offset;
         private final int count;
@@ -178,7 +179,7 @@ public final class LsRequest extends ContainerRequest {
                                         }
                                 }
                                 catch(IllegalStateTransition ist) {
-                                        esay("Illegal State Transition : " +ist.getMessage());
+                                        logger.error("Illegal State Transition : " +ist.getMessage());
                                 }
                         }
                 }
@@ -328,8 +329,8 @@ public final class LsRequest extends ContainerRequest {
                         status.setStatusCode(TStatusCode.SRM_INTERNAL_ERROR);
                         status.setExplanation("Could not find (deserialize) files in the request," +
                                               " NumOfFileRequest is 0");
-                        say("assigned status.statusCode : "+status.getStatusCode());
-                        say("assigned status.explanation : "+status.getExplanation());
+                        logger.debug("assigned status.statusCode : "+status.getStatusCode());
+                        logger.debug("assigned status.explanation : "+status.getExplanation());
                         return status;
                 }
                 int failed_req           = 0;
@@ -363,7 +364,7 @@ public final class LsRequest extends ContainerRequest {
                                 }
                         }
                         catch (Exception e) {
-                                esay(e);
+                                logger.error(e);
                                 got_exception++;
                         }
                 }
@@ -375,7 +376,7 @@ public final class LsRequest extends ContainerRequest {
                                        setState(State.DONE,State.DONE.toString());
                                  }
                                  catch(IllegalStateTransition ist) {
-                                         esay("Illegal State Transition : " +ist.getMessage());
+                                         logger.error("Illegal State Transition : " +ist.getMessage());
                                  }
                          }
                         return status;
@@ -413,7 +414,7 @@ public final class LsRequest extends ContainerRequest {
                                          setState(State.DONE,State.DONE.toString());
                                  }
                                  catch(IllegalStateTransition ist) {
-                                         esay("Illegal State Transition : " +ist.getMessage());
+                                         logger.error("Illegal State Transition : " +ist.getMessage());
                                  }
                                 return status;
                         }
@@ -424,7 +425,7 @@ public final class LsRequest extends ContainerRequest {
                                          setState(State.FAILED,State.FAILED.toString());
                                  }
                                  catch(IllegalStateTransition ist) {
-                                         esay("Illegal State Transition : " +ist.getMessage());
+                                         logger.error("Illegal State Transition : " +ist.getMessage());
                                  }
                                 return status;
                         }

@@ -17,11 +17,10 @@ public class SchedulerFactory {
     private final String name;
     private static SchedulerFactory factory=null;
 
-    private SchedulerFactory(AbstractStorageElement storage,
-            Configuration config, String name) {
+    private SchedulerFactory(Configuration config, String name) {
         schedulerMap = new HashMap<Class,Scheduler>();
         
-        Scheduler lsRequestScheduler = new Scheduler("ls_" + name, storage);
+        Scheduler lsRequestScheduler = new Scheduler("ls_" + name);
         // scheduler parameters
         lsRequestScheduler.setMaxThreadQueueSize(config.getLsReqTQueueSize());
         lsRequestScheduler.setThreadPoolSize(config.getLsThreadPoolSize());
@@ -36,7 +35,7 @@ public class SchedulerFactory {
         schedulerMap.put(LsFileRequest.class,lsRequestScheduler);
 
 
-        Scheduler getRequestScheduler = new Scheduler("get_" + name, storage);
+        Scheduler getRequestScheduler = new Scheduler("get_" + name);
         // scheduler parameters
         getRequestScheduler.setMaxThreadQueueSize(config.getGetReqTQueueSize());
         getRequestScheduler.setThreadPoolSize(config.getGetThreadPoolSize());
@@ -51,7 +50,7 @@ public class SchedulerFactory {
         schedulerMap.put(GetFileRequest.class,getRequestScheduler);
 
 
-        Scheduler bringOnlineRequestScheduler = new Scheduler("bring_online_" + name, storage);
+        Scheduler bringOnlineRequestScheduler = new Scheduler("bring_online_" + name);
         // scheduler parameters
         bringOnlineRequestScheduler.setMaxThreadQueueSize(config.getBringOnlineReqTQueueSize());
         bringOnlineRequestScheduler.setThreadPoolSize(config.getBringOnlineThreadPoolSize());
@@ -66,7 +65,7 @@ public class SchedulerFactory {
         schedulerMap.put(BringOnlineFileRequest.class,bringOnlineRequestScheduler);
 
 
-        Scheduler putRequestScheduler = new Scheduler("put_" + name, storage);
+        Scheduler putRequestScheduler = new Scheduler("put_" + name);
         // scheduler parameters
         putRequestScheduler.setMaxThreadQueueSize(config.getPutReqTQueueSize());
         putRequestScheduler.setThreadPoolSize(config.getPutThreadPoolSize());
@@ -80,7 +79,7 @@ public class SchedulerFactory {
         putRequestScheduler.start();
         schedulerMap.put(PutFileRequest.class,putRequestScheduler);
 
-        Scheduler copyRequestScheduler = new Scheduler("copy_" + name, storage);
+        Scheduler copyRequestScheduler = new Scheduler("copy_" + name);
         // scheduler parameters
         copyRequestScheduler.setMaxThreadQueueSize(config.getCopyReqTQueueSize());
         copyRequestScheduler.setThreadPoolSize(config.getCopyThreadPoolSize());
@@ -92,16 +91,15 @@ public class SchedulerFactory {
         copyRequestScheduler.start();
         schedulerMap.put(CopyRequest.class,copyRequestScheduler);
 
-        Scheduler reserveSpaceScheduler = new Scheduler("reserve_space" + name, storage);
+        Scheduler reserveSpaceScheduler = new Scheduler("reserve_space" + name);
         reserveSpaceScheduler.start();
         schedulerMap.put(ReserveSpaceRequest.class,copyRequestScheduler);
 
         this.name = name;
     }
 
-    public static void initSchedulerFactory(AbstractStorageElement storage,
-            Configuration config, String name) {
-        initSchedulerFactory( new SchedulerFactory(storage,config,name));
+    public static void initSchedulerFactory(Configuration config, String name) {
+        initSchedulerFactory( new SchedulerFactory(config,name));
     }
 
     public synchronized static void initSchedulerFactory(SchedulerFactory afactory) {

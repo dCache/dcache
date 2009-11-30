@@ -2,53 +2,16 @@
 
 package org.dcache.srm.util;
 
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.HttpURLConnection;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.InetAddress;
-import java.util.Hashtable;
-import java.util.StringTokenizer;
 import java.security.NoSuchAlgorithmException;
 import java.security.MessageDigest;
 import java.util.zip.Adler32;
-import java.util.Date;
-
-import org.ietf.jgss.GSSException;
-import org.ietf.jgss.GSSContext;
-import org.ietf.jgss.GSSCredential;
-import org.ietf.jgss.GSSManager;
-
-import org.globus.gsi.GlobusCredential;
-import org.globus.gsi.GlobusCredentialException;
-import org.globus.gsi.TrustedCertificates;
-
-import org.globus.gsi.gssapi.GlobusGSSManagerImpl;
-import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
-
-import org.globus.gsi.gssapi.net.GssSocket;
-import org.globus.gsi.gssapi.net.GssSocketFactory;
-import org.globus.gsi.gssapi.net.impl.GSIGssSocket;
-import org.globus.gsi.gssapi.auth.AuthorizationException;
-import org.globus.gsi.gssapi.auth.Authorization;
-
-import org.gridforum.jgss.ExtendedGSSContext;
-import org.gridforum.jgss.ExtendedGSSManager;
-import org.gridforum.jgss.ExtendedGSSCredential;
-
-import org.globus.gsi.GSIConstants;
-import org.globus.gsi.gssapi.GSSConstants;
-
 import org.globus.ftp.GridFTPClient;
 import org.globus.ftp.DataChannelAuthentication;
-import org.globus.ftp.Session;
 import org.globus.ftp.GridFTPSession;
 import org.globus.ftp.RetrieveOptions;
 import org.globus.ftp.DataSource;
 import org.globus.ftp.DataSink;
 import org.globus.ftp.Buffer;
-import org.globus.ftp.FileRandomIO;
 import org.globus.ftp.HostPort;
 import org.globus.ftp.extended.GridFTPControlChannel;
 import org.globus.ftp.exception.ServerException;
@@ -58,37 +21,16 @@ import org.globus.ftp.exception.UnexpectedReplyCodeException;
 import org.globus.ftp.vanilla.Reply;
 import org.globus.ftp.vanilla.Command;
 import org.globus.util.GlobusURL;
-
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
-import org.globus.gsi.gssapi.SSLUtil;
 import org.globus.gsi.GlobusCredentialException;
-import org.globus.gsi.TrustedCertificates;
-import org.globus.gsi.GSIConstants;
-import org.globus.gsi.gssapi.GlobusGSSManagerImpl;
-import org.globus.gsi.GSIConstants;
-import org.globus.gsi.gssapi.GSSConstants;
 import org.globus.gsi.GlobusCredential;
-import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.GSSCredential;
-import org.ietf.jgss.GSSName;
 import org.ietf.jgss.GSSException;
-
-import org.gridforum.jgss.ExtendedGSSContext;
-import org.gridforum.jgss.ExtendedGSSManager;
-import org.gridforum.jgss.ExtendedGSSCredential;
-import org.globus.gsi.gssapi.net.impl.GSIGssSocket;
-import org.globus.gsi.gssapi.net.GssSocket;
-
 import java.io.RandomAccessFile;
-import java.io.OutputStream;
-import java.io.InputStream;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.io.ByteArrayOutputStream;
-import java.net.Socket;
-import java.net.ServerSocket;
-
-import org.dcache.srm.Logger;
+import org.apache.log4j.Logger;
 /**
  * THE CLASS IS NOT THREAD SAVE
  * DO ONLY ONE OPERATION (READ / WRITE) AT A TIME
@@ -96,10 +38,12 @@ import org.dcache.srm.Logger;
 
 public class GridftpClient
 {
+    private static final Logger logger =
+            Logger.getLogger(GridftpClient.class);
+
     private final static int FirstByteTimeout=60*60; //one hour
     private final static int NextByteTimeout=60*10; //10 minutes
 
-    private final Logger _logger;
     private final FnalGridFTPClient _client;
     private final String _host;
     private String _cksmType;
@@ -119,60 +63,41 @@ public class GridftpClient
 
     public GridftpClient(String host, int port,
                          int tcpBufferSize,
-                         GSSCredential cred,
-                         Logger logger)
+                         GSSCredential cred)
         throws IOException, ServerException, ClientException,
                GlobusCredentialException, GSSException
     {
-        this(host, port, tcpBufferSize, 0, cred, logger);
+        this(host, port, tcpBufferSize, 0, cred);
     }
 
     public GridftpClient(String host, int port,
                          int tcpBufferSize,
                          int bufferSize,
-                         GSSCredential cred,
-                         Logger logger)
+                         GSSCredential cred)
         throws IOException, ServerException, ClientException,
                GlobusCredentialException, GSSException
     {
-        _logger = logger;
         if(bufferSize >0) {
             _bufferSize = bufferSize;
-            say("memory buffer size is set to "+bufferSize);
+            logger.debug("memory buffer size is set to "+bufferSize);
         }
         if(tcpBufferSize > 0)
             {
                 _tcpBufferSize = tcpBufferSize;
-                say("tcp buffer size is set to "+tcpBufferSize);
+                logger.debug("tcp buffer size is set to "+tcpBufferSize);
             }
         if(cred == null) {
             GlobusCredential gcred = GlobusCredential.getDefaultCredential();
             cred = new GlobusGSSCredentialImpl(gcred, GSSCredential.INITIATE_ONLY);
         }
         _host = host;
-        say("connecting to "+_host+" on port "+port);
+        logger.debug("connecting to "+_host+" on port "+port);
 
         _client  = new FnalGridFTPClient(_host, port);
         _client.setLocalTCPBufferSize(_tcpBufferSize);
-        say("gridFTPClient tcp buffer size is set to "+_tcpBufferSize);
+        logger.debug("gridFTPClient tcp buffer size is set to "+_tcpBufferSize);
         _client.authenticate(cred); /* use credentials */
         _client.setType(GridFTPSession.TYPE_IMAGE);
-    }
-
-    public  void say(String s) {
-        if (_logger != null) {
-            _logger.log("GridftpClient: "+s);
-        }
-    }
-    public void esay(String s) {
-        if (_logger != null) {
-            _logger.elog("GridftpClient: "+s);
-        }
-    }
-    public  void esay(Throwable t) {
-        if (_logger != null) {
-            _logger.elog(t);
-        }
     }
 
     public long getLastTransferTime()
@@ -275,27 +200,27 @@ public class GridftpClient
         if (_client.isFeatureSupported("DCAU")) {
             _client.setDataChannelAuthentication(DataChannelAuthentication.NONE);
         }
-        say("set local data channel authentication mode to None");
+        logger.debug("set local data channel authentication mode to None");
         _client.setLocalNoDataChannelAuthentication();
 
         if(emode) {
             _client.setMode(GridFTPSession.MODE_EBLOCK);
             // adding parallelism
-            say("parallelism: " + _streamsNum);
+            logger.debug("parallelism: " + _streamsNum);
             _client.setOptions(new RetrieveOptions(_streamsNum));
         }
         else {
             _client.setMode(GridFTPSession.MODE_STREAM);
-            say("stream mode transfer");
+            logger.debug("stream mode transfer");
 
             if (!_client.isFeatureSupported("GETPUT")) {
                 if(passive_server_mode){
-                    say("server is passive");
+                    logger.debug("server is passive");
                     HostPort serverHostPort = _client.setPassive();
-                    say("serverHostPort="+serverHostPort.getHost()+":"+serverHostPort.getPort());
+                    logger.debug("serverHostPort="+serverHostPort.getHost()+":"+serverHostPort.getPort());
                     _client.setLocalActive();
                 }else{
-                    say("server is active");
+                    logger.debug("server is active");
                     _client.setLocalPassive();
                     _client.setActive();
                 }
@@ -315,14 +240,14 @@ public class GridftpClient
         throws IOException, ServerException, FTPReplyParseException,
                UnexpectedReplyCodeException
     {
-        say(" sending wait command to ncsa host " + _host);
+        logger.debug(" sending wait command to ncsa host " + _host);
         GridFTPControlChannel channel = _client.getControlChannel();
         Reply reply = channel.execute(new Command("SITE","WAIT"));
-        say("Reply is "+reply);
+        logger.debug("Reply is "+reply);
         if(Reply.isPositiveCompletion( reply)) {
-            say("sending wait command successful");
+            logger.debug("sending wait command successful");
         } else {
-            esay("WARNING: sending wait command failed");
+            logger.error("WARNING: sending wait command failed");
         }
     }
 
@@ -363,8 +288,7 @@ public class GridftpClient
                     diskFile.close();
                 }
             } catch(IOException e) {
-                esay(" closing of file "+destinationfilepath+" failed");
-                esay(e);
+                logger.error(" closing of file "+destinationfilepath+" failed",e);
             }
         }
     }
@@ -400,7 +324,7 @@ public class GridftpClient
                FTPReplyParseException, UnexpectedReplyCodeException,
                InterruptedException, NoSuchAlgorithmException
     {
-        say("gridFTPRead started");
+        logger.debug("gridFTPRead started");
         // size of the file
         setCommonOptions(emode,passive_server_mode);
         if(_host.toLowerCase().indexOf("ncsa") != -1) {
@@ -415,23 +339,23 @@ public class GridftpClient
         getter.waitCompletion(FirstByteTimeout, NextByteTimeout);
 
         if(size - sink.getTransfered() >0) {
-            esay("we wrote less then file size!!!");
+            logger.error("we wrote less then file size!!!");
             throw new IOException("we wrote less then file size!!!");
         }
         else if(size - sink.getTransfered() <0) {
-            esay("we wrote more then file size!!!");
+            logger.error("we wrote more then file size!!!");
             throw new IOException("we wrote more then file size!!!");
         }
 
-        say("gridFTPWrite() wrote "+sink.getTransfered()+"bytes");
+        logger.debug("gridFTPWrite() wrote "+sink.getTransfered()+"bytes");
 
         try {
           if ( _cksmType != null )
             verifyCksmValue(_current_source_sink,sourcepath);
         } catch ( ChecksumNotSupported ex){
-          esay("Checksum is not supported:"+ex.toString());
+          logger.error("Checksum is not supported:"+ex.toString());
         } catch ( ChecksumValueFormatException cvfe) {
-          esay("Checksum format is not valid:"+cvfe.toString());
+          logger.error("Checksum format is not valid:"+cvfe.toString());
         }
 
         //make these remeber last values
@@ -468,8 +392,7 @@ public class GridftpClient
                     diskFile.close();
                 }
             } catch(IOException ioe) {
-                esay(" closing of file "+sourcefilepath+" failed");
-                esay(ioe);
+                logger.error(" closing of file "+sourcefilepath+" failed",ioe);
             }
         }
     }
@@ -497,7 +420,7 @@ public class GridftpClient
         throws InterruptedException, ClientException, ServerException,
                IOException, NoSuchAlgorithmException
     {
-        say("gridFTPWrite started, source file is "+sourceDiskFile+
+        logger.debug("gridFTPWrite started, source file is "+sourceDiskFile+
             " destination path is "+destinationpath);
 
         sourceDiskFile.seek(0);
@@ -530,7 +453,7 @@ public class GridftpClient
         throws InterruptedException, ClientException, ServerException,
                IOException, NoSuchAlgorithmException
     {
-        say("gridFTPWrite started, destination path is "+destinationpath);
+        logger.debug("gridFTPWrite started, destination path is "+destinationpath);
 
         setCommonOptions(emode,passive_server_mode);
 
@@ -542,7 +465,7 @@ public class GridftpClient
               sendAddler32Checksum(source.getAdler32());
               }
               catch(Exception e) {
-              say("could not set addler 32 "+e.toString());
+              logger.debug("could not set addler 32 "+e.toString());
               }
             */
         }
@@ -554,15 +477,15 @@ public class GridftpClient
         putter.waitCompletion(FirstByteTimeout, NextByteTimeout);
 
         if(diskFileLength > source.getTransfered() ) {
-            esay("we read less then file size!!!");
+            logger.error("we read less then file size!!!");
             throw new IOException("we read less then file size!!!");
         }
         else if(diskFileLength < source.getTransfered() ) {
-            esay("we read more then file size!!!");
+            logger.error("we read more then file size!!!");
             throw new IOException("we read more then file size!!!");
         }
 
-        say("gridFTPWrite() wrote "+source.getTransfered()+"bytes");
+        logger.debug("gridFTPWrite() wrote "+source.getTransfered()+"bytes");
         getTransfered();
         getLastTransferTime();
         _current_source_sink = null;
@@ -583,7 +506,7 @@ public class GridftpClient
             _client.sendCksmValue(myType,_cksmValue);
         } catch ( Exception ex ){
             // send cksm error is often expected for non dCache sites
-            say("Was not able to send checksum value:"+ex.toString());
+            logger.debug("Was not able to send checksum value:"+ex.toString());
         }
     }
 
@@ -597,13 +520,13 @@ public class GridftpClient
        for ( int i = 0; i < cksmTypeList.length; ++i){
               try {
                  String serverCksmValue = _client.getCksmValue(cksmTypeList[i],path);
-                 say("Negotiated type:"+cksmTypeList[i]+", value:"+serverCksmValue);
+                 logger.debug("Negotiated type:"+cksmTypeList[i]+", value:"+serverCksmValue);
                  return new Checksum(cksmTypeList[i],serverCksmValue);
               } catch ( ChecksumNotSupported ex ){
                  int majorCode = ex.getCode()/10;
-                 esay("code:"+Integer.toString(ex.getCode()));
+                 logger.error("code:"+Integer.toString(ex.getCode()));
                  if ( majorCode == 50 )
-                    esay("Checksum is not supported:"+ex.toString()+" continuing search");
+                    logger.error("Checksum is not supported:"+ex.toString()+" continuing search");
                  else
                     break;
               }
@@ -648,16 +571,17 @@ public class GridftpClient
                         _closed = true;
                     }
             }
-        say("closing client : "+_client);
+        logger.debug("closing client : "+_client);
 	try {
 		_client.close(false);
 	}
 	catch (IOException e) {
 	}
-        say("closed client");
+        logger.debug("closed client");
 
     }
 
+    @Override
     protected void finalize() {
         try {
             close();
@@ -665,6 +589,7 @@ public class GridftpClient
         catch(Exception e) {
         }
     }
+    
     /** Getter for property streamsNum.
      * @return Value of property streamsNum.
      *
@@ -775,29 +700,13 @@ public class GridftpClient
         GlobusURL dst_url = new GlobusURL(dest);
         GSSCredential credential = null;
 
-        Logger logger = new Logger()
-            {
-                public synchronized void log(String s)
-                {
-                    System.out.println(new Date().toString()+": "+ s);
-                }
-                public synchronized void elog(String s)
-                {
-                    System.err.println(new Date().toString()+": "+ s);
-                }
-                public synchronized void elog(Throwable t)
-                {
-                    t.printStackTrace();
-                }
-            };
-
         if( ( src_url.getProtocol().equals("gsiftp") ||
               src_url.getProtocol().equals("gridftp") ) &&
             dst_url.getProtocol().equals("file")) {
             GridftpClient client;
 
             client = new GridftpClient(src_url.getHost(),
-                                       src_url.getPort(), tcp_bs, bs,credential,logger);
+                                       src_url.getPort(), tcp_bs, bs,credential);
             client.setStreamsNum(streams);
             client.setChecksum(chsmType,chsmValue);
             try {
@@ -816,7 +725,7 @@ public class GridftpClient
              ) {
             GridftpClient client;
             client = new GridftpClient(dst_url.getHost(),
-                                       dst_url.getPort(), tcp_bs, bs,credential,logger);
+                                       dst_url.getPort(), tcp_bs, bs,credential);
             client.setStreamsNum(streams);
             try {
                 client.setChecksum(chsmType,chsmValue);
@@ -876,7 +785,7 @@ public class GridftpClient
         {
             long timeout = FirstByteTimeout*1000L;
 
-            say("waiting for completion of transfer");
+            logger.debug("waiting for completion of transfer");
             boolean timedout = false;
             boolean interrupted = false;
             while(true ) {
@@ -902,14 +811,13 @@ public class GridftpClient
             if(timedout ||interrupted ) {
                 _runner.interrupt();
                 String error = "transfer timedout or interrupted";
-                esay(error);
+                logger.error(error);
                 throw new InterruptedException(error);
             }
 
             if(getThrowable() !=null) {
                 Exception e = getThrowable();
-                esay(" transfer exception");
-                esay(e);
+                logger.error(" transfer exception",e);
                 if (e instanceof ClientException) {
                     throw (ClientException)e;
                 } else if (e instanceof ServerException) {
@@ -947,7 +855,7 @@ public class GridftpClient
         public void run() {
             try {
                 if(_read) {
-                    say("starting a transfer from "+_path);
+                    logger.debug("starting a transfer from "+_path);
                     if(_client.isFeatureSupported("GETPUT")) {
                         _client.get2(_path, (_emode ? false: _passive_server_mode),
                                     _source_sink, null);
@@ -956,7 +864,7 @@ public class GridftpClient
                     }
                 }
                 else {
-                    say("starting a transfer to "+_path);
+                    logger.debug("starting a transfer to "+_path);
                     if(_client.isFeatureSupported("GETPUT")) {
                         _client.put2(_path, (_emode ? true : _passive_server_mode),
                                     _source_sink, null);
@@ -965,13 +873,13 @@ public class GridftpClient
                     }
                 }
             } catch (IOException e) {
-                esay(e);
+                logger.error(e);
                 _throwable = e;
             } catch (ServerException e) {
-                esay(e);
+                logger.error(e);
                 _throwable = e;
             } catch (ClientException e) {
-                esay(e);
+                logger.error(e);
                 _throwable = e;
             } finally {
                 done();
@@ -1041,10 +949,9 @@ public class GridftpClient
             throws IOException {
             if(_source) {
                 String error = "DiskDataSourceSink is source and write is called";
-                esay(error);
+                logger.error(error);
                 throw new IllegalStateException(error);
             }
-            //say("DiskDataSourceSink.write()");
 
             _last_transfer_time    = System.currentTimeMillis() ;
             int read = buffer.getLength();
@@ -1058,7 +965,7 @@ public class GridftpClient
 
         public void close()
             throws IOException {
-            say("DiskDataSink.close() called");
+            logger.debug("DiskDataSink.close() called");
             _last_transfer_time    = System.currentTimeMillis() ;
         }
 
@@ -1087,16 +994,14 @@ public class GridftpClient
         public synchronized Buffer read() throws IOException {
             if(!_source) {
                 String error = "DiskDataSourceSink is sink and read is called";
-                esay(error);
+                logger.error(error);
                 throw new IllegalStateException(error);
             }
-            //say("DiskDataSourceSink.read()");
 
             _last_transfer_time    = System.currentTimeMillis() ;
             byte[] bytes = new byte[_buf_size];
 
             int read = _diskFile.read(bytes);
-            //say("DiskDataSourceSink.read() read "+read+" bytes");
             if(read == -1) {
                 return null;
             }
@@ -1107,7 +1012,7 @@ public class GridftpClient
 
         public long getAdler32() throws IOException{
             long adler32 = GridftpClient.getAdler32(_diskFile);
-            say("adler 32 for file "+_diskFile+" is "+adler32);
+            logger.debug("adler 32 for file "+_diskFile+" is "+adler32);
             _diskFile.seek(0);
             return adler32;
         }
@@ -1116,7 +1021,7 @@ public class GridftpClient
             throws IOException,NoSuchAlgorithmException
         {
             String v = GridftpClient.getCksmValue(_diskFile,type);
-            say(type+" for file "+_diskFile+" is "+v);
+            logger.debug(type+" for file "+_diskFile+" is "+v);
             _diskFile.seek(0);
             return v;
         }

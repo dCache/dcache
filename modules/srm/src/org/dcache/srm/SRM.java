@@ -90,18 +90,6 @@ import org.dcache.srm.request.CopyFileRequest;
 import org.dcache.srm.request.BringOnlineRequest;
 import org.dcache.srm.request.BringOnlineFileRequest;
 import org.dcache.srm.request.sql.DatabaseRequestStorage;
-import org.dcache.srm.request.sql.DatabaseContainerRequestStorage;
-import org.dcache.srm.request.sql.GetFileRequestStorage;
-import org.dcache.srm.request.sql.GetRequestStorage;
-import org.dcache.srm.request.sql.BringOnlineFileRequestStorage;
-import org.dcache.srm.request.sql.BringOnlineRequestStorage;
-import org.dcache.srm.request.sql.PutFileRequestStorage;
-import org.dcache.srm.request.sql.PutRequestStorage;
-import org.dcache.srm.request.sql.ReserveSpaceRequestStorage;
-import org.dcache.srm.request.sql.CopyFileRequestStorage;
-import org.dcache.srm.request.sql.CopyRequestStorage;
-import org.dcache.srm.request.sql.LsRequestStorage;
-import org.dcache.srm.request.sql.LsFileRequestStorage;
 import org.dcache.srm.request.sql.DatabaseRequestCredentialStorage;
 import org.dcache.srm.util.Tools;
 import java.util.Set;
@@ -110,8 +98,6 @@ import java.util.Iterator;
 import java.io.IOException;
 import java.io.File;
 import java.net.InetAddress;
-
-import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.SchedulerFactory;
 import org.dcache.srm.scheduler.State;
@@ -123,63 +109,15 @@ import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.request.RequestCredentialStorage;
 import org.dcache.srm.request.sql.RequestsPropertyStorage;
-
 import diskCacheV111.srm.FileMetaData;
 import diskCacheV111.srm.RequestStatus;
-import diskCacheV111.srm.RequestFileStatus;
 import diskCacheV111.srm.StorageElementInfo;
-
-import org.dcache.srm.v2_2.SrmLsRequest;
-import org.dcache.srm.v2_2.SrmLsResponse;
-
-import org.dcache.srm.v2_2.SrmRmRequest;
-import org.dcache.srm.v2_2.SrmRmResponse;
-
-import org.dcache.srm.v2_2.SrmPrepareToGetRequest;
-import org.dcache.srm.v2_2.SrmPrepareToGetResponse;
-
-import org.dcache.srm.v2_2.SrmMvRequest;
-import org.dcache.srm.v2_2.SrmMvResponse;
-
-import org.dcache.srm.v2_2.SrmRmdirRequest;
-import org.dcache.srm.v2_2.SrmRmdirResponse;
-
-import org.dcache.srm.v2_2.SrmMkdirRequest;
-import org.dcache.srm.v2_2.SrmMkdirResponse;
-
-import org.dcache.srm.v2_2.SrmStatusOfGetRequestRequest;
-import org.dcache.srm.v2_2.SrmStatusOfGetRequestResponse;
-
-import org.dcache.srm.v2_2.SrmStatusOfCopyRequestRequest;
-import org.dcache.srm.v2_2.SrmStatusOfCopyRequestResponse;
-
-import org.dcache.srm.v2_2.SrmReleaseFilesRequest;
-import org.dcache.srm.v2_2.SrmReleaseFilesResponse;
-
-import org.dcache.srm.v2_2.SrmPrepareToPutRequest;
-import org.dcache.srm.v2_2.SrmPrepareToPutResponse;
-
-import org.dcache.srm.v2_2.SrmCopyRequest;
-import org.dcache.srm.v2_2.SrmCopyResponse;
-
-import org.dcache.srm.v2_2.SrmStatusOfPutRequestRequest;
-import org.dcache.srm.v2_2.SrmStatusOfPutRequestResponse;
-
-import org.dcache.srm.v2_2.SrmPutDoneRequest;
-import org.dcache.srm.v2_2.SrmPutDoneResponse;
-
-import org.dcache.srm.v2_2.SrmAbortFilesRequest;
-import org.dcache.srm.v2_2.SrmAbortFilesResponse;
-
-import org.dcache.srm.v2_2.SrmAbortRequestRequest;
-import org.dcache.srm.v2_2.SrmAbortRequestResponse;
 import org.dcache.commons.stats.RequestCounters;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.commons.stats.rrd.RrdRequestCounters;
 import org.dcache.commons.stats.rrd.RrdRequestExecutionTimeGauges;
 import org.dcache.commons.stats.MonitoringProxy;
 import java.lang.reflect.Method;
-
 import java.util.concurrent.TimeoutException;
 import org.apache.log4j.Logger;
 
@@ -303,22 +241,20 @@ public class SRM {
          srmRequestGauges =
                  new RequestExecutionTimeGauges("SRMRequestsGauges");
 
-         RrdRequestExecutionTimeGauges rrdSrmRequestGauges;
-         RrdRequestCounters rrdSrmRequestCounters;
 
         // these jdbc parameters need to be set before the
         // first jdbc instance is created
         // so we do it before everything else
 
         if (configuration.getMaxQueuedJdbcTasksNum() != null) {
-            say("setMaxJdbcTasksNum to " +
+            logger.debug("setMaxJdbcTasksNum to " +
                     configuration.getMaxQueuedJdbcTasksNum().intValue());
             org.dcache.srm.request.sql.JdbcConnectionPool.setMaxQueuedJdbcTasksNum(
                     configuration.getMaxQueuedJdbcTasksNum().intValue());
         }
 
         if (configuration.getJdbcExecutionThreadNum() != null) {
-            say("set JDBC ExecutionThreadNum to " +
+            logger.debug("set JDBC ExecutionThreadNum to " +
                     configuration.getJdbcExecutionThreadNum().intValue());
             org.dcache.srm.request.sql.JdbcConnectionPool.setExecutionThreadNum(
                     configuration.getJdbcExecutionThreadNum().intValue());
@@ -347,13 +283,13 @@ public class SRM {
 
         requestCredentialStorage = new DatabaseRequestCredentialStorage(config);
         RequestCredential.registerRequestCredentialStorage(requestCredentialStorage);
-        SchedulerFactory.initSchedulerFactory(storage, config, name);
+        SchedulerFactory.initSchedulerFactory(config, name);
 
          JobStorageFactory.initJobStorageFactory(
                   new DatabaseJobStorageFactory(configuration));
 
         if (configuration.isVacuum()) {
-            say("starting vacuum thread");
+            logger.debug("starting vacuum thread");
             org.dcache.srm.request.sql.JdbcConnectionPool pool = org.dcache.srm.request.sql.JdbcConnectionPool.getPool(configuration.getJdbcUrl(),
                     configuration.getJdbcClass(), configuration.getJdbcUser(),
                     configuration.getJdbcPass());
@@ -368,7 +304,7 @@ public class SRM {
         } catch (InterruptedException ie) {
         }
 
-        this.say("srm started :\n\t" + configuration.toString());
+        logger.debug("srm started :\n\t" + configuration.toString());
 
     }
 
@@ -447,28 +383,6 @@ public class SRM {
     }
 
     /**
-     * logs a message
-     */
-    public void say(String words) {
-        storage.log("srm: " + words);
-    }
-
-    /**
-     * logs an error message
-     */
-    public void esay(String words) {
-        storage.elog("srm: " + words);
-    }
-
-    /**
-     * logs an exception
-     */
-    public void esay(Throwable t) {
-        storage.elog("srm exception:");
-        storage.elog(t);
-    }
-
-    /**
      * @return the srmServerCounters
      */
     public RequestCounters<Class> getSrmServerV2Counters() {
@@ -535,32 +449,32 @@ public class SRM {
         public void AdvisoryDeleteFailed(String reason) {
             error = " advisoryDelete(" + user + "," + path + ") AdvisoryDeleteFailed: " + reason;
             success = false;
-            esay(error);
+            logger.error(error);
             done();
         }
 
         public void AdvisoryDeleteSuccesseded() {
-            say(" advisoryDelete(" + user + "," + path + ") AdvisoryDeleteSuccesseded");
+            logger.debug(" advisoryDelete(" + user + "," + path + ") AdvisoryDeleteSuccesseded");
             done();
         }
 
         public void Exception(Exception e) {
             error = " advisoryDelete(" + user + "," + path + ") Exception :" + e;
-            esay(error);
+            logger.error(error);
             success = false;
             done();
         }
 
         public void Timeout() {
             error = " advisoryDelete(" + user + "," + path + ") Timeout ";
-            esay(error);
+            logger.error(error);
             success = false;
             done();
         }
 
         public void Error(String error) {
             this.error = " advisoryDelete(" + user + "," + path + ") Error " + error;
-            esay(this.error);
+            logger.error(this.error);
             success = false;
             done();
         }
@@ -596,11 +510,11 @@ public class SRM {
      * this srm method is not implemented
      */
     public void advisoryDelete(final SRMUser user, RequestCredential credential, String[] SURLS) {
-        say("SRM.advisoryDelete");
+        logger.debug("SRM.advisoryDelete");
         if (user == null) {
             String error = "advisoryDelete: user is unknown," +
                     " user needs authorization to delete ";
-            esay(error);
+            logger.error(error);
             throw new IllegalArgumentException(error);
         }
 
@@ -610,14 +524,14 @@ public class SRM {
                 if (!Tools.sameHost(configuration.getSrmHosts(),
                         gurl.getHost())) {
                     String error = "advisoryDelete: surl is not local : " + gurl.getURL();
-                    esay(error);
+                    logger.error(error);
                     throw new IllegalArgumentException(error);
                 }
             } catch (RuntimeException re) {
-                esay(re);
+                logger.error(re);
                 throw re;
             } catch (Exception e) {
-                esay(e);
+                logger.error(e);
             }
         }
 
@@ -639,7 +553,7 @@ public class SRM {
 
 
             } catch (RuntimeException re) {
-                esay(re);
+                logger.error(re);
                 throw re;
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -697,7 +611,7 @@ public class SRM {
             if (srcSURLS == null || srcSURLS.length == 0 ||
                     destSURLS == null || destSURLS.length == 0) {
                 String error = " number of source or destination SURLs is zero";
-                esay(error);
+                logger.error(error);
                 return createFailedRequestStatus(error);
 
             }
@@ -714,7 +628,7 @@ public class SRM {
                 sb.append("to_urls[").append(j).append("]=").append(to_urls[j]).append(",");
             }
             sb.append(")");
-            say(sb.toString());
+            logger.debug(sb.toString());
 
             if (src_num != dst_num) {
                 return createFailedRequestStatus(
@@ -735,11 +649,11 @@ public class SRM {
             }
             long lifetime = configuration.getCopyLifetime();
             if (cred_lifetime < lifetime) {
-                say("credential lifetime is less than default lifetime, using credential lifetime =" + cred_lifetime);
+                logger.debug("credential lifetime is less than default lifetime, using credential lifetime =" + cred_lifetime);
                 lifetime = cred_lifetime;
             }
             // create a request object
-            say("calling Request.createCopyRequest()");
+            logger.debug("calling Request.createCopyRequest()");
             ContainerRequest r = new CopyRequest(
                     user,
                     credential.getId(),
@@ -755,16 +669,16 @@ public class SRM {
                     null, null,
                     client_host,
                     null);
-            say(" Copy Request = " + r);
+            logger.debug(" Copy Request = " + r);
             // RequesScheduler will take care of the rest
             r.schedule();
 
             // Return the request status
             RequestStatus rs = r.getRequestStatus();
-            say(" copy returns RequestStatus = " + rs);
+            logger.debug(" copy returns RequestStatus = " + rs);
             return rs;
         } catch (Exception e) {
-            esay(e);
+            logger.error(e);
             return createFailedRequestStatus("copy request generated error : " + e);
         }
     }
@@ -792,7 +706,7 @@ public class SRM {
         int i = 0;
         // create a request object
         try {
-            say("get(): user = " + user);
+            logger.debug("get(): user = " + user);
             String[] supportedProtocols = storage.supportedGetProtocols();
             boolean foundMatchedProtocol = false;
             for (String supportedProtocol : supportedProtocols) {
@@ -825,10 +739,10 @@ public class SRM {
             //getGetRequestScheduler().add(r);
             // Return the request status
             RequestStatus rs = r.getRequestStatus();
-            say("get() initial RequestStatus = " + rs);
+            logger.debug("get() initial RequestStatus = " + rs);
             return rs;
         } catch (Exception e) {
-            esay(e);
+            logger.error(e);
             return createFailedRequestStatus("get error " + e);
         }
 
@@ -869,7 +783,7 @@ public class SRM {
         sb.append("getFileMetaData(");
         if (SURLS == null) {
             sb.append("SURLS are null)");
-            say(sb.toString());
+            logger.debug(sb.toString());
             throw new IllegalArgumentException(sb.toString());
         }
 
@@ -878,7 +792,7 @@ public class SRM {
             sb.append(SURLS[i] + ",");
         }
         sb.append(")");
-        say(sb.toString());
+        logger.debug(sb.toString());
 
         FileMetaData[] fmds = new FileMetaData[len];
         // call getFileMetaData(String path) for each SURL in array
@@ -888,7 +802,7 @@ public class SRM {
                 if (!Tools.sameHost(configuration.getSrmHosts(),
                         url.getHost())) {
                     String error = "getFileMetaData: surl is not local : " + url.getURL();
-                    esay(error);
+                    logger.error(error);
                     throw new IllegalArgumentException(error);
                 }
 
@@ -899,14 +813,14 @@ public class SRM {
                     surlpath = surlpath.substring(indx + SFN_STRING.length());
                 }
 
-                say("getFileMetaData(String[]) calling FileMetaData(" + surlpath + ")");
+                logger.debug("getFileMetaData(String[]) calling FileMetaData(" + surlpath + ")");
 
                 FileMetaData fmd = storage.getFileMetaData(user, surlpath);
                 fmd.SURL = SURLS[i];
                 fmds[i] = new FileMetaData(fmd);
-                say("FileMetaData[" + i + "]=" + fmds[i]);
+                logger.debug("FileMetaData[" + i + "]=" + fmds[i]);
             } catch (Exception e) {
-                esay("getFileMetaData failed to parse SURL: " + e);
+                logger.error("getFileMetaData failed to parse SURL: " + e);
                 throw new IllegalArgumentException("getFileMetaData failed to parse SURL: " + e);
             }
         }
@@ -935,19 +849,19 @@ public class SRM {
      * @return request status assosiated with this request
      */
     public RequestStatus getRequestStatus(SRMUser user, RequestCredential credential, int requestId) {
-        say(" getRequestStatus(" + user + "," + requestId + ")");
+        logger.debug(" getRequestStatus(" + user + "," + requestId + ")");
         try {
             // Try to get the request with such id
-            say("getRequestStatus() Request.getRequest(" + requestId + ");");
+            logger.debug("getRequestStatus() Request.getRequest(" + requestId + ");");
             ContainerRequest r = (ContainerRequest) ContainerRequest.getRequest(requestId);
-            say("getRequestStatus() received Request  ");
+            logger.debug("getRequestStatus() received Request  ");
             if (r != null) {
                 // we found one make sure it is the same  user
                 SRMUser requestUser = r.getUser();
                 if (requestUser == null || requestUser.equals(user)) {
                     // and return the request status
                     RequestStatus rs = r.getRequestStatus();
-                    say("obtained request status, returning rs for request id=" + requestId);
+                    logger.debug("obtained request status, returning rs for request id=" + requestId);
                     return rs;
                 } else {
                     return createFailedRequestStatus("getRequestStatus(): request #" + requestId +
@@ -957,7 +871,7 @@ public class SRM {
             return createFailedRequestStatus("getRequestStatus() request #" + requestId +
                     " was not found", requestId);
         } catch (Exception e) {
-            esay(e);
+            logger.error(e);
             return createFailedRequestStatus("getting request #" + requestId +
                     " generated error : " + e, requestId);
         }
@@ -1080,7 +994,7 @@ public class SRM {
             // return status
             return r.getRequestStatus();
         } catch (Exception e) {
-            esay(e);
+            logger.error(e);
             return createFailedRequestStatus("put(): error " + e);
         }
     }
@@ -1103,7 +1017,7 @@ public class SRM {
     public RequestStatus setFileStatus(SRMUser user, RequestCredential credential,
             int requestId, int fileRequestId, String state) {
         try {
-            say(" setFileStatus(" + requestId + "," + fileRequestId + "," + state + ");");
+            logger.debug(" setFileStatus(" + requestId + "," + fileRequestId + "," + state + ");");
             if (!state.equalsIgnoreCase("done") && !state.equalsIgnoreCase("running")) {
                 return createFailedRequestStatus("setFileStatus(): incorrect state " + state);
             }
@@ -1128,7 +1042,7 @@ public class SRM {
             synchronized (fr) {
                 State s = fr.getState();
                 if (s.isFinalState()) {
-                    say("can not set status, the file status is already " + s);
+                    logger.debug("can not set status, the file status is already " + s);
                 } else {
                     if (state.equalsIgnoreCase("done") && fr instanceof PutFileRequest &&
                             (s == State.READY || s == State.RUNNING)) {
@@ -1148,7 +1062,7 @@ public class SRM {
                     } else {
 
                         // process request
-                        say(" calling fr.setStatus(\"" + state + "\")");
+                        logger.debug(" calling fr.setStatus(\"" + state + "\")");
                         fr.setStatus(state);
                     }
                 }
@@ -1199,7 +1113,7 @@ public class SRM {
     }
 
     private RequestStatus createFailedRequestStatus(String error) {
-        esay("creating a failed request status with a message: " + error);
+        logger.error("creating a failed request status with a message: " + error);
         RequestStatus rs = new RequestStatus();
         rs.requestId = -1;
         rs.errorMessage = error;
@@ -1208,7 +1122,7 @@ public class SRM {
     }
 
     private RequestStatus createFailedRequestStatus(String error, int requestId) {
-        esay("creating a failed request status with a message: " + error);
+        logger.error("creating a failed request status with a message: " + error);
         RequestStatus rs = new RequestStatus();
         rs.requestId = requestId;
         rs.errorMessage = error;
@@ -1634,7 +1548,7 @@ public class SRM {
             sb.append(r.toString(false)).append('\n');
         } catch (IllegalStateTransition ist) {
             sb.append("Illegal State Transition : " +ist.getMessage());
-            esay("Illegal State Transition : " +ist.getMessage());
+            logger.error("Illegal State Transition : " +ist.getMessage());
         }
     }
 
@@ -1688,7 +1602,7 @@ public class SRM {
             Long requestId = (Long) i.next();
             java.util.regex.Matcher m = p.matcher(requestId.toString());
             if (m.matches()) {
-                say("cancelAllRequest: request Id #" + requestId + " in " + scheduler + " matches pattern!");
+                logger.debug("cancelAllRequest: request Id #" + requestId + " in " + scheduler + " matches pattern!");
                 jobsToKill.add(requestId);
             }
         }
@@ -1700,7 +1614,7 @@ public class SRM {
         for (Long requestId : jobsToKill) {
             final Job job = Job.getJob(requestId);
             if (job == null || !(job instanceof ContainerRequest)) {
-                esay(" request with reqiest id " + requestId + " is not found\n");
+                logger.error(" request with reqiest id " + requestId + " is not found\n");
                 continue;
             }
             sb.append("request #" + requestId + " matches pattern=\"" + pattern + "\"; canceling request \n");
@@ -1710,7 +1624,7 @@ public class SRM {
                     try {
                         job.setState(State.CANCELED, "Canceled by admin through cancelall command");
                     } catch (IllegalStateTransition ist) {
-                        esay("Illegal State Transition : " +ist.getMessage());
+                        logger.error("Illegal State Transition : " +ist.getMessage());
                     }
                 }
             }).start();

@@ -108,7 +108,7 @@ import org.apache.log4j.Logger;
  * @version
  */
 public final class PutFileRequest extends FileRequest {
-    private final static Logger _log = Logger.getLogger(PutFileRequest.class);
+    private final static Logger logger = Logger.getLogger(PutFileRequest.class);
     // this is anSurl path
     private GlobusURL surl;
     private GlobusURL turl;
@@ -140,10 +140,10 @@ public final class PutFileRequest extends FileRequest {
                 requestCredentalId,
                 lifetime,
                 maxNumberOfRetires);
-        _log.debug("constructor url = "+url+")");
+        logger.debug("constructor url = "+url+")");
         try {
             surl = new GlobusURL(url);
-            _log.debug("    surl = "+surl);
+            logger.debug("    surl = "+surl);
 
         } catch(MalformedURLException murle) {
             throw new IllegalArgumentException(murle.toString());
@@ -316,26 +316,26 @@ public final class PutFileRequest extends FileRequest {
                 }
             catch(SRMAuthorizationException srme) {
                 String error =srme.getMessage();
-                _log.error(error);
+                logger.error(error);
                 try {
                     setStateAndStatusCode(State.FAILED,
                             error,
                             TStatusCode.SRM_AUTHORIZATION_FAILURE);
                 }
                 catch(IllegalStateTransition ist) {
-                    _log.warn("Illegal State Transition : " +ist.getMessage());
+                    logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
             }
             catch(Exception srme) {
                     String error =
                 "can not obtain turl for file:"+srme;
-                    _log.error(error);
+                    logger.error(error);
                     try {
                         setState(State.FAILED,error);
                     }
                     catch(IllegalStateTransition ist)
                     {
-                        _log.warn("Illegal State Transition : " +ist.getMessage());
+                        logger.warn("Illegal State Transition : " +ist.getMessage());
                     }
                 }
             }
@@ -370,7 +370,7 @@ public final class PutFileRequest extends FileRequest {
             rfs.state = "Pending";
         }
 
-        _log.debug(" returning requestFileStatus for "+this.toString());
+        logger.debug(" returning requestFileStatus for "+this.toString());
         return rfs;
     }
 
@@ -384,7 +384,7 @@ public final class PutFileRequest extends FileRequest {
         try {
             anSurl= new URI(getSurlString());
         } catch (Exception e) {
-            _log.error(e);
+            logger.error(e);
             throw new java.sql.SQLException("wrong surl format");
         }
         fileStatus.setSURL(anSurl);
@@ -396,7 +396,7 @@ public final class PutFileRequest extends FileRequest {
             try {
                 transferURL = new URI(turlstring);
             } catch (Exception e) {
-                _log.error(e);
+                logger.error(e);
                 throw new java.sql.SQLException("wrong turl format");
             }
             fileStatus.setTransferURL(transferURL);
@@ -424,7 +424,7 @@ public final class PutFileRequest extends FileRequest {
         try {
             anSurl = new URI(getSurlString());
         } catch (Exception e) {
-            _log.error(e);
+            logger.error(e);
             throw new java.sql.SQLException("wrong surl format");
         }
         TReturnStatus returnStatus = getReturnStatus();
@@ -455,7 +455,7 @@ public final class PutFileRequest extends FileRequest {
                 }
                 return g_turl;
             } catch(MalformedURLException murle) {
-                _log.error(murle);
+                logger.error(murle);
                 throw new SRMException(murle.toString());
             }
         }
@@ -465,7 +465,7 @@ public final class PutFileRequest extends FileRequest {
             String aTurl =getStorage().getPutTurl(request.getUser(),getPath(), firstDcapTurl);
             return new GlobusURL(aTurl);
         } catch(MalformedURLException murle) {
-            _log.error(murle);
+            logger.error(murle);
             throw new SRMException(murle.toString());
         }
     }
@@ -521,7 +521,7 @@ public final class PutFileRequest extends FileRequest {
                         getSurl().getHost())) {
                     String error ="surl is not local : "+getSurl().getURL();
                     setState(State.FAILED,error);
-                    _log.error("can not prepare to put file request fr :"+this+
+                    logger.error("can not prepare to put file request fr :"+this+
                             ", " + error);
                     return;
                 }
@@ -587,7 +587,7 @@ public final class PutFileRequest extends FileRequest {
                 if( getAccessLatency() == null && getParentFmd() != null && getParentFmd().retentionPolicyInfo != null ) {
                     setAccessLatency(getParentFmd().retentionPolicyInfo.getAccessLatency());
                 }
-                _log.debug("reserving space, size="+(getSize()==0?1L:getSize()));
+                logger.debug("reserving space, size="+(getSize()==0?1L:getSize()));
                     getStorage().srmReserveSpace(
                     getUser(),
                     getSize()==0?1L:getSize(),
@@ -611,17 +611,17 @@ public final class PutFileRequest extends FileRequest {
                                     callbacks );
                 return;
             }
-            _log.debug("run() returns, scheduler should bring file request into the ready state eventually");
+            logger.debug("run() returns, scheduler should bring file request into the ready state eventually");
             return;
         }
         catch(Exception e) {
-            _log.error("can not prepare to put : ",e);
+            logger.error("can not prepare to put : ",e);
             String error ="can not prepare to put : "+e;
             try {
                 setState(State.FAILED,error);
             }
             catch(IllegalStateTransition ist) {
-                _log.warn("Illegal State Transition : " +ist.getMessage());
+                logger.warn("Illegal State Transition : " +ist.getMessage());
             }
         }
     }
@@ -629,23 +629,23 @@ public final class PutFileRequest extends FileRequest {
 
     protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
         State state = getState();
-        _log.debug("State changed from "+oldState+" to "+getState());
+        logger.debug("State changed from "+oldState+" to "+getState());
         if(state == State.READY) {
             try {
                 getRequest().resetRetryDeltaTime();
             } catch (SRMInvalidRequestException ire) {
-                _log.error(ire);
+                logger.error(ire);
             }
         }
         SRMUser user;
          try {
              user = getUser();
          }catch(SRMInvalidRequestException ire) {
-             _log.error(ire);
+             logger.error(ire);
              return;
          }
         if(State.isFinalState(state)) {
-            _log.debug("space reservation is "+getSpaceReservationId());
+            logger.debug("space reservation is "+getSpaceReservationId());
             if(getConfiguration().isReserve_space_implicitely() &&
                     getSpaceReservationId() != null &&
                     isSpaceMarkedAsBeingUsed() ) {
@@ -656,7 +656,7 @@ public final class PutFileRequest extends FileRequest {
 
             }
             if(getSpaceReservationId() != null && isWeReservedSpace()) {
-                _log.debug("storage.releaseSpace("+getSpaceReservationId()+"\"");
+                logger.debug("storage.releaseSpace("+getSpaceReservationId()+"\"");
                 SrmReleaseSpaceCallbacks callbacks =
                         new PutReleaseSpaceCallbacks(this.getId());
                 getStorage().srmReleaseSpace(  user,getSpaceReservationId(),
@@ -870,12 +870,12 @@ public final class PutFileRequest extends FileRequest {
                             reason,
                             TStatusCode.SRM_DUPLICATION_ERROR);
                 } catch(IllegalStateTransition ist) {
-                    _log.warn("Illegal State Transition : " +ist.getMessage());
+                    logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
 
-                _log.error("PutCallbacks error: "+ reason);
+                logger.error("PutCallbacks error: "+ reason);
             } catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
 
@@ -885,12 +885,12 @@ public final class PutFileRequest extends FileRequest {
                 try {
                     fr.setState(State.FAILED,error);
                 } catch(IllegalStateTransition ist) {
-                    _log.warn("Illegal State Transition : " +ist.getMessage());
+                    logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
 
-                _log.error("PutCallbacks error: "+ error);
+                logger.error("PutCallbacks error: "+ error);
             } catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
 
@@ -901,11 +901,11 @@ public final class PutFileRequest extends FileRequest {
                 try {
                     fr.setState(State.FAILED,error);
                 } catch(IllegalStateTransition ist) {
-                    _log.error("can not fail state:"+ist);
+                    logger.error("can not fail state:"+ist);
                 }
-                _log.error("PutCallbacks exception",e);
+                logger.error("PutCallbacks exception",e);
             } catch(Exception e1) {
-                e1.printStackTrace();
+                logger.error(e1);
             }
         }
 
@@ -915,12 +915,12 @@ public final class PutFileRequest extends FileRequest {
                 try {
                     fr.setState(State.FAILED,reason);
                 } catch(IllegalStateTransition ist) {
-                    _log.warn("Illegal State Transition : " +ist.getMessage());
+                    logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
 
-                _log.error("PutCallbacks error: "+ reason);
+                logger.error("PutCallbacks error: "+ reason);
             } catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
 
@@ -928,10 +928,10 @@ public final class PutFileRequest extends FileRequest {
         public void StorageInfoArrived(String fileId,FileMetaData fmd,String parentFileId, FileMetaData parentFmd) {
             try {
                 PutFileRequest fr = getPutFileRequest();
-                _log.debug("StorageInfoArrived: FileId:"+fileId);
+                logger.debug("StorageInfoArrived: FileId:"+fileId);
                 State state = fr.getState();
                 if(state == State.ASYNCWAIT) {
-                    _log.debug("PutCallbacks StorageInfoArrived for file "+fr.getSurlString());
+                    logger.debug("PutCallbacks StorageInfoArrived for file "+fr.getSurlString());
                     fr.setFileId(fileId);
                     fr.setFmd(fmd);
                     fr.setParentFileId(parentFileId);
@@ -941,11 +941,11 @@ public final class PutFileRequest extends FileRequest {
                     try {
                         scheduler.schedule(fr);
                     } catch(Exception ie) {
-                        _log.error(ie);
+                        logger.error(ie);
                     }
                 }
             } catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
 
@@ -955,12 +955,12 @@ public final class PutFileRequest extends FileRequest {
                 try {
                     fr.setState(State.FAILED,"PutCallbacks Timeout");
                 } catch(IllegalStateTransition ist) {
-                    _log.warn("Illegal State Transition : " +ist.getMessage());
+                    logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
 
-                _log.error("PutCallbacks Timeout");
+                logger.error("PutCallbacks Timeout");
             } catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
 
@@ -973,12 +973,12 @@ public final class PutFileRequest extends FileRequest {
                             reason,
                             TStatusCode.SRM_INVALID_PATH);
                 } catch(IllegalStateTransition ist) {
-                    _log.warn("Illegal State Transition : " +ist.getMessage());
+                    logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
 
-                _log.error("PutCallbacks error: "+ reason);
+                logger.error("PutCallbacks error: "+ reason);
             } catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
 
@@ -991,12 +991,12 @@ public final class PutFileRequest extends FileRequest {
                             reason,
                             TStatusCode.SRM_AUTHORIZATION_FAILURE);
                 } catch(IllegalStateTransition ist) {
-                    _log.warn("Illegal State Transition : " +ist.getMessage());
+                    logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
 
-                _log.error("PutCallbacks error: "+ reason);
+                logger.error("PutCallbacks error: "+ reason);
             } catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
     }
@@ -1026,11 +1026,11 @@ public final class PutFileRequest extends FileRequest {
                 try {
                     fr.setState(State.FAILED,error);
                 } catch(IllegalStateTransition ist) {
-                    _log.warn("Illegal State Transition : " +ist.getMessage());
+                    logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
-                _log.error("PutReserveSpaceCallbacks exception",e);
+                logger.error("PutReserveSpaceCallbacks exception",e);
             } catch(Exception e1) {
-                e1.printStackTrace();
+                logger.error(e1);
             }
         }
 
@@ -1040,12 +1040,12 @@ public final class PutFileRequest extends FileRequest {
                 try {
                     fr.setState(State.FAILED,reason);
                 } catch(IllegalStateTransition ist) {
-                    _log.warn("Illegal State Transition : " +ist.getMessage());
+                    logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
 
-                _log.error("PutReserveSpaceCallbacks error: "+ reason);
+                logger.error("PutReserveSpaceCallbacks error: "+ reason);
             } catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
 
@@ -1058,36 +1058,36 @@ public final class PutFileRequest extends FileRequest {
                             reason,
                             TStatusCode.SRM_NO_FREE_SPACE);
                 } catch(IllegalStateTransition ist) {
-                    _log.warn("Illegal State Transition : " +ist.getMessage());
+                    logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
 
-                _log.error("PutReserveSpaceCallbacks error: "+ reason);
+                logger.error("PutReserveSpaceCallbacks error: "+ reason);
             } catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
 
         public void SpaceReserved(String spaceReservationToken, long reservedSpaceSize) {
             try {
                 PutFileRequest fr = getPutFileRequest();
-                _log.debug("Space Reserved: spaceReservationToken:"+spaceReservationToken);
+                logger.debug("Space Reserved: spaceReservationToken:"+spaceReservationToken);
                 State state;
                 synchronized(fr) {
                     state = fr.getState();
                 }
                 if(state == State.ASYNCWAIT) {
-                    _log.debug("PutReserveSpaceCallbacks Space Reserved for file "+fr.getSurlString());
+                    logger.debug("PutReserveSpaceCallbacks Space Reserved for file "+fr.getSurlString());
                     fr.setWeReservedSpace(true);
                     fr.setSpaceReservationId(spaceReservationToken);
                     Scheduler scheduler = Scheduler.getScheduler(fr.getSchedulerId());
                     try {
                         scheduler.schedule(fr);
                     } catch(Exception ie) {
-                        _log.error(ie);
+                        logger.error(ie);
                     }
                 }
             } catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
     }
@@ -1114,9 +1114,9 @@ public final class PutFileRequest extends FileRequest {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 String error = e.toString();
-                _log.error("PutReleaseSpaceCallbacks exception",e);
+                logger.error("PutReleaseSpaceCallbacks exception",e);
             } catch(Exception e1) {
-                e1.printStackTrace();
+                logger.error(e1);
             }
         }
 
@@ -1124,18 +1124,18 @@ public final class PutFileRequest extends FileRequest {
             try {
                 PutFileRequest fr = getPutFileRequest();
 
-                _log.error("PutReleaseSpaceCallbacks error: "+ reason);
+                logger.error("PutReleaseSpaceCallbacks error: "+ reason);
             } catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
 
         public void SpaceReleased(String spaceReservationToken, long reservedSpaceSize) {
             try {
                 PutFileRequest fr = getPutFileRequest();
-                _log.debug("Space Released: spaceReservationToken:"+spaceReservationToken+" remaining space="+reservedSpaceSize);
+                logger.debug("Space Released: spaceReservationToken:"+spaceReservationToken+" remaining space="+reservedSpaceSize);
             } catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
     }
@@ -1165,11 +1165,11 @@ public final class PutFileRequest extends FileRequest {
                 try {
                             fr.setState(State.FAILED,error);
                 } catch(IllegalStateTransition ist) {
-                    _log.warn("Illegal State Transition : " +ist.getMessage());
+                    logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
-                _log.error("PutUseSpaceCallbacks exception",e);
+                logger.error("PutUseSpaceCallbacks exception",e);
             } catch(Exception e1) {
-                e1.printStackTrace();
+                logger.error(e1);
             }
         }
 
@@ -1179,12 +1179,12 @@ public final class PutFileRequest extends FileRequest {
                 try {
                     fr.setState(State.FAILED,reason);
                 } catch(IllegalStateTransition ist) {
-                    _log.warn("Illegal State Transition : " +ist.getMessage());
+                    logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
 
-                _log.error("PutUseSpaceCallbacks error: "+ reason);
+                logger.error("PutUseSpaceCallbacks error: "+ reason);
             } catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
         /**
@@ -1199,12 +1199,12 @@ public final class PutFileRequest extends FileRequest {
                             reason,
                             TStatusCode.SRM_NO_FREE_SPACE);
                 } catch(IllegalStateTransition ist) {
-                    _log.warn("Illegal State Transition : " +ist.getMessage());
+                    logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
 
-                _log.error("PutUseSpaceCallbacks error: "+ reason);
+                logger.error("PutUseSpaceCallbacks error: "+ reason);
             } catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
 
         }
@@ -1221,12 +1221,12 @@ public final class PutFileRequest extends FileRequest {
                             reason,
                             TStatusCode.SRM_NO_FREE_SPACE);
                 } catch(IllegalStateTransition ist) {
-                    _log.warn("Illegal State Transition : " +ist.getMessage());
+                    logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
 
-                _log.error("PutUseSpaceCallbacks error: "+ reason);
+                logger.error("PutUseSpaceCallbacks error: "+ reason);
             } catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
 
         }
@@ -1243,12 +1243,12 @@ public final class PutFileRequest extends FileRequest {
                             reason,
                             TStatusCode.SRM_SPACE_LIFETIME_EXPIRED);
                 } catch(IllegalStateTransition ist) {
-                    _log.warn("Illegal State Transition : " +ist.getMessage());
+                    logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
 
-                _log.error("PutUseSpaceCallbacks error: "+ reason);
+                logger.error("PutUseSpaceCallbacks error: "+ reason);
             } catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
 
         }
@@ -1265,12 +1265,12 @@ public final class PutFileRequest extends FileRequest {
                             reason,
                             TStatusCode.SRM_AUTHORIZATION_FAILURE);
                 } catch(IllegalStateTransition ist) {
-                    _log.warn("Illegal State Transition : " +ist.getMessage());
+                    logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
 
-                _log.error("PutUseSpaceCallbacks error: "+ reason);
+                logger.error("PutUseSpaceCallbacks error: "+ reason);
             } catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
 
         }
@@ -1278,20 +1278,20 @@ public final class PutFileRequest extends FileRequest {
         public void SpaceUsed() {
             try {
                 PutFileRequest fr = getPutFileRequest();
-                _log.debug("Space Marked as Being Used");
+                logger.debug("Space Marked as Being Used");
                 State state = fr.getState();
                 if(state == State.ASYNCWAIT) {
-                    _log.debug("PutUseSpaceCallbacks Space Marked as Being Used for file "+fr.getSurlString());
+                    logger.debug("PutUseSpaceCallbacks Space Marked as Being Used for file "+fr.getSurlString());
                     fr.setSpaceMarkedAsBeingUsed(true);
                     Scheduler scheduler = Scheduler.getScheduler(fr.getSchedulerId());
                     try {
                         scheduler.schedule(fr);
                     } catch(Exception ie) {
-                        _log.error(ie);
+                        logger.error(ie);
                     }
                 }
             } catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
     }
@@ -1317,9 +1317,9 @@ public final class PutFileRequest extends FileRequest {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 String error = e.toString();
-                _log.error("PutCancelUseOfSpaceCallbacks exception",e);
+                logger.error("PutCancelUseOfSpaceCallbacks exception",e);
             } catch(Exception e1) {
-                e1.printStackTrace();
+                logger.error(e1);
             }
         }
 
@@ -1327,18 +1327,18 @@ public final class PutFileRequest extends FileRequest {
             try {
                 PutFileRequest fr = getPutFileRequest();
 
-                _log.error("PutCancelUseOfSpaceCallbacks error: "+ reason);
+                logger.error("PutCancelUseOfSpaceCallbacks error: "+ reason);
             } catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
 
         public void UseOfSpaceSpaceCanceled() {
             try {
                 PutFileRequest fr = getPutFileRequest();
-                _log.debug("Umarked Space as Being Used");
+                logger.debug("Umarked Space as Being Used");
             } catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
     }
@@ -1364,9 +1364,9 @@ public final class PutFileRequest extends FileRequest {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 fr.setSpaceReservationId(null);
-                _log.error("TheReleaseSpaceCallbacks error: "+ error);
+                logger.error("TheReleaseSpaceCallbacks error: "+ error);
             } catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
 
@@ -1374,9 +1374,9 @@ public final class PutFileRequest extends FileRequest {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 fr.setSpaceReservationId(null);
-                _log.error("TheReleaseSpaceCallbacks exception",e);
+                logger.error("TheReleaseSpaceCallbacks exception",e);
             } catch(Exception e1) {
-                e1.printStackTrace();
+                logger.error(e1);
             }
         }
 
@@ -1387,19 +1387,19 @@ public final class PutFileRequest extends FileRequest {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 fr.setSpaceReservationId(null);
-                _log.error("TheReleaseSpaceCallbacks Timeout");
+                logger.error("TheReleaseSpaceCallbacks Timeout");
             } catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
 
         public void SpaceReleased() {
             try {
                 PutFileRequest fr = getPutFileRequest();
-                _log.debug("TheReleaseSpaceCallbacks: SpaceReleased");
+                logger.debug("TheReleaseSpaceCallbacks: SpaceReleased");
                 fr.setSpaceReservationId(null);
             } catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
 
@@ -1407,9 +1407,9 @@ public final class PutFileRequest extends FileRequest {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 fr.setSpaceReservationId(null);
-                _log.error("TheReleaseSpaceCallbacks error: "+ reason+" ignoring, could have been all used up");
+                logger.error("TheReleaseSpaceCallbacks error: "+ reason+" ignoring, could have been all used up");
             } catch(Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         }
 

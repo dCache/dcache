@@ -117,7 +117,6 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
                 getGssCredential(),
                 configuration.getRetry_timeout(),
                 configuration.getRetry_num(),
-                configuration.getLogger(),
                 doDelegation,
                 fullDelegation,
                 gss_expected_name,

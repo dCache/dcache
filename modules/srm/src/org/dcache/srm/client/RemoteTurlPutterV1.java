@@ -73,46 +73,21 @@ COPYRIGHT STATUS:
 package org.dcache.srm.client;
 
 import org.dcache.srm.AbstractStorageElement;
-import org.dcache.srm.SRM;
-import org.globus.util.GlobusURL;
-import org.globus.io.urlcopy.UrlCopy;
-import java.net.MalformedURLException;
-import java.net.UnknownHostException;
-import java.net.InetAddress;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.BufferedReader;
-import org.dcache.srm.client.SRMClientV1;
-import java.util.Hashtable;
-import java.util.HashSet;
-import java.util.HashMap;
-import java.util.Iterator;
-import org.dcache.srm.SRMException;
 import org.dcache.srm.request.RequestCredential;
 import java.beans.PropertyChangeListener;
+import org.apache.log4j.Logger;
 
 /**
  *
  * @author  timur
  */
-public class RemoteTurlPutterV1 extends TurlGetterPutterV1
+public final class RemoteTurlPutterV1 extends TurlGetterPutterV1
 {
+    private static final Logger logger = Logger.getLogger(RemoteTurlPutterV1.class);
     
     long[] sizes;
     
-    public void say(String s) {
-        storage.log("RemoteTurlPutterV1 :"+s);
-    }
-    
-    public void esay(String s) {
-        storage.elog("RemoteTurlPutterV1 :"+s);
-    }
-    
-    public void esay(Throwable t) {
-        storage.elog("RemoteTurlPutterV1 exception");
-        storage.elog(t);
-    }
     
     public RemoteTurlPutterV1(AbstractStorageElement storage,
     RequestCredential credential, String[] SURLs,
@@ -129,6 +104,7 @@ public class RemoteTurlPutterV1 extends TurlGetterPutterV1
         boolean[] wantperm =
         new boolean[number_of_file_reqs];
         java.util.Arrays.fill(wantperm,true);
+        logger.debug("SURLs[0] is "+SURLs[0]);
         return remoteSRM.put(SURLs,SURLs,sizes,wantperm,protocols);
     }    
 }

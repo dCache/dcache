@@ -85,11 +85,14 @@ import org.dcache.srm.v2_2.TGetRequestFileStatus;
 import org.dcache.srm.v2_2.SrmStatusOfGetRequestResponse;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.ArrayOfTGetRequestFileStatus;
+import org.apache.log4j.Logger;
 
 /*
  * @author  timur
  */
 public final class GetRequest extends ContainerRequest {
+    private final static Logger logger =
+            Logger.getLogger(GetRequest.class);
     /** array of protocols supported by client or server (copy) */
     protected String[] protocols;
     
@@ -111,9 +114,9 @@ public final class GetRequest extends ContainerRequest {
                 lifetime,
                 description,
                 client_host);
-        say("constructor");
-        say("user = "+user);
-        say("requestCredetialId="+requestCredentialId);
+        logger.debug("constructor");
+        logger.debug("user = "+user);
+        logger.debug("requestCredetialId="+requestCredentialId);
         int len = protocols.length;
         this.protocols = new String[len];
         System.arraycopy(protocols,0,this.protocols,0,len);
@@ -262,7 +265,7 @@ public final class GetRequest extends ContainerRequest {
     protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
         State state = getState();
         if(State.isFinalState(state)) {
-            say("get request state changed to "+state);
+            logger.debug("get request state changed to "+state);
             for(int i = 0 ; i < fileRequests.length; ++i) {
                 try {
                     FileRequest fr = fileRequests[i];
@@ -270,12 +273,12 @@ public final class GetRequest extends ContainerRequest {
                     if(!State.isFinalState(fr_state ))
                     {
 
-                        say("changing fr#"+fileRequests[i].getId()+" to "+state);
+                        logger.debug("changing fr#"+fileRequests[i].getId()+" to "+state);
                             fr.setState(state,"changing file state becase requests state changed");
                     }
                 }
                 catch(IllegalStateTransition ist) {
-                    esay("Illegal State Transition : " +ist.getMessage());
+                    logger.error("Illegal State Transition : " +ist.getMessage());
                 }
             }
            
@@ -348,7 +351,7 @@ public final class GetRequest extends ContainerRequest {
         for(TGetRequestFileStatus fs :arrayOfTGetRequestFileStatus.getStatusArray()) {
             s += " FileStatusCode = "+fs.getStatus().getStatusCode();
         }
-        say(s);
+        logger.debug(s);
         return response;
     }
     

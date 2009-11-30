@@ -73,40 +73,28 @@ COPYRIGHT STATUS:
 package org.dcache.srm.client;
 
 import org.dcache.srm.AbstractStorageElement;
-import org.dcache.srm.Logger;
 import org.globus.util.GlobusURL;
-import org.globus.io.urlcopy.UrlCopy;
-import java.net.MalformedURLException;
-import java.net.UnknownHostException;
-import java.net.InetAddress;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.BufferedReader;
-import java.util.Hashtable;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import org.dcache.srm.SRMException;
-import org.dcache.srm.util.OneToManyMap;
-// import org.dcache.srm.request.CopyFileRequest;
-import org.dcache.srm.scheduler.*;
 import org.dcache.srm.request.RequestCredential;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
+import org.apache.log4j.Logger;
 /**
  *
  * @author  timur
  */
 public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
-    protected diskCacheV111.srm.ISRM remoteSRM;
+    private static final Logger logger =
+            Logger.getLogger(TurlGetterPutterV1.class);
 
-    private Object sync = new Object();
+    protected diskCacheV111.srm.ISRM remoteSRM;
+    private final Object sync = new Object();
     protected diskCacheV111.srm.RequestStatus rs;
     // this is the set of remote file ids that are not "Ready" yet
     // this object will be used for synchronization fo all hash sets and maps
     // used in this class
-    private  HashSet fileIDs = new HashSet();
+    private  final HashSet fileIDs = new HashSet();
     //the map between remote file ids and corresponding RequestFileStatuses
     private  HashMap fileIDsMap = new HashMap();
     // this two maps give the correspondence between local file ids
@@ -116,14 +104,6 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
     protected int number_of_file_reqs;
     //    protected String[] SURLs;
     protected boolean createdMap;
-    
-    
-    public abstract void say(String s);
-    
-    public abstract void esay(String s);
-    
-    public abstract void esay(Throwable t);
-    
     private long retry_timout;
     private int retry_num;
     
@@ -136,12 +116,12 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
         this.number_of_file_reqs = SURLs.length;
         this.retry_num = retry_num;
         this.retry_timout = retry_timeout;
-        say("TurlGetterPutter, number_of_file_reqs = "+number_of_file_reqs);
+        logger.debug("TurlGetterPutter, number_of_file_reqs = "+number_of_file_reqs);
     }
     
      public void getInitialRequest() throws SRMException {
          if(number_of_file_reqs == 0) {
-            say("number_of_file_reqs is 0, nothing to do");
+            logger.debug("number_of_file_reqs is 0, nothing to do");
             return;
         }
         try {
@@ -149,13 +129,13 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
             remoteSRM = new SRMClientV1(
             new GlobusURL(SURLs[0]),
             credential.getDelegatedCredential(),
-            retry_timout,retry_num,storage,true,true,"host","srm/managerv1");
+            retry_timout,retry_num,true,true,"host","srm/managerv1");
         }
         catch(Exception e) {
             throw new SRMException("failed to connect to "+SURLs[0],e);
         }
 
-        say("run() : calling getInitialRequestStatus()");
+        logger.debug("run() : calling getInitialRequestStatus()");
         try {
             rs =  getInitialRequestStatus();
         }
@@ -168,7 +148,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
     public void run() {
         
         if(number_of_file_reqs == 0) {
-            say("number_of_file_reqs is 0, nothing to do");
+            logger.debug("number_of_file_reqs is 0, nothing to do");
             return;
         }
             
@@ -197,12 +177,12 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
             createdMap = true;
         }
         
-        say("getFromRemoteSRM() : received requestStatus, waiting");
+        logger.debug("getFromRemoteSRM() : received requestStatus, waiting");
         try {
             waitForReadyStatuses();
         }
         catch(Exception e) {
-            this.esay(e);
+            logger.error(e);
             notifyOfFailure(e);
             return;
         }
@@ -212,25 +192,24 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
     private void waitForReadyStatuses() throws Exception{
         while(!fileIDs.isEmpty()) {
             if(isStopped()) {
-                say("TurlGetterPutter is done, still have "+fileIDs.size()+" file ids");
+                logger.debug("TurlGetterPutter is done, still have "+fileIDs.size()+" file ids");
                 Iterator iter = fileIDs.iterator();
                 while(iter.hasNext()) {
                         diskCacheV111.srm.RequestFileStatus frs;
                         Integer nextID = (Integer)iter.next();
                         try {
-                            say("calling setFileStatus("+requestID+","+nextID+",\"Done\") on remote server");
+                            logger.debug("calling setFileStatus("+requestID+","+nextID+",\"Done\") on remote server");
                             setFileStatus(requestID,nextID.intValue(),"Done");
                         }
                         catch(Exception e) {
-                            esay("error setting file status to done");
-                            esay(e);
+                            logger.error("error setting file status to done",e);
                         }
                         try {
                             frs = getFileRequest(rs,nextID);
                             notifyOfFailure(frs.SURL,"stopped by user request",Integer.toString(rs.requestId),nextID.toString());
                         }
                         catch(Exception e) {
-                            this.esay(e);
+                            logger.error(e);
                        }
                 }
                 break;
@@ -255,7 +234,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                             frs = getFileRequest(rs,nextID);
                         }
                         catch(Exception e) {
-                            this.esay(e);
+                            logger.error(e);
                             totalFailure = true;
                             totalFailureError =" run() getFileRequest  failed with ioe="+e;
                             break;
@@ -279,7 +258,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                             continue;
                         }
 
-                        say("waitForReadyStatuses() received the RequestFileStatus with Status="+frs.state+" for SURL="+frs.SURL);
+                        logger.debug("waitForReadyStatuses() received the RequestFileStatus with Status="+frs.state+" for SURL="+frs.SURL);
                         removeIDs.add(nextID);
                         removedIDsToSURL.put(nextID,frs.SURL);
 
@@ -298,7 +277,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                                 continue;
                             } else {
                                 ready = true;
-                                say("waitForReadyStatuses(): FileRequestStatus is Ready received TURL="+
+                                logger.debug("waitForReadyStatuses(): FileRequestStatus is Ready received TURL="+
                                 frs.TURL);
                                 //notifyOfTURL(frs.SURL, frs.TURL,rs.requestId,frs.fileId);
                                 removeIDs.add(nextID);
@@ -326,7 +305,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                 }//synchronized
                 // we do all notifications outside of the sycnchronized block to avoid deadlocks
                  if(totalFailure){
-                     esay(" breaking the waiting loop with a failure:"+ totalFailureError);
+                     logger.error(" breaking the waiting loop with a failure:"+ totalFailureError);
 
                     notifyOfFailure(totalFailureError);
                     return;
@@ -361,7 +340,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                 synchronized (fileIDs) {
 
                     if(fileIDs.isEmpty()) {
-                        say("waitForReadyStatuses(): fileIDs is empty, breaking the loop");
+                        logger.debug("waitForReadyStatuses(): fileIDs is empty, breaking the loop");
                         break;
                     }
                 }
@@ -372,7 +351,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                         if( retrytime <= 0 ) {
                             retrytime = 5;
                         }
-                        say("waitForReadyStatuses(): waiting for "+retrytime+" seconds before updating status ...");
+                        logger.debug("waitForReadyStatuses(): waiting for "+retrytime+" seconds before updating status ...");
                         sync.wait( retrytime * 1000L );
                     }
                     catch(InterruptedException ie) {
@@ -392,9 +371,9 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                 }
 
                 if(rs.state.equals("Failed")) {
-                    esay("rs.state = "+rs.state+" rs.error = "+rs.errorMessage);
+                    logger.error("rs.state = "+rs.state+" rs.error = "+rs.errorMessage);
                     for(int i = 0; i< rs.fileStatuses.length;++i) {
-                        esay("      ====> fileStatus state =="+rs.fileStatuses[i].state);
+                        logger.error("      ====> fileStatus state =="+rs.fileStatuses[i].state);
                     }
                     notifyOfFailure("rs.state = "+rs.state+" rs.error = "+rs.errorMessage);
                     return;
@@ -464,8 +443,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
         int fileId,
         String status,
         long retry_timeout,
-        int retry_num,
-        Logger logger) throws Exception
+        int retry_num) throws Exception
     {
         
         diskCacheV111.srm.ISRM remoteSRM; 
@@ -473,7 +451,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
         // todo: extact web service path from surl if ?SFN= is present
         remoteSRM = new SRMClientV1(new GlobusURL(surl),
             credential.getDelegatedCredential(),
-            retry_timeout, retry_num,logger,true,true,"host","srm/managerv1");
+            retry_timeout, retry_num,true,true,"host","srm/managerv1");
         
         remoteSRM.setFileStatus(requestID,fileId,status);
 

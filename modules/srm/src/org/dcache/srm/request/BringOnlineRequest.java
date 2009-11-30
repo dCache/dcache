@@ -92,10 +92,12 @@ import org.dcache.srm.v2_2.TBringOnlineRequestFileStatus;
 import org.dcache.srm.v2_2.SrmReleaseFilesResponse;
 import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
 import org.apache.axis.types.URI;
+import org.apache.log4j.Logger;
 /*
  * @author  timur
  */
 public final class BringOnlineRequest extends ContainerRequest {
+    private static final Logger logger = Logger.getLogger(BringOnlineRequest.class);
     /** array of protocols supported by client or server (copy) */
     protected String[] protocols;
     private long desiredOnlineLifetimeInSeconds;
@@ -118,9 +120,9 @@ public final class BringOnlineRequest extends ContainerRequest {
             lifetime,
             description,
             client_host);
-        say("constructor");
-        say("user = "+user);
-        say("requestCredetialId="+requestCredentialId);
+        logger.debug("constructor");
+        logger.debug("user = "+user);
+        logger.debug("requestCredetialId="+requestCredentialId);
         int len;
         if(protocols != null) {
             len = protocols.length;
@@ -270,14 +272,14 @@ public final class BringOnlineRequest extends ContainerRequest {
         State state = getState();
         if(State.isFinalState(state)) {
             
-            say("get request state changed to "+state);
+            logger.debug("get request state changed to "+state);
             for(FileRequest fr: fileRequests) {
                 try {
-                    say("changing fr#"+fr.getId()+" to "+state);
+                    logger.debug("changing fr#"+fr.getId()+" to "+state);
                     fr.setState(state,"changing file state becase requests state changed");
                 }
                 catch(IllegalStateTransition ist) {
-                    esay("Illegal State Transition : " +ist.getMessage());
+                    logger.error("Illegal State Transition : " +ist.getMessage());
                 }
             }
            
@@ -333,7 +335,7 @@ public final class BringOnlineRequest extends ContainerRequest {
         for(TBringOnlineRequestFileStatus fs :arrayOfTBringOnlineRequestFileStatus.getStatusArray()) {
             s += " FileStatusCode = "+fs.getStatus().getStatusCode();
         }
-        say(s);
+        logger.debug(s);
         return response;
     }
     
@@ -394,7 +396,7 @@ public final class BringOnlineRequest extends ContainerRequest {
     
     public SrmReleaseFilesResponse 
             releaseFiles(URI[] surls,String[] surl_strings) throws SRMInvalidRequestException {
-        say("releaseFiles");
+        logger.debug("releaseFiles");
         int len ;
         TSURLReturnStatus[] surlLReturnStatuses;
         if(surls == null) {
@@ -406,7 +408,7 @@ public final class BringOnlineRequest extends ContainerRequest {
            surlLReturnStatuses = new TSURLReturnStatus[surls.length];
         }
         if(surls == null) {
-            say("releaseFiles, surls is null, releasing all "+len+" files");
+            logger.debug("releaseFiles, surls is null, releasing all "+len+" files");
             for(int i = 0; i< len; ++i) {
                 BringOnlineFileRequest fr =(BringOnlineFileRequest)fileRequests[i];
                 surlLReturnStatuses[i] = fr.releaseFile();
@@ -414,16 +416,16 @@ public final class BringOnlineRequest extends ContainerRequest {
         } else {
             for(int i = 0; i< len; ++i) {
                 BringOnlineFileRequest fr = null;
-               say("releaseFiles, releasing file "+surl_strings[i]);
+               logger.debug("releaseFiles, releasing file "+surl_strings[i]);
                 try{
                     fr =(BringOnlineFileRequest)getFileRequestBySurl(surl_strings[i]);
                 } catch (SRMFileRequestNotFoundException sfrnfe ) {
                     try {
                         String surl_string = surl_strings[i];
                         SRMUser user =(SRMUser) getUser();
-                        long id =getId();
+                        long theId =getId();
                         BringOnlineFileRequest.unpinBySURLandRequestId(
-                            getStorage(),user, id, surl_string);
+                            getStorage(),user, theId, surl_string);
                         TSURLReturnStatus surlStatus = new TSURLReturnStatus();
                         TReturnStatus surlReturnStatus = new TReturnStatus();
                         surlReturnStatus.setStatusCode(TStatusCode.SRM_SUCCESS);
@@ -480,7 +482,7 @@ public final class BringOnlineRequest extends ContainerRequest {
             getTReturnStatus();
         }
         catch(Exception e) {
-            e.printStackTrace();
+            logger.error(e);
         }
         int errors_cnt = 0;
         

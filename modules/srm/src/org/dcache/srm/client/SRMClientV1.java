@@ -1,6 +1,3 @@
-// $Id$
-// $Log: not supported by cvs2svn $
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -79,8 +76,12 @@ import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import org.globus.util.GlobusURL;
 import org.ietf.jgss.GSSCredential;
-import org.dcache.srm.Logger;
+import javax.xml.rpc.ServiceException;
+import org.apache.log4j.Logger;
+
 public class SRMClientV1 implements diskCacheV111.srm.ISRM {
+    private static final Logger logger =
+            Logger.getLogger(SRMClientV1.class);
     private final static String SFN_STRING="?SFN=";
     private int retries;
     private long retrytimeout;
@@ -88,25 +89,8 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
     private final org.dcache.srm.client.axis.ISRM_PortType axis_isrm;
     private GSSCredential user_cred;
     private String service_url;
-    private Logger logger;
     private String host;
-    private void say(String s) {
-        if(logger != null) {
-            logger.log("SRMClientV1 : "+s);
-        }
-    }
-    
-    private void esay(String s) {
-        if(logger != null) {
-            logger.elog("SRMClientV1 : "+s);
-        }
-    }
-    
-    private void esay(Throwable t) {
-        if(logger != null) {
-            logger.elog(t);
-        }
-    }
+
     public static String unwrapHttpRedirection(String http_url) {
         if(http_url == null || !http_url.startsWith("http://")) {
             return http_url;
@@ -153,25 +137,23 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
             GSSCredential user_cred,
             long retrytimeout,
             int numberofretries,
-            Logger logger,
             boolean do_delegation,
             boolean full_delegation,
             String gss_expected_name,
-            String webservice_path) throws IOException,InterruptedException,
-            javax.xml.rpc.ServiceException    {
+            String webservice_path) throws 
+                IOException,InterruptedException,ServiceException{
 	
-	say("In Server Side: webservice_path= "+webservice_path);
+	logger.debug("In Server Side: webservice_path= "+webservice_path);
 	
-	esay("constructor: srmurl = "+srmurl+" user_cred= "+ user_cred+" retrytimeout="+retrytimeout+" msec numberofretries="+numberofretries);
+	logger.debug("constructor: srmurl = "+srmurl+" user_cred= "+ user_cred+" retrytimeout="+retrytimeout+" msec numberofretries="+numberofretries);
         this.retrytimeout = retrytimeout;
         this.retries = numberofretries;
         this.user_cred = user_cred;
-        this.logger = logger;
         if(user_cred == null) {
             throw new NullPointerException("user credential is null");
         }
         try {
-	    say("user credentials are: "+user_cred.getName());
+	    logger.debug("user credentials are: "+user_cred.getName());
             if(user_cred.getRemainingLifetime() < 60) {
                 throw new IOException("credential remaining lifetime is less then a minute ");
             }
@@ -181,7 +163,6 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
         }
         
         
-        //say("constructor: obtained socket factory");
         host = srmurl.getHost();
         host = InetAddress.getByName(host).getCanonicalHostName();
         int port = srmurl.getPort();
@@ -198,14 +179,11 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
                 service_url += "/";
             }
             service_url += service_postfix;
-	    //say("SFN Exists: service_url: "+service_url);
         }
-        else {
-	    
-	    service_url += "/"+webservice_path;
-	    //say("SFN doesnot Exist: service_url: "+service_url);	
+        else {	    
+            service_url += "/"+webservice_path;
         }
-        say("SRMClientV1 calling org.globus.axis.util.Util.registerTransport() ");
+        logger.debug("SRMClientV1 calling org.globus.axis.util.Util.registerTransport() ");
         org.globus.axis.util.Util.registerTransport();
         org.apache.axis.configuration.SimpleProvider provider = 
             new org.apache.axis.configuration.SimpleProvider();
@@ -219,7 +197,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
         provider.deployTransport("http", c);
         org.dcache.srm.client.axis.SRMServerV1Locator sl = new org.dcache.srm.client.axis.SRMServerV1Locator(provider);
         java.net.URL url = new java.net.URL(service_url);
-        say("connecting to srm at "+service_url);
+        logger.debug("connecting to srm at "+service_url);
         axis_isrm = sl.getISRM(url);
         if(axis_isrm instanceof org.apache.axis.client.Stub) {
             org.apache.axis.client.Stub axis_isrm_as_stub = (org.apache.axis.client.Stub)axis_isrm;
@@ -252,15 +230,15 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
     boolean[] wantPerm,
     String[] protocols ) {
         for(int i = 0 ; i<sources.length;++i) {
-            say("\tput, sources["+i+"]=\""+sources[i]+"\"");
+            logger.debug("\tput, sources["+i+"]=\""+sources[i]+"\"");
         }
         for(int i = 0 ; i<dests.length;++i) {
-            say("\tput, dests["+i+"]=\""+dests[i]+"\"");
+            logger.debug("\tput, dests["+i+"]=\""+dests[i]+"\"");
         }
         for(int i = 0 ; i<protocols.length;++i) {
-            say("\tput, protocols["+i+"]=\""+protocols[i]+"\"");
+            logger.debug("\tput, protocols["+i+"]=\""+protocols[i]+"\"");
         }
-        say(" put, contacting service " + service_url);
+        logger.debug(" put, contacting service " + service_url);
         int i = 0;
         while(true) {
 
@@ -288,8 +266,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
                 }
             }
             catch(RuntimeException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
+                logger.error("put: try # "+i+" failed with error",e);
                 throw e;
             }
         }
@@ -298,10 +275,10 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
     public diskCacheV111.srm.RequestStatus get( String[] surls,String[] protocols ) {
 
         for(int i = 0 ; i<surls.length;++i) {
-            say("\tget: surls["+i+"]=\""+surls[i]+"\"");
+            logger.debug("\tget: surls["+i+"]=\""+surls[i]+"\"");
         }
         for(int i = 0 ; i<protocols.length;++i) {
-            say("\tget: protocols["+i+"]=\""+protocols[i]+"\"");
+            logger.debug("\tget: protocols["+i+"]=\""+protocols[i]+"\"");
         }
         int i = 0;
         while(true) {
@@ -321,14 +298,13 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
         org.dcache.srm.client.axis.RequestStatus rs = axis_isrm.get(surls,protocols);
                     return ConvertUtil.axisRS2RS(rs);
                 }catch(java.rmi.RemoteException re) {
-                    esay(re.toString());
+                    logger.error(re.toString());
                     throw new RuntimeException (re.toString());
                 }
 
             }
             catch(RuntimeException e) {
-                esay("get : try # "+i+" failed with error");
-                esay(e.getMessage());
+                logger.error("get : try # "+i+" failed with error",e);
                 throw e;
             }
         }
@@ -338,12 +314,12 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
     String[] destSURLS,
     boolean[] wantPerm ) {
         for(int i = 0 ; i<srcSURLS.length;++i) {
-            say("\tcopy, srcSURLS["+i+"]=\""+srcSURLS[i]+"\"");
+            logger.debug("\tcopy, srcSURLS["+i+"]=\""+srcSURLS[i]+"\"");
         }
         for(int i = 0 ; i<destSURLS.length;++i) {
-            say("\tcopy, destSURLS["+i+"]=\""+destSURLS[i]+"\"");
+            logger.debug("\tcopy, destSURLS["+i+"]=\""+destSURLS[i]+"\"");
         }
-        say(" copy, contacting service "+service_url);
+        logger.debug(" copy, contacting service "+service_url);
         int i = 0;
         while(true) {
 
@@ -363,14 +339,13 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
                     org.dcache.srm.client.axis.RequestStatus rs = axis_isrm.copy(srcSURLS,destSURLS,wantPerm);
                     return ConvertUtil.axisRS2RS(rs);
                 }catch(java.rmi.RemoteException re) {
-                    //esay(re);
+                    //logger.error(re);
                     throw new RuntimeException (re.toString());
                 }
 
             }
             catch(RuntimeException e) {
-                esay("copy: try # "+i+" failed with error");
-                esay(e.getMessage());
+                logger.error("copy: try # "+i+" failed with error",e);
                 throw e;
             }
         }
@@ -397,16 +372,15 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
                     org.dcache.srm.client.axis.RequestStatus rs = axis_isrm.getRequestStatus(requestId);
                     return ConvertUtil.axisRS2RS(rs);
                 }catch(java.rmi.RemoteException re) {
-                    //esay(re);
+                    //logger.error(re);
                     throw new RuntimeException (re.toString());
                 }
             }
             catch(RuntimeException e) {
-                esay("getRequestStatus: try #"+i+" failed with error");
-                esay(e.getMessage());
+                logger.error("getRequestStatus: try #"+i+" failed with error",e);
                 if(i <retries) {
                     i++;
-                    esay("getRequestStatus: try again");
+                    logger.error("getRequestStatus: try again");
                 }
                 else {
                     throw e;
@@ -414,7 +388,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
             }
 
             try {
-                say("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
+                logger.debug("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
                 Thread.sleep(retrytimeout*i);
             }
             catch(InterruptedException ie) {
@@ -423,7 +397,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
     }
 
     public boolean ping() {
-        say(" ping, contacting service "+service_url);
+        logger.debug(" ping, contacting service "+service_url);
         int i = 0;
         while(true) {
 
@@ -442,24 +416,23 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
                 {
                       return axis_isrm.ping();
                 }catch(java.rmi.RemoteException re) {
-                    //esay(re);
+                    //logger.error(re);
                     throw new RuntimeException (re.toString());
                 }
 
             }
             catch(RuntimeException e) {
-                esay("ping: try # "+i+" failed with error");
-                esay(e.getMessage());
+                logger.error("ping: try # "+i+" failed with error",e);
                 if(i <retries) {
                     i++;
-                    esay("ping: try again");
+                    logger.error("ping: try again");
                 }
                 else {
                     throw e;
                 }
             }
             try {
-                say("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
+                logger.debug("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
                 Thread.sleep(retrytimeout*i);
             }
             catch(InterruptedException ie) {
@@ -494,7 +467,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
     
     public diskCacheV111.srm.FileMetaData[] getFileMetaData( String[] SURLS ) {
         if (axis_isrm == null) { throw new NullPointerException ("both isrms are null!!!!");}
-        say(" getFileMetaData, contacting service "+service_url);
+        logger.debug(" getFileMetaData, contacting service "+service_url);
         int i = 0;
         while(true) {
 
@@ -514,24 +487,23 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
                     org.dcache.srm.client.axis.FileMetaData[] fmd = axis_isrm.getFileMetaData(SURLS);
                      return ConvertUtil.axisFMDs2FMDs(fmd);
                 }catch(java.rmi.RemoteException re) {
-                    //esay(re);
+                    //logger.error(re);
                     throw new RuntimeException (re.toString());
                 }
 
             }
             catch(RuntimeException e) {
-                esay("copy: try # "+i+" failed with error");
-                esay(e.getMessage());
+                logger.error("copy: try # "+i+" failed with error",e);
                 if(i <retries) {
                     i++;
-                    esay("copy: try again");
+                    logger.error("copy: try again");
                 }
                 else {
                     throw e;
                 }
             }
             try {
-                say("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
+                logger.debug("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
                 Thread.sleep(retrytimeout*i);
             }
             catch(InterruptedException ie) {
@@ -562,14 +534,13 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
                     org.dcache.srm.client.axis.RequestStatus rs = axis_isrm.setFileStatus(requestId,fileId,state);
                     return ConvertUtil.axisRS2RS(rs);
                 }catch(java.rmi.RemoteException re) {
-                    //esay(re);
+                    //logger.error(re);
                     throw new RuntimeException (re.toString());
                 }
-                //say("getRequestStatus returned");
+                //logger.debug("getRequestStatus returned");
             }
             catch(RuntimeException e) {
-                esay("getRequestStatus: try #"+i+" failed with error");
-                esay(e.getMessage());
+                logger.error("getRequestStatus: try #"+i+" failed with error",e);
                 /*
                  * we do not retry in case of setFileStatus for reasons of performanse
                  * and because the setFileStatus fails too often for castor implementation
@@ -579,7 +550,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
                  if(false)
                  {
                     i++;
-                    esay("getRequestStatus: try again");
+                    logger.error("getRequestStatus: try again");
                 }
                 else
 
@@ -589,7 +560,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
             }
 
             try {
-                say("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
+                logger.debug("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
                 Thread.sleep(retrytimeout*i);
             }
             catch(InterruptedException ie) {
@@ -599,9 +570,9 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
     
     public void advisoryDelete( String[] SURLS) {
         for(int i = 0 ; i<SURLS.length;++i) {
-            say("\tadvisoryDelete SURLS["+i+"]=\""+SURLS[i]+"\"");
+            logger.debug("\tadvisoryDelete SURLS["+i+"]=\""+SURLS[i]+"\"");
         }
-        say(" advisoryDelete, contacting service "+service_url);
+        logger.debug(" advisoryDelete, contacting service "+service_url);
         int i = 0;
 
         try {
@@ -619,7 +590,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
              axis_isrm.advisoryDelete(SURLS);
              return;
         }catch(java.rmi.RemoteException re) {
-            //esay(re);
+            //logger.error(re);
             String message = re.getMessage();
             if(message != null)  throw new RuntimeException (message);
             throw new RuntimeException (re);
@@ -627,7 +598,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
    }
     
     public String[] getProtocols() {
-        say(" getProtocols, contacting service "+service_url);
+        logger.debug(" getProtocols, contacting service "+service_url);
         int i = 0;
         while(true) {
 
@@ -647,24 +618,23 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
                       String protocols[] =axis_isrm.getProtocols();
                       return protocols;
                 }catch(java.rmi.RemoteException re) {
-                    //esay(re);
+                    //logger.error(re);
                     throw new RuntimeException (re.toString());
                 }
 
             }
             catch(RuntimeException e) {
-                esay("getProtocols: try # "+i+" failed with error");
-                esay(e.getMessage());
+                logger.error("getProtocols: try # "+i+" failed with error",e);
                 if(i <retries) {
                     i++;
-                    esay("getProtocols: try again");
+                    logger.error("getProtocols: try again");
                 }
                 else {
                     throw e;
                 }
             }
             try {
-                say("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
+                logger.debug("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
                 Thread.sleep(retrytimeout*i);
             }
             catch(InterruptedException ie) {

@@ -1,44 +1,17 @@
 package org.dcache.srm.qos.terapaths;
 
-import java.util.ArrayList;
-import java.util.Date;
-
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.qos.*;
-
 import java.util.*;
 import java.io.*;
-import javax.net.ssl.*;
-
 import org.dcache.srm.util.Configuration;
-
 import terapathsexamplejavaclient.*;
+import org.apache.log4j.Logger;
 
 public class TerapathsPlugin implements QOSPlugin {
+    private static final Logger logger =
+            Logger.getLogger(TerapathsPlugin.class);
 
-	/*    public TerapathsPlugin(){
-    	System.out.println("HELLO DIMITRI");
-    }
-
-    public QOSTicket createTicket(
-			String credential, 
-			Long bytes,
-			String srcURL, 
-			int srcPortMin, 
-			int srcPortMax,
-			String srcProtocol,
-			String dstURL, 
-			int dstPortMin,
-	        int dstPortMax,
-	        String dstProtocol){return null;}
-
-	public void setSrmConfiguration(Configuration configuration){}
-
-	public void addTicket(QOSTicket qosTicket){}
-
-	public boolean submit(){return false;}
-
-	public void sayStatus(QOSTicket qosTicket){}*/
 
 	AbstractStorageElement storage;
 	private ArrayList tickets = new ArrayList();
@@ -92,18 +65,18 @@ public class TerapathsPlugin implements QOSPlugin {
 		ScheduleSlots[] ss = null;
 		long startTime = new Date().getTime();
 
-		storage.log("Submitting qos request...");
+		logger.debug("Submitting qos request...");
 		
 		if (lastRetrieval==null || lastRetrieval.before(lastModification())) {
 			try {
 				properties.load(new FileInputStream(propFile));
 			}
 			catch(FileNotFoundException ex) {
-				storage.elog(ex);
+				logger.error(ex);
 				return false;
 			}
 			catch(IOException ex) {
-				storage.elog(ex);
+				logger.error(ex);
 				return false;
 			}
 
@@ -112,10 +85,10 @@ public class TerapathsPlugin implements QOSPlugin {
 				tpsAPISEIPort = tpsAPI.getTpsAPISEIPort();
 				((javax.xml.rpc.Stub) tpsAPISEIPort)._setProperty(javax.xml.rpc.Stub.ENDPOINT_ADDRESS_PROPERTY, properties.getProperty("serviceUrl", "http://198.124.220.9:8080/terapathsAPI/tpsAPI?wsdl"));
 			} catch(javax.xml.rpc.ServiceException ex) {
-				storage.elog(ex);
+				logger.error(ex);
 				return false;
 			} catch(Exception ex) {
-				storage.elog(ex);
+				logger.error(ex);
 				return false;
 			}
 
@@ -131,7 +104,7 @@ public class TerapathsPlugin implements QOSPlugin {
 				System.setProperty("javax.net.ssl.trustStorePassword", properties.getProperty("trustStorePassword","secret"));    
 
 			} catch (Exception e) {
-				storage.elog(e);
+				logger.error(e);
 			} 	
 
 			username = properties.getProperty("username", "terapaths");
@@ -234,7 +207,7 @@ public class TerapathsPlugin implements QOSPlugin {
 								tpTicket.endTime = endTime;
 								tpTicket.bandwidth = rdRcv.getBandwidth().getBandwidth();
 
-								storage.log("Submitted qos request "+tpTicket.id);
+								logger.debug("Submitted qos request "+tpTicket.id);
 								successFlag = true;
 								break;
 							}
@@ -249,10 +222,10 @@ public class TerapathsPlugin implements QOSPlugin {
 					result = false;
 			}
 			catch(java.rmi.RemoteException ex) {
-				storage.elog(ex);
+				logger.error(ex);
 				return false;
 			} catch(Exception ex) {
-				storage.elog(ex);
+				logger.error(ex);
 				return false;
 			}
 		}
@@ -267,15 +240,15 @@ public class TerapathsPlugin implements QOSPlugin {
 		//	Date now = new Date();
 		//	long now = now.getTime();
 		//	long timeLeft = tpTicket.endTime - now;
-		//	storage.log("End time="+(tpTicket.endTime/1000)+"s now="+(now/1000)+"s expires in "+(timeLeft/1000)+"s");
+		//	logger.debug("End time="+(tpTicket.endTime/1000)+"s now="+(now/1000)+"s expires in "+(timeLeft/1000)+"s");
 		//	long transferTimeLeft = 0;
 		//	if (tpTicket.bytes!=-1 && tpTicket.bandwidth!=-1)
 		//		transferTimeLeft = tpTicket.bytes/(tpTicket.bandwidth*8); // TODO: change bytes to remaining bytes
 		//	if (timeLeft - transferTime < 0)
-		//		storage.log("AM: will extend end time by "+extendTime);
+		//		logger.debug("AM: will extend end time by "+extendTime);
 		//	else
-		//		storage.log("AM: no need to extend end time");
-		//	storage.log("Ticket "+tpTicket.id+" enabled");
+		//		logger.debug("AM: no need to extend end time");
+		//	logger.debug("Ticket "+tpTicket.id+" enabled");
 		//}
 	}
 

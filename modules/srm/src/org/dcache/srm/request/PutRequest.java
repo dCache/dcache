@@ -1,5 +1,3 @@
-// $Id$
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -79,9 +77,7 @@ import org.dcache.srm.SRMUser;
 import java.util.HashSet;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.State;
-import org.dcache.srm.util.Configuration;
 import org.dcache.srm.SRMException;
-
 import org.dcache.srm.v2_2.SrmPrepareToPutResponse;
 import org.dcache.srm.v2_2.TPutRequestFileStatus;
 import org.dcache.srm.v2_2.SrmStatusOfPutRequestResponse;
@@ -92,11 +88,14 @@ import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TOverwriteMode;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMReleasedException;
+import org.apache.log4j.Logger;
 /**
  *
  * @author  timur
  */
 public final class PutRequest extends ContainerRequest{
+    private final static Logger logger =
+            Logger.getLogger(PutRequest.class);
     
     // private PutFileRequest fileRequests[];
     protected String[] protocols;
@@ -237,34 +236,22 @@ public final class PutRequest extends ContainerRequest{
     }
     
     
-    public void say(String words) {
-        getStorage().log("PutRequestHandler : "+words);
-    }
-    
-    public void esay(String words) {
-        getStorage().elog("PutRequestHandler error: "+words);
-    }
-    public void esay(Throwable t) {
-        getStorage().elog("PutRequestHandler error:");
-        getStorage().elog(t);
-    }
-    
     public void proccessRequest() {
-        say("proccessing put request");
+        logger.debug("proccessing put request");
         String supported_protocols[];
         try {
             supported_protocols = getStorage().supportedGetProtocols();
         }
         catch(org.dcache.srm.SRMException srme) {
-            esay(" protocols are not supported");
-            esay(srme);
+            logger.error(" protocols are not supported");
+            logger.error(srme);
             //setFailedStatus ("protocols are not supported");
             return;
         }
         java.util.HashSet supported_protocols_set = new HashSet(java.util.Arrays.asList(supported_protocols));
         supported_protocols_set.retainAll(java.util.Arrays.asList(protocols));
         if(supported_protocols_set.isEmpty()) {
-            esay("processPutRequest() : error selecting protocol");
+            logger.error("processPutRequest() : error selecting protocol");
             //setFailedStatus ("protocols are not supported");
             return;
         }
@@ -302,19 +289,19 @@ public final class PutRequest extends ContainerRequest{
         State state = getState();
         if(State.isFinalState(state)) {
             
-            say("copy request state changed to "+state);
+            logger.debug("copy request state changed to "+state);
             for(int i = 0 ; i < fileRequests.length; ++i) {
                 try {
                     FileRequest fr = fileRequests[i];
                     State fr_state = fr.getState();
                     if(!State.isFinalState(fr_state ))
                     {
-                        say("changing fr#"+fileRequests[i].getId()+" to "+state);
+                        logger.debug("changing fr#"+fileRequests[i].getId()+" to "+state);
                         fr.setState(state,"changing file state becase requests state changed");
                     }
                 }
                 catch(IllegalStateTransition ist) {
-                    esay("Illegal State Transition : " +ist.getMessage());
+                    logger.error("Illegal State Transition : " +ist.getMessage());
                 }
             }
            
@@ -374,7 +361,7 @@ public final class PutRequest extends ContainerRequest{
         for(TPutRequestFileStatus fs :arrayOfTPutRequestFileStatus.getStatusArray()) {
             s += " FileStatusCode = "+fs.getStatus().getStatusCode();
         }
-        say(s);
+        logger.debug(s);
         return response;
     }
     
@@ -461,6 +448,7 @@ public final class PutRequest extends ContainerRequest{
         return false;
     }
 
+    @Override
     public long extendLifetimeMillis(long newLifetimeInMillis) throws SRMException {
         try {
             return super.extendLifetimeMillis(newLifetimeInMillis);

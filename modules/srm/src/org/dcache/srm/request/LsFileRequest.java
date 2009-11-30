@@ -17,8 +17,12 @@ import org.dcache.srm.SRMTooManyResultsException;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.v2_2.*;
 import org.dcache.srm.SRMInvalidRequestException;
+import org.apache.log4j.Logger;
 
 public final class LsFileRequest extends FileRequest {
+    private static final Logger logger =
+            Logger.getLogger(LsFileRequest.class);
+    
         private org.apache.axis.types.URI surl;
         private TMetaDataPathDetail metaDataPathDetail;
 
@@ -73,24 +77,6 @@ public final class LsFileRequest extends FileRequest {
                 }
                 catch(org.apache.axis.types.URI.MalformedURIException murle) {
                         throw new IllegalArgumentException(murle.toString());
-                }
-        }
-
-        public void say(String s) {
-                if(getStorage() != null) {
-                        getStorage().log("LsFileRequest reqId #"+requestId+" ls#"+getId()+": "+s);
-                }
-        }
-
-        public void esay(String s) {
-                if(getStorage() != null) {
-                        getStorage().elog("LsFileRequest reqId #"+requestId+" ls#"+getId()+": "+s);
-                }
-        }
-
-        public void esay(Throwable t) {
-                if(getStorage() != null) {
-                        getStorage().elog(t);
                 }
         }
 
@@ -190,7 +176,7 @@ public final class LsFileRequest extends FileRequest {
                                 setState(State.FAILED,e.toString());
                         }
                         catch(IllegalStateTransition ist) {
-                                esay("Illegal State Transition : " +ist.getMessage());
+                                logger.error("Illegal State Transition : " +ist.getMessage());
                         } finally {
                             wunlock();
                         }
@@ -200,12 +186,12 @@ public final class LsFileRequest extends FileRequest {
 
         protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
             State state = getState();
-            say("State changed from "+oldState+" to "+getState());
+            logger.debug("State changed from "+oldState+" to "+getState());
                 if(state == State.READY) {
                     try {
                         getRequest().resetRetryDeltaTime();
                     } catch(SRMInvalidRequestException ire) {
-                        esay(ire);
+                        logger.error(ire);
                     }
                 }
         }
@@ -259,7 +245,7 @@ public final class LsFileRequest extends FileRequest {
                                 setState(State.DONE,State.DONE.toString());
                         }
                         catch(IllegalStateTransition ist) {                                                               
-                                 esay("Illegal State Transition : " +ist.getMessage());
+                                 logger.error("Illegal State Transition : " +ist.getMessage());
                         }                                                                                                 
                 }
                 return metaDataPathDetail;
@@ -278,57 +264,57 @@ public final class LsFileRequest extends FileRequest {
                             " offset to get complete listing \n");
                 }
                 FileMetaData fmd = getStorage().getFileMetaData(getUser(), path,parent_fmd);
-                TMetaDataPathDetail metaDataPathDetail =
+                TMetaDataPathDetail aMetaDataPathDetail =
                         new TMetaDataPathDetail();
-                metaDataPathDetail.setLifetimeAssigned(new Integer(-1));
-                metaDataPathDetail.setLifetimeLeft(new Integer(-1));
+                aMetaDataPathDetail.setLifetimeAssigned(new Integer(-1));
+                aMetaDataPathDetail.setLifetimeLeft(new Integer(-1));
                 TUserPermission userPermission = new TUserPermission();
                 userPermission.setUserID(fmd.owner);
                 TPermissionMode permissionMode;
                 int userPerm = (fmd.permMode >> 6) & 7;
                 userPermission.setMode(maskToTPermissionMode(userPerm));
-                metaDataPathDetail.setOwnerPermission(userPermission);
+                aMetaDataPathDetail.setOwnerPermission(userPermission);
                 TGroupPermission groupPermission = new TGroupPermission();
                 groupPermission.setGroupID(fmd.group);
                 int groupPerm = (fmd.permMode >> 3) & 7;
                 groupPermission.setMode(maskToTPermissionMode(groupPerm));
-                metaDataPathDetail.setGroupPermission(groupPermission);
-                metaDataPathDetail.setOtherPermission(maskToTPermissionMode(fmd.permMode & 7));
+                aMetaDataPathDetail.setGroupPermission(groupPermission);
+                aMetaDataPathDetail.setOtherPermission(maskToTPermissionMode(fmd.permMode & 7));
                 org.apache.axis.types.URI turi =
                         new org.apache.axis.types.URI();
                 turi.setScheme("srm");
-                metaDataPathDetail.setPath(path);
+                aMetaDataPathDetail.setPath(path);
                 java.util.GregorianCalendar td =
                         new java.util.GregorianCalendar();
                 td.setTimeInMillis(fmd.creationTime);
-                metaDataPathDetail.setCreatedAtTime(td);
+                aMetaDataPathDetail.setCreatedAtTime(td);
                 td = new java.util.GregorianCalendar();
                 td.setTimeInMillis(fmd.lastModificationTime);
-                metaDataPathDetail.setLastModificationTime(td);
+                aMetaDataPathDetail.setLastModificationTime(td);
                 if(fmd.checksumType != null && fmd.checksumValue != null ) {
-                        metaDataPathDetail.setCheckSumType(fmd.checksumType);
-                        metaDataPathDetail.setCheckSumValue(fmd.checksumValue);
+                        aMetaDataPathDetail.setCheckSumType(fmd.checksumType);
+                        aMetaDataPathDetail.setCheckSumValue(fmd.checksumValue);
                 }
-                metaDataPathDetail.setFileStorageType(TFileStorageType.PERMANENT);
+                aMetaDataPathDetail.setFileStorageType(TFileStorageType.PERMANENT);
                 if (!fmd.isPermanent) {
                         if (fmd.isPinned) {
-                                metaDataPathDetail.setFileStorageType(TFileStorageType.DURABLE);
+                                aMetaDataPathDetail.setFileStorageType(TFileStorageType.DURABLE);
                         }
                         else {
-		metaDataPathDetail.setFileStorageType(TFileStorageType.VOLATILE);
+		aMetaDataPathDetail.setFileStorageType(TFileStorageType.VOLATILE);
                         }
                 }
                 if(fmd.isDirectory) {
-                        metaDataPathDetail.setType(TFileType.DIRECTORY);
+                        aMetaDataPathDetail.setType(TFileType.DIRECTORY);
                 }
                 else if(fmd.isLink) {
-                        metaDataPathDetail.setType(TFileType.LINK);
+                        aMetaDataPathDetail.setType(TFileType.LINK);
                 }
                 else if(fmd.isRegular) {
-                        metaDataPathDetail.setType(TFileType.FILE);
+                        aMetaDataPathDetail.setType(TFileType.FILE);
                 }
                 else {
-                        say("file type is Unknown");
+                        logger.debug("file type is Unknown");
                 }
                 TFileLocality fileLocality = TFileLocality.NONE;
                 if (fmd.isCached) {
@@ -350,12 +336,12 @@ public final class LsFileRequest extends FileRequest {
                 if (fmd.isDirectory) {
                         fileLocality = TFileLocality.NONE;	
                 }
-                metaDataPathDetail.setFileLocality(fileLocality);
+                aMetaDataPathDetail.setFileLocality(fileLocality);
                 if (fmd.retentionPolicyInfo!=null) {
-                        metaDataPathDetail.setRetentionPolicyInfo(new TRetentionPolicyInfo(fmd.retentionPolicyInfo.getRetentionPolicy(),
+                        aMetaDataPathDetail.setRetentionPolicyInfo(new TRetentionPolicyInfo(fmd.retentionPolicyInfo.getRetentionPolicy(),
                                                                                            fmd.retentionPolicyInfo.getAccessLatency()));
                 }
-                metaDataPathDetail.setSize(new org.apache.axis.types.UnsignedLong(fmd.size));
+                aMetaDataPathDetail.setSize(new org.apache.axis.types.UnsignedLong(fmd.size));
                 if (fmd.spaceTokens!=null) {
                         if (fmd.spaceTokens.length > 0) {
                                 ArrayOfString arrayOfSpaceTokens = new ArrayOfString(new String[fmd.spaceTokens.length]);
@@ -364,12 +350,12 @@ public final class LsFileRequest extends FileRequest {
                                         spaceToken.append(fmd.spaceTokens[st]);
                                         arrayOfSpaceTokens.setStringArray(st,spaceToken.toString());
                                 }
-                                metaDataPathDetail.setArrayOfSpaceTokens(arrayOfSpaceTokens);
+                                aMetaDataPathDetail.setArrayOfSpaceTokens(arrayOfSpaceTokens);
                         }
                 }
                 TReturnStatus returnStatus = new TReturnStatus();
                 returnStatus.setStatusCode(TStatusCode.SRM_SUCCESS);
-                metaDataPathDetail.setStatus(returnStatus);
+                aMetaDataPathDetail.setStatus(returnStatus);
                 //
                 // behavior below is equivalent to this:
                 // supose we have file and dirtectory:
@@ -387,9 +373,9 @@ public final class LsFileRequest extends FileRequest {
                                 if (fmd.isDirectory) {
                                         returnStatus.setStatusCode(TStatusCode.SRM_AUTHORIZATION_FAILURE);
                                         returnStatus.setExplanation("Permission mask does not allow directory listing");
-                                        metaDataPathDetail.setStatus(returnStatus);
+                                        aMetaDataPathDetail.setStatus(returnStatus);
                                 }
-                                return metaDataPathDetail;
+                                return aMetaDataPathDetail;
                         }
                         else {
                                 if (fmd.isDirectory) {
@@ -401,10 +387,10 @@ public final class LsFileRequest extends FileRequest {
                 // check if the number of entries does not exceed count
                 //
                 if (!((LsRequest)getRequest()).checkCounter()) {
-                        metaDataPathDetail.setStatus(returnStatus);
-                        return metaDataPathDetail;
+                        aMetaDataPathDetail.setStatus(returnStatus);
+                        return aMetaDataPathDetail;
                 }
-                if (metaDataPathDetail.getType() == TFileType.DIRECTORY && 
+                if (aMetaDataPathDetail.getType() == TFileType.DIRECTORY &&
                         depth<((LsRequest)getRequest()).getNumOfLevels()) {
                         java.io.File dirFiles[] = getStorage().listDirectoryFiles(getUser(),path,fmd);
                         TMetaDataPathDetail dirMetaDataPathDetails[]=null;
@@ -440,9 +426,9 @@ public final class LsFileRequest extends FileRequest {
                                                                 returnStatus.setExplanation(srme.getMessage());
                                                                 ((LsRequest)getRequest()).setStatusCode(TStatusCode.SRM_TOO_MANY_RESULTS);
                                                                 ((LsRequest)getRequest()).setExplanation(srme.getMessage());
-                                                                metaDataPathDetail.setArrayOfSubPaths(new ArrayOfTMetaDataPathDetail(dirMetaDataPathDetails));
-                                                                metaDataPathDetail.setStatus(returnStatus);
-                                                                return metaDataPathDetail;
+                                                                aMetaDataPathDetail.setArrayOfSubPaths(new ArrayOfTMetaDataPathDetail(dirMetaDataPathDetails));
+                                                                aMetaDataPathDetail.setStatus(returnStatus);
+                                                                return aMetaDataPathDetail;
                                                         }
                                                         returnStatus.setStatusCode(TStatusCode.SRM_FAILURE);
                                                         returnStatus.setExplanation(srme.getMessage());
@@ -468,9 +454,9 @@ public final class LsFileRequest extends FileRequest {
                                         }
                                 }
                         }
-                        metaDataPathDetail.setArrayOfSubPaths(new ArrayOfTMetaDataPathDetail(dirMetaDataPathDetails));
+                        aMetaDataPathDetail.setArrayOfSubPaths(new ArrayOfTMetaDataPathDetail(dirMetaDataPathDetails));
                 }
-                return metaDataPathDetail;
+                return aMetaDataPathDetail;
         }
         
         public TMetaDataPathDetail getMinimalMetaDataPathDetail(String path,
@@ -482,40 +468,40 @@ public final class LsFileRequest extends FileRequest {
                                 " exceeded. Try to narrow down with count and use " +
                                 "offset to get complete listing \n");
                 }
-                TMetaDataPathDetail metaDataPathDetail =
+                TMetaDataPathDetail aMetaDataPathDetail =
                         new TMetaDataPathDetail();
-                metaDataPathDetail.setLifetimeAssigned(new Integer(-1));
-                metaDataPathDetail.setLifetimeLeft(new Integer(-1));
+                aMetaDataPathDetail.setLifetimeAssigned(new Integer(-1));
+                aMetaDataPathDetail.setLifetimeLeft(new Integer(-1));
                 org.apache.axis.types.URI turi =
                         new org.apache.axis.types.URI();
                 turi.setScheme("srm");
-                metaDataPathDetail.setPath(path);
+                aMetaDataPathDetail.setPath(path);
                 java.util.GregorianCalendar td =
                         new java.util.GregorianCalendar();
                 td.setTimeInMillis(file.lastModified());
-                metaDataPathDetail.setCreatedAtTime(td);
-                metaDataPathDetail.setLastModificationTime(td);
-                metaDataPathDetail.setFileStorageType(TFileStorageType.PERMANENT);
+                aMetaDataPathDetail.setCreatedAtTime(td);
+                aMetaDataPathDetail.setLastModificationTime(td);
+                aMetaDataPathDetail.setFileStorageType(TFileStorageType.PERMANENT);
                 if(file.isDirectory()) {
-                        metaDataPathDetail.setType(TFileType.DIRECTORY);
+                        aMetaDataPathDetail.setType(TFileType.DIRECTORY);
                 }
                 else if(file.isFile()) {
-                        metaDataPathDetail.setType(TFileType.FILE);
+                        aMetaDataPathDetail.setType(TFileType.FILE);
                 }
                 else {
-                        say("file type is Unknown");
+                        logger.debug("file type is Unknown");
                 }
                 if (file.length()==1) {
                         FileMetaData fmd = getStorage().getFileMetaData(getUser(), path, null);
-                        metaDataPathDetail.setSize(new org.apache.axis.types.UnsignedLong(fmd.size));
+                        aMetaDataPathDetail.setSize(new org.apache.axis.types.UnsignedLong(fmd.size));
                 }
                 else {
-                        metaDataPathDetail.setSize(new org.apache.axis.types.UnsignedLong(file.length()));
+                        aMetaDataPathDetail.setSize(new org.apache.axis.types.UnsignedLong(file.length()));
                 }
                 TReturnStatus returnStatus = new TReturnStatus();
                 returnStatus.setStatusCode(TStatusCode.SRM_SUCCESS);
-                metaDataPathDetail.setStatus(returnStatus);
-                return metaDataPathDetail;
+                aMetaDataPathDetail.setStatus(returnStatus);
+                return aMetaDataPathDetail;
         }
 
         public boolean canRead(SRMUser user, FileMetaData fmd) {

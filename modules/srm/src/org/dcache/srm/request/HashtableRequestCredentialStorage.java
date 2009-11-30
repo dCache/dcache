@@ -71,9 +71,7 @@ COPYRIGHT STATUS:
  */
 
 package org.dcache.srm.request;
-import java.util.Set;
 import java.util.Iterator;
-import java.util.HashMap;
 import java.util.Map;
 /**
  *

@@ -12,36 +12,15 @@
 package org.dcache.srm.client;
 
 import org.globus.util.GlobusURL;
-import org.dcache.srm.Logger;
 import org.dcache.srm.v2_2.*;
 
 import java.io.IOException;
 
 public class SrmStartUpPing {
 
-    //
-    // logger is used by SRMClientV2. elog is implemented to print nothing on purpose
-    //
-    private static class SrmLogger implements Logger {
-	private boolean debug;
-	public SrmLogger(boolean debug) {
-	    this.debug = debug;
-	}
-	public void elog(String s) {
-	}
-	public void elog(Throwable t) {
-	}
-	public void log(String s) {
-	    if (debug) {
-		System.out.println(s);
-	    }
-	}
-    }
-
     public static void main(String agv[]) { 
  	org.ietf.jgss.GSSCredential user_cred = null;
- 	org.dcache.srm.Logger logger = new SrmLogger(false);
-	int port=8443;
+ 	int port=8443;
 	String x509cert = System.getenv("X509_CERT");
 	if (x509cert==null) { 
 	    x509cert="/etc/grid-security/hostcert.pem";
@@ -74,7 +53,6 @@ public class SrmStartUpPing {
  						 user_cred,
  						 10000,
  						 0,
- 						 logger,
  						 false,
  						 false,
  						 null,

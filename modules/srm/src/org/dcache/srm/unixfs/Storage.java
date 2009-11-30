@@ -19,9 +19,7 @@ import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMAuthorizationException;
-import org.dcache.srm.SRMUser;
 import diskCacheV111.srm.StorageElementInfo;
-
 import org.dcache.srm.AdvisoryDeleteCallbacks;
 import org.dcache.srm.GetFileInfoCallbacks;
 import org.dcache.srm.PrepareToPutCallbacks;
@@ -59,10 +57,13 @@ import java.io.PrintStream;
 import org.dcache.srm.RemoveFileCallbacks;
 
 import java.util.*;
+import org.apache.log4j.Logger;
 
 public class Storage
     implements AbstractStorageElement {
 
+  private static final Logger logger =
+          Logger.getLogger(Storage.class);
   private final static String cvsId = "$Id:";
 
   private boolean debug = true; // Turns on/off debug messages
@@ -120,11 +121,11 @@ public class Storage
     StringWriter shell_err = new StringWriter();
     int return_code = ShellCommandExecuter.execute(stat_cmd+" --help",shell_out, shell_err);
     if(return_code != 0) {
-        log(stat_cmd+" --help output:");
-        log(shell_out.getBuffer().toString());
-        elog(stat_cmd+" --help error output:");
-        elog(shell_err.getBuffer().toString());
-        elog("can not find or run stat command, needed to this Storage Element implementation");
+        logger.debug(stat_cmd+" --help output:");
+        logger.debug(shell_out.getBuffer().toString());
+        logger.error(stat_cmd+" --help error output:");
+        logger.error(shell_err.getBuffer().toString());
+        logger.error("can not find or run stat command, needed to this Storage Element implementation");
         throw new IllegalArgumentException("stat_cmd=\""+stat_cmd+"\" execution failed with rc = "+return_code);
     }
     this.stat_cmd = stat_cmd;
@@ -133,11 +134,11 @@ public class Storage
     shell_err = new StringWriter();
     return_code = ShellCommandExecuter.execute(chown_cmd+" --help",shell_out, shell_err);
     if(return_code != 0) {
-        log(chown_cmd+" --help output:");
-        log(shell_out.getBuffer().toString());
-        elog(chown_cmd+" --help error output:");
-        elog(shell_err.getBuffer().toString());
-        elog("can not find or run chown command, needed to this Storage Element implementation");
+        logger.debug(chown_cmd+" --help output:");
+        logger.debug(shell_out.getBuffer().toString());
+        logger.error(chown_cmd+" --help error output:");
+        logger.error(shell_err.getBuffer().toString());
+        logger.error("can not find or run chown command, needed to this Storage Element implementation");
         throw new IllegalArgumentException("chown_cmd=\""+chown_cmd+"\" execution failed with rc = "+return_code);
     }
     this.chown_cmd = chown_cmd;
@@ -158,7 +159,7 @@ public class Storage
       throws SRMException {
 
     for( String protocol: getProtocols) {
-        dlog("supportedGetProtocols: " + protocol );
+        logger.debug("supportedGetProtocols: " + protocol );
     }
 
     return getProtocols;
@@ -169,7 +170,7 @@ public class Storage
       throws SRMException {
 
     for( String protocol: putProtocols) {
-        dlog("supportedPutProtocols: " + protocol );
+        logger.debug("supportedPutProtocols: " + protocol );
     }
 
     return putProtocols;
@@ -191,7 +192,7 @@ public class Storage
     throw new SRMException("no sutable protocol found");
     //SRMException srmEx = new SRMException(
     //    "Method getPutTurl() not yet implemented.");
-    //elog( srmEx );
+    //logger.error( srmEx );
     //throw srmEx;
   }
 
@@ -208,7 +209,7 @@ public class Storage
     String erStr2 = "This method is a feature of implementation dCache SRM SE and "+
         "it must not be called for the disk SE\n";
 
-    elog( erStr1 + "\n" + erStr2 );
+    logger.error( erStr1 + "\n" + erStr2 );
 
     SRMException srmEx = new SRMException( erStr1 );
     throw srmEx;
@@ -231,7 +232,7 @@ public class Storage
     throw new SRMException("no sutable protocol found");
     /*SRMException srmEx = new SRMException(
         "Method getGetTurl() not yet implemented.");
-    elog(srmEx);
+    logger.error(srmEx);
     throw srmEx;*/
   }
 
@@ -247,7 +248,7 @@ public class Storage
     String erStr1 = "Method getGetTurl(..., previous_turl) not implemented.";
     String erStr2 = "This method is a feature of implementation dCache SRM SE and "+
         "it must not be called for the disk SE\n";
-    elog( erStr1 + "\n" + erStr2 );
+    logger.error( erStr1 + "\n" + erStr2 );
 
     SRMException srmEx = new SRMException( erStr1 );
     throw srmEx;
@@ -275,7 +276,7 @@ public class Storage
               GSSCredential remoteCredential = RequestCredential.getRequestCredential(remoteCredentialId).getDelegatedCredential();
               GridftpClient client = new GridftpClient(url.getHost(),
                 url.getPort(), config.getTcp_buffer_size(),
-                remoteCredential,this);
+                remoteCredential);
               client.setStreamsNum(config.getParallel_streams());
 
               try
@@ -293,14 +294,14 @@ public class Storage
           }
           catch(Exception e)
           {
-              elog(e);
+              logger.error(e);
               throw new SRMException("remote turl "+remoteTURL+" to local file "+actualFilePath+" transfer failed",e);
           }
 
 
 //    SRMException srmEx = new SRMException(
 //        "Method getFromRemoteTURL() not yet implemented.");
-//    elog(srmEx);
+//    logger.error(srmEx);
 //    throw srmEx;
   }
 
@@ -318,7 +319,7 @@ public class Storage
 
               GridftpClient client = new GridftpClient(url.getHost(),
                 url.getPort(), config.getTcp_buffer_size(),
-                remoteCredential,this);
+                remoteCredential);
               client.setStreamsNum(config.getParallel_streams());
 
               try
@@ -334,13 +335,13 @@ public class Storage
           }
           catch(Exception e)
           {
-              elog(e);
+              logger.error(e);
               throw new SRMException("remote turl "+remoteTURL+" to local file "+actualFilePath+" transfer failed",e);
           }
     /**@todo # Implement putToRemoteTURL() method */
 //    SRMException srmEx = new SRMException(
 //        "Method putToRemoteTURL() not yet implemented.");
-//    elog(srmEx);
+//    logger.error(srmEx);
 //    throw srmEx;
   }
 
@@ -362,18 +363,18 @@ public class Storage
     Process proc;
 
     try {
-      dlog("Execute command in the main thread: " +cmd[0]+" "+cmd[1]+" "+cmd[2] );
+      logger.debug("Execute command in the main thread: " +cmd[0]+" "+cmd[1]+" "+cmd[2] );
       proc = Runtime.getRuntime().exec(cmd);
       proc.waitFor();
     }
     catch (IOException ex) {
-      elog("IOException in localCopy(): " + cmd[0]+" "+cmd[1]+" "+cmd[2] );
-      elog(ex);
+      logger.error("IOException in localCopy(): " + cmd[0]+" "+cmd[1]+" "+cmd[2] );
+      logger.error(ex);
       throw new SRMException( ex );
     }
     catch (InterruptedException ex) {
-      elog("InterruptedException in localCopy(): " + cmd[0]+" "+cmd[1]+" "+cmd[2] );
-      elog(ex);
+      logger.error("InterruptedException in localCopy(): " + cmd[0]+" "+cmd[1]+" "+cmd[2] );
+      logger.error(ex);
       throw new SRMException( ex );
     }
 
@@ -441,29 +442,29 @@ public class Storage
    *  and it may change when file is created /deleted.
    */
   private FileMetaData _getFileMetaData(SRMUser user, String filePath) throws SRMException {
-      StringWriter out = new StringWriter();
-      StringWriter err = new StringWriter();
+      StringWriter outWriter = new StringWriter();
+      StringWriter errWriter = new StringWriter();
     try {
 
       File file = new File(filePath);
       if(!file.exists()) throw new IOException("file does not exist");
       String command = stat_cmd+" -t "+file.getCanonicalPath();
-      log("executing command "+command);
-      int return_code = ShellCommandExecuter.execute(command,out, err);
-      log("command standard output:"+out.getBuffer().toString());
+      logger.debug("executing command "+command);
+      int return_code = ShellCommandExecuter.execute(command,outWriter, errWriter);
+      logger.debug("command standard output:"+outWriter.getBuffer().toString());
       if(return_code != 0 ) {
-          log("command error    output:"+err.getBuffer().toString());
+          logger.debug("command error    output:"+errWriter.getBuffer().toString());
           throw new IOException ("command failed with return_code="+return_code);
       }
     } catch (IOException ioe) {
-        elog(ioe);
+        logger.error(ioe);
         throw new SRMException("can't get the FileMetaData",ioe);
     }
     FileMetaData fmd = new UnixfsFileMetaData(filePath,
         config.getSrmHost(),
         config.getPort(),
         null,
-        out.getBuffer().toString());
+        outWriter.getBuffer().toString());
     return fmd;
 
 /*    boolean exists  = file.exists();
@@ -497,7 +498,7 @@ public class Storage
 
   /** */
   private File _getFile(String fileId, FileMetaData fmd) {
-    log("_getFile("+fileId);
+    logger.debug("_getFile("+fileId);
     return new File(fileId);
   }
 
@@ -516,7 +517,7 @@ public class Storage
     /**@todo # Implement getStorageElementInfo() method */
     SRMException srmEx = new SRMException(
         "Method getStorageElementInfo() not yet implemented.");
-    elog( srmEx );
+    logger.error( srmEx );
     throw srmEx;
   }
 
@@ -539,14 +540,14 @@ public class Storage
       fileId = filePath;
     }
     catch (Exception ex) {
-      elog( ex );
+      logger.error( ex );
 
       String erStr = "getFileInfo() got exception for the filePath=" +filePath +".";
       callbacks.GetStorageInfoFailed( erStr );
       return;
     }
 
-    dlog( "getFileInfo(): StorageInfoArrived, fileId="+fileId + "fmd=" + fmd );
+    logger.debug( "getFileInfo(): StorageInfoArrived, fileId="+fileId + "fmd=" + fmd );
     callbacks.StorageInfoArrived(fileId, fmd);
   }
 
@@ -572,7 +573,7 @@ public class Storage
     try {
       File file = _getFile(fileId, fmd);
       pinned = file.exists();
-      log("file exists is "+pinned);
+      logger.debug("file exists is "+pinned);
       if( pinned )
 
         pinId = fileId;
@@ -581,7 +582,7 @@ public class Storage
     }
     catch (Exception ex) {
       reason = "got exception " + ex;
-      elog( ex );
+      logger.error( ex );
     }
 
    // Return filedId as PinId
@@ -613,7 +614,7 @@ public class Storage
     }
     catch (Exception ex) {
       reason = "got exception " + ex;
-      elog( ex );
+      logger.error( ex );
     }
 
    if( unpinned )
@@ -643,7 +644,7 @@ public class Storage
     }
     catch (Exception ex) {
       reason = "got exception " + ex;
-      elog( ex );
+      logger.error( ex );
     }
 
     if( deleted )
@@ -663,11 +664,11 @@ public class Storage
 
   private boolean _installPath(SRMUser user, String path) {
     boolean exist;
-    log("_installPath("+user+","+path+")");
+    logger.debug("_installPath("+user+","+path+")");
     File file   = new File(path);
 
     if ( file.exists() ) {
-    log("_installPath: file exists, returning "+(file.isDirectory() && file.canWrite() ));
+    logger.debug("_installPath: file exists, returning "+(file.isDirectory() && file.canWrite() ));
       return ( file.isDirectory() && file.canWrite() );
     }
 
@@ -737,13 +738,13 @@ public class Storage
       }
     }
     catch (Exception ex) {
-      elog( ex );
+      logger.error( ex );
       String erStr = "prepareToPut() got exception for the filePath=" +path +".";
       callbacks.GetStorageInfoFailed( erStr );
       return;
     }
 
-    dlog( "prepareToPut(): StorageInfoArrived, fileId="+fileId + "fmd=" + fmd );
+    logger.debug( "prepareToPut(): StorageInfoArrived, fileId="+fileId + "fmd=" + fmd );
     callbacks.StorageInfoArrived(fileId, fmd,
                                  parentFileId, parentFmd);
   }
@@ -760,7 +761,7 @@ public class Storage
 
     Exception eex = new UnsupportedOperationException(
         "Method prepareToPutInReservedSpace() not yet implemented, this is the feature of SRM interface v2.0.");
-    elog(eex);
+    logger.error(eex);
     callbacks.Exception(eex);
   }
 
@@ -787,48 +788,19 @@ public class Storage
     callbacks.SpaceReleased();
   }
 
-  //----------------------------------------------------------------------------
-  // srm.Logger Interface implementation
-
-  /** */
-  public void log(String s) {
-    out.println(new java.util.Date().toString() + " " + s);
-  }
-
-  /** */
-  public void elog(String s) {
-    err.println(new java.util.Date().toString() + " " + s);
-  }
-
-  /** */
-  public void elog(Throwable t) {
-    t.printStackTrace(err);
-  }
-
-  /** */
-  public void dlog(String s) {
-    if( debug )
-      log( s );
-  }
-
-  /** */
-  public void dlog(Throwable t) {
-    if( debug )
-      elog(t);
-  }
 
   private void changeOwnership(String filePath, int uid, int gid) throws IOException {
-      StringWriter out = new StringWriter();
-      StringWriter err = new StringWriter();
+      StringWriter outWriter = new StringWriter();
+      StringWriter errWriter = new StringWriter();
 
       File file = new File(filePath);
       if(!file.exists()) throw new IOException("file does not exist");
       String command = chown_cmd+" "+uid+"."+gid+" "+file.getCanonicalPath();
-      log("executing command "+command);
-      int return_code = ShellCommandExecuter.execute(command,out, err);
-      log("command standard output:"+out.getBuffer().toString());
+      logger.debug("executing command "+command);
+      int return_code = ShellCommandExecuter.execute(command,outWriter, errWriter);
+      logger.debug("command standard output:"+outWriter.getBuffer().toString());
       if(return_code != 0 ) {
-          log("command error    output:"+err.getBuffer().toString());
+          logger.debug("command error    output:"+errWriter.getBuffer().toString());
           throw new IOException ("command failed with return_code="+return_code);
       }
 
@@ -867,12 +839,13 @@ public class Storage
         final CopyCallbacks callbacks) throws SRMException{
         Thread t = new Thread(){
 
+            @Override
             public void run() {
                 try
                 {
-                    log("calling getFromRemoteTURL from a copy thread");
+                    logger.debug("calling getFromRemoteTURL from a copy thread");
                     getFromRemoteTURL(user, remoteTURL,actualFilePath, remoteUser, remoteCredentialId);
-                    log("calling callbacks.copyComplete for path="+actualFilePath);
+                    logger.debug("calling callbacks.copyComplete for path="+actualFilePath);
                     callbacks.copyComplete(actualFilePath, getFileMetaData(user,actualFilePath));
                 }
                 catch (Exception e){
@@ -881,7 +854,7 @@ public class Storage
             }
         };
         String id = getUniqueId();
-        log("getFromRemoteTURL assigned id ="+id+"for transfer from "+remoteTURL+" to "+actualFilePath);
+        logger.debug("getFromRemoteTURL assigned id ="+id+"for transfer from "+remoteTURL+" to "+actualFilePath);
 
         copyThreads.put(id, t);
         t.start();
@@ -902,12 +875,13 @@ public class Storage
 
        Thread t = new Thread(){
 
+           @Override
             public void run() {
                 try
                 {
-                    log("calling putToRemoteTURL from a copy thread");
+                    logger.debug("calling putToRemoteTURL from a copy thread");
                     putToRemoteTURL(user, actualFilePath,remoteTURL, remoteUser, remoteCredentialId);
-                    log("calling callbacks.copyComplete for path="+actualFilePath);
+                    logger.debug("calling callbacks.copyComplete for path="+actualFilePath);
                     callbacks.copyComplete(actualFilePath, getFileMetaData(user,actualFilePath));
                 }
                 catch (Exception e){
@@ -916,7 +890,7 @@ public class Storage
             }
         };
         String id = getUniqueId();
-        log("putToRemoteTURL assigned id ="+id+"for transfer from "+actualFilePath+" to "+remoteTURL);
+        logger.debug("putToRemoteTURL assigned id ="+id+"for transfer from "+actualFilePath+" to "+remoteTURL);
 
         copyThreads.put(id, t);
         t.start();
@@ -927,11 +901,11 @@ public class Storage
   public void killRemoteTransfer(String transferId) {
       Thread t = (Thread) copyThreads.get(transferId);
       if(t == null) {
-          log("killRemoteTransfer: cannot find thread for transfer with id="+ transferId);
+          logger.debug("killRemoteTransfer: cannot find thread for transfer with id="+ transferId);
       }
       else
       {
-          log("killRemoteTransfer: found thread for transfer with id="+ transferId+", killing");
+          logger.debug("killRemoteTransfer: found thread for transfer with id="+ transferId+", killing");
           t.interrupt();
       }
   }

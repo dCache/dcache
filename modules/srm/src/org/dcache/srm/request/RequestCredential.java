@@ -92,7 +92,6 @@ public class RequestCredential {
     {
         //System.out.println("RequestCredential static constructor");
     }
-    private String requestUserId;
     private Long id;
     private long creationtime;
     private String credentialName;
@@ -334,7 +333,8 @@ public class RequestCredential {
     public java.lang.String getCredentialName() {
         return credentialName;
     }
-    
+
+    @Override
     public String toString() {
         return "RequestCredential["+credentialName+","+
         ((delegatedCredential==null)?"nondelegated":"delegated, remaining lifetime : "+getDelegatedCredentialRemainingLifetime()+" millis")+

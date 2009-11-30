@@ -33,7 +33,6 @@ public class SRMAbortRequestClientV2 extends SRMClient {
 				      credential,
 				      configuration.getRetry_timeout(),
 				      configuration.getRetry_num(),
-				      configuration.getLogger(),
 				      doDelegation, 
 				      fullDelegation,
 				      gss_expected_name,

@@ -43,22 +43,6 @@ public class GridftpList {
         
         org.globus.util.GlobusURL directory_url = new org.globus.util.GlobusURL(directory);
 
-        org.dcache.srm.Logger logger =   new org.dcache.srm.Logger()
-        {
-            public synchronized void log(String s)
-            {
-                //System.out.println(new java.util.Date().toString()+": "+ s);
-            }
-            public synchronized void elog(String s)
-            {
-                System.err.println(new java.util.Date().toString()+": "+ s);
-            }
-            public synchronized void elog(Throwable t)
-            {
-                t.printStackTrace();
-            }
-        };
-
         if( ! directory_url.getProtocol().equals("gsiftp") &&
               ! directory_url.getProtocol().equals("gridftp") ) {
                   System.err.println("wrong protocol : "+
@@ -68,7 +52,7 @@ public class GridftpList {
         }
         
         GridftpClient client = new GridftpClient(directory_url.getHost(),
-            directory_url.getPort(),0,null,logger);
+            directory_url.getPort(),0,null);
             client.setStreamsNum(1);
             
             System.out.println( client.list(directory_url.getPath(),serverPassive));

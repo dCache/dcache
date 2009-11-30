@@ -194,10 +194,7 @@ documents or software obtained from this server.
 package org.dcache.srm;
 
 
-import org.dcache.srm.FileMetaData;
 import diskCacheV111.srm.StorageElementInfo;
-import org.dcache.srm.SRMUser;
-import org.dcache.srm.request.RequestCredential;
 import java.util.Vector;
 import java.util.List;
 import org.dcache.srm.v2_2.TMetaDataSpace;
@@ -225,7 +222,7 @@ import org.dcache.srm.v2_2.TMetaDataSpace;
  *
  * @author timur
  */
-public interface AbstractStorageElement extends Logger{
+public interface AbstractStorageElement {
 
     /**
      * Method must be called before any "get" operations. It gives the list of all

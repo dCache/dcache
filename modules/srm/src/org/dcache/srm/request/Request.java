@@ -85,12 +85,14 @@ import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRM;
+import org.apache.log4j.Logger;
 
 /**
  *
  * @author timur
  */
 public abstract class Request extends Job {
+    private static final Logger logger = Logger.getLogger(Request.class);
     private String client_host;
     private SRMUser user;
     public Request(SRMUser user,
@@ -155,7 +157,7 @@ public abstract class Request extends Job {
                 ?null
                 :TStatusCode.fromString(statusCodeString);
         this.user = user;
-        say("restored");
+        logger.debug("restored");
     }
     
     
