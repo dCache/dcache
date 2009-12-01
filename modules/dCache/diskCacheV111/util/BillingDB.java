@@ -329,7 +329,12 @@ public class BillingDB {
             psDI.setInt   (  6, info.getGid() ) ;
             psDI.setString(  7, info.getClient() );
             psDI.setString(  8, info.getTransaction() );
-            psDI.setString(  9, info.getPnfsId().getId() );
+            if (info.getPnfsId() != null) {
+                psDI.setString(  9, info.getPnfsId().getId() );
+            }
+            else {
+                psDI.setString(  9, "" );
+            }
             psDI.setLong  ( 10, info.getTransactionTime() );
             psDI.setLong  ( 11, info.getTimeQueued() );
             psDI.setInt   ( 12, info.getResultCode() );
@@ -497,7 +502,6 @@ public class BillingDB {
         public void run() {
             while (true) {
                 try {
-                    System.err.println("TimeCommiter: COMMIT: " + _maxTimeBeforeCommit);
 //                  wait(timeout);
                     Thread.sleep(_maxTimeBeforeCommit);
                     // do only if something to do
