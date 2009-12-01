@@ -10,6 +10,7 @@ set context -c hostKeyFile       ${keyBase}/host_key
 set env     -c AccessControlCell acm
 #set context -c userPasswordFile  cell:pam
 set context -c userPasswordFile  cell:${AccessControlCell}
+set context -c adminHistoryFile  ""
 onerror shutdown
 
 # Required variables
@@ -40,6 +41,7 @@ create dmg.cells.services.login.LoginManager alm \
       "${adminPort}  \
        dmg.cells.services.login.StreamObjectCell \
        -prot=ssh -auth=dmg.cells.services.login.SshSAuth_A \
+       -history=${adminHistoryFile} \
        diskCacheV111.admin.UserAdminShell"
 
 create dmg.cells.services.login.user.AclCell ${AccessControlCell} \
