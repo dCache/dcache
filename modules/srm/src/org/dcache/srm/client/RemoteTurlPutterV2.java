@@ -74,7 +74,7 @@ COPYRIGHT STATUS:
 package org.dcache.srm.client;
 
 import org.dcache.srm.AbstractStorageElement;
-import org.globus.util.GlobusURL;
+import org.dcache.srm.util.SrmUrl;
 import java.io.IOException;
 import java.util.HashMap;
 import org.dcache.srm.SRMException;
@@ -161,7 +161,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
             return;
         }
         try {
-           GlobusURL srmUrl = new GlobusURL(SURLs[0]);
+            SrmUrl srmUrl = new SrmUrl(SURLs[0]);
             srmv2 = new SRMClientV2(srmUrl, 
             credential.getDelegatedCredential(),
             retry_timout,
@@ -419,7 +419,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
         int retry_num) throws Exception
     {
         
-        GlobusURL srmUrl = new GlobusURL(surl);
+        SrmUrl srmUrl = new SrmUrl(surl);
         SRMClientV2 srmv2 = new SRMClientV2(srmUrl, 
         credential.getDelegatedCredential(),
         retry_timeout,

@@ -72,7 +72,7 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
-import org.globus.util.GlobusURL;
+import org.dcache.srm.util.SrmUrl;
 import java.net.MalformedURLException;
 import java.io.IOException;
 import java.util.Set;
@@ -116,8 +116,8 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
     private boolean to_url_is_gsiftp;
     private boolean from_url_is_local;
     private boolean to_url_is_local;
-    private GlobusURL from_urls[];
-    private GlobusURL to_urls[];
+    private SrmUrl from_urls[];
+    private SrmUrl to_urls[];
     private int number_of_file_reqs;
     
     private String[] protocols;
@@ -300,13 +300,13 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
         logger.debug("number_of_file_reqs = "+getNumber_of_file_reqs());
         wlock();
         try {
-            from_urls = new GlobusURL[getNumber_of_file_reqs()];
-            to_urls = new GlobusURL[getNumber_of_file_reqs()];
+            from_urls = new SrmUrl[getNumber_of_file_reqs()];
+            to_urls = new SrmUrl[getNumber_of_file_reqs()];
             for(int i = 0 ; i<getNumber_of_file_reqs();++i) {
                 CopyFileRequest cfr = (CopyFileRequest) fileRequests[i];
             
-                from_urls[i] = new GlobusURL(cfr.getFromURL());
-                to_urls[i] = new GlobusURL(cfr.getToURL());
+                from_urls[i] = new SrmUrl(cfr.getFromURL());
+                to_urls[i] = new SrmUrl(cfr.getToURL());
             }
         } catch(MalformedURLException murle) {
             logger.error(murle);
@@ -679,10 +679,10 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                 
                 try {
                     if( isFrom_url_is_srm() && ! isFrom_url_is_local()) {
-                        cfr.setFrom_turl(new GlobusURL(TURL));
+                        cfr.setFrom_turl(new SrmUrl(TURL));
                     }
                     else {
-                        cfr.setTo_turl(new GlobusURL(TURL));
+                        cfr.setTo_turl(new SrmUrl(TURL));
                     }
                     if(size != null)
                     {
@@ -1266,7 +1266,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
      * @param i indext of the "from" url in the array
      * @return the from_urls
      */
-    private GlobusURL getFrom_url(int i) {
+    private SrmUrl getFrom_url(int i) {
         rlock();
         try {
             return from_urls[i];
@@ -1279,7 +1279,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
      * @param i indext of the "to" url in the array
      * @return the to_urls
      */
-    private GlobusURL getTo_url(int i) {
+    private SrmUrl getTo_url(int i) {
         rlock();
         try {
             return to_urls[i];

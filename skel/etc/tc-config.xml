@@ -175,6 +175,9 @@
           <class-expression>org.globus.util.GlobusURL</class-expression>
           <honor-transient>true</honor-transient>
         </include>
+         <include>
+           <class-expression>org.dcache.srm.util.SrmUrl</class-expression>
+         </include>
 
         <!-- Exclude tomcat internals to improve performance of webapp loading -->
         <exclude>org.bouncycastle..*</exclude>

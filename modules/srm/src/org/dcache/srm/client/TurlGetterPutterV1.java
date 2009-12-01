@@ -73,7 +73,7 @@ COPYRIGHT STATUS:
 package org.dcache.srm.client;
 
 import org.dcache.srm.AbstractStorageElement;
-import org.globus.util.GlobusURL;
+import org.dcache.srm.util.SrmUrl;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -127,7 +127,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
         try {
             //use new client using the apache axis soap tool
             remoteSRM = new SRMClientV1(
-            new GlobusURL(SURLs[0]),
+            new SrmUrl(SURLs[0]),
             credential.getDelegatedCredential(),
             retry_timout,retry_num,true,true,"host","srm/managerv1");
         }
@@ -449,7 +449,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
         diskCacheV111.srm.ISRM remoteSRM; 
         
         // todo: extact web service path from surl if ?SFN= is present
-        remoteSRM = new SRMClientV1(new GlobusURL(surl),
+        remoteSRM = new SRMClientV1(new SrmUrl(surl),
             credential.getDelegatedCredential(),
             retry_timeout, retry_num,true,true,"host","srm/managerv1");
         
