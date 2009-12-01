@@ -3,11 +3,11 @@
 # values and spaces in values. Escapes the backslash, quote, backtick
 # and dollar symbols. Dollar symbols are not escaped if they are used
 # for variable substitution (i.e. they are followed by a alphabetic
-# character or an opening curlybrace). 
+# character or an opening curly brace).
 #
 # Empty lines and non-assignment lines are stripped.
 #
-# Does not handle multi-line quoted strings or multible quoted values.
+# Does not handle multi-line quoted strings or multiple quoted values.
 #
 
 # Delete pure comment lines
@@ -19,7 +19,7 @@
 :repeat
 
 # Strip trailing comments
-s/\([^\#]*[ 	]\)\#.*/\1/
+s/^\([^\#]*[ 	]\)\#.*$/\1/
 
 # Repeat on line continuation
 /\\$/ {
@@ -33,16 +33,16 @@ s/^[ 	]*//
 # Strip trailing white space
 s/[ 	]*$//
 # Strip space around assignment
-s/\([^=]*\)[ 	]*=[ 	]*\(.*\)/\1=\2/
+s/^\([^= 	]*\)[ 	]*=[ 	]*\(.*\)$/\1=\2/
 
 /[^=]*='.*'/ {
     # Unquote value
-    s/\([^=]*\)='\(.*\)'/\1=\2/
+    s/^\([^=]*\)='\(.*\)$'/\1=\2/
     # Skip second quoting style
     b quoted
 }
 # Unquote value
-s/\([^=]*\)="\(.*\)"/\1=\2/
+s/^\([^=]*\)="\(.*\)"$/\1=\2/
 :quoted
 
 # Escape backslash
@@ -56,6 +56,6 @@ s/\$\([^a-zA-Z_{]\)/\\$\1/g
 # Escape trailing $
 s/\$$/\\\$/g
 # Quote value
-s/\([^=]*\)=\(.*\)/\1="\2"/
+s/^\([^=]*\)=\(.*\)$/\1="\2"/
 # Delete if not an assignment
-/[a-zA-Z0-9_]*=".*"/ !d
+/^[a-zA-Z0-9_]*=".*"$/ ! d

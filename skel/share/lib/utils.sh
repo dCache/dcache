@@ -116,6 +116,42 @@ require() # $1 = executable
     done
 }
 
+# Tries to locate a Java tool. The name of the tool is provided as an
+# argument to the function. Sets the variable of the same name to the
+# path to that tool unless the variable was already initialized and
+# pointed to the location of the tool.
+#
+# For instance calling 'requireJavaTool jmap' will set the variable
+# jmap to the full path of the jmap utility, unless the variable jmap
+# already contained the path to the jmap utility.
+#
+# Returns with a non-zero exit code if the tool could not be found.
+findJavaTool() # $1 = tool
+{
+    eval local path=\$$1
+
+    if [ -n "$path" ]; then
+        if [ ! -x "$path" ]; then
+            return 0
+        fi
+    else
+        path="$(dirname ${java})/$1"
+        if [ -x "$path" ]; then
+            eval $1="$path"
+            return 0
+        fi
+
+        if [ -n "$JAVA_HOME" ]; then
+            path="$JAVA_HOME/bin/$1"
+            if [ -x "$path" ]; then
+                eval \$$1="$path"
+                return 0
+            fi
+        fi
+    fi
+
+    return 1
+}
 
 # Sets the fqdn, hostname, and domainname variables
 determineHostName()

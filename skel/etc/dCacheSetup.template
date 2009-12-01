@@ -190,6 +190,46 @@ classpath=
 librarypath=${ourHomeDir}/lib
 
 
+#  ---- SSL Server certificate
+#
+#   This parameter specifies the path to the file containing the
+#   PKCS12 encoded server certificate used for SSL. The host certificate
+#   in /etc/grid-security/ needs to be converted to PKCS12 format before
+#   it can be used with SSL. Use the 'bin/dcache import
+#   hostcert' command to perform this task.
+#
+#   Notice that for GSI the host cetificate in /etc/grid-security/ is used
+#   directly.
+#
+#keyStore=${ourHomeDir}/etc/hostcert.p12
+
+#  ---- Password for SSL server certificate
+#
+#   This parameter specifies the password with which the PKCS12 encoded
+#   server certificate is encrypted.
+#
+#keyStorePassword=dcache
+
+#  ---- Trusted SSL CA certificates
+#
+#   This parameter specifies the path to a Java Keystore containing
+#   the the trusted CA certicates used for SSL. The CA certificates
+#   in /etc/grid-security/certificates/ need to be converted into a
+#   Java Keystore file before they can be used with SSL. Use the
+#   'bin/dcache import cacerts' command to perform this task.
+#
+#   Notice that for GSI the CA cetificates in
+#   /etc/grid-security/certificates/ are used directly.
+#
+#trustStore=${ourHomeDir}/etc/certificates.jks
+
+#  ---- Password for trusted SSL CA certificates
+#
+#   This parameter specifies the password with which the Java Keystore
+#   containing the trusted CA certificates is encrypted.
+#
+#trustStorePassword=dcache
+
 
 #  -----------------------------------------------------------------------
 #          Filesystem Locations
@@ -1457,22 +1497,22 @@ statisticsLocation=${ourHomeDir}/statistics
 #
 #webdavProtocol=http
 
-
 #  ---- Server certificate
 #
 #   This parameter specifies the path to the file containing the
 #   PKCS12 encoded server certificate. The host certificate in
 #   /etc/grid-security/ needs to be converted to PKCS12 format before
-#   it can be used with the WebDAV door.
+#   it can be used with the WebDAV door. Use the 'bin/dcache import
+#   hostcert' command to perform this task.
 #
-# webdavKeyStore=/etc/grid-security/hostcert.p12
+#webdavKeyStore=${keyStore}
 
 #  ---- Password for server certificate
 #
 #   This parameter specifies the password with which the PKCS12 encoded
 #   server certificate is encrypted.
 #
-# webdavKeyStorePassword=dcache
+#webdavKeyStorePassword=${keyStorePassword}
 
 #  ---- Trusted CA certificates
 #
@@ -1480,16 +1520,17 @@ statisticsLocation=${ourHomeDir}/statistics
 #   the the trusted CA certicates used by the WebDAV door. The CA
 #   certificates in /etc/grid-security/certificates/ need to be
 #   converted into a Java Keystore file before they can be used with
-#   the WebDAV door.
+#   the WebDAV door. Use the 'bin/dcache import cacerts' command to
+#   perform this task.
 #
-# webdavTrustStore=/etc/grid-security/truststore.jks
+#webdavTrustStore=${trustStore}
 
 #  ---- Password for trusted CA certificates
 #
 #   This parameter specifies the password with which the Java Keystore
 #   containing the trusted CA certificates is encrypted.
 #
-#webdavTrustStorePassword=dcache
+#webdavTrustStorePassword=${trustStorePassword}
 
 #  ---- Whether client certificates are accepted for HTTPS
 #

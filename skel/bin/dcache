@@ -30,6 +30,9 @@ usage()
     echo "   condrestart [<domain or service> ...]"
     echo "   dump heap [--force] <domain> <file>"
     echo "   dump threads [<domain or service> ...]"
+    echo "   import hostcert [--hostcert=<file>] [--hostkey=<file>]"
+    echo "                   [--out=<file>] [--password=<password>]"
+    echo "   import cacerts [--cacerts=<dir>] [--out=<file>] [--password=<password>]"
     echo "   pool create <size> <directory>"
     echo "   pool add [--fqdn] [--domain=<domain>] [--lfs=<mode>] <pool name> <directory>"
     echo "   pool ls"
@@ -181,34 +184,6 @@ parseOptions() # $1 = list of valid options
     done
 
     return $count
-}
-
-# Sets the jmap variable such that it contains the command to invoke
-# the jmap utility. Exits if jmap could not be found.
-requireJmap()
-{
-    if [ -n "$jmap" ]; then
-        if [ ! -x "$jmap" ]; then
-            return 0
-        fi
-    else
-        jmap="$(dirname ${java})/jmap"
-        if [ -x "$jmap" ]; then
-            return 0
-        fi
-
-        if [ -n "$JAVA_HOME" ]; then
-            jmap="$JAVA_HOME/bin/jmap"
-            if [ -x "$jmap" ]; then
-                return 0
-            fi
-        fi
-    fi
-
-    fail 1 "Could not find the jmap command, part of the Java 6 JDK.
-            This command is required for producing a heap dump. Please
-            ensure that either jmap is in the path or update
-            dCacheSetup to point to its location."
 }
 
 # Dumps the heap. Terminates the script in case of failure.
@@ -537,7 +512,11 @@ case "$1" in
                 domain=$1
                 file=$2
 
-                requireJmap
+                findJavaTool jmap ||
+                fail 1 "Could not find the jmap command, part of the Java 6
+                        JDK. This command is required for producing a heap
+                        dump. Please ensure that either jmap is in the path
+                        or update dCacheSetup to point to its location."
 
                 if [ -f ${file} ]; then
                     fail 1 "${file} already exists. Heap not dumped."
@@ -552,7 +531,7 @@ case "$1" in
                     dumpHeap "" "live" "$file" "$pid" \
                          "Failed to dump the heap; please consult
                           the previous error message for possible
-                          reasons. The dump might succeed when using 
+                          reasons. The dump might succeed when using
                           the --force option."
                 else
                     dumpHeap "force" "" "$file" "$pid" \
@@ -579,6 +558,64 @@ case "$1" in
                 done
 
                 printp "Stack traces have been written to the log files."
+                ;;
+
+            *)
+                usage
+                ;;
+        esac
+        ;;
+
+    import)
+        shift
+
+        if [ $# -eq 0 ]; then
+            usage
+        fi
+
+        command=$1
+        shift
+
+        case "$command" in
+            hostcert)
+                require openssl
+
+                opt_password="${dCache_keyStorePassword:-dcache}"
+                opt_out="${dCache_keyStore:-${DCACHE_HOME}/etc/hostcert.p12}"
+                opt_hostcert="/etc/grid-security/hostcert.pem"
+                opt_hostkey="/etc/grid-security/hostkey.pem"
+
+                parseOptions "out password hostcert hostkey" $*
+                shift $?
+
+                PASSWORD="${opt_password}" openssl pkcs12 -export -in "$opt_hostcert" -inkey "$opt_hostkey" -out "$opt_out" -passout env:PASSWORD && chmod 400 "$opt_out" || exit
+                printp "The host certifcate has been stored in $opt_out. If
+                        dCache runs as a non-root user, you must change 
+                        the owner of $opt_out."
+                ;;
+
+            cacerts)
+                require openssl
+                findJavaTool keytool ||
+                fail 1 "Could not find the keytool command, part of the Java
+                        JRE. Please ensure that either keytool is in the path
+                        or update dCacheSetup to point to its location."
+
+                opt_password="${dCache_trustStorePassword:-dcache}"
+                opt_out="${dCache_trustStore:-${DCACHE_HOME}/etc/certificates.jks}"
+                opt_cacerts="/etc/grid-security/certificates"
+
+                parseOptions "out password cacerts" $*
+                shift $?
+
+                rm -f "${opt_out}" || exit
+
+                for cert in $opt_cacerts/*.0; do
+                    cert_alias="${cert%.0}"
+                    readconf "${cert_alias}.info" cert_
+                    printf "$cert_alias "
+                    openssl x509 -in "${cert}" | ${keytool} -importcert -noprompt -alias "${cert_alias}" -storepass "${opt_password}" -keystore "${opt_out}" > /dev/null || exit
+                done
                 ;;
 
             *)

@@ -6,6 +6,16 @@ exec file:${ourHomeDir}/share/cells/import-arguments-index-1.fragment
 
 # Define defaults
 onerror continue
+set context -c keyStore ${ourHomeDir}/etc/hostcert.p12
+set context -c keyStorePassword dcache
+set context -c trustStore ${ourHomeDir}/etc/certificates.jks
+set context -c trustStorePassword dcache
+
+set context -c webdavKeyStore ${keyStore}
+set context -c webdavKeyStorePassword ${keyStorePassword}
+set context -c webdavTrustStore ${trustStore}
+set context -c webdavTrustStorePassword ${trustStorePassword}
+
 set context -c webdavProtocol http
 onerror shutdown
 
