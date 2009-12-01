@@ -571,7 +571,7 @@ public class Copier implements Runnable {
                                        src_url.getPort(),
                                        configuration.getTcp_buffer_size(),
                                        configuration.getBuffer_size(),
-                                       credential,logger);
+                                       credential);
             client.setStreamsNum(numberOfStreams);
             client.setChecksum(configuration.getCksmType(),
                                configuration.getCksmValue());
@@ -619,7 +619,7 @@ public class Copier implements Runnable {
                                        dst_url.getPort(),
                                        configuration.getTcp_buffer_size(),
                                        configuration.getBuffer_size(),
-                                       credential,logger);
+                                       credential);
             client.setStreamsNum(numberOfStreams);
             client.setChecksum(configuration.getCksmType(),
                                configuration.getCksmValue());

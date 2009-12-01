@@ -190,7 +190,7 @@ public abstract class SRMClient {
       try {
 	 
          SRMClientV1 client;
-         client = new SRMClientV1(srmUrl, getGssCredential(),configuration.getRetry_timeout(),configuration.getRetry_num(),configuration.getLogger(),doDelegation, fullDelegation,gss_expected_name,configuration.getWebservice_path());
+         client = new SRMClientV1(srmUrl, getGssCredential(),configuration.getRetry_timeout(),configuration.getRetry_num(),doDelegation, fullDelegation,gss_expected_name,configuration.getWebservice_path());
          dsay("connected to server, obtaining proxy");
          
          //srm =  client.getManagerConnection ();
