@@ -84,9 +84,13 @@ case $cmd1 in
             exit 4
           fi
         fi
+        java_opt_save="$JAVA_OPTS"
+        startup_sleep=2
         if [ "${RUN_WITH_TERRACOTTA:-false}" = "true" -o "${RUN_WITH_TERRACOTTA:-false}" = "yes" ] ; then
             .  $TC_INSTALL_DIR/bin/dso-env.sh -q
             export JAVA_OPTS="$JAVA_OPTS $TC_JAVA_OPTS"
+            # we need longer time to initialize under terracotta before running client
+            startup_sleep=10
         fi
         ${TOMCAT_BASE_PATH}/apache-tomcat-5.5.20/bin/startup.sh
         RETVAL=$?
@@ -94,7 +98,10 @@ case $cmd1 in
         [ $RETVAL -eq 0 ] && touch /var/lock/subsys/srm-tomcat
 	echo "Pinging srm server to wake it up, will take few seconds ..."
 	export CLASSPATH
-	sleep 2 
+	sleep ${startup_sleep}
+        # restore original java opts for running ping client
+        # these option might have been modified in case of terracotta condifiguration
+        JAVA_OPTS="$java_opt_save"
 	for jar in `find /opt/d-cache/classes/ -name '*jar'`; do  CLASSPATH=${CLASSPATH}:${jar}; done
 	$JAVA_HOME/bin/java org.dcache.srm.client.SrmStartUpPing
 	echo "Done"
