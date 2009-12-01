@@ -746,6 +746,7 @@ public abstract class AbstractFtpDoorV1
     protected Checksum _checkSum;
     protected ChecksumFactory _checkSumFactory;
     protected ChecksumFactory _optCheckSumFactory;
+    protected long _allo;
 
     /** List of selected RFC 3659 facts. */
     protected Set<Fact> _currentFacts =
@@ -2027,9 +2028,27 @@ public abstract class AbstractFtpDoorV1
         reply(ok("NOOP"));
     }
 
+    private static final Pattern ALLO_PATTERN =
+        Pattern.compile("(\\d+)( R \\d+)?");
+
     public void ac_allo(String arg)
     {
-        reply(ok("ALLO"));  // No-op for now. Sent by uberftp client.
+        _allo = 0;
+
+        Matcher matcher = ALLO_PATTERN.matcher(arg);
+        if (!matcher.matches()) {
+            reply("501 Invalid argument");
+            return;
+        }
+
+        try {
+            _allo = Long.parseLong(matcher.group(1));
+        } catch (NumberFormatException e) {
+            reply("501 Invalid argument");
+            return;
+        }
+
+        reply(ok("ALLO"));
     }
 
     public void ac_pwd(String arg)
@@ -2818,6 +2837,10 @@ public abstract class AbstractFtpDoorV1
             abortTransfer(451, "Operation cancelled");
         } catch (IOException e) {
             abortTransfer(451, "Operation failed: " + e.getMessage());
+        } finally {
+            _checkSumFactory = null;
+            _checkSum = null;
+            _allo = 0;
         }
     }
 
@@ -3123,6 +3146,7 @@ public abstract class AbstractFtpDoorV1
         } finally {
             _checkSumFactory = null;
             _checkSum = null;
+            _allo = 0;
         }
     }
 
@@ -3243,7 +3267,7 @@ public abstract class AbstractFtpDoorV1
         }
 
         // Find a pool suitable for the transfer.
-         
+
         _transfer.state = "waiting for pool selection by PoolManager";
         VOInfo voInfo = null;
         if(_pwdRecord != null ) {
@@ -3270,7 +3294,7 @@ public abstract class AbstractFtpDoorV1
             request = new PoolMgrSelectWritePoolMsg(_transfer.pnfsId,
                                                     storageInfo,
                                                     protocolInfo,
-                                                    0L);
+                                                    _allo);
         } else {   //transfer: 'retrieve'
             Subject subject = getSubject();
             int allowedStates =
