@@ -315,11 +315,17 @@ private void prepareClass( String className )
 
         }
 
+        /* To cleanly shut down the connection, we first shutdown the
+         * output and then wait for an EOF on the input stream.
+         */
+        _engine.getSocket().shutdownOutput();
+        while (_in.readLine() != null);
      }catch( Exception ee ){
         say( "Worker loop interrupted : "+ee ) ;
+     } finally {
+         say( "StreamObjectCell (worker) done." ) ;
+         kill() ;
      }
-     say( "StreamObjectCell (worker) done." ) ;
-     kill() ;
   }
   private class BinaryExec implements Runnable {
       private DomainObjectFrame _frame ;
@@ -403,7 +409,7 @@ private void prepareClass( String className )
       Object [] obj = new Object[1] ;
       Object result = null ;
       boolean done = false ;
-      while( true ){
+      while (!done) {
          if( str != null ){
             x = str ;
             str = null ;
@@ -411,8 +417,7 @@ private void prepareClass( String className )
             x = _in.readLine() ;
          }
          if( x == null )
-            throw new
-            CommandExitException("EOF") ;
+             break;
 
          obj[0] = x ;
          try{
@@ -434,30 +439,18 @@ private void prepareClass( String className )
          }
          _out.print( getPrompt() ) ;
          _out.flush() ;
-         if( done )throw (CommandExitException)result ;
-
       }
   }
-  public void cleanUp(){
-     _workerThread.interrupt() ;
 
-     try{
-
-        _in.close();
-
-        _engine.getInputStream().close();
+    public void cleanUp()
+    {
         try {
-           if (!_engine.getSocket().isClosed()) {
-               say("Close socket");
-               _engine.getSocket().close();
-           }
-        } catch (Exception ee) { ; }
-        //
-        // to finish the ssh protocol
-        //
-//        _in.read() ;
-     } catch(Exception e ){
-        esay( "cleanup says : "+e ) ;
-     }
-  }
+            _engine.getSocket().close();
+        } catch (IOException e) {
+            esay("Failed to close socket: " + e);
+        }
+        if (_workerThread != null) {
+            _workerThread.interrupt();
+        }
+    }
 }
