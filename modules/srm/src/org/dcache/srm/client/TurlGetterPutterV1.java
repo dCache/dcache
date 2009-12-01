@@ -146,7 +146,7 @@ package org.dcache.srm.client;
 
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.Logger;
-import org.globus.util.GlobusURL;
+import org.dcache.srm.util.SrmUrl;
 import org.globus.io.urlcopy.UrlCopy;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
@@ -225,7 +225,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
             if(connect_to_wsdl) {
                 //use old client using the mind electric's glue soap tool
                 remoteSRM = new SRMClientV1(
-                new GlobusURL(SURLs[0]),
+                new SrmUrl(SURLs[0]),
                 SRMServerV1.getSocketFactory(),
                 credential.getDelegatedCredential(), 
                 retry_timout,retry_num,storage);
@@ -234,7 +234,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
             {
                 //use new client using the apache axis soap tool
                 remoteSRM = new SRMClientV1(
-                new GlobusURL(SURLs[0]),
+                new SrmUrl(SURLs[0]),
                 credential.getDelegatedCredential(), 
                 retry_timout,retry_num,storage,true,true,"host","srm/managerv1");
 
@@ -559,14 +559,14 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
         
         diskCacheV111.srm.ISRM remoteSRM; 
         if(connect_to_wsdl) {
-            remoteSRM = new SRMClientV1(new GlobusURL(surl),
+            remoteSRM = new SRMClientV1(new SrmUrl(surl),
                 SRMServerV1.getSocketFactory(), 
                 credential.getDelegatedCredential(),
                 retry_timeout, retry_num,logger);
         }
         else
         {
-            remoteSRM = new SRMClientV1(new GlobusURL(surl),
+            remoteSRM = new SRMClientV1(new SrmUrl(surl),
                 credential.getDelegatedCredential(),
                 retry_timeout, retry_num,logger,true,true,"host","srm/managerv1");
             

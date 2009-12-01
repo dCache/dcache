@@ -68,6 +68,7 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
+import org.dcache.srm.util.SrmUrl;
 import diskCacheV111.srm.FileMetaData;
 import diskCacheV111.srm.RequestFileStatus;
 import diskCacheV111.srm.RequestStatus;

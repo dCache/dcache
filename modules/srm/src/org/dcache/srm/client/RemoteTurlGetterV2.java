@@ -149,7 +149,7 @@ package org.dcache.srm.client;
 
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
-import org.globus.util.GlobusURL;
+import org.dcache.srm.util.SrmUrl;
 import org.globus.io.urlcopy.UrlCopy;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
@@ -245,7 +245,7 @@ public class RemoteTurlGetterV2 extends TurlGetterPutter {
         }
         say("SURLs[0] is "+SURLs[0]);
         try {
-            GlobusURL srmUrl = new GlobusURL(SURLs[0]);
+            SrmUrl srmUrl = new SrmUrl(SURLs[0]);
             srmv2 = new SRMClientV2(srmUrl, 
             credential.getDelegatedCredential(),
             retry_timout,
@@ -484,7 +484,7 @@ public class RemoteTurlGetterV2 extends TurlGetterPutter {
     int retry_num,
     Logger logger) throws Exception
     {
-        GlobusURL srmUrl = new GlobusURL(surl);
+        SrmUrl srmUrl = new SrmUrl(surl);
         SRMClientV2 srmv2 = new SRMClientV2(srmUrl, 
         credential.getDelegatedCredential(),
         retry_timeout,

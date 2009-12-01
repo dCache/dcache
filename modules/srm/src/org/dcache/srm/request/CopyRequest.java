@@ -79,7 +79,7 @@ package org.dcache.srm.request;
 import diskCacheV111.srm.RequestStatus;
 //import diskCacheV111.srm.RequestFileStatus;
 import diskCacheV111.srm.ISRM;
-import org.globus.util.GlobusURL;
+import org.dcache.srm.util.SrmUrl;
 import java.net.MalformedURLException;
 //import java.net.UnknownHostException;
 import java.io.IOException;
@@ -137,12 +137,12 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
     private boolean to_url_is_http;
     private boolean from_url_is_local;
     private boolean to_url_is_local;
-    private GlobusURL from_urls[];
+    private SrmUrl from_urls[];
     private long size;
-    private GlobusURL to_urls[];
-    private GlobusURL fromTURLs[];
+    private SrmUrl to_urls[];
+    private SrmUrl fromTURLs[];
     private RequestStatus fromRS;
-    private GlobusURL toTURLs;
+    private SrmUrl toTURLs;
     private RequestStatus toRS;
     private int number_of_file_reqs;
     //
@@ -346,14 +346,14 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
         }
         number_of_file_reqs = fileRequests.length;
         say("number_of_file_reqs = "+number_of_file_reqs);
-        from_urls = new GlobusURL[number_of_file_reqs];
-        to_urls = new GlobusURL[number_of_file_reqs];
+        from_urls = new SrmUrl[number_of_file_reqs];
+        to_urls = new SrmUrl[number_of_file_reqs];
         for(int i = 0 ; i<number_of_file_reqs;++i) {
             CopyFileRequest cfr = (CopyFileRequest) fileRequests[i];
             
             try {
-                from_urls[i] = new GlobusURL(cfr.getFromURL());
-                to_urls[i] = new GlobusURL(cfr.getToURL());
+                from_urls[i] = new SrmUrl(cfr.getFromURL());
+                to_urls[i] = new SrmUrl(cfr.getToURL());
             }
             catch(MalformedURLException murle) {
                 esay(murle);
@@ -783,10 +783,10 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
                 
                 try {
                     if( from_url_is_srm && ! from_url_is_local) {
-                        cfr.setFrom_turl(new GlobusURL(TURL));
+                        cfr.setFrom_turl(new SrmUrl(TURL));
                     }
                     else {
-                        cfr.setTo_turl(new GlobusURL(TURL));
+                        cfr.setTo_turl(new SrmUrl(TURL));
                     }
                     if(size != null)
                     {
