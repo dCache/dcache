@@ -21,6 +21,7 @@ import com.bradmcevoy.http.exceptions.ConflictException;
 
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 
 import org.dcache.vehicles.FileAttributes;
@@ -54,12 +55,12 @@ public class DcacheDirectoryResource
             return _factory.list(_path);
         } catch (FileNotFoundCacheException e) {
             return Collections.emptyList();
+        } catch (PermissionDeniedCacheException e) {
+            throw new ForbiddenException(e.getMessage(), e, this);
         } catch (CacheException e) {
-            //TODO
-            throw new RuntimeException(e);
+            throw new WebDavException(e.getMessage(), e, this);
         } catch (InterruptedException e) {
-            //TODO
-            throw new RuntimeException(e);
+            throw new WebDavException(e.getMessage(), e, this);
         }
     }
 
@@ -71,6 +72,8 @@ public class DcacheDirectoryResource
         try {
             FsPath path = new FsPath(_path, newName);
             return _factory.createFile(_attributes, path, inputStream, length);
+        } catch (PermissionDeniedCacheException e) {
+            throw new ForbiddenException(e.getMessage(), e, this);
         } catch (CacheException e) {
             throw new IOException(e.getMessage(), e);
         } catch (InterruptedException e) {
@@ -85,12 +88,12 @@ public class DcacheDirectoryResource
     {
         try {
             _factory.list(_path, out);
+        } catch (PermissionDeniedCacheException e) {
+            throw new ForbiddenException(e.getMessage(), e, this);
         } catch (CacheException e) {
-            //TODO
-            throw new RuntimeException(e);
+            throw new WebDavException(e.getMessage(), e, this);
         } catch (InterruptedException e) {
-            //TODO
-            throw new RuntimeException(e);
+            throw new WebDavException(e.getMessage(), e, this);
         }
     }
 
@@ -117,8 +120,10 @@ public class DcacheDirectoryResource
     {
         try {
             _factory.deleteDirectory(_attributes.getPnfsId(), _path);
+        } catch (PermissionDeniedCacheException e) {
+            throw new ForbiddenException(e.getMessage(), e, this);
         } catch (CacheException e) {
-            throw new RuntimeException(e);
+            throw new WebDavException(e.getMessage(), e, this);
         }
     }
 
@@ -129,8 +134,10 @@ public class DcacheDirectoryResource
         try {
             return _factory.makeDirectory(_attributes,
                                           new FsPath(_path, newName));
+        } catch (PermissionDeniedCacheException e) {
+            throw new ForbiddenException(e.getMessage(), e, this);
         } catch (CacheException e) {
-            throw new RuntimeException(e);
+            throw new WebDavException(e.getMessage(), e, this);
         }
     }
 }

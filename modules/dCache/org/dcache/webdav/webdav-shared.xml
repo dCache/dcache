@@ -62,6 +62,12 @@
     <description>Logs all requests</description>
   </bean>
 
+  <bean id="dispatch-filter"
+        class="org.dcache.webdav.DcacheStandardFilter">
+    <description>Dispatches HTTP requests to handlers</description>
+    <property name="httpManager" ref="milton"/>
+  </bean>
+
   <bean id="response-handler"
         class="com.bradmcevoy.http.DefaultResponseHandler">
     <description>Generates WebDAV responses</description>
@@ -95,6 +101,7 @@
       <list>
         <ref bean="security-filter"/>
         <ref bean="logging-filter"/>
+        <ref bean="dispatch-filter"/>
       </list>
     </property>
   </bean>

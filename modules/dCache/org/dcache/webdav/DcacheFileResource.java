@@ -20,6 +20,7 @@ import com.bradmcevoy.http.exceptions.NotAuthorizedException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
 
 import org.dcache.vehicles.FileAttributes;
 
@@ -47,7 +48,7 @@ public class DcacheFileResource
                             Map<String,String> params, String contentType)
         throws IOException, NotAuthorizedException
     {
-        throw new RuntimeException("Request should have been redirected"); //FIXME
+        throw new RuntimeException("Request should have been redirected");
     }
 
     @Override
@@ -78,10 +79,12 @@ public class DcacheFileResource
             default:
                 return null;
             }
+        } catch (PermissionDeniedCacheException e) {
+            throw new ForbiddenException(e.getMessage(), e, this);
         } catch (CacheException e) {
-            throw new RuntimeException(e);
+            throw new WebDavException(e.getMessage(), e, this);
         } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            throw new WebDavException(e.getMessage(), e, this);
         }
     }
 
@@ -90,8 +93,10 @@ public class DcacheFileResource
     {
         try {
             _factory.deleteFile(_attributes.getPnfsId(), _path);
+        } catch (PermissionDeniedCacheException e) {
+            throw new ForbiddenException(e.getMessage(), e, this);
         } catch (CacheException e) {
-            throw new RuntimeException(e);
+            throw new WebDavException(e.getMessage(), e, this);
         }
     }
 }
