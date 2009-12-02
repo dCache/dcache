@@ -1,7 +1,7 @@
 # Written by Owen Synge for the dCache project
 
 #/opt/d-cache/etc/glue-1.3.xml.template
-#/opt/d-cache/libexec/infoprovidercms.rb -i 
+#/opt/d-cache/libexec/infoprovidercms.rb -i
 
 config_gip_dcache_helper_cms_app()
 {
@@ -18,7 +18,7 @@ config_gip_dcache_helper_cms_app_input()
     RET="/opt/d-cache/etc/glue-1.3.xml.template"
     if [ ! -f "${RET}" ] ; then
       RET=""
-    fi 
+    fi
   else
     config_gip_dcache_helper_cms_app_output
     # Note returns $RET in same way as this function so no need.
@@ -96,6 +96,19 @@ config_gip_dcache_info_setup()
 {
   yaimlog DEBUG "function config_gip_dcache_info_setup start"
   local helperApp
+  local input
+  local output
+  local file2update
+  local siteUniqueId
+  local seUniqueId
+  local seName
+  local dcacheStatus
+  local dcacheArchitecture
+  local nameSpacePrefix
+  local unit2path
+  local unit2vo
+  local vo2path
+
   config_gip_dcache_helper_cms_app
   helperApp=${RET}
   config_gip_dcache_helper_cms_app_input
@@ -115,11 +128,11 @@ config_gip_dcache_info_setup()
     return 1
   fi
   if [ ! -f "${input}" ] ; then
-    yaimlog ERROR "Template output file '${input}' is missing." 
+    yaimlog ERROR "Template output file '${input}' is missing."
     yaimlog INFO "You need to set \$RESET_DCACHE_CONFIGURATION to 'yes' in your 'site-info.def'."
     yaimlog INFO "or copy the template file to '${input}'."
     return 1
-  fi  
+  fi
   if [ ! -f "${output}" ] ; then
     cp ${input} ${output}
     yaimlog INFO "Making new '${output}' file."
@@ -128,33 +141,60 @@ config_gip_dcache_info_setup()
   file2update=$RET
   config_gip_dcache_info_get_GlueSiteName
   siteUniqueId="${RET}"
-  
+
   config_gip_dcache_info_get_GlueSEUniqueID
   seUniqueId="${RET}"
-  
+
   config_gip_dcache_info_get_GlueSEName
   seName="${RET}"
-  
+
   config_gip_dcache_info_get_GlueSEStatus
   dcacheStatus="${RET}"
-  
+
   config_gip_dcache_info_get_GlueSEArchitecture
   dcacheArchitecture="${RET}"
-  
+
   config_dcache_chimera_vo_dir_get
   nameSpacePrefix="${RET}"
-  
+
   # Now generate the command line
-  
+
   CMD="${helperApp} --input ${input} --output ${file2update} "
   supportedVos=""
+  unit2path=""
+  unit2vo=""
+  vo2path=""
+  # Now process each VO
   for Thisvo in ${VOS} ; do
     if [ "X" != "X${supportedVos}" ] ; then
       supportedVos="${Thisvo},${supportedVos}"
     else
       supportedVos="${Thisvo}"
     fi
-  done
+    if [ "X" != "X${nameSpacePrefix}" ] ; then
+      local addedunit2path
+      local addedunit2vo
+      local addedvo2path
+      addedunit2path="${Thisvo}:STATIC@osm^${nameSpacePrefix}/${Thisvo},${Thisvo}:GENERATED@osm^${nameSpacePrefix}/${Thisvo}/generated"
+      addedunit2vo="${Thisvo}:STATIC@osm^${Thisvo},${Thisvo}:GENERATED@osm^${Thisvo}"
+      addedvo2path="${Thisvo}^${nameSpacePrefix}/${Thisvo}"
+      if [ "X" != "X${unit2path}" ] ; then
+        unit2path="${unit2path},${addedunit2path}"
+      else
+        unit2path="${addedunit2path}"
+      fi
+      if [ "X" != "X${unit2vo}" ] ; then
+        unit2vo="${unit2vo},${addedunit2vo}"
+      else
+        unit2vo="${addedunit2vo}"
+      fi
+      if [ "X" != "X${vo2path}" ] ; then
+        vo2path="${vo2path},${addedvo2path}"
+      else
+        vo2path="${addedvo2path}"
+      fi
+    fi
+  done # end process each VO
   if [ "X" != "X${supportedVos}" ] ; then
     CMD="$CMD --vos ${supportedVos} "
   fi
@@ -176,7 +216,16 @@ config_gip_dcache_info_setup()
   if [ "X" != "X${nameSpacePrefix}" ] ; then
     CMD="$CMD --name-space-prefix ${nameSpacePrefix} "
   fi
-  echo $CMD
+  if [ "X" != "X${unit2path}" ] ; then
+    CMD="$CMD --unit2path ${unit2path} "
+  fi
+  if [ "X" != "X${unit2vo}" ] ; then
+    CMD="$CMD --unit2vo ${unit2vo} "
+  fi
+  if [ "X" != "X${vo2path}" ] ; then
+    CMD="$CMD --vo2path ${vo2path} "
+  fi
+  yaimlog DEBUG To generate the information systems configuration running $CMD
   $CMD
   cmdrc=$?
   if [ "${cmdrc}" != "0" ] ; then
@@ -186,11 +235,11 @@ config_gip_dcache_info_setup()
   fi
   if [ "${file2update}" != "${output}" ] ; then
     yaim_config_file_update_done ${output}
-    if [ $? == 1 ] ; then 
+    if [ $? == 1 ] ; then
       yaimlog WARNING "Changed the file ${output}"
     fi
   fi
-  
+
   yaimlog DEBUG "function config_gip_dcache_info_setup stop"
   return 0
 }
@@ -291,9 +340,9 @@ config_gip_dcache_info_run()
   if [ "${bdiionlyrc}" != "0" ] ; then
     yaimlog ERROR "function config_bdii_only returned the ${bdiionlyrc} error code"
     return ${bdiionlyrc}
-  fi  
+  fi
   yaim_query_conf_infoprovider_system
-  rcisvd=$?  
+  rcisvd=$?
   if [ "${rcisvd}" == "1" ] ; then
     config_gip_dcache_info_setup
     infosetuprc=$?
@@ -309,7 +358,7 @@ config_gip_dcache_info_run()
     infosetuprc=$?
     if [ "${infosetuprc}" != "0" ] ; then
       return 1
-    fi    
+    fi
   fi
   yaimlog DEBUG "function config_gip_dcache_info_run stop"
   return 0
