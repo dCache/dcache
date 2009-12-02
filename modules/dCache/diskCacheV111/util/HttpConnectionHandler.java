@@ -9,13 +9,18 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.Socket;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.StringTokenizer;
+import org.apache.log4j.Logger;
 
 public class HttpConnectionHandler
 {
+
+  private static final Logger _log = Logger.getLogger(HttpConnectionHandler.class);
+
   public static final String HTTP09 = "HTTP/0.9";
   public static final String HTTP10 = "HTTP/1.0";
   public static final String HTTP11 = "HTTP/1.1";
@@ -41,39 +46,30 @@ public class HttpConnectionHandler
           new BufferedWriter(
                 new OutputStreamWriter(httpconnection.getOutputStream())));
     connection = httpconnection;
-    say("HttpConnectionHandler created with Socket = "+httpconnection);
+    _log.debug("HttpConnectionHandler created with Socket = "+httpconnection);
   }
 
   public HttpConnectionHandler(BufferedReader in,
                                OutputStream outstream,
                                BufferedWriter out) throws IOException
   {
-    say("HttpConnectionHandler created with streams");
+    _log.debug("HttpConnectionHandler created with streams");
     this.in =in;
     this.outstream = outstream;
     this.out = out;
     //(this.timeout_thread = new Thread(this)).start();
-    say("parsing ...");
+    _log.debug("parsing ...");
     boolean parsed = parseRequest();
-    say("parsed ...");
+    _log.debug("parsed ...");
     if(!parsed)
     {
-       say("parseRequest returned false,returning error header ...");
+       _log.debug("parseRequest returned false,returning error header ...");
        returnErrorHeader();
     }
     else
     {
-       say("parseRequest returned true");
+       _log.debug("parseRequest returned true");
     }
-  }
-  public void say(String wisewords)
-  {
-    System.out.println(" <- HttpConnectionHandler-> " + wisewords);
-  }
-
-  public void esay(String wisewords)
-  {
-    System.err.println(" <- HttpConnectionHandler error-> " + wisewords);
   }
 
   public String[] getHeaders()
@@ -183,7 +179,7 @@ public class HttpConnectionHandler
     StringBuffer sb = new StringBuffer();
     sb.append(HTTP11).append(" 302 Redirected\n");
     sb.append("Server: HttpDoor \n");
-    sb.append("Location: ").append(redirectURI).append('\n');;
+    sb.append("Location: ").append(redirectURI).append('\n');
     sb.append("Connection: close");
     sb.append('\n').append('\n');
     System.out.println("returning header :"+sb.toString());
@@ -196,6 +192,7 @@ public class HttpConnectionHandler
 
   private synchronized boolean parseRequest()
   {
+
     if(isclosed())
     {
       return false;
@@ -207,12 +204,12 @@ public class HttpConnectionHandler
     {
       // Read the first line of the request.
       line = in.readLine();
-      say("parsing line "+line);
+      _log.debug("parsing line "+line);
       if ( line == null || line.length() == 0 )
       {
         error = HttpURLConnection.HTTP_BAD_REQUEST;
         error_string = "Empty request";
-        say("error: Empty request");
+        _log.warn("error: Empty request");
         return false;
       }
 
@@ -222,7 +219,7 @@ public class HttpConnectionHandler
       {
         error = HttpURLConnection.HTTP_BAD_REQUEST;
         error_string = "bad request";
-        say("error: bad request, count = "+count);
+        _log.warn("error: bad request, count = "+count);
         return false;
       }
       this.method = st.nextToken();
@@ -237,7 +234,7 @@ public class HttpConnectionHandler
       {
         error = HttpURLConnection.HTTP_BAD_REQUEST;
         error_string = "bad request, unknown method: "+method;
-         say("bad request, unknown method: "+method);
+         _log.warn("bad request, unknown method: "+method);
         return false;
       }
       this.request_url_string = st.nextToken();
@@ -264,7 +261,7 @@ public class HttpConnectionHandler
       while ( true )
       {
         line = in.readLine();
-         say("parsing line: "+line);
+         _log.debug("parsing line: "+line);
         if ( line == null || line.length() == 0 )
         {
           break;
@@ -286,7 +283,7 @@ public class HttpConnectionHandler
         {
           error = java.net.HttpURLConnection.HTTP_BAD_REQUEST;
           error_string = "bad request, host header is missing";
-          say("error: bad request, host header is missing");
+          _log.warn("error: bad request, host header is missing");
           return false;
         }
       }
@@ -300,13 +297,14 @@ public class HttpConnectionHandler
       this.request_url = new URL(request_url_string);
 
       return true;
-    }
-    catch(Exception e)
-    {
-      e.printStackTrace();
+    } catch(MalformedURLException e) {
+      _log.warn("Bad request: " + e.getMessage() );
       error = java.net.HttpURLConnection.HTTP_BAD_REQUEST;
       error_string = e.getMessage();
-      return false;
+    } catch(IOException e) {
+      _log.warn("Failed to read request: " + e.getMessage());
+      error = java.net.HttpURLConnection.HTTP_BAD_REQUEST;
+      error_string = e.getMessage();
     }
     finally
     {
@@ -317,6 +315,7 @@ public class HttpConnectionHandler
       }
     }
 
+    return false;
   }
 
 
