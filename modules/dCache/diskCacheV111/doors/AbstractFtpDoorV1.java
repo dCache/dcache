@@ -130,10 +130,7 @@ import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.GFtpProtocolInfo;
-import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
-import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
 import diskCacheV111.vehicles.PnfsSetLengthMessage;
-import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
 import diskCacheV111.vehicles.PoolMgrSelectPoolMsg;
 import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
@@ -182,6 +179,7 @@ import org.dcache.acl.enums.FileAttribute;
 import org.dcache.acl.enums.InetAddressType;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
+import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.util.list.DirectoryListSource;
 import org.dcache.util.list.DirectoryListPrinter;
 import org.dcache.util.list.ListDirectoryHandler;
@@ -200,6 +198,8 @@ import com.sun.security.auth.UnixNumericUserPrincipal;
 import javax.security.auth.Subject;
 
 import diskCacheV111.poolManager.RequestContainerV5;
+
+import static org.dcache.namespace.FileAttribute.*;
 
 /**
  * Exception indicating an error during processing of an FTP command.
@@ -2067,9 +2067,9 @@ public abstract class AbstractFtpDoorV1
             if (newcwd == null)
                 newcwd = _pathRoot;
 
-            PnfsGetFileMetaDataMessage meta =
-                _pnfs.getFileMetaDataByPath(newcwd);
-            if (!meta.getMetaData().isDirectory()) {
+            FileAttributes attributes =
+                _pnfs.getFileAttributes(newcwd, EnumSet.of(SIMPLE_TYPE));
+            if (attributes.getFileType() != FileType.DIR) {
                 reply("550 Not a directory: " + arg);
                 return;
             }
@@ -2243,12 +2243,9 @@ public abstract class AbstractFtpDoorV1
         try {
             ChecksumFactory cf = ChecksumFactory.getFactory(algo);
 
-
             try {
-                PnfsGetStorageInfoMessage storageInfoMsg = _pnfs.getStorageInfoByPath( absolutePath(path) );
-
-                Checksum checksum = cf.createFromPersistentState(this, storageInfoMsg.getPnfsId());
-
+                PnfsId pnfsId = _pnfs.getPnfsIdByPath(absolutePath(path));
+                Checksum checksum = cf.createFromPersistentState(this, pnfsId);
                 if (checksum == null) {
                     throw new FTPCommandException(504, "Checksum is not available, dynamic checksum calculation is not supported");
                 } else {
@@ -2335,9 +2332,12 @@ public abstract class AbstractFtpDoorV1
         }
 
         // Get meta-data for this file/directory
-        PnfsGetFileMetaDataMessage fileMetaDataMsg;
+        FileAttributes attributes;
         try {
-            fileMetaDataMsg = _pnfs.getFileMetaDataByPath(pnfsPath);
+            attributes =
+                _pnfs.getFileAttributes(pnfsPath,
+                                        EnumSet.of(PNFSID, TYPE,
+                                                   OWNER, OWNER_GROUP));
         } catch (PermissionDeniedCacheException e) {
             if(!setNextPwdRecord()) {
                 reply("550 Permission denied");
@@ -2355,12 +2355,11 @@ public abstract class AbstractFtpDoorV1
         }
 
         // Extract fields of interest
-        PnfsId       myPnfsId   = fileMetaDataMsg.getPnfsId();
-        FileMetaData metaData   = fileMetaDataMsg.getMetaData();
-        boolean      isADir     = metaData.isDirectory();
-        boolean      isASymLink = metaData.isSymbolicLink();
-        int          myUid      = metaData.getUid();
-        int          myGid      = metaData.getGid();
+        PnfsId       myPnfsId   = attributes.getPnfsId();
+        boolean      isADir     = (attributes.getFileType() == FileType.DIR);
+        boolean      isASymLink = (attributes.getFileType() == FileType.LINK);
+        int          myUid      = attributes.getOwner();
+        int          myGid      = attributes.getGroup();
 
         // Only file/directory owner can change permissions on that file/directory
         if (myUid != _pwdRecord.UID) {
@@ -2741,19 +2740,28 @@ public abstract class AbstractFtpDoorV1
             /* Retrieve storage information for file.
              */
             _transfer.state = "waiting for storage info";
-            PnfsGetStorageInfoMessage  storageInfoMsg =
-                _pnfs.getStorageInfoByPath(_transfer.path);
+            FileAttributes attributes =
+                _pnfs.getFileAttributes(_transfer.path,
+                                        EnumSet.of(PNFSID,
+                                                   STORAGEINFO,
+                                                   SIZE,
+                                                   SIMPLE_TYPE));
             _transfer.state = "received storage info";
 
-            StorageInfo storageInfo = storageInfoMsg.getStorageInfo();
-            _transfer.info.setPnfsId(storageInfoMsg.getPnfsId());
-            _transfer.pnfsId = storageInfoMsg.getPnfsId();
+            FileType type = attributes.getFileType();
+            if (type == FileType.DIR || type == FileType.SPECIAL) {
+                throw new FTPCommandException(550, "Not a regular file");
+            }
+
+            StorageInfo storageInfo = attributes.getStorageInfo();
+            _transfer.info.setPnfsId(attributes.getPnfsId());
+            _transfer.pnfsId = attributes.getPnfsId();
 
             /* Sanity check offset and size parameters. We cannot do
              * this earlier, because we need the size of the file
              * first.
              */
-            long fileSize = storageInfo.getFileSize();
+            long fileSize = attributes.getSize();
             if (offset == -1) {
                 offset = 0;
             }
@@ -3001,7 +3009,7 @@ public abstract class AbstractFtpDoorV1
              */
             _transfer.state = "creating pnfs entry";
             StorageInfo storageInfo;
-            PnfsGetStorageInfoMessage pnfsEntry;
+            PnfsGetFileAttributes pnfsEntry;
 
             /* FIXME: There is a race condition here. In case we break
              * out, maybe due to a thread interrupt, or due to some
@@ -3065,7 +3073,7 @@ public abstract class AbstractFtpDoorV1
                  _transfer.pnfsId);
 
             debug("FTP Door: store getting related StorageInfo");
-            storageInfo = pnfsEntry.getStorageInfo();
+            storageInfo = pnfsEntry.getFileAttributes().getStorageInfo();
             if (storageInfo == null) {
                 throw new FTPCommandException
                     (533,
@@ -3572,8 +3580,9 @@ public abstract class AbstractFtpDoorV1
         String path = absolutePath(arg);
         long filelength = 0;
         try {
-            PnfsGetStorageInfoMessage info = _pnfs.getStorageInfoByPath(path);
-            PnfsId pnfsId = _pnfs.getPnfsIdByPath(path);
+            FileAttributes attributes =
+                _pnfs.getFileAttributes(path, EnumSet.of(PNFSID, SIZE));
+            PnfsId pnfsId = attributes.getPnfsId();
             if (_permissionHandler.canGetAttributes(pnfsId, getSubject(), _origin, FileAttribute.FATTR4_SIZE) != AccessType.ACCESS_ALLOWED) {
                 if(!setNextPwdRecord()) {
                     reply("553 Permission denied");
@@ -3582,8 +3591,7 @@ public abstract class AbstractFtpDoorV1
                 }
                 return;
             }
-            filelength = info.getMetaData().getFileSize();
-
+            filelength = attributes.getSize();
         } catch(ACLException e) {
             reply("550 Permission denied, reason (Acl) ");
             error("FTP Door: ACL module failed: " + e);
@@ -3618,9 +3626,10 @@ public abstract class AbstractFtpDoorV1
             }
 
             long modification_time;
-            PnfsGetFileMetaDataMessage info =
-                _pnfs.getFileMetaDataByPath(path);
-            PnfsId pnfsId = info.getPnfsId();
+            FileAttributes attributes =
+                _pnfs.getFileAttributes(path,
+                                        EnumSet.of(PNFSID, MODIFICATION_TIME));
+            PnfsId pnfsId = attributes.getPnfsId();
             if (_permissionHandler.canGetAttributes(pnfsId, getSubject(), _origin, FileAttribute.FATTR4_SUPPORTED_ATTRS) != AccessType.ACCESS_ALLOWED) {
                 if(!setNextPwdRecord()) {
                     reply("550 Permission denied");
@@ -3630,7 +3639,7 @@ public abstract class AbstractFtpDoorV1
                 return;
             }
 
-            modification_time = info.getMetaData().getLastModifiedTime();
+            modification_time = attributes.getModificationTime();
             String time_val =
                 TIMESTAMP_FORMAT.format(new Date(modification_time));
             reply("213 " + time_val);
@@ -4630,9 +4639,7 @@ public abstract class AbstractFtpDoorV1
         public Set<org.dcache.namespace.FileAttribute> getRequiredAttributes()
         {
             Set<org.dcache.namespace.FileAttribute> attributes =
-                EnumSet.of(org.dcache.namespace.FileAttribute.TYPE,
-                           org.dcache.namespace.FileAttribute.MODIFICATION_TIME,
-                           org.dcache.namespace.FileAttribute.SIZE);
+                EnumSet.of(SIMPLE_TYPE, MODIFICATION_TIME, SIZE);
             attributes.addAll(_pdp.getRequiredAttributes());
             return attributes;
         }
@@ -4713,22 +4720,22 @@ public abstract class AbstractFtpDoorV1
             for (Fact fact: _currentFacts) {
                 switch (fact) {
                 case SIZE:
-                    attributes.add(org.dcache.namespace.FileAttribute.SIZE);
+                    attributes.add(SIZE);
                     attributes.addAll(_pdp.getRequiredAttributes());
                     break;
                 case MODIFY:
-                    attributes.add(org.dcache.namespace.FileAttribute.MODIFICATION_TIME);
+                    attributes.add(MODIFICATION_TIME);
                     attributes.addAll(_pdp.getRequiredAttributes());
                     break;
                 case TYPE:
-                    attributes.add(org.dcache.namespace.FileAttribute.TYPE);
+                    attributes.add(SIMPLE_TYPE);
                     break;
                 case PERM:
-                    attributes.add(org.dcache.namespace.FileAttribute.TYPE);
+                    attributes.add(SIMPLE_TYPE);
                     attributes.addAll(_pdp.getRequiredAttributes());
                     break;
                 case UNIQUE:
-                    attributes.add(org.dcache.namespace.FileAttribute.PNFSID);
+                    attributes.add(PNFSID);
                     break;
                 }
             }
@@ -4746,7 +4753,7 @@ public abstract class AbstractFtpDoorV1
                     case SIZE:
                         access =
                             _pdp.canGetAttributes(_subject, dirAttr, attr,
-                                                  EnumSet.of(org.dcache.namespace.FileAttribute.SIZE));
+                                                  EnumSet.of(SIZE));
                         if (access == AccessType.ACCESS_ALLOWED) {
                             printSizeFact(attr);
                         }
@@ -4754,7 +4761,7 @@ public abstract class AbstractFtpDoorV1
                     case MODIFY:
                         access =
                             _pdp.canGetAttributes(_subject, dirAttr, attr,
-                                                  EnumSet.of(org.dcache.namespace.FileAttribute.MODIFICATION_TIME));
+                                                  EnumSet.of(MODIFICATION_TIME));
                         if (access == AccessType.ACCESS_ALLOWED) {
                             printModifyFact(attr);
                         }
