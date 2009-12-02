@@ -732,15 +732,27 @@ public class PoolManagerV5
               requestFailed( 55 , "Quotas Exceeded for StorageClass : "+storageInfo.getStorageClass() ) ;
               return ;
            }
-           String expectedLengthString = storageInfo.getKey("alloc-size") ;
-           long expectedLength = 0L ;
-           if( expectedLengthString != null ){
-              try{
-                 expectedLength = Long.parseLong(expectedLengthString) ;
-              }catch(NumberFormatException ee ){
-                  // bad values are ignored
-              }
+
+           long expectedLength = 0L;
+           if (_request.getFileSize() > 0) {
+               expectedLength = _request.getFileSize();
+           } else if (storageInfo.getFileSize() > 0) {
+               expectedLength = storageInfo.getFileSize();
+           } else {
+               String s = storageInfo.getKey("alloc-size");
+               if (s != null) {
+                   try{
+                       expectedLength = Long.parseLong(s);
+                   } catch (NumberFormatException e) {
+                       // bad values are ignored
+                   }
+               }
            }
+
+           /* The cost module relies on the expected file size.
+            */
+           _request.setFileSize(expectedLength);
+
            try{
 
               List<PoolCostCheckable> storeList = _poolMonitor.

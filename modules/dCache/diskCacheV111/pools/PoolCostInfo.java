@@ -127,6 +127,11 @@ public class PoolCostInfo implements java.io.Serializable {
         public long getGap(){ return _gap ; }
         public double getBreakEven(){ return _breakEven ; }
         public long getLRUSeconds(){ return _lru ; }
+
+        public void modifyPinnedSpace(long diff)
+        {
+            _free = Math.max(0, Math.min(_free - diff, _total - _removable - _precious));
+        }
     }
 
     //
