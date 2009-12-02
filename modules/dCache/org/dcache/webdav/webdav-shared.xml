@@ -43,9 +43,10 @@
 
   <bean id="scheduled-thread-pool"
         class="java.util.concurrent.Executors"
-        factory-method="newSingleThreadScheduledExecutor"
+        factory-method="newScheduledThreadPool"
         destroy-method="shutdown">
     <description>Thread pool for scheduled activities</description>
+    <constructor-arg value="2"/>
   </bean>
 
   <bean id="security-filter" class="org.dcache.webdav.SecurityFilter">
@@ -80,6 +81,10 @@
     <property name="rootPath" value="${webdavRootPath}"/>
     <property name="allowedPaths" value="${webdavAllowedPaths}"/>
     <property name="ioQueue" value="${webdavIoQueue}"/>
+    <property name="executor" ref="scheduled-thread-pool"/>
+    <property name="moverTimeout" value="${webdavMoverTimeout}"/>
+    <property name="killTimeout" value="${webdavKillTimeout}"/>
+    <property name="transferConfirmationTimeout" value="${webdavTransferConfirmationTimeout}"/>
   </bean>
 
   <bean id="milton" class="com.bradmcevoy.http.HttpManager">

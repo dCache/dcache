@@ -19,6 +19,9 @@
         webdavReadOnly=false
         webdavAnonymousAccess=NONE
         webdavIoQueue=
+        webdavKillTimeout=1500
+        webdavMoverTimeout=180000
+        webdavTransferConfirmationTimeout=60000
         webdavKeyStore=/etc/grid-security/hostcert.p12
         webdavKeyStorePassword=dcache
         webdavTrustStore=/etc/grid-security/truststore.jks

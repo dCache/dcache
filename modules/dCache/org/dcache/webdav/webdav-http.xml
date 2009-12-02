@@ -19,6 +19,9 @@
         webdavReadOnly=false
         webdavAnonymousAccess=READONLY
         webdavIoQueue=
+        webdavKillTimeout=1500
+        webdavMoverTimeout=180000
+        webdavTransferConfirmationTimeout=60000
         pnfsmanager=PnfsManager
         poolmanager=PoolManager
         gplazma=gPlazma

@@ -79,7 +79,7 @@ public class DcacheFileResource
                 return null;
             }
         } catch (CacheException e) {
-             throw new RuntimeException(e);
+            throw new RuntimeException(e);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
