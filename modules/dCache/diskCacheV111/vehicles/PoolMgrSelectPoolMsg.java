@@ -53,6 +53,11 @@ public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {
         _allowedStates = allowedStates;
     }
 
+    public void setFileSize(long fileSize)
+    {
+        _fileSize = fileSize;
+    }
+
     public long getFileSize(){ return _fileSize; }
 
     public ProtocolInfo getProtocolInfo(){ return _protocolInfo; }

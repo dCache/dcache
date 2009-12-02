@@ -6,9 +6,12 @@ import dmg.cells.nucleus.* ;
 import java.util.* ;
 import diskCacheV111.vehicles.* ;
 
+import org.apache.log4j.Logger;
+
 public class PoolOperator
     extends CostModuleV1
 {
+    private final static Logger _log = Logger.getLogger(PoolOperator.class);
 
    private HashMap _poolHash = new HashMap() ;
 
@@ -33,7 +36,7 @@ public class PoolOperator
          if( map != null )cost.setTagMap(map) ;
          return cost ;
       }catch(MissingResourceException ee ){
-         esay( "Missing resource exception from get cost : "+ee ) ;
+          _log.error( "Missing resource exception from get cost : "+ee ) ;
          return null ;
       }
 

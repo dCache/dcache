@@ -25,8 +25,10 @@ import diskCacheV111.vehicles.Pool2PoolTransferMsg;
 import diskCacheV111.vehicles.PoolCostCheckable;
 import diskCacheV111.vehicles.PoolFetchFileMessage;
 import diskCacheV111.vehicles.PoolIoFileMessage;
+import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 import diskCacheV111.vehicles.PoolMgrSelectPoolMsg;
+import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 import dmg.cells.nucleus.CellMessage;
 import dmg.util.Args;
 
@@ -186,30 +188,42 @@ public class CostModuleV1
 
         String requestedQueueName = msg.getIoQueueName();
 
+        PoolCostInfo costInfo = e.getPoolCostInfo();
         Map<String, NamedPoolQueueInfo> map =
-            e.getPoolCostInfo().getExtendedMoverHash();
+            costInfo.getExtendedMoverHash();
 
-        PoolCostInfo.PoolQueueInfo queue = null;
+        PoolCostInfo.PoolQueueInfo queue;
+        PoolCostInfo.PoolSpaceInfo spaceInfo = costInfo.getSpaceInfo();
 
         if (map == null) {
-            queue = e.getPoolCostInfo().getMoverQueue();
+            queue = costInfo.getMoverQueue();
         } else {
             requestedQueueName =
                 (requestedQueueName == null ||
                  map.get(requestedQueueName) == null)
-                ? e.getPoolCostInfo().getDefaultQueueName()
+                ? costInfo.getDefaultQueueName()
                 : requestedQueueName;
             queue = map.get(requestedQueueName);
         }
 
-        int diff =
-            (msg.isReply() && msg.getReturnCode() != 0)
-            ? -1
-            : ((!msg.isReply() && !_magic) ? 1 : 0);
+        int diff = 0;
+        long pinned = 0;
+        if (msg.isReply() && msg.getReturnCode() != 0) {
+            diff = -1;
+            if (msg instanceof PoolAcceptFileMessage) {
+                pinned = -msg.getStorageInfo().getFileSize();
+            }
+        } else if (!msg.isReply() && !_magic) {
+            diff = 1;
+            if (msg instanceof PoolAcceptFileMessage) {
+                pinned = msg.getStorageInfo().getFileSize();
+            }
+        }
 
         queue.modifyQueue(diff);
+        spaceInfo.modifyPinnedSpace(pinned);
 
-        xsay("Mover"+(requestedQueueName==null?"":("("+requestedQueueName+")")) , poolName, diff, msg);
+        xsay("Mover"+(requestedQueueName==null?"":("("+requestedQueueName+")")) , poolName, diff, pinned, msg);
     }
 
     public synchronized void messageToForward(DoorTransferFinishedMessage msg)
@@ -219,28 +233,31 @@ public class CostModuleV1
         if (e == null)
             return;
 
+        PoolCostInfo costInfo = e.getPoolCostInfo();
         String requestedQueueName = msg.getIoQueueName();
 
         Map<String, NamedPoolQueueInfo> map =
-            e.getPoolCostInfo().getExtendedMoverHash();
-        PoolCostInfo.PoolQueueInfo queue = null;
+            costInfo.getExtendedMoverHash();
+        PoolCostInfo.PoolQueueInfo queue;
 
         if (map == null) {
-            queue = e.getPoolCostInfo().getMoverQueue();
+            queue = costInfo.getMoverQueue();
         } else {
             requestedQueueName =
                 (requestedQueueName == null) ||
                 (map.get(requestedQueueName) == null)
-                ? e.getPoolCostInfo().getDefaultQueueName()
+                ? costInfo.getDefaultQueueName()
                 : requestedQueueName;
 
             queue = map.get(requestedQueueName);
         }
 
         int diff = -1;
+        long pinned = 0;
+
         queue.modifyQueue(diff);
 
-        xsay("Mover"+(requestedQueueName==null?"":("("+requestedQueueName+")")), poolName, diff, msg);
+        xsay("Mover"+(requestedQueueName==null?"":("("+requestedQueueName+")")), poolName, diff, pinned, msg);
     }
 
     public synchronized void messageToForward(PoolFetchFileMessage msg)
@@ -250,13 +267,23 @@ public class CostModuleV1
          if (e == null)
              return;
 
-         PoolCostInfo.PoolQueueInfo queue =
-             e.getPoolCostInfo().getRestoreQueue();
+         PoolCostInfo costInfo = e.getPoolCostInfo();
+         PoolCostInfo.PoolQueueInfo queue = costInfo.getRestoreQueue();
+         PoolCostInfo.PoolSpaceInfo spaceInfo = costInfo.getSpaceInfo();
 
-         int diff = msg.isReply() ? -1 : 1;
+         int diff;
+         long pinned;
+         if (!msg.isReply()) {
+             diff = 1;
+             pinned = msg.getStorageInfo().getFileSize();
+         } else {
+             diff = -1;
+             pinned = 0;
+         }
          queue.modifyQueue(diff);
+         spaceInfo.modifyPinnedSpace(pinned);
 
-         xsay( "Restore" , poolName, diff, msg);
+         xsay("Restore", poolName, diff, pinned, msg);
     }
 
     public synchronized void messageToForward(PoolMgrSelectPoolMsg msg)
@@ -273,31 +300,35 @@ public class CostModuleV1
 
          String requestedQueueName = msg.getIoQueueName();
 
+         PoolCostInfo costInfo = e.getPoolCostInfo();
          Map<String, NamedPoolQueueInfo> map =
-             e.getPoolCostInfo().getExtendedMoverHash();
-         PoolCostInfo.PoolQueueInfo queue = null;
+             costInfo.getExtendedMoverHash();
+         PoolCostInfo.PoolQueueInfo queue;
+         PoolCostInfo.PoolSpaceInfo spaceInfo = costInfo.getSpaceInfo();
 
          if (map == null) {
-            queue = e.getPoolCostInfo().getMoverQueue();
+            queue = costInfo.getMoverQueue();
          } else {
             requestedQueueName =
                 (requestedQueueName == null) ||
                 (map.get(requestedQueueName) == null)
-                ? e.getPoolCostInfo().getDefaultQueueName()
+                ? costInfo.getDefaultQueueName()
                 : requestedQueueName;
             queue = map.get(requestedQueueName);
          }
 
          int diff = 1;
-
+         long pinned =
+             (msg instanceof PoolMgrSelectWritePoolMsg) ? msg.getFileSize() : 0;
          queue.modifyQueue(diff);
+         spaceInfo.modifyPinnedSpace(pinned);
 
-         xsay("Mover (magic)"+(requestedQueueName==null?"":("("+requestedQueueName+")")), poolName, diff, msg);
+         xsay("Mover (magic)"+(requestedQueueName==null?"":("("+requestedQueueName+")")), poolName, diff, pinned, msg);
     }
 
     public synchronized void messageToForward(Pool2PoolTransferMsg msg)
     {
-        say( "Pool2PoolTransferMsg : reply="+msg.isReply());
+        _log.debug( "Pool2PoolTransferMsg : reply="+msg.isReply());
 
         String sourceName = msg.getSourcePoolName();
         Entry source = _hash.get(sourceName);
@@ -314,14 +345,18 @@ public class CostModuleV1
 
         PoolCostInfo.PoolQueueInfo destinationQueue =
             destination.getPoolCostInfo().getP2pClientQueue();
+        PoolCostInfo.PoolSpaceInfo destinationSpaceInfo =
+            destination.getPoolCostInfo().getSpaceInfo();
 
         int diff = msg.isReply() ? -1 : 1;
+        long pinned = msg.getStorageInfo().getFileSize();
 
         sourceQueue.modifyQueue(diff);
         destinationQueue.modifyQueue(diff);
+        destinationSpaceInfo.modifyPinnedSpace(pinned);
 
-        xsay("P2P client (magic)", destinationName, diff, msg);
-        xsay("P2P server (magic)", sourceName, diff, msg);
+        xsay("P2P client (magic)", destinationName, diff, pinned, msg);
+        xsay("P2P server (magic)", sourceName, diff, 0, msg);
     }
 
     /**
@@ -355,15 +390,12 @@ public class CostModuleV1
         pw.println("cm set magic "+(_magic?"on":"off"));
     }
 
-   protected void say( String msg ){
-       _log.debug(msg);
-   }
-   protected void esay( String msg ){
-       _log.warn(msg);
-   }
-   private void xsay( String queue , String pool , int diff , Object obj ){
-      if(_debug)_log.debug("CostModuleV1 : "+queue+" queue of "+pool+" modified by "+diff+" due to "+obj.getClass().getName());
-   }
+    private void xsay(String queue, String pool, int diff, long pinned, Object obj)
+    {
+        if (_debug) {
+            _log.debug("CostModuleV1 : "+queue+" queue of "+pool+" modified by "+diff+"/" + pinned + " due to "+obj.getClass().getName());
+        }
+    }
 
    @Override
    public synchronized PoolCostCheckable getPoolCost( String poolName , long filesize ){
