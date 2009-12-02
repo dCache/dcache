@@ -724,7 +724,7 @@ public class PutCompanion implements CellMessageAnswerable {
     }
     
     private void unregisterAndFailCreator(String error) {
-        if(pathItems != null) {
+        if(pathItems != null && current_dir_depth != -1) {
             //directory creation failed, notify all waiting on this companion
             for( int i = this.current_dir_depth; i<(this.pathItems.size());
             ++i) {
