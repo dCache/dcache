@@ -525,14 +525,14 @@
                   path="d:metric[@name='vo']"/>
             </attr>
 
-	    <!-- Publish the total size of the space as the ReservedOnlineSize -->
+            <!-- Publish the total size of the space as the ReservedOnlineSize -->
             <attr name="GlueSAReservedOnlineSize">
               <scale to-integer="round"
                      factor="bytes-to-gigabytes">
                 <lookup default="0"
                         child="path">d:space/d:metric[@name='total']</lookup>
               </scale>
-	    </attr>
+            </attr>
 
             <attr name="GlueSATotalOnlineSize">
               <scale to-integer="round"
@@ -568,11 +568,11 @@
               </scale>
             </attr>
 
-	    <!-- We are required to publish these attributes -->
-	    <attr name="GlueSAReservedNearlineSize">0</attr>
-	    <attr name="GlueSATotalNearlineSize">0</attr>
-	    <attr name="GlueSAUsedNearlineSize">0</attr>
-	    <attr name="GlueSAFreeNearlineSize">0</attr>
+            <!-- We are required to publish these attributes -->
+            <attr name="GlueSAReservedNearlineSize">0</attr>
+            <attr name="GlueSATotalNearlineSize">0</attr>
+            <attr name="GlueSAUsedNearlineSize">0</attr>
+            <attr name="GlueSAFreeNearlineSize">0</attr>
 
             <!-- We hard-code 0 to avoid SRM reservations from being
                  included in any accounting -->
@@ -635,15 +635,15 @@
                 </map>
               </suppress>
 
-	      <!-- Ensure the combination of VO and path is unique -->
-	      <unique>
+              <!-- Ensure the combination of VO and path is unique -->
+              <unique>
                 <map name="unit-to-VO">
                   <lookup path="@name"/>
                 </map>
                 <map name="unit-to-path">
                   <lookup path="@name"/>
                 </map>
-	      </unique>
+              </unique>
 
               <attr name="GlueVOInfoLocalID">
                 <lookup path="@name"/>
@@ -692,11 +692,11 @@
                   <lookup path="@name"/>
                 </map>
               </suppress>
-	      <unique>
-		<map name="unit-to-VO">
-		  <lookup path="@name"/>
-		</map>
-	      </unique>
+              <unique>
+                <map name="unit-to-VO">
+                  <lookup path="@name"/>
+                </map>
+              </unique>
             </attr>
 
             <!-- Publish those VOs that can read -->
@@ -709,11 +709,11 @@
                   <lookup path="@name"/>
                 </map>
               </suppress>
-	      <unique>
-		<map name="unit-to-VO">
-		  <lookup path="@name"/>
-		</map>
-	      </unique>
+              <unique>
+                <map name="unit-to-VO">
+                  <lookup path="@name"/>
+                </map>
+              </unique>
             </attr>
 
             <!-- Publish those VOs that can stage from tape -->
@@ -726,11 +726,11 @@
                   <lookup path="@name"/>
                 </map>
               </suppress>
-	      <unique>
-		<map name="unit-to-VO">
-		  <lookup path="@name"/>
-		</map>
-	      </unique>
+              <unique>
+                <map name="unit-to-VO">
+                  <lookup path="@name"/>
+                </map>
+              </unique>
             </attr>
 
             <!-- We repeat publishing the access rules with the deprecated
@@ -746,11 +746,11 @@
                     name="unit-to-VO">
                 <lookup path="@name"/>
               </map>
-	      <unique>
-		<map name="unit-to-VO">
-		  <lookup path="@name"/>
-		</map>
-	      </unique>
+              <unique>
+                <map name="unit-to-VO">
+                  <lookup path="@name"/>
+                </map>
+              </unique>
             </attr>
             <attr name="GlueSAAccessControlBaseRule"
                   not-empty="1"
@@ -758,11 +758,11 @@
                     name="unit-to-VO">
                 <lookup path="@name"/>
               </map>
-	      <unique>
-		<map name="unit-to-VO">
-		  <lookup path="@name"/>
-		</map>
-	      </unique>
+              <unique>
+                <map name="unit-to-VO">
+                  <lookup path="@name"/>
+                </map>
+              </unique>
             </attr>
             <attr name="GlueSAAccessControlBaseRule"
                   not-empty="1"
@@ -770,11 +770,11 @@
                       name="unit-to-VO">
                 <lookup path="@name"/>
               </map>
-	      <unique>
-		<map name="unit-to-VO">
-		  <lookup path="@name"/>
-		</map>
-	      </unique>
+              <unique>
+                <map name="unit-to-VO">
+                  <lookup path="@name"/>
+                </map>
+              </unique>
             </attr>
 
 
@@ -916,11 +916,11 @@
                   <lookup path="@name"/>
                 </map>
               </suppress>
-	      <unique>
-		<map name="unit-to-VO">
+              <unique>
+                <map name="unit-to-VO">
                   <lookup path="@name"/>
                 </map>
-	      </unique>
+              </unique>
             </attr>
 
             <attr select="d:units/d:store/d:read/d:unitref"
@@ -932,11 +932,11 @@
                   <lookup path="@name"/>
                 </map>
               </suppress>
-	      <unique>
-		<map name="unit-to-VO">
+              <unique>
+                <map name="unit-to-VO">
                   <lookup path="@name"/>
                 </map>
-	      </unique>
+              </unique>
             </attr>
 
             <attr select="d:units/d:store/d:write/d:unitref"
@@ -948,11 +948,11 @@
                   <lookup path="@name"/>
                 </map>
               </suppress>
-	      <unique>
-		<map name="unit-to-VO">
+              <unique>
+                <map name="unit-to-VO">
                   <lookup path="@name"/>
                 </map>
-	      </unique>
+              </unique>
             </attr>
 
             <attr name="GlueChunkKey">
@@ -1096,7 +1096,7 @@
                         default="0"
                         path="space/reserved"/>
               </scale>
-	    </attr>
+            </attr>
           </object>
 
 
@@ -1258,7 +1258,7 @@
                 list="SRM-supported-VOs">VO:<item/></attr>
 
 
-	  <!-- FTS ignores GlueServiceAccessControlBaseRule attributes.
+          <!-- FTS ignores GlueServiceAccessControlBaseRule attributes.
                This bug is described here:
 
                    https://savannah.cern.ch/bugs/?57827
@@ -1335,7 +1335,7 @@
 
       <attr name="GlueSESizeFree">
         <scale to-integer="round" factor="bytes-to-gigabytes">
-	  <!-- Publish Free as free + removable -->
+          <!-- Publish Free as free + removable -->
           <sum>
             <term>
               <lookup default="0"
