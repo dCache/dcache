@@ -1435,7 +1435,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
         @Override
         public void storageInfoAvailable(){
-            if( _getStorageInfo.getFileAttributes().getFileType() != FileType.REGULAR ) {
+            if( !_getStorageInfo.getMetaData().isRegularFile() ) {
                 sendReply( "storageInfoAvailable" , CacheException.NOT_FILE,
                         "path is not a regular file", "EINVAL" ) ;
                 removeUs();
