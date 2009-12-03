@@ -290,7 +290,7 @@ public class PoolV4
         } else if (lfs.equals("precious") || lfs.equals("")){
             _lfsMode = LFS_PRECIOUS;
         } else if (lfs.equals("volatile") || lfs.equals("transient")) {
-            _lfsMode = LFS_PRECIOUS;
+            _lfsMode = LFS_VOLATILE;
         } else {
             throw new IllegalArgumentException("lfs=[none|precious|volatile]");
         }
