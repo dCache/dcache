@@ -38,6 +38,7 @@ import org.dcache.acl.enums.FileAttribute;
 
 import javax.security.auth.Subject;
 import org.apache.log4j.Logger;
+import org.dcache.namespace.FileType;
 
 /**
  * @author Patrick Fuhrmann
@@ -1102,24 +1103,22 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         public void keepAlive(){
             _log.debug("Keep alived called for : "+this);
         }
-        protected void sendReply( String tag , int rc , String msg ){
+
+        protected void sendReply( String tag , int rc , String msg){
+            sendReply(tag, rc, msg, "");
+        }
+
+        protected void sendReply( String tag , int rc , String msg , String posixErr){
 
             String problem = null ;
             _info.setTransactionTime( System.currentTimeMillis()-_timestamp);
             if( rc == 0 ){
-                problem = ""+_sessionId+
-                " "+_commandId+
-                " "+_vargs.getName()+
-                " ok"   ;
-
-                _log.debug( tag+" : "+problem ) ;
+                problem = String.format("%d %d %s ok", _sessionId, _commandId, _vargs.getName());
+               _log.debug( tag+" : "+problem ) ;
             }else{
-                problem = ""+_sessionId+
-                " "+_commandId+
-                " "+_vargs.getName()+
-                " failed "+rc +
-                " \""+msg+"\""  ;
-
+                problem = String.format("%d %d %s failed %d \"%s\" %s",
+                        _sessionId, _commandId, _vargs.getName(),
+                        rc, msg, posixErr);
                 _log.error( tag+" : "+problem ) ;
                 _info.setResult( rc , msg ) ;
             }
@@ -1436,6 +1435,12 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
         @Override
         public void storageInfoAvailable(){
+            if( _getStorageInfo.getFileAttributes().getFileType() != FileType.REGULAR ) {
+                sendReply( "storageInfoAvailable" , CacheException.NOT_FILE,
+                        "path is not a regular file", "EINVAL" ) ;
+                removeUs();
+                return;
+            }
             //
             // we are not called if the pnfs request failed.
             //
