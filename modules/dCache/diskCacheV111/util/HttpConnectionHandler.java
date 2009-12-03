@@ -182,9 +182,11 @@ public class HttpConnectionHandler
     sb.append("Location: ").append(redirectURI).append('\n');
     sb.append("Connection: close");
     sb.append('\n').append('\n');
-    System.out.println("returning header :"+sb.toString());
+    if(_log.isTraceEnabled()){
+        _log.trace("returning header :"+sb.toString());
+    }
     out.write(sb.toString());
-    System.out.println("returned");
+    _log.trace("returned");
     out.flush();
     closeconnection();
   }
