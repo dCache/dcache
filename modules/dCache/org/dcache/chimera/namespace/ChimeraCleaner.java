@@ -10,6 +10,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -719,9 +720,17 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
                 if( o instanceof String[] ) {
                     String[] notRemoved = (String[])o;
                     // find out which files were successfully removed from the pool and store them in 'okRemoved'
-                    Collection<String> okRemoved_coll = Arrays.asList(_filesToRemove);
+                    Collection<String> filesToBeRemoved = Arrays.asList(_filesToRemove); //A
+                    Collection<String> filesNotRemoved = Arrays.asList(notRemoved); //B
+                    Collection<String> okRemoved_coll = new ArrayList<String>(); //C
 
-                    okRemoved_coll.removeAll(Arrays.asList(notRemoved));
+                    Iterator<String> iter = filesToBeRemoved.iterator();
+                    while(iter.hasNext()) {
+                        String currentFile = iter.next();
+                        if ( !filesNotRemoved.contains(currentFile) ){
+                            okRemoved_coll.add(currentFile);  //C=A-B
+                        }
+                    }
 
                     String[] okRemoved = okRemoved_coll.toArray(new String[okRemoved_coll.size()]);
                     removeFiles(_poolName, okRemoved);
