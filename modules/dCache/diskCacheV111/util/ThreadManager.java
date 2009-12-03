@@ -482,9 +482,16 @@ import org.apache.log4j.NDC;
        throws IllegalArgumentException {}
 
     public int getCurrentThreadCount() { return 0;}
-    public int getMaxThreadCount() {return 0;}
+    public int getMaxThreadCount() {
+        return ThreadManager.getExecutor().getMaximumPoolSize();
+    }
     public int getWaitingThreadCount() {return 0;}
 
     public void setMaxThreadCount( int maxThreadCount )
-        throws IllegalArgumentException {}
+        throws IllegalArgumentException {
+
+        ThreadManager.THREAD_COUNT = maxThreadCount;
+        ThreadManager.getExecutor().setCorePoolSize(THREAD_COUNT);
+        ThreadManager.getExecutor().setMaximumPoolSize(THREAD_COUNT);
+    }
 }
