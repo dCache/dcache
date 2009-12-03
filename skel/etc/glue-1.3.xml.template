@@ -166,6 +166,38 @@
         +-->
     <list name="SRM-GlueServiceOwners">
     </list>
+
+
+    <!--+
+        |  The store unit *@* is special.  It's not a wildcard "match-all"
+        |  unit but rather a default store unit.  It matches all requests
+        |  that have no other store unit matches.  Requests that utilise
+        |  some part of the namespace where no store unit is defined will
+        |  take the *@* (or "default") store unit.
+        |
+        |  A site may choose to configure store units for all parts of the
+        |  namespace that a VO can access; if so, then that requests from
+        |  that VO's members will always have some specific store unit and
+        |  will never utilise the *@* default store unit.
+        |
+        |  If requests from a VO's members may use some part of the namespace
+        |  where no store unit is defined then those requests will utilise
+        |  the *@* default store unit.
+        |
+        |  Those VOs whos members can issue requests that attract the
+        |  *@* default store unit should be present in the following
+        |  list.  Any VO listed in this list must also have a corresponding
+        |  entry in the "VO-to-path" mapping below.
+        |
+        |  Here is an example of the list:
+        |
+        |       <list name="default-store-unit-VOs">
+        |         <item>dteam</item>
+        |         <item>ops</item>
+        |       </list>
+        +-->
+    <list name="default-store-unit-VOs">
+    </list>
   </lists>
 
 
@@ -628,6 +660,11 @@
                 </map>
               </suppress>
 
+              <!-- Don't publish the default store-units here -->
+              <suppress test="*@*" check="is">
+                <lookup path="@name"/>
+              </suppress>
+
               <!-- Avoid publishing anything that doesn't have a VO -->
               <suppress test="" check="is">
                 <map name="unit-to-VO">
@@ -645,8 +682,7 @@
                 </map>
               </unique>
 
-              <attr name="GlueVOInfoLocalID">
-                <lookup path="@name"/>
+              <attr name="GlueVOInfoLocalID">store-unit-<lookup path="@name"/>
               </attr>
 
               <attr name="GlueVOInfoPath">
@@ -671,6 +707,36 @@
             </object>
 
 
+            <!-- Publish a VOInfo object for VOs in default store units -->
+            <object rdn="GlueVOInfoLocalID"
+                    list="default-store-unit-VOs"
+                    classes="GlueVOInfo GlueSchemaVersion GlueKey">
+
+              <!-- Suppress publishing if *@* cannot write -->
+              <suppress test="">
+                <lookup path="d:units/d:store/d:write/d:unitref[@name='*@*']/@name"/>
+              </suppress>
+
+              <attr name="GlueVOInfoLocalID">default-store-<item/></attr>
+
+              <attr name="GlueVOInfoPath">
+                <map name="VO-to-path">
+                  <item/>
+                </map>
+              </attr>
+
+              <attr name="GlueChunkKey">
+                <parent-rdn rdn="GlueSALocalID"/>
+              </attr>
+
+              <attr name="GlueChunkKey">
+                <parent-rdn rdn="GlueSEUniqueID"/>
+              </attr>
+
+              <attr name="GlueVOInfoAccessControlBaseRule">VO:<item/></attr>
+            </object>
+
+
             <attr name="GlueSALocalID">nas-<map name="GlueSALocalID-BDII-workaround">
                 <lookup path="@id"/>
               </map>
@@ -692,6 +758,8 @@
                   <lookup path="@name"/>
                 </map>
               </suppress>
+              <!-- Don't publish the default store-unit here -->
+              <suppress test="*@*"><lookup path="@name"/></suppress>
               <unique>
                 <map name="unit-to-VO">
                   <lookup path="@name"/>
@@ -709,6 +777,8 @@
                   <lookup path="@name"/>
                 </map>
               </suppress>
+              <!-- Don't publish the default store-unit here -->
+              <suppress test="*@*"><lookup path="@name"/></suppress>
               <unique>
                 <map name="unit-to-VO">
                   <lookup path="@name"/>
@@ -726,12 +796,35 @@
                   <lookup path="@name"/>
                 </map>
               </suppress>
+              <!-- Don't publish the default store-unit here -->
+              <suppress test="*@*"><lookup path="@name"/></suppress>
               <unique>
                 <map name="unit-to-VO">
                   <lookup path="@name"/>
                 </map>
               </unique>
             </attr>
+
+            <!-- publish *@* VOs, if appropriate -->
+            <attr name="GlueSAAccessControlBaseRule"
+                  list="default-store-unit-VOs">VO:<item/>
+              <suppress test="">
+                <lookup path="d:units/d:store/d:read/d:unitref[@name='*@*']/@name"/>
+              </suppress>
+            </attr>
+            <attr name="GlueSAAccessControlBaseRule"
+                  list="default-store-unit-VOs">VO:<item/>
+              <suppress test="">
+                <lookup path="d:units/d:store/d:write/d:unitref[@name='*@*']/@name"/>
+              </suppress>
+            </attr>
+            <attr name="GlueSAAccessControlBaseRule"
+                  list="default-store-unit-VOs">VO:<item/>
+              <suppress test="">
+                <lookup path="d:units/d:store/d:stage/d:unitref[@name='*@*']/@name"/>
+              </suppress>
+            </attr>
+
 
             <!-- We repeat publishing the access rules with the deprecated
                  format as a work-around for a bug present in:
@@ -746,6 +839,8 @@
                     name="unit-to-VO">
                 <lookup path="@name"/>
               </map>
+              <!-- Don't publish the default store-unit here -->
+              <suppress test="*@*"><lookup path="@name"/></suppress>
               <unique>
                 <map name="unit-to-VO">
                   <lookup path="@name"/>
@@ -758,6 +853,8 @@
                     name="unit-to-VO">
                 <lookup path="@name"/>
               </map>
+              <!-- Don't publish the default store-unit here -->
+              <suppress test="*@*"><lookup path="@name"/></suppress>
               <unique>
                 <map name="unit-to-VO">
                   <lookup path="@name"/>
@@ -770,6 +867,8 @@
                       name="unit-to-VO">
                 <lookup path="@name"/>
               </map>
+              <!-- Don't publish the default store-unit here -->
+              <suppress test="*@*"><lookup path="@name"/></suppress>
               <unique>
                 <map name="unit-to-VO">
                   <lookup path="@name"/>
@@ -777,6 +876,29 @@
               </unique>
             </attr>
 
+            <!-- Again, publish the *@* VOs separately, if appropriate, but this
+                 time without the "VO:" prefix -->
+            <attr name="GlueSAAccessControlBaseRule"
+                  list="default-store-unit-VOs">
+              <item/>
+              <suppress test="">
+                <lookup path="d:units/d:store/d:read/d:unitref[@name='*@*']/@name"/>
+              </suppress>
+            </attr>
+            <attr name="GlueSAAccessControlBaseRule"
+                  list="default-store-unit-VOs">
+              <item/>
+              <suppress test="">
+                <lookup path="d:units/d:store/d:write/d:unitref[@name='*@*']/@name"/>
+              </suppress>
+            </attr>
+            <attr name="GlueSAAccessControlBaseRule"
+                  list="default-store-unit-VOs">
+              <item/>
+              <suppress test="">
+                <lookup path="d:units/d:store/d:stage/d:unitref[@name='*@*']/@name"/>
+              </suppress>
+            </attr>
 
             <!-- Publish a hard-coded ReservedOnlineSize of zero since
                  this is a "Storage Area representing an unreserved
@@ -907,11 +1029,14 @@
 
             <attr name="GlueSACapability">InstalledNearlineCapacity=0</attr>
 
+            <!-- Publish some dCache-specific information -->
             <attr select="d:units/d:store/d:stage/d:unitref"
                   name="GlueSACapability">dCacheCanStage=VO:<map
                     name="unit-to-VO">
                 <lookup path="@name"/>
               </map>
+              <!-- Don't publish the default store-unit here -->
+              <suppress test="*@*"><lookup path="@name"/></suppress>
               <suppress test=""><map name="unit-to-VO">
                   <lookup path="@name"/>
                 </map>
@@ -922,12 +1047,21 @@
                 </map>
               </unique>
             </attr>
+            <attr name="GlueSACapability"
+                  list="default-store-unit-VOs">dCacheCanStage=VO:<item/>
+              <suppress test="">
+                <lookup path="d:units/d:store/d:stage/d:unitref[@name='*@*']/@name"/>
+              </suppress>
+            </attr>
+
 
             <attr select="d:units/d:store/d:read/d:unitref"
                   name="GlueSACapability">dCacheCanRead=VO:<map
                     name="unit-to-VO">
                 <lookup path="@name"/>
               </map>
+              <!-- Don't publish the default store-unit here -->
+              <suppress test="*@*"><lookup path="@name"/></suppress>
               <suppress test=""><map name="unit-to-VO">
                   <lookup path="@name"/>
                 </map>
@@ -937,6 +1071,12 @@
                   <lookup path="@name"/>
                 </map>
               </unique>
+            </attr>
+            <attr name="GlueSACapability"
+                  list="default-store-unit-VOs">dCacheCanRead=VO:<item/>
+              <suppress test="">
+                <lookup path="d:units/d:store/d:read/d:unitref[@name='*@*']/@name"/>
+              </suppress>
             </attr>
 
             <attr select="d:units/d:store/d:write/d:unitref"
@@ -944,6 +1084,8 @@
                     name="unit-to-VO">
                 <lookup path="@name"/>
               </map>
+              <!-- Don't publish the default store-unit here -->
+              <suppress test="*@*"><lookup path="@name"/></suppress>
               <suppress test=""><map name="unit-to-VO">
                   <lookup path="@name"/>
                 </map>
@@ -953,6 +1095,12 @@
                   <lookup path="@name"/>
                 </map>
               </unique>
+            </attr>
+            <attr name="GlueSACapability"
+                  list="default-store-unit-VOs">dCacheCanWrite=VO:<item/>
+              <suppress test="">
+                <lookup path="d:units/d:store/d:write/d:unitref[@name='*@*']/@name"/>
+              </suppress>
             </attr>
 
             <attr name="GlueChunkKey">
