@@ -129,7 +129,7 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
 
             }
 
-            String tmp = _args.getOpt("processFilesAtOnce");
+            String tmp = _args.getOpt("processFilesPerRun");
             if (tmp != null) {
                 try {
                     _processAtOnce = Integer.parseInt(tmp);
