@@ -46,10 +46,10 @@ public class SrmSetPermission {
 	SrmSetPermissionRequest  request;
 	SrmSetPermissionResponse response;
 	SRMUser              user;
-	
+
 	public SrmSetPermission(SRMUser user,
 				RequestCredential credential,
-				SrmSetPermissionRequest request, 
+				SrmSetPermissionRequest request,
 				AbstractStorageElement storage,
 				org.dcache.srm.SRM srm,
 				String client_host ) {
@@ -57,7 +57,7 @@ public class SrmSetPermission {
 		this.user    = user;
 		this.storage = storage;
 	}
-	
+
 	public SrmSetPermissionResponse getResponse() {
 		if(response != null ) return response;
 		try {
@@ -76,7 +76,7 @@ public class SrmSetPermission {
 	public static final SrmSetPermissionResponse getFailedResponse(String error) {
 		return getFailedResponse(error,null);
 	}
-        
+
 	public static final SrmSetPermissionResponse getFailedResponse(String error,TStatusCode statusCode) {
 		if(statusCode == null) {
 			statusCode =TStatusCode.SRM_FAILURE;
@@ -93,7 +93,7 @@ public class SrmSetPermission {
 	/**
 	 * implementation of srm set permission
 	 */
-	
+
 	public SrmSetPermissionResponse srmSetPermission() throws SRMException,
                 MalformedURIException {
 		SrmSetPermissionResponse response  = new SrmSetPermissionResponse();
@@ -105,16 +105,16 @@ public class SrmSetPermission {
 		}
 		URI uri = request.getSURL();
 		String path = uri.getPath(true,true);
-		int indx = path.indexOf(SFN_STRING); 
-		if (indx!=-1) { 
+		int indx = path.indexOf(SFN_STRING);
+		if (indx!=-1) {
 			path=path.substring(indx+SFN_STRING.length());
 		}
-		try { 
+		try {
 			FileMetaData fmd= storage.getFileMetaData(user,path);
 			String owner    = fmd.owner;
 			int permissions = fmd.permMode;
 			int groupid = Integer.parseInt(fmd.group);
-			if (!fmd.isOwner(user)) { 
+			if (!fmd.isOwner(user)) {
 				return getFailedResponse("user "+user+" does not own file "+request.getSURL()+" Can't set permission",TStatusCode.SRM_AUTHORIZATION_FAILURE);
 			}
 			TPermissionType permissionType = request.getPermissionType();
@@ -122,16 +122,16 @@ public class SrmSetPermission {
 			ArrayOfTUserPermission arrayOfUserPermissions = request.getArrayOfUserPermissions();
 			ArrayOfTGroupPermission arrayOfGroupPermissions = request.getArrayOfGroupPermissions();
 			TPermissionMode otherPermission = request.getOtherPermission();
-			TGroupPermission groupPermission = null;				
-			if (arrayOfUserPermissions  != null ) { 
+			TGroupPermission groupPermission = null;
+			if (arrayOfUserPermissions  != null ) {
 				return getFailedResponse("ACLs are not supported by the dCACHE",TStatusCode.SRM_NOT_SUPPORTED);
 			}
 			if (arrayOfGroupPermissions!=null &&
 			    arrayOfGroupPermissions.getGroupPermissionArray()!=null &&
-			    arrayOfGroupPermissions.getGroupPermissionArray().length>1) { 
+			    arrayOfGroupPermissions.getGroupPermissionArray().length>1) {
 				return getFailedResponse("ACLs are not supported by the dCACHE",TStatusCode.SRM_NOT_SUPPORTED);
 			}
-			if (arrayOfGroupPermissions!=null && 
+			if (arrayOfGroupPermissions!=null &&
 			    arrayOfGroupPermissions.getGroupPermissionArray()!=null) {
 				if (arrayOfGroupPermissions.getGroupPermissionArray()[0]!=null) {
 					groupPermission=arrayOfGroupPermissions.getGroupPermissionArray()[0];
@@ -143,45 +143,45 @@ public class SrmSetPermission {
 			int requestOwner=iowner;
 			int requestGroup=igroup;
 			int requestOther=iother;
-			if (permissionType==TPermissionType.REMOVE) { 
+			if (permissionType==TPermissionType.REMOVE) {
 				requestOwner=0;
 				requestGroup=0;
 				requestOther=0;
 			}
-			if ( ownerPermission != null ) { 
+			if ( ownerPermission != null ) {
 			    requestOwner = PermissionMaskToTPermissionMode.permissionModetoMask(ownerPermission);
 			}
-			if ( otherPermission != null ) { 
-			    requestOther  = PermissionMaskToTPermissionMode.permissionModetoMask(otherPermission);	
+			if ( otherPermission != null ) {
+			    requestOther  = PermissionMaskToTPermissionMode.permissionModetoMask(otherPermission);
 			}
 			if ( groupPermission != null ) {
 			    requestGroup =PermissionMaskToTPermissionMode.permissionModetoMask(groupPermission.getMode());
 			}
 
-			if (permissionType==TPermissionType.CHANGE) { 
+			if (permissionType==TPermissionType.CHANGE) {
 			    iowner=requestOwner;
 			    igroup=requestGroup;
 			    iother=requestOther;
 			}
-			else if (permissionType==TPermissionType.ADD) { 
+			else if (permissionType==TPermissionType.ADD) {
 			    iowner|=requestOwner;
 			    igroup|=requestGroup;
 			    iother|=requestOther;
 			}
-			else if (permissionType==TPermissionType.REMOVE) { 
+			else if (permissionType==TPermissionType.REMOVE) {
 				if (requestGroup!=0) igroup^=requestGroup;
 				if (requestOther!=0) iother^=requestOther;
 				if (requestOwner!=0) iowner^=requestOwner;
 // 				if (groupPermission != null) igroup=0;
 // 				if (otherPermission != null) iother=0;
 			}
-			if ((permissionType==TPermissionType.ADD||permissionType==TPermissionType.CHANGE)) {  
+			if ((permissionType==TPermissionType.ADD||permissionType==TPermissionType.CHANGE)) {
 				if (ownerPermission==null && otherPermission==null && groupPermission==null ) {
 					ownerPermission = TPermissionMode.R;
-					otherPermission = TPermissionMode.R;	
+					otherPermission = TPermissionMode.R;
 					iowner =PermissionMaskToTPermissionMode.permissionModetoMask(ownerPermission);
 					iother =PermissionMaskToTPermissionMode.permissionModetoMask(otherPermission);
-					if (arrayOfGroupPermissions!=null && 
+					if (arrayOfGroupPermissions!=null &&
 					    arrayOfGroupPermissions.getGroupPermissionArray()!=null) {
 						if (arrayOfGroupPermissions.getGroupPermissionArray()[0]==null) {
 							groupPermission=new TGroupPermission(fmd.group,TPermissionMode.R);
@@ -194,7 +194,7 @@ public class SrmSetPermission {
 
 			int newPermissions = ((iowner<<6)|(igroup<<3))|iother;
 			fmd.permMode=newPermissions;
-			try { 
+			try {
 			    storage.setFileMetaData(user,fmd);
 			}
 			catch (SRMException e) {

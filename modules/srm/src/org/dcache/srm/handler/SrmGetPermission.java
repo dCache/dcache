@@ -31,14 +31,14 @@ import org.apache.axis.types.URI.MalformedURIException;
  */
 
 public class SrmGetPermission {
-        private static Logger logger = 
+        private static Logger logger =
                 Logger.getLogger(SrmGetPermission.class);
 	private final static String SFN_STRING="?SFN=";
 	AbstractStorageElement storage;
 	SrmGetPermissionRequest request;
 	SrmGetPermissionResponse response;
 	SRMUser user;
-	
+
 	public SrmGetPermission(SRMUser user,
 				RequestCredential credential,
 				SrmGetPermissionRequest request,
@@ -49,7 +49,7 @@ public class SrmGetPermission {
 		this.user = user;
 		this.storage = storage;
 	}
-    
+
 	public SrmGetPermissionResponse getResponse() {
 		if(response != null ) return response;
 		try {
@@ -64,11 +64,11 @@ public class SrmGetPermission {
         }
 		return response;
 	}
-	
+
 	public static final SrmGetPermissionResponse getFailedResponse(String error) {
 		return getFailedResponse(error,null);
 	}
-	
+
 	public static final SrmGetPermissionResponse getFailedResponse(String error,TStatusCode statusCode) {
 		if(statusCode == null) {
 			statusCode =TStatusCode.SRM_FAILURE;
@@ -80,12 +80,12 @@ public class SrmGetPermission {
 		response.setReturnStatus(status);
 		return response;
 	}
-	
-	
+
+
 	/**
 	 * implementation of srm get permission
 	 */
-	
+
 	public SrmGetPermissionResponse srmGetPermission() throws SRMException,
             MalformedURIException {
 		SrmGetPermissionResponse response  = new SrmGetPermissionResponse();
@@ -99,7 +99,7 @@ public class SrmGetPermission {
 		ArrayOfAnyURI anyuriarray = request.getArrayOfSURLs();
 		URI[] uriarray            = anyuriarray.getUrlArray();
 		int length = uriarray.length;
-		if (length==0) { 
+		if (length==0) {
 			return getFailedResponse(" zero length array of URLS");
 		}
 		String path[]=new String[length];
@@ -157,19 +157,19 @@ public class SrmGetPermission {
 			}
 		}
 		response.setArrayOfPermissionReturns(permissionarray);
-		if ( haveFailure ) { 
-			if ( nfailed == length ) { 
+		if ( haveFailure ) {
+			if ( nfailed == length ) {
 				response.getReturnStatus().setStatusCode(TStatusCode.SRM_FAILURE);
 				response.getReturnStatus().setExplanation("failed to get Permission for all requested surls");
 			}
-			else { 
+			else {
 				response.getReturnStatus().setStatusCode(TStatusCode.SRM_PARTIAL_SUCCESS);
 				response.getReturnStatus().setExplanation("failed to get Permission for at least one file");
-				
+
 			}
 			return response;
 		}
-		
+
 		response.getReturnStatus().setStatusCode(TStatusCode.SRM_SUCCESS);
 		response.getReturnStatus().setExplanation("success");
 		return response;

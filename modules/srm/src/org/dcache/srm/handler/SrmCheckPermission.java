@@ -59,10 +59,10 @@ public class SrmCheckPermission {
 	SrmCheckPermissionRequest request;
 	SrmCheckPermissionResponse response;
 	SRMUser user;
-	
+
 	public SrmCheckPermission(SRMUser user,
 				  RequestCredential credential,
-				  SrmCheckPermissionRequest request, 
+				  SrmCheckPermissionRequest request,
 				  AbstractStorageElement storage,
 				  org.dcache.srm.SRM srm,
 				  String client_host ) {
@@ -70,12 +70,12 @@ public class SrmCheckPermission {
 		this.user = user;
 		this.storage = storage;
 	}
-	
+
 	public SrmCheckPermissionResponse getResponse() {
 		if(response != null ) return response;
 		try {
 			response = srmCheckPermission();
-		} 
+		}
 		catch(Exception e) {
 			logger.error(e);
 		}
@@ -85,7 +85,7 @@ public class SrmCheckPermission {
 	public static final SrmCheckPermissionResponse getFailedResponse(String error) {
 		return getFailedResponse(error,null);
 	}
-        
+
 	public static final SrmCheckPermissionResponse getFailedResponse(String error,TStatusCode statusCode) {
 		if(statusCode == null) {
 			statusCode =TStatusCode.SRM_FAILURE;
@@ -102,8 +102,8 @@ public class SrmCheckPermission {
 	/**
 	 * implementation of srm check permission
 	 */
-	
-	public SrmCheckPermissionResponse srmCheckPermission() 
+
+	public SrmCheckPermissionResponse srmCheckPermission()
 		throws SRMException,org.apache.axis.types.URI.MalformedURIException {
 		SrmCheckPermissionResponse response  = new SrmCheckPermissionResponse();
 		TReturnStatus returnStatus           = new TReturnStatus();
@@ -115,9 +115,9 @@ public class SrmCheckPermission {
 		}
 		ArrayOfAnyURI anyuriarray=request.getArrayOfSURLs();
 		String authorizationID=request.getAuthorizationID();
-		URI[] uriarray=anyuriarray.getUrlArray();	
+		URI[] uriarray=anyuriarray.getUrlArray();
 		int length=uriarray.length;
-		if (length==0) { 
+		if (length==0) {
 			return getFailedResponse(" zero length array of URLS");
 		}
 		String[] path=new String[length];
@@ -133,26 +133,26 @@ public class SrmCheckPermission {
 			pr.setSurl(uriarray[i]);
 			logger.debug("SURL["+i+"]= "+uriarray[i]);
 			path[i] = uriarray[i].getPath(true,true);
-			int indx    = path[i].indexOf(SFN_STRING);	
-			if(indx != -1) { 
+			int indx    = path[i].indexOf(SFN_STRING);
+			if(indx != -1) {
 				path[i]=path[i].substring(indx+SFN_STRING.length());
 			}
-			try { 
+			try {
 				FileMetaData fmd=storage.getFileMetaData(user,path[i]);
 				int permissions = fmd.permMode;
 				TPermissionMode pm  = TPermissionMode.NONE;
-				if (fmd.isOwner(user)) { 
+				if (fmd.isOwner(user)) {
 					pm = PermissionMaskToTPermissionMode.maskToTPermissionMode(((permissions>>6)&0x7));
 				}
-				else if (fmd.isGroupMember(user)) { 
+				else if (fmd.isGroupMember(user)) {
 					pm = PermissionMaskToTPermissionMode.maskToTPermissionMode(((permissions>>3)&0x7));
 				}
-				else { 
+				else {
 					pm = PermissionMaskToTPermissionMode.maskToTPermissionMode((permissions&0x7));
 				}
 				pr.setPermission(pm);
 			}
-			catch (SRMException srme) { 
+			catch (SRMException srme) {
 				logger.warn(srme);
 				pr.getStatus().setStatusCode(TStatusCode.SRM_FAILURE);
 				pr.getStatus().setExplanation(uriarray[i]+" "+srme.getMessage());
@@ -163,12 +163,12 @@ public class SrmCheckPermission {
 			}
 		}
 		response.setArrayOfPermissions(arrayOfPermissions);
-		if ( nfailed!=0) { 
-			if ( nfailed == length ) { 
+		if ( nfailed!=0) {
+			if ( nfailed == length ) {
 				response.getReturnStatus().setStatusCode(TStatusCode.SRM_FAILURE);
 				response.getReturnStatus().setExplanation("failed to check Permission for all requested surls");
 			}
-			else { 
+			else {
 				response.getReturnStatus().setStatusCode(TStatusCode.SRM_PARTIAL_SUCCESS);
 				response.getReturnStatus().setExplanation("failed to check Permission for at least one file");
 			}
