@@ -64,8 +64,8 @@ public class UserAuthRecordTest {
 
         int uid = 3750;
         boolean readOnly = false;
-        String fqan1 = "Role1";
-        String fqan2 = "Role2";
+        String fqan1 = "/Desy.org/Role=Role1";
+        String fqan2 = "/Desy.org/Role=Role2";
         String user = "tigran";
         String DN = "/";
         HashSet<String> principals = new HashSet<String>();

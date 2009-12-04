@@ -65,6 +65,25 @@ public class FQAN implements java.io.Serializable {
         return getMatcher().group(3);
     }
 
+    @Override
+    public int hashCode() {
+        return fqan.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object testFQAN) {
+        if (testFQAN == this) {
+            return true;
+        }
+        if (!(testFQAN instanceof FQAN)){
+            return false;
+        }
+        FQAN otherFQAN = (FQAN) testFQAN;
+        return this.fqan.equals(otherFQAN.fqan);
+    }
+
+
+
     /**
      * @param args the command line arguments
      */
