@@ -7,28 +7,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -41,10 +41,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -54,10 +54,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -107,26 +107,26 @@ import org.dcache.srm.SRMInvalidRequestException;
 public final class BringOnlineFileRequest extends FileRequest {
     private final static Logger logger =
             Logger.getLogger(BringOnlineFileRequest.class);
-    
+
     // the globus url class created from surl_string
     private GlobusURL surl;
     private String pinId;
     private String fileId;
     private transient FileMetaData fileMetaData;
-    
+
     private static final long serialVersionUID = -9155373723705753177L;
-    
+
     /** Creates new FileRequest */
     public BringOnlineFileRequest(Long requestId,
     Long  requestCredentalId,
     String url,
     long lifetime,
     int maxNumberOfRetries
-    
+
     ) throws Exception {
         super(requestId,
-                requestCredentalId, 
-                lifetime, 
+                requestCredentalId,
+                lifetime,
                 maxNumberOfRetries);
         logger.debug("BringOnlineFileRequest, requestId="+requestId+" fileRequestId = "+getId());
         try {
@@ -136,13 +136,13 @@ public final class BringOnlineFileRequest extends FileRequest {
         catch(MalformedURLException murle) {
             throw new IllegalArgumentException(murle.toString());
         }
-        
+
     }
     /**
      * restore constructore, used for restoring the existing
      * file request from the database
      */
-    
+
     public BringOnlineFileRequest(
     Long id,
     Long nextJobId,
@@ -173,28 +173,28 @@ public final class BringOnlineFileRequest extends FileRequest {
         schedulerTimeStamp,
         numberOfRetries,
         maxNumberOfRetries,
-        lastStateTransitionTime, 
+        lastStateTransitionTime,
         jobHistoryArray,
         requestId,
         requestCredentalId,
         statusCodeString);
-        
+
         try {
             this.surl = new GlobusURL(SURL);
         }
         catch(MalformedURLException murle) {
             throw new IllegalArgumentException(murle.toString());
         }
-        
+
         if(fileId != null && (!fileId.equalsIgnoreCase("null"))) {
             this.fileId = fileId;
         }
-        
+
         if(pinId != null && (!pinId.equalsIgnoreCase("null"))) {
             this.pinId = pinId;
         }
     }
-    
+
     public void setPinId(String pinId) {
         wlock();
         try {
@@ -203,7 +203,7 @@ public final class BringOnlineFileRequest extends FileRequest {
             wunlock();
         }
     }
-    
+
     public String getPinId() {
         rlock();
         try {
@@ -212,7 +212,7 @@ public final class BringOnlineFileRequest extends FileRequest {
             runlock();
         }
     }
-    
+
     public boolean isPinned() {
         rlock();
         try {
@@ -222,14 +222,14 @@ public final class BringOnlineFileRequest extends FileRequest {
         }
 
     }
-    
-    
-    
+
+
+
     public String getPath() {
         return getPath(getSurl());
     }
-    
-    
+
+
     public GlobusURL getSurl() {
         rlock();
         try {
@@ -238,8 +238,8 @@ public final class BringOnlineFileRequest extends FileRequest {
             runlock();
         }
     }
-    
-    
+
+
     public String getSurlString() {
         rlock();
         try {
@@ -248,7 +248,7 @@ public final class BringOnlineFileRequest extends FileRequest {
             runlock();
         }
     }
-    
+
     public String getFileId() {
         rlock();
         try {
@@ -257,8 +257,8 @@ public final class BringOnlineFileRequest extends FileRequest {
             runlock();
         }
     }
-    
-    
+
+
     public RequestFileStatus getRequestFileStatus(){
         RequestFileStatus rfs;
         if(fileMetaData != null) {
@@ -267,16 +267,16 @@ public final class BringOnlineFileRequest extends FileRequest {
         else {
             rfs = new RequestFileStatus();
         }
-        
+
         rfs.fileId = getId().intValue();
         rfs.SURL = getSurlString();
-        
-        
+
+
         if(this.isPinned()) {
             rfs.isPinned = true;
             rfs.isCached = true;
         }
-        
+
         State state = getState();
         if(state == State.DONE) {
             rfs.state = "Done";
@@ -294,33 +294,33 @@ public final class BringOnlineFileRequest extends FileRequest {
         else {
             rfs.state = "Pending";
         }
-        
+
         //logger.debug(" returning requestFileStatus for "+rfs.toString());
         return rfs;
     }
-    
-    public TBringOnlineRequestFileStatus  getTGetRequestFileStatus() 
+
+    public TBringOnlineRequestFileStatus  getTGetRequestFileStatus()
     throws java.sql.SQLException, SRMInvalidRequestException{
         TBringOnlineRequestFileStatus fileStatus = new TBringOnlineRequestFileStatus();
         if(fileMetaData != null) {
             fileStatus.setFileSize(new org.apache.axis.types.UnsignedLong(fileMetaData.size));
         }
-         
+
         try {
              fileStatus.setSourceSURL(new URI(getSurlString()));
         } catch (Exception e) {
             logger.error(e);
             throw new java.sql.SQLException("wrong surl format");
         }
-        
+
         if(this.isPinned()) {
-            
+
             fileStatus.setRemainingPinTime(new Integer((int)(getRemainingLifetime()/1000)));
         }
         fileStatus.setEstimatedWaitTime(new Integer((int)(getRequest().getRetryDeltaTime())));
         TReturnStatus returnStatus = getReturnStatus();
         fileStatus.setStatus(returnStatus);
-        
+
         return fileStatus;
     }
 
@@ -388,7 +388,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                 }
             }
             logger.debug("fileId = "+getFileId());
-            
+
             if(getPinId() == null) {
 
                 // do not check explicitely if we can read the file
@@ -407,12 +407,12 @@ public final class BringOnlineFileRequest extends FileRequest {
         }
         logger.info("PinId is "+getPinId()+" returning, scheduler should change" +
             " state to \"Ready\"");
-        
+
     }
-    
+
     public void askFileId() throws NonFatalJobFailure, FatalJobFailure {
         try {
-            
+
             logger.debug(" proccessing the file request id "+getId());
             String  path =   getPath();
             logger.debug(" path is "+path);
@@ -420,7 +420,7 @@ public final class BringOnlineFileRequest extends FileRequest {
             //(not in ftp root for example) this will throw exception
             // we do not care about the return value yet
             logger.debug("calling Job.getJob("+requestId+")");
-            BringOnlineRequest request = (BringOnlineRequest) 
+            BringOnlineRequest request = (BringOnlineRequest)
                 Job.getJob(requestId);
             logger.debug("this file request's request is  "+request);
             //this will fail if the protocols are not supported
@@ -457,10 +457,10 @@ public final class BringOnlineFileRequest extends FileRequest {
             throw new NonFatalJobFailure(e.toString());
         }
     }
-    
+
     public void pinFile() throws NonFatalJobFailure, FatalJobFailure {
         try {
-            
+
             PinCallbacks callbacks = new ThePinCallbacks(getId());
             logger.info("storage.pinFile("+getFileId()+",...)");
             long desiredPinLifetime =
@@ -470,10 +470,10 @@ public final class BringOnlineFileRequest extends FileRequest {
                 desiredPinLifetime *= 1000;
             }
 
-            getStorage().pinFile(getUser(), 
+            getStorage().pinFile(getUser(),
                 getFileId(),getRequest().getClient_host(),
-                fileMetaData, 
-                desiredPinLifetime, 
+                fileMetaData,
+                desiredPinLifetime,
                 getRequestId().longValue() ,
                 callbacks);
         }
@@ -482,7 +482,7 @@ public final class BringOnlineFileRequest extends FileRequest {
             throw new NonFatalJobFailure(e.toString());
         }
     }
-    
+
     protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
         State state = getState();
         logger.debug("State changed from "+oldState+" to "+getState());
@@ -508,7 +508,7 @@ public final class BringOnlineFileRequest extends FileRequest {
             }
         }
     }
-    
+
     public TSURLReturnStatus releaseFile() throws SRMInvalidRequestException {
         TSURLReturnStatus surlReturnStatus = new TSURLReturnStatus();
         TReturnStatus returnStatus = new TReturnStatus();
@@ -536,13 +536,13 @@ public final class BringOnlineFileRequest extends FileRequest {
            return surlReturnStatus;
 
         }
-        
+
         if(getFileId() != null && getPinId() != null) {
             TheUnpinCallbacks callbacks = new TheUnpinCallbacks(this.getId());
             logger.debug("srmReleaseFile, unpinning fileId= "+
                     getFileId()+" pinId = "+getPinId());
             getStorage().unPinFile(getUser(),getFileId(),callbacks, getPinId());
-            try {   
+            try {
                 callbacks.waitCompleteion(60000); //one minute
                 if(callbacks.success) {
                     setPinId(null);
@@ -554,8 +554,8 @@ public final class BringOnlineFileRequest extends FileRequest {
             } catch( InterruptedException ie) {
                 logger.error(ie);
             }
-            
-           
+
+
            returnStatus.setExplanation(" srmReleaseFile failed: "+callbacks.getError());
            returnStatus.setStatusCode(TStatusCode.SRM_FAILURE);
            surlReturnStatus.setStatus(returnStatus);
@@ -567,13 +567,13 @@ public final class BringOnlineFileRequest extends FileRequest {
            return surlReturnStatus;
 
         }
-        
-        
+
+
     }
 
     public TReturnStatus getReturnStatus() {
         TReturnStatus returnStatus = new TReturnStatus();
-        
+
         State state = getState();
  	returnStatus.setExplanation(state.toString());
 
@@ -602,8 +602,8 @@ public final class BringOnlineFileRequest extends FileRequest {
         else if(state == State.TQUEUED ) {
             returnStatus.setStatusCode(TStatusCode.SRM_REQUEST_QUEUED);
         }
-        else if(state == State.RUNNING || 
-                state == State.RQUEUED || 
+        else if(state == State.RUNNING ||
+                state == State.RQUEUED ||
                 state == State.ASYNCWAIT ) {
             returnStatus.setStatusCode(TStatusCode.SRM_REQUEST_INPROGRESS);
         }
@@ -614,7 +614,7 @@ public final class BringOnlineFileRequest extends FileRequest {
     }
 
     /**
-     * 
+     *
      * @param newLifetime  new lifetime in millis
      *  -1 stands for infinite lifetime
      * @return int lifetime left in millis
@@ -632,8 +632,8 @@ public final class BringOnlineFileRequest extends FileRequest {
         if(remainingLifetime >= newLifetime) {
             return remainingLifetime;
         }
-        
-        newLifetime = extendLifetimeMillis(newLifetime);   
+
+        newLifetime = extendLifetimeMillis(newLifetime);
         if(remainingLifetime >= newLifetime) {
             return remainingLifetime;
         }
@@ -663,20 +663,20 @@ public final class BringOnlineFileRequest extends FileRequest {
             wunlock();
         }
     }
-    
-    
-    
+
+
+
     private  static class GetCallbacks implements GetFileInfoCallbacks
-    
+
     {
-        
+
         Long fileRequestJobId;
-        
+
         public GetCallbacks(Long fileRequestJobId) {
             this.fileRequestJobId = fileRequestJobId;
         }
-        
-        private BringOnlineFileRequest getBringOnlineFileRequest()   
+
+        private BringOnlineFileRequest getBringOnlineFileRequest()
                 throws java.sql.SQLException, SRMInvalidRequestException {
             Job job = Job.getJob(fileRequestJobId);
             if(job != null) {
@@ -684,7 +684,7 @@ public final class BringOnlineFileRequest extends FileRequest {
             }
             return null;
         }
-        
+
         public void FileNotFound(String reason) {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
@@ -703,7 +703,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                 logger.error(e);
             }
         }
-        
+
         public void Error( String error) {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
@@ -719,7 +719,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                 logger.error(e);
             }
         }
-        
+
         public void Exception( Exception e) {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
@@ -735,7 +735,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                 logger.error(e1);
             }
         }
-        
+
         public void GetStorageInfoFailed(String reason) {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
@@ -745,18 +745,18 @@ public final class BringOnlineFileRequest extends FileRequest {
                 catch(IllegalStateTransition ist) {
                     logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
-                
+
                 logger.error("GetCallbacks error: "+ reason);
             }
             catch(Exception e) {
                 logger.error(e);
             }
-            
+
         }
-        
-        
-        
-        public void StorageInfoArrived(String fileId,FileMetaData fileMetaData) {            
+
+
+
+        public void StorageInfoArrived(String fileId,FileMetaData fileMetaData) {
             try {
                 if (fileMetaData.isDirectory) {
                     FileNotFound("Path is a directory");
@@ -768,7 +768,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                 synchronized(fr) {
                     state = fr.getState();
                 }
-                
+
                 if(state == State.ASYNCWAIT || state == State.RUNNING) {
                     fr.setFileId(fileId);
                     fr.fileMetaData = fileMetaData;
@@ -782,15 +782,15 @@ public final class BringOnlineFileRequest extends FileRequest {
                         }
                     }
                 }
-                
+
             }
             catch(Exception e) {
                 logger.error(e);
             }
-            
+
         }
-        
-        
+
+
         public void Timeout() {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
@@ -800,26 +800,26 @@ public final class BringOnlineFileRequest extends FileRequest {
                 catch(IllegalStateTransition ist) {
                     logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
-                
+
                 logger.error("GetCallbacks Timeout");
             }
             catch(Exception e) {
                 logger.error(e);
             }
         }
-        
+
     }
-    
-    
+
+
     private  static class ThePinCallbacks implements PinCallbacks {
-        
+
         Long fileRequestJobId;
-        
+
         public ThePinCallbacks(Long fileRequestJobId) {
             this.fileRequestJobId = fileRequestJobId;
         }
-        
-        public BringOnlineFileRequest getBringOnlineFileRequest() 
+
+        public BringOnlineFileRequest getBringOnlineFileRequest()
                 throws java.sql.SQLException, SRMInvalidRequestException {
             Job job = Job.getJob(fileRequestJobId);
             if(job != null) {
@@ -827,7 +827,7 @@ public final class BringOnlineFileRequest extends FileRequest {
             }
             return null;
         }
-        
+
         public void Error( String error) {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
@@ -843,7 +843,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                 logger.error(e);
             }
         }
-        
+
         public void Exception( Exception e) {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
@@ -859,10 +859,10 @@ public final class BringOnlineFileRequest extends FileRequest {
                 logger.error(e1);
             }
         }
-        
-        
-        
-        
+
+
+
+
         public void Timeout() {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
@@ -872,14 +872,14 @@ public final class BringOnlineFileRequest extends FileRequest {
                 catch(IllegalStateTransition ist) {
                     logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
-                
+
                 logger.error("GetCallbacks Timeout");
             }
             catch(Exception e) {
                 logger.error(e);
             }
         }
-        
+
         public void Pinned(String pinId) {
             try {
                BringOnlineFileRequest fr = getBringOnlineFileRequest();
@@ -899,7 +899,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                 logger.warn("Illegal State Transition : " +ist.getMessage());
             }
         }
-        
+
         public void PinningFailed(String reason) {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
@@ -909,25 +909,25 @@ public final class BringOnlineFileRequest extends FileRequest {
                 catch(IllegalStateTransition ist) {
                     logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
-                
+
                 logger.error("ThePinCallbacks error: "+ reason);
             }
             catch(Exception e) {
                 logger.error(e);
             }
         }
-        
+
     }
-    
+
     private static class TheUnpinCallbacks implements UnpinCallbacks {
-        
+
         Long fileRequestJobId;
-        
+
         public TheUnpinCallbacks(Long fileRequestJobId) {
             this.fileRequestJobId = fileRequestJobId;
         }
-        
-        public BringOnlineFileRequest getBringOnlineFileRequest() 
+
+        public BringOnlineFileRequest getBringOnlineFileRequest()
                 throws java.sql.SQLException, SRMInvalidRequestException {
             if(fileRequestJobId != null) {
                 Job job = Job.getJob(fileRequestJobId);
@@ -937,12 +937,12 @@ public final class BringOnlineFileRequest extends FileRequest {
             }
             return null;
         }
-        
+
         public void Error( String error) {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
                 /*
-                 * unpin is called when the file request  is already 
+                 * unpin is called when the file request  is already
                  * in a final state
                  */
                 /*
@@ -965,12 +965,12 @@ public final class BringOnlineFileRequest extends FileRequest {
                 done();
             }
         }
-        
+
         public void Exception( Exception e) {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
                 /*
-                 * unpin is called when the file request  is already 
+                 * unpin is called when the file request  is already
                  * in a final state
                  */
                 /*
@@ -993,15 +993,15 @@ public final class BringOnlineFileRequest extends FileRequest {
                 done();
             }
         }
-        
-        
-        
-        
+
+
+
+
         public void Timeout() {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
                 /*
-                 * unpin is called when the file request  is already 
+                 * unpin is called when the file request  is already
                  * in a final state
                  */
                 /*
@@ -1012,21 +1012,21 @@ public final class BringOnlineFileRequest extends FileRequest {
                     //logger.error("can not fail state:"+ist);
                 }
                  */
-                
+
                 this.error = "TheUninCallbacks Timeout";
                 if(fr  != null) {
                     logger.error(this.error);
                }
                 success = false;
                 done();
-                
+
             }
             catch(Exception e) {
                 logger.error(e);
                 done();
             }
         }
-        
+
         public void Unpinned(String pinId) {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
@@ -1052,12 +1052,12 @@ public final class BringOnlineFileRequest extends FileRequest {
                 done();
             }
         }
-        
+
         public void UnpinningFailed(String reason) {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
                 /*
-                 * unpin is called when the file request  is already 
+                 * unpin is called when the file request  is already
                  * in a final state
                  */
                 /*
@@ -1068,7 +1068,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                     //logger.error("can not fail state:"+ist);
                 }
                  */
-                
+
                 this.error = "TheUnpinCallbacks error: "+ reason;
                 if(fr  != null) {
                     logger.error(this.error);
@@ -1082,11 +1082,11 @@ public final class BringOnlineFileRequest extends FileRequest {
                 done();
             }
         }
-        
+
         private boolean done = false;
         private boolean success  = true;
         private String error;
-        
+
         public boolean isSuccess() {
             return done && success;
         }
@@ -1108,7 +1108,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                 }
             }
         }
-        
+
         public  synchronized void done() {
             done = true;
             notifyAll();
@@ -1116,43 +1116,43 @@ public final class BringOnlineFileRequest extends FileRequest {
 
         public java.lang.String getError() {
             return error;
-        }      
-        
+        }
+
         public boolean isDone() {
             return done;
         }
 
-        
+
     }
     public static void unpinBySURLandRequestId(
         AbstractStorageElement storage,
-        final SRMUser user, 
+        final SRMUser user,
         final long id,
         final String surl_string) throws SRMException, MalformedURLException {
         GlobusURL surl = new GlobusURL(surl_string);
         String path = FileRequest.getPath(surl);
-        
+
         FileMetaData fmd =
             storage.getFileMetaData(user,path);
         String fileId = fmd.fileId;
         if(fileId != null) {
-            BringOnlineFileRequest.TheUnpinCallbacks unpinCallbacks = 
+            BringOnlineFileRequest.TheUnpinCallbacks unpinCallbacks =
                 new BringOnlineFileRequest.TheUnpinCallbacks(null);
             storage.unPinFileBySrmRequestId(user,
                 fileId,unpinCallbacks,id);
-          try {   
+          try {
                 unpinCallbacks.waitCompleteion(60000); //one minute
                 if(unpinCallbacks.isDone()) {
-                    
+
                     if(unpinCallbacks.isSuccess()) {
                         return;
-                    } else 
+                    } else
                     throw new SRMException("unpinning of "+surl_string+" by SrmRequestId "+id+
                         " failed :"+unpinCallbacks.getError());
                 } else {
                     throw new SRMException("unpinning of "+surl_string+" by SrmRequestId "+id+
                         " took too long");
-                    
+
                 }
             } catch( InterruptedException ie) {
                 logger.error(ie);
@@ -1164,21 +1164,21 @@ public final class BringOnlineFileRequest extends FileRequest {
 
     public static void unpinBySURL(
         AbstractStorageElement storage,
-        final SRMUser user, 
-        final String surl_string) 
-        throws SRMException, 
+        final SRMUser user,
+        final String surl_string)
+        throws SRMException,
             MalformedURLException {
         GlobusURL surl = new GlobusURL(surl_string);
-        String path = FileRequest.getPath(surl);        
+        String path = FileRequest.getPath(surl);
         FileMetaData fmd =
             storage.getFileMetaData(user,path);
         String fileId = fmd.fileId;
         if(fileId != null) {
-            BringOnlineFileRequest.TheUnpinCallbacks unpinCallbacks = 
+            BringOnlineFileRequest.TheUnpinCallbacks unpinCallbacks =
                 new BringOnlineFileRequest.TheUnpinCallbacks(null);
             storage.unPinFile(user,
                 fileId,unpinCallbacks);
-          try {   
+          try {
                 unpinCallbacks.waitCompleteion(60000); //one minute
                 if(unpinCallbacks.isDone()) {
                     if(unpinCallbacks.isSuccess()) {

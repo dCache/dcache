@@ -7,28 +7,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -41,10 +41,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -54,10 +54,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -109,7 +109,7 @@ import org.apache.log4j.Logger;
 public final class CopyRequest extends ContainerRequest implements PropertyChangeListener {
     private final static Logger logger =
             Logger.getLogger(CopyRequest.class);
-    
+
     private boolean from_url_is_srm;
     private boolean to_url_is_srm;
     private boolean from_url_is_gsiftp;
@@ -119,7 +119,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
     private SrmUrl from_urls[];
     private SrmUrl to_urls[];
     private int number_of_file_reqs;
-    
+
     private String[] protocols;
     private SRMProtocol callerSrmProtocol;
     private SRMProtocol remoteSrmProtocol;
@@ -133,7 +133,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
     private transient final OneToManyMap remoteSurlToFileReqIds = new OneToManyMap();
     private transient TurlGetterPutter getter_putter;
     private transient QOSPlugin qosPlugin = null;
-    
+
     public CopyRequest( SRMUser user,
     Long requestCredentialId,
     String[] from_urls,
@@ -148,7 +148,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
     TAccessLatency targetAccessLatency,
     String description,
     String client_host,
-    TOverwriteMode overwriteMode 
+    TOverwriteMode overwriteMode
     ) throws Exception{
         super(user,
             requestCredentialId,
@@ -158,7 +158,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                 description,
                 client_host);
         java.util.ArrayList prot_list = new java.util.ArrayList(4);
-                
+
         if(getConfiguration().isUseGsiftpForSrmCopy()) {
             prot_list.add("gsiftp");
         }
@@ -171,7 +171,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
         if(getConfiguration().isUseFtpForSrmCopy()) {
             prot_list.add("ftp");
         }
-        
+
         protocols = (String[]) prot_list.toArray(new String[0]);
         int reqs_num = from_urls.length;
         if(reqs_num != to_urls.length) {
@@ -182,7 +182,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
         }
         fileRequests = new FileRequest[reqs_num];
         for(int i = 0; i<reqs_num; ++i) {
-            CopyFileRequest fileRequest = 
+            CopyFileRequest fileRequest =
                 new CopyFileRequest(getId(),
                 requestCredentialId,from_urls[i],to_urls[i],
                 spaceToken,
@@ -200,7 +200,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
         storeInSharedMemory();
         logger.debug("Request.createCopyRequest : created new request succesfully");
     }
-    
+
     /**
      * restore constructor
      */
@@ -239,18 +239,18 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
         schedulerTimeStamp,
         numberOfRetries,
         maxNumberOfRetries,
-        lastStateTransitionTime, 
+        lastStateTransitionTime,
         jobHistoryArray,
         credentialId,
         fileRequest,
-        retryDeltaTime, 
+        retryDeltaTime,
         should_updateretryDeltaTime,
         description,
         client_host,
         statusCodeString);
-        
+
         java.util.ArrayList prot_list = new java.util.ArrayList(4);
-        
+
         if(getConfiguration().isUseGsiftpForSrmCopy()) {
             prot_list.add("gsiftp");
         }
@@ -263,7 +263,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
         if(getConfiguration().isUseFtpForSrmCopy()) {
             prot_list.add("ftp");
         }
-        
+
         protocols = (String[]) prot_list.toArray(new String[0]);
         if (getConfiguration().getQosPluginClass()!=null)
         	this.qosPlugin = QOSPluginFactory.createInstance(getConfiguration());
@@ -273,17 +273,17 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
      }
 
 
-    
+
     public int getNumOfFileRequest() {
         if(fileRequests == null) {
             return 0;
         }
         return fileRequests.length;
     }
-    
-    
+
+
     public void proccessRequest()  throws java.sql.SQLException,Exception {
-        
+
         logger.debug("Proccessing request");
         if(fileRequests == null || fileRequests.length == 0) {
             try {
@@ -294,7 +294,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
             {
                 logger.error("Illegal State Transition : " +ist.getMessage());
             }
-            
+
         }
         setNumber_of_file_reqs(fileRequests.length);
         logger.debug("number_of_file_reqs = "+getNumber_of_file_reqs());
@@ -304,7 +304,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
             to_urls = new SrmUrl[getNumber_of_file_reqs()];
             for(int i = 0 ; i<getNumber_of_file_reqs();++i) {
                 CopyFileRequest cfr = (CopyFileRequest) fileRequests[i];
-            
+
                 from_urls[i] = new SrmUrl(cfr.getFromURL());
                 to_urls[i] = new SrmUrl(cfr.getToURL());
             }
@@ -325,7 +325,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
         identify();
         getTURLs();
     }
-    
+
     private void identify() throws IOException, SRMException {
         wlock();
         try {
@@ -424,8 +424,8 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
 		} catch(Exception e) {
 			logger.error("Could not create QOS reservation: "+e.getMessage());
 		}
-    } 
-    
+    }
+
     private void getTURLs() throws SRMException,
     IOException,InterruptedException,IllegalStateTransition ,java.sql.SQLException,
     org.dcache.srm.scheduler.FatalJobFailure {
@@ -434,7 +434,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
             // this means that the from url is remote srm url
             // and a "to" url is a local srm url
             if(getStorageType() != null && !storageType.equals(TFileStorageType.PERMANENT)) {
-                  throw new 
+                  throw new
                       org.dcache.srm.scheduler.FatalJobFailure(
                       "TargetFileStorageType "+getStorageType()+" is not supported");
             }
@@ -452,7 +452,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                     Scheduler.getScheduler(schedulerId).schedule(cfr);
                     continue;
                 }
- 
+
                 //Since "to" url has to be local srm, we can just set the local to path
                 remoteSurlToFileReqIds.put(getFrom_url(i).getURL(),fileRequests[i].getId());
                 logger.debug("getTurlsArrived, setting local \"to\" path to "+
@@ -492,17 +492,17 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                     getGetter_putter().getInitialRequest();
                     setRemoteSrmProtocol(SRMProtocol.V1_1);
                  }
-                 
+
              } else {
                  throw new org.dcache.srm.scheduler.FatalJobFailure("usupported srm protocol");
              }
-             
+
             getGetter_putter().run();
-             
+
              return;
-             
+
          }
-         
+
         if(isFrom_url_is_srm()) // from_url_is_local is true (nonlocal case handled above)
          {
              // this means that the from url is loacal srm url.
@@ -512,7 +512,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                     // copy file request has being canceled,failed or scheduled before
                     continue;
                 }
-                
+
                 if(cfr.getLocal_from_path() != null ) {
                     continue;
                 }
@@ -521,7 +521,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                 cfr.setLocal_from_path(
                 cfr.getFromPath());
                 cfr.saveJob();
-                
+
             }
         }
         else {
@@ -534,7 +534,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                     // copy file request has being canceled,failed or scheduled before
                     continue;
                 }
-                
+
                 if(cfr.getFrom_turl() != null ) {
                     continue;
                 }
@@ -542,13 +542,13 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                 getFrom_url(i).getURL());
                 cfr.setFrom_turl(getFrom_url(i));
                 cfr.saveJob();
-                
+
             }
-            
+
         }
-        
+
         // now "from" turl or local path is known, need to handle the "to" part
-        
+
         if(isTo_url_is_srm() &&  isTo_url_is_local()) {
             //this means that we either local "from" srm url or
             // non local "from" turl, and we have local to srm
@@ -559,7 +559,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                     // copy file request has being canceled,failed or scheduled before
                     continue;
                 }
-                
+
                 logger.debug("getTurlsArrived, setting local \"to\" path to "+
                 cfr.getToPath());
                 cfr.setLocal_to_path(
@@ -570,7 +570,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
             }
             return;
         }
-        
+
         if(!isTo_url_is_srm()) {
             // this means we have local from url and some "to" turl that is given
             // we have all info needed to proccede
@@ -591,23 +591,23 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
         }
         // the only case remaining is the local "from" srm url
         //the to url is a remote srm url -> need to discover "to" TURL
-        
+
         for(int i = 0;i<this.getNumber_of_file_reqs();++i) {
             CopyFileRequest cfr = (CopyFileRequest) fileRequests[i];
             if( cfr.getState()!= State.PENDING || cfr.getSchedulerId() != null) {
                 // copy file request has being canceled,failed or scheduled before
                 continue;
             }
-            
+
             if(cfr.getTo_turl() != null ) {
                 //to turl has arrived , but request has not been scheduled
                 Scheduler.getScheduler(schedulerId).schedule(cfr);
                 continue;
             }
-            
+
             remoteSurlToFileReqIds.put(getTo_url(i).getURL(),fileRequests[i].getId());
         }
-        
+
         String[] remoteSurlsUniqueArray =
         (String[]) remoteSurlToFileReqIds.keySet().toArray(new String[0]);
         int length = remoteSurlsUniqueArray.length;
@@ -623,7 +623,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
             if (getQosPlugin() != null)
              	makeQosReservation(i);
          }
-         
+
         setRemoteSrmGet(false);
          //need to put into the remote srm system
          RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
@@ -654,13 +654,13 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
          } else {
              throw new org.dcache.srm.scheduler.FatalJobFailure("usupported srm protocol");
          }
-         
+
          getGetter_putter().run();
          return;
     }
-    
+
     public void turlArrived(String SURL, String TURL,String remoteRequestId,String remoteFileId,Long size)  throws java.sql.SQLException {
-        
+
         synchronized(remoteSurlToFileReqIds) {
             Set fileRequestSet = remoteSurlToFileReqIds.getValues(SURL);
             if(fileRequestSet == null || fileRequestSet.isEmpty()) {
@@ -671,12 +671,12 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
             Date now = new Date();
             long t = now.getTime();
             for(int i = 0 ;i< cfr_ids.length;i++) {
-                
+
                 CopyFileRequest cfr  = (CopyFileRequest)getFileRequest(cfr_ids[i]);
                 if (getQosPlugin()!=null && cfr.getQOSTicket()!=null) {
 					getQosPlugin().sayStatus(cfr.getQOSTicket());
 				}
-                
+
                 try {
                     if( isFrom_url_is_srm() && ! isFrom_url_is_local()) {
                         cfr.setFrom_turl(new SrmUrl(TURL));
@@ -690,17 +690,17 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                     }
                 }
                 catch(MalformedURLException mue) {
-                    
+
                 }
                 cfr.setRemoteRequestId(remoteRequestId);
                 cfr.setRemoteFileId(remoteFileId);
                 cfr.saveJob();
-                
-                
+
+
                 try {
                     String theShedulerId = schedulerId;
                     State file_state = cfr.getState();
-                    if(theShedulerId != null && 
+                    if(theShedulerId != null &&
                         !(file_state == State.CANCELED || file_state == State.FAILED ||file_state == State.DONE) )
                     {
                         Scheduler.getScheduler(theShedulerId).schedule(cfr);
@@ -721,20 +721,20 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
             }
         }
     }
-    
+
     public void turlRetrievalFailed(String SURL, String reason,String remoteRequestId,String remoteFileId)  throws java.sql.SQLException {
-        
+
         synchronized(remoteSurlToFileReqIds) {
             Set fileRequestSet = remoteSurlToFileReqIds.getValues(SURL);
             if(fileRequestSet == null || fileRequestSet.isEmpty()) {
                 logger.error("turlArrived for unknown SURL = "+SURL);
                 return;
-            } 
+            }
             Long[] cfr_ids = (Long[])fileRequestSet.toArray(new Long[0]);
             for(int i = 0 ;i< cfr_ids.length;i++) {
-                
+
                 CopyFileRequest cfr  = (CopyFileRequest)getFileRequest(cfr_ids[i]);
-                
+
                 try {
                     String error;
                     if( isFrom_url_is_srm() && ! isFrom_url_is_local()) {
@@ -750,14 +750,14 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                     logger.error("Illegal State Transition : " +ist.getMessage());
                 }
                 cfr.saveJob();
-                
+
                 remoteSurlToFileReqIds.remove(SURL,cfr_ids[i]);
             }
         }
         remoteFileRequestDone(SURL,remoteRequestId,remoteFileId);
 
     }
-    
+
     public void turlsRetrievalFailed(Object reason)  throws java.sql.SQLException {
         synchronized(remoteSurlToFileReqIds) {
             String SURLs[] = (String[] )remoteSurlToFileReqIds.keySet().toArray(new String[0]);
@@ -790,7 +790,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
             }
         }
     }
-    
+
     public void remoteFileRequestDone(String SURL,
     String remoteRequestIdString,
     String remoteFileIdString) {
@@ -807,18 +807,18 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                     if(isRemoteSrmGet())
                     {
                        RemoteTurlGetterV2.staticReleaseFile(getCredential(),
-                               SURL, 
+                               SURL,
                                remoteRequestIdString,
                            getConfiguration().getCopyRetryTimeout(),
                            getConfiguration().getCopyMaxNumOfRetries());
                     } else {
-                        RemoteTurlPutterV2.staticPutDone(getCredential(), 
-                               SURL, 
-                               remoteRequestIdString, 
+                        RemoteTurlPutterV2.staticPutDone(getCredential(),
+                               SURL,
+                               remoteRequestIdString,
                            getConfiguration().getCopyRetryTimeout(),
                            getConfiguration().getCopyMaxNumOfRetries());
                     }
-                    
+
                 } else {
                     logger.error("unknown or null callerSrmProtocol");
                 }
@@ -829,9 +829,9 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
             }
         }
     }
-    
-    
-    
+
+
+
     public final CopyFileRequest getFileRequestBySurls(String fromurl,String tourl)
     throws java.sql.SQLException, SRMException{
         if(fromurl == null || tourl == null) {
@@ -847,22 +847,22 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
         " and to url="+tourl +" is not found");
     }
 
-    
+
     public String getMethod() {
         return "Copy";
     }
-    
+
     //we want to stop handler if the
     //the request is ready (all file reqs are ready), since all copy transfers are
     // competed by now
     public boolean shouldStopHandlerIfReady() {
         return true;
     }
-    
+
    private volatile boolean processingDone = false;
 
    private static final long serialVersionUID = 7528188091894319055L;
-   
+
     public void run() throws org.dcache.srm.scheduler.NonFatalJobFailure, org.dcache.srm.scheduler.FatalJobFailure {
         if(isProcessingDone())
         {
@@ -879,7 +879,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                     done = false;
                 }
             }
-            
+
             setProcessingDone(true);
             if(done) {
                 setState(State.DONE,"all file request completed");
@@ -899,11 +899,11 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
         }
 
     }
-    
+
     protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
         State state = getState();
         if(State.isFinalState(state)) {
-            
+
             TurlGetterPutter a_getter_putter = getGetter_putter();
             if(a_getter_putter != null) {
                 logger.error("copyRequest getter_putter is non null, stopping");
@@ -925,16 +925,16 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                     logger.error("Illegal State Transition : " +ist.getMessage());
                 }
             }
-           
+
         }
-            
+
     }
-    
+
     public void propertyChange(java.beans.PropertyChangeEvent evt) {
         logger.debug("propertyChange");
         try {
             if(evt instanceof TURLsArrivedEvent) {
-                
+
                 TURLsArrivedEvent tae = (TURLsArrivedEvent) evt;
                 String SURL = tae.getSURL();
                 String TURL = tae.getTURL();
@@ -942,7 +942,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                 String remoteFileId = tae.getFileRequestId();
                 Long size= tae.getSize();
                 turlArrived(SURL, TURL, remoteRequestId,remoteFileId,size);
-                
+
             }
             else if (evt instanceof TURLsGetFailedEvent)
             {
@@ -958,21 +958,21 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                 RequestFailedEvent rfe = (RequestFailedEvent)evt;
                 Object reason = rfe.getReason();
                 turlsRetrievalFailed(reason);
-                
+
             }
-                
+
         }catch(Exception e) {
             logger.error(e);
         }
     }
-    
+
     public void fileRequestCompleted()
     {
         resetRetryDeltaTime();
 
         if(isProcessingDone())
         {
-            
+
             try
             {
                 boolean done = true;
@@ -983,7 +983,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                         done = false;
                     }
                 }
-                
+
                 State state = getState();
                 if(!State.isFinalState(state)) {
                     if(done) {
@@ -1010,36 +1010,36 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
         }
     }
 
-	public final SrmCopyResponse getSrmCopyResponse()  
+	public final SrmCopyResponse getSrmCopyResponse()
 		throws SRMException ,java.sql.SQLException {
 		SrmCopyResponse response = new SrmCopyResponse();
 		response.setReturnStatus(getTReturnStatus());
 		response.setRequestToken(getTRequestToken());
-                ArrayOfTCopyRequestFileStatus arrayOfTCopyRequestFileStatus = 
+                ArrayOfTCopyRequestFileStatus arrayOfTCopyRequestFileStatus =
                     new ArrayOfTCopyRequestFileStatus();
                 arrayOfTCopyRequestFileStatus.setStatusArray(
                     getArrayOfTCopyRequestFileStatuses(null,null));
 		response.setArrayOfFileStatuses(arrayOfTCopyRequestFileStatus);
 		return response;
 	}
-    
+
 
 	private String getTRequestToken() {
                 return getId().toString();
 	}
 
 	public final TCopyRequestFileStatus[]  getArrayOfTCopyRequestFileStatuses(
-        String[] fromurls,String[] tourls) 
+        String[] fromurls,String[] tourls)
 		throws SRMException, java.sql.SQLException {
             if(fromurls != null) {
-               if(tourls == null || 
+               if(tourls == null ||
                   fromurls.length != tourls.length ) {
                       throw new SRMException("incompatible fromurls and tourls arrays");
 
                }
             }
             int len = fromurls == null ? getNumOfFileRequest():fromurls.length;
-            TCopyRequestFileStatus[] copyRequestFileStatuses = 
+            TCopyRequestFileStatus[] copyRequestFileStatuses =
              new TCopyRequestFileStatus[len];
             if(fromurls == null) {
                 for(int i = 0; i< len; ++i) {
@@ -1056,16 +1056,16 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
             return copyRequestFileStatuses;
         }
 
-	public final SrmStatusOfCopyRequestResponse getSrmStatusOfCopyRequest()   
+	public final SrmStatusOfCopyRequestResponse getSrmStatusOfCopyRequest()
 		throws SRMException, java.sql.SQLException {
                 return getSrmStatusOfCopyRequest(null,null);
 	}
 
-	public final SrmStatusOfCopyRequestResponse getSrmStatusOfCopyRequest(String[] fromurls,String[] tourls)  
+	public final SrmStatusOfCopyRequestResponse getSrmStatusOfCopyRequest(String[] fromurls,String[] tourls)
 		throws SRMException, java.sql.SQLException {
 		SrmStatusOfCopyRequestResponse response = new SrmStatusOfCopyRequestResponse();
 		response.setReturnStatus(getTReturnStatus());
-                ArrayOfTCopyRequestFileStatus arrayOfTCopyRequestFileStatus = 
+                ArrayOfTCopyRequestFileStatus arrayOfTCopyRequestFileStatus =
                     new ArrayOfTCopyRequestFileStatus();
                 arrayOfTCopyRequestFileStatus.setStatusArray(
                     getArrayOfTCopyRequestFileStatuses(fromurls,tourls));
@@ -1087,7 +1087,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
         throw new SRMException("file request for url ="+surl+
         " is not found");
     }
-        
+
     public final TSURLReturnStatus[] getArrayOfTSURLReturnStatus(String[] surls) throws SRMException, java.sql.SQLException {
         int len ;
         TSURLReturnStatus[] surlLReturnStatuses;
@@ -1194,7 +1194,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
         }
         this.overwriteMode = overwriteMode;
     }
-    
+
     public boolean isOverwrite() {
         if(getConfiguration().isOverwrite()) {
             if(getOverwriteMode() == null) {

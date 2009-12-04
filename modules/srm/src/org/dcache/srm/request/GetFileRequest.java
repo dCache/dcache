@@ -7,28 +7,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -41,10 +41,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -54,10 +54,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -104,7 +104,7 @@ import org.apache.log4j.Logger;
  */
 public final class GetFileRequest extends FileRequest {
     private final static Logger logger = Logger.getLogger(GetFileRequest.class);
-    
+
     // the globus url class created from surl_string
     private GlobusURL surl;
     private GlobusURL turl;
@@ -117,20 +117,20 @@ public final class GetFileRequest extends FileRequest {
      * scheduled
      */
     private transient FileMetaData fileMetaData;
-    
+
     private static final long serialVersionUID = -9155373723705753177L;
-    
+
     /** Creates new FileRequest */
     public GetFileRequest(Long requestId,
     Long  requestCredentalId,
     String url,
     long lifetime,
     int maxNumberOfRetries
-    
+
     ) throws Exception {
         super(requestId,
-            requestCredentalId, 
-            lifetime, 
+            requestCredentalId,
+            lifetime,
             maxNumberOfRetries);
         logger.debug("GetFileRequest, requestId="+requestId+" fileRequestId = "+getId());
         try {
@@ -140,13 +140,13 @@ public final class GetFileRequest extends FileRequest {
         catch(MalformedURLException murle) {
             throw new IllegalArgumentException(murle.toString());
         }
-        
+
     }
     /**
      * restore constructore, used for restoring the existing
      * file request from the database
      */
-    
+
     public GetFileRequest(
     Long id,
     Long nextJobId,
@@ -178,12 +178,12 @@ public final class GetFileRequest extends FileRequest {
         schedulerTimeStamp,
         numberOfRetries,
         maxNumberOfRetries,
-        lastStateTransitionTime, 
+        lastStateTransitionTime,
         jobHistoryArray,
         requestId,
         requestCredentalId,
         statusCodeString);
-        
+
         try {
             this.surl = new GlobusURL(SURL);
             if(TURL != null && (!TURL.equalsIgnoreCase("null"))) {
@@ -193,16 +193,16 @@ public final class GetFileRequest extends FileRequest {
         catch(MalformedURLException murle) {
             throw new IllegalArgumentException(murle.toString());
         }
-        
+
         if(fileId != null && (!fileId.equalsIgnoreCase("null"))) {
             this.fileId = fileId;
         }
-        
+
         if(pinId != null && (!pinId.equalsIgnoreCase("null"))) {
             this.pinId = pinId;
         }
     }
-        
+
     public void setPinId(String pinId) {
         wlock();
         try {
@@ -211,7 +211,7 @@ public final class GetFileRequest extends FileRequest {
             wunlock();
         }
     }
-    
+
     public String getPinId() {
         rlock();
         try {
@@ -220,7 +220,7 @@ public final class GetFileRequest extends FileRequest {
             runlock();
         }
     }
-    
+
     public boolean isPinned() {
         rlock();
         try {
@@ -229,9 +229,9 @@ public final class GetFileRequest extends FileRequest {
             runlock();
         }
     }
-    
-    
-    
+
+
+
     private final String getPath() {
         String path;
 
@@ -241,20 +241,20 @@ public final class GetFileRequest extends FileRequest {
         } finally {
             runlock();
         }
-        
+
         int indx=path.indexOf(SFN_STRING);
         if( indx != -1) {
-            
+
             path=path.substring(indx+SFN_STRING.length());
         }
-        
+
         if(!path.startsWith("/")) {
             path = "/"+path;
         }
         return path;
     }
-    
-    
+
+
     private final GlobusURL getSurl() {
         rlock();
         try {
@@ -263,7 +263,7 @@ public final class GetFileRequest extends FileRequest {
             runlock();
         }
     }
-    
+
     private final GlobusURL getTurl() {
         rlock();
         try {
@@ -272,7 +272,7 @@ public final class GetFileRequest extends FileRequest {
             runlock();
         }
     }
-    
+
     public final String getSurlString() {
         rlock();
         try {
@@ -281,9 +281,9 @@ public final class GetFileRequest extends FileRequest {
             runlock();
         }
     }
-    
-    
-    
+
+
+
     public String getTurlString()  {
         wlock();
         try {
@@ -328,8 +328,8 @@ public final class GetFileRequest extends FileRequest {
         }
         return null;
     }
-    
-    
+
+
     public String getFileId() {
         rlock();
         try {
@@ -338,8 +338,8 @@ public final class GetFileRequest extends FileRequest {
             runlock();
         }
     }
-    
-    
+
+
     public RequestFileStatus getRequestFileStatus(){
         RequestFileStatus rfs;
         if(getFileMetaData() != null) {
@@ -348,17 +348,17 @@ public final class GetFileRequest extends FileRequest {
         else {
             rfs = new RequestFileStatus();
         }
-        
+
         rfs.fileId = getId().intValue();
         rfs.SURL = getSurlString();
-        
-        
-        
+
+
+
         if(this.isPinned()) {
             rfs.isPinned = true;
             rfs.isCached = true;
         }
-        
+
         State state = getState();
         rfs.TURL = getTurlString();
         if(state == State.DONE) {
@@ -377,25 +377,25 @@ public final class GetFileRequest extends FileRequest {
         else {
             rfs.state = "Pending";
         }
-        
+
         //logger.debug(" returning requestFileStatus for "+rfs.toString());
         return rfs;
     }
-    
-    public TGetRequestFileStatus getTGetRequestFileStatus() 
+
+    public TGetRequestFileStatus getTGetRequestFileStatus()
             throws java.sql.SQLException, SRMInvalidRequestException{
         TGetRequestFileStatus fileStatus = new TGetRequestFileStatus();
         if(getFileMetaData() != null) {
             fileStatus.setFileSize(new org.apache.axis.types.UnsignedLong(getFileMetaData().size));
         }
-         
+
         try {
              fileStatus.setSourceSURL(new URI(getSurlString()));
         } catch (Exception e) {
             logger.error(e);
             throw new java.sql.SQLException("wrong surl format");
         }
-        
+
         String turlstring = getTurlString();
         if(turlstring != null) {
             try {
@@ -404,16 +404,16 @@ public final class GetFileRequest extends FileRequest {
                 logger.error(e);
                 throw new java.sql.SQLException("wrong turl format");
             }
- 
+
         }
         if(this.isPinned()) {
-            
+
             fileStatus.setRemainingPinTime(new Integer((int)(getRemainingLifetime()/1000)));
         }
         fileStatus.setEstimatedWaitTime(new Integer((int)(getRequest().getRetryDeltaTime())));
         TReturnStatus returnStatus = getReturnStatus();
         fileStatus.setStatus(returnStatus);
-        
+
         return fileStatus;
     }
 
@@ -429,7 +429,7 @@ public final class GetFileRequest extends FileRequest {
         surlReturnStatus.setStatus(returnStatus);
         return surlReturnStatus;
     }
-    
+
     private GlobusURL getTURL() throws SRMException, java.sql.SQLException{
         String firstDcapTurl = null;
         GetRequest request = (GetRequest) Job.getJob(requestId);
@@ -456,9 +456,9 @@ public final class GetFileRequest extends FileRequest {
                 }
             }
         }
-        
+
         try {
-            
+
             String theTurl =getStorage().getGetTurl(getUser(),getPath(), firstDcapTurl);
             if(theTurl == null) {
                 return null;
@@ -469,7 +469,7 @@ public final class GetFileRequest extends FileRequest {
             return null;
         }
     }
-    
+
     @Override
     public void toString(StringBuilder sb, boolean longformat) {
         sb.append(" GetFileRequest ");
@@ -497,7 +497,7 @@ public final class GetFileRequest extends FileRequest {
             sb.append(getHistory());
         }
     }
-    
+
     public synchronized void run() throws NonFatalJobFailure, FatalJobFailure {
         logger.debug("run()");
         try {
@@ -524,7 +524,7 @@ public final class GetFileRequest extends FileRequest {
                 }
             }
             logger.debug("fileId = "+getFileId());
-            
+
             if(getPinId() == null) {
                 // do not check explicitely if we can read the file
                 // this is done by pnfs manager when we call askFileId()
@@ -540,12 +540,12 @@ public final class GetFileRequest extends FileRequest {
             throw new NonFatalJobFailure("Illegal State Transition : " +ist.getMessage());
         }
         logger.info("PinId is "+getPinId()+" returning, scheduler should change state to \"Ready\"");
-        
+
     }
-    
+
     public void askFileId() throws NonFatalJobFailure, FatalJobFailure {
         try {
-            
+
             logger.debug(" proccessing the file request id "+getId());
             String  path =   getPath();
             logger.debug(" path is "+path);
@@ -580,13 +580,13 @@ public final class GetFileRequest extends FileRequest {
             throw new NonFatalJobFailure(e.toString());
         }
     }
-    
+
     public void pinFile() throws NonFatalJobFailure, FatalJobFailure {
         try {
-            
+
             PinCallbacks callbacks = new ThePinCallbacks(getId());
             logger.info("storage.pinFile("+getFileId()+",...)");
-            getStorage().pinFile(getUser(), 
+            getStorage().pinFile(getUser(),
                 getFileId(),getRequest().getClient_host(), getFileMetaData(),
                 lifetime,
                     getRequestId().longValue() ,callbacks);
@@ -596,7 +596,7 @@ public final class GetFileRequest extends FileRequest {
             throw new NonFatalJobFailure(e.toString());
         }
     }
-    
+
     protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
         State state = getState();
         logger.debug("State changed from "+oldState+" to "+getState());
@@ -622,14 +622,14 @@ public final class GetFileRequest extends FileRequest {
             }
         }
     }
-    
+
     public TReturnStatus getReturnStatus() {
         TReturnStatus returnStatus = new TReturnStatus();
-        
+
         State state = getState();
-        
+
  	returnStatus.setExplanation(state.toString());
-        
+
         if(getStatusCode() != null) {
             returnStatus.setStatusCode(getStatusCode());
         } else if(state == State.DONE) {
@@ -651,8 +651,8 @@ public final class GetFileRequest extends FileRequest {
         else if(state == State.TQUEUED ) {
             returnStatus.setStatusCode(TStatusCode.SRM_REQUEST_QUEUED);
         }
-        else if(state == State.RUNNING || 
-                state == State.RQUEUED || 
+        else if(state == State.RUNNING ||
+                state == State.RQUEUED ||
                 state == State.ASYNCWAIT ) {
             returnStatus.setStatusCode(TStatusCode.SRM_REQUEST_INPROGRESS);
         }
@@ -664,7 +664,7 @@ public final class GetFileRequest extends FileRequest {
 
 
     /**
-     * 
+     *
      * @param newLifetime  new lifetime in millis
      *  -1 stands for infinite lifetime
      * @return int lifetime left in millis
@@ -682,8 +682,8 @@ public final class GetFileRequest extends FileRequest {
         if(remainingLifetime >= newLifetime) {
             return remainingLifetime;
         }
-        
-        newLifetime = extendLifetimeMillis(newLifetime);   
+
+        newLifetime = extendLifetimeMillis(newLifetime);
         if(remainingLifetime >= newLifetime) {
             return remainingLifetime;
         }
@@ -741,20 +741,20 @@ public final class GetFileRequest extends FileRequest {
             wunlock();
         }
     }
-    
 
-    
+
+
     private  static class GetCallbacks implements GetFileInfoCallbacks
-    
+
     {
-        
+
         Long fileRequestJobId;
-        
+
         public GetCallbacks(Long fileRequestJobId) {
             this.fileRequestJobId = fileRequestJobId;
         }
-        
-        private GetFileRequest getGetFileRequest() 
+
+        private GetFileRequest getGetFileRequest()
                 throws java.sql.SQLException, SRMInvalidRequestException {
             Job job = Job.getJob(fileRequestJobId);
             if(job != null) {
@@ -762,7 +762,7 @@ public final class GetFileRequest extends FileRequest {
             }
             return null;
         }
-        
+
         public void FileNotFound(String reason) {
             try {
                 GetFileRequest fr = getGetFileRequest();
@@ -780,7 +780,7 @@ public final class GetFileRequest extends FileRequest {
                 logger.error(e);
             }
         }
-  
+
         public void Error( String error) {
             try {
                 GetFileRequest fr = getGetFileRequest();
@@ -796,7 +796,7 @@ public final class GetFileRequest extends FileRequest {
                 logger.error(e);
             }
         }
-        
+
         public void Exception( Exception e) {
             try {
                 GetFileRequest fr = getGetFileRequest();
@@ -812,7 +812,7 @@ public final class GetFileRequest extends FileRequest {
                 logger.error(e1);
             }
         }
-        
+
         public void GetStorageInfoFailed(String reason) {
             try {
                 GetFileRequest fr = getGetFileRequest();
@@ -822,17 +822,17 @@ public final class GetFileRequest extends FileRequest {
                 catch(IllegalStateTransition ist) {
                     logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
-                
+
                 logger.error("GetCallbacks error: "+ reason);
             }
             catch(Exception e) {
                 logger.error(e);
             }
-            
+
         }
-        
-        
-        
+
+
+
         public void StorageInfoArrived(String fileId,FileMetaData fileMetaData) {
             try {
                 if (fileMetaData.isDirectory) {
@@ -846,7 +846,7 @@ public final class GetFileRequest extends FileRequest {
                 synchronized(fr) {
                     state = fr.getState();
                 }
-                
+
                 if(state == State.ASYNCWAIT || state == State.RUNNING) {
                     fr.setFileId(fileId);
                     fr.setFileMetaData(fileMetaData);
@@ -861,14 +861,14 @@ public final class GetFileRequest extends FileRequest {
                         }
                     }
                 }
-                
+
             }
             catch(Exception e) {
                 logger.error(e);
-            }            
+            }
         }
-        
-        
+
+
         public void Timeout() {
             try {
                 GetFileRequest fr = getGetFileRequest();
@@ -878,26 +878,26 @@ public final class GetFileRequest extends FileRequest {
                 catch(IllegalStateTransition ist) {
                     logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
-                
+
                 logger.error("GetCallbacks Timeout");
             }
             catch(Exception e) {
                 logger.error(e);
             }
         }
-        
+
     }
-    
-    
+
+
     private  static class ThePinCallbacks implements PinCallbacks {
-        
+
         Long fileRequestJobId;
-        
+
         public ThePinCallbacks(Long fileRequestJobId) {
             this.fileRequestJobId = fileRequestJobId;
         }
-        
-        public GetFileRequest getGetFileRequest() 
+
+        public GetFileRequest getGetFileRequest()
                 throws java.sql.SQLException,SRMInvalidRequestException  {
             Job job = Job.getJob(fileRequestJobId);
             if(job != null) {
@@ -905,7 +905,7 @@ public final class GetFileRequest extends FileRequest {
             }
             return null;
         }
-        
+
         public void Error( String error) {
             try {
                 GetFileRequest fr = getGetFileRequest();
@@ -921,7 +921,7 @@ public final class GetFileRequest extends FileRequest {
                 logger.error(e);
             }
         }
-        
+
         public void Exception( Exception e) {
             try {
                 GetFileRequest fr = getGetFileRequest();
@@ -937,10 +937,10 @@ public final class GetFileRequest extends FileRequest {
                 logger.error(e1);
             }
         }
-        
-        
-        
-        
+
+
+
+
         public void Timeout() {
             try {
                 GetFileRequest fr = getGetFileRequest();
@@ -950,14 +950,14 @@ public final class GetFileRequest extends FileRequest {
                 catch(IllegalStateTransition ist) {
                     logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
-                
+
                 logger.error("GetCallbacks Timeout");
             }
             catch(Exception e) {
                 logger.error(e);
             }
         }
-        
+
         public void Pinned(String pinId) {
             try {
                 GetFileRequest fr = getGetFileRequest();
@@ -983,7 +983,7 @@ public final class GetFileRequest extends FileRequest {
                 logger.error(e);
             }
         }
-        
+
         public void PinningFailed(String reason) {
             try {
                 GetFileRequest fr = getGetFileRequest();
@@ -993,25 +993,25 @@ public final class GetFileRequest extends FileRequest {
                 catch(IllegalStateTransition ist) {
                     logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
-                
+
                 logger.error("ThePinCallbacks error: "+ reason);
             }
             catch(Exception e) {
                 logger.error(e);
             }
         }
-        
+
     }
-    
+
     private  static class TheUninCallbacks implements UnpinCallbacks {
-        
+
         Long fileRequestJobId;
-        
+
         public TheUninCallbacks(Long fileRequestJobId) {
             this.fileRequestJobId = fileRequestJobId;
         }
-        
-        public GetFileRequest getGetFileRequest() 
+
+        public GetFileRequest getGetFileRequest()
                 throws java.sql.SQLException, SRMInvalidRequestException {
             Job job = Job.getJob(fileRequestJobId);
             if(job != null) {
@@ -1019,12 +1019,12 @@ public final class GetFileRequest extends FileRequest {
             }
             return null;
         }
-        
+
         public void Error( String error) {
             try {
                 GetFileRequest fr = getGetFileRequest();
                 /*
-                 * unpin is called when the file request  is already 
+                 * unpin is called when the file request  is already
                  * in a final state
                  */
                 /*
@@ -1041,12 +1041,12 @@ public final class GetFileRequest extends FileRequest {
                 logger.error(e);
             }
         }
-        
+
         public void Exception( Exception e) {
             try {
                 GetFileRequest fr = getGetFileRequest();
                 /*
-                 * unpin is called when the file request  is already 
+                 * unpin is called when the file request  is already
                  * in a final state
                  */
                 /*
@@ -1063,15 +1063,15 @@ public final class GetFileRequest extends FileRequest {
                 logger.error(e1);
             }
         }
-        
-        
-        
-        
+
+
+
+
         public void Timeout() {
             try {
                 GetFileRequest fr = getGetFileRequest();
                 /*
-                 * unpin is called when the file request  is already 
+                 * unpin is called when the file request  is already
                  * in a final state
                  */
                 /*
@@ -1082,14 +1082,14 @@ public final class GetFileRequest extends FileRequest {
                     //logger.error("can not fail state:"+ist);
                 }
                  */
-                
+
                 logger.error("TheUninCallbacks Timeout");
             }
             catch(Exception e) {
                 logger.error(e);
             }
         }
-        
+
         public void Unpinned(String pinId) {
             try {
                 GetFileRequest fr = getGetFileRequest();
@@ -1110,12 +1110,12 @@ public final class GetFileRequest extends FileRequest {
                 logger.error(e);
             }
         }
-        
+
         public void UnpinningFailed(String reason) {
             try {
                 GetFileRequest fr = getGetFileRequest();
                 /*
-                 * unpin is called when the file request  is already 
+                 * unpin is called when the file request  is already
                  * in a final state
                  */
                 /*
@@ -1126,13 +1126,13 @@ public final class GetFileRequest extends FileRequest {
                     //logger.error("can not fail state:"+ist);
                 }
                  */
-                
+
                 logger.error("TheUninCallbacks error: "+ reason);
             }
             catch(Exception e) {
                 logger.error(e);
             }
         }
-        
+
     }
 }
