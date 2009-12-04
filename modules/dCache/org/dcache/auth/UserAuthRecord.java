@@ -222,7 +222,7 @@ public class UserAuthRecord extends UserAuthBase
         return Username.equals(r.Username) && ReadOnly == r.ReadOnly
                 && UID == r.UID && Arrays.equals(GIDs, r.GIDs)
                 && Home.equals(r.Home) && Root.equals(r.Root)
-                && FsRoot.equals(r.FsRoot);
+                && FsRoot.equals(r.FsRoot) && this.getFqan().equals(r.getFqan());
     }
 }
 
