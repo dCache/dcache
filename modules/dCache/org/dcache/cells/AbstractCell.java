@@ -111,7 +111,7 @@ import diskCacheV111.util.PnfsId;
  *
  * It is important that fields used for storing options do not have an
  * initializer. An initializer would overwrite the value retrieved
- * from the option.
+ * from the option. Empty Strings will become null.
  *
  * Example code:
  *
@@ -652,6 +652,8 @@ public class AbstractCell extends CellAdapter
 
                         String s = getOption(option);
                         Object value;
+//                        this filters empty strings with the result that they
+//                        become null
                         if (s != null && s.length() > 0) {
                             try {
                                 value = toType(s, field.getType());
