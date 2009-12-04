@@ -134,7 +134,7 @@ public final class CopyFileRequest extends FileRequest {
 	private String spaceReservationId;
 	private boolean weReservedSpace;
 	private boolean spaceMarkedAsBeingUsed=false;
-	
+
 	/** Creates new FileRequest */
 
 	public CopyFileRequest(Long requestId,
@@ -153,12 +153,12 @@ public final class CopyFileRequest extends FileRequest {
 		this.spaceReservationId = spaceToken;
 		logger.debug("constructor from_url=" +from_url+" to_url="+to_url);
 	}
-	
+
 	/**
 	 * restore constructore, used for restoring the existing
 	 * file request from the database
 	 */
-	
+
 	public CopyFileRequest(
 		Long id,
 		Long nextJobId,
@@ -231,11 +231,11 @@ public final class CopyFileRequest extends FileRequest {
 		}
 		this.spaceReservationId = spaceReservationId;
 	}
-    	
+
 	public void done() {
 		logger.debug("done()");
 	}
-	
+
 	public void error() {
 		done();
 	}
@@ -265,7 +265,7 @@ public final class CopyFileRequest extends FileRequest {
 		}
 		return rfs;
 	}
-	
+
 	public String getToURL() {
         rlock();
         try {
@@ -345,7 +345,7 @@ public final class CopyFileRequest extends FileRequest {
             runlock();
         }
 	}
-	
+
 	/** Setter for property to_turl.
 	 * @param to_turl New value of property to_turl.
 	 */
@@ -357,7 +357,7 @@ public final class CopyFileRequest extends FileRequest {
             wunlock();
         }
 	}
-	
+
 	/** Getter for property size.
 	 * @return Value of property size.
 	 */
@@ -369,7 +369,7 @@ public final class CopyFileRequest extends FileRequest {
             runlock();
         }
 	}
-	
+
 	/** Setter for property size.
 	 * @param size New value of property size.
 	 */
@@ -403,7 +403,7 @@ public final class CopyFileRequest extends FileRequest {
             sb.append(getHistory());
         }
     }
-	
+
 	/** Getter for property absolute_local_from_path.
 	 * @return Value of property absolute_local_from_path.
 	 */
@@ -415,7 +415,7 @@ public final class CopyFileRequest extends FileRequest {
             runlock();
         }
 	}
-	
+
 	/** Setter for property absolute_local_from_path.
 	 * @param absolute_local_from_path New value of property absolute_local_from_path.
 	 */
@@ -427,7 +427,7 @@ public final class CopyFileRequest extends FileRequest {
             wunlock();
         }
 	}
-	
+
 	/** Getter for property absolute_local_to_path.
 	 * @return Value of property absolute_local_to_path.
 	 */
@@ -439,7 +439,7 @@ public final class CopyFileRequest extends FileRequest {
             runlock();
         }
 	}
-	
+
 	/** Setter for property absolute_local_to_path.
 	 * @param absolute_local_to_path New value of property absolute_local_to_path.
 	 */
@@ -451,7 +451,7 @@ public final class CopyFileRequest extends FileRequest {
             wunlock();
         }
 	}
-	
+
 	/** Getter for property toFileId.
 	 * @return Value of property toFileId.
 	 *
@@ -464,7 +464,7 @@ public final class CopyFileRequest extends FileRequest {
             runlock();
         }
 	}
-	
+
 	/** Setter for property toFileId.
 	 * @param toFileId New value of property toFileId.
 	 *
@@ -477,7 +477,7 @@ public final class CopyFileRequest extends FileRequest {
             wunlock();
         }
 	}
-	
+
 	/** Getter for property fromFileId.
 	 * @return Value of property fromFileId.
 	 *
@@ -491,7 +491,7 @@ public final class CopyFileRequest extends FileRequest {
         }
 
 	}
-	
+
 	/** Setter for property fromFileId.
 	 * @param fromFileId New value of property fromFileId.
 	 *
@@ -505,7 +505,7 @@ public final class CopyFileRequest extends FileRequest {
         }
 
 	}
-	
+
 	private void runScriptCopy() throws Exception {
 		GlobusURL from =getFrom_turl();
 		GlobusURL to = getTo_turl();
@@ -743,7 +743,7 @@ public final class CopyFileRequest extends FileRequest {
 			TheCopyCallbacks copycallbacks = new TheCopyCallbacks(getId());
 			if(getSpaceReservationId() != null) {
 				setTransferId(getStorage().getFromRemoteTURL(getUser(), getFrom_turl().getURL(), getLocal_to_path(), getUser(), credential.getId(), getSpaceReservationId().toString(), size, copycallbacks));
-				
+
 			}
 			else {
 				setTransferId(getStorage().getFromRemoteTURL(getUser(), getFrom_turl().getURL(), getLocal_to_path(), getUser(), credential.getId(), copycallbacks));
@@ -980,7 +980,7 @@ public final class CopyFileRequest extends FileRequest {
 			}
 		}
 	}
-	
+
 	public void javaUrlCopy(URL from, URL to) throws Exception {
 		try {
 			InputStream in = null;
@@ -1022,7 +1022,7 @@ public final class CopyFileRequest extends FileRequest {
 			throw e;
 		}
 	}
-	
+
 	protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
 		State state = getState();
 		if(State.isFinalState(state)) {
@@ -1253,7 +1253,7 @@ public final class CopyFileRequest extends FileRequest {
             wunlock();
         }
     }
-	
+
 	private static class PutCallbacks implements PrepareToPutCallbacks {
 		Long fileRequestJobId;
 		public boolean completed = false;
@@ -1263,7 +1263,7 @@ public final class CopyFileRequest extends FileRequest {
 		public String parentFileId;
 		public FileMetaData parentFmd;
 		public String error_message;
-		
+
 		public synchronized boolean waitResult(long timeout) {
 			long start = System.currentTimeMillis();
 			long current = start;
@@ -1277,7 +1277,7 @@ public final class CopyFileRequest extends FileRequest {
 						this.wait(wait);
 					}
 					catch(InterruptedException ie){
-						
+
 					}
 				}
 				else {
@@ -1311,7 +1311,7 @@ public final class CopyFileRequest extends FileRequest {
 			}
 			throw new java.sql.SQLException("CopyFileRequest for id="+fileRequestJobId+" is not found");
 		}
-		
+
 		public void DuplicationError(String reason) {
 			error_message = reason;
 			try {
@@ -1350,7 +1350,7 @@ public final class CopyFileRequest extends FileRequest {
 			}
 			complete(false);
 		}
-		
+
 		public void Exception( Exception e) {
 			error_message = e.toString();
 			try {
@@ -1368,7 +1368,7 @@ public final class CopyFileRequest extends FileRequest {
 			}
 			complete(false);
 		}
-		
+
 		public void GetStorageInfoFailed(String reason) {
 			error_message = reason;
 			try {
@@ -1379,7 +1379,7 @@ public final class CopyFileRequest extends FileRequest {
 				catch(IllegalStateTransition ist) {
 					logger.error("Illegal State Transition : " +ist.getMessage());
 				}
-				
+
 				logger.error("PutCallbacks Timeout");
 			}
 			catch(Exception e) {
@@ -1387,8 +1387,8 @@ public final class CopyFileRequest extends FileRequest {
 			}
 			complete(false);
 		}
-		
-		
+
+
 		public void StorageInfoArrived(String fileId,
 					       FileMetaData fmd,
 					       String parentFileId,
@@ -1416,9 +1416,9 @@ public final class CopyFileRequest extends FileRequest {
 				logger.error(e);
 				complete(false);
 			}
-			
+
 		}
-		
+
 		public void Timeout() {
 			error_message = "PutCallbacks Timeout";
 			try {
@@ -1457,7 +1457,7 @@ public final class CopyFileRequest extends FileRequest {
 			}
 			complete(false);
 		}
-		
+
 		public void AuthorizationError(String reason) {
 			error_message = reason;
 			try {
@@ -1470,7 +1470,7 @@ public final class CopyFileRequest extends FileRequest {
 				catch(IllegalStateTransition ist) {
 					logger.error("Illegal State Transition : " +ist.getMessage());
 				}
-				
+
 				logger.error("PutCallbacks Timeout");
 			}
 			catch(Exception e) {
@@ -1479,12 +1479,12 @@ public final class CopyFileRequest extends FileRequest {
 			complete(false);
 		}
 	}
-	
+
 	private static class TheCopyCallbacks implements org.dcache.srm.CopyCallbacks {
 		private Long fileRequestJobId;
 		private boolean completed = false;
 		private boolean success = false;
-		
+
 		public TheCopyCallbacks ( Long fileRequestJobId ) {
 			this.fileRequestJobId = fileRequestJobId;
 		}
@@ -1511,7 +1511,7 @@ public final class CopyFileRequest extends FileRequest {
 				current = System.currentTimeMillis();
 			}
 		}
-		
+
 		public synchronized void complete(boolean success) {
 			this.success = success;
 			this.completed = true;
@@ -1595,7 +1595,7 @@ public final class CopyFileRequest extends FileRequest {
 		copyRequestFileStatus.setStatus(returnStatus);
 		return copyRequestFileStatus;
 	}
-	
+
 	public TReturnStatus getReturnStatus() {
 		TReturnStatus returnStatus = new TReturnStatus();
 		State state = getState();
@@ -1632,8 +1632,8 @@ public final class CopyFileRequest extends FileRequest {
 		}
 		return returnStatus;
 	}
-	
-	
+
+
 	public TSURLReturnStatus  getTSURLReturnStatus(String surl ) throws java.sql.SQLException{
 		if(surl == null) {
 			surl = getToURL();
@@ -1664,7 +1664,7 @@ public final class CopyFileRequest extends FileRequest {
             runlock();
         }
 	}
-	
+
 	public void setWeReservedSpace(boolean weReservedSpace) {
         wlock();
         try {
@@ -1741,7 +1741,7 @@ public final class CopyFileRequest extends FileRequest {
 				logger.error(e);
 			}
 		}
-		
+
 		public void SpaceReserved(String spaceReservationToken, long reservedSpaceSize) {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
@@ -1764,7 +1764,7 @@ public final class CopyFileRequest extends FileRequest {
 				logger.error(e);
 			}
 		}
-		
+
 		public void ReserveSpaceFailed(Exception e) {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
@@ -1784,14 +1784,14 @@ public final class CopyFileRequest extends FileRequest {
 		}
 	}
 
-	
+
 	private  static class TheReleaseSpaceCallbacks implements  SrmReleaseSpaceCallbacks {
 		Long fileRequestJobId;
-		
+
 		public TheReleaseSpaceCallbacks(Long fileRequestJobId) {
 			this.fileRequestJobId = fileRequestJobId;
 		}
-		
+
 		public CopyFileRequest getCopyFileRequest()
                 throws java.sql.SQLException, SRMInvalidRequestException {
 			Job job = Job.getJob(fileRequestJobId);
@@ -1800,7 +1800,7 @@ public final class CopyFileRequest extends FileRequest {
 			}
 			return null;
 		}
-		
+
 		public void ReleaseSpaceFailed( String error) {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
@@ -1811,7 +1811,7 @@ public final class CopyFileRequest extends FileRequest {
 				logger.error(e);
 			}
 		}
-		
+
 		public void ReleaseSpaceFailed( Exception e) {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
@@ -1853,7 +1853,7 @@ public final class CopyFileRequest extends FileRequest {
         public java.lang.String getTransferId() {
 		return transferId;
         }
-	
+
 	/**
 	 *
 	 *
@@ -1875,7 +1875,7 @@ public final class CopyFileRequest extends FileRequest {
 			return remainingLifetime;
 		}
 		String spaceToken =getSpaceReservationId();
-		
+
 		if(!getConfiguration().isReserve_space_implicitely() ||
 		   spaceToken == null ||
 		   !isWeReservedSpace()) {
@@ -1888,7 +1888,7 @@ public final class CopyFileRequest extends FileRequest {
 		SRMUser user =(SRMUser) getUser();
 		return getStorage().srmExtendReservationLifetime(user,spaceToken,newLifetime);
 	}
-	
+
 	public static class CopyUseSpaceCallbacks implements SrmUseSpaceCallbacks {
 		Long fileRequestJobId;
 
@@ -1900,11 +1900,11 @@ public final class CopyFileRequest extends FileRequest {
 			}
 			return null;
 		}
-		
+
 		public CopyUseSpaceCallbacks(Long fileRequestJobId) {
 			this.fileRequestJobId = fileRequestJobId;
 		}
-		
+
 		public void SrmUseSpaceFailed( Exception e) {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
@@ -1922,7 +1922,7 @@ public final class CopyFileRequest extends FileRequest {
 				logger.error(e1);
 			}
 		}
-		
+
 		public void SrmUseSpaceFailed(String reason) {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
@@ -2022,7 +2022,7 @@ public final class CopyFileRequest extends FileRequest {
 				logger.error(e);
 			}
 		}
-		
+
 		public void SpaceUsed() {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
@@ -2045,10 +2045,10 @@ public final class CopyFileRequest extends FileRequest {
 			}
 		}
 	}
-	
+
 	public static class CopyCancelUseOfSpaceCallbacks implements SrmCancelUseOfSpaceCallbacks {
 		Long fileRequestJobId;
-		
+
 		public CopyFileRequest getCopyFileRequest()
                 throws java.sql.SQLException, SRMInvalidRequestException {
 			Job job = Job.getJob(fileRequestJobId);
@@ -2072,7 +2072,7 @@ public final class CopyFileRequest extends FileRequest {
 				logger.error(e1);
 			}
 		}
-		
+
 		public void CancelUseOfSpaceFailed(String reason) {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
@@ -2082,7 +2082,7 @@ public final class CopyFileRequest extends FileRequest {
 				logger.error(e);
 			}
 		}
-		
+
 		public void UseOfSpaceSpaceCanceled() {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
