@@ -3,16 +3,12 @@ package org.dcache.services.pinmanager1;
 import java.util.Collection;
 import java.util.Set;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Hashtable;
-import java.util.LinkedList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.io.PrintWriter;
-
 import java.sql.SQLException;
 import java.sql.Connection;
 import java.sql.Statement;
@@ -20,10 +16,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.DatabaseMetaData;
 import java.sql.Types;
-
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.Pgpass;
-
 import org.dcache.commons.util.SqlHelper;
 import org.dcache.util.JdbcConnectionPool;
 import org.dcache.auth.AuthorizationRecord;
