@@ -21,6 +21,7 @@ import diskCacheV111.vehicles.PinManagerPinMessage;
 import diskCacheV111.vehicles.PinManagerUnpinMessage;
 import diskCacheV111.vehicles.PinManagerExtendLifetimeMessage;
 import diskCacheV111.vehicles.PoolRemoveFilesMessage;
+import diskCacheV111.vehicles.PoolSetStickyMessage;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CheckStagePermission;
@@ -42,7 +43,7 @@ import org.dcache.cells.Option;
 import org.dcache.cells.AbstractCell;
 import org.dcache.auth.AuthorizationRecord;
 import org.dcache.auth.Subjects;
-
+import org.dcache.pool.repository.StickyRecord;
 import diskCacheV111.vehicles.StorageInfo;
 
 /**
@@ -1044,7 +1045,7 @@ public class PinManager extends AbstractCell implements Runnable  {
      * cellMessage set to null as it might be invoked by an admin command
      */
 
-    public void extendLifetime(PinManagerJobImpl job)
+    private void extendLifetime(PinManagerJobImpl job)
             throws PinException
     {
         info("extend lifetime pnfsId="+job.getPnfsId()+" pinRequestId="+job.getPinRequestId()+
@@ -1741,6 +1742,29 @@ public class PinManager extends AbstractCell implements Runnable  {
         }
     }
 
+    private void cleanPoolStickyBitsUnknownToPinManager(
+            PinManagerMovePinMessage movePin
+         ) throws NoRouteToCellException
+    {
+        PnfsId pnfsId = movePin.getPnfsId();
+        String srcPool = movePin.getSourcePool();
+        Collection<StickyRecord> records = movePin.getRecords();
+        for(StickyRecord record:records) {
+            String stickyBitName = record.owner();
+            if(stickyBitName.startsWith(getCellName())) {
+                PoolSetStickyMessage setStickyRequest =
+                   new PoolSetStickyMessage(srcPool,
+                        pnfsId, false,stickyBitName,-1);
+                setStickyRequest.setReplyRequired(false);
+
+                this.sendMessage(
+                        new CellMessage(new CellPath(srcPool),
+                        setStickyRequest));
+            }
+        }
+
+    }
+
     private void movePin(PinManagerMovePinMessage movePin,
         CellMessage envelope ) {
         PnfsId pnfsId = movePin.getPnfsId();
@@ -1778,7 +1802,14 @@ public class PinManager extends AbstractCell implements Runnable  {
                     }
                 }
                 if(pinsToMove.isEmpty()) {
-                    error("pins for "+pnfsId+" in "+srcPool+ " in pinned state are not  found");
+                    warn("pins for "+pnfsId+" in "+srcPool+
+                            " in pinned state are not  found," +
+                            " removing sticky flags");
+                    try {
+                        cleanPoolStickyBitsUnknownToPinManager(movePin);
+                    } catch(NoRouteToCellException nrtce) {
+                        error(nrtce);
+                    }
                     movePin.setFailed(1,"pins for "+pnfsId+" in "+srcPool+ " in pinned state are not  found");
                     returnResponse(movePin, envelope);
                     return;
