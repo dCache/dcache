@@ -1405,6 +1405,70 @@ statisticsLocation=${ourHomeDir}/statistics
 #stagePolicyEnforcementPoint=doors
 
 
+#  -----------------------------------------------------------------------
+#       Chimera Cleaner
+#  -----------------------------------------------------------------------
+#   The Chimera Cleaner removes files from dCache pools after they are
+#   removed from the Chimera namespace.
+#   The Cleaner offers two functionalities:
+#    a) DISK Chimera Cleaner.
+#       Cleaning files on the pools without HSM-backend (DISK-pools).
+#       A request to the DISK-pool is sent to delete these files from DISK.
+#
+#    b) HSM Chimera Cleaner.
+#       Cleaning files on the pools with HSM-backend (HSM-pools).
+#       A request to the HSM-pool is sent to delete these files from the tape.
+#       This functionality is disabled by default.
+#       The instructions on how to use this functionality are given below
+#       in the Section "HSM Chimera Cleaner functionality".
+
+#   Chimera Cleaner by default runs in the Chimera domain.
+#   There should be at most one cleaner per dCache instance.
+
+#   ----- Chimera Cleaner settings
+#
+#    1) The time in seconds that the Cleaner waits between successive runs.
+#
+#cleanerRefresh=120
+
+#    2) Pools that fail to process a cleaning request are added to a Black List.
+#       Pools in this Black List are not sent any requests from the Cleaner.
+#       Pools will be removed from the list when their status becomes "enabled"
+#       or after they have been in the list for cleanerRecover seconds.
+#
+#cleanerRecover=240
+
+#   ----- DISK Chimera Cleaner settings
+#
+#    1) Cleaning request timeout in seconds. If the DISK-pool takes longer
+#       than the specified timeout, the pool is placed in the Black List.
+#
+#cleanerPoolTimeout=100
+
+#    2) The maximal number of file operations in any cleaning request
+#       sent to a DISK-pool.
+#
+#cleanerProcessFilesPerRun=500
+
+#  -----------------------------------------------------------------------
+#       HSM Chimera Cleaner functionality
+#  -----------------------------------------------------------------------
+#   The HSM cleaner is disabled by default.
+#   To enable HSM cleaner, set the following variable to 'enabled' for the Chimera domain:
+#
+#hsmChimeraCleaner=disabled
+
+#   ----- HSM Chimera Cleaner settings
+#
+#    1) Cleaning request timeout in seconds. If the HSM-pool takes longer
+#       than the specified timeout, the pool is placed in the Black List.
+#
+#hsmTimeout=120
+
+#    2) The maximal number of concurrent requests to remove HSM-stored files
+#       sent to a single HSM.
+#
+#hsmMaxRequests=100
 
 #  -----------------------------------------------------------------------
 #       WebDAV
