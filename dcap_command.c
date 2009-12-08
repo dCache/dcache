@@ -35,27 +35,30 @@ int do_command_fail(char **argv, asciiMessage *result)
    result->msg = strdup(argv[2]);
    result->type = ASCII_FAILED;
 
-	/* Temporary hack for dc_check.
-	 * Pool Manager always should reply error 4 when file not cached 
-	 */
-	 
-   if(strcmp(argv[1], "4") == 0) {
-   		dc_errno = DENCACHED;
-        dc_debug(DC_ERROR, "Server error message for [%d]: %s (errno %s).",result->destination, argv[2], argv[1]);
+   /*
+    * The error message format is:
+    *    <dCache error code> <error message> [POSIX error code]
+    */
 
-		return 0;
+    /* Temporary hack for dc_check.
+     * Pool Manager always should reply error 4 when file not cached
+     */
+
+   if(strcmp(argv[1], "4") == 0) {
+        dc_errno = DENCACHED;
+   }else{
+        dc_setServerError(argv[2]);
    }
-   
-   dc_debug(DC_ERROR, "Command failed!");
-   dc_debug(DC_ERROR, "Server error message for [%d]: %s (errno %s).",result->destination, argv[2], argv[1]);
-   dc_setServerError(argv[2]);
    
    /* set errno to errno  recived from  door */
    if( argv[3] != NULL ) {
-	   errno = str2errno(argv[3]);
+        errno = str2errno(argv[3]);
    }
-   
-   return 0;
+
+    dc_debug(DC_INFO, "Server error message for [%d]: %s (err code: %s, errno: %s).",
+            result->destination, argv[2], argv[1], argv[3] );
+
+    return 0;
 }
 
 int do_command_welcome(char **argv, asciiMessage *result)
