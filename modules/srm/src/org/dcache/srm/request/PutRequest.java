@@ -431,19 +431,30 @@ public final class PutRequest extends ContainerRequest{
     }
 
     public TOverwriteMode getOverwriteMode() {
-        return overwriteMode;
+        rlock();
+        try {
+            return overwriteMode;
+        } finally {
+            runlock();
+        }
     }
 
     public void setOverwriteMode(TOverwriteMode overwriteMode) {
-        this.overwriteMode = overwriteMode;
+        wlock();
+        try {
+            this.overwriteMode = overwriteMode;
+        } finally {
+            wunlock();
+        }
     }
     
     public final boolean isOverwrite() {
         if(getConfiguration().isOverwrite()) {
-            if(overwriteMode == null) {
+            TOverwriteMode mode = getOverwriteMode();
+            if(mode == null) {
                 return getConfiguration().isOverwrite_by_default();
             }
-            return overwriteMode.equals(TOverwriteMode.ALWAYS);
+            return mode.equals(TOverwriteMode.ALWAYS);
         }
         return false;
     }

@@ -166,6 +166,9 @@
             <class-expression>org.dcache.srm.v2_2.TRetentionPolicyInfo</class-expression>
          </include>
          <include>
+           <class-expression>org.dcache.srm.v2_2.TOverwriteMode</class-expression>
+         </include>
+         <include>
            <class-expression>org.apache.axis.types.UnsignedLong</class-expression>
          </include>
 
