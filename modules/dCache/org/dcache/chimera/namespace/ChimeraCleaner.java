@@ -256,7 +256,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
 
                             _poolsBlackList.remove(poolName);
                             if (_logNamespace.isDebugEnabled()) {
-                            		_logNamespace.debug("Remove the following pool from the black pool list : "+ poolName);
+                            		_logNamespace.debug("Remove the following pool from the Black List : "+ poolName);
                             	}
                             }
                     }
@@ -350,7 +350,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
     }
 
     private static final String sqlGetPoolsForFile = "SELECT ilocation FROM t_locationinfo_trash "
-        + "WHERE ipnfsid=? ORDER BY iatime";
+        + "WHERE ipnfsid=? AND itype=1 ORDER BY iatime";
 
     private static final String sqlGetFileListForPool = "SELECT ipnfsid FROM t_locationinfo_trash "
             + "WHERE ilocation=? ORDER BY iatime";
@@ -586,7 +586,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
     }
 
 
-    public static String hh_ls_blacklist = " # list pools in the 'black pool list'";
+    public static String hh_ls_blacklist = " # list pools in the Black List";
     public String ac_ls_blacklist(Args args) throws Exception {
 
 
@@ -599,21 +599,18 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
         return sb.toString();
     }
 
-    public static String hh_remove_from_blacklist = "<poolName> # remove this pool from the black list";
+    public static String hh_remove_from_blacklist = "<poolName> # remove this pool from the Black List";
     public String ac_remove_from_blacklist_$_1(Args args) throws Exception {
 
         String poolName = args.argv(0);
         if(_poolsBlackList.remove(poolName) !=null) {
-        	return "Pool "+poolName+" is removed from the black list ";
+        	return "Pool "+poolName+" is removed from the Black List ";
         }
 
-        return "Pool "+poolName+" was not found in the black list ";
+        return "Pool "+poolName+" was not found in the Black List ";
     }
 
-    public static String hh_remove_file = "<pnfsID> # remove this file ";
-    public String ac_remove_file_$_1(Args args) throws Exception {
-
-        String filePnfsID = args.argv(0);
+    private String adminCleanFileDisk(String filePnfsID) throws SQLException, InterruptedException {
         Connection dbConnection = null;
         List<String> removeFile = new ArrayList<String>(1);
         removeFile.add(filePnfsID);
@@ -637,6 +634,13 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
             SqlHelper.tryToClose(dbConnection);
         }
       return "";
+
+    }
+
+    public static String hh_clean_file = "<pnfsID> # clean this file (file will be deleted from DISK)";
+    public String ac_clean_file_$_1(Args args) throws Exception {
+
+        return adminCleanFileDisk(args.argv(0));
 
     }
 
