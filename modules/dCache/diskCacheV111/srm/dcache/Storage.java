@@ -188,6 +188,7 @@ import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.acl.enums.AccessType;
+import org.dcache.acl.enums.AccessMask;
 import org.ietf.jgss.GSSCredential;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
@@ -2052,7 +2053,7 @@ public class Storage
             }
         }
 
-    public void getFileInfo(SRMUser user, String filePath,
+    public void getFileInfo(SRMUser user, String filePath, boolean read,
         GetFileInfoCallbacks callbacks) {
         String actualPnfsPath= srm_root+"/"+filePath;
         if(!verifyUserPathIsRootSubpath(actualPnfsPath,user)) {
@@ -2062,6 +2063,7 @@ public class Storage
         GetFileInfoCompanion.getFileInfo(
                 (AuthorizationRecord)user,
                 actualPnfsPath,
+                read,
                 callbacks,
                 _pnfsStub);
     }
@@ -2116,16 +2118,7 @@ public class Storage
         }
     }
 
-
-    public FileMetaData getFileMetaData(SRMUser user,
-					String path,
-                                        FileMetaData parentFMD)
-        throws SRMException
-    {
-        return getFileMetaData(user, path);
-    }
-
-    public FileMetaData getFileMetaData(SRMUser user, String path)
+    public FileMetaData getFileMetaData(SRMUser user, String path, boolean read)
         throws SRMException
     {
         _log.debug("getFileMetaData(" + path + ")");
@@ -2139,7 +2132,7 @@ public class Storage
             Set<FileAttribute> requestedAttributes =
                 EnumSet.of(TYPE, LOCATIONS);
             requestedAttributes.addAll(DcacheFileMetaData.getKnownAttributes());
-            attributes = handler.getFileAttributes(fullPath, requestedAttributes);
+            attributes = handler.getFileAttributes(fullPath, requestedAttributes, read ? EnumSet.of(AccessMask.READ_DATA) : EnumSet.noneOf(AccessMask.class));
             pnfsId = attributes.getPnfsId();
         }
         catch (TimeoutCacheException e) {
@@ -3526,29 +3519,28 @@ public class Storage
     }
 
     /**
+     * Ensures that the user has write privileges for a path. That
+     * includes checking lookup privileges. The file must exist for
+     * the call to succeed.
      *
-     * we support only permanent file, lifetime is always -1
-     * @param newLifetime SURL lifetime in seconds
-     *   -1 stands for infinite lifetime
-     * @return long lifetime left in seconds
-     *   -1 stands for infinite lifetime
-     *
+     * @param user The user ID
+     * @param path The path to the file
+     * @throws SRMAuthorizationException if the user lacks write priviledges
+     *         for this path.
+     * @throws SRMInvalidPathException if the file does not exist
+     * @throws SRMInternalErrorException for transient errors
+     * @throws SRMException for other errors
      */
-    public int srmExtendSurlLifetime(SRMUser user, String fileName, int newLifetime)
+    public void checkWritePrivileges(SRMUser user, String path)
         throws SRMException
     {
         try {
-            AuthorizationRecord duser = (AuthorizationRecord) user;
-            Subject subject = Subjects.getSubject(duser);
+            Subject subject = Subjects.getSubject((AuthorizationRecord) user);
+            String fullPath = getFullPath(path);
             PnfsHandler handler = new PnfsHandler(_pnfs, subject);
-            FileAttributes attributes =
-                handler.getFileAttributes(fileName, permissionHandler.getRequiredAttributes());
-
-            if (permissionHandler.canWriteFile(subject, attributes) != AccessType.ACCESS_ALLOWED) {
-                throw new SRMAuthorizationException("Permission denied");
-            }
-
-            return -1;
+            handler.getFileAttributes(fullPath,
+                                      EnumSet.noneOf(FileAttribute.class),
+                                      EnumSet.of(AccessMask.WRITE_DATA));
         } catch (TimeoutCacheException e) {
             throw new SRMInternalErrorException("Internal name space timeout", e);
         } catch (NotInTrashCacheException e) {
@@ -3561,6 +3553,22 @@ public class Storage
             throw new SRMException(String.format("Operation failed [rc=%d,msg=%s]",
                                                  e.getRc(), e.getMessage()));
         }
+    }
+
+    /**
+     *
+     * we support only permanent file, lifetime is always -1
+     * @param newLifetime SURL lifetime in seconds
+     *   -1 stands for infinite lifetime
+     * @return long lifetime left in seconds
+     *   -1 stands for infinite lifetime
+     *
+     */
+    public int srmExtendSurlLifetime(SRMUser user, String fileName, int newLifetime)
+        throws SRMException
+    {
+        checkWritePrivileges(user, fileName);
+        return -1;
     }
 
     /**

@@ -450,7 +450,7 @@ public final class BringOnlineFileRequest extends FileRequest {
             //storage.getGetTurl(getUser(),path,request.protocols);
             logger.debug("storage.prepareToGet("+path+",...)");
             GetFileInfoCallbacks callbacks = new GetCallbacks(getId());
-            getStorage().getFileInfo(getUser(),path,callbacks);
+            getStorage().getFileInfo(getUser(),path,true,callbacks);
         }
         catch(Exception e) {
             logger.error(e);
@@ -1133,7 +1133,7 @@ public final class BringOnlineFileRequest extends FileRequest {
         String path = FileRequest.getPath(surl);
 
         FileMetaData fmd =
-            storage.getFileMetaData(user,path);
+            storage.getFileMetaData(user,path,true);
         String fileId = fmd.fileId;
         if(fileId != null) {
             BringOnlineFileRequest.TheUnpinCallbacks unpinCallbacks =
@@ -1171,7 +1171,7 @@ public final class BringOnlineFileRequest extends FileRequest {
         GlobusURL surl = new GlobusURL(surl_string);
         String path = FileRequest.getPath(surl);
         FileMetaData fmd =
-            storage.getFileMetaData(user,path);
+            storage.getFileMetaData(user,path,true);
         String fileId = fmd.fileId;
         if(fileId != null) {
             BringOnlineFileRequest.TheUnpinCallbacks unpinCallbacks =

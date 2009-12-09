@@ -573,7 +573,7 @@ public final class GetFileRequest extends FileRequest {
             //storage.getGetTurl(getUser(),path,request.protocols);
             logger.debug("storage.prepareToGet("+path+",...)");
             GetFileInfoCallbacks callbacks = new GetCallbacks(getId());
-            getStorage().getFileInfo(getUser(),path,callbacks);
+            getStorage().getFileInfo(getUser(),path,true,callbacks);
         }
         catch(Exception e) {
             logger.error(e);

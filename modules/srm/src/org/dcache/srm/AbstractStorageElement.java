@@ -291,16 +291,27 @@ public interface AbstractStorageElement {
             String previous_turl)
             throws SRMException;
 
-    /** This method discovers the info about the requested file and
-     * returns the info via GetFileInfoCallbacks interface
-     * Method must be nonblocking - when called it creates thread and returns
-     * immediately.
+    /**
+     * Retrieves the FileMetaData of a file.
+     *
+     * The method is asynchronous and the result is reported via a
+     * callback.
+     *
+     * An implementation may check whether the user sufficient
+     * privileges. If the user lacks sufficient privileges, a
+     * SRMAuthorizationException is delivered through the callback. If
+     * the read parameter is true, an implementation is requested to
+     * check whether the user is allowed to read the file in addition
+     * to retrieving the FileMetaData. If the read parameter is false,
+     * then only permission to retrieve the FileMetaData is checked.
+     *
      * @param user User ID
-     * @param filePath Actual file path
-     * @param callbacks This interface is used for asyncronous notification of SRM of the
-     * various actions performed to get file info from the storage
+     * @param filePath File path
+     * @param read True if read permission are required, false otherwise
+     * @param callbacks Callback for delivering the result of the
+     *                  asynchronous operation.
      */
-    public void getFileInfo(SRMUser user, String filePath,
+    public void getFileInfo(SRMUser user, String filePath, boolean read,
             GetFileInfoCallbacks callbacks);
 
     /** Method must be nonblocking -- when called it creates thread and returns immediately,
@@ -460,11 +471,27 @@ public interface AbstractStorageElement {
     public boolean isLocalTransferUrl(String url) throws SRMException;
 
     /**
+     * Retrieves the FileMetaData of a file.
+     *
+     * An implementation may check whether the user sufficient
+     * privileges. If the read parameter is true, an implementation is
+     * requested to check whether the user is allowed to read the file
+     * in addition to retrieving the FileMetaData. If the read
+     * parameter is false, then only permission to retrieve the
+     * FileMetaData is checked.
+     *
      * @param user User ID
-     * @param path
-     * @return
+     * @param filePath File path
+     * @param read True if read permission are required, false otherwise
+     * @return FileMetaData of the file
+     * @throws SRMAuthorizationException if the user lacks sufficient
+     *         privileges
+     * @throws SRMInvalidPathException if the file does not exist
+     * @throws SRMInternalErrorException in case of transient errors
+     * @throws SRMException for any other error
      */
-    public FileMetaData getFileMetaData(SRMUser user,String path) throws SRMException;
+    public FileMetaData getFileMetaData(SRMUser user,String path,boolean read)
+        throws SRMException;
 
     /**
      * @param user User ID
@@ -473,13 +500,6 @@ public interface AbstractStorageElement {
      */
 
     public void setFileMetaData(SRMUser user,FileMetaData fmd) throws SRMException;
-
-    /**
-     * @param user User ID
-     * @param path
-     * @return
-     */
-    public FileMetaData getFileMetaData(SRMUser user,String path,FileMetaData parentFMD) throws SRMException;
 
     /** This method allows to unpin file in the Storage Element,
      * i.e. cancel the request to have the file in "fast access state"

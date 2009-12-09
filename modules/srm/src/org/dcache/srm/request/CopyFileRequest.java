@@ -546,7 +546,7 @@ public final class CopyFileRequest extends FileRequest {
 		logger.debug("copying from local to local ");
         FileMetaData fmd ;
         try {
-            fmd = getStorage().getFileMetaData(getUser(),getLocal_from_path());
+            fmd = getStorage().getFileMetaData(getUser(),getLocal_from_path(),true);
         } catch (SRMException srme) {
             try {
                 setStateAndStatusCode(State.FAILED,

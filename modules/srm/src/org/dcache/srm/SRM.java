@@ -815,7 +815,7 @@ public class SRM {
 
                 logger.debug("getFileMetaData(String[]) calling FileMetaData(" + surlpath + ")");
 
-                FileMetaData fmd = storage.getFileMetaData(user, surlpath);
+                FileMetaData fmd = storage.getFileMetaData(user, surlpath, false);
                 fmd.SURL = SURLS[i];
                 fmds[i] = new FileMetaData(fmd);
                 logger.debug("FileMetaData[" + i + "]=" + fmds[i]);

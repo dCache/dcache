@@ -121,7 +121,7 @@ public class SrmGetPermission {
 				path[i]=path[i].substring(indx+SFN_STRING.length());
 			}
 			try {
-				FileMetaData fmd= storage.getFileMetaData(user,path[i]);
+                            FileMetaData fmd= storage.getFileMetaData(user,path[i], false);
 				String owner    = fmd.owner;
 				int permissions = fmd.permMode;
 				TPermissionMode  upm = PermissionMaskToTPermissionMode.maskToTPermissionMode(((permissions>>6)&0x7));

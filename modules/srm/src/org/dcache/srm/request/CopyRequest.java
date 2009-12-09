@@ -407,7 +407,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
         	RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
         	QOSTicket qosTicket = getQosPlugin().createTicket(
                     credential.getCredentialName(),
-                    (getStorage().getFileMetaData((SRMUser)getUser(),cfr.getFromPath())).size,
+                    (getStorage().getFileMetaData((SRMUser)getUser(),cfr.getFromPath(), false)).size,
 		    getFrom_url(i).getURL(),
                     getFrom_url(i).getPort(),
                     getFrom_url(i).getPort(),
@@ -616,7 +616,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
         for(int i =0 ; i<length;++i) {
             Long fileRequestId = (Long) remoteSurlToFileReqIds.get(remoteSurlsUniqueArray[i]);
             CopyFileRequest cfr = (CopyFileRequest)getFileRequest(fileRequestId);
-            sizes[i] = (getStorage().getFileMetaData(getUser(),cfr.getFromPath())).size;
+            sizes[i] = (getStorage().getFileMetaData(getUser(),cfr.getFromPath(), false)).size;
             logger.debug("getTURLs: local size  returned by storage.getFileMetaData is "+sizes[i]);
             cfr.setSize(sizes[i]);
             dests[i] = cfr.getToURL();
@@ -1073,7 +1073,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
 		response.setArrayOfFileStatuses(arrayOfTCopyRequestFileStatus);
 		return response;
 	}
-	
+
     public final FileRequest getFileRequestBySurl(String surl) throws java.sql.SQLException, SRMException {
         if(surl == null ) {
            throw new SRMException("surl is null");

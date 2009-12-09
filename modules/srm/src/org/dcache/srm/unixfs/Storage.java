@@ -485,7 +485,7 @@ public class Storage
   }
 
   /** */
-  public FileMetaData getFileMetaData(SRMUser user, String filePath) throws SRMException{
+    public FileMetaData getFileMetaData(SRMUser user, String filePath, boolean read) throws SRMException{
 
     /**@todo getFileMetaData() - process exception */
     return _getFileMetaData(user, filePath);
@@ -524,7 +524,7 @@ public class Storage
   //-------------- Async methods ----------------
 
   /** */
-  public void getFileInfo(SRMUser user, String filePath,
+    public void getFileInfo(SRMUser user, String filePath, boolean read,
                           GetFileInfoCallbacks callbacks) {
     /**@todo getFileInfo() - async, lost fileId */
 
@@ -846,7 +846,7 @@ public class Storage
                     logger.debug("calling getFromRemoteTURL from a copy thread");
                     getFromRemoteTURL(user, remoteTURL,actualFilePath, remoteUser, remoteCredentialId);
                     logger.debug("calling callbacks.copyComplete for path="+actualFilePath);
-                    callbacks.copyComplete(actualFilePath, getFileMetaData(user,actualFilePath));
+                    callbacks.copyComplete(actualFilePath, getFileMetaData(user,actualFilePath, false));
                 }
                 catch (Exception e){
                     callbacks.copyFailed(e);
@@ -882,7 +882,7 @@ public class Storage
                     logger.debug("calling putToRemoteTURL from a copy thread");
                     putToRemoteTURL(user, actualFilePath,remoteTURL, remoteUser, remoteCredentialId);
                     logger.debug("calling callbacks.copyComplete for path="+actualFilePath);
-                    callbacks.copyComplete(actualFilePath, getFileMetaData(user,actualFilePath));
+                    callbacks.copyComplete(actualFilePath, getFileMetaData(user,actualFilePath, false));
                 }
                 catch (Exception e){
                     callbacks.copyFailed(e);
@@ -930,7 +930,7 @@ public class Storage
       }
 
 	public String[] listNonLinkedDirectory(SRMUser user, String directoryName) throws SRMException {
-         FileMetaData fmd = getFileMetaData(user, directoryName);
+            FileMetaData fmd = getFileMetaData(user, directoryName, false);
          int uid = Integer.parseInt(fmd.owner);
          int gid = Integer.parseInt(fmd.group);
          int permissions = fmd.permMode;
@@ -966,13 +966,8 @@ public class Storage
 
 	}
 
-      public FileMetaData getFileMetaData(SRMUser user, String filePath, FileMetaData parentFMD) throws SRMException {
-        /**@todo getFileMetaData() - process exception */
-        return _getFileMetaData(user, filePath);
-      }
-
       public java.io.File[] listDirectoryFiles(SRMUser user, String directoryName, FileMetaData fileMetaData) throws SRMException {
-         FileMetaData fmd = getFileMetaData(user, directoryName);
+          FileMetaData fmd = getFileMetaData(user, directoryName,false);
          int uid = Integer.parseInt(fmd.owner);
          int gid = Integer.parseInt(fmd.group);
          int permissions = fmd.permMode;
@@ -1009,7 +1004,7 @@ public class Storage
       }
 
       public String[] listDirectory(SRMUser user, String directoryName, FileMetaData fileMetaData) throws SRMException {
-         FileMetaData fmd = getFileMetaData(user, directoryName);
+          FileMetaData fmd = getFileMetaData(user, directoryName, false);
          int uid = Integer.parseInt(fmd.owner);
          int gid = Integer.parseInt(fmd.group);
          int permissions = fmd.permMode;
@@ -1055,7 +1050,7 @@ public class Storage
         List<FileMetaData> result = new ArrayList<FileMetaData>();
 
         for (int i = offset; i < list.length && i < offset + count; i++) {
-            result.add(getFileMetaData(user, directory + "/" + list[i]));
+            result.add(getFileMetaData(user, directory + "/" + list[i], false));
         }
 
         return result;
@@ -1116,7 +1111,7 @@ public class Storage
      *   -1 stands for infinite lifetime
      */
     public int srmExtendSurlLifetime(SRMUser user, String fileName, int newLifetime) throws SRMException {
-        FileMetaData fmd = getFileMetaData(user,fileName);
+        FileMetaData fmd = getFileMetaData(user,fileName, false);
         int uid = Integer.parseInt(fmd.owner);
         int gid = Integer.parseInt(fmd.group);
         int permissions = fmd.permMode;

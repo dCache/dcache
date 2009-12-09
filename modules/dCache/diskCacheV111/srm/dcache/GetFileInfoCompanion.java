@@ -66,6 +66,7 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.srm.dcache;
 
+import java.util.EnumSet;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.MessageCallback;
 import org.dcache.cells.ThreadManagerMessageCallback;
@@ -74,6 +75,7 @@ import org.dcache.auth.Subjects;
 import org.dcache.srm.GetFileInfoCallbacks;
 import org.dcache.srm.FileMetaData;
 import org.dcache.vehicles.PnfsGetFileAttributes;
+import org.dcache.acl.enums.AccessMask;
 import static diskCacheV111.util.CacheException.*;
 
 public class GetFileInfoCompanion
@@ -139,6 +141,7 @@ public class GetFileInfoCompanion
 
     public static void getFileInfo(AuthorizationRecord user,
                                    String path,
+                                   boolean read,
                                    GetFileInfoCallbacks callbacks,
                                    CellStub pnfsStub)
     {
@@ -147,6 +150,9 @@ public class GetFileInfoCompanion
         PnfsGetFileAttributes msg =
             new PnfsGetFileAttributes(path,
                                       DcacheFileMetaData.getKnownAttributes());
+        if (read) {
+            msg.setAccessMask(EnumSet.of(AccessMask.READ_DATA));
+        }
         msg.setSubject(Subjects.getSubject(user));
         pnfsStub.send(msg, PnfsGetFileAttributes.class,
                       new ThreadManagerMessageCallback(companion));

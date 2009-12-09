@@ -110,7 +110,7 @@ public class SrmSetPermission {
 			path=path.substring(indx+SFN_STRING.length());
 		}
 		try {
-			FileMetaData fmd= storage.getFileMetaData(user,path);
+                    FileMetaData fmd= storage.getFileMetaData(user,path,false);
 			String owner    = fmd.owner;
 			int permissions = fmd.permMode;
 			int groupid = Integer.parseInt(fmd.group);
@@ -172,8 +172,6 @@ public class SrmSetPermission {
 				if (requestGroup!=0) igroup^=requestGroup;
 				if (requestOther!=0) iother^=requestOther;
 				if (requestOwner!=0) iowner^=requestOwner;
-// 				if (groupPermission != null) igroup=0;
-// 				if (otherPermission != null) iother=0;
 			}
 			if ((permissionType==TPermissionType.ADD||permissionType==TPermissionType.CHANGE)) {
 				if (ownerPermission==null && otherPermission==null && groupPermission==null ) {

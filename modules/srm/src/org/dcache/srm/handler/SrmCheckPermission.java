@@ -138,7 +138,7 @@ public class SrmCheckPermission {
 				path[i]=path[i].substring(indx+SFN_STRING.length());
 			}
 			try {
-				FileMetaData fmd=storage.getFileMetaData(user,path[i]);
+                            FileMetaData fmd=storage.getFileMetaData(user,path[i],false);
 				int permissions = fmd.permMode;
 				TPermissionMode pm  = TPermissionMode.NONE;
 				if (fmd.isOwner(user)) {

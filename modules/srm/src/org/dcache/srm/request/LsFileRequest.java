@@ -22,7 +22,7 @@ import org.apache.log4j.Logger;
 public final class LsFileRequest extends FileRequest {
     private static final Logger logger =
             Logger.getLogger(LsFileRequest.class);
-    
+
         private org.apache.axis.types.URI surl;
         private TMetaDataPathDetail metaDataPathDetail;
 
@@ -95,7 +95,7 @@ public final class LsFileRequest extends FileRequest {
         public org.apache.axis.types.URI getSurl() {
                 return surl;
          }
-        
+
         public String getSurlString() {
                 return surl.toString();
         }
@@ -182,7 +182,7 @@ public final class LsFileRequest extends FileRequest {
                         }
                 }
         }
-        
+
 
         protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
             State state = getState();
@@ -244,9 +244,9 @@ public final class LsFileRequest extends FileRequest {
                         try {
                                 setState(State.DONE,State.DONE.toString());
                         }
-                        catch(IllegalStateTransition ist) {                                                               
+                        catch(IllegalStateTransition ist) {
                                  logger.error("Illegal State Transition : " +ist.getMessage());
-                        }                                                                                                 
+                        }
                 }
                 return metaDataPathDetail;
         }
@@ -263,7 +263,7 @@ public final class LsFileRequest extends FileRequest {
                             " exceeded. Try to narrow down with count and use" +
                             " offset to get complete listing \n");
                 }
-                FileMetaData fmd = getStorage().getFileMetaData(getUser(), path,parent_fmd);
+                FileMetaData fmd = getStorage().getFileMetaData(getUser(), path,false);
                 TMetaDataPathDetail aMetaDataPathDetail =
                         new TMetaDataPathDetail();
                 aMetaDataPathDetail.setLifetimeAssigned(new Integer(-1));
@@ -334,7 +334,7 @@ public final class LsFileRequest extends FileRequest {
                         }
                 }
                 if (fmd.isDirectory) {
-                        fileLocality = TFileLocality.NONE;	
+                        fileLocality = TFileLocality.NONE;
                 }
                 aMetaDataPathDetail.setFileLocality(fileLocality);
                 if (fmd.retentionPolicyInfo!=null) {
@@ -458,7 +458,7 @@ public final class LsFileRequest extends FileRequest {
                 }
                 return aMetaDataPathDetail;
         }
-        
+
         public TMetaDataPathDetail getMinimalMetaDataPathDetail(String path,
                                                                 java.io.File file)
                 throws SRMException,org.apache.axis.types.URI.MalformedURIException {
@@ -492,7 +492,7 @@ public final class LsFileRequest extends FileRequest {
                         logger.debug("file type is Unknown");
                 }
                 if (file.length()==1) {
-                        FileMetaData fmd = getStorage().getFileMetaData(getUser(), path, null);
+                        FileMetaData fmd = getStorage().getFileMetaData(getUser(), path, false);
                         aMetaDataPathDetail.setSize(new org.apache.axis.types.UnsignedLong(fmd.size));
                 }
                 else {
