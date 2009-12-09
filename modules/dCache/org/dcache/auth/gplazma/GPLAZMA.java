@@ -1,96 +1,3 @@
-// $Id: GPLAZMA.java,v 1.25 2007-08-03 15:46:02 timur Exp $
-// $Log: not supported by cvs2svn $
-// Revision 1.24  2007/04/17 21:47:33  tdh
-// Fixed forwarding of log level to AuthorizationController.
-//
-// Revision 1.23  2007/03/27 19:20:28  tdh
-// Merge of support for multiple attributes from 1.7.1.
-//
-// Revision 1.22  2007/03/16 22:36:17  tdh
-// Propagate requested username.
-//
-// Revision 1.21  2007/03/16 21:59:49  tdh
-// Added ability to request username.
-// Config files are read only if they have changed.
-//
-// Revision 1.20  2007/01/04 17:45:29  tdh
-// Turned on delegation and added timing lines in tester part of code.
-//
-// Revision 1.19  2006/12/21 22:16:48  tdh
-// Service context used to set up socket with SAZ server.
-// Convert bouncycastle DN to globus form.
-// Improved error reporting, exception handling.
-// Setting DN in results.
-// Moved some functions from GPLAZMA to AuthorizationController.
-//
-// Revision 1.18  2006/12/15 15:54:43  tdh
-// Redid indentations.
-//
-// Revision 1.17  2006/11/29 19:10:46  tdh
-// Added debug, warn log levels and ac command to set loglevel. Added lines to set loglevel in AuthorizationController.
-//
-// Revision 1.16  2006/11/28 21:11:18  tdh
-// Removed hard-code of logging level. Added log-level flag and warn output function.
-//
-// Revision 1.15  2006/08/24 21:12:13  tdh
-// Added priority entry to storage-authdb line and associated field in UserAuthBase.
-//
-// Revision 1.14  2006/08/23 16:43:39  tdh
-// Removed concurrent backport dependence. Create with classname.
-//
-// Revision 1.13  2006/08/01 19:43:32  tdh
-// When authorizing by context, print the role as extracted in the authorization process.
-//
-// Revision 1.12  2006/07/25 15:04:39  tdh
-// Merged DN/Role authentification. Added propagation/logging of authRequestID. Made domain name anonymous.
-//
-// Revision 1.11.2.1  2006/07/12 19:28:37  tdh
-// Added method for receiving authentication by DN message.
-//
-// Revision 1.11  2006/07/06 14:21:29  tdh
-// Fixed ampersand typo.
-//
-// Revision 1.10  2006/07/06 13:53:32  tdh
-// Fixed non-compiling development lines.
-//
-// Revision 1.9  2006/07/05 16:26:26  tdh
-// Undo start of DN work to make a new branch.
-//
-// Revision 1.8  2006/07/05 16:23:25  tdh
-// Starting code to authorize using DN rather than context.
-//
-// Revision 1.7  2006/07/04 22:23:37  timur
-// Use Credential Id to reffer to the remote credential in delegation step, reformated some classes
-//
-// Revision 1.6  2006/07/03 21:13:41  tdh
-// Fixed large log output when using dcache.kpwd method of authorization.
-//
-// Revision 1.5  2006/07/03 19:56:51  tdh
-// Added code to throw and/or catch AuthenticationServiceExceptions from GPLAZMA cell.
-//
-// Revision 1.4  2006/06/29 20:18:07  tdh
-// Added code to run as a testing cell. Added threads to kill authentication attempt after a timeout.
-//
-// Revision 1.3  2006/06/12 21:55:14  tdh
-// Changed package name of concurrent utilities to use backport and compile with java 1.4.
-//
-// Revision 1.2  2006/06/09 15:46:21  tdh
-// Merged (added) to main trunk.
-//
-// Revision 1.1.2.4  2006/06/06 15:18:46  tdh
-// Cleaned up code and added javadoc comments.
-//
-// Revision 1.1.2.3  2006/06/06 14:23:39  tdh
-// Added timeout to delegation socket.
-//
-// Revision 1.1.2.2  2006/06/02 21:58:07  tdh
-// Added thread pool using java.util.concurrent.
-//
-// Revision 1.1.2.1  2006/05/25 21:21:34  tdh
-// New cell to handle authentification and return of user's root path and related info.
-//
-//
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -360,6 +267,7 @@ public class GPLAZMA extends CellAdapter {
   /**
    * is called if user types 'info'
    */
+  @Override
   public void getInfo( PrintWriter pw ){
     super.getInfo(pw);
     pw.println("GPLAZMA");
@@ -370,15 +278,19 @@ public class GPLAZMA extends CellAdapter {
    * super Class to clean the actions made from this Cell.
    * It stops the Thread created.
    */
+  @Override
   public void cleanUp(){
 
     log.debug(" Clean up called ... " ) ;
     synchronized( this ){
       notifyAll() ;
     }
-
-    authpool.shutdownNow();
-    delaychecker.shutdownNow();
+    if(authpool != null) {
+        authpool.shutdownNow();
+    }
+    if(delaychecker != null) {
+        delaychecker.shutdownNow();
+    }
 
     log.debug( "Cleanup done" ) ;
   }
@@ -389,6 +301,7 @@ public class GPLAZMA extends CellAdapter {
    * The sender of the message should block, waiting for the response.
    * @param msg CellMessage
    */
+  @Override
   public synchronized void messageArrived( CellMessage msg ) {
 
     if(msg.getMessageObject() instanceof DNInfo) {
@@ -596,6 +509,7 @@ public class GPLAZMA extends CellAdapter {
       super(msg);
     }
 
+    @Override
     public void run() {
       CDC.clearMessageContext();
       CDC.setMessageContext(msg);
@@ -641,6 +555,7 @@ public class GPLAZMA extends CellAdapter {
      * When skip_processing has been set true, this method causes a null object to be
      * returned to the calling cell.
      */
+    @Override
     public void returnNullMessage() {
       long authRequestID = 0;
 
@@ -673,6 +588,7 @@ public class GPLAZMA extends CellAdapter {
       super(msg);
     }
 
+    @Override
     public void run() {
       //NDC.inherit(parent_stack);
       CDC.clearMessageContext();
@@ -736,6 +652,7 @@ public class GPLAZMA extends CellAdapter {
      * When skip_processing has been set true, this method causes a null object to be
      * returned to the calling cell.
      */
+    @Override
     public void returnNullMessage() {
       long authRequestID = 0;
 
@@ -788,6 +705,7 @@ public class GPLAZMA extends CellAdapter {
      * @param t
      * @param r
      */
+    @Override
     public void beforeExecute(Thread t, Runnable r) {
       if(r instanceof TimedFuture) {
         TimedFuture timedtask = (TimedFuture) r;
@@ -811,6 +729,7 @@ public class GPLAZMA extends CellAdapter {
      * @param r
      * @param t
      */
+    @Override
     public void afterExecute(Runnable r, Throwable t) {
       super.afterExecute(r, t);
       if(r instanceof TimedFuture) {
