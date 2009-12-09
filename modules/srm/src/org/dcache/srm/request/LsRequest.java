@@ -3,6 +3,7 @@ package org.dcache.srm.request;
 import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMTooManyResultsException;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.v2_2.SrmLsRequest;
@@ -20,11 +21,12 @@ public final class LsRequest extends ContainerRequest {
     private final static Logger logger =
             Logger.getLogger(LsRequest.class);
 
-        private final int offset;
-        private final int count;
-        private int maxNumOfResults=100;
-        private int numberOfResults=0;
-        private final int numOfLevels;
+        private final int offset;         // starting entry number
+        private final int count;          // max number of entries to be returned as set by client
+        private int maxNumOfResults=100;  // max number of entries allowed by server, settable via configuration
+        private int numberOfResults=0;    // counts only entries allowed to be returned
+        private long counter=0;           // counts all entries
+        private final int numOfLevels;    // recursion level
         private final boolean longFormat;
         private String explanation;
 
@@ -64,7 +66,7 @@ public final class LsRequest extends ContainerRequest {
                 }
                 if(getConfiguration().isAsynchronousLs()) {
                     storeInSharedMemory();
-        }
+                }
         }
 
         public  LsRequest(
@@ -87,11 +89,11 @@ public final class LsRequest extends ContainerRequest {
                 boolean should_updateretryDeltaTime,
                 String description,
                 String client_host,
-                String statusCodeString, 
+                String statusCodeString,
                 String explanation,
                 boolean longFormat,
                 int numOfLevels,
-                int count, 
+                int count,
                 int offset) throws java.sql.SQLException {
                 super(id,
                       nextJobId,
@@ -118,6 +120,7 @@ public final class LsRequest extends ContainerRequest {
                 this.numOfLevels=numOfLevels;
                 this.count=count;
                 this.offset=offset;
+
         }
 
         public FileRequest getFileRequestBySurl(String surl)
@@ -137,7 +140,7 @@ public final class LsRequest extends ContainerRequest {
         @Override
         public void schedule() throws InterruptedException,
                 IllegalStateTransition {
-            
+
                 // save this request in request storage unconditionally
                 // file requests will get stored as soon as they are
                 // scheduled, and the saved state needs to be consistent
@@ -221,22 +224,20 @@ public final class LsRequest extends ContainerRequest {
                 return detail;
         }
 
-        public final boolean increaseResultsNumAndContinue(){
+        public final boolean increaseResultsNumAndContinue()
+                throws SRMTooManyResultsException
+        {
             wlock();
             try {
-                if(getNumberOfResults() > getMaxNumOfResults()) {
-                        return false;
-                }
                 setNumberOfResults(getNumberOfResults() + 1);
-                return true;
-            } finally {
-                wunlock();
-            }
-        }
-
-        public final boolean checkCounter(){
-            wlock();
-            try {
+                if(getNumberOfResults() > getMaxNumOfResults()) {
+                        StringBuilder sb = new StringBuilder();
+                        sb.append("max results number of ").append(getMaxNumOfResults());
+                        sb.append(" exceeded. Try to narrow down with count and use offset to get complete listing");
+                        setExplanation(sb.toString());
+                        setStatusCode(TStatusCode.SRM_TOO_MANY_RESULTS);
+                        throw new SRMTooManyResultsException(sb.toString());
+                }
                 if (getNumberOfResults() > getCount() && getCount()!=0) {
                         return false;
                 }
@@ -251,18 +252,18 @@ public final class LsRequest extends ContainerRequest {
         }
 
         public int getCount(){
-               // final, no need to synchronize
-                 return count;
+                // final, no need to synchronize
+                return count;
         }
 
         public int getOffset(){
-              // final, no need to synchronize
-                 return offset;
+                // final, no need to synchronize
+                return offset;
         }
 
         public int getNumOfLevels() {
-              // final, no need to synchronize
-                 return numOfLevels;
+                // final, no need to synchronize
+                return numOfLevels;
         }
 
         public boolean getLongFormat() {
@@ -371,8 +372,8 @@ public final class LsRequest extends ContainerRequest {
                 if (done_req == len ) {
                         status.setStatusCode(TStatusCode.SRM_SUCCESS);
                         status.setExplanation("All ls file requests completed");
-                        if (!State.isFinalState(getState())) { 
-                                try { 
+                        if (!State.isFinalState(getState())) {
+                                try {
                                        setState(State.DONE,State.DONE.toString());
                                  }
                                  catch(IllegalStateTransition ist) {
@@ -380,12 +381,12 @@ public final class LsRequest extends ContainerRequest {
                                  }
                          }
                         return status;
-                }	
+                }
                 if (canceled_req == len ) {
                         status.setStatusCode(TStatusCode.SRM_ABORTED);
                         status.setExplanation("All ls file requests were cancelled");
                         return status;
-                }	
+                }
                 if ((pending_req==len)||(pending_req+running_req==len)||running_req==len) {
                         status.setStatusCode(TStatusCode.SRM_REQUEST_QUEUED);
                         status.setExplanation("All ls file requests are pending");
@@ -432,7 +433,7 @@ public final class LsRequest extends ContainerRequest {
                 }
         }
 
-        public  TSURLReturnStatus[] getArrayOfTSURLReturnStatus(String[] surls) 
+        public  TSURLReturnStatus[] getArrayOfTSURLReturnStatus(String[] surls)
                 throws SRMException,java.sql.SQLException {
                 return null;
         }
@@ -450,7 +451,7 @@ public final class LsRequest extends ContainerRequest {
                 sb.append("\n offset     : ").append(getOffset());
                 sb.append("\n longFormat : ").append(getLongFormat());
                 sb.append("\n numOfLevels: ").append(getNumOfLevels());
-                if(longformat) { 
+                if(longformat) {
                         sb.append("\n status code=").append(getStatusCode());
                         sb.append("\n error message=").append(getErrorMessage());
                         sb.append("\n History of State Transitions: \n");
@@ -475,6 +476,7 @@ public final class LsRequest extends ContainerRequest {
         }
     }
 
+
     /**
      * @param numberOfResults the numberOfResults to set
      */
@@ -487,6 +489,52 @@ public final class LsRequest extends ContainerRequest {
         }
     }
 
+    /**
+     * @return the counter
+     */
+    public long getCounter() {
+        rlock();
+        try {
+            return counter;
+        }
+        finally {
+            runlock();
+        }
+    }
+    /**
+     * @return set the counter
+     */
+    public void setCounter(long c) {
+        wlock();
+        try {
+            counter=c;
+        }
+        finally {
+            wunlock();
+        }
+    }
+
+    public void incrementGlobalEntryCounter() {
+        wlock();
+        try {
+            setCounter(getCounter()+1);
+        }
+        finally {
+            wunlock();
+        }
+    }
+    /**
+     * @return check if we skip this record
+     */
+    public boolean skip() {
+        wlock();
+        try {
+            return getCounter()<getOffset();
+        }
+        finally {
+            wunlock();
+        }
+    }
     /**
      * @return the longFormat
      */

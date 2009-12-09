@@ -1,123 +1,5 @@
 //$Id$
 //$Log: not supported by cvs2svn $
-//Revision 1.30  2007/03/10 00:13:19  timur
-//started work on adding support for optional overwrite
-//
-//Revision 1.29  2007/02/10 04:46:13  timur
-// first version of SrmExtendFileLifetime
-//
-//Revision 1.27  2007/01/10 23:00:22  timur
-//implemented srmGetRequestTokens, store request description in database, fixed several srmv2 issues
-//
-//Revision 1.26  2006/11/14 22:37:13  timur
-//getSpaceTokens implementation
-//
-//Revision 1.25  2006/11/10 22:57:03  litvinse
-//introduced setFileMetadata function to prapare for SrmSetPermission
-//
-//Revision 1.24  2006/11/09 22:34:08  timur
-//implementation of SrmGetSpaceMetaData function
-//
-//Revision 1.23  2006/10/10 20:59:56  timur
-//more changes for srmBringOnline
-//
-//Revision 1.22  2006/08/18 22:05:31  timur
-//srm usage of space by srmPrepareToPut implemented
-//
-//Revision 1.21  2006/08/02 22:03:12  timur
-//more work for space management
-//
-//Revision 1.20  2006/08/01 00:09:50  timur
-//more space reservation code
-//
-//Revision 1.19  2006/07/29 18:10:40  timur
-//added schedulable requests for execution reserve space requests
-//
-//Revision 1.18  2006/06/23 21:12:17  timur
-//use correct transfer request ids in srm copy file request, use request credential id  to refernce delegated credential
-//
-//Revision 1.17  2006/06/20 15:42:15  timur
-//initial v2.2 commit, code is based on a week old wsdl, will update the wsdl and code next
-//
-//Revision 1.16  2005/11/16 22:13:37  litvinse
-//implemented Mv
-//
-//Revision 1.15  2005/11/15 01:10:42  litvinse
-//implemented SrmMkdir function
-//
-//Revision 1.14  2005/11/14 02:17:07  litvinse
-//redo removeDirectory function so it is not asynchronous
-//
-//Revision 1.13  2005/11/12 22:15:35  litvinse
-//implemented SrmRmDir
-//
-//WARNING: if directory is sym-link or recursion level is specified an
-//	 a subdirectory contains sym-link - it will follow it. Do not
-//	 use if there are symbolic link.
-//
-//Revision 1.12  2005/11/10 22:58:57  timur
-//better faster srm ls in non verbose mode
-//
-//Revision 1.11  2005/11/09 23:56:48  timur
-//srm ls related improvements
-//
-//Revision 1.10  2005/11/01 17:07:16  litvinse
-//implemented SrmRm
-//
-//Revision 1.9  2005/10/07 22:57:15  timur
-//work for srm v2
-//
-//Revision 1.8  2005/07/22 17:32:54  leoheska
-//srm-ls modifications
-//
-//Revision 1.7  2005/06/22 22:11:28  timur
-//added extentions to globus plugins for gridifying tomcat, which removed dependency on grid-mapfile
-//
-//Revision 1.6  2005/06/06 21:59:03  leoheska
-//Added srm-ls functionality
-//
-//Revision 1.5  2005/03/23 18:10:37  timur
-//more space reservation related changes, need to support it in case of "copy"
-//
-//Revision 1.4  2005/03/11 21:16:24  timur
-//making srm compatible with cern tools again
-//
-//Revision 1.3  2005/03/07 22:55:33  timur
-//refined the space reservation call, restored logging of sql commands while debugging the sql performance
-//
-//Revision 1.2  2005/03/01 23:10:38  timur
-//Modified the database scema to increase database operations performance and to account for reserved space"and to account for reserved space
-//
-//Revision 1.1  2005/01/14 23:07:13  timur
-//moving general srm code in a separate repository
-//
-//Revision 1.20  2004/12/02 05:30:20  timur
-//new GsiftpTransferManager
-//
-//Revision 1.19  2004/08/06 19:35:21  timur
-//merging branch srm-branch-12_May_2004 into the trunk
-//
-//Revision 1.18.2.16  2004/07/29 22:17:29  timur
-//Some functionality for disk srm is working
-//
-//Revision 1.18.2.15  2004/06/30 22:11:05  cvs
-//More docs
-//
-//Revision 1.18.2.14  2004/06/22 17:04:58  cvs
-//More docs
-//
-//Revision 1.18.2.13  2004/06/22 16:22:20  cvs
-//More typos correction
-//
-//Revision 1.18.2.12  2004/06/22 15:17:55  cvs
-//Typos corrected
-//
-//Revision 1.18.2.11  2004/06/15 22:46:34  cvs
-//More docs
-//
-//Revision 1.18.2.10  2004/06/15 21:55:27  timur
-//added cvs logging tags at the top
-//
 
 /*
 COPYRIGHT STATUS:
@@ -653,7 +535,7 @@ public interface AbstractStorageElement {
      */
     List<FileMetaData>
         listDirectory(SRMUser user, String directory, boolean verbose,
-                      int offset, int count)
+                      long offset, long count)
         throws SRMException;
 
     /**
