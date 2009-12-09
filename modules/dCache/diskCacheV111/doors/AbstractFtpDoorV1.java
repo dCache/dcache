@@ -177,6 +177,7 @@ import org.dcache.acl.enums.AccessType;
 import org.dcache.acl.enums.AuthType;
 import org.dcache.acl.enums.FileAttribute;
 import org.dcache.acl.enums.InetAddressType;
+import org.dcache.acl.enums.AccessMask;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.vehicles.PnfsGetFileAttributes;
@@ -2745,7 +2746,8 @@ public abstract class AbstractFtpDoorV1
                                         EnumSet.of(PNFSID,
                                                    STORAGEINFO,
                                                    SIZE,
-                                                   SIMPLE_TYPE));
+                                                   SIMPLE_TYPE),
+                                        EnumSet.of(AccessMask.READ_DATA));
             _transfer.state = "received storage info";
 
             FileType type = attributes.getFileType();

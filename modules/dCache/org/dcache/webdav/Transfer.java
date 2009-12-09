@@ -1,20 +1,25 @@
 package org.dcache.webdav;
 
 import java.util.Set;
+import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.security.auth.Subject;
 
 import com.sun.security.auth.UserPrincipal;
 
 import org.dcache.acl.Origin;
+import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.util.CacheExceptionFactory;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.namespace.FileType;
 
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.FsPath;
 
 import diskCacheV111.vehicles.IoDoorEntry;
@@ -37,6 +42,8 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.apache.log4j.Logger;
+
+import static org.dcache.namespace.FileAttribute.*;
 
 /**
  * Encapulates information about and typical operations of a
@@ -399,15 +406,25 @@ public abstract class Transfer implements Comparable<Transfer>
     {
         setStatus("PnfsManager: Fetching storage info");
         try {
-            PnfsGetStorageInfoMessage msg;
+            Set<FileAttribute> request = EnumSet.of(PNFSID, STORAGEINFO);
+            Set<AccessMask> mask = EnumSet.of(AccessMask.READ_DATA);
+            FileAttributes attributes;
             PnfsId pnfsid = getPnfsId();
             if (pnfsid != null) {
-                msg = _pnfs.getStorageInfoByPnfsId(pnfsid);
+                attributes = _pnfs.getFileAttributes(pnfsid, request, mask);
             } else {
-                msg = _pnfs.getStorageInfoByPath(_path.toString());
+                attributes = _pnfs.getFileAttributes(_path.toString(), request, mask);
             }
-            setStorageInfo(msg.getStorageInfo());
-            setPnfsId(msg.getPnfsId());
+
+            /* We can only read regular files.
+             */
+            FileType type = attributes.getFileType();
+            if (type == FileType.DIR || type == FileType.SPECIAL) {
+                throw new NotFileCacheException("Not a regular file");
+            }
+
+            setStorageInfo(attributes.getStorageInfo());
+            setPnfsId(attributes.getPnfsId());
             setWrite(false);
         } finally {
             setStatus(null);

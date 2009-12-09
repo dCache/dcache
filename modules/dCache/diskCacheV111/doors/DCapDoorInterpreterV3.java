@@ -33,6 +33,7 @@ import diskCacheV111.util.PnfsHandler;
 import org.dcache.acl.ACLException;
 import org.dcache.acl.Origin;
 import org.dcache.acl.enums.AccessType;
+import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.AuthType;
 import org.dcache.acl.enums.FileAttribute;
 
@@ -1184,12 +1185,19 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         protected PnfsGetStorageInfoMessage  _getStorageInfo  = null ;
         protected PnfsGetFileMetaDataMessage _getFileMetaData = null ;
+        protected final Set<AccessMask> _accessMask;
 
-        protected PnfsSessionHandler(
-        int sessionId , int commandId , VspArgs args )
-        throws Exception {
+        protected PnfsSessionHandler(int sessionId, int commandId, VspArgs args)
+            throws Exception
+        {
+            this(sessionId, commandId, args, EnumSet.noneOf(AccessMask.class));
+        }
 
-            this( sessionId , commandId , args , false , true ) ;
+        protected PnfsSessionHandler(int sessionId, int commandId, VspArgs args,
+                                     Set<AccessMask> accessMask)
+            throws Exception
+        {
+            this(sessionId, commandId, args, false, true, accessMask);
             /* if is url, _path is already pointing to to correct path */
             if( _path == null ) {
                 _path           = args.getOpt("path");
@@ -1210,12 +1218,23 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             }
 
         }
-        protected PnfsSessionHandler(
-        int sessionId , int commandId , VspArgs args ,
-        boolean metaDataOnly , boolean resolvePath       )
-        throws Exception {
 
-            super( sessionId , commandId , args ) ;
+        protected PnfsSessionHandler(int sessionId, int commandId, VspArgs args,
+                                     boolean metaDataOnly, boolean resolvePath)
+            throws Exception
+        {
+            this(sessionId, commandId, args, metaDataOnly, resolvePath,
+                 EnumSet.noneOf(AccessMask.class));
+        }
+
+        protected PnfsSessionHandler(int sessionId, int commandId, VspArgs args,
+                                     boolean metaDataOnly, boolean resolvePath,
+                                     Set<AccessMask> accessMask)
+            throws Exception
+        {
+            super(sessionId, commandId, args);
+
+            _accessMask = accessMask;
 
             if( metaDataOnly )askForFileMetaData(resolvePath) ;
             else              askForStorageInfo() ;
@@ -1265,6 +1284,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             try{
                 _pnfsId         = new PnfsId(_vargs.argv(0)) ;
                 _getStorageInfo = new PnfsGetStorageInfoMessage( _pnfsId ) ;
+                _getStorageInfo.setAccessMask(_accessMask);
             }catch(Exception ee ){
                 //
                 // seems not to be a pnfsId, might be a url.
@@ -1303,6 +1323,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             try{
                 _pnfsId          = new PnfsId(_vargs.argv(0)) ;
                 _getFileMetaData = new PnfsGetFileMetaDataMessage( _pnfsId ) ;
+                _getFileMetaData.setAccessMask(_accessMask);
             }catch(Exception ee ){
                 //
                 // seems not to be a pnfsId, might be a url.
@@ -2163,7 +2184,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         private IoHandler( int sessionId , int commandId , VspArgs args )
         throws Exception {
 
-            super( sessionId , commandId , args ) ;
+            super(sessionId, commandId, args,
+                  args.argv(1).equals("r")
+                  ? EnumSet.of(AccessMask.READ_DATA)
+                  : EnumSet.noneOf(AccessMask.class));
 
             _ioMode = _vargs.argv(1) ;
             int   port    = Integer.parseInt( _vargs.argv(3) ) ;

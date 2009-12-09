@@ -285,17 +285,9 @@ public class PermissionHandlerNameSpaceProvider
     public StorageInfo getStorageInfo(Subject subject, PnfsId pnfsId)
         throws CacheException
     {
-        if (!Subjects.isRoot(subject)) {
-            FileAttributes attributes =
-                getFileAttributesForPermissionHandler(pnfsId, TYPE);
-
-            if (attributes.getFileType() != DIR &&
-                _handler.canReadFile(subject, attributes) != ACCESS_ALLOWED) {
-                throw new PermissionDeniedCacheException("Access denied: " + pnfsId.toString());
-            }
-        }
-
-        return super.getStorageInfo(subject, pnfsId);
+        FileAttributes result =
+            getFileAttributes(subject, pnfsId, EnumSet.of(STORAGEINFO));
+        return result.getStorageInfo();
     }
 
     @Override
@@ -303,14 +295,22 @@ public class PermissionHandlerNameSpaceProvider
                                             Set<FileAttribute> attr)
         throws CacheException
     {
-        if (!Subjects.isRoot(subject) && attr.contains(STORAGEINFO)) {
-            FileAttributes attributes =
-                getFileAttributesForPermissionHandler(pnfsId, TYPE);
+        if (!Subjects.isRoot(subject)) {
+            Set<FileAttribute> required = _handler.getRequiredAttributes();
+            required.addAll(attr);
+            FileAttributes fileAttributes =
+                super.getFileAttributes(subject, pnfsId, required);
 
-            if (attributes.getFileType() != DIR &&
-                _handler.canReadFile(subject, attributes) != ACCESS_ALLOWED) {
+            /* The permission check is performed after we fetched the
+             * attributes to avoid fetching the attributes twice.
+             */
+            PnfsId parentId = _inner.getParentOf(subject, pnfsId);
+            FileAttributes parent =
+                getFileAttributesForPermissionHandler(parentId);
+            if (_handler.canGetAttributes(subject, parent, fileAttributes, attr) != ACCESS_ALLOWED) {
                 throw new PermissionDeniedCacheException("Access denied: " + pnfsId.toString());
             }
+            return fileAttributes;
         }
 
         return super.getFileAttributes(subject, pnfsId, attr);

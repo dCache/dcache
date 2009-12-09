@@ -40,6 +40,7 @@ import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.vehicles.PnfsSetFileAttributes;
 import org.dcache.namespace.FileType;
+import org.dcache.acl.enums.AccessMask;
 
 import javax.security.auth.Subject;
 
@@ -496,6 +497,24 @@ public class PnfsHandler
      * than requested. If <code>attr</code> is an empty array, file existence
      * if checked.
      *
+     * @param pnfsid
+     * @param attr array of requested attributes.
+     * @param mask Additional AccessMask access rights to check
+     * @return requested attributes
+     */
+    public FileAttributes getFileAttributes(PnfsId pnfsid, Set<FileAttribute> attr, Set<AccessMask> mask)
+        throws CacheException
+    {
+        PnfsGetFileAttributes msg = new PnfsGetFileAttributes(pnfsid, attr);
+        msg.setAccessMask(mask);
+        return pnfsRequest(msg).getFileAttributes();
+    }
+
+    /**
+     * Get file attributes. The PnfsManager is free to return less attributes
+     * than requested. If <code>attr</code> is an empty array, file existence
+     * if checked.
+     *
      * @param path
      * @param attr array of requested attributes.
      * @return requested attributes
@@ -504,6 +523,26 @@ public class PnfsHandler
         throws CacheException
     {
         return pnfsRequest(new PnfsGetFileAttributes(path, attr)).getFileAttributes();
+    }
+
+    /**
+     * Get file attributes. The PnfsManager is free to return less attributes
+     * than requested. If <code>attr</code> is an empty array, file existence
+     * if checked.
+     *
+     * @param path
+     * @param attr array of requested attributes.
+     * @param mask Additional AccessMask access rights to check
+     * @return requested attributes
+     */
+    public FileAttributes getFileAttributes(String path,
+                                            Set<FileAttribute> attr,
+                                            Set<AccessMask> mask)
+        throws CacheException
+    {
+        PnfsGetFileAttributes msg = new PnfsGetFileAttributes(path, attr);
+        msg.setAccessMask(mask);
+        return pnfsRequest(msg).getFileAttributes();
     }
 
     /**
