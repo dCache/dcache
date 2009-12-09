@@ -62,4 +62,22 @@ public enum AccessType {
     {
         return value ? ACCESS_ALLOWED : ACCESS_DENIED;
     }
+
+    /**
+     * Conjunction in ternary Kleene logic with ALLOWED being true,
+     * DENIED being false, and UNDEFINED being unknown.
+     */
+    public AccessType and(AccessType other)
+    {
+        if (this == ACCESS_ALLOWED && other == ACCESS_ALLOWED) {
+            return ACCESS_ALLOWED;
+        }
+
+        if (this == ACCESS_DENIED || other == ACCESS_DENIED) {
+            return ACCESS_DENIED;
+        }
+
+        return ACCESS_UNDEFINED;
+    }
+
 }

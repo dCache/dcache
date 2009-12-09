@@ -29,10 +29,16 @@ import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.ChainedPermissionHandler;
 import org.dcache.namespace.PosixPermissionHandler;
 import org.dcache.namespace.ACLPermissionHandler;
+import org.dcache.namespace.PermissionHandler;
 
 import org.dcache.commons.stats.RequestCounters;
 import javax.security.auth.Subject;
+
+import org.dcache.acl.enums.AccessMask;
+import org.dcache.acl.enums.AccessType;
+
 import static org.dcache.auth.Subjects.ROOT;
+import static org.dcache.acl.enums.AccessType.*;
 
 public class PnfsManagerV3 extends CellAdapter
 {
@@ -79,7 +85,8 @@ public class PnfsManagerV3 extends CellAdapter
      */
     private boolean      _canFold = false;
 
-    private final NameSpaceProvider     _nameSpaceProvider;
+    private final PermissionHandler _permissionHandler;
+    private final NameSpaceProvider _nameSpaceProvider;
     private final NameSpaceProvider _cacheLocationProvider;
     private final static String defaultNameSpaceProvider      = "diskCacheV111.namespace.provider.BasicNameSpaceProviderFactory";
     private final static String defaultCacheLocationProvider  = "diskCacheV111.namespace.provider.BasicNameSpaceProviderFactory";
@@ -207,8 +214,9 @@ public class PnfsManagerV3 extends CellAdapter
 
             say("Namespace provider: " + nameSpace_provider);
             DcacheNameSpaceProviderFactory nameSpaceProviderFactory = (DcacheNameSpaceProviderFactory) Class.forName(nameSpace_provider).newInstance();
+            _permissionHandler = new ChainedPermissionHandler(new ACLPermissionHandler(), new PosixPermissionHandler());
             _nameSpaceProvider =
-                new PermissionHandlerNameSpaceProvider(nameSpaceProviderFactory.getProvider(_args, _nucleus), new ChainedPermissionHandler(new ACLPermissionHandler(), new PosixPermissionHandler()));
+                new PermissionHandlerNameSpaceProvider(nameSpaceProviderFactory.getProvider(_args, _nucleus), _permissionHandler);
 
 
             String cacheLocation_provider = _args.getOpt("cachelocation-provider") ;
@@ -923,6 +931,8 @@ public class PnfsManagerV3 extends CellAdapter
                                                        "_this_entry_doesn't_exist_");
             }
              */
+
+            checkMask(pnfsMessage);
             _cacheLocationProvider.addCacheLocation(pnfsMessage.getSubject(),
                                                     pnfsMessage.getPnfsId(),
                                                     pnfsMessage.getPoolName());
@@ -941,6 +951,7 @@ public class PnfsManagerV3 extends CellAdapter
         PnfsId pnfsId = pnfsMessage.getPnfsId();
         say("clearCacheLocation : "+pnfsMessage.getPoolName()+" for "+pnfsId);
         try {
+            checkMask(pnfsMessage);
             _cacheLocationProvider.clearCacheLocation(pnfsMessage.getSubject(),
                                                       pnfsId,
                                                       pnfsMessage.getPoolName(),
@@ -960,9 +971,9 @@ public class PnfsManagerV3 extends CellAdapter
         Subject subject = pnfsMessage.getSubject();
         try {
             PnfsId pnfsId = populatePnfsId(pnfsMessage);
-
             say("get cache locations for "+pnfsId);
 
+            checkMask(pnfsMessage);
             pnfsMessage.setCacheLocations(_cacheLocationProvider.getCacheLocation(subject, pnfsId));
             pnfsMessage.setSucceeded();
         } catch (FileNotFoundCacheException fnf ) {
@@ -980,8 +991,12 @@ public class PnfsManagerV3 extends CellAdapter
         PnfsId pnfsId = null;
         say("create directory "+pnfsMessage.getPath());
         try {
-        	FileMetaData metadata = new FileMetaData(true, pnfsMessage.getUid(), pnfsMessage.getGid(), pnfsMessage.getMode());
-                pnfsId = _nameSpaceProvider.createEntry(pnfsMessage.getSubject(), pnfsMessage.getPath(), metadata, true);
+            File file = new File(pnfsMessage.getPath());
+            checkMask(pnfsMessage.getSubject(), file.getParent(),
+                      pnfsMessage.getAccessMask());
+
+            FileMetaData metadata = new FileMetaData(true, pnfsMessage.getUid(), pnfsMessage.getGid(), pnfsMessage.getMode());
+            pnfsId = _nameSpaceProvider.createEntry(pnfsMessage.getSubject(), pnfsMessage.getPath(), metadata, true);
 
             pnfsMessage.setPnfsId(pnfsId);
             pnfsMessage.setSucceeded();
@@ -1025,8 +1040,12 @@ public class PnfsManagerV3 extends CellAdapter
         PnfsId pnfsId = null;
         say("create entry "+pnfsMessage.getPath());
         try {
-        	FileMetaData metadata = new FileMetaData(false, pnfsMessage.getUid(), pnfsMessage.getGid(), pnfsMessage.getMode());
-                pnfsId = _nameSpaceProvider.createEntry(pnfsMessage.getSubject(), pnfsMessage.getPath(),metadata, false);
+            File file = new File(pnfsMessage.getPath());
+            checkMask(pnfsMessage.getSubject(), file.getParent(),
+                      pnfsMessage.getAccessMask());
+
+            FileMetaData metadata = new FileMetaData(false, pnfsMessage.getUid(), pnfsMessage.getGid(), pnfsMessage.getMode());
+            pnfsId = _nameSpaceProvider.createEntry(pnfsMessage.getSubject(), pnfsMessage.getPath(),metadata, false);
 
             pnfsMessage.setPnfsId(pnfsId);
             pnfsMessage.setSucceeded();
@@ -1081,6 +1100,7 @@ public class PnfsManagerV3 extends CellAdapter
             PnfsId pnfsId = populatePnfsId(pnfsMessage);
             say( "setStorageInfo : "+pnfsId ) ;
 
+            checkMask(pnfsMessage);
             _nameSpaceProvider.setStorageInfo(subject, pnfsId, pnfsMessage.getStorageInfo(), pnfsMessage.getAccessMode());
 
         }catch(FileNotFoundCacheException fnf) {
@@ -1103,6 +1123,7 @@ public class PnfsManagerV3 extends CellAdapter
             FileMetaData meta = pnfsMessage.getMetaData();
             say("setFileMetaData=" + meta + " for " + pnfsId);
 
+            checkMask(pnfsMessage);
             _nameSpaceProvider.setFileMetaData(pnfsMessage.getSubject(), pnfsId, meta);
         }catch ( Exception e) {
             esay(e);
@@ -1150,6 +1171,9 @@ public class PnfsManagerV3 extends CellAdapter
 
                 PnfsId pnfsIdFromPath = pathToPnfsid(subject, path, false);
 
+                checkMask(pnfsMessage.getSubject(), pnfsIdFromPath,
+                          pnfsMessage.getAccessMask());
+
                 /*
                  * raice condition check:
                  *
@@ -1178,6 +1202,8 @@ public class PnfsManagerV3 extends CellAdapter
                     throw new CacheException(CacheException.INVALID_ARGS,
                                              "Path exists but is not of the expected type");
                 }
+
+                checkMask(pnfsMessage);
 
                 say("delete PNFS entry for "+ pnfsId );
                 _nameSpaceProvider.deleteEntry(subject, pnfsId);
@@ -1231,6 +1257,8 @@ public class PnfsManagerV3 extends CellAdapter
 
             say("Set length of " + pnfsId + " to " + length);
 
+            checkMask(pnfsMessage);
+
             FileAttributes fileAttributes = new FileAttributes();
             fileAttributes.setSize(length);
             fileAttributes.setDefaultAccessLatency();
@@ -1258,6 +1286,7 @@ public class PnfsManagerV3 extends CellAdapter
             PnfsId pnfsId = populatePnfsId(msg);
             String newName = msg.newName();
             say("rename " + pnfsId + " to new name : " + newName);
+            checkMask(msg);
             rename(msg.getSubject(), pnfsId, newName, msg.getOverwrite());
         } catch (CacheException e){
             msg.setFailed(e.getRc(), e.getMessage());
@@ -1309,6 +1338,7 @@ public class PnfsManagerV3 extends CellAdapter
                 say("map:  path2id for " + globalPath);
                 pnfsMessage.setPnfsId(pathToPnfsid(subject, globalPath, false));
             }
+            checkMask(pnfsMessage);
         } catch(FileNotFoundCacheException fnf){
         	pnfsMessage.setFailed( CacheException.FILE_NOT_FOUND , fnf.getMessage() ) ;
         }catch (CacheException ce) {
@@ -1326,6 +1356,7 @@ public class PnfsManagerV3 extends CellAdapter
     {
         try {
             PnfsId pnfsId = populatePnfsId(msg);
+            checkMask(msg);
             msg.setParent(_nameSpaceProvider.getParentOf(msg.getSubject(), pnfsId));
         } catch (CacheException e) {
             esay(e);
@@ -1411,6 +1442,9 @@ public class PnfsManagerV3 extends CellAdapter
 
         try {
             String path = msg.getPnfsPath();
+
+            checkMask(msg.getSubject(), path, msg.getAccessMask());
+
             long delay = getAdjustedTtl(envelope);
             long initialDelay =
                 (delay == Long.MAX_VALUE)
@@ -1616,6 +1650,7 @@ public class PnfsManagerV3 extends CellAdapter
 
         long ctime = System.currentTimeMillis();
          _counters.incrementRequests(pnfsMessage.getClass());
+
         if (pnfsMessage instanceof PnfsAddCacheLocationMessage){
             addCacheLocation((PnfsAddCacheLocationMessage)pnfsMessage);
         }
@@ -1914,6 +1949,7 @@ public class PnfsManagerV3 extends CellAdapter
         try {
             Subject subject = message.getSubject();
             PnfsId pnfsId = populatePnfsId(message);
+            checkMask(message);
             Set<FileAttribute> requested = message.getRequestedAttributes();
             if (requested.isEmpty()) {
                 /* The semantics of the message requires us to check
@@ -1954,7 +1990,7 @@ public class PnfsManagerV3 extends CellAdapter
         try {
             FileAttributes attr = message.getFileAttributes();
             PnfsId pnfsId = populatePnfsId(message);
-
+            checkMask(message);
             if (attr.getDefinedAttributes().contains(FileAttribute.LOCATIONS)) {
                 for (String pool: attr.getLocations()) {
                     PnfsMessage msg =
@@ -2007,5 +2043,128 @@ public class PnfsManagerV3 extends CellAdapter
             ? Long.MAX_VALUE
             : ttl - Math.min(TTL_BUFFER_MAXIMUM,
                              (long) (ttl * TTL_BUFFER_FRACTION));
+    }
+
+    /**
+     * Checks the access mask for a given message.
+     */
+    private void checkMask(PnfsMessage message)
+        throws CacheException
+    {
+        checkMask(message.getSubject(),
+                  message.getPnfsId(),
+                  message.getAccessMask());
+    }
+
+    /**
+     * Checks an access mask.
+     */
+    private void checkMask(Subject subject, PnfsId pnfsId, Set<AccessMask> mask)
+        throws CacheException
+    {
+        if (!Subjects.isRoot(subject) && !mask.isEmpty()) {
+            Set<FileAttribute> required =
+                _permissionHandler.getRequiredAttributes();
+            FileAttributes attributes =
+                _nameSpaceProvider.getFileAttributes(subject, pnfsId, required);
+            if (!checkMask(subject, mask, attributes)) {
+                throw new PermissionDeniedCacheException("Access denied");
+            }
+        }
+    }
+
+    /**
+     * Checks an access mask.
+     */
+    private void checkMask(Subject subject, String path, Set<AccessMask> mask)
+        throws CacheException
+    {
+        if (!Subjects.isRoot(subject) && !mask.isEmpty()) {
+            Set<FileAttribute> required =
+                _permissionHandler.getRequiredAttributes();
+            PnfsId pnfsId = pathToPnfsid(ROOT, path, false);
+            FileAttributes attributes =
+                _nameSpaceProvider.getFileAttributes(subject, pnfsId, required);
+            if (!checkMask(subject, mask, attributes)) {
+                throw new PermissionDeniedCacheException("Access denied");
+            }
+        }
+    }
+
+    /**
+     * Checks whether a subject has a certain set of access right to a
+     * file system object.
+     *
+     * @param subject The Subject for which to check access rights
+     * @param mask The access right to check
+     * @param attr The FileAttributes of the object to check access rights to
+     * @return true if subject has all access rights in mask,
+     *         false otherwise
+     */
+    private boolean checkMask(Subject subject,
+                              Set<AccessMask> mask,
+                              FileAttributes attr)
+        throws PermissionDeniedCacheException
+    {
+        AccessType access = ACCESS_ALLOWED;
+        for (AccessMask m: mask) {
+            switch (m) {
+            case READ_DATA:
+                access =
+                    access.and(_permissionHandler.canReadFile(subject, attr));
+                break;
+            case LIST_DIRECTORY:
+                access =
+                    access.and(_permissionHandler.canListDir(subject, attr));
+                break;
+            case WRITE_DATA:
+                access =
+                    access.and(_permissionHandler.canWriteFile(subject, attr));
+                break;
+            case ADD_FILE:
+                access =
+                    access.and(_permissionHandler.canCreateFile(subject, attr));
+                break;
+            case APPEND_DATA:
+                /* Doesn't make much sense in dCache at the moment, so
+                 * we simply translate this to WRITE_DATA.
+                 */
+                access =
+                    access.and(_permissionHandler.canWriteFile(subject, attr));
+                break;
+            case ADD_SUBDIRECTORY:
+                access =
+                    access.and(_permissionHandler.canCreateSubDir(subject, attr));
+                break;
+            case EXECUTE:
+                /* Doesn't make sense for files in dCache, but for
+                 * directories this is the lookup permission.
+                 */
+                access =
+                    access.and(_permissionHandler.canLookup(subject, attr));
+                break;
+
+            case READ_ATTRIBUTES:
+            case WRITE_ATTRIBUTES:
+            case READ_ACL:
+            case WRITE_ACL:
+            case WRITE_OWNER:
+            case READ_NAMED_ATTRS:
+            case WRITE_NAMED_ATTRS:
+            case DELETE:
+            case DELETE_CHILD:
+            case SYNCHRONIZE:
+                /* These attributes are either unsupported in dCache
+                 * or not readily accessible through the current
+                 * PermissionHandler interface.
+                 */
+                access = access.and(ACCESS_UNDEFINED);
+                break;
+            }
+            if (access == ACCESS_DENIED) {
+                return false;
+            }
+        }
+        return (access == ACCESS_ALLOWED);
     }
 }

@@ -2,13 +2,20 @@
 
 package diskCacheV111.vehicles;
 import  diskCacheV111.util.PnfsId ;
-//Base class for messages to PnfsManager
+import org.dcache.acl.enums.AccessMask;
+import java.util.Set;
+import java.util.Collections;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 
-
+/**
+ * Base class for messages to PnfsManager.
+ */
 public class PnfsMessage extends Message {
 
     private PnfsId _pnfsId = null;
     private String _path   = null ;
+    private Set<AccessMask> _mask = Collections.emptySet();
 
     private static final long serialVersionUID = -3686370854772807059L;
 
@@ -28,6 +35,20 @@ public class PnfsMessage extends Message {
     public void setPnfsId(PnfsId pnfsId){
 	_pnfsId = pnfsId ;
     }
+
+    public void setAccessMask(Set<AccessMask> mask)
+    {
+        if (mask == null) {
+            throw new IllegalArgumentException("Null argument not allowed");
+        }
+        _mask = mask;
+    }
+
+    public Set<AccessMask> getAccessMask()
+    {
+        return _mask;
+    }
+
     public String toString(){
         return _pnfsId==null?
                (_path==null?"NULL":("Path="+_path)):
@@ -50,6 +71,19 @@ public class PnfsMessage extends Message {
             }
         }
         return true;
+    }
+
+    /**
+     * For compatibility with pre-1.9.6 installations, we fill in the
+     * _mask field if it is missing.
+     */
+    private void readObject(ObjectInputStream stream)
+        throws IOException, ClassNotFoundException
+    {
+        stream.defaultReadObject();
+        if (_mask == null) {
+            _mask = Collections.emptySet();
+        }
     }
 }
 
