@@ -3184,7 +3184,7 @@ public class Storage
     @Override
     public List<FileMetaData>
         listDirectory(SRMUser user, String directory, final boolean verbose,
-                      long offset, long count)
+                      int offset, int count)
         throws SRMException
     {
         final Set<FileAttribute> required =

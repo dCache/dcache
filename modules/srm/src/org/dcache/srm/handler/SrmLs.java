@@ -28,7 +28,7 @@ import org.dcache.srm.scheduler.IllegalStateTransition;
  * @author  timur
  */
 public class SrmLs {
-        private static Logger logger =
+        private static Logger logger = 
             Logger.getLogger(SrmLs.class);
         private final static String SFN_STRING="?SFN=";
         private int maxNumOfLevels=100;
@@ -126,7 +126,11 @@ public class SrmLs {
                         }
                 }
                 int offset =  request.getOffset() !=null ? request.getOffset().intValue() : 0;
-                int count  =  request.getCount() !=null ? request.getCount().intValue() : Integer.MAX_VALUE;
+                int count  =  request.getCount() !=null ? request.getCount().intValue() : 0;
+                if (numOfLevels>1 && (offset > 0 || count > 0)) {
+                        return getFailedResponse("numOfLevels>1 together with offset and/or count is not supported",
+                                                 TStatusCode.SRM_INVALID_REQUEST);
+                }
                 if (offset<0) {
                         return getFailedResponse(" offset value less than 0, disallowed ",
 				     TStatusCode.SRM_INVALID_REQUEST);
@@ -164,12 +168,12 @@ public class SrmLs {
                                                     numOfLevels,
                                                     longFormat,
                                                     max_results_num);
-                        if (configuration.isAsynchronousLs()) {
+                        if (configuration.isAsynchronousLs()) { 
                                 r.schedule();
                                 return r.getSrmLsResponse();
                         }
-                        else {
-                                for (FileRequest fr : r.getFileRequests()) {
+                        else { 
+                                for (FileRequest fr : r.getFileRequests()) { 
                                         fr.run();
                                         try {
                                             if (fr.getState()==State.PENDING) {
