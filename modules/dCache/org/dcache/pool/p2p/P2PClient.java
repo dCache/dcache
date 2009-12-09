@@ -170,7 +170,7 @@ public class P2PClient
             return _id;
         }
 
-        public void cacheFileAvailable(String pnfsId, Throwable t)
+        public void cacheFileAvailable(PnfsId pnfsId, Throwable t)
         {
             try {
                 if (_callback != null) {
@@ -183,7 +183,7 @@ public class P2PClient
                  * around.
                  */
                 if (t == null) {
-                    cancelCompanions(new PnfsId(pnfsId),
+                    cancelCompanions(pnfsId,
                                      "Replica already exists");
                 }
             } catch (InterruptedException e) {

@@ -103,7 +103,7 @@ public class StorageClassInfo implements CacheFileAvailable
     /**
      * Callback from HSM storage handler.
      */
-    public synchronized void cacheFileAvailable(String pnfsId, Throwable ce)
+    public synchronized void cacheFileAvailable(PnfsId pnfsId, Throwable ce)
     {
         if (ce != null) {
             _errorCounter ++;
@@ -112,7 +112,7 @@ public class StorageClassInfo implements CacheFileAvailable
                 CacheException cce = (CacheException)ce;
 
                 if ((cce.getRc() >= 30) &&(cce.getRc() < 40)) {
-                    Entry entry = removeRequest(new PnfsId(pnfsId));
+                    Entry entry = removeRequest(pnfsId);
                     if (entry != null) {
                         _failedRequests.put(entry.pnfsId, entry);
                     }

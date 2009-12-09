@@ -21,11 +21,6 @@ public class PoolFileFlushedMessage extends PnfsMessage {
         setReplyRequired(true);
     }
 
-    public PoolFileFlushedMessage(String poolName, StorageInfo storageInfo,
-            String pnfsId) {
-    	this(poolName, new PnfsId(pnfsId),storageInfo );
-    }
-
     public StorageInfo getStorageInfo() {
         return _storageInfo;
     }

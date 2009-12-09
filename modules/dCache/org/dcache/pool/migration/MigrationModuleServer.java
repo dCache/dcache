@@ -324,7 +324,7 @@ public class MigrationModuleServer
         }
 
         @Override
-        public synchronized void cacheFileAvailable(String file, Throwable e)
+        public synchronized void cacheFileAvailable(PnfsId pnfsId, Throwable e)
         {
             _requests.remove(_uuid);
             finished(e);

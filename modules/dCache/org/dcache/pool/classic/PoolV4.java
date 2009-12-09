@@ -1467,9 +1467,8 @@ public class PoolV4
             _message = message;
         }
 
-        public void cacheFileAvailable(String pnfsId, Throwable ee)
+        public void cacheFileAvailable(PnfsId pnfsId, Throwable ee)
         {
-            PnfsId id = new PnfsId(pnfsId);
             try {
                 if (ee == null) {
                     _message.setSucceeded();
@@ -1498,7 +1497,7 @@ public class PoolV4
                      * than risk leaving a broken file).
                      */
                     try {
-                        _repository.setState(id, EntryState.REMOVED);
+                        _repository.setState(pnfsId, EntryState.REMOVED);
                     } catch (IllegalTransitionException e) {
                         /* Most likely indicates that the file was
                          * removed before we could do it. Log the
@@ -1557,7 +1556,7 @@ public class PoolV4
             _message = message;
         }
 
-        public void cacheFileAvailable(String pnfsIdString, Throwable error)
+        public void cacheFileAvailable(PnfsId pnfsId, Throwable error)
         {
             if (_message.getReplyRequired()) {
                 if (error == null) {

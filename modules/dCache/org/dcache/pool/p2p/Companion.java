@@ -577,7 +577,7 @@ class Companion
         _acceptor.unregister(_id);
 
         if (_callback != null) {
-            final String pnfsId = _pnfsId.toString();
+
             final Object error = _error;
 
             _executor.execute(new Runnable() {
@@ -591,7 +591,7 @@ class Companion
                         } else {
                             t = new CacheException(error.toString());
                         }
-                        _callback.cacheFileAvailable(pnfsId, t);
+                        _callback.cacheFileAvailable(_pnfsId, t);
                     }
                 });
         }

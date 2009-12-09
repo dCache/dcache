@@ -34,12 +34,6 @@ public class PnfsGetFileMetaDataMessage extends PnfsGetFileAttributes
         setReplyRequired(true);
     }
 
-    public PnfsGetFileMetaDataMessage(String pnfsId)
-    {
-        super(new PnfsId(pnfsId), FileMetaData.getKnownFileAttributes());
-	setReplyRequired(true);
-    }
-
     public PnfsGetFileMetaDataMessage(PnfsId pnfsId)
     {
         super(pnfsId, FileMetaData.getKnownFileAttributes());

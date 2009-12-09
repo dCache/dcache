@@ -6,12 +6,6 @@ public class PoolMgrSelectWritePoolMsg extends PoolMgrSelectPoolMsg {
 
     private static final long serialVersionUID = 1935227143005174577L;    
 
-    public PoolMgrSelectWritePoolMsg( String       pnfsId ,
-                                      StorageInfo  storageInfo,
-				      ProtocolInfo protocolInfo,
-				      long fileSize ){
-	super( pnfsId , storageInfo , protocolInfo , fileSize ) ;
-    }
     public PoolMgrSelectWritePoolMsg( PnfsId       pnfsId ,
                                       StorageInfo  storageInfo,
 				      ProtocolInfo protocolInfo,

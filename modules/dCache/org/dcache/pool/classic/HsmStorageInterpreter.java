@@ -170,12 +170,12 @@ public class HsmStorageInterpreter
     public String hh_rh_restore = "[-block] <pnfsId>";
     public Object ac_rh_restore_$_1(Args args)
     {
-        final String pnfsId = args.argv(0);
+        final PnfsId pnfsId = new PnfsId(args.argv(0));
         final boolean block = args.getOpt("block") != null;
         final DelayedReply reply = new DelayedReply();
 
         final CacheFileAvailable cfa = new CacheFileAvailable() {
-                public void cacheFileAvailable(String pnfsId, Throwable ee) {
+                public void cacheFileAvailable(PnfsId pnfsId, Throwable ee) {
                     try {
                         if (ee == null) {
                             reply.send("Fetched " + pnfsId);
@@ -196,8 +196,8 @@ public class HsmStorageInterpreter
         Thread t = new Thread("rh restore") {
                 public void run() {
                     try {
-                        StorageInfo si = _pnfs.getStorageInfoByPnfsId(new PnfsId(pnfsId)).getStorageInfo();
-                        _storageHandler.fetch(new PnfsId(pnfsId), si,
+                        StorageInfo si = _pnfs.getStorageInfoByPnfsId(pnfsId).getStorageInfo();
+                        _storageHandler.fetch(pnfsId, si,
                                               block ? cfa : null);
                     } catch (CacheException e) {
                         cfa.cacheFileAvailable(pnfsId, e);

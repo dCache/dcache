@@ -149,7 +149,7 @@ public class HsmStorageHandler2
                        + _pnfsId + " (callback=" + _callbacks + ") " + exc);
             for (CacheFileAvailable callback : _callbacks) {
                 try {
-                    callback.cacheFileAvailable(_pnfsId.toString(), exc);
+                    callback.cacheFileAvailable(_pnfsId, exc);
                 } catch (Exception e) {
                     _log.fatal("Exception in callback to " +
                                callback.getClass().getName(), e);

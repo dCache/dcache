@@ -141,7 +141,7 @@ public class PnfsManagerBroker extends CellAdapter {
 
             if( pnfsId != null) {
                 pnfsInstance = pnfsId.getDomain();
-                pnfsMessageObject.setPnfsId( new PnfsId(pnfsId.getId()) );
+                pnfsMessageObject.setPnfsId( pnfsId );
             }else {
                 //request with path!
                 // let say, path format is: /pnfs/instance/path

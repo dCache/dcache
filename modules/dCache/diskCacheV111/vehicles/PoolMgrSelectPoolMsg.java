@@ -15,14 +15,6 @@ public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {
     private static final long serialVersionUID = -5874326080375390208L;
     private final int    _allowedStates;
 
-    public PoolMgrSelectPoolMsg( String       pnfsId ,
-                                 StorageInfo  storageInfo,
-                ProtocolInfo protocolInfo,
-                long fileSize ){
-
-        this(new PnfsId(pnfsId), storageInfo, protocolInfo, fileSize);
-
-    }
     public PoolMgrSelectPoolMsg( PnfsId       pnfsId ,
                                  StorageInfo  storageInfo,
                 ProtocolInfo protocolInfo,
@@ -30,15 +22,6 @@ public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {
 
     this( pnfsId , storageInfo, protocolInfo, fileSize, RequestContainerV5.allStates) ;
 
-    }
-
-    public PoolMgrSelectPoolMsg( String pnfsId ,
-            StorageInfo  storageInfo,
-            ProtocolInfo protocolInfo,
-            long fileSize,
-            int allowedStates){
-
-        this(new PnfsId(pnfsId), storageInfo, protocolInfo, fileSize, allowedStates);
     }
 
     public PoolMgrSelectPoolMsg( PnfsId pnfsId ,

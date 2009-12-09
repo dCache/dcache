@@ -31,10 +31,6 @@ public class PoolFetchFileMessage extends PoolMessage {
         setReplyRequired(true);
     }
 
-    public void setPnfsId(String pnfsId) {
-        _pnfsId = new PnfsId(pnfsId);
-    }
-
     public void setPnfsId(PnfsId pnfsId) {
         _pnfsId = pnfsId;
     }

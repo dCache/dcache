@@ -13,10 +13,6 @@ public class PoolCheckFileMessage extends PoolCheckMessage implements
 
     private static final long serialVersionUID = -642190491441448681L;
 
-    public PoolCheckFileMessage(String poolName, String pnfsId) {
-       this(poolName,  new PnfsId(pnfsId) );
-    }
-
     public PoolCheckFileMessage(String poolName, PnfsId pnfsId) {
         super(poolName);
         _pnfsId = pnfsId;
@@ -27,10 +23,6 @@ public class PoolCheckFileMessage extends PoolCheckMessage implements
         return super.toString() + ";PnfsId="
                 + (_pnfsId == null ? "<unknown>" : _pnfsId.toString())
                 + ";have=" + _have + ";waiting=" + _waiting;
-    }
-
-    public void setPnfsId(String pnfsId) {
-        _pnfsId = new PnfsId(pnfsId);
     }
 
     public void setPnfsId(PnfsId pnfsId) {
