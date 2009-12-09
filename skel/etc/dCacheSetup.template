@@ -748,7 +748,7 @@ pnfs=/pnfs/fs
 #   operations. This variable controls the number of threads to
 #   use.
 #
-#pnfsNumberOfListThreads=1
+#pnfsNumberOfListThreads=2
 
 #   -- don't change this
 #

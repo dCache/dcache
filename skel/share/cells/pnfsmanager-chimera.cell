@@ -9,7 +9,7 @@ set context -c defaultPnfsServer localhost
 set context -c pnfs /pnfs/fs
 set context -c pnfsNumberOfThreads 4
 set context -c pnfsNumberOfThreadGroups 1
-set context -c pnfsNumberOfListThreads 1
+set context -c pnfsNumberOfListThreads 2
 set context -c DefaultAccessLatency ""
 set context -c DefaultRetentionPolicy ""
 onerror shutdown

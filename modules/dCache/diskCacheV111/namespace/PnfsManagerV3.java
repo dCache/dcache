@@ -46,7 +46,7 @@ public class PnfsManagerV3 extends CellAdapter
         Logger.getLogger(PnfsManagerV3.class.getName());
 
     private static final int THRESHOLD_DISABLED = 0;
-    private static final int DEFAULT_LIST_THREADS = 1;
+    private static final int DEFAULT_LIST_THREADS = 2;
     private static final int DEFAULT_DIR_LIST_LIMIT = 100;
     private static final int TTL_BUFFER_MAXIMUM = 10000;
     private static final float TTL_BUFFER_FRACTION = 0.10f;
@@ -60,21 +60,22 @@ public class PnfsManagerV3 extends CellAdapter
     private int _directoryListLimit = DEFAULT_DIR_LIST_LIMIT;
 
     /**
-     * Queue for list operations.
+     * Queues for list operations. There is one queue per thread
+     * group.
      */
-    private final BlockingQueue<CellMessage> _listQueue;
+    private final BlockingQueue<CellMessage>[] _listQueues;
 
     /**
      * Tasks queues used for cache location messages. Depending on
      * configuration, this may be the same as <code>_fifos</code>.
      */
-    private final BlockingQueue<CellMessage> [] _locationFifos;
+    private final BlockingQueue<CellMessage>[] _locationFifos;
 
     /**
      * Tasks queues used for messages that do not operate on cache
      * locations.
      */
-    private final BlockingQueue<CellMessage> [] _fifos    ;
+    private final BlockingQueue<CellMessage>[] _fifos;
 
 
     private CellPath     _cacheModificationRelay = null ;
@@ -258,13 +259,20 @@ public class PnfsManagerV3 extends CellAdapter
                 _locationFifos = _fifos;
             }
 
-            _listQueue = new LinkedBlockingQueue();
-
+            /* Start list-threads threads per thread group for list
+             * processing. We use a shared queue per thread group, as
+             * list operations are read only and thus there is no need
+             * to serialize the operations.
+             */
             tmp = _args.getOpt("list-threads");
             int listThreads =
                 (tmp == null) ? DEFAULT_LIST_THREADS : Integer.parseInt(tmp);
-            for (int i = 0; i < listThreads; i++) {
-                _nucleus.newThread(new ProcessThread(_listQueue), "proc-list-" + i).start();
+            _listQueues = new BlockingQueue[_threadGroups];
+            for (int i = 0; i < _threadGroups; i++) {
+                _listQueues[i] = new LinkedBlockingQueue();
+                for (int j = 0; j < listThreads; j++) {
+                    _nucleus.newThread(new ProcessThread(_listQueues[i]), "proc-list-" + i + "-" + j).start();
+                }
             }
 
             tmp = _args.getOpt("folding");
@@ -317,7 +325,10 @@ public class PnfsManagerV3 extends CellAdapter
         pw.println( "CacheLocation Provider: ");
         pw.println( _cacheLocationProvider.toString() );
         pw.println();
-        pw.println("List operations queued: " + _listQueue.size());
+        pw.println("List queues (" + _listQueues.length + ")");
+        for (int i = 0; i < _listQueues.length; i++) {
+            pw.println("    [" + i + "] " + _listQueues[i].size());
+        }
         pw.println();
         pw.println("Threads (" + _fifos.length + ") Queue");
         for (int i = 0; i < _fifos.length; i++) {
@@ -1578,7 +1589,17 @@ public class PnfsManagerV3 extends CellAdapter
 
         try {
             if (pnfs instanceof PnfsListDirectoryMessage) {
-                if (!_listQueue.offer(message)) {
+                int group;
+                if (pnfsId != null) {
+                    group = pnfsIdToThreadGroup(pnfsId);
+                    say("Using list queue [" + pnfsId + "] " + group);
+                } else if (path != null) {
+                    group = pathToThreadGroup(path);
+                    say("Using list queue [" + path + "] " + group);
+                } else {
+                    throw new InvalidMessageCacheException("Missing PNFS id and path");
+                }
+                if (!_listQueues[group].offer(message)) {
                     throw new MissingResourceCacheException("PnfsManager queue limit exceeded");
                 }
                 return;
