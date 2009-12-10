@@ -367,9 +367,9 @@ gplazmaPolicy=${ourHomeDir}/etc/dcachesrm-gplazma.policy
 #   get performanceMarkers every 3 minutes.  A value of 0 will
 #   disable performance markers.
 #
-#   Default: 180
+#   Default: 70
 #
-#performanceMarkerPeriod=180
+#performanceMarkerPeriod=70
 
 #gsiftpPoolManagerTimeout=5400
 #gsiftpPoolTimeout=600
@@ -461,7 +461,7 @@ dCapPort=${portBase}125
 ftpPort=${portBase}126
 kerberosFtpPort=${portBase}127
 dCapGsiPort=${portBase}128
-#gsiFtpPortNumber=2811
+gsiFtpPortNumber=2811
 srmPort=8443
 xrootdPort=1094
 
@@ -773,7 +773,7 @@ pnfs=/pnfs/fs
 #
 #pnfsFolding=false
 
-#  ---- Storage for cacheinfo
+#  ---- Storage for cacheinfo (only relevant with PNFS backend)
 #
 #   This variable defines where cacheinfo is to be stored.
 #
@@ -1180,7 +1180,8 @@ billingDb=${ourHomeDir}/billing
 #billingDbName=billing
 #billingDbCommitRows=100
 #billingDbCommitIntervalInMilliseconds=30000
-# the following enables using pgfile, which is disabled by
+
+# the following enables using pgfile, which is disabled by default
 #billingDbPgPassFileName=/root/.pgpass
 
 
@@ -1318,14 +1319,14 @@ statisticsLocation=${ourHomeDir}/statistics
 
 #  ---- Authorization options
 #
-#   The following two variables enable authorization in the xrootd
-#   door.  Currently, dCache supports only one plugin, which
-#   implements token based authorization controlled by a remote
-#   filecatalogue.  This requires an additional keystore file that
-#   holds the keypairs needed to do the authorisation.  A template
-#   keystore file can be found in ${ourHomeDir}/etc/keystore.temp.
+#   The  following two  variables enable  authorization in  the xrootd
+#   door.    Currently,  dCache  supports   only  one   plugin,  which
+#   implements token  based authorization controlled by  a remote file
+#   catalogue.  This  requires an additional keystore  file that holds
+#   the keypairs needed to  do the authorisation.  A template keystore
+#   file can be found in ${ourHomeDir}/etc/keystore.temp.
 #
-#xrootdAuthzPlugin=org.dcache.xrootd.security.plugins.tokenauthz.TokenAuthorizationFactory
+#xrootdAuthzPlugin=org.dcache.xrootd2.security.plugins.tokenauthz.TokenAuthorizationFactory
 #xrootdAuthzKeystore=${ourHomeDir}/etc/keystore
 
 #  ---- Mover queue
@@ -1354,45 +1355,104 @@ statisticsLocation=${ourHomeDir}/statistics
 #       ACL Configuration
 #  -----------------------------------------------------------------------
 #
-#     The following options describe how dCache ACL support will contact
-#     a database for querying and updating ACLs.
-#     By default, the table 't_acl' is used in database 'chimera' on
-#     the machine 'localhost'.
-#     If Chimera is deployed with the 'chimera' database on the same machine
-#     as ChimeraDomain then the table will exist locally and
-#     no configuration is needed.
-#     If PNFS is deployed then a suitable table must be created and
-#     the acl variables adjusted accordingly.
+#     The  following options  configure  ACL support.
 #
-#     One of the following cases must be used:
-#     1) only UNIX permissions are used
-#        permissionHandler=diskCacheV111.services.acl.UnixPermissionHandler
-#     2) only ACL permissions are used
-#        permissionHandler=diskCacheV111.services.acl.ACLPermissionHandler
-#     3) ACL permissions are used first. If ACLs do not state whether
-#        an operation is allowed or denied then UNIX permissions are used
-#        permissionHandler=diskCacheV111.services.acl.ACLPermissionHandler,diskCacheV111.services.acl.UnixPermissionHandler
+#     ACLs  in dCache  follow the  NFS4 specification.  When enforcing
+#     file  permissions, dCache  will  first consult  the  ACLs. If  a
+#     request can  neither be  granted nor denied  based on  the ACLs,
+#     then dCache falls back to file mode based permission checking.
 #
-#     The default case is 1).
+#     ACLs are stored in a database.  By default, the table 't_acl' is
+#     used  in  database  'chimera'  on 'localhost'.   If  Chimera  is
+#     deployed  with the  'chimera' database  on the  same  machine as
+#     ChimeraDomain  then the table  will already  exist.  If  PNFS is
+#     deployed  then a  suitable table  must  be created  and the  acl
+#     variables adjusted accordingly.
 #
+#     One has the choice of two enforcement points for permission
+#     handling:
 #
-#permissionHandler=diskCacheV111.services.acl.UnixPermissionHandler
+#     1) The default is to enforce file permissions in doors. In that
+#        case ACL support must be enabled and configured on all doors
+#        and PnfsManager throughout dCache. All doors and PnfsManager
+#        need access to the shared database containing the ACL table.
+#
+#     2) Optionally the enforcement point can be moved to the
+#        PnfsManager. In that case the database containing the ACL
+#        table only needs to be accessible from the PnfsManager, and
+#        ACLs only have to be enabled and configured in PnfsManager.
+#
+#     To use PnfsManager as the enforcement point, that is, to use the
+#     second   option,   define  permissionPolicyEnforcementPoint   to
+#     PnfsManager on all doors.
+#
+#     Depending on where the enforcement point is, the following needs
+#     to  be configured  on  all  doors and  PnfsManager,  or only  in
+#     PnfsManager.
+#
+#        To enable ACLs, set aclEnabled to true. If the database
+#        containing the ACL table is on a different host or in a
+#        different database than 'chimera', then configure aclConnUrl
+#        to point to the correct database.
+
+#  ---- Define the permission policy enforcement point
+#
+#   File  access permissions  may be  enforced in  either doors  or in
+#   PnfsManager.
+#
+#   The default  is to  enforce permissions in  doors for  those doors
+#   that support  it. In that case  ACLs need to be  configured on all
+#   doors  in addition  to  being configured  in  PnfsManager. If  the
+#   enforcement point  is set to PnfsManager, then  all doors delegate
+#   the  permission check  to  PnfsManager  and ACL  only  need to  be
+#   configured in PnfsManager.
+#
+#   This choice is not limitted  to systems with ACLs enabled. The non
+#   ACL based  permission check  can be performed  in either  doors or
+#   PnfsManager  too. If  it is  performed  in the  doors, then  extra
+#   information has to be  retrieved from PnfsManager which introduces
+#   additional latency.
+#
+#   Notice  that some doors  always delegate  the permission  check to
+#   PnfsManager.  Thus  when enabling  ACLs,  ACL  support  has to  be
+#   configured in PnfsManager no matter the value of this setting.
+#
+#permissionPolicyEnforcementPoint=doors
+
+#  ---- Enabled ACL support
+#
+#   Set to true  to enable ACL support. Needs to  be configured on all
+#   permission policy enforcement points.
+#
 #aclEnabled=false
+
+#  ---- ACL database parameters
+#
+#   These paramters define the database connection parameters for ACL.
+#   These  need to  be configured  on  at least  the PnfsManager,  and
+#   possibly all  doors if the permission policy  enforcement point is
+#   set to the doors.
+#
 #aclTable=t_acl
 #aclConnDriver=org.postgresql.Driver
 #aclConnUrl=jdbc:postgresql://localhost/chimera?prepareThreshold=3
 #aclConnUser=postgres
 #aclConnPswd=
 
+
 #  -----------------------------------------------------------------------
 #       Tape protection
 #  -----------------------------------------------------------------------
-#   Tape protection feature is only available if stageConfigurationFilePath line is uncommented,
-#   and there is a similarly named file containing a list of FQANs and DNs whose owners
-#   are allowed to stage files (i.e., to read files from dCache that are stored only on tape).
 #
-#   Stage configuration can be provided either on the door or on the PoolManager as described
-#   in the following two cases below:
+#   The    tape   protection    feature   is    only    available   if
+#   stageConfigurationFilePath  line is  uncommented, and  there  is a
+#   similarly  named file  containing a  list of  FQANs and  DNs whose
+#   owners are allowed to stage files (i.e., to read files from dCache
+#   that are stored only on tape).
+#
+#   Stage configuration can  be provided either on the  door or on the
+#   PoolManager as described in the following two cases below:
+#
 #      1) stage configuration provided on the door
 #         (remember to repeat the same configuration on each door):
 #         stagePolicyEnforcementPoint=doors
