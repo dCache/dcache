@@ -41,6 +41,7 @@ import org.dcache.chimera.InodeId;
 import com.sun.security.auth.UnixNumericGroupPrincipal;
 import com.sun.security.auth.UnixNumericUserPrincipal;
 import javax.security.auth.Subject;
+import org.dcache.commons.util.SqlHelper;
 
 /**
  * @author Irina Kozlova, David Melkumyan
@@ -77,11 +78,12 @@ public class ACLTest {
             sql.append(inLine);
         }
 
-        Statement st = _conn.createStatement();
-
-        st.executeUpdate(sql.toString());
-
-        tryToClose(st);
+        String[] statements = sql.toString().split(";");
+        for (String statement : statements) {
+            Statement st = _conn.createStatement();
+            st.executeUpdate(statement);
+            SqlHelper.tryToClose(st);
+        }
 
         Properties aclProps = new Properties();
 

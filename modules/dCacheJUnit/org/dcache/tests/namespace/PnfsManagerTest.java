@@ -46,6 +46,7 @@ import diskCacheV111.vehicles.PnfsSetChecksumMessage;
 import diskCacheV111.vehicles.PnfsSetStorageInfoMessage;
 import diskCacheV111.vehicles.StorageInfo;
 import java.net.URI;
+import org.dcache.commons.util.SqlHelper;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.namespace.FileAttribute;
 
@@ -81,11 +82,12 @@ public class PnfsManagerTest {
             sql.append(inLine);
         }
 
-        Statement st = _conn.createStatement();
-
-        st.executeUpdate(sql.toString());
-
-        tryToClose(st);
+        String[] statements = sql.toString().split(";");
+        for (String statement : statements) {
+            Statement st = _conn.createStatement();
+            st.executeUpdate(statement);
+            SqlHelper.tryToClose(st);
+        }
 
 
         String args = "org.dcache.chimera.namespace.ChimeraOsmStorageInfoExtractor " +
