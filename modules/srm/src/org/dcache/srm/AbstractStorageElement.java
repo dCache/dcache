@@ -128,28 +128,28 @@ non-exclusive, royalty-free license to publish or reproduce these documents
 and software for U.S. Government purposes.  All documents and software
 available from this server are protected under the U.S. and Foreign
 Copyright Laws, and FNAL reserves all rights.
-
-
+ 
+ 
 Distribution of the software available from this server is free of
 charge subject to the user following the terms of the Fermitools
 Software Legal Information.
-
+ 
 Redistribution and/or modification of the software shall be accompanied
 by the Fermitools Software Legal Information  (including the copyright
 notice).
-
+ 
 The user is asked to feed back problems, benefits, and/or suggestions
 about the software to the Fermilab Software Providers.
-
-
+ 
+ 
 Neither the name of Fermilab, the  URA, nor the names of the contributors
 may be used to endorse or promote products derived from this software
 without specific prior written permission.
-
-
-
+ 
+ 
+ 
 DISCLAIMER OF LIABILITY (BSD):
-
+ 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
 LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -162,10 +162,10 @@ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY  OF
 LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
-
-
+ 
+ 
 Liabilities of the Government:
-
+ 
 This software is provided by URA, independent from its Prime Contract
 with the U.S. Department of Energy. URA is acting independently from
 the Government and in its own private capacity and is not acting on
@@ -175,10 +175,10 @@ has no connection to this software and in no manner whatsoever shall
 be liable for nor assume any responsibility or obligation for any claim,
 cost, or damages arising out of or resulting from the use of the software
 available from this server.
-
-
+ 
+ 
 Export Control:
-
+ 
 All documents and software available from this server are subject to U.S.
 export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
@@ -208,9 +208,9 @@ import org.dcache.srm.v2_2.TMetaDataSpace;
  * put and get operations. Before any get/put operations user has to get the list of
  * supported get/put protocols.
  * THe sequence of actions to process get request:
- *
+ * 
  * 1) call supportedGetProtocols() to get the list of supported protocols
- *
+ * 
  * 2) call getFileInfo(SRMUser user, String filePath, GetFileInfoCallbacks callbacks)
  * The result will be returned thru callbacks
  * GetFileInfoCallbacks is one of the interfaces to be implemented for Storage Element
@@ -219,13 +219,13 @@ import org.dcache.srm.v2_2.TMetaDataSpace;
  *      FileId is unique ID for the file inside Storage Element
  *      fileId is persistent in SRM
  *      fileMetaData -- is not guaranteed to be persistent
- *
+ * 
  *  To be continued...
- *
+ * 
  * @author timur
  */
 public interface AbstractStorageElement extends Logger{
-
+    
     /**
      * Method must be called before any "get" operations. It gives the list of all
      * protocols implemented in the Storage Element for "get" operations
@@ -233,14 +233,14 @@ public interface AbstractStorageElement extends Logger{
      * @throws SRMException in case of error
      */
     public String[] supportedGetProtocols() throws SRMException;
-
+    
     /** Method must be called before any "put" operations. It gives the list of all
      * protocols implemented in the Storage Element for "put" operations
      * @throws SRMException
      * @return Array of strings with protocol names.
      */
     public String[] supportedPutProtocols()throws SRMException;
-
+    
     /** This method has to be called to get the transport URL for file operation.
      * The returned value is passed to the user and user does actual data transfer
      * @param user User ID
@@ -252,7 +252,7 @@ public interface AbstractStorageElement extends Logger{
     public String getPutTurl(SRMUser user,String filePath,
             String[] protocols)
             throws SRMException;
-
+    
     /** To accomodate the property of dcache that requires that the same client get all
      * dcap transfers though the same dcap door, we put the get(Get/Put)Turl which has
      * this siganture.
@@ -266,7 +266,7 @@ public interface AbstractStorageElement extends Logger{
     public String getPutTurl(SRMUser user,String filePath,
             String previous_turl)
             throws SRMException;
-
+    
     /** This method has to be called to get the transport URL for file operation.
      * The returned value is passed to the user and user does actual data transfer
      * @param user User ID
@@ -278,7 +278,7 @@ public interface AbstractStorageElement extends Logger{
     public String getGetTurl(SRMUser user,String filePath,
             String[] protocols)
             throws SRMException;
-
+    
     /** To accomodate the property of dcache that requires that the same client get all
      * dcap transfers though the same dcap door, we put the get(Get/Put)Turl which has
      * this siganture.
@@ -292,7 +292,7 @@ public interface AbstractStorageElement extends Logger{
     public String getGetTurl(SRMUser user, String filePath,
             String previous_turl)
             throws SRMException;
-
+    
     /** This method discovers the info about the requested file and
      * returns the info via GetFileInfoCallbacks interface
      * Method must be nonblocking - when called it creates thread and returns
@@ -304,7 +304,7 @@ public interface AbstractStorageElement extends Logger{
      */
     public void getFileInfo(SRMUser user, String filePath,
             GetFileInfoCallbacks callbacks);
-
+    
     /** Method must be nonblocking -- when called it creates thread and returns immediately,
      *         result will be sent thru callbacks
      * @param user User ID
@@ -316,7 +316,7 @@ public interface AbstractStorageElement extends Logger{
     public void prepareToPut(SRMUser user, String filePath,
             PrepareToPutCallbacks callbacks,
             boolean overwrite);
-
+    
     /** This method allows to pin file in the Storage Element,
      * i.e. put the file in "fast access state"
      * @param user User ID
@@ -330,26 +330,26 @@ public interface AbstractStorageElement extends Logger{
      * @param callbacks This interface is used for asyncronous notification of SRM of the
      * various actions performed to "pin" file in the storage
      */
-
+    
 
     public void pinFile(SRMUser user,
            String fileId,
            String clientHost,
-           FileMetaData fmd,
+           FileMetaData fmd, 
            long pinLifetime,
            long requestId,
            PinCallbacks callbacks);
-
+    
     /**
      * @param user User ID
      * @param pinId Id of a valid pin
      * @param newPinLifetime new lifetime in millis to assign to pin
      * @return long lifetime left for pin in millis
      */
-
+    
     public long extendPinLifetime(SRMUser user, String fileId, String pinId, long newPinLifetime)
     throws SRMException ;
-
+   
     /**
      * @param user User ID
      * @param path File path
@@ -359,8 +359,8 @@ public interface AbstractStorageElement extends Logger{
      */
     public void prepareToPutInReservedSpace(SRMUser user, String path,  long size,
             long spaceReservationToken,    PrepareToPutInSpaceCallbacks callbacks);
-
-
+    
+    
     /**
      *this method perform a transfer from the remote transfer url to the local file, specified by actualFilePath
      * this method can return the string identifier of the pending transfer, and then notify about the
@@ -385,7 +385,7 @@ public interface AbstractStorageElement extends Logger{
             Long requestCredentialId,
             CopyCallbacks callbacks)
             throws SRMException;
-
+    
     /**
      *this method perform a transfer from the remote transfer url to the local file, specified by actualFilePath
      * this method can return the string identifier of the pending transfer, and then notify about the
@@ -414,7 +414,7 @@ public interface AbstractStorageElement extends Logger{
             long size,
             CopyCallbacks callbacks)
             throws SRMException;
-
+    
     /**
      *this method perform a transfer from the local file to the remote transfer url, specified by actualFilePath
      * this method can return the string identifier of the pending transfer, and then notify about the
@@ -437,14 +437,14 @@ public interface AbstractStorageElement extends Logger{
             Long requestCredentialId,
             CopyCallbacks callbacks)
             throws SRMException;
-
+    
     /**
      * while the copy is in progress, this method would call the transfer to be canceled
      * this should lead to the invocation of the copyFailed method CopyCallbacks interfaced
      */
     public void killRemoteTransfer(String transferId);
-
-
+    
+    
     /**
      * @param user User ID
      * @param actualFromFilePath
@@ -453,21 +453,21 @@ public interface AbstractStorageElement extends Logger{
      */
     public void localCopy(SRMUser user,String actualFromFilePath, String actualToFilePath)
     throws SRMException;
-
+    
     /**
      * @param url User ID
      * @throws SRMException
      * @return
      */
     public boolean isLocalTransferUrl(String url) throws SRMException;
-
+    
     /**
      * @param user User ID
      * @param path
      * @return
      */
     public FileMetaData getFileMetaData(SRMUser user,String path) throws SRMException;
-
+    
     /**
      * @param user User ID
      * @param path
@@ -475,14 +475,14 @@ public interface AbstractStorageElement extends Logger{
      */
 
     public void setFileMetaData(SRMUser user,FileMetaData fmd) throws SRMException;
-
+    
     /**
      * @param user User ID
      * @param path
      * @return
      */
     public FileMetaData getFileMetaData(SRMUser user,String path,FileMetaData parentFMD) throws SRMException;
-
+    
     /** This method allows to unpin file in the Storage Element,
      * i.e. cancel the request to have the file in "fast access state"
      * @param user User ID
@@ -492,14 +492,14 @@ public interface AbstractStorageElement extends Logger{
      * @param pinId Unique id received during pinFile operation (?)
      */
     public void unPinFile(SRMUser user,String fileId,UnpinCallbacks callbacks,String pinId);
-
+    
     /** This method allows to unpin file in the Storage Element,
      * i.e. cancel the request to have the file in "fast access state"
      * @param user User ID
      * @param fileId Storage Element internal file ID
      * @param callbacks This interface is used for asyncronous notification of SRM of the
      * various actions performed to "unpin" file in the storage
-     * @param srmRequestId id given to the storage  during pinFile operation
+     * @param srmRequestId id given to the storage  during pinFile operation 
      */
     public void unPinFileBySrmRequestId(SRMUser user,String fileId,
             UnpinCallbacks callbacks,
@@ -512,7 +512,7 @@ public interface AbstractStorageElement extends Logger{
      */
     public void unPinFile(SRMUser user,String fileId,
             UnpinCallbacks callbacks);
-
+    
     /** This method tells SE that the specified file can be removed from the storage.
      * This is up to SE to decide when the file will be deleted
      * @param user User ID
@@ -521,7 +521,7 @@ public interface AbstractStorageElement extends Logger{
      * various actions performed to remove file from the storage
      */
     public void advisoryDelete(SRMUser user, String path,AdvisoryDeleteCallbacks callbacks);
-
+    
     /**
      *
      * @param user User ID
@@ -530,7 +530,7 @@ public interface AbstractStorageElement extends Logger{
      * various actions performed to remove file from the storage
      */
     public void removeFile(SRMUser user, String path,RemoveFileCallbacks callbacks);
-
+    
     /**
      *
      * @param user User ID
@@ -538,30 +538,30 @@ public interface AbstractStorageElement extends Logger{
      * @param callbacks This interface is used for asyncronous notification of SRM of the
      * various actions performed to remove file from the storage
      */
-
+    
     public void removeDirectory(SRMUser user,
             Vector tree) throws SRMException;
-
+    
     /**
-     *
-     * @param user
-     * @param directory
-     * @throws org.dcache.srm.SRMException
+     * 
+     * @param user 
+     * @param directory 
+     * @throws org.dcache.srm.SRMException 
      */
     public void createDirectory(SRMUser user,
             String directory) throws SRMException;
-
+    
     /**
-     *
-     * @param user
-     * @param from
-     * @param to
-     * @throws org.dcache.srm.SRMException
+     * 
+     * @param user 
+     * @param from 
+     * @param to 
+     * @throws org.dcache.srm.SRMException 
      */
     public void moveEntry(SRMUser user, String from,
             String to) throws SRMException;
-
-
+    
+    
     /** This method tells if the specified file can be read
      * @param user User ID
      * @param fileId SE internal file ID
@@ -569,7 +569,7 @@ public interface AbstractStorageElement extends Logger{
      * @return Boolean T/F
      */
     public boolean canRead(SRMUser user,String fileId,FileMetaData fmd);
-
+    
     /** This method tells if the specified file can be written
      * @param user User ID
      * @param fileId SE internal file ID
@@ -582,10 +582,10 @@ public interface AbstractStorageElement extends Logger{
     public boolean canWrite(SRMUser user,
             String fileId,
             FileMetaData fmd,
-            String parentFileId,
+            String parentFileId, 
             FileMetaData parentFmd,
             boolean overwrite);
-
+    
     /** This method returns via callbacks the size of the
      * space reserved in the "pool" (pool is a space storage part that can be
      * utilized in a continuous manner. If pool says it has 100GB of free space,
@@ -601,9 +601,9 @@ public interface AbstractStorageElement extends Logger{
      *
      * various actions performed to reserve space in the storage
      */
-
-
-
+    
+    
+    
     /**
      * This was used for explicit space reservation, not a new type of reservation
      * Reserves spaceSize bytes of the space for storage of file with the path filename
@@ -625,7 +625,7 @@ public interface AbstractStorageElement extends Logger{
             String filename,
             String host,
             ReserveSpaceCallbacks callbacks);
-
+    
     /**
      * This was used for explicit space reservation, not a new type of reservation
      * Release spaceSize bytes of the reserved space identified with the token
@@ -640,7 +640,7 @@ public interface AbstractStorageElement extends Logger{
      * various actions performed to release space in the storage
      */
     public void releaseSpace( SRMUser user, long spaceSize, String spaceToken, ReleaseSpaceCallbacks callbacks);
-
+    
     /**
      * This was used for explicit space reservation, not a new type of reservation
      * Release all of the space identified with the token
@@ -654,51 +654,51 @@ public interface AbstractStorageElement extends Logger{
      * various actions performed to release space in the storage
      */
     public void releaseSpace( SRMUser user,  String spaceToken, ReleaseSpaceCallbacks callbacks);
-
-
+    
+     
     /** This method returns the information about the Storage Element
      * @param user User ID
      * @throws SRMException
      * @return StorageElementInfo object contained information about the Storage Element
      */
     public StorageElementInfo getStorageElementInfo(SRMUser user) throws SRMException;
-
+    
     /**
-     *
-     * @param user
-     * @param directoryName
-     * @throws org.dcache.srm.SRMException
-     * @return
+     * 
+     * @param user 
+     * @param directoryName 
+     * @throws org.dcache.srm.SRMException 
+     * @return 
      */
     public String[] listNonLinkedDirectory(SRMUser user,String directoryName) throws SRMException;
     /**
-     *
-     * @param user
-     * @param directoryName
-     * @param fileMetaData
-     * @throws org.dcache.srm.SRMException
-     * @return
+     * 
+     * @param user 
+     * @param directoryName 
+     * @param fileMetaData 
+     * @throws org.dcache.srm.SRMException 
+     * @return 
      */
     public String[] listDirectory(SRMUser user,String directoryName,FileMetaData fileMetaData) throws SRMException;
     /**
-     *
-     * @param user
-     * @param directoryName
-     * @param fileMetaData
-     * @throws org.dcache.srm.SRMException
-     * @return
+     * 
+     * @param user 
+     * @param directoryName 
+     * @param fileMetaData 
+     * @throws org.dcache.srm.SRMException 
+     * @return 
      */
     public java.io.File[] listDirectoryFiles(SRMUser user,String directoryName,FileMetaData fileMetaData) throws SRMException;
-
+    
     /**
-     *
-     * @param user
-     * @param sizeInBytes
-     * @param spaceReservationLifetime
-     * @param retentionPolicy
-     * @param accessLatency
-     * @param description
-     * @param callbacks
+     * 
+     * @param user 
+     * @param sizeInBytes 
+     * @param spaceReservationLifetime 
+     * @param retentionPolicy 
+     * @param accessLatency 
+     * @param description 
+     * @param callbacks 
      */
     public void srmReserveSpace(SRMUser user,
             long sizeInBytes,
@@ -707,27 +707,27 @@ public interface AbstractStorageElement extends Logger{
             String accessLatency,
             String description,
             SrmReserveSpaceCallbacks callbacks);
-
+    
     /**
-     *
-     * @param user
-     * @param spaceToken
-     * @param sizeInBytes
-     * @param callbacks
+     * 
+     * @param user 
+     * @param spaceToken 
+     * @param sizeInBytes 
+     * @param callbacks 
      */
     public void srmReleaseSpace(SRMUser user,
             String spaceToken,
             Long sizeInBytes,
             SrmReleaseSpaceCallbacks callbacks);
-
+            
     /**
-     *
-     * @param user
-     * @param spaceToken
-     * @param fileName
-     * @param sizeInBytes
-     * @param useLifetime
-     * @param callbacks
+     * 
+     * @param user 
+     * @param spaceToken 
+     * @param fileName 
+     * @param sizeInBytes 
+     * @param useLifetime 
+     * @param callbacks 
      */
     public void srmMarkSpaceAsBeingUsed(SRMUser user,
             String spaceToken,
@@ -736,56 +736,56 @@ public interface AbstractStorageElement extends Logger{
             long useLifetime,
             boolean overwrite,
             SrmUseSpaceCallbacks callbacks);
-
+    
     /**
-     *
-     * @param user
-     * @param spaceToken
-     * @param fileName
-     * @param callbacks
+     * 
+     * @param user 
+     * @param spaceToken 
+     * @param fileName 
+     * @param callbacks 
      */
     public void srmUnmarkSpaceAsBeingUsed(SRMUser user,
             String spaceToken,
             String fileName,
             SrmCancelUseOfSpaceCallbacks callbacks);
-
+    
     /**
-     *
-     * @param spaceTokens
-     * @throws org.dcache.srm.SRMException
-     * @return
+     * 
+     * @param spaceTokens 
+     * @throws org.dcache.srm.SRMException 
+     * @return 
      */
     public TMetaDataSpace[] srmGetSpaceMetaData(SRMUser user,String[] spaceTokens)
         throws SRMException;
 
     /**
-     *
-     * @param description
-     * @throws org.dcache.srm.SRMException
-     * @return
+     * 
+     * @param description 
+     * @throws org.dcache.srm.SRMException 
+     * @return 
      */
     public String[] srmGetSpaceTokens(SRMUser user,String description)
         throws SRMException;
-
+    
       /**
      * @param user User ID
      * @param spaceToken of a valid space reservation
      * @param newReservationLifetime new lifetime in millis to assign to space reservation
      * @return long lifetime of spacereservation left in milliseconds
-     *
+     *  
      */
-
+    
     public long srmExtendReservationLifetime(SRMUser user, String spaceToken, long newReservationLifetime)
     throws SRMException ;
    /**
-     *
-     * @param description
-     * @throws org.dcache.srm.SRMException
-     * @return
+     * 
+     * @param description 
+     * @throws org.dcache.srm.SRMException 
+     * @return 
      */
     public String[] srmGetRequestTokens(SRMUser user,String description)
         throws SRMException;
-
+    
     /**
      * @param newLifetime SURL lifetime in milliseconds
      *   -1 stands for infinite lifetime

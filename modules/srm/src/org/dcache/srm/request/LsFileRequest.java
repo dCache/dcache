@@ -128,7 +128,7 @@ public class LsFileRequest extends FileRequest {
         public org.apache.axis.types.URI getSurl() {
                 return surl;
          }
-
+        
         public String getSurlString() {
                 return surl.toString();
         }
@@ -238,7 +238,7 @@ public class LsFileRequest extends FileRequest {
 //                         }
 //                 }
         }
-
+        
 
         protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
             State state = getState();
@@ -300,9 +300,9 @@ public class LsFileRequest extends FileRequest {
                         try {
                                 setState(State.DONE,State.DONE.toString());
                         }
-                        catch(IllegalStateTransition ist) {
-                                 esay("can not set state to DONE");
-                        }
+                        catch(IllegalStateTransition ist) {                                                               
+                                 esay("can not set state to DONE");                                                      
+                        }                                                                                                 
                 }
                 return metaDataPathDetail;
         }
@@ -390,7 +390,7 @@ public class LsFileRequest extends FileRequest {
                         }
                 }
                 if (fmd.isDirectory) {
-                        fileLocality = TFileLocality.NONE;
+                        fileLocality = TFileLocality.NONE;	
                 }
                 metaDataPathDetail.setFileLocality(fileLocality);
                 if (fmd.retentionPolicyInfo!=null) {
@@ -517,7 +517,7 @@ public class LsFileRequest extends FileRequest {
                 }
                 return metaDataPathDetail;
         }
-
+        
         public TMetaDataPathDetail getMinimalMetaDataPathDetail(String path,
                                                                 java.io.File file)
                 throws SRMException,org.apache.axis.types.URI.MalformedURIException {
@@ -603,11 +603,11 @@ public class LsFileRequest extends FileRequest {
                 }
         }
 
-        public LsRequest getLsRequest() {
+        public LsRequest getLsRequest() { 
                 return request;
         }
 
-        public void setLsRequest(LsRequest request) {
+        public void setLsRequest(LsRequest request) { 
                 this.request=request;
         }
 
@@ -635,6 +635,6 @@ public class LsFileRequest extends FileRequest {
                 }
                 return sb.toString();
         }
-
+      
 }
 
