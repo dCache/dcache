@@ -1975,6 +1975,22 @@ public class PnfsManagerV3 extends CellAdapter
                  */
                 _nameSpaceProvider.getFileMetaData(subject, pnfsId);
             } else {
+                if(requested.contains(FileAttribute.STORAGEINFO)) {
+                    /*
+                     * TODO:
+                     * The 'classic' result of getStorageInfo was a cobination of
+                     * fileMetadata + storageInfo. This was used add the owner and group
+                     * information into sorageInfo's internal Map. Uid and Gid
+                     * used by the HSM flush scripts.
+                     *
+                     * This atavism will have to be cut out when HSM interface will
+                     * undestand Subject or FileAttributes will be passed to
+                     * HSM interface.
+                     */
+                    requested = EnumSet.copyOf(requested);
+                    requested.add(FileAttribute.OWNER);
+                    requested.add(FileAttribute.OWNER_GROUP);
+                }
                 FileAttributes attrs =
                     _nameSpaceProvider.getFileAttributes(subject,
                                                          pnfsId,
