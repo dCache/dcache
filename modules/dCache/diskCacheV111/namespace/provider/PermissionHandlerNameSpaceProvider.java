@@ -296,7 +296,8 @@ public class PermissionHandlerNameSpaceProvider
         throws CacheException
     {
         if (!Subjects.isRoot(subject)) {
-            Set<FileAttribute> required = _handler.getRequiredAttributes();
+            Set<FileAttribute> required = EnumSet.noneOf(FileAttribute.class);
+            required.addAll(_handler.getRequiredAttributes());
             required.addAll(attr);
             FileAttributes fileAttributes =
                 super.getFileAttributes(subject, pnfsId, required);
