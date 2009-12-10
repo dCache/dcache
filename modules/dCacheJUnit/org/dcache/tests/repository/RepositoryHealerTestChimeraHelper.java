@@ -19,6 +19,7 @@ import org.dcache.chimera.XMLconfig;
 import org.dcache.pool.repository.FileStore;
 
 import diskCacheV111.util.PnfsId;
+import org.dcache.commons.util.SqlHelper;
 
 public class RepositoryHealerTestChimeraHelper implements FileStore {
 
@@ -45,12 +46,12 @@ public class RepositoryHealerTestChimeraHelper implements FileStore {
             sql.append(inLine);
         }
 
-        Statement st = _conn.createStatement();
-
-        st.executeUpdate(sql.toString());
-
-        tryToClose(st);
-
+        String[] statements = sql.toString().split(";");
+        for (String statement : statements) {
+            Statement st = _conn.createStatement();
+            st.executeUpdate(statement);
+            SqlHelper.tryToClose(st);
+        }
 
         _fs = new JdbcFs(new XMLconfig(new File("modules/external/Chimera/test-config.xml")));
         _rootInode = _fs.path2inode("/");
