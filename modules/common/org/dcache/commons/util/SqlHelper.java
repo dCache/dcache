@@ -4,6 +4,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Connection;
 
 public class SqlHelper {
 
@@ -52,6 +53,18 @@ public class SqlHelper {
         } catch (Exception e) {
             // _logNamespace.error("tryToClose ResultSet", e);
         }
+    }
+
+    /**
+     * database resource cleanup
+     *
+     * @param o
+     */
+    public static void tryToClose(Connection o) {
+        try {
+            if (o != null)
+                o.close();
+        } catch (Exception e) {}
     }
 
 }
