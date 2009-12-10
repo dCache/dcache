@@ -6,7 +6,6 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
 
@@ -33,6 +32,7 @@ import java.security.Principal;
 import diskCacheV111.services.acl.ACLPermissionHandler;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.PnfsId;
+import org.dcache.commons.util.SqlHelper;
 
 /**
  * @author Irina Kozlova, David Melkumyan
@@ -126,9 +126,12 @@ public class ACLPermissionHandlerTest {
         while ((inLine = dataStr.readLine()) != null)
             sql.append(inLine);
 
-        Statement stmt = connection.createStatement();
-        stmt.executeUpdate(sql.toString());
-        attemptClose(stmt);
+        String[] statements = sql.toString().split(";");
+        for (String statement : statements) {
+            Statement st = connection.createStatement();
+            st.executeUpdate(statement);
+            SqlHelper.tryToClose(st);
+        }
     }
 
     /**
@@ -138,31 +141,7 @@ public class ACLPermissionHandlerTest {
     */
     private static void shutdownConnection() throws Exception {
         connection.createStatement().execute("SHUTDOWN;");
-        attemptClose(connection);
-    }
-
-    /**
-    * @param Close
-    *            statement
-    */
-    private static void attemptClose(Statement stmt) {
-        try {
-            if (stmt != null)
-                stmt.close();
-        } catch (SQLException IgnoreMe) {
-    }
-    }
-
-    /**
-    * @param Close
-    *            statement attempt
-    */
-    private static void attemptClose(Connection conn) {
-        try {
-            if (conn != null)
-                conn.close();
-        } catch (SQLException IgnoreMe) {
-    }
+        SqlHelper.tryToClose(connection);
     }
 
     private static void setACL(ACL acl) throws Exception {
