@@ -69,6 +69,7 @@ import org.dcache.cells.CellMessageReceiver;
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.chimera.nfs.v3.MountServer;
+import org.dcache.chimera.nfs.v4.MDSOperationFactory;
 import org.dcache.chimera.nfs.v4.xdr.layouttype4;
 import org.dcache.chimera.nfs.v4.xdr.nfsv4_1_file_layout_ds_addr4;
 import org.dcache.chimera.nfsv41.Utils;
@@ -156,7 +157,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             @Override
             public void run() {
                 try {
-                    NFSServerV41 nfs4 = new NFSServerV41(_dm, _fileFileSystemProvider, _exportFile );
+                    NFSServerV41 nfs4 = new NFSServerV41( new MDSOperationFactory(), _dm, _fileFileSystemProvider, _exportFile );
 
                     new OncRpcEmbeddedPortmap(2000);
 

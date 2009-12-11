@@ -6,20 +6,16 @@ import java.nio.channels.FileChannel;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
-import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.IOHimeraFsException;
-import org.dcache.chimera.nfs.ExportFile;
 import org.dcache.chimera.nfs.v4.AbstractNFSv4Operation;
-import org.dcache.chimera.nfs.v4.CompoundArgs;
 import org.dcache.chimera.nfs.ChimeraNFSException;
-import org.dcache.chimera.nfs.v4.NFSv4OperationResult;
+import org.dcache.chimera.nfs.v4.CompoundContext;
 import org.dcache.chimera.nfs.v4.xdr.READ4res;
 import org.dcache.chimera.nfs.v4.xdr.READ4resok;
 import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
 import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
-import org.dcache.xdr.RpcCall;
 
 public class EDSOperationREAD extends AbstractNFSv4Operation {
 
@@ -27,16 +23,13 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
 
      private final Map<stateid4, MoverBridge> _activeIO;
 
-    public EDSOperationREAD(FileSystemProvider fs, RpcCall call$, CompoundArgs fh, nfs_argop4 args,  Map<stateid4, MoverBridge> activeIO, ExportFile exports) {
-        super(fs, exports, call$, fh, args, nfs_opnum4.OP_READ);
+    public EDSOperationREAD(nfs_argop4 args,  Map<stateid4, MoverBridge> activeIO) {
+        super(args, nfs_opnum4.OP_READ);
         _activeIO = activeIO;
-        if(_log.isDebugEnabled() ) {
-            _log.debug("NFS Request  DSREAD from: " + _callInfo.getTransport().getRemoteSocketAddress() );
-        }
     }
 
     @Override
-    public NFSv4OperationResult process() {
+    public boolean process(CompoundContext context) {
         READ4res res = new READ4res();
 
         try {
@@ -90,7 +83,8 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
 
        _result.opread = res;
 
-        return new NFSv4OperationResult(_result, res.status);
+        context.processedOperations().add(_result);
+        return res.status == nfsstat4.NFS4_OK;
     }
 
     private static class IOReadFile {

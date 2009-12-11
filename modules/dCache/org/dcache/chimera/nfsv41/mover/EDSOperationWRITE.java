@@ -10,9 +10,8 @@ import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.IOHimeraFsException;
 import org.dcache.chimera.nfs.ExportFile;
 import org.dcache.chimera.nfs.v4.AbstractNFSv4Operation;
-import org.dcache.chimera.nfs.v4.CompoundArgs;
 import org.dcache.chimera.nfs.ChimeraNFSException;
-import org.dcache.chimera.nfs.v4.NFSv4OperationResult;
+import org.dcache.chimera.nfs.v4.CompoundContext;
 import org.dcache.chimera.nfs.v4.xdr.WRITE4res;
 import org.dcache.chimera.nfs.v4.xdr.WRITE4resok;
 import org.dcache.chimera.nfs.v4.xdr.count4;
@@ -36,16 +35,13 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
      private static final int INC_SPACE = (50 * 1024 * 1024);
 
 
-    public EDSOperationWRITE(FileSystemProvider fs, RpcCall call$, CompoundArgs fh, nfs_argop4 args, Map<stateid4, MoverBridge> activeIO, ExportFile exports) {
-        super(fs, exports, call$, fh, args, nfs_opnum4.OP_WRITE);
+    public EDSOperationWRITE(nfs_argop4 args, Map<stateid4, MoverBridge> activeIO) {
+        super(args, nfs_opnum4.OP_WRITE);
         _activeIO = activeIO;
-        if(_log.isDebugEnabled() ) {
-            _log.debug("NFS Request DSWRITE from: " + _callInfo.getTransport().getRemoteSocketAddress() );
-        }
     }
 
     @Override
-    public NFSv4OperationResult process() {
+    public boolean process(CompoundContext context) {
 
         WRITE4res res = new WRITE4res();
 
@@ -104,8 +100,8 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
 
        _result.opwrite = res;
 
-        return new NFSv4OperationResult(_result, res.status);
-
+        context.processedOperations().add(_result);
+        return res.status == nfsstat4.NFS4_OK;
     }
 
     private static class IOWriteFile {
