@@ -14,6 +14,7 @@ import com.bradmcevoy.http.Handler;
 import com.bradmcevoy.http.HttpManager;
 import com.bradmcevoy.http.exceptions.ConflictException;
 import com.bradmcevoy.http.exceptions.NotAuthorizedException;
+import com.bradmcevoy.http.exceptions.BadRequestException;
 
 /**
  * Custom StandardFilter for Milton.
@@ -88,6 +89,9 @@ public class DcacheStandardFilter implements Filter
             }
 
             handler.process(_manager, request, response);
+        } catch (BadRequestException ex) {
+            _manager.getResponseHandler().respondBadRequest(ex.getResource(),
+                                                            response, request);
         } catch (ConflictException ex) {
             _manager.getResponseHandler().respondConflict(ex.getResource(),
                                                           response, request,
