@@ -30,12 +30,21 @@ public class LoggingFilter implements Filter
         try {
             filterChain.process(request, response);
 
-            _log.info(String.format("%s %s %s %s %d",
-                                    request.getFromAddress(),
-                                    request.getMethod(),
-                                    request.getAbsolutePath(),
-                                    getUser(),
-                                    response.getStatus().code));
+            Response.Status status = response.getStatus();
+            if (status != null) {
+                _log.info(String.format("%s %s %s %s %d",
+                                        request.getFromAddress(),
+                                        request.getMethod(),
+                                        request.getAbsolutePath(),
+                                        getUser(),
+                                        status.code));
+            } else {
+                _log.info(String.format("%s %s %s %s",
+                                        request.getFromAddress(),
+                                        request.getMethod(),
+                                        request.getAbsolutePath(),
+                                        getUser()));
+            }
         } catch (RuntimeException e) {
             _log.warn(String.format("%s %s %s %s %s",
                                     request.getFromAddress(),
