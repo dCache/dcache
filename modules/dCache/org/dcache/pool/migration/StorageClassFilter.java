@@ -1,6 +1,7 @@
 package org.dcache.pool.migration;
 
 import org.dcache.pool.repository.CacheEntry;
+import diskCacheV111.vehicles.StorageInfo;
 
 /**
  * Repository entry filter accepting entries with a particular storage
@@ -17,6 +18,7 @@ public class StorageClassFilter implements CacheEntryFilter
 
     public boolean accept(CacheEntry entry)
     {
-        return _sc.equals(entry.getStorageInfo().getStorageClass());
+        StorageInfo info = entry.getStorageInfo();
+        return info != null && _sc.equals(info.getStorageClass());
     }
 }

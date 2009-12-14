@@ -659,6 +659,7 @@ public class MigrationModule
         "   CANCELLING     Job cancelled by user; waiting for tasks to stop\n" +
         "   CANCELLED      Job cancelled by user; no tasks are running\n" +
         "   FINISHED       Job completed\n\n" +
+        "   FAILED         Job failed (check log file for details)\n" +
         "Job tasks may be in any of the following states:\n\n" +
         "   Queued               Queued for execution\n" +
         "   GettingLocations     Querying PnfsManager for file locations\n" +
