@@ -1,56 +1,3 @@
-// $Id: GsiFtpDoorV1.java,v 1.17 2007-10-25 20:02:42 behrmann Exp $
-// $Log: not supported by cvs2svn $
-// Revision 1.16  2005/11/22 10:59:30  patrick
-// Versioning enabled.
-//
-// Revision 1.15  2005/11/08 14:16:35  patrick
-// perf switch off with perfMarkerPeriod=0 (from 1.6.6)
-//
-// Revision 1.11.6.2  2005/10/31 10:21:16  patrick
-// perf switch off with perfMarkerPeriod=0
-//
-// Revision 1.11.6.1  2005/10/31 05:42:41  patrick
-// Performance Markers from head to 1.6.6
-//
-// Revision 1.14  2005/10/26 17:56:41  aik
-// GFtp performance markers implementation.
-//
-// Revision 1.11.8.1  2005/10/12 23:08:13  aik
-// GridFtp performance markers implementation. First (or ~0.75) cut.
-//
-// Revision 1.11  2005/05/19 05:55:43  timur
-// added support for monitoring door state via dcache pages
-//
-// Revision 1.10  2004/09/09 20:27:37  timur
-// made ftp transaction logging optional
-//
-// Revision 1.9  2004/09/09 18:39:40  timur
-// added the uid,gid to the user names in FTP logs
-//
-// Revision 1.8  2004/09/08 21:25:43  timur
-// remote gsiftp transfer manager will now use ftp logger too, fixed ftp door logging problem
-//
-// Revision 1.7  2004/08/19 18:22:28  timur
-// gridftp door gives pool a host name instead of address, reformated code
-//
-// Revision 1.6  2003/09/25 16:52:05  cvs
-// use globus java cog kit gsi gss library instead of gsint
-//
-// Revision 1.5  2003/09/02 21:06:20  cvs
-// removed logging of security info by kftp and gsiftp doors, changest in srm
-//
-// Revision 1.4  2003/06/12 22:39:30  cvs
-// added code to allow an individual user to be read-only
-//
-// Revision 1.3  2003/05/12 19:26:19  cvs
-// create worker threads from sublclasses
-//
-// Revision 1.2  2003/05/07 17:44:24  cvs
-// new ftp doors are ready
-//
-// Revision 1.1  2003/05/06 22:10:48  cvs
-// new ftp door classes structure
-//
 /*
  * GsiFtpDoorV1.java
  *
@@ -83,7 +30,12 @@ import org.globus.gsi.GSIConstants;
 import org.globus.gsi.gssapi.GSSConstants;
 
 import org.dcache.cells.Option;
-
+import gplazma.authz.AuthorizationController;
+import gplazma.authz.AuthorizationException;
+import org.dcache.vehicles.AuthorizationMessage;
+import org.dcache.auth.AuthorizationRecord;
+import org.dcache.auth.AuthzQueryHelper;
+import org.dcache.auth.RecordConvert;
 /**
  *
  * @author  timur
@@ -122,7 +74,7 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
         super.init();
 
         Args args = getArgs();
-        _GSSFlavor = "gsi";
+        _gssFlavor = "gsi";
 
         // Grid FTP Performance Markers options:
         String arg_string = args.getOpt("usePerfMarkers");
@@ -213,5 +165,46 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
         context.setOption(GSSConstants.TRUSTED_CERTIFICATES, trusted_certs);
 
         return context;
+    }
+    /**
+     * Communicates with gPlazma in protocol and configuration  appropriate
+     * manner in order to receiceve authorization
+     * @return AuthorizationRecord obtained from gPlazma service
+     */
+    protected AuthorizationRecord authorize()
+            throws AuthorizationException {
+        if (_use_gplazmaAuthzCell) {
+            AuthzQueryHelper authHelper = new AuthzQueryHelper(this);
+            authHelper.setDelegateToGplazma(_delegate_to_gplazma);
+            AuthorizationMessage authorizationMessage;
+            if (_user.equals(GLOBUS_URL_COPY_DEFAULT_USER)) {
+                info("GssFtpDoorV1::ac_user: gplazma special case, user is " +
+                        _user);
+                authorizationMessage =
+                        authHelper.getAuthorization(_serviceContext);
+            } else {
+                authorizationMessage =
+                        authHelper.getAuthorization(_serviceContext, _user);
+
+            }
+            return authorizationMessage.getAuthorizationRecord();
+        } else  if ( _use_gplazmaAuthzModule) {
+            AuthorizationController authCtrl =
+                    new AuthorizationController(_gplazmaPolicyFilePath);
+            if (_user.equals(GLOBUS_URL_COPY_DEFAULT_USER)) {
+                info("GssFtpDoorV1::ac_user: gplazma special case, user is " +
+                        _user);
+                return RecordConvert.gPlazmaToAuthorizationRecord(
+                        authCtrl.authorize(_serviceContext, null, null, null));
+            } else {
+                return RecordConvert.gPlazmaToAuthorizationRecord(
+                        authCtrl.authorize(_serviceContext, _user, null, null));
+            }
+        }  else {
+            throw new AuthorizationException(
+                    "_use_gplazmaAuthzCell is false and " +
+                    "_use_gplazmaAuthzModule is false");
+        }
+
     }
 }
