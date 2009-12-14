@@ -1,6 +1,6 @@
 
 #define VER(a) #a " " __DATE__ " " __TIME__ ;
-#define VERLONG(a) #a " " __DATE__ " " __TIME__ " CFLAGS=\"" __CFLAGS__ "\"";
+#define VERLONG(a) #a " " __DATE__ " " __TIME__ " ";
 
 const char *getDcapVersion()
 {
