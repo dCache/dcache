@@ -56,8 +56,7 @@ import org.apache.log4j.Logger;
  * job, then it is added to the transfer queue of the job. A permanent
  * job does not terminate, even if its transfer queue becomes
  * empty. Permanent jobs are saved to the pool setup file and restored
- * on pool start. (PERMANENT JOBS HAVE NOT BEEN IMPLEMENTD YET!)
- *
+ * on pool start.
  *
  * Jobs can be in any of the following states:
  *
@@ -68,12 +67,13 @@ import org.apache.log4j.Logger;
  * CANCELLING     Job cancelled by user; waiting for tasks to stop
  * CANCELLED      Job cancelled by user; no tasks are running
  * FINISHED       Job completed
+ * FAILED         Job failed
  */
 public class Job
     extends AbstractStateChangeListener
 {
     enum State { INITIALIZING, RUNNING, SLEEPING, SUSPENDED,
-            CANCELLING, CANCELLED, FINISHED }
+            CANCELLING, CANCELLED, FINISHED, FAILED }
 
     private final static Logger _log = Logger.getLogger(Job.class);
 
@@ -111,9 +111,14 @@ public class Job
         executor.submit(new LoggingTask(new Runnable() {
                 public void run()
                 {
-                    _configuration.getRepository().addListener(Job.this);
-                    populate();
-                    setState(State.RUNNING);
+                    State state = State.FAILED;
+                    try {
+                        _configuration.getRepository().addListener(Job.this);
+                        populate();
+                        state = State.RUNNING;
+                    } finally {
+                        setState(state);
+                    }
                 }
             }));
     }
@@ -175,6 +180,7 @@ public class Job
                 break;
 
             case CANCELLED:
+            case FAILED:
                 pw.println("Completed  : "
                            + _statistics.getCompleted() + " files; "
                            + _statistics.getTransferred() + " bytes");
@@ -311,6 +317,7 @@ public class Job
 
             case FINISHED:
             case CANCELLED:
+            case FAILED:
                 _queued.clear();
                 _sizes.clear();
                 _configuration.getRepository().removeListener(this);

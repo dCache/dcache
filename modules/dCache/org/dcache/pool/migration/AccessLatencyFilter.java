@@ -3,6 +3,7 @@ package org.dcache.pool.migration;
 import org.dcache.pool.repository.CacheEntry;
 
 import diskCacheV111.util.AccessLatency;
+import diskCacheV111.vehicles.StorageInfo;
 
 /**
  * Repository entry filter which only accepts files with a certain
@@ -19,6 +20,7 @@ public class AccessLatencyFilter implements CacheEntryFilter
 
     public boolean accept(CacheEntry entry)
     {
-        return entry.getStorageInfo().getAccessLatency().equals(_accessLatency);
+        StorageInfo info = entry.getStorageInfo();
+        return info != null && _accessLatency.equals(info.getAccessLatency());
     }
 }

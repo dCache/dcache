@@ -3,6 +3,7 @@ package org.dcache.pool.migration;
 import org.dcache.pool.repository.CacheEntry;
 
 import diskCacheV111.util.RetentionPolicy;
+import diskCacheV111.vehicles.StorageInfo;
 
 /**
  * Repository entry filter which only accepts files with a certain
@@ -19,6 +20,7 @@ public class RetentionPolicyFilter implements CacheEntryFilter
 
     public boolean accept(CacheEntry entry)
     {
-        return entry.getStorageInfo().getRetentionPolicy().equals(_retentionPolicy);
+        StorageInfo info = entry.getStorageInfo();
+        return info != null && _retentionPolicy.equals(info.getRetentionPolicy());
     }
 }

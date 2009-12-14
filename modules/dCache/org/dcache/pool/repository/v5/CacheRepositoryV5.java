@@ -67,7 +67,7 @@ public class CacheRepositoryV5
     * time in millisecs added to each sticky expiration task
     * We schedule the task later than the expiration time to account
     * for small clock shifts.
-    */    
+    */
     public static final long EXPIRATION_CLOCKSHIFT_EXTRA_TIME = 1000L;
     private final static Logger _log =
         Logger.getLogger(CacheRepositoryV5.class);
@@ -405,11 +405,17 @@ public class CacheRepositoryV5
         throws FileInCacheException
     {
         try {
-            if (stickyRecords == null)
-                throw new IllegalArgumentException("List of sticky records may not be null");
+            if (stickyRecords == null) {
+                throw new IllegalArgumentException("List of sticky records must not be null");
+            }
 
-            if (!_initialised)
+            if (info == null) {
+                throw new IllegalArgumentException("StorageInfo must not be null");
+            }
+
+            if (!_initialised) {
                 throw new IllegalStateException("Repository has not been initialized");
+            }
 
             switch (transferState) {
             case FROM_CLIENT:
