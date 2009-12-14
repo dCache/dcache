@@ -98,6 +98,11 @@ public class DcacheStandardFilter implements Filter
         } catch (ForbiddenException e) {
             errorResponse(response,
                           Response.Status.SC_FORBIDDEN, FORBIDDEN_HTML);
+        } catch (WebDavException e) {
+            log.warn("Internal server error: " + e);
+            errorResponse(response,
+                          Response.Status.SC_INTERNAL_SERVER_ERROR,
+                          INTERNAL_SERVER_ERROR_HTML);
         } catch (RuntimeException e) {
             log.error("Internal server error", e);
             errorResponse(response,

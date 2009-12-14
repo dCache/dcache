@@ -23,6 +23,7 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.FileExistsCacheException;
 
 import org.dcache.vehicles.FileAttributes;
 
@@ -74,10 +75,12 @@ public class DcacheDirectoryResource
             return _factory.createFile(_attributes, path, inputStream, length);
         } catch (PermissionDeniedCacheException e) {
             throw new ForbiddenException(e.getMessage(), e, this);
+        } catch (FileExistsCacheException e) {
+            throw new ForbiddenException(e.getMessage(), e, this);
         } catch (CacheException e) {
-            throw new IOException(e.getMessage(), e);
+            throw new WebDavException(e.getMessage(), e, this);
         } catch (InterruptedException e) {
-            throw new InterruptedIOException("Transfer was interrupted");
+            throw new WebDavException("Transfer was interrupted", e, this);
         }
     }
 
