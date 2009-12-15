@@ -601,10 +601,6 @@
         <!-- Web services stuff   -->
         <copy file="${dcache.src}/diskCacheV111/config/JHRM.map" todir="${server.bin.dir}/config" />
 
-        <!-- LCG specific -->
-        <copy file="${dcache.src}/diskCacheV111/jobs/infoDynamicSE-plugin-dcache" todir="${server.bin.dir}/jobs" />
-        <copy file="${dcache.src}/diskCacheV111/jobs/infoDynamicSE-provider-dcache" todir="${server.bin.dir}/jobs" />
-
         <!-- most of this stuff have nothing to do with dCache, but I can't find beter place -->
 
         <!-- external jars -->
