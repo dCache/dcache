@@ -80,8 +80,6 @@ fi
 %attr(0755,root,root) /opt/d-cache/jobs/initPackage.sh
 %attr(0755,root,root) /opt/d-cache/jobs/hsmcp.sh
 %attr(0755,root,root) /opt/d-cache/jobs/hsmcpV4.sh
-%attr(0755,root,root) /opt/d-cache/jobs/infoDynamicSE-plugin-dcache
-%attr(0755,root,root) /opt/d-cache/jobs/infoDynamicSE-provider-dcache
 %attr(0755,root,root) /opt/d-cache/bin/dcache-srm
 %attr(0755,root,root) /opt/d-cache/libexec/chimera/chimera-nfs-run.sh
 %attr(0755,root,root) /opt/d-cache/libexec/chimera/chimera-cli.sh
