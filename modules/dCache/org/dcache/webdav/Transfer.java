@@ -406,7 +406,7 @@ public abstract class Transfer implements Comparable<Transfer>
     {
         setStatus("PnfsManager: Fetching storage info");
         try {
-            Set<FileAttribute> request = EnumSet.of(PNFSID, STORAGEINFO);
+            Set<FileAttribute> request = EnumSet.of(PNFSID, TYPE, STORAGEINFO);
             Set<AccessMask> mask = EnumSet.of(AccessMask.READ_DATA);
             FileAttributes attributes;
             PnfsId pnfsid = getPnfsId();
