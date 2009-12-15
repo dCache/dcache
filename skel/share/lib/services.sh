@@ -103,9 +103,6 @@ printLegacyDomains()
 # node_config variables.
 printLegacyAdminDomains()
 {
-    if isNodeConfigEnabled infoProvider; then
-        printDomains infoProvider
-    fi
     if isNodeConfigEnabled info; then
         printDomains info
     fi

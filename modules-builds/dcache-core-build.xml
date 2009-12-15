@@ -395,7 +395,6 @@
         <copy file="${dcache.src}/diskCacheV111/config/authdoor.batch" todir="${server.bin.dir}/config" />
         <copy file="${dcache.src}/diskCacheV111/config/adminDoor.batch" todir="${server.bin.dir}/config" />
         <copy file="${dcache.src}/diskCacheV111/config/httpd.batch" todir="${server.bin.dir}/config" />
-        <copy file="${dcache.src}/diskCacheV111/config/infoProvider.batch" todir="${server.bin.dir}/config" />
         <copy file="${dcache.src}/diskCacheV111/config/pool.batch" todir="${server.bin.dir}/config" />
         <copy file="${dcache.src}/diskCacheV111/config/replica.batch" todir="${server.bin.dir}/config" />
         <copy file="${dcache.src}/diskCacheV111/config/utility.batch" todir="${server.bin.dir}/config" />

@@ -68,7 +68,6 @@
     <import file="modules-builds/gplazma-build.xml"/>
     <import file="modules-builds/dcache-core-build.xml"/>
     <import file="modules-builds/srm-build.xml"/>
-    <import file="modules-builds/infoProvider-build.xml"/>
     <import file="modules-builds/dcap-build.xml"/>
     <import file="modules-builds/srmclient-build.xml" />
     <import file="modules-builds/junit-build.xml" />
@@ -92,9 +91,6 @@
     <target name="xrootd-tokenauthz" depends="dcache,-xrootd-tokenauthz.bin"
                   description="Compile xrootd tokenauthorization package and create xrootd-tokenauthz.jar" />
 
-    <target name="infoprovider" depends="dcache,-infoProvider.bin"
-                  description="Compile infoProvider package and create infoProvider.jar" />
-
     <target name="javatunnel" depends="gplazma,-javatunnel.bin"
                   description="Compile javatunnel package and create javatunnel.jar" />
 
@@ -111,7 +107,7 @@
 
     <target name="install-server"
               depends="dcache,
-                       infoprovider,xrootd-tokenauthz,javatunnel,-dcache-classpath"
+                       xrootd-tokenauthz,javatunnel,-dcache-classpath"
                 description="build deploy-ready server package">
 
         <!-- rpm directory structure with some defaults scripts -->
@@ -239,8 +235,6 @@
        <echo message="     srm               : Compile srm and dependent packages" />
        <echo message="" />
        <echo message="     dcache            : Compile dcache and dependent packages" />
-       <echo message="" />
-       <echo message="     infoprovider      : Compile infoProvider and dependent packages" />
        <echo message="" />
        <echo message="     xrootd-tokenauthz : Compile xrootd-tokenauthz and dependent packages" />
        <echo message="" />

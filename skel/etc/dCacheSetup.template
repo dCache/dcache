@@ -1232,54 +1232,9 @@ billingDb=${ourHomeDir}/billing
 #
 #   This variable describes which XSLT processor to use.  The current
 #   valid options are xsltproc and saxon.  If none is specified then
-#   saxon is used by deafult.
+#   saxon is used by default.
 #
 #xsltProcessor=saxon
-
-
-
-#  -----------------------------------------------------------------------
-#       Info Provider
-#  -----------------------------------------------------------------------
-#
-#   The following variables are used by the (old) dynamic info
-#   provider, which is used for integration of dCache as a storage
-#   element in the WLCG information system.  All variables are used by
-#   the client side of the dynamic info provider which is called
-#   at regular intervals by the gLite GIP (generic info provider)
-#   framework. It consists of the two scripts:
-#
-#     jobs/infoDynamicSE-plugin-dcache
-#     jobs/infoDynamicSE-provider-dcache
-
-#  ---- Time between retrievals
-#
-#   The time, in seconds, between successive information retrievals.
-#   Default: 180
-#
-#infoCollectorInterval=180
-
-#  ---- Location of static LDIF
-#
-#   The static LDIF file used by GIP.  This is also used by the
-#   plugin to determine the info it should output.
-#   Default: /opt/lcg/var/gip/ldif/lcg-info-static-se.ldif
-#
-#infoProviderStaticFile=/opt/lcg/var/gip/ldif/lcg-info-static-se.ldif
-
-#  ---- Where infoCollector service is running
-#
-#   This is the hostname of the node that runs the infoCollector
-#   service.  The default value is localhost.
-#
-#infoCollectorHost=localhost
-
-#  ---- The port on which the InfoCollector cell will listen
-#
-#   This variable is used by the InfoCollector cell as well as the
-#   dynamic info provider scripts.  The default value is 22111.
-#
-#infoCollectorPort=22111
 
 
 
