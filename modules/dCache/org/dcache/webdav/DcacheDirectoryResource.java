@@ -16,6 +16,7 @@ import com.bradmcevoy.http.DeletableResource;
 import com.bradmcevoy.http.MakeCollectionableResource;
 import com.bradmcevoy.http.Auth;
 import com.bradmcevoy.http.Range;
+import com.bradmcevoy.http.Request;
 import com.bradmcevoy.http.exceptions.NotAuthorizedException;
 import com.bradmcevoy.http.exceptions.ConflictException;
 
@@ -40,6 +41,16 @@ public class DcacheDirectoryResource
                                    FsPath path, FileAttributes attributes)
     {
         super(factory, path, attributes);
+    }
+
+    @Override
+    public String checkRedirect(Request request)
+    {
+        String url = request.getAbsoluteUrl();
+        if (request.getMethod() == Request.Method.GET && !url.endsWith("/")) {
+            return url + "/";
+        }
+        return null;
     }
 
     @Override
