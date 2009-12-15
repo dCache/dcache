@@ -305,11 +305,22 @@ public class PermissionHandlerNameSpaceProvider
             /* The permission check is performed after we fetched the
              * attributes to avoid fetching the attributes twice.
              */
-            PnfsId parentId = _inner.getParentOf(subject, pnfsId);
-            FileAttributes parent =
-                getFileAttributesForPermissionHandler(parentId);
-            if (_handler.canGetAttributes(subject, parent, fileAttributes, attr) != ACCESS_ALLOWED) {
-                throw new PermissionDeniedCacheException("Access denied: " + pnfsId.toString());
+            try {
+                PnfsId parentId = _inner.getParentOf(subject, pnfsId);
+
+                FileAttributes parent =
+                    getFileAttributesForPermissionHandler(parentId);
+                if (_handler.canGetAttributes(subject, parent, fileAttributes, attr) != ACCESS_ALLOWED) {
+                    throw new PermissionDeniedCacheException("Access denied: " + pnfsId.toString());
+                }
+            } catch (FileNotFoundCacheException e) {
+                /* This usually means that the file doesn't have a
+                 * parent. That is we are fetching attributes of the
+                 * root directory. We cannot handle this situation
+                 * correctly with the current PermissionHandler. As a
+                 * temporary workaround we simply allow fetching
+                 * attributes of the root directory.
+                 */
             }
             return fileAttributes;
         }
