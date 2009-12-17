@@ -1522,7 +1522,8 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
         sb.append("          readyQueue size="+readyQueue.size()).append('\n');
         sb.append("          !!! readyQueued="+getTotalRQueued()).append('\n');
         sb.append("          maxNumberOfRetries="+maxNumberOfRetries).append('\n');
-        sb.append("          number of restored but not scheduled=").append(restoredJobsNum).append('\n');
+        sb.append("          number of restored but not scheduled=").
+                append(getTotalRestored()).append('\n');
         sb.append("          restorePolicy");
         switch(restorePolicy) {
             case ON_RESTART_FAIL_REQUEST:
