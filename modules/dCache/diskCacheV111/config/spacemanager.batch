@@ -4,5 +4,5 @@ exec -shell file:${ourHomeDir}/share/cells/logging.fragment
 exec -shell file:${ourHomeDir}/share/cells/setup.fragment
 exec -shell file:${ourHomeDir}/share/cells/tunnel.fragment
 exec -shell file:${ourHomeDir}/share/cells/threadmanager.cell
-exec -shell file:${ourHomeDir}/share/cells/srm.cell
+exec -shell file:${ourHomeDir}/share/cells/spacemanager.cell
 

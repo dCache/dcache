@@ -94,6 +94,12 @@ printLegacyDomains()
     if isNodeConfigEnabled GSIDCAP; then
         printDomains gsidcap
     fi
+    if isNodeConfigEnabled SPACEMANAGER; then
+        printDomains spacemanager
+    fi
+    if isNodeConfigEnabled TRANSFERMANAGERS; then
+        printDomains transfermanagers
+    fi
     if isNodeConfigEnabled SRM; then
         printDomains srm
     fi
