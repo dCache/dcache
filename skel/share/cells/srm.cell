@@ -14,7 +14,7 @@ check -strong srmPort
 #   srm     c e l l
 #
 #
-#   Default values (it not specified in dCacheSetup
+#   Default values (if not specified in dCacheSetup)
 #
 onerror continue
 
@@ -99,15 +99,11 @@ set context -c srmBringOnlineLifeTime      ${srmGetLifeTime}
 set context -c srmPutLifeTime      14400000
 set context -c srmCopyLifeTime     14400000
 
-set context -c srmVacuum          true
-set context -c srmVacuumPeriod   21600
-
 set context -c pnfsSrmPath                      /
 set context -c xrootdRootPath                   /
 set context -c webdavRootPath                   /
 set context -c httpRootPath                     ${webdavRootPath}
 
-set context -c srmPoolManagerTimeout   300
 set context -c srmPoolTimeout          300
 set context -c srmPnfsTimeout          300
 set context -c srmMoverTimeout        7200
@@ -149,7 +145,7 @@ set context -c srmPoolManager PoolManager
 set context -c srmLoginBrokerUpdatePeriod 3000
 
 #pool manager timeout in seconds
-set context -c srmPoolManagerTimeout 60
+set context -c srmPoolManagerTimeout 300
 
 #number of doors in the random selection
 #srm will order doors according to their load
@@ -204,8 +200,6 @@ set context -c srmSpaceManagerEnabled no
 
 
 define env srmSpaceManagerOn.exe endExe
-  set env -c remoteTransferManagerPoolProxy        "SrmSpaceManager"
-  set env -c remoteTransferManagerPoolManager      "SrmSpaceManager"
   set context -c srmImplicitSpaceManagerEnabled true
   set context -c srmSpaceReservationStrict true
 endExe
@@ -222,10 +216,6 @@ exec env srmSpaceManagerOn.exe -ifok=srmSpaceManagerIsOn
 eval ${srmSpaceManagerEnabled} yes !=
 set env srmSpaceManagerIsOff ${rc}
 exec env srmSpaceManagerOff.exe -ifok=srmSpaceManagerIsOff
-
-set context -c remoteTransferManagerPoolProxy                "PoolManager"
-set context -c remoteTransferManagerPoolManager              "PoolManager"
-
 
 # srmCustomGetHostByAddr enables using the BNL developed procedure
 # for host by ip resolution if standard InetAddress method failed
@@ -253,54 +243,6 @@ onerror shutdown
 #exec context localhost.exe -ifnotok=srmDbHostIsSet
 #onerror shutdown
 #
-
-
-#
-# RemoteHttpTransferManager
-#
-#
-create diskCacheV111.doors.RemoteHttpTransferManager RemoteHttpTransferManager \
-        "default \
-        -export \
-        -pool_manager_timeout=${srmPoolManagerTimeout} \
-        -pool_timeout=${srmPoolTimeout} \
-        -pnfs_timeout=${srmPnfsTimeout} \
-        -mover_timeout=${srmMoverTimeout} \
-        -max_transfers=${remoteHttpMaxTransfers} \
-"
-#
-# RemoteGsiftpTransferManager
-#
-create diskCacheV111.services.GsiftpTransferManager RemoteGsiftpTransferManager \
-        "default -export \
-        -pool_manager_timeout=${srmPoolManagerTimeout} \
-        -pool_timeout=${srmPoolTimeout} \
-        -pnfs_timeout=${srmPnfsTimeout} \
-        -mover_timeout=${srmMoverTimeout} \
-        -max_transfers=${remoteGsiftpMaxTransfers} \
-        -io-queue=${remoteGsiftpIoQueue} \
-        -jdbcUrl=jdbc:postgresql://${srmDatabaseHost}/${srmDbName} \
-        -jdbcDriver=org.postgresql.Driver  \
-        -dbUser=${srmDbUser} \
-        -dbPass=${srmDbPassword} \
-        -pgPass=${srmPasswordFile}   \
-        -doDbLog=${srmDbLogEnabled} \
-        -poolManager=${remoteTransferManagerPoolManager} \
-        -poolProxy=${remoteTransferManagerPoolProxy} \
-"
-#
-# Copy Manager Cell
-#
-create diskCacheV111.doors.CopyManager CopyManager \
-       "default -export \
-        -pool_manager_timeout=${srmPoolManagerTimeout} \
-        -pool_timeout=${srmPoolTimeout} \
-        -pnfs_timeout=${srmPnfsTimeout} \
-        -mover_timeout=${srmMoverTimeout} \
-        -max_transfers=${remoteCopyMaxTransfers} \
-        -poolManager=${remoteTransferManagerPoolManager} \
-        -poolProxy=${remoteTransferManagerPoolProxy} \
-"
 
 create diskCacheV111.srm.dcache.Storage  SRM-${thisHostname} \
        "-srmport=${srmPort} \
