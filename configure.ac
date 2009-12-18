@@ -3,12 +3,12 @@ dnl -------------------------------------------------------------------------
 
 
 
-AC_INIT(dcap.c)
+AC_INIT(src/dcap.c)
 GCCVER=$EDG_RPM_RELEASE_VERSION
 AC_SUBST(GCCVER)
 
 AC_CONFIG_AUX_DIR(config)
-AM_CONFIG_HEADER(debug_level.h)
+AM_CONFIG_HEADER(src/debug_level.h)
 
 BRUTTAG='$Name:  $'
 
@@ -504,8 +504,9 @@ AC_SUBST(GLOBUS_LIB_DIR)
 
 
 AC_OUTPUT(Makefile \
-  dcap.h \
-  dcache-dcap.spec \
-  security_plugins/Makefile \
-  security_plugins/gssapi/Makefile \
-  security_plugins/telnet/Makefile )
+  src/Makefile \
+  src/dcap.h \
+  plugins/Makefile \
+  plugins/gssapi/Makefile \
+  plugins/telnet/Makefile \
+  dcache-dcap.spec )
