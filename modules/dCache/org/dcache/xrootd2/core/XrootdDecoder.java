@@ -50,7 +50,7 @@ public class XrootdDecoder extends FrameDecoder
             return null;
         }
 
-        ChannelBuffer frame = buffer.readSlice(length);
+        ChannelBuffer frame = buffer.readBytes(length);
         int requestID = frame.getUnsignedShort(2);
 
         switch (requestID) {
