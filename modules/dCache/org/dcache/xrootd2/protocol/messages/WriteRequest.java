@@ -45,9 +45,17 @@ public class WriteRequest extends AbstractRequestMessage
     public void getData(GatheringByteChannel out)
         throws IOException
     {
-        int len = 0;
-        while (len < dlen) {
-            len += buffer.getBytes(24, out, dlen);
+        int index = 24;
+        int len = dlen;
+        while (len > 0) {
+            int written = buffer.getBytes(index, out, len);
+            index += written;
+            len -= written;
         }
+    }
+
+    public String toString()
+    {
+        return String.format("write[%d,%d,%d]", fhandle, offset, dlen);
     }
 }
