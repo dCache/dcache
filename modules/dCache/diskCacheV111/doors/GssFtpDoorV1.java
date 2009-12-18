@@ -199,8 +199,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
             GSSIdentity = serviceContext.getSrcName();
             //debug("GssFtpDoorV1::ac_adat: User principal: " + UserPrincipal);
         } catch( Exception e ) {
-            error("GssFtpDoorV1::ac_adat: got service context exception: " +
-                  e.getMessage());
+            _logger.error("GssFtpDoorV1::ac_adat: got service context exception", e);
             reply("535 Authentication failed: " + e);
             return;
         }
