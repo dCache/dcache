@@ -126,11 +126,7 @@ public class SrmLs {
                         }
                 }
                 int offset =  request.getOffset() !=null ? request.getOffset().intValue() : 0;
-                int count  =  request.getCount() !=null ? request.getCount().intValue() : 0;
-                if (numOfLevels>1 && (offset > 0 || count > 0)) {
-                        return getFailedResponse("numOfLevels>1 together with offset and/or count is not supported",
-                                                 TStatusCode.SRM_INVALID_REQUEST);
-                }
+                int count  =  request.getCount() !=null ? request.getCount().intValue() : Integer.MAX_VALUE;
                 if (offset<0) {
                         return getFailedResponse(" offset value less than 0, disallowed ",
 				     TStatusCode.SRM_INVALID_REQUEST);

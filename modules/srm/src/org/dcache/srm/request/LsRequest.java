@@ -3,6 +3,7 @@ package org.dcache.srm.request;
 import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMTooManyResultsException;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.v2_2.SrmLsRequest;
@@ -20,11 +21,12 @@ public final class LsRequest extends ContainerRequest {
     private final static Logger logger =
             Logger.getLogger(LsRequest.class);
 
-        private final int offset;
-        private final int count;
-        private int maxNumOfResults=100;
-        private int numberOfResults=0;
-        private final int numOfLevels;
+        private final long offset;         // starting entry number
+        private final long count;          // max number of entries to be returned as set by client
+        private int maxNumOfResults=100;  // max number of entries allowed by server, settable via configuration
+        private int numberOfResults=0;    // counts only entries allowed to be returned
+        private long counter=0;           // counts all entries
+        private final int numOfLevels;    // recursion level
         private final boolean longFormat;
         private String explanation;
 
@@ -35,8 +37,8 @@ public final class LsRequest extends ContainerRequest {
                          long max_update_period,
                          int max_number_of_retries,
                          String client_host,
-                         int count,
-                         int offset,
+                         long count,
+                         long offset,
                          int numOfLevels,
                          boolean longFormat,
                          int maxNumOfResults ) throws Exception {
@@ -91,8 +93,8 @@ public final class LsRequest extends ContainerRequest {
                 String explanation,
                 boolean longFormat,
                 int numOfLevels,
-                int count, 
-                int offset) throws java.sql.SQLException {
+                long count,
+                long offset) throws java.sql.SQLException {
                 super(id,
                       nextJobId,
                       creationTime,
@@ -118,6 +120,7 @@ public final class LsRequest extends ContainerRequest {
                 this.numOfLevels=numOfLevels;
                 this.count=count;
                 this.offset=offset;
+
         }
 
         public FileRequest getFileRequestBySurl(String surl)
@@ -221,22 +224,20 @@ public final class LsRequest extends ContainerRequest {
                 return detail;
         }
 
-        public final boolean increaseResultsNumAndContinue(){
+        public final boolean increaseResultsNumAndContinue()
+                throws SRMTooManyResultsException
+        {
             wlock();
             try {
-                if(getNumberOfResults() > getMaxNumOfResults()) {
-                        return false;
-                }
                 setNumberOfResults(getNumberOfResults() + 1);
-                return true;
-            } finally {
-                wunlock();
-            }
-        }
-
-        public final boolean checkCounter(){
-            wlock();
-            try {
+                if(getNumberOfResults() > getMaxNumOfResults()) {
+                        StringBuilder sb = new StringBuilder();
+                        sb.append("max results number of ").append(getMaxNumOfResults());
+                        sb.append(" exceeded. Try to narrow down with count and use offset to get complete listing");
+                        setExplanation(sb.toString());
+                        setStatusCode(TStatusCode.SRM_TOO_MANY_RESULTS);
+                        throw new SRMTooManyResultsException(sb.toString());
+                }
                 if (getNumberOfResults() > getCount() && getCount()!=0) {
                         return false;
                 }
@@ -250,12 +251,12 @@ public final class LsRequest extends ContainerRequest {
                 return TRequestType.LS;
         }
 
-        public int getCount(){
+        public long getCount(){
                // final, no need to synchronize
                  return count;
         }
 
-        public int getOffset(){
+        public long getOffset(){
               // final, no need to synchronize
                  return offset;
         }
@@ -475,6 +476,7 @@ public final class LsRequest extends ContainerRequest {
         }
     }
 
+
     /**
      * @param numberOfResults the numberOfResults to set
      */
@@ -487,6 +489,52 @@ public final class LsRequest extends ContainerRequest {
         }
     }
 
+    /**
+     * @return the counter
+     */
+    public long getCounter() {
+        rlock();
+        try {
+            return counter;
+        }
+        finally {
+            runlock();
+        }
+    }
+    /**
+     * @return set the counter
+     */
+    public void setCounter(long c) {
+        wlock();
+        try {
+            counter=c;
+        }
+        finally {
+            wunlock();
+        }
+    }
+
+    public void incrementGlobalEntryCounter() {
+        wlock();
+        try {
+            setCounter(getCounter()+1);
+        }
+        finally {
+            wunlock();
+        }
+    }
+    /**
+     * @return check if we skip this record if the counter is less than offset
+     */
+    public boolean shouldSkipThisRecord() {
+        rlock();
+        try {
+            return getCounter()<getOffset();
+        }
+        finally {
+            runlock();
+        }
+    }
     /**
      * @return the longFormat
      */
