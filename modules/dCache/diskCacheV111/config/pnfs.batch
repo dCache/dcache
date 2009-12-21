@@ -65,6 +65,12 @@ set env -c locationThreads 0
 set context -c DefaultAccessLatency ""
 set context -c DefaultRetentionPolicy ""
 
+#
+# access to Deletion registration
+#
+set context -c  pnfsDeleteRegistration ""
+set context -c  pnfsDeleteRegistrationDbUser ${pnfsDbUser}
+set context -c  pnfsDeleteRegistrationDbPass ${pnfsDbPassword}
 
 onerror shutdown
 #
@@ -96,6 +102,10 @@ create diskCacheV111.namespace.PnfsManagerV3 PnfsManager \
         -cachelocation-provider-pgPass=${pnfsPasswordFile}  \
         -cachelocation-threads=${locationThreads} \
         -folding=${pnfsFolding} \
+        -delete-registration=${pnfsDeleteRegistration} \
+        -delete-registration-jdbcDrv=org.postgresql.Driver \
+        -delete-registration-dbUser=${pnfsDeleteRegistrationDbUser} \
+        -delete-registration-dbPass=${pnfsDeleteRegistrationDbPass} \
        "
 #
 #   The 'remove' handler (informs the dCache about pfns removes)
