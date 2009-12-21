@@ -77,6 +77,8 @@ import gplazma.authz.util.NameRolePair;
 import gplazma.authz.records.gPlazmaAuthorizationRecord;
 import dmg.cells.nucleus.*;
 import dmg.util.Args;
+import org.dcache.cells.AbstractCell;
+import org.dcache.cells.Option;
 import org.dcache.srm.security.SslGsiSocketFactory;
 import org.dcache.vehicles.AuthorizationMessage;
 import org.dcache.vehicles.gPlazmaDelegationInfo;
@@ -93,119 +95,126 @@ import java.util.*;
 
 import java.security.cert.X509Certificate;
 
-/**GPLAZMA Cell.<br/>
- * This Cell make callouts on behalf of other cells to a GUMS server for authenfication and Storage Element information.
+/**
+ * GPLAZMA Cell.
+ *
+ * This Cell make callouts on behalf of other cells to a GUMS server
+ * for authenfication and Storage Element information.
  * @see gplazma.authz.AuthorizationController
  **/
-public class GPLAZMA extends CellAdapter {
-
+public class GPLAZMA extends AbstractCell
+{
   private static final Logger log = Logger.getLogger(GPLAZMA.class);
 
   /** Location of gss files **/
-  private String service_key           = "/etc/grid-security/hostkey.pem";
-  private String service_cert          = "/etc/grid-security/hostcert.pem";
-  private String service_trusted_certs = "/etc/grid-security/certificates";
-
-  /** Policy file to specify the behavior of GPLAZMA **/
-  protected String gplazmaPolicyFilePath = "/opt/d-cache/config/dcachesrm-gplazma.policy";
-
-  /** Class for persisting and retrieving AuthorizationRecords **/
-  AuthRecordPersistenceManager authzPersistenceManager= null;
-
-  /** Arguments specified in .batch file **/
-  private Args _opt;
-
-  /** Specifies logging level **/
-  private Level loglevel = Level.ERROR;
+  private static final String SERVICE_KEY =
+    "/etc/grid-security/hostkey.pem";
+  private static final String SERVICE_CERT =
+    "/etc/grid-security/hostcert.pem";
+  private static final String SERVICE_TRUSTED_CERTS =
+    "/etc/grid-security/certificates";
 
   /** Username returned by GUMS will be used **/
   public static final String GLOBUS_URL_COPY_DEFAULT_USER = ":globus-mapping:";
 
-  /** Whether to drop the email attribute from the subject DN extracted from the user's certificate chain **/
-  private boolean omitEmail=false;
+  /** Class for persisting and retrieving AuthorizationRecords **/
+  protected AuthRecordPersistenceManager authzPersistenceManager;
 
-  /** Thread pool to handle multiple simultaneous authentication requests. **/
-  //private final ExecutorService authpool;
+  /** Specifies logging level **/
+  private Level loglevel = Level.ERROR;
+
+  /** Thread pool to handle multiple simultaneous authentication
+   *  requests. **/
   private ThreadPoolTimedExecutor authpool;
 
-  /** Number of simultaneous requests to be handled. **/
-  public static int THREAD_COUNT = 10;
-
-  /** Starts a timing thread for each executing request and cancels it upon timeout. **/
-  ScheduledExecutorService delaychecker;
-
-  /** Elapsed time in seconds after which an authentication request is canceled.
-   *  Includes both the time on the queue and the time for actual request processing. **/
-  public int DELAY_CANCEL_TIME = 180;
+  /** Starts a timing thread for each executing request and cancels it
+   *  upon timeout. **/
+  private ScheduledExecutorService delaychecker;
 
   /** Cancel time in milliseconds **/
-  private long toolong = 1000*DELAY_CANCEL_TIME;
+  private long tooLong;
 
-  /** Reads input parametes from batch file and initializes thread pools. **/
-  public GPLAZMA( String name , String args )  throws Exception {
+  @Option(
+    name = "gplazma-authorization-module-policy",
+    description = "Policy file to specify the behavior of GPLAZMA",
+    defaultValue = "/opt/d-cache/config/dcachesrm-gplazma.policy"
+  )
+  protected String gplazmaPolicyFilePath;
 
-    super( name, GPLAZMA.class.getSimpleName(), args , false ) ;
+  @Option(
+    name = "jdbcUrl",
+    required = true
+  )
+  protected String jdbcUrl;
 
-    _opt = getArgs() ;
+  @Option(
+    name = "jdbcDriver",
+    required = true
+  )
+  protected String jdbcDriver;
 
-    try{
+  @Option(
+    name = "dbUser",
+    required = true
+  )
+  protected String dbUser;
 
-      /**
-       *  USAGE :
-       *              -gplazma-authorization-module-policy=GPLAZMA_POLICY_FILE
-       *              -log-level=LOG_LEVEL
-       *              -num-simultaneous-requests=THREAD_COUNT
-       *              -request-timeout=DELAY_CANCEL_TIME
-       *
-       */
+  @Option(
+    name = "dbPass",
+    required = true
+  )
+  protected String dbPass;
 
-      gplazmaPolicyFilePath = setParam("gplazma-authorization-module-policy", gplazmaPolicyFilePath); //todo: use Opts instead.
+  @Option(
+    name = "num-simultaneous-requests",
+    description = "Number of simultaneous requests to be handled",
+    defaultValue = "10"
+  )
+  protected int threadCount;
 
-      System.setProperty("dmg.cells.nucleus.send_session", "true");
+  @Option(
+    name = "request-timeout",
+    description = "Elapsed time in seconds after which an authentication request is canceled",
+    defaultValue = "180"
+  )
+  protected int delayCancelTime;
 
-      authzPersistenceManager =
-          new AuthRecordPersistenceManager(
-              _opt.getOpt("jdbcUrl"),
-              _opt.getOpt("jdbcDriver"),
-              _opt.getOpt("dbUser"),
-              _opt.getOpt("dbPass"));
+  public GPLAZMA(String name, String args)
+    throws InterruptedException, ExecutionException
+  {
+    super(name, GPLAZMA.class.getSimpleName(), new Args(args));
 
-      THREAD_COUNT = setParam("num-simultaneous-requests", THREAD_COUNT);
-      DELAY_CANCEL_TIME = setParam("request-timeout", DELAY_CANCEL_TIME);
-      toolong = 1000*DELAY_CANCEL_TIME;
+    doInit();
+  }
 
-      say(this.toString() + " starting with policy file " + gplazmaPolicyFilePath);
+  protected void init()
+    throws IOException
+  {
+    System.setProperty("dmg.cells.nucleus.send_session", "true");
 
-      authpool =
-        new ThreadPoolTimedExecutor(  THREAD_COUNT,
-              THREAD_COUNT,
-              60,
-              TimeUnit.SECONDS,
-              new LinkedBlockingQueue());
+    authzPersistenceManager =
+      new AuthRecordPersistenceManager(jdbcUrl, jdbcDriver, dbUser, dbPass);
 
-      delaychecker = Executors.newScheduledThreadPool(THREAD_COUNT);
+    say(this.toString() + " starting with policy file " + gplazmaPolicyFilePath);
+    tooLong = 1000 * delayCancelTime;
 
-      say(this.toString() + " started");
+    authpool =
+      new ThreadPoolTimedExecutor(threadCount,
+                                  threadCount,
+                                  60,
+                                  TimeUnit.SECONDS,
+                                  new LinkedBlockingQueue());
 
-    } catch( Exception iae ){
-      log.error(this.toString() + " couldn't start due to " + iae);
-      start() ;
-      kill() ;
-      throw iae ;
-    }
+    delaychecker = Executors.newScheduledThreadPool(threadCount);
 
-    //Make the cell name well-known
-    getNucleus().export();
-    start() ;
-
-    say(" Constructor finished" ) ;
+    say(this.toString() + " started");
   }
 
   /**
    * Sets the logging level.
   */
-  public String hh_set_LogLevel = "<loglevel>" ;
-  public String fh_set_LogLevel =
+  public final static String hh_set_LogLevel = "<loglevel>" ;
+  public final static String fh_set_LogLevel =
     " set LogLevel <loglevel>\n"+
     "        Sets the log level. Choices are DEBUG, INFO, WARN, ERROR.\n"+
     "\n";
@@ -229,24 +238,25 @@ public class GPLAZMA extends CellAdapter {
     return "Log level set to " + log.getLevel();
   }
 
-  
-  public final String hh_get_mapping = "\"<DN>\" [\"FQAN1\",...,\"FQANn\"]";
+
+  public final static String hh_get_mapping =
+    "\"<DN>\" [\"FQAN1\",...,\"FQANn\"]";
   public String ac_get_mapping_$_1_2 (Args args) throws AuthorizationException {
-      
-      
+
+
       String principal = args.argv(0);
       /*
        * returns null if argv(1) does not exist
        */
       String roleArg = args.argv(1);
       List<String> roles ;
-      if( roleArg != null ) {          
+      if( roleArg != null ) {
           String[] roleList = roleArg.split(",");
-          roles = Arrays.asList(roleList) ;                   
+          roles = Arrays.asList(roleList) ;
       }else{
           roles = new ArrayList<String>(0);
       }
-      
+
       Map <NameRolePair, gPlazmaAuthorizationRecord> user_auths =  authorize(principal, roles, null, 0);
       StringBuilder sb = new StringBuilder();
       for( NameRolePair nameAndRole : user_auths.keySet()) {
@@ -259,11 +269,11 @@ public class GPLAZMA extends CellAdapter {
             }
           sb.append("\n");
       }
-      
+
       return sb.toString();
   }
 
-  
+
   /**
    * is called if user types 'info'
    */
@@ -367,7 +377,7 @@ public class GPLAZMA extends CellAdapter {
       java.net.ServerSocket ss= null;
       try {
         ss = new java.net.ServerSocket(0,1);
-        ss.setSoTimeout(DELAY_CANCEL_TIME*1000);
+        ss.setSoTimeout(delayCancelTime*1000);
       }
       catch(IOException ioe) {
         log.error("exception while trying to create a server socket for delegation: " + ioe);
@@ -402,7 +412,7 @@ public class GPLAZMA extends CellAdapter {
       java.net.Socket deleg_socket=null;
       try{
         log.debug("waiting for delegation connection");
-        //timeout after DELAY_CANCEL_TIME seconds if credentials not delegated
+        //timeout after delayCancelTime seconds if credentials not delegated
         deleg_socket = ss.accept();
         log.debug("connected");
       } catch ( IOException ioe ){
@@ -414,7 +424,7 @@ public class GPLAZMA extends CellAdapter {
       GSSContext context = null;
       GSIGssSocket gsiSocket=null;
       try {
-        context = SslGsiSocketFactory.getServiceContext(service_cert, service_key, service_trusted_certs);
+        context = SslGsiSocketFactory.getServiceContext(SERVICE_CERT, SERVICE_KEY, SERVICE_TRUSTED_CERTS);
         gsiSocket = new GSIGssSocket(deleg_socket, context);
         gsiSocket.setUseClientMode(false);
         gsiSocket.setAuthorization(
@@ -711,7 +721,7 @@ public class GPLAZMA extends CellAdapter {
         TimedFuture timedtask = (TimedFuture) r;
         long now = System.currentTimeMillis();
         long then = timedtask.getCreateTime();
-        long timeleft = toolong - (now - then);
+        long timeleft = tooLong - (now - then);
 
         if(timeleft < 0) {
           timedtask.abbreviateTask(true);
@@ -1018,38 +1028,4 @@ public class GPLAZMA extends CellAdapter {
 
     return user_auths;
   }
-
-  public synchronized void Message( String msg1, String msg2 ){
-    log.debug("Message received");
-  }
-
-  /** Set a parameter according to option specified in .batch config file **/
-  private String setParam(String name, String target) {
-    if(target==null) target = "";
-    String option = _opt.getOpt(name) ;
-    if((option != null) && (option.length()>0)) target = option;
-    say("Using " + name + " : " + target);
-    return target;
-  }
-
-  /** Set a parameter according to option specified in .batch config file **/
-  private int setParam(String name, int target) {
-    String option = _opt.getOpt(name) ;
-    if( ( option != null ) && ( option.length() > 0 ) ) {
-      try{ target = Integer.parseInt(option); } catch(NumberFormatException e) {}
-    }
-    say("Using " + name + " : " + target);
-    return target;
-  }
-
-  /** Set a parameter according to option specified in .batch config file **/
-  private long setParam(String name, long target) {
-    String option = _opt.getOpt(name) ;
-    if( ( option != null ) && ( option.length() > 0 ) ) {
-      try{ target = Integer.parseInt(option); } catch(NumberFormatException e) {}
-    }
-    say("Using " + name + " : " + target);
-    return target;
-  }
-
 }
