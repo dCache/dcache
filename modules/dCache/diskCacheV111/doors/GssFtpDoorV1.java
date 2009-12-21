@@ -378,13 +378,16 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         }
 
         if (_permissionHandler instanceof GrantAllPermissionHandler) {
-            Subject subject = Subjects.getSubject(authRecord);
+            Subject subject;
+            if(authRecord != null) {
+                subject = Subjects.getSubject(authRecord);
+            } else {
+                subject = Subjects.getSubject(_pwdRecord, true);
+            }
             subject.getPrincipals().add(_origin);
             subject.setReadOnly();
             _pnfs.setSubject(subject);
         }
-
-        //if(_pwdRecord==null && authRecord != null) {}
 
         resetPwdRecord();
 
