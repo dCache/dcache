@@ -114,15 +114,30 @@ public class AuthzQueryHelper
         return authorize(serviceContext, deleginfo);
     }
 
-    public AuthorizationMessage getAuthorization(GSSContext serviceContext)
+    public AuthorizationMessage getAuthorization(GSSContext serviceContext, String user)
         throws AuthorizationException
     {
         gPlazmaDelegationInfo deleginfo =
-            new gPlazmaDelegationInfo(authRequestID, null, Long.valueOf(0));
+            new gPlazmaDelegationInfo(authRequestID, user, Long.valueOf(0));
         AuthenticationMessage authmessage =
             authorize(serviceContext, deleginfo);
         return new AuthorizationMessage(authmessage);
     }
+
+    public AuthorizationMessage getAuthorization(GSSContext serviceContext)
+        throws AuthorizationException
+    {
+        return getAuthorization(serviceContext, null);
+    }
+
+    public AuthorizationMessage getAuthorization(String subjectDN, List<String> roles,String user)
+        throws AuthorizationException
+    {
+        AuthenticationMessage authmessage =
+                authorize(subjectDN, roles, user);
+        return new AuthorizationMessage(authmessage);
+    }
+
 
     public AuthenticationMessage
         authorize(GSSContext serviceContext, gPlazmaDelegationInfo deleginfo)
