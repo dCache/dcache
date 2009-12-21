@@ -58,4 +58,4 @@ s/\$$/\\\$/g
 # Quote value
 s/^\([^=]*\)=\(.*\)$/\1="\2"/
 # Delete if not an assignment
-/^[a-zA-Z0-9_]*=".*"$/ ! d
+/^[a-zA-Z0-9_]*=".*"$/ !d
