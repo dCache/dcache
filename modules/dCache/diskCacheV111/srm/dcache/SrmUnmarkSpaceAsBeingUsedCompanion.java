@@ -64,35 +64,25 @@ obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
 
-/*
- * StageAndPinCompanion.java
- *
- * Created on January 2, 2003, 2:08 PM
- */
 package diskCacheV111.srm.dcache;
 
 import org.dcache.cells.CellStub;
-import org.dcache.cells.MessageCallback;
-import org.dcache.cells.ThreadManagerMessageCallback;
 import org.dcache.auth.AuthorizationRecord;
 import org.dcache.srm.SrmCancelUseOfSpaceCallbacks;
 import diskCacheV111.services.space.message.CancelUse;
 import org.apache.log4j.Logger;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.TimeoutCacheException;
 
 /**
  *
  * @author  timur
  */
 /**
- * this class does all the dcache specific work needed for staging and pinning a
- * file represented by a path. It notifies the caller about each next stage
- * of the process via a StageAndPinCompanionCallbacks interface.
- * Boolean functions of the callback interface need to return true in order for
- * the process to continue
+ * send message to SrmSpaceManager to cancel use space for file
+ * with a given pnfspath.
  */
-public final class SrmUnmarkSpaceAsBeingUsedCompanion
-        implements MessageCallback<CancelUse> {
-
+public final class SrmUnmarkSpaceAsBeingUsedCompanion {
     private final static Logger _log =
             Logger.getLogger(SrmUnmarkSpaceAsBeingUsedCompanion.class);
     private final long spaceToken;
@@ -112,23 +102,23 @@ public final class SrmUnmarkSpaceAsBeingUsedCompanion
     @Override
     public String toString() {
         return getClass().getName() + " [token:" + spaceToken +
-                " path:" + pnfPath + "]";
+            " path:" + pnfPath + "]";
     }
 
     public void failure(int rc, Object error) {
         _log.error("Unmarking Space as Being Used Failed: rc=" + rc +
-                " error:" + error);
+                   " error:" + error);
         callbacks.CancelUseOfSpaceFailed(
-                "Unmarking Space as Being Used failed: rc=" + rc +
-                " error:" + error);
+                                         "Unmarking Space as Being Used failed: rc=" + rc +
+                                         " error:" + error);
         return;
     }
 
     public void noroute() {
         _log.error("Unmarking Space as Being Used Failed : No route to " +
-                "SrmSpaceManager");
+                   "SrmSpaceManager");
         callbacks.CancelUseOfSpaceFailed("Unmarking Space as Being Used " +
-                "Failed : No Route to SrmSpaceManager");
+                                         "Failed : No Route to SrmSpaceManager");
         return;
     }
 
@@ -149,10 +139,11 @@ public final class SrmUnmarkSpaceAsBeingUsedCompanion
             String pnfPath,
             SrmCancelUseOfSpaceCallbacks callbacks,
             CellStub spaceManagerStub) {
-        _log.debug(" SrmMarkSpaceAsBeingUsedCompanion.markSpace(" + user +
-                " for spaceToken" + spaceToken +
-                " pnfsPath=" + pnfPath +
-                ")");
+        _log.debug(" SrmMarkSpaceAsBeingUsedCompanion.markSpace(" +
+                   user +
+                   " for spaceToken" + spaceToken +
+                   " pnfsPath=" + pnfPath +
+                   ")");
         SrmUnmarkSpaceAsBeingUsedCompanion companion =
                 new SrmUnmarkSpaceAsBeingUsedCompanion(
                 spaceToken,
@@ -163,8 +154,33 @@ public final class SrmUnmarkSpaceAsBeingUsedCompanion
                 spaceToken,
                 pnfPath,
                 null);
-        spaceManagerStub.send(cancelUse, CancelUse.class,
-                new ThreadManagerMessageCallback(companion));
+        cancelUse.setReplyRequired(true);
+        try {
+            cancelUse=spaceManagerStub.sendAndWait(cancelUse, CancelUse.class);
+            if (cancelUse.getReturnCode()!=0) {
+                companion.failure(cancelUse.getReturnCode(),
+                                  cancelUse.getErrorObject());
+            }
+            else {
+                companion.success(cancelUse);
+            }
+        }
+        catch (TimeoutCacheException e) {
+            companion.timeout();
+        }
+        catch (InterruptedException e) {
+            callbacks.CancelUseOfSpaceFailed("Unmark space as being used was "+
+                                             "interrupted "+companion);
+        }
+        catch (CacheException e) {
+            if (e.getRc()!=0) {
+                companion.failure(e.getRc(),e);
+            }
+            else {
+                // we could be here if SrmSpaceManager was disabled in configuration
+                companion.success(null);
+            }
+        }
     }
 }
 
