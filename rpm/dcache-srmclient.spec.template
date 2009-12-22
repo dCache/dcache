@@ -11,10 +11,6 @@ Prefix: /opt/d-cache
 #BuildRoot: %{_topdir}/BUILDROOT/%{name}-%{version}
 #Source0: dcache-srmclient.tar
 AutoReqProv: no
-Requires: java >= 1.5
-Requires:  jpackage-utils
-BuildRequires: java-devel >= 1.6.0
-BuildRequires:  jpackage-utils
 
 License: Free
 Group: Applications/System
