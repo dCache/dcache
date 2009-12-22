@@ -550,6 +550,33 @@ sshPort=${portBase}124
 #
 #companionDatabaseHost=localhost
 
+#  ---- pnfs Manager interface to Deletion Resigistration Configuration
+#
+#   Deletion Registration functionality in pnfs, when enabled, creates a
+#   record of each file deletion in pnfs namespace. Dcache does not delete
+#   precious or online data files in pools if a deletion registration record 
+#   is not present. Usage of trash database is recommended in case of the 
+#   pnfs namespace, as pnfs can report files as not being found when some 
+#   components of pnfs are not running. This issue does not affect Chimera.
+#
+#   There are two ways to connect to the database containing
+#   registration of deletions of files in pnfs  namespace, direct
+#   database or through a special ".()()" file in pnfs nfs interface
+#   To configure access though pnfs nfs set the value of
+#   pnfsDeleteRegistration to pnfs:
+#   To configure dirrect access to postgres, set pnfsDeleteRegistration
+#   to jdbc url jdbc:postgresql://localhost/trash and set
+#   pnfsDeleteRegistrationDbUser and pnfsDeleteRegistrationDbPass to
+#   postgres user name to password values.
+#   Set value to "" to disable usage the registration of deletion
+#   Default value pnfsDeleteRegistration is "pnfs:"
+#
+#
+#pnfsDeleteRegistration=jdbc:postgresql://localhost/trash
+#pnfsDeleteRegistration=pnfs:
+#pnfsDeleteRegistrationDbUser=srmdcache
+#pnfsDeleteRegistrationDbPass=
+
 #  ---- SRM Database Host
 #
 #   NB. If the srmDbHost variable is set and the following variable
