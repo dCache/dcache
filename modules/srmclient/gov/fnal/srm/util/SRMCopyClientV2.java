@@ -35,28 +35,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -69,10 +69,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -82,10 +82,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -114,13 +114,13 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
     private GlobusURL from[];
     private GlobusURL to[];
     private SrmCopyRequest req = new SrmCopyRequest();
-    
+
     private org.ietf.jgss.GSSCredential cred = null;
     private GlobusURL[] surls;
     private String[] surl_strings;
     private ISRM srmv2;
     private Thread hook;
-    private HashMap pendingSurlsMap = new HashMap();
+    private HashMap<String,Integer> pendingSurlsMap = new HashMap<String,Integer>();
     private String requestToken;
     public SRMCopyClientV2(Configuration configuration, GlobusURL[] from, GlobusURL[] to) {
         super(configuration);
@@ -134,7 +134,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
             System.err.println("Couldn't getGssCredential.");
         }
     }
-    
+
     public void connect() throws Exception {
         GlobusURL srmUrl = null;
         if ( configuration.isPushmode()  ) {
@@ -151,7 +151,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
                 gss_expected_name,
                 configuration.getWebservice_path());
     }
-    
+
     public void start() throws Exception {
         try {
             if (cred.getRemainingLifetime() < 60)
@@ -166,9 +166,9 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
             //
             int len = from.length;
             String storagetype=configuration.getStorageType();
-            
+
             TCopyFileRequest copyFileRequests[] = new TCopyFileRequest[len];
-            
+
             for(int i = 0; i<from.length;++i) {
                 GlobusURL source = from[i];
                 GlobusURL dest   = to[i];
@@ -184,7 +184,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
             }
             hook = new Thread(this);
             Runtime.getRuntime().addShutdownHook(hook);
-            if (storagetype!=null) { 
+            if (storagetype!=null) {
                     if(storagetype.equals("volatile")){
                             req.setTargetFileStorageType(TFileStorageType.VOLATILE);
                     }
@@ -194,7 +194,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
                     else if (storagetype.equals("permanent")) {
                             req.setTargetFileStorageType(TFileStorageType.PERMANENT);
                     }
-                    else { 
+                    else {
                             throw new IllegalArgumentException("Unknown storage type \"" +storagetype+"\"");
                     }
             }
@@ -203,19 +203,19 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
             TAccessLatency accessLatency = null;
             if(configuration.getRetentionPolicy() != null ){
                  retentionPolicy = TRetentionPolicy.fromString(configuration.getRetentionPolicy());
-                
+
             }
-            
+
             if(  configuration.getAccessLatency() != null){
                 accessLatency = TAccessLatency.fromString(configuration.getAccessLatency());
-                
+
             }
             if(retentionPolicy != null) {
                 TRetentionPolicyInfo retentionPolicyInfo =
                         new TRetentionPolicyInfo(retentionPolicy,accessLatency);
                 req.setTargetFileRetentionPolicyInfo(retentionPolicyInfo);
             }
-            
+
             if(configuration.getOverwriteMode() != null) {
                 req.setOverwriteOption(TOverwriteMode.fromString(configuration.getOverwriteMode()));
             }
@@ -224,11 +224,11 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
             if(configuration.getSpaceToken() != null) {
                 req.setTargetSpaceToken(configuration.getSpaceToken());
             }
-	    if (configuration.getExtraParameters().size()>0) { 
+	    if (configuration.getExtraParameters().size()>0) {
 		    TExtraInfo[] extraInfoArray = new TExtraInfo[configuration.getExtraParameters().size()];
 		    int counter=0;
                     Map extraParameters = configuration.getExtraParameters();
-		    for (Iterator i =extraParameters.keySet().iterator(); i.hasNext();) { 
+		    for (Iterator i =extraParameters.keySet().iterator(); i.hasNext();) {
                             String key = (String)i.next();
                             String value = (String)extraParameters.get(key);
 			    extraInfoArray[counter++]=new TExtraInfo(key,value);
@@ -253,7 +253,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
             if(resp.getArrayOfFileStatuses() == null) {
                 throw new IOException("srmCopy submission failed, arrayOfFileStatuses is null, status code :"+
                         rs.getStatusCode()+" explanation="+rs.getExplanation());
-                
+
             }
             TCopyRequestFileStatus[] arrayOfStatuses =
                     resp.getArrayOfFileStatuses().getStatusArray();
@@ -262,7 +262,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
                         "is SrmRequestStatus is different from exopected "+len+" received "+
                         arrayOfStatuses.length);
             }
-            
+
             while(!pendingSurlsMap.isEmpty()) {
                 long estimatedWaitInSeconds = 5;
                 for (int i=0; i<arrayOfStatuses.length; i++) {
@@ -296,7 +296,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
                         esay(error);
                         int indx = ((Integer) pendingSurlsMap.remove(from_surl_string)).intValue();
                         setReportFailed(from[indx],to[indx],error);
-                        
+
                     } else if ( fileStatusCode == TStatusCode.SRM_SUCCESS||
                             fileStatusCode == TStatusCode.SRM_DONE ) {
                         int indx = ((Integer) pendingSurlsMap.remove(from_surl_string)).intValue();
@@ -314,12 +314,12 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
                     Runtime.getRuntime().removeShutdownHook(hook);
                     break;
                 }
-                
+
                 if(estimatedWaitInSeconds > 60) {
                     estimatedWaitInSeconds = 60;
                 }
                 try {
-                    
+
                     say("sleeping "+estimatedWaitInSeconds+" seconds ...");
                     Thread.sleep(estimatedWaitInSeconds * 1000);
                 } catch(InterruptedException ie) {
@@ -351,10 +351,10 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
                 if ( copyStatusRequestResponse.getArrayOfFileStatuses() == null) {
                     throw new IOException("null SrmStatusOfCopyRequestResponse.getArrayOfFileStatuses()");
                 }
-                
+
                 arrayOfStatuses =
                         copyStatusRequestResponse.getArrayOfFileStatuses().getStatusArray();
-                
+
                 if ( arrayOfStatuses.length != pendingSurlsMap.size() ) {
                     esay( "incorrect number of arrayOfStatuses "+
                             "in SrmStatusOfCopyRequestResponse expected "+
@@ -381,7 +381,10 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
                                     " , "+arrayOfStatuses[i].getTargetSURL()+
                                     "] status="+frstatus.getStatusCode()+
                                     " explanation="+frstatus.getExplanation()
-                                    );
+                                 );
+                            if (!RequestStatusTool.isTransientStateStatus(frstatus)) {
+                                pendingSurlsMap.remove(arrayOfStatuses[i].getSourceSURL().toString());
+                            }
                         }
                     }
                     throw new IOException(error);
@@ -403,8 +406,8 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
             }
         }
     }
-    
-    
+
+
     public void run() {
         try {
             say("stopping ");
@@ -413,7 +416,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
             logger.elog(e);
         }
     }
-    
+
     private void abortAllPendingFiles() throws Exception {
         if (pendingSurlsMap.isEmpty()) {
             return;
@@ -423,7 +426,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
         int len = surl_strings.length;
         say("Releasing all remaining file requests");
         URI surlArray[] = new URI[len];
-        
+
         for(int i=0;i<len;++i){
             org.apache.axis.types.URI uri =
                     new org.apache.axis.types.URI(surl_strings[i]);
@@ -444,5 +447,5 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
             say("srmAbortFiles status code="+returnStatus.getStatusCode());
         }
     }
-    
+
 }

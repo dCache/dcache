@@ -10,28 +10,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -44,10 +44,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -57,10 +57,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -96,7 +96,7 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
     public static String[] protocols;
     GlobusURL from[];
     GlobusURL to[];
-    private HashMap pendingSurlsToIndex = new HashMap();
+    private HashMap<String,Integer> pendingSurlsToIndex = new HashMap<String,Integer>();
     private Copier copier;
     private String requestToken;
     private Thread hook;
@@ -109,8 +109,8 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
         this.from = from;
         this.to = to;
     }
-    
-    
+
+
     public void connect() throws Exception {
         GlobusURL srmUrl = from[0];
         srmv2 = new SRMClientV2(srmUrl,
@@ -122,11 +122,11 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
                 gss_expected_name,
                 configuration.getWebservice_path());
     }
-    
+
     public void setProtocols(String[] protocols) {
         this.protocols = protocols;
     }
-    
+
     public void start() throws Exception {
         try {
             copier = new Copier(urlcopy,configuration);
@@ -156,7 +156,7 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
             if(configuration.getAccessLatency() != null ) {
                 al = TAccessLatency.fromString(configuration.getAccessLatency());
             }
-            if ( (al!=null) && (rp==null)) { 
+            if ( (al!=null) && (rp==null)) {
                     throw new IllegalArgumentException("if access latency is specified, "+
                                                        "then retention policy have to be specified as well");
             }
@@ -174,24 +174,24 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
 		    ct = TConnectionType.fromString(configuration.getConnectionType());
             }
             ArrayOfString protocolArray = null;
-            if (protocols != null) { 
+            if (protocols != null) {
                     protocolArray = new ArrayOfString(protocols);
             }
             ArrayOfString arrayOfClientNetworks = null;
-            if (configuration.getArrayOfClientNetworks()!=null) { 
+            if (configuration.getArrayOfClientNetworks()!=null) {
                     arrayOfClientNetworks = new ArrayOfString(configuration.getArrayOfClientNetworks());
             }
-            if (ap!=null || ct!=null || arrayOfClientNetworks !=null || protocolArray != null) { 
+            if (ap!=null || ct!=null || arrayOfClientNetworks !=null || protocolArray != null) {
                     srmPrepareToGetRequest.setTransferParameters(new TTransferParameters(ap,
                                                                                          ct,
                                                                                          arrayOfClientNetworks,
                                                                                          protocolArray));
             }
-            if (configuration.getExtraParameters().size()>0) { 
+            if (configuration.getExtraParameters().size()>0) {
 		    TExtraInfo[] extraInfoArray = new TExtraInfo[configuration.getExtraParameters().size()];
 		    int counter=0;
                     Map extraParameters = configuration.getExtraParameters();
-		    for (Iterator i =extraParameters.keySet().iterator(); i.hasNext();) { 
+		    for (Iterator i =extraParameters.keySet().iterator(); i.hasNext();) {
                             String key = (String)i.next();
                             String value = (String)extraParameters.get(key);
 			    extraInfoArray[counter++]=new TExtraInfo(key,value);
@@ -230,7 +230,7 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
                         "in RequestStatus expected "+len+" received "+
                         getRequestFileStatuses.length);
             }
-            
+
             boolean haveCompletedFileRequests = false;
             while(!pendingSurlsToIndex.isEmpty()) {
                 long estimatedWaitInSeconds = 5;
@@ -279,7 +279,7 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
                         estimatedWaitInSeconds = getRequestFileStatus.getEstimatedWaitTime().intValue();
                     }
                 }
-                
+
                 if(pendingSurlsToIndex.isEmpty()) {
                     dsay("no more pending transfers, breaking the loop");
                     Runtime.getRuntime().removeShutdownHook(hook);
@@ -290,7 +290,7 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
                     estimatedWaitInSeconds = 60;
                 }
                 try {
-                    
+
                     say("sleeping "+estimatedWaitInSeconds+" seconds ...");
                     Thread.sleep(estimatedWaitInSeconds * 1000);
                 } catch(InterruptedException ie) {
@@ -309,11 +309,11 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
                 // we do not need to specify any surls
                 int expectedResponseLength= pendingSurlStrings.length;
                 org.apache.axis.types.URI surlArray[] = new org.apache.axis.types.URI[expectedResponseLength];
-                
+
                 for(int i=0;i<expectedResponseLength;++i){
                     surlArray[i]=new org.apache.axis.types.URI(pendingSurlStrings[i]);;
                 }
-                
+
                 srmStatusOfGetRequestRequest.setArrayOfSourceSURLs(
                         new ArrayOfAnyURI(surlArray));
                 //}
@@ -338,7 +338,7 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
                 }
                 getRequestFileStatuses =
                         srmStatusOfGetRequestResponse.getArrayOfFileStatuses().getStatusArray();
-                
+
                 if(getRequestFileStatuses == null ||
                         getRequestFileStatuses.length !=  expectedResponseLength) {
                     String error =  "incorrect number of RequestFileStatuses";
@@ -350,7 +350,7 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
                     esay(error);
                     throw new IOException(error);
                 }
-                
+
                 status = srmStatusOfGetRequestResponse.getReturnStatus();
                 if(status == null) {
                     throw new IOException(" null return status");
@@ -371,6 +371,9 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
                                     "] status="+frstatus.getStatusCode()+
                                     " explanation="+frstatus.getExplanation()
                                     );
+                            if (!RequestStatusTool.isTransientStateStatus(frstatus)) {
+                                pendingSurlsToIndex.remove(getRequestFileStatuses[i].getSourceSURL().toString());
+                            }
                         }
                     }
                     throw new IOException(error);
@@ -397,7 +400,7 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
                 System.err.println("srm copy of at least one file failed or not completed");
                 System.exit(1);
             }
-            
+
         }
     }
     // this is called when Ctrl-C is hit, or TERM signal received
@@ -410,7 +413,7 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
             logger.elog(e);
         }
     }
-    
+
     private void abortAllPendingFiles() throws Exception{
         if(pendingSurlsToIndex.isEmpty()) {
             return;
@@ -420,7 +423,7 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
             int len = surl_strings.length;
             say("Releasing all remaining file requests");
             org.apache.axis.types.URI surlArray[] = new org.apache.axis.types.URI[len];
-            
+
             for(int i=0;i<len;++i){
                 surlArray[i]=new org.apache.axis.types.URI(surl_strings[i]);
             }
@@ -441,6 +444,6 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
             }
         }
     }
-    
-    
+
+
 }
