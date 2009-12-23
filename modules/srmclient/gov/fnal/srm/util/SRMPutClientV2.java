@@ -10,28 +10,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -44,10 +44,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -57,10 +57,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -94,7 +94,7 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
     private GlobusURL from[];
     private GlobusURL to[];
     private String protocols[];
-    private HashMap pendingSurlsToIndex = new HashMap();
+    private HashMap<String,Integer> pendingSurlsToIndex = new HashMap<String,Integer>();
     private Copier copier;
     private Thread hook;
     private ISRM srmv2;
@@ -108,12 +108,12 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
         this.from = from;
         this.to = to;
     }
-    
-    
+
+
     public void setProtocols(String[] protocols) {
         this.protocols = protocols;
     }
-    
+
     public void connect() throws Exception {
         GlobusURL srmUrl = to[0];
         srmv2 = new SRMClientV2(srmUrl,
@@ -126,7 +126,7 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
                 gss_expected_name,
                 configuration.getWebservice_path());
     }
-    
+
     public void start() throws Exception {
         try {
             copier = new Copier(urlcopy,configuration);
@@ -158,13 +158,13 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
                 fileRequests[i].setTargetSURL(uri);
                 pendingSurlsToIndex.put(SURLS[i],new Integer(i));
             }
-            
+
             hook = new Thread(this);
             Runtime.getRuntime().addShutdownHook(hook);
-            
+
             SrmPrepareToPutRequest srmPrepareToPutRequest =
                     new SrmPrepareToPutRequest();
-            if (storagetype!=null) { 
+            if (storagetype!=null) {
                     if(storagetype.equals("volatile")){
                             srmPrepareToPutRequest.setDesiredFileStorageType(TFileStorageType.VOLATILE);
                     }else if(storagetype.equals("durable")){
@@ -172,12 +172,12 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
                     }else if (storagetype.equals("permanent")) {
                             srmPrepareToPutRequest.setDesiredFileStorageType(TFileStorageType.PERMANENT);
                     }
-                    else { 
+                    else {
                             throw new IllegalArgumentException("Unknown storage type \"" +storagetype+"\"");
                     }
             }
             srmPrepareToPutRequest.setDesiredTotalRequestTime(new Integer((int)configuration.getRequestLifetime()));
-            
+
             srmPrepareToPutRequest.setArrayOfFileRequests(
                     new ArrayOfTPutFileRequest(fileRequests));
 
@@ -224,11 +224,11 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
             if(configuration.getSpaceToken() != null) {
                 srmPrepareToPutRequest.setTargetSpaceToken(configuration.getSpaceToken());
             }
-	    if (configuration.getExtraParameters().size()>0) { 
+	    if (configuration.getExtraParameters().size()>0) {
 		    TExtraInfo[] extraInfoArray = new TExtraInfo[configuration.getExtraParameters().size()];
 		    int counter=0;
                     Map extraParameters = configuration.getExtraParameters();
-		    for (Iterator i =extraParameters.keySet().iterator(); i.hasNext();) { 
+		    for (Iterator i =extraParameters.keySet().iterator(); i.hasNext();) {
                             String key = (String)i.next();
                             String value = (String)extraParameters.get(key);
 			    extraInfoArray[counter++]=new TExtraInfo(key,value);
@@ -315,7 +315,6 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
                         estimatedWaitInSeconds = putRequestFileStatus.getEstimatedWaitTime().intValue();
                     }
                 }
-                
                 if(pendingSurlsToIndex.isEmpty()) {
                     dsay("no more pending transfers, breaking the loop");
                     Runtime.getRuntime().removeShutdownHook(hook);
@@ -348,10 +347,7 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
                     surlArray[i]=new org.apache.axis.types.URI(pendingSurlStrings[i]);
                 }
                 srmStatusOfPutRequestRequest.setArrayOfTargetSURLs(
-                        new ArrayOfAnyURI(surlArray));
-                //}else {
-                //        expectedResponseLength = from.length;
-                //}
+                                                                   new ArrayOfAnyURI(surlArray));
                 SrmStatusOfPutRequestResponse srmStatusOfPutRequestResponse = srmv2.srmStatusOfPutRequest(srmStatusOfPutRequestRequest);
                 if(srmStatusOfPutRequestResponse == null) {
                     throw new IOException(" null srmStatusOfPutRequestResponse");
@@ -366,7 +362,6 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
                     esay( "incorrect number of RequestFileStatuses");
                     throw new IOException("incorrect number of RequestFileStatuses");
                 }
-                
                 status = srmStatusOfPutRequestResponse.getReturnStatus();
                 if(status == null) {
                     throw new IOException(" null return status");
@@ -387,6 +382,9 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
                                     "] status="+frstatus.getStatusCode()+
                                     " explanation="+frstatus.getExplanation()
                                     );
+                            if (!RequestStatusTool.isTransientStateStatus(frstatus)) {
+                                pendingSurlsToIndex.remove(putRequestFileStatuses[i].getSURL().toString());
+                            }
                         }
                     }
                     throw new IOException(error);
@@ -396,7 +394,6 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
             esay(e.toString());
             try {
                 if(copier != null) {
-                    
                     say("stopping copier");
                     copier.stop();
                     abortAllPendingFiles();
@@ -416,7 +413,7 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
             }
         }
     }
-    
+
     // this is called when Ctrl-C is hit, or TERM signal received
     public void run() {
         try{
@@ -427,14 +424,14 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
             logger.elog(e);
         }
     }
-    
+
     private void abortAllPendingFiles() throws Exception{
         if(pendingSurlsToIndex.isEmpty()) {
             return;
         }
         if(response != null) {
             requestToken = response.getRequestToken();
-	    if (requestToken!=null) { 
+	    if (requestToken!=null) {
 		String[] surl_strings = (String[])pendingSurlsToIndex.keySet().toArray(new String[0]);
 		int len = surl_strings.length;
 		say("Releasing all remaining file requests");
@@ -448,8 +445,8 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
 		SrmAbortFilesResponse srmAbortFilesResponse = srmv2.srmAbortFiles(srmAbortFilesRequest);
 		if(srmAbortFilesResponse == null) {
 		    logger.elog(" srmAbortFilesResponse is null");
-		} 
-		else 
+		}
+		else
 		{
 		    TReturnStatus returnStatus = srmAbortFilesResponse.getReturnStatus();
 		    if(returnStatus == null) {
@@ -459,10 +456,10 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
 		    say("srmAbortFiles status code="+returnStatus.getStatusCode());
 		}
 	    }
-	    else { 
-		if (response.getArrayOfFileStatuses()!=null){ 
-		    if (response.getArrayOfFileStatuses().getStatusArray()!=null) { 
-			for(int i=0;i<response.getArrayOfFileStatuses().getStatusArray().length;i++) { 
+	    else {
+		if (response.getArrayOfFileStatuses()!=null){
+		    if (response.getArrayOfFileStatuses().getStatusArray()!=null) {
+			for(int i=0;i<response.getArrayOfFileStatuses().getStatusArray().length;i++) {
 			    org.apache.axis.types.URI surl=response.getArrayOfFileStatuses().getStatusArray(i).getSURL();
 			    TReturnStatus fst=response.getArrayOfFileStatuses().getStatusArray(i).getStatus();
 			    esay("SURL["+i+"]="+surl.toString()+" status="+fst.getStatusCode()+" explanation="+fst.getExplanation());
