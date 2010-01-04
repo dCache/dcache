@@ -213,7 +213,7 @@ public class LoginBrokerHandler
         rescheduleTask();
     }
 
-    public synchronized long setUpdateTime()
+    public synchronized long getUpdateTime()
     {
         return _brokerUpdateTime;
     }
