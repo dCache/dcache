@@ -33,6 +33,7 @@ import org.dcache.pool.FaultListener;
 import org.dcache.pool.FaultAction;
 import org.dcache.cells.CellInfoProvider;
 import org.dcache.cells.AbstractCellComponent;
+import org.dcache.util.CacheExceptionFactory;
 import static org.dcache.pool.repository.EntryState.*;
 
 import java.io.PrintWriter;
@@ -48,8 +49,6 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Set;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Collections;
@@ -941,8 +940,12 @@ public class CacheRepositoryV5
             try {
                 return _store.get(id);
             } catch (CacheException e) {
-                if (e.getRc() != CacheException.TIMEOUT)
-                    throw e;
+                if (e.getRc() != CacheException.TIMEOUT) {
+                    String s =
+                        String.format("Failed to read meta data record [%s]: %s",
+                                      id, e.getMessage());
+                    throw CacheExceptionFactory.exceptionOf(e.getRc(), s);
+                }
             }
             Thread.sleep(1000);
         }
