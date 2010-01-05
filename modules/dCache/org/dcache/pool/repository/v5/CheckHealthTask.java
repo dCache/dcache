@@ -120,14 +120,16 @@ class CheckHealthTask implements Runnable
             }
 
             if (total < _account.getTotal()) {
-                _log.warn("The file system containing the data files appears to be smaller than the configured pool size.");
+                _log.warn(String.format("The file system containing the data files appears to be smaller (%,d bytes) than the configured pool size (%,d bytes).", total, _account.getTotal()));
             }
 
             if (free < _account.getFree()) {
-                _log.warn("The file system containing the data files appears to have less free space than expected; reducing the pool size to compensate. Notice that this does not leave any space for the meta data. If such data is stored on the same file system, then it is paramount that the pool size is reconfigured to leave enough space for the meta data.");
+                long newSize =
+                    _account.getTotal() - (_account.getFree() - free);
 
-                _account.setTotal(_account.getTotal() -
-                                  (_account.getFree() - free));
+                _log.warn(String.format("The file system containing the data files appears to have less free space (%,d bytes) than expected (%,d bytes); reducing the pool size to %,d bytes to compensate. Notice that this does not leave any space for the meta data. If such data is stored on the same file system, then it is paramount that the pool size is reconfigured to leave enough space for the meta data.", free, _account.getFree(), newSize));
+
+                _account.setTotal(newSize);
             }
         }
     }
