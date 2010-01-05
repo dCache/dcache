@@ -105,6 +105,7 @@ import javax.xml.transform.stream.StreamResult;
 import java.io.IOException;
 import java.io.FileWriter;
 import org.dcache.srm.qos.*;
+import java.sql.SQLException;
 
 //
 // just testing cvs
@@ -1735,7 +1736,7 @@ public class Configuration {
      * Getter for property pass.
      * @return Value of property pass.
      */
-    public java.lang.String getJdbcPass() {
+    public java.lang.String getJdbcPass() throws SQLException {
         if (this.jdbcPwdfile==null) {
             return jdbcPass;
         } else if (this.jdbcPwdfile.equals("")) {
