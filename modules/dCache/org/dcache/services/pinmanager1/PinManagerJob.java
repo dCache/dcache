@@ -10,6 +10,8 @@ import diskCacheV111.vehicles.PinManagerMessage;
 import diskCacheV111.vehicles.StorageInfo;
 import dmg.cells.nucleus.CellMessage;
 import org.dcache.auth.AuthorizationRecord;
+import javax.security.auth.Subject;
+
 
 /**
  *
@@ -23,6 +25,11 @@ public interface PinManagerJob {
      * @return the authRecord
      */
     AuthorizationRecord getAuthorizationRecord();
+
+    /**
+     * @return the subject
+     */
+    Subject getSubject();
 
     /**
      * @return the cellMessage

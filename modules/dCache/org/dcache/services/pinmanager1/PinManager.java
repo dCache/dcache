@@ -43,6 +43,7 @@ import org.dcache.cells.Option;
 import org.dcache.cells.AbstractCell;
 import org.dcache.auth.AuthorizationRecord;
 import org.dcache.auth.Subjects;
+import javax.security.auth.Subject;
 import org.dcache.pool.repository.StickyRecord;
 import diskCacheV111.vehicles.StorageInfo;
 
@@ -732,18 +733,21 @@ public class PinManager extends AbstractCell implements Runnable  {
                 // if processing succeeds before the commit is executed
                 // (a race condition )
 
-                int allowedStates = RequestContainerV5.allStatesExceptStage;
-                if(job.getAuthorizationRecord() != null) {
-                     try {
-                         allowedStates =
-                                 _checkStagePermission.canPerformStaging(Subjects.getSubject(job.getAuthorizationRecord())) ?
-                                     RequestContainerV5.allStates :
-                                     RequestContainerV5.allStatesExceptStage;
-                     } catch (PatternSyntaxException ex) {
-                         error("failed to get allowed pool manager states: " + ex);
-                     } catch (IOException ex) {
-                         error("failed to get allowed pool manager states: " + ex);
-                     }
+                // if the job.getAuthorizationRecord() is null the
+                // request is comming from the admin interface
+                // and staging should be allowed for this case
+                // so the default value for allowedStates should be
+                //
+                int allowedStates = RequestContainerV5.allStates;
+                try {
+                     allowedStates =
+                             _checkStagePermission.canPerformStaging(job.getSubject()) ?
+                                 RequestContainerV5.allStates :
+                                 RequestContainerV5.allStatesExceptStage;
+                } catch (PatternSyntaxException ex) {
+                     error("failed to get allowed pool manager states: " + ex);
+                } catch (IOException ex) {
+                     error("failed to get allowed pool manager states: " + ex);
                 }
                 new Pinner(this, job, pin,
                    pinRequest.getId(), allowedStates);
@@ -2154,6 +2158,18 @@ public class PinManager extends AbstractCell implements Runnable  {
         public AuthorizationRecord getAuthorizationRecord() {
             return authRecord;
         }
+
+        /**
+         * @return the subject
+         */
+        public Subject getSubject(){
+            if(authRecord == null) {
+                return Subjects.ROOT ;
+            }
+            return Subjects.getSubject(authRecord);
+        }
+
+
 
         /**
          * @return the srmRequestId
