@@ -49,6 +49,10 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
     String jdbcDriver,
     String user,
     String pass) throws IOException {
+        _logJpa.debug("<init>("+jdbcUrl+","+
+            jdbcDriver+","+
+            user+","+
+            pass+")");
         // This properties allow us to override the defaults
         Properties p = new Properties();
         // JPOX a.k.a. DataNucleous style properties
