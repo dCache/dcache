@@ -208,7 +208,9 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                 throw new java.rmi.RemoteException("Failed to get instance of srm." );
             }
             String logConfigFile = srmConn.getLogFile();
-            DOMConfigurator.configure(logConfigFile);
+            if (logConfigFile != null && !logConfigFile.equals("")) {
+                DOMConfigurator.configure(logConfigFile);
+            }
             log.info("srmConfigFile: " + srmConfigFile);
             log.info(" initialize() got connector ="+srmConn);
             // Set up the authorization service

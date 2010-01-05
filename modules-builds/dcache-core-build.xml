@@ -405,6 +405,7 @@
         <copy file="${dcache.src}/diskCacheV111/config/info.batch" todir="${server.bin.dir}/config" />
         <copy file="${dcache.src}/diskCacheV111/config/webdav.batch" todir="${server.bin.dir}/config" />
         <copy file="${dcache.src}/diskCacheV111/config/webadmin.batch" todir="${server.bin.dir}/config" />
+        <copy file="${dcache.src}/diskCacheV111/config/jsrm.batch" todir="${server.bin.dir}/config" />
         <!--<copy file="${dcache.src}/diskCacheV111/config/aclcell.batch" todir="${server.bin.dir}/config" /> -->
 
         <!-- configs  -->

@@ -652,7 +652,6 @@ public class JettyGSIConnector
             {
                 getOutputStream().write(b);
             }
-       }
+        }
     }
-
 }

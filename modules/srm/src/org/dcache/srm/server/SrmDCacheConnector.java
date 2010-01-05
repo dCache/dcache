@@ -148,39 +148,41 @@ public class SrmDCacheConnector {
          throw new IllegalArgumentException ("dCacheParametersFileName value not specified");
 
      }
+
+     String[] dCacheParams;
      dCacheParamFileName = dCacheParamFileName.trim();
-     System.out.println("dCacheParamFileName: " + dCacheParamFileName);
-     java.io.File dCacheParamFile = new java.io.File(dCacheParamFileName);
-     if(!dCacheParamFile.exists() || !dCacheParamFile.canRead()) {
-         System.err.println("can't find dCacheParamFile at "+dCacheParamFileName);
-         throw new IllegalArgumentException("can't find dCacheParamFile at "+dCacheParamFileName);
+     if (dCacheParamFileName.length() == 0) {
+         dCacheParams = new String[0];
+     } else {
+         System.out.println("dCacheParamFileName: " + dCacheParamFileName);
+         java.io.File dCacheParamFile = new java.io.File(dCacheParamFileName);
+         if(!dCacheParamFile.exists() || !dCacheParamFile.canRead()) {
+             System.err.println("can't find dCacheParamFile at "+dCacheParamFileName);
+             throw new IllegalArgumentException("can't find dCacheParamFile at "+dCacheParamFileName);
+         }
+
+         // Now build dCacheParams.
+
+         builder = new org.jdom.input.SAXBuilder();
+         doc = builder.build(dCacheParamFile);
+         root = doc.getRootElement();
+         java.util.List children = root.getChildren();
+         int numChildren = children.size();
+         dCacheParams = new String[numChildren];
+         int aPos = 0;  // used to keep track of where we are in tsa
+         // System.out.println(
+         //    "This XML file has "+ children.size() +" top elements:");
+         java.util.Iterator it = children.iterator();
+
+         while (it.hasNext()) {
+             org.jdom.Element te = (org.jdom.Element) it.next();
+             System.out.println(
+                                "dCacheParams Element name: " + te.getName() +
+                                "; Element value: " + te.getText());
+             dCacheParams[aPos++] = te.getText();
+         }
      }
 
-     javax.naming.Context logctx;
-
-     log = org.apache.log4j.Logger.getLogger(this.getClass().getName());
-     logctx = new javax.naming.InitialContext();
-
-     // Now build dCacheParams.
-
-     builder = new org.jdom.input.SAXBuilder();
-     doc = builder.build(dCacheParamFile);
-     root = doc.getRootElement();
-     java.util.List children = root.getChildren();
-     int numChildren = children.size();
-     String [] dCacheParams = new String[numChildren];
-     int aPos = 0;  // used to keep track of where we are in tsa
-     // System.out.println(
-     //    "This XML file has "+ children.size() +" top elements:");
-     java.util.Iterator it = children.iterator();
-
-     while (it.hasNext()) {
-        org.jdom.Element te = (org.jdom.Element) it.next();
-        System.out.println(
-           "dCacheParams Element name: " + te.getName() +
-           "; Element value: " + te.getText());
-        dCacheParams[aPos++] = te.getText();
-     }
             try
             {
             Class clazz = Class.forName(storageClassName);

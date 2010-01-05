@@ -32,7 +32,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
    private SrmAuthorizer srmAuth = null;
    private final RequestCounters<String> srmServerCounters;
    private final RequestExecutionTimeGauges<String> srmServerGauges;
-    
+
     public SRMServerV1() throws java.rmi.RemoteException {
        try
        {
@@ -59,13 +59,16 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
              if (srmConn == null) {
                  throw new java.rmi.RemoteException("Failed to get instance of srm." );
              }
+
              String logConfigFile = srmConn.getLogFile();
-             System.out.println("ISRMImpl: reading log4j configuration from "+logConfigFile);
-             DOMConfigurator.configure(logConfigFile);
+             if (logConfigFile != null && !logConfigFile.equals("")) {
+                 System.out.println("ISRMImpl: reading log4j configuration from "+logConfigFile);
+                 DOMConfigurator.configure(logConfigFile);
+             }
              log.info("srmConfigFile: " + srmConfigFile);
              log.info(" initialize() got connector ="+srmConn);
              // Set up the authorization service
-             srmAuth = new SrmAuthorizer(srmConn);   
+             srmAuth = new SrmAuthorizer(srmConn);
              srmServerCounters = srmConn.getSrm().getSrmServerV1Counters();
              srmServerGauges =
                      srmConn.getSrm().getSrmServerV1Gauges();
@@ -74,7 +77,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
        catch ( Exception e) {
            throw new java.rmi.RemoteException("exception",e);
        }
-        
+
     }
 
       /**
@@ -85,7 +88,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       srmServerCounters.incrementRequests(operation);
     }
 
-    public org.dcache.srm.client.axis.RequestStatus put(java.lang.String[] arg0, 
+    public org.dcache.srm.client.axis.RequestStatus put(java.lang.String[] arg0,
             java.lang.String[] arg1, long[] arg2, boolean[] arg3, java.lang.String[] arg4)
             throws java.rmi.RemoteException {
       long startTimeStamp = System.currentTimeMillis();

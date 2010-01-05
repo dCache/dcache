@@ -112,7 +112,9 @@ public class SrmAuthorizer {
    private synchronized void initialize(SrmDCacheConnector srmConn) {
       try {
          logConfigFile = srmConn.getLogFile();
-         org.apache.log4j.xml.DOMConfigurator.configure(logConfigFile);
+         if (logConfigFile != null && !logConfigFile.equals("")) {
+             org.apache.log4j.xml.DOMConfigurator.configure(logConfigFile);
+         }
          // Below re-checks config file periodically; default 60 seconds
          // DOMConfigurator.configureAndWatch(logConfigFile);
          config = srmConn.configuration;
