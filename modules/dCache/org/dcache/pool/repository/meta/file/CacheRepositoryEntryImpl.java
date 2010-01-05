@@ -19,7 +19,6 @@ import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.v3.RepositoryException;
-import org.dcache.pool.repository.v3.SiFileCorruptedException;
 import org.dcache.pool.repository.v3.entry.CacheRepositoryEntryState;
 
 import com.sun.corba.se.impl.io.OptionalDataException;
@@ -65,11 +64,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         _state = new CacheRepositoryEntryState(_controlFile);
 
         try {
-            _storageInfo =  readStorageInfo(siFile);
-            if( _storageInfo == null ) {
-                throw new SiFileCorruptedException("bad SI file for");
-            }
-
+            _storageInfo = readStorageInfo(siFile);
             _creationTime = _siFile.lastModified();
         }catch(FileNotFoundException fnf) {
             /*
@@ -216,7 +211,6 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         _lastAccess = System.currentTimeMillis();
         _dataFile.setLastModified(_lastAccess);
     }
-
 
     private static StorageInfo readStorageInfo(File objIn) throws IOException
     {
