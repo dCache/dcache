@@ -5,6 +5,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Collection;
+import java.util.Set;
+import java.util.HashSet;
 
 import org.apache.log4j.Logger;
 
@@ -85,7 +87,14 @@ public class BerkeleyDBMetaDataRepository
     @Override
     public Collection<PnfsId> list()
     {
-        throw new RuntimeException("Not implemented");
+        Set<PnfsId> ids = new HashSet<PnfsId>();
+        for (Object id: _views.getStorageInfoMap().keySet()) {
+            ids.add(new PnfsId((String) id));
+        }
+        for (Object id: _views.getStateMap().keySet()) {
+            ids.add(new PnfsId((String) id));
+        }
+        return ids;
     }
 
     @Override
