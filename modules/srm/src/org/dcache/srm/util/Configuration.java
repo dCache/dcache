@@ -78,34 +78,24 @@ import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMUserPersistenceManager;
-
-//import org.xml.sax.*;
-//import org.xml.sax.helpers.DefaultHandler;
-//import javax.xml.parsers.SAXParserFactory;
-//import javax.xml.parsers.SAXParser;
-//import javax.xml.parsers.ParserConfigurationException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-//import org.w3c.dom.NodeList;
 import org.w3c.dom.Text;
 import org.w3c.dom.Comment;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
-
 // for writing xml
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
-//import javax.xml.transform.TransformerException;
-//import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-//import java.io.File;
 import java.io.IOException;
 import java.io.FileWriter;
 import java.util.Set;
 import java.util.HashSet;
+import java.sql.SQLException;
 //
 // just testing cvs
 //
@@ -1753,7 +1743,7 @@ public class Configuration {
      * Getter for property pass.
      * @return Value of property pass.
      */
-    public java.lang.String getJdbcPass() {
+    public java.lang.String getJdbcPass() throws SQLException {
         if (this.jdbcPwdfile==null) {
             return jdbcPass;
         } else if (this.jdbcPwdfile.equals("")) {
