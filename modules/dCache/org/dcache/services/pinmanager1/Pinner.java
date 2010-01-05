@@ -115,10 +115,7 @@ class Pinner extends SMCTask
                                          pinfo,
                                          0,
                                          _allowedStates);
-        AuthorizationRecord auth = _job.getAuthorizationRecord();
-        if (auth != null) {
-            request.setSubject(Subjects.getSubject(auth));
-        }
+        request.setSubject(_job.getSubject());
 
         sendMessage(_poolManager, request, 60*60*1000);
     }
