@@ -55,8 +55,8 @@ public class FileIO extends IoPackage {
 	public static final String SELECT_BY_PNFSID_AND_PNFSPATH =
 		"SELECT * FROM "+SRM_SPACEFILE_TABLE+" WHERE pnfsid=? AND pnfspath=?";
 	public static final String SELECT_TRANSIENT_FILES_BY_PNFSPATH_AND_RESERVATIONID =
-		"SELECT * FROM "+SRM_SPACEFILE_TABLE+" WHERE  pnfspath=? AND spacereservationid=? and state= "+
-                FileState.RESERVED.getStateId()+" or state = "+ FileState.TRANSFERRING.getStateId() + " FOR UPDATE";
+		"SELECT * FROM "+SRM_SPACEFILE_TABLE+" WHERE  pnfspath=? AND spacereservationid=? and (state= "+
+                FileState.RESERVED.getStateId()+" or state = "+ FileState.TRANSFERRING.getStateId() + ") FOR UPDATE";
 	public static final String SELECT_USED_SPACE_IN_SPACEFILES = "SELECT sum(sizeinbytes)  FROM "+
 		SRM_SPACEFILE_TABLE+" WHERE spacereservationid = ? AND state != ? "+FileState.FLUSHED.getStateId();
 	public static final String SELECT_TRANSFERRING_OR_RESERVED_BY_PNFSPATH =
