@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+
+
+  <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    <description>Imported configuration data</description>
+    <property name="location" value="domaincontext:"/>
+    <property name="properties">
+      <value>
+        srmGracefulShutdown=2000
+      </value>
+    </property>
+  </bean>
+
+  <bean id="srm" class="diskCacheV111.srm.dcache.Storage">
+    <description>dCache plugin for SRM</description>
+    <constructor-arg value="${srmCellName}"/>
+    <constructor-arg value="
+      -srmport=${srmPort}
+      -export
+      -srmversion=${srmVersion}
+      -timout=${srmTimeout}
+      -pnfsManager=${srmPnfsManager}
+      -pnfs-timeout=${srmPnfsTimeout}
+      -poolManager=${srmPoolManager}
+      -pool-manager-timeout=${srmPoolManagerTimeout}
+      -vacuum=${srmVacuum}
+      -vacuum-period=${srmVacuumPeriod}
+      -pnfs-srm-path=${pnfsSrmPath}
+      -xrootdRootPath=${xrootdRootPath}
+      -httpRootPath=${httpRootPath}
+      -gsissl=true
+      -reserve-space-implicitly=${srmImplicitSpaceManagerEnabled}
+      -space-reservation-strict=${srmSpaceReservationStrict}
+      -credentials-dir=${srmUserCredentialsDirectory}
+      -buffer_size=${srmBufferSize}
+      -tcp_buffer_size=${srmTcpBufferSize}
+      -parallel_streams=${parallelStreams}
+      -debug=${srmDebug}
+      -usekftp=false
+      -get-lifetime=${srmGetLifeTime}
+      -bring-online-lifetime=${srmBringOnlineLifeTime}
+      -put-lifetime=${srmPutLifeTime}
+      -copy-lifetime=${srmCopyLifeTime}
+      -get-req-thread-queue-size=${srmGetReqThreadQueueSize}
+      -get-req-thread-pool-size=${srmGetReqThreadPoolSize}
+      -get-req-max-waiting-requests=${srmGetReqMaxWaitingRequests}
+      -get-req-ready-queue-size=${srmGetReqReadyQueueSize}
+      -get-req-max-ready-requests=${srmGetReqMaxReadyRequests}
+      -get-req-max-number-of-retries=${srmGetReqMaxNumberOfRetries}
+      -get-req-retry-timeout=${srmGetReqRetryTimeout}
+      -get-req-max-num-of-running-by-same-owner=${srmGetReqMaxNumOfRunningBySameOwner}
+      -bring-online-req-thread-queue-size=${srmBringOnlineReqThreadQueueSize}
+      -bring-online-req-thread-pool-size=${srmBringOnlineReqThreadPoolSize}
+      -bring-online-req-max-waiting-requests=${srmBringOnlineReqMaxWaitingRequests}
+      -bring-online-req-ready-queue-size=${srmBringOnlineReqReadyQueueSize}
+      -bring-online-req-max-ready-requests=${srmBringOnlineReqMaxReadyRequests}
+      -bring-online-req-max-number-of-retries=${srmBringOnlineReqMaxNumberOfRetries}
+      -bring-online-req-retry-timeout=${srmBringOnlineReqRetryTimeout}
+      -bring-online-req-max-num-of-running-by-same-owner=${srmBringOnlineReqMaxNumOfRunningBySameOwner}
+      -put-req-thread-queue-size=${srmPutReqThreadQueueSize}
+      -put-req-thread-pool-size=${srmPutReqThreadPoolSize}
+      -put-req-max-waiting-requests=${srmPutReqMaxWaitingRequests}
+      -put-req-ready-queue-size=${srmPutReqReadyQueueSize}
+      -put-req-max-ready-requests=${srmPutReqMaxReadyRequests}
+      -put-req-max-number-of-retries=${srmPutReqMaxNumberOfRetries}
+      -put-req-retry-timeout=${srmPutReqRetryTimeout}
+      -put-req-max-num-of-running-by-same-owner=${srmPutReqMaxNumOfRunningBySameOwner}
+      -copy-req-thread-queue-size=${srmCopyReqThreadQueueSize}
+      -copy-req-thread-pool-size=${srmCopyReqThreadPoolSize}
+      -copy-req-max-waiting-requests=${srmCopyReqMaxWaitingRequests}
+      -copy-req-max-number-of-retries=${srmCopyReqMaxNumberOfRetries}
+      -copy-req-retry-timeout=${srmCopyReqRetryTimeout}
+      -copy-req-max-num-of-running-by-same-owner=${srmCopyReqMaxNumOfRunningBySameOwner}
+      -recursive-dirs-creation=${RecursiveDirectoryCreation}
+      -advisory-delete=${AdvisoryDelete}
+      -jdbcUrl=${jdbcUrl}
+      -jdbcDriver=${jdbcDriver}
+      -dbUser=${srmDbUser}
+      -dbPass=${srmDbPassword}
+      -pgPass=${srmPasswordFile}
+      -log-request-history-in-db-enabled=${srmJdbcMonitoringLogEnabled}
+      -num-days-history=${srmNumberOfDaysInDatabaseHistory}
+      -old-request-remove-period-secs=${srmOldRequestRemovalPeriodSeconds}
+      -jdbc-execution-thread-num=${srmJdbcExecutionThreadNum}
+      -max-queued-jdbc-tasks-num=${srmMaxNumberOfJdbcTasksInQueue}
+      -use-gplazma-authorization-cell=${useGPlazmaAuthorizationCell}
+      -delegate-to-gplazma=${delegateToGPlazma}
+      -use-gplazma-authorization-module=${useGPlazmaAuthorizationModule}
+      -gplazma-authorization-module-policy=${gplazmaPolicy}
+      -srm-authz-cache-lifetime=${srmAuthzCacheLifetime}
+      -srmLoginBroker=${srmLoginBroker}
+      -protocolFamily=${protocolFamily}
+      -protocolVersion=${protocolVersion}
+      -kpwd-file=${kpwdFile}
+      -start_server=false
+      -login-broker-update-period=${srmLoginBrokerUpdatePeriod}
+      -num-doors-in-rand-selection=${srmNumberOfDoorsInRandomSelection}
+      -overwrite=${overwriteEnabled}
+      -overwrite_by_default=${srmOverwriteByDefault}
+      -custom-get-host-by-addr=${srmCustomGetHostByAddr}
+      -ignore-client-protocol-order=${srmIgnoreClientProtocolOrder}
+      -size-of-single-remove-batch=${srmSizeOfSingleRemoveBatch}
+      -clean-pending-requests-on-restart=${srmCleanPendingRequestsOnRestart}
+      -use-asynchronous-ls=${srmAsynchronousLs}
+      -max-number-of-ls-entries=${srmLsMaxNumberOfEntries}
+      -max-number-of-ls-levels=${srmLsMaxNumberOfLevels}
+      -ls-request-lifetime=${srmLsRequestLifetime}
+      -ls-request-thread-queue-size=${srmLsRequestThreadQueueSize}
+      -ls-request-thread-pool-size=${srmLsRequestThreadPoolSize}
+      -ls-request-max-waiting-requests=${srmLsRequestMaxWaitingRequests}
+      -ls-request-ready-queue-size=${srmLsRequestReadyQueueSize}
+      -ls-request-max-ready-requests=${srmLsRequestMaxReadyRequests}
+      -ls-request-max-number-of-retries=${srmLsRequestMaxNumberOfRetries}
+      -ls-request-retry-timeout=${srmLsRequestRetryTimeout}
+      -ls-request-max-num-of-running-by-same-owner=${srmLsRequestMaxNumberOfRunningBySameOwner}
+      -client-dns-lookup=${srmClientDNSLookup}"/>
+  </bean>
+
+  <bean id="thread-pool" class="org.eclipse.jetty.util.thread.QueuedThreadPool"
+        init-method="start" destroy-method="stop">
+    <description>Thread pool used by Jetty for request processing</description>
+    <property name="maxIdleTimeMs" value="${srmJettyThreadsMaxIdleTime}"/>
+    <property name="maxThreads" value="${srmJettyThreadsMax}"/>
+    <property name="minThreads" value="${srmJettyThreadsMin}"/>
+    <property name="name" value="jetty-srm"/>
+    <property name="maxQueued" value="${srmJettyThreadsMaxQueued}"/>
+  </bean>
+
+  <bean id="config-file" class="org.eclipse.jetty.plus.jndi.EnvEntry">
+    <description>The SRM config file</description>
+    <constructor-arg><null/></constructor-arg>
+    <constructor-arg value="srmConfigFile"/>
+    <constructor-arg value="${ourHomeDir}/share/srm-webapp/WEB-INF/srmConfigFile.xml"/>
+    <constructor-arg value="true"/>
+  </bean>
+
+  <bean id="server" class="org.eclipse.jetty.server.Server"
+        init-method="start" destroy-method="stop">
+    <description>Jetty server hosting the SRM web application</description>
+
+    <property name="gracefulShutdown" value="${srmGracefulShutdown}"/>
+    <property name="threadPool" ref="thread-pool"/>
+
+    <property name="connectors">
+      <list>
+        <bean id="connector"
+              class="org.dcache.util.JettyGSIConnector">
+          <property name="port" value="${srmPort}"/>
+
+          <property name="acceptors" value="${srmJettyConnectorAcceptors}"/>
+          <property name="maxIdleTime" value="${srmJettyConnectorMaxIdleTime}"/>
+          <property name="lowResourceMaxIdleTime" 
+                    value="${srmJettyConnectorLowResourceMaxIdleTime}"/>
+          <property name="acceptQueueSize" value="${srmJettyConnectorBackLog}"/>
+
+          <property name="hostCertificatePath" value="/etc/grid-security/hostcert.pem"/>
+          <property name="hostKeyPath" value="/etc/grid-security/hostkey.pem"/>
+          <property name="caCertificatePath" value="/etc/grid-security/certificates"/>
+          <property name="autoFlush" value="true"/>
+          <property name="encrypt" value="true"/>
+          <property name="requireClientAuth" value="true"/>
+          <property name="acceptNoClientCerts" value="false"/>
+          <property name="handshakeTimeout" value="10000"/>
+          <property name="gssMode" value="gsi"/>
+        </bean>
+      </list>
+    </property>
+
+    <property name="handler">
+      <bean class="org.eclipse.jetty.webapp.WebAppContext" depends-on="srm">
+        <property name="contextPath" value="/srm"/>
+        <property name="war" value="${ourHomeDir}/share/srm-webapp"/>
+        <property name="configurationClasses">
+          <list>
+            <value>org.eclipse.jetty.webapp.WebInfConfiguration</value>
+            <value>org.eclipse.jetty.plus.webapp.EnvConfiguration</value>
+            <value>org.eclipse.jetty.plus.webapp.Configuration</value>
+            <value>org.eclipse.jetty.webapp.WebXmlConfiguration</value>
+            <value>org.eclipse.jetty.webapp.TagLibConfiguration</value>
+          </list>
+        </property>
+      </bean>
+    </property>
+
+    <!-- property name="handler">
+      <bean id="handlers" class="org.eclipse.jetty.server.handler.HandlerList">
+        <property name="handlers">
+          <list>
+            <bean class="ServletContextHandler">
+              <property name="contextPath" value="/"/>
+              <property name="resourceBase" value="/var/www"/>
+              <property name="servletHandler.servlets">
+                <list>
+                  <bean class="org.eclipse.jetty.servlet.ServletHolder">
+                    <property name="name" value="AxisServlet"/>
+                    <property name="servlet">
+                      <bean class="org.apache.axis.transport.http.AxisServlet"/>
+                    </property>
+                    <property name="initParameters">
+                      <map>
+                        <entry key="resourceBase" value="/var/www"/>
+                      </map>
+                    </property>
+                  </bean>
+                </list>
+              </property>
+              <property name="servletHandler.servletMappings">
+                <list>
+                  <bean class="org.mortbay.jetty.servlet.ServletMapping">
+                    <property name="pathSpecs">
+                      <list>
+                        <value>/*</value>
+                        <value>/servlet/AxisServlet</value>
+                        <value>*.jws</value>
+                        <value>/services/*</value>
+                      </list>
+                    </property>
+                    <property name="servletName" value="AxisServlet"/>
+                  </bean>
+                </list>
+              </property>
+            </bean>
+
+            <bean class="org.eclipse.jetty.server.handler.DefaultHandler"/>
+          </list>
+        </property>
+      </bean>
+    </property -->
+  </bean>
+
+</beans>

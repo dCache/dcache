@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 
 import org.apache.log4j.Logger;
 import org.dcache.pool.classic.ChecksumModuleV1;
@@ -53,6 +54,8 @@ public class ConsistentStore
         "Recovering: Marked %1$s precious";
     private final static String CACHED_MSG =
         "Recovering: Marked %1$s cached";
+    private final static String REMOVING_REDUNDANT_META_DATA =
+        "Removing redundant meta data for %s";
 
     private final static String BAD_MSG =
         "Marked %1$s bad: %2$s";
@@ -106,14 +109,20 @@ public class ConsistentStore
     }
 
     /**
-     * Returns a collection of IDs of cached entries. The collection
-     * is a live view of the store and will be updated as entries are
-     * added or removed.
+     * Returns a collection of IDs of entries in the store. Removes
+     * redundant meta data entries in the process.
      */
     @Override
     public Collection<PnfsId> list()
     {
-        return _fileStore.list();
+        Collection<PnfsId> files = _fileStore.list();
+        Collection<PnfsId> records = _metaDataStore.list();
+        records.removeAll(new HashSet(files));
+        for (PnfsId id: records) {
+            _log.warn(String.format(REMOVING_REDUNDANT_META_DATA, id));
+            _metaDataStore.remove(id);
+        }
+        return files;
     }
 
     /**
@@ -152,14 +161,14 @@ public class ConsistentStore
              && entry.getState() != EntryState.PRECIOUS);
 
         if (isBroken) {
+            _log.warn(String.format(RECOVERING_MSG, id));
+
             if (entry == null) {
                 entry = _metaDataStore.create(id);
                 _log.warn(String.format(MISSING_MSG, id));
             }
 
             try {
-                _log.warn(String.format(RECOVERING_MSG, id));
-
                 EntryState state = entry.getState();
 
                 /* It is safe to remove FROM_STORE files: We have a

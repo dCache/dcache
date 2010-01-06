@@ -13,26 +13,26 @@ world-wide non-exclusive, royalty-free license to publish or reproduce
 these documents and software for U.S. Government purposes.  All
 documents and software available from this server are protected under
 the U.S. and Foreign Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
 Neither the name of Fermilab, the  URA, nor the names of the
 contributors may be used to endorse or promote products derived from
 this software without specific prior written permission.
- 
+
 DISCLAIMER OF LIABILITY (BSD):
- 
+
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
 LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -45,10 +45,10 @@ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY  OF
 LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
 Liabilities of the Government:
- 
+
 This software is provided by URA, independent from its Prime Contract
 with the U.S. Department of Energy. URA is acting independently from
 the Government and in its own private capacity and is not acting on
@@ -58,10 +58,10 @@ has no connection to this software and in no manner whatsoever shall
 be liable for nor assume any responsibility or obligation for any claim,
 cost, or damages arising out of or resulting from the use of the
 software available from this server.
- 
- 
+
+
 Export Control:
- 
+
 All documents and software available from this server are subject to
 U.S. export control laws.  Anyone downloading information from this
 server is obligated to secure any necessary Government licenses before
@@ -170,7 +170,7 @@ import org.dcache.commons.stats.RequestExecutionTimeGauges;
 
 
 public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
-    
+
     // log4j Logger
     public Logger log;
     private SrmDCacheConnector srmConn;
@@ -179,7 +179,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
     private AbstractStorageElement storage;
     private final RequestCounters<Class> srmServerCounters;
     private final RequestExecutionTimeGauges<Class> srmServerGauges;
-    
+
     public SRMServerV2() throws java.rmi.RemoteException{
     	JDC.setSchedulerContext("SRMServerV2");
         try {
@@ -189,7 +189,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
             Context logctx = new InitialContext();
             String srmConfigFile =
                     (String) logctx.lookup("java:comp/env/srmConfigFile");
-            
+
             if(srmConfigFile == null) {
                 String error = "name of srm config file is not specified";
                 String error_details ="please insert the following xml codelet into web.xml\n"+
@@ -198,7 +198,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                         "   <env-entry-value>INSERT SRM CONFIG FILE NAME HERE</env-entry-value>\n"+
                         "  <env-entry-type>java.lang.String</env-entry-type>\n"+
                         " </env-entry>";
-                
+
                 log.error(error);
                 log.error(error_details);
                 throw new java.rmi.RemoteException(error );
@@ -208,7 +208,9 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                 throw new java.rmi.RemoteException("Failed to get instance of srm." );
             }
             String logConfigFile = srmConn.getLogFile();
-            DOMConfigurator.configure(logConfigFile);
+            if (logConfigFile != null && !logConfigFile.equals("")) {
+                DOMConfigurator.configure(logConfigFile);
+            }
             log.info("srmConfigFile: " + srmConfigFile);
             log.info(" initialize() got connector ="+srmConn);
             // Set up the authorization service
@@ -221,7 +223,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
             throw new java.rmi.RemoteException("exception",e);
         }
     }
-    
+
     private Object handleRequest(String requestName, Object request)  throws RemoteException {
         long startTimeStamp = System.currentTimeMillis();
 
@@ -328,14 +330,14 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
 
         }
     }
-    
+
     private Object getFailedResponse(String capitalizedRequestName, TStatusCode statusCode, String errorMessage)
     throws ClassNotFoundException,
             NoSuchMethodException,
             InstantiationException,
             IllegalAccessException,
             java.lang.reflect.InvocationTargetException {
-        
+
         Class responseClass = Class.forName("org.dcache.srm.v2_2."+capitalizedRequestName+"Response");
         Constructor responseConstructor = responseClass.getConstructor((Class[])null);
         Object response = responseConstructor.newInstance((Object[])null);
@@ -344,12 +346,12 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
 		Method setReturnStatus = responseClass.getMethod("setReturnStatus",new Class[]{TReturnStatus.class});
 		setReturnStatus.invoke(response, new Object[]{trs});
         }
-	catch (java.lang.NoSuchMethodException nsme) { 
+	catch (java.lang.NoSuchMethodException nsme) {
 		// A hack to handle SrmPingResponse which does not have "setReturnStatus" method
 		// I put it here cause it will go away as soon as this method is present
 		// (by Dmitry Litvintsev (litvinse@fnal.gov))
 		log.fatal("getFailedResponse invocation failed for "+capitalizedRequestName+"Response.setReturnStatus");
-		if (capitalizedRequestName.equals("SrmPing")) { 
+		if (capitalizedRequestName.equals("SrmPing")) {
 			Class handlerClass = Class.forName("org.dcache.srm.handler."+capitalizedRequestName);
 			Method getFailedRespose = handlerClass.getMethod("getFailedResponse",new Class[]{String.class});
 			return getFailedRespose.invoke(null,new Object[]{errorMessage});
@@ -364,7 +366,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
         }
         return response;
     }
-    
+
     public SrmReserveSpaceResponse srmReserveSpace(
             SrmReserveSpaceRequest srmReserveSpaceRequest)
             throws java.rmi.RemoteException {
@@ -372,7 +374,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                 (SrmReserveSpaceResponse)
                 handleRequest("srmReserveSpace",srmReserveSpaceRequest);
     }
-    
+
     public SrmReleaseSpaceResponse srmReleaseSpace(
             SrmReleaseSpaceRequest srmReleaseSpaceRequest)
             throws java.rmi.RemoteException {
@@ -380,7 +382,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                 (SrmReleaseSpaceResponse)
                 handleRequest("srmReleaseSpace",srmReleaseSpaceRequest);
     }
-    
+
     public SrmUpdateSpaceResponse srmUpdateSpace(
             SrmUpdateSpaceRequest srmUpdateSpaceRequest)
             throws java.rmi.RemoteException {
@@ -388,8 +390,8 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                 (SrmUpdateSpaceResponse)
                 handleRequest("srmUpdateSpace",srmUpdateSpaceRequest);
     }
-    
-    
+
+
     public SrmGetSpaceMetaDataResponse srmGetSpaceMetaData(
             SrmGetSpaceMetaDataRequest srmGetSpaceMetaDataRequest)
             throws java.rmi.RemoteException {
@@ -397,9 +399,9 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                 (SrmGetSpaceMetaDataResponse)
                 handleRequest("srmGetSpaceMetaData",srmGetSpaceMetaDataRequest);
     }
-    
-    
-    
+
+
+
     public SrmSetPermissionResponse srmSetPermission(
             SrmSetPermissionRequest srmSetPermissionRequest)
             throws java.rmi.RemoteException {
@@ -407,8 +409,8 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                 (SrmSetPermissionResponse)
                 handleRequest("srmSetPermission",srmSetPermissionRequest);
     }
-    
-    
+
+
     public SrmCheckPermissionResponse srmCheckPermission(
             SrmCheckPermissionRequest srmCheckPermissionRequest)
             throws java.rmi.RemoteException {
@@ -416,43 +418,43 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                 (SrmCheckPermissionResponse)
                 handleRequest("srmCheckPermission",srmCheckPermissionRequest);
     }
-    
+
     public SrmMkdirResponse srmMkdir( SrmMkdirRequest request) throws java.rmi.RemoteException {
         return
                 (SrmMkdirResponse)
                 handleRequest("srmMkdir",request);
     }
-    
+
     public SrmRmdirResponse srmRmdir( SrmRmdirRequest request) throws java.rmi.RemoteException {
         return
                 (SrmRmdirResponse)
                 handleRequest("srmRmdir",request);
     }
-    
+
     public SrmCopyResponse srmCopy(SrmCopyRequest request)  throws java.rmi.RemoteException {
         return
                 (SrmCopyResponse)
                 handleRequest("srmCopy",request);
     }
-    
+
     public SrmRmResponse srmRm(SrmRmRequest request)  throws java.rmi.RemoteException {
         return
                 (SrmRmResponse)
                 handleRequest("srmRm",request);
     }
-    
+
     public SrmLsResponse srmLs(SrmLsRequest srmLsRequest)
     throws java.rmi.RemoteException {
         return (SrmLsResponse)handleRequest("srmLs",srmLsRequest);
     }
-    
+
     public SrmMvResponse srmMv(SrmMvRequest request)
     throws java.rmi.RemoteException {
         return
                 (SrmMvResponse)
                 handleRequest("srmMv",request);
     }
-    
+
     public SrmPrepareToGetResponse srmPrepareToGet(
             SrmPrepareToGetRequest srmPrepareToGetRequest)
             throws java.rmi.RemoteException {
@@ -460,7 +462,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                 (SrmPrepareToGetResponse)
                 handleRequest("srmPrepareToGet",srmPrepareToGetRequest);
     }
-    
+
     public SrmPrepareToPutResponse srmPrepareToPut(
             SrmPrepareToPutRequest srmPrepareToPutRequest)
             throws java.rmi.RemoteException {
@@ -468,8 +470,8 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                 (SrmPrepareToPutResponse)
                 handleRequest("srmPrepareToPut",srmPrepareToPutRequest);
     }
-    
-    
+
+
     public SrmReleaseFilesResponse srmReleaseFiles(
             SrmReleaseFilesRequest srmReleaseFilesRequest)
             throws java.rmi.RemoteException {
@@ -477,7 +479,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                 (SrmReleaseFilesResponse)
                 handleRequest("srmReleaseFiles",srmReleaseFilesRequest);
     }
-    
+
     public SrmPutDoneResponse srmPutDone(
             SrmPutDoneRequest srmPutDoneRequest)
             throws java.rmi.RemoteException {
@@ -485,7 +487,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                 (SrmPutDoneResponse)
                 handleRequest("srmPutDone",srmPutDoneRequest);
     }
-    
+
     public SrmAbortRequestResponse srmAbortRequest(
             SrmAbortRequestRequest srmAbortRequestRequest)
             throws java.rmi.RemoteException {
@@ -493,7 +495,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                 (SrmAbortRequestResponse)
                 handleRequest("srmAbortRequest",srmAbortRequestRequest);
     }
-    
+
     public SrmAbortFilesResponse srmAbortFiles(
             SrmAbortFilesRequest srmAbortFilesRequest)
             throws java.rmi.RemoteException {
@@ -501,7 +503,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                 (SrmAbortFilesResponse)
                 handleRequest("srmAbortFiles",srmAbortFilesRequest);
     }
-    
+
     public SrmSuspendRequestResponse srmSuspendRequest(
             SrmSuspendRequestRequest srmSuspendRequestRequest)
             throws java.rmi.RemoteException {
@@ -509,7 +511,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                 (SrmSuspendRequestResponse)
                 handleRequest("srmSuspendRequest",srmSuspendRequestRequest);
     }
-    
+
     public SrmResumeRequestResponse srmResumeRequest(
             SrmResumeRequestRequest srmResumeRequestRequest)
             throws java.rmi.RemoteException {
@@ -517,7 +519,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                 (SrmResumeRequestResponse)
                 handleRequest("srmResumeRequest",srmResumeRequestRequest);
     }
-    
+
     public SrmStatusOfGetRequestResponse srmStatusOfGetRequest(
             SrmStatusOfGetRequestRequest srmStatusOfGetRequestRequest)
             throws java.rmi.RemoteException {
@@ -525,7 +527,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                 (SrmStatusOfGetRequestResponse)
                 handleRequest("srmStatusOfGetRequest",srmStatusOfGetRequestRequest);
     }
-    
+
     public SrmStatusOfPutRequestResponse srmStatusOfPutRequest(
             SrmStatusOfPutRequestRequest srmStatusOfPutRequestRequest)
             throws java.rmi.RemoteException {
@@ -533,8 +535,8 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                 (SrmStatusOfPutRequestResponse)
                 handleRequest("srmStatusOfPutRequest",srmStatusOfPutRequestRequest);
     }
-    
-    
+
+
     public SrmStatusOfCopyRequestResponse srmStatusOfCopyRequest(
             SrmStatusOfCopyRequestRequest request)
             throws java.rmi.RemoteException {
@@ -542,89 +544,89 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                 (SrmStatusOfCopyRequestResponse)
                 handleRequest("srmStatusOfCopyRequest",request);
     }
-    
+
     public SrmGetRequestSummaryResponse srmGetRequestSummary(
             SrmGetRequestSummaryRequest srmGetRequestSummaryRequest)
             throws java.rmi.RemoteException {
         return (SrmGetRequestSummaryResponse)
         handleRequest("srmGetRequestSummary",srmGetRequestSummaryRequest);
     }
-    
+
     public SrmExtendFileLifeTimeResponse srmExtendFileLifeTime(
             SrmExtendFileLifeTimeRequest srmExtendFileLifeTimeRequest)
             throws java.rmi.RemoteException {
         return (SrmExtendFileLifeTimeResponse)
         handleRequest("srmExtendFileLifeTime",srmExtendFileLifeTimeRequest);
     }
-    
+
     public SrmStatusOfBringOnlineRequestResponse srmStatusOfBringOnlineRequest(SrmStatusOfBringOnlineRequestRequest srmStatusOfBringOnlineRequestRequest) throws RemoteException {
         return (SrmStatusOfBringOnlineRequestResponse)
         handleRequest("srmStatusOfBringOnlineRequest",srmStatusOfBringOnlineRequestRequest);
     }
-    
+
     public SrmBringOnlineResponse srmBringOnline(SrmBringOnlineRequest srmBringOnlineRequest) throws RemoteException {
         return (SrmBringOnlineResponse)
         handleRequest("srmBringOnline",srmBringOnlineRequest);
     }
-    
+
     public SrmExtendFileLifeTimeInSpaceResponse srmExtendFileLifeTimeInSpace(SrmExtendFileLifeTimeInSpaceRequest srmExtendFileLifeTimeInSpaceRequest) throws RemoteException {
         return (SrmExtendFileLifeTimeInSpaceResponse)
         handleRequest("srmExtendFileLifeTimeInSpace",srmExtendFileLifeTimeInSpaceRequest);
     }
-    
+
     public SrmStatusOfUpdateSpaceRequestResponse srmStatusOfUpdateSpaceRequest(SrmStatusOfUpdateSpaceRequestRequest srmStatusOfUpdateSpaceRequestRequest) throws RemoteException {
         return (SrmStatusOfUpdateSpaceRequestResponse)
         handleRequest("srmStatusOfUpdateSpaceRequest",srmStatusOfUpdateSpaceRequestRequest);
     }
-    
+
     public SrmPurgeFromSpaceResponse srmPurgeFromSpace(SrmPurgeFromSpaceRequest srmPurgeFromSpaceRequest) throws RemoteException {
         return (SrmPurgeFromSpaceResponse)
         handleRequest("srmPurgeFromSpace",srmPurgeFromSpaceRequest);
     }
-    
+
     public SrmPingResponse srmPing(SrmPingRequest srmPingRequest) throws RemoteException {
         return (SrmPingResponse)
         handleRequest("srmPing",srmPingRequest);
     }
-    
+
     public SrmGetPermissionResponse srmGetPermission(SrmGetPermissionRequest srmGetPermissionRequest) throws RemoteException {
         return (SrmGetPermissionResponse)
         handleRequest("srmGetPermission",srmGetPermissionRequest);
     }
-    
+
     public SrmStatusOfReserveSpaceRequestResponse srmStatusOfReserveSpaceRequest(SrmStatusOfReserveSpaceRequestRequest srmStatusOfReserveSpaceRequestRequest) throws RemoteException {
         return (SrmStatusOfReserveSpaceRequestResponse)
         handleRequest("srmStatusOfReserveSpaceRequest",srmStatusOfReserveSpaceRequestRequest);
     }
-    
+
     public SrmChangeSpaceForFilesResponse srmChangeSpaceForFiles(SrmChangeSpaceForFilesRequest srmChangeSpaceForFilesRequest) throws RemoteException {
         return (SrmChangeSpaceForFilesResponse)
         handleRequest("srmChangeSpaceForFiles",srmChangeSpaceForFilesRequest);
     }
-    
+
     public SrmGetTransferProtocolsResponse srmGetTransferProtocols(SrmGetTransferProtocolsRequest srmGetTransferProtocolsRequest) throws RemoteException {
         return (SrmGetTransferProtocolsResponse)
         handleRequest("srmGetTransferProtocols",srmGetTransferProtocolsRequest);
     }
-    
+
     public SrmGetRequestTokensResponse srmGetRequestTokens(SrmGetRequestTokensRequest srmGetRequestTokensRequest) throws RemoteException {
         return (SrmGetRequestTokensResponse)
         handleRequest("srmGetRequestTokens",srmGetRequestTokensRequest);
     }
-    
+
     public SrmGetSpaceTokensResponse srmGetSpaceTokens(SrmGetSpaceTokensRequest srmGetSpaceTokensRequest) throws RemoteException {
         return (SrmGetSpaceTokensResponse)
         handleRequest("srmGetSpaceTokens",srmGetSpaceTokensRequest);
     }
-    
+
     public SrmStatusOfChangeSpaceForFilesRequestResponse srmStatusOfChangeSpaceForFilesRequest(SrmStatusOfChangeSpaceForFilesRequestRequest srmStatusOfChangeSpaceForFilesRequestRequest) throws RemoteException {
         return (SrmStatusOfChangeSpaceForFilesRequestResponse)
         handleRequest("srmStatusOfChangeSpaceForFilesRequest",srmStatusOfChangeSpaceForFilesRequestRequest);
     }
-    
+
     public SrmStatusOfLsRequestResponse srmStatusOfLsRequest(SrmStatusOfLsRequestRequest srmStatusOfLsRequestRequest) throws RemoteException {
         return (SrmStatusOfLsRequestResponse)
         handleRequest("srmStatusOfLsRequest",srmStatusOfLsRequestRequest);
     }
-    
+
 }
