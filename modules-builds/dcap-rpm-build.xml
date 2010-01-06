@@ -17,9 +17,6 @@
             </fileset>
             <mapper type="glob" from="*.template" to="*" />
             <filterset>
-                <filter token="rpmMacrosFile" value="${dcapclient.rpmMacrosFile}" />
-                <!-- This is only used in the rpmrc file -->
-
                 <filter token="rpmRpmDir" value="${rpmRpmDir}" />
                 <!-- These are used in the rpmmacros file -->
                 <filter token="rpmSrpmDir" value="${rpmSrpmDir}" />
@@ -38,8 +35,7 @@
             <!-- output="${buildDir}/rpm.log" -->
             <arg value="--buildroot" />
             <arg file="${package.root.dir}/dcap" />
-            <arg value="--rcfile" />
-            <arg file="/usr/lib/rpm/rpmrc:${dcapclient.rpmRcFile}" />
+            <arg value="--macros=/usr/lib/rpm/macros:${dcapclient.rpmMacrosFile}" />
             <!-- some documentation claims that /usr/lib/rpm/rpmrc
                                                         will always be parsed. But it currently isnt if not set here -->
             <arg value="-bb" />
@@ -82,8 +78,7 @@
             <!-- output="${buildDir}/rpm.log" -->
             <arg value="--buildroot" />
             <arg file="${package.root.dir}/dcap" />
-            <arg value="--rcfile" />
-            <arg file="/usr/lib/rpm/rpmrc:${dcapclient.rpmRcFile}" />
+            <arg value="--macros=/usr/lib/rpm/macros:${dcapclient.rpmMacrosFile}" />
             <!-- some documentation claims that /usr/lib/rpm/rpmrc
                                                         will always be parsed. But it currently isnt if not set here -->
             <arg value="-bb" />
