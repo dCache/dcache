@@ -133,16 +133,10 @@
         package type specific build modules for srmclient
     -->
     <import file="modules-builds/srmclient-rpm-build.xml" />
-    <import file="modules-builds/dcap-rpm-build.xml" />
 
     <!--
-        Client RPM dCap + SRM
+        Client RPM SRM
     -->
-
-    <target name="install-dcap32" depends="-dcap32.compile"
-        description="build deploy-ready dcap client"/>
-    <target name="install-dcap64" depends="-dcap64.compile"
-        description="build deploy-ready dcap64 client"/>
     <target name="install-srmclient" depends="srmclient"
         description="build deploy-ready srm client"/>
 
@@ -248,21 +242,10 @@
        <echo message="                       : to overwrite default location use" />
        <echo message="                       : -Dsrmclient.bin.dir=/path/to/install" />
        <echo message="" />
-       <echo message="     install-dcap32    : build deploy-ready dcap32 client" />
-       <echo message="                       : to overwrite default location" />
-       <echo message="                       : -Ddcapclient.bin.dir=/path/to/install " />
-       <echo message="" />
-       <echo message="     install-dcap64    : build deploy-ready dcap64 client" />
-       <echo message="                       : to overwrite default location" />
-       <echo message="                       : -Ddcapclient.bin.dir=/path/to/install " />
-       <echo message="" />
        <echo message="     server.rpm        : generate dcache-server-xxx.rpm" />
        <echo message="     server.tgz        : generate dcache-server-xxx.tgz" />
        <echo message="     server.dep        : generate dcache-server-xxx.dep" />
        <echo message="     server.solpkg     : generate dcache-server-xxx.pkg (Solaris)" />
-       <echo message="" />
-       <echo message="     dcap32.rpm        : generate dcache-dcap32-xxx.rpm" />
-       <echo message="     dcap64.rpm        : generate dcache-dcap64-xxx.rpm" />
        <echo message="" />
        <echo message="     srmclient.rpm     : generate srmclient-xxx.rpm" />
        <echo message="" />
