@@ -3,24 +3,7 @@
 #		se-handlers/file_lookup
 
 AM_CFLAGS=-g -O0  -fPIC -Wall -pedantic -pipe \
-	-D_REENTRANT -DLIBC_SYSCALLS  \
-	-DOPEN_SYM=\"open\" -DCLOSE_SYM=\"close\" \
-	-DREAD_SYM=\"read\" -DWRITE_SYM=\"write\" \
-	-DLSEEK_SYM=\"lseek\" -DLSEEK64_SYM=\"lseek64\" \
-	-DPREAD_SYM=\"pread\" -DPREAD64_SYM=\"pread64\" \
-	-DPWRITE_SYM=\"pwrite\" -DPWRITE64_SYM=\"pwrite64\" \
-	-DSTAT_SYM=\"__xstat\" -DSTAT64_SYM=\"__xstat64\" \
-	-DFSTAT64_SYM=\"__fxstat64\" -DLSTAT_SYM=\"__lxstat\" \
-	-DLSTAT64_SYM=\"__lxstat64\" -DFSTAT_SYM=\"__fxstat\" \
-	-DFSYNC_SYM=\"fsync\" -DDUP_SYM=\"dup\" \
-	-DOPENDIR_SYM=\"opendir\" -DCLOSEDIR_SYM=\"closedir\" \
-	-DREADDIR_SYM=\"readdir\" -DREADDIR64_SYM=\"readdir64\" \
-	-DTELLDIR_SYM=\"telldir\" -DSEEKDIR_SYM=\"seekdir\" \
-	-DUNLINK_SYM=\"unlink\" -DRMDIR_SYM=\"rmdir\" \
-	-DMKDIR_SYM=\"mkdir\" -DCHMOD_SYM=\"chmod\" \
-	-DACCESS_SYM=\"access\" -DRENAME_SYM=\"rename\" \
-	-DCHOWN_SYM=\"chown\" -DWRITEV_SYM=\"writev\" \
-	-DREADV_SYM=\"readv\" -D_GNU_SOURCE
+	-D_REENTRANT -DLIBC_SYSCALLS -D_GNU_SOURCE
 
 
 $(PROGRAMS): $(LDEPS)
