@@ -68,6 +68,7 @@ AC_CHECK_HEADERS([sys/socket.h])
 AC_CHECK_HEADERS([sys/time.h])
 AC_CHECK_HEADERS([sys/vfs.h])
 AC_CHECK_HEADERS([termios.h])
+AC_CHECK_HEADERS([stropts.h])
 AC_CHECK_MEMBERS([struct stat.st_blksize])
 AC_CHECK_MEMBERS([struct stat.st_rdev])
 AC_C_CONST

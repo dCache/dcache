@@ -21,7 +21,9 @@
 #include <sys/types.h>
 #ifndef WIN32
 #    ifndef __CYGWIN__
-#         include <stropts.h>
+#        ifdef HAVE_STROPTS_H
+#            include <stropts.h>
+#        endif /* HAVE_STROPTS_H */
 #    endif /* __CYGWIN__ */
 #    include <poll.h>
 #    include <unistd.h>

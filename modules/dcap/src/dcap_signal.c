@@ -19,7 +19,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #ifndef __CYGWIN__
-#    include <stropts.h>
+#    ifdef HAVE_STROPTS_H
+#        include <stropts.h>
+#    endif /* HAVE_STROPTS_H */
 #endif /* __CYGWIN__ */
 
 #include "dcap_debug.h"
