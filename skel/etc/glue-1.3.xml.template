@@ -1759,24 +1759,25 @@
       <sub match="production-" replace-with=""/>
     </map>
 
-    <!-- RFC 2253 describes how LDAP DNs should escape certain characters.
-         Unfortunately, BDII is not RFC 2253 compliant; including a
-         escape-required character in the attribute value that is to
-         become part of an object's DN results in BDII alternatively
-         publishing and suppressing publication of that object.  This is
-         described in bug:
+    <!-- RFC 2253 describes how LDAP DNs should escape certain
+         characters.  Unfortunately, BDII is not RFC 2253 compliant;
+         including a escape-required character in the attribute value
+         that is to become part of an object's DN results in BDII
+         alternatively publishing and suppressing publication of that
+         object.  This is described in bug:
 
          https://savannah.cern.ch/bugs/?57840
 
-         Currently, this problem is only manifest for the GlueSA objects
-         used to provide information on installed capacity: the NAS
-         auto-generated names can include a comma if the set of pools
-         is shared between two or more store units.
+         Currently, this problem is only manifest for the GlueSA
+         objects used to provide information on installed capacity:
+         the NAS auto-generated names can include a comma if the set
+         of pools is shared between two or more store units.
 
-         Here we introduce a work-around: we map all escapable characters
-         to the colon character. -->
+         Here we introduce a work-around: we map all must-escape
+	 characters ( ',', '+', '"', '\', '<', '>', '=', ';') to the
+	 colon character. -->
     <map name="GlueSALocalID-BDII-workaround">
-      <translate from="&quot;,+;&lt;>" to="::::::"/>
+      <translate from=",+&quot;\&lt;>=;" to="::::::::"/>
     </map>
 
     <map name="dCache-ALRP-values-to-Glue">
