@@ -32,7 +32,7 @@ class LockFile
             RandomAccessFile lock = new RandomAccessFile(_file, "rw");
             try {
                 if (lock.getChannel().tryLock() == null) {
-                    throw new IllegalStateException("Lock is owned by another process");
+                    throw new IllegalStateException(String.format("Lock file [%s] is owned by another process", _file));
                 }
                 _lock = lock;
                 lock = null;
