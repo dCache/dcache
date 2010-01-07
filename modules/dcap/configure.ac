@@ -8,6 +8,7 @@ GCCVER=$EDG_RPM_RELEASE_VERSION
 AC_SUBST(GCCVER)
 
 AC_CONFIG_AUX_DIR(config)
+AC_CANONICAL_SYSTEM
 AM_CONFIG_HEADER(src/debug_level.h)
 
 BRUTTAG='$Name:  $'
@@ -480,6 +481,114 @@ AC_DEFINE_UNQUOTED(DC_CALLS,16,[dcap debug level to include calls])
 AC_DEFINE_UNQUOTED(DC_IO,32,[dcap debug level to include IO logging])
 AC_DEFINE_UNQUOTED(DC_THREADS,64,[dcap debug level to include thread tracing])
 
+
+dnl Set default preload options
+
+OPEN_SYM="open"
+CLOSE_SYM="close"
+READ_SYM="read"
+WRITE_SYM="write"
+LSEEK_SYM="lseek"
+LSEEK64_SYM="lseek64"
+PREAD_SYM="pread"
+PREAD64_SYM="pread64"
+PWRITE_SYM="pwrite"
+PWRITE64_SYM="pwrite64"
+STAT_SYM="stat"
+STAT64_SYM="stat64"
+FSTAT64_SYM="fstat64"
+LSTAT_SYM="lstat"
+LSTAT64_SYM="lstat64"
+FSTAT_SYM="fstat"
+FSYNC_SYM="fsync"
+DUP_SYM="dup"
+OPENDIR_SYM="opendir"
+CLOSEDIR_SYM="closedir"
+READDIR_SYM="readdir"
+READDIR64_SYM="readdir64"
+TELLDIR_SYM="telldir"
+SEEKDIR_SYM="seekdir"
+UNLINK_SYM="unlink"
+RMDIR_SYM="rmdir"
+MKDIR_SYM="mkdir"
+CHMOD_SYM="chmod"
+ACCESS_SYM="access"
+RENAME_SYM="rename"
+CHOWN_SYM="chown"
+WRITEV_SYM="writev"
+READV_SYM="readv"
+
+dnl Override defaults By OS
+case "${target_os}" in
+linux-gnu)
+AC_MSG_RESULT([Setting the Linux preload methods])
+STAT_SYM="__xstat"
+STAT64_SYM="__xstat64"
+FSTAT64_SYM="__fxstat64"
+LSTAT_SYM="__lxstat"
+LSTAT64_SYM="__lxstat64"
+FSTAT_SYM="__fxstat"
+;;
+darwin*)
+AC_MSG_RESULT([Setting Darwin preload methods])
+;;
+sgi*)
+AC_MSG_RESULT([Setting SGI preload methods])
+OPENDIR_SYM="_opendir"
+CLOSEDIR_SYM="_closedir"
+READDIR_SYM="_readdir"
+READDIR64_SYM="_readdir64"
+TELLDIR_SYM="_telldir"
+SEEKDIR_SYM="_seekdir"
+;;
+sun*)
+AC_MSG_RESULT([Setting SUN preload methods])
+OPENDIR_SYM="_opendir"
+CLOSEDIR_SYM="_closedir"
+READDIR_SYM="_readdir"
+READDIR64_SYM="_readdir64"
+TELLDIR_SYM="_telldir"
+SEEKDIR_SYM="_seekdir"
+;;
+*)
+AC_MSG_RESULT([Operating system not coded for explicitly so disabling preload])
+CPPFLAGS=${CPPFLAGS} -DDCAP_NO_PREAD
+;;
+esac
+
+AC_DEFINE_UNQUOTED(OPEN_SYM,"$OPEN_SYM",[native function for native or local file system access.])
+AC_DEFINE_UNQUOTED(CLOSE_SYM,"$CLOSE_SYM",[native function for native or local file system access.])
+AC_DEFINE_UNQUOTED(READ_SYM,"$READ_SYM",[native function for native or local file system access.])
+AC_DEFINE_UNQUOTED(WRITE_SYM,"$WRITE_SYM",[native function for native or local file system access.])
+AC_DEFINE_UNQUOTED(LSEEK_SYM,"$LSEEK_SYM",[native function for native or local file system access.])
+AC_DEFINE_UNQUOTED(LSEEK64_SYM,"$LSEEK64_SYM",[native function for native or local file system access.])
+AC_DEFINE_UNQUOTED(PREAD_SYM,"$PREAD_SYM",[native function for native or local file system access.])
+AC_DEFINE_UNQUOTED(PREAD64_SYM,"$PREAD64_SYM",[native function for native or local file system access.])
+AC_DEFINE_UNQUOTED(PWRITE_SYM,"$PWRITE_SYM",[native function for native or local file system access.])
+AC_DEFINE_UNQUOTED(PWRITE64_SYM,"$PWRITE64_SYM",[native function for native or local file system access.])
+AC_DEFINE_UNQUOTED(STAT_SYM,"$STAT_SYM",[native function for native or local file system access.])
+AC_DEFINE_UNQUOTED(STAT64_SYM,"$STAT64_SYM",[native function for native or local file system access.])
+AC_DEFINE_UNQUOTED(FSTAT64_SYM,"$FSTAT64_SYM",[native function for native or local file system access.])
+AC_DEFINE_UNQUOTED(LSTAT_SYM,"$LSTAT_SYM",[native function for native or local file system access.])
+AC_DEFINE_UNQUOTED(LSTAT64_SYM,"$LSTAT64_SYM",[native function for native or local file system access.])
+AC_DEFINE_UNQUOTED(FSTAT_SYM,"$FSTAT_SYM",[native function for native or local file system access.])
+AC_DEFINE_UNQUOTED(FSYNC_SYM,"$FSYNC_SYM",[native function for native or local file system access.])
+AC_DEFINE_UNQUOTED(DUP_SYM,"$DUP_SYM",[native function for native or local file system access.])
+AC_DEFINE_UNQUOTED(OPENDIR_SYM,"$OPENDIR_SYM",[native function for native or local file system access.])
+AC_DEFINE_UNQUOTED(CLOSEDIR_SYM,"$CLOSEDIR_SYM",[native function for native or local file system access.])
+AC_DEFINE_UNQUOTED(READDIR_SYM,"$READDIR_SYM",[native function for native or local file system access.])
+AC_DEFINE_UNQUOTED(READDIR64_SYM,"$READDIR64_SYM",[native function for native or local file system access.])
+AC_DEFINE_UNQUOTED(TELLDIR_SYM,"$TELLDIR_SYM",[native function for native or local file system access.])
+AC_DEFINE_UNQUOTED(SEEKDIR_SYM,"$SEEKDIR_SYM",[native function for native or local file system access.])
+AC_DEFINE_UNQUOTED(UNLINK_SYM,"$UNLINK_SYM",[native function for native or local file system access.])
+AC_DEFINE_UNQUOTED(RMDIR_SYM,"$RMDIR_SYM",[native function for native or local file system access.])
+AC_DEFINE_UNQUOTED(MKDIR_SYM,"$MKDIR_SYM",[native function for native or local file system access.])
+AC_DEFINE_UNQUOTED(CHMOD_SYM,"$CHMOD_SYM",[native function for native or local file system access.])
+AC_DEFINE_UNQUOTED(ACCESS_SYM,"$ACCESS_SYM",[native function for native or local file system access.])
+AC_DEFINE_UNQUOTED(RENAME_SYM,"$RENAME_SYM",[native function for native or local file system access.])
+AC_DEFINE_UNQUOTED(CHOWN_SYM,"$CHOWN_SYM",[native function for native or local file system access.])
+AC_DEFINE_UNQUOTED(WRITEV_SYM,"$WRITEV_SYM",[native function for native or local file system access.])
+AC_DEFINE_UNQUOTED(READV_SYM,"$READV_SYM",[native function for native or local file system access.])
 
 dnl We dont test for the dependacies for the telnet plugin
 dnl as their apear to be no major ones.
