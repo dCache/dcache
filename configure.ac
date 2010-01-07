@@ -594,40 +594,6 @@ AC_SUBST(RPM_DIR)
 
 AC_SUBST(ac_aux_dir)
 
-DCAPPREFIX=/opt/dcache/dcap
-AC_MSG_CHECKING([for dcap prefix directory])
-AC_ARG_WITH(dcap-prefix,[  --with-dcap-prefix=<dir> Default is $DCAPPREFIX/],
-            dcap_prefix="$withval", dcap_prefix="$DCAPPREFIX")
-
-if test -d "$dcap_prefix" ; then
-    AC_MSG_RESULT([found $dcap_prefix])
-    DCAPPREFIX_DIR=$dcap_prefix
-else
-    AC_MSG_RESULT([no such directory $dcap_prefix])
-    AC_MSG_RESULT([the directory $dcap_prefix will be created for you if possible])
-    DCAPPREFIX_DIR=$dcap_prefix
-fi
-
-AC_SUBST(DCAPPREFIX_DIR)
-
-
-
-DOCD=${DCAPPREFIX_DIR}/share/doc/${PACKAGE}-${VERSION}
-AC_MSG_CHECKING([for directory where to install docs])
-AC_ARG_WITH(doc-dir,[  --with-doc-dir=<dir> Default is $DOCD/],
-            doc_dir="$withval", doc_dir="$DOCD")
-if test -d "$doc_dir" ; then
-    AC_MSG_RESULT([found $doc_dir])
-    DOC_DIR=$doc_dir
-else
-    AC_MSG_RESULT([no such directory $doc_dir])
-    AC_MSG_RESULT([the directory $doc_dir will be created for you if possible])
-    DOC_DIR=$doc_dir
-fi
-
-AC_SUBST(DOC_DIR)
-
-
 dnl Some debugging dcap #defines
 
 AC_DEFINE_UNQUOTED(DC_NO_OUTPUT,0,[dcap debug level for no output])
