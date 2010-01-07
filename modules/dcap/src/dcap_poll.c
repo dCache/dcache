@@ -288,13 +288,13 @@ dcap_poll(int mode, struct vsp_node *node, int what)
 				}
 			}
 
-#ifdef linux
+#if defined(__linux__) || defined(__GNU__) || defined(__FreeBSD_kernel__)
 again:
 #endif /* linux */
 
 			retval = poll(poll_list, (unsigned long) poll_len, mode);
 			if (retval < 0) {
-#ifdef linux
+#if defined(__linux__) || defined(__GNU__) || defined(__FreeBSD_kernel__) 
 				/* on the linux the system calls are not automatically
 				  restarted after interruption */
 				/* be sure we are not interrupted by timeout */
@@ -429,14 +429,14 @@ again:
 				pfd.fd = node->dataFd;
 				pfd.events = POLLIN;
 
-#ifdef linux
+#if defined(__linux__) || defined(__GNU__) || defined(__FreeBSD_kernel__)
 again2:
 #endif /* linux */
 				dc_debug(DC_INFO, "Alternative polling for [%d].",node->dataFd);
 				retval = poll(&pfd, 1, TIMEOUT);
 
 				if (retval < 0) {
-#ifdef linux
+#if defined(__linux__) || defined(__GNU__) || defined(__FreeBSD_kernel__)
 				/* on the linux the system calls are not automatically
 				  restarted after interruption */
 					if(errno == EINTR) {

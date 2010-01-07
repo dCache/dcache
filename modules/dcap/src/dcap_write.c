@@ -300,8 +300,11 @@ ssize_t dc_writev(int fd, const struct iovec *vector, int count) {
 	/* nothing wrong ... yet */
 	dc_errno = DEOK;	
 	
-	
+#ifdef IOV_MAX
 	if( (count == 0) || (count > IOV_MAX) ) {
+#else
+	if(count == 0) {
+#endif
 		errno = EINVAL;
 		return -1;
 	}

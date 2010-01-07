@@ -39,8 +39,17 @@ char *followLink( const char *path)
 {
 	char *real_path;
 	char *ret;
-	
-	real_path = malloc(PATH_MAX);
+	int path_max;
+
+#ifdef PATH_MAX
+	path_max = PATH_MAX;
+#else
+	path_max = pathconf(path, _PC_PATH_MAX);
+	if (path_max <= 0)
+		path_max = 4096;
+#endif
+
+	real_path = malloc(path_max);
 	if( real_path == NULL ) {
 		return NULL;
 	}

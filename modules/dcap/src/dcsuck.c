@@ -37,6 +37,9 @@ extern int getopt(int, char * const *, const char *);
 
 #define DEFAULT_BUFFER 1048570L /* 1Mb */
 
+#ifndef MAXPATHLEN
+#define MAXPATHLEN 4096
+#endif
 
 int main(int argc, char *argv[])
 {

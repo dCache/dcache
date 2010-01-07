@@ -805,7 +805,7 @@ create_data_socket(int *dataFd, unsigned short *cbPort)
 {
 
 	struct sockaddr_in me;
-#if defined(linux)
+#if defined(__linux__) || defined(__GNU__) || defined(__FreeBSD_kernel__)
 	socklen_t       addrSize;
 #else
 	size_t          addrSize;	
@@ -848,7 +848,7 @@ create_data_socket(int *dataFd, unsigned short *cbPort)
 	}
 
 	/* get our TCP port number as it can be redefined at bind time */
-#if defined(linux)
+#if defined(__linux__) || defined(__GNU__) || defined(__FreeBSD_kernel__)
 	getsockname(*dataFd, (struct sockaddr *) & me, (socklen_t *) &addrSize);
 #else
 	getsockname(*dataFd, (struct sockaddr *) & me, (int *) &addrSize);
@@ -1133,7 +1133,7 @@ data_hello_conversation(struct vsp_node * node)
 {
 	struct sockaddr_in him;
 	int             newFd;
-#if defined(linux)
+#if defined(__linux__) || defined(__GNU__) || defined(__FreeBSD_kernel__)
 	socklen_t       addrSize;
 #else
 	size_t          addrSize;	
@@ -1172,8 +1172,8 @@ data_hello_conversation(struct vsp_node * node)
 		}
 
 		addrSize = sizeof(him);
-	#if defined(linux)
-    	newFd = accept(callBackSocket, (struct sockaddr *) & him, (socklen_t *) &addrSize);	
+	#if defined(__linux__) || defined(__GNU__) || defined(__FreeBSD_kernel__)
+		newFd = accept(callBackSocket, (struct sockaddr *) & him, (socklen_t *) &addrSize);
 	#else
 		newFd = accept(callBackSocket, (struct sockaddr *) & him, (int *) &addrSize);
 	#endif
@@ -1472,16 +1472,23 @@ get_fin(struct vsp_node * node)
 		return 0;
 }
 
-#if defined(__x86__) || defined(__i386__) || defined(__alpha) || \
-    defined(__i386) || defined (WIN32) || defined(__x86_64__) || \
-	defined(__ia64)
+#if defined(__x86__) || defined(__i386__) || defined(__i386) || \
+    defined(__x86_64__) || defined(__x86_64) || \
+    defined(__amd64__) || defined(__amd64) || \
+    defined(__alpha__) || defined(__alpha) || \
+    defined(__ia64__) || defined(__ia64) || \
+    defined(__MIPSEL__) || defined(MIPSEL) || defined(__ARMEL__) || \
+    defined(__sh__) || defined(__avr32__) || defined (WIN32)
 #  define I_AM_LITTLE_ENDIAN
-#elif defined(__powerpc__) || defined(_AIX) || defined(__sparc__) || \
-        defined (sparc) || defined(__m68k__) || defined(__mips__) ||\
-	defined (sgi)
+#elif defined(_AIX) || defined(AIX) || \
+      defined(__powerpc__) || defined(__ppc__) || defined(__ppc) || \
+      defined(__sparc__) || defined (__sparc) || defined (sparc) || \
+      defined(__mc68000__) || defined(__m68k__) || \
+      defined(__MIPSEB__) || defined(MIPSEB) || defined(__ARMEB__) || \
+      defined(__hppa__) || defined(HPPA) || defined(__s390__)
 #  define  I_AM_BIG_ENDIAN
 #else
-#  error Unknow Byte order
+#  error Unknown Byte order
 #endif
 
 int64_t
