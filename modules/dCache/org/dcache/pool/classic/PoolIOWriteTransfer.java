@@ -140,11 +140,9 @@ public class PoolIOWriteTransfer
                 try {
                     raf.getFD().sync();
                 } catch (SyncFailedException e) {
-                    /* Data is not guaranteed to be on disk. Not a fatal
-                     * problem, but better generate a warning.
-                     */
-                    _log.warn("Failed to synchronize file with storage device: "
-                              + e.getMessage());
+                    throw new CacheException(CacheException.ERROR_IO_DISK,
+                                             "Failed to synchronize file with storage device: "
+                                             + e.getMessage());
                 }
 
                 /* This may throw an IOException, although it is not
@@ -157,7 +155,6 @@ public class PoolIOWriteTransfer
         } catch (FileNotFoundException e) {
             throw new CacheException(CacheException.ERROR_IO_DISK,
                                      "File could not be created; please check the file system");
-
         }
     }
 
