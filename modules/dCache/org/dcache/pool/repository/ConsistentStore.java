@@ -62,6 +62,7 @@ public class ConsistentStore
     private final FileStore _fileStore;
     private final MetaDataStore _importStore;
     private final ChecksumModuleV1 _checksumModule;
+    private boolean _isVolatile = false;
 
     public ConsistentStore(PnfsHandler pnfsHandler,
                            ChecksumModuleV1 checksumModule,
@@ -87,6 +88,11 @@ public class ConsistentStore
         if (!(_importStore instanceof EmptyMetaDataStore)) {
             _log.warn(String.format("NOTICE: Importing any missing meta data from %s. This should only be used to convert an existing repository and never as a permanent setup.", _importStore));
         }
+    }
+
+    public void setLFSMode(String lfs)
+    {
+        _isVolatile = ("volatile".equals(lfs) || "transient".equals(lfs));
     }
 
     /**
@@ -226,7 +232,7 @@ public class ConsistentStore
                         entry.setSticky(record.owner(), record.expire(), false);
                     }
 
-                    if (PoolIOWriteTransfer.getTargetState(info) == EntryState.PRECIOUS && !info.isStored()) {
+                    if (PoolIOWriteTransfer.getTargetState(info) == EntryState.PRECIOUS && !info.isStored() && !_isVolatile) {
                         entry.setState(EntryState.PRECIOUS);
                         _log.warn(String.format(PRECIOUS_MSG, id));
                     } else {

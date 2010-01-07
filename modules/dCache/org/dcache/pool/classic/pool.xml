@@ -132,6 +132,7 @@
         <constructor-arg ref="file-store"/>
         <constructor-arg ref="meta-store"/>
         <constructor-arg ref="import-store"/>
+        <property name="LFSMode" value="${lfs}"/>
        </bean>
     </property>
   </bean>
