@@ -133,6 +133,7 @@
         <constructor-arg ref="meta-store"/>
         <constructor-arg ref="import-store"/>
         <property name="poolName" value="${poolname}"/>
+        <property name="LFSMode" value="${lfs}"/>
        </bean>
     </property>
   </bean>
