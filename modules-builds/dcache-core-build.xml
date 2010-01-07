@@ -87,7 +87,7 @@
         <pathelement location="${classesDir}/srm.jar" />
         <pathelement location="${classesDir}/gplazma.jar" />
         <pathelement location="${libDir}/dbcp/c3p0-0.9.1.2.jar" />
-        <pathelement location="${libDir}/berkeleyDB/je-3.2.76.jar" />
+        <pathelement location="${libDir}/berkeleyDB/je-4.0.71.jar" />
         <fileset dir="${libDir}/spring/" includes="spring-*.jar" />
         <fileset dir="${libDir}/netty/" includes="*.jar" />
         <fileset dir="${libDir}/activemq/" includes="*.jar" />
@@ -489,7 +489,7 @@
 
         <!-- BerkeleyDB -->
         <mkdir dir="${server.bin.dir}/classes/berkeleyDB/" />
-        <copy file="${libDir}/berkeleyDB/je-3.2.76.jar" todir="${server.bin.dir}/classes/berkeleyDB/" />
+        <copy file="${libDir}/berkeleyDB/je-4.0.71.jar" todir="${server.bin.dir}/classes/berkeleyDB/" />
 
         <!-- slf4j -->
         <mkdir dir="${server.bin.dir}/classes/slf4j/" />
