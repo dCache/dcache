@@ -39,7 +39,7 @@
 /* there is no strndup in standart C library */
 char *xstrndup( const char *source, size_t size)
 {
-#if defined(linux) && defined(_GNU_SOURCE)
+#if (defined(__linux__) || defined(__GNU__) || defined(__FreeBSD_kernel__)) && defined(_GNU_SOURCE)
 	return strndup(source, size);
 #else /* ! defined(linux) && defined(_GNU_SOURCE) */
 

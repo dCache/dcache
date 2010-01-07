@@ -29,6 +29,10 @@ int dc_lstat64(const char *path, struct stat64 *buf);
 int dc_fstat64(int fd, struct stat64 *buf);
 #endif
 
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
+
 /* 
    to support large files on current pnfs ( nfs v2 ), implementes small
    workaround. If file size is 1, than perform a stat operation over

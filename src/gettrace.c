@@ -29,6 +29,10 @@
 
 #include "dcap_debug.h"
 
+#ifndef MAXPATHLEN
+#define MAXPATHLEN 4096
+#endif
+
 static asymbol **read_bfd_stuff(bfd *);
 extern void getStackTrace(unsigned long *, int *);
 
@@ -134,7 +138,7 @@ static int printStackInfo(const char *address, int i)
 
 static void init_traceBack()
 {
-    char exename[MAXPATHLEN];
+	char exename[MAXPATHLEN];
 	int res;
 
 	if( !init) {

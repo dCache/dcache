@@ -49,6 +49,9 @@ extern int getopt(int, char * const *, const char *);
 #    endif /* O_BINARY */
 #endif /* WIN32 */
 
+#ifndef MAXPATHLEN
+#define MAXPATHLEN 4096
+#endif
 
 void usage();
 int copyfile(int src, int dest, size_t buffsize, off_t  *size);

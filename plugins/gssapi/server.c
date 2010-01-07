@@ -16,6 +16,10 @@
 
 #include "gssTunnel.h"
 
+#ifndef MAXHOSTNAMELEN
+#define MAXHOSTNAMELEN 64
+#endif
+
 int
 create_socket(int *dataFd, int *cbPort)
 {

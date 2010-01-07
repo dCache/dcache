@@ -28,7 +28,7 @@ int char2dirent64(const char *, struct dirent64 *);
 int char2dirent(const char *, struct dirent *);
 
 
-#ifdef linux
+#if defined(__linux__) || defined(__GNU__) || defined(__FreeBSD_kernel__)
 
 struct __dirstream   {
     int fd;         /* File descriptor.  */
@@ -145,11 +145,13 @@ struct dirent *dc_readdir( DIR *dir)
 	}
 			
 	memcpy(ent.d_name, ep->d_name, 256);
-#ifdef linux	
+#if defined(__linux__) || defined(__GNU__) || defined(__FreeBSD_kernel__)
 	ent.d_type = ep->d_type;
 #endif
 	ent.d_reclen = ep->d_reclen;
+#if !defined(__GNU__) && !defined(__FreeBSD_kernel__)
 	ent.d_off = (off_t)ep->d_off;
+#endif
 	ent.d_ino = (ino_t)ep->d_ino;
 	
 	return &ent;	
@@ -299,7 +301,7 @@ int char2dirent64(const char *line, struct dirent64 *ent)
 	}	
 
 	s++;
-#ifdef linux
+#if defined(__linux__) || defined(__GNU__) || defined(__FreeBSD_kernel__)
 	switch(s[0]){
 		case 'f' :
 			ent->d_type = DT_REG;
@@ -350,7 +352,7 @@ int char2dirent(const char *line, struct dirent *ent)
 	}	
 
 	s++;
-#ifdef linux
+#if defined(__linux__) || defined(__GNU__) || defined(__FreeBSD_kernel__)
 	switch(s[0]){
 		case 'f' :
 			ent->d_type = DT_REG;
