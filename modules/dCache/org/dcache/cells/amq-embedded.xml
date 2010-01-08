@@ -67,7 +67,7 @@
 
     <!-- The transport connectors ActiveMQ will listen to -->
     <transportConnectors>
-      <transportConnector name="openwire" uri="tcp://localhost:${amqPort}" 
+      <transportConnector name="openwire" uri="tcp://0.0.0.0:${amqPort}"
                           discoveryUri="multicast://default"/>
 <!--     
       <transportConnector name="ssl" uri="ssl://localhost:${jmsSSLPort}"/>
