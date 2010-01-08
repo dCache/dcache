@@ -102,8 +102,8 @@ extern int             get_data( struct vsp_node *);
 extern int             get_fin( struct vsp_node *);
 extern int             get_ack(int , ConfirmationBlock * );
 extern ConfirmationBlock get_reply(int);
-extern int64_t         htonll(int64_t);
-extern int64_t         ntohll(int64_t);
+extern uint64_t         htonll(uint64_t);
+extern uint64_t         ntohll(uint64_t);
 extern int             str2errno(const char *);
 
 

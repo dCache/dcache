@@ -59,6 +59,8 @@ AC_CHECK_FUNCS([strerror])
 AC_CHECK_FUNCS([strndup])
 AC_CHECK_FUNCS([strrchr])
 AC_CHECK_FUNCS([strstr])
+AC_CHECK_FUNCS([htonll])
+AC_CHECK_FUNCS([ntohll])
 AC_CHECK_HEADERS([arpa/inet.h])
 AC_CHECK_HEADERS([fcntl.h])
 AC_CHECK_HEADERS([limits.h])
@@ -72,6 +74,9 @@ AC_CHECK_HEADERS([termios.h])
 AC_CHECK_HEADERS([stropts.h])
 AC_CHECK_MEMBERS([struct stat.st_blksize])
 AC_CHECK_MEMBERS([struct stat.st_rdev])
+AC_CHECK_MEMBERS([FILE._fileno])
+AC_CHECK_MEMBERS([FILE._magic])
+AC_CHECK_MEMBERS([FILE._file])
 AC_C_CONST
 AC_FUNC_CHOWN
 AC_FUNC_CLOSEDIR_VOID
