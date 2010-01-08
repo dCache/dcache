@@ -42,12 +42,15 @@ int        dc_fseeko64(FILE *, off64_t, int);
 #endif
 
 
-#if defined(__linux__) || defined(__GNU__) || defined(__FreeBSD_kernel__)
-	#define FILE_NO(x) (x)->_fileno
+#ifdef HAVE_FILE__MAGIC
+    #define FILE_NO(x) (x)->_magic
+#elif defined(HAVE_FILE__FILENO)
+    #define FILE_NO(x) (x)->_fileno
+#elif defined(HAVE_FILE__FILE)
+    #define FILE_NO(x) (x)->_file
 #else
-	#define FILE_NO(x) (x)->_file
-#endif	
-
+   #error "unsupported platform"
+#endif
 
 int dc_fclose(FILE *fp)
 {
