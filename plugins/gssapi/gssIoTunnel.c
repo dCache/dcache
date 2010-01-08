@@ -36,6 +36,7 @@
 #endif				/* MIT_KRB5 */
 
 static int      gssAuth(int sock,tunnel_ctx_t* ctx, const char *hostname, const char *service);
+static ssize_t writen(int fd, const void *buf, size_t nbyte);
 
 #define MAXBUF 16384
 
@@ -189,7 +190,7 @@ eRead(int fd, void *buf, size_t size)
 ssize_t
 eWrite(int fd, const void *buf, size_t size)
 {
-	ssize_t         ret = 0;
+	ssize_t  ret = -1;
 
 	gss_buffer_desc enc_buff, data_buf;
 	OM_uint32 maj_stat, min_stat;
@@ -229,11 +230,22 @@ eWrite(int fd, const void *buf, size_t size)
 		gss_release_buffer(&min_stat, &enc_buff);
 	}
 
-	write(fd, prefix, 4);
-	write(fd, str, len);
-	write(fd, &nl, 1);
+	if( writen(fd, prefix, 4) != 4) {
+            goto clean_exit;
+        }
+
+	if (writen(fd, str, len) != len) {
+            goto clean_exit;
+        }
+
+        if( writen(fd, &nl, 1) != 1) {
+            goto clean_exit;
+        }
+
+        ret = size;
+clean_exit:
 	free(str);
-	return size;
+	return ret;
 }
 
 
@@ -510,4 +522,23 @@ gss_check(int sock)
 	} while( maj_stat == GSS_S_CONTINUE_NEEDED ) ;
 
 	return 0;
+}
+
+ssize_t
+writen(int fd, const void *buf, size_t bufsize) {
+    size_t nleft;
+    ssize_t nwritten;
+    nleft = bufsize;
+
+    while (nleft > 0) {
+        nwritten = write(fd, buf, nleft);
+
+        if (nwritten < 0)
+            return nwritten;
+
+        nleft -= nwritten;
+        buf += nwritten;
+    }
+
+    return (bufsize - nleft);
 }
