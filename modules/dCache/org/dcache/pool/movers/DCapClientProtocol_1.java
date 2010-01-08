@@ -11,7 +11,6 @@ import diskCacheV111.vehicles.DCapClientPortAvailableMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.PnfsFile;
 import diskCacheV111.util.CacheException;
 import org.dcache.pool.repository.Allocator;
 
@@ -19,14 +18,9 @@ import org.apache.log4j.Logger;
 
 import dmg.cells.nucleus.*;
 import java.io.*;
-import java.net.URL;
-import java.net.URLConnection;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.InetAddress;
-import java.util.Hashtable;
-import java.util.StringTokenizer;
-
 
 public class DCapClientProtocol_1 implements MoverProtocol
 {
@@ -34,23 +28,14 @@ public class DCapClientProtocol_1 implements MoverProtocol
         Logger.getLogger(DCapClientProtocol_1.class);
     public static final int READ   =  1;
     public static final int WRITE  =  2;
-    private static final int INC_SPACE  =  (50*1024*1024);
-    private long    allocated_space  = 0;
     private long last_transfer_time    = System.currentTimeMillis();
     private final CellEndpoint   cell;
     private DCapClientProtocolInfo dcapClient;
-    private CellPath pathToSource;
     private long starttime;
-    private RandomAccessFile diskFile;
     private long timeout_time;
-    private String remoteURL;
     private volatile long transfered  = 0;
     private boolean changed;
 
-
-    //
-    // <init>(CellAdapter cell);
-    //
 
     public DCapClientProtocol_1(CellEndpoint cell)
     {
@@ -87,7 +72,6 @@ public class DCapClientProtocol_1 implements MoverProtocol
                 throw new  CacheException(
                                           "protocol info is not RemoteGsiftpransferProtocolInfo");
             }
-        this.diskFile = diskFile;
         starttime = System.currentTimeMillis();
 
         dcapClient = (DCapClientProtocolInfo) protocol;
@@ -97,30 +81,33 @@ public class DCapClientProtocol_1 implements MoverProtocol
                                          dcapClient.getInitiatorCellDomain());
         say(" runIO() RemoteGsiftpTranferManager cellpath="+cellpath);
 
-        ServerSocket ss= null;
+        ServerSocket serverSocket= null;
         try
             {
-                ss = new ServerSocket(0,1);
+                serverSocket = new ServerSocket(0,1);
             }
         catch(IOException ioe)
             {
                 esay("exception while trying to create a server socket : "+ioe);
                 throw ioe;
             }
-        int port = ss.getLocalPort();
-        String host = InetAddress.getLocalHost().getHostName();
+        int port = serverSocket.getLocalPort();
+
+        InetAddress localAddress = dcapClient.getLocalAddressForClient();
+
         DCapClientPortAvailableMessage cred_request =
-            new DCapClientPortAvailableMessage(host,port,dcapClient.getId());
+            new DCapClientPortAvailableMessage(localAddress.getHostName(),
+            port,dcapClient.getId());
 
 
         say(" runIO() created message");
         cell.sendMessage (new CellMessage(cellpath,cred_request));
         say("waiting for dcap server connection");
-        Socket dcap_socket = ss.accept();
+        Socket dcap_socket = serverSocket.accept();
         say("connected");
         try
             {
-                ss.close();
+                serverSocket.close();
             }
         catch(IOException ioe)
             {
@@ -280,7 +267,6 @@ public class DCapClientProtocol_1 implements MoverProtocol
 
         byte [] data = new byte[256*1024];
         int nextPacket = 0;
-        long total     = 0L;
         while(true){
             if((nextPacket = in.readInt()) < 0)break;
 
@@ -306,8 +292,6 @@ public class DCapClientProtocol_1 implements MoverProtocol
                 }
                 changed = true;
                 transfered +=block;
-                total += block;
-                // say("<RunningIo="+total+">");
                 _dataFile.write(data , 0 , block);
                 restPacket -= block;
             }
@@ -370,6 +354,3 @@ public class DCapClientProtocol_1 implements MoverProtocol
         say("<Done>");
     }
 }
-
-
-

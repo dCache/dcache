@@ -38,7 +38,7 @@ public class StagerMessageV0  extends StagerMessage {
 
       
    }
-   public class _ProtocolInfo implements IpProtocolInfo {
+   public class _ProtocolInfo extends IpProtocolInfo {
        
        private static final long serialVersionUID = 1752886092046157556L;
        

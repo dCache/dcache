@@ -1,14 +1,8 @@
-/*
- * $Id:NFSv41ProtocolMover.java 140 2007-06-07 13:44:55Z tigran $
- */
-
 package org.dcache.chimera.nfsv41.mover;
 
 import java.io.RandomAccessFile;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.NetworkInterface;
-import java.util.Enumeration;
 
 import org.apache.log4j.Logger;
 
@@ -126,29 +120,11 @@ public class NFSv41ProtocolMover implements ManualMover {
         if( _nfsIO == null ) {
             throw new IllegalStateException("NFS mover not ready");
         }
+        NFS4ProtocolInfo nfs4ProtocolInfo = (NFS4ProtocolInfo) protocol;
 
-        /*
-         * FIXME:
-         * here we have to put all interfaces and send it to client.
-         * in pNFS language this is't a multipath device.
-         * To make this work, PoolPassiveIoFileMessage have to be changed.
-         */
-        InetAddress localIp = null;
-        Enumeration<NetworkInterface> ne = NetworkInterface.getNetworkInterfaces();
-        while(ne.hasMoreElements() ) {
-            NetworkInterface iface = ne.nextElement();
-            // java 6 way to do it
-//            if( !iface.isLoopback() && iface.isUp() ) {
-//                localIp = iface.getInetAddresses().nextElement();
-//                break;
-//            }
+        InetAddress localAddress = nfs4ProtocolInfo.getLocalAddressForClient();
 
-            localIp = iface.getInetAddresses().nextElement();
-            if( !localIp.isLoopbackAddress() ) break;
-
-        }
-
-        _log.debug("using local interface: " + localIp);
+        _log.debug("using local interface: " + localAddress);
 
         _ioMode = access;
         stateid4 stateid = ((NFS4ProtocolInfo) protocol).stateId();
@@ -177,13 +153,12 @@ public class NFSv41ProtocolMover implements ManualMover {
             byte[] d = xdr.body().array();
 
             PoolPassiveIoFileMessage msg = new PoolPassiveIoFileMessage(_cell.getCellInfo().getCellName(),
-                    new InetSocketAddress(localIp, _nfsIO.getLocalPort()), d);
-    
-    
+                    new InetSocketAddress(localAddress, _nfsIO.getLocalPort()), d);
+
             CellPath cellpath = ((NFS4ProtocolInfo) protocol).door();
             _cell.sendMessage(new CellMessage(cellpath, msg));
-    
-    
+
+
             /*
              * hang forever, until thread is not stopped( interrupted )
              */

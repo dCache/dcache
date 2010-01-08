@@ -1,5 +1,3 @@
-// $Id: FtpProtocol_1.java,v 1.12 2003-06-11 09:19:32 cvs Exp $
-
 package org.dcache.pool.movers;
 import  diskCacheV111.vehicles.*;
 import  diskCacheV111.util.*;
@@ -17,7 +15,6 @@ public class FtpProtocol_1
     private final static Logger _log = Logger.getLogger(FtpProtocol_1.class);
     private final static Logger _logSpaceAllocation = Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + FtpProtocol_1.class.getName());
 
-    private final CellEndpoint  _cell;
     private long _bytesTransferred = -1;
     private long _transferStarted  = 0;
     private long _transferTime     = 0;
@@ -30,7 +27,6 @@ public class FtpProtocol_1
     private boolean _wasChanged      = false;
 
     public FtpProtocol_1(CellEndpoint cell){
-        _cell = cell;
         say("FtpProtocol_1 created");
     }
     private void say(String str){
@@ -53,33 +49,34 @@ public class FtpProtocol_1
 
         throws Exception {
 
+        if(! (protocol instanceof FtpProtocolInfo)){
+            throw new
+                CacheException(44, "protocol info not FtpProtocolInfo");
+
+        }
+        FtpProtocolInfo ftpProtocolInfo = (FtpProtocolInfo)protocol;
+
         _lastTransferred = System.currentTimeMillis();
         if((access & MoverProtocol.WRITE) != 0){
             _wasChanged = true;
-            runRemoteToDisk(diskFile, protocol, storage, pnfsId.toString(), allocator);
+            runRemoteToDisk(diskFile, ftpProtocolInfo, storage, pnfsId.toString(), allocator);
         }else{
-            runDiskToRemote(diskFile, protocol, storage, pnfsId.toString() );
+            runDiskToRemote(diskFile, ftpProtocolInfo, storage, pnfsId.toString() );
         }
 
 
     }
 
     public void runRemoteToDisk(RandomAccessFile diskFile,
-                                ProtocolInfo protocol,
+                                FtpProtocolInfo ftpProtocol,
                                 StorageInfo  storage,
                                 String       pnfsId ,
                                 Allocator allocator)
 
         throws Exception {
 
-        if(! (protocol instanceof FtpProtocolInfo)){
-            throw new
-                CacheException(44, "protocol info not FtpProtocolInfo");
-
-        }
-        FtpProtocolInfo ftp = (FtpProtocolInfo)protocol;
-	int    port = ftp.getPort();
-	String host = ftp.getHost();
+	int    port = ftpProtocol.getPort();
+	String host = ftpProtocol.getHost();
 	Socket       dataSocket = new Socket(host, port);
 	InputStream  istream    = dataSocket.getInputStream();
         say("Connected to "+host+"("+port+")");
@@ -107,10 +104,10 @@ public class FtpProtocol_1
             }
         }finally{
             try{ dataSocket.close(); }catch(Exception xe){}
-            ftp.setBytesTransferred(_bytesTransferred);
+            ftpProtocol.setBytesTransferred(_bytesTransferred);
             _transferTime = System.currentTimeMillis() -
                 _transferStarted;
-            ftp.setTransferTime(_transferTime);
+            ftpProtocol.setTransferTime(_transferTime);
             say("Transfer finished : "+
                  _bytesTransferred+" bytes in "+
                  (_transferTime/1000) +" seconds ");
@@ -124,20 +121,14 @@ public class FtpProtocol_1
     }
 
     public void runDiskToRemote(RandomAccessFile  diskFile,
-                                ProtocolInfo protocol,
+                                FtpProtocolInfo ftpProtocol,
                                 StorageInfo  storage,
                                 String       pnfsId   )
 
         throws Exception {
 
-        if(! (protocol instanceof FtpProtocolInfo)){
-            throw new
-                CacheException(44, "protocol info not FtpProtocolInfo");
-
-        }
-        FtpProtocolInfo ftp = (FtpProtocolInfo)protocol;
-	int    port = ftp.getPort();
-	String host = ftp.getHost();
+	int    port = ftpProtocol.getPort();
+	String host = ftpProtocol.getHost();
         say("Connecting to "+host+"("+port+")");
 	Socket       dataSocket = new Socket(host, port);
 	OutputStream ostream    = dataSocket.getOutputStream();
@@ -209,10 +200,10 @@ public class FtpProtocol_1
             }
         }finally{
             try{ dataSocket.close(); }catch(Exception xe){}
-            ftp.setBytesTransferred(_bytesTransferred);
+            ftpProtocol.setBytesTransferred(_bytesTransferred);
             _transferTime = System.currentTimeMillis() -
                 _transferStarted;
-            ftp.setTransferTime(_transferTime);
+            ftpProtocol.setTransferTime(_transferTime);
 
             say("Transfer finished : "+
                  _bytesTransferred+" bytes in "+
@@ -228,7 +219,7 @@ public class FtpProtocol_1
 
     }
 
-    public long getLastTransferred() { return System.currentTimeMillis(); }
+    public long getLastTransferred() { return _lastTransferred; }
     public long getBytesTransferred(){ return _bytesTransferred ; }
     public long getTransferTime(){
         return _transferTime < 0 ?

@@ -1,5 +1,6 @@
 package org.dcache.util;
 
+import java.net.DatagramSocket;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -11,18 +12,19 @@ import java.net.SocketException;
 /**
  * Various network related utility functions.
  */
-public abstract class NetworkUtils
-{
+public abstract class NetworkUtils {
+
+    private static final int RANDOM_PORT = 23241;
+
     /**
      * Returns the list of IP V4 addresses of this host.
      */
     public static List<InetAddress> getLocalAddressesV4()
-        throws SocketException
-    {
+            throws SocketException {
         List<InetAddress> result = new ArrayList<InetAddress>();
 
         Enumeration<NetworkInterface> interfaces =
-            NetworkInterface.getNetworkInterfaces();
+                NetworkInterface.getNetworkInterfaces();
         while (interfaces.hasMoreElements()) {
             NetworkInterface i = interfaces.nextElement();
             if (i.isUp() && !i.isLoopback()) {
@@ -36,5 +38,23 @@ public abstract class NetworkUtils
             }
         }
         return result;
+    }
+
+    /**
+     * Return the local address via which the given destination
+     * address is reachable.
+     *
+     * Java does not provide this functionality and therefore we need
+     * this workaround.
+     */
+    public static InetAddress getLocalAddress(InetAddress intendedDestination)
+            throws SocketException {
+        DatagramSocket socket = new DatagramSocket();
+        try {
+            socket.connect(intendedDestination, RANDOM_PORT);
+            return socket.getLocalAddress();
+        } finally {
+            socket.close();
+        }
     }
 }

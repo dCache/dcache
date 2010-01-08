@@ -5,7 +5,7 @@ package diskCacheV111.vehicles;
  * @version 0.0, 28 Jun 2002
  */
 
-public class RemoteHttpDataTransferProtocolInfo implements IpProtocolInfo 
+public class RemoteHttpDataTransferProtocolInfo extends IpProtocolInfo
 {
   private String name  = "Unkown" ;
   private int    minor = 0 ;
