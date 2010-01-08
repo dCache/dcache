@@ -89,8 +89,9 @@ fi
 %config(noreplace) /opt/d-cache/config/chimera-config.xml
 %config(noreplace) /opt/d-cache/config/log4j.properties
 %config(noreplace) /opt/d-cache/etc/dcachesrm-gplazma.policy
-%config /opt/d-cache/config/*.batch
+%config(noreplace) /opt/d-cache/config/*.batch
 %config(noreplace) /opt/d-cache/etc/srm_setup.env
 %config(noreplace) /opt/d-cache/etc/tc-config.xml
+%config /opt/d-cache/share/cells/*.cell
 %changelog
 
