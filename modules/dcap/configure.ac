@@ -99,6 +99,7 @@ AC_TYPE_OFF_T
 AC_TYPE_SIGNAL
 AC_TYPE_SIZE_T
 AC_TYPE_UID_T
+AC_C_BIGENDIAN
 
 
 dnl === Globus stuff ===
