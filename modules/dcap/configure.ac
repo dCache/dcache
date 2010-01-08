@@ -579,8 +579,10 @@ export LD_LIBRARY_PATH=${_ldlibpath}
 dnl =============
 dnl Check RPM dir
 dnl =============
-RPMD=`pwd`
 
+if test X = "X${RPMD}" ; then
+    RPMD=`pwd`
+fi
 AC_MSG_CHECKING([for directory where to create rpms])
 AC_ARG_WITH(rpm-dir,[  --with-rpm-dir=<dir> Default is \$RPMD/],
             rpm_dir="$withval", rpm_dir="$RPMD")
@@ -592,10 +594,29 @@ else
     AC_MSG_RESULT([the directory $rpm_dir will be created for you if possible])
     RPM_DIR=$rpm_dir
 fi
-
-
-
 AC_SUBST(RPM_DIR)
+
+dnl =============
+dnl Check Doc dir
+dnl =============
+dnl Note: as of autoconf 2.6 this is included by default
+
+if test X = "X${DOCD}" ; then
+    DOCD=${prefix}/share/doc/${PACKAGE}-${VERSION}
+fi
+AC_MSG_CHECKING([for directory where to install docs])
+AC_ARG_WITH(doc-dir,[  --with-doc-dir=<dir> Default is \$DOCD/],
+            doc_dir="$withval", doc_dir="$DOCD")
+if test -d "$doc_dir" ; then
+    AC_MSG_RESULT([found $doc_dir])
+    DOC_DIR=$doc_dir
+else
+    AC_MSG_RESULT([no such directory $doc_dir])
+    AC_MSG_RESULT([the directory $doc_dir will be created for you if possible])
+    DOC_DIR=$doc_dir
+fi
+
+AC_SUBST(DOC_DIR)
 
 AC_SUBST(ac_aux_dir)
 

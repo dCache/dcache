@@ -68,7 +68,7 @@ docfiles = \
 
 
 
-
+docdir = $(DOC_DIR)
 doc_DATA = $(docfiles)
 EXTRA_DIST = $(docfiles)
 

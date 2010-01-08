@@ -101,7 +101,7 @@ libdir=%{prefix}/lib64
 CPPFLAGS="@CPPFLAGS@" LDFLAGS="@LDFLAGS@" ./configure \
   --bindir=/${bindir} \
   --libdir=/${libdir} \
-  --docdir=%{prefix}/share/doc/@PACKAGE@-@VERSION@ \
+  --with-doc-dir=%{prefix}/share/doc/@PACKAGE@-@VERSION@ \
   --includedir=%{prefix}/include/ \
   --with-globus-include=@GLOBUS_INCLUDE_DIR@ \
   --with-globus-lib=@GLOBUS_LIB_DIR@
