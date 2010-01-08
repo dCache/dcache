@@ -7,28 +7,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -41,10 +41,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -54,10 +54,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -96,7 +96,7 @@ import org.apache.log4j.Logger;
 public final class PutRequest extends ContainerRequest{
     private final static Logger logger =
             Logger.getLogger(PutRequest.class);
-    
+
     // private PutFileRequest fileRequests[];
     protected String[] protocols;
     private TOverwriteMode overwriteMode;
@@ -116,7 +116,7 @@ public final class PutRequest extends ContainerRequest{
     TAccessLatency accessLatency,
     String description
     ) throws Exception {
-        
+
         super(user,
                 requestCredentialId,
                 max_number_of_retries,
@@ -127,7 +127,7 @@ public final class PutRequest extends ContainerRequest{
         int len = protocols.length;
         this.protocols = new String[len];
         System.arraycopy(protocols,0,this.protocols,0,len);
-        
+
         len = srcFileNames.length;
         if(len != destUrls.length || len != sizes.length ||
         len != wantPermanent.length) {
@@ -137,7 +137,7 @@ public final class PutRequest extends ContainerRequest{
         }
         fileRequests = new FileRequest[len];
         for(int i = 0; i < len; ++i) {
-            
+
             PutFileRequest fileRequest = new PutFileRequest(getId(),
             requestCredentialId,
             destUrls[i],sizes[i],
@@ -147,13 +147,13 @@ public final class PutRequest extends ContainerRequest{
             retentionPolicy,
             accessLatency
             );
-            
+
             fileRequests[i] = fileRequest;
         }
         storeInSharedMemory();
-        
+
     }
-    
+
     public  PutRequest(
     Long id,
     Long nextJobId,
@@ -192,15 +192,15 @@ public final class PutRequest extends ContainerRequest{
         jobHistoryArray,
         credentialId,
         fileRequests,
-        retryDeltaTime, 
+        retryDeltaTime,
         should_updateretryDeltaTime,
         description,
         client_host,
         statusCodeString);
         this.protocols = protocols;
-        
+
     }
-    
+
     public FileRequest getFileRequestBySurl(String surl) throws java.sql.SQLException, SRMException{
         if(surl == null) {
            throw new SRMException("surl is null");
@@ -216,7 +216,7 @@ public final class PutRequest extends ContainerRequest{
     @Override
     public void schedule() throws InterruptedException,
     IllegalStateTransition {
-        
+
         // save this request in request storage unconditionally
         // file requests will get stored as soon as they are
         // scheduled, and the saved state needs to be consistent
@@ -227,15 +227,15 @@ public final class PutRequest extends ContainerRequest{
             fileRequest.schedule();
         }
     }
-    
+
     public int getNumOfFileRequest() {
         if(fileRequests == null) {
             return 0;
         }
         return fileRequests.length;
     }
-    
-    
+
+
     public void proccessRequest() {
         logger.debug("proccessing put request");
         String supported_protocols[];
@@ -257,22 +257,22 @@ public final class PutRequest extends ContainerRequest{
         }
         //do not need it, let it be garbagecollected
         supported_protocols_set = null;
-        
+
     }
-    
+
     public HashSet callbacks_set =  new HashSet();
-    
+
     private static final long serialVersionUID = -2911584313170829728L;
-    
+
     /**
      * this callbacks are given to storage.prepareToPut
      * storage.prepareToPut calls methods of callbacks to indicate progress
      */
-    
+
     public String getMethod() {
         return "Put";
     }
-    
+
     //we do not want to stop handler if the
     //the request is ready (all file reqs are ready), since the actual transfer migth
     // happen any time after that
@@ -281,14 +281,14 @@ public final class PutRequest extends ContainerRequest{
     public boolean shouldStopHandlerIfReady() {
         return false;
     }
-    
+
     public void run() throws org.dcache.srm.scheduler.NonFatalJobFailure, org.dcache.srm.scheduler.FatalJobFailure {
     }
-    
+
     protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
         State state = getState();
         if(State.isFinalState(state)) {
-            
+
             logger.debug("copy request state changed to "+state);
             for(int i = 0 ; i < fileRequests.length; ++i) {
                 try {
@@ -304,11 +304,11 @@ public final class PutRequest extends ContainerRequest{
                     logger.error("Illegal State Transition : " +ist.getMessage());
                 }
             }
-           
+
         }
-            
+
     }
-    
+
     /**
      * Getter for property protocols.
      * @return Value of property protocols.
@@ -316,8 +316,8 @@ public final class PutRequest extends ContainerRequest{
     public java.lang.String[] getProtocols() {
         return this.protocols;
     }
-        
-     
+
+
     public final SrmPrepareToPutResponse getSrmPrepareToPutResponse()
     throws SRMException ,java.sql.SQLException {
         SrmPrepareToPutResponse response = new SrmPrepareToPutResponse();
@@ -334,14 +334,14 @@ public final class PutRequest extends ContainerRequest{
         response.setArrayOfFileStatuses(arrayOfTPutRequestFileStatus);
         return response;
     }
-    
-    public final SrmStatusOfPutRequestResponse getSrmStatusOfPutRequestResponse()  
+
+    public final SrmStatusOfPutRequestResponse getSrmStatusOfPutRequestResponse()
     throws SRMException, java.sql.SQLException {
             return getSrmStatusOfPutRequestResponse(null);
     }
-    
+
     public  final SrmStatusOfPutRequestResponse getSrmStatusOfPutRequestResponse(
-            String[] surls)  
+            String[] surls)
     throws SRMException, java.sql.SQLException {
         SrmStatusOfPutRequestResponse response = new SrmStatusOfPutRequestResponse();
 
@@ -364,11 +364,11 @@ public final class PutRequest extends ContainerRequest{
         logger.debug(s);
         return response;
     }
-    
+
     private String getTRequestToken() {
         return getId().toString();
     }
-    
+
     private TPutRequestFileStatus[] getArrayOfTPutRequestFileStatus(String[] surls) throws SRMException,java.sql.SQLException {
          int len = surls == null ? getNumOfFileRequest():surls.length;
         TPutRequestFileStatus[] putFileStatuses
@@ -383,12 +383,12 @@ public final class PutRequest extends ContainerRequest{
                 PutFileRequest fr =(PutFileRequest)getFileRequestBySurl(surls[i]);
                 putFileStatuses[i] = fr.getTPutRequestFileStatus();
             }
-            
+
         }
         return putFileStatuses;
     }
-    
-    
+
+
     public TSURLReturnStatus[] getArrayOfTSURLReturnStatus(String[] surls) throws SRMException,java.sql.SQLException {
         rlock();
         try {
@@ -447,7 +447,7 @@ public final class PutRequest extends ContainerRequest{
             wunlock();
         }
     }
-    
+
     public final boolean isOverwrite() {
         if(getConfiguration().isOverwrite()) {
             TOverwriteMode mode = getOverwriteMode();

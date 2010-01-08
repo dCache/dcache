@@ -1004,7 +1004,7 @@ public final class PutFileRequest extends FileRequest {
     public static class PutReserveSpaceCallbacks implements SrmReserveSpaceCallbacks {
         Long fileRequestJobId;
 
-        public PutFileRequest getPutFileRequest() 
+        public PutFileRequest getPutFileRequest()
                 throws java.sql.SQLException,
                 SRMInvalidRequestException {
             Job job = Job.getJob(fileRequestJobId);
@@ -1143,7 +1143,7 @@ public final class PutFileRequest extends FileRequest {
     public static class PutUseSpaceCallbacks implements SrmUseSpaceCallbacks {
         Long fileRequestJobId;
 
-        public PutFileRequest getPutFileRequest() 
+        public PutFileRequest getPutFileRequest()
                 throws java.sql.SQLException,
                 SRMInvalidRequestException {
             Job job = Job.getJob(fileRequestJobId);
@@ -1299,7 +1299,7 @@ public final class PutFileRequest extends FileRequest {
     public static class PutCancelUseOfSpaceCallbacks implements SrmCancelUseOfSpaceCallbacks {
         Long fileRequestJobId;
 
-        public PutFileRequest getPutFileRequest() 
+        public PutFileRequest getPutFileRequest()
                 throws java.sql.SQLException, SRMInvalidRequestException {
             Job job = Job.getJob(fileRequestJobId);
             if(job != null) {
@@ -1351,7 +1351,7 @@ public final class PutFileRequest extends FileRequest {
             this.fileRequestJobId = fileRequestJobId;
         }
 
-        public PutFileRequest getPutFileRequest() 
+        public PutFileRequest getPutFileRequest()
                 throws java.sql.SQLException, SRMInvalidRequestException {
             Job job = Job.getJob(fileRequestJobId);
             if(job != null) {

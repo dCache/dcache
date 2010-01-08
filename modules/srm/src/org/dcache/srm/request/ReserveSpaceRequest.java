@@ -7,28 +7,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -41,10 +41,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -54,10 +54,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -103,14 +103,14 @@ import org.apache.log4j.Logger;
 public final class ReserveSpaceRequest extends Request {
     private static final Logger logger =
             Logger.getLogger (ReserveSpaceRequest.class);
-    
+
     private long sizeInBytes ;
     private final TRetentionPolicy retentionPolicy;
     private final TAccessLatency accessLatency;
     private String spaceToken;
     private long spaceReservationLifetime;
-    
-    
+
+
     /** Creates new ReserveSpaceRequest */
     public ReserveSpaceRequest(
             Long  requestCredentalId,
@@ -130,21 +130,21 @@ public final class ReserveSpaceRequest extends Request {
               lifetime,
               description,
               clienthost);
-        
+
         this.sizeInBytes = sizeInBytes ;
         this.retentionPolicy = retentionPolicy;
         this.accessLatency = accessLatency;
         this.spaceReservationLifetime = spaceReservationLifetime;
         storeInSharedMemory();
         logger.debug("created");
-        
+
     }
-    
+
     /** this constructor is used for restoring the previously
      * saved FileRequest from persitance storage
      */
-    
-    
+
+
     public ReserveSpaceRequest(
             Long id,
             Long nextJobId,
@@ -170,15 +170,15 @@ public final class ReserveSpaceRequest extends Request {
             String statusCodeString) {
                 super(id,
                 nextJobId,
-                creationTime,  
+                creationTime,
                 lifetime,
-                stateId, 
-                errorMessage, 
+                stateId,
+                errorMessage,
                 user,
                 scheduelerId,
                 schedulerTimeStamp,
-                numberOfRetries, 
-                maxNumberOfRetries, 
+                numberOfRetries,
+                maxNumberOfRetries,
                 lastStateTransitionTime,
                 jobHistoryArray,//VVV
                 requestCredentalId,
@@ -189,15 +189,15 @@ public final class ReserveSpaceRequest extends Request {
                 statusCodeString);
         this.sizeInBytes = sizeInBytes;
         this.spaceToken = spaceToken;
-        
+
         this.retentionPolicy = retentionPolicy == null?null: TRetentionPolicy.fromString(retentionPolicy);
         this.accessLatency = accessLatency == null ?null :TAccessLatency.fromString(accessLatency);
         this.spaceReservationLifetime = spaceReservationLifetime;
-        
+
         logger.debug("restored");
     }
-    
-    
+
+
     @Override
     public void toString(StringBuilder sb, boolean longformat) {
         sb.append(" ReserveSpaceRequest ");
@@ -222,12 +222,12 @@ public final class ReserveSpaceRequest extends Request {
             sb.append(getHistory());
         }
     }
-    
-    
+
+
     protected void stateChanged(State oldState) {
     }
-    
-    
+
+
     public void run() throws NonFatalJobFailure, FatalJobFailure {
         try{
             SrmReserveSpaceCallbacks callbacks = new SrmReserveSpaceCallbacks(this.getId());
@@ -249,7 +249,7 @@ public final class ReserveSpaceRequest extends Request {
             if(e instanceof FatalJobFailure ) {
                 throw (FatalJobFailure) e;
             }
-            
+
             logger.error("can not reserve space: ");
             logger.error(e);
             try {
@@ -258,9 +258,9 @@ public final class ReserveSpaceRequest extends Request {
                 logger.error("Illegal State Transition : " +ist.getMessage());
             }
         }
-        
+
     }
-    
+
     public SrmStatusOfReserveSpaceRequestResponse getSrmStatusOfReserveSpaceRequestResponse() {
         rlock();
         try {
@@ -276,9 +276,9 @@ public final class ReserveSpaceRequest extends Request {
         } finally {
             runlock();
         }
-        
+
     }
-    
+
     public SrmReserveSpaceResponse getSrmReserveSpaceResponse() {
         rlock();
         try {
@@ -295,7 +295,7 @@ public final class ReserveSpaceRequest extends Request {
             runlock();
         }
     }
-    
+
     public final TReturnStatus getTReturnStatus()   {
         TReturnStatus status = new TReturnStatus();
         rlock();
@@ -325,7 +325,7 @@ public final class ReserveSpaceRequest extends Request {
         }
         return status;
     }
-    
+
     public static ReserveSpaceRequest getRequest(Long requestId)
             throws SRMInvalidRequestException {
         Job job = Job.getJob( requestId);
@@ -340,7 +340,7 @@ public final class ReserveSpaceRequest extends Request {
         public SrmReserveSpaceCallbacks(Long requestJobId){
             this.requestJobId = requestJobId;
         }
-        
+
         public ReserveSpaceRequest getReserveSpacetRequest()
                 throws SRMInvalidRequestException {
             Job job = Job.getJob(requestJobId);
@@ -349,7 +349,7 @@ public final class ReserveSpaceRequest extends Request {
             }
             return null;
         }
-        
+
         public void ReserveSpaceFailed(String reason) {
 
             ReserveSpaceRequest request;
@@ -364,10 +364,10 @@ public final class ReserveSpaceRequest extends Request {
             } catch(IllegalStateTransition ist) {
                 logger.error("Illegal State Transition : " +ist.getMessage());
             }
-            
+
             logger.error("ReserveSpace error: "+ reason);
         }
-        
+
         public void NoFreeSpace(String  reason) {
             ReserveSpaceRequest request;
             try {
@@ -376,16 +376,16 @@ public final class ReserveSpaceRequest extends Request {
                 logger.error(ire);
                 return;
             }
-            
+
             try {
                 request.setStateAndStatusCode(State.FAILED,reason,TStatusCode.SRM_NO_FREE_SPACE);
             } catch(IllegalStateTransition ist) {
                 logger.error("Illegal State Transition : " +ist.getMessage());
             }
-            
+
             logger.error("ReserveSpace failed (NoFreeSpace), no free space : "+reason);
         }
- 
+
         public void ReserveSpaceFailed(Exception e) {
             ReserveSpaceRequest request;
             try {
@@ -394,16 +394,16 @@ public final class ReserveSpaceRequest extends Request {
                 logger.error(ire);
                 return;
             }
-            
+
             try {
                 request.setState(State.FAILED,e.toString());
             } catch(IllegalStateTransition ist) {
               logger.error("Illegal State Transition : " +ist.getMessage());
             }
-            
+
             logger.error("ReserveSpace exception: ",e);
         }
-        
+
         public void SpaceReserved(String spaceReservationToken, long reservedSpaceSize) {
             ReserveSpaceRequest request;
             try {
@@ -427,9 +427,9 @@ public final class ReserveSpaceRequest extends Request {
                 wunlock();
             }
         }
-        
+
     }
-    
+
     public long getSizeInBytes() {
         rlock();
         try {
@@ -438,7 +438,7 @@ public final class ReserveSpaceRequest extends Request {
             runlock();
         }
     }
-    
+
     public void setSizeInBytes(long sizeInBytes) {
         wlock();
         try {
@@ -447,15 +447,15 @@ public final class ReserveSpaceRequest extends Request {
             wunlock();
         }
     }
-    
+
     public TRetentionPolicy getRetentionPolicy() {
         return retentionPolicy;
     }
-    
+
     public TAccessLatency getAccessLatency() {
         return accessLatency;
     }
-    
+
     public String getSpaceToken() {
         rlock();
         try {
@@ -464,7 +464,7 @@ public final class ReserveSpaceRequest extends Request {
             runlock();
         }
     }
-    
+
     public void setSpaceToken(String spaceToken) {
         wlock();
         try {
@@ -473,7 +473,7 @@ public final class ReserveSpaceRequest extends Request {
             wunlock();
         }
     }
-    
+
     public long getSpaceReservationLifetime() {
         rlock();
         try {
@@ -482,7 +482,7 @@ public final class ReserveSpaceRequest extends Request {
             runlock();
         }
     }
-    
+
     public void setSpaceReservationLifetime(long spaceReservationLifetime) {
         wlock();
         try {
@@ -491,7 +491,7 @@ public final class ReserveSpaceRequest extends Request {
             wunlock();
         }
     }
-    
+
     public String getMethod(){
         return "srmReserveSpace";
     }

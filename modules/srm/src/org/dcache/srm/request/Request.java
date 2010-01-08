@@ -7,28 +7,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -41,10 +41,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -54,10 +54,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -110,12 +110,12 @@ public abstract class Request extends Job {
         this.client_host = client_host;
         this.user = user;
     }
-    
+
    /**
      * this constructor is used for restoring the previously
      * saved Request from persitance storage
      */
-  
+
     protected Request(
     Long id,
     Long nextJobId,
@@ -159,34 +159,34 @@ public abstract class Request extends Job {
         this.user = user;
         logger.debug("restored");
     }
-    
-    
+
+
     /** general srm server configuration settings */
     private transient Configuration configuration;
 
-    
-    
-    
+
+
+
     /*
      * public static (class) variables
      */
     protected Long credentialId;
 
 
-    
+
     protected int cyclicUpdateCounter = 0;
 
     protected long max_update_period = 10*60*60;
 
-    
-    
-    
+
+
+
     /*
      * public constructors
      */
     protected static RequestsPropertyStorage requestsproperties = null;
 
-    
+
     /*
      * private instance variables
      */
@@ -201,12 +201,12 @@ public abstract class Request extends Job {
     private transient AbstractStorageElement storage;
     /**
      * Status code from version 2.2
-     * provides a better description of 
+     * provides a better description of
      * reasons for failure, etc
      * need this to comply with the spec
      */
     private TStatusCode statusCode;
-    
+
     public RequestCredential getCredential() {
         if(credentialId==null) {
             return null;
@@ -214,7 +214,7 @@ public abstract class Request extends Job {
         return RequestCredential.getRequestCredential(credentialId);
     }
 
-    
+
     /**
      * Getter for property credentialId.
      * @return Value of property credentialId.
@@ -229,17 +229,17 @@ public abstract class Request extends Job {
     }
 
     public abstract String getMethod();
-    
+
     private String description;
-    
+
     public void addDebugHistoryEvent(String description) {
         if(getConfiguration().isJdbcLogRequestHistoryInDBEnabled()) {
             addHistoryEvent( description);
         }
     }
 
-    
-    public static Request getRequest(Long requestId) 
+
+    public static Request getRequest(Long requestId)
             throws  SRMInvalidRequestException {
         Job job = Job.getJob( requestId);
         if (job == null || !(job instanceof Request)) {
@@ -248,14 +248,14 @@ public abstract class Request extends Job {
         return (Request) job;
     }
 
-    
-    
-    public static Request getRequest(int requestNum) 
+
+
+    public static Request getRequest(int requestNum)
             throws SRMInvalidRequestException {
         return (Request) Job.getJob(new Long((long) requestNum));
     }
 
-    
+
     /**
      * gets request id as int
      * @return
@@ -265,7 +265,7 @@ public abstract class Request extends Job {
         return (int) (getId().longValue());
     }
 
-    
+
     /**
      * Getter for property retryDeltaTime.
      * @return Value of property retryDeltaTime.
@@ -280,7 +280,7 @@ public abstract class Request extends Job {
 
     }
 
-    
+
     /**
      * gets srm user who issued the request
      * @return
@@ -295,7 +295,7 @@ public abstract class Request extends Job {
         }
     }
 
-    
+
     /**
      * Getter for property should_updateretryDeltaTime.
      * @return Value of property should_updateretryDeltaTime.
@@ -309,7 +309,7 @@ public abstract class Request extends Job {
         }
     }
 
-    
+
     /**
      * reset retryDeltaTime to 1
      */
@@ -324,7 +324,7 @@ public abstract class Request extends Job {
 
     //public abstract void schedule(Scheduler scheduler) throws InterruptedException, IllegalStateTransition, SQLException;
 
-    
+
     /**
      * status is not going to change
      * set retry delta time to 1
@@ -345,7 +345,7 @@ public abstract class Request extends Job {
      * if nothing has been happening for a while
      * The algoritm of incrising retryDeltaTime is absolutely arbitrary
      */
-    
+
     protected void updateRetryDeltaTime() {
         wlock();
         try {
@@ -436,7 +436,7 @@ public abstract class Request extends Job {
             runlock();
         }
     }
-    
+
     public String getSubmitterId() {
         rlock();
         try {
@@ -456,17 +456,17 @@ public abstract class Request extends Job {
         return storage;
     }
 
-    
-    /** 
+
+    /**
      * @return the configuration
      */
     public final Configuration getConfiguration() {
         if(configuration == null) {
             configuration = SRM.getSRM().getConfiguration();
-        }   
+        }
         return configuration;
-    }   
+    }
 
 
-    
+
 }
