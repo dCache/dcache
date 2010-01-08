@@ -43,14 +43,21 @@ public class PnfsGetFileMetaDataMessage extends PnfsGetFileAttributes
     @Override
     public void setFileAttributes(FileAttributes fileAttributes)
     {
-        super.setFileAttributes(fileAttributes);
-
         /* For backwards compatibility with old versions we set these
          * fields. We do this even though we don't use these fields.
          */
         _metaData = new FileMetaData(fileAttributes);
         if (fileAttributes.isDefined(CHECKSUM)) {
             _checksums = fileAttributes.getChecksums();
+        }
+
+        /* For backwards compatibility with old versions, we do not
+         * set the file attributes unless they have actually been
+         * requested. This avoid deserialization problems with clients
+         * that cannot handle all values in the FileAttribute enum.
+         */
+        if (_attributes != null) {
+            super.setFileAttributes(fileAttributes);
         }
     }
 
