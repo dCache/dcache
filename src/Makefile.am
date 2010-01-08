@@ -163,6 +163,6 @@ docexfiles = \
 
 
 
-docexdir = $(docdir)/examples
+docexdir = $(DOC_DIR)/examples
 docex_DATA = $(docexfiles)
 EXTRA_DIST = $(docexfiles)
