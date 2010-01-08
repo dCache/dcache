@@ -1475,21 +1475,9 @@ get_fin(struct vsp_node * node)
 	else
 		return 0;
 }
-
-#if defined(__x86__) || defined(__i386__) || defined(__i386) || \
-    defined(__x86_64__) || defined(__x86_64) || \
-    defined(__amd64__) || defined(__amd64) || \
-    defined(__alpha__) || defined(__alpha) || \
-    defined(__ia64__) || defined(__ia64) || \
-    defined(__MIPSEL__) || defined(MIPSEL) || defined(__ARMEL__) || \
-    defined(__sh__) || defined(__avr32__) || defined (WIN32)
+#ifndef WORDS_BIGENDIAN
 #  define I_AM_LITTLE_ENDIAN
-#elif defined(_AIX) || defined(AIX) || \
-      defined(__powerpc__) || defined(__ppc__) || defined(__ppc) || \
-      defined(__sparc__) || defined (__sparc) || defined (sparc) || \
-      defined(__mc68000__) || defined(__m68k__) || \
-      defined(__MIPSEB__) || defined(MIPSEB) || defined(__ARMEB__) || \
-      defined(__hppa__) || defined(HPPA) || defined(__s390__)
+#elif WORDS_BIGENDIAN == 1
 #  define  I_AM_BIG_ENDIAN
 #else
 #  error Unknown Byte order
