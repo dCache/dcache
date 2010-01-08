@@ -3,15 +3,15 @@
 <!--+
     | Copyright (c) 2008, Deutsches Elektronen-Synchrotron (DESY)
     | All rights reserved.
-    | 
+    |
     | Redistribution and use in source and binary forms, with
     | or without modification, are permitted provided that the
     | following conditions are met:
-    | 
+    |
     |   o  Redistributions of source code must retain the above
     |      copyright notice, this list of conditions and the
     |      following disclaimer.
-    | 
+    |
     |   o  Redistributions in binary form must reproduce the
     |      above copyright notice, this list of conditions and
     |      the following disclaimer in the documentation and/or
@@ -60,7 +60,7 @@
     <xsl:with-param name="key" select="$key"/>
     <xsl:with-param name="value">
       <xsl:call-template name="markup-attribute-value">
-	<xsl:with-param name="value" select="$value"/>
+        <xsl:with-param name="value" select="$value"/>
       </xsl:call-template>
     </xsl:with-param>
   </xsl:call-template>
@@ -96,6 +96,16 @@
 
 
 <!--+
+    |  Output a comment line.  This may wrap if it's too long.
+    +-->
+<xsl:template match="*|@*|text()" mode="emit-as-comment">
+  <xsl:call-template name="output-line">
+    <xsl:with-param name="text">#  <xsl:value-of select="."/></xsl:with-param>
+  </xsl:call-template>
+</xsl:template>
+
+
+<!--+
     |  Output a line of text, wrapping as necessary.
     +-->
 <xsl:template name="output-line">
@@ -103,47 +113,39 @@
 
   <xsl:choose>
     <xsl:when test="string-length($text) > 75">
-      <xsl:value-of select="substring($text,1,75)"/>
-      <xsl:call-template name="output-EOL"/>
+      <xsl:value-of select="concat(substring($text,1,75),'&#xA; ')"/>
 
       <xsl:call-template name="output-partial-line">
-	<xsl:with-param name="text" select="substring($text,76)"/>
+        <xsl:with-param name="text" select="substring($text,76)"/>
       </xsl:call-template>
     </xsl:when>
 
     <xsl:otherwise>
-      <xsl:value-of select="$text"/>
-      <xsl:call-template name="output-EOL"/>
+      <xsl:value-of select="concat($text,'&#xA;')"/>
     </xsl:otherwise>
   </xsl:choose>
-
 </xsl:template>
 
 
 <xsl:template name="output-partial-line">
   <xsl:param name="text"/>
 
-  <xsl:text> </xsl:text>
-
   <xsl:choose>
     <xsl:when test="string-length($text) > 74">
-      <xsl:value-of select="substring($text,1,74)"/>
-      <xsl:call-template name="output-EOL"/>
+      <xsl:value-of select="concat(substring($text,1,74),'&#xA; ')"/>
 
       <xsl:call-template name="output-partial-line">
-	<xsl:with-param name="text" select="substring($text,75)"/>
+        <xsl:with-param name="text" select="substring($text,75)"/>
       </xsl:call-template>
     </xsl:when>
 
     <xsl:otherwise>
-      <xsl:value-of select="$text"/>
-      <xsl:call-template name="output-EOL"/>
+      <xsl:value-of select="concat($text,'&#xA;')"/>
     </xsl:otherwise>
   </xsl:choose>
 </xsl:template>
 
-
-<xsl:template name="output-EOL">
+<xsl:template name="output-empty-line">
   <xsl:text>&#xA;</xsl:text>
 </xsl:template>
 
