@@ -264,8 +264,8 @@ require awk df egrep grep sed cat hostname wc dirname basename mount mv
 # Read configuration files
 readconf ${DCACHE_HOME}/etc/node_config NODE_CONFIG_ ||
 readconf ${DCACHE_HOME}/etc/door_config NODE_CONFIG_
-loadConfigurationFile dCache dCache
-loadConfigurationFile pool pool
+loadServiceConfigurationFile dCache
+loadServiceConfigurationFile pool
 
 # We sometimes need to start java; import the path from dCacheSetup
 java="${dCache_java}"
