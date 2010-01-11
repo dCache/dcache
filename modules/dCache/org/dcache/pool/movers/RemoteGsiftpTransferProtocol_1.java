@@ -160,7 +160,7 @@ public class RemoteGsiftpTransferProtocol_1
         RemoteGsiftpDelegateUserCredentialsMessage cred_request =
             new RemoteGsiftpDelegateUserCredentialsMessage(remoteGsiftpProtocolInfo.getId(),
                                                            remoteGsiftpProtocolInfo.getSourceId(),
-                                                           localAddress.getHostName(),
+                                                           localAddress.getCanonicalHostName(),
                                                            serverSocket.getLocalPort(),
                                                            remoteGsiftpProtocolInfo.getRequestCredentialId());
 

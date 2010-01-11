@@ -233,7 +233,7 @@ public class HttpProtocol_1 implements MoverProtocol
         InetAddress localAddress = httpProtocolInfo.getLocalAddressForClient();
 
         StringBuffer url_sb = new StringBuffer("http://");
-        url_sb.append(localAddress.getHostName ());
+        url_sb.append(localAddress.getCanonicalHostName());
         url_sb.append(':').append(localPort);
         if(!httpProtocolInfo.getPath().startsWith("/"))
             {
