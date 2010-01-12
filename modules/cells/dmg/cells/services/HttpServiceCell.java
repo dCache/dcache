@@ -56,6 +56,20 @@ public class      HttpServiceCell
 
 
    }
+
+    @Override
+    public void cleanUp()
+    {
+        if (_listener != null) {
+            try {
+                _listener.close();
+            } catch (IOException e) {
+                esay(e.getMessage());
+            }
+        }
+        super.cleanUp();
+    }
+
    private static class AliasEntry {
 	  private String _intFailureMsg = null;
       private String _type ;
