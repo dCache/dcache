@@ -577,6 +577,16 @@ CPPFLAGS=${_cppflags}
 LDFLAGS=${_ldflags}
 export LD_LIBRARY_PATH=${_ldlibpath}
 
+dnl ====================
+dnl Check and set Prefix
+dnl ====================
+
+if test "${prefix}" = NONE ; then
+    dcap_prefix=/usr/local
+else
+    dcap_prefix=${prefix}
+fi
+
 dnl =============
 dnl Check RPM dir
 dnl =============
@@ -603,7 +613,7 @@ dnl =============
 dnl Note: as of autoconf 2.6 this is included by default
 
 if test X = "X${DOCD}" ; then
-    DOCD=${prefix}/share/doc/${PACKAGE}-${VERSION}
+    DOCD=${dcap_prefix}/share/doc/${PACKAGE}-${VERSION}
 fi
 AC_MSG_CHECKING([for directory where to install docs])
 AC_ARG_WITH(doc-dir,[  --with-doc-dir=<dir> Default is \$DOCD/],
