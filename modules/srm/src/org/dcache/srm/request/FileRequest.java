@@ -7,28 +7,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -41,10 +41,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -54,10 +54,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -97,9 +97,9 @@ import org.dcache.srm.qos.QOSTicket;
  * each ContainerRequest is identified by its requestId
  * and each file request is identified by its fileRequestId within ContainerRequest
  * File ContainerRequest contains  a reference to its ContainerRequest
- * 
+ *
  * @author timur
- * @version 
+ * @version
  */
 public abstract class FileRequest extends Job {
     private final static Logger logger =
@@ -109,11 +109,11 @@ public abstract class FileRequest extends Job {
     // is not available yet
     //for copy - file is being copied
     public static final String SFN_STRING="?SFN=";
-    
+
     //request which contains this fileRequest (which is different from request number)
     protected Long requestId;
     protected Long credentialId;
-    
+
     //pointer to underlying storage
     private transient AbstractStorageElement storage;
     //srm configuration
@@ -123,15 +123,15 @@ public abstract class FileRequest extends Job {
     private transient QOSTicket qosTicket;
 
     private static final long serialVersionUID = -5737484917461810463L;
-    
+
     /**
      * Status code from version 2.2
-     * provides a better description of 
+     * provides a better description of
      * reasons for failure, etc
      * need this to comply with the spec
      */
     private TStatusCode statusCode;
-    
+
    /** Creates new FileRequest */
     protected FileRequest(Long requestId,
     Long  requestCredentalId,long lifetime,
@@ -140,14 +140,14 @@ public abstract class FileRequest extends Job {
         this.credentialId = requestCredentalId;
         this.requestId = requestId;
         logger.debug("created");
-        
+
     }
-    
+
     /** this constructor is used for restoring the previously
      * saved FileRequest from persitance storage
      */
-    
-    
+
+
     protected FileRequest(
     Long id,
     Long nextJobId,
@@ -177,15 +177,15 @@ public abstract class FileRequest extends Job {
                 ?null
                 :TStatusCode.fromString(statusCodeString);
         logger.debug("restored");
-        
+
     }
-    
+
     public void addDebugHistoryEvent(String description) {
         if(getConfiguration().isJdbcLogRequestHistoryInDBEnabled()) {
             addHistoryEvent( description);
         }
     }
-    
+
     public RequestCredential getCredential() {
          return RequestCredential.getRequestCredential(credentialId);
     }
@@ -199,7 +199,7 @@ public abstract class FileRequest extends Job {
     }
 
     public abstract RequestFileStatus getRequestFileStatus() ;
-    
+
     public abstract TReturnStatus getReturnStatus();
 
     @Override
@@ -214,7 +214,7 @@ public abstract class FileRequest extends Job {
     public int hashCode() {
         return getId().hashCode();
     }
-    
+
     public void setStatus(String status) throws SRMException, java.sql.SQLException {
         logger.debug("("+status+")");
         try {
@@ -252,9 +252,9 @@ public abstract class FileRequest extends Job {
             logger.error(error);
             throw new SRMException(error);
         }
-        
+
     }
-    
+
     public SRMUser getUser() throws SRMInvalidRequestException {
         return getRequest().getUser();
     }
@@ -262,7 +262,7 @@ public abstract class FileRequest extends Job {
     public Request getRequest() throws SRMInvalidRequestException  {
         return Request.getRequest(requestId);
     }
-    
+
     /**
      * Getter for property requestId.
      * @return Value of property requestId.
@@ -274,8 +274,8 @@ public abstract class FileRequest extends Job {
         } finally {
             runlock();
         }
-    } 
-    
+    }
+
     public void setQOSTicket(QOSTicket qosTicket) {
         this.qosTicket = qosTicket;
     }
@@ -283,7 +283,7 @@ public abstract class FileRequest extends Job {
     public QOSTicket getQOSTicket() {
         return qosTicket;
     }
-    
+
    /**
      * @param newLifetime  new lifetime in millis
      *  -1 stands for infinite lifetime
@@ -332,15 +332,15 @@ public abstract class FileRequest extends Job {
             wunlock();
         }
     }
-    
+
     public static String getPath(GlobusURL surl) {
         String path = surl.getPath();
         int indx=path.indexOf(SFN_STRING);
         if( indx != -1) {
-            
+
             path=path.substring(indx+SFN_STRING.length());
         }
-        
+
         if(!path.startsWith("/")) {
             path = "/"+path;
         }
@@ -377,14 +377,14 @@ public abstract class FileRequest extends Job {
         return storage;
     }
 
-    /** 
+    /**
      * @return the configuration
      */
     public final Configuration getConfiguration() {
         if(configuration == null) {
             configuration = SRM.getSRM().getConfiguration();
-        }   
+        }
         return configuration;
-    }   
+    }
 
 }

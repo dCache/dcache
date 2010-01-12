@@ -421,7 +421,7 @@ public abstract class ContainerRequest extends Request {
 
         rlock();
         try {
-           
+
 
            if(getStatusCode() != null) {
                 status.setStatusCode(getStatusCode());
@@ -442,7 +442,7 @@ public abstract class ContainerRequest extends Request {
         // we can rely on the fact that
         // once file request reach their final state, this state does not change
         // so the combined logic
-        
+
         int len = getNumOfFileRequest();
 
         if (len == 0) {

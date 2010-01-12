@@ -7,28 +7,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -41,10 +41,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -54,10 +54,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -101,8 +101,8 @@ public final class BringOnlineRequest extends ContainerRequest {
     /** array of protocols supported by client or server (copy) */
     protected String[] protocols;
     private long desiredOnlineLifetimeInSeconds;
-    
-    
+
+
     public BringOnlineRequest(SRMUser user,
     Long requestCredentialId,
     String[] surls,
@@ -135,16 +135,16 @@ public final class BringOnlineRequest extends ContainerRequest {
         for(int i = 0; i<len; ++i) {
             BringOnlineFileRequest fileRequest =
             new BringOnlineFileRequest(getId(),
-                    requestCredentialId, 
-                    surls[i],  
-                    lifetime, 
+                    requestCredentialId,
+                    surls[i],
+                    lifetime,
                     max_number_of_retries);
-            
+
             fileRequests[i] = fileRequest;
         }
          storeInSharedMemory();
     }
-    
+
     /**
      * restore constructor
      */
@@ -186,15 +186,15 @@ public final class BringOnlineRequest extends ContainerRequest {
         jobHistoryArray,
         credentialId,
         fileRequests,
-        retryDeltaTime, 
+        retryDeltaTime,
         should_updateretryDeltaTime,
         description,
         client_host,
         statusCodeString);
         this.protocols = protocols;
-       
+
     }
-    
+
       public FileRequest getFileRequestBySurl(String surl) throws java.sql.SQLException, SRMException{
         if(surl == null) {
            throw new SRMException("surl is null");
@@ -206,11 +206,11 @@ public final class BringOnlineRequest extends ContainerRequest {
         }
         throw new SRMFileRequestNotFoundException("file request for surl ="+surl +" is not found");
     }
-  
+
     @Override
     public void schedule() throws InterruptedException,
     IllegalStateTransition {
-        
+
         // save this request in request storage unconditionally
         // file requests will get stored as soon as they are
         // scheduled, and the saved state needs to be consistent
@@ -221,7 +221,7 @@ public final class BringOnlineRequest extends ContainerRequest {
             fileRequest.schedule();
         }
     }
-    
+
     // ContainerRequest request;
     /**
      * for each file request in the request
@@ -233,29 +233,29 @@ public final class BringOnlineRequest extends ContainerRequest {
         }
         return fileRequests.length;
     }
-    
+
      public String[] getProtocols() {
         if(protocols == null) return null;
         String[] copy = new String[protocols.length];
         System.arraycopy(protocols, 0, copy, 0, protocols.length);
         return copy;
     }
-   
+
     public HashSet callbacks_set =  new HashSet();
-    
+
     private static final long serialVersionUID = -3739166738239918248L;
-    
+
     /**
      * storage.PrepareToGet() is given this callbacks
      * implementation
      * it will call the method of GetCallbacks to indicate
      * progress
      */
-    
+
     public String getMethod() {
         return "BringOnline";
     }
-    
+
     //we do not want to stop handler if the
     //the request is ready (all file reqs are ready), since the actual transfer migth
     // happen any time after that
@@ -264,14 +264,14 @@ public final class BringOnlineRequest extends ContainerRequest {
     public boolean shouldStopHandlerIfReady() {
         return false;
     }
-    
+
     public void run() throws org.dcache.srm.scheduler.NonFatalJobFailure, org.dcache.srm.scheduler.FatalJobFailure {
     }
-    
+
     protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
         State state = getState();
         if(State.isFinalState(state)) {
-            
+
             logger.debug("get request state changed to "+state);
             for(FileRequest fr: fileRequests) {
                 try {
@@ -282,18 +282,18 @@ public final class BringOnlineRequest extends ContainerRequest {
                     logger.error("Illegal State Transition : " +ist.getMessage());
                 }
             }
-           
-        }
-            
-    }
-    
 
-        
-    public  final SrmBringOnlineResponse getSrmBringOnlineResponse()  
+        }
+
+    }
+
+
+
+    public  final SrmBringOnlineResponse getSrmBringOnlineResponse()
     throws SRMException ,java.sql.SQLException {
         SrmBringOnlineResponse response = new SrmBringOnlineResponse();
       // getTReturnStatus should be called before we get the
-       // statuses of the each file, as the call to the 
+       // statuses of the each file, as the call to the
        // getTReturnStatus() can now trigger the update of the statuses
        // in particular move to the READY state, and TURL availability
         response.setReturnStatus(getTReturnStatus());
@@ -305,23 +305,23 @@ public final class BringOnlineRequest extends ContainerRequest {
         response.setArrayOfFileStatuses(arrayOfTBringOnlineRequestFileStatus);
         return response;
     }
-    
 
-    public final SrmStatusOfBringOnlineRequestResponse 
-            getSrmStatusOfBringOnlineRequestResponse()  
+
+    public final SrmStatusOfBringOnlineRequestResponse
+            getSrmStatusOfBringOnlineRequestResponse()
     throws SRMException, java.sql.SQLException {
         return getSrmStatusOfBringOnlineRequestResponse(null);
     }
-    
-    
-    public final SrmStatusOfBringOnlineRequestResponse 
+
+
+    public final SrmStatusOfBringOnlineRequestResponse
             getSrmStatusOfBringOnlineRequestResponse(
-            String[] surls)  
+            String[] surls)
     throws SRMException, java.sql.SQLException {
-        SrmStatusOfBringOnlineRequestResponse response = 
+        SrmStatusOfBringOnlineRequestResponse response =
                 new SrmStatusOfBringOnlineRequestResponse();
       // getTReturnStatus should be called before we get the
-       // statuses of the each file, as the call to the 
+       // statuses of the each file, as the call to the
        // getTReturnStatus() can now trigger the update of the statuses
        // in particular move to the READY state, and TURL availability
         response.setReturnStatus(getTReturnStatus());
@@ -338,12 +338,12 @@ public final class BringOnlineRequest extends ContainerRequest {
         logger.debug(s);
         return response;
     }
-    
-   
+
+
     private String getTRequestToken() {
         return getId().toString();
     }
-    
+
    /* private ArrayOfTGetRequestFileStatus getArrayOfTGetRequestFileStatus()throws SRMException,java.sql.SQLException {
         return getArrayOfTGetRequestFileStatus(null);
     }
@@ -363,7 +363,7 @@ public final class BringOnlineRequest extends ContainerRequest {
                 BringOnlineFileRequest fr =(BringOnlineFileRequest)getFileRequestBySurl(surls[i]);
                 getFileStatuses[i] = fr.getTGetRequestFileStatus();
             }
-            
+
         }
         return getFileStatuses;
     }
@@ -389,12 +389,12 @@ public final class BringOnlineRequest extends ContainerRequest {
                 BringOnlineFileRequest fr =(BringOnlineFileRequest)getFileRequestBySurl(surls[i]);
                 surlLReturnStatuses[i] = fr.getTSURLReturnStatus();
             }
-            
+
         }
         return surlLReturnStatuses;
     }
-    
-    public SrmReleaseFilesResponse 
+
+    public SrmReleaseFilesResponse
             releaseFiles(URI[] surls,String[] surl_strings) throws SRMInvalidRequestException {
         logger.debug("releaseFiles");
         int len ;
@@ -444,7 +444,7 @@ public final class BringOnlineRequest extends ContainerRequest {
                         surlStatus.setStatus(surlReturnStatus);
                         surlLReturnStatuses[i] = surlStatus;
                     }
-                    
+
                 }
                 catch (Exception e) {
                     TSURLReturnStatus surlStatus = new TSURLReturnStatus();
@@ -456,7 +456,7 @@ public final class BringOnlineRequest extends ContainerRequest {
                     surlStatus.setStatus(surlReturnStatus);
                     surlLReturnStatuses[i] = surlStatus;
                 }
-                
+
                 try {
                     surlLReturnStatuses[i] = fr.releaseFile();
                 }
@@ -470,13 +470,13 @@ public final class BringOnlineRequest extends ContainerRequest {
                     surlLReturnStatuses[i] = surlStatus;
                 }
             }
-            
+
         }
-        
+
        try{
        // we do this to make the srm update the status of the request if it changed
        // getTReturnStatus should be called before we get the
-       // statuses of the each file, as the call to the 
+       // statuses of the each file, as the call to the
        // getTReturnStatus() can now trigger the update of the statuses
        // in particular move to the READY state, and TURL availability
             getTReturnStatus();
@@ -485,7 +485,7 @@ public final class BringOnlineRequest extends ContainerRequest {
             logger.error(e);
         }
         int errors_cnt = 0;
-        
+
         for (TSURLReturnStatus surlLReturnStatus: surlLReturnStatuses) {
             if(surlLReturnStatus == null || !surlLReturnStatus.getStatus().
                 getStatusCode().equals(TStatusCode.SRM_SUCCESS)) {

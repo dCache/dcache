@@ -7,28 +7,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -41,10 +41,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -54,10 +54,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -104,23 +104,23 @@ public class RequestCredential {
     //if this number goes to 0, the request credential delegated credential part is set to null
     private int credential_users;
     private static final Set requestCredentailStorages = new HashSet();
-    
+
     private static final long serialVersionUID = 4986528613717664419L;
-    
+
     public static final void registerRequestCredentialStorage(RequestCredentialStorage requestCredentialStorage) {
         synchronized(requestCredentailStorages) {
             requestCredentailStorages.add(requestCredentialStorage);
         }
-        
+
     }
-    
+
 /*    public void start() {
         new Thread(this).start();
     }
     public void run() {
         while(true) {
             //System.out.println("delegatedCredential = "+delegatedCredential+" id="+id);
-        
+
             try {
                 Thread.sleep(100);
             }
@@ -129,7 +129,7 @@ public class RequestCredential {
             }
         }
     }
-  */  
+  */
     public static RequestCredential getRequestCredential(Long requestCredentialId) {
       synchronized(weakRequestCredentialStorage) {
           Object o = weakRequestCredentialStorage.get(requestCredentialId);
@@ -163,7 +163,7 @@ public class RequestCredential {
             requestCreatorStoragesArray =
             (RequestCredentialStorage[])requestCredentailStorages.toArray(new RequestCredentialStorage[0]);
         }
-        
+
         for(int i = 0; i<requestCreatorStoragesArray.length; ++i) {
             RequestCredential requestCredential = (RequestCredential) requestCreatorStoragesArray[i].getRequestCredential(requestCredentialId);
             if(requestCredential != null) {
@@ -177,7 +177,7 @@ public class RequestCredential {
         }
         return null;
     }
-    
+
     public static RequestCredential getRequestCredential(String credentialName,String role)
     {
        //System.out.println("RequestCredential.getRequestCredential("+credentialName+","+role+")");
@@ -202,15 +202,15 @@ public class RequestCredential {
                 }
             }
         }
-        
+
         RequestCredentialStorage requestCreatorStoragesArray[];
         synchronized(requestCredentailStorages) {
             requestCreatorStoragesArray =
             (RequestCredentialStorage[])requestCredentailStorages.toArray(new RequestCredentialStorage[0]);
         }
-        
+
         for(int i = 0; i<requestCreatorStoragesArray.length; ++i) {
-            RequestCredential requestCredential = 
+            RequestCredential requestCredential =
                 (RequestCredential) requestCreatorStoragesArray[i].getRequestCredential(credentialName,role);
                 if(requestCredential != null) {
                     synchronized(weakRequestCredentialStorage) {
@@ -223,17 +223,17 @@ public class RequestCredential {
         }
         return null;
     }
-    
+
     /** Creates a new instance of requestCredential */
-    public RequestCredential(String credentialName, 
+    public RequestCredential(String credentialName,
                             String role,
                             GSSCredential delegatedCredential,
-                            RequestCredentialStorage storage) 
+                            RequestCredentialStorage storage)
                             throws SQLException,org.ietf.jgss.GSSException {
         //System.out.println("RequestCredential  constructor");
         //start();
-                               
-        this.id = 
+
+        this.id =
             JobIdGeneratorFactory.getJobIdGeneratorFactory().getJobIdGenerator().getNextId();
         this.creationtime = System.currentTimeMillis();
         this.credentialName = credentialName;
@@ -253,15 +253,15 @@ public class RequestCredential {
             weakRequestCredentialStorage.put(this.id, new WeakReference(this));
         }
     }
-    
+
     /** restores a previously stored instance of the requestcredential*/
     public RequestCredential(Long id,
                              long creationtime,
-                            String credentialName, 
+                            String credentialName,
                             String role,
                             GSSCredential delegatedCredential,
                             long delegatedCredentialExpiration,
-                            RequestCredentialStorage storage) 
+                            RequestCredentialStorage storage)
                             throws SQLException{
         //System.out.println("RequestCredential restore constructor");
         //new Throwable().printStackTrace();
@@ -283,7 +283,7 @@ public class RequestCredential {
         }
     }
     //public static
-    
+
     /** Getter for property delegatedCredential.
      * @return Value of property delegatedCredential.
      *
@@ -291,7 +291,7 @@ public class RequestCredential {
     public org.ietf.jgss.GSSCredential getDelegatedCredential() {
         return delegatedCredential;
     }
-    
+
     public void keepBestDelegatedCredential(GSSCredential delegatedCredential)
     throws org.ietf.jgss.GSSException
     {
@@ -301,10 +301,10 @@ public class RequestCredential {
            return;
        }
     //System.out.println("keepBestDelegatedCredential(delegatedCredential is non null)");
-       
-       long newCredentialExpiration = System.currentTimeMillis() + 
+
+       long newCredentialExpiration = System.currentTimeMillis() +
                 delegatedCredential.getRemainingLifetime()*1000L;
-       if(this.delegatedCredential == null || 
+       if(this.delegatedCredential == null ||
         newCredentialExpiration > this.delegatedCredentialExpiration)
        {
             //System.out.println("RequestCredential.delegatedCredential 3 assigned"+delegatedCredential);
@@ -313,11 +313,11 @@ public class RequestCredential {
             saved = false;
             return;
        }
-       
+
        return;
-       
+
     }
-    
+
     /** Getter for property requestCredentialId.
      * @return Value of property requestCredentialId.
      *
@@ -325,7 +325,7 @@ public class RequestCredential {
     public Long getId() {
         return id;
     }
-    
+
     /** Getter for property credentialName.
      * @return Value of property credentialName.
      *
@@ -340,7 +340,7 @@ public class RequestCredential {
         ((delegatedCredential==null)?"nondelegated":"delegated, remaining lifetime : "+getDelegatedCredentialRemainingLifetime()+" millis")+
         "  ]";
     }
-    
+
     public void decreaseCredential_users() {
         //System.out.println("RequestCredentials.decreaseCredential_users");
         credential_users--;
@@ -350,7 +350,7 @@ public class RequestCredential {
         }
         storage.saveRequestCredential(this);
     }
-    
+
     /** Getter for property credential_users.
      * @return Value of property credential_users.
      *
@@ -358,7 +358,7 @@ public class RequestCredential {
     public int getCredential_users() {
         return credential_users;
     }
-    
+
     /** Setter for property credential_users.
      * @param credential_users New value of property credential_users.
      *
@@ -366,7 +366,7 @@ public class RequestCredential {
     public void setCredential_users(int credential_users) {
         this.credential_users = credential_users;
     }
-    
+
     public void saveCredential() {
         if(saved) {
             return;
@@ -375,7 +375,7 @@ public class RequestCredential {
         storage.saveRequestCredential(this);
         saved = true;
     }
-    
+
     /** Getter for property role.
      * @return Value of property role.
      *
@@ -391,7 +391,7 @@ public class RequestCredential {
     public long getDelegatedCredentialExpiration() {
         return delegatedCredentialExpiration;
     }
-       
+
     /**
      * Getter for property creationtime.
      * @return Value of property creationtime.
@@ -399,11 +399,11 @@ public class RequestCredential {
     public long getCreationtime() {
         return creationtime;
     }
-    
-   /**    
-    * Returns the remaining lifetime in milliseconds for a credential.  
+
+   /**
+    * Returns the remaining lifetime in milliseconds for a credential.
     */
-    
+
     public long getDelegatedCredentialRemainingLifetime()
     {
         long lifetime =  delegatedCredentialExpiration - System.currentTimeMillis();
@@ -417,6 +417,6 @@ public class RequestCredential {
     public void setSaved(boolean saved) {
         this.saved = saved;
     }
- 
-    
+
+
 }

@@ -363,7 +363,7 @@ public class SRM {
      *
      * @return instance of SRM if it was created or null if it was not
      */
-    public static final SRM getSRM() {
+    public static synchronized final SRM getSRM() {
         return srm;
     }
 

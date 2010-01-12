@@ -7,28 +7,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -41,10 +41,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -54,10 +54,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -95,8 +95,8 @@ public final class GetRequest extends ContainerRequest {
             Logger.getLogger(GetRequest.class);
     /** array of protocols supported by client or server (copy) */
     protected String[] protocols;
-    
-    
+
+
     public GetRequest(SRMUser user,
     Long requestCredentialId,
     String[] surls,
@@ -125,12 +125,12 @@ public final class GetRequest extends ContainerRequest {
         for(int i = 0; i<len; ++i) {
             GetFileRequest fileRequest =
             new GetFileRequest(getId(),requestCredentialId, surls[i],  lifetime,  max_number_of_retries);
-            
+
             fileRequests[i] = fileRequest;
         }
         storeInSharedMemory();
     }
-    
+
     /**
      * restore constructor
      */
@@ -172,15 +172,15 @@ public final class GetRequest extends ContainerRequest {
         jobHistoryArray,
         credentialId,
         fileRequests,
-        retryDeltaTime, 
+        retryDeltaTime,
         should_updateretryDeltaTime,
         description,
         client_host,
         statusCodeString);
         this.protocols = protocols;
-        
+
     }
-    
+
       public FileRequest getFileRequestBySurl(String surl) throws java.sql.SQLException, SRMException{
         if(surl == null) {
            throw new SRMException("surl is null");
@@ -197,7 +197,7 @@ public final class GetRequest extends ContainerRequest {
         }
         throw new SRMException("file request for surl ="+surl +" is not found");
     }
-  
+
     @Override
     public void schedule() throws InterruptedException,
     IllegalStateTransition {
@@ -233,23 +233,23 @@ public final class GetRequest extends ContainerRequest {
             runlock();
         }
     }
-    
-    
+
+
     public HashSet callbacks_set =  new HashSet();
-    
+
     private static final long serialVersionUID = -3739166738239918248L;
-    
+
     /**
      * storage.PrepareToGet() is given this callbacks
      * implementation
      * it will call the method of GetCallbacks to indicate
      * progress
      */
-    
+
     public String getMethod() {
         return "Get";
     }
-    
+
     //we do not want to stop handler if the
     //the request is ready (all file reqs are ready), since the actual transfer migth
     // happen any time after that
@@ -258,10 +258,10 @@ public final class GetRequest extends ContainerRequest {
     public boolean shouldStopHandlerIfReady() {
         return false;
     }
-    
+
     public void run() throws org.dcache.srm.scheduler.NonFatalJobFailure, org.dcache.srm.scheduler.FatalJobFailure {
     }
-    
+
     protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
         State state = getState();
         if(State.isFinalState(state)) {
@@ -281,11 +281,11 @@ public final class GetRequest extends ContainerRequest {
                     logger.error("Illegal State Transition : " +ist.getMessage());
                 }
             }
-           
+
         }
-            
+
     }
-    
+
     public String[] getProtocols() {
         String[] copy = new String[protocols.length];
         rlock();
@@ -296,12 +296,12 @@ public final class GetRequest extends ContainerRequest {
         }
         return copy;
     }
-        
-    public final SrmPrepareToGetResponse getSrmPrepareToGetResponse()  
+
+    public final SrmPrepareToGetResponse getSrmPrepareToGetResponse()
     throws SRMException ,java.sql.SQLException {
         SrmPrepareToGetResponse response = new SrmPrepareToGetResponse();
         // getTReturnStatus should be called before we get the
-       // statuses of the each file, as the call to the 
+       // statuses of the each file, as the call to the
        // getTReturnStatus() can now trigger the update of the statuses
        // in particular move to the READY state, and TURL availability\
         ArrayOfTGetRequestFileStatus arrayOfTGetRequestFileStatus;
@@ -313,18 +313,18 @@ public final class GetRequest extends ContainerRequest {
         response.setArrayOfFileStatuses(arrayOfTGetRequestFileStatus);
         return response;
     }
-    
-    public final SrmStatusOfGetRequestResponse getSrmStatusOfGetRequestResponse()  
+
+    public final SrmStatusOfGetRequestResponse getSrmStatusOfGetRequestResponse()
     throws SRMException, java.sql.SQLException {
         return getSrmStatusOfGetRequestResponse(null);
     }
-    
+
     public final SrmStatusOfGetRequestResponse getSrmStatusOfGetRequestResponse(
-            String[] surls)  
+            String[] surls)
     throws SRMException, java.sql.SQLException {
         SrmStatusOfGetRequestResponse response = new SrmStatusOfGetRequestResponse();
         // getTReturnStatus should be called before we get the
-       // statuses of the each file, as the call to the 
+       // statuses of the each file, as the call to the
        // getTReturnStatus() can now trigger the update of the statuses
        // in particular move to the READY state, and TURL availability
         response.setReturnStatus(getTReturnStatus());
@@ -348,12 +348,12 @@ public final class GetRequest extends ContainerRequest {
         logger.debug(s);
         return response;
     }
-    
-   
+
+
     private String getTRequestToken() {
         return getId().toString();
     }
-    
+
    /* private ArrayOfTGetRequestFileStatus getArrayOfTGetRequestFileStatus()throws SRMException,java.sql.SQLException {
         return getArrayOfTGetRequestFileStatus(null);
     }

@@ -12,13 +12,13 @@ import org.dcache.srm.scheduler.JobStorage;
  * @author  timur
  */
 public interface RequestStorage  extends JobStorage{
-    
-    
+
+
     public abstract org.dcache.srm.scheduler.Job getJob(Long jobId) throws java.sql.SQLException;
     public abstract java.util.Set getJobs(String scheduler) throws java.sql.SQLException;
-    
+
     public abstract java.util.Set getJobs(String scheduler, org.dcache.srm.scheduler.State state) throws java.sql.SQLException ;
-    
+
     public void saveJob(org.dcache.srm.scheduler.Job job, boolean saveifhistoryisnotlogged) throws java.sql.SQLException ;
-    
+
 }
