@@ -272,7 +272,7 @@ public abstract class FileRequest extends Job {
         try {
             return requestId;
         } finally {
-            wunlock();
+            runlock();
         }
     }
 
