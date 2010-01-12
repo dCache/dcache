@@ -366,27 +366,22 @@ public final class GetRequest extends ContainerRequest {
     */
     private TGetRequestFileStatus[] getArrayOfTGetRequestFileStatus(String[] surls)
             throws SRMException,java.sql.SQLException {
-        rlock();
-        try {
-            int len = surls == null ? getNumOfFileRequest():surls.length;
-            TGetRequestFileStatus[] getFileStatuses
-                = new TGetRequestFileStatus[len];
-            if(surls == null) {
-                for(int i = 0; i< len; ++i) {
-                    GetFileRequest fr =(GetFileRequest)fileRequests[i];
-                    getFileStatuses[i] = fr.getTGetRequestFileStatus();
-                }
-            } else {
-                for(int i = 0; i< len; ++i) {
-                    GetFileRequest fr =(GetFileRequest)getFileRequestBySurl(surls[i]);
-                    getFileStatuses[i] = fr.getTGetRequestFileStatus();
-                }
-
+        int len = surls == null ? getNumOfFileRequest():surls.length;
+        TGetRequestFileStatus[] getFileStatuses
+            = new TGetRequestFileStatus[len];
+        if(surls == null) {
+            for(int i = 0; i< len; ++i) {
+                GetFileRequest fr =(GetFileRequest)fileRequests[i];
+                getFileStatuses[i] = fr.getTGetRequestFileStatus();
             }
-            return getFileStatuses;
-        } finally {
-            runlock();
+        } else {
+            for(int i = 0; i< len; ++i) {
+                GetFileRequest fr =(GetFileRequest)getFileRequestBySurl(surls[i]);
+                getFileStatuses[i] = fr.getTGetRequestFileStatus();
+            }
+
         }
+        return getFileStatuses;
     }
     /*public TSURLReturnStatus[] getArrayOfTSURLReturnStatus()
     throws SRMException,java.sql.SQLException {
