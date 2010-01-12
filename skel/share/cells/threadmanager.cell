@@ -1,21 +1,17 @@
-# Load arguments into environment
-define env argument-overrides endDefine
-${0}
-${1}
-${2}
-${3}
-${4}
-${5}
-${6}
-${7}
-${8}
-${9}
-endDefine
+#
+# Thread manager
+#
 
-import env -source=env argument-overrides
+exec file:${ourHomeDir}/share/cells/import-arguments-index-0.fragment
+
+# Define defaults
+onerror continue
+set context -c threadManagerThreads 200
+set context -c threadManagerTimeout 15
+onerror shutdown
 
 create diskCacheV111.util.ThreadManager ThreadManager \
        "default \
-       -num-threads=200 \
-       -thread-timeout=15 \
+       -num-threads=${threadManagerThreads} \
+       -thread-timeout=${threadManagerTimeout} \
 "

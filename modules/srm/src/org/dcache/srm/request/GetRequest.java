@@ -304,18 +304,12 @@ public final class GetRequest extends ContainerRequest {
        // statuses of the each file, as the call to the 
        // getTReturnStatus() can now trigger the update of the statuses
        // in particular move to the READY state, and TURL availability\
-        rlock();
         ArrayOfTGetRequestFileStatus arrayOfTGetRequestFileStatus;
-        try {
-            response.setReturnStatus(getTReturnStatus());
-            response.setRequestToken(getTRequestToken());
-
-            arrayOfTGetRequestFileStatus =
-                new ArrayOfTGetRequestFileStatus();
-            arrayOfTGetRequestFileStatus.setStatusArray(getArrayOfTGetRequestFileStatus(null));
-        } finally {
-            runlock();
-        }
+        response.setReturnStatus(getTReturnStatus());
+        response.setRequestToken(getTRequestToken());
+        arrayOfTGetRequestFileStatus =
+            new ArrayOfTGetRequestFileStatus();
+        arrayOfTGetRequestFileStatus.setStatusArray(getArrayOfTGetRequestFileStatus(null));
         response.setArrayOfFileStatuses(arrayOfTGetRequestFileStatus);
         return response;
     }
@@ -366,27 +360,22 @@ public final class GetRequest extends ContainerRequest {
     */
     private TGetRequestFileStatus[] getArrayOfTGetRequestFileStatus(String[] surls)
             throws SRMException,java.sql.SQLException {
-        rlock();
-        try {
-            int len = surls == null ? getNumOfFileRequest():surls.length;
-            TGetRequestFileStatus[] getFileStatuses
-                = new TGetRequestFileStatus[len];
-            if(surls == null) {
-                for(int i = 0; i< len; ++i) {
-                    GetFileRequest fr =(GetFileRequest)fileRequests[i];
-                    getFileStatuses[i] = fr.getTGetRequestFileStatus();
-                }
-            } else {
-                for(int i = 0; i< len; ++i) {
-                    GetFileRequest fr =(GetFileRequest)getFileRequestBySurl(surls[i]);
-                    getFileStatuses[i] = fr.getTGetRequestFileStatus();
-                }
-
+        int len = surls == null ? getNumOfFileRequest():surls.length;
+        TGetRequestFileStatus[] getFileStatuses
+            = new TGetRequestFileStatus[len];
+        if(surls == null) {
+            for(int i = 0; i< len; ++i) {
+                GetFileRequest fr =(GetFileRequest)fileRequests[i];
+                getFileStatuses[i] = fr.getTGetRequestFileStatus();
             }
-            return getFileStatuses;
-        } finally {
-            runlock();
+        } else {
+            for(int i = 0; i< len; ++i) {
+                GetFileRequest fr =(GetFileRequest)getFileRequestBySurl(surls[i]);
+                getFileStatuses[i] = fr.getTGetRequestFileStatus();
+            }
+
         }
+        return getFileStatuses;
     }
     /*public TSURLReturnStatus[] getArrayOfTSURLReturnStatus()
     throws SRMException,java.sql.SQLException {

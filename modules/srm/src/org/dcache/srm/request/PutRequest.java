@@ -390,40 +390,35 @@ public final class PutRequest extends ContainerRequest{
     
     
     public TSURLReturnStatus[] getArrayOfTSURLReturnStatus(String[] surls) throws SRMException,java.sql.SQLException {
-        rlock();
-        try {
-            int len ;
-            TSURLReturnStatus[] surlLReturnStatuses;
-            if(surls == null) {
-                len = getNumOfFileRequest();
-               surlLReturnStatuses = new TSURLReturnStatus[len];
-            }
-            else {
-                len = surls.length;
-               surlLReturnStatuses = new TSURLReturnStatus[surls.length];
-            }
-            boolean failed_req = false;
-            boolean pending_req = false;
-            boolean running_req = false;
-            boolean ready_req = false;
-            boolean done_req = false;
-            String fr_error="";
-            if(surls == null) {
-                for(int i = 0; i< len; ++i) {
-                    PutFileRequest fr =(PutFileRequest)fileRequests[i];
-                    surlLReturnStatuses[i] = fr.getTSURLReturnStatus();
-                }
-            } else {
-                for(int i = 0; i< len; ++i) {
-                    PutFileRequest fr =(PutFileRequest)getFileRequestBySurl(surls[i]);
-                    surlLReturnStatuses[i] = fr.getTSURLReturnStatus();
-                }
-
-            }
-            return surlLReturnStatuses;
-        } finally {
-            runlock();
+        int len ;
+        TSURLReturnStatus[] surlLReturnStatuses;
+        if(surls == null) {
+            len = getNumOfFileRequest();
+            surlLReturnStatuses = new TSURLReturnStatus[len];
         }
+        else {
+            len = surls.length;
+            surlLReturnStatuses = new TSURLReturnStatus[surls.length];
+        }
+        boolean failed_req = false;
+        boolean pending_req = false;
+        boolean running_req = false;
+        boolean ready_req = false;
+        boolean done_req = false;
+        String fr_error="";
+        if(surls == null) {
+            for(int i = 0; i< len; ++i) {
+                PutFileRequest fr =(PutFileRequest)fileRequests[i];
+                surlLReturnStatuses[i] = fr.getTSURLReturnStatus();
+            }
+        } else {
+            for(int i = 0; i< len; ++i) {
+                PutFileRequest fr =(PutFileRequest)getFileRequestBySurl(surls[i]);
+                surlLReturnStatuses[i] = fr.getTSURLReturnStatus();
+            }
+
+        }
+        return surlLReturnStatuses;
     }
 
     public TRequestType getRequestType() {

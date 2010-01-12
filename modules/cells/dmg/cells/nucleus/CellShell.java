@@ -1523,7 +1523,7 @@ public String command( String c ) throws CommandExitException {
 
             return (args.getOpt("nooutput") != null) ? "" : out.toString();
         } catch (FileNotFoundException e) {
-            throw new CommandException(66, "Context not found: "+ loopName);
+            throw new CommandException(66, e.getMessage(), e);
         } catch (IOException e) {
             throw new CommandExitException("I/O error: " + e.getMessage(), 11);
         }

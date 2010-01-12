@@ -285,7 +285,6 @@ public class HsmStorageHandler2
             for (URI location: storageInfo.locations()) {
                 if (location.getScheme().equals(hsm.getType()) && location.getAuthority().equals(hsm.getInstance())) {
                     sb.append(" -uri=").append(location.toString());
-                    break;
                 }
             }
         }

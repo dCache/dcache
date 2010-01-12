@@ -342,13 +342,13 @@ import org.apache.log4j.NDC;
     * super Class to clean the actions made from this Cell.
     * It stops the Thread created.
     */
-   public void cleanUp(){
-
-      say(" Clean up called ... " ) ;
-      synchronized( this ){
-         notifyAll() ;
-      }
-      say( " Done" ) ;
+   public void cleanUp() {
+       if (executor != null) {
+           executor.shutdownNow();
+       }
+       if (delaychecker != null) {
+           delaychecker.shutdownNow();
+       }
    }
 
   /**
