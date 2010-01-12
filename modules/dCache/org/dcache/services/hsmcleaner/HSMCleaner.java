@@ -196,12 +196,19 @@ public class HSMCleaner extends AbstractCell
                                          _flushInterval, TimeUnit.SECONDS);
     }
 
+    @Override
     public void cleanUp()
     {
-        _executor.shutdownNow();
+        if (_requests != null) {
+            _requests.shutdown();
+        }
+        if (_executor != null) {
+            _executor.shutdownNow();
+        }
         super.cleanUp();
     }
 
+    @Override
     public void getInfo(PrintWriter out)
     {
         super.getInfo(out);
