@@ -304,18 +304,12 @@ public final class GetRequest extends ContainerRequest {
        // statuses of the each file, as the call to the
        // getTReturnStatus() can now trigger the update of the statuses
        // in particular move to the READY state, and TURL availability\
-        rlock();
         ArrayOfTGetRequestFileStatus arrayOfTGetRequestFileStatus;
-        try {
-            response.setReturnStatus(getTReturnStatus());
-            response.setRequestToken(getTRequestToken());
-
-            arrayOfTGetRequestFileStatus =
-                new ArrayOfTGetRequestFileStatus();
-            arrayOfTGetRequestFileStatus.setStatusArray(getArrayOfTGetRequestFileStatus(null));
-        } finally {
-            runlock();
-        }
+        response.setReturnStatus(getTReturnStatus());
+        response.setRequestToken(getTRequestToken());
+        arrayOfTGetRequestFileStatus =
+            new ArrayOfTGetRequestFileStatus();
+        arrayOfTGetRequestFileStatus.setStatusArray(getArrayOfTGetRequestFileStatus(null));
         response.setArrayOfFileStatuses(arrayOfTGetRequestFileStatus);
         return response;
     }
