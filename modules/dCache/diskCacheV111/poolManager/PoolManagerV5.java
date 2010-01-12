@@ -558,7 +558,7 @@ public class PoolManagerV5
         return msg;
     }
 
-    private static class XProtocolInfo extends IpProtocolInfo {
+    private static class XProtocolInfo implements IpProtocolInfo {
        private String [] _host = new String[1] ;
 
        private static final long serialVersionUID = -5817364111427851052L;

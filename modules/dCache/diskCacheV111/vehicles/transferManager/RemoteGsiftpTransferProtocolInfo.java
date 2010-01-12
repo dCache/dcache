@@ -6,7 +6,7 @@ import diskCacheV111.vehicles.IpProtocolInfo;
  * @version 0.0, 28 Jun 2002
  */
 
-public class RemoteGsiftpTransferProtocolInfo extends IpProtocolInfo
+public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo 
 {
   private String name  = "Unkown" ;
   private int    minor = 0 ;

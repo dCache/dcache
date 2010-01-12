@@ -108,9 +108,7 @@ public class RemoteGsiftpTransferProtocol_1
 {
     private final static org.apache.log4j.Logger _log =
         org.apache.log4j.Logger.getLogger(RemoteGsiftpTransferProtocol_1.class);
-    //timeout after 5 minutes if credentials not delegated
-    private final static int SERVER_SOCKET_TIMEOUT = 60 * 5 *1000;
-    private final CellEndpoint _cell;
+     private final CellEndpoint _cell;
     private long _starttime;
     private long _timeout_time;
     private PnfsId _pnfsId;
@@ -146,32 +144,31 @@ public class RemoteGsiftpTransferProtocol_1
                          remoteGsiftpProtocolInfo.getGsiftpTranferManagerDomain());
         _log.debug(" runIO() RemoteGsiftpTranferManager cellpath=" + cellpath);
 
-        ServerSocket serverSocket = null;
+        ServerSocket ss = null;
         try {
-            serverSocket = new ServerSocket(0, 1);
-            serverSocket.setSoTimeout(SERVER_SOCKET_TIMEOUT);
+            ss = new ServerSocket(0, 1);
+            //timeout after 5 minutes if credentials not delegated
+            ss.setSoTimeout(5 * 60 * 1000);
         } catch (IOException e) {
             _log.error("exception while trying to create a server socket : " + e);
             throw e;
         }
 
-        InetAddress localAddress = remoteGsiftpProtocolInfo.getLocalAddressForClient();
-
         RemoteGsiftpDelegateUserCredentialsMessage cred_request =
             new RemoteGsiftpDelegateUserCredentialsMessage(remoteGsiftpProtocolInfo.getId(),
                                                            remoteGsiftpProtocolInfo.getSourceId(),
-                                                           localAddress.getCanonicalHostName(),
-                                                           serverSocket.getLocalPort(),
+                                                           InetAddress.getLocalHost().getHostName(),
+                                                           ss.getLocalPort(),
                                                            remoteGsiftpProtocolInfo.getRequestCredentialId());
 
         _log.debug(" runIO() created message");
         _cell.sendMessage(new CellMessage(cellpath, cred_request));
         _log.debug("waiting for delegation connection");
         //timeout after 5 minutes if credentials not delegated
-        Socket deleg_socket = serverSocket.accept();
+        Socket deleg_socket = ss.accept();
         _log.debug("connected");
         try {
-            serverSocket.close();
+            ss.close();
         } catch (IOException e) {
             _log.error("failed to close server socket");
             _log.error(e);

@@ -1,3 +1,5 @@
+// $Id: DCapProtocol_3_nio.java,v 1.17 2007-10-02 13:35:52 tigran Exp $
+
 package org.dcache.pool.movers;
 import java.io.EOFException;
 import java.io.IOException;
@@ -5,11 +7,11 @@ import java.io.RandomAccessFile;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.SocketException;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SocketChannel;
+import java.security.MessageDigest;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -84,62 +86,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
         protocolConnectionPoolFactory =
             new ProtocolConnectionPoolFactory(port, new DCapChallengeReader());
 
-    }
-
-    private void initialiseBuffer(MoverIoBuffer bufferSize) {
-        try {
-            _bigBuffer = _bigBuffer
-                    == null ? ByteBuffer.allocateDirect(bufferSize.getIoBufferSize()) :
-                        _bigBuffer;
-        } catch (OutOfMemoryError om) {
-            _bigBuffer = ByteBuffer.allocateDirect(32 * 1024);
-        }
-    }
-
-    private void initialiseDataSocket(SocketChannel socketChannel, MoverIoBuffer bufferSize)
-            throws SocketException {
-        Socket dataSocket = socketChannel.socket();
-        if (_logSocketIO.isDebugEnabled()) {
-            _logSocketIO.debug("Socket OPEN remote = " +
-                    dataSocket.getInetAddress() + ":" + dataSocket.getPort()
-                    + " local = " + dataSocket.getLocalAddress() + ":" +
-                    dataSocket.getLocalPort());
-        }
-        dataSocket.setReceiveBufferSize(bufferSize.getRecvBufferSize());
-        dataSocket.setSendBufferSize(bufferSize.getSendBufferSize());
-        say("Using : Buffer Sizes (send/recv/io) : " +
-                dataSocket.getSendBufferSize() + "/" +
-                dataSocket.getReceiveBufferSize() + "/" + _bigBuffer.capacity());
-    }
-
-    private MoverIoBuffer prepareBufferSize(StorageInfo storage) {
-        MoverIoBuffer bufferSize = new MoverIoBuffer(_defaultBufferSize);
-        String tmp = null;
-        try {
-            tmp = storage.getKey("send");
-            if (tmp != null) {
-                bufferSize.setSendBufferSize(Math.min(Integer.parseInt(tmp), _maxBufferSize.getSendBufferSize()));
-            }
-        } catch (NumberFormatException e) { /* bad values are ignored */
-
-        }
-        try {
-            tmp = storage.getKey("receive");
-            if (tmp != null) {
-                bufferSize.setRecvBufferSize(Math.min(Integer.parseInt(tmp), _maxBufferSize.getRecvBufferSize()));
-            }
-        } catch (NumberFormatException e) { /* bad values are ignored */
-
-        }
-        try {
-            tmp = storage.getKey("bsize");
-            if (tmp != null) {
-                bufferSize.setIoBufferSize(Math.min(Integer.parseInt(tmp), _maxBufferSize.getIoBufferSize()));
-            }
-        } catch (NumberFormatException e) { /* bad values are ignored */
-
-        }
-        return bufferSize;
     }
 
     private class SpaceMonitorHandler {
@@ -331,7 +277,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
         if(! (protocol instanceof DCapProtocolInfo))
             throw new
                 CacheException(44, "protocol info not DCapProtocolInfo");
-        DCapProtocolInfo dcapProtocolInfo = (DCapProtocolInfo)protocol;
 
         _pnfsId              = pnfsId;
         _spaceMonitorHandler = new SpaceMonitorHandler(allocator);
@@ -383,23 +328,68 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
             if(io != null)_ioError = Long.parseLong(io);
         }catch(NumberFormatException e){ /* bad values are ignored */}
         say("ioError = "+_ioError);
-//        gets the buffervalues of the storageInfo keys
-        MoverIoBuffer bufferSize = prepareBufferSize(storage);
+
+
+        MoverIoBuffer bufferSize = new MoverIoBuffer(_defaultBufferSize);
+
+        {
+            String tmp     = null;
+
+            try{
+                tmp = storage.getKey("send");
+                if(tmp != null)
+                    bufferSize.setSendBufferSize(
+                                                 Math.min(Integer.parseInt(tmp),_maxBufferSize.getSendBufferSize())
+                                                );
+            }catch(NumberFormatException e){ /* bad values are ignored */}
+            try{
+                tmp = storage.getKey("receive");
+                if(tmp != null)
+                    bufferSize.setRecvBufferSize(
+                                                 Math.min(Integer.parseInt(tmp),_maxBufferSize.getRecvBufferSize())
+                                                );
+            }catch(NumberFormatException e){ /* bad values are ignored */}
+            try{
+                tmp = storage.getKey("bsize");
+                if(tmp != null)
+                    bufferSize.setIoBufferSize(
+                                               Math.min(Integer.parseInt(tmp),_maxBufferSize.getIoBufferSize())
+                                              );
+            }catch(NumberFormatException e){ /* bad values are ignored */}
+
+        }
+
         say("Client : Buffer Sizes : "+bufferSize);
-//        allocates the _bigBuffer
-        initialiseBuffer(bufferSize);
+        //                                                                    //
+        //                                                                    //
+        ////////////////////////////////////////////////////////////////////////
+        //                                                                    //
+        //      get a buffer                                                  //
+        //                                                                    //
+
+        try{
+            _bigBuffer =
+                _bigBuffer == null ?
+                ByteBuffer.allocateDirect(bufferSize.getIoBufferSize()) :
+                _bigBuffer;
+        }catch(OutOfMemoryError om){
+            _bigBuffer = ByteBuffer.allocateDirect(32*1024);
+        }
+
+
+        DCapProtocolInfo dcap = (DCapProtocolInfo)protocol;
 
         SocketChannel socketChannel = null;
         FileChannel   fileChannel   = diskFile.getChannel();
         DCapOutputByteBuffer cntOut = new DCapOutputByteBuffer(1024);
 
-        _sessionId  = dcapProtocolInfo.getSessionId();
+        _sessionId  = dcap.getSessionId();
 
-        if(! dcapProtocolInfo.isPassive()) {
-            int        port       = dcapProtocolInfo.getPort();
-            String []  hosts      = dcapProtocolInfo.getHosts();
+        if(! dcap.isPassive()) {
+            int        port       = dcap.getPort();
+            String []  hosts      = dcap.getHosts();
             String     host       = null;
-            Exception  bufferedException         = null;
+            Exception  se         = null;
 
             //
             // try to connect to the client, scan the list.
@@ -409,21 +399,37 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                     host = hosts[i];
 
                     socketChannel = SocketChannel.open(
-                        new InetSocketAddress(InetAddress.getByName(host),
-                        port));
+                                                       new InetSocketAddress(
+                                                                             InetAddress.getByName(host),
+                                                                             port        )
+                                                      );
+
                     socketChannel.configureBlocking(true);
 
                 }catch(Exception ee){
                     esay("Can't connect to "+host);
-                    bufferedException = ee;
+                    se = ee;
                     continue;
                 }
                 break;
             }
-            if(socketChannel == null)
-                throw bufferedException;
-            // sets buffersizes of the Socket and some logging
-            initialiseDataSocket(socketChannel, bufferSize);
+            if(socketChannel == null)throw se;
+
+            {
+                Socket dataSocket = socketChannel.socket();
+              	if(_logSocketIO.isDebugEnabled()) {
+                    _logSocketIO.debug("Socket OPEN remote = " + dataSocket.getInetAddress() + ":" + dataSocket.getPort() +
+                                       " local = " + dataSocket.getLocalAddress() + ":" + dataSocket.getLocalPort());
+            	}
+                dataSocket.setReceiveBufferSize(bufferSize.getRecvBufferSize());
+                dataSocket.setSendBufferSize(bufferSize.getSendBufferSize());
+
+                say("Using : Buffer Sizes (send/recv/io) : "+
+                    dataSocket.getSendBufferSize()+"/"+
+                    dataSocket.getReceiveBufferSize()+"/"+
+                    _bigBuffer.capacity());
+
+            }
 
             say("Connected to "+host+"("+port+")");
             //
@@ -437,21 +443,19 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
             ProtocolConnectionPool pcp = protocolConnectionPoolFactory.getConnectionPool();
 
-            InetAddress localAddress = dcapProtocolInfo.getLocalAddressForClient();
             InetSocketAddress socketAddress =
-                new  InetSocketAddress(localAddress,
+                new  InetSocketAddress(InetAddress.getLocalHost(),
                                        pcp.getLocalPort());
 
             byte[] challenge = UUID.randomUUID().toString().getBytes();
-            PoolPassiveIoFileMessage msg = new PoolPassiveIoFileMessage("pool",
-                    socketAddress, challenge);
-            msg.setId(dcapProtocolInfo.getSessionId());
+            PoolPassiveIoFileMessage msg = new PoolPassiveIoFileMessage("pool", socketAddress, challenge);
+            msg.setId(dcap.getSessionId());
             say("waiting for client to connect ("+
-                 localAddress  +
+                 InetAddress.getLocalHost()  +
                  pcp.getLocalPort() +
                  ")");
 
-            CellPath cellpath = dcapProtocolInfo.door();
+            CellPath cellpath = dcap.door();
             _cell.sendMessage (new CellMessage(cellpath, msg));
             DCapProrocolChallenge dcapChallenge = new DCapProrocolChallenge(_sessionId, challenge);
             socketChannel = pcp.getSocket(dcapChallenge);
@@ -796,11 +800,11 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                 socketChannel.close();
             }catch(Exception xe){}
 
-            dcapProtocolInfo.setBytesTransferred(_bytesTransferred);
+            dcap.setBytesTransferred(_bytesTransferred);
 
             _transferTime = System.currentTimeMillis() -
                 _transferStarted;
-            dcapProtocolInfo.setTransferTime(_transferTime);
+            dcap.setTransferTime(_transferTime);
 
             say("(Transfer finished : "+
                  _bytesTransferred+" bytes in "+

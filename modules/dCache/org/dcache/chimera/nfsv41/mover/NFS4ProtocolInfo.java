@@ -1,3 +1,6 @@
+/*
+ * $Id:NFS4ProtocolInfo.java 140 2007-06-07 13:44:55Z tigran $
+ */
 package org.dcache.chimera.nfsv41.mover;
 
 /*
@@ -10,7 +13,7 @@ import org.dcache.chimera.nfs.v4.xdr.stateid4;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import dmg.cells.nucleus.CellPath;
 
-public class NFS4ProtocolInfo extends IpProtocolInfo {
+public class NFS4ProtocolInfo implements IpProtocolInfo {
 
 	private static final long serialVersionUID = -2283394435195441798L;
 

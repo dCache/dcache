@@ -4,7 +4,7 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import dmg.cells.nucleus.CellPath;
 
-public class XrootdProtocolInfo extends IpProtocolInfo {
+public class XrootdProtocolInfo implements IpProtocolInfo {
 
 	private static final long serialVersionUID = -7070947404762513894L;
 

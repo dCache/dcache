@@ -4,10 +4,16 @@ import java.text.MessageFormat;
 import java.nio.channels.FileChannel;
 import java.io.RandomAccessFile;
 import java.io.IOException;
+import java.net.SocketAddress;
+import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.InetAddress;
+import java.net.SocketException;
+import java.net.BindException;
 import java.security.MessageDigest;
 import java.util.Random;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.UnresolvedAddressException;
@@ -420,6 +426,25 @@ public class GFtpProtocol_2_nio
         }
     }
 
+    /**
+     * Return the local address via which the given destination
+     * address is reachable.
+     *
+     * Java does not provide this functionality and therefore we need
+     * this workaround.
+     */
+    private InetAddress getLocalHost(InetAddress intendedDestination)
+        throws SocketException
+    {
+        DatagramSocket sock = new DatagramSocket();
+        try {
+            sock.connect(intendedDestination, 23241); // A random port
+            return sock.getLocalAddress();
+        } finally {
+            sock.close();
+        }
+    }
+
     /** Part of the MoverProtocol interface. */
     public void runIO(RandomAccessFile file,
 		      ProtocolInfo protocol,
@@ -432,27 +457,27 @@ public class GFtpProtocol_2_nio
         if (!(protocol instanceof GFtpProtocolInfo)) {
             throw new CacheException(44, "Protocol info not of type GFtpProtocolInfo");
         }
-        GFtpProtocolInfo gftpProtocolInfo    = (GFtpProtocolInfo)protocol;
+        GFtpProtocolInfo ftp    = (GFtpProtocolInfo)protocol;
 
 	Role role = (access & MoverProtocol.WRITE) != 0
 	    ? Role.Receiver : Role.Sender;
-        int    version     = gftpProtocolInfo.getMajorVersion();
-	String host        = gftpProtocolInfo.getHost();
-	int    port        = gftpProtocolInfo.getPort();
-	int    bufferSize  = gftpProtocolInfo.getBufferSize();
-	int    parallelism = gftpProtocolInfo.getParallelStart();
-	long   offset      = gftpProtocolInfo.getOffset();
-	long   size        = gftpProtocolInfo.getSize();
-        boolean passive    = gftpProtocolInfo.getPassive() && _allowPassivePool;
+        int    version     = ftp.getMajorVersion();
+	String host        = ftp.getHost();
+	int    port        = ftp.getPort();
+	int    bufferSize  = ftp.getBufferSize();
+	int    parallelism = ftp.getParallelStart();
+	long   offset      = ftp.getOffset();
+	long   size        = ftp.getSize();
+        boolean passive    = ftp.getPassive() && _allowPassivePool;
 
 	say(MessageFormat.format
 	    ("version={0}, role={1}, mode={2}, host={3}:{4,number,#}, buffer={5}, passive={6}, parallelism={7}",
-             version, role, gftpProtocolInfo.getMode(),
+             version, role, ftp.getMode(),
              host, port, bufferSize, passive, parallelism));
 
         /* Sanity check the parameters.
          */
-        if (gftpProtocolInfo.getPassive() && version == 1) {
+        if (ftp.getPassive() && version == 1) {
             /* In passive mode we need to be able to send the port we
              * listen on to the client. With GFtp/1, we cannot send
              * this information back to the door.
@@ -466,7 +491,7 @@ public class GFtpProtocol_2_nio
 	_transferStarted  = System.currentTimeMillis();
 	_lastTransferred  = _transferStarted;
 
-	Mode mode = createMode(gftpProtocolInfo.getMode(), role, file);
+	Mode mode = createMode(ftp.getMode(), role, file);
 	mode.setBufferSize(bufferSize);
 
         /* For GFtp/2, the FTP door expects a
@@ -492,10 +517,11 @@ public class GFtpProtocol_2_nio
                  * seems like a safe assumption that the data channel
                  * will be established from the same network.
                  */
-                InetAddress localAddress = gftpProtocolInfo.getLocalAddressForClient();
+                InetAddress local =
+                    getLocalHost(InetAddress.getByName(ftp.getClientAddress()));
                 message =
                     new GFtpTransferStartedMessage(pnfsId.getId(),
-                                                   localAddress.getCanonicalHostName(),
+                                                   local.getCanonicalHostName(),
                                                    channel.socket().getLocalPort());
                 mode.setPassive(channel);
             } else {
@@ -505,8 +531,8 @@ public class GFtpProtocol_2_nio
                  */
                 message = new GFtpTransferStartedMessage(pnfsId.getId());
             }
-            CellPath path = new CellPath(gftpProtocolInfo.getDoorCellName(),
-                                         gftpProtocolInfo.getDoorCellDomainName());
+            CellPath path = new CellPath(ftp.getDoorCellName(),
+                                         ftp.getDoorCellDomainName());
             _cell.sendMessage(new CellMessage(path, message));
         }
 
@@ -532,7 +558,7 @@ public class GFtpProtocol_2_nio
          *
          * In either case, set the parallelism to one.
  	 */
-        switch (Character.toUpperCase(gftpProtocolInfo.getMode().charAt(0))) {
+        switch (Character.toUpperCase(ftp.getMode().charAt(0))) {
         case 'E':
             if (role == Role.Receiver && !passive) {
                 parallelism = 1;
@@ -575,8 +601,8 @@ public class GFtpProtocol_2_nio
 	    /* Log some useful information about the transfer. This
              * will be send back to the door by the pool cell.
 	     */
-	    gftpProtocolInfo.setBytesTransferred(getBytesTransferred());
-	    gftpProtocolInfo.setTransferTime(getTransferTime());
+	    ftp.setBytesTransferred(getBytesTransferred());
+	    ftp.setTransferTime(getTransferTime());
 	}
     }
 

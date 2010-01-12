@@ -4,9 +4,11 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.Inet4Address;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -131,7 +133,9 @@ public class XrootdProtocol_2 implements MoverProtocol
 
             Collection netifsCol = new ArrayList();
 
-            InetAddress localIP = xrootdProtocol.getLocalAddressForClient();
+            // try to pick the ip address with corresponds to the
+            // hostname (which is hopefully visible to the world)
+            InetAddress localIP = InetAddress.getLocalHost();
 
             if (localIP != null && !localIP.isLoopbackAddress() && localIP instanceof Inet4Address) {
                 // the ip we got from the hostname is at least not
