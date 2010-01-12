@@ -379,4 +379,9 @@ public class RequestTracker
 
         return sb.toString();
     }
+
+    public void shutdown()
+    {
+        _timer.cancel();
+    }
 }
