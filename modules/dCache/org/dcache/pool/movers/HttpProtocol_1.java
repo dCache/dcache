@@ -21,8 +21,6 @@ import java.net.URL;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.InetAddress;
-import java.util.Hashtable;
-import java.util.StringTokenizer;
 import java.util.List;
 import java.text.ParseException;
 
@@ -37,10 +35,7 @@ public class HttpProtocol_1 implements MoverProtocol
     public static final long SERVER_LIFE_SPAN= 60 * 5 * 1000; /* 5 minutes */
 
     private final CellEndpoint      _cell;
-    private HttpProtocolInfo httpProtocolInfo;
     private ServerSocket httpserver;
-    private long starttime;
-    private RandomAccessFile diskFile;
     private long timeout_time;
     private long start_transfer_time    = System.currentTimeMillis();
 
@@ -85,35 +80,25 @@ public class HttpProtocol_1 implements MoverProtocol
             {
                 throw new  CacheException(44, "protocol info not HttpProtocolInfo");
             }
-        this.diskFile = diskFile;
-        ServerSocket ss;
+        HttpProtocolInfo httpProtocolInfo = (HttpProtocolInfo) protocol;
+
+        ServerSocket serverSocket;
         try {
-            ss = new ServerSocket();
-            _portRange.bind(ss);
+            serverSocket = new ServerSocket();
+            _portRange.bind(serverSocket);
         } catch(IOException ioe) {
             esay("exception while trying to create a server socket : "+ioe);
             throw ioe;
         }
-        starttime = System.currentTimeMillis();
-        this.httpserver = ss;
+        this.httpserver = serverSocket;
 
-        httpProtocolInfo = (HttpProtocolInfo) protocol;
-        StringBuffer url_sb = new StringBuffer("http://");
-        url_sb.append(InetAddress.getLocalHost ().getHostName ());
-        url_sb.append(':').append(ss.getLocalPort());
-        if(!httpProtocolInfo.getPath().startsWith("/"))
-            {
-                url_sb.append('/');
-            }
-        url_sb.append(httpProtocolInfo.getPath());
-        say(" redirecting to  "+
-            url_sb.toString());
+        String targetUrl = buildUrl(serverSocket.getLocalPort(), httpProtocolInfo);
 
         CellPath cellpath = new CellPath(httpProtocolInfo.getHttpDoorCellName (),
                                          httpProtocolInfo.getHttpDoorDomainName ());
         say(" runIO() cellpath="+cellpath);
         HttpDoorUrlInfoMessage httpDoorMessage =
-            new HttpDoorUrlInfoMessage(pnfsId.getId (),url_sb.toString());
+            new HttpDoorUrlInfoMessage(pnfsId.getId (),targetUrl);
         say(" runIO() created message");
         _cell.sendMessage (new CellMessage(cellpath,httpDoorMessage));
 
@@ -242,6 +227,24 @@ public class HttpProtocol_1 implements MoverProtocol
         return System.currentTimeMillis() - start_transfer_time;
     }
     public boolean wasChanged(){ return false; }
+
+    private String buildUrl(int localPort, HttpProtocolInfo httpProtocolInfo)
+            throws Exception{
+        InetAddress localAddress = httpProtocolInfo.getLocalAddressForClient();
+
+        StringBuffer url_sb = new StringBuffer("http://");
+        url_sb.append(localAddress.getCanonicalHostName());
+        url_sb.append(':').append(localPort);
+        if(!httpProtocolInfo.getPath().startsWith("/"))
+            {
+                url_sb.append('/');
+            }
+        url_sb.append(httpProtocolInfo.getPath());
+        say(" redirecting to  "+
+            url_sb.toString());
+
+        return url_sb.toString();
+    }
 }
 
 

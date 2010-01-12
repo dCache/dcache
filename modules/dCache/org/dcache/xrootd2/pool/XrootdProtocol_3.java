@@ -2,9 +2,6 @@ package org.dcache.xrootd2.pool;
 
 import java.io.RandomAccessFile;
 import java.io.IOException;
-import java.io.FileNotFoundException;
-import java.io.SyncFailedException;
-import java.nio.channels.FileChannel;
 import java.nio.channels.ClosedChannelException;
 import java.net.InetSocketAddress;
 import java.net.InetAddress;
@@ -55,7 +52,6 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.SimpleChannelHandler;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.ChannelPipelineCoverage;
@@ -475,7 +471,7 @@ public class XrootdProtocol_3
 
         // try to pick the ip address with corresponds to the
         // hostname (which is hopefully visible to the world)
-        InetAddress localIP = InetAddress.getLocalHost();
+        InetAddress localIP = _protocolInfo.getLocalAddressForClient();
 
         if (localIP != null && !localIP.isLoopbackAddress()
             && localIP instanceof Inet4Address) {

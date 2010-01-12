@@ -8,9 +8,7 @@ package org.dcache.pool.movers;
 
 import diskCacheV111.vehicles.*;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.PnfsFile;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.HttpConnectionHandler;
 import org.dcache.pool.repository.Allocator;
 
 import dmg.cells.nucleus.*;
@@ -18,11 +16,6 @@ import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.HttpURLConnection;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.InetAddress;
-import java.util.Hashtable;
-import java.util.StringTokenizer;
 
 import org.apache.log4j.Logger;
 
@@ -41,10 +34,7 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
     private long last_transfer_time    = System.currentTimeMillis();
     private final CellEndpoint   cell;
     private RemoteHttpDataTransferProtocolInfo remoteHttpProtocolInfo;
-    private CellPath pathToSource;
-    private ServerSocket httpserver;
     private long starttime;
-    private RandomAccessFile diskFile;
     private long timeout_time;
     private URL remoteURL;
     private volatile long transfered  = 0;
@@ -80,7 +70,6 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
                 throw new  CacheException(
                                           "protocol info is not RemoteHttpDataTransferProtocolInfo");
             }
-        this.diskFile = diskFile;
         starttime = System.currentTimeMillis();
 
         remoteHttpProtocolInfo = (RemoteHttpDataTransferProtocolInfo) protocol;

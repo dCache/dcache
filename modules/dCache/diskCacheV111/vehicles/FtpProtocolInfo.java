@@ -2,7 +2,7 @@
 
 package diskCacheV111.vehicles ;
 
-public class FtpProtocolInfo implements IpProtocolInfo {
+public class FtpProtocolInfo extends IpProtocolInfo {
    private String _name  = "Unkown" ;
    private int    _minor = 0 ;
    private int    _major = 0 ;

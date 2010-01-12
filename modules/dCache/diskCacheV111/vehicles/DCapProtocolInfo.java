@@ -6,7 +6,7 @@ package diskCacheV111.vehicles;
 import diskCacheV111.util.VOInfo;
 import dmg.cells.nucleus.CellPath;
 
-public class DCapProtocolInfo implements IpProtocolInfo, GridProtocolInfo {
+public class DCapProtocolInfo extends IpProtocolInfo implements GridProtocolInfo {
 
     private final String _name;
     private final int _minor;
