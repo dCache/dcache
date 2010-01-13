@@ -300,11 +300,12 @@ public class ChimeraOsmStorageInfoExtractor implements
 
     /**
      *
-     * get content of a virtual file named .(tag)(&lt;tagname&gt;)
+     * get content of a virtual file named .(tag)(&lt;tagname&gt;).
      *
      * @param dirInode inode of directory
      * @param tag tag name
-     * @return array of strings corresponding to lines of tag file or null if tag does not exist
+     * @return array of strings corresponding to lines of tag file or null
+     * if tag does not exist or empty.
      * @throws IOException
      */
     private static String[] getTag(FsInode dirInode, String tag)
@@ -321,7 +322,8 @@ public class ChimeraOsmStorageInfoExtractor implements
         byte[] buff = new byte[256];
 
         int len = tagInode.read(0, buff, 0, buff.length);
-        if( len < 0 ) {
+        /* empty and bad tags are treated as non existing tags */
+        if( len <= 0 ) {
             return null;
         }
 
