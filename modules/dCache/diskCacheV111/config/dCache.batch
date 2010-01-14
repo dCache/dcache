@@ -23,6 +23,7 @@ create org.dcache.cells.UniversalSpringCell PoolManager \
    "classpath:diskCacheV111/poolManager/poolmanager.xml \
     -setupFile=${config}/PoolManager.conf \
     -export \
+    -cellClass=PoolManager \
     -replyObject"
 #
 create diskCacheV111.hsmControl.DummyStager Prestager "${config}"

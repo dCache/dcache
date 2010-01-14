@@ -15,13 +15,13 @@ set context -c jmsEmbeddedTunnel classpath:org/dcache/cells/amq-embedded.xml
 # Connect to JMS broker
 define env tunnel-jms.exe end
   create org.dcache.cells.UniversalSpringCell JMS \
-        "-cellType=System ${jmsTunnel}"
+        "-cellType=System -cellClass=JMS ${jmsTunnel}"
 end
 
 # Start embedded JMS broker and cells-JMS gateway
 define env tunnel-jms-broker.exe end
   create org.dcache.cells.UniversalSpringCell JMS \
-        "-cellType=System ${jmsEmbeddedTunnel}"
+        "-cellType=System -cellClass=JMS ${jmsEmbeddedTunnel}"
   create dmg.cells.services.LocationManager lm \
         "${serviceLocatorHost} ${serviceLocatorPort}"
 end

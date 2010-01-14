@@ -232,6 +232,11 @@ public class AbstractCell extends CellAdapter
     {
         super(cellName, cellType, stripDefinedSetup(arguments), false);
 
+        String cellClass = arguments.getOpt("cellClass");
+        if (cellClass != null) {
+            getNucleus().setCellClass(cellClass);
+        }
+
         _logger = Logger.getLogger(getClass());
         _definedSetup = getDefinedSetup(arguments);
 
@@ -870,7 +875,7 @@ public class AbstractCell extends CellAdapter
             sendReply(envelope, result);
         }
     }
-    
+
     /**
      * A static version of the getCellVersion method.  This method is called
      * by reflection in
@@ -880,7 +885,7 @@ public class AbstractCell extends CellAdapter
     public static CellVersion getStaticCellVersion(){
         return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision$" );
     }
-    
+
     @Override
     public  CellVersion getCellVersion(){
         return getStaticCellVersion() ;

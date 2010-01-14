@@ -38,5 +38,6 @@ onerror shutdown
 #
 #
 create org.dcache.cells.UniversalSpringCell Xrootd-${thisHostname} \
-       "classpath:org/dcache/xrootd2/door/xrootd.xml -export"
+       "classpath:org/dcache/xrootd2/door/xrootd.xml -export \
+        -cellClass=XrootdDoor"
 
