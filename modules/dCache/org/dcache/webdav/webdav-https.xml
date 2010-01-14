@@ -7,37 +7,6 @@
   <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
     <description>Imported configuration data</description>
     <property name="location" value="domaincontext:"/>
-    <property name="properties">
-      <value>
-        webdavPnfsTimeout=120000
-        webdavPoolManagerTimeout=300000
-        webdavPoolTimeout=10000
-        webdavGplazmaTimeout=180000
-        webdavPort=2880
-        webdavRootPath=/
-        webdavAllowedPaths=/
-        webdavReadOnly=false
-        webdavAnonymousAccess=NONE
-        webdavIoQueue=
-        webdavKillTimeout=1500
-        webdavMoverTimeout=180000
-        webdavTransferConfirmationTimeout=60000
-        webdavKeyStore=/etc/grid-security/hostcert.p12
-        webdavKeyStorePassword=dcache
-        webdavTrustStore=/etc/grid-security/truststore.jks
-        webdavTrustStorePassword=dcache
-        webdavWantClientAuth=true
-        webdavNeedClientAuth=false
-        pnfsmanager=PnfsManager
-        poolmanager=PoolManager
-        gplazma=gPlazma
-        loginBrokerUpdateTime=30
-        loginBrokerUpdateThreshold=0.1
-        loginBroker=LoginBroker
-        useGPlazmaAuthorizationCell=true
-        useGPlazmaAuthorizationModule=false
-      </value>
-    </property>
   </bean>
 
   <import resource="webdav-shared.xml"/>
