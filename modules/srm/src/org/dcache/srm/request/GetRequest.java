@@ -330,16 +330,11 @@ public final class GetRequest extends ContainerRequest {
         response.setReturnStatus(getTReturnStatus());
 
         ArrayOfTGetRequestFileStatus arrayOfTGetRequestFileStatus;
-        rlock();
-        try {
-            arrayOfTGetRequestFileStatus =
-                new ArrayOfTGetRequestFileStatus();
-            arrayOfTGetRequestFileStatus.setStatusArray(
-                getArrayOfTGetRequestFileStatus(surls));
-            response.setArrayOfFileStatuses(arrayOfTGetRequestFileStatus);
-        } finally {
-            runlock();
-        }
+        arrayOfTGetRequestFileStatus =
+            new ArrayOfTGetRequestFileStatus();
+        arrayOfTGetRequestFileStatus.setStatusArray(
+            getArrayOfTGetRequestFileStatus(surls));
+        response.setArrayOfFileStatuses(arrayOfTGetRequestFileStatus);
         String s ="getSrmStatusOfGetRequestResponse:";
         s+= " StatusCode = "+response.getReturnStatus().getStatusCode().toString();
         for(TGetRequestFileStatus fs :arrayOfTGetRequestFileStatus.getStatusArray()) {
@@ -386,32 +381,27 @@ public final class GetRequest extends ContainerRequest {
         int len ;
         TSURLReturnStatus[] surlLReturnStatuses;
 
-        rlock();
-        try {
-            if(surls == null) {
-                len = getNumOfFileRequest();
-               surlLReturnStatuses = new TSURLReturnStatus[len];
-            }
-            else {
-                len = surls.length;
-               surlLReturnStatuses = new TSURLReturnStatus[surls.length];
-            }
-            if(surls == null) {
-                for(int i = 0; i< len; ++i) {
-                    GetFileRequest fr =(GetFileRequest)fileRequests[i];
-                    surlLReturnStatuses[i] = fr.getTSURLReturnStatus();
-                }
-            } else {
-                for(int i = 0; i< len; ++i) {
-                    GetFileRequest fr =(GetFileRequest)getFileRequestBySurl(surls[i]);
-                    surlLReturnStatuses[i] = fr.getTSURLReturnStatus();
-                }
-
-            }
-            return surlLReturnStatuses;
-        } finally {
-            runlock();
+        if(surls == null) {
+            len = getNumOfFileRequest();
+            surlLReturnStatuses = new TSURLReturnStatus[len];
         }
+        else {
+            len = surls.length;
+            surlLReturnStatuses = new TSURLReturnStatus[surls.length];
+        }
+        if(surls == null) {
+            for(int i = 0; i< len; ++i) {
+                GetFileRequest fr =(GetFileRequest)fileRequests[i];
+                surlLReturnStatuses[i] = fr.getTSURLReturnStatus();
+            }
+        } else {
+            for(int i = 0; i< len; ++i) {
+                GetFileRequest fr =(GetFileRequest)getFileRequestBySurl(surls[i]);
+                surlLReturnStatuses[i] = fr.getTSURLReturnStatus();
+            }
+
+        }
+        return surlLReturnStatuses;
     }
 
     public TRequestType getRequestType() {
