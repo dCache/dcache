@@ -6,15 +6,6 @@ exec file:${ourHomeDir}/share/cells/import-arguments-index-1.fragment
 
 # Define defaults
 onerror continue
-set context -c keyStore ${ourHomeDir}/etc/hostcert.p12
-set context -c keyStorePassword dcache
-set context -c trustStore ${ourHomeDir}/etc/certificates.jks
-set context -c trustStorePassword dcache
-
-set context -c webdavKeyStore ${keyStore}
-set context -c webdavKeyStorePassword ${keyStorePassword}
-set context -c webdavTrustStore ${trustStore}
-set context -c webdavTrustStorePassword ${trustStorePassword}
 set context -c webdavProtocol http
 set context -c webdavPnfsTimeout 120000
 set context -c webdavPoolManagerTimeout 300000
@@ -24,13 +15,11 @@ set context -c webdavPort 2880
 set context -c webdavRootPath /
 set context -c webdavAllowedPaths /
 set context -c webdavReadOnly false
-set context -c webdavAnonymousAccess NONE
+
 set context -c webdavIoQueue ""
 set context -c webdavKillTimeout 1500
 set context -c webdavMoverTimeout 180000
 set context -c webdavTransferConfirmationTimeout 60000
-set context -c webdavWantClientAuth true
-set context -c webdavNeedClientAuth false
 
 set context -c pnfsmanager PnfsManager
 set context -c poolmanager PoolManager
@@ -40,6 +29,29 @@ set context -c loginBrokerUpdateThreshold 0.1
 set context -c loginBroker LoginBroker
 set context -c useGPlazmaAuthorizationCell true
 set context -c useGPlazmaAuthorizationModule false
+
+define env webdav-http.exe enddefine
+  set context -c webdavAnonymousAccess READONLY
+enddefine
+
+define env webdav-https.exe enddefine
+  set context -c keyStore ${ourHomeDir}/etc/hostcert.p12
+  set context -c keyStorePassword dcache
+  set context -c trustStore ${ourHomeDir}/etc/certificates.jks
+  set context -c trustStorePassword dcache
+
+  set context -c webdavKeyStore ${keyStore}
+  set context -c webdavKeyStorePassword ${keyStorePassword}
+  set context -c webdavTrustStore ${trustStore}
+  set context -c webdavTrustStorePassword ${trustStorePassword}
+
+  set context -c webdavAnonymousAccess NONE
+  set context -c webdavWantClientAuth true
+  set context -c webdavNeedClientAuth false
+enddefine
+
+exec env webdav-${webdavProtocol}.exe
+
 onerror shutdown
 
 create org.dcache.cells.UniversalSpringCell ${0} \
