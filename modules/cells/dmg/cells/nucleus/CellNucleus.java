@@ -551,6 +551,17 @@ public class CellNucleus implements Runnable, ThreadFactory {
                             nsay("messageThread : delivering message : "+msg);
                             _cell.messageArrived(new MessageEvent(msg));
                             nsay("messageThread : delivering message done : "+msg);
+                        } catch (RuntimeException e) {
+                            if (!msg.isReply()) {
+                                try {
+                                    msg.revertDirection();
+                                    msg.setMessageObject(e);
+                                    sendMessage(msg);
+                                } catch (NoRouteToCellException f) {
+                                    esay("PANIC : Problem returning answer : " + f);
+                                }
+                            }
+                            throw e;
                         } finally {
                             CDC.clearMessageContext();
                         }
@@ -821,16 +832,27 @@ public class CellNucleus implements Runnable, ThreadFactory {
                InstantiationException,
                InvocationTargetException,
                IllegalAccessException,
-               ClassCastException          {
-
-        Object [] args = new Object[1];
-        args[0] = cellArgs;
-
-        return (Cell)__cellGlue._newInstance(cellClass,
-                                             cellName,
-                                             args,
-                                             systemOnly);
+               ClassCastException
+    {
+        try {
+            Object [] args = new Object[1];
+            args[0] = cellArgs;
+            return (Cell)__cellGlue._newInstance(cellClass,
+                                                 cellName,
+                                                 args,
+                                                 systemOnly);
+        } catch (InvocationTargetException e) {
+            Throwable t = e.getTargetException();
+            if (t instanceof RuntimeException) {
+                throw (RuntimeException) t;
+            }
+            if (t instanceof Error) {
+                throw (Error) t;
+            }
+            throw e;
+        }
     }
+
     public Class<?> loadClass(String className) throws ClassNotFoundException {
         return __cellGlue.loadClass(className);
     }
