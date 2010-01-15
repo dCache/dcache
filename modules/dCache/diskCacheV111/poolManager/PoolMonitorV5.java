@@ -465,7 +465,9 @@ public class PoolMonitorV5
          if( level.length == 0 )
             throw new
             CacheException( 19 ,
-                             "No write pools configured for <"+ storageInfo +">" ) ;
+                             "No write pools configured for <"+ storageInfo +
+                                "> in the linkGroup " +
+                                ( _linkGroup == null ? "[none]" : _linkGroup) ) ;
 
          List<PoolCostCheckable> costs = null ;
 
@@ -483,7 +485,9 @@ public class PoolMonitorV5
          if( costs == null || costs.size() == 0 )
             throw new
             CacheException( 20 ,
-                            "No write pool available for <"+ storageInfo +">" ) ;
+                            "No write pool available for <"+ storageInfo +
+                                "> in the linkGroup " +
+                                ( _linkGroup == null ? "[none]" : _linkGroup));
 
          sortByCost( costs , true , parameter ) ;
 
