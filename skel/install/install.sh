@@ -607,7 +607,7 @@ dcacheInstallPnfsConfigCheck()
   local yesno
   local serverRoot
   fqHostname=`fqdn_os`
-  getServiceConfigurationValue dcap dCapPort
+  getConfigurationValue dcap dCapPort
   dCapPort=$RET
   logmessage INFO "Checking on a possibly existing dCache/PNFS configuration ..."
   if [ -f ${NODE_CONFIG_PNFS_ROOT}/fs/admin/etc/config/serverRoot ]; then
@@ -794,16 +794,15 @@ dcacheInstallSrm()
 {
   logmessage DEBUG "dcacheInstallSrm.start"  
   local java
-  getServiceConfigurationValue srm java; java=$RET
+  getConfigurationValue srm java; java=$RET
 
-  
   #
   # check java:
   #     jdk >= 1.6 , ( javac needed by tomcat/SRM )
   #
 
   if [ -z "${java}" ]; then
-    logmessage ABORT "java variable in ${DCACHE_HOME}/config/dCacheSetup not defined"
+    logmessage ABORT "java variable in ${DCACHE_HOME}/config/srmSetup not defined"
     exit 6
   fi
 
@@ -812,13 +811,13 @@ dcacheInstallSrm()
   #
   getCanonicalPath "${java}"; java="${RET}"
   if [ -z "${java}" ]; then
-    logmessage ABORT "java variable in ${DCACHE_HOME}/config/dCacheSetup do not point to existing binary"
+    logmessage ABORT "java variable in ${DCACHE_HOME}/config/srmSetup does not point to existing binary"
     exit 7
   fi
 
   ${java} -version 2>&1 | grep version | egrep "1\.[6]\." >/dev/null 2>&1
   if [ $? -ne 0 ]; then
-    logmessage ABORT "java variable in ${DCACHE_HOME}/config/dCacheSetup do not point to java version 1.6.x"
+    logmessage ABORT "java variable in ${DCACHE_HOME}/config/srmSetup do not point to java version 1.6.x"
     exit 6
   fi
   # standard javac location $JAVA_HOME/bin/java

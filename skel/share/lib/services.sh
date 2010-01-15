@@ -297,8 +297,7 @@ getPidOfDomain() # $1 = Domain name
 
     domain="$1"
 
-    getService "$domain" || return
-    getServiceConfigurationValue "$RET" pidDir || return
+    getConfigurationValue "$domain" pidDir || return
 
     pidFile="${RET:-$DCACHE_PID}/dcache.$domain.pid"
     [ -f ${pidFile} ] || return 1
@@ -330,7 +329,7 @@ getLogOfDomain() # $1 = Domain name
             fi
             ;;
         *)
-            getServiceConfigurationValue $service logArea
+            getConfigurationValue $domain logArea
             RET="${RET:-$DCACHE_LOG}/${domain}.log"
             ;;
     esac
@@ -346,34 +345,52 @@ getPoolListFile() # $1 = domain name
     RET="${pool_config}/${1%Domain}.poollist"
 }
 
-# Returns the setup file path for a service.
-getServiceConfigurationFile() # $1 = service
+# Returns the setup file path for a service or domain
+getConfigurationFile() # $1 = service or domain
 {
     local filename
-    local service
-    service="$1"
+    local name
+    local tmp
+    name="$1"
 
-    case "${service}" in
-        srm)
+    case "${name}" in
+        srm|srm-*Domain)
             filename="srmSetup"
             ;;
         dcap)
             filename="doorSetup"
             ;;
-        xrootd)
+        dcap*-*Domain)
+	    tmp=${name%%-*Domain}
+            filename="door${tmp#dcap}Setup"
+            ;;
+        xrootd|xrootd-*Domain)
             filename="xrootdDoorSetup"
             ;;
-        gridftp)
+        gridftp|gridftp-*Domain)
             filename="gridftpdoorSetup"
             ;;
-        gsidcap)
+        gsidcap|gsidcap-*Domain)
             filename="gsidcapdoorSetup"
             ;;
-        admin)
+        admin|adminDoorDomain)
             filename="adminDoorSetup"
             ;;
+        gPlazma|gPlazma-*Domain)
+            filename="gPlazmaSetup"
+            ;;
+        webdav|webdav-*Domain)
+            filename="webdavSetup"
+            ;;
+        *Domain)
+	    if contains $name $(printAllPoolDomains); then
+		filename="poolSetup"
+	    else
+		filename="${name%Domain}Setup"
+	    fi
+            ;;
         *)
-            filename="${service}Setup"
+            filename="${name}Setup"
             ;;
     esac
 
@@ -388,22 +405,24 @@ getServiceConfigurationFile() # $1 = service
     fi
 }
 
-# Loads a service setup into environment variables prefixed with the
-# service name. Only loads the setup file the first time the function
-# is called.
-loadServiceConfigurationFile() # $1 = service
+# Loads a setup into environment variables. All environment variables
+# are prefixed by $2 followed by an underscore. Only loads the setup
+# file the first time the function is called for a given prefix.
+loadConfigurationFile() # $1 = service or domain, $2 = prefix
 {
-    if eval "[ -z \"\$SETUP_$1\" ]"; then
-        getServiceConfigurationFile "$1" || return
-        ourHomeDir="${DCACHE_HOME}" readconf "$RET" "$1_" || return
-        eval "SETUP_$1=1"
+    if eval "[ -z \"\$SETUP_$2\" ]"; then
+        getConfigurationFile "$1" || return
+        ourHomeDir="${DCACHE_HOME}" readconf "$RET" "$2_" || return
+        eval "SETUP_$2=1"
     fi
 }
 
 # Returns configuration value for a service
-getServiceConfigurationValue() # $1 = service, $2 = key
+getConfigurationValue() # $1 = service or domain, $2 = key
 {
-    loadServiceConfigurationFile $1 && eval RET="\${$1_$2}"
+    local prefix
+    prefix=$(echo $1 | sed -e 's/_/__/g' -e 's/-/_/g')
+    loadConfigurationFile $1 $prefix && eval RET="\${${prefix}_$2}"
 }
 
 # Returns the program path used when starting and stopping a service.
