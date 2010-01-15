@@ -158,11 +158,6 @@ public class      CellShell
              }
          }
          return ce ;
-      }catch( Throwable te ){
-         _errorCode = 666 ;
-         _errorMsg  = te.toString() ;
-         _nucleus.esay( "CellShell ??? : "+_errorMsg ) ;
-         return "CellShell got Throwable : "+_errorMsg ;
       }
    }
    public Object objectCommand( String strin ) throws CommandExitException {
@@ -231,12 +226,6 @@ public class      CellShell
          }else{
             return "CommandException  :"+ce.getMessage() ;
          }
-      }catch( Throwable te ){
-         _errorCode = 666 ;
-         _errorMsg  = te.toString() ;
-         _nucleus.esay( te ) ;
-         _nucleus.esay( "CellShell ??? : "+_errorMsg ) ;
-         return "CellShell got Throwable : "+_errorMsg ;
       }
    }
 
@@ -698,30 +687,30 @@ public String command( String c ) throws CommandExitException {
    //
     public String hh_create = "<cellClass> <cellName> [<Arguments>]";
     public String ac_create_$_2_3(Args args)
-        throws InvocationTargetException,
-               ClassNotFoundException,
-               NoSuchMethodException,
-               InstantiationException,
-               IllegalAccessException
+        throws Throwable
     {
-        if( ( args.optc() > 0 ) && ( args.optv(0).equals("-c") ) ){
-            String [] argClasses = new String[1] ;
-            Object [] argObjects = new Object[1] ;
+        try {
+            if( ( args.optc() > 0 ) && ( args.optv(0).equals("-c") ) ){
+                String [] argClasses = new String[1] ;
+                Object [] argObjects = new Object[1] ;
 
-            argClasses[0] = "java.lang.String" ;
-            argObjects[0] = args.argc()>2?args.argv(2):"" ;
+                argClasses[0] = "java.lang.String" ;
+                argObjects[0] = args.argc()>2?args.argv(2):"" ;
 
-            Cell cell = (Cell)_nucleus.createNewCell(args.argv(0),
-                                                     args.argv(1),
-                                                     argClasses,
-                                                     argObjects);
-            return "created : "+cell.toString() ;
-        }else{
-            Cell cell = _nucleus.createNewCell(args.argv(0),
-                                               args.argv(1),
-                                               args.argc()>2?args.argv(2):"",
-                                               true);
-            return "created : "+cell.toString() ;
+                Cell cell = (Cell)_nucleus.createNewCell(args.argv(0),
+                                                         args.argv(1),
+                                                         argClasses,
+                                                         argObjects);
+                return "created : "+cell.toString() ;
+            }else{
+                Cell cell = _nucleus.createNewCell(args.argv(0),
+                                                   args.argv(1),
+                                                   args.argc()>2?args.argv(2):"",
+                                                   true);
+                return "created : "+cell.toString() ;
+            }
+        } catch (InvocationTargetException e) {
+            throw e.getTargetException();
         }
     }
    ////////////////////////////////////////////////////////////
@@ -1498,7 +1487,7 @@ public String command( String c ) throws CommandExitException {
                 } else if (!(answer instanceof CommandEvaluationException)) {
                     String msg =
                         Exceptions.getMessageWithCauses((Throwable) answer);
-                    println(err, String.format("%s: %d: Illegal argument (%s)",
+                    println(err, String.format("%s: %d: Command failed (%s)",
                                                source, no, msg));
                 }
             }
