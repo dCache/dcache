@@ -20,7 +20,7 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage {
         "MAXNUMOFRETR=?," +
         "LASTSTATETRANSITIONTIME=? ";//10
 
-        private static int ADDITIONAL_FIELDS = 0;
+        private static int ADDITIONAL_FIELDS = 1;
         public LsFileRequestStorage(Configuration configuration)
                 throws SQLException {
                 super(configuration);
@@ -94,10 +94,10 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage {
                 return TABLE_NAME;
         }
 
-    
-        public PreparedStatement getStatement(Connection connection, 
-                                              String query, 
-                                              Job fr) throws SQLException { 
+
+        public PreparedStatement getStatement(Connection connection,
+                                              String query,
+                                              Job fr) throws SQLException {
                 LsFileRequest gfr = (LsFileRequest)fr;
                 PreparedStatement stmt = getPreparedStatement(connection,
                                           query,
@@ -125,9 +125,9 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage {
                 ", CREDENTIALID=?" +
                 ", STATUSCODE=?" +
                 ", SURL=? WHERE ID=?";
-        public PreparedStatement getUpdateStatement(Connection connection, 
-                                                    Job fr) 
-                throws SQLException { 
+        public PreparedStatement getUpdateStatement(Connection connection,
+                                                    Job fr)
+                throws SQLException {
                 if(fr == null || !(fr instanceof LsFileRequest)) {
                         throw new IllegalArgumentException("fr is not LsFileRequest" );
                 }
@@ -153,9 +153,9 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage {
             "SURL )"+
             "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
-        public PreparedStatement getCreateStatement(Connection connection, 
-                                                Job fr) 
-                throws SQLException { 
+        public PreparedStatement getCreateStatement(Connection connection,
+                                                Job fr)
+                throws SQLException {
                 if(fr == null || !(fr instanceof LsFileRequest)) {
                         throw new IllegalArgumentException("fr is not LsFileRequest" );
                 }

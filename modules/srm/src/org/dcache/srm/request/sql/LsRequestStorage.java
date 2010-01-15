@@ -11,7 +11,7 @@ import org.dcache.srm.SRMUser;
 
 public class LsRequestStorage extends DatabaseContainerRequestStorage{
     public static final String TABLE_NAME ="lsrequests";
-    
+
     private static final String UPDATE_PREFIX = "UPDATE " + TABLE_NAME + " SET "+
         "NEXTJOBID=?, " +
         "CREATIONTIME=?,  " +
@@ -163,14 +163,14 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage{
         }
 
         public void getCreateList(ContainerRequest r, StringBuffer sb) {
-                if (r==null || !(r instanceof LsRequest)){ 
+                if (r==null || !(r instanceof LsRequest)){
                         throw new IllegalArgumentException("r is not LsRequest" );
                 }
                 LsRequest lsRequest = (LsRequest)r;
                 if(lsRequest.getExplanation()!=null) {
                         sb.append(",'").append(lsRequest.getExplanation()).append("'");
                 }
-                else { 
+                else {
                         sb.append(",NULL");
                 }
                 sb.append(",").append(lsRequest.getLongFormat()==true?1:0);
@@ -178,7 +178,7 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage{
                 sb.append(",").append(lsRequest.getCount());
                 sb.append(",").append(lsRequest.getOffset());
         }
-        
+
         protected ContainerRequest getContainerRequest(Connection connection,
                                                        Long ID,
                                                        Long NEXTJOBID,
@@ -240,7 +240,7 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage{
                 return " "+
                         ",EXPLANATION "+stringType +
                         ",LONGFORMAT "+booleanType +
-                        ",NUMOFLEVELS "+intType + 
+                        ",NUMOFLEVELS "+intType +
                         ",COUNT "+intType +
                         ",LSOFFSET "+intType;
         }
@@ -248,16 +248,16 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage{
         public String getTableName() {
                 return TABLE_NAME;
         }
-        
+
         public void getUpdateAssignements(ContainerRequest r, StringBuffer sb) {
-                if (r==null || !(r instanceof LsRequest)){ 
+                if (r==null || !(r instanceof LsRequest)){
                         throw new IllegalArgumentException("r is not LsRequest" );
                 }
                 LsRequest lsRequest = (LsRequest)r;
                 if(lsRequest.getExplanation()!=null) {
                         sb.append(",EXPLANATION='").append(lsRequest.getExplanation()).append("'");
                 }
-                else { 
+                else {
                         sb.append(",EXPLANATION=NULL");
                 }
                 sb.append(",LONGFORMAT=").append(lsRequest.getLongFormat()==true?1:0);
@@ -265,30 +265,30 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage{
                 sb.append(",COUNT=").append(lsRequest.getCount());
                 sb.append(",LSOFFSET=").append(lsRequest.getOffset());
         }
-        
-        
+
+
         public String getFileRequestsTableName() {
                 return LsFileRequestStorage.TABLE_NAME;
         }
-        
-        protected void __verify(int nextIndex, 
-                                int columnIndex, 
-                                String tableName, 
-                                String columnName, 
+
+        protected void __verify(int nextIndex,
+                                int columnIndex,
+                                String tableName,
+                                String columnName,
                                 int columnType) throws SQLException {
                 if(columnIndex == nextIndex) {
                         verifyStringType("EXPLANATION",columnIndex,tableName, columnName, columnType);
                 }
-                else if(columnIndex == nextIndex+1) { 
+                else if(columnIndex == nextIndex+1) {
                         verifyBooleanType("LONGFORMAT",columnIndex,tableName, columnName, columnType);
                 }
-                else if(columnIndex == nextIndex+2) { 
+                else if(columnIndex == nextIndex+2) {
                         verifyIntType("NUMOFLEVELS",columnIndex,tableName, columnName, columnType);
                 }
-                else if(columnIndex == nextIndex+3) { 
+                else if(columnIndex == nextIndex+3) {
                         verifyIntType("COUNT",columnIndex,tableName, columnName, columnType);
                 }
-                else if(columnIndex == nextIndex+4) { 
+                else if(columnIndex == nextIndex+4) {
                         verifyIntType("LSOFFSET",columnIndex,tableName, columnName, columnType);
                 }
                 else {
@@ -299,7 +299,7 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage{
                                                " this column should not be present!!!");
                 }
         }
-        
+
         protected int getMoreCollumnsNum() {
                 return ADDITIONAL_FIELDS;
         }
