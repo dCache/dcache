@@ -1540,14 +1540,12 @@ public class PoolSelectionUnitV2
 
     }
 
-    public String getNetIdentifier(String address) {
+    public String getNetIdentifier(String address) throws UnknownHostException {
 
         _psuReadLock.lock();
         try {
             NetUnit unit = _netHandler.match(address);
             return unit.getCanonicalName();
-        } catch (Exception e) {
-            return "NoSuchHost";
         } finally {
             _psuReadLock.unlock();
         }

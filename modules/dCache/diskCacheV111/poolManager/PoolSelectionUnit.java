@@ -8,6 +8,7 @@ import java.util.Set;
 
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.vehicles.StorageInfo;
+import java.net.UnknownHostException;
 
 public interface PoolSelectionUnit  {
 
@@ -163,7 +164,7 @@ public interface PoolSelectionUnit  {
    public String [] getActivePools() ;
    public String [] getDefinedPools( boolean enabledOnly ) ;
    public String    getVersion() ;
-   public String getNetIdentifier( String address ) ;
+   public String getNetIdentifier( String address ) throws UnknownHostException;
    public String getProtocolUnit( String protocolUnitName ) ;
    public SelectionLinkGroup getLinkGroupByName(String linkGroupName) throws NoSuchElementException ;
    public String [] getLinkGroups();
