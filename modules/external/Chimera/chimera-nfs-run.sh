@@ -5,6 +5,7 @@
 
 PORTMAP_PORT=111
 PORTMAP_PROGNUM=100000
+PORTMAP_VERS=2
 
 NFS_PROGNUM=100003
 NFS_VERS=3
@@ -78,7 +79,7 @@ waitForEvent()
 
 portmapPortPresent()
 {
-    rpcinfo -n ${PORTMAP_PORT} -u localhost ${PORTMAP_PROGNUM} >/dev/null
+    rpcinfo -n ${PORTMAP_PORT} -u localhost ${PORTMAP_PROGNUM} ${PORTMAP_VERS} >/dev/null
 }
 
 nfsV3ServiceRegistered()
