@@ -442,7 +442,7 @@ public class CommandInterpreter implements Interpretable {
          Throwable t = cpe.getTargetException() ;
          sb.append( t.getClass().getName()+" : "+t.getMessage()+"\n" ) ;
          return sb.toString() ;
-      }catch( Exception e ){
+      }catch( CommandException e ){
          return "??? : "+e.toString() ;
       }
    }
@@ -612,14 +612,22 @@ public class CommandInterpreter implements Interpretable {
              //
              throw (CommandException)te ;
           }else{
+              // We treat uncaught RuntimeExceptions other than
+              // IllegalArgumentExceptions as bugs and log them as
+              // that.
+              if (te instanceof RuntimeException &&
+                  !(te instanceof IllegalArgumentException)) {
+                  throw (RuntimeException) te;
+              }
+              if (te instanceof Error) {
+                  throw (Error) te;
+              }
+
              throw new CommandThrowableException(
                          te.toString()+" from "+m.getName() ,
                          te ) ;
           }
        } catch (IllegalAccessException ee) {
-           throw new CommandPanicException("Exception while invoking " +
-                                           m.getName(), ee);
-       } catch (RuntimeException ee) {
            throw new CommandPanicException("Exception while invoking " +
                                            m.getName(), ee);
        }

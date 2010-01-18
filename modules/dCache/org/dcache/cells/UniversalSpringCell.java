@@ -315,7 +315,7 @@ public class UniversalSpringCell
     protected void printSetup(PrintWriter pw)
     {
         pw.println("#\n# Created by " + getCellName() + "("
-                   + getClass().getName() + ") at " + (new Date()).toString()
+                   + getNucleus().getCellClass() + ") at " + (new Date()).toString()
                    + "\n#");
         for (CellSetupProvider provider: _setupProviders)
             provider.printSetup(pw);

@@ -4,7 +4,7 @@ import java.util.Date ;
 import java.io.Serializable ;
 
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.2, 14 Mar 2001
@@ -23,7 +23,7 @@ public class CellInfo implements Serializable {
   private int    _eventQueueSize = 0 ;
   private int    _threadCount  = 0 ;
   private CellVersion _version = new CellVersion() ;
-  
+
   private static final String [] _stateNames =
      { "Initial" , "Active" , "Removing" , "Dead" , "Unknown" } ;
   public CellInfo(){}
@@ -40,20 +40,18 @@ public class CellInfo implements Serializable {
      _threadCount    = info._threadCount ;
      _version        = info._version ;
   }
-  //
-  // the setter routines are all 'package'
-  //   
-  void setCellName(String name ){     _cellName     = name ; }
-  void setCellType( String type ){    _cellType     = type ; }
-  void setCellClass( String info ){   _cellClass    = info ; }
+
+  public void setCellName(String name ){     _cellName     = name ; }
+  public void setCellType( String type ){    _cellType     = type ; }
+  public void setCellClass( String info ){   _cellClass    = info ; }
   public void setCellVersion( CellVersion version ){ _version = version ; }
-  void setDomainName( String name ){  _domainName   = name ; }
-  void setCreationTime( Date date ){  _creationTime = date ; }
-  void setPrivateInfo( String info ){ _privateInfo  = info ; }
-  void setShortInfo( String info ){   _shortInfo    = info ; }
-  void setEventQueueSize( int size ){ _eventQueueSize = size ; }
-  void setThreadCount( int threadCount ){ _threadCount = threadCount ; }
-  void setState( int state ){
+  public void setDomainName( String name ){  _domainName   = name ; }
+  public void setCreationTime( Date date ){  _creationTime = date ; }
+  public void setPrivateInfo( String info ){ _privateInfo  = info ; }
+  public void setShortInfo( String info ){   _shortInfo    = info ; }
+  public void setEventQueueSize( int size ){ _eventQueueSize = size ; }
+  public void setThreadCount( int threadCount ){ _threadCount = threadCount ; }
+  public void setState( int state ){
      _state = ( state < 0 ) || ( _state >= _stateNames.length )  ?
               _stateNames.length : state  ;
      return ;
@@ -62,7 +60,7 @@ public class CellInfo implements Serializable {
   // and now the public getter's
   //
   public String toString(){
-     return f( _cellName              , 20 ) + 
+     return f( _cellName              , 20 ) +
             f( _stateNames[_state].substring(0,1) , 2 ) +
             f( ""+_eventQueueSize     , 3 ) +
             f( ""+_threadCount        , 3 ) +
@@ -95,6 +93,6 @@ public class CellInfo implements Serializable {
      int lastDot = c.lastIndexOf( '.' ) ;
      if( ( lastDot < 0 ) || ( lastDot >= ( c.length() - 1 ) ) )return c ;
      return c.substring( lastDot+1 ) ;
-  
+
   }
 }

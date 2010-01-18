@@ -90,7 +90,7 @@ autoMountNameSpace()
             ;;
         pnfs)
             if contains pnfsDomain $(printAllDomains); then
-                loadServiceConfigurationFile pnfs
+                loadConfigurationFile pnfs
                 if [ -z "$pnfs_pnfs" ]; then
                     mountNameSpace "${root}/fs" "/fs" 2
                 else

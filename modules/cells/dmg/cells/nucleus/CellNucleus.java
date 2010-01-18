@@ -51,6 +51,8 @@ public class CellNucleus implements Runnable, ThreadFactory {
     private final  Map<UOID, CellLock> _waitHash = new HashMap<UOID, CellLock>();
     private        boolean   _runAsyncCallback = false;
 
+    private String _cellClass;
+
     public CellNucleus(Cell cell, String name) {
 
         this(cell, name, "Generic");
@@ -100,7 +102,9 @@ public class CellNucleus implements Runnable, ThreadFactory {
 
             }
         }
+
         _cell = cell;
+        _cellClass = _cell.getClass().getName();
 
         //
         // for the use in restricted sandboxes
@@ -135,6 +139,17 @@ public class CellNucleus implements Runnable, ThreadFactory {
     }
     public String getCellName() { return _cellName; }
     public String getCellType() { return _cellType; }
+
+    public String getCellClass()
+    {
+        return _cellClass;
+    }
+
+    public void setCellClass(String cellClass)
+    {
+        _cellClass = cellClass;
+    }
+
     public CellAddressCore getThisAddress() {
         return new CellAddressCore(_cellName, __cellGlue.getCellDomainName());
     }
@@ -198,14 +213,12 @@ public class CellNucleus implements Runnable, ThreadFactory {
         } catch(Exception e) {
             info.setShortInfo("Not yet/No more available");
         }
+        info.setCellClass(_cellClass);
         try {
-            info.setCellClass(_cell.getClass().getName());
             info.setEventQueueSize(getEventQueueSize());
             info.setState(_state);
             info.setThreadCount(_threads.activeCount());
         } catch(Exception e) {
-
-            info.setCellClass("Unknown");
             info.setEventQueueSize(0);
             info.setState(0);
             info.setThreadCount(0);
@@ -538,6 +551,17 @@ public class CellNucleus implements Runnable, ThreadFactory {
                             nsay("messageThread : delivering message : "+msg);
                             _cell.messageArrived(new MessageEvent(msg));
                             nsay("messageThread : delivering message done : "+msg);
+                        } catch (RuntimeException e) {
+                            if (!msg.isReply()) {
+                                try {
+                                    msg.revertDirection();
+                                    msg.setMessageObject(e);
+                                    sendMessage(msg);
+                                } catch (NoRouteToCellException f) {
+                                    esay("PANIC : Problem returning answer : " + f);
+                                }
+                            }
+                            throw e;
                         } finally {
                             CDC.clearMessageContext();
                         }
@@ -808,16 +832,27 @@ public class CellNucleus implements Runnable, ThreadFactory {
                InstantiationException,
                InvocationTargetException,
                IllegalAccessException,
-               ClassCastException          {
-
-        Object [] args = new Object[1];
-        args[0] = cellArgs;
-
-        return (Cell)__cellGlue._newInstance(cellClass,
-                                             cellName,
-                                             args,
-                                             systemOnly);
+               ClassCastException
+    {
+        try {
+            Object [] args = new Object[1];
+            args[0] = cellArgs;
+            return (Cell)__cellGlue._newInstance(cellClass,
+                                                 cellName,
+                                                 args,
+                                                 systemOnly);
+        } catch (InvocationTargetException e) {
+            Throwable t = e.getTargetException();
+            if (t instanceof RuntimeException) {
+                throw (RuntimeException) t;
+            }
+            if (t instanceof Error) {
+                throw (Error) t;
+            }
+            throw e;
+        }
     }
+
     public Class<?> loadClass(String className) throws ClassNotFoundException {
         return __cellGlue.loadClass(className);
     }
