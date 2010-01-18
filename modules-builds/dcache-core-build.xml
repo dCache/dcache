@@ -220,7 +220,6 @@
             <include name="org/**" />
             <exclude name="diskCacheV111/scripts/**" />
             <exclude name="diskCacheV111/tomcat/**" />
-            <exclude name="diskCacheV111/replicaManager/ReplicaManagerExample.java" />
             <exclude name="org/dcache/xrootd/security/plugins/**" />
             <exclude name="org/dcache/xrootd/tests/**" />
         </javac>
