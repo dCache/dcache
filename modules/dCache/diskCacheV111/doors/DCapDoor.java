@@ -2,6 +2,7 @@
 
 package diskCacheV111.doors ;
 
+import diskCacheV111.util.VspArgs;
 import java.io.BufferedReader;
 import java.io.PrintWriter;
 import java.io.Reader;
@@ -190,39 +191,41 @@ public class      DCapDoor
             }
             say("DCapLock released");
             _dcapLock = false ;
-            boolean shutdown = false  ;
-	    while( true ){
-		try{
-		    if( ( _lastCommand = _in.readLine() ) == null )break;
-		    _commandCounter++;
-		    if( execute( _lastCommand ) > 0 ){
-			//
-			// we need to close the socket AND
-			// have to go back to readLine to
-			// finish the ssh protocol gracefully.
-                        // The other protocols don't care.
-			//
-                        println( "0 0 server byebye" ) ;
-                        _out.close();
-                        shutdown = true ;
-                        say( "ComThread : protocol ended" ) ;
-		    }
-		}catch( Exception e ){
-                    if( shutdown ){
-                       say( "ComThread : shutdown finished with : "+e ) ;
-                       break ;
-                    }else{
-                       if( Thread.currentThread().isInterrupted() ){
-                          say( "ComThread : was interrupted" ) ;
-                       }
-                       _out.close();
-                       shutdown = true ;
-                       esay( "ComThread : got "+e ) ;
-                       esay(e);
-                    }
-		}
 
-	    }
+            try {
+                while (true) {
+                    if ((_lastCommand = _in.readLine()) == null) {
+                        break;
+                    }
+
+                    if(_lastCommand.length() == 0) continue;
+
+                    _commandCounter++;
+                    say("Executing command: " + _lastCommand);
+                    VspArgs args;
+                    try {
+                        args = new VspArgs(_lastCommand);
+                    }catch(IllegalArgumentException e) {
+                        println("protocol violation: " + e.getMessage());
+                        esay("protocol violation ["+e.getMessage()+"]from " + _engine.getInetAddress());
+                        break;
+                    }
+
+                    if (execute(args) > 0) {
+                        println("0 0 server byebye");
+                        say("ComThread : protocol ended");
+                        break;
+                    }
+                }
+            } catch (IOException e) {
+                esay("Got IO exception " +e.toString() + " from: " + _engine.getInetAddress());
+            } catch (Exception e) {
+                 esay("ComThread : got " + e);
+                 esay(e);
+            }finally{
+                _out.close();
+            }
+
 	    say( "ComThread : Client communication Thread finished" );
             _stateChanged( __connectionLostEvent ) ;
 	}else if( Thread.currentThread() == _anyThread  ){
@@ -384,12 +387,11 @@ public class      DCapDoor
 	_out.flush();
     }
 
-    private int execute( String line ) throws Exception {
-	if( line.equals("") )return 0 ;
+    private int execute( VspArgs args ) throws Exception {
 
         try{
 
-           String answer = _interpreter.execute(line);
+           String answer = _interpreter.execute(args);
            if( answer != null ){
               say( "Our answer : "+answer ) ;
               println( answer ) ;
