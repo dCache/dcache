@@ -1123,15 +1123,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 _info.setResult( rc , msg ) ;
             }
             println( problem ) ;
-            try{
-                _cell.sendMessage(
-                new CellMessage( _billingCellPath ,
-                _info ) ) ;
-            }catch(Exception ee){
-                _log.error("Couldn't send billing info : "+ee );
-            }
-            return ;
+            postToBilling(_info);
         }
+
         protected void sendReply( String tag , Message msg ){
 
             sendReply( tag ,
@@ -2879,12 +2873,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     }
 
     @Override
-    public String execute(String command) throws Exception {
-
-        if(_log.isDebugEnabled() ) {
-            _log.debug("Executing command: " + command);
-        }
-        VspArgs args = new VspArgs( command );
+    public String execute(VspArgs args) throws Exception {
 
         /*
          * Legacy rone handlig.
@@ -3096,21 +3085,25 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
     }
 
-    private void sendRemoveInfoToBilling(String pathToBeRemoved) {
+    private void postToBilling(DoorRequestInfoMessage info) {
         try {
-            DoorRequestInfoMessage infoRemove =
-                new DoorRequestInfoMessage(_cell.getCellInfo().getCellName()+"@"+
-                                         _cell.getCellInfo().getDomainName(), "remove");
-            infoRemove.setOwner(_user.getName());
-            infoRemove.setUid(_userAuthRecord.UID);
-            infoRemove.setGid(_userAuthRecord.GID);
-            infoRemove.setPath(pathToBeRemoved);
+            _cell.sendMessage(new CellMessage(_billingCellPath, info));
+        } catch (NoRouteToCellException ee) {
+            _log.info("Billing is not available.");
+        }
+    }
 
-        _cell.sendMessage(new CellMessage(_billingCellPath, infoRemove));
-            } catch (NoRouteToCellException e) {
-            _log.error("DCap Door : Can't send remove message to " +
-                    "billing database: " + e.getMessage());
-           }
-     }
+    private void sendRemoveInfoToBilling(String pathToBeRemoved) {
+
+        DoorRequestInfoMessage infoRemove =
+                new DoorRequestInfoMessage(_cell.getCellInfo().getCellName() + "@"
+                + _cell.getCellInfo().getDomainName(), "remove");
+        infoRemove.setOwner(_user.getName());
+        infoRemove.setUid(_userAuthRecord.UID);
+        infoRemove.setGid(_userAuthRecord.GID);
+        infoRemove.setPath(pathToBeRemoved);
+
+        postToBilling(infoRemove);
+    }
 
 }
