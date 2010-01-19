@@ -1,5 +1,6 @@
 package diskCacheV111.doors;
 
+import diskCacheV111.util.VspArgs;
 import dmg.cells.nucleus.CellMessage;
 import java.io.PrintWriter;
 
@@ -14,11 +15,11 @@ public interface DcapProtocolInterpreter {
     /**
      * Execute dcap command.
      *
-     * @param command to execute
+     * @param {@link VspArgs} command to execute
      * @return {@link String} reply
      * @throws Exception
      */
-    String execute(String command) throws Exception;
+    String execute(VspArgs command) throws Exception;
 
     /**
      * Free allocated resources.
