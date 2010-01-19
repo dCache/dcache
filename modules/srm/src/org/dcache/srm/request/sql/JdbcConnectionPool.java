@@ -14,29 +14,29 @@ import org.apache.log4j.Logger;
  * @author  timur
  */
 public class JdbcConnectionPool implements Runnable{
-    
+
     String jdbcUrl;
     String jdbcClass;
     String user;
     String pass;
-    
+
     private static HashSet pools = new HashSet();
-    
+
     private Thread[] execution_threads;
     private final List jdbcTasks = new LinkedList();
-    
+
     private Thread vacuum_thread;
     private long vacuum_period=60*60*1000;//every hour
     private static int executionThreadNum=5;
     private static int maxJdbcTasksNum = 1000 ;
-    
-    private static Logger _logSql = 
+
+    private static Logger _logSql =
             Logger.getLogger(
             "logger.org.dcache.db.sql"+
             JdbcConnectionPool.class.getName());
 
-    
-    
+
+
     public synchronized static final JdbcConnectionPool getPool(String jdbcUrl,
     String jdbcClass,
     String user,
@@ -63,9 +63,9 @@ public class JdbcConnectionPool implements Runnable{
             _logSql.debug( "getPool() took "+elapsed+" ms");
         }
         return pool;
-        
+
     }
-    
+
     /** Creates a new instance of ResuestsPropertyStorage */
     protected JdbcConnectionPool(  String jdbcUrl,
     String jdbcClass,
@@ -85,15 +85,15 @@ public class JdbcConnectionPool implements Runnable{
         catch(Exception e) {
             throw new SQLException("can not initialize jdbc driver : "+jdbcClass);
         }
-        
+
         this.jdbcUrl = jdbcUrl;
         this.jdbcClass = jdbcClass;
         this.user = user;
         this.pass = pass;
         startExecutionThreads();
     }
-    
-    
+
+
     private final Set connections = new HashSet();
     private int max_connections = 50;
     private int max_connections_out = 50;
@@ -113,12 +113,12 @@ public class JdbcConnectionPool implements Runnable{
                 }
             }
             connections_out++;
-            connections.notify();            
+            connections.notify();
             //new Exception("connection given, connections_out="+connections_out+" thread is "+Thread.currentThread()).printStackTrace();
-            
-            
+
+
             if(connections.size() > 0) {
-                
+
                 Connection _con = (Connection)connections.iterator().next();
                 connections.remove(_con);
                 try {
@@ -144,15 +144,15 @@ public class JdbcConnectionPool implements Runnable{
         }
         return _con;
     }
-    
+
     public void returnFailedConnection(Connection _con) {
-        
+
         long starttimestamp = System.currentTimeMillis();
         try {
             _con.rollback();
         }
         catch (SQLException sqle) {
-            
+
         }
 
         synchronized(connections) {
@@ -179,17 +179,17 @@ public class JdbcConnectionPool implements Runnable{
             _logSql.debug( "returnFailedConnection() took "+elapsed+" ms");
         }
    }
-    
+
     public void returnConnection(Connection _con) {
-        
+
         long starttimestamp = System.currentTimeMillis();
         try {
             _con.commit();
         }
         catch (SQLException sqle) {
-            
+
         }
-        
+
         synchronized(connections) {
             connections_out--;
             // new Exception("connection returned, connections_out="+connections_out+" thread is "+Thread.currentThread()).printStackTrace();
@@ -210,7 +210,7 @@ public class JdbcConnectionPool implements Runnable{
                     }
                     return;
                 }
-                
+
                 connections.add(_con);
             }
             catch(SQLException sqle) {
@@ -231,7 +231,7 @@ public class JdbcConnectionPool implements Runnable{
         if( this == o) {
             return true;
         }
-        
+
         if(o == null || !(o instanceof JdbcConnectionPool)) {
             return false;
         }
@@ -250,7 +250,7 @@ public class JdbcConnectionPool implements Runnable{
         user.hashCode() ;
     }
 
-    
+
     public void startVacuumThread(long vacuum_period){
             if(vacuum_thread != null)
             {
@@ -272,9 +272,9 @@ public class JdbcConnectionPool implements Runnable{
                execution_threads[i] =  new Thread (this);
                execution_threads[i].start();
             }
-            
+
     }
-    
+
     public void vacuum() {
         try
         {
@@ -299,7 +299,7 @@ public class JdbcConnectionPool implements Runnable{
            System.err.println("quiting posgres vacuuming thread");
         }
     }
-    
+
     public void execution_thread_loop() {
         while (true) {
             try{
@@ -307,7 +307,7 @@ public class JdbcConnectionPool implements Runnable{
                 synchronized(jdbcTasks) {
                     while(jdbcTasks.isEmpty()) {
                         jdbcTasks.wait(10000);
-                    } 
+                    }
 
                     nextTask  = (JdbcTask)jdbcTasks.remove(0);
                 }
@@ -348,7 +348,7 @@ public class JdbcConnectionPool implements Runnable{
             }
         }
     }
-    
+
     public void run() {
         Thread current = Thread.currentThread();
         if (  current == vacuum_thread) {
@@ -358,11 +358,11 @@ public class JdbcConnectionPool implements Runnable{
              execution_thread_loop();
         }
     }
-    
+
     public static interface JdbcTask {
         public void execute(Connection connection) throws SQLException ;
     }
-    
+
     public void execute(JdbcTask task) throws SQLException {
         if(task == null) {
             return;
@@ -379,7 +379,7 @@ public class JdbcConnectionPool implements Runnable{
         System.err.println("Execution of JdbcTask failed, jdbcTaskQueue is too long:"+jdbcTasksSize+
                 " task is:"+task.toString());
         throw new SQLException("jdbcTaskQueue is too long:"+jdbcTasksSize);
-        
+
     }
 
     public static int getExecutionThreadNum() {
@@ -397,7 +397,7 @@ public class JdbcConnectionPool implements Runnable{
     public static void setMaxQueuedJdbcTasksNum(int aMaxJdbcTasksNum) {
         maxJdbcTasksNum = aMaxJdbcTasksNum;
     }
-    
+
     public static final void main(final String[] args) throws Exception {
         if(args == null || args.length <5) {
             System.err.println("Usage: java org.dcache.srm.request.sql.JdbcConnectionPool "+
@@ -410,20 +410,20 @@ public class JdbcConnectionPool implements Runnable{
                 args[3]);
         for(int i = 4; i <args.length ; ++i) {
             final String updateStatementString = args[i];
-            JdbcConnectionPool.JdbcTask task = 
+            JdbcConnectionPool.JdbcTask task =
                     new JdbcConnectionPool.JdbcTask() {
              public void say(String s){
                  System.out.println(s);
              }
-             
+
              public void esay(String s){
                  System.err.println(s);
              }
-             
+
              public void esay(Throwable t){
                  t.printStackTrace();
              }
-             
+
              public void execute(Connection connection) throws SQLException {
                 int result = 0;
                 try {
@@ -452,10 +452,10 @@ public class JdbcConnectionPool implements Runnable{
                 //ignore the saving errors, this will affect monitoring and
                 // future status updates, but is not critical
             }
-            
+
         }
-        
+
     }
-    
+
 }
 
