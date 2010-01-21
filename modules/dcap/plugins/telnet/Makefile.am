@@ -7,6 +7,7 @@ c_sources = dcapPasswd.c  telnetTunnel.c  user.c
 lib_LTLIBRARIES = libtelnetTunnel.la
 
 libtelnetTunnel_la_SOURCES = $(c_sources)  $(h_sources)
+libtelnetTunnel_la_LDFLAGS = -no-undefined -avoid-version -module
 
 .PHONY: tags
 tags:

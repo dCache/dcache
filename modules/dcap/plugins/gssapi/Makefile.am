@@ -15,11 +15,12 @@ endif
 libgsiTunnel_la_SOURCES = $(c_sources)  $(h_sources)
 libgsiTunnel_la_CFLAGS =  -DGSIGSS -I$(GLOBUS_INCLUDE_DIR)
 libgsiTunnel_la_LIBADD = $(GLOBUS_LIBS) -L$(GLOBUS_LIB_DIR)
-
+libgsiTunnel_la_LDFLAGS = -no-undefined -avoid-version -module
 
 libgssTunnel_la_SOURCES = $(c_sources)  $(h_sources)
 libgssTunnel_la_CFLAGS =  -DMIT_KRB5 -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -D_POSIX_PII_SOCKET=1 -D_GNU_SOURCE -I/usr/include/gssapi/ -I/usr/include/
 libgssTunnel_la_LIBADD = $(KRB_LIBS)
+libgssTunnel_la_LDFLAGS = -no-undefined -avoid-version -module
 
 .PHONY: tags
 tags:
