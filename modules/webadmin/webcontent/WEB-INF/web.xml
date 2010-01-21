@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app id="Webadmin" version="2.5" xmlns="http://java.sun.com/xml/ns/javaee" xmlns:web="http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
+
+    <display-name>dCache Webadmin</display-name>
+    <filter>
+        <filter-name>WebAdminInterface</filter-name>
+        <filter-class>org.apache.wicket.protocol.http.WicketFilter</filter-class>
+        <init-param>
+          <param-name>applicationClassName</param-name>
+          <param-value>org.dcache.webadmin.view.WebAdminInterface</param-value>
+        </init-param>
+    </filter>
+    <filter-mapping>
+        <filter-name>WebAdminInterface</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+</web-app>

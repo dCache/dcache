@@ -72,6 +72,7 @@
     <import file="modules-builds/srmclient-build.xml" />
     <import file="modules-builds/junit-build.xml" />
     <import file="modules-builds/release-build.xml" />
+    <import file="modules-builds/webadmin-build.xml" />
 
     <target name="common" depends="-prepare,-dcache-common.bin"
                   description="Compile common package and create dcache-common.jar"/>
@@ -85,8 +86,11 @@
     <target name="srm" depends="common,gplazma,-srm.bin"
                   description="Compile srm package and create srm.jar and srm-tomcat.jar" />
 
-    <target name="dcache" depends="srm,-dcache.bin,-gen.bg.image,-xrootd-tokenauthz.bin,-compile.junit"
+    <target name="dcache" depends="srm,-dcache.bin,-gen.bg.image,-xrootd-tokenauthz.bin, webadminPackage, -compile.junit"
                   description="Compile dcache package and create dcache.jar" />
+
+    <target name="webadmin" depends="webadminPackage"
+                 description="Compile and create webadmin.war" />
 
     <target name="xrootd-tokenauthz" depends="dcache,-xrootd-tokenauthz.bin"
                   description="Compile xrootd tokenauthorization package and create xrootd-tokenauthz.jar" />
@@ -229,6 +233,8 @@
        <echo message="     srm               : Compile srm and dependent packages" />
        <echo message="" />
        <echo message="     dcache            : Compile dcache and dependent packages" />
+       <echo message="" />
+       <echo message="     webadmin          : Compile webadmin and dcache" />
        <echo message="" />
        <echo message="     xrootd-tokenauthz : Compile xrootd-tokenauthz and dependent packages" />
        <echo message="" />

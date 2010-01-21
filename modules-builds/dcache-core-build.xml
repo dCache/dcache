@@ -95,6 +95,7 @@
         <fileset dir="${libDir}/servlet-api/" includes="*.jar" />
         <fileset dir="${libDir}/milton/" includes="*.jar" />
         <fileset dir="${libDir}/jetty/" includes="*.jar" />
+        <fileset dir="${libDir}/wicket/" includes="*.jar" />
         <pathelement location="${libDir}/smc/statemap.jar" />
         <pathelement location="${libDir}/persistence/persistence-api-1.0.jar" />
         <pathelement location="${libDir}/dbcp/commons-pool.jar" />
@@ -529,13 +530,13 @@
             </fileset>
         </copy>
 
-        <!-- Jetty -->
-        <mkdir dir="${server.bin.dir}/classes/jetty/" />
-        <copy todir="${server.bin.dir}/classes/jetty">
-            <fileset dir="${libDir}/jetty/">
-                <include name="*.jar" />
+        <!-- Wicket -->
+        <mkdir dir="${server.bin.dir}/classes/wicket" />
+	<copy todir="${server.bin.dir}/classes/wicket">
+            <fileset dir="${libDir}/wicket">
+		<include name="*.jar" />
             </fileset>
-        </copy>
+	</copy>
 
         <!-- Milton -->
         <mkdir dir="${server.bin.dir}/classes/milton/" />
