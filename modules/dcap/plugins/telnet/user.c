@@ -36,7 +36,7 @@ char * askLogin()
 	int i = 0;
 	char c;
 	struct termios term, oterm;
-	static const char prom[]="DCAP user Authentification\nLogin: ";
+	static const char prom[]="DCAP user Authentication\nLogin: ";
 	
 	write(output, prom, strlen(prom));
 	
