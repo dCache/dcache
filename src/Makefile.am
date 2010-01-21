@@ -108,8 +108,9 @@ library_include_HEADERS = $(h_sources)
 #lib_LTLIBRARIES = libdcap.la
 lib_LTLIBRARIES = libdcap.la libpdcap.la
 libdcap_la_SOURCES = $(c_sources)
+libdcap_la_LDFLAGS = -no-undefined -version-info 1:0:0
 libpdcap_la_SOURCES = $(p_loadsrc)
-
+libpdcap_la_LDFLAGS = -no-undefined -version-info 1:0:0
 
 DEPS = $(top_builddir)/src/.libs/libdcap.a
 
