@@ -15,7 +15,6 @@
  * $Id: dcap_preload.c,v 1.39 2006-09-26 07:47:27 tigran Exp $
  */
 #include <dcap.h>
-#include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
 #include <limits.h>
