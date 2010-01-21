@@ -139,7 +139,7 @@ static const char *const dcap_errlist[] = {
 	"Parser error",
 	"System error",
 	"Can not open config file",
-	"Config file not availble",
+	"Config file not available",
 	"Can not create socket",
 	"Unable to connect to server",
 	"Server rejected \"hello\"",
@@ -149,8 +149,8 @@ static const char *const dcap_errlist[] = {
 	"Server error",
 	"File not cached",
 	"Not valid DCAP url",
-    "Unsafe write operation failed",
-    "Unrecoverable read error",
+	"Unsafe write operation failed",
+	"Unrecoverable read error",
 	""
 };
 
