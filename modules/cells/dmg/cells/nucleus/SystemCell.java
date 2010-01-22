@@ -210,12 +210,8 @@ public class      SystemCell
            String command = (String)obj ;
            if( command.length() < 1 )return ;
            Object reply = null ;
-           try{
-              say( "Command : "+command ) ;
-              reply = _cellShell.objectCommand2( command ) ;
-           }catch( CommandExitException cee ){
-              reply = "Can't exit SystemShell" ;
-           }
+           say( "Command : "+command ) ;
+           reply = _cellShell.objectCommand2( command ) ;
            say( "Reply : "+reply ) ;
            msg.setMessageObject( reply ) ;
            _packetsAnswered ++ ;
@@ -224,12 +220,8 @@ public class      SystemCell
            String command = as.toString() ;
            if( command.length() < 1 )return ;
            Object reply = null ;
-           try{
-              say( "Command(p="+as.getAuthorizedPrincipal()+") : "+command ) ;
-              reply = _cellShell.objectCommand2( command ) ;
-           }catch( CommandExitException cee ){
-              reply = "Can't exit SystemShell" ;
-           }
+           say( "Command(p="+as.getAuthorizedPrincipal()+") : "+command ) ;
+           reply = _cellShell.objectCommand2( command ) ;
            say( "Reply : "+reply ) ;
            msg.setMessageObject( reply ) ;
            _packetsAnswered ++ ;

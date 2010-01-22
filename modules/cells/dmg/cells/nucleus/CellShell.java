@@ -128,7 +128,8 @@ public class      CellShell
       }
       return str ;
    }
-   public Object objectCommand2( String strin ) throws CommandExitException {
+
+   public Object objectCommand2(String strin) {
       String str = null ;
       if( ( str = prepareCommand( strin ) ) == null )return "" ;
       try{
@@ -143,20 +144,9 @@ public class      CellShell
          _errorMsg  = null ;
          if( o == null )return "" ;
          return o ;
-      }catch( CommandExitException cee ){
-         throw cee ;
       }catch( CommandException ce ){
          _errorCode = ce.getErrorCode() ;
          _errorMsg  = ce.getErrorMessage() ;
-
-         if( _doOnExit != null ){
-             if (_doOnExit.equals("shutdown")) {
-                 throw new CommandExitException(ce.toString(), 666, ce);
-             } else {
-                 throw new CommandExitException(ce.getErrorMessage(),
-                                                ce.getErrorCode(), ce);
-             }
-         }
          return ce ;
       }
    }
@@ -1430,19 +1420,17 @@ public String command( String c ) throws CommandExitException {
         throws CommandExitException, IOException
     {
         List<String> store = _argumentVector;
+        int no = 1;
         try {
             _argumentVector  = new Vector<String>();
             for (int i = 0; i < args.argc(); i++) {
                 _argumentVector.add(args.argv(i));
             }
 
-            int no = 0;
             String line;
             StringBuilder sb = null;
             BufferedReader input = new BufferedReader(in);
-            while ((line = input.readLine()) != null) {
-                no = no + 1;
-
+            for (; (line = input.readLine()) != null; no = no + 1) {
                 /* Skip empty and comment lines.
                  */
                 String s = line.trim();
@@ -1468,29 +1456,53 @@ public String command( String c ) throws CommandExitException {
                  */
                 Object answer = objectCommand2(line);
 
-                /* CommandEvaluationException does not generate output
-                 * since it is not really an error. Runtime exceptions
-                 * other than IllegalArgumentException are
-                 * logged. Other exceptions are printed to the error
-                 * output.
+                /* Process result.
                  */
                 if (!(answer instanceof Throwable)) {
                     println(out, answer.toString());
-                } else if (answer instanceof IllegalArgumentException) {
-                    String msg =
-                        String.format("%s: %d: Illegal argument (%s)",
-                                      source, no,
-                                      ((Exception) answer).getMessage());
-                    println(err, msg);
-                } else if (answer instanceof RuntimeException) {
-                    _nucleus.esay((Throwable) answer);
-                } else if (!(answer instanceof CommandEvaluationException)) {
-                    String msg =
-                        Exceptions.getMessageWithCauses((Throwable) answer);
-                    println(err, String.format("%s: %d: Command failed (%s)",
-                                               source, no, msg));
+                } else {
+                    Throwable error = (Throwable) answer;
+                    if (_doOnExit != null) {
+                        String msg =
+                            String.format("%s: line %d: %s", source, no,
+                                          error.getMessage());
+                        if (_doOnExit.equals("shutdown")) {
+                            throw new CommandExitException(msg, 666, error);
+                        } else if (error instanceof CommandException) {
+                            int rc = ((CommandException) error).getErrorCode();
+                            throw new CommandExitException(msg, rc, error);
+                        } else {
+                            throw new CommandExitException(msg, 1, error);
+                        }
+                    }
+
+                    /* CommandEvaluationException does not generate
+                     * output since it is not really an error. Runtime
+                     * exceptions other than IllegalArgumentException
+                     * are logged. Other exceptions are printed to the
+                     * error output.
+                     */
+                    if (error instanceof IllegalArgumentException) {
+                        String msg =
+                            String.format("%s: line %d: Illegal argument (%s)",
+                                          source, no, error.getMessage());
+                        println(err, msg);
+                    } else if (error instanceof RuntimeException) {
+                        _nucleus.esay(error);
+                    } else if (!(error instanceof CommandEvaluationException)) {
+                        String msg =
+                            Exceptions.getMessageWithCauses(error);
+                        println(err, String.format("%s: line %d: Command failed (%s)",
+                                                   source, no, msg));
+                    }
                 }
             }
+        } catch (IOException e) {
+            throw new IOException(String.format("%s: line %d: %s", source,
+                                                no, e.getMessage()), e);
+        } catch (RuntimeException e) {
+            throw new RuntimeException(String.format("%s: line %d: %s", source,
+                                                     no, e.getMessage()), e);
         } finally {
             _argumentVector = store;
         }
