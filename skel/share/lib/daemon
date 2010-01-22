@@ -1,12 +1,15 @@
 #!/bin/sh
 
+set -e
+
 usage()
 {
     echo "Usage: $(basename $0) [OPTION]... COMMAND"
     echo
     echo "Valid options are:"
+    echo "   -c <file>      store PID of child process in <file>"
     echo "   -d <seconds>   delay between automatic restart"
-    echo "   -p <file>      store PID of daemon in <file>"
+    echo "   -p <file>      store PID of daemon wrapper in <file>"
     echo "   -r <file>      restart daemon on termination unless <file> exists"
     echo "   -u <user>      change effective UID to <user>"
     echo "   -o <file>      redirect output to <file>"
@@ -22,28 +25,48 @@ usage()
     echo "including failure to execute the command. The daemon does not fully"
     echo "detach from the shell unless -o is specified. Use -o /dev/null if"
     echo "the output is not relevant."
+    echo
+    echo "The PID stored with -c is always the PID of the last invocation of"
+    echo "COMMAND. The PID stored with -p is the PID of process that invoked"
+    echo "COMMAND. In case -f is specified and -r is not specified, then the"
+    echo "daemon wrapper will terminate after COMMAND has been executed. In"
+    echo "that case -p will store the PID of COMMAND."
     exit 2
 } 1>&2
+
+storePid() # in $1=pid, in $2=file
+{
+    if [ -n "$2" ]; then
+        echo $1 > "$2"
+    fi
+}
 
 run()
 {
     "$@" &
-    if [ "$pid" ]; then
-        echo $! > "$pid"
-    fi
+    storePid $! "$childPid"
 }
 
 loop()
 {
     while run "$@"; wait $!; ! [ -f "$restart" ]; do
-        if [ "$delay" ] ; then
+        if [ -n "$delay" ] ; then
             sleep "$delay"
         fi
     done
 }
 
-while getopts d:p:r:u:o:f opt "$@"; do
+createFileWithOwner() # in $1 = file, in $2 = owner
+{
+    if [ -n "$1" ]; then
+        touch "$1"
+        chown "$2" "$1"
+    fi
+}
+
+while getopts c:d:p:r:u:o:f opt "$@"; do
     case $opt in
+        c) childPid="$OPTARG";;
         d) delay="$OPTARG";;
         p) pid="$OPTARG";;
         r) restart="$OPTARG";;
@@ -59,22 +82,20 @@ shift `expr $OPTIND - 1`
 
 # Redirect if -o is given
 exec </dev/null
-if [ "$output" ]; then
+if [ -n "$output" ]; then
     exec 1>> "$output" 2>&1
 fi
 
 # Switch user if -u is given
-if [ "$user" ]; then
+if [ -n "$user" ]; then
     # Make sure the user is able to write to the PID file
-    if [ "$pid" ]; then
-        touch "$pid"
-        chown "$user" "$pid"
-    fi
+    createFileWithOwner "$childPid" "$user"
+    createFileWithOwner "$pid" "$user"
 
     # To preserve white space, we need to quote each argument.  Notice
     # that ${x:+-x "$x"} doesn't work on Solaris due to the space in
     # the expression.
-    param="${fork:+-f} ${pid:+-p} ${pid:+\"$pid\"} ${restart:+-r} ${restart:+\"$restart\"} ${delay:+-d} ${delay:+\"$delay\"}"
+    param="${fork:+-f} ${childPid:+-c} ${childPid:+\"$childPid\"} ${pid:+-p} ${pid:+\"$pid\"} ${restart:+-r} ${restart:+\"$restart\"} ${delay:+-d} ${delay:+\"$delay\"}"
     for i in "$@"; do
         param="$param \"$i\""
     done
@@ -83,15 +104,20 @@ if [ "$user" ]; then
 fi
 
 # Run the program
-if [ "$restart" ]; then
-    if [ "$fork" ]; then
+if [ -n "$restart" ]; then
+    if [ -n "$fork" ]; then
         loop "$@" &
+        storePid $! "$pid"
     else
+        storePid $$ "$pid"
         loop "$@"
     fi
 else
     run "$@"
-    [ "$fork" ] || wait $!
+    if [ -n "$fork" ]; then
+        storePid $! "$pid"
+    else
+        storePid $$ "$pid"
+        wait $!
+    fi
 fi
-
-
