@@ -66,23 +66,30 @@ This library is dynamically loaded at run time.
 
 %if %krb
 %package -n libdcap-tunnel-krb
-Summary: dCache GSI Tunnel
+Summary: dCache Kerberos Tunnel
 Group: Applications/System
 Requires: libdcap
 BuildRequires: krb5-devel
 %description -n libdcap-tunnel-krb
-This package contains the gsi tunnel plugin library used by dcachedcap.
+This package contains the kerberos tunnel plugin library used by dcachedcap.
 This library is dynamically loaded at run time.
 %endif
 
 %package -n libdcap-tunnel-telnet
-Summary: dCache GSI Tunnel
+Summary: dCache Telnet Tunnel
 Group: Applications/System
 Requires: libdcap
 %description -n libdcap-tunnel-telnet
-This package contains the gsi tunnel plugin library used by dcachedcap.
+This package contains the telnet tunnel plugin library used by dcachedcap.
 This library is dynamically loaded at run time.
 
+%package -n libdcap-tunnel-ssl
+Summary: dCache SSL Tunnel
+Group: Applications/System
+Requires: libdcap
+%description -n libdcap-tunnel-ssl
+This package contains the ssl tunnel plugin library used by dcachedcap.
+This library is dynamically loaded at run time.
 
 
 %prep
@@ -103,6 +110,7 @@ CPPFLAGS="@CPPFLAGS@" LDFLAGS="@LDFLAGS@" ./configure \
   --libdir=/${libdir} \
   --with-doc-dir=%{prefix}/share/doc/@PACKAGE@-@VERSION@ \
   --includedir=%{prefix}/include/ \
+  --with-krb5-gssapi-include=@KRB5_GSSAPI_INCLUDE_DIR@ \
   --with-globus-include=@GLOBUS_INCLUDE_DIR@ \
   --with-globus-lib=@GLOBUS_LIB_DIR@
 make
@@ -184,7 +192,6 @@ rm -rf $RPM_BUILD_ROOT
 %endif
 %endif
 
-
 %if %krb
 %files -n libdcap-tunnel-krb
 %defattr(-,root,root)
@@ -209,6 +216,18 @@ rm -rf $RPM_BUILD_ROOT
 %{prefix}/lib/libtelnetTunnel.a
 %{prefix}/lib/libtelnetTunnel.la
 %{prefix}/lib/libtelnetTunnel.so*
+%endif
+
+%files -n libdcap-tunnel-ssl
+%defattr(-,root,root)
+%ifarch x86_64
+%{prefix}/lib64/libsslTunnel.a
+%{prefix}/lib64/libsslTunnel.la
+%{prefix}/lib64/libsslTunnel.so*
+%else
+%{prefix}/lib/libsslTunnel.a
+%{prefix}/lib/libsslTunnel.la
+%{prefix}/lib/libsslTunnel.so*
 %endif
 
 %changelog
