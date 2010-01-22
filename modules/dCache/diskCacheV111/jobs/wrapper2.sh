@@ -1,4 +1,7 @@
 #!/bin/sh
+
+set -e
+
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #
 #     were are we ? who are we ?
@@ -217,13 +220,10 @@ if [ -f ${SITE_LOCAL} ]  ; then
      exit 2
    fi
 
-   ${SITE_LOCAL} $*
-   rc=$?
-   if [ $rc -ne 0 ] ; then
-      echo "Site local script (${SITE_LOCAL}) failed : errno = $rc"
-      exit $rc
-   fi
-
+   ${SITE_LOCAL} $* || {
+      echo "Site local script (${SITE_LOCAL}) failed : errno = $?"
+      exit $?
+   }
 fi
 #
 #     end of init

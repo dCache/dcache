@@ -214,7 +214,7 @@ requireJmap()
 # Dumps the heap. Terminates the script in case of failure.
 dumpHeap() # $1=force, $2=live, $3=file, $4=pid, $5=error
 {
-    if ! jmap ${1:+-F} -dump:${2:+live,}format=b,file=$3 $4; then
+    if ! $jmap ${1:+-F} -dump:${2:+live,}format=b,file=$3 $4; then
         fail 1 "$5"
     fi
 
@@ -350,15 +350,15 @@ case "$1" in
     status)
         domains=$(printAllDomains)
         maxWidth $domains; width="$RET"
-        format="%-${width}s %-10s %-10s%5s\n"
-        printf "$format" "Domain" "Service" "Status" "Pid"
+        format="%-${width}s %-16s %s\n"
+        printf "$format" "Domain" "Service" "Status"
         for domain in $domains; do
-            if getPidOfDomain $domain; then
-                pid="$RET"
+            if ! getPidOfDomain $domain; then
+                status="stopped"
+            elif getJavaPidOfDomain $domain; then
                 status="running"
             else
-                pid=""
-                status="stopped"
+                status="restarting"
             fi
 
             if getService $domain; then
@@ -367,7 +367,7 @@ case "$1" in
                 service=""
             fi
 
-            printf "$format" "$domain" "$service" "$status" "$pid"
+            printf "$format" "$domain" "$service" "$status"
         done
         ;;
 
@@ -543,7 +543,7 @@ case "$1" in
                     fail 1 "${file} already exists. Heap not dumped."
                 fi
 
-                if ! getPidOfDomain ${domain}; then
+                if ! getJavaPidOfDomain ${domain}; then
                     fail 1 "Domain ${domain} is not running."
                 fi
                 pid="$RET"
@@ -569,7 +569,7 @@ case "$1" in
             threads)
                 domains=$(printExpandedServiceAndDomainList $*)
                 for domain in $domains; do
-                    if getPidOfDomain ${domain}; then
+                    if getJavaPidOfDomain ${domain}; then
                         if ! kill -s QUIT ${RET}; then
                             fail 1 "Failed to dump stack traces. Likely
                                     the current user does not have the
