@@ -6,9 +6,9 @@
 
 
 # Prints the list of pools in the given pool domains.
-printAllPools() # $* = list of domains
+printAllPools() # in $* = list of domains
 {
-    for domain in $*; do
+    for domain in "$@"; do
         printPoolsInDomain $domain | while read pool path param; do
             printf "%s " $pool
         done
@@ -18,11 +18,11 @@ printAllPools() # $* = list of domains
 # Writes the poollist file of the given pool domain to stdout. The
 # format is 'name directory parameters'. Aborts if the file does not
 # exist.
-printPoolsInDomain() # $1 = Pool domain
+printPoolsInDomain() # in $1 = Pool domain
 {
     local poolFile
 
-    getPoolListFile $1; poolFile="$RET"
+    getPoolListFile $1 poolFile
     if [ ! -f ${poolFile} ]; then
         printp "Pool file not found: ${poolFile}" 1>&2
         exit 4
@@ -31,18 +31,21 @@ printPoolsInDomain() # $1 = Pool domain
 }
 
 # If pool exists in one of the given domains, then the domain
-# containing the pool is stored in RET and the return code is 0. If
-# the pool is not found, the return code is 1.
-getDomainOfPool() # $1 = pool, $2+ = list of domains
+# containing the pool is provided and the return code is 0. If the
+# pool is not found, the return code is 1.
+getDomainOfPool() # out $1 = domain, in $2 = pool, in $3+ = list of domains
 {
     local pool
+    local out
+    local ret
 
-    pool=$1
-    shift
+    out=$1
+    pool=$2
+    shift 2
 
-    for domain in "$@"; do
-        if contains "$pool" $(printPoolsInDomain "$domain"); then
-            RET="$domain"
+    for ret in "$@"; do
+        if contains "$pool" $(printPoolsInDomain "$ret"); then
+            eval $out=\"$ret\"
             return 0
         fi
     done
@@ -50,48 +53,51 @@ getDomainOfPool() # $1 = pool, $2+ = list of domains
     return 1
 }
 
-getPoolPath() # $1 = pool, $2 = domain
+getPoolPath() # in $1 = pool, in $2 = domain, out $3 = path
 {
     local pool
     local domain
     local poolFile
+    local ret
 
     pool="$1"
     domain="$2"
 
-    getPoolListFile "$domain"; poolFile="$RET"
-    RET=$(sed -n -e "s/^${pool} *\([^ ]*\)*.*$/\1/p" < ${poolFile})
+    getPoolListFile "$domain" poolFile
+    ret=$(sed -n -e "s/^${pool} *\([^ ]*\)*.*$/\1/p" < "${poolFile}")
 
-    [ -n "${RET}" ]
+    eval $3=\"$ret\"
+
+    [ -n "${ret}" ]
 }
 
-getPoolSetting() # #1 = pool path, #2+ = setting
+getPoolSetting() # in $1 = pool path, in $2 = key, out $3 = value
 {
     local path
     local key
 
     path=$1
-    shift
-    key=$*
+    key=$2
 
-    if [ ! -f ${path}/setup ]; then
+    if [ ! -f "${path}/setup" ]; then
         printp "Setup file not found in $1" 1>&2
         exit 4
     fi
 
-    #          Comments      Trailing space       Print value
-    #          vvvvvvvv      vvvvvvv              vvvvvvvvvvvvvvvvvvvvvvvvvv
-    RET=$(sed -n -e 's/#.*$//' -e 's/[  ]*$//' -e "s/^[         ]*${key}[       ]*\(.*\)/\1/p" ${path}/setup)
+    #                    Comments      Trailing space  Print value
+    #                    vvvvvvvv      vvvvvvv         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+    eval $3=$(sed -n -e 's/#.*$//' -e 's/[  ]*$//' -e "s/^[         ]*${key}[       ]*\(.*\)/\1/p" "${path}/setup")
 }
 
 # Extracts the size of a pool in GiB.
-getSizeOfPool() # $1 = pool path
+getSizeOfPool() # in $1 = pool path, out $2 = size
 {
-    getPoolSetting ${path} "set max diskspace"
-    stringToGiB "$RET"
+    local diskspace
+    getPoolSetting "$1" "set max diskspace" diskspace
+    stringToGiB "$diskspace" $2
 }
 
-createPool() # $1 = size, $2 = path
+createPool() # in $1 = size, in $2 = path
 {
     local size
     local path
@@ -101,7 +107,7 @@ createPool() # $1 = size, $2 = path
     local set_movers
     local parent
 
-    stringToGiB "$1"; size="$RET"
+    stringToGiB "$1" size
     path="$2"
 
     # Path must not exist
@@ -110,13 +116,13 @@ createPool() # $1 = size, $2 = path
     fi
 
     # Make sure the parent path exists
-    parent=$(dirname ${path})
+    parent=$(dirname "${path}")
     if [ ! -d "${parent}" ]; then
         mkdir -p "${parent}" || fail 1 "Failed to create $parent"
     fi
 
     # We need to have enough free space
-    getFreeSpace "${parent}"; ds="$RET"
+    getFreeSpace "${parent}" ds
 
     if [ "${ds}" -lt "${size}" ]; then
         fail 1 "Pool size exceeds available space. ${path} only
@@ -129,7 +135,7 @@ createPool() # $1 = size, $2 = path
     # which is not the case!
     movers="$NODE_CONFIG_NUMBER_OF_MOVERS"
 
-    mkdir -p "${path}" "${path}/data" "${path}/control" || 
+    mkdir -p "${path}" "${path}/data" "${path}/control" ||
     fail 1 "Failed to create directory tree"
 
     set_size="s:set max diskspace 100g:set max diskspace ${size}g:g"
@@ -142,7 +148,7 @@ createPool() # $1 = size, $2 = path
             pool directory. You may need to adjust it."
 }
 
-addPool() # $1 = pool, $2 = path, $3 = domain, $4 = use fqdn, $5 = lfs
+addPool() # in $1 = pool, in $2 = path, in $3 = domain, in $4 = use fqdn, in $5 = lfs
 {
     local pool
     local path
@@ -152,16 +158,16 @@ addPool() # $1 = pool, $2 = path, $3 = domain, $4 = use fqdn, $5 = lfs
     local file
     local param
 
-    pool=$1
-    path=$2
-    domain=$3
-    use_fqdn=$4
-    lfs=$5
+    pool="$1"
+    path="$2"
+    domain="$3"
+    use_fqdn="$4"
+    lfs="$5"
 
-    sanitisePath $path; path="$RET"
+    sanitisePath "$path" path
 
     # Check that LFS mode is valid
-    if ! contains $lfs none precious hsm volatile transient; then
+    if ! contains "$lfs" none precious hsm volatile transient; then
         fail 2 "Invalid LFS mode."
     fi
 
@@ -172,7 +178,7 @@ addPool() # $1 = pool, $2 = path, $3 = domain, $4 = use fqdn, $5 = lfs
     fi
 
     # Check that pool exists
-    if [ ! -f ${path}/setup ]; then
+    if [ ! -f "${path}/setup" ]; then
         fail 1 "No pool found in ${path}. Operation aborted."
     fi
 
@@ -202,19 +208,19 @@ addPool() # $1 = pool, $2 = path, $3 = domain, $4 = use fqdn, $5 = lfs
     fi
 
     # It must not be used for any other service
-    if ! contains $domain $(printAllPoolDomains) ; then
-        if contains $domain $(printAllDomains); then
+    if ! contains "$domain" $(printAllPoolDomains) ; then
+        if contains "$domain" $(printAllDomains); then
             fail 1 "${domain} is not a valid pool domain name, because
                     the domain is already used for other purposes."
         fi
     fi
 
     # Create the domain if it doesn't already exist
-    file=${pool_config}/${hostname}.domains
-    if [ ! -f $file ]; then
-        echo "${domain%Domain}" >> $file || exit 1
-    elif ! grep "${domain%Domain}" $file > /dev/null; then
-        echo "${domain%Domain}" >> $file || exit 1
+    file="${pool_config}/${hostname}.domains"
+    if [ ! -f "$file" ]; then
+        echo "${domain%Domain}" >> "$file" || exit 1
+    elif ! grep -q "${domain%Domain}" "$file"; then
+        echo "${domain%Domain}" >> "$file" || exit 1
     fi
 
     # Determine pool parameters
@@ -229,8 +235,8 @@ addPool() # $1 = pool, $2 = path, $3 = domain, $4 = use fqdn, $5 = lfs
     fi
 
     # Add pool to domain
-    getPoolListFile $domain
-    echo "$pool  $path  $param" >> "$RET" || exit 1
+    getPoolListFile "$domain" file
+    echo "$pool  $path  $param" >> "$file" || exit 1
 
     # Tell the user what we did
     printp "Added pool ${pool} in ${path} to ${domain}."\
@@ -239,20 +245,21 @@ addPool() # $1 = pool, $2 = path, $3 = domain, $4 = use fqdn, $5 = lfs
             the pool domain."
 }
 
-removePool() # $1 = pool name
+removePool() # in $1 = pool name
 {
     local pool
     local pl
     local dl
+    local pid
 
-    pool=$1
+    pool="$1"
 
     # Find the domain containing pool and remove the pool from it
     for domain in $(printAllPoolDomains); do
         printPoolsInDomain $domain | while read _pool _path _param; do
             if [ "$pool" = "$_pool" ]; then
                 # Check if domain is still running
-                if getPidOfDomain ${domain}; then
+                if getPidOfDomain "${domain}" pid; then
                     fail 1 "A pool named $pool was found in the domain
                             $domain. $domain is still running. Shut it
                             down before removing the pool from the
@@ -260,16 +267,16 @@ removePool() # $1 = pool name
                 fi
 
                 # Remove pool from pool list file
-                getPoolListFile "$domain"; pl="$RET"
-                sed -e "/^${pool}.*/ d" ${pl} > ${pl}.$$ || exit
-                mv -f ${pl}.$$ ${pl} || exit
+                getPoolListFile "$domain" pl
+                sed -e "/^${pool}.*/ d" "${pl}" > "${pl}.$$" || exit
+                mv -f "${pl}.$$" "${pl}" || exit
 
                 # Disable domain if empty
-                if isFileEmpty $pl; then
-                    rm $pl || exit
+                if isFileEmpty "$pl"; then
+                    rm "$pl" || exit
                     dl="${pool_config}/${hostname}.domains"
-                    sed -e "/^${domain%Domain}\$/ d" ${dl} > ${dl}.$$ || exit
-                    mv -f ${dl}.$$ ${dl} || exit
+                    sed -e "/^${domain%Domain}\$/ d" "${dl}" > "${dl}.$$" || exit
+                    mv -f "${dl}.$$" "${dl}" || exit
                     printp "Removed pool ${pool} from ${domain}. ${domain}
                             is now empty and has been removed."
                 else
@@ -289,7 +296,7 @@ removePool() # $1 = pool name
 }
 
 # Reconstruct the meta data Berkeley DB of a pool
-reconstructMeta() # $1 = src meta dir, $2 = dst meta dir
+reconstructMeta() # in $1 = src meta dir, in $2 = dst meta dir
 {
     local src
     local dst

@@ -27,11 +27,11 @@ usage()
   echo "                        debug level WARNING=25"
   echo "                        debug level INFO=15"
   echo "                        debug level DEBUG=5"
-  
+
 }
 
 logmessage()
-{ 
+{
   local ThisLogLevel
   local ThisPrefix
   let ThisLogLevel=$1
@@ -101,13 +101,13 @@ logmessage()
 check_shell()
 {
   if [ "$BASH_VERSION" = "" ] ; then
-    logmessage ERROR "bash was not detected script exiting."  
+    logmessage ERROR "bash was not detected script exiting."
     exit 1
   fi
 }
 
 check_os()
-{  
+{
   local osname
   RET="Unknown"
   osname=`uname`
@@ -222,10 +222,10 @@ dcacheInstallGetExportPoint()
 {
   local exportPoint
   local pnfsMountPoint
-  
+
   dcacheInstallGetPnfsMountPoint
   pnfsMountPoint=$RET
-  
+
   exportPoint=`mount | grep ${pnfsMountPoint} | awk '{print $1}' | awk -F':' '{print $2}'`
   RET=${exportPoint}
 }
@@ -256,8 +256,7 @@ dcacheInstallGetNameSpaceType()
 
 dcacheInstallGetNameSpaceServer()
 {
-  getNameSpaceServer
-  RET=${RET:-localhost}
+  getNameSpaceServer RET
 }
 
 dcacheNameServerIs()
@@ -279,7 +278,7 @@ dcacheNameServerIs()
 
 
 dcacheInstallPnfsMountPointClient()
-{ 
+{
   logmessage DEBUG "dcacheInstallPnfsMountPointClient.start"
   local pnfsMountPoint
   local NAMESPACE_NODE
@@ -302,7 +301,7 @@ dcacheInstallPnfsMountPointClient()
       logmessage WARNING "${pnfsMountPoint} mounted, however not to ${NAMESPACE_NODE}:/pnfsdoors."
       logmessage INFO "Unmounting it now:"
       umount ${pnfsMountPoint}
-      
+
     fi
     if [ -L "${pnfsMountPoint}" ] ; then
       logmessage INFO "Trying to remove symbolic link ${pnfsMountPoint} :"
@@ -355,7 +354,7 @@ dcacheInstallPnfsMountPointClient()
     logmessage WARNING "You might want to remove any mounts not needed anymore."
   fi
   logmessage DEBUG "dcacheInstallPnfsMountPointClient.stop"
-  
+
 }
 
 
@@ -438,7 +437,7 @@ dcacheInstallPnfsMountPointServer()
 
   which rpcinfo 2>&1 > /dev/null
   RC=$?
-  if [ ${RC} -ne 0 ] ; then 
+  if [ ${RC} -ne 0 ] ; then
     logmessage ERROR "rpcinfo is not on the path"
     exit 1
   fi
@@ -491,14 +490,14 @@ dcacheInstallPnfsMountPointServer()
 dcacheInstallPnfsMountPoints()
 {
   logmessage DEBUG "dcacheInstallPnfsMountPoints.start"
-  # Creating /pnfs/fs and Symbolic Link /pnfs/fs/usr to /pnfs/<domain> 
+  # Creating /pnfs/fs and Symbolic Link /pnfs/fs/usr to /pnfs/<domain>
   # (e.g. /pnfs/fnal.gov) for GridFTP
 
   if contains pnfsDomain $DOMAINS; then
       dcacheInstallPnfsMountPointServer
   elif isNameSpaceMountNeeded $DOMAINS; then
       dcacheInstallPnfsMountPointClient
-  fi  
+  fi
 
   logmessage DEBUG "dcacheInstallPnfsMountPoints.stop"
 }
@@ -506,7 +505,7 @@ dcacheInstallPnfsMountPoints()
 
 
 dcacheInstallChimeraMountPointServer()
-{  
+{
   local pnfsServer
   local localhostName
   local tryToMount
@@ -565,16 +564,16 @@ dcacheInstallChimeraMountPointServer()
 dcacheInstallChimeraMountPoints()
 {
   logmessage DEBUG "dcacheInstallChimeraMountPoints.start"
-  # Creating /pnfs/fs and Symbolic Link /pnfs/fs/usr to /pnfs/<domain> 
+  # Creating /pnfs/fs and Symbolic Link /pnfs/fs/usr to /pnfs/<domain>
   # (e.g. /pnfs/fnal.gov) for GridFTP
 
   if contains chimeraDomain $DOMAINS; then
-      /etc/init.d/portmap restart    
+      /etc/init.d/portmap restart
       dcacheInstallChimeraMountPointServer
   elif isNameSpaceMountNeeded $DOMAINS; then
       dcacheInstallChimeraMountPointServer
-  fi  
-  
+  fi
+
   logmessage DEBUG "dcacheInstallChimeraMountPoints.stop"
 }
 
@@ -592,7 +591,7 @@ dcacheInstallMountPoints()
     dcacheInstallChimeraMountPoints
   fi
   logmessage DEBUG "dcacheInstallMountPoints.stop"
-  
+
 }
 
 
@@ -607,8 +606,7 @@ dcacheInstallPnfsConfigCheck()
   local yesno
   local serverRoot
   fqHostname=`fqdn_os`
-  getConfigurationValue dcap dCapPort
-  dCapPort=$RET
+  getConfigurationValue dcap dCapPort dCapPort
   logmessage INFO "Checking on a possibly existing dCache/PNFS configuration ..."
   if [ -f ${NODE_CONFIG_PNFS_ROOT}/fs/admin/etc/config/serverRoot ]; then
     WRITING_PNFS=no
@@ -622,11 +620,11 @@ dcacheInstallPnfsConfigCheck()
     logmessage INFO "Not allowed to overwrite existing PNFS configuration."
   elif [ \( "${yesno}" = "y" -o "${yesno}" = "yes" \) -a "${WRITING_PNFS}" = "no" ] ; then
     logmessage INFO "Found an existing dCache/PNFS configuration!"
-    
+
     logmessage WARNING "Overwriting existing dCache/PNFS configuration..."
-    
+
     WRITING_PNFS=yes
-    
+
     sleep 5
   fi
 
@@ -641,7 +639,7 @@ dcacheInstallPnfsConfigCheck()
     #
     logmessage DEBUG "Changing directory to ${NODE_CONFIG_PNFS_ROOT}/fs/admin/etc/config"
     cd ${NODE_CONFIG_PNFS_ROOT}/fs/admin/etc/config
-    
+
     echo "${fqHostname}" > ./serverName
     echo "${SERVER_ID}" >./serverId
     echo "$serverRoot ." > ./serverRoot
@@ -692,7 +690,7 @@ dcacheInstallPnfsMount()
     fi
   fi
   logmessage INFO "You may restrict access to this export to the GridFTP doors which"
-  logmessage INFO "are not on the admin node. See the documentation." 
+  logmessage INFO "are not on the admin node. See the documentation."
   logmessage DEBUG "dcacheInstallPnfsMount.stop"
 }
 
@@ -735,7 +733,7 @@ dcacheInstallSshKeys()
 
 #    Pool configuration
 #
-dcacheInstallCheckPool() 
+dcacheInstallCheckPool()
 {
   logmessage DEBUG "dcacheInstallCheckPool.start"
   local rt
@@ -743,7 +741,7 @@ dcacheInstallCheckPool()
   local shortHostname
   rt=`echo ${rrt} | awk '{print $1}'`
   size=`echo ${rrt} | awk '{print $2}'`
-    
+
   if [ ! -e "${rt}/pool" ]; then
     logmessage INFO "Creating Pool" ${pn}
     shortHostname=`shortname_os`
@@ -755,8 +753,8 @@ dcacheInstallCheckPool()
 }
 
 dcacheInstallPool()
-{  
-  logmessage DEBUG "dcacheInstallPool.start" 
+{
+  logmessage DEBUG "dcacheInstallPool.start"
   local shortHostname
   local x
   local fileToProcess
@@ -775,26 +773,27 @@ dcacheInstallPool()
     fileToProcess=${DCACHE_HOME}/etc/pool_path
     let x=1
     linecount=`wc -l ${fileToProcess} | cut -d" " -f1`
-    let linecount=${linecount}+1 
+    let linecount=${linecount}+1
     while [ $x -lt $linecount ]
     do
       rrt=`sed "${x}q;d" ${fileToProcess}`
       pn=${shortHostname}"_"${x}
       dcacheInstallCheckPool
       let x=${x}+1
-    done 
-     
+    done
+
   fi
-  
-  logmessage DEBUG "dcacheInstallPool.stop" 
+
+  logmessage DEBUG "dcacheInstallPool.stop"
 }
 
 
 dcacheInstallSrm()
 {
-  logmessage DEBUG "dcacheInstallSrm.start"  
   local java
-  getConfigurationValue srm java; java=$RET
+
+  logmessage DEBUG "dcacheInstallSrm.start"
+  getConfigurationValue srm java java
 
   #
   # check java:
@@ -828,11 +827,11 @@ dcacheInstallSrm()
     # to $JAVA_HOME/jre/bin/java. Try to go up another level.
     JAVA_HOME=${java%/jre/bin/*}
   fi
-  # install SRM 
+  # install SRM
   #
 
   # put correct JAVA_HOME into srm_setup.env
-  ( 
+  (
     grep -v JAVA_HOME ${DCACHE_HOME}/etc/srm_setup.env
     echo "JAVA_HOME=${JAVA_HOME}"
   ) > ${DCACHE_HOME}/etc/srm_setup.env.$$
@@ -840,24 +839,24 @@ dcacheInstallSrm()
   if contains srm $SERVICES; then
     export loglevel logfile
     logmessage DEBUG "Running ${DCACHE_HOME}/install/deploy_srmv2.sh ${DCACHE_HOME}/etc/srm_setup.env"
-    ${DCACHE_HOME}/install/deploy_srmv2.sh ${DCACHE_HOME}/etc/srm_setup.env 
+    ${DCACHE_HOME}/install/deploy_srmv2.sh ${DCACHE_HOME}/etc/srm_setup.env
   fi
-  logmessage DEBUG "dcacheInstallSrm.stop"  
+  logmessage DEBUG "dcacheInstallSrm.stop"
 }
 
 dcacheInstallCreateWrappers()
 {
-  logmessage DEBUG "dcacheInstallCreateWrappers.start"  
+  logmessage DEBUG "dcacheInstallCreateWrappers.start"
   #
   # init package ( create wrappers in jobs directory )
   #
   logmessage DEBUG "Running ${DCACHE_HOME}/jobs/initPackage.sh ${DCACHE_HOME} "
-  ${DCACHE_HOME}/jobs/initPackage.sh ${DCACHE_HOME} 2>&1 
+  ${DCACHE_HOME}/jobs/initPackage.sh ${DCACHE_HOME} 2>&1
   if [ $? != 0 ]; then
     logmessage ABORT "Failed to initalize dCache installation, exiting."
     exit 2
   fi
-  logmessage DEBUG "dcacheInstallCreateWrappers.stop"  
+  logmessage DEBUG "dcacheInstallCreateWrappers.stop"
 }
 
 # Do the inistialtion checks
@@ -868,35 +867,35 @@ check_shell
 # Now check OS
 check_os
 if [ "$RET" == "Unknown" ] ; then
-  echo "ERROR: OS is not found." 
+  echo "ERROR: OS is not found."
   exit 1
 fi
 
 # now process the command line
 
 while [ $# -ne 0 ]
-do	
+do
   # Default to shifting to next parameter
-  shift_size=1		
-  if [ $1 == "--prefix" -o $1 == "-p" ] 
+  shift_size=1
+  if [ $1 == "--prefix" -o $1 == "-p" ]
   then
     # set dCache install location
     DCACHE_HOME=$2
     shift_size=2
   fi
-  if [ $1 == "--help" -o $1 == "-h" ] 
+  if [ $1 == "--help" -o $1 == "-h" ]
   then
     # set dCache install location
     usage
     exit 0
   fi
-  if [ $1 == "--loglevel" -o $1 == "-l"  ] 
+  if [ $1 == "--loglevel" -o $1 == "-l"  ]
   then
     # set dCache install location
     let loglevel=$2
     shift_size=2
   fi
-  if [ $1 == "--logfile" ] 
+  if [ $1 == "--logfile" ]
   then
     # set dCache install location
     logfile=$2
@@ -911,7 +910,7 @@ if [ -z "$DCACHE_HOME" ]; then
     DCACHE_HOME=${RET%/install/install.sh}
 fi
 
-if [ ! -d "$DCACHE_HOME" ]; then 
+if [ ! -d "$DCACHE_HOME" ]; then
     echo "$DCACHE_HOME is not a directory"
     exit 2
 fi
@@ -929,11 +928,11 @@ check_install
 
 # Read node config into variables prefixed by NODE_CONFIG_
 readconf ${DCACHE_HOME}/etc/node_config NODE_CONFIG_ ||
-readconf ${DCACHE_HOME}/etc/door_config NODE_CONFIG_ 
+readconf ${DCACHE_HOME}/etc/door_config NODE_CONFIG_
 
 DOMAINS="$(printAllDomains)"
 SERVICES="$(printServices $DOMAINS)"
-getServerId; SERVER_ID="$RET"
+getServerId SERVER_ID
 
 if isNameSpaceMountNeeded $DOMAINS; then
   logmessage INFO "This node will need to mount the name server."

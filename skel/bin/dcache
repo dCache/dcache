@@ -3,15 +3,17 @@
 # chkconfig: 2345 92 8
 # description: dCache init script
 
+set -e
+
 # Solaris doesn't have a POSIX compliant shell as /bin/sh. We
 # try to find one and execute it.
 if [ "$1" = "%" ]; then
     shift
 elif [ "`uname`" = "SunOS" ]; then
     if [ -x /usr/xpg4/bin/sh ]; then
-        exec /usr/xpg4/bin/sh $0 % $*
+        exec /usr/xpg4/bin/sh $0 % "$@"
     elif [ -x /bin/bash ]; then
-        exec /bin/bash $0 % $*
+        exec /bin/bash $0 % "$@"
     else
         echo "Cannot find POSIX compliant shell. This script will"
         echo "probably break, but we attempt to execute it anyway."
@@ -51,40 +53,33 @@ usage()
     exit 2
 } 1>&2
 
-checkReadlinkf()
-{
-  if [ ! "$hasReadlinkf" ] ; then
-    readlink -f . > /dev/null 2>&1
-    hasReadlinkf=$?
-  fi
-  return $hasReadlinkf
-}
-
 # Get the canonical path of $1. Only returns a truely canonical path
 # if readlink is available. Otherwise an absolute path which does not
 # end in a symlink is returned.
-getCanonicalPath() # $1 = path
+getCanonicalPath() # in $1 = path, out $2 = canonical path
 {
     local link
+    local ret
     link="$1"
-    if checkReadlinkf ; then
-        RET="$(readlink -f $link)"
+    if readlink -f . > /dev/null 2>&1; then
+	ret="$(readlink -f $link)"
     else
-        RET="$(cd $(dirname $link); pwd)/$(basename $link)"
-        while [ -h "$RET" ]; do
-            link="$(ls -ld $RET | sed 's/.*-> //')"
+        ret="$(cd $(dirname $link); pwd)/$(basename $link)"
+        while [ -h "$ret" ]; do
+            link="$(ls -ld $ret | sed 's/.*-> //')"
             if [ -z "${link##/*}" ]; then
-                RET="${link}"
+                ret="${link}"
             else
-                link="$(dirname $RET)/${link}"
-                RET="$(cd $(dirname $link); pwd)/$(basename $link)"
+                link=$(dirname $ret)/${link}
+                ret="$(cd $(dirname $link); pwd)/$(basename $link)"
             fi
         done
     fi
+    eval $2=\"$ret\"
 }
 
 # Returns true if $1 is contained as a word in $2.
-contains() # $1 = word, $2+ = list
+contains() # in $1 = word, in $2+ = list
 {
     local word
     word=$1
@@ -205,8 +200,7 @@ showVersion()
 }
 
 # Parse global options
-parseOptions "d" $*
-shift $?
+parseOptions "d" "$@" || shift $?
 
 if [ $# -eq 0 ]; then
     usage
@@ -216,8 +210,8 @@ fi
 if [ -n "$opt_d" ]; then
     DCACHE_HOME="$opt_d"
 elif [ -z "$DCACHE_HOME" ]; then
-    getCanonicalPath "$0"
-    DCACHE_HOME=${RET%/bin/dcache}
+    getCanonicalPath "$0" path
+    DCACHE_HOME="${path%/bin/dcache}"
 fi
 
 if [ ! -d "$DCACHE_HOME" ]; then
@@ -238,9 +232,11 @@ require awk df egrep grep sed cat hostname wc dirname basename mount mv
 
 # Read configuration files
 readconf ${DCACHE_HOME}/etc/node_config NODE_CONFIG_ ||
-readconf ${DCACHE_HOME}/etc/door_config NODE_CONFIG_
-loadConfigurationFile dCache dCache
-loadConfigurationFile pool pool
+readconf ${DCACHE_HOME}/etc/door_config NODE_CONFIG_ ||
+    fail 1 "Failed to read ${DCACHE_HOME}/etc/node_config"
+loadConfigurationFile dCache dCache ||
+    fail 1 "Failed to read dCacheSetup file"
+loadConfigurationFile pool pool || loadConfigurationFile dCache pool
 
 # We sometimes need to start java; import the path from dCacheSetup
 java="${dCache_java}"
@@ -257,14 +253,14 @@ determineHostName
 case "$1" in
     start)
         shift
-        domains=$(printExpandedServiceAndDomainList $*)
+        domains=$(printExpandedServiceAndDomainList "$@")
 
         if isNameSpaceMountNeeded $domains; then
             autoMountNameSpace
         fi
 
         for domain in $domains; do
-            runDomain $domain start
+            runDomain $domain start || :
         done
 
         touch $DCACHE_LOCK 2> /dev/null || :
@@ -272,12 +268,12 @@ case "$1" in
 
     stop)
         shift
-        domains=$(printExpandedServiceAndDomainList $*)
+        domains=$(printExpandedServiceAndDomainList "$@")
 
-        reverse $domains; domains_backward="$RET"
+        reverse domains_backward $domains
         for domain in $domains_backward; do
-            if getPidOfDomain $domain; then
-                runDomain $domain stop
+            if getPidOfDomain $domain pid; then
+                runDomain $domain stop || :
             fi
         done
 
@@ -286,12 +282,12 @@ case "$1" in
 
     restart)
         shift
-        domains=$(printExpandedServiceAndDomainList $*)
+        domains=$(printExpandedServiceAndDomainList "$@")
 
-        reverse $domains; domains_backward="$RET"
+        reverse domains_backward $domains
         for domain in $domains_backward; do
-            if getPidOfDomain $domain; then
-                runDomain $domain stop
+            if getPidOfDomain $domain pid; then
+                runDomain $domain stop || :
             fi
         done
 
@@ -300,47 +296,43 @@ case "$1" in
         fi
 
         for domain in $domains; do
-            runDomain $domain start
+            runDomain $domain start || :
         done
         ;;
 
     condrestart)
         shift
-        domains=$(printExpandedServiceAndDomainList $*)
+        domains=$(printExpandedServiceAndDomainList "$@")
 
-        reverse $domains; domains_backward="$RET"
+        reverse domains_backward $domains
         for domain in $domains_backward; do
-            if getPidOfDomain $domain; then
+            if getPidOfDomain $domain pid; then
 		running_domains="$running_domains $domain"
-                runDomain $domain stop
+                runDomain $domain stop || :
             fi
         done
 
-        reverse $running_domains; domains_to_start="$RET"
+        reverse domains_to_start $running_domains
         for domain in $domains_to_start; do
-            runDomain $domain start
+            runDomain $domain start || :
         done
         ;;
 
     status)
         domains=$(printAllDomains)
-        maxWidth $domains; width="$RET"
+        maxWidth width $domains
         format="%-${width}s %-16s %s\n"
         printf "$format" "Domain" "Service" "Status"
         for domain in $domains; do
-            if ! getPidOfDomain $domain; then
+            if ! getPidOfDomain $domain pid; then
                 status="stopped"
-            elif getJavaPidOfDomain $domain; then
+            elif getJavaPidOfDomain $domain pid; then
                 status="running"
             else
                 status="restarting"
             fi
 
-            if getService $domain; then
-                service="$RET"
-            else
-                service=""
-            fi
+            getService $domain service || service=
 
             printf "$format" "$domain" "$service" "$status"
         done
@@ -348,29 +340,19 @@ case "$1" in
 
     services)
         domains=$(printAllDomains)
-        maxWidth $domains; width="$RET"
-        format="%-${width}s %-10s %s\n"
+        maxWidth width $domains
+        format="%-${width}s %-16s %s\n"
         printf "$format" "Domain" "Service" "Log"
         for domain in $domains; do
-            if getService $domain; then
-                service="$RET"
-            else
-                service=""
-            fi
-
-            if getLogOfDomain ${domain} && [ -f "$RET" ]; then
-                log="$RET"
-            else
-                log=""
-            fi
-
+            getService $domain service || service=
+            getLogOfDomain ${domain} log && [ -f "$log" ] || log=
             printf "$format" "$domain" "$service" "$log"
         done
         ;;
 
     version)
         showVersion
-    ;;
+	;;
 
     pool)
         shift
@@ -388,16 +370,16 @@ case "$1" in
 
                 domains=$(printAllPoolDomains)
                 pools=$(printAllPools $domains)
-                maxWidth $pools; width_1="$RET"
-                maxWidth $domains; width_2="$RET"
+                maxWidth width_1 $pools
+                maxWidth width_2 $domains
                 format="%-${width_1}s %-${width_2}s %-9s %7s%7s %s\n"
                 printf "$format" "Pool" "Domain" "LFS" "Size" "Free" "Path"
                 for domain in $domains; do
                     printPoolsInDomain $domain | while read pool path param; do
                         lfs=$(echo $param | sed -n -e 's/.*lfs=\([^ ]*\).*/\1/p')
                         if [ -f "${path}/setup" ]; then
-                            getSizeOfPool $path; size="$RET"
-                            getFreeSpace $path; free="$RET"
+                            getSizeOfPool "$path" size
+                            getFreeSpace "$path" free
                             printf "$format" "$pool" "$domain" "$lfs" "$size" "$free" "$path"
                         else
                             printf "$format" "$pool" "$domain" "$lfs" "-" "-" "$path (missing)"
@@ -421,8 +403,7 @@ case "$1" in
                 ;;
 
             add)
-                parseOptions "domain fqdn lfs" $*
-                shift $?
+                parseOptions "domain fqdn lfs" "$@" || shift $?
 
                 [ $# -ne 2 ] && usage
                 pool=$1
@@ -444,13 +425,12 @@ case "$1" in
 
                 # First find the domain containing the pool
                 domains=$(printAllPoolDomains)
-                if ! getDomainOfPool "$pool" $domains; then
+                if ! getDomainOfPool domain "$pool" $domains; then
                     fail 2 "Cannot find a pool named $pool."
                 fi
-                domain="$RET"
 
                 # Make sure the pool is not running right now
-                if getPidOfDomain "$domain"; then
+                if getPidOfDomain "$domain" pid; then
                     fail 1 "$domain contains $pool, however the domain is
                             still running. Please stop the domain before
                             attempting to reconstruct the meta data. The
@@ -459,8 +439,7 @@ case "$1" in
                 fi
 
                 # Find the path to the pool
-                getPoolPath "$pool" "$domain" || fail 1 "Failed to locate pool"
-                path="$RET"
+                getPoolPath "$pool" "$domain" path || fail 1 "Failed to locate pool"
 
                 # Check that we have a meta directory
                 if [ ! -d "$path/meta" ]; then
@@ -504,8 +483,7 @@ case "$1" in
 
         case "$command" in
             heap)
-                parseOptions "force" $*
-                shift $?
+                parseOptions "force" "$@" || shift $?
 
                 [ $# -ne 2 ] && usage
 
@@ -522,10 +500,9 @@ case "$1" in
                     fail 1 "${file} already exists. Heap not dumped."
                 fi
 
-                if ! getJavaPidOfDomain ${domain}; then
+                if ! getJavaPidOfDomain ${domain} pid; then
                     fail 1 "Domain ${domain} is not running."
                 fi
-                pid="$RET"
 
                 if [ -z "$opt_force" ]; then
                     dumpHeap "" "live" "$file" "$pid" \
@@ -546,10 +523,10 @@ case "$1" in
                 ;;
 
             threads)
-                domains=$(printExpandedServiceAndDomainList $*)
+                domains=$(printExpandedServiceAndDomainList "$@")
                 for domain in $domains; do
-                    if getJavaPidOfDomain ${domain}; then
-                        if ! kill -s QUIT ${RET}; then
+                    if getJavaPidOfDomain ${domain} pid; then
+                        if ! kill -s QUIT "${pid}"; then
                             fail 1 "Failed to dump stack traces. Likely
                                     the current user does not have the
                                     proper permissions."
@@ -585,12 +562,11 @@ case "$1" in
                 opt_hostcert="/etc/grid-security/hostcert.pem"
                 opt_hostkey="/etc/grid-security/hostkey.pem"
 
-                parseOptions "out password hostcert hostkey" $*
-                shift $?
+                parseOptions "out password hostcert hostkey" "$@" || shift $?
 
                 PASSWORD="${opt_password}" openssl pkcs12 -export -in "$opt_hostcert" -inkey "$opt_hostkey" -out "$opt_out" -passout env:PASSWORD && chmod 400 "$opt_out" || exit
                 printp "The host certifcate has been stored in $opt_out. If
-                        dCache runs as a non-root user, you must change 
+                        dCache runs as a non-root user, you must change
                         the owner of $opt_out."
                 ;;
 
@@ -605,8 +581,7 @@ case "$1" in
                 opt_out="${dCache_trustStore:-${DCACHE_HOME}/etc/certificates.jks}"
                 opt_cacerts="/etc/grid-security/certificates"
 
-                parseOptions "out password cacerts" $*
-                shift $?
+                parseOptions "out password cacerts" "$@" || shift $?
 
                 rm -f "${opt_out}" || exit
 
