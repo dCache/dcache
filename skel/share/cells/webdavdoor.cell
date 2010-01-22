@@ -13,6 +13,8 @@ set context -c webdavPoolManagerTimeout 300000
 set context -c webdavPoolTimeout 10000
 set context -c webdavGplazmaTimeout 180000
 set context -c webdavPort 2880
+set context -c webdavAddress 0.0.0.0
+set context -c webdavInternalAddress ""
 set context -c webdavRootPath /
 set context -c webdavAllowedPaths /
 set context -c webdavReadOnly false
@@ -69,6 +71,8 @@ create org.dcache.cells.UniversalSpringCell ${0} \
     -webdavPoolTimeout=${webdavPoolTimeout} \
     -webdavGplazmaTimeout=${webdavGplazmaTimeout} \
     -webdavPort=${webdavPort} \
+    -webdavAddress=${webdavAddress} \
+    -webdavInternalAddress=${webdavInternalAddress} \
     -webdavRootPath=${webdavRootPath} \
     -webdavAllowedPaths=${webdavAllowedPaths} \
     -webdavReadOnly=${webdavReadOnly} \

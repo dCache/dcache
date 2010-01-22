@@ -22,7 +22,9 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.net.ServerSocket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import javax.security.auth.Subject;
 import java.security.AccessController;
 
@@ -151,10 +153,13 @@ public class DcacheResourceFactory
     private FsPath _rootPath = new FsPath();
     private List<FsPath> _allowedPaths =
         Collections.singletonList(new FsPath());
+    private InetAddress _internalAddress;
 
     public DcacheResourceFactory()
+        throws UnknownHostException
     {
         _securityManager = new NullSecurityManager();
+        _internalAddress = InetAddress.getLocalHost();
     }
 
     /**
@@ -360,6 +365,25 @@ public class DcacheResourceFactory
         _executor.scheduleAtFixedRate(new PingMoverTask(),
                                       _pingDelay, _pingDelay,
                                       TimeUnit.MILLISECONDS);
+    }
+
+    public void setInternalAddress(String host)
+        throws UnknownHostException
+    {
+        if (host != null && !host.isEmpty()) {
+            InetAddress address = InetAddress.getByName(host);
+            if (address.isAnyLocalAddress()) {
+                throw new IllegalArgumentException("Wildcard address is not allowed: " + host);
+            }
+            _internalAddress = address;
+        } else {
+            _internalAddress = InetAddress.getLocalHost();
+        }
+    }
+
+    public String getInternalAddress()
+    {
+        return _internalAddress.getHostAddress();
     }
 
     /**
@@ -880,7 +904,7 @@ public class DcacheResourceFactory
             _serverChannel = ServerSocketChannel.open();
             try {
                 _serverChannel.socket().setSoTimeout(_moverTimeout);
-                _serverChannel.socket().bind(null);
+               _serverChannel.socket().bind(new InetSocketAddress(_internalAddress, 0));
             } catch (IOException e) {
                 _serverChannel.close();
                 _serverChannel = null;

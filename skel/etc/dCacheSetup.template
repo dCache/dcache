@@ -554,9 +554,9 @@ sshPort=${portBase}124
 #
 #   Deletion Registration functionality in pnfs, when enabled, creates a
 #   record of each file deletion in pnfs namespace. Dcache does not delete
-#   precious or online data files in pools if a deletion registration record 
-#   is not present. Usage of trash database is recommended in case of the 
-#   pnfs namespace, as pnfs can report files as not being found when some 
+#   precious or online data files in pools if a deletion registration record
+#   is not present. Usage of trash database is recommended in case of the
+#   pnfs namespace, as pnfs can report files as not being found when some
 #   components of pnfs are not running. This issue does not affect Chimera.
 #
 #   There are two ways to connect to the database containing
@@ -1549,6 +1549,21 @@ statisticsLocation=${ourHomeDir}/statistics
 #   Specifies the TCP port on which the WebDAV door accepts connections.
 #
 #webdavPort=2880
+
+#  ---- What IP address to listen on for WebDAV door
+#
+#   Specifies the IP address to which the WebDAV door listens for
+#   connections from clients. Defaults to the wildcard address.
+#
+#webdavAddress=0.0.0.0
+
+#  ---- What IP address to use for connections from pools to the WebDAV door
+#
+#   For uploads pools create a TCP connection to the WebDAV door.
+#   If empty, the WebDAV door will choose a local address. Notice
+#   that this address must not be a wildcard address.
+#
+#webdavInternalAddress=""
 
 #  ---- Root path of WebDAV door
 #
