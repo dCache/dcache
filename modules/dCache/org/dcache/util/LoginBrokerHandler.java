@@ -4,10 +4,12 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.List;
+import java.util.Collections;
 
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
@@ -118,7 +120,7 @@ public class LoginBrokerHandler
 
         for (InetAddress addr: addresses) {
             String host = addr.getCanonicalHostName();
-            if( !addr.isLinkLocalAddress() && !addr.isLoopbackAddress() &&
+            if (!addr.isLinkLocalAddress() && !addr.isLoopbackAddress() &&
                 !addr.isSiteLocalAddress() && !addr.isMulticastAddress()) {
                 _hosts[nextExternalIfIndex++] = host;
             } else {
@@ -127,6 +129,17 @@ public class LoginBrokerHandler
         }
 
         rescheduleTask();
+    }
+
+    public synchronized void setAddress(String host)
+        throws SocketException, UnknownHostException
+    {
+        InetAddress address = InetAddress.getByName(host);
+        if (address.isAnyLocalAddress()) {
+            setAddresses(NetworkUtils.getLocalAddressesV4());
+        } else {
+            setAddresses(Collections.singletonList(address));
+        }
     }
 
     public synchronized void setPort(int port)

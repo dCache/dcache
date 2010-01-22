@@ -91,6 +91,7 @@
     <property name="moverTimeout" value="${webdavMoverTimeout}"/>
     <property name="killTimeout" value="${webdavKillTimeout}"/>
     <property name="transferConfirmationTimeout" value="${webdavTransferConfirmationTimeout}"/>
+    <property name="internalAddress" value="${webdavInternalAddress}"/>
   </bean>
 
   <bean id="milton" class="com.bradmcevoy.http.HttpManager">
