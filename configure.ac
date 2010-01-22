@@ -4,8 +4,6 @@ dnl -------------------------------------------------------------------------
 
 
 AC_INIT(src/dcap.c)
-GCCVER=$EDG_RPM_RELEASE_VERSION
-AC_SUBST(GCCVER)
 
 AC_CONFIG_AUX_DIR(config)
 AC_CANONICAL_SYSTEM
@@ -22,11 +20,12 @@ if test "A" = A$CVSVERSION; then
     CVSVERSION="cvs"$CVSVERSION
 fi
 
-
-GENERIC_LIBRARY_VERSION=`echo $BRUTTAG | cut -d':' -f2 | tr '_' ':' `
-AC_SUBST(GENERIC_LIBRARY_VERSION)
-
 AM_INIT_AUTOMAKE(dcache-dcap,$CVSVERSION)
+
+PROTOCOL_VERSION=1-2-44
+AC_SUBST(PROTOCOL_VERSION)
+LIBRARY_VERSION=`tr - : <<< ${PROTOCOL_VERSION}`
+AC_SUBST(LIBRARY_VERSION)
 
 AC_PROG_CC
 
@@ -535,7 +534,18 @@ export LD_LIBRARY_PATH=${_ldlibpath}
 
 dnl == MIT Kerberous ==
 
+AC_ARG_WITH(krb5-gssapi-include,
+[ --with-krb5-gssapi-include[[=DIR]] use krb5 gssapi includedir],[
+if test "X${withval}" != "X" ; then
+KRB5_GSSAPI_INCLUDE_DIR=$withval
+fi
+],[
+KRB5_GSSAPI_INCLUDE_DIR=/usr/include/gssapi
+])
+AC_SUBST(KRB5_GSSAPI_INCLUDE_DIR)
+
 nokrb=0
+CPPFLAGS="${CPPFLAGS} -I${KRB5_GSSAPI_INCLUDE_DIR}"
 AC_CHECK_HEADERS([gssapi_krb5.h],[],[nokrb=1])
 AC_CHECK_HEADERS([gssapi_generic.h],[],[nokrb=1])
 
@@ -777,7 +787,9 @@ AC_SUBST(GLOBUS_LIB_DIR)
 AC_OUTPUT(Makefile \
   src/Makefile \
   src/dcap.h \
+  src/dcap_version.c \
   plugins/Makefile \
   plugins/gssapi/Makefile \
+  plugins/ssl/Makefile \
   plugins/telnet/Makefile \
   dcache-dcap.spec )

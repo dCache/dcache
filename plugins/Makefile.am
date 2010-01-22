@@ -10,14 +10,12 @@ TELNET = telnet
 endif
 
 
-SUBDIRS = $(GSSAPI) $(TELNET)
+SUBDIRS = $(GSSAPI) $(TELNET) ssl
 
 .PHONY: tags
 tags:
-	make TAGS 
+	make TAGS
 	list=''; for subdir in "$list"; do \
-  	test "$subdir" = . || (cd $subdir && make tags); \
+	test "$subdir" = . || (cd $subdir && make tags); \
 		echo $subdir; \
 	done
-	
-	

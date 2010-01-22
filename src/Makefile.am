@@ -108,45 +108,39 @@ library_include_HEADERS = $(h_sources)
 #lib_LTLIBRARIES = libdcap.la
 lib_LTLIBRARIES = libdcap.la libpdcap.la
 libdcap_la_SOURCES = $(c_sources)
-libdcap_la_LDFLAGS = -no-undefined -version-info 1:0:0
+libdcap_la_LIBADD = -lpthread -ldl
+libdcap_la_LDFLAGS = -no-undefined -version-number $(LIBRARY_VERSION)
 libpdcap_la_SOURCES = $(p_loadsrc)
-libpdcap_la_LDFLAGS = -no-undefined -version-info 1:0:0
-
-DEPS = $(top_builddir)/src/.libs/libdcap.a
-
+libpdcap_la_LIBADD = libdcap.la
+libpdcap_la_LDFLAGS = -no-undefined -version-number $(LIBRARY_VERSION)
 
 #bin_PROGRAMS = dccp dcap_test
 
 bin_PROGRAMS = dccp dcap_test dcsuck readv_test wdccp
 
-dccp_SOURCES= dccp.c $(h_internal)
+dccp_SOURCES = dccp.c $(h_internal)
 dccp_LDFLAGS =
-dccp_DEPENDENCIES = $(DEPS)
-dccp_LDADD= $(LDADDS)  -ldcap -ldl -lpthread
+dccp_LDADD = $(LDADDS) libdcap.la
 dccp_CFLAGS = $(AM_CFLAGS)
 
 dcap_test_SOURCES = dcap_test.c
 dcap_test_LDFLAGS =
-dcap_test_DEPENDENCIES = $(DEPS)
-dcap_test_LDADD= $(LDADDS) -ldcap -ldl -lpthread
+dcap_test_LDADD = $(LDADDS) libdcap.la
 dcap_test_CFLAGS = $(AM_CFLAGS)
 
-dcsuck_SOURCES= dcsuck.c
+dcsuck_SOURCES = dcsuck.c
 dcsuck_LDFLAGS =
-dcsuck_DEPENDENCIES = $(DEPS)
-dcsuck_LDADD= $(LDADDS) -ldcap -ldl -lpthread
+dcsuck_LDADD = $(LDADDS) libdcap.la
 dcsuck_CFLAGS = $(AM_CFLAGS)
 
-readv_test_SOURCES= readv_test.c
+readv_test_SOURCES = readv_test.c
 readv_test_LDFLAGS =
-readv_test_DEPENDENCIES = $(DEPS)
-readv_test_LDADD= $(LDADDS) -ldcap -ldl -lpthread
+readv_test_LDADD = $(LDADDS) libdcap.la
 readv_test_CFLAGS = $(AM_CFLAGS)
 
-wdccp_SOURCES= wdccp.c
+wdccp_SOURCES = wdccp.c
 wdccp_LDFLAGS =
-wdccp_DEPENDENCIES = $(DEPS)
-wdccp_LDADD= $(LDADDS) -ldcap -ldl -lpthread
+wdccp_LDADD = $(LDADDS) libdcap.la
 wdccp_CFLAGS = $(AM_CFLAGS)
 
 
@@ -154,7 +148,7 @@ wdccp_CFLAGS = $(AM_CFLAGS)
 tags:
 	make TAGS
 	list=''; for subdir in "$list"; do \
-  	test "$subdir" = . || (cd $subdir && make tags); \
+	test "$subdir" = . || (cd $subdir && make tags); \
 		echo $subdir; \
 	done
 
