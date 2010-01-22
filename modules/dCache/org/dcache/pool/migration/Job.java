@@ -469,6 +469,19 @@ public class Job
         }
     }
 
+    /** Callback from task: Task failed permanently, remove it. */
+    synchronized void taskFailedPermanently(Task task, String msg)
+    {
+        PnfsId pnfsId = task.getPnfsId();
+        _running.remove(pnfsId);
+        schedule();
+
+        Error error = new Error(task.getId(), pnfsId, msg);
+        while (!_errors.offer(error)) {
+            _errors.poll();
+        }
+    }
+
     /** Callback from task: Task is done, remove it. */
     synchronized void taskCompleted(Task task)
     {

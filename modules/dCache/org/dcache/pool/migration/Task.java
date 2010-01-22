@@ -384,6 +384,17 @@ public class Task
     }
 
     /** FSM Action */
+    void failPermanently(final String message)
+    {
+        _executor.execute(new LoggingTask(new Runnable() {
+                public void run()
+                {
+                    _job.taskFailedPermanently(Task.this, message);
+                }
+            }));
+    }
+
+    /** FSM Action */
     void notifyCompleted()
     {
         _executor.execute(new LoggingTask(new Runnable() {
