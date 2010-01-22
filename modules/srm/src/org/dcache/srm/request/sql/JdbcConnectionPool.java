@@ -23,19 +23,15 @@ public class JdbcConnectionPool implements Runnable{
     private static HashSet pools = new HashSet();
 
     private Thread[] execution_threads;
-    private final List jdbcTasks = new LinkedList();
+    private final List<JdbcTask> jdbcTasks = new LinkedList<JdbcTask>();
 
     private Thread vacuum_thread;
     private long vacuum_period=60*60*1000;//every hour
     private static int executionThreadNum=5;
     private static int maxJdbcTasksNum = 1000 ;
 
-    private static Logger _logSql =
-            Logger.getLogger(
-            "logger.org.dcache.db.sql"+
-            JdbcConnectionPool.class.getName());
-
-
+    private static final Logger _log =
+        Logger.getLogger(JdbcConnectionPool.class);
 
     public synchronized static final JdbcConnectionPool getPool(String jdbcUrl,
     String jdbcClass,
@@ -50,8 +46,8 @@ public class JdbcConnectionPool implements Runnable{
             pool.pass.equals(pass) &&
             pool.user.equals(user) ) {
                 long elapsed = System.currentTimeMillis()-starttimestamp;
-                if( _logSql.isDebugEnabled() ) {
-                    _logSql.debug( "getPool() took "+elapsed+" ms");
+                if( _log.isDebugEnabled() ) {
+                    _log.debug( "getPool() took "+elapsed+" ms");
                 }
                 return pool;
             }
@@ -59,8 +55,8 @@ public class JdbcConnectionPool implements Runnable{
         JdbcConnectionPool pool = new JdbcConnectionPool(jdbcUrl,jdbcClass,user,pass);
         pools.add(pool);
         long elapsed = System.currentTimeMillis()-starttimestamp;
-        if( _logSql.isDebugEnabled() ) {
-            _logSql.debug( "getPool() took "+elapsed+" ms");
+        if( _log.isDebugEnabled() ) {
+            _log.debug( "getPool() took "+elapsed+" ms");
         }
         return pool;
 
@@ -124,8 +120,8 @@ public class JdbcConnectionPool implements Runnable{
                 try {
                     if(!_con.isClosed()) {
                         long elapsed = System.currentTimeMillis()-starttimestamp;
-                        if( _logSql.isDebugEnabled() ) {
-                            _logSql.debug( "getConnection() took "+elapsed+" ms");
+                        if( _log.isDebugEnabled() ) {
+                            _log.debug( "getConnection() took "+elapsed+" ms");
                         }
                         return _con;
                     }
@@ -139,8 +135,8 @@ public class JdbcConnectionPool implements Runnable{
         Connection _con  = DriverManager.getConnection(jdbcUrl, user, pass);
         _con.setAutoCommit(false);
         long elapsed = System.currentTimeMillis()-starttimestamp;
-        if( _logSql.isDebugEnabled() ) {
-            _logSql.debug( "getConnection() took "+elapsed+" ms");
+        if( _log.isDebugEnabled() ) {
+            _log.debug( "getConnection() took "+elapsed+" ms");
         }
         return _con;
     }
@@ -162,21 +158,21 @@ public class JdbcConnectionPool implements Runnable{
             try {
                 _con.close();
                 long elapsed = System.currentTimeMillis()-starttimestamp;
-                if( _logSql.isDebugEnabled() ) {
-                    _logSql.debug( "returnFailedConnection() took "+elapsed+" ms");
+                if( _log.isDebugEnabled() ) {
+                    _log.debug( "returnFailedConnection() took "+elapsed+" ms");
                 }
                 return;
             }
             catch(SQLException sqle) {
-                if( _logSql.isDebugEnabled()) {
-                    _logSql.debug("returnFailedConnection() exception: ",sqle);
+                if( _log.isDebugEnabled()) {
+                    _log.debug("returnFailedConnection() exception: ",sqle);
                 }
             }
         }
 
         long elapsed = System.currentTimeMillis()-starttimestamp;
-        if( _logSql.isDebugEnabled() ) {
-            _logSql.debug( "returnFailedConnection() took "+elapsed+" ms");
+        if( _log.isDebugEnabled() ) {
+            _log.debug( "returnFailedConnection() took "+elapsed+" ms");
         }
    }
 
@@ -197,16 +193,16 @@ public class JdbcConnectionPool implements Runnable{
             try {
                 if(_con.isClosed()) {
                     long elapsed = System.currentTimeMillis()-starttimestamp;
-                    if( _logSql.isDebugEnabled() ) {
-                        _logSql.debug( "returnConnection() took "+elapsed+" ms");
+                    if( _log.isDebugEnabled() ) {
+                        _log.debug( "returnConnection() took "+elapsed+" ms");
                     }
                     return;
                 }
                 if(connections.size() >= max_connections) {
                     _con.close();
                     long elapsed = System.currentTimeMillis()-starttimestamp;
-                    if( _logSql.isDebugEnabled() ) {
-                        _logSql.debug( "returnConnection() took "+elapsed+" ms");
+                    if( _log.isDebugEnabled() ) {
+                        _log.debug( "returnConnection() took "+elapsed+" ms");
                     }
                     return;
                 }
@@ -215,14 +211,14 @@ public class JdbcConnectionPool implements Runnable{
             }
             catch(SQLException sqle) {
                 //esay(sqle);
-                if( _logSql.isDebugEnabled()) {
-                    _logSql.debug("returnConnection() exception: ",sqle);
+                if( _log.isDebugEnabled()) {
+                    _log.debug("returnConnection() exception: ",sqle);
                 }
             }
         }
         long elapsed = System.currentTimeMillis()-starttimestamp;
-        if( _logSql.isDebugEnabled() ) {
-            _logSql.debug( "returnConnection() took "+elapsed+" ms");
+        if( _log.isDebugEnabled() ) {
+            _log.debug( "returnConnection() took "+elapsed+" ms");
         }
     }
 
@@ -259,7 +255,7 @@ public class JdbcConnectionPool implements Runnable{
             if(vacuum_period >0) {
                 this.vacuum_period = vacuum_period;
             }
-            vacuum_thread = new Thread (this);
+            vacuum_thread = new Thread(this, "vacuum-thread");
             vacuum_thread.start();
     }
     public void startExecutionThreads(){
@@ -269,8 +265,8 @@ public class JdbcConnectionPool implements Runnable{
             }
             execution_threads = new Thread[executionThreadNum];
             for(int i = 0; i<execution_threads.length; ++i){
-               execution_threads[i] =  new Thread (this);
-               execution_threads[i].start();
+                execution_threads[i] = new Thread(this, "db-thread-" + i);
+                execution_threads[i].start();
             }
 
     }
@@ -282,69 +278,53 @@ public class JdbcConnectionPool implements Runnable{
             while(true) {
                 Thread.sleep(vacuum_period);
                 Statement sqlStatement = _con.createStatement();
-                System.out.println("executing statement: VACUUM ANALYZE");
+                _log.debug("executing statement: VACUUM ANALYZE");
                 sqlStatement.execute("VACUUM ANALYZE");
-                System.out.println("finished statement: VACUUM ANALYZE");
+                _log.debug("finished statement: VACUUM ANALYZE");
 
             }
-        }
-        catch(InterruptedException ie){
-            vacuum_thread = null;
-            ie.printStackTrace();
-            System.err.println("quiting posgres vacuuming thread");
-        }
-        catch(SQLException sqle) {
-           sqle.printStackTrace();
+        } catch (InterruptedException e){
+            _log.debug("Vacuum thread shutting down");
+        } catch (SQLException e) {
+            _log.error("VACCUUM ANALYZE failed: " + e.getMessage());
+        } finally {
            vacuum_thread = null;
-           System.err.println("quiting posgres vacuuming thread");
         }
     }
 
     public void execution_thread_loop() {
         while (true) {
-            try{
+            try {
                 JdbcTask nextTask;
                 synchronized(jdbcTasks) {
                     while(jdbcTasks.isEmpty()) {
                         jdbcTasks.wait(10000);
                     }
 
-                    nextTask  = (JdbcTask)jdbcTasks.remove(0);
+                    nextTask  = jdbcTasks.remove(0);
                 }
                 Connection _con =null;
                 try {
                     _con = getConnection();
                     nextTask.execute(_con);
-                    returnConnection(_con);
-                    _con = null;
                 }
-                catch(SQLException sqle) {
-                    sqle.printStackTrace();
+                catch(SQLException e) {
+                    _log.error("SQL statement failed: " + e.getMessage());
                     if(_con != null) {
                         returnFailedConnection(_con);
                         _con = null;
                     }
-
-                    throw sqle;
                 }
                 finally {
                     if(_con != null) {
                         returnConnection(_con);
                     }
                 }
-            }
-            catch(InterruptedException ie) {
-                ie.printStackTrace();
-                System.err.println("jdbc execution thread interrupted, quitting");
-                return;
-            }
-            catch(Exception e) {
-                e.printStackTrace();
-            }
-            catch(Throwable t){
-                t.printStackTrace();
-                System.err.println("fatal failure in jdbc execution thread, quitting");
-                return;
+            } catch (InterruptedException e) {
+                _log.debug("Execution thread shutting down");
+                break;
+            } catch (Throwable e) {
+                Thread.currentThread().getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), e);
             }
         }
     }
@@ -376,10 +356,9 @@ public class JdbcConnectionPool implements Runnable{
                 return;
             }
         }
-        System.err.println("Execution of JdbcTask failed, jdbcTaskQueue is too long:"+jdbcTasksSize+
-                " task is:"+task.toString());
-        throw new SQLException("jdbcTaskQueue is too long:"+jdbcTasksSize);
-
+        _log.error("Execution of JdbcTask failed, jdbcTaskQueue is too long: " +
+                   jdbcTasksSize+" task is: "+task);
+        throw new SQLException("jdbcTaskQueue is too long: " + jdbcTasksSize);
     }
 
     public static int getExecutionThreadNum() {
