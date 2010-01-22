@@ -313,10 +313,32 @@ getPidOfDomain() # $1 = Domain name
 
     getConfigurationValue "$domain" pidDir || return
 
-    pidFile="${RET:-$DCACHE_PID}/dcache.$domain.pid"
-    [ -f ${pidFile} ] || return 1
+    pidFile="${RET:-$DCACHE_PID}/dcache.$domain-daemon.pid"
+    [ -f "${pidFile}" ] || return 1
 
-    pid=$(cat ${pidFile})
+    pid=$(cat "${pidFile}")
+    isRunning ${pid} || return 1
+
+    RET=${pid}
+    return 0
+}
+
+# If domain runs, RET is set to its PID.  Returns 0 if domain is
+# running, 1 otherwise.
+getJavaPidOfDomain() # $1 = Domain name
+{
+    local domain
+    local pidFile
+    local pid
+
+    domain="$1"
+
+    getConfigurationValue "$domain" pidDir || return
+
+    pidFile="${RET:-$DCACHE_PID}/dcache.$domain-java.pid"
+    [ -f "${pidFile}" ] || return 1
+
+    pid=$(cat "${pidFile}")
     isRunning ${pid} || return 1
 
     RET=${pid}
