@@ -52,10 +52,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
     private long _lastTransferred    = System.currentTimeMillis();
 
     private ByteBuffer _bigBuffer    = null;
-    private boolean _debug           = false;
     private String  _status          = "None";
-    private long    _crash           = -1;
-    private String  _crashType       = null;
     private boolean _io_ok           = true;
     private long    _ioError         = -1;
     private PnfsId  _pnfsId          = null;
@@ -268,13 +265,10 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
         _log.info("Setup : Defaults Buffer Sizes  : "+_defaultBufferSize);
         _log.info("Setup : Max Buffer Sizes       : "+_maxBufferSize);
 
-        String debugEnabled = (String)_context.get("dCap3-debug");
-        _debug = (debugEnabled != null) &&  ! debugEnabled.equals("");
-
     }
     private synchronized int getParameterInt(String name, int defaultValue){
         String stringValue = (String)_context.get("dCap3-"+name);
-        stringValue = stringValue == null ? (String)_args.getOpt(name) : stringValue;
+        stringValue = stringValue == null ? _args.getOpt(name) : stringValue;
         try{
             return stringValue == null ? defaultValue : Integer.parseInt(stringValue);
         }catch(NumberFormatException e){
@@ -320,16 +314,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
         //                                                                    //
         //    Prepare the tunable parameters                                  //
         //                                                                    //
-        try{
-            String crash = storage.getKey("crash");
-            if(crash != null){
-                _crash     = crash.length() == 0 ? 654321L : Long.parseLong(crash);
-                _crashType = storage.getKey("crashType");
-                _log.info("Options : crash = "+crash+"; type = "+ _crashType);
-            }
-        }catch(NumberFormatException e){ /* bad values are ignored */}
-        _log.info("crash       = "+_crash);
-        _log.info("crashType   = "+_crashType);
 
         try{
             String allocation = storage.getKey("alloc-size");
@@ -344,19 +328,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                 }
             }
         }catch(NumberFormatException e){ /* bad values are ignored */}
-
-        try{
-            String debug = storage.getKey("debug");
-            if(debug != null){
-                _log.info("Options : debug = "+debug);
-                if(debug.length() == 0)_debug = true;
-                else{
-                    _debug =  Integer.parseInt(debug) > 0;
-                }
-            }
-        }catch(NumberFormatException e){ /* bad values are ignored */}
-
-        _log.info("debug = "+_debug);
 
         try{
             String io = storage.getKey("io-error");
@@ -860,8 +831,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                 _bytesTransferred += rc;
 
             }
-
-
         }
 
         return;
