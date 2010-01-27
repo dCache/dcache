@@ -20,5 +20,14 @@ public class DcapURLTest extends TestCase {
 		assertEquals("Invalid protocol", "/pnfs/desy.de/h1/user/tigran/index.dat", url.getFilePart() );
 		
 	}
-	
+
+    @Test
+    public void testDcapUrlWithOptions() throws IllegalArgumentException, IOException {
+
+        DCapUrl url = new DCapUrl("dcap://dcachedoor0.desy.de:22225/pnfs/desy.de/h1/user/tigran/index.dat?filetype=raw");
+
+        assertEquals("Invalid protocol", "dcap", url.getProtocol());
+        assertEquals("Invalid protocol", "/pnfs/desy.de/h1/user/tigran/index.dat", url.getFilePart());
+
+    }
 }
