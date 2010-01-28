@@ -553,10 +553,10 @@ public class HsmStorageHandler2
                         if (returnCode == 71 ) {
                             returnCode = CacheException.HSM_DELAY_ERROR;
                         }
-                        excep  =
-                            new CacheException(returnCode, run.getErrorString());
-                        _log.error("HSM script returned " + returnCode
-                                   + ": " + run.getErrorString());
+
+                        throw new CacheException(returnCode,
+                                                 "HSM script failed: " +
+                                                 run.getErrorString());
                     }
 
                     doChecksum(_handle);
