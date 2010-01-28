@@ -54,15 +54,12 @@ public class MiltonHandler
         CDC.createSession();
         NDC.push(CDC.getSession().toString());
         try {
-            try {
-                ServletRequest req = new ServletRequest(request);
-                ServletResponse resp = new ServletResponse(response);
-                baseRequest.setHandled(true);
-                _httpManager.process(req, resp);
-            } finally {
-                response.getOutputStream().flush();
-                response.flushBuffer();
-            }
+            ServletRequest req = new ServletRequest(request);
+            ServletResponse resp = new ServletResponse(response);
+            baseRequest.setHandled(true);
+            _httpManager.process(req, resp);
+            response.getOutputStream().flush();
+            response.flushBuffer();
         } finally {
             MDC.remove(CDC.MDC_DOMAIN);
             MDC.remove(CDC.MDC_CELL);
