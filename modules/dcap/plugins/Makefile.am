@@ -8,9 +8,11 @@ endif
 if WANT_LIBTELNETTUNNEL
 TELNET = telnet
 endif
+if WANT_LIBSSLTUNNEL
+SSL = ssl
+endif
 
-
-SUBDIRS = $(GSSAPI) $(TELNET) ssl
+SUBDIRS = $(GSSAPI) $(TELNET) $(SSL)
 
 .PHONY: tags
 tags:

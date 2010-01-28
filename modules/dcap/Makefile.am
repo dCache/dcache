@@ -12,7 +12,9 @@ endif
 if WANT_LIBTELNETTUNNEL
 TELNETAPI = -with telnet
 endif
-
+if WANT_LIBSSLTUNNEL
+SSLAPI = -with ssl
+endif
 
 AUX_DIST             =  $(ac_aux_dir)/config.guess \
                         $(ac_aux_dir)/config.sub \
@@ -54,7 +56,7 @@ rpm: dist @PACKAGE@.spec
 	cp @PACKAGE@-@VERSION@.tar.gz $(topdir)/SOURCES
 	cp @PACKAGE@.spec $(topdir)/SPECS
 	rpmbuild --define "_topdir $(topdir)" \
-	-ba $(GSSAPI) $(GSIAPI) $(TELNETAPI) \
+	-ba $(GSSAPI) $(GSIAPI) $(SSLAPI) $(TELNETAPI) \
 	@PACKAGE@.spec
 
 
