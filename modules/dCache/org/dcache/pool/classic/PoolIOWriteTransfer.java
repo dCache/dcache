@@ -140,9 +140,8 @@ public class PoolIOWriteTransfer
                 try {
                     raf.getFD().sync();
                 } catch (SyncFailedException e) {
-                    throw new CacheException(CacheException.ERROR_IO_DISK,
-                                             "Failed to synchronize file with storage device: "
-                                             + e.getMessage());
+                    raf.getFD().sync();
+                    _log.info("First sync failed [" + e + "], but second sync suceeded");
                 }
 
                 /* This may throw an IOException, although it is not
