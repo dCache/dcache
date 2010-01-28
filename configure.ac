@@ -101,6 +101,18 @@ AC_TYPE_UID_T
 AC_C_BIGENDIAN
 
 
+
+dnl === openssl stuff ===
+
+nossl=0
+AC_CHECK_HEADERS([openssl/ssl.h], [], [nossl=1])
+AC_CHECK_HEADERS([openssl/err.h], [], [nossl=1])
+if test "${nossl}" != "0" ; then
+AC_MSG_RESULT([Disabling ssl plugin as header files not found.])
+else
+AC_CHECK_LIB(ssl,SSL_library_init,[],[nossl=1])
+fi
+
 dnl === Globus stuff ===
 noglobus=0
 EPEL_LIBS_NOT=0
@@ -771,6 +783,7 @@ dnl Do the conditional compilation flags in rest of autotools.
 AM_CONDITIONAL([WANT_LIBGSITUNNEL], [test "${noglobus}" = "0"])
 AM_CONDITIONAL([WANT_LIBGSSTUNNEL], [test "${nokrb}" = "0"])
 AM_CONDITIONAL([WANT_LIBTELNETTUNNEL], [test "${notelnet}" = "0"])
+AM_CONDITIONAL([WANT_LIBSSLTUNNEL], [test "${nossl}" = "0"])
 AM_CONDITIONAL([PKG_DEP_VDT], [test "${PKGDEPVDT}" = "1"])
 AM_CONDITIONAL([PKG_DEP_EPEL], [test "${PKGDEPEPEL}" = "1"])
 

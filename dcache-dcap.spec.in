@@ -1,9 +1,11 @@
 %define krb 0
 %define vdt 0
 %define epel 0
+%define ssl 0
 %{?_with_krb:%define krb 1}
 %{?_with_vdt:%define vdt 1}
 %{?_with_epel:%define epel 1}
+%{?_with_ssl:%define ssl 1}
 
 %if %vdt || %epel
 %define gsi 1
@@ -83,14 +85,16 @@ Requires: libdcap
 This package contains the telnet tunnel plugin library used by dcachedcap.
 This library is dynamically loaded at run time.
 
+%if %ssl
 %package -n libdcap-tunnel-ssl
 Summary: dCache SSL Tunnel
 Group: Applications/System
 Requires: libdcap
+BuildRequires: openssl-devel
 %description -n libdcap-tunnel-ssl
 This package contains the ssl tunnel plugin library used by dcachedcap.
 This library is dynamically loaded at run time.
-
+%endif
 
 %prep
 
@@ -218,6 +222,7 @@ rm -rf $RPM_BUILD_ROOT
 %{prefix}/lib/libtelnetTunnel.so*
 %endif
 
+%if %ssl
 %files -n libdcap-tunnel-ssl
 %defattr(-,root,root)
 %ifarch x86_64
@@ -229,7 +234,7 @@ rm -rf $RPM_BUILD_ROOT
 %{prefix}/lib/libsslTunnel.la
 %{prefix}/lib/libsslTunnel.so*
 %endif
-
+%endif
 %changelog
 * Thu Nov 19 2009 - owen.synge (at) desy.de
 - Repackaged with auto tools
