@@ -32,6 +32,8 @@ set context -c loginBrokerUpdateThreshold 0.1
 set context -c loginBroker LoginBroker
 set context -c useGPlazmaAuthorizationCell true
 set context -c useGPlazmaAuthorizationModule false
+set context -c gplazmaPolicy ${ourHomeDir}/etc/dcachesrm-gplazma.policy
+
 set context -c logoPath images/logo.png
 set context -c dirIconPath images/directoryIcon.png
 set context -c fileIconPath images/fileIcon.png
@@ -96,6 +98,7 @@ create org.dcache.cells.UniversalSpringCell ${0} \
     -loginBroker=${loginBroker} \
     -useGPlazmaAuthorizationCell=${useGPlazmaAuthorizationCell} \
     -useGPlazmaAuthorizationModule=${useGPlazmaAuthorizationModule} \
+    -gplazmaPolicy=${gplazmaPolicy} \
     -webdavLogoPath=${logoPath} \
     -webdavDirIconPath=${dirIconPath} \
     -webdavFileIconPath=${fileIconPath} \

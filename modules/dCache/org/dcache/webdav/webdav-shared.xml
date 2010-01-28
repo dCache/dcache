@@ -55,6 +55,7 @@
     <property name="anonymousAccess" value="${webdavAnonymousAccess}"/>
     <property name="useGplazmaCell" value="${useGPlazmaAuthorizationCell}"/>
     <property name="useGplazmaModule" value="${useGPlazmaAuthorizationModule}"/>
+    <property name="gplazmaPolicyFilePath" value="${gplazmaPolicy}"/>
     <property name="gplazmaStub" ref="gplazma-stub"/>
   </bean>
 
