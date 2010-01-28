@@ -2,7 +2,7 @@
 #
 #		se-handlers/file_lookup
 
-AM_CFLAGS=-g -O0  -fPIC -Wall -pedantic -pipe \
+AM_CFLAGS=-g -O0  -fPIC $(CWFLAG) -pedantic -pipe \
 	-D_REENTRANT -DLIBC_SYSCALLS -D_GNU_SOURCE
 
 
