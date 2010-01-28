@@ -161,7 +161,6 @@ procStart()
 
 # Add a java option for an endorsed directory
     java_options="${java_options} \
-                -cp ${CLASSPATH} \
                 -Djava.endorsed.dirs=${ourHomeDir}/classes/endorsed \
                 dmg.cells.services.Domain ${domainName} $TELNET_PORT \
                 -param setupFile=${setupFilePath} \
@@ -183,7 +182,7 @@ procStart()
     fi
 
     rm -f "$stopFile"
-    /bin/sh ${ourHomeDir}/share/lib/daemon ${user:+-u} ${user:+"$user"} -r "${stopFile}" -d "${delay}" -f -c "${javaPidFile}" -p "${daemonPidFile}" -o "${logfile}" "${java}" ${java_options}
+    CLASSPATH=${CLASSPATH} /bin/sh ${ourHomeDir}/share/lib/daemon ${user:+-u} ${user:+"$user"} -r "${stopFile}" -d "${delay}" -f -c "${javaPidFile}" -p "${daemonPidFile}" -o "${logfile}" "${java}" ${java_options}
 
     printf "Starting ${domainName} "
     for c in 6 5 4 3 2 1 0; do
