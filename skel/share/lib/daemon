@@ -49,7 +49,7 @@ run()
 
 loop()
 {
-    while run "$@"; wait $!; ! [ -f "$restart" ]; do
+    while run "$@"; wait $!; [ ! -f "$restart" ]; do
         if [ -n "$delay" ] ; then
             sleep "$delay"
         fi
