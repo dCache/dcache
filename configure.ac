@@ -29,6 +29,20 @@ AC_SUBST(LIBRARY_VERSION)
 
 AC_PROG_CC
 
+#
+# Wall
+#
+AC_CACHE_CHECK([for maximum warnings compiler flag],
+  ac_cv_cwflag,
+[case "${CC-cc}" in
+  *gcc*) ac_cv_cwflag=-Wall;;
+  *)
+  ;;
+esac])
+AC_SUBST([CWFLAG], [$ac_cv_cwflag])
+
+
+
 AC_PROG_INSTALL
 AM_PROG_LIBTOOL
 AC_PROG_LN_S
