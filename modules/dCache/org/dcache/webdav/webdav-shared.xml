@@ -104,8 +104,8 @@
     <constructor-arg ref="response-handler"/>
     <property name="filters">
       <list>
-        <ref bean="security-filter"/>
         <ref bean="logging-filter"/>
+        <ref bean="security-filter"/>
         <ref bean="dispatch-filter"/>
       </list>
     </property>
