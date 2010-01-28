@@ -32,6 +32,7 @@ set context -c loginBrokerUpdateThreshold 0.1
 set context -c loginBroker LoginBroker
 set context -c useGPlazmaAuthorizationCell true
 set context -c useGPlazmaAuthorizationModule false
+set context -c gplazmaPolicy ${ourHomeDir}/etc/dcachesrm-gplazma.policy
 
 define env webdav-http.exe enddefine
   set context -c webdavAnonymousAccess READONLY
@@ -91,4 +92,5 @@ create org.dcache.cells.UniversalSpringCell ${0} \
     -loginBroker=${loginBroker} \
     -useGPlazmaAuthorizationCell=${useGPlazmaAuthorizationCell} \
     -useGPlazmaAuthorizationModule=${useGPlazmaAuthorizationModule} \
+    -gplazmaPolicy=${gplazmaPolicy} \
     -export -cellClass=WebDAVDoor"
