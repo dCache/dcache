@@ -697,7 +697,7 @@ public abstract class AbstractFtpDoorV1
 
     protected String         _client_data_host;
     protected int            _client_data_port = 20;
-    protected Socket         _dataSocket;
+    protected volatile Socket _dataSocket;
 
     // added for the support or ERET with partial retrieve mode
     protected long prm_offset = -1;
@@ -1126,7 +1126,8 @@ public abstract class AbstractFtpDoorV1
         synchronized(this) {
             if (_transfer != null &&
                 !(cmd.equals("abor") || cmd.equals("mic")
-                  || cmd.equals("conf") || cmd.equals("enc"))) {
+                  || cmd.equals("conf") || cmd.equals("enc")
+                  || cmd.equals("quit") || cmd.equals("bye"))) {
                 reply("503 Transfer in progress", false);
                 return;
             }
@@ -1502,6 +1503,7 @@ public abstract class AbstractFtpDoorV1
                 //      Clear the _pnfsEntryIncomplete flag since transfer successful
                 _transfer.sendDoorRequestInfo(0, "");
                 _transfer = null;
+                notifyAll();
                 reply("226 Transfer complete.");
             } else {
                 StringBuffer errMsg = new StringBuffer("Transfer aborted (");
@@ -3564,6 +3566,7 @@ public abstract class AbstractFtpDoorV1
                 debug(exception);
             }
             _transfer = null;
+            notifyAll();
         }
     }
 
@@ -3682,22 +3685,15 @@ public abstract class AbstractFtpDoorV1
 
     private void closeDataSocket()
     {
-        try {
-            _dataSocket.close();
-        } catch (IOException e) {
-            warn("FTP Door: got I/O exception closing socket: " +
-                 e.getMessage());
-        }
-        _dataSocket = null;
-        if (_mode == Mode.PASSIVE) {
-            info("FTP door: list is waiting for passive adapter...");
-            while (_adapter.isAlive()) {
-                try {
-                    _adapter.join(300000);  // 5 minutes
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
+        Socket socket = _dataSocket;
+        if (socket != null) {
+            try {
+                socket.close();
+            } catch (IOException e) {
+                warn("FTP Door: got I/O exception closing socket: " +
+                     e.getMessage());
             }
+            _dataSocket = null;
         }
     }
 
@@ -3959,9 +3955,33 @@ public abstract class AbstractFtpDoorV1
     //      The delayed QUIT has not been directly implemented yet, instead...
     // Equivalent: let the data channel and pnfs entry clean-up code take care of clean-up.
     // ---------------------------------------------
-    public void ac_quit(String arg) throws CommandExitException
+    public synchronized void ac_quit(String arg)
+        throws CommandExitException
     {
         reply("221 Goodbye");
+
+        /* From RFC 959:
+         *
+         *    "This command terminates a USER and if file transfer is
+         *     not in progress, the server closes the control
+         *     connection.  If file transfer is in progress, the
+         *     connection will remain open for result response and the
+         *     server will then close it."
+         *
+         * In other words, we are supposed to wait until ongoing
+         * transfers have completed.
+         */
+        try {
+            _commandQueue.enableInterrupt();
+            while (_transfer != null) {
+                wait();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } finally {
+            _commandQueue.disableInterrupt();
+        }
+
         throw new CommandExitException("", 0);
     }
 
@@ -3970,29 +3990,17 @@ public abstract class AbstractFtpDoorV1
     // ---------------------------------------------
     public void ac_bye( String arg ) throws CommandExitException
     {
-        reply("221 Goodbye");
-        throw new CommandExitException("", 0);
+        ac_quit(arg);
     }
 
     // --------------------------------------------
     // ABOR: close data channels, but leave command channel open
     // ---------------------------------------------
-    public synchronized void ac_abor(String arg)
+    public void ac_abor(String arg)
     {
         abortTransfer(426, "Transfer aborted");
-
-        // In any case, close data socket and send response 226 to client
-        if (_dataSocket != null) {
-            try {
-                _dataSocket.close();
-            } catch (IOException e) {
-                // ignore
-            }
-            _dataSocket=null;
-            reply("226 Closing data connection, abort successful");
-        } else {
-            reply("226 Abort successful");
-        }
+        closeDataSocket();
+        reply("226 Abort successful");
     }
 
     // --------------------------------------------
