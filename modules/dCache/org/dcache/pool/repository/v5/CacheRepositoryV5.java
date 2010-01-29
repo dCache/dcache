@@ -183,8 +183,7 @@ public class CacheRepositoryV5
     }
 
     /**
-     * Sets whether pool is volatile. On volatile pools, target states
-     * of PRECIOUS are silently changed to CACHED, and
+     * Sets whether pool is volatile. On volatile pools
      * ClearCacheLocation messages are flagged to trigger deletion of
      * the namespace entry when the last known replica is deleted.
      */
@@ -431,10 +430,6 @@ public class CacheRepositoryV5
                 break;
             default:
                 throw new IllegalArgumentException("Invalid target state");
-            }
-
-            if (_volatile && targetState == PRECIOUS) {
-                targetState = CACHED;
             }
 
             MetaDataRecord entry = createMetaDataRecord(id);

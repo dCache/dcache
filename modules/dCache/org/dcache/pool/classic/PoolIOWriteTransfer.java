@@ -75,33 +75,18 @@ public class PoolIOWriteTransfer
                                StorageInfo storageInfo,
                                MoverProtocol mover,
                                Repository repository,
-                               ChecksumModuleV1 checksumModule)
+                               ChecksumModuleV1 checksumModule,
+                               EntryState targetState,
+                               List<StickyRecord> stickyRecords)
         throws FileInCacheException, IOException
     {
         super(pnfsId, protocolInfo, storageInfo, mover);
 
         _checksumModule = checksumModule;
-
-        /* Due to support of <AccessLatency> and <RetentionPolicy>
-         * the file state in the pool has changed it's meaning:
-         *
-         *     precious: have to goto tape
-         *     cached: free to be removed by sweeper
-         *     cached+sticky: does not go to tape, isn't removed by sweeper
-         *
-         * new states depending on AL and RP:
-         *
-         *     Custodial+ONLINE   (T1D1) : precious+sticky  => cached+sticky
-         *     Custodial+NEARLINE (T1D0) : precious         => cached
-         *     Output+ONLINE      (T0D1) : cached+sticky    => cached+sticky
-         */
-        List<StickyRecord> stickyRecords = getStickyRecords(storageInfo);
-        EntryState target = getTargetState(storageInfo);
-
         _handle = repository.createEntry(pnfsId,
                                          _storageInfo,
                                          EntryState.FROM_CLIENT,
-                                         target,
+                                         targetState,
                                          stickyRecords);
         _file = _handle.getFile();
         _file.createNewFile();

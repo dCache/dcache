@@ -5,10 +5,11 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.dcache.pool.classic.ChecksumModuleV1;
-import org.dcache.pool.classic.PoolIOWriteTransfer;
+import org.dcache.pool.classic.ReplicaStatePolicy;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.MetaDataStore;
 import org.dcache.pool.repository.MetaDataRecord;
@@ -50,10 +51,8 @@ public class ConsistentStore
         "Recovering: Removed %1$s because name space entry was deleted";
     private final static String UPDATE_SIZE_MSG =
         "Recovering: Setting size of %1$s in PNFS to %2$d";
-    private final static String PRECIOUS_MSG =
-        "Recovering: Marked %1$s precious";
-    private final static String CACHED_MSG =
-        "Recovering: Marked %1$s cached";
+    private final static String MARKED_MSG =
+        "Recovering: Marked %1$s as %2$s";
     private final static String REMOVING_REDUNDANT_META_DATA =
         "Removing redundant meta data for %s";
 
@@ -67,29 +66,22 @@ public class ConsistentStore
     private final FileStore _fileStore;
     private final MetaDataStore _importStore;
     private final ChecksumModuleV1 _checksumModule;
+    private final ReplicaStatePolicy _replicaStatePolicy;
     private String _poolName;
-    private boolean _isVolatile = false;
-
-    public ConsistentStore(PnfsHandler pnfsHandler,
-                           ChecksumModuleV1 checksumModule,
-                           FileStore fileStore,
-                           MetaDataStore metaDataStore)
-    {
-        this(pnfsHandler,checksumModule, fileStore, metaDataStore,
-             new EmptyMetaDataStore());
-    }
 
     public ConsistentStore(PnfsHandler pnfsHandler,
                            ChecksumModuleV1 checksumModule,
                            FileStore fileStore,
                            MetaDataStore metaDataStore,
-                           MetaDataStore importStore)
+                           MetaDataStore importStore,
+                           ReplicaStatePolicy replicaStatePolicy)
     {
         _pnfsHandler = pnfsHandler;
         _checksumModule = checksumModule;
         _fileStore = fileStore;
         _metaDataStore = metaDataStore;
         _importStore = importStore;
+        _replicaStatePolicy = replicaStatePolicy;
 
         if (!(_importStore instanceof EmptyMetaDataStore)) {
             _log.warn(String.format("NOTICE: Importing any missing meta data from %s. This should only be used to convert an existing repository and never as a permanent setup.", _importStore));
@@ -107,11 +99,6 @@ public class ConsistentStore
     public String getPoolName()
     {
         return _poolName;
-    }
-
-    public void setLFSMode(String lfs)
-    {
-        _isVolatile = ("volatile".equals(lfs) || "transient".equals(lfs));
     }
 
     /**
@@ -266,17 +253,17 @@ public class ConsistentStore
                  * the target state of a newly uploaded file.
                  */
                 if (state != EntryState.CACHED && state != EntryState.PRECIOUS) {
-                    for (StickyRecord record: PoolIOWriteTransfer.getStickyRecords(info)) {
+                    EntryState targetState =
+                        _replicaStatePolicy.getTargetState(info);
+                    List<StickyRecord> stickyRecords =
+                        _replicaStatePolicy.getStickyRecords(info);
+
+                    for (StickyRecord record: stickyRecords) {
                         entry.setSticky(record.owner(), record.expire(), false);
                     }
 
-                    if (PoolIOWriteTransfer.getTargetState(info) == EntryState.PRECIOUS && !info.isStored() && !_isVolatile) {
-                        entry.setState(EntryState.PRECIOUS);
-                        _log.warn(String.format(PRECIOUS_MSG, id));
-                    } else {
-                        entry.setState(EntryState.CACHED);
-                        _log.warn(String.format(CACHED_MSG, id));
-                    }
+                    entry.setState(targetState);
+                    _log.warn(String.format(MARKED_MSG, id, targetState));
                 }
             } catch (InterruptedException e) {
                 throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
