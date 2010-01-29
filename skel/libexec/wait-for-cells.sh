@@ -159,7 +159,7 @@ if [ "x$dots" = "x1" ]; then
     echo
 fi
 
-if [ $rc -ne 0 -a "$list_missing" = "1" ]; then
+if [ $rc -ne 0 -a "$list_missing" = 1 ]; then
   list_missing_cells
 fi
 

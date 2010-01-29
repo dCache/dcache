@@ -449,7 +449,7 @@ dcacheInstallPnfsMountPointServer()
   rpcinfo -u localhost 100003 >/dev/null 2>&1
   RETVAL=$?
   if [ ${RETVAL} -eq 1 ]; then
-    if [ ! -x ${NODE_CONFIG_PNFS_INSTALL_DIR}/tools/pnfs.server ]; then
+    if [ ! -x "${NODE_CONFIG_PNFS_INSTALL_DIR}/tools/pnfs.server" ]; then
       logmessage ERROR "PNFS not installed but needed for dCache admin node installation. Exiting."
       exit 1
     fi
@@ -466,19 +466,19 @@ dcacheInstallPnfsMountPointServer()
 
   #    Checking pnfs mount and possibly mounting
   #
-  cp=`df ${pnfsMountPoint} 2>/dev/null | grep "${pnfsMountPoint}" | awk '{print $2}'`
+  cp=`df "${pnfsMountPoint}" 2>/dev/null | grep "${pnfsMountPoint}" | awk '{print $2}'`
   if [ -z ${cp} ]; then
     logmessage INFO "${pnfsMountPoint} mount point exists, but is not mounted - going to mount it now ..."
     mount -o intr,rw,noac,hard,nfsvers=2 ${pnfsServer}:/fs ${pnfsMountPoint}
   fi
-  cp=`df ${pnfsMountPoint} 2>/dev/null | grep "${pnfsMountPoint}" | awk '{print $2}'`
+  cp=`df "${pnfsMountPoint}" 2>/dev/null | grep "${pnfsMountPoint}" | awk '{print $2}'`
   if [ -z $cp ]; then
     logmessage ERROR "Was not able to mount ${pnfsServer}:/fs to ${pnfsMountPoint}. Exiting."
     exit 1
   fi
   dcacheNameServerIs
   dcacheNameServerIsRc=$?
-  if [ "${dcacheNameServerIsRc}" == "1" ]
+  if [ "${dcacheNameServerIsRc}" == 1 ]
   then
     dcacheInstallPnfsConfigCheck
   else
@@ -532,16 +532,16 @@ dcacheInstallChimeraMountPointServer()
   if [ -n "$(mount | grep "/pnfs" )" ] ; then
     tryToMount=0
   fi
-  if [ "${tryToMount}" == "0" ] ; then
+  if [ "${tryToMount}" == 0 ] ; then
     logmessage INFO "Already Mounted ${pnfsServer}"
   else
     cmdline="mount -o intr,rw,hard ${pnfsServer}:/pnfs /pnfs"
     counter=1
     logmessage INFO "Need to mount ${pnfsServer}"
-    while [ "${tryToMount}" == "1" ] ; do
+    while [ "${tryToMount}" == 1 ] ; do
       $cmdline
       mountrc=$?
-      if [ "${mountrc}" == "0" ] ; then
+      if [ "${mountrc}" == 0 ] ; then
         logmessage INFO "Successflly mounted Chimera running $cmdline"
         tryToMount=0
       else
@@ -608,7 +608,7 @@ dcacheInstallPnfsConfigCheck()
   fqHostname=`fqdn_os`
   getConfigurationValue dcap dCapPort dCapPort
   logmessage INFO "Checking on a possibly existing dCache/PNFS configuration ..."
-  if [ -f ${NODE_CONFIG_PNFS_ROOT}/fs/admin/etc/config/serverRoot ]; then
+  if [ -f "${NODE_CONFIG_PNFS_ROOT}/fs/admin/etc/config/serverRoot" ]; then
     WRITING_PNFS=no
   else
     WRITING_PNFS=yes
@@ -764,7 +764,7 @@ dcacheInstallPool()
     rm -f "${DCACHE_HOME}/config/${shortHostname}.poollist"
     touch "${DCACHE_HOME}/config/${shortHostname}.poollist"
   fi
-  if [ -r ${DCACHE_HOME}/etc/pool_path ]; then
+  if [ -r "${DCACHE_HOME}/etc/pool_path" ]; then
     logmessage WARNING "Defining pools in ${DCACHE_HOME}/etc/pool_path is deprecated."
     logmessage WARNING "Please use ${DCACHE_HOME}/bin/dcache pool create and"
     logmessage WARNING "${DCACHE_HOME}/bin/dcache pool add instead."
@@ -822,7 +822,7 @@ dcacheInstallSrm()
   # standard javac location $JAVA_HOME/bin/java
   # check for javac
   JAVA_HOME=${java%/bin/*}
-  if [ ! -x ${JAVA_HOME}/bin/javac ]; then
+  if [ ! -x "${JAVA_HOME}/bin/javac" ]; then
     # on some system (e.g. Debian), $JAVA_HOME/bin/java points
     # to $JAVA_HOME/jre/bin/java. Try to go up another level.
     JAVA_HOME=${java%/jre/bin/*}

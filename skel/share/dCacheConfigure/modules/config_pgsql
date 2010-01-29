@@ -248,7 +248,7 @@ config_pgsql_base_init()
     [ -x /sbin/restorecon ] && /sbin/restorecon "$pgdata"
     /etc/init.d/postgresql start
     startedOK=$?
-    if [ "$startedOK" != "0" ] ; then
+    if [ "$startedOK" != 0 ] ; then
         echo $pglogdir
         service postgresql initdb
     fi
@@ -384,17 +384,17 @@ yaim_query_conf_node_dcache_dbserver_create_list()
     result=0
     yaim_query_conf_node_dcache_admin
     rcadmin=$?
-    if [ "$rcadmin" == "1" ] ; then
+    if [ "$rcadmin" == 1 ] ; then
         holder="dcache replicas  billing $holder"
     fi
     yaim_query_conf_node_dcache_pnfsserver
     rcpnfss=$?
-    if [ "$rcpnfss" == "1" ] ; then
+    if [ "$rcpnfss" == 1 ] ; then
         holder="companion $holder"
     fi
     yaim_query_conf_node_srm_door
     rcsrm=$?
-    if [ "$rcsrm" == "1" ] ; then
+    if [ "$rcsrm" == 1 ] ; then
         holder="dcache $holder"
     fi
     for i in $holder
@@ -475,12 +475,12 @@ config_pgsql_base_user()
 	createuser -U postgres --no-adduser -r --createdb $USER
 	rc=$?
 	#try to escape problems on old postgresql 8.0 systems
-	if [ ! "$rc" == "0" ] ;  then
+	if [ ! "$rc" == 0 ] ;  then
 		# Try to create user without the -r option
 		# which is not supported on postgres 8.0.4
 		createuser -U postgres --no-adduser --createdb $USER
 		rc=$?
-		if [ ! "$rc" == "0" ] ;  then
+		if [ ! "$rc" == 0 ] ;  then
 			echo "createuser -U postgres --no-adduser --createdb $USER"
 			echo "Command failed"
 			exit 1	
@@ -517,7 +517,7 @@ config_pgsql_installed_test()
   yaimlog DEBUG "function config_pgsql_installed_test start"
   id postgres > /dev/null
   postgresidckrc=$?
-  if [ $postgresidckrc != 0 ] ; then
+  if [ "$postgresidckrc" != 0 ] ; then
     echo config_pgsql called but postgres users does not exist!
     echo Try creating user postgres and rerun Yaim 
     exit 1
@@ -560,17 +560,17 @@ config_sedcache_pgsql()
   
   yaim_query_conf_node_dcache_dbserver
   rcdbserver=$?
-  if [ "$rcdbserver" == "1" ]
+  if [ "$rcdbserver" == 1 ]
   then
     yaim_state_reset_postgresql
     rcrmpgsql=$?
-    if [ "$rcrmpgsql" == "1" ]
+    if [ "$rcrmpgsql" == 1 ]
     then
       yaim_query_conf_node_dcache_name_server
       rcnameserver=$?
-      if [ "$rcrmpgsql" == "1" ] ; then
-	yaim_state_nameserver_unmount
-	yaim_state_nameserver_stop
+      if [ "$rcrmpgsql" == 1 ] ; then
+        yaim_state_nameserver_unmount
+        yaim_state_nameserver_stop
       fi
       config_pgsql_uninstall
       RESET_DCACHE_PNFS=yes
@@ -578,7 +578,7 @@ config_sedcache_pgsql()
     else
       yaim_state_postgresql_started
       postgresql_started=$?
-      if [ "${postgresql_started}" != "0" ] ; then
+      if [ "${postgresql_started}" != 0 ] ; then
         echo "Error: Postgresql is not started or producing an Error. Please set the variable"
         echo "Error: RESET_DCACHE_RDBMS=yes"
         echo "Error: or start the postgres database before running YAIM"

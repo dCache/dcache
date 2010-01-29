@@ -228,7 +228,7 @@ config_gip_dcache_info_setup()
   yaimlog DEBUG To generate the information systems configuration running $CMD
   $CMD
   cmdrc=$?
-  if [ "${cmdrc}" != "0" ] ; then
+  if [ "${cmdrc}" != 0 ] ; then
     yaimlog ERROR "Command ${CMD} failed please rerun it to find out why."
     yaimlog WARNING "Giving up configuring the information system"
     return 1
@@ -271,7 +271,7 @@ config_gip_dcache_info_break_old()
   # Now delete all links in the directory except the target
   for file in `ls ${symlinkdir}`
   do
-    if [ -s ${symlinkdir}/${file} ] ; then
+    if [ -s "${symlinkdir}/${file}" ] ; then
       if [ "${target}" != "${symlinkdir}/${file}" ] ; then
         yaimlog INFO "Deleting file ${target}"
         rm ${target}
@@ -308,7 +308,7 @@ config_gip_dcache_info_link()
 config_gip_dcache_info_check()
 {
   rcdcache_info_check=$?
-  if [ "${rcdcache_info_check}" != "0" ] ; then
+  if [ "${rcdcache_info_check}" != 0 ] ; then
     config_gip_check_users_exist
   fi
   return 0
@@ -325,38 +325,38 @@ config_gip_dcache_info_run()
   yaimlog DEBUG "function config_gip_dcache_info_run start"
   config_gip_dcache_info_check
   rcdcache_info_check=$?
-  if [ "${rcdcache_info_check}" != "0" ] ; then
+  if [ "${rcdcache_info_check}" != 0 ] ; then
     yaimlog INFO "Information system is not needed here."
     return 0
   fi
   config_gip_only
   giponlyrc=$?
-  if [ "${giponlyrc}" != "0" ] ; then
+  if [ "${giponlyrc}" != 0 ] ; then
     yaimlog ERROR "function config_gip_only returned the ${giponlyrc} error code"
     return ${giponlyrc}
   fi
   config_bdii_only
   bdiionlyrc=$?
-  if [ "${bdiionlyrc}" != "0" ] ; then
+  if [ "${bdiionlyrc}" != 0 ] ; then
     yaimlog ERROR "function config_bdii_only returned the ${bdiionlyrc} error code"
     return ${bdiionlyrc}
   fi
   yaim_query_conf_infoprovider_system
   rcisvd=$?
-  if [ "${rcisvd}" == "1" ] ; then
+  if [ "${rcisvd}" == 1 ] ; then
     config_gip_dcache_info_setup
     infosetuprc=$?
-    if [ "${infosetuprc}" != "0" ] ; then
+    if [ "${infosetuprc}" != 0 ] ; then
       return 1
     fi
     config_gip_dcache_info_break_old
     infosetuprc=$?
-    if [ "${infosetuprc}" != "0" ] ; then
+    if [ "${infosetuprc}" != 0 ] ; then
       return 1
     fi
     config_gip_dcache_info_link
     infosetuprc=$?
-    if [ "${infosetuprc}" != "0" ] ; then
+    if [ "${infosetuprc}" != 0 ] ; then
       return 1
     fi
   fi

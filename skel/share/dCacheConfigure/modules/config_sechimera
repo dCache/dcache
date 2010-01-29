@@ -90,7 +90,7 @@ yaim_query_conf_node_dcache_chimera()
     result=0
     yaim_query_conf_node_dcache_name_server
     isANameServer=$?
-    if [ "1" == "${isANameServer}" ] ; then
+    if [ 1 == "${isANameServer}" ] ; then
         result=1
         if [ -n "${DCACHE_PNFS_SERVER}" ] ; then
             result=0
@@ -257,7 +257,7 @@ chimera_create_mount_points_UNIX()
   fi
   mount localhost:/ /mnt/tmp
   mountResults=$?
-  if [ "$mountResults" != "0" ] ; then
+  if [ "$mountResults" != 0 ] ; then
     echo Exiting as failed to mount chimera.
     exit 1
   fi
@@ -266,7 +266,7 @@ chimera_create_mount_points_UNIX()
   vopath=$RET
   mkdir -p /mnt/tmp/${vopath}
   mkdirResults=$?
-  if [ "${mkdirResults}" != "0" ] ; then
+  if [ "${mkdirResults}" != 0 ] ; then
     exit 1
   fi
   echo "chimera" > /mnt/tmp/${vopath}/'.(tag)(sGroup)'
@@ -291,13 +291,13 @@ chimera_create_mount_points_api()
     currentPath=${currentPath}/$i
     $chimeracli Ls ${currentPath} 2> /dev/null
     directoryExists=$?
-    if [ "${directoryExists}" != "0" ] ; then
+    if [ "${directoryExists}" != 0 ] ; then
       yaimlog INFO "Directory ${currentPath} does not exist creating"
       cmd="$chimeracli Mkdir ${currentPath} "
       yaimlog DEBUG "Running ${cmd}"
       $cmd 2>1 1> /dev/null
       mkdirRc=$?
-      if [ "${mkdirRc}" != "0" ] ; then
+      if [ "${mkdirRc}" != 0 ] ; then
         yaimlog ERROR "running command ${cmd} failed"
         exit 1
       fi
@@ -307,20 +307,20 @@ chimera_create_mount_points_api()
   do
     $chimeracli Ls "${currentPath}/${thisvo}"
     directoryExists=$?
-    if [ "${directoryExists}" != "0" ] ; then
+    if [ "${directoryExists}" != 0 ] ; then
       yaimlog INFO "Directory ${currentPath}/${thisvo} does not exist creating"
       cmd="$chimeracli Mkdir ${currentPath}/${thisvo}"
       yaimlog DEBUG "Running ${cmd}"
       $cmd 
       mkdirRc=$?
-      if [ "${mkdirRc}" != "0" ] ; then
+      if [ "${mkdirRc}" != 0 ] ; then
         yaimlog ERROR "running command ${cmd} failed"
         exit 1
       fi
       users_VoGetsUid ${thisvo}
       users_VoGetsUidrc=$?
       VoUID=${RET}
-      if [ "${users_VoGetsUidrc}" != "0" ] ; then
+      if [ "${users_VoGetsUidrc}" != 0 ] ; then
         yaimlog ERROR "users_VoGetsGid returned an error exiting"
         exit 4
       fi
@@ -329,14 +329,14 @@ chimera_create_mount_points_api()
       yaimlog DEBUG "Running ${cmd}"
       $cmd 
       mkdirRc=$?
-      if [ "${mkdirRc}" != "0" ] ; then
+      if [ "${mkdirRc}" != 0 ] ; then
         yaimlog ERROR "running command ${cmd} failed"
         exit 1
       fi
       users_VoGetsGid ${thisvo}
       users_VoGetsGidrc=$?
       VoGID=${RET}
-      if [ "${users_VoGetsGidrc}" != "0" ] ; then
+      if [ "${users_VoGetsGidrc}" != 0 ] ; then
         yaimlog ERROR "users_VoGetsGid returned an error exiting"
         exit 4
       fi
@@ -345,7 +345,7 @@ chimera_create_mount_points_api()
       yaimlog DEBUG "Running ${cmd}"
       $cmd 
       mkdirRc=$?
-      if [ "${mkdirRc}" != "0" ] ; then
+      if [ "${mkdirRc}" != 0 ] ; then
         yaimlog ERROR "running command ${cmd} failed"
         exit 1
       fi
@@ -353,7 +353,7 @@ chimera_create_mount_points_api()
       yaimlog DEBUG "Running ${cmd}"
       $cmd 
       mkdirRc=$?
-      if [ "${mkdirRc}" != "0" ] ; then
+      if [ "${mkdirRc}" != 0 ] ; then
         yaimlog ERROR "running command ${cmd} failed"
         exit 1
       fi
@@ -425,7 +425,7 @@ yaim_configure_exports()
     echo "/pnfs " >> "${file2update}"
   fi
   yaim_config_file_update_done ${filename}
-  if [ $? == 1 ] ; then 
+  if [ $? != 0 ] ; then 
     yaimlog WARNING "Changed the file ${dcacheVoms2GplasmaConf}"
   fi
   yaimlog DEBUG "function yaim_configure_exports stop"
@@ -440,12 +440,12 @@ yaim_config_sechimera()
   
   yaim_query_conf_node_dcache_chimera
   rcchimeraserver=$?
-  if [ "${rcchimeraserver}" == "1" ] ; then
+  if [ "${rcchimeraserver}" == 1 ] ; then
     yaimlog INFO "configuring chimera"    
     chimera_create_nfs_stop
     yaim_query_conf_node_dcache_chimera_reset
     resetChimera=$?
-    if [ "${resetChimera}" == "1" ] ; then
+    if [ "${resetChimera}" == 1 ] ; then
       sleep 2
       chimeraReset
     fi

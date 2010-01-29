@@ -652,7 +652,7 @@ GlueSAPolicyMinFileSizeVo="1"
 GlueSAPolicyMaxDataVo="100"
 GlueSAPolicyMaxNumFilesVo="999999"
 GlueSAPolicyMaxPinDurationVo="10"
-GlueSAPolicyQuotaVo=0
+GlueSAPolicyQuotaVo="0"
 GlueSAPolicyFileLifeTimeVo="volatile"
 GlueSAStateAvailableSpaceVo="0"
 GlueSAStateUsedSpaceVo="999999"
@@ -814,7 +814,7 @@ yaim_config_file_update_prepare $SOURCE
 DESTINATION=$RET
 yaim_config_file_set_value "$DESTINATION" infoProviderStaticFile "$gipstatic"
 yaim_config_file_update_done $SOURCE
-if [ $? == 1 ] ; then 
+if [ $? != 0 ] ; then 
     yaim_state_service_restart_needed core
     yaim_config_info_restart
 fi
@@ -868,7 +868,7 @@ config_gip_check_users_exist()
     allisGood=1
   fi
   
-  if [ "${allisGood}" != "0" ] ; then
+  if [ "${allisGood}" != 0 ] ; then
     yaimlog ERROR "Exiting due to required users and groups missing."
     exit 4
   fi
@@ -881,7 +881,7 @@ config_gip_dcache_run()
   yaimlog DEBUG "function yaim_config_info_system start"
   yaim_query_conf_infoprovider_system
   rcisvd=$?  
-  if [ "${rcisvd}" == "1" ] ; then
+  if [ "${rcisvd}" == 1 ] ; then
     # Use new info system and disable the old info system
     config_gip_check_users_exist
     config_bdii_only

@@ -55,7 +55,7 @@ yaim_query_conf_node_dcache_pnfsserver()
     result=0
     yaim_query_conf_node_dcache_name_server
     isANameServer=$?
-    if [ "1" == "${isANameServer}" ] ; then
+    if [ 1 == "${isANameServer}" ] ; then
         if [ -n "${DCACHE_PNFS_SERVER}" ] ; then
             result=1
         fi
@@ -135,7 +135,7 @@ config_pnfs_uninstall()
   yaimlog DEBUG "function config_pnfs_uninstall start"
   yaim_query_conf_node_dcache_pnfs_root
   PNFSROOT=$RET
-  PNFS_CONFIG=${PNFSROOT}/etc/pnfs_config
+  PNFS_CONFIG="${PNFSROOT}/etc/pnfs_config"
   if [ -f "${PNFS_CONFIG}" ] ; then
   
     PNFS_DB=`cat $PNFS_CONFIG 2> /dev/null| grep PNFS_DB | awk '{print $3}'` 
@@ -161,7 +161,7 @@ config_pnfs_install_script()
       if [ -x  install/pnfs-install.sh ] ;  then
         install/pnfs-install.sh
 	pnfsinstallsuc=$?
-	if [ "0" == pnfsinstallsuc ] ; then
+	if [ 0 == pnfsinstallsuc ] ; then
 	  yaimlog ERROR "calling ${PNFSROOT}/install/pnfs-install.sh"
 	  yaimlog ERROR "failed aborting"
 	  exit 1
@@ -192,13 +192,13 @@ config_pnfs_install()
       yaim_config_file_update_prepare ${configFile}
       file2update=$RET
       cp ${PNFSROOT}/etc/pnfs_config.template $file2update
-      if [ "$?" != "0" ] ; then
+      if [ $? != 0 ] ; then
         yaimlog ABORT "cp ${PNFSROOT}/etc/pnfs_config.template ${PNFSROOT}/etc/pnfs_config"
         exit 1
       fi
       # Finished editng values
       yaim_config_file_update_done ${configFile}
-      if [ $? == 1 ] ; then 
+      if [ $? != 0 ] ; then 
           yaim_state_service_restart_needed pnfs
           yaimlog WARNING "Changed the file ${configFile}"
       fi
@@ -314,7 +314,7 @@ config_dcache_pnfs_database_shmservers_set()
     updateFile=$RET
     yaim_config_file_set_value "${updateFile}" "shmservers" "$new_server_count"
     yaim_config_file_update_done "/usr/etc/pnfsSetup"
-    if [ $? == 1 ] ; then 
+    if [ $? != 0 ] ; then 
 	yaimlog WARNING "Changed the file '/usr/etc/pnfsSetup'"
 	config_pnfs_stop
         config_pnfs_start
@@ -458,7 +458,7 @@ config_dcache_pnfs_vo_dir_create()
   users_VoGetsGid ${currentVo}
   users_VoGetsGidrc=$?
   VoGID=${RET}
-  if [ "${users_VoGetsGidrc}" != "0" ] ; then
+  if [ "${users_VoGetsGidrc}" != 0 ] ; then
     yaimlog ERROR "users_VoGetsGid returned an error exiting"
     exit 4
   fi
@@ -477,12 +477,12 @@ config_dcache_pnfs_databases()
   local rcpnfsserver
   yaim_query_conf_node_dcache_pnfsserver
   rcpnfsserver=$?
-  if [ "${rcpnfsserver}" == "1" ] ; then
+  if [ "${rcpnfsserver}" == 1 ] ; then
     for thisvo in ${VOS}
     do
       config_dcache_pnfs_vo_dir_get
       vo_dir=$RET/$thisvo
-      if [ ! -d ${vo_dir} ] ; then
+      if [ ! -d "${vo_dir}" ] ; then
         config_dcache_pnfs_database_get_id $thisvo
         apnfsdbid=$RET
         if [ -n "$apnfsdbid" ] ; then
@@ -578,7 +578,7 @@ pnfs_permsions=${INSTALL_ROOT}/d-cache/libexec/pnfsperms.sh
 # Our selves from the big bad grid.
 yaim_query_conf_node_dcache_pnfsserver
 rcNameServer=$?
-if [ "$rcNameServer" == "1" ]
+if [ "$rcNameServer" == 1 ]
 then
   
   
@@ -586,7 +586,7 @@ then
   file2update=$RET
   config_sedcache_cron_create_chown ${file2update}
   yaim_config_file_update_done ${pnfs_permsions}
-  if [ $? == 1 ] ; then 
+  if [ $? != 0 ] ; then 
     yaimlog WARNING "Changed the file ${pnfs_permsions}"
   fi  
   
@@ -619,19 +619,19 @@ config_pnfs_install_mount()
   yaim_config_file_update_prepare /etc/fstab
   file2update=$RET
   grep "${mountdev}" ${file2update} > /dev/null
-  if [ 1 == $? ] ; then
+  if [ 0 != $? ] ; then
     newfstabline="${mountdev} ${mountdir}  nfs hard,intr,ro,bg,noac,auto 0 0"
     echo ${newfstabline} >> ${file2update}  
   fi
   yaim_config_file_update_done /etc/fstab
-  if [ $? == 1 ] ; then 
+  if [ $? != 0 ] ; then 
     yaimlog WARNING "Changed the file /etc/fstab"
   fi
-  if [ ! -d ${mountdir} ] ; then
+  if [ ! -d "${mountdir}" ] ; then
     mkdir -p ${mountdir}
   fi
   mount  | grep "${mountdev}" >/dev/null
-  if [ 1 == $? ] ; then
+  if [ 0 != $? ] ; then
     yaimlog INFO "Please wait mounting ${mountdir}"
     mount ${mountdir}
     yaimlog INFO "Finished mounting ${mountdir}"
@@ -648,11 +648,11 @@ config_sedcache_pnfs()
   # Check to see if PNFS should be installed
   yaim_query_conf_node_dcache_pnfsserver
   rcrmdcconf=$?
-  if [ "$rcrmdcconf" == "1" ]
+  if [ "$rcrmdcconf" == 1 ]
   then
     yaim_state_reset_pnfs
     rcrmdcconf=$?
-    if [ "$rcrmdcconf" == "1" ]
+    if [ "$rcrmdcconf" == 1 ]
     then
       config_pnfs_stop
       config_pnfs_uninstall
@@ -668,7 +668,7 @@ config_sedcache_pnfs()
   else
     yaim_query_conf_node_gsiftp_door
     rcgsiftpdoornode=$?
-    if [ "$rcgsiftpdoornode" == "1" ]
+    if [ "$rcgsiftpdoornode" == 1 ]
     then
       config_pnfs_install_mount
     fi

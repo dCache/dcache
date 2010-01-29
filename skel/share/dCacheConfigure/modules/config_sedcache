@@ -975,31 +975,31 @@ yaim_state_service_restart_needed_do()
         esac
     done
     shouldruncore=${has_door}${has_admin}${has_pnfsserver}${has_chimera}
-    if [ -n "$(echo "${shouldruncore}${has_pool}" | grep 1)" -a "${core_restart}" == "1" ] ; then
+    if [ -n "$(echo "${shouldruncore}${has_pool}" | grep 1)" -a "${core_restart}" == 1 ] ; then
         /sbin/service dcache stop
     fi
 
-    if [ "$has_pnfs" == "1" -a "${pnfs_restart}" == "1" ] ; then
+    if [ "$has_pnfs" == 1 -a "${pnfs_restart}" == 1 ] ; then
         config_pnfs_stop
     fi
 
-    if [ "$has_chimera" == "1" -a "${chimera_restart}" == "1" ] ; then
+    if [ "$has_chimera" == 1 -a "${chimera_restart}" == 1 ] ; then
         chimera_create_nfs_stop
     fi
 
-    if [ "$has_rdbms" == "1" -a "${rdbms_restart}" == "1" ] ; then
+    if [ "$has_rdbms" == 1 -a "${rdbms_restart}" == 1 ] ; then
         /sbin/service postgresql stop
         /sbin/service postgresql start
     fi
 
-    if [ "$has_pnfs" == "1" -a "${pnfs_restart}" == "1" ] ; then
+    if [ "$has_pnfs" == 1 -a "${pnfs_restart}" == 1 ] ; then
         config_pnfs_start
     fi
     
-    if [ "$has_chimera" == "1" -a "${chimera_restart}" == "1" ] ; then
+    if [ "$has_chimera" == 1 -a "${chimera_restart}" == 1 ] ; then
         chimera_create_nfs_start
     fi
-    if [ -n "$(echo "${shouldruncore}${has_pool}" | grep 1)" -a "${core_restart}" == "1" ] ; then
+    if [ -n "$(echo "${shouldruncore}${has_pool}" | grep 1)" -a "${core_restart}" == 1 ] ; then
         /sbin/service dcache start
     fi
 
@@ -1123,7 +1123,7 @@ config_sedcache_start()
     yaim_query_conf_node_dcache_pool
     rcpool=$?
 
-    if [ "$rcpool" == "1" ]
+    if [ "$rcpool" == 1 ]
     then
         /sbin/service dcache stop
     fi
@@ -1133,18 +1133,18 @@ config_sedcache_start()
         /sbin/service dcache stop
     fi
 
-    if [ "$rcpnfs" == "1" ] ; then
+    if [ "$rcpnfs" == 1 ] ; then
         config_pnfs_stop
         chimera_create_nfs_stop
     fi
 
-    if [ "$rcrdbms" == "1" ] ; then
+    if [ "$rcrdbms" == 1 ] ; then
         /sbin/service postgresql stop
         /sbin/service postgresql start
     fi
 
 
-    if [ "$rcpnfs" == "1" ] ; then
+    if [ "$rcpnfs" == 1 ] ; then
         config_pnfs_start
         chimera_create_nfs_start
     fi
@@ -1153,7 +1153,7 @@ config_sedcache_start()
         /sbin/service dcache start
     fi
 
-    if [ "$rcpool" == "1" ]
+    if [ "$rcpool" == 1 ]
     then
         /sbin/service dcache start
     fi
@@ -1175,7 +1175,7 @@ config_dcache_config_file_generate_dCacheSetup()
 
   cp $SOURCE $file2update
   yaim_config_file_update_done $DESTINATION
-  if [ $? == 1 ] ; then 
+  if [ $? != 0 ] ; then 
     yaimlog WARNING "Changed the file ${DESTINATION}"
     yaim_state_service_restart_needed core
   fi
@@ -1194,7 +1194,7 @@ config_dcache_config_file_generate_node_config()
   file2update=$RET
   cp $SOURCE $file2update
   yaim_config_file_update_done $DESTINATION
-  if [ $? == 1 ] ; then 
+  if [ $? != 0 ] ; then 
       yaimlog WARNING "Changed the file ${DESTINATION}"
       yaim_state_service_restart_needed core
   fi
@@ -1242,18 +1242,18 @@ config_dcache_config_pools()
         if [ -z "$poolExists" ] ; then
           /opt/d-cache/bin/dcache pool create ${size}G ${pool}
           poolcreaterc=$?
-          if [ "$poolcreaterc" == "0" ] ; then
-            notnamed="0"
-            while [ ${notnamed} == "0" ]
+          if [ "$poolcreaterc" == 0 ] ; then
+            notnamed=0
+            while [ ${notnamed} == 0 ]
             do
               poolname=`hostname`_${alreadyexistingpools}
               poolExists=$( /opt/d-cache/bin/dcache pool ls | grep ${poolname} )
               if [ -z "$poolExists" ] ; then
                 /opt/d-cache/bin/dcache pool add ${poolname} ${pool}
                 namedPoolrc=$?
-                if [ "${namedPoolrc}" == "0" ] ; then
+                if [ "${namedPoolrc}" == 0 ] ; then
                   yaim_state_service_restart_needed pool
-                  notnamed="1"
+                  notnamed=1
                 fi
               else
                 yaimlog INFO "Pool name ${poolname} already exists creating new pool name."
@@ -1417,13 +1417,13 @@ config_dcache_config_system_files_init()
   rcadmin=$?
   yaim_query_conf_node_dcache_pool
   rcpool=$?
-  if [ "$rcpnfs" == "1" ]
+  if [ "$rcpnfs" == 1 ]
   then
     config_sepnfs_installed
     ln -fs $pnfs/bin/pnfs       /etc/init.d
     chkconfig pnfs on
   fi
-  if [ "$rcchimera" == "1" ]
+  if [ "$rcchimera" == 1 ]
   then
     chimera_create_link
   fi
@@ -1452,7 +1452,7 @@ config_dcache_config_dcache_scripts()
     dir=${INSTALL_ROOT}/d-cache
     $dir/install/install.sh
     retcode=$?
-    if [ "$retcode" != "0" ] ; then 
+    if [ "$retcode" != 0 ] ; then 
         echo "ERROR executing $dir/install/install.sh failed (exit code $retcode) -- abort"
         exit 1
     fi
@@ -1595,7 +1595,7 @@ fi
 
 
 # Crontab entry to have up-to-date proxy for dynamic info query
-if [ -x ${INSTALL_ROOT}/globus/bin/grid-proxy-init ] ; then
+if [ -x "${INSTALL_ROOT}/globus/bin/grid-proxy-init" ] ; then
   job="7 * * * * ${INSTALL_ROOT}/globus/bin/grid-proxy-init -q \
 -cert /etc/grid-security/hostcert.pem \
 -key /etc/grid-security/hostkey.pem -out ${INSTALL_ROOT}/lcg/hostproxy.\$$ && \
@@ -1637,7 +1637,7 @@ local gridmapfileloc
 local gridmapfile2dcache
 gridmapfile2dcache=/opt/d-cache/bin/grid-mapfile2dcache-kpwd
 gridmapfileloc=/etc/grid-security/grid-mapfile
-if [ -f ${gridmapfileloc} ] ; then
+if [ -f "${gridmapfileloc}" ] ; then
     fileneeds_update=0
     currentdate=$(date +%Y-%m-%d)
     seldate=$(stat ${gridmapfileloc} | grep Modify | cut -d: -f2- | grep "${currentdate}" )
@@ -1647,12 +1647,12 @@ if [ -f ${gridmapfileloc} ] ; then
 else
     fileneeds_update=1
 fi
-if [ "$fileneeds_update" == "1" ] ; then
+if [ "$fileneeds_update" == 1 ] ; then
   if [ -x /opt/edg/sbin/edg-mkgridmap ] ; then
     /opt/edg/sbin/edg-mkgridmap --output=${gridmapfileloc} --safe
   fi
 fi
-if [ -f ${gridmapfile2dcache} ] ; then
+if [ -f "${gridmapfile2dcache}" ] ; then
   ${gridmapfile2dcache}
 fi
 yaimlog DEBUG "function config_dcache_kpwd_update stop"
@@ -1689,7 +1689,7 @@ if [ -f "${dcacheVoms2GplasmaConf}" ] ; then
   file2update=$RET
   yaim_state_reset_dcache_config
   rcupdateconfig=$?
-  if [ "$rcupdateconfig" == "1" ]; then
+  if [ "$rcupdateconfig" == 1 ]; then
     rm -f ${file2update}
     config_dcache_gen_voms2gplasmaconf_header ${file2update}
   fi
@@ -1714,7 +1714,7 @@ do
     users_VoFlagGetsNames ${thisvo} 
     VoFlagGetsNamesRC=$?
     username=`echo "$RET" | head -1`
-    if [ "${VoFlagGetsNamesRC}" != "0" ] ; then
+    if [ "${VoFlagGetsNamesRC}" != 0 ] ; then
       yaimlog ERROR "VoFlagGetsNames ${thisvo} returned an error exiting."
       exit 1
     fi
@@ -1728,12 +1728,12 @@ do
     userid="$RET"
     users_NameGetsGid ${username}
     groupIdExistsRc=$?
-    if [ "${groupIdExistsRc}" != "0" ] ; then
+    if [ "${groupIdExistsRc}" != 0 ] ; then
       yaimlog ERROR "users_NameGetsGid ${thisvo} returned an error exiting."
       exit 1
     fi
     groupid=$(echo "$RET" | cut -d, -f1 )
-    if [ "0" == "${useridexists}" ] ; then
+    if [ 0 == "${useridexists}" ] ; then
       allreadyhere=$(grep "$transvoserver" ${file2update})
       if [ -z "${allreadyhere}" ] ; then
         echo >> ${file2update}
@@ -1747,7 +1747,7 @@ do
     users_VoGetsFlags ${thisvo}
     VoGetsFlagsRc=$?
     VoFlags=$RET
-    if [ "${VoGetsFlagsRc}" != "0" ] ; then
+    if [ "${VoGetsFlagsRc}" != 0 ] ; then
       yaimlog ERROR "users_VoGetsFlags ${thisvo} had an error skipping processing the rest of the VO."
       exit 1
     fi
@@ -1765,7 +1765,7 @@ do
       users_VoFlagGetsNames ${thisvo} ${VoFlag}
       VoFlagGetsNamesRC=$?
       username=`echo "$RET" | head -1`
-      if [ "${VoFlagGetsNamesRC}" != "0" ] ; then
+      if [ "${VoFlagGetsNamesRC}" != 0 ] ; then
         yaimlog ERROR "VoFlagGetsNames vo=${thisvo} role=${mappedValue} retrurned an error exiting."
         exit 1
       fi
@@ -1779,12 +1779,12 @@ do
       userid="$RET"
       users_NameGetsGid ${username}
       groupIdExistsRc=$?
-      if [ "${groupIdExistsRc}" != "0" ] ; then
+      if [ "${groupIdExistsRc}" != 0 ] ; then
         yaimlog ERROR "users_NameGetsGid ${thisvo} returned an error exiting."
         exit 1
       fi
       groupid=$(echo "$RET" | cut -d, -f1 )
-      if [ "0" == "${useridexists}" ] ; then
+      if [ 0 == "${useridexists}" ] ; then
         allreadyhere=$(grep "${transvoserver}${mappedValue}" ${file2update})
         if [ -z "${allreadyhere}" ] ; then
           echo >> ${file2update}
@@ -1802,9 +1802,9 @@ do
 done
 
 
-if [ "${confexists}" == "1" ] ; then
+if [ "${confexists}" == 1 ] ; then
   yaim_config_file_update_done ${dcacheVoms2GplasmaConf}
-  if [ $? == 1 ] ; then 
+  if [ $? != 0 ] ; then 
     yaimlog WARNING "Changed the file ${dcacheVoms2GplasmaConf}"
   fi
 fi
@@ -1837,7 +1837,7 @@ if [ -f "${dcacheVoms2GplasmaConf}" ] ; then
   # check config for dcacheVoms2Gplasma exists
   yaim_state_reset_dcache_config
   rcupdateconfig=$?
-  if [ "$rcupdateconfig" == "1" ]; then
+  if [ "$rcupdateconfig" == 1 ]; then
     # update config for dcacheVoms2Gplasma
     config_dcache_gen_voms2gplasmaconf ${dcacheVoms2GplasmaConf}
   fi
@@ -1846,13 +1846,13 @@ else
   config_dcache_gen_voms2gplasmaconf ${dcacheVoms2GplasmaConf}
 fi
 
-if [ "${rcupdatedauthz}" == "1" ] ;then
+if [ "${rcupdatedauthz}" == 1 ] ;then
   # generate authz
   /opt/d-cache/sbin/dcacheVoms2Gplasma.py -a -c ${dcacheVoms2GplasmaConf}
 fi
 
 
-if [ "${rcupdatedvorolemap}" == "1" ] ;then
+if [ "${rcupdatedvorolemap}" == 1 ] ;then
   # generate 
   /opt/d-cache/sbin/dcacheVoms2Gplasma.py -rq -c ${dcacheVoms2GplasmaConf}
 fi
@@ -1909,7 +1909,7 @@ do
     fi
 done
 yaim_config_file_update_done ${file_location_poolmanager}
-if [ $? == 1 ] ; then 
+if [ $? != 0 ] ; then 
     yaim_state_service_restart_needed core
 fi
 yaimlog DEBUG "function yaim_config_pool_manager_add_lines stop"
@@ -1949,7 +1949,7 @@ yaim_config_dcache_files_key_value_dCacheSetup()
     errorcode=$?
     portrangeGlobusMin=$(echo $RET | cut -s -d, -f1)
     portrangeGlobusMax=$(echo $RET | cut -s -d, -f2)
-    if [ "$errorcode" != "0" ] ; then
+    if [ "$errorcode" != 0 ] ; then
         echo "Error: DCACHE_PORT_RANGE_PROTOCOLS_SERVER_GSIFTP set incorrect format:"
         exit 1
     fi
@@ -1961,7 +1961,7 @@ yaim_config_dcache_files_key_value_dCacheSetup()
     errorcode=$?
     portrangeNativeMin=$(echo $RET | cut -s -d, -f1)
     portrangeNativeMax=$(echo $RET | cut -s -d, -f2)
-    if [ "$errorcode" != "0" ] ; then
+    if [ "$errorcode" != 0 ] ; then
         echo "Error: DCACHE_PORT_RANGE_PROTOCOLS_SERVER_MISC set incorrect format:"
         exit 1
     fi
@@ -1978,7 +1978,7 @@ yaim_config_dcache_files_key_value_dCacheSetup()
     yaim_config_file_set_value "${file2update}" "java_options" "\"${javaOptions}\""
     
     yaim_query_conf_dcache_portrange_gsiftp_client
-    if [ "$errorcode" != "0" ] ; then
+    if [ "$errorcode" != 0 ] ; then
         echo "Error: DCACHE_PORT_RANGE_PROTOCOLS_SERVER_MISC set incorrect format:"
         exit 1
     fi
@@ -2035,7 +2035,7 @@ yaim_config_dcache_files_key_value_dCacheSetup()
     fi
     yaim_query_conf_voms
     reusevoms=$?
-    if [ "$reusevoms" == "1" ] ; then
+    if [ "$reusevoms" == 1 ] ; then
         yaim_config_file_set_value "${file2update}" "useGPlazmaAuthorizationModule" "true"
         yaim_config_file_set_value "${file2update}" "useGPlazmaAuthorizationCell" "false"
     fi
@@ -2049,7 +2049,7 @@ yaim_config_dcache_files_key_value_dCacheSetup()
     
     
     yaim_config_file_update_done ${configFile}
-    if [ $? == 1 ] ; then 
+    if [ $? != 0 ] ; then 
         yaim_state_service_restart_needed core
         yaimlog WARNING "Changed the file ${configFile}"
     fi
@@ -2168,7 +2168,7 @@ yaim_config_dcache_files_key_value_node_config()
     yaim_config_file_set_value "${file2update}" "SERVICES" "${servicesettings}"
     # Finished editng values
     yaim_config_file_update_done ${configFile}
-    if [ $? == 1 ] ; then 
+    if [ $? != 0 ] ; then 
         yaim_state_service_restart_needed core
         yaimlog WARNING "Changed the file ${configFile}"
     fi
@@ -2189,7 +2189,7 @@ yaim_config_dcache_files_key_value_srm_gplazma_policy()
   file2update=$RET
   yaim_query_conf_voms
   reusevoms=$?
-  if [ "$reusevoms" == "1" ] ; then
+  if [ "$reusevoms" == 1 ] ; then
     yaim_config_file_set_value "${file2update}" "gplazmalite-vorole-mapping" "\"ON\""
   else
     yaim_config_file_set_value "${file2update}" "gPlazmaService" "\"OFF\""
@@ -2197,13 +2197,13 @@ yaim_config_dcache_files_key_value_srm_gplazma_policy()
   
   yaim_query_conf_kpwd
   reusekpwd=$?
-  if [ "$reusekpwd" == "1" ] ; then
+  if [ "$reusekpwd" == 1 ] ; then
     yaim_config_file_set_value "${file2update}" "kpwd" "\"ON\""
   else
     yaim_config_file_set_value "${file2update}" "kpwd" "\"OFF\""
   fi
   yaim_config_file_update_done ${configFile}
-  if [ $? == 1 ] ; then 
+  if [ $? != 0 ] ; then 
     yaim_state_service_restart_needed core
     yaimlog WARNING "Changed the file ${configFile}"
   fi
@@ -2250,7 +2250,7 @@ yaim_config_dcache_validate_hosts()
     do
         yaim_config_dcache_validate_host_name $ahost
         retcode=$?
-        if [ "$retcode" == "0" ] ; then
+        if [ "$retcode" == 0 ] ; then
             echo "Error: Hostname '${ahost}' does not appear to be a FQDN"
             echo "Error: Please check your site-info.def file"
             exit 1
@@ -2316,7 +2316,7 @@ config_sedcache_run()
   # Check to see if D-Cache config should be reinstalled  
   yaim_state_reset_dcache_config
   rcrmpnfs=$?
-  if [ "$rcrmpnfs" == "1" ]
+  if [ "$rcrmpnfs" == 1 ]
   then
     requires DCACHE_ADMIN DCACHE_POOLS
     config_dcache_config_files
@@ -2334,15 +2334,15 @@ config_sedcache_run()
   config_dcache_pnfs_databases
   yaim_query_conf_voms
   reusevoms=$?
-  if [ "$reusevoms" == "1" ] ; then
+  if [ "$reusevoms" == 1 ] ; then
     config_dcache_vorolemap_authz_update
   fi
   yaim_query_conf_kpwd
   reusekpwd=$?
-  if [ "$reusevoms" == "1" ] ; then
+  if [ "$reusevoms" == 1 ] ; then
     config_dcache_kpwd_update
   fi
-  if [ "${rcadmin}" == "1" ]; then
+  if [ "${rcadmin}" == 1 ]; then
     yaim_config_pool_manager_add_lines
   fi
   config_dcache_config_pools
