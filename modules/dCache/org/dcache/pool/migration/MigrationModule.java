@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.Comparator;
 import java.io.StringWriter;
 import java.io.PrintWriter;
 
@@ -29,6 +30,7 @@ import org.dcache.cells.CellStub;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.CacheEntry;
 import org.dcache.util.Interval;
 import org.dcache.util.Glob;
 
@@ -322,6 +324,23 @@ public class MigrationModule
         }
     }
 
+    private Comparator<CacheEntry> createComparator(String order)
+    {
+        if (order == null) {
+            return null;
+        } else if (order.equals("size")) {
+            return new SizeOrder();
+        } else if (order.equals("-size")) {
+            return new ReverseOrder(new SizeOrder());
+        } else if (order.equals("lru")) {
+            return new LruOrder();
+        } else if (order.equals("-lru")) {
+            return new ReverseOrder(new LruOrder());
+        } else {
+            throw new IllegalArgumentException(order + ": Invalid value for option -order");
+        }
+    }
+
     private synchronized int copy(Args args,
                                   String defaultSelect,
                                   String defaultTarget,
@@ -343,6 +362,11 @@ public class MigrationModule
         String refresh = args.getOpt("refresh");
         String concurrency = args.getOpt("concurrency");
         String pins = args.getOpt("pins");
+        String order = args.getOpt("order");
+
+        if (permanent && order != null) {
+            throw new IllegalArgumentException("Permanent jobs cannot be ordered");
+        }
 
         if (select == null) {
             select = defaultSelect;
@@ -394,6 +418,7 @@ public class MigrationModule
                               createCacheEntryMode(sourceMode),
                               createCacheEntryMode(targetMode),
                               createPoolSelectionStrategy(select),
+                              createComparator(order),
                               createPoolList(1.0, 0.0, target, targets,
                                              excluded),
                               Integer.valueOf(refresh) * 1000,
@@ -505,6 +530,19 @@ public class MigrationModule
         "  -concurrency=<concurrency>\n" +
         "          Specifies how many concurrent transfers to perform.\n" +
         "          Defaults to 1.\n" +
+        "  -order=[-]size|[-]lru\n" +
+        "          Sort transfer queue. By default transfers are placed in\n" +
+        "          ascending order, that is, smallest and least recently used\n" +
+        "          first. Transfers are placed in descending order if the key\n" +
+        "          is prefixed by a minus sign. Failed transfers are placed at\n" +
+        "          the end of the queue for retry regardless of the order. This\n" +
+        "          option cannot be used for permanent jobs. Notice that for\n" +
+        "          pools with a large number of files, sorting significantly\n" +
+        "          increases the initialization time of the migration job.\n" +
+        "          size:\n" +
+        "              Sort according to file size.\n" +
+        "          lru:\n" +
+        "              Sort according to last access time.\n" +
         "  -pins=move|keep\n" +
         "          Controls how sticky flags owned by the pin manager are handled:\n" +
         "          move:\n" +

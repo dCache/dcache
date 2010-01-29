@@ -217,7 +217,20 @@ public class Job
     {
         try {
             Repository repository = _configuration.getRepository();
-            for (PnfsId pnfsId: repository) {
+            Iterable<PnfsId> files = repository;
+
+            if (_definition.comparator != null) {
+                List<PnfsId> all = new ArrayList<PnfsId>();
+                for (PnfsId pnfsId: files) {
+                    all.add(pnfsId);
+                }
+                Comparator<PnfsId> order =
+                    new CacheEntryOrder(repository, _definition.comparator);
+                Collections.sort(all, order);
+                files = all;
+            }
+
+            for (PnfsId pnfsId: files) {
                 try {
                     synchronized (this) {
                         CacheEntry entry = repository.getEntry(pnfsId);
