@@ -17,6 +17,8 @@
 
     <!-- PREPARE -->
     <target name="webadminPrepare">
+        <delete dir="${webappBuildDir}" />
+        <delete dir="${webappPackageDir}" />
         <mkdir dir="${webappBuildDir}" />
         <mkdir dir="${webappPackageDir}" />
         <mkdir dir="${webappPackageDir.web-inf.lib}" />
@@ -27,9 +29,12 @@
 
     <!--COMPILE CLASSES-->
     <target name="webadminCompile" depends="webadminPrepare">
-                <javac debug="on" srcdir="${webappDir.src}" destdir="${webappBuildDir}">
+        <javac debug="on" srcdir="${webappDir.src}" destdir="${webappBuildDir}">
             <classpath refid="webappbuild.class.path" />
         </javac>
+        <!--for the unittests it is neccessary to have the classes included into
+            junit-build.xml - easiest way seems to be a jar file-->
+        <jar destfile="${webappBuildDir}/webadmin.jar" basedir="${webappBuildDir}"/>
     </target>
 
     <!-- PACKAGE -->
@@ -65,12 +70,11 @@
         </copy>
 
 	<!-- with all resources in place, create the war file -->
-        <war destfile="${webappPackageDir}/webadmin.war" webxml="${webappDir.webcontent.web-inf}/web.xml" basedir="${webappBuildDir}">
-            <classes dir="${webappBuildDir}" />
+        <war destfile="${webappPackageDir}/webadmin.war" webxml="${webappDir.webcontent.web-inf}/web.xml" basedir="${webappPackageDir}">
+            <classes dir="${webappPackageDir.classes}" />
         </war>
          <!--now copy the .war into its final location (webapps folder) -->
         <copy file="${webappPackageDir}/webadmin.war" tofile="${server.bin.dir}/classes/webapps/webadmin.war" overwrite="true" />
-        <copy file="${webappPackageDir}/webadmin.war" tofile="${webappBuildDir}/webadmin.war" overwrite="true" />
         <delete file="${webappPackageDir}/webadmin.war" />
     </target>
 
