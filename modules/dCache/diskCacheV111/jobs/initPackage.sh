@@ -46,7 +46,7 @@ if [ ! -f dCacheSetup ] ; then
   echo "" >&2
   echo " Panic : Master Setup File  './config/dCacheSetup' not found" >&2
   echo "" >&2
-  echo " You may use ./config/dCacheSetup.temp as template" >&2
+  echo " You may use ${DCACHE_HOME}/etc/dCacheSetup.template as template" >&2
   echo "" >&2
   exit 4
 else

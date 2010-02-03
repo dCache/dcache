@@ -41,6 +41,13 @@
     <constructor-arg value="${pooldir}/lock"/>
   </bean>
 
+  <bean id="replica-state-policy"
+        class="org.dcache.pool.classic.LFSReplicaStatePolicyFactory"
+        factory-method="createInstance">
+    <description>Defines the state of new replicas</description>
+    <constructor-arg value="${lfs}"/>
+  </bean>
+
   <bean id="pool" class="org.dcache.pool.classic.PoolV4"
         init-method="init"
         destroy-method="cleanUp">
@@ -58,8 +65,6 @@
               value="${poolupDestination}"/>
     <property name="allowCleaningPreciousFiles"
               value="${allowCleaningPreciousFiles}"/>
-    <property name="LFSMode"
-              value="${lfs}"/>
     <property name="replicateOnArrival"
               value="${replicateOnArrival}"/>
 
@@ -73,6 +78,11 @@
     <property name="flushController" ref="flush"/>
     <property name="PPClient" ref="pp"/>
     <property name="account" ref="account"/>
+    <property name="replicaStatePolicy" ref="replica-state-policy"/>
+    <property name="volatile"
+              value="#{ '${lfs}' == 'volatile' or '${lfs}' == 'transient' }"/>
+    <property name="hasTapeBackend"
+              value="#{ '${lfs}' == 'none' }"/>
   </bean>
 
   <!-- The PnfsHandler class takes a CellPath constructor
@@ -107,7 +117,7 @@
     <description>Store for imported pool meta data</description>
     <constructor-arg ref="file-store"/>
     <constructor-arg value="${pooldir}"/>
-   </bean>
+  </bean>
 
   <bean id="sweeper" class="${sweeper}">
     <description>Pool garbage collector</description>
@@ -125,6 +135,8 @@
     <property name="account" ref="account"/>
     <property name="allocator" ref="allocator"/>
     <property name="spaceSweeperPolicy" ref="sweeper"/>
+    <property name="volatile"
+              value="#{ '${lfs}' == 'volatile' or '${lfs}' == 'transient' }"/>
     <property name="metaDataStore">
       <bean class="org.dcache.pool.repository.ConsistentStore">
         <constructor-arg ref="csm"/>
@@ -132,8 +144,8 @@
         <constructor-arg ref="file-store"/>
         <constructor-arg ref="meta-store"/>
         <constructor-arg ref="import-store"/>
+        <constructor-arg ref="replica-state-policy"/>
         <property name="poolName" value="${poolname}"/>
-        <property name="LFSMode" value="${lfs}"/>
        </bean>
     </property>
   </bean>

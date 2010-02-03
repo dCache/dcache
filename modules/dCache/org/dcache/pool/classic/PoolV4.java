@@ -125,10 +125,6 @@ public class PoolV4
     private static final String MAX_SPACE = "use-max-space";
     private static final String PREALLOCATED_SPACE = "use-preallocated-space";
 
-    private final static int LFS_NONE = 0;
-    private final static int LFS_PRECIOUS = 1;
-    private final static int LFS_VOLATILE = 2;
-
     private final static int DUP_REQ_NONE = 0;
     private final static int DUP_REQ_IGNORE = 1;
     private final static int DUP_REQ_REFRESH = 2;
@@ -184,11 +180,13 @@ public class PoolV4
     private boolean _crashEnabled = false;
     private String _crashType = "exception";
     private long _gap = 4L * 1024L * 1024L * 1024L;
-    private int _lfsMode = LFS_NONE;
     private int _p2pFileMode = P2P_CACHED;
     private int _dupRequest = DUP_REQ_IGNORE;
     private int _p2pMode = P2P_SEPARATED;
     private P2PClient _p2pClient = null;
+
+    private boolean _isVolatile = false;
+    private boolean _hasTapeBackend = true;
 
     private int _cleaningInterval = 60;
 
@@ -198,6 +196,8 @@ public class PoolV4
 
     private ChecksumModuleV1 _checksumModule;
     private ReplicationHandler _replicationHandler = new ReplicationHandler();
+
+    private ReplicaStatePolicy _replicaStatePolicy;
 
     private boolean _running = false;
     private double _breakEven = 250.0;
@@ -282,19 +282,24 @@ public class PoolV4
         _cleanPreciousFiles = allow;
     }
 
-    public void setLFSMode(String lfs)
+    public void setVolatile(boolean isVolatile)
     {
-        if (lfs == null || lfs.equals("none")) {
-            _lfsMode = LFS_NONE;
-        } else if (lfs.equals("precious") || lfs.equals("")){
-            _lfsMode = LFS_PRECIOUS;
-        } else if (lfs.equals("volatile") || lfs.equals("transient")) {
-            _lfsMode = LFS_VOLATILE;
-        } else {
-            throw new IllegalArgumentException("lfs=[none|precious|volatile]");
-        }
-        if (_repository != null)
-            _repository.setVolatile(_lfsMode == LFS_VOLATILE);
+        _isVolatile = isVolatile;
+    }
+
+    public boolean isVolatile()
+    {
+        return _isVolatile;
+    }
+
+    public void setHasTapeBackend(boolean hasTapeBackend)
+    {
+        _hasTapeBackend = hasTapeBackend;
+    }
+
+    public boolean getHasTapeBackend()
+    {
+        return _hasTapeBackend;
     }
 
     public void setP2PMode(String mode)
@@ -354,7 +359,6 @@ public class PoolV4
         _repository.addListener(new NotifyBillingOnRemoveListener());
         _repository.addListener(new HFlagMaintainer());
         _repository.addListener(_replicationHandler);
-        _repository.setVolatile(_lfsMode == LFS_VOLATILE);
     }
 
     public void setAccount(Account account)
@@ -405,6 +409,11 @@ public class PoolV4
         _p2pClient = client;
     }
 
+    public void setReplicaStatePolicy(ReplicaStatePolicy replicaStatePolicy)
+    {
+        _replicaStatePolicy = replicaStatePolicy;
+    }
+
     /**
      * Initialize remaining pieces.
      *
@@ -424,6 +433,10 @@ public class PoolV4
         assert _flushingThread != null : "Flush controller must be set";
         assert _p2pClient != null : "P2P client must be set";
         assert _account != null : "Account must be set";
+
+        if (_isVolatile && _hasTapeBackend) {
+            throw new IllegalStateException("Volatile pool cannot have a tape backend");
+        }
 
         _p2pQueue = new SimpleJobScheduler("P2P");
         _ioQueue = new IoQueueManager(_args.getOpt("io-queues"));
@@ -711,7 +724,7 @@ public class PoolV4
         {
             if (event.getOldState() == EntryState.FROM_CLIENT) {
                 PnfsId id = event.getPnfsId();
-                if (_lfsMode == LFS_NONE) {
+                if (_hasTapeBackend) {
                     _pnfs.putPnfsFlag(id, "h", "yes");
                 } else {
                     _pnfs.putPnfsFlag(id, "h", "no");
@@ -738,7 +751,7 @@ public class PoolV4
             if (to == EntryState.PRECIOUS) {
                 _log.debug("Adding " + id + " to flush queue");
 
-                if (_lfsMode == LFS_NONE) {
+                if (_hasTapeBackend) {
                     try {
                         _storageQueue.addCacheEntry(id);
                     } catch (FileNotInCacheException e) {
@@ -845,16 +858,12 @@ public class PoolV4
         pw.println("Ping Heartbeat    : " + _pingThread.getHeartbeat()
                    + " seconds");
         pw.println("ReplicationMgr    : " + _replicationHandler);
-        switch (_lfsMode) {
-        case LFS_NONE:
+        if (_hasTapeBackend) {
             pw.println("LargeFileStore    : None");
-            break;
-        case LFS_PRECIOUS:
-            pw.println("LargeFileStore    : Precious");
-            break;
-        case LFS_VOLATILE:
+        } else if (_isVolatile) {
             pw.println("LargeFileStore    : Volatile");
-            break;
+        } else {
+            pw.println("LargeFileStore    : Precious");
         }
         pw.println("DuplicateRequests : "
                    + ((_dupRequest == DUP_REQ_NONE)
@@ -964,9 +973,14 @@ public class PoolV4
 
             PoolIOTransfer transfer;
             if (message instanceof PoolAcceptFileMessage) {
+                List<StickyRecord> stickyRecords =
+                    _replicaStatePolicy.getStickyRecords(si);
+                EntryState targetState =
+                    _replicaStatePolicy.getTargetState(si);
                 transfer =
                     new PoolIOWriteTransfer(pnfsId, pi, si, mover, _repository,
-                                            _checksumModule);
+                                            _checksumModule,
+                                            targetState, stickyRecords);
             } else {
                 transfer =
                     new PoolIOReadTransfer(pnfsId, pi, si, mover, _repository);
@@ -1638,7 +1652,7 @@ public class PoolV4
         if (fileMode != Pool2PoolTransferMsg.UNDETERMINED) {
             if (fileMode == Pool2PoolTransferMsg.PRECIOUS)
                 targetState = EntryState.PRECIOUS;
-        } else if ((_lfsMode == LFS_PRECIOUS)
+        } else if (!_hasTapeBackend && !_isVolatile
                    && (_p2pFileMode == P2P_PRECIOUS)) {
             targetState = EntryState.PRECIOUS;
         }
@@ -1652,11 +1666,14 @@ public class PoolV4
     public Object messageArrived(PoolFetchFileMessage msg)
         throws CacheException
     {
-        if (_poolMode.isDisabled(PoolV2Mode.DISABLED_STAGE)
-            || (_lfsMode != LFS_NONE)) {
+        if (_poolMode.isDisabled(PoolV2Mode.DISABLED_STAGE)) {
             _log.warn("PoolFetchFileMessage request rejected due to "
                        + _poolMode);
             throw new CacheException(104, "Pool is disabled");
+        }
+        if (!_hasTapeBackend) {
+            _log.warn("PoolFetchFileMessage request rejected due to LFS mode");
+            throw new CacheException(104, "Pool has no tape backend");
         }
 
         PnfsId pnfsId = msg.getPnfsId();
@@ -1685,11 +1702,14 @@ public class PoolV4
                                PoolRemoveFilesFromHSMMessage msg)
         throws CacheException
     {
-        if (_poolMode.isDisabled(PoolV2Mode.DISABLED_STAGE) ||
-            (_lfsMode != LFS_NONE)) {
+        if (_poolMode.isDisabled(PoolV2Mode.DISABLED_STAGE)) {
             _log.warn("PoolRemoveFilesFromHsmMessage request rejected due to "
                       + _poolMode);
             throw new CacheException(104, "Pool is disabled");
+        }
+        if (!_hasTapeBackend) {
+            _log.warn("PoolRemoveFilesFromHsmMessage request rejected due to LFS mode");
+            throw new CacheException(104, "Pool has no tape backend");
         }
 
         _storageHandler.remove(envelope);
@@ -1757,7 +1777,7 @@ public class PoolV4
         for (int i = 0; i < fileList.length; i++) {
             try {
                 PnfsId pnfsId = new PnfsId(fileList[i]);
-                if (!_cleanPreciousFiles && (_lfsMode == LFS_NONE)
+                if (!_cleanPreciousFiles && _hasTapeBackend
                     && (_repository.getState(pnfsId) == EntryState.PRECIOUS)) {
                     counter++;
                     _log.error("Replica " + fileList[i] + " kept (precious)");
@@ -2242,13 +2262,6 @@ public class PoolV4
             sb.append(entry.getKey()).append(" -> ").append(entry.getValue().getName()).append("\n");
         }
         return sb.toString();
-    }
-
-    public String hh_pool_lfs = "none|precious # FOR DEBUG ONLY";
-    public String ac_pool_lfs_$_1(Args args) throws CommandSyntaxException
-    {
-        setLFSMode(args.argv(0));
-        return "";
     }
 
     public String hh_set_duplicate_request = "none|ignore|refresh";

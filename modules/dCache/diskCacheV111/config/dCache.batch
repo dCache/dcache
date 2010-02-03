@@ -7,3 +7,4 @@ exec -shell file:${ourHomeDir}/share/cells/poolmanager.cell
 exec -shell file:${ourHomeDir}/share/cells/dummy-prestager.cell
 exec -shell file:${ourHomeDir}/share/cells/broadcast.cell
 exec -shell file:${ourHomeDir}/share/cells/loginbroker.cell
+exec -shell file:${ourHomeDir}/share/cells/topo.cell

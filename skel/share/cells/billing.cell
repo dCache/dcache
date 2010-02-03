@@ -41,4 +41,3 @@ create diskCacheV111.cells.BillingCell billing \
         ${billingDisableTxt} \
         ${billingDbParams} \
        "
-create dmg.cells.network.TopoCell topo "none -update=100 -export"

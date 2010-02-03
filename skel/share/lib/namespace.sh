@@ -6,11 +6,12 @@
 
 # Returns 0 if any of the domains require a PNFS mount, returns 1
 # otherwise.
-isNameSpaceMountNeeded() # $* = domains
+isNameSpaceMountNeeded() # in $* = domains
 {
+    local service
     for domain in $*; do
-        getService $domain
-        case "$RET" in
+        getService $domain service
+        case "$service" in
             srm|pnfs)
                 return 0
                 ;;
@@ -18,11 +19,11 @@ isNameSpaceMountNeeded() # $* = domains
                 ;;
         esac
     done
-    return 1;
+    return 1
 }
 
 # Mount name server export $2 on local directory $1
-mountNameSpace() # $1 = mount point, $2 = server export, $3 = nfs protocol version
+mountNameSpace() # in $1 = mount point, in $2 = server export, in $3 = nfs protocol version
 {
     local mountpoint
     local export
@@ -36,7 +37,7 @@ mountNameSpace() # $1 = mount point, $2 = server export, $3 = nfs protocol versi
 
     # Check if already mounted
     if [ -f "${mountpoint}/.(tags)()" ]; then
-        return;
+        return
     fi
 
     # Check that mount point exists
@@ -46,7 +47,7 @@ mountNameSpace() # $1 = mount point, $2 = server export, $3 = nfs protocol versi
     fi
 
     # Determine the name space server; defaults to localhost
-    getNameSpaceServer; server=${RET:-localhost}
+    getNameSpaceServer server
 
     # Solaris specific fix
     case $(uname) in
@@ -97,7 +98,10 @@ autoMountNameSpace()
                     mountNameSpace "${pnfs_pnfs}" "/fs" 2
                 fi
             else
-                getServerId; serverId="$RET"
+                if ! getServerId serverId; then
+		    fail 2 "Could not determine SERVER_ID. Please check
+		            your node_config setup."
+		fi
                 mountNameSpace "${root}/${serverId}" "/pnfsdoors" 2
             fi
             ;;

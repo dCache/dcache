@@ -11,10 +11,11 @@
 # Prints all domains for the given service. Services like 'pool' and
 # 'dcap' may have more than one domain. Notice that this function is
 # not limitted to configured domains.
-printDomains() # $1 = service
+printDomains() # in $1 = service
 {
     local i
     local door
+    local file
 
     case "$1" in
         dcap)
@@ -50,8 +51,8 @@ printDomains() # $1 = service
 
         pool)
             for i in $(printAllPoolDomains); do
-                getPoolListFile $i
-                if ! isFileEmpty "$RET"; then
+                getPoolListFile $i file
+                if ! isFileEmpty "$file"; then
                     printf "%s" "$i "
                 fi
             done
@@ -206,18 +207,18 @@ printAllDomains()
 # domains.
 printAllPoolDomains()
 {
-    if [ -f ${pool_config}/${hostname}.domains ]; then
+    if [ -f "${pool_config}/${hostname}.domains" ]; then
 
         while read domain; do
-            if [ ! -f ${pool_config}/${domain}.poollist ]; then
+            if [ ! -f "${pool_config}/${domain}.poollist" ]; then
                 printp "Requested pool list file not found (skipped):
                         ${domain}.poollist" 1>&2
             else
                 printf "%s" "${domain}Domain "
             fi
-        done < ${pool_config}/${hostname}.domains
+        done < "${pool_config}/${hostname}.domains"
 
-    elif [ -f ${pool_config}/${hostname}.poollist ]; then
+    elif [ -f "${pool_config}/${hostname}.poollist" ]; then
         printf "%s" "${hostname}Domain "
     fi
 }
@@ -227,7 +228,7 @@ printAllPoolDomains()
 # and the services are expanded to the list of domains for those
 # services. If no arguments are specified, a list of all configured
 # domains is printed.
-printExpandedServiceAndDomainList() # $* = list of services and domains
+printExpandedServiceAndDomainList() # in $* = list of services and domains
 {
     if [ $# -eq 0 ]; then
         printAllDomains
@@ -238,121 +239,97 @@ printExpandedServiceAndDomainList() # $* = list of services and domains
     fi
 }
 
-# Provides the service name of a domain in RET. The service name
-# corresponds to the name of the batch file of that service, without
-# the file suffix.
-getService() # $1 = domain name
+# Returns the service name of a domain. The service name corresponds
+# to the name of the batch file of that service, without the file
+# suffix.
+getService() # in $1 = domain name, out $2 = service
 {
+    local ret
     if contains $1 $(printAllPoolDomains); then
-        RET="pool"
+        ret="pool"
     else
         case "$1" in
-            dcap*-*Domain)
-                RET="dcap"
-                ;;
-
-            gPlazma-*Domain)
-                RET="gPlazma"
-                ;;
-
-            xrootd-*Domain)
-                RET="xrootd"
-                ;;
-
-            gridftp-*Domain)
-                RET="gridftp"
-                ;;
-
-            webdav-*Domain)
-                RET="webdav"
-                ;;
-
-            gsidcap-*Domain)
-                RET="gsidcap"
-                ;;
-
-            srm-*Domain)
-                RET="srm"
-                ;;
-
-            adminDoorDomain)
-                RET="admin"
-                ;;
-
-            *Domain)
-                RET="${1%Domain}"
-                ;;
-
-            *)
-                return 1
-                ;;
+            dcap*-*Domain)   ret="dcap" ;;
+            gPlazma-*Domain) ret="gPlazma" ;;
+            xrootd-*Domain)  ret="xrootd" ;;
+            gridftp-*Domain) ret="gridftp" ;;
+            webdav-*Domain)  ret="webdav" ;;
+            gsidcap-*Domain) ret="gsidcap" ;;
+            srm-*Domain)     ret="srm" ;;
+            adminDoorDomain) ret="admin" ;;
+            *Domain)         ret="${1%Domain}" ;;
+            *)               return 1 ;;
         esac
     fi
-    return 0
+    eval $2=\"$ret\"
 }
 
 # Given a list of domains, prints a list of corresponding service
 # names.
-printServices() # $* = list of domains
+printServices() # in $* = list of domains
 {
+    local service
     for domain in $*; do
-        getService $domain
-        printf "${RET} "
+        getService $domain service
+        printf "${service} "
     done
 }
 
-# If domain runs, RET is set to its PID.  Returns 0 if domain is
-# running, 1 otherwise.
-getPidOfDomain() # $1 = Domain name
+# If domain runs, provides its PID. Returns 0 if domain is running, 1
+# otherwise.
+getPidOfDomain() # in $1 = Domain name, out $2 = pid
 {
     local domain
     local pidFile
-    local pid
+    local pidDir
+    local ret
 
     domain="$1"
 
-    getConfigurationValue "$domain" pidDir || return
+    getConfigurationValue "$domain" pidDir pidDir || return
 
-    pidFile="${RET:-$DCACHE_PID}/dcache.$domain-daemon.pid"
-    [ -f "${pidFile}" ] || return 1
+    pidFile="${pidDir:-$DCACHE_PID}/dcache.$domain-daemon.pid"
+    [ -f "${pidFile}" ] || return
 
-    pid=$(cat "${pidFile}")
-    isRunning ${pid} || return 1
+    ret=$(cat "${pidFile}")
+    isRunning "${ret}" || return
 
-    RET=${pid}
-    return 0
+    eval $2=\"$ret\"
 }
 
-# If domain runs, RET is set to its PID.  Returns 0 if domain is
-# running, 1 otherwise.
-getJavaPidOfDomain() # $1 = Domain name
+# If domain runs, provides the PID of its Java process.  Returns 0 if
+# domain is running, 1 otherwise.
+getJavaPidOfDomain() # in $1 = Domain name, out $2 = pid
 {
     local domain
     local pidFile
-    local pid
+    local pidDir
+    local ret
 
     domain="$1"
 
-    getConfigurationValue "$domain" pidDir || return
+    getConfigurationValue "$domain" pidDir pidDir || return
 
-    pidFile="${RET:-$DCACHE_PID}/dcache.$domain-java.pid"
-    [ -f "${pidFile}" ] || return 1
+    pidFile="${pidDir:-$DCACHE_PID}/dcache.$domain-java.pid"
+    [ -f "${pidFile}" ] || return
 
-    pid=$(cat "${pidFile}")
-    isRunning ${pid} || return 1
+    ret=$(cat "${pidFile}")
+    isRunning "${ret}" || return
 
-    RET=${pid}
-    return 0
+    eval $2=\"$ret\"
 }
 
-# Provides the name of the log file used by a domain in RET.
-getLogOfDomain() # $1 = Domain name
+# Returns the name of the log file used by a domain.
+getLogOfDomain() # in $1 = Domain name, out $2 = log of domain
 {
     local domain
     local service
-    domain=$1
+    local logArea
+    local ret
 
-    getService ${domain} || return; service="$RET"
+    domain="$1"
+
+    getService "${domain}" service || return
 
     case "$service" in
         srm)
@@ -361,28 +338,26 @@ getLogOfDomain() # $1 = Domain name
             if [ -r ${DCACHE_ETC}/srm_setup.env ] && [ -r ${DCACHE_HOME}/bin/dcache-srm ]; then
                 . ${DCACHE_ETC}/srm_setup.env
                 eval $(grep "export CATALINA_HOME" ${DCACHE_BIN}/dcache-srm)
-                RET="${CATALINA_HOME}/logs/catalina.out"
+                ret="${CATALINA_HOME}/logs/catalina.out"
             fi
             ;;
         *)
-            getConfigurationValue $domain logArea
-            RET="${RET:-$DCACHE_LOG}/${domain}.log"
+            getConfigurationValue $domain logArea logArea || return
+            ret="${logArea:-$DCACHE_LOG}/${domain}.log"
             ;;
     esac
 
-    return 0
+    eval $2=\"$ret\"
 }
 
-
-# Stores the name of the pool list file for the given pool domain in
-# RET.
-getPoolListFile() # $1 = domain name
+# Returns the name of the pool list file for the given pool domain.
+getPoolListFile() # in $1 = domain name, out $2 = pool list file
 {
-    RET="${pool_config}/${1%Domain}.poollist"
+    eval $2=\"${pool_config}/${1%Domain}.poollist\"
 }
 
 # Returns the setup file path for a service or domain
-getConfigurationFile() # $1 = service or domain
+getConfigurationFile() # in $1 = service or domain, out $2 = configuration file
 {
     local filename
     local name
@@ -431,11 +406,11 @@ getConfigurationFile() # $1 = service or domain
     esac
 
     if [ -f "${DCACHE_CONFIG}/${filename}" ] ; then
-        RET="${DCACHE_CONFIG}/${filename}"
+        eval $2=\"${DCACHE_CONFIG}/${filename}\"
     elif [ -f "${DCACHE_CONFIG}/${filename}-$(uname -n)" ] ; then
-        RET="${DCACHE_CONFIG}/${filename}-$(uname -n)"
+        eval $2=\"${DCACHE_CONFIG}/${filename}-$(uname -n)\"
     elif [ -f "/etc/${filename}" ] ; then
-        RET="/etc/${filename}"
+        eval $2=\"/etc/${filename}\"
     else
         return 1
     fi
@@ -444,56 +419,59 @@ getConfigurationFile() # $1 = service or domain
 # Loads a setup into environment variables. All environment variables
 # are prefixed by $2 followed by an underscore. Only loads the setup
 # file the first time the function is called for a given prefix.
-loadConfigurationFile() # $1 = service or domain, $2 = prefix
+loadConfigurationFile() # in $1 = service or domain, in $2 = prefix
 {
+    local file
     if eval "[ -z \"\$SETUP_$2\" ]"; then
-        getConfigurationFile "$1" || return
-        ourHomeDir="${DCACHE_HOME}" readconf "$RET" "$2_" || return
+        getConfigurationFile "$1" file || return
+        ourHomeDir="${DCACHE_HOME}" readconf "$file" "$2_" || return
         eval "SETUP_$2=1"
     fi
 }
 
 # Returns configuration value for a service
-getConfigurationValue() # $1 = service or domain, $2 = key
+getConfigurationValue() # in $1 = service or domain, in $2 = key, out $3 = value
 {
     local prefix
     prefix=$(echo $1 | sed -e 's/_/__/g' -e 's/-/_/g')
-    loadConfigurationFile $1 $prefix && eval RET="\${${prefix}_$2}"
+    loadConfigurationFile $1 $prefix && eval $3=\"\${${prefix}_$2}\"
 }
 
 # Returns the program path used when starting and stopping a service.
-getJob() # $1 = service
+getJob() # in $1 = service, out $2 = job
 {
+    local ret
     case "${service}" in
         srm)
-            RET="${DCACHE_BIN}/dcache-srm"
+            ret="${DCACHE_BIN}/dcache-srm"
             ;;
         dcap)
             # $domain has the format 'dcap${door}-${host}Domain'
             door=${domain#dcap}
             door=${door%-${hostname}Domain}
-            RET="${DCACHE_JOBS}/door${door}"
+            ret="${DCACHE_JOBS}/door${door}"
             ;;
         xrootd)
-            RET="${DCACHE_JOBS}/xrootdDoor"
+            ret="${DCACHE_JOBS}/xrootdDoor"
             ;;
         gridftp)
-            RET="${DCACHE_JOBS}/gridftpdoor"
+            ret="${DCACHE_JOBS}/gridftpdoor"
             ;;
         gsidcap)
-            RET="${DCACHE_JOBS}/gsidcapdoor"
+            ret="${DCACHE_JOBS}/gsidcapdoor"
             ;;
         admin)
-            RET="${DCACHE_JOBS}/adminDoor"
+            ret="${DCACHE_JOBS}/adminDoor"
             ;;
         *)
-            RET="${DCACHE_JOBS}/${service}"
+            ret="${DCACHE_JOBS}/${service}"
             ;;
     esac
+    eval $2=\"$ret\"
 }
 
 # Starts or stops a given domain.
-runDomain() # $1 = domain, $2 = action
+runDomain() # in $1 = domain, in $2 = action
 {
     local domain
     local action
@@ -504,13 +482,10 @@ runDomain() # $1 = domain, $2 = action
     domain=$1
     action=$2
 
-    getService "$1" || return
-    service="$RET"
+    getService "$1" service || return
+    getJob "$service" program || return
 
-    getJob "$service"
-    program="$RET"
-
-    if [ ! -x $program ]; then
+    if [ ! -x "$program" ]; then
         fail 1 "$program not found. The dCache domain $domain is
                 probably not configured on this host. If you recently
                 configured it, then you may need to rerun the
@@ -519,13 +494,13 @@ runDomain() # $1 = domain, $2 = action
 
     case "${service}" in
         pool)
-            ${program} -pool=${domain%Domain} ${action}
+            "${program}" "-pool=${domain%Domain}" ${action} || return
             ;;
         srm)
-            ${program} ${action}
+            "${program}" ${action} || return
             ;;
         *)
-            ${program} -domain=${domain} ${action}
+            "${program}" "-domain=${domain}" ${action} || return
             ;;
     esac
 }
