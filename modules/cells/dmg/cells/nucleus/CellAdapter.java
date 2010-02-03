@@ -127,7 +127,9 @@ public class   CellAdapter
         if (_args.getOpt("replyObject") != null)setCommandExceptionEnabled(true);
         if (startNow)start();
 
+        addCommandListener(new Log4jShell());
     }
+
     /**
      *  starts the delivery of messages to this cell and
      *  executes the auto and defined Setup context.
