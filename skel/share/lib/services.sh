@@ -307,13 +307,23 @@ getPidOfDomain() # $1 = Domain name
 {
     local domain
     local pidFile
+    local pidDir
     local pid
+    local service
 
     domain="$1"
 
     getConfigurationValue "$domain" pidDir || return
+    pidDir="${RET:-$DCACHE_PID}"
 
-    pidFile="${RET:-$DCACHE_PID}/dcache.$domain-daemon.pid"
+    getService "$domain" || return
+    service="$RET"
+
+    if [ "$service" = "srm" ]; then
+        pidFile="${pidDir}/dcache.$domain.pid"
+    else
+        pidFile="${pidDir}/dcache.$domain-daemon.pid"
+    fi
     [ -f "${pidFile}" ] || return 1
 
     pid=$(cat "${pidFile}")
@@ -329,13 +339,24 @@ getJavaPidOfDomain() # $1 = Domain name
 {
     local domain
     local pidFile
+    local pidDir
     local pid
+    local service
 
     domain="$1"
 
     getConfigurationValue "$domain" pidDir || return
+    pidDir="${RET:-$DCACHE_PID}"
 
-    pidFile="${RET:-$DCACHE_PID}/dcache.$domain-java.pid"
+    getService "$domain" || return
+    service="$RET"
+
+    if [ "$service" = "srm" ]; then
+        pidFile="${pidDir}/dcache.$domain.pid"
+    else
+        pidFile="${pidDir}/dcache.$domain-java.pid"
+    fi
+
     [ -f "${pidFile}" ] || return 1
 
     pid=$(cat "${pidFile}")
