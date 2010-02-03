@@ -288,9 +288,9 @@ getPidOfDomain() # in $1 = Domain name, out $2 = pid
     getService "$domain" service || return
 
     if [ "$service" = "srm" ]; then
-        pidFile="${pidDir}/dcache.$domain.pid"
+        pidFile="${pidDir:-$DCACHE_PID}/dcache.$domain.pid"
     else
-        pidFile="${pidDir}/dcache.$domain-daemon.pid"
+        pidFile="${pidDir:-$DCACHE_PID}/dcache.$domain-daemon.pid"
     fi
     [ -f "${pidFile}" ] || return
 
@@ -316,7 +316,7 @@ getJavaPidOfDomain() # in $1 = Domain name, out $2 = pid
     getService "$domain" service || return
 
     if [ "$service" = "srm" ]; then
-        pidFile="${pidDir}/dcache.$domain.pid"
+        pidFile="${pidDir:-$DCACHE_PID}/dcache.$domain.pid"
     else
         pidFile="${pidDir:-$DCACHE_PID}/dcache.$domain-java.pid"
     fi
