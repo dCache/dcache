@@ -45,7 +45,6 @@ daemonPidFile="${pidDir}/dcache.${domainName}-daemon.pid"
 
 getPid() # in $1=pidfile, out $2=pid
 {
-    local pid
     if [ ! -f "$1" ] ; then
         echo "Cannot find appropriate PID file ($1)" 1>&2
         exit 1
@@ -63,9 +62,6 @@ getPid() # in $1=pidfile, out $2=pid
 #
 procStop()
 {
-    local javaPid
-    local daemonPid
-
     getPid "$daemonPidFile" daemonPid
     getPid "$javaPidFile" javaPid
 
@@ -105,8 +101,6 @@ isRunning() # in $1=pidFile
 
 procStart()
 {
-    local pid
-
     if isRunning "${daemonPidFile}"; then
         echo "${domainName} might still be running" 1>&2
         exit 4
