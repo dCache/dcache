@@ -21,6 +21,7 @@
     <property name="protocolEngine" value="org.dcache.webdav.DcacheResourceFactory"/>
     <property name="protocolVersion" value="1.1"/>
     <property name="protocolFamily" value="https"/>
+    <property name="address" value="${webdavAddress}"/>
     <property name="port" value="${webdavPort}"/>
     <property name="loginBroker">
       <bean class="dmg.cells.nucleus.CellPath">
@@ -38,6 +39,7 @@
       <list>
         <bean class="org.eclipse.jetty.server.ssl.SslSelectChannelConnector">
           <property name="port" value="${webdavPort}"/>
+          <property name="host" value="${webdavAddress}"/>
           <property name="keystore" value="${webdavKeyStore}"/>
           <property name="keystoreType" value="PKCS12"/>
           <property name="password" value="${webdavKeyStorePassword}"/>

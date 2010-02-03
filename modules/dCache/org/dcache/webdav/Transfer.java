@@ -327,7 +327,7 @@ public abstract class Transfer implements Comparable<Transfer>
      * @return true when the mover has finished
      * @throws CacheException if the mover failed
      */
-    public synchronized boolean join(long millis)
+    public synchronized boolean waitForMover(long millis)
         throws CacheException, InterruptedException
     {
         long deadline = System.currentTimeMillis() + millis;
@@ -555,7 +555,7 @@ public abstract class Transfer implements Comparable<Transfer>
             /* To reduce the risk of orphans when using PNFS, we wait
              * for the transfer confirmation.
              */
-            if (!join(millis)) {
+            if (!waitForMover(millis)) {
                 _log.error("Failed to kill mover " + pool + "/" + moverId
                            + ": Timeout");
             }

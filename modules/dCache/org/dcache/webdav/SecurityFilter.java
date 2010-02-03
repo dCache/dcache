@@ -220,12 +220,12 @@ public class SecurityFilter implements Filter
         _gPlazmaStub = stub;
     }
 
-    public void setGPlazmaPolicyFilePath(String path)
+    public void setGplazmaPolicyFilePath(String path)
     {
         _gPlazmaPolicyFilePath = path;
     }
 
-    public String getGPlazmaPolicyFilePath()
+    public String getGplazmaPolicyFilePath()
     {
         return _gPlazmaPolicyFilePath;
     }

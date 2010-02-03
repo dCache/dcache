@@ -20,9 +20,12 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.nio.channels.AsynchronousCloseException;
 import java.net.ServerSocket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import javax.security.auth.Subject;
 import java.security.AccessController;
 
@@ -151,10 +154,13 @@ public class DcacheResourceFactory
     private FsPath _rootPath = new FsPath();
     private List<FsPath> _allowedPaths =
         Collections.singletonList(new FsPath());
+    private InetAddress _internalAddress;
 
     public DcacheResourceFactory()
+        throws UnknownHostException
     {
         _securityManager = new NullSecurityManager();
+        _internalAddress = InetAddress.getLocalHost();
     }
 
     /**
@@ -362,6 +368,25 @@ public class DcacheResourceFactory
                                       TimeUnit.MILLISECONDS);
     }
 
+    public void setInternalAddress(String host)
+        throws UnknownHostException
+    {
+        if (host != null && !host.isEmpty()) {
+            InetAddress address = InetAddress.getByName(host);
+            if (address.isAnyLocalAddress()) {
+                throw new IllegalArgumentException("Wildcard address is not allowed: " + host);
+            }
+            _internalAddress = address;
+        } else {
+            _internalAddress = InetAddress.getLocalHost();
+        }
+    }
+
+    public String getInternalAddress()
+    {
+        return _internalAddress.getHostAddress();
+    }
+
     /**
      * Performs component initialization. Must be called after all
      * dependencies have been injected.
@@ -462,9 +487,6 @@ public class DcacheResourceFactory
                     transfer.startMover(_ioQueue);
                     try {
                         transfer.relayData(inputStream);
-                        if (!transfer.join(_transferConfirmationTimeout)) {
-                            throw new CacheException("Missing transfer confirmation from pool");
-                        }
                     } finally {
                         transfer.setStatus(null);
                         transfer.killMover(_killTimeout);
@@ -490,11 +512,11 @@ public class DcacheResourceFactory
             throw e;
         } catch (IOException e) {
             transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                   e.getMessage());
+                                   e.toString());
             throw e;
         } catch (RuntimeException e) {
             transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                   e.getMessage());
+                                   e.toString());
             throw e;
         } finally {
             _transfers.remove(transfer);
@@ -679,7 +701,7 @@ public class DcacheResourceFactory
             throw e;
         } catch (RuntimeException e) {
             transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                   e.getMessage());
+                                   e.toString());
             throw e;
         } finally {
             if (uri == null) {
@@ -857,7 +879,7 @@ public class DcacheResourceFactory
             if (error == null) {
                 notifyBilling(0, "");
             } else {
-                notifyBilling(error.getRc(), error.toString());
+                notifyBilling(error.getRc(), error.getMessage());
             }
         }
     }
@@ -880,7 +902,7 @@ public class DcacheResourceFactory
             _serverChannel = ServerSocketChannel.open();
             try {
                 _serverChannel.socket().setSoTimeout(_moverTimeout);
-                _serverChannel.socket().bind(null);
+               _serverChannel.socket().bind(new InetSocketAddress(_internalAddress, 0));
             } catch (IOException e) {
                 _serverChannel.close();
                 _serverChannel = null;
@@ -921,11 +943,16 @@ public class DcacheResourceFactory
         }
 
         public void relayData(InputStream inputStream)
-            throws IOException, CacheException
+            throws IOException, CacheException, InterruptedException
         {
             setStatus("Mover " + getPool() + "/" + getMoverId() +
                       ": Waiting for data connection");
             try {
+                ServerSocketChannel serverChannel = getServerChannel();
+                if (serverChannel == null) {
+                    throw new AsynchronousCloseException();
+                }
+
                 SocketChannel channel = getServerChannel().accept();
                 try {
                     closeServerChannel();
@@ -947,6 +974,17 @@ public class DcacheResourceFactory
                 } finally {
                     channel.close();
                 }
+                if (!waitForMover(_transferConfirmationTimeout)) {
+                    throw new CacheException("Missing transfer confirmation from pool");
+                }
+            } catch (AsynchronousCloseException e) {
+                /* Server socket closed because the mover reported an
+                 * error rather than connection to us. The mover has
+                 * likely a much more interesting error message than
+                 * the asynchronous close.
+                 */
+                waitForMover(0);
+                throw new IllegalStateException("Server channel is not open");
             } catch (SocketTimeoutException e) {
                 throw new TimeoutCacheException("Server is busy (internal timeout)");
             } finally {

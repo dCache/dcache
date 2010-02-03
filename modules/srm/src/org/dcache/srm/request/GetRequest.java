@@ -185,15 +185,10 @@ public final class GetRequest extends ContainerRequest {
         if(surl == null) {
            throw new SRMException("surl is null");
         }
-        rlock();
-        try {
-            for(int i =0; i<fileRequests.length;++i) {
-                if(((GetFileRequest)fileRequests[i]).getSurlString().equals(surl)) {
-                    return fileRequests[i];
-                }
+        for(int i =0; i<fileRequests.length;++i) {
+            if(((GetFileRequest)fileRequests[i]).getSurlString().equals(surl)) {
+                return fileRequests[i];
             }
-        } finally {
-            runlock();
         }
         throw new SRMException("file request for surl ="+surl +" is not found");
     }
@@ -206,14 +201,9 @@ public final class GetRequest extends ContainerRequest {
         // file requests will get stored as soon as they are
         // scheduled, and the saved state needs to be consistent
         saveJob(true);
-        rlock();
-        try {
-            for(int i = 0; i < fileRequests.length ;++ i) {
-                GetFileRequest fileRequest = (GetFileRequest) fileRequests[i];
-                fileRequest.schedule();
-            }
-        } finally {
-            runlock();
+        for(int i = 0; i < fileRequests.length ;++ i) {
+            GetFileRequest fileRequest = (GetFileRequest) fileRequests[i];
+            fileRequest.schedule();
         }
     }
 

@@ -55,6 +55,7 @@
     <property name="anonymousAccess" value="${webdavAnonymousAccess}"/>
     <property name="useGplazmaCell" value="${useGPlazmaAuthorizationCell}"/>
     <property name="useGplazmaModule" value="${useGPlazmaAuthorizationModule}"/>
+    <property name="gplazmaPolicyFilePath" value="${gplazmaPolicy}"/>
     <property name="gplazmaStub" ref="gplazma-stub"/>
   </bean>
 
@@ -91,6 +92,7 @@
     <property name="moverTimeout" value="${webdavMoverTimeout}"/>
     <property name="killTimeout" value="${webdavKillTimeout}"/>
     <property name="transferConfirmationTimeout" value="${webdavTransferConfirmationTimeout}"/>
+    <property name="internalAddress" value="${webdavInternalAddress}"/>
   </bean>
 
   <bean id="milton" class="com.bradmcevoy.http.HttpManager">
@@ -99,8 +101,8 @@
     <constructor-arg ref="response-handler"/>
     <property name="filters">
       <list>
-        <ref bean="security-filter"/>
         <ref bean="logging-filter"/>
+        <ref bean="security-filter"/>
         <ref bean="dispatch-filter"/>
       </list>
     </property>
