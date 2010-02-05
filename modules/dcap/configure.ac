@@ -35,7 +35,7 @@ AC_PROG_CC
 AC_CACHE_CHECK([for maximum warnings compiler flag],
   ac_cv_cwflag,
 [case "${CC-cc}" in
-  *gcc*) ac_cv_cwflag=-Wall;;
+  *gcc*) ac_cv_cwflag="-Wall -pedantic -pipe";;
   *)
   ;;
 esac])
