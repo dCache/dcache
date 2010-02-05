@@ -448,13 +448,13 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
         /*
          * we may use sendAndWait here. Unfortunately, PoolRemoveFilesMessage
          * returns an array of not removed files as a error object.
-         * SendAndWay will convert it into exception.
+         * SendAndWait will convert it into exception.
          *
          * As a work around that we simulate synchronous behavior.
          */
         synchronized(callback) {
             _poolStub.send(new CellPath(poolName), msg, PoolRemoveFilesMessage.class, callback);
-            callback.wait();
+            callback.wait(_replyTimeout);
         }
     }
 
