@@ -652,7 +652,7 @@ public class PoolMonitorV5
                         list.add(check);
                         _log.info("queryPoolsForPnfsId : returning : " + check);
                     }
-                } else if (poolMessage.getReturnCode() == 0) {
+                } else if (!poolMessage.getWaiting() && poolMessage.getReturnCode() == 0) {
                     _log.warn("queryPoolsForPnfsId : clearingCacheLocation for pnfsId "
                                     + pnfsId + " at pool " + poolName);
                     _pnfsHandler.clearCacheLocation(pnfsId, poolName);
