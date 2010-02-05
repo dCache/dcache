@@ -177,6 +177,12 @@ public class XrootdProtocol_3
                          XrootdProtocol_3.class.getName());
 
     /**
+     * Maximum frame size of a read or readv reply. Does not include
+     * the size of the frame header.
+     */
+    private static int _maxFrameSize = 2 << 20;
+
+    /**
      * Shared thread pool accepting TCP connections.
      */
     private static Executor _acceptExecutor;
@@ -332,6 +338,12 @@ public class XrootdProtocol_3
                 new OrderedMemoryAwareThreadPoolExecutor(threads,
                                                          perChannelLimit,
                                                          totalLimit);
+
+            s = endpoint.getArgs().getOpt("xrootd-mover-max-frame-size");
+            if (s != null && !s.isEmpty()) {
+                _maxFrameSize = Integer.parseInt(s);
+            }
+
         }
 
         /* The accept executor is used for accepting TCP
@@ -729,6 +741,12 @@ public class XrootdProtocol_3
                                  "Invalid file handle");
                 return;
             }
+
+            if (req.BytesToRead() + ReadResponse.READ_LIST_HEADER_SIZE > _maxFrameSize) {
+                respondWithError(ctx, event, msg, kXR_NoMemory,
+                                 "Single readv transfer is too large");
+                return;
+            }
         }
 
         _readers.add(new VectorReader(msg.getStreamID(), _descriptors, list));
@@ -840,7 +858,7 @@ public class XrootdProtocol_3
     {
         try {
             while (_readers.peek() != null) {
-                ReadResponse block = _readers.element().read();
+                ReadResponse block = _readers.element().read(_maxFrameSize);
                 if (block != null) {
                     _bytesTransferred += block.getDataLength();
                     return block;
