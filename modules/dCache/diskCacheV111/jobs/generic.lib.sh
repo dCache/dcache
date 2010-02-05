@@ -148,7 +148,7 @@ procStart()
 # we need to activate the globus gsi key pair caching for those installations that
 # continue to use  dCacheSetup where -Dorg.globus.jglobus.delegation.cache.lifetime is not
 # specified
-    echo "${java_options}" | grep -q "\-Dorg\.globus\.jglobus\.delegation\.cache\.lifetime=" || {
+    echo "${java_options}" | grep "\-Dorg\.globus\.jglobus\.delegation\.cache\.lifetime=" >/dev/null || {
         java_options="${java_options} \
                  -Dorg.globus.jglobus.delegation.cache.lifetime=30000"
     }
