@@ -136,7 +136,7 @@ while :; do
       break;
   fi
 
-  list_missing_cells | grep -q "Missing:"
+  list_missing_cells | grep "Missing:" >/dev/null
 
   if [ $? -eq 1 ]; then
       # All cells are present, exit with rc=0
