@@ -12,6 +12,8 @@ import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ExecutionException;
 import java.security.GeneralSecurityException;
@@ -77,6 +79,7 @@ public class XrootdDoor
     private final static String XROOTD_PROTOCOL_STRING = "Xrootd";
     private final static int XROOTD_PROTOCOL_MAJOR_VERSION = 2;
     private final static int XROOTD_PROTOCOL_MINOR_VERSION = 7;
+    private final static int RETRY_SLEEP = 500; // ms
 
     /**
      * Is set true only once (when plugin loading didn't succeed) to
@@ -88,7 +91,10 @@ public class XrootdDoor
      * File handle to port address mapping. Access is protected by
      * synchronization on the map.
      */
-    private Map<Integer,InetSocketAddress> _redirectTable = new HashMap();
+    private Set<Integer> _waitingForRedirect =
+        new HashSet<Integer>();
+    private Map<Integer,InetSocketAddress> _redirectTable =
+        new HashMap<Integer,InetSocketAddress>();
 
     private AbstractAuthorizationFactory _authzFactory;
 
@@ -275,31 +281,33 @@ public class XrootdDoor
 
         protocolInfo.setPath(path);
 
-        InetSocketAddress redirectAddress = null;
-        do {
-            // ask the Poolmanager for a pool
-            String pool = askForPool(pnfsid,
-                                     storageInfo,
-                                     protocolInfo,
-                                     isWrite);
-            try {
-                // ask the pool to prepare the transfer
-                redirectAddress =
-                    askForFile(pool,
-                               pnfsid,
-                               storageInfo,
-                               protocolInfo,
-                               isWrite);
-            } catch (TimeoutCacheException e) {
-                if (isWrite) {
-                    throw e;
-                }
-            } catch (CacheException e) {
-                _log.warn("Pool error: " + e.getMessage());
-            }
-        } while (redirectAddress == null);
+        InetSocketAddress redirectAddress =
+            createMover(pnfsid, storageInfo, protocolInfo, isWrite);
+        while (redirectAddress == null) {
+            Thread.sleep(RETRY_SLEEP);
+            redirectAddress =
+                createMover(pnfsid, storageInfo, protocolInfo, isWrite);
+        }
 
         return redirectAddress;
+    }
+
+    private InetSocketAddress
+        createMover(PnfsId pnfsid, StorageInfo storageInfo,
+                    XrootdProtocolInfo protocolInfo, boolean isWrite)
+        throws CacheException, InterruptedException
+    {
+        String pool = askForPool(pnfsid, storageInfo, protocolInfo, isWrite);
+        try {
+            return askForFile(pool, pnfsid, storageInfo, protocolInfo, isWrite);
+        } catch (TimeoutCacheException e) {
+            if (isWrite) {
+                throw e;
+            }
+        } catch (CacheException e) {
+            _log.warn("Pool error: " + e.getMessage());
+        }
+        return null;
     }
 
     public PnfsGetStorageInfoMessage getStorageInfo(String path)
@@ -425,31 +433,41 @@ public class XrootdDoor
             (CellPath) _poolManagerStub.getDestinationPath().clone();
         path.add(pool);
 
-        PoolIoFileMessage poolReply = _poolStub.sendAndWait(path, poolMessage);
-
-        _log.info("Pool " + pool +
-                  (isWrite ? " will accept file" : " will deliver file ") +
-                  pnfsId);
-
         Integer key = protocolInfo.getXrootdFileHandle();
-
         synchronized (_redirectTable) {
-            while (!_redirectTable.containsKey(key)) {
-                _log.info("waiting for redirect message from pool "+pool+
-                          " (pnfsId="+pnfsId+" fileHandle="+key+")");
-                _redirectTable.wait();
-            }
+            _waitingForRedirect.add(key);
+        }
+        try {
+            PoolIoFileMessage poolReply =
+                _poolStub.sendAndWait(path, poolMessage);
 
-            /* null is a special value we added to the map when no valid
-             * interface was returned by the pool.
-             */
-            InetSocketAddress newAddress = _redirectTable.remove(key);
-            if (newAddress == null) {
-                throw new CacheException("Pool responded with invalid redirection address, transfer failed");
-            }
+            _log.info("Pool " + pool +
+                      (isWrite ? " will accept file" : " will deliver file ") +
+                      pnfsId);
 
-            _log.info("Redirecting to " + pool + " (pnfsId=" + pnfsId + ")");
-            return newAddress;
+            synchronized (_redirectTable) {
+                while (!_redirectTable.containsKey(key)) {
+                    _log.info("waiting for redirect message from pool "+pool+
+                              " (pnfsId="+pnfsId+" fileHandle="+key+")");
+                    _redirectTable.wait();
+                }
+
+                /* null is a special value we added to the map when no
+                 * valid interface was returned by the pool.
+                 */
+                InetSocketAddress newAddress = _redirectTable.get(key);
+                if (newAddress == null) {
+                    throw new CacheException("Pool failed to open TCP socket");
+                }
+
+                _log.info(String.format("Redirecting to %s@%s", pnfsId, pool));
+                return newAddress;
+            }
+        } finally {
+            synchronized (_redirectTable) {
+                _redirectTable.remove(key);
+                _waitingForRedirect.remove(key);
+            }
         }
     }
 
@@ -486,36 +504,55 @@ public class XrootdDoor
     {
         _log.info("received redirect msg from mover");
         synchronized (_redirectTable) {
-            _log.debug("got lock on _sync");
+            Integer key = msg.getXrootdFileHandle();
+            if (_waitingForRedirect.contains(key)) {
+                // pick the first IPv4 address from the collection at this
+                // point, we can't determine, which of the pool
+                // IP-addresses is the right one, so we select the first
+                Collection<NetIFContainer> interfaces =
+                    Collections.checkedCollection(msg.getNetworkInterfaces(),
+                                                  NetIFContainer.class);
+                Inet4Address ip = getFirstIpv4(interfaces);
 
-            // pick the first IPv4 address from the collection at this
-            // point, we can't determine, which of the pool
-            // IP-addresses is the right one, so we select the first
-            Collection<NetIFContainer> interfaces =
-                Collections.checkedCollection(msg.getNetworkInterfaces(),
-                                              NetIFContainer.class);
-            Inet4Address ip = getFirstIpv4(interfaces);
+                if (ip != null) {
+                    InetSocketAddress address =
+                        new InetSocketAddress(ip, msg.getServerPort());
+                    _redirectTable.put(key, address);
+                } else {
+                    _log.warn("error: no valid IP-adress received from pool. Redirection not possible");
 
-            if (ip != null) {
-                InetSocketAddress address =
-                    new InetSocketAddress(ip, msg.getServerPort());
-                _redirectTable.put(msg.getXrootdFileHandle(), address);
-            } else {
-                _log.warn("error: no valid IP-adress received from pool. Redirection not possible");
+                    // we have to put a null address to at least notify the
+                    // right xrootd thread about the failure
+                    _redirectTable.put(key, null);
+                }
 
-                // we have to put a null address to at least notify the
-                // right xrootd thread about the failure
-                _redirectTable.put(msg.getXrootdFileHandle(), null);
+                _redirectTable.notifyAll();
             }
-
-            _redirectTable.notifyAll();
         }
     }
 
     public void messageArrived(DoorTransferFinishedMessage msg)
     {
         if ((msg.getProtocolInfo() instanceof XrootdProtocolInfo)) {
-            _log.info("Transfer finished");
+            XrootdProtocolInfo info =
+                (XrootdProtocolInfo) msg.getProtocolInfo();
+            int rc = msg.getReturnCode();
+            if (rc == 0) {
+                _log.info(String.format("Transfer %s@%s finished",
+                                        msg.getPnfsId(), msg.getPoolName()));
+            } else {
+                _log.info(String.format("Transfer %s@%s failed: %s (error code=%d)",
+                                        msg.getPnfsId(), msg.getPoolName(),
+                                        msg.getErrorObject(), rc));
+            }
+
+            synchronized (_redirectTable) {
+                Integer key = info.getXrootdFileHandle();
+                if (_waitingForRedirect.contains(key)) {
+                    _redirectTable.put(key, null);
+                }
+                _redirectTable.notifyAll();
+            }
         }
     }
 
