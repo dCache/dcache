@@ -6,7 +6,7 @@ function dummy () {
     done
 }
 
-if ( echo "$@" | grep -q "'" ); then
+if ( echo "$@" | grep "'" >/dev/null ); then
     eval dummy $@
 else 
     echo "$@"
