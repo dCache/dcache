@@ -1,6 +1,9 @@
 h_sources = get_user.h user_entry.h
 c_sources = sslTunnel.c user.c
 
+AM_CFLAGS=-g -O0  -fPIC $(CWFLAG) \
+	-D_REENTRANT -DLIBC_SYSCALLS -D_GNU_SOURCE
+
 lib_LTLIBRARIES = libsslTunnel.la
 
 libsslTunnel_la_SOURCES = $(c_sources)  $(h_sources)
