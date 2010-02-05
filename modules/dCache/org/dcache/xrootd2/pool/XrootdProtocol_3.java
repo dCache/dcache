@@ -223,6 +223,11 @@ public class XrootdProtocol_3
     private final CountDownLatch _closeLatch = new CountDownLatch(1);
 
     /**
+     * Hangup handler signals closure of the client connection.
+     */
+    private final HangupHandler _hangupHandler = new HangupHandler(_closeLatch);
+
+    /**
      * Next response message used during read operations. Provides a
      * simplistic read-ahead buffer.
      */
@@ -467,7 +472,7 @@ public class XrootdProtocol_3
                         pipeline.addLast("logger", new LoggingHandler(XrootdProtocol_3.class));
                     }
                     pipeline.addLast("handshake", new XrootdHandshakeHandler(XrootdProtocol.DATA_SERVER));
-                    pipeline.addLast("hangup", new HangupHandler(_closeLatch));
+                    pipeline.addLast("hangup", _hangupHandler);
                     pipeline.addLast("executor", new ExecutionHandler(_diskExecutor));
                     pipeline.addLast("transfer", XrootdProtocol_3.this);
                     return pipeline;
