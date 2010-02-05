@@ -497,7 +497,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             _userAuthRecord = getUserMetadata( _user.getName(), _user.getRole() ) ;
         }
 
-        if ( !_checkStagePermission.canPerformStaging(_userAuthRecord.DN, _userAuthRecord.getFqan()) ) {
+        if ( !_checkStagePermission.canPerformStaging(_subject) ) {
            return sessionId + " 0 " + _ourName + " ok ";
         }
         //VP
