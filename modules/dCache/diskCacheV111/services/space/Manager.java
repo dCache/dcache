@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Date;
+import java.util.EnumSet;
 import diskCacheV111.services.space.message.*;
 import  dmg.cells.nucleus.SystemCell;
 import  dmg.cells.nucleus.Cell;
@@ -71,7 +72,6 @@ import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.GridProtocolInfo;
 import diskCacheV111.vehicles.PnfsDeleteEntryNotificationMessage;
-import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FQAN;
 import diskCacheV111.util.CacheException;
@@ -84,6 +84,7 @@ import diskCacheV111.util.DBManager;
 import diskCacheV111.util.IoPackage;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.namespace.NameSpaceProvider;
+import org.dcache.namespace.FileAttribute;
 import org.dcache.util.JdbcConnectionPool;
 import org.apache.log4j.Logger;
 
@@ -150,7 +151,7 @@ public final class Manager
 		connection_pool = manager.getConnectionPool();
 		spaceManagerEnabled =
 			isOptionSetToTrueOrYes("spaceManagerEnabled",spaceManagerEnabled);
-		if (logger.isDebugEnabled()) { 
+		if (logger.isDebugEnabled()) {
                         logger.debug("USING LOGGER spaceManagerEnabled="+spaceManagerEnabled);
                 }
 		if(_args.getOpt("poolManager") != null) {
@@ -399,7 +400,7 @@ public final class Manager
                                                 }
                                         }
                         catch (SQLException e) {
-                                return e.toString();   
+                                return e.toString();
                         }
                         catch (Exception  e) {
                                 return e.toString();
@@ -1248,9 +1249,8 @@ public final class Manager
                         logger.info(String.format("fix missing size: Processed %d of %d files.", counter, files.size()));
                     }
 
-                    PnfsGetFileMetaDataMessage msg =
-                        pnfs.getFileMetaDataById(file.getPnfsId());
-                    long size = msg.getMetaData().getFileSize();
+                    long size =
+                        pnfs.getFileAttributes(file.getPnfsId(), EnumSet.of(FileAttribute.SIZE)).getSize();
                     updateSpaceFile(file.getId(),
                                     null,
                                     null,
@@ -2487,7 +2487,7 @@ public final class Manager
 	public long[] getSpaceTokens(String voGroup,
 				     String voRole,
 				     String description)  throws SQLException{
-                
+
                 HashSet spaces = null;
                 if(description == null) {
 			if (voGroup!=null&&!voGroup.equals("")&&
@@ -2504,7 +2504,7 @@ public final class Manager
                                                                         SELECT_SPACE_TOKENS_BY_VOGROUP,
                                                                         SpaceState.RESERVED.getStateId(),
                                                                         voGroup);
-                                        
+
                                 }
                                 if (voRole!=null&&!voRole.equals("")) {
                                         spaces = manager.selectPrepared(new  SpaceReservationIO(),
@@ -2520,8 +2520,8 @@ public final class Manager
                                                         SpaceState.RESERVED.getStateId(),
                                                         description);
                 }
-                if(spaces==null) { 
-                        throw new IllegalArgumentException("getSpaceTokens: all arguments are nulls, not supported"); 
+                if(spaces==null) {
+                        throw new IllegalArgumentException("getSpaceTokens: all arguments are nulls, not supported");
                 }
 		Set<Long> tokenSet = new HashSet<Long>();
 		for (Iterator i=spaces.iterator(); i.hasNext();){
@@ -2549,7 +2549,7 @@ public final class Manager
 	public long[] getFileSpaceTokens( PnfsId pnfsId,
 					  String pnfsPath)  throws SQLException{
 
-                if (pnfsId==null&&pnfsPath==null) { 
+                if (pnfsId==null&&pnfsPath==null) {
                         throw new IllegalArgumentException("getFileSpaceTokens: all arguments are nulls, not supported");
                 }
                 HashSet files = null;
@@ -3524,7 +3524,7 @@ public final class Manager
 						    vos);
 			}
 			catch(SQLException sqle) {
-				logger.error("update of linkGroup "+linkGroupName+" failed with exception: "+sqle.getMessage()); 
+				logger.error("update of linkGroup "+linkGroupName+" failed with exception: "+sqle.getMessage());
 			}
 		}
 		latestLinkGroupUpdateTime = currentTime;
@@ -3618,14 +3618,14 @@ public final class Manager
 			}
                         VOsSet.close();
                         sqlStatement2.close();
-			for(VOInfo nextVo :insertVOs ) { 
+			for(VOInfo nextVo :insertVOs ) {
                                 manager.update(connection,
                                                INSERT_LINKGROUP_VO,
                                                nextVo.getVoGroup(),
                                                nextVo.getVoRole(),
                                                id);
 			}
-			for(VOInfo nextVo : deleteVOs ) { 
+			for(VOInfo nextVo : deleteVOs ) {
                                 manager.update(connection,
                                                DELETE_LINKGROUP_VO,
                                                nextVo.getVoGroup(),

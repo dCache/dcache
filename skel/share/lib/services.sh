@@ -275,60 +275,81 @@ printServices() # in $* = list of domains
     done
 }
 
-# If domain runs, provides its PID. Returns 0 if domain is running, 1
-# otherwise.
-getPidOfDomain() # in $1 = Domain name, out $2 = pid
+# Returns the PID stored in pidfile
+getPidFromFile() # in $1 = pidfile, out $2 = pid
 {
-    local domain
-    local pidFile
-    local pidDir
-    local service
     local ret
+    [ -f "$1" ] && ret=$(cat "$1") && [ "$ret" ] && eval $2=\"$ret\"
+}
 
-    domain="$1"
+# Returns the PID directory of domain
+getPidDir() # in $1 = domain, out $2 = pid dir
+{
+    getConfigurationValue "$1" pidDir $2 && eval $2=\"\${$2:-$DCACHE_PID}\"
+}
 
-    getConfigurationValue "$domain" pidDir pidDir || return
+# The stop file is the file used to suppress domain restart
+getStopFile() # in $1 = domain, out $2 = stop file
+{
+    eval $2=\"/tmp/.dcache-stop.${1}\"
+}
+
+# The java pid file stores the PID of the java process
+getJavaPidFile() # $1 = domain, out $2 = pid file
+{
+    local dir
+    local service
+
     getService "$domain" service || return
+    getPidDir "$1" dir || return
 
     if [ "$service" = "srm" ]; then
-        pidFile="${pidDir:-$DCACHE_PID}/dcache.$domain.pid"
+        eval $2=\"${dir}/dcache.$domain.pid\"
     else
-        pidFile="${pidDir:-$DCACHE_PID}/dcache.$domain-daemon.pid"
+        eval $2=\"${dir}/dcache.${domain}-java.pid\"
     fi
-    [ -f "${pidFile}" ] || return
+}
 
-    ret=$(cat "${pidFile}")
-    isRunning "${ret}" || return
+# The daemon pid file stores the PID of the daemon wrapper
+getDaemonPidFile() # $1 = domain, out $2 = pid file
+{
+    local dir
+    local service
 
-    eval $2=\"$ret\"
+    getService "$domain" service || return
+    getPidDir "$1" dir || return
+
+    if [ "$service" = "srm" ]; then
+        eval $2=\"${dir}/dcache.$domain.pid\"
+    else
+        eval $2=\"${dir}/dcache.${domain}-daemon.pid\"
+    fi
+}
+
+# If domain runs, provides the PID of its daemon wrapper
+# script. Returns 0 if domain is running, 1 otherwise.
+getPidOfDomain() # in $1 = Domain name, out $2 = pid
+{
+    local file
+    local pidOfDomain
+
+    getDaemonPidFile "$1" file || return
+    getPidFromFile "$file" pidOfDomain || return
+    isRunning "$pidOfDomain" || return
+    eval $2=\"$pidOfDomain\"
 }
 
 # If domain runs, provides the PID of its Java process.  Returns 0 if
 # domain is running, 1 otherwise.
 getJavaPidOfDomain() # in $1 = Domain name, out $2 = pid
 {
-    local domain
-    local pidFile
-    local pidDir
-    local service
-    local ret
+    local file
+    local pidOfDomain
 
-    domain="$1"
-
-    getConfigurationValue "$domain" pidDir pidDir || return
-    getService "$domain" service || return
-
-    if [ "$service" = "srm" ]; then
-        pidFile="${pidDir:-$DCACHE_PID}/dcache.$domain.pid"
-    else
-        pidFile="${pidDir:-$DCACHE_PID}/dcache.$domain-java.pid"
-    fi
-    [ -f "${pidFile}" ] || return
-
-    ret=$(cat "${pidFile}")
-    isRunning "${ret}" || return
-
-    eval $2=\"$ret\"
+    getJavaPidFile "$1" file || return
+    getPidFromFile "$file" pidOfDomain || return
+    isRunning "$pidOfDomain" || return
+    eval $2=\"$pidOfDomain\"
 }
 
 # Returns the name of the log file used by a domain.
@@ -373,7 +394,6 @@ getConfigurationFile() # in $1 = service or domain, out $2 = configuration file
 {
     local filename
     local name
-    local tmp
     name="$1"
 
     case "${name}" in
@@ -384,8 +404,8 @@ getConfigurationFile() # in $1 = service or domain, out $2 = configuration file
             filename="doorSetup"
             ;;
         dcap*-*Domain)
-	    tmp=${name%%-*Domain}
-            filename="door${tmp#dcap}Setup"
+	    name=${name%%-*Domain}
+            filename="door${name#dcap}Setup"
             ;;
         xrootd|xrootd-*Domain)
             filename="xrootdDoorSetup"
@@ -482,6 +502,62 @@ getJob() # in $1 = service, out $2 = job
     eval $2=\"$ret\"
 }
 
+getBatchFile() # in $1 = service or domain, out $2 = batch file
+{
+    local filename
+    local name
+    name="$1"
+
+    if ! getConfigurationValue "$name" batch filename || [ -z "$filename" ]; then
+	case "${name}" in
+            srm|srm-*Domain)
+		filename="srm.batch"
+		;;
+            dcap)
+		filename="door.batch"
+		;;
+            dcap*-*Domain)
+		name=${name%%-*Domain}
+		filename="door${name#dcap}.batch"
+		;;
+            xrootd|xrootd-*Domain)
+		filename="xrootdDoor.batch"
+		;;
+            gridftp|gridftp-*Domain)
+		filename="gridftpdoor.batch"
+		;;
+            gsidcap|gsidcap-*Domain)
+		filename="gsidcapdoor.batch"
+		;;
+            admin|adminDoorDomain)
+		filename="adminDoor.batch"
+		;;
+            gPlazma|gPlazma-*Domain)
+		filename="gPlazma.batch"
+		;;
+            webdav|webdav-*Domain)
+		filename="webdav.batch"
+		;;
+            *Domain)
+		if contains $name $(printAllPoolDomains); then
+		    filename="pool.batch"
+		else
+		    filename="${name%Domain}.batch"
+		fi
+		;;
+            *)
+		filename="${name}.batch"
+		;;
+	esac
+    fi
+
+    if [ -f "${DCACHE_CONFIG}/${filename}" ] ; then
+        eval $2=\"${DCACHE_CONFIG}/${filename}\"
+    else
+        return 1
+    fi
+}
+
 # Starts or stops a given domain.
 runDomain() # in $1 = domain, in $2 = action
 {
@@ -490,6 +566,7 @@ runDomain() # in $1 = domain, in $2 = action
     local service
     local program
     local door
+    local poolFile
 
     domain=$1
     action=$2
@@ -506,13 +583,215 @@ runDomain() # in $1 = domain, in $2 = action
 
     case "${service}" in
         pool)
-            "${program}" "-pool=${domain%Domain}" ${action} || return
+            case "$action" in
+                start)
+		    getPoolListFile "$domain" poolFile
+		    if [ ! -f "${poolFile}" ] ; then
+			fail 4 "Pool file not found: ${poolFile}"
+		    fi
+
+		    ( domainStart "$domain" "pool=${poolFile}" ) || return
+                    ;;
+                stop)
+                    ( domainStop "$domain" ) || return
+                    ;;
+            esac
             ;;
         srm)
             "${program}" ${action} || return
             ;;
         *)
-            "${program}" "-domain=${domain}" ${action} || return
+            case "$action" in
+                start)
+		    ( domainStart "$domain" ) || return
+                    ;;
+                stop)
+                    ( domainStop "$domain" ) || return
+                    ;;
+            esac
             ;;
     esac
+}
+
+# Start domain. Use runDomain rather than calling this function
+# directly.
+domainStart() # $1 = domain, $2+ = domain parameters
+{
+    local domain
+    local log
+    local tmp
+    local java_options
+    local domain_domains
+    local stopFile
+    local javaPidFile
+    local daemonPidFile
+    local setupFile
+    local batchFile
+    local pid
+    local java
+
+    domain="$1"
+    shift
+
+    # Don't do anything if already running
+    if getPidOfDomain "$domain" tmp; then
+        fail 1 "${domain} is already running"
+    fi
+
+    # Construct Java options
+    getConfigurationValue "$domain" java_options java_options || true
+    java_options="${java_options} -Djava.endorsed.dirs=${DCACHE_HOME}/classes/endorsed"
+
+    # Activate GSI key pair caching
+    if ! echo "${java_options}" | grep -q "\-Dorg\.globus\.jglobus\.delegation\.cache\.lifetime="; then
+        java_options="${java_options} -Dorg.globus.jglobus.delegation.cache.lifetime=30000"
+    fi
+
+    # Telnet port (what is this used for?)
+    if getConfigurationValue "$domain" telnetPort tmp && [ "$tmp" ]; then
+        domain_options="$domain_options -telnet ${tmp}"
+    elif getConfigurationValue "$domain" telnet tmp && [ "$tmp" ]; then
+        domain_options="$domain_options -telnet ${tmp}"
+    fi
+
+    # Debug switch
+    if getConfigurationValue "$domain" debug tmp && [ "${tmp}" ]; then
+        domain_options="$domain_options -debug"
+    fi
+
+    # Locate setup file
+    if ! getConfigurationFile "$domain" setupFile; then
+        fail 1 "Failed to find setup file for $domain"
+    fi
+
+    # Determine batch file
+    if ! getBatchFile "$domain" batchFile; then
+        fail 5 "Cannot find batch file for ${domain}"
+    fi
+
+    # Build classpath
+    classpath="${DCACHE_HOME}/classes/cells.jar:${DCACHE_HOME}/classes/dcache.jar"
+    if getConfigurationValue "$domain" classpath tmp && [ "$tmp" ]; then
+        classpath="${tmp}:${classpath}"
+    fi
+    if [ -r "${DCACHE_HOME}/classes/extern.classpath" ]; then
+        . "${DCACHE_HOME}/classes/extern.classpath"
+        classpath="${classpath}:${externalLibsClassPath}"
+    fi
+
+    # LD_LIBRARY_PATH override
+    if getConfigurationValue "$domain" libbrarypath LD_LIBRARY_PATH && [ "$LD_LIBRARY_PATH" ]; then
+        export LD_LIBRARY_PATH
+    fi
+
+    # Unpriviledged user
+    getConfigurationValue "$domain" user user || true
+
+    # Find JRE
+    if ! getConfigurationValue "$domain" java java || [ ! -x "$java" ]; then
+	if [ -x "${DCACHE_HOME}/jre/bin/java" ]; then
+            java="${DCACHE_HOME}/jre/bin/java"
+	else
+	    fail 1 "Could not find Java executable"
+	fi
+    fi
+
+    # Prepare log file
+    getLogOfDomain "$domain" log
+    if getConfigurationValue "$domain" logMode tmp && [ "$tmp" = "new" ]; then
+        mv -f "${log}" "${log}.old"
+    fi
+    touch "${log}" || fail 1 "Could not write to log file ${log}"
+
+    # Delay between automatic restarts
+    if getConfigurationValue "$domain" config tmp && [ -f "${tmp}/delay" ] ; then
+        delay=$(cat "${tmp}/delay")
+    else
+        delay=10
+    fi
+
+    # Various control files
+    getJavaPidFile "$domain" javaPidFile
+    getDaemonPidFile "$domain" daemonPidFile
+    getStopFile "$domain" stopFile
+
+    # Source dcache.local.sh
+    if [ -f "${DCACHE_JOBS}/dcache.local.sh" ]  ; then
+        . "${DCACHE_JOBS}/dcache.local.sh"
+    fi
+
+    # Execute dcache.local.run.sh
+    if [ -f "${DCACHE_JOBS}/dcache.local.run.sh" ]; then
+        if ! "${DCACHE_JOBS}/dcache.local.run.sh" $action; then
+            fail $? "Site local script ${DCACHE_JOBS}/dcache.local.run.sh failed: errno = $?"
+        fi
+    fi
+
+    # Start daemon
+    rm -f "$stopFile"
+    cd $DCACHE_HOME
+    CLASSPATH="$classpath" /bin/sh ${DCACHE_HOME}/share/lib/daemon ${user:+-u} ${user:+"$user"} -r "$stopFile" -d "$delay" -f -c "$javaPidFile" -p "$daemonPidFile" -o "$log" "$java" ${java_options} dmg.cells.services.Domain "${domain}" ${domain_options} -batch "$batchFile" -param "ourHomeDir=${DCACHE_HOME}" "setupFile=${setupFile}" "$@" 
+
+    # Wait for confirmation
+    printf "Starting ${domain} "
+    for c in 6 5 4 3 2 1 0; do
+        if getPidFromFile "$javaPidFile" pid && isRunning "$pid"; then
+            echo "done"
+            return
+        fi
+        sleep 1
+        printf "$c "
+    done
+
+    echo "failed"
+    grep PANIC "${log}"
+    exit 4
+}
+
+# Stop domain. Use runDomain rather than calling this function
+# directly.
+domainStop() # $1 = domain
+{
+    local domain
+    local javaPid
+    local daemonPid
+    local stopFile
+
+    domain="$1"
+
+    if ! getPidOfDomain "$domain" daemonPid; then
+        return 0
+    fi
+
+    # Fail if we don't have permission to signal the daemon
+    if ! kill -0 $daemonPid; then
+	fail 1 "Failed to kill ${domain}"
+    fi
+
+    # Stopping a dCache domain for good requires that we supress the
+    # automatic restart by creating a stop file.
+    getStopFile "$domain" stopFile
+    touch "$stopFile" 2>/dev/null
+
+    if getJavaPidOfDomain "$domain" javaPid; then
+	kill -TERM $javaPid 1>/dev/null 2>/dev/null || true
+    fi
+
+    printf "Stopping ${domain} (pid=$daemonPid) "
+    for c in  0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
+        if ! isRunning $daemonPid; then
+            rm -f "$daemonPidFile" "$javaPidFile"
+            echo "done"
+            return
+        fi
+        printf "$c "
+        sleep 1
+        if [ $c -eq 9 ] ; then
+	    if getJavaPidOfDomain "$domain" javaPid; then
+		kill -9 $javaPid 1>/dev/null 2>/dev/null || true
+	    fi
+        fi
+    done
+    echo
+    fail 4 "Giving up. ${domain} might still be running."
 }
