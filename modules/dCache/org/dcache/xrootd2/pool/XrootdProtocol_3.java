@@ -334,11 +334,12 @@ public class XrootdProtocol_3
                                                          totalLimit);
         }
 
-        /* The accept executor is only used for accepting TCP
-         * connections. A single thread is plenty for that purpose.
+        /* The accept executor is used for accepting TCP
+         * connections. An accept task will be submitted per server
+         * socket.
          */
         if (_acceptExecutor == null) {
-            _acceptExecutor = Executors.newSingleThreadExecutor();
+            _acceptExecutor = Executors.newCachedThreadPool();
         }
 
         /* The socket executor handles socket IO. As netty performs
