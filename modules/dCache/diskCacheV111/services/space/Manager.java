@@ -296,7 +296,7 @@ public final class Manager
                 "                                                     # set new size and/or lifetime for the space token \n " +
                 "                                                     # valid examples of size: 1000, 100kB, 100KB, 100KiB, 100MB, 100MiB, 100GB, 100GiB, 10.5TB, 100TiB \n" +
                 "                                                     # see http://en.wikipedia.org/wiki/Gigabyte for explanation \n"+
-                "                                                     # lifetime is in seconds ";
+                "                                                     # lifetime is in seconds (\"-1\" means infinity or permanent reservation";
 
 	public final long stringToSize(String s)  throws Exception {
 		long size=0L;
@@ -365,7 +365,12 @@ public final class Manager
                     sSize==null&&
                     voRole==null&&
                     voGroup==null) {
-                        return "Need to specify at least one option \"-lifetime\", \"-size\" \"-vog\" or \"-vor\"";
+                        return "Need to specify at least one option \"-lifetime\", \"-size\" \"-vog\" or \"-vor\". If -lifetime=\"-1\"  then the reservation will not expire";
+                }
+                Long longLifetime = null;
+                if (sLifetime != null) {
+                        long lifetime = Long.parseLong(sLifetime);
+                        longLifetime = ( lifetime == -1 ) ? new Long(-1) : new Long ( lifetime * 1000 );
                 }
                 if (voRole!=null||voGroup!=null) {
                         // check that linkgroup allows these role/group combination
@@ -394,8 +399,8 @@ public final class Manager
                                 }
                                         throw new IllegalArgumentException("cannot change voGroup:voRole to "+
                                                                            voGroup+":"+voRole+
-                                                                                           ". Supported vogroup:vorole pairs for this spacereservation\n"+
-                                                                                           sb.toString());
+                                                                           ". Supported vogroup:vorole pairs for this spacereservation\n"+
+                                                                           sb.toString());
                                                 }
                                         }
                         catch (SQLException e) {
@@ -413,7 +418,7 @@ public final class Manager
 					       null,
 					       null,
 					       (sSize != null ?  Long.valueOf(stringToSize(sSize)) : null),
-					       (sLifetime != null ? Long.parseLong(sLifetime)*1000 : null),
+					       longLifetime,
 					       null,
 					       null);
 		}
