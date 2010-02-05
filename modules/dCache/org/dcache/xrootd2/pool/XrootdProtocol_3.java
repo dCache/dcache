@@ -177,6 +177,12 @@ public class XrootdProtocol_3
                          XrootdProtocol_3.class.getName());
 
     /**
+     * Maximum frame size of a read or readv reply. Does not include
+     * the size of the frame header.
+     */
+    private static int _maxFrameSize = 2 << 20;
+
+    /**
      * Shared thread pool accepting TCP connections.
      */
     private static Executor _acceptExecutor;
@@ -215,6 +221,11 @@ public class XrootdProtocol_3
      * Used to signal when the client TCP connection has been closed.
      */
     private final CountDownLatch _closeLatch = new CountDownLatch(1);
+
+    /**
+     * Hangup handler signals closure of the client connection.
+     */
+    private final HangupHandler _hangupHandler = new HangupHandler(_closeLatch);
 
     /**
      * Next response message used during read operations. Provides a
@@ -332,13 +343,20 @@ public class XrootdProtocol_3
                 new OrderedMemoryAwareThreadPoolExecutor(threads,
                                                          perChannelLimit,
                                                          totalLimit);
+
+            s = endpoint.getArgs().getOpt("xrootd-mover-max-frame-size");
+            if (s != null && !s.isEmpty()) {
+                _maxFrameSize = Integer.parseInt(s);
+            }
+
         }
 
-        /* The accept executor is only used for accepting TCP
-         * connections. A single thread is plenty for that purpose.
+        /* The accept executor is used for accepting TCP
+         * connections. An accept task will be submitted per server
+         * socket.
          */
         if (_acceptExecutor == null) {
-            _acceptExecutor = Executors.newSingleThreadExecutor();
+            _acceptExecutor = Executors.newCachedThreadPool();
         }
 
         /* The socket executor handles socket IO. As netty performs
@@ -454,7 +472,7 @@ public class XrootdProtocol_3
                         pipeline.addLast("logger", new LoggingHandler(XrootdProtocol_3.class));
                     }
                     pipeline.addLast("handshake", new XrootdHandshakeHandler(XrootdProtocol.DATA_SERVER));
-                    pipeline.addLast("hangup", new HangupHandler(_closeLatch));
+                    pipeline.addLast("hangup", _hangupHandler);
                     pipeline.addLast("executor", new ExecutionHandler(_diskExecutor));
                     pipeline.addLast("transfer", XrootdProtocol_3.this);
                     return pipeline;
@@ -728,6 +746,12 @@ public class XrootdProtocol_3
                                  "Invalid file handle");
                 return;
             }
+
+            if (req.BytesToRead() + ReadResponse.READ_LIST_HEADER_SIZE > _maxFrameSize) {
+                respondWithError(ctx, event, msg, kXR_NoMemory,
+                                 "Single readv transfer is too large");
+                return;
+            }
         }
 
         _readers.add(new VectorReader(msg.getStreamID(), _descriptors, list));
@@ -839,7 +863,7 @@ public class XrootdProtocol_3
     {
         try {
             while (_readers.peek() != null) {
-                ReadResponse block = _readers.element().read();
+                ReadResponse block = _readers.element().read(_maxFrameSize);
                 if (block != null) {
                     _bytesTransferred += block.getDataLength();
                     return block;

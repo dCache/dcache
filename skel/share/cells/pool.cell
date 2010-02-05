@@ -23,6 +23,7 @@ onerror continue
   set context -c xrootdMoverSocketThreads 5
   set context -c xrootdMoverMaxMemoryPerConnection 16777216
   set context -c xrootdMoverMaxMemory 67108864
+  set context -c xrootdMoverMaxFrameSize 2097152
 onerror shutdown
 
 #
@@ -62,6 +63,7 @@ create org.dcache.cells.UniversalSpringCell ${0} \
     -xrootd-mover-socket-threads=${xrootdMoverSocketThreads} \
     -xrootd-mover-max-memory-per-connection=${xrootdMoverMaxMemoryPerConnection} \
     -xrootd-mover-max-memory=${xrootdMoverMaxMemory} \
+    -xrootd-mover-max-frame-size=${xrootdMoverMaxFrameSize} \
     -${2} -${3} -${4} -${5} -${6} -${7} -${8}"
 
 

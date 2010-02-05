@@ -404,6 +404,8 @@ public class StreamObjectCell
             if (str.equals("$BINARY$")) {
                 _log.info("Opening Object Streams");
                 console.printString(str);
+                console.printNewline();
+                console.flushConsole();
                 runBinaryMode();
                 break;
             }

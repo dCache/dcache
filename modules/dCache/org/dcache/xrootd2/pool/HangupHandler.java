@@ -11,7 +11,7 @@ import org.jboss.netty.channel.ChannelPipelineCoverage;
  * first connect. Once that first channel is closed, this fact is
  * signaled through a latch.
  */
-@ChannelPipelineCoverage("one")
+@ChannelPipelineCoverage("all")
 public class HangupHandler extends SimpleChannelHandler
 {
     private final CountDownLatch _latch;
@@ -23,28 +23,27 @@ public class HangupHandler extends SimpleChannelHandler
         _latch = latch;
     }
 
-    @Override 
-    public void channelOpen(ChannelHandlerContext ctx, 
+    @Override
+    public void channelOpen(ChannelHandlerContext ctx,
                             ChannelStateEvent event)
         throws Exception
     {
-        /* Refuse all but the first connect. 
+        /* Refuse all but the first connect.
          */
         if (_connected) {
             ctx.getChannel().close();
             return;
         }
-        
+
         /* Close parent channel as soon as we got the connection.
          */
         _connected = false;
-        ctx.getChannel().getParent().close();
 
         super.channelOpen(ctx, event);
     }
 
-    @Override 
-    public void channelClosed(ChannelHandlerContext ctx, 
+    @Override
+    public void channelClosed(ChannelHandlerContext ctx,
                               ChannelStateEvent event)
         throws Exception
     {

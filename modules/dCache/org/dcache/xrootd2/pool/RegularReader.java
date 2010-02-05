@@ -34,14 +34,14 @@ public class RegularReader implements Reader
      * Returns the next response message for this read
      * request. Returns null if all data has been read.
      */
-    public ReadResponse read()
+    public ReadResponse read(int maxFrameSize)
         throws IOException
     {
         if (_length == 0) {
             return null;
         }
 
-        int length = Math.min(_length, CHUNK_SIZE);
+        int length = Math.min(_length, maxFrameSize);
         ReadResponse response = new ReadResponse(_id, length);
         _channel.position(_position);
         length = response.writeBytes(_channel, length);
