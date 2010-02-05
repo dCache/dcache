@@ -453,7 +453,7 @@ loadConfigurationFile() # in $1 = service or domain, in $2 = prefix
     local file
     if eval "[ -z \"\$SETUP_$2\" ]"; then
         getConfigurationFile "$1" file || return
-        ourHomeDir="${DCACHE_HOME}" readconf "$file" "$2_" || return
+        readconf "$file" "$2_" || return
         eval "SETUP_$2=1"
     fi
 }

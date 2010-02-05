@@ -880,7 +880,7 @@ do
   if [ $1 == "--prefix" -o $1 == "-p" ]
   then
     # set dCache install location
-    DCACHE_HOME=$2
+    DCACHE_HOME="$2"
     shift_size=2
   fi
   if [ $1 == "--help" -o $1 == "-h" ]
@@ -914,6 +914,8 @@ if [ ! -d "$DCACHE_HOME" ]; then
     echo "$DCACHE_HOME is not a directory"
     exit 2
 fi
+
+ourHomeDir="$DCACHE_HOME"
 
 # Load libraries
 . ${DCACHE_HOME}/share/lib/paths.sh
