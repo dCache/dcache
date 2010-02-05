@@ -9,6 +9,8 @@ import org.dcache.xrootd2.protocol.messages.GenericReadRequestMessage.EmbeddedRe
 
 public class ReadResponse extends AbstractResponseMessage
 {
+    public final static int READ_LIST_HEADER_SIZE = 16;
+
     public ReadResponse(int sId, int length)
     {
         super(sId, kXR_ok, length);

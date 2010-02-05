@@ -13,15 +13,11 @@ import org.dcache.xrootd2.protocol.messages.GenericReadRequestMessage.EmbeddedRe
  */
 public class VectorReader implements Reader
 {
-    private final static int CHUNK_SIZE = 65536;
-
     private final int _id;
     private final List<FileDescriptor> _descriptors;
     private final EmbeddedReadRequest[] _requests;
 
-    private long _position;
     private int _index;
-    private boolean _writeHeader;
 
     public VectorReader(int id,
                         List<FileDescriptor> descriptors,
@@ -30,7 +26,7 @@ public class VectorReader implements Reader
         _id = id;
         _descriptors = descriptors;
         _requests = requests;
-        setRequest(0);
+        _index = 0;
     }
 
     public int getStreamID()
@@ -38,13 +34,43 @@ public class VectorReader implements Reader
         return _id;
     }
 
-    private void setRequest(int index)
+    private int getSizeOfNextFrame(int maxFrameSize)
     {
-        _index = index;
-        if (_index < _requests.length) {
-            _position = _requests[_index].getOffset();
-            _writeHeader = true;
+        int length = 0;
+        for (int i = _index; i < _requests.length; i++) {
+            EmbeddedReadRequest req = _requests[_index];
+            int sizeOfNextBlock =
+                req.BytesToRead() + ReadResponse.READ_LIST_HEADER_SIZE;
+            if (length + sizeOfNextBlock > maxFrameSize) {
+                break;
+            }
+            length += sizeOfNextBlock;
         }
+
+        if (length == 0) {
+            throw new IllegalStateException("Maximum chunk size exceeded");
+        }
+
+        return length;
+    }
+
+    private int readBlock(ReadResponse response, EmbeddedReadRequest request)
+        throws IOException
+    {
+        FileDescriptor descriptor = _descriptors.get(request.getFileHandle());
+        FileChannel channel = descriptor.getChannel();
+        long position = request.getOffset();
+        long end = position + request.BytesToRead();
+
+        int length = response.writeBytes(request);
+        channel.position(position);
+        while (position < end) {
+            int read = response.writeBytes(channel, (int) (end - position));
+            position += read;
+            length += read;
+        }
+
+        return length;
     }
 
     /**
@@ -52,51 +78,18 @@ public class VectorReader implements Reader
      * request. Returns null if all data has been read.
      */
     @Override
-    public ReadResponse read()
+    public ReadResponse read(int maxFrameSize)
         throws IOException
     {
         if (_index == _requests.length) {
             return null;
         }
 
-        int length = CHUNK_SIZE;
+        int length = getSizeOfNextFrame(maxFrameSize);
         ReadResponse response = new ReadResponse(_id, length);
-
         while (length > 0 && _index < _requests.length) {
-            EmbeddedReadRequest req = _requests[_index];
-
-            /* Write the read_list header to the data stream if we
-             * have not already done so. This may push the response
-             * size over our 64kb limit, however 64kb is an arbitrary
-             * limit we have chosen and the response buffer will
-             * automatically resize to accommodate the extra bytes.
-             */
-            if (_writeHeader) {
-                length -= response.writeBytes(req);
-                _writeHeader = false;
-                continue;
-            }
-
-            /* If at the the end of the current read request, then
-             * move to the next.
-             */
-            long end = req.getOffset() + req.BytesToRead();
-            if (_position >= end) {
-                setRequest(_index + 1);
-                continue;
-            }
-
-            /* Read some data from the channel.
-             */
-            int read = Math.min((int) (end - _position), length);
-            FileDescriptor desc = _descriptors.get(req.getFileHandle());
-            FileChannel channel = desc.getChannel();
-
-            channel.position(_position);
-            read = response.writeBytes(channel, read);
-
-            _position += read;
-            length -= read;
+            length -= readBlock(response, _requests[_index]);
+            _index = _index + 1;
         }
 
         response.setIncomplete(_index < _requests.length);

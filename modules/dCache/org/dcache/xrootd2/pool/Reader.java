@@ -14,6 +14,6 @@ import org.dcache.xrootd2.protocol.messages.ReadResponse;
 public interface Reader
 {
     int getStreamID();
-    ReadResponse read()
+    ReadResponse read(int maxFrameSize)
         throws IOException;
 }
