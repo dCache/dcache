@@ -46,6 +46,8 @@ import java.util.StringTokenizer;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 
+import javax.security.auth.Subject;
+
 //java net
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -53,6 +55,7 @@ import java.net.UnknownHostException;
 //cells
 import dmg.util.StreamEngine;
 import dmg.util.Args;
+import dmg.cells.nucleus.CellPath;
 
 //jgss
 import org.ietf.jgss.GSSContext;
@@ -63,6 +66,15 @@ import org.ietf.jgss.Oid;
 import org.ietf.jgss.ChannelBinding;
 import org.ietf.jgss.GSSName;
 
+import diskCacheV111.services.acl.GrantAllPermissionHandler;
+import diskCacheV111.util.KAuthFile;
+import org.dcache.auth.UserAuthRecord;
+import org.dcache.auth.AuthzQueryHelper;
+import org.dcache.auth.RecordConvert;
+import org.dcache.auth.Subjects;
+import gplazma.authz.AuthorizationController;
+import java.util.List;
+import java.util.Collections;
 
 /**
  *
@@ -187,4 +199,121 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1 {
 
         return context;
     }
+
+    @Override
+    public void ac_user(String arg) {
+
+        KAuthFile authf;
+
+        _pwdRecord = null;
+        authRecord = null;
+        _user = null;
+        info("GssFtpDoorV1::ac_user <" + arg + ">");
+        if (arg.equals("")) {
+            reply(err("USER",arg));
+            return;
+        }
+
+        if (serviceContext == null || !serviceContext.isEstablished()) {
+            reply("530 Authentication required");
+            return;
+        }
+
+        _user = arg;
+        _dnUser = GSSIdentity.toString();
+        if (!_use_gplazmaAuthzCell && !_use_gplazmaAuthzModule) {
+            try {
+                authf = new KAuthFile(_kpwdFilePath);
+            } catch( Exception e ) {
+                reply("530 User authentication file not found: " + e);
+                return;
+            }
+
+            if (_user.equals(GLOBUS_URL_COPY_DEFAULT_USER)) {
+                info("GssFtpDoorV1::ac_user: non-gplazma special case, user is " + _user);
+                _user = authf.getIdMapping(GSSIdentity.toString() );
+                if (_user == null) {
+                    reply("530 User Name for GSI Identity" +
+                    GSSIdentity.toString() + " not found.");
+                    return;
+                }
+            }
+
+            _pwdRecord = authf.getUserRecord(_user);
+
+            if ( _pwdRecord == null ) {
+                reply("530 User " + _user + " not found.");
+                return;
+            }
+
+            info("GssFtpDoorV1::ac_user: looking up: " +
+                 GSSIdentity.toString());
+            if ( !((UserAuthRecord)_pwdRecord).hasSecureIdentity(GSSIdentity.toString()) ) {
+                _pwdRecord = null;
+                reply("530 Permission denied");
+                return;
+            }
+            _pathRoot = _pwdRecord.Root;
+            _curDirV = _pwdRecord.Home;
+        }
+
+        if (_use_gplazmaAuthzCell) {
+            AuthzQueryHelper authHelper;
+            try {
+                authHelper = new AuthzQueryHelper(this);
+                authHelper.setDelegateToGplazma(_delegate_to_gplazma);
+                 List<String> emptyRolesList= Collections.emptyList();
+                authRecord =  authHelper.getAuthorization(_dnUser,emptyRolesList,_user, new CellPath("gPlazma"), this).getAuthorizationRecord();
+            } catch( Exception e ) {
+                error(e);
+                if (!_use_gplazmaAuthzModule) {
+                    reply("530 Authorization Service failed: " + e);
+                }
+                error("GssFtpDoorV1::ac_user: authorization through gPlazma " +
+                      "cell failed: " + e.getMessage());
+                authRecord = null;
+            }
+        }
+
+        if (authRecord==null && _use_gplazmaAuthzModule) {
+            AuthorizationController authCtrl;
+            try {
+                authCtrl = new AuthorizationController(_gplazmaPolicyFilePath);
+                //authCrtl.setLoglevel();
+            } catch (Exception e) {
+                reply("530 Authorization Service failed to initialize: " + e);
+                return;
+            }
+            List<String> emptyRolesList= Collections.emptyList();
+            try {
+                authRecord = RecordConvert.gPlazmaToAuthorizationRecord(authCtrl.authorize( _dnUser, emptyRolesList, null,
+                    _user, null, null));
+            } catch ( Exception e ) {
+                reply("530 User Authorization record failed to be retrieved: " + e);
+                return;
+            }
+        }
+
+        if (_pwdRecord == null && authRecord == null) {
+            reply("530 Permission denied");
+            return;
+        }
+
+        if (_permissionHandler instanceof GrantAllPermissionHandler) {
+            Subject subject;
+            if(authRecord != null) {
+                subject = Subjects.getSubject(authRecord);
+            } else {
+                subject = Subjects.getSubject(_pwdRecord, true);
+            }
+            subject.getPrincipals().add(_origin);
+            subject.setReadOnly();
+            _pnfs.setSubject(subject);
+        }
+
+        resetPwdRecord();
+
+        reply("200 User "+_user+" logged in");
+    }
+
 }

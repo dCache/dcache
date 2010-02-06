@@ -86,11 +86,23 @@ public class AuthzQueryHelper {
     }
 
     public AuthorizationMessage getAuthorization(GSSContext serviceContext, CellPath cellpath, CellEndpoint caller) throws AuthorizationException {
+        return getAuthorization(serviceContext, null, cellpath, caller);
+    }
 
-        gPlazmaDelegationInfo deleginfo = new gPlazmaDelegationInfo(authRequestID, null, new Long(0));
+    public AuthorizationMessage getAuthorization(GSSContext serviceContext,  String user, CellPath cellpath, CellEndpoint caller) throws AuthorizationException {
+
+        gPlazmaDelegationInfo deleginfo = new gPlazmaDelegationInfo(authRequestID, user, new Long(0));
 
         AuthenticationMessage authmessage = authorize(serviceContext, deleginfo, cellpath, caller);
+        log.debug("AuthenticationMessage: "+authmessage);
+        return new AuthorizationMessage(authmessage);
+    }
 
+    public AuthorizationMessage getAuthorization(String subjectDN, List<String> roles,String user,CellPath cellpath, CellEndpoint caller)
+        throws AuthorizationException
+    {
+        AuthenticationMessage authmessage =
+                authorize(subjectDN, roles, user,cellpath,caller);
         return new AuthorizationMessage(authmessage);
     }
 
@@ -105,8 +117,11 @@ public class AuthzQueryHelper {
             if (serviceContext instanceof ExtendedGSSContext) {
                 extendedcontext = (ExtendedGSSContext) serviceContext;
             } else {
-                log.error("Received context not instance of ExtendedGSSContext, AuthorizationController exiting ...");
-                return null;
+                String error = "Received context not instance of " +
+                        "ExtendedGSSContext, AuthzQueryHelper " +
+                        "exiting ...";
+                log.error(error);
+                throw new AuthorizationException(error);
             }
 
             try {

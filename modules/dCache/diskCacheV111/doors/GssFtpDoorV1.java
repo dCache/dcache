@@ -336,6 +336,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
                 authHelper.setDelegateToGplazma(_delegate_to_gplazma);
                 authRecord =  authHelper.getAuthorization(serviceContext, new CellPath("gPlazma"), this).getAuthorizationRecord();
             } catch( Exception e ) {
+                error(e);
                 if (!_use_gplazmaAuthzModule) {
                     reply("530 Authorization Service failed: " + e);
                 }
