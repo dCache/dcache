@@ -1,6 +1,5 @@
 package org.dcache.webadmin.model.businessobjects;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -18,11 +17,6 @@ public class NamedCellTest {
     @Before
     public void setUp() {
         namedCell = new NamedCell();
-    }
-
-    @After
-    public void tearDown() {
-        namedCell = null;
     }
 
     @Test
