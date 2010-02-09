@@ -2,7 +2,7 @@ h_sources = base64.h  gssTunnel.h  tunnelQueue.h  util.h
 
 c_sources = base64.c  client.c  gssIoTunnel.c  tunnelQueue.c  util.c
 
-AM_CFLAGS=-g -O0  -fPIC $(CWFLAG) \
+AM_CFLAGS=$(CWFLAG) \
 	-D_REENTRANT -DLIBC_SYSCALLS -D_GNU_SOURCE
 
 lib_LTLIBRARIES =
