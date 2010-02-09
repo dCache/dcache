@@ -1733,7 +1733,7 @@ statisticsLocation=${ourHomeDir}/statistics
 #logoPath=images/logo.png
 #dirIconPath=images/directoryIcon.png
 #fileIconPath=images/fileIcon.png
-#cssPath=styles/stylesheet.css
+#cssPath=styles/webdav.css
 
 #webdavLogoPath=${logoPath}
 #webdavDirIconPath=${dirIconPath}
