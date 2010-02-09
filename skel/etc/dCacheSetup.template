@@ -1711,3 +1711,31 @@ statisticsLocation=${ourHomeDir}/statistics
 #   client certificate for authentication.
 #
 #webdavNeedClientAuth=false
+
+#  -----------------------------------------------------------------------
+#         WebDav Web Interface Configuration
+#  -----------------------------------------------------------------------
+
+#  ---- Directory locations for dCache webDav web interface
+#
+#   The following four variables specify the location of the
+#   image and style directories for the dCache-internal webdav server.
+#   These images and stylesheet affect the appereance of the webdav
+#   websites in the browser. Dcache provides the default layout.
+#   In case you wish to define your own images or/and stylesheet, create a
+#   directory "local" in the  ${ourHomeDir} and put your files into
+#   this directory.
+#   Then your paths should be relative to the directory "${ourHomeDir}/local"
+#   (like listed below).
+#
+#   Do not change them unless you know what you are doing.
+#
+#logoPath=images/logo.png
+#dirIconPath=images/directoryIcon.png
+#fileIconPath=images/fileIcon.png
+#cssPath=styles/stylesheet.css
+
+#webdavLogoPath=${logoPath}
+#webdavDirIconPath=${dirIconPath}
+#webdavFileIconPath=${fileIconPath}
+#webdavCssPath=${cssPath}
