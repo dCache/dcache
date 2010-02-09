@@ -153,7 +153,7 @@ public class DcacheResourceFactory
         Collections.singletonList(new FsPath());
     private InetAddress _internalAddress;
     private String _logoPath;
-    private String _stylesheetPath;
+    private String _webdavStylesheetPath;
     private String _iconDirPath;
     private String _iconFilePath;
     private String _path;
@@ -377,14 +377,14 @@ public class DcacheResourceFactory
      * @return the stylesheetPath
      */
     public String getStylesheetPath() {
-        return _stylesheetPath;
+        return _webdavStylesheetPath;
     }
 
     /**
-     * @param stylesheetPath: the path to the css-file.
+     * @param webdavStylesheetPath: the path to the css-file.
      */
-    public void setStylesheetPath(String stylesheetPath) {
-        this._stylesheetPath = stylesheetPath;
+    public void setWebdavStylesheetPath(String webdavStylesheetPath) {
+        this._webdavStylesheetPath = webdavStylesheetPath;
     }
 
     /**
@@ -660,7 +660,7 @@ public class DcacheResourceFactory
         w.open("head");
         w.begin("title").open().writeText("dCache.org - File System").close();
 
-        w.begin("link").writeAtt("rel", "stylesheet").writeAtt("type", "text/css").writeAtt("href", _stylesheetPath).open().close();
+        w.begin("link").writeAtt("rel", "stylesheet").writeAtt("type", "text/css").writeAtt("href", _webdavStylesheetPath).open().close();
 
         w.close("head");
         w.open("body");
