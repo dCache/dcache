@@ -38,7 +38,7 @@ set context -c gplazmaPolicy ${ourHomeDir}/etc/dcachesrm-gplazma.policy
 set context -c logoPath images/logo.png
 set context -c dirIconPath images/directoryIcon.png
 set context -c fileIconPath images/fileIcon.png
-set context -c cssPath styles/stylesheet.css
+set context -c cssPath styles/webdav.css
 set context -c webdavContextPath /.webdav
 >>>>>>> .merge-right.r13353
 
