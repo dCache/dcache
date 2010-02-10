@@ -640,7 +640,7 @@ domainStart() # $1 = domain, $2+ = domain parameters
     java_options="${java_options} -Djava.endorsed.dirs=${DCACHE_HOME}/classes/endorsed"
 
     # Activate GSI key pair caching
-    if ! echo "${java_options}" | grep -q "\-Dorg\.globus\.jglobus\.delegation\.cache\.lifetime="; then
+    if ! echo "${java_options}" | grep "\-Dorg\.globus\.jglobus\.delegation\.cache\.lifetime=" >/dev/null; then
         java_options="${java_options} -Dorg.globus.jglobus.delegation.cache.lifetime=30000"
     fi
 
