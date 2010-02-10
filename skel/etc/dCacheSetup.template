@@ -843,6 +843,10 @@ cacheInfo=companion
 #
 #trash=
 
+#  -----------------------------------------------------------------------
+#       PNFS Cleaner
+#  -----------------------------------------------------------------------
+#
 #  ---- Cleaner settings
 #
 #   The cleaner stores persistency information in subdirectories of
@@ -1478,7 +1482,7 @@ statisticsLocation=${ourHomeDir}/statistics
 #       Pools will be removed from the list when their status becomes "enabled"
 #       or after they have been in the list for cleanerRecover seconds.
 #
-#cleanerRecover=240
+#cleanerRecover=1800
 
 #   ----- DISK Chimera Cleaner settings
 #
@@ -1492,25 +1496,24 @@ statisticsLocation=${ourHomeDir}/statistics
 #
 #cleanerProcessFilesPerRun=500
 
-#  -----------------------------------------------------------------------
-#       HSM Chimera Cleaner functionality
-#  -----------------------------------------------------------------------
+#   ----- HSM Chimera Cleaner functionality
+#
 #   The HSM cleaner is disabled by default.
 #   To enable HSM cleaner, set the following variable to 'enabled' for the Chimera domain:
 #
-#hsmChimeraCleaner=disabled
+#hsmCleaner=disabled
 
 #   ----- HSM Chimera Cleaner settings
 #
 #    1) Cleaning request timeout in seconds. If the HSM-pool takes longer
 #       than the specified timeout, the pool is placed in the Black List.
 #
-#hsmTimeout=120
+#hsmCleanerTimeout=120
 
 #    2) The maximal number of concurrent requests to remove HSM-stored files
 #       sent to a single HSM.
 #
-#hsmMaxRequests=100
+#hsmCleanerRequest=100
 
 #  -----------------------------------------------------------------------
 #       WebDAV
