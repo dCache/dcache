@@ -55,9 +55,9 @@ NODE_TYPE=
 #  White space separated list of services or domains to start on this
 #  host.  Legitimate service names are
 #
-#    dcap, gPlazma, xrootd, gridftp, gsidcap, srm, admin, 
-#    infoProvider, chimera, pnfs, httpd, utility, dir, info,
-#    statistics, lm, dCache, replica
+#    dcap, gPlazma, xrootd, gridftp, gsidcap, srm, admin, infoProvider,
+#    chimera, pnfs, httpd, utility, dir, info, statistics, lm,
+#    dCache, replica, kerberosdcap, kerberosftp, weakftp
 #
 #  or any domain name prefix. These services are started in addition
 #  to the services selected by the NODE_TYPE parameter.

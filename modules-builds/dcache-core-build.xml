@@ -568,6 +568,9 @@
         <copy file="${dcache.src}/diskCacheV111/config/gridftpdoor.batch" todir="${server.bin.dir}/config" />
         <copy file="${dcache.src}/diskCacheV111/config/gsidcapdoor.batch" todir="${server.bin.dir}/config" />
         <copy file="${dcache.src}/diskCacheV111/config/gPlazma.batch" todir="${server.bin.dir}/config" />
+        <copy file="${dcache.src}/diskCacheV111/config/weakftpdoor.batch" todir="${server.bin.dir}/config" />
+        <copy file="${dcache.src}/diskCacheV111/config/kerberosftpdoor.batch" todir="${server.bin.dir}/config" />
+        <copy file="${dcache.src}/diskCacheV111/config/kerberosdcapdoor.batch" todir="${server.bin.dir}/config" />
 
         <!-- Web services stuff   -->
         <copy file="${dcache.src}/diskCacheV111/config/JHRM.map" todir="${server.bin.dir}/config" />

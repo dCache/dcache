@@ -1,0 +1,90 @@
+set printout default 2
+set printout CellGlue none
+onerror shutdown
+#
+check -strong setupFile
+#
+copy file:${setupFile} context:setupContext
+#
+#  import the variables into our $context.
+#  don't overwrite already existing variables.
+#
+import context -c setupContext
+
+#
+#   Make sure we got what we need.
+#
+check -strong weakFtpPort
+
+# Cell communication
+exec -run -shell file:${ourHomeDir}/config/tunnel.fragment
+
+# Stage protection
+exec -run -shell file:${ourHomeDir}/config/stage.fragment doors
+
+# Permission configuration
+exec -run -shell file:${ourHomeDir}/config/permission.fragment
+
+#
+#      WeakFTP Door
+#
+#    Default for all our variables
+#
+onerror continue
+set context -c performanceMarkerPeriod 70
+set context -c kpwdFile          ${ourHomeDir}/etc/dcache.kpwd
+set context -c gsiftpPoolManagerTimeout  5400
+set context -c gsiftpPoolTimeout          600
+set context -c gsiftpPnfsTimeout          300
+set context -c gsiftpMaxRetries            80
+set context -c gsiftpMaxStreamsPerClient   10
+set context -c gsiftpDefaultStreamsPerClient  1
+set context -c gsiftpDeleteOnConnectionClosed true
+set context -c gsiftpMaxLogin                 100
+set context -c clientDataPortRange            20000:25000
+set context -c gsiftpAdapterInternalInterface ""
+set context -c gsiftpIoQueue                  ""
+set context -c overwriteEnabled false
+set context -c gsiftpAllowPassivePool false
+set context -c FtpTLogDir ""
+
+#
+#
+onerror shutdown
+#
+create dmg.cells.services.login.LoginManager WFTP-${thisHostname} \
+            "${weakFtpPort} \
+             -export \
+             diskCacheV111.doors.WeakFtpDoorV1 \
+             -prot=raw \
+             -clientDataPortRange=${clientDataPortRange} \
+             -root=${ftpBase} \
+             -maxLogin=${gsiftpMaxLogin} \
+             -brokerUpdateTime=5 \
+             -protocolFamily=ftp \
+             -protocolVersion=1.0.0 \
+             -loginBroker=LoginBroker \
+             -perfMarkerPeriod=${performanceMarkerPeriod} \
+             -poolManagerTimeout=${gsiftpPoolManagerTimeout} \
+             -poolTimeout=${gsiftpPoolTimeout} \
+             -pnfsTimeout=${gsiftpPnfsTimeout} \
+             -maxRetries=${gsiftpMaxRetries} \
+             -maxStreamsPerClient=${gsiftpMaxStreamsPerClient} \
+             -defaultStreamsPerClient=${gsiftpDefaultStreamsPerClient} \
+             -deleteOnConnectionClosed=${gsiftpDeleteOnConnectionClosed} \
+             -io-queue=${gsiftpIoQueue} \
+             -kpwd-file=${kpwdFile} \
+             -permission-handler=${permissionHandler} \
+             -aclTable=${aclTable} \
+             -aclConnDriver=${aclConnDriver} \
+             -aclConnUrl=${aclConnUrl} \
+             -aclConnUser=${aclConnUser} \
+             -aclConnPswd=${aclConnPswd} \
+             -stageConfigurationFilePath=${stageConfigurationFilePath} \
+             -ftp-adapter-internal-interface=${gsiftpAdapterInternalInterface} \
+             -overwrite=${overwriteEnabled} \
+             -allowPassivePool=${gsiftpAllowPassivePool} \
+             -tlog=${FtpTLogDir} \
+             -read-only=true \
+"
+

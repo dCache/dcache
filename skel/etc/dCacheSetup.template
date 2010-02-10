@@ -129,6 +129,28 @@ serviceLocatorPort=11111
 #          Java Configuration
 #  -----------------------------------------------------------------------
 
+#  ---- Kerberos Configuration
+#  
+#   Please change FNAL.GOV to your kerberos 5 realm if you use kerbros dcap or ftp doors
+#
+kerberosRealm=FNAL.GOV
+#
+# templates for authLoginConfig files jgss.conf and jgss_host.conf are in ${ourHomeDir}/etc 
+# directory, please copy them to ${ourHomeDir}/config  and modify appropriately
+#
+#   authLoginConfig=${ourHomeDir}/config/jgss_host.conf
+#   works for kerberos ftp door
+#
+#   Please specify authLoginConfig=${ourHomeDir}/config/jgss_host.conf
+#   for kerberos dcap door
+#
+authLoginConfig=${ourHomeDir}/config/jgss.conf
+#
+# Specify a comma separated list of KDCs, 
+# localhost.localdomain can be used if KDC multiplexer is running on the local machine
+#
+kerberosKdcList=localhost.localdomain
+
 #  ---- The binary of the Java VM
 #
 #   Adjust to the absolute location of the JVM binary: java.  This
@@ -142,7 +164,6 @@ java="/usr/bin/java"
 #   Do not change unless you know what you are doing.
 #
 #   If the globus.tcp.port.range is changed, the clientDataPortRange
-#   variable below MUST be changed accordingly.
 #
 java_options="-server -Xmx512m -XX:MaxDirectMemorySize=512m \
               -Dsun.net.inetaddr.ttl=1800 \
@@ -153,8 +174,11 @@ java_options="-server -Xmx512m -XX:MaxDirectMemorySize=512m \
               -Dlog4j.configuration=file:${ourHomeDir}/config/log4j.properties \
               -Dorg.globus.jglobus.delegation.cache.lifetime=30000 \
               -Dorg.globus.jglobus.crl.cache.lifetime=60000 \
+              -Djava.security.krb5.realm=${kerberosRealm} \
+              -Djava.security.krb5.kdc=${kerberosKdcList} \
+              -Djavax.security.auth.useSubjectCredsOnly=false \
+              -Djava.security.auth.login.config=${authLoginConfig} \
              "
-
 #  ---- User
 #
 #   If defined, the UID of the java process will be set.  Notice that
@@ -166,13 +190,9 @@ java_options="-server -Xmx512m -XX:MaxDirectMemorySize=512m \
 
 #
 #   Additional option for Kerberos5 authentication:
-#              -Djava.security.krb5.realm=FNAL.GOV \
-#              -Djava.security.krb5.kdc=krb-fnal-1.fnal.gov \
 #
 #   Other additional options that might be useful:
-#              -Djavax.security.auth.useSubjectCredsOnly=false \
-#              -Djava.security.auth.login.config=/opt/d-cache/config/jgss.conf \
-#              -Xms400m \
+#              -Xms512m \
 
 #  ---- Classpath
 #
@@ -297,6 +317,9 @@ gplazmaPolicy=${ourHomeDir}/etc/dcachesrm-gplazma.policy
 #         dcap tuning
 #  -----------------------------------------------------------------------
 #
+#kerberosdcapIoQueue=
+#kerberosdcapIoQueueOverwrite=denied
+#kerberosdcapMaxLogin=1500
 #gsidcapIoQueue=
 #gsidcapIoQueueOverwrite=denied
 #gsidcapMaxLogin=1500
@@ -307,7 +330,7 @@ gplazmaPolicy=${ourHomeDir}/etc/dcachesrm-gplazma.policy
 
 
 #  -----------------------------------------------------------------------
-#         gsiftp tuning
+#         kerberos and gsiftp tuning
 #  -----------------------------------------------------------------------
 
 #  ---- Period between successive GridFTP performance markers
@@ -361,8 +384,11 @@ gplazmaPolicy=${ourHomeDir}/etc/dcachesrm-gplazma.policy
 #
 #gsiftpAllowPassivePool=false
 
-
-
+#  -----------------------------------------------------------------------
+#        kerberos ftp specific
+#  -----------------------------------------------------------------------
+#
+#kerberosScvPrincipal=ftp/${thisHostname}.fnal.gov@FNAL.GOV
 #  -----------------------------------------------------------------------
 #         common to gsiftp and srm
 #  -----------------------------------------------------------------------
@@ -408,10 +434,11 @@ styles=${ourHomeDir}/docs/styles
 #
 portBase=22
 dCapPort=${portBase}125
-ftpPort=${portBase}126
-kerberosFtpPort=${portBase}127
 dCapGsiPort=${portBase}128
+dCapKerberosPort=${portBase}725
+weakFtpPort=${portBase}126
 gsiFtpPortNumber=2811
+kerberosFtpPort=${portBase}127
 srmPort=8443
 xrootdPort=1094
 
@@ -486,9 +513,9 @@ tcpBufferSize=1048576
 #
 #   Deletion Registration functionality in pnfs, when enabled, creates a
 #   record of each file deletion in pnfs namespace. Dcache does not delete
-#   precious or online data files in pools if a deletion registration record 
-#   is not present. Usage of trash database is recommended in case of the 
-#   pnfs namespace, as pnfs can report files as not being found when some 
+#   precious or online data files in pools if a deletion registration record
+#   is not present. Usage of trash database is recommended in case of the
+#   pnfs namespace, as pnfs can report files as not being found when some
 #   components of pnfs are not running. This issue does not affect Chimera.
 #
 #   There are two ways to connect to the database containing
@@ -1071,8 +1098,8 @@ AdvisoryDelete=true
 
 
 # --- Default access latency used if space reservation request
-#     does not specify one  
-#    
+#     does not specify one
+#
 #DefaultAccessLatencyForSpaceReservation=${DefaultAccessLatency}
 
 
