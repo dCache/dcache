@@ -2,8 +2,9 @@ package org.dcache.chimera.namespace;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -27,6 +28,9 @@ import dmg.util.Args;
 import org.dcache.chimera.DbConnectionInfo;
 import org.dcache.chimera.XMLconfig;
 import org.dcache.services.hsmcleaner.BroadcastRegistrationTask;
+import org.dcache.services.hsmcleaner.PoolInformationBase;
+import org.dcache.services.hsmcleaner.RequestTracker;
+import org.dcache.services.hsmcleaner.Sink;
 
 import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
@@ -63,6 +67,29 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
 
     // how many files will be processed at once, default 100 :
     private int _processAtOnce = 100;
+
+    private RequestTracker _requests;
+
+    /**
+     * HSM Cleaner: Timeout in milliseconds for delete requests send to HSM-pools.
+     */
+    private long _hsmTimeout = 120000;
+
+    /**
+     * HSM-Cleaner: Maximum number of files to include in a single request.
+     */
+    private int _hsmCleanerRequest = 100;
+
+    /**
+     * HSM-Cleaner: Variable to check whether HSM Cleaner is enabled (value 'true')
+     * or disabled (value 'false')
+     */
+    private boolean _hsmCleanerEnabled = false;
+
+    /**
+     * Pools currently available.
+     */
+    private PoolInformationBase _pools = new PoolInformationBase();
 
     private DataSource _dbConnectionDataSource;
 
@@ -110,6 +137,9 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
             new BroadcastRegistrationTask(this, POOLUP_MESSAGE, me);
         _timer.schedule(_broadcastRegistration, 0, 300000); // 5 minutes
 
+        this.addMessageListener(_pools);
+        this.addCommandListener(_pools);
+
         XMLconfig config = new XMLconfig( new File( _args.getOpt("chimeraConfig") ) );
         // for now we are looking for fsid==0 only
 
@@ -130,11 +160,27 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
                 try {
 
                     _refreshInterval = Long.parseLong(refreshString) * 1000L;
-
                 } catch (NumberFormatException ee) {
-                    // bad numbers ignored
+                    throw new NumberFormatException ("Wrong value of the parameter cleanerRefresh in dCacheSetup: " + refreshString);
                 }
+            }
 
+            String cleanerRecover = _args.getOpt("recover");
+            if (cleanerRecover != null) {
+                try {
+                    _recoverTimer = Long.parseLong(cleanerRecover) * 1000L;
+                } catch (NumberFormatException ee) {
+                    throw new NumberFormatException ("Wrong value of the parameter cleanerRecover in dCacheSetup: " + cleanerRecover);
+                }
+            }
+
+            String cleanerPoolTimeout = _args.getOpt("poolTimeout");
+            if (cleanerPoolTimeout != null) {
+                try {
+                    _replyTimeout = Long.parseLong(cleanerPoolTimeout) * 1000L;
+                } catch (NumberFormatException ee) {
+                    throw new NumberFormatException ("Wrong value of the parameter cleanerPoolTimeout in dCacheSetup: " + cleanerPoolTimeout);
+                }
             }
 
             String tmp = _args.getOpt("processFilesPerRun");
@@ -142,7 +188,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
                 try {
                     _processAtOnce = Integer.parseInt(tmp);
                 } catch (NumberFormatException ee) {
-                    // bad numbers ignored
+                    throw new NumberFormatException ("Wrong value of the parameter cleanerProcessFilesPerRun in dCacheSetup: " + tmp);
                 }
             }
 
@@ -157,11 +203,59 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
                 _logNamespace.debug("Remove report disabled");
             }
 
+            String hsmCleaner = _args.getOpt("hsmCleaner");
+            if(hsmCleaner.equalsIgnoreCase("enabled")) {
+               _hsmCleanerEnabled = true;
+               _logNamespace.info("HSM Cleaner enabled.");
+            }else if(hsmCleaner.equalsIgnoreCase("disabled")){
+                _hsmCleanerEnabled = false;
+                _logNamespace.info("HSM Cleaner disabled.");
+            }else{
+                throw new IllegalArgumentException ("Wrong value of the parameter hsmCleaner in dCacheSetup: " + hsmCleaner);
+            }
 
-               if (_logNamespace.isDebugEnabled()) {
-                    _logNamespace.debug("Refresh Interval set to (in milliseconds): " + _refreshInterval);
-                    _logNamespace.debug("Number of files processed at once : "+ _processAtOnce);
-               }
+            if (_hsmCleanerEnabled) {
+
+                String maxRequests = _args.getOpt("hsmCleanerRequest");
+                try {
+                    _hsmCleanerRequest = Integer.parseInt(maxRequests);
+                } catch (NumberFormatException ee) {
+                    throw new NumberFormatException ("Wrong value of the parameter hsmCleanerRequest in dCacheSetup: " + maxRequests);
+                }
+
+                //timeout for HSM :
+                String timeout = _args.getOpt("hsmCleanerTimeout");
+                try {
+                   _hsmTimeout = Integer.parseInt(timeout) * 1000;
+                } catch (NumberFormatException ee) {
+                    throw new NumberFormatException ("Wrong value of the parameter hsmCleanerTimeout in dCacheSetup: " + timeout);
+                }
+
+                _requests = new RequestTracker(this);
+                _requests.setMaxFilesPerRequest(_hsmCleanerRequest);
+                _requests.setTimeout(_hsmTimeout * 1000);
+
+                _requests.setSuccessSink(new Sink<URI>() {
+                    public void push(URI uri) {
+                        onSuccess(uri);
+                    }
+                });
+
+               _requests.setFailureSink(new Sink<URI>() {
+                    public void push(URI uri) {
+                        onFailure(uri);
+                    }
+                });
+            }
+
+            if (_logNamespace.isDebugEnabled()) {
+                 _logNamespace.debug("Refresh Interval set to (in milliseconds): " + _refreshInterval);
+                 _logNamespace.debug("Number of files processed at once : "+ _processAtOnce);
+                 if (_hsmCleanerEnabled ){
+                     _logNamespace.debug("Timeout for cleaning requests to HSM-pools (ms) : " + _hsmTimeout);
+                     _logNamespace.debug("Maximal number of concurrent requests to a single HSM : "+ _hsmCleanerRequest);
+                 }
+            }
 
             (_cleanerThread = _nucleus.newThread(this, "Cleaner")).start();
 
@@ -288,8 +382,16 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
 
                 }
 
+                //HSM part
+                if(_hsmCleanerEnabled){
+                   //read files from trash-table:
+                   List<String> locationsListHSMdb = getHsmLocations();
 
-
+                   //if list of files is not empty call runDeleteHSM( ... ) for these files
+                   if ((locationsListHSMdb != null) && (locationsListHSMdb.size() > 0)) {
+                       runDeleteHSM(locationsListHSMdb);
+                   }
+                 }
             } catch (Exception ee) {
                 _logNamespace.error("ChimeraCleaners: runDelete :" , ee);
             }
@@ -561,9 +663,115 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
         }
      }
 
+    //Select locations of all files stored on tape. In case itype=0  'ilocation' is an URI representing the location
+    //of a file on HSM, for example:
+    //osm://sample-main/?store=sql&group=chimera&bfid=3434.0.994.1188400818542)
+    private static final String sqlGetIlocationHSM = "SELECT ilocation "
+        + "FROM t_locationinfo_trash WHERE itype=0";
+
+    /**
+     * getIlocationHSM
+     * returns a list of 'ilocation's from the trash-table (itype=0 means HSM-storage)
+     *
+     * @throws java.sql.SQLException
+     * @return list of strings representing file locations on a HSM
+    */
+
+    List<String> getHsmLocations() throws SQLException {
+
+        Connection dbConnection = null;
+        List<String> ilocationList = new ArrayList<String>();
+
+        ResultSet rs = null;
+        PreparedStatement stGetIlocationList = null;
+        try {
+           dbConnection = _dbConnectionDataSource.getConnection();
+           stGetIlocationList = dbConnection.prepareStatement(sqlGetIlocationHSM);
+
+           rs = stGetIlocationList.executeQuery();
+
+           while (rs.next()) {
+
+              String ilocation = rs.getString("ilocation");
+              ilocationList.add(ilocation);
+           }
+
+        } finally {
+          SqlHelper.tryToClose(rs);
+          SqlHelper.tryToClose(stGetIlocationList);
+          SqlHelper.tryToClose(dbConnection);
+        }
+        return ilocationList;
+    }
+
+    //for HSM. delete files from trash-table
+    private static final String sqlRemoveHSMFiles = "DELETE FROM t_locationinfo_trash "
+                                                + "WHERE ilocation=? AND itype=0";
+
+   /**
+    * removeFilesHSM
+    * Delete entries (stored on tape, having itype=0) from the trash-table.
+    * File location on tape (ilocation) is input parameter.
+    *
+    * @param ilocation file location on tape
+    * @throws java.sql.SQLException
+    *
+    */
+
+    void removeFilesHSM (String ilocation) throws SQLException {
+
+            _logNamespace.debug("HSM-ChimeraCleaner: remove entries from the trash-table. ilocation=" + ilocation);
+
+            Connection dbConnection = null;
+            PreparedStatement stRemoveFiles = null;
+
+            try {
+                 dbConnection = _dbConnectionDataSource.getConnection();
+                 stRemoveFiles = dbConnection.prepareStatement(sqlRemoveHSMFiles);
+
+                 stRemoveFiles.setString(1, ilocation);
+                 int rc = stRemoveFiles.executeUpdate();
+             } catch (SQLException e) {
+                _logNamespace.error("HSM-ChimeraCleaner: Failed to remove entries from the trash-table: " + e.getMessage());
+             } finally {
+                    SqlHelper.tryToClose(stRemoveFiles);
+                    SqlHelper.tryToClose(dbConnection);
+             }
+    }
+
+    /**
+     * runDeleteHSM
+     * Delete files stored on tape (HSM).
+     *
+     * @param ilocationListHSM list of pools (with files stored on tape)
+     * @throws java.sql.SQLException
+     * @throws java.lang.InterruptedException
+     * @throws URISyntaxException
+     */
+    private void runDeleteHSM(List<String> ilocationListHSM) throws SQLException, InterruptedException, URISyntaxException {
+
+         if(_logNamespace.isDebugEnabled()) {
+             _logNamespace.debug("HSM-ChimeraCleaner. Locations to be deleted: " + ilocationListHSM);
+         }
+
+         for (String ilocation: ilocationListHSM) {
+            if (Thread.interrupted()) {
+                throw new InterruptedException();
+            }
+
+            URI locationURI = new URI(ilocation);
+
+            if(_logNamespace.isDebugEnabled()) {
+                _logNamespace.debug("Submitting a request to delete a file: " + locationURI);
+            }
+
+            _requests.submit(locationURI);
+         }
+    }
+
     ////////////////////////////////////////////////////////////////////////////
     public static String hh_rundelete = " # run Cleaner ";
-    public String ac_rundelete(Args args) throws Exception {
+    public String ac_rundelete(Args args) throws SQLException, InterruptedException {
 
         List<String> tmpPoolList = getPoolList();
         runDelete(tmpPoolList.toArray(new String[tmpPoolList.size()]));
@@ -580,8 +788,13 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
             sb.append("Reply Timeout (ms): ").append(_replyTimeout).append("\n");
             sb.append("Recover Timer (min): ").append(_recoverTimer/1000L/60L).append("\n");
             sb.append("Number of files processed at once: ").append(_processAtOnce);
-
-
+            if ( _hsmCleanerEnabled ) {
+                sb.append("\n HSM Cleaner enabled. Info : \n");
+                sb.append("Timeout for cleaning requests to HSM-pools (ms): ").append(_hsmTimeout).append("\n");
+                sb.append("Maximal number of concurrent requests to a single HSM : ").append(_hsmCleanerRequest);
+            } else {
+               sb.append("\n HSM Cleaner disabled.");
+            }
         return sb.toString();
     }
 
@@ -690,12 +903,128 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
        return "Number of files processed at once set to "+ _processAtOnce ;
     }
 
+    /////  HSM admin commands /////
+
+    public static String hh_rundelete_hsm = " # run HSM Cleaner";
+    public String ac_rundelete_hsm(Args args) throws Exception {
+        if ( _hsmCleanerEnabled ) {
+          List<String> tmpLocationsHSM = getHsmLocations();
+          runDeleteHSM(tmpLocationsHSM);
+          return "";
+         } else {
+          return "HSM Cleaner is disabled.";
+         }
+    }
+
+    //select 'ilocation's where the file (ipnfsid) is stored (on TAPE, itype=0)
+    private static final String sqlGetILocationForFileHSM = "SELECT ilocation FROM t_locationinfo_trash "
+        + "WHERE ipnfsid=? AND itype=0 ORDER BY iatime";
+
+    private String adminCleanFileHsm(String filePnfsID) throws SQLException, URISyntaxException {
+        Connection dbConnection = null;
+
+        List<String> removeFile = new ArrayList<String>();
+        removeFile.add(filePnfsID);
+
+        ResultSet rs = null;
+        PreparedStatement stGetILocationOfFile = null;
+        try {
+            dbConnection = _dbConnectionDataSource.getConnection();
+            stGetILocationOfFile = dbConnection.prepareStatement(sqlGetILocationForFileHSM);
+            stGetILocationOfFile.setString(1, filePnfsID);
+            rs = stGetILocationOfFile.executeQuery();
+
+            while (rs.next()) {
+
+                String ilocation = rs.getString("ilocation");
+                URI locationURI = new URI(ilocation);
+                _requests.submit(locationURI);
+            }
+        } finally {
+            SqlHelper.tryToClose(rs);
+            SqlHelper.tryToClose(stGetILocationOfFile);
+            SqlHelper.tryToClose(dbConnection);
+        }
+        return "";
+    }
+
+    //explicitly clean HSM-file
+    public static String hh_clean_file_hsm = "<pnfsID> # clean this file on HSM (file will be deleted from HSM)";
+    public String ac_clean_file_hsm_$_1(Args args) throws SQLException, URISyntaxException  {
+
+      if ( _hsmCleanerEnabled ) {
+
+        String filePnfsID = args.argv(0);
+        return adminCleanFileHsm(filePnfsID);
+
+      } else {
+        return "HSM Cleaner is disabled.";
+      }
+    }
+
+    public static String hh_hsm_set_MaxFilesPerRequest = "<number> # maximal number of concurrent requests to a single HSM";
+    public String ac_hsm_set_MaxFilesPerRequest_$_1(Args args) throws NumberFormatException {
+
+       if ( _hsmCleanerEnabled ) {
+        if( args.argc() > 0 ){
+             int maxFilesPerRequest = Integer.valueOf(args.argv(0));
+             if( maxFilesPerRequest == 0 ) {
+                throw new
+                IllegalArgumentException("The number must be greater than 0 ");
+             }
+             _hsmCleanerRequest = maxFilesPerRequest;
+          }
+
+          return "Maximal number of concurrent requests to a single HSM is set to "+ _hsmCleanerRequest;
+       } else {
+         return "HSM Cleaner is disabled.";
+       }
+
+    }
+
+    public static String hh_hsm_set_TimeOut = "<seconds> # cleaning request timeout in seconds (for HSM-pools)";
+    public String ac_hsm_set_TimeOut_$_1(Args args) throws NumberFormatException {
+
+      if ( _hsmCleanerEnabled ) {
+        if( args.argc() > 0 ){
+             long timeOutHSM = Long.valueOf(args.argv(0));
+
+             _hsmTimeout = timeOutHSM * 1000;
+          }
+
+          return "Timeout for cleaning requests to HSM-pools is set to "+ _hsmTimeout + "milliseconds";
+       } else {
+         return "HSM Cleaner is disabled.";
+       }
+
+    }
 
     @Override
     public CellVersion getCellVersion(){ return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision: 1.23 $" ); }
     @Override
     public void getInfo( PrintWriter pw ){
         pw.println("ChimeraCleaner $Revision: 1.23 $");
+    }
+
+    /**
+     * Called when a file was successfully deleted from the HSM.
+     */
+    protected void onSuccess(URI uri)
+    {
+        //Remove these files from trash-table:
+        try {
+           removeFilesHSM(uri.toString());
+       } catch (SQLException e) {
+           _logNamespace.error("HSM-ChimeraCleaner : Error when deleting from the trash-table " + e.getMessage());
+       }
+    }
+
+    /**
+     * Called when a file could not be deleted from the HSM.
+     */
+    protected void onFailure(URI uri)
+    {
+       _logNamespace.info("Failed to delete a file " + uri + " from HSM. Will try again later.");
     }
 
     private class RemoveMessageCallback
