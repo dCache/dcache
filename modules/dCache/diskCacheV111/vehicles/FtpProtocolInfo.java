@@ -1,8 +1,6 @@
-// $Id: FtpProtocolInfo.java,v 1.7 2006-05-12 20:47:12 tigran Exp $
-
 package diskCacheV111.vehicles ;
 
-public class FtpProtocolInfo extends IpProtocolInfo {
+public class FtpProtocolInfo implements IpProtocolInfo {
    private String _name  = "Unkown" ;
    private int    _minor = 0 ;
    private int    _major = 0 ;

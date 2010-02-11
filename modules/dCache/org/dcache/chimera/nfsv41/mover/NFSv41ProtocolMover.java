@@ -17,6 +17,7 @@ import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
+import org.dcache.util.NetworkUtils;
 import org.dcache.util.PortRange;
 import org.dcache.xdr.XdrBuffer;
 import org.dcache.xdr.XdrEncodingStream;
@@ -122,7 +123,7 @@ public class NFSv41ProtocolMover implements ManualMover {
         }
         NFS4ProtocolInfo nfs4ProtocolInfo = (NFS4ProtocolInfo) protocol;
 
-        InetAddress localAddress = nfs4ProtocolInfo.getLocalAddressForClient();
+        InetAddress localAddress = NetworkUtils.getLocalAddressForClient(nfs4ProtocolInfo.getHosts());
 
         _log.debug("using local interface: " + localAddress);
 

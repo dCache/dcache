@@ -1,10 +1,5 @@
-// $Id: StagerMessageV0.java,v 1.12 2007-10-04 11:09:50 tigran Exp $
-
 package diskCacheV111.vehicles;
 import  diskCacheV111.util.* ;
-
-import java.util.Map ;
-import java.util.HashMap ;
 
 public class StagerMessageV0  extends StagerMessage {
    private String _storageClass = null ;
@@ -38,7 +33,7 @@ public class StagerMessageV0  extends StagerMessage {
 
       
    }
-   public class _ProtocolInfo extends IpProtocolInfo {
+   public class _ProtocolInfo implements IpProtocolInfo {
        
        private static final long serialVersionUID = 1752886092046157556L;
        

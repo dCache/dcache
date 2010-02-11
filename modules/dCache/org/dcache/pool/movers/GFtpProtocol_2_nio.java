@@ -29,6 +29,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.SysTimer;
 import org.dcache.pool.repository.Allocator;
 import org.dcache.util.PortRange;
+import org.dcache.util.NetworkUtils;
 
 import org.apache.log4j.Logger;
 import org.dcache.ftp.*;
@@ -36,8 +37,8 @@ import org.dcache.ftp.*;
 /**
  * FTP mover. Supports both mover protocols GFtp/1 and GFtp/2.
  */
-public class GFtpProtocol_2_nio
-    implements ConnectionMonitor, MoverProtocol, ChecksumMover, ErrorListener
+public class GFtpProtocol_2_nio implements ConnectionMonitor,
+        MoverProtocol, ChecksumMover, ErrorListener
 {
     private final static Logger _log =
         Logger.getLogger(GFtpProtocol_2_nio.class);
@@ -492,7 +493,7 @@ public class GFtpProtocol_2_nio
                  * seems like a safe assumption that the data channel
                  * will be established from the same network.
                  */
-                InetAddress localAddress = gftpProtocolInfo.getLocalAddressForClient();
+                InetAddress localAddress = NetworkUtils.getLocalAddressForClient(gftpProtocolInfo.getHosts());
                 message =
                     new GFtpTransferStartedMessage(pnfsId.getId(),
                                                    localAddress.getCanonicalHostName(),

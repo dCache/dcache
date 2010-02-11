@@ -21,6 +21,7 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.InetAddress;
+import org.dcache.util.NetworkUtils;
 
 public class DCapClientProtocol_1 implements MoverProtocol
 {
@@ -93,7 +94,7 @@ public class DCapClientProtocol_1 implements MoverProtocol
             }
         int port = serverSocket.getLocalPort();
 
-        InetAddress localAddress = dcapClient.getLocalAddressForClient();
+        InetAddress localAddress = NetworkUtils.getLocalAddressForClient(dcapClient.getHosts());
 
         DCapClientPortAvailableMessage cred_request =
             new DCapClientPortAvailableMessage(localAddress.getCanonicalHostName(),

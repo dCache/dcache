@@ -33,6 +33,7 @@ import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.util.Checksum;
 import diskCacheV111.util.ChecksumFactory;
 import java.util.UUID;
+import org.dcache.util.NetworkUtils;
 
 
 public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
@@ -388,7 +389,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
             ProtocolConnectionPool pcp = protocolConnectionPoolFactory.getConnectionPool();
 
-            InetAddress localAddress = dcapProtocolInfo.getLocalAddressForClient();
+            InetAddress localAddress = NetworkUtils.getLocalAddressForClient(dcapProtocolInfo.getHosts());
             InetSocketAddress socketAddress =
                 new  InetSocketAddress(localAddress,
                                        pcp.getLocalPort());

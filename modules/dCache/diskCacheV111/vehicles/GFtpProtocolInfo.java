@@ -68,7 +68,7 @@ package diskCacheV111.vehicles ;
 
 import diskCacheV111.util.VOInfo;
 
-public class GFtpProtocolInfo extends IpProtocolInfo implements GridProtocolInfo {
+public class GFtpProtocolInfo implements IpProtocolInfo , GridProtocolInfo {
     private String _name  = "Unkown" ;
     private int    _minor = 0 ;
     private int    _major = 0 ;

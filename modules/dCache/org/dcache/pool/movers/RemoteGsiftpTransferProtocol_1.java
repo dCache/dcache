@@ -91,6 +91,7 @@ import java.security.NoSuchAlgorithmException;
 import org.dcache.srm.util.GridftpClient.IDiskDataSourceSink;
 import org.dcache.srm.util.GridftpClient;
 import org.dcache.srm.security.SslGsiSocketFactory;
+import org.dcache.util.NetworkUtils;
 import org.globus.ftp.Buffer;
 import org.globus.ftp.exception.ClientException;
 import org.globus.ftp.exception.ServerException;
@@ -155,7 +156,7 @@ public class RemoteGsiftpTransferProtocol_1
             throw e;
         }
 
-        InetAddress localAddress = remoteGsiftpProtocolInfo.getLocalAddressForClient();
+        InetAddress localAddress = NetworkUtils.getLocalAddressForClient(remoteGsiftpProtocolInfo.getHosts());
 
         RemoteGsiftpDelegateUserCredentialsMessage cred_request =
             new RemoteGsiftpDelegateUserCredentialsMessage(remoteGsiftpProtocolInfo.getId(),

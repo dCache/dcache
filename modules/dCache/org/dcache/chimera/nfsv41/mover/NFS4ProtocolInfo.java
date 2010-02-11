@@ -3,14 +3,14 @@ package org.dcache.chimera.nfsv41.mover;
 /*
  * dCache specific part
  */
+import diskCacheV111.vehicles.IpProtocolInfo;
 import java.net.InetAddress;
 
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
 
-import diskCacheV111.vehicles.IpProtocolInfo;
 import dmg.cells.nucleus.CellPath;
 
-public class NFS4ProtocolInfo extends IpProtocolInfo {
+public class NFS4ProtocolInfo implements IpProtocolInfo {
 
 	private static final long serialVersionUID = -2283394435195441798L;
 

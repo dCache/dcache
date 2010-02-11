@@ -25,6 +25,7 @@ import java.util.List;
 import java.text.ParseException;
 
 import org.apache.log4j.Logger;
+import org.dcache.util.NetworkUtils;
 
 public class HttpProtocol_1 implements MoverProtocol
 {
@@ -230,7 +231,7 @@ public class HttpProtocol_1 implements MoverProtocol
 
     private String buildUrl(int localPort, HttpProtocolInfo httpProtocolInfo)
             throws Exception{
-        InetAddress localAddress = httpProtocolInfo.getLocalAddressForClient();
+        InetAddress localAddress = NetworkUtils.getLocalAddressForClient(httpProtocolInfo.getHosts());
 
         StringBuffer url_sb = new StringBuffer("http://");
         url_sb.append(localAddress.getCanonicalHostName());

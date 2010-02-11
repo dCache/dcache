@@ -65,6 +65,7 @@ import org.jboss.netty.handler.execution.ExecutionHandler;
 import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
 
 import org.apache.log4j.Logger;
+import org.dcache.util.NetworkUtils;
 
 
 /**
@@ -489,7 +490,7 @@ public class XrootdProtocol_3
 
         // try to pick the ip address with corresponds to the
         // hostname (which is hopefully visible to the world)
-        InetAddress localIP = _protocolInfo.getLocalAddressForClient();
+        InetAddress localIP = NetworkUtils.getLocalAddressForClient(_protocolInfo.getHosts());
 
         if (localIP != null && !localIP.isLoopbackAddress()
             && localIP instanceof Inet4Address) {

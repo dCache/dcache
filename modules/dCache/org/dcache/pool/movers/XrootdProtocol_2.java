@@ -31,6 +31,7 @@ import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
+import org.dcache.util.NetworkUtils;
 
 public class XrootdProtocol_2 implements MoverProtocol
 {
@@ -131,7 +132,7 @@ public class XrootdProtocol_2 implements MoverProtocol
 
             Collection netifsCol = new ArrayList();
 
-            InetAddress localIP = xrootdProtocol.getLocalAddressForClient();
+            InetAddress localIP = NetworkUtils.getLocalAddressForClient(xrootdProtocol.getHosts());
 
             if (localIP != null && !localIP.isLoopbackAddress() && localIP instanceof Inet4Address) {
                 // the ip we got from the hostname is at least not

@@ -5,7 +5,7 @@ package diskCacheV111.vehicles;
  * @version 0.0, 28 Jun 2002
  */
 
-public class HttpProtocolInfo extends IpProtocolInfo
+public class HttpProtocolInfo implements IpProtocolInfo
 {
   private String _name  = "Unkown" ;
   private int    _minor = 0 ;

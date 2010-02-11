@@ -1,13 +1,6 @@
-// $Id: PoolManagerV5.java,v 1.48 2007-10-10 08:05:34 tigran Exp $
-
 package diskCacheV111.poolManager ;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.PrintWriter;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -17,14 +10,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Set;
 import java.util.StringTokenizer;
 
 import org.apache.log4j.Logger;
 import org.dcache.poolmanager.Utils;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
-import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsHandler;
@@ -42,21 +33,16 @@ import diskCacheV111.vehicles.PoolManagerGetPoolsByPoolGroupMessage;
 import diskCacheV111.vehicles.PoolMgrGetPoolByLink;
 import diskCacheV111.vehicles.PoolMgrGetPoolLinkGroups;
 import diskCacheV111.vehicles.PoolMgrQueryPoolsMsg;
-import diskCacheV111.vehicles.PoolMgrSelectPoolMsg;
-import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 import diskCacheV111.vehicles.PoolStatusChangedMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.QuotaMgrCheckQuotaMessage;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
-import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellVersion;
-import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.DelayedReply;
 import dmg.util.Args;
 import dmg.util.CommandException;
@@ -558,7 +544,7 @@ public class PoolManagerV5
         return msg;
     }
 
-    private static class XProtocolInfo extends IpProtocolInfo {
+    private static class XProtocolInfo implements IpProtocolInfo {
        private String [] _host = new String[1] ;
 
        private static final long serialVersionUID = -5817364111427851052L;
