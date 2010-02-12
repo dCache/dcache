@@ -48,6 +48,7 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RunSystem;
 import diskCacheV111.util.SimpleJobScheduler;
 import diskCacheV111.util.Checksum;
+import diskCacheV111.util.HsmLocationExtractorFactory;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
 import diskCacheV111.vehicles.PoolRemoveFilesFromHSMMessage;
 import diskCacheV111.vehicles.StorageInfo;
@@ -962,7 +963,10 @@ public class HsmStorageHandler2
                         String line = null;
                         try {
                             while ((line = in.readLine()) != null) {
-                                URI location = new URI(line);
+
+                                String uri = line.trim();
+                                if(uri.isEmpty()) continue;
+                                URI location = HsmLocationExtractorFactory.validate(new URI(uri));
                                 storageInfo.addLocation(location);
                                 storageInfo.isSetAddLocation(true);
                                 _log.debug(pnfsId.toString()

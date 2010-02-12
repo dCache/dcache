@@ -24,19 +24,50 @@ public class HsmLocationExtractorFactory {
 
     public static HsmLocation extractorOf(URI location) throws IllegalArgumentException {
 
+        URI validatedUri = validate(location);
         HsmLocation extractor = null;
-        String hsmType = location.getScheme();
+        String hsmType = validatedUri.getScheme();
 
         if ("osm".equals(hsmType)) {
-            extractor = new OsmLocationExtractor(location);
+            extractor = new OsmLocationExtractor(validatedUri);
         } else if ("enstore".equals(hsmType)) {
-            extractor = new EnstoreLocationExtractor(location);
+            extractor = new EnstoreLocationExtractor(validatedUri);
         } else if ("hpss".equals(hsmType)) {
-            extractor = new HpssLocationExtractor(location);
+            extractor = new HpssLocationExtractor(validatedUri);
         } else {
             throw new IllegalArgumentException("hsmType " + hsmType
                     + " not supported. FIXME: make it dynamic");
         }
         return extractor;
+    }
+
+    /**
+     * Validate gived URI with hsm location rules:
+     * <pre>
+     *  <strong>[scheme:][//authority][path][?query][#fragment]</strong>
+     *  where:
+     * 	scheme    : hsm type
+     * 	authority : instance id
+     * 	path+query: opaque to dCache HSM specific data
+     * </pre>
+     * @param location
+     * @return location is it's valid
+     * @throws IllegalArgumentException if location violates hsm rules.
+     */
+    public static URI validate(URI location) throws IllegalArgumentException {
+
+        if(location.getScheme() == null) {
+            throw new IllegalArgumentException("hsm type not defined");
+        }
+
+        if(location.getAuthority() == null) {
+            throw new IllegalArgumentException("hsm instance id not defined");
+        }
+
+        if (location.getPath() == null || location.getPath().isEmpty() ) {
+            throw new IllegalArgumentException("hsm-specific opaque data not defined");
+        }
+
+        return location;
     }
 }
