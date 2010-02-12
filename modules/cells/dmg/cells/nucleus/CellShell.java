@@ -991,7 +991,6 @@ public String command( String c ) throws CommandExitException {
      "               -c                  : don't overwrite\n"+
      "               -source=env|context : only check the specifed\n"+
      "                                     source for the variableName\n"+
-     "               -check=strong       : requires '=' sign\n"+
      "               -nr                 : don't run the variable resolver\n"+
      "\n"+
      "      The source is interpreted as a set of lines separated by\n"+
@@ -1002,10 +1001,8 @@ public String command( String c ) throws CommandExitException {
    public String fh_import_env = fh_import_context ;
 
    public String hh_import_context = "[-source=context|env] [-nr]"+
-                                     "[-check[=strong]] "+
                                      "<contextVariableName>" ;
    public String hh_import_env     = "[-source=context|env] [-nr]"+
-                                     "[-check[=strong]] "+
                                      "<environmentVariableName>" ;
 
    public String ac_import_context_$_1( Args args )throws CommandException {
@@ -1018,76 +1015,99 @@ public String command( String c ) throws CommandExitException {
     private String imprt_dict(Args args, Map<String,Object> dict)
         throws CommandException
     {
-      String  varName        = args.argv(0) ;
-      boolean opt_overwrite  = args.getOpt("c") == null ;
-      String  check          = args.getOpt( "check" )  ;
-      boolean checkSyntax    = check != null ;
-      boolean resolve        = args.getOpt( "nr" ) == null ;
+      String  varName = args.argv(0);
+      boolean opt_overwrite = (args.getOpt("c") == null);
+      boolean resolve = (args.getOpt( "nr" ) == null);
 
-      String     src     = args.getOpt( "source" ) ;
-      Map<String,Object> srcDict = src == null ? null  :
-                           src.equals("env")     ? _environment :
-                           src.equals("context") ? _nucleus.getDomainContext() :
-                           null ;
-
-      Object value = null ;
-      if( srcDict == null ){
-         if( ( value = _environment.get( varName ) ) == null )
-         value = _nucleus.getDomainContext().get( varName)  ;
-      }else{
-         value = srcDict.get( varName ) ;
+      String src = args.getOpt("source");
+      Object input;
+      if (src == null) {
+          input = _environment.get(varName);
+          if (input == null) {
+              input = _nucleus.getDomainContext().get(varName);
+          }
+      } else if (src.equals("env")) {
+          input = _environment.get(varName);
+      } else if (src.equals("context")) {
+          input = _nucleus.getDomainContext().get(varName);
+      } else {
+          throw new CommandException("Invalid value for -source=" + src);
       }
-      if( value == null )
-         throw new
-         CommandException( "variable >"+varName+"< not found" ) ;
 
-      BufferedReader br = new BufferedReader(
-                          new StringReader( value.toString() ) ) ;
-      String line = null ;
-      StringTokenizer st = null ;
-      String key = null ;
-      String val = null ;
-      try{
-         while( ( line = br.readLine() ) != null ){
+      if (input == null) {
+          throw new CommandException("Variable not defined: " + varName);
+      }
 
-            if( ( line.length()        == 0   ) ||
-                ( line.charAt(0)       == '#' ) ||
-                ( line.trim().length() == 0   )    )continue ;
+      try {
+          Properties properties = new Properties();
+          properties.load(new StringReader(input.toString()));
 
-            if( resolve )line = prepareCommand( line ) ;
-            try{
-               st  = new StringTokenizer( line , "=" ) ;
-               key = st.nextToken() ;
-               try{
-                  val = st.nextToken() ;
-               } catch (NoSuchElementException ee) {
-                  if( checkSyntax && ( check != null && check.equals("strong") ) ){
-                     throw new
-                     CommandException( 1 , "Nothing assigned to : "+key ) ;
-                  }else{
-                     val = "" ;
+          ReplaceableProperties replaceable =
+              new ReplaceableProperties(properties);
+
+          Enumeration e = properties.propertyNames();
+          while (e.hasMoreElements()) {
+              String key = (String) e.nextElement();
+              if (opt_overwrite || (dict.get(key) == null)) {
+                  String value = properties.getProperty(key);
+
+                  int length = value.length();
+                  if (length > 1 &&
+                      value.charAt(0) == '"' &&
+                      value.charAt(length - 1) == '"') {
+                      value = value.substring(1, length - 1);
                   }
 
-               }
+                  if (resolve) {
+                      value = Formats.replaceKeywords(value, replaceable);
+                  }
 
-            } catch (CommandException e) {
-               if( checkSyntax ){
-                  throw new
-                  CommandException( 2 , "Command syntax exception : "+e ) ;
-               }else{
-                  continue ;
-               }
-            }
-            if( opt_overwrite ||
-                ( dict.get( key ) == null ) )dict.put( key , val ) ;
-         }
-      }catch( IOException ioe ){
-         if( checkSyntax )
-         throw new
-         CommandException( 3 , "Command syntax exception : "+ioe ) ;
+                  dict.put(key, value);
+              }
+          }
+      } catch (IllegalArgumentException e) {
+          throw new CommandException(3, "Failed to read " + varName + ": " + e);
+      } catch (IOException e) {
+          throw new CommandException(3, "Failed to read " + varName + ": " + e);
       }
-      return "" ;
+
+      return "";
    }
+
+    /**
+     * Properties wrapper which implements Replacable. Values are
+     * looked up recursively in a Properties object. Upon failure to
+     * lookup a name, getReplacement of the CellShell is called.
+     */
+    private class ReplaceableProperties implements Replaceable
+    {
+        private Properties _properties;
+        private Stack<String> _stack = new Stack<String>();
+
+        public ReplaceableProperties(Properties properties)
+        {
+            _properties = properties;
+        }
+
+        public String getReplacement(String name)
+        {
+            String value = _properties.getProperty(name);
+            if (value != null) {
+                if (_stack.search(name) == -1) {
+                    _stack.push(name);
+                    try {
+                        value = Formats.replaceKeywords(value, this);
+                    } finally {
+                        _stack.pop();
+                    }
+                }
+            } else {
+                value = CellShell.this.getReplacement(name);
+            }
+            return value;
+        }
+    }
+
    public String fh_set_context =
       "set context|env  [options]  <variableName>  <value>\n"+
       "        options :\n"+
