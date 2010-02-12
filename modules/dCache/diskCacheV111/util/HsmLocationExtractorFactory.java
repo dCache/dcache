@@ -17,31 +17,26 @@ import java.net.URI;
  * 	osm://desy-main/?store=h1&bfid=1234
  *	osm://desy-copy/?store=h1_d&bfid=5678
  */
-public class HsmLocationExtractorFactory {	 
-	
-	private HsmLocationExtractorFactory() {}
-	
-	
-	public static HsmLocation extractorOf(URI location) throws IllegalArgumentException {
-		
-		HsmLocation extractor = null;
-		String hsmType = location.getScheme();
-		
-		
-		
-		if( "osm".equals(hsmType) ) {
-			extractor =  new OsmLocationExtractor(location);
-		} else if ("enstore".equals(hsmType)) {
-			extractor =  new  EnstoreLocationExtractor(location);
-		} else if ( "hpss".equals(hsmType)) {
-			extractor =  new  HpssLocationExtractor(location);
-		} else {
-			throw new IllegalArgumentException("hsmType not supported. FIXME: make it dynamic");
-		}
-		
-		return extractor;
-		
-	}
-	
-	
+public class HsmLocationExtractorFactory {
+
+    private HsmLocationExtractorFactory() {
+    }
+
+    public static HsmLocation extractorOf(URI location) throws IllegalArgumentException {
+
+        HsmLocation extractor = null;
+        String hsmType = location.getScheme();
+
+        if ("osm".equals(hsmType)) {
+            extractor = new OsmLocationExtractor(location);
+        } else if ("enstore".equals(hsmType)) {
+            extractor = new EnstoreLocationExtractor(location);
+        } else if ("hpss".equals(hsmType)) {
+            extractor = new HpssLocationExtractor(location);
+        } else {
+            throw new IllegalArgumentException("hsmType " + hsmType
+                    + " not supported. FIXME: make it dynamic");
+        }
+        return extractor;
+    }
 }
