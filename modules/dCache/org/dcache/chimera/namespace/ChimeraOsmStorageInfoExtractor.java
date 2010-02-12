@@ -26,7 +26,6 @@ import org.dcache.chimera.store.RetentionPolicy;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
-import diskCacheV111.util.HsmLocation;
 import diskCacheV111.util.HsmLocationExtractorFactory;
 import diskCacheV111.vehicles.OSMStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
@@ -286,8 +285,10 @@ public class ChimeraOsmStorageInfoExtractor implements
                 }
 
                 for(URI location : locationURIs) {
-                    HsmLocation hsmLocation = HsmLocationExtractorFactory.extractorOf(location);
-                    inode.getFs().addInodeLocation(inode, StorageGenericLocation.TAPE, hsmLocation.location().toString());
+                    // skip bad URI's if the get here
+                    if(location.toString().isEmpty()) continue;
+                    URI validatedUri = HsmLocationExtractorFactory.validate(location);
+                    inode.getFs().addInodeLocation(inode, StorageGenericLocation.TAPE, validatedUri.toString());
                 }
             }
 
