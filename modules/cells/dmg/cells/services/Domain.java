@@ -5,6 +5,8 @@ import   dmg.cells.nucleus.* ;
 import   dmg.cells.network.* ;
 import   dmg.util.* ;
 
+import org.apache.log4j.Logger;
+
 import java.util.* ;
 import java.io.* ;
 
@@ -58,6 +60,8 @@ import java.io.* ;
   * @version 0.1, 15 Feb 1998
   */
 public class Domain {
+
+  private static final Logger _log = Logger.getLogger(Domain.class);
 
   private static final int IDLE      = 0 ;
   private static final int ASSEMBLE  = 1 ;
@@ -180,7 +184,7 @@ public class Domain {
          if( ( tmp = (String[])argHash.get( "-debug" ) ) != null ){
 
 
-             System.out.println( "Starting DebugSequence" ) ;
+             _log.info( "Starting DebugSequence" ) ;
              List<String> v = new ArrayList<String>() ;
              if( ( tmp.length > 1 ) && ( tmp[1].equals("full") ) ){
                 v.add( "set printout CellGlue all" ) ;
@@ -204,7 +208,7 @@ public class Domain {
              }
              String a = sb.toString() ;
 
-             System.out.println( "Loading new CellPrinter "+a ) ;
+             _log.info( "Loading new CellPrinter "+a ) ;
              List<String> v = new ArrayList<String>() ;
              v.add( "load cellprinter "+a );
 
@@ -213,7 +217,7 @@ public class Domain {
 
          }
          if( argHash.get("-routed") != null ){
-             System.out.println( "Starting Routing Manager" ) ;
+             _log.info( "Starting Routing Manager" ) ;
              new RoutingManager( "RoutingMgr" , "up0" ) ;
          }
 
@@ -228,7 +232,7 @@ public class Domain {
                    sb.append(tmp[i]);
              }
              String a = sb.toString() ;
-             System.out.println( "Installing LocationManager '"+a+"'") ;
+             _log.info( "Installing LocationManager '"+a+"'") ;
              new LocationManager( "lm" , a ) ;
              new RoutingManager( "RoutingMgr" , "" ) ;
          }
@@ -236,7 +240,7 @@ public class Domain {
          if( argHash.get( "-silent" ) != null ){
 
 
-             System.out.println( "Starting Silent Sequence" ) ;
+             _log.info( "Starting Silent Sequence" ) ;
              List<String> v = new ArrayList<String>();
              v.add( "set printout CellGlue none" ) ;
              v.add( "set printout default none" ) ;
@@ -264,7 +268,7 @@ public class Domain {
                  sb.append( " -" ).append( tmp[i] ) ;
              }
 
-             System.out.println( "Starting LoginManager (telnet) on "+sb.toString() ) ;
+             _log.info( "Starting LoginManager (telnet) on "+sb.toString() ) ;
              new LoginManager( "tlm" , sb.toString() ) ;
 
          }
@@ -286,7 +290,7 @@ public class Domain {
                  sb.append( " -" ).append( tmp[i] ) ;
              }
 
-             System.out.println( "Starting RetryTunnel2 (raw) on "+sb.toString() ) ;
+             _log.info( "Starting RetryTunnel2 (raw) on "+sb.toString() ) ;
              new LoginManager( "down" , sb.toString() ) ;
 
          }
@@ -294,41 +298,41 @@ public class Domain {
              ( tmp.length > 2 ) ){
 
 
-             System.out.println( "Starting RetryTunnel on "+tmp[1]+" "+tmp[2] ) ;
+             _log.info( "Starting RetryTunnel on "+tmp[1]+" "+tmp[2] ) ;
              new RetryTunnel( "up0" , tmp[1]+" "+tmp[2] ) ;
 
          }
          if( ( ( tmp = (String[])argHash.get( "-connect2" ) ) != null ) &&
              ( tmp.length > 2 ) ){
 
-             System.out.println( "Starting RetryTunnel2 on "+tmp[1]+" "+tmp[2] ) ;
+             _log.info( "Starting RetryTunnel2 on "+tmp[1]+" "+tmp[2] ) ;
              new RetryTunnel2( "up0" , tmp[1]+" "+tmp[2] ) ;
 
          }
          if( ( ( tmp = (String[])argHash.get( "-connectDomain" ) ) != null ) &&
              ( tmp.length > 1 ) ){
 
-             System.out.println( "Starting LocationMgrTunnel on "+tmp[1] ) ;
+             _log.info( "Starting LocationMgrTunnel on "+tmp[1] ) ;
              new LocationManagerConnector("upD", "-lm=lm " + "-domain=" + tmp[1]);
          }
          if( ( ( tmp = (String[])argHash.get( "-acm" ) ) != null ) &&
              ( tmp.length > 1 ) ){
 
-             System.out.println( "Starting UserMgrCell on "+tmp[1] ) ;
+             _log.info( "Starting UserMgrCell on "+tmp[1] ) ;
              new UserMgrCell( "acm" , tmp[1] ) ;
 
          }
          if( ( ( tmp = (String[])argHash.get( "-tunnel" ) ) != null ) &&
              ( tmp.length > 1 ) ){
 
-             System.out.println( "Starting RetryTunnel on "+tmp[1] ) ;
+             _log.info( "Starting RetryTunnel on "+tmp[1] ) ;
              new GNLCell( "down" , "dmg.cells.network.RetryTunnel "+tmp[1] ) ;
 
          }
          if( ( ( tmp = (String[])argHash.get( "-accept" ) ) != null ) &&
              ( tmp.length > 0 ) ){
 
-             System.out.println( "Starting LocationMgrTunnel(listen)" ) ;
+             _log.info( "Starting LocationMgrTunnel(listen)" ) ;
              new LoginManager(
                    "downD" ,
                    "0 dmg.cells.network.LocationMgrTunnel "+
@@ -339,7 +343,7 @@ public class Domain {
              ( tmp.length > 1 ) ){
 
 
-             System.out.println( "Starting BootSequence for Domain "+tmp[1] ) ;
+             _log.info( "Starting BootSequence for Domain "+tmp[1] ) ;
              List<String> v = new ArrayList<String>() ;
              v.add( "onerror shutdown" ) ;
              v.add( "set context bootDomain "+tmp[1] ) ;
@@ -356,9 +360,9 @@ public class Domain {
              ( tmp.length > 1 ) ){
 
 
-             System.out.println( "Starting TopologyManager " ) ;
+             _log.info( "Starting TopologyManager " ) ;
              new TopoCell( "topo" , "" ) ;
-             System.out.println( "Starting Spy Listener on "+tmp[1] ) ;
+             _log.info( "Starting Spy Listener on "+tmp[1] ) ;
              new LoginManager( "Spy" ,
                 tmp[1]+
                 " dmg.cells.services.ObjectLoginCell"+
@@ -369,7 +373,7 @@ public class Domain {
              ( tmp.length > 1 ) ){
 
 
-             System.out.println( "Starting BatchCell on "+tmp[1] ) ;
+             _log.info( "Starting BatchCell on "+tmp[1] ) ;
              new BatchCell( "batch" , tmp[1] ) ;
 
          }
@@ -377,13 +381,12 @@ public class Domain {
              ( tmp.length > 1 ) ){
 
 
-             System.out.println( "Installing interruptHandlerClass "+tmp[1] ) ;
+             _log.info( "Installing interruptHandlerClass "+tmp[1] ) ;
              systemCell.enableInterrupts( tmp[1] ) ;
 
          }
       }catch( Exception e ){
-          e.printStackTrace() ;
-          System.exit(4);
+          _log.error(e, e);
       }
   }
   private static String [] [] getParameter( String [] args ){
