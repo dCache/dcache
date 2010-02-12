@@ -6,13 +6,14 @@ package javatunnel;
 
 import java.net.*;
 import java.io.*;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.ietf.jgss.*;
 
 
 class GssTunnel extends TunnelConverter {
 
-    private final static Logger _log = Logger.getLogger(GssTunnel.class);
+    private final static Logger _log = LoggerFactory.getLogger(GssTunnel.class);
 
     // GSS Kerberos context and others
     private GSSManager _gManager = null;

@@ -5,11 +5,12 @@
 package javatunnel;
 
 import java.io.*;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class TunnelConverter implements Convertable,UserBindible  {
 
-    private final static Logger _log = Logger.getLogger(TunnelConverter.class);
+    private final static Logger _log = LoggerFactory.getLogger(TunnelConverter.class);
 
     private boolean _isAuthentificated = false;
     private final static int IO_BUFFER_SIZE = 1048576; // 1 MB
