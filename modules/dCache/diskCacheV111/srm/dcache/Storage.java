@@ -198,7 +198,8 @@ import javax.naming.NamingEnumeration;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.security.auth.Subject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.dcache.namespace.FileAttribute.*;
 
@@ -217,7 +218,7 @@ public class Storage
         extends AbstractCell
         implements AbstractStorageElement, Runnable
 {
-    private final static Logger _log = Logger.getLogger(Storage.class);
+    private final static Logger _log = LoggerFactory.getLogger(Storage.class);
 
     private static boolean kludgeDomainMainWasRun = false;
 
@@ -413,7 +414,7 @@ public class Storage
             try {
                 config.read(_args.getOpt("config"));
             } catch (Exception e) {
-                _log.fatal("can't read config from file: "+_args.getOpt("config"));
+                _log.error("can't read config from file: "+_args.getOpt("config"));
                 throw e;
             }
         }
@@ -554,7 +555,7 @@ public class Storage
         if((jdbcPass==null && jdbcPwdfile==null)) {
             String error = "database parameters are not specified; use options " +
                 "-jdbcUrl, -jdbcDriver, -dbUser and -dbPass/-pgPass";
-            _log.fatal(error);
+            _log.error(error.toString());
             throw new Exception(error);
         }
         config.setJdbcUrl(getOption("jdbcUrl"));
@@ -909,13 +910,13 @@ public class Storage
         try {
             handler.setUpdateTime(getLongOption("brokerUpdateTime", 5*60));
         } catch (NumberFormatException e) {
-            _log.fatal("Failed to parse brokerUpdateTime: " +
+            _log.error("Failed to parse brokerUpdateTime: " +
                        e.getMessage());
         }
         try {
             handler.setUpdateThreshold(getDoubleOption("brokerUpdateOffset", 0.1));
         } catch (NumberFormatException e) {
-            _log.fatal("Failed to parse brokerUpdateOffset: " +
+            _log.error("Failed to parse brokerUpdateOffset: " +
                        e.getMessage());
         }
 
@@ -1062,7 +1063,7 @@ public class Storage
         } catch (NumberFormatException e) {
             return e.toString();
         } catch (SQLException e) {
-            _log.warn(e);
+            _log.warn(e.toString());
             return e.toString();
         }
     }
@@ -1113,7 +1114,7 @@ public class Storage
             }
             return sb.toString();
         } catch (RuntimeException e) {
-            _log.fatal("Failure in cancelall", e);
+            _log.error("Failure in cancelall", e);
             return e.toString();
         } catch (Exception e) {
             _log.warn("Failure in cancelall: " + e.getMessage());
@@ -1313,7 +1314,7 @@ public class Storage
             srm.listRequest(sb, requestId, true);
             return sb.toString();
         } catch (RuntimeException e) {
-            _log.fatal("Failure in set job priority", e);
+            _log.error("Failure in set job priority", e);
             return e.toString();
         } catch (Exception e) {
             _log.warn("Failure in set job priority: " + e.getMessage());
@@ -1472,17 +1473,17 @@ public class Storage
 
     public void log(String s)
     {
-        _log.info(s);
+        _log.info(s.toString());
     }
 
     public void elog(String s)
     {
-        _log.error(s);
+        _log.error(s.toString());
     }
 
     public void elog(Throwable t)
     {
-        _log.fatal(t ,t);
+        _log.error(t.toString(),t);
     }
 
     public void pinFile(SRMUser user,
@@ -1627,7 +1628,7 @@ public class Storage
         try {
             prev_turl= new GlobusURL(previous_turl);
         } catch (java.net.MalformedURLException e) {
-            _log.warn(e);
+            _log.warn(e.toString());
             throw new SRMException("Illegal previous turl: " + e.getMessage(),
                                    e);
         }
@@ -1732,7 +1733,7 @@ public class Storage
                 String error = "verifyUserPathIsInTheRoot error:"+
                         "user's path "+absolutePath+
                         " is not subpath of the user's root" +user_root;
-                _log.warn(error);
+                _log.warn(error.toString());
                 return false;
             }
 
@@ -2182,7 +2183,7 @@ public class Storage
                 }
             }
         } catch (RuntimeException e) {
-	    _log.fatal("getFileMetaData failed", e);
+	    _log.error("getFileMetaData failed", e);
         } catch (Exception e) {
 	    _log.warn("getFileMetaData failed: " + e);
 	}
@@ -2242,7 +2243,7 @@ public class Storage
         } catch (CacheException e) {
             String msg = " local copy failed with code =" + e.getRc() +
                 " details: " + e.getMessage();
-            _log.warn(msg);
+            _log.warn(msg.toString());
             throw new SRMException(msg, e);
         } catch (InterruptedException e) {
             throw new SRMException("Request to CopyManager was interrupted", e);
@@ -2920,7 +2921,7 @@ public class Storage
                 sout.close();
                 s.close();
             } catch(IOException ioe) {
-                _log.error(ioe);
+                _log.error(ioe.toString());
             }
         } else {
             try {
@@ -2937,7 +2938,7 @@ public class Storage
                     sout.close();
                     s.close();
                 } catch(IOException ioe) {
-                    _log.error(ioe);
+                    _log.error(ioe.toString());
                 }
                 return;
             }
@@ -2949,7 +2950,7 @@ public class Storage
                         credential,false);
                 _log.info("delegation appears to have succeeded");
             } catch (RuntimeException e) {
-                _log.fatal("delegation failed", e);
+                _log.error("delegation failed", e);
             } catch (Exception e) {
                 _log.error("delegation failed: " + e.getMessage());
             }
@@ -3007,7 +3008,7 @@ public class Storage
                            "], continuing with the rest of the pools: " +
                            e.getMessage());
             } catch (RuntimeException e) {
-                _log.fatal("Cannot get info from pool [" + pool +
+                _log.error("Cannot get info from pool [" + pool +
                            "], continuing with the rest of the pools", e);
             }
         }
@@ -3025,7 +3026,7 @@ public class Storage
             try {
                 updateStorageElementInfo();
             } catch(SRMException srme){
-                _log.warn(srme);
+                _log.warn(srme.toString());
             }
             try {
                 Thread.sleep(config.getStorage_info_update_period());

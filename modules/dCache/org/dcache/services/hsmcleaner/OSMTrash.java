@@ -14,14 +14,15 @@ import java.net.URI;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.OsmLocationExtractor;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Encapsulation of the PNFS trash directory for OSM.
  */
 public class OSMTrash implements Trash, FilenameFilter
 {
-    private final static Logger _log = Logger.getLogger(OSMTrash.class);
+    private final static Logger _log = LoggerFactory.getLogger(OSMTrash.class);
 
     /**
      * This is an index of known locations in the trash directory. The

@@ -6,11 +6,12 @@ import java.util.*;
 import java.io.*;
 import org.dcache.srm.util.Configuration;
 import terapathsexamplejavaclient.*;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TerapathsPlugin implements QOSPlugin {
     private static final Logger logger =
-            Logger.getLogger(TerapathsPlugin.class);
+            LoggerFactory.getLogger(TerapathsPlugin.class);
 
 
 	AbstractStorageElement storage;
@@ -72,11 +73,11 @@ public class TerapathsPlugin implements QOSPlugin {
 				properties.load(new FileInputStream(propFile));
 			}
 			catch(FileNotFoundException ex) {
-				logger.error(ex);
+				logger.error(ex.toString());
 				return false;
 			}
 			catch(IOException ex) {
-				logger.error(ex);
+				logger.error(ex.toString());
 				return false;
 			}
 
@@ -85,10 +86,10 @@ public class TerapathsPlugin implements QOSPlugin {
 				tpsAPISEIPort = tpsAPI.getTpsAPISEIPort();
 				((javax.xml.rpc.Stub) tpsAPISEIPort)._setProperty(javax.xml.rpc.Stub.ENDPOINT_ADDRESS_PROPERTY, properties.getProperty("serviceUrl", "http://198.124.220.9:8080/terapathsAPI/tpsAPI?wsdl"));
 			} catch(javax.xml.rpc.ServiceException ex) {
-				logger.error(ex);
+				logger.error(ex.toString());
 				return false;
 			} catch(Exception ex) {
-				logger.error(ex);
+				logger.error(ex.toString());
 				return false;
 			}
 
@@ -104,7 +105,7 @@ public class TerapathsPlugin implements QOSPlugin {
 				System.setProperty("javax.net.ssl.trustStorePassword", properties.getProperty("trustStorePassword","secret"));    
 
 			} catch (Exception e) {
-				logger.error(e);
+				logger.error(e.toString());
 			} 	
 
 			username = properties.getProperty("username", "terapaths");
@@ -222,10 +223,10 @@ public class TerapathsPlugin implements QOSPlugin {
 					result = false;
 			}
 			catch(java.rmi.RemoteException ex) {
-				logger.error(ex);
+				logger.error(ex.toString());
 				return false;
 			} catch(Exception ex) {
-				logger.error(ex);
+				logger.error(ex.toString());
 				return false;
 			}
 		}

@@ -86,7 +86,8 @@ import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMInvalidRequestException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 import org.dcache.srm.qos.QOSTicket;
@@ -103,7 +104,7 @@ import org.dcache.srm.qos.QOSTicket;
  */
 public abstract class FileRequest extends Job {
     private final static Logger logger =
-            Logger.getLogger(FileRequest.class);
+            LoggerFactory.getLogger(FileRequest.class);
     //file ContainerRequest is being processed
     // for get and put it means that file turl
     // is not available yet
@@ -238,7 +239,7 @@ public abstract class FileRequest extends Job {
                 }
                 else {
                     String error =  "Can't set Status to "+status;
-                    logger.error(error);
+                    logger.error(error.toString());
                     throw new SRMException(error);
 
                 }
@@ -249,7 +250,7 @@ public abstract class FileRequest extends Job {
         catch(IllegalStateTransition ist) {
             String error =  "Can't set Status to "+status+
                     " due to Illegal State Transition : " +ist.getMessage();
-            logger.error(error);
+            logger.error(error.toString());
             throw new SRMException(error);
         }
 
@@ -362,7 +363,7 @@ public abstract class FileRequest extends Job {
              // Therefore we catch the exception and
              // just report the submitter id as unknown
              //
-             logger.error(e);
+             logger.error(e.toString());
              return "unknown";
          }
      }

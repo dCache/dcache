@@ -2,7 +2,8 @@ package diskCacheV111.util;
 
 import java.util.concurrent.Callable;
 import java.io.IOException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Encapsulates running an external process as a task. The task waits
@@ -10,7 +11,7 @@ import org.apache.log4j.Logger;
  */
 public class ExternalTask implements Callable<Integer>
 {
-    private final static Logger _log = Logger.getLogger(ExternalTask.class);
+    private final static Logger _log = LoggerFactory.getLogger(ExternalTask.class);
     private final long        _timeout;
     private final String      _command;
 

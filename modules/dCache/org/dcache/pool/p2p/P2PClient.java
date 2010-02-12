@@ -13,7 +13,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.ScheduledExecutorService;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.pool.classic.ChecksumModuleV1;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.StickyRecord;
@@ -40,7 +41,7 @@ public class P2PClient
     implements CellMessageReceiver,
                CellCommandListener
 {
-    private final static Logger _log = Logger.getLogger(P2PClient.class);
+    private final static Logger _log = LoggerFactory.getLogger(P2PClient.class);
     private final static Acceptor _acceptor = new Acceptor();
 
     private final Map<Integer, Companion> _companions = new HashMap();

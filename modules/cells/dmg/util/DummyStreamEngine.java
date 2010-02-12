@@ -9,14 +9,15 @@ import java.nio.channels.ByteChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.Channels;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import dmg.security.CellUser;
 
 public class DummyStreamEngine implements StreamEngine
 {
     private final static Logger _logger =
-        Logger.getLogger(DummyStreamEngine.class);
+        LoggerFactory.getLogger(DummyStreamEngine.class);
 
     private final Socket _socket;
     private CellUser _userName = new CellUser("Unknown", null, null);

@@ -4,7 +4,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
@@ -16,7 +17,7 @@ import org.dcache.services.info.stateInfo.LinkInfo.UNIT_TYPE;
  * of LinkInfo objects.
  */
 public class LinkInfoVisitor extends SkeletonListVisitor {
-    private static Logger _log = Logger.getLogger( LinkInfoVisitor.class);
+    private static Logger _log = LoggerFactory.getLogger( LinkInfoVisitor.class);
 
     private static final StatePath LINK_PATH = StatePath.parsePath( "links");
 

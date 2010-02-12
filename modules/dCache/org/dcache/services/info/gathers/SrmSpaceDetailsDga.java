@@ -1,6 +1,7 @@
 package org.dcache.services.info.gathers;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import diskCacheV111.services.space.message.GetSpaceTokensMessage;
 import dmg.cells.nucleus.CellPath;
@@ -15,7 +16,7 @@ import dmg.cells.nucleus.CellPath;
  * @author Paul Millar <paul.millar@desy.de>
  */
 public class SrmSpaceDetailsDga extends SkelPeriodicActivity {
-	private static Logger _log = Logger.getLogger( SrmSpaceDetailsDga.class);
+	private static Logger _log = LoggerFactory.getLogger( SrmSpaceDetailsDga.class);
 
 	private static final String SRM_CELL_NAME = "SrmSpaceManager";
 

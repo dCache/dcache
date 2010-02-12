@@ -15,7 +15,8 @@ import java.security.AccessController;
 import java.security.cert.X509Certificate;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Simple request logging for WebDAV door. Interim solution until we
@@ -23,7 +24,7 @@ import org.apache.log4j.Logger;
  */
 public class LoggingFilter implements Filter
 {
-    private final Logger _log = Logger.getLogger(LoggingFilter.class);
+    private final Logger _log = LoggerFactory.getLogger(LoggingFilter.class);
 
     private static final String X509_CERTIFICATE_ATTRIBUTE =
         "javax.servlet.request.X509Certificate";

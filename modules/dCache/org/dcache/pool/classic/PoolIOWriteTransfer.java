@@ -27,7 +27,8 @@ import java.io.SyncFailedException;
 import java.util.List;
 import java.util.Collections;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Encapsulates a write transfer, that is, receiving a file. It acts
@@ -37,7 +38,7 @@ public class PoolIOWriteTransfer
     extends PoolIOTransfer
 {
     private final static Logger _log =
-        Logger.getLogger(PoolIOWriteTransfer.class);
+        LoggerFactory.getLogger(PoolIOWriteTransfer.class);
 
     private final WriteHandle _handle;
     private final File _file;

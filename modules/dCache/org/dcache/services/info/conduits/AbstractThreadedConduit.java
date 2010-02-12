@@ -1,6 +1,7 @@
 package org.dcache.services.info.conduits;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A simple, abstract implementation of a blocking InfoConduit.  A new Thread
@@ -14,7 +15,7 @@ import org.apache.log4j.Logger;
  */
 abstract class AbstractThreadedConduit implements Runnable, Conduit {
 
-	private static Logger _log = Logger.getLogger(AbstractThreadedConduit.class);
+	private static Logger _log = LoggerFactory.getLogger(AbstractThreadedConduit.class);
 
 	private Thread _thd = null;
 	protected int _callCount = 0;

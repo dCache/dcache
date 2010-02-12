@@ -1,6 +1,7 @@
 package org.dcache.services.info.gathers;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.StateComposite;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
@@ -10,7 +11,7 @@ import dmg.cells.nucleus.UOID;
 
 public class PoolGroupInfoMsgHandler extends CellMessageHandlerSkel {
 
-	private static Logger _log = Logger.getLogger( PoolGroupInfoMsgHandler.class);
+	private static Logger _log = LoggerFactory.getLogger( PoolGroupInfoMsgHandler.class);
 
 	private static final StatePath POOLGROUPS_PATH = new StatePath( "poolgroups");
 

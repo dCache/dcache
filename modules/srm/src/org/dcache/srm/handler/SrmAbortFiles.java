@@ -24,7 +24,8 @@ import org.dcache.srm.util.Configuration;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.axis.types.URI.MalformedURIException;
 import java.sql.SQLException;
 
@@ -36,7 +37,7 @@ import java.sql.SQLException;
 public class SrmAbortFiles {
     
     private static Logger logger = 
-            Logger.getLogger(SrmAbortFiles.class);
+            LoggerFactory.getLogger(SrmAbortFiles.class);
     
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement storage;
@@ -82,11 +83,11 @@ public class SrmAbortFiles {
             response = getFailedResponse(" invalid request : "+ire.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
         } catch(SQLException sqle) {
-            logger.error(sqle);
+            logger.error(sqle.toString());
             response = getFailedResponse("sql error "+sqle.getMessage(),
                     TStatusCode.SRM_INTERNAL_ERROR);
         } catch(SRMException srme) {
-            logger.error(srme);
+            logger.error(srme.toString());
             response = getFailedResponse(srme.toString());
         } catch(IllegalStateTransition ist) {
             logger.error("Illegal State Transition : " +ist.getMessage());

@@ -2,7 +2,8 @@ package org.dcache.acl.client;
 
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.MissingArgumentException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.acl.ACL;
 import org.dcache.acl.handler.DefaultACLHandler;
 import org.dcache.acl.parser.ACLParser;
@@ -15,7 +16,7 @@ import org.dcache.acl.parser.ACLParser;
  */
 public class SetAclClient extends AclClient {
 
-    private static final Logger logger = Logger.getLogger("logger.org.dcache.authorization." + SetAclClient.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger("logger.org.dcache.authorization." + SetAclClient.class.getName());
 
     public SetAclClient(String[] args) {
         super(args);
@@ -72,7 +73,7 @@ public class SetAclClient extends AclClient {
             app.exitHelp(2, "SetAclClient failed. Illegal Argument Exception: " + iae.getMessage());
 
         } catch (Exception e) {
-            logger.fatal("SetAclClient failed. Exception: " + e.getMessage());
+            logger.error("SetAclClient failed. Exception: " + e.getMessage());
             System.exit(3);
         }
 

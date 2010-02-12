@@ -5,14 +5,15 @@ import org.dcache.srm.util.Configuration;
 import org.dcache.srm.request.*;
 import java.util.Map;
 import java.util.HashMap;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author timur
  */
 public class SchedulerFactory {
-    private static final Logger logger = Logger.getLogger(SchedulerFactory.class);
+    private static final Logger logger = LoggerFactory.getLogger(SchedulerFactory.class);
     private final Map<Class,Scheduler> schedulerMap;
     private final String name;
     private static SchedulerFactory factory=null;

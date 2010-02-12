@@ -3,7 +3,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * MonitoringProxy can be used to decorate a any class implementing an interface
@@ -21,7 +22,7 @@ import org.apache.log4j.Logger;
  * @author timur
  */
 public class MonitoringProxy  <T> implements InvocationHandler {
-    private static final Logger logger = Logger.getLogger(MonitoringProxy.class);
+    private static final Logger logger = LoggerFactory.getLogger(MonitoringProxy.class);
     private final T monitoredObject;
     private final RequestCounters<Method> counter;
     private final RequestExecutionTimeGauges<Method> gauge;

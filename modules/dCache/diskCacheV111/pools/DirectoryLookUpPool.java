@@ -28,7 +28,8 @@ import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 
 import org.dcache.cells.AbstractCell;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.list.DirectoryListSource;
@@ -46,7 +47,7 @@ import static org.dcache.namespace.FileType.*;
 public class DirectoryLookUpPool extends AbstractCell
 {
     private final static Logger _log =
-        Logger.getLogger(DirectoryLookUpPool.class);
+        LoggerFactory.getLogger(DirectoryLookUpPool.class);
 
     private final static CellPath PNFS_MANAGER = new CellPath("PnfsManager");
 
@@ -315,9 +316,9 @@ public class DirectoryLookUpPool extends AbstractCell
                 }
 
             } catch (CacheException e) {
-                _log.error(e);
+                _log.error(e.toString());
             } catch (IOException e) {
-                _log.warn(e);
+                _log.warn(e.toString());
             } catch (InterruptedException e) {
                 // end of thread
             } finally {
@@ -325,7 +326,7 @@ public class DirectoryLookUpPool extends AbstractCell
                     try {
                         ostream.close();
                     } catch (IOException e) {
-                        _log.warn(e);
+                        _log.warn(e.toString());
                     }
                 }
 
@@ -333,7 +334,7 @@ public class DirectoryLookUpPool extends AbstractCell
                     try {
                         istream.close();
                     } catch (IOException e) {
-                        _log.warn(e);
+                        _log.warn(e.toString());
                     }
                 }
 
@@ -341,7 +342,7 @@ public class DirectoryLookUpPool extends AbstractCell
                     try {
                         dataSocket.close();
                     } catch (IOException e) {
-                        _log.warn(e);
+                        _log.warn(e.toString());
                     }
                 }
             }
@@ -370,7 +371,7 @@ public class DirectoryLookUpPool extends AbstractCell
             }
 
             if (dataSocket == null) {
-                _log.error(se);
+                _log.error(se.toString());
                 throw se;
             }
 

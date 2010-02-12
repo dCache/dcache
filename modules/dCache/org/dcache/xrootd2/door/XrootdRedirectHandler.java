@@ -53,7 +53,8 @@ import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Channel handler which redirects all open requests to a
@@ -69,7 +70,7 @@ import org.apache.log4j.Logger;
 public class XrootdRedirectHandler extends XrootdRequestHandler
 {
     private final static Logger _log =
-        Logger.getLogger(XrootdRedirectHandler.class);
+        LoggerFactory.getLogger(XrootdRedirectHandler.class);
 
     /**
      * Secure random number generator used for making login tokens.
@@ -126,7 +127,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
             Thread me = Thread.currentThread();
             me.getUncaughtExceptionHandler().uncaughtException(me, t);
         } else {
-            _log.warn(t);
+            _log.warn(t.toString());
         }
         // TODO: If not already closed, we should probably close the
         // channel.
@@ -330,7 +331,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                              XrootdProtocol.kXR_ServerError,
                              "Server shutdown");
         } catch (RuntimeException e) {
-            _log.fatal("Open failed due to a bug", e);
+            _log.error("Open failed due to a bug", e);
             info.fileOpenFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                 e.getMessage());
             respondWithError(ctx, event, req,
@@ -378,7 +379,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                                                e.getMessage(), e.getRc()));
             }
         } catch (RuntimeException e) {
-            _log.fatal("Stat failed due to a bug", e);
+            _log.error("Stat failed due to a bug", e);
             respondWithError(ctx, event, req,
                              XrootdProtocol.kXR_ServerError,
                              String.format("Internal server error (%s)",
@@ -428,7 +429,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                                                e.getMessage(), e.getRc()));
             }
         } catch (RuntimeException e) {
-            _log.fatal("Statx failed due to a bug", e);
+            _log.error("Statx failed due to a bug", e);
             respondWithError(ctx, event, req,
                              XrootdProtocol.kXR_ServerError,
                              String.format("Internal server error (%s)",

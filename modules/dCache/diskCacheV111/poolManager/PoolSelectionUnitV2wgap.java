@@ -25,7 +25,8 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Pattern;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import dmg.util.Args;
 import dmg.util.CommandSyntaxException;
@@ -44,7 +45,7 @@ import diskCacheV111.pools.PoolCostInfo.NamedPoolQueueInfo;
 public class PoolSelectionUnitV2wgap extends PoolSelectionUnitV2 {
 
     private static final String __version = "$Id: PoolSelectionUnitV2wgap.java,v 1.0 2008-08-05 14:03:54 catalind Exp $";
-    private static final Logger _logPoolSelection = Logger.getLogger("logger.org.dcache.poolselection."+PoolSelectionUnitV2wgap.class.getName());
+    private static final Logger _logPoolSelection = LoggerFactory.getLogger("logger.org.dcache.poolselection."+PoolSelectionUnitV2wgap.class.getName());
 
     private static final long _TO_GetFreeSpace         = 2*60 * 1000L;
     private static final long _TO_GetGapSpace          = 3600 * 1000L;

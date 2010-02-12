@@ -21,7 +21,8 @@ import org.dcache.srm.request.sql.BringOnlineRequestStorage;
 import org.dcache.srm.request.sql.BringOnlineFileRequestStorage;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.SRM;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.axis.types.URI.MalformedURIException;
 import java.sql.SQLException;
 
@@ -33,7 +34,7 @@ import java.sql.SQLException;
 public class SrmStatusOfBringOnlineRequest {
     
     private static Logger logger = 
-            Logger.getLogger(SrmStatusOfBringOnlineRequest.class);
+            LoggerFactory.getLogger(SrmStatusOfBringOnlineRequest.class);
     
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement storage;
@@ -80,11 +81,11 @@ public class SrmStatusOfBringOnlineRequest {
             response = getFailedResponse(" malformed uri : "+mue.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
         } catch(SQLException sqle) {
-            logger.error(sqle);
+            logger.error(sqle.toString());
             response = getFailedResponse("sql error "+sqle.getMessage(),
                     TStatusCode.SRM_INTERNAL_ERROR);
         } catch(SRMException srme) {
-            logger.error(srme);
+            logger.error(srme.toString());
             response = getFailedResponse(srme.toString());
         }        
         return response;

@@ -4,7 +4,8 @@ import java.util.Date;
 import java.util.Set;
 import java.util.Stack;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.stateInfo.ListVisitor;
@@ -31,7 +32,7 @@ import org.dcache.services.info.stateInfo.ListVisitor;
  */
 abstract class SkelListBasedActivity implements Schedulable {
 	
-	private static final Logger _log = Logger.getLogger( SkelListBasedActivity.class);
+	private static final Logger _log = LoggerFactory.getLogger( SkelListBasedActivity.class);
 
 
 	/** Minimum time between fetching a fresh list (or querying the same list-item), in milliseconds */

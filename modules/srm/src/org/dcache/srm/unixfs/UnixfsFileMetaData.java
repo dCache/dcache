@@ -8,14 +8,15 @@ package org.dcache.srm.unixfs;
 import org.dcache.srm.FileMetaData;
 import java.util.StringTokenizer;
 import org.dcache.srm.SRMUser;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author  timur
  */
 public class UnixfsFileMetaData extends FileMetaData{
-    private Logger logger =  Logger.getLogger(UnixfsFileMetaData.class.getName());
+    private Logger logger =  LoggerFactory.getLogger(UnixfsFileMetaData.class.getName());
     public boolean filo ;
     public boolean character_device ;
     public boolean directory ;

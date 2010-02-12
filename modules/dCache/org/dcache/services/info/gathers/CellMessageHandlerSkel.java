@@ -5,7 +5,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StateComposite;
 import org.dcache.services.info.base.StatePath;
@@ -26,7 +27,7 @@ import dmg.cells.nucleus.UOID;
  */
 abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
 	
-	private static final Logger _log = Logger.getLogger( CellMessageHandlerSkel.class);
+	private static final Logger _log = LoggerFactory.getLogger( CellMessageHandlerSkel.class);
 
 	private final static DateFormat _simpleDateFormat = new SimpleDateFormat("MMM d, HH:mm:ss z" );
 	private final static DateFormat _iso8601DateFormat = new SimpleDateFormat( "yyyy-MM-dd'T'HH:mm'Z'");

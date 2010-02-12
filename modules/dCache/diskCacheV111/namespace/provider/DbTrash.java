@@ -4,7 +4,8 @@
 package diskCacheV111.namespace.provider;
 
 import diskCacheV111.util.PnfsIdUtil;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.util.JdbcConnectionPool;
 
 import javax.sql.DataSource;
@@ -17,7 +18,7 @@ import java.text.MessageFormat;
 public class DbTrash implements Trash
 {
     private final DataSource _dataSource;
-    private static final Logger _logger =  Logger.getLogger("logger.org.dcache.namespace." + DbTrash.class.getName());
+    private static final Logger _logger =  LoggerFactory.getLogger("logger.org.dcache.namespace." + DbTrash.class.getName());
 
 
     public DbTrash(String jdbcUrl, String jdbcClass, String user, String password)

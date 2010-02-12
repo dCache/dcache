@@ -327,7 +327,7 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
                     say("sleeping "+estimatedWaitInSeconds+" seconds ...");
                     Thread.sleep(estimatedWaitInSeconds * 1000);
                 }catch(InterruptedException ie) {
-                    logger.elog(ie);
+                    logger.elog(ie.toString());
                 }
                 SrmStatusOfPutRequestRequest srmStatusOfPutRequestRequest = new SrmStatusOfPutRequestRequest();
                 srmStatusOfPutRequestRequest.setRequestToken(requestToken);
@@ -398,7 +398,7 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
                     abortAllPendingFiles();
                 }
             }catch(Exception e1) {
-                logger.elog(e1);
+                logger.elog(e1.toString());
             }
         }finally{
             if(copier != null) {
@@ -420,7 +420,7 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
             copier.stop();
             abortAllPendingFiles();
         }catch(Exception e) {
-            logger.elog(e);
+            logger.elog(e.toString());
         }
     }
 

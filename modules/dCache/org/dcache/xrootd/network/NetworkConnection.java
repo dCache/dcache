@@ -11,12 +11,13 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class NetworkConnection {
 
     private final static Logger _log =
-        Logger.getLogger(NetworkConnection.class);
+        LoggerFactory.getLogger(NetworkConnection.class);
 
     /**
      * maximum amount of time between two received bytes that form together a message

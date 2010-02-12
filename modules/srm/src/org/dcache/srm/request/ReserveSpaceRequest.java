@@ -87,7 +87,8 @@ import org.dcache.srm.v2_2.SrmReserveSpaceResponse;
 import org.dcache.srm.v2_2.SrmStatusOfReserveSpaceRequestResponse;
 import org.apache.axis.types.UnsignedLong;
 import org.dcache.srm.SRMInvalidRequestException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 /**
  * File request is an abstract "SRM file request"
  * its concrete subclasses are GetFileRequest,PutFileRequest and CopyFileRequest
@@ -102,7 +103,7 @@ import org.apache.log4j.Logger;
  */
 public final class ReserveSpaceRequest extends Request {
     private static final Logger logger =
-            Logger.getLogger (ReserveSpaceRequest.class);
+            LoggerFactory.getLogger (ReserveSpaceRequest.class);
 
     private long sizeInBytes ;
     private final TRetentionPolicy retentionPolicy;
@@ -251,7 +252,7 @@ public final class ReserveSpaceRequest extends Request {
             }
 
             logger.error("can not reserve space: ");
-            logger.error(e);
+            logger.error(e.toString());
             try {
                 setState(State.FAILED,e.toString());
             } catch(IllegalStateTransition ist) {
@@ -356,7 +357,7 @@ public final class ReserveSpaceRequest extends Request {
             try {
                   request  = getReserveSpacetRequest();
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire);
+                logger.error(ire.toString());
                 return;
             }
             try {
@@ -373,7 +374,7 @@ public final class ReserveSpaceRequest extends Request {
             try {
                   request  = getReserveSpacetRequest();
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire);
+                logger.error(ire.toString());
                 return;
             }
 
@@ -391,7 +392,7 @@ public final class ReserveSpaceRequest extends Request {
             try {
                   request  = getReserveSpacetRequest();
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire);
+                logger.error(ire.toString());
                 return;
             }
 
@@ -409,7 +410,7 @@ public final class ReserveSpaceRequest extends Request {
             try {
                   request  = getReserveSpacetRequest();
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire);
+                logger.error(ire.toString());
                 return;
             }
             request.wlock();

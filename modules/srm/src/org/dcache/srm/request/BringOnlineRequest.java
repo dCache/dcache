@@ -92,12 +92,13 @@ import org.dcache.srm.v2_2.TBringOnlineRequestFileStatus;
 import org.dcache.srm.v2_2.SrmReleaseFilesResponse;
 import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
 import org.apache.axis.types.URI;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 /*
  * @author  timur
  */
 public final class BringOnlineRequest extends ContainerRequest {
-    private static final Logger logger = Logger.getLogger(BringOnlineRequest.class);
+    private static final Logger logger = LoggerFactory.getLogger(BringOnlineRequest.class);
     /** array of protocols supported by client or server (copy) */
     protected String[] protocols;
     private long desiredOnlineLifetimeInSeconds;
@@ -335,7 +336,7 @@ public final class BringOnlineRequest extends ContainerRequest {
         for(TBringOnlineRequestFileStatus fs :arrayOfTBringOnlineRequestFileStatus.getStatusArray()) {
             s += " FileStatusCode = "+fs.getStatus().getStatusCode();
         }
-        logger.debug(s);
+        logger.debug(s.toString());
         return response;
     }
 
@@ -482,7 +483,7 @@ public final class BringOnlineRequest extends ContainerRequest {
             getTReturnStatus();
         }
         catch(Exception e) {
-            logger.error(e);
+            logger.error(e.toString());
         }
         int errors_cnt = 0;
 

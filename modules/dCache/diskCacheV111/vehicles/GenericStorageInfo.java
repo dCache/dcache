@@ -8,7 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
@@ -16,7 +17,7 @@ import diskCacheV111.util.RetentionPolicy;
 public class GenericStorageInfo
     implements StorageInfo
 {
-    private static Logger _logger = Logger.getLogger( GenericStorageInfo.class);
+    private static Logger _logger = LoggerFactory.getLogger( GenericStorageInfo.class);
 
     static final long serialVersionUID = 2089636591513548893L;
 

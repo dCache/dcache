@@ -4,7 +4,8 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.bradmcevoy.http.Filter;
 import com.bradmcevoy.http.FilterChain;
@@ -29,7 +30,7 @@ import com.bradmcevoy.http.exceptions.NotAuthorizedException;
 public class DcacheStandardFilter implements Filter
 {
     private final static Logger log =
-        Logger.getLogger(DcacheStandardFilter.class);
+        LoggerFactory.getLogger(DcacheStandardFilter.class);
 
     public static final String METHOD_NOT_IMPLEMENTED_HTML =
         "<html><body><h1>Method Not Implemented</h1></body></html>";

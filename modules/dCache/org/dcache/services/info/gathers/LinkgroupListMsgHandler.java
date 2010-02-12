@@ -1,6 +1,7 @@
 package org.dcache.services.info.gathers;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.StateComposite;
 import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StatePath;
@@ -18,7 +19,7 @@ import diskCacheV111.services.space.message.GetLinkGroupNamesMessage;
  */
 public class LinkgroupListMsgHandler implements MessageHandler {
 
-	private static Logger _log = Logger.getLogger( LinkgroupListMsgHandler.class);
+	private static Logger _log = LoggerFactory.getLogger( LinkgroupListMsgHandler.class);
 	private static final StatePath LINKGROUPS_PATH = new StatePath("linkgroups");
 	
 	final private StateUpdateManager _sum;

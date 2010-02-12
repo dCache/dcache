@@ -6,7 +6,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
@@ -22,7 +23,7 @@ import org.dcache.services.info.base.StringStateValue;
 public class ReservationInfoVisitor extends SkeletonListVisitor {
 
     private static Logger _log =
-            Logger.getLogger( ReservationInfoVisitor.class);
+            LoggerFactory.getLogger( ReservationInfoVisitor.class);
 
     public static final String PATH_ELEMENT_SPACE = "space";
     public static final String PATH_ELEMENT_LIFETIME = "lifetime";

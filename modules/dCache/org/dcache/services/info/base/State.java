@@ -8,7 +8,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This singleton class provides a (best-effort) complete representation of
@@ -45,7 +46,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
     public static final String METADATA_BRANCH_CLASS_KEY = "branch";
     public static final String METADATA_BRANCH_IDNAME_KEY = "id";
 
-    private static final Logger _log = Logger.getLogger( State.class);
+    private static final Logger _log = LoggerFactory.getLogger( State.class);
 
     /**
      * Class member variables...

@@ -38,7 +38,8 @@ import org.dcache.acl.enums.AuthType;
 import org.dcache.acl.enums.FileAttribute;
 
 import javax.security.auth.Subject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.namespace.FileType;
 
 /**
@@ -54,7 +55,7 @@ import org.dcache.namespace.FileType;
 public class DCapDoorInterpreterV3 implements KeepAliveListener,
         DcapProtocolInterpreter {
 
-    public static final Logger _log = Logger.getLogger(DCapDoorInterpreterV3.class);
+    public static final Logger _log = LoggerFactory.getLogger(DCapDoorInterpreterV3.class);
 
     /**
      * Ascii commands supported by this interpreter.
@@ -201,7 +202,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                  *     or
                  *    nobody account is used
                  */
-                _log.error(e);
+                _log.error(e.toString());
             }
 
         }
@@ -353,7 +354,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             _maxClientVersion  = st.countTokens() > 0 ? new Version(st.nextToken()) : null ;
         }catch(Exception ee ){
             _log.error("Client Version : syntax error (limits ignored) : "+versionString);
-            _log.error(ee);
+            _log.error(ee.toString());
             _minClientVersion = _maxClientVersion = null ;
         }
     }
@@ -409,7 +410,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         ( ( _maxClientVersion != null ) && ( version.compareTo( _maxClientVersion ) > 0 ) )  ){
 
             String error = "Client version rejected : "+version ;
-            _log.error(error);
+            _log.error(error.toString());
             throw new
             CommandExitException(error , 1 );
         }
@@ -891,7 +892,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             throw new CommandException(ce.getRc() ,
             ce.getMessage() ) ;
         }catch(Exception e){
-            _log.error(e);
+            _log.error(e.toString());
             throw new CommandException(44 , e.getMessage() ) ;
 
         }
@@ -1096,7 +1097,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             String reply = ""+_sessionId+" 1 "+
             _vargs.getName()+" "+comment ;
             println( reply ) ;
-            _log.debug( reply ) ;
+            _log.debug(reply.toString()) ;
         }
         public void keepAlive(){
             _log.debug("Keep alived called for : "+this);
@@ -2133,12 +2134,12 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 //        I am changing the following log to be
                 //        logged only if the debugging is on
                 //        anyway sendReply will log the response
-                _log.debug(cee);
+                _log.debug(cee.toString());
                 sendReply( "storageInfoAvailable" , cee.getRc() , cee.getMessage()) ;
                 removeUs() ;
                 return ;
             }catch(Exception ee ){
-                _log.error(ee);
+                _log.error(ee.toString());
                 sendReply( "storageInfoAvailable" , 104 , ee.getMessage()) ;
                 removeUs() ;
                 return ;
@@ -2379,7 +2380,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                         }
 
                     }catch(CacheException ce ) {
-                        _log.error(ce);
+                        _log.error(ce.toString());
                         sendReply( "pnfsGetStorageInfoArrived", 1,
                         "Failed to truncate file");
                         removeUs();
@@ -2924,7 +2925,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             int errorCode, String errorMessage) {
         String problem = String.format("%d %d %s failed %d \"internalError : %s\"",
                 sessionId, commandId, name, errorCode, errorMessage);
-        _log.debug(problem);
+        _log.debug(problem.toString());
         return problem;
     }
 
@@ -2932,7 +2933,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             int errorCode, String errorMessage) {
         String problem= String.format("%d %d %s failed %d \"protocolViolation : %s\"",
                 sessionId, commandId, name, errorCode, errorMessage);
-        _log.debug(problem);
+        _log.debug(problem.toString());
         return problem;
     }
 

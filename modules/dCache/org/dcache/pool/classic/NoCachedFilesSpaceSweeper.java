@@ -1,6 +1,7 @@
 package org.dcache.pool.classic;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PnfsId;
@@ -28,7 +29,7 @@ public class NoCachedFilesSpaceSweeper
     implements SpaceSweeperPolicy
 {
     private final static Logger _log =
-        Logger.getLogger(NoCachedFilesSpaceSweeper.class);
+        LoggerFactory.getLogger(NoCachedFilesSpaceSweeper.class);
 
     private Repository _repository;
 

@@ -10,7 +10,8 @@ import java.io.Serializable;
 import java.io.ObjectInputStream;
 import java.io.IOException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.EntryState;
@@ -26,7 +27,7 @@ public class CacheRepositoryEntryState implements Serializable
     static final long serialVersionUID = -715461991190516015L;
 
     private static Logger _log =
-        Logger.getLogger("logger.org.dcache.repository");
+        LoggerFactory.getLogger("logger.org.dcache.repository");
 
     private final Set<StickyRecord> _sticky = new HashSet<StickyRecord>(0);
     private boolean _precious    = false;

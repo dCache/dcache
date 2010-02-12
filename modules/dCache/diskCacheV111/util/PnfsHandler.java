@@ -7,7 +7,8 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.EnumSet;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellPath;
@@ -55,7 +56,7 @@ public class PnfsHandler
     private Subject _subject;
 
     private static final Logger _logNameSpace =
-        Logger.getLogger("logger.org.dcache.namespace." + PnfsHandler.class.getName());
+        LoggerFactory.getLogger("logger.org.dcache.namespace." + PnfsHandler.class.getName());
 
     private static CellStub createStub(CellPath path)
     {

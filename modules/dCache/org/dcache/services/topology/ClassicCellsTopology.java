@@ -18,14 +18,15 @@ import java.util.ArrayDeque;
 import java.util.Set;
 import java.util.HashSet;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ClassicCellsTopology
     extends AbstractCellComponent
     implements CellsTopology,
                CellCommandListener
 {
-    private Logger _log = Logger.getLogger(ClassicCellsTopology.class);
+    private Logger _log = LoggerFactory.getLogger(ClassicCellsTopology.class);
 
     private volatile CellDomainNode[] _infoMap;
 

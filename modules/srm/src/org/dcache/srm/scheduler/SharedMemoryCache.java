@@ -14,7 +14,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.HashMap;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -23,7 +24,7 @@ import org.apache.log4j.Logger;
 public class SharedMemoryCache {
 
     private static final Logger _log =
-        Logger.getLogger(SharedMemoryCache.class);
+        LoggerFactory.getLogger(SharedMemoryCache.class);
 
     /**
      * This set is used to keep the Jobs that are in active

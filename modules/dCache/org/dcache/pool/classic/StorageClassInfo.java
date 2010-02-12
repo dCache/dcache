@@ -8,12 +8,13 @@ import org.dcache.pool.repository.CacheEntry;
 
 import java.util.*;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.log4j.NDC;
 
 public class StorageClassInfo implements CacheFileAvailable
 {
-    private static Logger _log = Logger.getLogger(StorageClassInfo.class);
+    private static Logger _log = LoggerFactory.getLogger(StorageClassInfo.class);
 
     static class Entry
     {

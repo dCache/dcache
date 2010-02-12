@@ -1,6 +1,7 @@
 package org.dcache.services.info.gathers;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
@@ -19,7 +20,7 @@ import dmg.cells.nucleus.UOID;
  */
 public class CellInfoMsgHandler extends CellMessageHandlerSkel {
 	
-	private static Logger _log = Logger.getLogger( CellInfoMsgHandler.class);
+	private static Logger _log = LoggerFactory.getLogger( CellInfoMsgHandler.class);
 	
 	private static final StatePath DOMAINS_PATH = new StatePath( "domains");
 

@@ -4,7 +4,8 @@ import java.io.RandomAccessFile;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.dcache.pool.movers.MoverProtocol;
 import org.dcache.pool.movers.ManualMover;
@@ -33,7 +34,7 @@ public class NFSv41ProtocolMover implements ManualMover {
     private long _ended = 0;
 
     private int _ioMode = MoverProtocol.READ;
-    private static final Logger _log = Logger.getLogger(NFSv41ProtocolMover.class.getName());
+    private static final Logger _log = LoggerFactory.getLogger(NFSv41ProtocolMover.class.getName());
 
     private static NFSv4MoverHandler _nfsIO;
     static {
@@ -48,7 +49,7 @@ public class NFSv41ProtocolMover implements ManualMover {
             _nfsIO = new NFSv4MoverHandler(portRange);
         }catch(Exception e) {
             _nfsIO = null;
-            _log.fatal("Failed to initialize NFS mover", e);
+            _log.error("Failed to initialize NFS mover", e);
         }
     }
 

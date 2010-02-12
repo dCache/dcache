@@ -14,14 +14,15 @@ import java.util.regex.Pattern;
 
 import dmg.cells.nucleus.CellPath;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class PoolListFromPoolManager
     implements RefreshablePoolList,
                MessageCallback<PoolManagerGetPoolsMessage>
 {
     private static final Logger _log =
-        Logger.getLogger(PoolListFromPoolManager.class);
+        LoggerFactory.getLogger(PoolListFromPoolManager.class);
 
     private final double _spaceFactor;
     private final double _cpuFactor;

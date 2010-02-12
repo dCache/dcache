@@ -2,7 +2,8 @@ package org.dcache.services.info.stateInfo;
 
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.BooleanStateValue;
 import org.dcache.services.info.base.FloatingPointStateValue;
 import org.dcache.services.info.base.IntegerStateValue;
@@ -23,7 +24,7 @@ import org.dcache.services.info.base.StringStateValue;
  */
 public class SkeletonListVisitor implements StateVisitor {
 
-	private static Logger _log = Logger.getLogger( SkeletonListVisitor.class);
+	private static Logger _log = LoggerFactory.getLogger( SkeletonListVisitor.class);
 
 	final private StatePath _pathToList;
 	

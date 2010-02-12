@@ -22,12 +22,13 @@ import org.dcache.commons.util.SqlHelper;
 import org.dcache.util.JdbcConnectionPool;
 import org.dcache.auth.AuthorizationRecord;
 import org.dcache.auth.persistence.AuthRecordPersistenceManager;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 class PinManagerDatabase
 {
-    private static final Logger _logger = Logger.getLogger(PinManagerDatabase.class);
+    private static final Logger _logger = LoggerFactory.getLogger(PinManagerDatabase.class);
     // keep the names spelled in the lower case to make postgress
     // driver to work correctly
     private static final String PinManagerPinsTableName="pinsv3";
@@ -279,7 +280,7 @@ class PinManagerDatabase
             }
             catch (SQLException sqle) {
                 _logger.error("updateSchemaToVersion3 failed, schema might have been updated already:");
-                _logger.error(sqle);
+                _logger.error(sqle.toString());
             }
             previousSchemaVersion = 3;
         }
@@ -289,7 +290,7 @@ class PinManagerDatabase
             }
             catch (SQLException sqle) {
                 _logger.error("updateSchemaToVersion3 failed, schema might have been updated already:");
-                _logger.error(sqle);
+                _logger.error(sqle.toString());
             }
             previousSchemaVersion = 3;
 
@@ -303,7 +304,7 @@ class PinManagerDatabase
                 "SELECT PinRequestId, PnfsId, Expiration FROM "
                 + TABLE_OLDPINREQUEST;
             Statement stmt = con.createStatement();
-            _logger.debug(SelectEverythingFromOldPinRewquestTable);
+            _logger.debug(SelectEverythingFromOldPinRewquestTable.toString());
 
             PreparedStatement pinsInsertStmt =
                 con.prepareStatement(InsertIntoPinsTable);
@@ -369,7 +370,7 @@ class PinManagerDatabase
             PreparedStatement pinReqsInsertStmt =
                 con.prepareStatement(InsertIntoPinRequestsTable);
             Statement stmt = con.createStatement();
-            _logger.debug(SelectAllV2Requests);
+            _logger.debug(SelectAllV2Requests.toString());
             ResultSet rs = stmt.executeQuery(SelectAllV2Requests);
             while (rs.next()) {
                 long pinId = rs.getLong(1);
@@ -524,7 +525,7 @@ class PinManagerDatabase
             _logger.error(sqe.toString());
             throw sqe;
         } catch (Exception ex) {
-            _logger.error(ex);
+            _logger.error(ex.toString());
             throw new SQLException(ex.toString());
         }
         finally {
@@ -549,7 +550,7 @@ class PinManagerDatabase
             try {
                 stSelectNextPinRequestIdForUpdate =
                     _con.prepareStatement(SelectNextPinRequestIdForUpdate);
-                _logger.debug(SelectNextPinRequestIdForUpdate);
+                _logger.debug(SelectNextPinRequestIdForUpdate.toString());
                 rsSelectNextPinRequestIdForUpdate = stSelectNextPinRequestIdForUpdate.executeQuery();
                 if (!rsSelectNextPinRequestIdForUpdate.next()) {
                     throw new SQLException("Table " + PinManagerNextRequestIdTableName + " is empty.");
@@ -557,7 +558,7 @@ class PinManagerDatabase
                 nextLongBase = rsSelectNextPinRequestIdForUpdate.getLong("NEXTLONG");
                 _logger.debug("nextLongBase=" + nextLongBase);
                 stIncreasePinRequestId = _con.prepareStatement(IncreasePinRequestId);
-                _logger.debug(IncreasePinRequestId);
+                _logger.debug(IncreasePinRequestId.toString());
                 stIncreasePinRequestId.executeUpdate();
             } catch (SQLException e) {
                 _logger.error("Failed to obtain ID sequence: " + e.toString());
@@ -1462,7 +1463,7 @@ class PinManagerDatabase
             assert pinRequest != null;
             return pinRequest;
         } catch(SQLException sqle) {
-            _logger.error(sqle);
+            _logger.error(sqle.toString());
             throw new PinDBException("insertPinRequestIntoNewOrExistingPin failed: "+sqle);
         }
     }
@@ -1486,7 +1487,7 @@ class PinManagerDatabase
                 PinManagerPinState.MOVING);
             return getPin( _con, id);
         } catch(SQLException sqle) {
-            _logger.error(sqle);
+            _logger.error(sqle.toString());
             throw new PinDBException("newPinForPinMove failed: "+sqle);
         }
     }
@@ -1509,7 +1510,7 @@ class PinManagerDatabase
                 PinManagerPinState.PINNING);
             return getPin( _con, id);
         } catch(SQLException sqle) {
-            _logger.error(sqle);
+            _logger.error(sqle.toString());
             throw new PinDBException("newPinForRepin failed: "+sqle);
         }
     }
@@ -1650,12 +1651,12 @@ class PinManagerDatabase
            _con.commit();
        } catch(SQLException sqle) {
             _logger.error("commitDBOperations failed with ");
-            _logger.error(sqle);
+            _logger.error(sqle.toString());
             _logger.error("ROLLBACK TRANSACTION");
             try {
                 _con.rollback();
             } catch (SQLException sqle1) {
-                _logger.error(sqle1);
+                _logger.error(sqle1.toString());
             }
             throw new PinDBException(2,"commitDBOperations failed with "+
                 sqle.toString()) ;

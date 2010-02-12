@@ -24,7 +24,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import org.dcache.srm.SRMUserPersistenceManager;
 import org.dcache.srm.SRMUser;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.Map;
 import java.util.HashMap;
 /**
@@ -36,7 +37,7 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
     private Map<Long,AuthorizationRecord> authRecCache  = 
         new HashMap<Long,AuthorizationRecord>();
     private static final Logger _logJpa =
-            Logger.getLogger( AuthRecordPersistenceManager.class);
+            LoggerFactory.getLogger( AuthRecordPersistenceManager.class);
     EntityManager em ;
     public AuthRecordPersistenceManager(String propertiesFile) throws IOException {
         Properties p = new Properties();

@@ -15,11 +15,12 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.util.RequestStatusTool;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class LsRequest extends ContainerRequest {
     private final static Logger logger =
-            Logger.getLogger(LsRequest.class);
+            LoggerFactory.getLogger(LsRequest.class);
 
         private final long offset;         // starting entry number
         private final long count;          // max number of entries to be returned as set by client
@@ -365,7 +366,7 @@ public final class LsRequest extends ContainerRequest {
                                 }
                         }
                         catch (Exception e) {
-                                logger.error(e);
+                                logger.error(e.toString());
                                 got_exception++;
                         }
                 }

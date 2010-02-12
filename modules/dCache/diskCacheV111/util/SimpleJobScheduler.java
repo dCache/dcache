@@ -13,7 +13,8 @@ import org.dcache.util.ReflectionUtils;
 import org.dcache.util.CDCThreadFactory;
 import org.dcache.util.FireAndForgetTask;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.log4j.NDC;
 
 import dmg.cells.nucleus.CDC;
@@ -21,7 +22,7 @@ import dmg.cells.nucleus.CDC;
 public class SimpleJobScheduler implements JobScheduler, Runnable
 {
     private final static Logger _log =
-        Logger.getLogger(SimpleJobScheduler.class);
+        LoggerFactory.getLogger(SimpleJobScheduler.class);
 
     public static final int LOW = 0;
     public static final int REGULAR = 1;

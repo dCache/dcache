@@ -388,7 +388,7 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
                     abortAllPendingFiles();
                 }
             }catch(Exception e1) {
-                logger.elog(e1);
+                logger.elog(e1.toString());
             }
         } finally {
             if(copier != null) {
@@ -410,7 +410,7 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
             copier.stop();
             abortAllPendingFiles();
         }catch(Exception e) {
-            logger.elog(e);
+            logger.elog(e.toString());
         }
     }
 

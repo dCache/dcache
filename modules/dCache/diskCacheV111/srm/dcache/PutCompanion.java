@@ -98,7 +98,8 @@ import org.dcache.auth.Subjects;
 import javax.security.auth.Subject;
 import org.dcache.namespace.PermissionHandler;
 import org.dcache.acl.enums.AccessType;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -107,7 +108,7 @@ import org.apache.log4j.Logger;
 
 public final class PutCompanion implements MessageCallback<PnfsMessage>
 {
-    private final static Logger _log = Logger.getLogger(PutCompanion.class);
+    private final static Logger _log = LoggerFactory.getLogger(PutCompanion.class);
 
     private static final int PNFS_MAX_FILE_NAME_LENGTH=199;
     public  static final long PNFS_TIMEOUT = 10*Constants.MINUTE;
@@ -238,7 +239,7 @@ public final class PutCompanion implements MessageCallback<PnfsMessage>
                 String errorString = "GetStorageInfoFailed message.getReturnCode" +
                         " () != 0, error="+error;
                 unregisterAndFailCreator(errorString);
-                _log.error(errorString);
+                _log.error(errorString.toString());
                 callbacks.GetStorageInfoFailed("GetStorageInfoFailed " +
                         "PnfsGetStorageInfoMessage.getReturnCode () != 0 => " +
                         "parrent directory does not exist");
@@ -298,7 +299,7 @@ public final class PutCompanion implements MessageCallback<PnfsMessage>
             if (attributes.getFileType() != FileType.DIR) {
                 String error ="file "+metadata_msg.getPnfsPath()+
                 " is not a directory";
-                    _log.error(error);
+                    _log.error(error.toString());
                     unregisterAndFailCreator(error);
                     callbacks.InvalidPathError(error);
                     return;
@@ -329,7 +330,7 @@ public final class PutCompanion implements MessageCallback<PnfsMessage>
                 else {
                     String error = "path does not exist and user has no " +
                             "permissions to create it";
-                    _log.warn(error);
+                    _log.warn(error.toString());
                     unregisterAndFailCreator(error);
                     callbacks.InvalidPathError(error);
                     return;
@@ -342,7 +343,7 @@ public final class PutCompanion implements MessageCallback<PnfsMessage>
                 if(canCreateFile != AccessType.ACCESS_ALLOWED ) {
                     String error = "user has no permission to create file "+
                             getCurrentDirPath();
-                    _log.warn(error);
+                    _log.warn(error.toString());
                     callbacks.AuthorizationError(error);
                     return;
 
@@ -356,7 +357,7 @@ public final class PutCompanion implements MessageCallback<PnfsMessage>
             }
         }
         catch(java.lang.RuntimeException re) {
-            _log.error(re, re);
+            _log.error(re.toString(), re);
             throw re;
         }
     }
@@ -394,7 +395,7 @@ public final class PutCompanion implements MessageCallback<PnfsMessage>
                     new ThreadManagerMessageCallback(this) );
         }
         catch(Exception ee ) {
-            _log.error(ee);
+            _log.error(ee.toString());
             callbacks.Exception(ee);
         }
         lastOperationTime = System.currentTimeMillis();

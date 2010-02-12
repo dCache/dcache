@@ -3,14 +3,15 @@
  */
 package diskCacheV111.namespace.provider;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 
 public class FsTrash implements Trash
 {
     private final String _trash;
-    private static final Logger _logger =  Logger.getLogger("logger.org.dcache.namespace." + FsTrash.class.getName());
+    private static final Logger _logger =  LoggerFactory.getLogger("logger.org.dcache.namespace." + FsTrash.class.getName());
 
 
     public FsTrash(String location)

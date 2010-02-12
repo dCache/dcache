@@ -5,11 +5,12 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class NetworkServer extends Thread {
 
-    private final static Logger _log = Logger.getLogger(NetworkServer.class);
+    private final static Logger _log = LoggerFactory.getLogger(NetworkServer.class);
 
     ConnectionManager chMgr;
     int listenPort;

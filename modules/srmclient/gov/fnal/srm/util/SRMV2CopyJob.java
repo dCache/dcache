@@ -258,7 +258,7 @@ public class SRMV2CopyJob implements CopyJob {
                 }
 
             } catch(Exception e) {
-                logger.elog(e);
+                logger.elog(e.toString());
             }
             
         }

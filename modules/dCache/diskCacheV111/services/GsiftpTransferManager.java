@@ -15,14 +15,15 @@ import diskCacheV111.vehicles.transferManager.RemoteGsiftpTransferManagerMessage
 import diskCacheV111.vehicles.transferManager.RemoteGsiftpDelegateUserCredentialsMessage;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import java.net.InetAddress;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author  timur
  */
 public class GsiftpTransferManager extends TransferManager{
-    private static final Logger log = Logger.getLogger(GsiftpTransferManager.class);
+    private static final Logger log = LoggerFactory.getLogger(GsiftpTransferManager.class);
 
     public boolean _messageArrived(CellMessage cellMessage ) {
        Object object = cellMessage.getMessageObject();
@@ -41,7 +42,7 @@ public class GsiftpTransferManager extends TransferManager{
             }
             catch(Exception e)
             {
-                log.error(e);
+                log.error(e.toString());
                 return false;
             }
         }

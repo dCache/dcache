@@ -165,7 +165,7 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
                                 " - Status code:  " +
                                 response.getReturnStatus().getStatusCode().getValue() + '\n' +
                                 " - Explanation:  " + response.getReturnStatus().getExplanation();
-                        logger.log(statusText);
+                        logger.log(statusText.toString());
                         if (RequestStatusTool.isFailedRequestStatus(rs)) {
                                 sb.append(statusText+'\n');
                         }
@@ -228,7 +228,7 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
                                                         status.getStatusCode().getValue() + '\n' +
                                                         " - Explanation:  " + status.getExplanation() + '\n' + 
                                                         " - request token: " +requestToken;
-                                                logger.log(statusText);
+                                                logger.log(statusText.toString());
                                                 if (RequestStatusTool.isFailedRequestStatus(status)){
                                                         sb.append(statusText+'\n');
                                                 }
@@ -258,7 +258,7 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
                                 }
                         }
                         catch (Exception e1) {
-                                logger.elog(e1);
+                                logger.elog(e1.toString());
                         }
                         finally {
                                 Runtime.getRuntime().removeShutdownHook(hook);
@@ -278,7 +278,7 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
                         }
                 }
                 catch(Exception e) {
-                        logger.elog(e);
+                        logger.elog(e.toString());
                 }
         }
 

@@ -1,6 +1,7 @@
 package org.dcache.pool.repository.v5;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.util.PnfsHandler;
@@ -34,7 +35,7 @@ class WriteHandleImpl implements WriteHandle
     }
 
     private static Logger _log =
-        Logger.getLogger("logger.org.dcache.repository");
+        LoggerFactory.getLogger("logger.org.dcache.repository");
 
     /**
      * Time that a new CACHED file with no sticky flags will be marked

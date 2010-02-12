@@ -1,11 +1,12 @@
 package org.dcache.xrootd2.protocol.messages;
 import org.dcache.xrootd2.protocol.XrootdProtocol;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ErrorResponse extends AbstractResponseMessage
 {
-    private final static Logger _log = Logger.getLogger(ErrorResponse.class);
+    private final static Logger _log = LoggerFactory.getLogger(ErrorResponse.class);
 
     public ErrorResponse(int sId, int errnum, String errmsg)
     {

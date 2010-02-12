@@ -99,7 +99,8 @@ import org.apache.axis.types.URI;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.TAccessLatency;
 import org.dcache.srm.v2_2.TRetentionPolicy;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -108,7 +109,7 @@ import org.apache.log4j.Logger;
  * @version
  */
 public final class PutFileRequest extends FileRequest {
-    private final static Logger logger = Logger.getLogger(PutFileRequest.class);
+    private final static Logger logger = LoggerFactory.getLogger(PutFileRequest.class);
     // this is anSurl path
     private GlobusURL surl;
     private GlobusURL turl;
@@ -316,7 +317,7 @@ public final class PutFileRequest extends FileRequest {
                 }
             catch(SRMAuthorizationException srme) {
                 String error =srme.getMessage();
-                logger.error(error);
+                logger.error(error.toString());
                 try {
                     setStateAndStatusCode(State.FAILED,
                             error,
@@ -329,7 +330,7 @@ public final class PutFileRequest extends FileRequest {
             catch(Exception srme) {
                     String error =
                 "can not obtain turl for file:"+srme;
-                    logger.error(error);
+                    logger.error(error.toString());
                     try {
                         setState(State.FAILED,error);
                     }
@@ -384,7 +385,7 @@ public final class PutFileRequest extends FileRequest {
         try {
             anSurl= new URI(getSurlString());
         } catch (Exception e) {
-            logger.error(e);
+            logger.error(e.toString());
             throw new java.sql.SQLException("wrong surl format");
         }
         fileStatus.setSURL(anSurl);
@@ -396,7 +397,7 @@ public final class PutFileRequest extends FileRequest {
             try {
                 transferURL = new URI(turlstring);
             } catch (Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
                 throw new java.sql.SQLException("wrong turl format");
             }
             fileStatus.setTransferURL(transferURL);
@@ -424,7 +425,7 @@ public final class PutFileRequest extends FileRequest {
         try {
             anSurl = new URI(getSurlString());
         } catch (Exception e) {
-            logger.error(e);
+            logger.error(e.toString());
             throw new java.sql.SQLException("wrong surl format");
         }
         TReturnStatus returnStatus = getReturnStatus();
@@ -455,7 +456,7 @@ public final class PutFileRequest extends FileRequest {
                 }
                 return g_turl;
             } catch(MalformedURLException murle) {
-                logger.error(murle);
+                logger.error(murle.toString());
                 throw new SRMException(murle.toString());
             }
         }
@@ -465,7 +466,7 @@ public final class PutFileRequest extends FileRequest {
             String aTurl =getStorage().getPutTurl(request.getUser(),getPath(), firstDcapTurl);
             return new GlobusURL(aTurl);
         } catch(MalformedURLException murle) {
-            logger.error(murle);
+            logger.error(murle.toString());
             throw new SRMException(murle.toString());
         }
     }
@@ -634,14 +635,14 @@ public final class PutFileRequest extends FileRequest {
             try {
                 getRequest().resetRetryDeltaTime();
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire);
+                logger.error(ire.toString());
             }
         }
         SRMUser user;
          try {
              user = getUser();
          }catch(SRMInvalidRequestException ire) {
-             logger.error(ire);
+             logger.error(ire.toString());
              return;
          }
         if(State.isFinalState(state)) {
@@ -875,7 +876,7 @@ public final class PutFileRequest extends FileRequest {
 
                 logger.error("PutCallbacks error: "+ reason);
             } catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
 
@@ -890,7 +891,7 @@ public final class PutFileRequest extends FileRequest {
 
                 logger.error("PutCallbacks error: "+ error);
             } catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
 
@@ -905,7 +906,7 @@ public final class PutFileRequest extends FileRequest {
                 }
                 logger.error("PutCallbacks exception",e);
             } catch(Exception e1) {
-                logger.error(e1);
+                logger.error(e1.toString());
             }
         }
 
@@ -920,7 +921,7 @@ public final class PutFileRequest extends FileRequest {
 
                 logger.error("PutCallbacks error: "+ reason);
             } catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
 
@@ -941,11 +942,11 @@ public final class PutFileRequest extends FileRequest {
                     try {
                         scheduler.schedule(fr);
                     } catch(Exception ie) {
-                        logger.error(ie);
+                        logger.error(ie.toString());
                     }
                 }
             } catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
 
@@ -960,7 +961,7 @@ public final class PutFileRequest extends FileRequest {
 
                 logger.error("PutCallbacks Timeout");
             } catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
 
@@ -978,7 +979,7 @@ public final class PutFileRequest extends FileRequest {
 
                 logger.error("PutCallbacks error: "+ reason);
             } catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
 
@@ -996,7 +997,7 @@ public final class PutFileRequest extends FileRequest {
 
                 logger.error("PutCallbacks error: "+ reason);
             } catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
     }
@@ -1030,7 +1031,7 @@ public final class PutFileRequest extends FileRequest {
                 }
                 logger.error("PutReserveSpaceCallbacks exception",e);
             } catch(Exception e1) {
-                logger.error(e1);
+                logger.error(e1.toString());
             }
         }
 
@@ -1045,7 +1046,7 @@ public final class PutFileRequest extends FileRequest {
 
                 logger.error("PutReserveSpaceCallbacks error: "+ reason);
             } catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
 
@@ -1063,7 +1064,7 @@ public final class PutFileRequest extends FileRequest {
 
                 logger.error("PutReserveSpaceCallbacks error: "+ reason);
             } catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
 
@@ -1083,11 +1084,11 @@ public final class PutFileRequest extends FileRequest {
                     try {
                         scheduler.schedule(fr);
                     } catch(Exception ie) {
-                        logger.error(ie);
+                        logger.error(ie.toString());
                     }
                 }
             } catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
     }
@@ -1116,7 +1117,7 @@ public final class PutFileRequest extends FileRequest {
                 String error = e.toString();
                 logger.error("PutReleaseSpaceCallbacks exception",e);
             } catch(Exception e1) {
-                logger.error(e1);
+                logger.error(e1.toString());
             }
         }
 
@@ -1126,7 +1127,7 @@ public final class PutFileRequest extends FileRequest {
 
                 logger.error("PutReleaseSpaceCallbacks error: "+ reason);
             } catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
 
@@ -1135,7 +1136,7 @@ public final class PutFileRequest extends FileRequest {
                 PutFileRequest fr = getPutFileRequest();
                 logger.debug("Space Released: spaceReservationToken:"+spaceReservationToken+" remaining space="+reservedSpaceSize);
             } catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
     }
@@ -1169,7 +1170,7 @@ public final class PutFileRequest extends FileRequest {
                 }
                 logger.error("PutUseSpaceCallbacks exception",e);
             } catch(Exception e1) {
-                logger.error(e1);
+                logger.error(e1.toString());
             }
         }
 
@@ -1184,7 +1185,7 @@ public final class PutFileRequest extends FileRequest {
 
                 logger.error("PutUseSpaceCallbacks error: "+ reason);
             } catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
         /**
@@ -1204,7 +1205,7 @@ public final class PutFileRequest extends FileRequest {
 
                 logger.error("PutUseSpaceCallbacks error: "+ reason);
             } catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
 
         }
@@ -1226,7 +1227,7 @@ public final class PutFileRequest extends FileRequest {
 
                 logger.error("PutUseSpaceCallbacks error: "+ reason);
             } catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
 
         }
@@ -1248,7 +1249,7 @@ public final class PutFileRequest extends FileRequest {
 
                 logger.error("PutUseSpaceCallbacks error: "+ reason);
             } catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
 
         }
@@ -1270,7 +1271,7 @@ public final class PutFileRequest extends FileRequest {
 
                 logger.error("PutUseSpaceCallbacks error: "+ reason);
             } catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
 
         }
@@ -1287,11 +1288,11 @@ public final class PutFileRequest extends FileRequest {
                     try {
                         scheduler.schedule(fr);
                     } catch(Exception ie) {
-                        logger.error(ie);
+                        logger.error(ie.toString());
                     }
                 }
             } catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
     }
@@ -1319,7 +1320,7 @@ public final class PutFileRequest extends FileRequest {
                 String error = e.toString();
                 logger.error("PutCancelUseOfSpaceCallbacks exception",e);
             } catch(Exception e1) {
-                logger.error(e1);
+                logger.error(e1.toString());
             }
         }
 
@@ -1329,7 +1330,7 @@ public final class PutFileRequest extends FileRequest {
 
                 logger.error("PutCancelUseOfSpaceCallbacks error: "+ reason);
             } catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
 
@@ -1338,7 +1339,7 @@ public final class PutFileRequest extends FileRequest {
                 PutFileRequest fr = getPutFileRequest();
                 logger.debug("Umarked Space as Being Used");
             } catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
     }
@@ -1366,7 +1367,7 @@ public final class PutFileRequest extends FileRequest {
                 fr.setSpaceReservationId(null);
                 logger.error("TheReleaseSpaceCallbacks error: "+ error);
             } catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
 
@@ -1376,7 +1377,7 @@ public final class PutFileRequest extends FileRequest {
                 fr.setSpaceReservationId(null);
                 logger.error("TheReleaseSpaceCallbacks exception",e);
             } catch(Exception e1) {
-                logger.error(e1);
+                logger.error(e1.toString());
             }
         }
 
@@ -1389,7 +1390,7 @@ public final class PutFileRequest extends FileRequest {
                 fr.setSpaceReservationId(null);
                 logger.error("TheReleaseSpaceCallbacks Timeout");
             } catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
 
@@ -1399,7 +1400,7 @@ public final class PutFileRequest extends FileRequest {
                 logger.debug("TheReleaseSpaceCallbacks: SpaceReleased");
                 fr.setSpaceReservationId(null);
             } catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
 
@@ -1409,7 +1410,7 @@ public final class PutFileRequest extends FileRequest {
                 fr.setSpaceReservationId(null);
                 logger.error("TheReleaseSpaceCallbacks error: "+ reason+" ignoring, could have been all used up");
             } catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
 

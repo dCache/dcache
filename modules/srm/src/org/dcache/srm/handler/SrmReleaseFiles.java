@@ -32,7 +32,8 @@ import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.SchedulerFactory;
 import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
 import org.apache.axis.types.URI; 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.srm.SRM;
 import java.util.Set;
 import java.util.HashSet;
@@ -52,7 +53,7 @@ public class SrmReleaseFiles {
     
     
     private static final Logger logger= 
-        Logger.getLogger(SrmReleaseFiles.class.getName()) ;
+        LoggerFactory.getLogger(SrmReleaseFiles.class.getName()) ;
     
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement storage;
@@ -97,14 +98,14 @@ public class SrmReleaseFiles {
             response = getFailedResponse(" malformed uri : "+mue.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
         } catch(SQLException sqle) {
-            logger.error(sqle);
+            logger.error(sqle.toString());
             response = getFailedResponse("sql error "+sqle.getMessage(),
                     TStatusCode.SRM_INTERNAL_ERROR);
         } catch(SRMInvalidRequestException ire) {
             response = getFailedResponse(ire.toString(),
                     TStatusCode.SRM_INVALID_REQUEST);
         } catch(SRMException srme) {
-            logger.error(srme);
+            logger.error(srme.toString());
             response = getFailedResponse(srme.toString());
         } catch(IllegalStateTransition ist) {
             logger.error("Illegal State Transition : " +ist.getMessage());
@@ -336,7 +337,7 @@ public class SrmReleaseFiles {
                     new TReturnStatus(TStatusCode.SRM_SUCCESS,"released"));
             }
             catch(Exception e) {
-                logger.warn(e);
+                logger.warn(e.toString());
                 //if rs status is TStatusCode.SRM_INTERNAL_ERROR 
                 // this means it was not changed since 
                 // it is set initially in the calling function
@@ -424,7 +425,7 @@ public class SrmReleaseFiles {
                 activeRequestIds = 
                    reqstorage.getActiveFileRequestIds(scheduler.getId());
             } catch (java.sql.SQLException sqle) {
-                logger.warn(sqle);
+                logger.warn(sqle.toString());
                 //just return empty
                 return foundRequests;
             }
@@ -434,7 +435,7 @@ public class SrmReleaseFiles {
                 try {
                     job =  Job.getJob(requestId);
                 } catch (SRMInvalidRequestException ire) {
-                    logger.error(ire);
+                    logger.error(ire.toString());
                     continue;
                 }
                 if(job == null || !(job instanceof BringOnlineFileRequest)) {
@@ -465,7 +466,7 @@ public class SrmReleaseFiles {
             activeRequestIds = 
                 reqstorage.getActiveFileRequestIds(scheduler.getId());
         } catch (java.sql.SQLException sqle) {
-            logger.warn(sqle);
+            logger.warn(sqle.toString());
             //just return empty
             return foundRequests;
         }
@@ -476,7 +477,7 @@ public class SrmReleaseFiles {
             try {
                 job =  Job.getJob(requestId);
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire);
+                logger.error(ire.toString());
                 continue;
             }
             if(job == null || !(job instanceof GetFileRequest)) {

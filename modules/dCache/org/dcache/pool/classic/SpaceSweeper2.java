@@ -31,13 +31,14 @@ import java.util.Iterator;
 import java.text.SimpleDateFormat;
 import java.io.PrintWriter;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SpaceSweeper2
     implements Runnable, CellCommandListener, StateChangeListener,
                SpaceSweeperPolicy
 {
-    private final static Logger _log = Logger.getLogger(SpaceSweeper2.class);
+    private final static Logger _log = LoggerFactory.getLogger(SpaceSweeper2.class);
 
     private static SimpleDateFormat __format =
         new SimpleDateFormat("HH:mm-MM/dd");
@@ -309,7 +310,7 @@ public class SpaceSweeper2
                         continue;
                     }
                     if (!isRemovable(entry)) {
-                        _log.fatal("file skipped by sweeper (not removable): " + entry);
+                        _log.error("file skipped by sweeper (not removable): " + entry);
                         continue;
                     }
                     long size = entry.getReplicaSize();

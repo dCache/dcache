@@ -77,13 +77,14 @@ import org.dcache.srm.SRMException;
 import org.dcache.srm.request.RequestCredential;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 /**
  *
  * @author  timur
  */
 public abstract class TurlGetterPutter implements Runnable {
-    private static final Logger logger = Logger.getLogger(TurlGetterPutter.class);
+    private static final Logger logger = LoggerFactory.getLogger(TurlGetterPutter.class);
     private PropertyChangeSupport changeSupport = new PropertyChangeSupport(this);
     
     public void notifyOfTURL(String SURL,String TURL,String requestId, String fileId,Long size) {

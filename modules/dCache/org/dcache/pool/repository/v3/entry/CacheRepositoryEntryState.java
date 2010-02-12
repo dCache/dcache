@@ -11,7 +11,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.pool.repository.v3.entry.state.Sticky;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.EntryState;
@@ -22,7 +23,7 @@ import java.util.regex.Pattern;
 public class CacheRepositoryEntryState
 {
     // new logger concept
-    private static Logger _logBussiness = Logger.getLogger("logger.org.dcache.repository");
+    private static Logger _logBussiness = LoggerFactory.getLogger("logger.org.dcache.repository");
 
 
     // format version

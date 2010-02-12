@@ -22,7 +22,8 @@ import org.dcache.srm.request.ContainerRequest;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.IllegalStateTransition;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.axis.types.URI.MalformedURIException;
 import java.sql.SQLException;
 
@@ -33,7 +34,7 @@ import java.sql.SQLException;
 public class SrmGetRequestSummary {
     
     private static Logger logger = 
-            Logger.getLogger(SrmGetRequestSummary.class);
+            LoggerFactory.getLogger(SrmGetRequestSummary.class);
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement storage;
     SrmGetRequestSummaryRequest srmGetRequestSummaryRequest;
@@ -72,11 +73,11 @@ public class SrmGetRequestSummary {
             response = getFailedResponse(" malformed uri : "+mue.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
         } catch(SQLException sqle) {
-            logger.error(sqle);
+            logger.error(sqle.toString());
             response = getFailedResponse("sql error "+sqle.getMessage(),
                     TStatusCode.SRM_INTERNAL_ERROR);
         } catch(SRMException srme) {
-            logger.error(srme);
+            logger.error(srme.toString());
             response = getFailedResponse(srme.toString());
         } catch(IllegalStateTransition ist) {
             logger.error("Illegal State Transition : " +ist.getMessage());

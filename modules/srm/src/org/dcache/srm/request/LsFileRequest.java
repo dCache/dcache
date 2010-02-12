@@ -22,11 +22,12 @@ import java.util.List;
 import java.util.LinkedList;
 import java.util.Collections;
 import java.util.Comparator;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class LsFileRequest extends FileRequest {
         private static final Logger logger =
-                Logger.getLogger(LsFileRequest.class);
+                LoggerFactory.getLogger(LsFileRequest.class);
         private org.apache.axis.types.URI surl;
         private TMetaDataPathDetail metaDataPathDetail;
         private int recursionDepth;
@@ -219,7 +220,7 @@ public final class LsFileRequest extends FileRequest {
                                 getRequest().resetRetryDeltaTime();
                         }
                         catch(SRMInvalidRequestException ire) {
-                                logger.error(ire);
+                                logger.error(ire.toString());
                         }
                 }
         }

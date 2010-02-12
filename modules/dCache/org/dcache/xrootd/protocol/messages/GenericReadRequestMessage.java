@@ -1,6 +1,7 @@
 package org.dcache.xrootd.protocol.messages;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class GenericReadRequestMessage extends AbstractRequestMessage {
 
@@ -34,7 +35,7 @@ public abstract class GenericReadRequestMessage extends AbstractRequestMessage {
     }
 
     private final static Logger _log =
-        Logger.getLogger(GenericReadRequestMessage.class);
+        LoggerFactory.getLogger(GenericReadRequestMessage.class);
 
     private EmbeddedReadRequest[] readList;
 

@@ -10,7 +10,8 @@ import java.sql.*;
 import java.util.*;
 import javax.sql.DataSource;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.commons.pool.ObjectPool;
 import org.apache.commons.pool.impl.GenericObjectPool;
@@ -45,7 +46,7 @@ public class JdbcConnectionPool {
     private final GenericObjectPool connectionPool;
     private final DataSource dataSource;
     private static Logger _logSql = 
-            Logger.getLogger(
+            LoggerFactory.getLogger(
             "logger.org.dcache.db.sql."+
             JdbcConnectionPool.class.getName());
 

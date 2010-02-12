@@ -3,7 +3,8 @@ package org.dcache.services.info.gathers;
 import java.util.Date;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StateComposite;
 import org.dcache.services.info.base.StatePath;
@@ -17,7 +18,7 @@ import diskCacheV111.vehicles.Message;
 
 public class SrmSpaceDetailsMsgHandler implements MessageHandler {
 	
-	private static Logger _log = Logger.getLogger( SrmSpaceDetailsMsgHandler.class);
+	private static Logger _log = LoggerFactory.getLogger( SrmSpaceDetailsMsgHandler.class);
 	private static final StatePath SPACES_PATH = StatePath.parsePath("reservations");
 	private static final StatePath LINKGROUPS = new StatePath("linkgroups");
 	private static final String SRM_ROLE_WILDCARD = "*";

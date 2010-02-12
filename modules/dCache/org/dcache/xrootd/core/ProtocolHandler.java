@@ -23,11 +23,12 @@ import org.dcache.xrootd.protocol.messages.StatxRequest;
 import org.dcache.xrootd.protocol.messages.SyncRequest;
 import org.dcache.xrootd.protocol.messages.WriteRequest;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ProtocolHandler {
 
-    private final static Logger _log = Logger.getLogger(ProtocolHandler.class);
+    private final static Logger _log = LoggerFactory.getLogger(ProtocolHandler.class);
 
     private PhysicalXrootdConnection physicalConnection;
 

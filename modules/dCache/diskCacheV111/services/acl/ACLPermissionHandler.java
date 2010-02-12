@@ -3,7 +3,8 @@ package diskCacheV111.services.acl;
 import java.util.Arrays;
 import java.util.Properties;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.acl.ACL;
 import org.dcache.acl.ACLException;
 import org.dcache.acl.Origin;
@@ -35,7 +36,7 @@ import javax.security.auth.Subject;
  */
 public class ACLPermissionHandler extends AbstractPermissionHandler {
 
-    private static final Logger _logger = Logger.getLogger("logger.org.dcache.authorization." + ACLPermissionHandler.class.getName());
+    private static final Logger _logger = LoggerFactory.getLogger("logger.org.dcache.authorization." + ACLPermissionHandler.class.getName());
 
     public ACLPermissionHandler(CellEndpoint cell) throws ACLException {
         super(cell);

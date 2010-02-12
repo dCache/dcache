@@ -19,7 +19,8 @@ import java.util.TreeMap;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellMessageReceiver;
@@ -63,7 +64,7 @@ public class RequestContainerV5
     implements Runnable, CellCommandListener, CellMessageReceiver
 {
     private static final Logger _log =
-        Logger.getLogger(RequestContainerV5.class);
+        LoggerFactory.getLogger(RequestContainerV5.class);
 
     /**
      * State of CheckFilePingHandler.
@@ -220,7 +221,7 @@ public class RequestContainerV5
                    handler.alive() ;
                 }
              }catch(Throwable t){
-                _log.warn(t) ;
+                _log.warn(t.toString()) ;
                 continue ;
              }
           }
@@ -1118,7 +1119,7 @@ public class RequestContainerV5
                     _poolMonitor.messageToCostModule(m);
                 } catch (Exception e) {
                     _log.warn("Exception requestSucceeded : " + e);
-                    _log.warn(e);
+                    _log.warn(e.toString());
                 }
                 messages.remove();
             }
@@ -1230,7 +1231,7 @@ public class RequestContainerV5
 
               }catch(Exception ee ){
                  _log.warn("Unexpected Exception in state loop for "+_pnfsId+" : "+ee) ;
-                 _log.warn(ee);
+                 _log.warn(ee.toString());
               }
            }
         }
@@ -1920,7 +1921,7 @@ public class RequestContainerV5
               _currentRc = ee instanceof CacheException ? ((CacheException)ee).getRc() : 102 ;
               _currentRm = ee.getMessage();
               _log.warn("exerciseStageReply : "+ee ) ;
-              _log.warn(ee);
+              _log.warn(ee.toString());
               return RT_ERROR ;
            }
         }
@@ -1953,7 +1954,7 @@ public class RequestContainerV5
               _currentRc = ee instanceof CacheException ? ((CacheException)ee).getRc() : 102 ;
               _currentRm = ee.getMessage();
               _log.warn("exercisePool2PoolReply : "+ee ) ;
-              _log.warn(ee);
+              _log.warn(ee.toString());
               return RT_ERROR ;
            }
         }
@@ -2164,7 +2165,7 @@ public class RequestContainerV5
 
            }catch(Exception ee ){
               _log.warn(err="Exception in getFileAvailableList : "+ee ) ;
-              _log.warn(ee);
+              _log.warn(ee.toString());
               setError(130,err) ;
               return RT_ERROR ;
            }finally{
@@ -2409,7 +2410,7 @@ public class RequestContainerV5
             } catch (Exception ee) {
 
                 setError( 128 , ee.getMessage());
-                _log.warn(ee);
+                _log.warn(ee.toString());
 
                 return RT_ERROR;
 
@@ -2571,7 +2572,7 @@ public class RequestContainerV5
            }catch( Exception ee ){
 
               setError( 128 , ee.getMessage() );
-              _log.warn(ee) ;
+              _log.warn(ee.toString()) ;
 
               return RT_ERROR ;
 

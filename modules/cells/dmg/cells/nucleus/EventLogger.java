@@ -1,15 +1,16 @@
 package dmg.cells.nucleus;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class EventLogger
 {
     private final static Logger deliver =
-        Logger.getLogger("events.org.dcache.cells.deliver");
+        LoggerFactory.getLogger("events.org.dcache.cells.deliver");
     private final static Logger send =
-        Logger.getLogger("events.org.dcache.cells.send");
+        LoggerFactory.getLogger("events.org.dcache.cells.send");
     private final static Logger queue =
-        Logger.getLogger("events.org.dcache.cells.queue");
+        LoggerFactory.getLogger("events.org.dcache.cells.queue");
 
     private final static String DELIVER_BEGIN =
         "org.dcache.cells.deliver.begin";

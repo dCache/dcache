@@ -30,7 +30,8 @@ import java.io.RandomAccessFile;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.io.ByteArrayOutputStream;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 /**
  * THE CLASS IS NOT THREAD SAVE
  * DO ONLY ONE OPERATION (READ / WRITE) AT A TIME
@@ -39,7 +40,7 @@ import org.apache.log4j.Logger;
 public class GridftpClient
 {
     private static final Logger logger =
-            Logger.getLogger(GridftpClient.class);
+            LoggerFactory.getLogger(GridftpClient.class);
 
     private final static int FirstByteTimeout=60*60; //one hour
     private final static int NextByteTimeout=60*10; //10 minutes
@@ -811,7 +812,7 @@ public class GridftpClient
             if(timedout ||interrupted ) {
                 _runner.interrupt();
                 String error = "transfer timedout or interrupted";
-                logger.error(error);
+                logger.error(error.toString());
                 throw new InterruptedException(error);
             }
 
@@ -873,13 +874,13 @@ public class GridftpClient
                     }
                 }
             } catch (IOException e) {
-                logger.error(e);
+                logger.error(e.toString());
                 _throwable = e;
             } catch (ServerException e) {
-                logger.error(e);
+                logger.error(e.toString());
                 _throwable = e;
             } catch (ClientException e) {
-                logger.error(e);
+                logger.error(e.toString());
                 _throwable = e;
             } finally {
                 done();
@@ -949,7 +950,7 @@ public class GridftpClient
             throws IOException {
             if(_source) {
                 String error = "DiskDataSourceSink is source and write is called";
-                logger.error(error);
+                logger.error(error.toString());
                 throw new IllegalStateException(error);
             }
 
@@ -994,7 +995,7 @@ public class GridftpClient
         public synchronized Buffer read() throws IOException {
             if(!_source) {
                 String error = "DiskDataSourceSink is sink and read is called";
-                logger.error(error);
+                logger.error(error.toString());
                 throw new IllegalStateException(error);
             }
 

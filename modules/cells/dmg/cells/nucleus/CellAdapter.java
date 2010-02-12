@@ -6,7 +6,8 @@ import java.io.*;
 import java.lang.reflect.*;
 
 import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *

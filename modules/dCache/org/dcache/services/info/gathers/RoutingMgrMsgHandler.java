@@ -4,7 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.StateComposite;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
@@ -68,7 +69,7 @@ import dmg.cells.nucleus.UOID;
  */
 public class RoutingMgrMsgHandler extends CellMessageHandlerSkel {
 	
-	private static Logger _log = Logger.getLogger( CellInfoMsgHandler.class);
+	private static Logger _log = LoggerFactory.getLogger( CellInfoMsgHandler.class);
 	
 	private static final StatePath DOMAINS_PATH = new StatePath( "domains");
 	

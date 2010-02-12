@@ -10,7 +10,8 @@ import java.util.HashMap;
 
 import diskCacheV111.util.PnfsId;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class contains useful static methods for working with Java
@@ -18,7 +19,7 @@ import org.apache.log4j.Logger;
  */
 public class ReflectionUtils
 {
-    private static final Logger _log = Logger.getLogger(ReflectionUtils.class);
+    private static final Logger _log = LoggerFactory.getLogger(ReflectionUtils.class);
 
     private static final Map<String,Method> methodCache =
         new HashMap<String,Method>();

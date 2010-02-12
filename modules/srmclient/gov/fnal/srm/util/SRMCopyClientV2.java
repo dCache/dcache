@@ -391,12 +391,12 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
                 }
             }
         } catch(Exception e) {
-            logger.elog(e);
+            logger.elog(e.toString());
             try {
                 abortAllPendingFiles();
             }
             catch(Exception e1) {
-                logger.elog(e1);
+                logger.elog(e1.toString());
             }
         } finally {
             report.dumpReport();
@@ -413,7 +413,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
             say("stopping ");
             abortAllPendingFiles();
         }catch(Exception e) {
-            logger.elog(e);
+            logger.elog(e.toString());
         }
     }
 

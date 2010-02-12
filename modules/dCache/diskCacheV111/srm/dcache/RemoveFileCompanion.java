@@ -90,7 +90,8 @@ import org.dcache.auth.Subjects;
 import org.dcache.srm.RemoveFileCallbacks;
 import diskCacheV111.util.CacheException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.dcache.namespace.FileType.*;
 
@@ -98,7 +99,7 @@ public class RemoveFileCompanion
     implements MessageCallback<PnfsDeleteEntryMessage>
 {
     private static Logger _log =
-        Logger.getLogger(RemoveFileCompanion.class);
+        LoggerFactory.getLogger(RemoveFileCompanion.class);
 
     private final static CellPath BILLING_PATH = new CellPath("billing");
 

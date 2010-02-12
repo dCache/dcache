@@ -2,7 +2,8 @@ package org.dcache.acl.mapper;
 
 import java.net.UnknownHostException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.acl.ACE;
 import org.dcache.acl.ACL;
 import org.dcache.acl.ACLException;
@@ -25,7 +26,7 @@ import org.dcache.auth.Subjects;
  */
 public class AclMapper {
 
-    private static final Logger logger = Logger.getLogger("logger.org.dcache.authorization." + AclMapper.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger("logger.org.dcache.authorization." + AclMapper.class.getName());
 
     private static AclMapper _SINGLETON;
     static {

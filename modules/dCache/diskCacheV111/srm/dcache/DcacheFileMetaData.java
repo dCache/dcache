@@ -98,7 +98,8 @@ import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.auth.AuthorizationRecord;
 import org.dcache.srm.SRMUser;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.util.Checksum;
@@ -116,7 +117,7 @@ import static org.dcache.namespace.FileAttribute.*;
 public class DcacheFileMetaData extends org.dcache.srm.FileMetaData {
     private PnfsId pnfsId;
     private FileAttributes attributes;
-    private static final Logger logger =  Logger.getLogger(DcacheFileMetaData.class);
+    private static final Logger logger =  LoggerFactory.getLogger(DcacheFileMetaData.class);
 
     /** Creates a new instance of DcacheFileMetaData */
     public DcacheFileMetaData(PnfsId pnfsId) {

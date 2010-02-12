@@ -14,7 +14,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.acplt.oncrpc.OncRpcException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.nfs.v4.AbstractNFSv4Operation;
@@ -47,7 +48,7 @@ import org.dcache.xdr.RpcProtocolFilter;
  */
 public class NFSv4MoverHandler {
 
-    private static final Logger _log = Logger.getLogger(NFSv4MoverHandler.class.getName());
+    private static final Logger _log = LoggerFactory.getLogger(NFSv4MoverHandler.class.getName());
 
     private final FileSystemProvider _fs = new DummyFileSystemProvider();
 

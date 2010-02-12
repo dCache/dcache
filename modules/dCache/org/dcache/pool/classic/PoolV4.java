@@ -30,7 +30,8 @@ import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.dcache.pool.FaultListener;
 import org.dcache.pool.FaultEvent;
@@ -135,7 +136,7 @@ public class PoolV4
     private final static int P2P_CACHED = 1;
     private final static int P2P_PRECIOUS = 2;
 
-    private final static Logger _log = Logger.getLogger(PoolV4.class);
+    private final static Logger _log = LoggerFactory.getLogger(PoolV4.class);
 
     private final String _poolName;
     private final Args _args;
@@ -1025,7 +1026,7 @@ public class PoolV4
             _log.error(e.getMessage());
             message.setFailed(e.getRc(), e.getMessage());
         } catch (Throwable e) {
-            _log.fatal("Possible bug found: " + e.getMessage(), e);
+            _log.error("Possible bug found: " + e.getMessage(), e);
             message.setFailed(CacheException.DEFAULT_ERROR_CODE,
                               "Failed to enqueue mover: " + e.getMessage());
         }
@@ -1034,7 +1035,7 @@ public class PoolV4
             envelope.revertDirection();
             sendMessage(envelope);
         } catch (NoRouteToCellException e) {
-            _log.error(e);
+            _log.error(e.toString());
         }
     }
 
@@ -1605,7 +1606,7 @@ public class PoolV4
             mover_kill(kill.getMoverId(), false);
             kill.setSucceeded();
         } catch (NoSuchElementException e) {
-            _log.info(e);
+            _log.info(e.toString());
             kill.setReply(1, e);
         }
         return kill;
@@ -1690,7 +1691,7 @@ public class PoolV4
             msg.setSucceeded();
             return msg;
         } catch (CacheException e) {
-            _log.error(e);
+            _log.error(e.toString());
             if (e.getRc() == CacheException.ERROR_IO_DISK)
                 disablePool(PoolV2Mode.DISABLED_STRICT,
                             e.getRc(), e.getMessage());

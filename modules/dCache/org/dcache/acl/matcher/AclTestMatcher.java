@@ -1,9 +1,10 @@
 package org.dcache.acl.matcher;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AclTestMatcher extends AclMatcher {
-    private static final Logger logger = Logger.getLogger("logger.org.dcache.authorization." + AclTestMatcher.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger("logger.org.dcache.authorization." + AclTestMatcher.class.getName());
 
     private static AclTestMatcher _SINGLETON;
     static {

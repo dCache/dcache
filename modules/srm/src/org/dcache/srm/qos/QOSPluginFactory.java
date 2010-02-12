@@ -1,11 +1,12 @@
 package org.dcache.srm.qos;
 
 import org.dcache.srm.util.Configuration;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class QOSPluginFactory {
     private static final Logger logger =
-            Logger.getLogger(QOSPluginFactory.class);
+            LoggerFactory.getLogger(QOSPluginFactory.class);
 
 	static public QOSPlugin createInstance(Configuration configuration) {
 		QOSPlugin qosPlugin = null;

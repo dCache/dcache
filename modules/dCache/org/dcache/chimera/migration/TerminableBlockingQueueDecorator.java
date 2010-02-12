@@ -2,7 +2,8 @@ package org.dcache.chimera.migration;
 
 import java.util.concurrent.BlockingQueue;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A wrapper class that implements TerminableBlockingQueue interface by
@@ -11,7 +12,7 @@ import org.apache.log4j.Logger;
 public class TerminableBlockingQueueDecorator<E> extends
         AbstractBlockingQueueDecorator<E> implements TerminableBlockingQueue<E> {
 
-    private static Logger _log = Logger.getLogger( TerminableBlockingQueueDecorator.class);
+    private static Logger _log = LoggerFactory.getLogger( TerminableBlockingQueueDecorator.class);
 
     private static final int DEFAULT_CONSUMERS_COUNT = 1;
 

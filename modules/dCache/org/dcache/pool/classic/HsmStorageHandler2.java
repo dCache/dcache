@@ -26,7 +26,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
@@ -65,7 +66,7 @@ public class HsmStorageHandler2
     extends AbstractCellComponent
 {
     private static Logger _log =
-        Logger.getLogger(HsmStorageHandler2.class);
+        LoggerFactory.getLogger(HsmStorageHandler2.class);
 
     private final Repository _repository;
     private final HsmSet _hsmSet;
@@ -151,7 +152,7 @@ public class HsmStorageHandler2
                 try {
                     callback.cacheFileAvailable(_pnfsId, exc);
                 } catch (Exception e) {
-                    _log.fatal("Exception in callback to " +
+                    _log.error("Exception in callback to " +
                                callback.getClass().getName(), e);
                 }
             }
@@ -566,7 +567,7 @@ public class HsmStorageHandler2
                 }
                 _handle.commit(null);
             } catch (CacheException e) {
-                _log.error(e);
+                _log.error(e.toString());
                 returnCode = 1;
                 excep = e;
             } catch (InterruptedException e) {
@@ -590,7 +591,7 @@ public class HsmStorageHandler2
                 returnCode = 6;
                 excep = e;
             } catch (Exception e) {
-                _log.fatal(e, e);
+                _log.error(e.toString(), e);
                 returnCode = 5;
                 excep = e;
             } finally {
@@ -1071,7 +1072,7 @@ public class HsmStorageHandler2
                 _infoMsg.setResult(4, e.getMessage());
             } catch (Throwable t) {
                 excep = t;
-                _log.fatal("Unexpected exception", t);
+                _log.error("Unexpected exception", t);
                 _infoMsg.setResult(666, t.getMessage());
             } finally {
                 removeStoreEntry(pnfsId);

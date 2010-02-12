@@ -44,7 +44,8 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Encapsulates the tasks to be performed on the destination of a pool
@@ -59,7 +60,7 @@ import org.apache.log4j.Logger;
  */
 class Companion
 {
-    private final static Logger _log = Logger.getLogger(Companion.class);
+    private final static Logger _log = LoggerFactory.getLogger(Companion.class);
 
     private final static long PING_PERIOD = 5 * 60 * 1000; // 5 minutes
 
@@ -565,7 +566,7 @@ class Companion
 
         if (_error != null) {
             if (_error instanceof RuntimeException) {
-                _log.fatal(String.format("P2P for %s failed: %s", _pnfsId, _error),
+                _log.error(String.format("P2P for %s failed: %s", _pnfsId, _error),
                            (Exception) _error);
             } else {
                 _log.error(String.format("P2P for %s failed: %s", _pnfsId, _error));

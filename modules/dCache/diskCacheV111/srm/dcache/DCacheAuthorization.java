@@ -168,8 +168,8 @@ public final class DCacheAuthorization implements SRMAuthorization {
         random = new Random();
       }
 
-    private static  org.apache.log4j.Logger _logAuth =
-             org.apache.log4j.Logger.getLogger(DCacheAuthorization.class);
+    private static  org.slf4j.Logger _logAuth =
+             org.slf4j.LoggerFactory.getLogger(DCacheAuthorization.class);
     private static DCacheAuthorization srmauthorization;
     private String kAuthFileName;
     private String gplazmaPolicyFilePath;

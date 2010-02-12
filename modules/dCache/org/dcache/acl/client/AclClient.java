@@ -8,11 +8,12 @@ import org.apache.commons.cli.MissingOptionException;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.UnrecognizedOptionException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AclClient {
 
-    private static final Logger logger = Logger.getLogger("logger.org.dcache.authorization." + AclClient.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger("logger.org.dcache.authorization." + AclClient.class.getName());
 
     protected final static String LINE_SEPARATOR = System.getProperty("line.separator", "\n");
 
@@ -36,9 +37,9 @@ public class AclClient {
 
     private void exitHelp(Options opts, int exitValue, String message) {
         if ( exitValue == 0 )
-            logger.info(message);
+            logger.info(message.toString());
         else
-            logger.fatal(message);
+            logger.error(message.toString());
         exitHelp(opts, exitValue);
     }
 
@@ -50,9 +51,9 @@ public class AclClient {
 
     void exitHelp(int exitValue, String message) {
         if ( exitValue == 0 )
-            logger.info(message);
+            logger.info(message.toString());
         else
-            logger.fatal(message);
+            logger.error(message.toString());
         exitHelp(exitValue);
     }
 

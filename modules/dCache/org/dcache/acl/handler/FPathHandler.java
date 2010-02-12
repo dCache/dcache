@@ -5,7 +5,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.acl.ACLException;
 import org.dcache.acl.config.Config;
 import org.dcache.acl.util.sql.SQLHandler;
@@ -17,7 +18,7 @@ import org.dcache.acl.util.sql.SQLHandler;
  */
 public class FPathHandler extends THandler {
 
-    private static final Logger logger = Logger.getLogger("logger.org.dcache.authorization." + FPathHandler.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger("logger.org.dcache.authorization." + FPathHandler.class.getName());
 
     private static final String FILE_SEPARATOR = System.getProperty("file.separator", "/");
 

@@ -33,7 +33,8 @@ import java.util.Comparator;
 import java.util.Collections;
 import java.io.PrintWriter;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Encapsulates a job as defined by a user command.
@@ -75,7 +76,7 @@ public class Job
     enum State { INITIALIZING, RUNNING, SLEEPING, SUSPENDED,
             CANCELLING, CANCELLED, FINISHED, FAILED }
 
-    private final static Logger _log = Logger.getLogger(Job.class);
+    private final static Logger _log = LoggerFactory.getLogger(Job.class);
 
     private final Set<PnfsId> _queued = new LinkedHashSet();
     private final Map<PnfsId,Long> _sizes = new HashMap();
@@ -628,7 +629,7 @@ public class Job
             try {
                 _inner.run();
             } catch (Exception e) {
-                _log.error(e, e);
+                _log.error(e.toString(), e);
             }
         }
     }

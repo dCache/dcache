@@ -82,7 +82,8 @@ import org.dcache.srm.request.RequestCredential;
 import java.beans.PropertyChangeListener;
 import org.dcache.srm.v2_2.*;
 import org.dcache.srm.util.RequestStatusTool;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -91,7 +92,7 @@ import org.apache.log4j.Logger;
 public final class RemoteTurlPutterV2 extends TurlGetterPutter
 {
     private static final Logger logger =
-            Logger.getLogger(RemoteTurlPutterV2.class);
+            LoggerFactory.getLogger(RemoteTurlPutterV2.class);
     private ISRM srmv2;
     private String requestToken;
     private String targetSpaceToken;
@@ -283,7 +284,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
                     if(RequestStatusTool.isFailedFileRequestStatus(fileStatus)){
                         String error ="retreval of surl "+surl_string+" failed, status = "+fileStatusCode+
                         " explanation="+fileStatus.getExplanation();
-                        logger.error(error);
+                        logger.error(error.toString());
                        int indx = ((Integer) pendingSurlsToIndex.remove(surl_string)).intValue();
                         notifyOfFailure(SURLs[indx], error, requestToken, null);
                         haveCompletedFileRequests = true;
@@ -388,7 +389,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
             
         }
         catch(Exception e) {
-            logger.error(e);
+            logger.error(e.toString());
             notifyOfFailure(e);
             return;
         }

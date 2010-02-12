@@ -9,11 +9,12 @@ import org.dcache.srm.util.Configuration;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.FileInputStream;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class LambdaStationPlugin implements QOSPlugin {
     private static final Logger logger =
-            Logger.getLogger(LambdaStationPlugin.class);
+            LoggerFactory.getLogger(LambdaStationPlugin.class);
 	private LambdaStationMap lambdaStationMap = null;
 	private String lambdaStationConf = null;
 	private String lambdaStationScript = null;
@@ -30,11 +31,11 @@ public class LambdaStationPlugin implements QOSPlugin {
                         properties.load(new FileInputStream(lambdaStationConf));
                 }
                 catch(FileNotFoundException ex) {
-                        logger.error(ex);
+                        logger.error(ex.toString());
                         return;
                 }
                 catch(IOException ex) {
-                        logger.error(ex);
+                        logger.error(ex.toString());
                         return;
                 }
 

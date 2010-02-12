@@ -17,7 +17,8 @@ import org.dcache.cells.CellInfoProvider;
 import dmg.util.Args;
 import dmg.cells.nucleus.CellInfo;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Channel handler that keeps track of connected channels. Provides
@@ -30,7 +31,7 @@ public class ConnectionTracker
                CellInfoProvider
 {
     private final static Logger _log =
-        Logger.getLogger(ConnectionTracker.class);
+        LoggerFactory.getLogger(ConnectionTracker.class);
 
     private Map<Integer, Channel> _channels = new ConcurrentHashMap();
     private AtomicInteger _counter = new AtomicInteger();

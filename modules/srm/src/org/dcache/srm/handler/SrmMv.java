@@ -27,7 +27,8 @@ import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMDuplicationException;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidPathException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.axis.types.URI.MalformedURIException;
 
 /**
@@ -37,7 +38,7 @@ import org.apache.axis.types.URI.MalformedURIException;
 
 public class SrmMv {
         private static Logger logger = 
-                Logger.getLogger(SrmMv.class);
+                LoggerFactory.getLogger(SrmMv.class);
 	private final static String SFN_STRING="?SFN=";
 	AbstractStorageElement storage;
 	SrmMvRequest           request;
@@ -64,7 +65,7 @@ public class SrmMv {
             response = getFailedResponse(" malformed uri : "+mue.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
         } catch(SRMException srme) {
-            logger.error(srme);
+            logger.error(srme.toString());
             response = getFailedResponse(srme.toString());
         }
 		return response;
@@ -118,7 +119,7 @@ public class SrmMv {
 			storage.moveEntry(user,from_path,to_path);
                 } 
 		catch (Exception e) { 
-		    logger.warn(e);
+		    logger.warn(e.toString());
 		    response.getReturnStatus().setExplanation(e.getMessage());
 		    if ( e instanceof SRMDuplicationException) { 
 			response.getReturnStatus().setStatusCode(TStatusCode.SRM_DUPLICATION_ERROR);

@@ -9,12 +9,13 @@ import org.dcache.xrootd.protocol.messages.AuthentiticationRequest;
 import org.dcache.xrootd.protocol.messages.LoginRequest;
 import org.dcache.xrootd.protocol.messages.OKResponse;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class XrootdDoorController implements PhysicalConnectionListener {
 
     private final static Logger _log =
-        Logger.getLogger(XrootdDoorController.class);
+        LoggerFactory.getLogger(XrootdDoorController.class);
 
     private XrootdDoor door;
     private PhysicalXrootdConnection physicalXrootdConnection;

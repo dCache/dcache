@@ -79,14 +79,15 @@ import java.util.HashMap;
 import java.util.Iterator;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.request.RequestCredential;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 /**
  *
  * @author  timur
  */
 public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
     private static final Logger logger =
-            Logger.getLogger(TurlGetterPutterV1.class);
+            LoggerFactory.getLogger(TurlGetterPutterV1.class);
 
     protected diskCacheV111.srm.ISRM remoteSRM;
     private final Object sync = new Object();
@@ -182,7 +183,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
             waitForReadyStatuses();
         }
         catch(Exception e) {
-            logger.error(e);
+            logger.error(e.toString());
             notifyOfFailure(e);
             return;
         }
@@ -209,7 +210,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                             notifyOfFailure(frs.SURL,"stopped by user request",Integer.toString(rs.requestId),nextID.toString());
                         }
                         catch(Exception e) {
-                            logger.error(e);
+                            logger.error(e.toString());
                        }
                 }
                 break;
@@ -234,7 +235,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                             frs = getFileRequest(rs,nextID);
                         }
                         catch(Exception e) {
-                            logger.error(e);
+                            logger.error(e.toString());
                             totalFailure = true;
                             totalFailureError =" run() getFileRequest  failed with ioe="+e;
                             break;

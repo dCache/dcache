@@ -28,7 +28,8 @@ import org.dcache.util.CacheExceptionFactory;
 import dmg.util.CollectionFactory;
 import dmg.cells.nucleus.NoRouteToCellException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import javax.security.auth.Subject;
 
 /**
@@ -49,7 +50,7 @@ public class ListDirectoryHandler
     implements CellMessageReceiver, DirectoryListSource
 {
     private final static Logger _log =
-        Logger.getLogger(ListDirectoryHandler.class);
+        LoggerFactory.getLogger(ListDirectoryHandler.class);
 
     private final PnfsHandler _pnfs;
     private final Map<UUID,Stream> _replies =

@@ -37,7 +37,8 @@ import org.dcache.util.Glob;
 import dmg.util.Args;
 import dmg.cells.nucleus.CellEndpoint;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Module for migrating files between pools.
@@ -94,7 +95,7 @@ public class MigrationModule
                CellMessageReceiver
 {
     private final static Logger _log =
-        Logger.getLogger(MigrationModule.class);
+        LoggerFactory.getLogger(MigrationModule.class);
 
     private final List<Job> _alive = new ArrayList();
     private final Map<Integer,Job> _jobs = new HashMap();

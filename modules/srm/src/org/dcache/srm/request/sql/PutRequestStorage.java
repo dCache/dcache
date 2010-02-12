@@ -12,7 +12,8 @@ import org.dcache.srm.util.Configuration;
 import java.sql.*;
 import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.SRMUser;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -20,7 +21,7 @@ import org.apache.log4j.Logger;
  */
 public class PutRequestStorage extends DatabaseContainerRequestStorage{
    private final static Logger logger =
-            Logger.getLogger(PutRequestStorage.class);
+            LoggerFactory.getLogger(PutRequestStorage.class);
    
      public static final String TABLE_NAME ="putrequests";
     private static final String UPDATE_PREFIX = "UPDATE " + TABLE_NAME + " SET "+
@@ -164,14 +165,14 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage{
             pool.returnConnection(_con);
             _con =null;
          } catch (SQLException sqe) {
-             logger.error(sqe);
+             logger.error(sqe.toString());
             should_reanamed_old_table = true;
             if(_con != null) {
                 pool.returnFailedConnection(_con);
                 _con = null;
             }
         } catch (Exception ex) {
-            logger.error(ex);
+            logger.error(ex.toString());
             should_reanamed_old_table = true;
             if(_con != null) {
                 pool.returnFailedConnection(_con);

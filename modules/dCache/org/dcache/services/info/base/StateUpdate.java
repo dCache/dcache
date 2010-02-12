@@ -7,7 +7,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The StateUpdate is a simple collection containing zero or more proposed concurrent
@@ -27,7 +28,7 @@ import org.apache.log4j.Logger;
  */
 public class StateUpdate {
 
-	private static final Logger _log = Logger.getLogger(StateUpdate.class);
+	private static final Logger _log = LoggerFactory.getLogger(StateUpdate.class);
 
 	/**
 	 * A single update to a dCache metric.

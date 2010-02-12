@@ -1,6 +1,7 @@
 package org.dcache.acl.enums;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * ACE flags bit mask.
@@ -36,7 +37,7 @@ public enum AceFlags {
     IDENTIFIER_GROUP(0x00000040, 'g');
 
     // Logger
-    private static final Logger logger = Logger.getLogger("logger.org.dcache.authorization." + AceFlags.class);
+    private static final Logger logger = LoggerFactory.getLogger("logger.org.dcache.authorization." + AceFlags.class);
 
     private final int _value;
 

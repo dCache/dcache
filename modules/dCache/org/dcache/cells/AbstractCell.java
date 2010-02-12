@@ -1,6 +1,7 @@
 package org.dcache.cells;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.math.BigInteger;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -237,7 +238,7 @@ public class AbstractCell extends CellAdapter
             getNucleus().setCellClass(cellClass);
         }
 
-        _logger = Logger.getLogger(getClass());
+        _logger = LoggerFactory.getLogger(getClass());
         _definedSetup = getDefinedSetup(arguments);
 
         parseOptions();
@@ -289,7 +290,7 @@ public class AbstractCell extends CellAdapter
             throw e;
         } catch (ExecutionException e) {
             Throwable t = e.getCause();
-            _logger.fatal("Failed to initialise cell: " + t.getMessage(), t);
+            _logger.error("Failed to initialise cell: " + t.getMessage(), t);
             start();
             kill();
             throw e;
@@ -381,7 +382,7 @@ public class AbstractCell extends CellAdapter
 
     public void debug(String str)
     {
-        _logger.debug(str);
+        _logger.debug(str.toString());
     }
 
     public void debug(Throwable t)
@@ -390,23 +391,23 @@ public class AbstractCell extends CellAdapter
         StringWriter sw = new StringWriter();
         t.printStackTrace(new PrintWriter(sw));
         for (String s : sw.toString().split("\n")) {
-            _logger.debug(s);
+            _logger.debug(s.toString());
         }
     }
 
     public void info(String str)
     {
-        _logger.info(str);
+        _logger.info(str.toString());
     }
 
     public void warn(String str)
     {
-        _logger.warn(str);
+        _logger.warn(str.toString());
     }
 
     public void error(String str)
     {
-        _logger.error(str);
+        _logger.error(str.toString());
     }
 
     public void error(Throwable t)
@@ -415,22 +416,22 @@ public class AbstractCell extends CellAdapter
         StringWriter sw = new StringWriter();
         t.printStackTrace(new PrintWriter(sw));
         for (String s : sw.toString().split("\n")) {
-            _logger.error(s);
+            _logger.error(s.toString());
         }
     }
 
     public void fatal(String str)
     {
-        _logger.fatal(str);
+        _logger.error(str.toString());
     }
 
     public void fatal(Throwable t)
     {
-        _logger.fatal(t.getMessage());
+        _logger.error(t.getMessage());
         StringWriter sw = new StringWriter();
         t.printStackTrace(new PrintWriter(sw));
         for (String s : sw.toString().split("\n")) {
-            _logger.fatal(s);
+            _logger.error(s.toString());
         }
     }
 

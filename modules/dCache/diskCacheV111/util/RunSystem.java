@@ -3,10 +3,11 @@
 package diskCacheV111.util ;
 import java.io.* ;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RunSystem implements Runnable {
-    private final static Logger _log = Logger.getLogger(RunSystem.class);
+    private final static Logger _log = LoggerFactory.getLogger(RunSystem.class);
     private final static Runtime __runtime = Runtime.getRuntime() ;
     private final String _exec ;
     private final int    _maxLines ;

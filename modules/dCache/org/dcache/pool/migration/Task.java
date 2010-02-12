@@ -35,11 +35,12 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Task
 {
-    private final static Logger _log = Logger.getLogger(Job.class);
+    private final static Logger _log = LoggerFactory.getLogger(Job.class);
     private final static AtomicInteger _counter = new AtomicInteger();
 
     private final TaskContext _fsm;
@@ -556,7 +557,7 @@ public class Task
             try {
                 _inner.run();
             } catch (Exception e) {
-                _log.error(e, e);
+                _log.error(e.toString(), e);
             }
         }
     }

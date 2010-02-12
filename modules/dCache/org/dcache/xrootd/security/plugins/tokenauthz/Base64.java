@@ -50,12 +50,13 @@ package org.dcache.xrootd.security.plugins.tokenauthz;
  * @version 2.2
  */
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Base64
 {
 
-    private final static Logger _log = Logger.getLogger(Base64.class);
+    private final static Logger _log = LoggerFactory.getLogger(Base64.class);
 
     /* ********  P U B L I C   F I E L D S  ******** */
 

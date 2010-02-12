@@ -25,7 +25,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.dcache.xdr.OncRpcException;
 import org.acplt.oncrpc.apps.jportmap.OncRpcEmbeddedPortmap;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FsInode;
@@ -84,7 +85,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         NFSv41DeviceManager, CellCommandListener,
         CellMessageReceiver, CellInfoProvider {
 
-    private static final Logger _log = Logger.getLogger(NFSv41Door.class);
+    private static final Logger _log = LoggerFactory.getLogger(NFSv41Door.class);
 
     /** dCache-friendly NFS device id to pool name mapping */
     private Map<String, NFS4IoDevice> _poolNameToIpMap = new HashMap<String, NFS4IoDevice>();
@@ -209,21 +210,21 @@ public class NFSv41Door extends AbstractCellComponent implements
                     try {
                         _controller.start();
                     } catch (IOException e) {
-                        _log.fatal("Exception in controller...", e);
+                        _log.error("Exception in controller...", e);
                     }
 
                 } catch (org.acplt.oncrpc.OncRpcException e) {
                     // TODO: kill the cell
-                    _log.error(e);
+                    _log.error(e.toString());
                 } catch (OncRpcException e) {
                     // TODO: kill the cell
-                    _log.error(e);
+                    _log.error(e.toString());
                 } catch (IOException e) {
                     // TODO: kill the cell
-                    _log.error(e);
+                    _log.error(e.toString());
                 } catch (ChimeraFsException e) {
                     // TODO: kill the cell
-                    _log.error(e);
+                    _log.error(e.toString());
                 }
 
             }

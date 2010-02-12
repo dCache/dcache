@@ -88,14 +88,15 @@ import org.dcache.srm.request.*;
 import org.dcache.srm.scheduler.policies.*;
 import org.dcache.srm.util.JDC;
 import org.dcache.srm.SRMInvalidRequestException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 /**
  *
  * @author  timur
  */
 public final class Scheduler implements Runnable, PropertyChangeListener {
     private static final Logger logger =
-            Logger.getLogger(Scheduler.class);
+            LoggerFactory.getLogger(Scheduler.class);
 
 	public static final int ON_RESTART_FAIL_REQUEST=1;
 	public static final int ON_RESTART_RESTORE_REQUEST=2;
@@ -778,7 +779,7 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
 
             }
             catch( java.sql.SQLException sqle) {
-                logger.error(sqle);
+                logger.error(sqle.toString());
             }
             catch(Throwable t)
             {              
@@ -877,7 +878,7 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
                 }
                 catch(Throwable t1)
                 {
-                    logger.error(t1);
+                    logger.error(t1.toString());
                     t = t1;
                 }
                 job.wlock();
@@ -962,7 +963,7 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
                         {
                             try {
 
-                                logger.error(t);
+                                logger.error(t.toString());
                                 job.setState(State.FAILED,t.toString());
 
                             }
@@ -980,7 +981,7 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
                 }
             }
             catch(Throwable t) {
-                logger.error(t);
+                logger.error(t.toString());
             }
             finally {
                 started();
@@ -1054,7 +1055,7 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
             try {
                 jobStorageAdded(jobStorage);
             }catch(java.sql.SQLException  sqle) {
-                logger.error(sqle);
+                logger.error(sqle.toString());
             }
         }
         else {

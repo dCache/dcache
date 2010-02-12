@@ -14,7 +14,8 @@ import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.AbstractCellComponent;
 import dmg.util.Args;
 import dmg.cells.nucleus.CellInfo;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class SchedulerEntry
 {
@@ -86,7 +87,7 @@ public class JobTimeoutManager
                CellCommandListener
 {
     private final static Logger _log =
-        Logger.getLogger(JobTimeoutManager.class);
+        LoggerFactory.getLogger(JobTimeoutManager.class);
 
     private final List<SchedulerEntry> _schedulers
         = new CopyOnWriteArrayList<SchedulerEntry>();
@@ -201,12 +202,12 @@ public class JobTimeoutManager
 
     private void say(String str)
     {
-        _log.info(str);
+        _log.info(str.toString());
     }
 
     private void esay(String str)
     {
-        _log.error(str);
+        _log.error(str.toString());
     }
 
     public void run()

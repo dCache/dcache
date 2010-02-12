@@ -77,11 +77,12 @@ import java.net.InetAddress;
 import org.globus.util.GlobusURL;
 import org.ietf.jgss.GSSCredential;
 import javax.xml.rpc.ServiceException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SRMClientV1 implements diskCacheV111.srm.ISRM {
     private static final Logger logger =
-            Logger.getLogger(SRMClientV1.class);
+            LoggerFactory.getLogger(SRMClientV1.class);
     private final static String SFN_STRING="?SFN=";
     private int retries;
     private long retrytimeout;
@@ -339,7 +340,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
                     org.dcache.srm.client.axis.RequestStatus rs = axis_isrm.copy(srcSURLS,destSURLS,wantPerm);
                     return ConvertUtil.axisRS2RS(rs);
                 }catch(java.rmi.RemoteException re) {
-                    //logger.error(re);
+                    //logger.error(re.toString());
                     throw new RuntimeException (re.toString());
                 }
 
@@ -372,7 +373,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
                     org.dcache.srm.client.axis.RequestStatus rs = axis_isrm.getRequestStatus(requestId);
                     return ConvertUtil.axisRS2RS(rs);
                 }catch(java.rmi.RemoteException re) {
-                    //logger.error(re);
+                    //logger.error(re.toString());
                     throw new RuntimeException (re.toString());
                 }
             }
@@ -416,7 +417,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
                 {
                       return axis_isrm.ping();
                 }catch(java.rmi.RemoteException re) {
-                    //logger.error(re);
+                    //logger.error(re.toString());
                     throw new RuntimeException (re.toString());
                 }
 
@@ -487,7 +488,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
                     org.dcache.srm.client.axis.FileMetaData[] fmd = axis_isrm.getFileMetaData(SURLS);
                      return ConvertUtil.axisFMDs2FMDs(fmd);
                 }catch(java.rmi.RemoteException re) {
-                    //logger.error(re);
+                    //logger.error(re.toString());
                     throw new RuntimeException (re.toString());
                 }
 
@@ -534,7 +535,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
                     org.dcache.srm.client.axis.RequestStatus rs = axis_isrm.setFileStatus(requestId,fileId,state);
                     return ConvertUtil.axisRS2RS(rs);
                 }catch(java.rmi.RemoteException re) {
-                    //logger.error(re);
+                    //logger.error(re.toString());
                     throw new RuntimeException (re.toString());
                 }
                 //logger.debug("getRequestStatus returned");
@@ -590,7 +591,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
              axis_isrm.advisoryDelete(SURLS);
              return;
         }catch(java.rmi.RemoteException re) {
-            //logger.error(re);
+            //logger.error(re.toString());
             String message = re.getMessage();
             if(message != null)  throw new RuntimeException (message);
             throw new RuntimeException (re);
@@ -618,7 +619,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
                       String protocols[] =axis_isrm.getProtocols();
                       return protocols;
                 }catch(java.rmi.RemoteException re) {
-                    //logger.error(re);
+                    //logger.error(re.toString());
                     throw new RuntimeException (re.toString());
                 }
 

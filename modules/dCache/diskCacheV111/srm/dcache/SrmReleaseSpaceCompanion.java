@@ -77,7 +77,8 @@ import org.dcache.cells.ThreadManagerMessageCallback;
 import org.dcache.auth.AuthorizationRecord;
 import org.dcache.srm.SrmReleaseSpaceCallbacks;
 import diskCacheV111.services.space.message.Release;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -93,7 +94,7 @@ import org.apache.log4j.Logger;
 public final class SrmReleaseSpaceCompanion
         implements MessageCallback<Release> {
 
-    private final static Logger _log = Logger.getLogger(SrmReleaseSpaceCompanion.class);
+    private final static Logger _log = LoggerFactory.getLogger(SrmReleaseSpaceCompanion.class);
     private final long spaceToken;
     private final Long spaceToReleaseInBytes;
     private final SrmReleaseSpaceCallbacks callbacks;

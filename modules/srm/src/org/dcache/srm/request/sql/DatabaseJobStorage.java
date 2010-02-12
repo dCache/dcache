@@ -83,14 +83,15 @@ import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.JDC;
 import org.dcache.commons.util.SqlHelper;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 /**
  *
  * @author  timur
  */
 public abstract class DatabaseJobStorage implements JobStorage, Runnable {
     private final static Logger logger =
-            Logger.getLogger(DatabaseJobStorage.class);
+            LoggerFactory.getLogger(DatabaseJobStorage.class);
     
     protected static final String INDEX_SUFFIX="_idx";
 
@@ -267,7 +268,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                             _con.commit();
                         } catch(SQLException sqle) {
                             //ignoring, state might be already in the table
-                            logger.error(sqle);
+                            logger.error(sqle.toString());
                         } finally {
                             SqlHelper.tryToClose(sqlStatement1);
                         }
@@ -679,7 +680,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                     _con);
                     scheduler.schedule(job);
                 } catch (SRMInvalidRequestException ire) {
-                    logger.error(ire);
+                    logger.error(ire.toString());
                 }
             }
         }
@@ -732,7 +733,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
                     Job job = Job.getJob(ID,
                     _con);
                 } catch (SRMInvalidRequestException ire) {
-                    logger.error(ire);
+                    logger.error(ire.toString());
                 }
                 
             }
@@ -964,7 +965,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
             throw sqe;
         }
         catch (Exception ex) {
-            logger.error(ex);
+            logger.error(ex.toString());
             if(_con != null) {
                 pool.returnFailedConnection(_con);
                 _con = null;
@@ -998,7 +999,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
             throw sqe;
         }
         catch (Exception ex) {
-            logger.error(ex);
+            logger.error(ex.toString());
             if(_con != null) {
                 pool.returnFailedConnection(_con);
                 _con = null;
@@ -1090,7 +1091,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
 			throw sqe;
 		}
 		catch (Exception ex) {
-			logger.error(ex);
+			logger.error(ex.toString());
 			if(_con != null) {
 				pool.returnFailedConnection(_con);
 				_con = null;
@@ -1145,7 +1146,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
 			throw sqe;
 		}
 		catch (Exception ex) {
-			logger.error(ex);
+			logger.error(ex.toString());
 			if(_con != null) {
 				pool.returnFailedConnection(_con);
 				_con = null;
@@ -1383,7 +1384,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
                     }
                 }
                 catch (Exception ex) {
-                    logger.error(ex);
+                    logger.error(ex.toString());
                     if(_con != null) {
                         pool.returnFailedConnection(_con);
                         _con = null;

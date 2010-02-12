@@ -102,7 +102,8 @@ import org.dcache.srm.v2_2.*;
 import org.apache.axis.types.URI;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SRMInvalidRequestException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -113,7 +114,7 @@ import org.apache.log4j.Logger;
 public final class CopyFileRequest extends FileRequest {
 
     private static final Logger logger =
-            Logger.getLogger(CopyFileRequest.class);
+            LoggerFactory.getLogger(CopyFileRequest.class);
 	private String from_url;
 	private String to_url;
 	private GlobusURL from_turl;
@@ -533,7 +534,7 @@ public final class CopyFileRequest extends FileRequest {
 		if(from ==null || to == null) {
 			String error = "could not resolve either source or destination"+
 				" from = "+from+" to = "+to;
-			logger.error(error);
+			logger.error(error.toString());
 			throw new SRMException(error);
 		}
 		logger.debug("calling scriptCopy("+from.getURL()+","+to.getURL()+")");
@@ -770,7 +771,7 @@ public final class CopyFileRequest extends FileRequest {
             try {
                 ((CopyRequest)getRequest()).fileRequestCompleted();
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire);
+                logger.error(ire.toString());
             }
         }
         catch(IllegalStateTransition ist) {
@@ -818,7 +819,7 @@ public final class CopyFileRequest extends FileRequest {
 					return;
 				}
 				catch(Exception e) {
-					logger.error(e);
+					logger.error(e.toString());
 					logger.error("copying using script failed, trying java");
 				}
 			}
@@ -848,7 +849,7 @@ public final class CopyFileRequest extends FileRequest {
 			}
 		}
 		catch(Exception e) {
-			logger.error(e);
+			logger.error(e.toString());
 			logger.error("copy  failed");
 			throw new NonFatalJobFailure(e.toString());
 		}
@@ -889,7 +890,7 @@ public final class CopyFileRequest extends FileRequest {
 				}
 				catch(IOException ioe) {
 					logger.error("saving credentials to "+proxy_file+" failed");
-					logger.error(ioe);
+					logger.error(ioe.toString());
 					proxy_file = null;
 				}
 			}
@@ -975,7 +976,7 @@ public final class CopyFileRequest extends FileRequest {
 				}
 				catch(Exception e) {
 					logger.error("error deleting proxy cash "+proxy_file);
-					logger.error(e);
+					logger.error(e.toString());
 				}
 			}
 		}
@@ -1033,7 +1034,7 @@ public final class CopyFileRequest extends FileRequest {
                         try {
                             user = getUser();
                         } catch (SRMInvalidRequestException ire) {
-                            logger.error(ire);
+                            logger.error(ire.toString());
                             return;
                         }
 			if(getSpaceReservationId() != null && isWeReservedSpace()) {
@@ -1328,7 +1329,7 @@ public final class CopyFileRequest extends FileRequest {
 				logger.error("PutCallbacks Timeout");
 			}
 			catch(Exception e) {
-				logger.error(e);
+				logger.error(e.toString());
 			}
 			complete(false);
 		}
@@ -1346,7 +1347,7 @@ public final class CopyFileRequest extends FileRequest {
 				logger.error("PutCallbacks Timeout");
 			}
 			catch(Exception e) {
-				logger.error(e);
+				logger.error(e.toString());
 			}
 			complete(false);
 		}
@@ -1364,7 +1365,7 @@ public final class CopyFileRequest extends FileRequest {
 				logger.error("PutCallbacks Timeout");
 			}
 			catch(Exception e1) {
-				logger.error(e1);
+				logger.error(e1.toString());
 			}
 			complete(false);
 		}
@@ -1383,7 +1384,7 @@ public final class CopyFileRequest extends FileRequest {
 				logger.error("PutCallbacks Timeout");
 			}
 			catch(Exception e) {
-				logger.error(e);
+				logger.error(e.toString());
 			}
 			complete(false);
 		}
@@ -1407,13 +1408,13 @@ public final class CopyFileRequest extends FileRequest {
 						scheduler.schedule(fr);
 					}
 					catch(Exception ie) {
-						logger.error(ie);
+						logger.error(ie.toString());
 					}
 				}
 				complete(true);
 			}
 			catch(Exception e){
-				logger.error(e);
+				logger.error(e.toString());
 				complete(false);
 			}
 
@@ -1432,7 +1433,7 @@ public final class CopyFileRequest extends FileRequest {
 				logger.error("PutCallbacks Timeout");
 			}
 			catch(Exception e) {
-				logger.error(e);
+				logger.error(e.toString());
 			}
 			complete(false);
 		}
@@ -1453,7 +1454,7 @@ public final class CopyFileRequest extends FileRequest {
 				logger.error("PutCallbacks Timeout");
 			}
 			catch(Exception e) {
-				logger.error(e);
+				logger.error(e.toString());
 			}
 			complete(false);
 		}
@@ -1474,7 +1475,7 @@ public final class CopyFileRequest extends FileRequest {
 				logger.error("PutCallbacks Timeout");
 			}
 			catch(Exception e) {
-				logger.error(e);
+				logger.error(e.toString());
 			}
 			complete(false);
 		}
@@ -1534,7 +1535,7 @@ public final class CopyFileRequest extends FileRequest {
                 copyFileRequest.setStateToDone();
                 complete(true);
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire);
+                logger.error(ire.toString());
             }
 		}
 
@@ -1543,12 +1544,12 @@ public final class CopyFileRequest extends FileRequest {
             try {
                  copyFileRequest   = getCopyFileRequest();
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire);
+                logger.error(ire.toString());
                 return;
             }
 			copyFileRequest.setTransferError(e);
 			logger.error("copy failed:");
-			logger.error(e);
+			logger.error(e.toString());
 			State state =  copyFileRequest.getState();
 			Scheduler scheduler = Scheduler.getScheduler(copyFileRequest.getSchedulerId());
 			if(!State.isFinalState(state) && scheduler != null) {
@@ -1556,10 +1557,10 @@ public final class CopyFileRequest extends FileRequest {
 					scheduler.schedule(copyFileRequest);
 				}
 				catch(InterruptedException ie) {
-					logger.error(ie);
+					logger.error(ie.toString());
 				}
 				catch(org.dcache.srm.scheduler.IllegalStateTransition ist) {
-					logger.error(ist);
+					logger.error(ist.toString());
 				}
 			}
 			complete(false);
@@ -1576,14 +1577,14 @@ public final class CopyFileRequest extends FileRequest {
 		try { to_surl= new URI(getTo_url());
 		}
 		catch (Exception e) {
-			logger.error(e);
+			logger.error(e.toString());
 			throw new java.sql.SQLException("wrong surl format");
 		}
 		try {
 			from_surl=new URI(getFrom_url());
 		}
 		catch (Exception e) {
-			logger.error(e);
+			logger.error(e.toString());
 			throw new java.sql.SQLException("wrong surl format");
 		}
 		copyRequestFileStatus.setSourceSURL(from_surl);
@@ -1643,7 +1644,7 @@ public final class CopyFileRequest extends FileRequest {
 			tsurl=new URI(surl);
 		}
 		catch (Exception e) {
-			logger.error(e);
+			logger.error(e.toString());
 			throw new java.sql.SQLException("wrong surl format");
 		}
 		TReturnStatus returnStatus =  getReturnStatus();
@@ -1720,7 +1721,7 @@ public final class CopyFileRequest extends FileRequest {
 				logger.error("CopyReserveSpaceCallbacks error: "+ reason);
 			}
 			catch(Exception e) {
-				logger.error(e);
+				logger.error(e.toString());
 			}
 		}
 		public void NoFreeSpace(String reason) {
@@ -1738,7 +1739,7 @@ public final class CopyFileRequest extends FileRequest {
 				logger.error("CopyReserveSpaceCallbacks error NoFreeSpace : "+ reason);
 			}
 			catch(Exception e) {
-				logger.error(e);
+				logger.error(e.toString());
 			}
 		}
 
@@ -1756,12 +1757,12 @@ public final class CopyFileRequest extends FileRequest {
 						scheduler.schedule(fr);
 					}
 					catch(Exception ie) {
-						logger.error(ie);
+						logger.error(ie.toString());
 					}
 				}
 			}
 			catch(Exception e) {
-				logger.error(e);
+				logger.error(e.toString());
 			}
 		}
 
@@ -1776,10 +1777,10 @@ public final class CopyFileRequest extends FileRequest {
 					logger.error("Illegal State Transition : " +ist.getMessage());
 				}
 				logger.error("CopyReserveSpaceCallbacks exception");
-				logger.error(e);
+				logger.error(e.toString());
 			}
 			catch(Exception e1) {
-				logger.error(e1);
+				logger.error(e1.toString());
 			}
 		}
 	}
@@ -1808,7 +1809,7 @@ public final class CopyFileRequest extends FileRequest {
 				logger.error("TheReleaseSpaceCallbacks error: "+ error);
 			}
 			catch(Exception e) {
-				logger.error(e);
+				logger.error(e.toString());
 			}
 		}
 
@@ -1817,10 +1818,10 @@ public final class CopyFileRequest extends FileRequest {
 				CopyFileRequest fr = getCopyFileRequest();
 				fr.setSpaceReservationId(null);
 				logger.error("TheReleaseSpaceCallbacks exception");
-				logger.error(e);
+				logger.error(e.toString());
 			}
 			catch(Exception e1) {
-				logger.error(e1);
+				logger.error(e1.toString());
 			}
 		}
 
@@ -1831,7 +1832,7 @@ public final class CopyFileRequest extends FileRequest {
 				logger.error("TheReleaseSpaceCallbacks Timeout");
 			}
 			catch(Exception e) {
-				logger.error(e);
+				logger.error(e.toString());
 			}
 		}
 
@@ -1842,7 +1843,7 @@ public final class CopyFileRequest extends FileRequest {
 				fr.setSpaceReservationId(null);
 			}
 			catch(Exception e) {
-				logger.error(e);
+				logger.error(e.toString());
 			}
 		}
 	}
@@ -1916,10 +1917,10 @@ public final class CopyFileRequest extends FileRequest {
 					logger.error("Illegal State Transition : " +ist.getMessage());
 				}
 				logger.error("CopyUseSpaceCallbacks exception");
-				logger.error(e);
+				logger.error(e.toString());
 			}
 			catch(Exception e1) {
-				logger.error(e1);
+				logger.error(e1.toString());
 			}
 		}
 
@@ -1935,7 +1936,7 @@ public final class CopyFileRequest extends FileRequest {
 				logger.error("CopyUseSpaceCallbacks error: "+ reason);
 			}
 			catch(Exception e) {
-				logger.error(e);
+				logger.error(e.toString());
 			}
 		}
 		/**
@@ -1956,7 +1957,7 @@ public final class CopyFileRequest extends FileRequest {
 				logger.error("CopyUseSpaceCallbacks error: "+ reason);
 			}
 			catch(Exception e) {
-				logger.error(e);
+				logger.error(e.toString());
 			}
 		}
 		/**
@@ -1977,7 +1978,7 @@ public final class CopyFileRequest extends FileRequest {
 				logger.error("CopyUseSpaceCallbacks error: "+ reason);
 			}
 			catch(Exception e) {
-				logger.error(e);
+				logger.error(e.toString());
 			}
 		}
 		/**
@@ -1998,7 +1999,7 @@ public final class CopyFileRequest extends FileRequest {
 				logger.error("CopyUseSpaceCallbacks error: "+ reason);
 			}
 			catch(Exception e) {
-				logger.error(e);
+				logger.error(e.toString());
 			}
 		}
 		/**
@@ -2019,7 +2020,7 @@ public final class CopyFileRequest extends FileRequest {
 				logger.error("CopyUseSpaceCallbacks error: "+ reason);
 			}
 			catch(Exception e) {
-				logger.error(e);
+				logger.error(e.toString());
 			}
 		}
 
@@ -2036,12 +2037,12 @@ public final class CopyFileRequest extends FileRequest {
 						scheduler.schedule(fr);
 					}
 					catch(Exception ie) {
-						logger.error(ie);
+						logger.error(ie.toString());
 					}
 				}
 			}
 			catch(Exception e) {
-				logger.error(e);
+				logger.error(e.toString());
 			}
 		}
 	}
@@ -2069,7 +2070,7 @@ public final class CopyFileRequest extends FileRequest {
 				logger.error("CopyCancelUseOfSpaceCallbacks exception",e);
 			}
 			catch(Exception e1) {
-				logger.error(e1);
+				logger.error(e1.toString());
 			}
 		}
 
@@ -2079,7 +2080,7 @@ public final class CopyFileRequest extends FileRequest {
 				logger.error("CopyCancelUseOfSpaceCallbacks error: "+ reason);
 			}
 			catch(Exception e) {
-				logger.error(e);
+				logger.error(e.toString());
 			}
 		}
 
@@ -2089,7 +2090,7 @@ public final class CopyFileRequest extends FileRequest {
 				logger.debug("Umarked Space as Being Used");
 			}
 			catch(Exception e) {
-				logger.error(e);
+				logger.error(e.toString());
 			}
 		}
 	}

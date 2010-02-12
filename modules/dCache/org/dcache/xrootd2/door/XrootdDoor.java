@@ -60,7 +60,8 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.CellVersion;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Shared cell component used to interface with the rest of
@@ -74,7 +75,7 @@ public class XrootdDoor
     extends AbstractCellComponent
     implements CellMessageReceiver
 {
-    private final static Logger _log = Logger.getLogger(XrootdDoor.class);
+    private final static Logger _log = LoggerFactory.getLogger(XrootdDoor.class);
 
     private final static String XROOTD_PROTOCOL_STRING = "Xrootd";
     private final static int XROOTD_PROTOCOL_MAJOR_VERSION = 2;
@@ -625,7 +626,7 @@ public class XrootdDoor
                 } catch (FileNotFoundCacheException e) {
                     // Already gone, so never mind
                 } catch (CacheException e) {
-                    _log.error(e);
+                    _log.error(e.toString());
                 }
             }
 

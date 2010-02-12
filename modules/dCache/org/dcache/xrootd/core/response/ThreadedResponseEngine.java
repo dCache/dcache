@@ -6,12 +6,13 @@ import org.dcache.xrootd.core.connection.PhysicalXrootdConnection;
 import org.dcache.xrootd.protocol.messages.AbstractResponseMessage;
 import org.dcache.xrootd.util.Queue;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ThreadedResponseEngine extends AbstractResponseEngine implements Runnable{
 
     public final static Logger _log =
-        Logger.getLogger(ThreadedResponseEngine.class);
+        LoggerFactory.getLogger(ThreadedResponseEngine.class);
 
     public static final String THREADNAME = "Xrootd-Response-Thread";
 

@@ -84,14 +84,15 @@ import org.dcache.cells.CellStub;
 import org.dcache.cells.MessageCallback;
 import org.dcache.cells.ThreadManagerMessageCallback;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static diskCacheV111.util.CacheException.*;
 
 public class PinCompanion
     implements MessageCallback<PinManagerPinMessage>
 {
-    private final static Logger _log = Logger.getLogger(PinCompanion.class);
+    private final static Logger _log = LoggerFactory.getLogger(PinCompanion.class);
 
     private final PinCallbacks callbacks;
     private final String fileId;

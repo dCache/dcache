@@ -18,13 +18,14 @@ import java.io.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ChecksumModuleV1
     extends AbstractCellComponent
     implements CellCommandListener
 {
-    private final static Logger _log = Logger.getLogger(ChecksumModuleV1.class);
+    private final static Logger _log = LoggerFactory.getLogger(ChecksumModuleV1.class);
 
     private final Repository _repository;
 
@@ -397,7 +398,7 @@ public class ChecksumModuleV1
                 } catch (Exception e) {
                     /* Whatever it is, log it and continue with the task.
                      */
-                    _log.error(e);
+                    _log.error(e.toString());
                 }
             }
         }

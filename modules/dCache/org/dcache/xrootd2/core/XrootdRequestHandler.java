@@ -11,7 +11,8 @@ import org.jboss.netty.channel.ChannelFutureListener;
 import org.dcache.xrootd2.protocol.messages.*;
 import static org.dcache.xrootd2.protocol.XrootdProtocol.*;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A SimpleChannelHandler which provides an individual handler method
@@ -24,7 +25,7 @@ import org.apache.log4j.Logger;
 public class XrootdRequestHandler extends SimpleChannelHandler
 {
     private final static Logger _log =
-        Logger.getLogger(XrootdRequestHandler.class);
+        LoggerFactory.getLogger(XrootdRequestHandler.class);
 
     public XrootdRequestHandler()
     {

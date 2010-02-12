@@ -17,13 +17,14 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.HttpURLConnection;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
 {
     private final static Logger _log =
-        Logger.getLogger(RemoteHttpDataTransferProtocol_1.class);
-    private final static Logger _logSpaceAllocation = Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + RemoteHttpDataTransferProtocol_1.class.getName());
+        LoggerFactory.getLogger(RemoteHttpDataTransferProtocol_1.class);
+    private final static Logger _logSpaceAllocation = LoggerFactory.getLogger("logger.dev.org.dcache.poolspacemonitor." + RemoteHttpDataTransferProtocol_1.class.getName());
 
     public static final int READ   =  1;
     public static final int WRITE  =  2;
@@ -47,11 +48,11 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
     }
 
     private void say(String str){
-        _log.info(str);
+        _log.info(str.toString());
     }
 
     private void esay(String str){
-        _log.error(str);
+        _log.error(str.toString());
     }
 
     public void runIO(RandomAccessFile diskFile,

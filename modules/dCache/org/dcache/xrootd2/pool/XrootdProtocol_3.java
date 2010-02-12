@@ -64,7 +64,8 @@ import org.jboss.netty.handler.logging.LoggingHandler;
 import org.jboss.netty.handler.execution.ExecutionHandler;
 import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.util.NetworkUtils;
 
 
@@ -167,10 +168,10 @@ public class XrootdProtocol_3
      */
     private static final long SPACE_INC = 50 * (1 << 20);
 
-    private static final Logger _log = Logger.getLogger(XrootdProtocol_3.class);
+    private static final Logger _log = LoggerFactory.getLogger(XrootdProtocol_3.class);
 
     private static final Logger _logSpaceAllocation =
-        Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." +
+        LoggerFactory.getLogger("logger.dev.org.dcache.poolspacemonitor." +
                          XrootdProtocol_3.class.getName());
 
     /**
@@ -618,7 +619,7 @@ public class XrootdProtocol_3
             Thread me = Thread.currentThread();
             me.getUncaughtExceptionHandler().uncaughtException(me, t);
         } else {
-            _log.warn(t);
+            _log.warn(t.toString());
         }
         // TODO: If not already closed, we should probably close the
         // channel.

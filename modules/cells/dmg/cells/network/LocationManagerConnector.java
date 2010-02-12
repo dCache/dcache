@@ -9,7 +9,8 @@ import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
 import java.util.Random;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import dmg.cells.services.login.SshCAuth_Key;
 import dmg.cells.nucleus.CellAdapter;
@@ -27,7 +28,7 @@ public class LocationManagerConnector
     implements Runnable
 {
     private final static Logger _log =
-        Logger.getLogger("org.dcache.cells.network");
+        LoggerFactory.getLogger("org.dcache.cells.network");
 
     private final String _domain;
     private final String _lm;

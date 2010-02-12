@@ -8,11 +8,12 @@ import org.dcache.xrootd.core.ProtocolHandler;
 import org.dcache.xrootd.core.connection.PhysicalXrootdConnection;
 import org.dcache.xrootd.network.NetworkConnection;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RequestEngine extends Thread {
 
-    private final static Logger _log = Logger.getLogger(RequestEngine.class);
+    private final static Logger _log = LoggerFactory.getLogger(RequestEngine.class);
 
     public static final String THREADNAME = "Request-Thread";
 
@@ -111,7 +112,7 @@ public class RequestEngine extends Thread {
             try {
                 rawRequest = receive(expectedMsgLength);
             } catch (IOException e) {
-                _log.error(e);
+                _log.error(e.toString());
 
                 //				close request thread due to critical error
                 isInterrupted = true;
@@ -130,7 +131,7 @@ public class RequestEngine extends Thread {
                 try {
                     protocol.handleRequest(rawRequest);
                 } catch (IOException e) {
-                    _log.error(e);
+                    _log.error(e.toString());
                     //					close request thread du to critical error
                     isInterrupted = true;
                     break;
@@ -161,7 +162,7 @@ public class RequestEngine extends Thread {
 
                 handleCriticalException(e);
 
-            } else { _log.error(e); }
+            } else { _log.error(e.toString()); }
 
         } catch (IOException e) {
 
@@ -194,7 +195,7 @@ public class RequestEngine extends Thread {
 
                 handleCriticalException(e);
 
-            } else { _log.error(e); }
+            } else { _log.error(e.toString()); }
 
         } catch (IOException e) {
 

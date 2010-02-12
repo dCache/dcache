@@ -81,7 +81,8 @@ import diskCacheV111.services.space.SpaceReleasedException;
 import diskCacheV111.services.space.SpaceExpiredException;
 import diskCacheV111.services.space.NoFreeSpaceException;
 import diskCacheV111.services.space.SpaceAuthorizationException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -98,7 +99,7 @@ public final class SrmMarkSpaceAsBeingUsedCompanion
         implements MessageCallback<Use> {
 
     private final static Logger _log =
-            Logger.getLogger(SrmMarkSpaceAsBeingUsedCompanion.class);
+            LoggerFactory.getLogger(SrmMarkSpaceAsBeingUsedCompanion.class);
     private final long spaceToken;
     private final String pnfPath;
     private final long sizeInBytes;

@@ -99,7 +99,8 @@ import org.dcache.srm.SRMProtocol;
 import org.dcache.srm.qos.*;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMReleasedException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -108,7 +109,7 @@ import org.apache.log4j.Logger;
  */
 public final class CopyRequest extends ContainerRequest implements PropertyChangeListener {
     private final static Logger logger =
-            Logger.getLogger(CopyRequest.class);
+            LoggerFactory.getLogger(CopyRequest.class);
 
     private boolean from_url_is_srm;
     private boolean to_url_is_srm;
@@ -309,7 +310,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                 to_urls[i] = new SrmUrl(cfr.getToURL());
             }
         } catch(MalformedURLException murle) {
-            logger.error(murle);
+            logger.error(murle.toString());
             try {
                 setState(State.FAILED, murle.toString());
             }
@@ -336,7 +337,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                 ! (from_urls[i].getPort() == from_urls[0].getPort()) ) {
                     String err = "source url #"+i+" "+from_urls[i].getURL()+" and "+
                     "source url #0"+from_urls[0].getURL()+" are not compartible";
-                    logger.error(err);
+                    logger.error(err.toString());
                     throw new IOException(err);
                 }
 
@@ -346,7 +347,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                 ! (to_urls[i].getPort() == to_urls[0].getPort()) ) {
                     String err = "dest url #"+i+" "+to_urls[i].getURL()+" and "+
                     "dest url #0"+to_urls[0].getURL()+" are not compartible";
-                    logger.error(err);
+                    logger.error(err.toString());
                     throw new IOException(err);
                 }
 
@@ -707,7 +708,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                     }
                 }
                 catch(Exception e) {
-                    logger.error(e);
+                    logger.error(e.toString());
                     logger.error("failed to schedule CopyFileRequest " +cfr);
                     try {
                         cfr.setState(State.FAILED,"failed to schedule CopyFileRequest " +cfr +" rasaon: "+e);
@@ -743,7 +744,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                     else {
                         error = "retrieval of \"to\" TURL failed with error "+reason;
                     }
-                    logger.error(error);
+                    logger.error(error.toString());
                     cfr.setState(State.FAILED,error);
                 }
                 catch(IllegalStateTransition ist) {
@@ -778,7 +779,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                         else {
                             error = "retrieval of \"to\" TURL failed with error "+reason;
                         }
-                        logger.error(error);
+                        logger.error(error.toString());
                         cfr.setState(State.FAILED,error);
                     }
                     catch(IllegalStateTransition ist) {
@@ -893,7 +894,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
         }
         catch(Exception e)
         {
-            logger.error(e);
+            logger.error(e.toString());
             logger.error("throwing nonfatal exception for retry");
             throw new org.dcache.srm.scheduler.NonFatalJobFailure(e.toString());
         }
@@ -962,7 +963,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
             }
 
         }catch(Exception e) {
-            logger.error(e);
+            logger.error(e.toString());
         }
     }
 
@@ -993,7 +994,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
             }
             catch(Exception e)
             {
-                logger.error(e);
+                logger.error(e.toString());
                 logger.error("setting to done anyway");
                 try
                 {

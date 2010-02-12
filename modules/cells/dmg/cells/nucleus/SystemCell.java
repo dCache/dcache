@@ -3,7 +3,8 @@ import dmg.util.*;
 import java.io.*;
 import java.util.List;
 import java.util.ArrayList;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
   *
@@ -15,7 +16,7 @@ public class      SystemCell
     extends    CellAdapter
     implements Runnable, Thread.UncaughtExceptionHandler
 {
-    private final static Logger _log = Logger.getLogger(SystemCell.class);
+    private final static Logger _log = LoggerFactory.getLogger(SystemCell.class);
 
    private final CellShell   _cellShell ;
    private final CellNucleus _nucleus ;
@@ -258,8 +259,8 @@ public class      SystemCell
          * fatal error reoccurs.
          */
         if (e instanceof VirtualMachineError) {
-            _log.fatal("Fatal JVM error", e);
-            _log.fatal("Shutting down...");
+            _log.error("Fatal JVM error", e);
+            _log.error("Shutting down...");
             kill();
         }
 

@@ -16,7 +16,8 @@ import java.sql.*;
 import javax.sql.DataSource;
 import javax.security.auth.Subject;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.mchange.v2.c3p0.DataSources;
 
@@ -24,7 +25,7 @@ import org.dcache.commons.util.SqlHelper;
 
 public class SQLNameSpaceProvider extends AbstractNameSpaceProvider
 {
-    private static Logger _logNamespace = Logger.getLogger("logger.org.dcache.namespace.provider");
+    private static Logger _logNamespace = LoggerFactory.getLogger("logger.org.dcache.namespace.provider");
 
     private String _url = "jdbc:mysql://localhost/Himera";
     private String _driver = "org.gjt.mm.mysql.Driver";

@@ -7,7 +7,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.StateUpdateManager;
 
 import diskCacheV111.vehicles.Message;
@@ -42,7 +43,7 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>, Mes
 
 
 
-	private static final Logger _log = Logger.getLogger( MessageHandlerChain.class);
+	private static final Logger _log = LoggerFactory.getLogger( MessageHandlerChain.class);
 
 	private List<MessageHandler> _messageHandler = new LinkedList<MessageHandler>();
 

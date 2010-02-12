@@ -2,7 +2,8 @@ package diskCacheV111.services.authorization;
 
 import java.util.*;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.dcache.auth.*;
 import org.dcache.vehicles.AuthorizationMessage;
@@ -23,7 +24,7 @@ import dmg.cells.nucleus.CellEndpoint;
 public class GplazmaService {
 
 
-    private static final Logger _logAuth = Logger.getLogger("logger.org.dcache.authorization." + GplazmaService.class.getName());
+    private static final Logger _logAuth = LoggerFactory.getLogger("logger.org.dcache.authorization." + GplazmaService.class.getName());
 
 
     private final boolean _use_gplazmaAuthzModule;

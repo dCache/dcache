@@ -137,6 +137,7 @@
         <pathelement location="${libDir}/jpox/jpox-core-1.2.2.jar" />
         <pathelement location="${libDir}/jpox/jpox-enhancer-1.2.2.jar" />
         <pathelement location="${libDir}/log4j/log4j-${log4jVersion}.jar" />
+        <fileset dir="${libDir}/slf4j" includes="*.jar" />
         <pathelement location="${libDir}/asm/asm-3.1.jar" />
         <pathelement path="${dcache.build.dir}" />
     </path>
@@ -236,6 +237,7 @@
         <pathelement location="${libDir}/jpox/jpox-java5-1.2.2.jar" />
         <pathelement location="${libDir}/jpox/jpox-rdbms-1.2.2.jar" />
         <pathelement location="${libDir}/log4j/log4j-${log4jVersion}.jar" />
+        <fileset dir="${libDir}/slf4j" includes="*.jar" />
         <pathelement location="${libDir}/persistence/persistence-api-1.0.jar" />
         <pathelement location="${libDir}/asm/asm-3.1.jar" />
         <pathelement location="${dcache.build.dir}" />

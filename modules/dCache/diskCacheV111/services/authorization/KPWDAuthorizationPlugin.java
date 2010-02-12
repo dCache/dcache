@@ -16,7 +16,8 @@ import java.security.cert.X509Certificate;
 
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSName;
-import org.apache.log4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import diskCacheV111.util.KAuthFile;
 import org.dcache.auth.UserAuthRecord;
@@ -33,7 +34,7 @@ import gplazma.authz.plugins.CachingPlugin;
 
 public class KPWDAuthorizationPlugin extends CachingPlugin {
 
-    private static Logger logger = Logger.getLogger(KPWDAuthorizationPlugin.class);
+    private static Logger logger = LoggerFactory.getLogger(KPWDAuthorizationPlugin.class);
 	private String kAuthFilePath;
     private long authRequestID=0;
 	GSSContext context;
@@ -110,7 +111,7 @@ public class KPWDAuthorizationPlugin extends CachingPlugin {
             logger.info("dcache.kpwd service returned Username: " + user_name);
 			if (user_name == null) {
 				String denied = DENIED_MESSAGE + ": Cannot determine Username for DN " + subjectDN;
-                logger.warn(denied);
+                logger.warn(denied.toString());
                 throw new AuthorizationException(denied);
 			}	
 		}

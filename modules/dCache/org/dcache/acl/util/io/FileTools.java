@@ -10,14 +10,15 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author David Melkumyan, DESY Zeuthen
  *
  */
 public class FileTools {
-    private static final Logger logger = Logger.getLogger("logger.org.dcache.authorization." + FileTools.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger("logger.org.dcache.authorization." + FileTools.class.getName());
 
     public static int FILTER_FILES = 1;
 

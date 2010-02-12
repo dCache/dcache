@@ -81,7 +81,8 @@ import diskCacheV111.services.space.SpaceException;
 import diskCacheV111.services.space.NoFreeSpaceException;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.AccessLatency;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -98,7 +99,7 @@ public final class SrmReserveSpaceCompanion
         implements MessageCallback<Reserve> {
 
     private final static Logger _log =
-            Logger.getLogger(SrmReserveSpaceCompanion.class);
+            LoggerFactory.getLogger(SrmReserveSpaceCompanion.class);
     private final long sizeInBytes;
     private final long spaceReservationLifetime;
     private final String retentionPolicy;

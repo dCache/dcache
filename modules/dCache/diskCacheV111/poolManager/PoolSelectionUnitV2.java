@@ -23,7 +23,8 @@ import java.util.regex.Pattern;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import dmg.util.Args;
 import dmg.util.CommandSyntaxException;
@@ -41,7 +42,7 @@ public class PoolSelectionUnitV2
 {
 
     private static final String __version = "$Id: PoolSelectionUnitV2.java,v 1.42 2007-10-25 14:03:54 tigran Exp $";
-    private static final Logger _logPoolSelection = Logger.getLogger("logger.org.dcache.poolselection."+PoolSelectionUnitV2.class.getName());
+    private static final Logger _logPoolSelection = LoggerFactory.getLogger("logger.org.dcache.poolselection."+PoolSelectionUnitV2.class.getName());
 
 
     public String getVersion() {

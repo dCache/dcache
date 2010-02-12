@@ -13,7 +13,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.cells.AbstractCellComponent;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
@@ -35,7 +36,7 @@ import dmg.cells.nucleus.CellPath;
 public class PoolMonitorV5
     extends AbstractCellComponent
 {
-    private final static Logger _log = Logger.getLogger(PoolMonitorV5.class);
+    private final static Logger _log = LoggerFactory.getLogger(PoolMonitorV5.class);
 
    private long              _poolTimeout   = 15 * 1000;
    private PoolSelectionUnit _selectionUnit ;

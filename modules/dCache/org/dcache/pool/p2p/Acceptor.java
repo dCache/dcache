@@ -16,7 +16,8 @@ import java.util.HashMap;
 
 import org.dcache.util.PortRange;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Helper class for the P2PClient. Listens for connections from source
@@ -24,7 +25,7 @@ import org.apache.log4j.Logger;
  */
 class Acceptor implements Runnable
 {
-    private final static Logger _log = Logger.getLogger(Acceptor.class);
+    private final static Logger _log = LoggerFactory.getLogger(Acceptor.class);
 
     private final Map<Integer, Companion> _sessions =
         new HashMap<Integer, Companion>();
@@ -224,7 +225,7 @@ class Acceptor implements Runnable
             _log.error("Problem in accepting connection : " + e);
         } catch (Exception e) {
             _error = e.getMessage();
-            _log.fatal("Bug detected: " + e, e);
+            _log.error("Bug detected: " + e, e);
         }
     }
 

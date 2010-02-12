@@ -5,7 +5,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.BooleanStateValue;
 import org.dcache.services.info.base.FloatingPointStateValue;
 import org.dcache.services.info.base.IntegerStateValue;
@@ -21,7 +22,7 @@ import org.dcache.services.info.base.StringStateValue;
  */
 public class PoolgroupToPoolsVisitor implements StateVisitor {
 
-	private static Logger _log = Logger.getLogger( PoolgroupToPoolsVisitor.class);
+	private static Logger _log = LoggerFactory.getLogger( PoolgroupToPoolsVisitor.class);
 
 	private static final StatePath POOLGROUPS_PATH = new StatePath( "poolgroups");
 	

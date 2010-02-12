@@ -5,7 +5,8 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Set;
 import java.util.HashSet;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.DuplicateEntryException;
@@ -25,7 +26,7 @@ public class FileMetaDataRepository
     implements MetaDataStore
 {
     private static Logger _log =
-        Logger.getLogger("logger.org.dcache.repository");
+        LoggerFactory.getLogger("logger.org.dcache.repository");
 
     private static final String DIRECTORY_NAME = "control";
 
@@ -140,13 +141,13 @@ public class FileMetaDataRepository
             tmp.deleteOnExit();
 
             if (!tmp.createNewFile() || !tmp.exists()) {
-                _log.fatal("Could not create " + tmp);
+                _log.error("Could not create " + tmp);
                 return false;
             }
 
             return true;
 	} catch (IOException e) {
-            _log.fatal("Failed to touch " + tmp + ": " + e.getMessage());
+            _log.error("Failed to touch " + tmp + ": " + e.getMessage());
             return false;
 	}
     }

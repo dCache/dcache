@@ -3,7 +3,8 @@ package org.dcache.acl.mapper;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.acl.ACE;
 import org.dcache.acl.ACL;
 import org.dcache.acl.Permission;
@@ -23,7 +24,7 @@ import org.dcache.acl.unix.AMUnix;
  */
 public class AclUnixMapper {
 
-    private static final Logger logger = Logger.getLogger("logger.org.dcache.authorization." + AclUnixMapper.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger("logger.org.dcache.authorization." + AclUnixMapper.class.getName());
 
     private static AclUnixMapper _SINGLETON;
     static {

@@ -107,8 +107,8 @@ import org.ietf.jgss.GSSException;
 public class RemoteGsiftpTransferProtocol_1
     implements MoverProtocol,ChecksumMover,DataBlocksRecipient
 {
-    private final static org.apache.log4j.Logger _log =
-        org.apache.log4j.Logger.getLogger(RemoteGsiftpTransferProtocol_1.class);
+    private final static org.slf4j.Logger _log =
+        org.slf4j.LoggerFactory.getLogger(RemoteGsiftpTransferProtocol_1.class);
     //timeout after 5 minutes if credentials not delegated
     private final static int SERVER_SOCKET_TIMEOUT = 60 * 5 *1000;
     private final CellEndpoint _cell;
@@ -175,7 +175,7 @@ public class RemoteGsiftpTransferProtocol_1
             serverSocket.close();
         } catch (IOException e) {
             _log.error("failed to close server socket");
-            _log.error(e);
+            _log.error(e.toString());
             // we still can continue, this is non-fatal
         }
         GSSCredential deleg_cred;
@@ -209,7 +209,7 @@ public class RemoteGsiftpTransferProtocol_1
          out.close();
          }catch (Exception e)
          {
-         _log.error(e);
+         _log.error(e.toString());
          }
         */
 
@@ -342,7 +342,7 @@ public class RemoteGsiftpTransferProtocol_1
                 }
             }
         } catch (Exception e) {
-            _log.error(e);
+            _log.error(e.toString());
             throw new CacheException(e.toString());
         }
     }
@@ -374,7 +374,7 @@ public class RemoteGsiftpTransferProtocol_1
                 _client.close();
             }
         } catch (Exception e) {
-            _log.error(e);
+            _log.error(e.toString());
             throw new CacheException(e.toString());
         }
     }
@@ -406,7 +406,7 @@ public class RemoteGsiftpTransferProtocol_1
 
             return _transferChecksum;
         } catch (IOException e) {
-            _log.error(e);
+            _log.error(e.toString());
             return null;
         }
     }
@@ -488,7 +488,7 @@ public class RemoteGsiftpTransferProtocol_1
         {
             if (_source) {
                 String error = "DiskDataSourceSink is source and write is called";
-                _log.error(error);
+                _log.error(error.toString());
                 throw new IllegalStateException(error);
             }
 
@@ -544,7 +544,7 @@ public class RemoteGsiftpTransferProtocol_1
         {
             if (!_source) {
                 String error = "DiskDataSourceSink is sink and read is called";
-                _log.error(error);
+                _log.error(error.toString());
                 throw new IllegalStateException(error);
             }
 
@@ -573,7 +573,7 @@ public class RemoteGsiftpTransferProtocol_1
             }
             catch(Exception e){
                 _log.error("could not get "+type+" from pnfs:");
-                _log.error(e);
+                _log.error(e.toString());
                 _log.error("ignoring this error");
 
             }

@@ -76,14 +76,15 @@ import org.dcache.srm.AbstractStorageElement;
 import java.io.IOException;
 import java.beans.PropertyChangeListener;
 import org.dcache.srm.request.RequestCredential;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 /**
  *
  * @author  timur
  */
 public final class RemoteTurlGetterV1 extends TurlGetterPutterV1 {
     private static final Logger logger =
-            Logger.getLogger(RemoteTurlGetterV1.class);
+            LoggerFactory.getLogger(RemoteTurlGetterV1.class);
     
     public RemoteTurlGetterV1(AbstractStorageElement storage,
     RequestCredential credential,String[] surls,

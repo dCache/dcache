@@ -13,7 +13,8 @@ import java.util.Iterator;
 import org.ietf.jgss.*;
 
 // globus gsi
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.glite.voms.FQAN;
 import org.globus.gsi.GSIConstants;
 import org.globus.gsi.GlobusCredential;
@@ -26,7 +27,7 @@ import org.gridforum.jgss.ExtendedGSSManager;
 
 class GsiTunnel extends GssTunnel  {
 
-    private final static Logger _log = Logger.getLogger(GsiTunnel.class);
+    private final static Logger _log = LoggerFactory.getLogger(GsiTunnel.class);
 
     private ExtendedGSSContext _e_context = null;
 

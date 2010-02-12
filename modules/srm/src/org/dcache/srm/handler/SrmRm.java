@@ -30,7 +30,8 @@ import org.dcache.srm.RemoveFileCallbacks;
 import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
 import org.apache.axis.types.URI;
 import org.dcache.srm.util.Configuration;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.axis.types.URI.MalformedURIException;
 
 /**
@@ -41,7 +42,7 @@ import org.apache.axis.types.URI.MalformedURIException;
 public class SrmRm {
 	private final static String SFN_STRING = "?SFN=";
         private static Logger logger = 
-            Logger.getLogger(SrmRm.class);
+            LoggerFactory.getLogger(SrmRm.class);
         
 	AbstractStorageElement storage;
 	SrmRmRequest           request;
@@ -77,7 +78,7 @@ public class SrmRm {
                 response = getResponse(" malformed uri : "+mue.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
             } catch(SRMException srme) {
-                logger.error(srme);
+                logger.error(srme.toString());
                 response = getFailedResponse(srme.toString());
             }
             return response;
@@ -146,14 +147,14 @@ public class SrmRm {
 					
 				} 
 				catch(RuntimeException re) {
-					logger.error(re);
+					logger.error(re.toString());
 					surlReturnStatusArray[i].setStatus( 
 						new TReturnStatus(
 							TStatusCode.SRM_INTERNAL_ERROR,
 							"RuntimeException "+re.getMessage()));
 				} 
 				catch (Exception e) {
-					logger.error(e);
+					logger.error(e.toString());
 					surlReturnStatusArray[i].setStatus( 
 						new TReturnStatus(
 							TStatusCode.SRM_INTERNAL_ERROR,
@@ -239,7 +240,7 @@ public class SrmRm {
 				"Exception: "+e.getMessage());
 			TReturnStatus individualFileReturnStatus
 				= new TReturnStatus();
-			logger.warn(e);
+			logger.warn(e.toString());
 			done();
 		}
 		

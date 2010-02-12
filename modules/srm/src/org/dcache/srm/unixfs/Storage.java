@@ -57,13 +57,14 @@ import java.io.PrintStream;
 import org.dcache.srm.RemoveFileCallbacks;
 
 import java.util.*;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Storage
     implements AbstractStorageElement {
 
   private static final Logger logger =
-          Logger.getLogger(Storage.class);
+          LoggerFactory.getLogger(Storage.class);
   private final static String cvsId = "$Id:";
 
   private boolean debug = true; // Turns on/off debug messages
@@ -192,7 +193,7 @@ public class Storage
     throw new SRMException("no sutable protocol found");
     //SRMException srmEx = new SRMException(
     //    "Method getPutTurl() not yet implemented.");
-    //logger.error( srmEx );
+    //logger.error(srmEx.toString());
     //throw srmEx;
   }
 
@@ -232,7 +233,7 @@ public class Storage
     throw new SRMException("no sutable protocol found");
     /*SRMException srmEx = new SRMException(
         "Method getGetTurl() not yet implemented.");
-    logger.error(srmEx);
+    logger.error(srmEx.toString());
     throw srmEx;*/
   }
 
@@ -294,14 +295,14 @@ public class Storage
           }
           catch(Exception e)
           {
-              logger.error(e);
+              logger.error(e.toString());
               throw new SRMException("remote turl "+remoteTURL+" to local file "+actualFilePath+" transfer failed",e);
           }
 
 
 //    SRMException srmEx = new SRMException(
 //        "Method getFromRemoteTURL() not yet implemented.");
-//    logger.error(srmEx);
+//    logger.error(srmEx.toString());
 //    throw srmEx;
   }
 
@@ -335,13 +336,13 @@ public class Storage
           }
           catch(Exception e)
           {
-              logger.error(e);
+              logger.error(e.toString());
               throw new SRMException("remote turl "+remoteTURL+" to local file "+actualFilePath+" transfer failed",e);
           }
     /**@todo # Implement putToRemoteTURL() method */
 //    SRMException srmEx = new SRMException(
 //        "Method putToRemoteTURL() not yet implemented.");
-//    logger.error(srmEx);
+//    logger.error(srmEx.toString());
 //    throw srmEx;
   }
 
@@ -369,12 +370,12 @@ public class Storage
     }
     catch (IOException ex) {
       logger.error("IOException in localCopy(): " + cmd[0]+" "+cmd[1]+" "+cmd[2] );
-      logger.error(ex);
+      logger.error(ex.toString());
       throw new SRMException( ex );
     }
     catch (InterruptedException ex) {
       logger.error("InterruptedException in localCopy(): " + cmd[0]+" "+cmd[1]+" "+cmd[2] );
-      logger.error(ex);
+      logger.error(ex.toString());
       throw new SRMException( ex );
     }
 
@@ -457,7 +458,7 @@ public class Storage
           throw new IOException ("command failed with return_code="+return_code);
       }
     } catch (IOException ioe) {
-        logger.error(ioe);
+        logger.error(ioe.toString());
         throw new SRMException("can't get the FileMetaData",ioe);
     }
     FileMetaData fmd = new UnixfsFileMetaData(filePath,
@@ -517,7 +518,7 @@ public class Storage
     /**@todo # Implement getStorageElementInfo() method */
     SRMException srmEx = new SRMException(
         "Method getStorageElementInfo() not yet implemented.");
-    logger.error( srmEx );
+    logger.error(srmEx.toString());
     throw srmEx;
   }
 
@@ -540,7 +541,7 @@ public class Storage
       fileId = filePath;
     }
     catch (Exception ex) {
-      logger.error( ex );
+      logger.error(ex.toString());
 
       String erStr = "getFileInfo() got exception for the filePath=" +filePath +".";
       callbacks.GetStorageInfoFailed( erStr );
@@ -582,7 +583,7 @@ public class Storage
     }
     catch (Exception ex) {
       reason = "got exception " + ex;
-      logger.error( ex );
+      logger.error(ex.toString());
     }
 
    // Return filedId as PinId
@@ -614,7 +615,7 @@ public class Storage
     }
     catch (Exception ex) {
       reason = "got exception " + ex;
-      logger.error( ex );
+      logger.error(ex.toString());
     }
 
    if( unpinned )
@@ -644,7 +645,7 @@ public class Storage
     }
     catch (Exception ex) {
       reason = "got exception " + ex;
-      logger.error( ex );
+      logger.error(ex.toString());
     }
 
     if( deleted )
@@ -738,7 +739,7 @@ public class Storage
       }
     }
     catch (Exception ex) {
-      logger.error( ex );
+      logger.error(ex.toString());
       String erStr = "prepareToPut() got exception for the filePath=" +path +".";
       callbacks.GetStorageInfoFailed( erStr );
       return;
@@ -761,7 +762,7 @@ public class Storage
 
     Exception eex = new UnsupportedOperationException(
         "Method prepareToPutInReservedSpace() not yet implemented, this is the feature of SRM interface v2.0.");
-    logger.error(eex);
+    logger.error(eex.toString());
     callbacks.Exception(eex);
   }
 

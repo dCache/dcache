@@ -1,6 +1,7 @@
 package org.dcache.services.info.gathers;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StateUpdateManager;
@@ -18,7 +19,7 @@ import dmg.cells.nucleus.UOID;
  */
 public class TopoMapHandler extends CellMessageHandlerSkel {
 
-	private static Logger _log = Logger.getLogger( TopoMapHandler.class);
+	private static Logger _log = LoggerFactory.getLogger( TopoMapHandler.class);
 	
 	private static final StatePath DOMAINS_PATH = new StatePath( "domains");
 

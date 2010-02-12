@@ -21,7 +21,8 @@ import java.util.Vector;
 import java.util.Set;
 import java.util.EnumSet;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import diskCacheV111.namespace.provider.EmptyTrash;
 import diskCacheV111.namespace.provider.Trash;
@@ -38,7 +39,7 @@ public class PnfsFile extends File
     private static Trash _trash = new EmptyTrash("empty trash");
 
     private static final Logger _logNameSpace =
-        Logger.getLogger("logger.dev.org.dcache.namespace." + PnfsFile.class.getName());
+        LoggerFactory.getLogger("logger.dev.org.dcache.namespace." + PnfsFile.class.getName());
 
     //
     // taken from linux stat man page

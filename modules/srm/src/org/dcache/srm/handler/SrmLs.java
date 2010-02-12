@@ -20,7 +20,8 @@ import org.dcache.srm.scheduler.State;
 import org.dcache.srm.request.LsRequest;
 import org.dcache.srm.request.LsFileRequest;
 import org.dcache.srm.request.FileRequest;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 
 /**
@@ -29,7 +30,7 @@ import org.dcache.srm.scheduler.IllegalStateTransition;
  */
 public class SrmLs {
         private static Logger logger =
-            Logger.getLogger(SrmLs.class);
+            LoggerFactory.getLogger(SrmLs.class);
         private final static String SFN_STRING="?SFN=";
         private int maxNumOfLevels=100;
         AbstractStorageElement storage;
@@ -86,7 +87,7 @@ public class SrmLs {
                         response = srmLs();
                 }
                 catch(Exception e) {
-                        logger.error(e);
+                        logger.error(e.toString());
                         response = new SrmLsResponse();
                         TReturnStatus returnStatus = new TReturnStatus();
                         returnStatus.setStatusCode(TStatusCode.SRM_FAILURE);
@@ -188,7 +189,7 @@ public class SrmLs {
                         }
                 }
                 catch (Exception e) {
-                        logger.error(e);
+                        logger.error(e.toString());
                         return getFailedResponse(e.toString());
                 }
         }

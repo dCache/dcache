@@ -7,7 +7,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.pool.classic.ChecksumModuleV1;
 import org.dcache.pool.classic.ReplicaStatePolicy;
 import org.dcache.pool.repository.FileStore;
@@ -37,7 +38,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 public class ConsistentStore
     implements MetaDataStore
 {
-    private final static Logger _log = Logger.getLogger(ConsistentStore.class);
+    private final static Logger _log = LoggerFactory.getLogger(ConsistentStore.class);
 
     private final static String RECOVERING_MSG =
         "Recovering %1$s...";

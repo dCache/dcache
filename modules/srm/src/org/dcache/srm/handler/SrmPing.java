@@ -23,7 +23,8 @@ import org.dcache.srm.SRMException;
 import org.dcache.srm.util.Configuration;
 import org.apache.axis.types.URI;
 import org.dcache.srm.request.ContainerRequest;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -32,7 +33,7 @@ import org.apache.log4j.Logger;
 
 public class SrmPing {
         private static Logger logger = 
-                Logger.getLogger(SrmPing.class);
+                LoggerFactory.getLogger(SrmPing.class);
 	private final static String SFN_STRING="?SFN=";
 	AbstractStorageElement storage;
 	SRMUser            user;

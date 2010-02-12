@@ -84,14 +84,15 @@ import java.io.FileWriter;
 import java.io.FileReader;
 import java.io.File;
 import java.io.IOException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 /**
  *
  * @author  timur
  */
 public class DatabaseRequestCredentialStorage implements RequestCredentialStorage {
     private static final Logger logger =
-            Logger.getLogger(DatabaseRequestCredentialStorage.class);
+            LoggerFactory.getLogger(DatabaseRequestCredentialStorage.class);
     
    /** Creates a new instance of TestDatabaseJobStorage */
    private final String jdbcUrl;
@@ -173,7 +174,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
                int result = s.executeUpdate(createRequestCredentialTable);
                s.close();
             } catch(SQLException sqle) {
-               logger.error(sqle);
+               logger.error(sqle.toString());
                logger.error("relation could already exist");
             }
          }
@@ -193,7 +194,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
             pool.returnFailedConnection(_con);
             _con = null;
          }
-         logger.error(ex);
+         logger.error(ex.toString());
          throw new SQLException(ex.toString());
       } finally {
          if(_con != null) {
@@ -298,7 +299,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
             }
         }
         catch (Exception e) { 
-            logger.error(e);
+            logger.error(e.toString());
         }
         finally { 
             if (_con != null) { 
@@ -377,7 +378,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
           _con.commit();
       }
       catch (SQLException e) {
-          logger.error(e);
+          logger.error(e.toString());
           if (_con!=null) {
               try { 
                   _con.rollback();
@@ -416,7 +417,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
                }catch(IOException ioe1) {
                }
            }
-           logger.error(ioe);
+           logger.error(ioe.toString());
        }
 
    }
@@ -475,7 +476,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
             return cred;
          } catch(Exception e) {
             logger.error("error reading the credentials from database");
-            logger.error(e);
+            logger.error(e.toString());
          }
       }
       return null;

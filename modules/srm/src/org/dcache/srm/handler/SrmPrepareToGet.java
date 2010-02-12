@@ -24,7 +24,8 @@ import org.dcache.srm.request.sql.GetRequestStorage;
 import org.dcache.srm.request.sql.GetFileRequestStorage;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.Tools;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.axis.types.URI.MalformedURIException;
 
 
@@ -35,7 +36,7 @@ import org.apache.axis.types.URI.MalformedURIException;
 public class SrmPrepareToGet {
 
     private static Logger logger =
-            Logger.getLogger(SrmPrepareToGet.class);
+            LoggerFactory.getLogger(SrmPrepareToGet.class);
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement storage;
     SrmPrepareToGetRequest request;
@@ -84,7 +85,7 @@ public class SrmPrepareToGet {
             response = getFailedResponse(" malformed uri : "+mue.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
         } catch(SRMException srme) {
-            logger.error(srme);
+            logger.error(srme.toString());
             response = getFailedResponse(srme.toString());
         }
 
@@ -255,7 +256,7 @@ public class SrmPrepareToGet {
             // Return the request status
             return r.getSrmPrepareToGetResponse();
         } catch(Exception e) {
-            logger.warn(e);
+            logger.warn(e.toString());
             return getFailedResponse(e.toString());
         }
 

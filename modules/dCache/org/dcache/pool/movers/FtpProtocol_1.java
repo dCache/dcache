@@ -5,15 +5,16 @@ import  dmg.cells.nucleus.*;
 import  java.io.*;
 import  java.net.*;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.dcache.pool.repository.Allocator;
 
 public class FtpProtocol_1
     implements MoverProtocol           {
 
-    private final static Logger _log = Logger.getLogger(FtpProtocol_1.class);
-    private final static Logger _logSpaceAllocation = Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + FtpProtocol_1.class.getName());
+    private final static Logger _log = LoggerFactory.getLogger(FtpProtocol_1.class);
+    private final static Logger _logSpaceAllocation = LoggerFactory.getLogger("logger.dev.org.dcache.poolspacemonitor." + FtpProtocol_1.class.getName());
 
     private long _bytesTransferred = -1;
     private long _transferStarted  = 0;
@@ -30,10 +31,10 @@ public class FtpProtocol_1
         say("FtpProtocol_1 created");
     }
     private void say(String str){
-        _log.info(str);
+        _log.info(str.toString());
     }
     private void esay(String str){
-        _log.error(str);
+        _log.error(str.toString());
     }
     public String toString(){
         return "SU="+_spaceUsed+";SA="+_spaceAllocated+";S="+_status;

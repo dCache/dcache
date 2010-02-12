@@ -1,6 +1,7 @@
 package org.dcache.xrootd2.protocol.messages;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jboss.netty.buffer.ChannelBuffer;
 
 public abstract class GenericReadRequestMessage extends AbstractRequestMessage
@@ -40,7 +41,7 @@ public abstract class GenericReadRequestMessage extends AbstractRequestMessage
     }
 
     private final static Logger _log =
-        Logger.getLogger(GenericReadRequestMessage.class);
+        LoggerFactory.getLogger(GenericReadRequestMessage.class);
 
     private final int pathid;
     private final EmbeddedReadRequest[] readList;

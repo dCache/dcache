@@ -23,7 +23,8 @@ import java.util.Date;
 import java.util.Iterator;
 import java.io.PrintWriter;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HsmFlushController
     extends AbstractCellComponent
@@ -32,7 +33,7 @@ public class HsmFlushController
                CellCommandListener
 {
     private final static Logger _log =
-        Logger.getLogger(HsmFlushController.class);
+        LoggerFactory.getLogger(HsmFlushController.class);
 
     private final Thread _worker  ;
     private int    _maxActive         = 1000 ;
@@ -268,7 +269,7 @@ public class HsmFlushController
                 /* Catch all - we should not see any exceptions at this
                  * point so better dump the stack trace.
                  */
-                _log.error(e, e);
+                _log.error(e.toString(), e);
             }
             try {
                 wait(_flushingInterval * 1000);

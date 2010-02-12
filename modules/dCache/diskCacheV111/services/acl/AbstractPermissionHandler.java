@@ -3,7 +3,8 @@ package diskCacheV111.services.acl;
 import java.io.File;
 import java.lang.reflect.Constructor;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.acl.ACLException;
 import org.dcache.acl.Origin;
 import org.dcache.acl.enums.FileAttribute;
@@ -26,7 +27,7 @@ import javax.security.auth.Subject;
  */
 public abstract class AbstractPermissionHandler implements PermissionHandler {
 
-    private static final Logger _logger = Logger.getLogger("logger.org.dcache.authorization." + AbstractPermissionHandler.class.getName());
+    private static final Logger _logger = LoggerFactory.getLogger("logger.org.dcache.authorization." + AbstractPermissionHandler.class.getName());
 
     private static final long DEFAULT_PNFS_TIMEOUT = 60 * 1000L;
 

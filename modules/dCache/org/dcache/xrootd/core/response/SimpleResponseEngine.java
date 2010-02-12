@@ -6,12 +6,13 @@ import org.dcache.xrootd.core.connection.PhysicalXrootdConnection;
 import org.dcache.xrootd.network.NetworkConnection;
 import org.dcache.xrootd.protocol.messages.AbstractResponseMessage;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SimpleResponseEngine extends AbstractResponseEngine {
 
     private final static Logger _log =
-        Logger.getLogger(SimpleResponseEngine.class);
+        LoggerFactory.getLogger(SimpleResponseEngine.class);
 
     private NetworkConnection network;
 

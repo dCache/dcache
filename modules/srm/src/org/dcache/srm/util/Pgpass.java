@@ -10,7 +10,8 @@ import java.io.PrintWriter;
 import java.io.BufferedWriter;
 import java.io.OutputStreamWriter;
 import java.io.IOException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.sql.SQLException;
 import java.net.UnknownHostException;
 /**
@@ -18,7 +19,7 @@ import java.net.UnknownHostException;
  * @author  Vladimir Podstavkov
  */
 public class Pgpass {
-    private static final Logger _logger = Logger.getLogger(Pgpass.class);
+    private static final Logger _logger = LoggerFactory.getLogger(Pgpass.class);
     private String _pwdfile;
     private String _hostname;
     private String _port;
@@ -46,7 +47,7 @@ public class Pgpass {
                 try {
                     hostMatched = Tools.sameHost(sa[0],hostname);
                 } catch(UnknownHostException uhe) {
-                    _logger.warn(uhe);
+                    _logger.warn(uhe.toString());
                 }
             }
             if ( hostMatched                                   &&
@@ -83,12 +84,12 @@ public class Pgpass {
                 _port = r1[1];
             } else if (r1.length > 2) {
                 String error = "illegal jdbc url format: "+url+legalFormats;
-                _logger.error(error);
+                _logger.error(error.toString());
                 throw new SQLException(error);
             }
         } else {
                 String error = "illegal jdbc url format: "+url+legalFormats;
-                _logger.error(error);
+                _logger.error(error.toString());
                 throw new SQLException(error);
         }
     }
@@ -150,7 +151,7 @@ public class Pgpass {
                 String error = String.format("could not get password from '%s' "+
                     "for  hostname: '%s' ,port: %s ,database: '%s' " +
                     "and username: '%s' ",_pwdfile,hostname,port,database,username);
-                _logger.error(error);
+                _logger.error(error.toString());
                 throw new SQLException(error);
             }
             return r;

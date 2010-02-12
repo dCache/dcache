@@ -12,14 +12,15 @@ import java.sql.SQLException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author David Melkumyan, DESY Zeuthen
  *
  */
 public class SQLHandler {
-    private static final Logger logger = Logger.getLogger("logger.org.dcache.authorization." + SQLHandler.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger("logger.org.dcache.authorization." + SQLHandler.class.getName());
 
     public final static String PROPERTY_USER = "user";
 

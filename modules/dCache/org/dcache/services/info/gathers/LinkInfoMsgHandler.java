@@ -2,7 +2,8 @@ package org.dcache.services.info.gathers;
 
 import java.util.ArrayList;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StateComposite;
 import org.dcache.services.info.base.StatePath;
@@ -19,7 +20,7 @@ import dmg.cells.nucleus.UOID;
  */
 public class LinkInfoMsgHandler extends CellMessageHandlerSkel {
 
-	private static Logger _log = Logger.getLogger( LinkInfoMsgHandler.class);
+	private static Logger _log = LoggerFactory.getLogger( LinkInfoMsgHandler.class);
 
 	private static final int EXPECTED_ARRAY_SIZE=13;
 

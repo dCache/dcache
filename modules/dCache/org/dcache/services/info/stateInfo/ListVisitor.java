@@ -3,7 +3,8 @@ package org.dcache.services.info.stateInfo;
 import java.util.Set;
 import java.util.HashSet;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateTransition;
@@ -16,7 +17,7 @@ import org.dcache.services.info.base.StateTransition;
  */
 public class ListVisitor extends SkeletonListVisitor {
 	
-	private static Logger _log = Logger.getLogger( ListVisitor.class);
+	private static Logger _log = LoggerFactory.getLogger( ListVisitor.class);
 
 	
 	/**

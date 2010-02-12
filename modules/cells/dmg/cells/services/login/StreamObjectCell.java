@@ -23,13 +23,14 @@ import dmg.util.Args;
 import dmg.util.CommandExitException;
 import dmg.util.StreamEngine;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class StreamObjectCell
     extends CellAdapter
     implements Runnable
 {
-    private static final Logger _log = Logger.getLogger(StreamObjectCell.class);
+    private static final Logger _log = LoggerFactory.getLogger(StreamObjectCell.class);
 
     private static final int HISTORY_SIZE = 50;
     private static final String CONTROL_C_ANSWER =
@@ -284,7 +285,7 @@ public class StreamObjectCell
                 }
             }
         } catch (IllegalAccessException e) {
-            _log.fatal("Failed to execute command: " + e);
+            _log.error("Failed to execute command: " + e);
         } catch (ClassNotFoundException e) {
             _log.warn("Binary mode failure: " + e);
         } catch (IOException e) {

@@ -1,6 +1,7 @@
 package org.dcache.services.info.secondaryInfoProviders;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateTransition;
@@ -9,7 +10,7 @@ import org.dcache.services.info.stateInfo.PoolSummaryVisitor;
 import org.dcache.services.info.stateInfo.SpaceInfo;
 
 public class PoolsSummaryMaintainer extends AbstractStateWatcher {
-	private static Logger _log = Logger.getLogger( PoolsSummaryMaintainer.class);
+	private static Logger _log = LoggerFactory.getLogger( PoolsSummaryMaintainer.class);
 	private static final String PREDICATE_PATHS[] = { "pools.*.space.*"};
 	private static final StatePath SUMMARY_POOLS_SPACE_PATH = StatePath.parsePath("summary.pools.space");
 

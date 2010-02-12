@@ -20,7 +20,8 @@ import org.dcache.srm.util.Configuration;
 import java.sql.*;
 import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.SRMUser;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -28,7 +29,7 @@ import org.apache.log4j.Logger;
  */
 public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
    private final static Logger logger =
-            Logger.getLogger(BringOnlineRequestStorage.class);
+            LoggerFactory.getLogger(BringOnlineRequestStorage.class);
      public static final String TABLE_NAME ="bringonlinerequests";
     
     private static final String UPDATE_PREFIX = "UPDATE " + TABLE_NAME + " SET "+

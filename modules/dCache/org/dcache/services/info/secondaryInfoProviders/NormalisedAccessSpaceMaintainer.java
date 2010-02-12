@@ -9,7 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateTransition;
@@ -47,7 +48,7 @@ import org.dcache.services.info.stateInfo.SpaceInfo;
 public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
 
     private static Logger _log =
-            Logger.getLogger( NormalisedAccessSpaceMaintainer.class);
+            LoggerFactory.getLogger( NormalisedAccessSpaceMaintainer.class);
 
     /**
      * How we want to represent the different LinkInfo.UNIT_TYPE values as

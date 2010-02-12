@@ -4,7 +4,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.acl.ACLException;
 import org.dcache.acl.Origin;
 import org.dcache.acl.enums.AccessType;
@@ -34,7 +35,7 @@ import javax.security.auth.Subject;
  */
 public class DelegatingPermissionHandler implements PermissionHandler {
 
-    private static final Logger _logger = Logger.getLogger("logger.org.dcache.authorization." + DelegatingPermissionHandler.class.getName());
+    private static final Logger _logger = LoggerFactory.getLogger("logger.org.dcache.authorization." + DelegatingPermissionHandler.class.getName());
 
     public static final String DELIMITER = ",";
 

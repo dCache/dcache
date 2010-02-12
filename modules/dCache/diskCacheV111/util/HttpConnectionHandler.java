@@ -14,12 +14,13 @@ import java.net.URL;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.StringTokenizer;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HttpConnectionHandler
 {
 
-  private static final Logger _log = Logger.getLogger(HttpConnectionHandler.class);
+  private static final Logger _log = LoggerFactory.getLogger(HttpConnectionHandler.class);
 
   public static final String HTTP09 = "HTTP/0.9";
   public static final String HTTP10 = "HTTP/1.0";

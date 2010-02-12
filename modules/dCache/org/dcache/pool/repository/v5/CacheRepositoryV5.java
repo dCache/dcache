@@ -56,7 +56,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Date;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CacheRepositoryV5
     extends AbstractCellComponent
@@ -69,7 +70,7 @@ public class CacheRepositoryV5
     */
     public static final long EXPIRATION_CLOCKSHIFT_EXTRA_TIME = 1000L;
     private final static Logger _log =
-        Logger.getLogger(CacheRepositoryV5.class);
+        LoggerFactory.getLogger(CacheRepositoryV5.class);
 
     private final List<FaultListener> _faultListeners =
         new CopyOnWriteArrayList<FaultListener>();
@@ -295,7 +296,7 @@ public class CacheRepositoryV5
                     if ((flags & ALLOW_SPACE_RECOVERY) == 0)
                         throw new CacheException(206, error);
 
-                    _log.error(error);
+                    _log.error(error.toString());
 
                     if (usedDataSpace - removableSpace > total) {
                         throw new

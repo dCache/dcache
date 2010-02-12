@@ -24,7 +24,8 @@ import org.dcache.srm.util.Configuration;
 import org.dcache.srm.scheduler.Scheduler;
 import org.apache.axis.types.URI;
 import org.dcache.srm.SRMProtocol;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.axis.types.URI.MalformedURIException;
 
 /**
@@ -34,7 +35,7 @@ import org.apache.axis.types.URI.MalformedURIException;
 
 public class SrmGetSpaceMetaData {
     private static Logger logger = 
-            Logger.getLogger(SrmGetSpaceMetaData.class);
+            LoggerFactory.getLogger(SrmGetSpaceMetaData.class);
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement  storage;
     SrmGetSpaceMetaDataRequest  request;
@@ -75,7 +76,7 @@ public class SrmGetSpaceMetaData {
             response = getFailedResponse(" malformed uri : "+mue.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
         } catch(SRMException srme) {
-            logger.error(srme);
+            logger.error(srme.toString());
             response = getFailedResponse(srme.toString());
         }
         return response;

@@ -30,7 +30,8 @@ import dmg.cells.nucleus.CellTunnelInfo;
 import dmg.cells.nucleus.CellEventListener;
 import dmg.util.Args;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import javax.jms.ConnectionFactory;
 import javax.jms.Connection;
 import javax.jms.Session;
@@ -66,9 +67,9 @@ public class JMSTunnel
     implements CellTunnel
 {
     private final static Logger _logMessages =
-        Logger.getLogger("logger.org.dcache.cells.messages");
+        LoggerFactory.getLogger("logger.org.dcache.cells.messages");
     private final static Logger _log =
-        Logger.getLogger(JMSTunnel.class);
+        LoggerFactory.getLogger(JMSTunnel.class);
 
     private final static long ARP_TIMEOUT = 10000;
     private final static long CACHE_TIME = 120000;

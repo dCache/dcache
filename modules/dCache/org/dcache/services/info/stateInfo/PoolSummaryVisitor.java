@@ -1,6 +1,7 @@
 package org.dcache.services.info.stateInfo;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StateTransition;
 
@@ -9,7 +10,7 @@ import org.dcache.services.info.base.StateTransition;
  */
 public class PoolSummaryVisitor extends AbstractPoolSpaceVisitor {
 
-	private static Logger _log = Logger.getLogger( PoolSummaryVisitor.class);
+	private static Logger _log = LoggerFactory.getLogger( PoolSummaryVisitor.class);
 		
 	/**
 	 * Obtain some summary statistics about all available pools.

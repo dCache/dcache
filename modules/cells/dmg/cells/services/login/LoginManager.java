@@ -8,7 +8,8 @@ import java.io.* ;
 import java.nio.channels.*;
 import java.util.*;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import dmg.cells.nucleus.*;
 import dmg.util.*;
@@ -55,7 +56,7 @@ public class       LoginManager
 
   private LoginBrokerHandler _loginBrokerHandler = null ;
 
-  private static Logger _logSocketIO = Logger.getLogger("logger.dev.org.dcache.io.socket");
+  private static Logger _logSocketIO = LoggerFactory.getLogger("logger.dev.org.dcache.io.socket");
 
   private Class [][] _loginConSignature = {
     {  java.lang.String.class ,

@@ -5,7 +5,8 @@ package org.dcache.acl.client;
 
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.MissingArgumentException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.acl.ACL;
 import org.dcache.acl.handler.DefaultACLHandler;
 
@@ -27,7 +28,7 @@ public class GetAclClient extends AclClient {
     // private final FileMetaDataProviderHelper _metaDataSource = new
     // FileMetaDataProviderHelper(_dummyCell);
 
-    private static final Logger logger = Logger.getLogger("logger.org.dcache.authorization." + GetAclClient.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger("logger.org.dcache.authorization." + GetAclClient.class.getName());
 
     public GetAclClient(String[] args) {
         super(args);
@@ -66,7 +67,7 @@ public class GetAclClient extends AclClient {
             app.exitHelp(2, "GetAclClient failed. Illegal Argument Exception: " + iae.getMessage());
 
         } catch (Exception e) {
-            logger.fatal("GetAclClient failed. Exception: " + e.getMessage());
+            logger.error("GetAclClient failed. Exception: " + e.getMessage());
             System.exit(3);
         }
     }

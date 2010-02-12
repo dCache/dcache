@@ -5,7 +5,8 @@ package org.dcache.acl.handler.singleton;
 
 import java.util.Properties;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.acl.ACL;
 import org.dcache.acl.ACLException;
 import org.dcache.acl.config.AclConfig;
@@ -23,7 +24,7 @@ import org.dcache.acl.config.AclConfig;
  */
 public class AclHandler {
 
-    private static final Logger logger = Logger.getLogger("logger.org.dcache.authorization." + AclHandler.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger("logger.org.dcache.authorization." + AclHandler.class.getName());
 
     private static org.dcache.acl.handler.DefaultACLHandler _aclHandler;
     private static AclConfig _aclConfig;

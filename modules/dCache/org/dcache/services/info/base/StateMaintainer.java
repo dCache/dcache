@@ -9,7 +9,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.util.FireAndForgetTask;
 
 /**
@@ -19,7 +20,7 @@ import org.dcache.util.FireAndForgetTask;
  */
 public class StateMaintainer implements StateUpdateManager {
 
-    private static final Logger _log = Logger.getLogger( StateMaintainer.class);
+    private static final Logger _log = LoggerFactory.getLogger( StateMaintainer.class);
 
     private static final boolean CANCEL_RUNNING_METRIC_EXPUNGE = false;
 

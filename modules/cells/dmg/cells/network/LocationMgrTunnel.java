@@ -16,7 +16,8 @@ import java.util.Map;
 import java.util.HashMap;
 
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellPath;
@@ -135,7 +136,7 @@ public class LocationMgrTunnel
     private final static Tunnels _tunnels = new Tunnels();
 
     private final static Logger _logMessages =
-        Logger.getLogger("logger.org.dcache.cells.messages");
+        LoggerFactory.getLogger("logger.org.dcache.cells.messages");
 
     private final CellNucleus  _nucleus;
 

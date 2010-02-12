@@ -25,7 +25,8 @@ import org.dcache.srm.scheduler.Scheduler;
 import org.apache.axis.types.URI;
 import org.dcache.srm.request.ContainerRequest;
 import org.dcache.srm.SRMProtocol;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -34,7 +35,7 @@ import org.apache.log4j.Logger;
 
 public class SrmGetTransferProtocols {
    private static Logger logger = 
-           Logger.getLogger(SrmGetTransferProtocols.class);
+           LoggerFactory.getLogger(SrmGetTransferProtocols.class);
 
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement storage;
@@ -82,7 +83,7 @@ public class SrmGetTransferProtocols {
           
          protocols = srm.getProtocols(user,credential);
       } catch(Exception e) {
-         logger.warn(e);
+         logger.warn(e.toString());
          return getFailedResponse("SrmGetTransferProtocols failed: "+e,
                  TStatusCode.SRM_INTERNAL_ERROR);
       }

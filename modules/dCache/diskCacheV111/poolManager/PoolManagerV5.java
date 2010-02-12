@@ -12,7 +12,8 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.poolmanager.Utils;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
@@ -88,8 +89,8 @@ public class PoolManagerV5
     private String  _quotaManager  = "none";
 
 
-    private final static Logger _log = Logger.getLogger(PoolManagerV5.class);
-    private final static Logger _logPoolMonitor = Logger.getLogger("logger.org.dcache.poolmonitor." + PoolManagerV5.class.getName());
+    private final static Logger _log = LoggerFactory.getLogger(PoolManagerV5.class);
+    private final static Logger _logPoolMonitor = LoggerFactory.getLogger("logger.org.dcache.poolmonitor." + PoolManagerV5.class.getName());
 
 
     public PoolManagerV5()
@@ -667,7 +668,7 @@ public class PoolManagerV5
        }catch(Exception ee ){
 
            _log.warn( "quotasExceeded of "+storageClass+" : Exception : "+ee);
-           _log.warn(ee);
+           _log.warn(ee.toString());
            return false ;
        }
 

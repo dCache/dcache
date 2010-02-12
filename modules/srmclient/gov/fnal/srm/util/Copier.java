@@ -112,25 +112,25 @@ public class Copier implements Runnable {
  
     public final void say(String msg) {
         if(logger != null) {
-            logger.log(msg);
+            logger.log(msg.toString());
         }
     }
     
     public final void dsay(String msg) {
         if(logger != null) {
-            logger.log(msg);
+            logger.log(msg.toString());
         }
     }
     
     //error say
     public final void esay(String err) {
         if(logger != null) {
-            logger.elog(err);
+            logger.elog(err.toString());
         }
     }
     public final void esay(Throwable t) {
         if(logger != null) {
-            logger.elog(t);
+            logger.elog(t.toString());
         }
     }
     

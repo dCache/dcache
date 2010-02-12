@@ -37,7 +37,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  *
  */
 public class EncryptedAuthzToken {
-    //	static Logger logger = Logger.getLogger(EncryptedAuthzToken.class);
+    //	static Logger logger = LoggerFactory.getLogger(EncryptedAuthzToken.class);
 
     //	delimiters used to split the raw token into Cipher and Sealed Envelope
     private final static String CYPHER_START = "-----BEGIN SEALED CIPHER-----";

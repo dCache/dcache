@@ -21,11 +21,12 @@ import org.dcache.xrootd.protocol.messages.WriteRequest;
 import org.dcache.xrootd.protocol.messages.GenericReadRequestMessage.EmbeddedReadRequest;
 import org.dcache.xrootd.util.Queue;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class LogicalStream extends Thread {
 
-    private final static Logger _log = Logger.getLogger(LogicalStream.class);
+    private final static Logger _log = LoggerFactory.getLogger(LogicalStream.class);
 
     private PhysicalXrootdConnection physicalConnection;
 

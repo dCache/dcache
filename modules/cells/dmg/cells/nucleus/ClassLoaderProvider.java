@@ -4,7 +4,8 @@ import dmg.util.* ;
 import java.util.* ;
 import java.io.* ;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ClassLoaderProvider {
 
@@ -155,7 +156,7 @@ class CDPDummy implements ClassDataProvider {
 class ClassDataProvider0 implements ClassDataProvider {
 
     private final static Logger _log =
-        Logger.getLogger(ClassDataProvider0.class);
+        LoggerFactory.getLogger(ClassDataProvider0.class);
 
     private CellNucleus _nucleus  = null ;
     private CellPath    _cellPath = null ;

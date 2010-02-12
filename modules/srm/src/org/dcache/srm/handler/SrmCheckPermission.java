@@ -45,7 +45,8 @@ import java.util.Iterator;
 import java.util.Collections;
 import java.util.Comparator;
 import java.io.File;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 /**
  *
  * @author neha
@@ -53,7 +54,7 @@ import org.apache.log4j.Logger;
 
 public class SrmCheckPermission {
         private static Logger logger =
-            Logger.getLogger(SrmCheckPermission.class);
+            LoggerFactory.getLogger(SrmCheckPermission.class);
 	private final static String SFN_STRING="?SFN=";
 	AbstractStorageElement storage;
 	SrmCheckPermissionRequest request;
@@ -77,7 +78,7 @@ public class SrmCheckPermission {
 			response = srmCheckPermission();
 		}
 		catch(Exception e) {
-			logger.error(e);
+			logger.error(e.toString());
 		}
 		return response;
 	}
@@ -153,7 +154,7 @@ public class SrmCheckPermission {
 				pr.setPermission(pm);
 			}
 			catch (SRMException srme) {
-				logger.warn(srme);
+				logger.warn(srme.toString());
 				pr.getStatus().setStatusCode(TStatusCode.SRM_FAILURE);
 				pr.getStatus().setExplanation(uriarray[i]+" "+srme.getMessage());
 				nfailed++;

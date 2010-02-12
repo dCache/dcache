@@ -15,7 +15,8 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 import javax.security.auth.Subject;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.dcache.chimera.FileExistsChimeraFsException;
 import org.dcache.chimera.FsInode;
@@ -63,7 +64,7 @@ public class ChimeraNameSpaceProvider
     private final Args         _args;
     private final ChimeraStorageInfoExtractable _extractor;
 
-    private static final Logger _logNameSpace =  Logger.getLogger("logger.org.dcache.namespace");
+    private static final Logger _logNameSpace =  LoggerFactory.getLogger("logger.org.dcache.namespace");
 
     private final diskCacheV111.util.AccessLatency _defaultAccessLatency;
     private final diskCacheV111.util.RetentionPolicy _defaultRetentionPolicy;

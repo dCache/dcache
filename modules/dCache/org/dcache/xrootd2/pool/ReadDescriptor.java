@@ -12,7 +12,8 @@ import org.dcache.xrootd2.protocol.messages.ReadVRequest;
 import org.dcache.xrootd2.protocol.messages.WriteRequest;
 import org.dcache.xrootd2.protocol.messages.SyncRequest;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Encapsulates an open file for reading in the xrootd data server.
@@ -20,7 +21,7 @@ import org.apache.log4j.Logger;
 public class ReadDescriptor implements FileDescriptor
 {
     private final static Logger _log =
-        Logger.getLogger(ReadDescriptor.class);
+        LoggerFactory.getLogger(ReadDescriptor.class);
 
     private RandomAccessFile _file;
 

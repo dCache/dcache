@@ -8,7 +8,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellMessageDispatcher;
@@ -40,7 +41,7 @@ public class CostModuleV1
 {
     /** The file size used when calculating performance cost ranked percentile  */
     public static final long PERCENTILE_FILE_SIZE = 104857600;
-    private final static Logger _log = Logger.getLogger(CostModuleV1.class);
+    private final static Logger _log = LoggerFactory.getLogger(CostModuleV1.class);
 
     private final Map<String, Entry> _hash = new HashMap<String, Entry>() ;
     private boolean _isActive = true ;

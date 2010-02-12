@@ -5,7 +5,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.StateComposite;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StateUpdate;
@@ -25,7 +26,7 @@ import org.dcache.services.info.stateInfo.SpaceInfo;
  */
 public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 
-	private static Logger _log = Logger.getLogger( PoolgroupSpaceWatcher.class);
+	private static Logger _log = LoggerFactory.getLogger( PoolgroupSpaceWatcher.class);
 	private static final String PREDICATE_PATHS[] = { "pools.*.space.*",
 											"poolgroups.*",
 											"poolgroups.*.pools.*"};

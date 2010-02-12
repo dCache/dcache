@@ -4,12 +4,13 @@ import  diskCacheV111.vehicles.* ;
 
 import  java.util.* ;
 import  java.io.* ;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.util.AbstractPnfsExtractor;
 
 public class  EnstoreInfoExtractor extends AbstractPnfsExtractor {
 
-    private static final Logger _log = Logger.getLogger(EnstoreInfoExtractor.class);
+    private static final Logger _log = LoggerFactory.getLogger(EnstoreInfoExtractor.class);
 
     @Override
    public void setStorageInfo( String pnfsMountpoint , PnfsId pnfsId ,

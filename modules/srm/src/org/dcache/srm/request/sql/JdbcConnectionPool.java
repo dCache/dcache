@@ -7,7 +7,8 @@
 package org.dcache.srm.request.sql;
 import java.sql.*;
 import java.util.*;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -31,7 +32,7 @@ public class JdbcConnectionPool implements Runnable{
     private static int maxJdbcTasksNum = 1000 ;
 
     private static final Logger _log =
-        Logger.getLogger(JdbcConnectionPool.class);
+        LoggerFactory.getLogger(JdbcConnectionPool.class);
 
     public synchronized static final JdbcConnectionPool getPool(String jdbcUrl,
     String jdbcClass,

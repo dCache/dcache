@@ -16,13 +16,14 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotInCacheException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RepositoryInterpreter
     implements CellCommandListener
 {
     private final static Logger _log =
-        Logger.getLogger(RepositoryInterpreter.class);
+        LoggerFactory.getLogger(RepositoryInterpreter.class);
     private Repository _repository;
     private Account _account;
 

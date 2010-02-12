@@ -12,7 +12,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.HashMap;
 import java.io.IOException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.Random;
 import java.io.File;
 import java.util.NoSuchElementException;
@@ -24,7 +25,7 @@ import java.util.NoSuchElementException;
  * @author timur
  */
 public class RrdRequestCounters<T> {
-    private static final Logger logger = Logger.getLogger(RrdRequestCounters.class);
+    private static final Logger logger = LoggerFactory.getLogger(RrdRequestCounters.class);
     private final Map<T,RRDRequestCounter> rrdcounters =
             new HashMap<T,RRDRequestCounter>();
     private RRDRequestCounter totalRequestCounter;

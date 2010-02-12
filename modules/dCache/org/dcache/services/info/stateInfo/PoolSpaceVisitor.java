@@ -3,7 +3,8 @@ package org.dcache.services.info.stateInfo;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StateTransition;
 
@@ -15,7 +16,7 @@ import org.dcache.services.info.base.StateTransition;
  */
 public class PoolSpaceVisitor extends AbstractPoolSpaceVisitor {
 	
-	private static Logger _log = Logger.getLogger( PoolSpaceVisitor.class);
+	private static Logger _log = LoggerFactory.getLogger( PoolSpaceVisitor.class);
 		
 	/**
 	 * Obtain a Map between pools and their space information for current dCache state.

@@ -16,7 +16,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 import java.net.URI;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Encapsulates the task to process a PoolRemoveFilesFromHSMMessage.
@@ -25,7 +26,7 @@ public class HsmRemoveTask implements Runnable
 {
     /** Logging target.
      */
-    private final static Logger _log = Logger.getLogger(HsmRemoveTask.class);
+    private final static Logger _log = LoggerFactory.getLogger(HsmRemoveTask.class);
 
     /** The cell used to send back a reply to the requester.
      */

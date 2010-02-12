@@ -8,13 +8,14 @@ import dmg.cells.nucleus.CDC ;
 import dmg.util.Args ;
 
 import org.dcache.cells.CellCommandListener;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ThreadCounter
     implements ThreadPool, Runnable, CellCommandListener
 {
 
-    private final static Logger _log = Logger.getLogger(ThreadCounter.class);
+    private final static Logger _log = LoggerFactory.getLogger(ThreadCounter.class);
 
     private CellAdapter _cell          = null ;
     private int    _currentThreadCount = 0 ;
@@ -96,7 +97,7 @@ public class ThreadCounter
           try{
              _runner.run();
           }catch(Throwable t ){
-             _log.warn(t);
+             _log.warn(t.toString());
           }finally{
               CDC.clear();
              synchronized( _fifo ){
@@ -135,13 +136,13 @@ public class ThreadCounter
 //                   _log.info("ThreadCounter : thread started "+_currentThreadCount);
                    _currentThreadCount ++ ;
                 }catch(Throwable tt ){
-                    _log.warn(tt);
+                    _log.warn(tt.toString());
                     try{
                        if( r.runner instanceof ExtendedRunnable ){
                            ((ExtendedRunnable)r.runner).runFailed() ;
                        }
                     }catch(Throwable ttt){
-                       _log.warn(ttt);
+                       _log.warn(ttt.toString());
                     }
                 }
 

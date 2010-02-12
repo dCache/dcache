@@ -17,7 +17,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
@@ -110,7 +111,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
     /**
      * Logger
      */
-    private static final Logger _logNamespace = Logger.getLogger("logger.org.dcache.namespace."+ ChimeraCleaner.class.getName());
+    private static final Logger _logNamespace = LoggerFactory.getLogger("logger.org.dcache.namespace."+ ChimeraCleaner.class.getName());
 
     /**
      * cell communication stub to Broadcaster cell.

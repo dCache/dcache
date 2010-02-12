@@ -76,7 +76,8 @@ import org.dcache.srm.AbstractStorageElement;
 import java.io.IOException;
 import org.dcache.srm.request.RequestCredential;
 import java.beans.PropertyChangeListener;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -84,7 +85,7 @@ import org.apache.log4j.Logger;
  */
 public final class RemoteTurlPutterV1 extends TurlGetterPutterV1
 {
-    private static final Logger logger = Logger.getLogger(RemoteTurlPutterV1.class);
+    private static final Logger logger = LoggerFactory.getLogger(RemoteTurlPutterV1.class);
     
     long[] sizes;
     

@@ -1,6 +1,7 @@
 package org.dcache.services.info.gathers;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 
@@ -9,7 +10,7 @@ import dmg.cells.nucleus.CellPath;
 
 public class CellInfoDga extends SkelListBasedActivity {
 
-	private static final Logger _log = Logger.getLogger( CellInfoDga.class);
+	private static final Logger _log = LoggerFactory.getLogger( CellInfoDga.class);
 
 	private final MessageSender _sender;
 

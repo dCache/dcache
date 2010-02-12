@@ -1,11 +1,12 @@
 package org.dcache.services.billing;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.Date;
 
 public class Log4jLogger extends TextLogger
 {
-    private Logger _logger = Logger.getLogger(Log4jLogger.class);
+    private Logger _logger = LoggerFactory.getLogger(Log4jLogger.class);
 
     public Log4jLogger()
     {
@@ -13,6 +14,6 @@ public class Log4jLogger extends TextLogger
 
     protected void log(Date date, String output)
     {
-        _logger.info(output);
+        _logger.info(output.toString());
     }
 }

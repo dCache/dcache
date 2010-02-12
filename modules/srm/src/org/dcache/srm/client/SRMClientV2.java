@@ -22,7 +22,8 @@ import org.globus.util.GlobusURL;
 import org.ietf.jgss.GSSCredential;
 import java.rmi.RemoteException;
 import javax.xml.rpc.ServiceException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -30,7 +31,7 @@ import org.apache.log4j.Logger;
  */
 public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
     private static final Logger logger =
-            Logger.getLogger(SRMClientV1.class);
+            LoggerFactory.getLogger(SRMClientV1.class);
     private final static String SFN_STRING="?SFN=";
     private int retries;
     private long retrytimeout;

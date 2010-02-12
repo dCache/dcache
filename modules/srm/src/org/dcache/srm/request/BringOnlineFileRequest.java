@@ -96,7 +96,8 @@ import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TBringOnlineRequestFileStatus;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.apache.axis.types.URI;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.SRMInvalidRequestException;
 /**
@@ -106,7 +107,7 @@ import org.dcache.srm.SRMInvalidRequestException;
  */
 public final class BringOnlineFileRequest extends FileRequest {
     private final static Logger logger =
-            Logger.getLogger(BringOnlineFileRequest.class);
+            LoggerFactory.getLogger(BringOnlineFileRequest.class);
 
     // the globus url class created from surl_string
     private GlobusURL surl;
@@ -309,7 +310,7 @@ public final class BringOnlineFileRequest extends FileRequest {
         try {
              fileStatus.setSourceSURL(new URI(getSurlString()));
         } catch (Exception e) {
-            logger.error(e);
+            logger.error(e.toString());
             throw new java.sql.SQLException("wrong surl format");
         }
 
@@ -330,7 +331,7 @@ public final class BringOnlineFileRequest extends FileRequest {
         try {
             surlReturnStatus.setSurl(new URI(getSurlString()));
         } catch (Exception e) {
-            logger.error(e);
+            logger.error(e.toString());
             throw new java.sql.SQLException("wrong surl format");
         }
         surlReturnStatus.setStatus(returnStatus);
@@ -371,12 +372,12 @@ public final class BringOnlineFileRequest extends FileRequest {
                     if(!Tools.sameHost(getConfiguration().getSrmHosts(),
                     getSurl().getHost())) {
                         String error ="surl is not local : "+getSurl().getURL();
-                        logger.error(error);
+                        logger.error(error.toString());
                         throw new FatalJobFailure(error);
                     }
                 }
                 catch(java.net.UnknownHostException uhe) {
-                    logger.error(uhe);
+                    logger.error(uhe.toString());
                     throw new FatalJobFailure(uhe.toString());
                 }
                 logger.debug("fileId is null, asking to get a fileId");
@@ -453,7 +454,7 @@ public final class BringOnlineFileRequest extends FileRequest {
             getStorage().getFileInfo(getUser(),path,true,callbacks);
         }
         catch(Exception e) {
-            logger.error(e);
+            logger.error(e.toString());
             throw new NonFatalJobFailure(e.toString());
         }
     }
@@ -478,7 +479,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                 callbacks);
         }
         catch(Exception e) {
-            logger.error(e);
+            logger.error(e.toString());
             throw new NonFatalJobFailure(e.toString());
         }
     }
@@ -491,7 +492,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                 getRequest().resetRetryDeltaTime();
             }
             catch (SRMInvalidRequestException ire) {
-                logger.error(ire);
+                logger.error(ire.toString());
             }
         }
         if(state == State.CANCELED || state == State.FAILED ) {
@@ -502,7 +503,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                     getStorage().unPinFile(getUser(),getFileId(),callbacks, getPinId());
                 }
                 catch (SRMInvalidRequestException ire) {
-                    logger.error(ire);
+                    logger.error(ire.toString());
                     return;
                 }
             }
@@ -515,7 +516,7 @@ public final class BringOnlineFileRequest extends FileRequest {
         try {
             surlReturnStatus.setSurl(new URI(getSurlString()));
         } catch (Exception e) {
-            logger.error(e);
+            logger.error(e.toString());
            returnStatus.setExplanation("wrong surl format");
            returnStatus.setStatusCode(TStatusCode.SRM_INVALID_REQUEST);
            surlReturnStatus.setStatus(returnStatus);
@@ -552,7 +553,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                     return surlReturnStatus;
                 }
             } catch( InterruptedException ie) {
-                logger.error(ie);
+                logger.error(ie.toString());
             }
 
 
@@ -700,7 +701,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                 logger.error("GetCallbacks error: "+ reason);
             }
             catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
 
@@ -716,7 +717,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                 logger.error("GetCallbacks error: "+ error);
             }
             catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
 
@@ -732,7 +733,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                 logger.error("GetCallbacks exception",e);
             }
             catch(Exception e1) {
-                logger.error(e1);
+                logger.error(e1.toString());
             }
         }
 
@@ -749,7 +750,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                 logger.error("GetCallbacks error: "+ reason);
             }
             catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
 
         }
@@ -778,14 +779,14 @@ public final class BringOnlineFileRequest extends FileRequest {
                             scheduler.schedule(fr);
                         }
                         catch(Exception ie) {
-                            logger.error(ie);
+                            logger.error(ie.toString());
                         }
                     }
                 }
 
             }
             catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
 
         }
@@ -804,7 +805,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                 logger.error("GetCallbacks Timeout");
             }
             catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
 
@@ -840,7 +841,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                 logger.error("ThePinCallbacks error: "+ error);
             }
             catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
 
@@ -856,7 +857,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                 logger.error("ThePinCallbacks exception",e);
             }
             catch(Exception e1) {
-                logger.error(e1);
+                logger.error(e1.toString());
             }
         }
 
@@ -876,7 +877,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                 logger.error("GetCallbacks Timeout");
             }
             catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
 
@@ -913,7 +914,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                 logger.error("ThePinCallbacks error: "+ reason);
             }
             catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
 
@@ -961,7 +962,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                 done();
             }
             catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
                 done();
             }
         }
@@ -989,7 +990,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                 done();
             }
             catch(Exception e1) {
-                logger.error(e1);
+                logger.error(e1.toString());
                 done();
             }
         }
@@ -1022,7 +1023,7 @@ public final class BringOnlineFileRequest extends FileRequest {
 
             }
             catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
                 done();
             }
         }
@@ -1040,7 +1041,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                             scheduler.schedule(fr);
                         }
                         catch(Exception ie) {
-                            logger.error(ie);
+                            logger.error(ie.toString());
                         }
                     }
                 }
@@ -1048,7 +1049,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                 done();
             }
             catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
                 done();
             }
         }
@@ -1078,7 +1079,7 @@ public final class BringOnlineFileRequest extends FileRequest {
 
             }
             catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
                 done();
             }
         }
@@ -1155,7 +1156,7 @@ public final class BringOnlineFileRequest extends FileRequest {
 
                 }
             } catch( InterruptedException ie) {
-                logger.error(ie);
+                logger.error(ie.toString());
                 throw new SRMException("unpinning of "+surl_string+" by SrmRequestId "+id+
                         " got interrupted");
             }
@@ -1192,7 +1193,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                             " took too long");
                 }
             } catch( InterruptedException ie) {
-                logger.error(ie);
+                logger.error(ie.toString());
                 throw new SRMException("unpinning of "+surl_string+
                         " got interrupted");
             }

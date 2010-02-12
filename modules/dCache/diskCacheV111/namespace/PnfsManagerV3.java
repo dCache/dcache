@@ -20,7 +20,8 @@ import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.auth.Subjects;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.ListHandler;
@@ -43,7 +44,7 @@ import static org.dcache.acl.enums.AccessType.*;
 public class PnfsManagerV3 extends CellAdapter
 {
     private static final Logger _log =
-        Logger.getLogger(PnfsManagerV3.class);
+        LoggerFactory.getLogger(PnfsManagerV3.class);
 
     private static final int THRESHOLD_DISABLED = 0;
     private static final int DEFAULT_LIST_THREADS = 2;
@@ -820,10 +821,10 @@ public class PnfsManagerV3 extends CellAdapter
                 _nameSpaceProvider.getChecksum(msg.getSubject(), pnfsId,type);
             msg.setValue(checksumValue);
         }catch( CacheException e ){
-            _log.warn(e) ;
+            _log.warn(e.toString()) ;
             msg.setFailed( e.getRc() , e.getMessage() ) ;
         }catch ( Exception e){
-            _log.warn(e) ;
+            _log.warn(e.toString()) ;
             msg.setFailed( CacheException.UNEXPECTED_SYSTEM_EXCEPTION , e.getMessage() ) ;
         }
     }
@@ -837,10 +838,10 @@ public class PnfsManagerV3 extends CellAdapter
                 _nameSpaceProvider.listChecksumTypes(msg.getSubject(), pnfsId);
             msg.setValue(types);
         }catch( CacheException e ){
-            _log.warn(e) ;
+            _log.warn(e.toString()) ;
             msg.setFailed( e.getRc() , e.getMessage() ) ;
         }catch ( Exception e){
-            _log.warn(e) ;
+            _log.warn(e.toString()) ;
             msg.setFailed( CacheException.UNEXPECTED_SYSTEM_EXCEPTION , e.getMessage() ) ;
         }
     }
@@ -859,7 +860,7 @@ public class PnfsManagerV3 extends CellAdapter
             _log.warn("Unxpected CacheException: " + e);
             msg.setFailed( e.getRc() , e.getMessage() ) ;
         }catch ( Exception e){
-            _log.warn(e) ;
+            _log.warn(e.toString()) ;
             msg.setFailed( CacheException.UNEXPECTED_SYSTEM_EXCEPTION , e.getMessage() ) ;
         }
 
@@ -1303,7 +1304,7 @@ public class PnfsManagerV3 extends CellAdapter
         } catch (CacheException e){
             msg.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e) {
-            _log.error(e, e);
+            _log.error(e.toString(), e);
             msg.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                           "Pnfs rename failed");
         }
@@ -1369,10 +1370,10 @@ public class PnfsManagerV3 extends CellAdapter
             checkMask(msg);
             msg.setParent(_nameSpaceProvider.getParentOf(msg.getSubject(), pnfsId));
         } catch (CacheException e) {
-            _log.warn(e);
+            _log.warn(e.toString());
             msg.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e) {
-            _log.error(e, e);
+            _log.error(e.toString(), e);
             msg.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                           e.getMessage());
         }
@@ -1477,10 +1478,10 @@ public class PnfsManagerV3 extends CellAdapter
         } catch (NotDirCacheException e) {
             msg.setFailed(e.getRc(), e.getMessage());
         } catch (CacheException e) {
-            _log.warn(e);
+            _log.warn(e.toString());
             msg.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e) {
-            _log.error(e, e);
+            _log.error(e.toString(), e);
             msg.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                           e.getMessage());
         }
@@ -1744,9 +1745,9 @@ public class PnfsManagerV3 extends CellAdapter
         long duration = System.currentTimeMillis() - ctime;
         String logMsg = pnfsMessage.getClass() + " processed in " + duration + " ms";
         if( _logSlowThreshold != THRESHOLD_DISABLED && duration > _logSlowThreshold)
-            _log.warn( logMsg);
+            _log.warn(logMsg.toString());
         else
-            _log.info( logMsg);
+            _log.info(logMsg.toString());
 
 
         if (! ((Message)pnfsMessage).getReplyRequired() ){

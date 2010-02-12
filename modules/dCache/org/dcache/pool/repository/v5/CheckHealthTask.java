@@ -1,6 +1,7 @@
 package org.dcache.pool.repository.v5;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.repository.SpaceRecord;
 import org.dcache.pool.repository.FileStore;
@@ -9,7 +10,7 @@ import org.dcache.pool.repository.Account;
 
 class CheckHealthTask implements Runnable
 {
-    private final static Logger _log = Logger.getLogger(CheckHealthTask.class);
+    private final static Logger _log = LoggerFactory.getLogger(CheckHealthTask.class);
 
     private final CacheRepositoryV5 _repository;
 

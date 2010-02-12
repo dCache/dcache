@@ -54,11 +54,12 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 import dmg.util.StreamEngine;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class XrootdDoor extends AbstractCell
 {
-    private final static Logger _log = Logger.getLogger(XrootdDoor.class);
+    private final static Logger _log = LoggerFactory.getLogger(XrootdDoor.class);
 
     private final static String POOL_MANAGER = "PoolManager";
 
@@ -412,7 +413,7 @@ public class XrootdDoor extends AbstractCell
             String errmsg =
                 String.format("Cannot send message to %s. Got error: %s",
                               path, e.getMessage());
-            _log.warn(errmsg);
+            _log.warn(errmsg.toString());
 
             /* We report this as a timeout, since from the callers
              * point of view a timeout due to a lost message or a
@@ -431,7 +432,7 @@ public class XrootdDoor extends AbstractCell
             String errmsg = "Got unexpected message of class " +
                             replyObject.getClass() + " from " +
                             replyMessage.getSourceAddress();
-            _log.error(errmsg);
+            _log.error(errmsg.toString());
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                      errmsg);
         }
@@ -759,7 +760,7 @@ public class XrootdDoor extends AbstractCell
                 try {
                     _pnfs.deletePnfsEntry(message.getPnfsId(), path);
                 } catch (CacheException e) {
-                    _log.error(e);
+                    _log.error(e.toString());
                 }
             }
 

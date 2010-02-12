@@ -29,7 +29,8 @@ import org.dcache.srm.request.sql.PutRequestStorage;
 import org.dcache.srm.request.sql.PutFileRequestStorage;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.Tools;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.axis.types.URI.MalformedURIException;
 
 /**
@@ -38,7 +39,7 @@ import org.apache.axis.types.URI.MalformedURIException;
  */
 public class SrmPrepareToPut {
     private static Logger logger = 
-            Logger.getLogger(SrmPrepareToPut.class);
+            LoggerFactory.getLogger(SrmPrepareToPut.class);
     
     
     private final static String SFN_STRING="?SFN=";
@@ -88,7 +89,7 @@ public class SrmPrepareToPut {
             response = getFailedResponse(" malformed uri : "+mue.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
         } catch(SRMException srme) {
-            logger.error(srme);
+            logger.error(srme.toString());
             response = getFailedResponse(srme.toString());
         }
         
@@ -295,7 +296,7 @@ public class SrmPrepareToPut {
             // Return the request status
             return r.getSrmPrepareToPutResponse();
         } catch(Exception e) {
-            logger.warn(e);
+            logger.warn(e.toString());
             return getFailedResponse(e.toString());
         }
         

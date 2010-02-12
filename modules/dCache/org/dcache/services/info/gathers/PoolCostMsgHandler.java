@@ -4,7 +4,8 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.FloatingPointStateValue;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StatePath;
@@ -27,7 +28,7 @@ import dmg.cells.nucleus.UOID;
  */
 public class PoolCostMsgHandler extends CellMessageHandlerSkel {
 
-	private static Logger _log = Logger.getLogger( PoolCostMsgHandler.class);
+	private static Logger _log = LoggerFactory.getLogger( PoolCostMsgHandler.class);
 
 	public PoolCostMsgHandler(StateUpdateManager sum, MessageMetadataRepository<UOID> msgMetaRepo) {
 		super(sum, msgMetaRepo);

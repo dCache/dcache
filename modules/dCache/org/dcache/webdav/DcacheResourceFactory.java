@@ -68,7 +68,8 @@ import dmg.util.CollectionFactory;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.dcache.namespace.FileType.*;
 import static org.dcache.namespace.FileAttribute.*;
@@ -82,7 +83,7 @@ public class DcacheResourceFactory
     implements ResourceFactory, CellMessageReceiver, CellCommandListener
 {
     private static final Logger _log =
-        Logger.getLogger(DcacheResourceFactory.class);
+        LoggerFactory.getLogger(DcacheResourceFactory.class);
 
     private static final Set<FileAttribute> REQUIRED_ATTRIBUTES =
         EnumSet.of(TYPE, PNFSID, CREATION_TIME, MODIFICATION_TIME, SIZE,

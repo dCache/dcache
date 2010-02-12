@@ -5,7 +5,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.IOHimeraFsException;
 import org.dcache.chimera.nfs.ExportFile;
@@ -29,7 +30,7 @@ import org.dcache.xdr.RpcCall;
 
 public class EDSOperationWRITE extends AbstractNFSv4Operation {
 
-    private static final Logger _log = Logger.getLogger(EDSOperationWRITE.class.getName());
+    private static final Logger _log = LoggerFactory.getLogger(EDSOperationWRITE.class.getName());
 
      private final Map<stateid4, MoverBridge> _activeIO;
      private static final int INC_SPACE = (50 * 1024 * 1024);

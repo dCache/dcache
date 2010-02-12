@@ -59,11 +59,11 @@ public class HttpProtocol_1 implements MoverProtocol
     }
 
     private void say(String str) {
-        _log.info(str);
+        _log.info(str.toString());
     }
 
     private void esay(String str) {
-        _log.error(str);
+        _log.error(str.toString());
     }
 
     private HttpConnectionHandler httpconnection = null;

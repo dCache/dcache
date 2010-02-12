@@ -8,7 +8,8 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.HashSet;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.collections.StoredMap;
@@ -38,7 +39,7 @@ public class BerkeleyDBMetaDataRepository
     implements MetaDataStore
 {
     private static Logger _log =
-        Logger.getLogger(BerkeleyDBMetaDataRepository.class);
+        LoggerFactory.getLogger(BerkeleyDBMetaDataRepository.class);
 
     private static final String DIRECTORY_NAME = "meta";
 
@@ -156,7 +157,7 @@ public class BerkeleyDBMetaDataRepository
             tmp.deleteOnExit();
 
             if (!tmp.createNewFile() || !tmp.exists()) {
-                _log.fatal("Could not create " + tmp);
+                _log.error("Could not create " + tmp);
                 return false;
             }
 
@@ -166,7 +167,7 @@ public class BerkeleyDBMetaDataRepository
 
             return true;
 	} catch (IOException e) {
-            _log.fatal("Failed to touch " + tmp + ": " + e.getMessage());
+            _log.error("Failed to touch " + tmp + ": " + e.getMessage());
             return false;
 	}
     }

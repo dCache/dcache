@@ -31,7 +31,7 @@ public class Envelope {
 
 
 
-    //  static Logger logger = Logger.getLogger(Envelope.class);
+    //  static Logger logger = LoggerFactory.getLogger(Envelope.class);
 
     /**
      * This class encapsulates all permisson and location information

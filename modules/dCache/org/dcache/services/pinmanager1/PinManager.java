@@ -6,7 +6,8 @@
 
 package org.dcache.services.pinmanager1;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import diskCacheV111.poolManager.RequestContainerV5;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
@@ -80,7 +81,7 @@ import diskCacheV111.vehicles.StorageInfo;
  */
 public class PinManager extends AbstractCell implements Runnable  {
 
-    private static final Logger logger = Logger.getLogger(PinManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(PinManager.class);
 
     @Option(
         name = "expirationFrequency",
@@ -330,7 +331,7 @@ public class PinManager extends AbstractCell implements Runnable  {
                             reply.send("bulk pinning failed due to IO error: " +
                                 ioe.getMessage());
                         }catch(Exception e) {
-                            logger.error(e);
+                            logger.error(e.toString());
                         }
                     } catch (InterruptedException ie) {
                         logger.warn("bulk pin interrupted: "+ie.getMessage());

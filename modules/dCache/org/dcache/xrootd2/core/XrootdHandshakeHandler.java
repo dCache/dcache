@@ -13,7 +13,8 @@ import org.dcache.xrootd2.protocol.messages.AbstractRequestMessage;
 import org.dcache.xrootd2.protocol.messages.HandshakeRequest;
 import static org.dcache.xrootd2.protocol.XrootdProtocol.*;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A ChannelHandler which recognizes the xrootd handshake and
@@ -25,7 +26,7 @@ import org.apache.log4j.Logger;
 public class XrootdHandshakeHandler extends SimpleChannelHandler
 {
     private final static Logger _log =
-        Logger.getLogger(XrootdHandshakeHandler.class);
+        LoggerFactory.getLogger(XrootdHandshakeHandler.class);
 
     private final int _serverType;
     private boolean _isHandshaked;

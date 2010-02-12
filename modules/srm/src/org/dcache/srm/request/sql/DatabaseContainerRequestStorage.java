@@ -14,7 +14,8 @@ import org.dcache.srm.util.Configuration;
 import java.sql.*;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SRMInvalidRequestException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -22,7 +23,7 @@ import org.apache.log4j.Logger;
  */
 public abstract class DatabaseContainerRequestStorage extends DatabaseRequestStorage {
    private final static Logger logger =
-            Logger.getLogger(DatabaseContainerRequestStorage.class);
+            LoggerFactory.getLogger(DatabaseContainerRequestStorage.class);
 
     
     /** Creates a new instance of DatabaseContainerRequestStorage */
@@ -111,7 +112,7 @@ public abstract class DatabaseContainerRequestStorage extends DatabaseRequestSto
             try {
                 fileRequests[i] = (FileRequest) Job.getJob(fileIds[i],_con);
             } catch (SRMInvalidRequestException ire){
-                logger.error(ire);
+                logger.error(ire.toString());
             }
         }
         return getContainerRequest(

@@ -6,12 +6,13 @@ import dmg.cells.nucleus.* ;
 import java.util.* ;
 import diskCacheV111.vehicles.* ;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PoolOperator
     extends CostModuleV1
 {
-    private final static Logger _log = Logger.getLogger(PoolOperator.class);
+    private final static Logger _log = LoggerFactory.getLogger(PoolOperator.class);
 
    private HashMap _poolHash = new HashMap() ;
 

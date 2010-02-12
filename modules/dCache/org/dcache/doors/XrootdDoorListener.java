@@ -40,7 +40,8 @@ import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class XrootdDoorListener implements StreamListener {
 
@@ -60,7 +61,7 @@ public class XrootdDoorListener implements StreamListener {
     }
 
     private final static Logger _log =
-        Logger.getLogger(XrootdDoorListener.class);
+        LoggerFactory.getLogger(XrootdDoorListener.class);
 
     private XrootdDoor door;
     private PhysicalXrootdConnection physicalXrootdConnection;

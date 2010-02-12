@@ -4,7 +4,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdateManager;
@@ -28,8 +29,8 @@ public class DataGatheringScheduler implements Runnable {
 	
 	private boolean _timeToQuit = false;
 	private List<RegisteredActivity> _activity = new ArrayList<RegisteredActivity>();
-	private static Logger _logSched = Logger.getLogger(DataGatheringScheduler.class);
-	private static Logger _logRa = Logger.getLogger(RegisteredActivity.class);
+	private static Logger _logSched = LoggerFactory.getLogger(DataGatheringScheduler.class);
+	private static Logger _logRa = LoggerFactory.getLogger(RegisteredActivity.class);
 
 		
 	/**

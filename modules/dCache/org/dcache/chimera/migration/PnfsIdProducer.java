@@ -3,7 +3,8 @@ package org.dcache.chimera.migration;
 import java.io.BufferedReader;
 import java.io.IOException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import diskCacheV111.util.PnfsId;
 
@@ -17,7 +18,7 @@ import diskCacheV111.util.PnfsId;
  * completely parsed then the processing will terminate
  */
 public class PnfsIdProducer implements Runnable {
-    public static final Logger _log = Logger.getLogger( PnfsIdProducer.class);
+    public static final Logger _log = LoggerFactory.getLogger( PnfsIdProducer.class);
 
     public static final String THREAD_NAME = "file reader";
 

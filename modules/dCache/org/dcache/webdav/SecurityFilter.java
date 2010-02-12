@@ -24,7 +24,8 @@ import org.dcache.auth.RecordConvert;
 import gplazma.authz.AuthorizationController;
 import gplazma.authz.AuthorizationException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * SecurityFilter for WebDAV door.
@@ -48,7 +49,7 @@ import org.apache.log4j.Logger;
  */
 public class SecurityFilter implements Filter
 {
-    private final Logger _log = Logger.getLogger(SecurityFilter.class);
+    private final Logger _log = LoggerFactory.getLogger(SecurityFilter.class);
 
     private static final String X509_CERTIFICATE_ATTRIBUTE =
         "javax.servlet.request.X509Certificate";

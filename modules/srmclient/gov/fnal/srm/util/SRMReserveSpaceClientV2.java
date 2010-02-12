@@ -287,7 +287,7 @@ public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
 			}
 			System.exit(1);
 		} catch (Exception e1) {
-			logger.elog(e1);
+			logger.elog(e1.toString());
 			System.exit(1);
 		}
         }
@@ -301,7 +301,7 @@ public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
                 abortRequest();
             }
         } catch(Exception e) {
-            logger.elog(e);
+            logger.elog(e.toString());
         }
     }
     

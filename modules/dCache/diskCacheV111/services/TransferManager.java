@@ -47,13 +47,14 @@ import javax.jdo.JDOHelper;
 import javax.jdo.PersistenceManager;
 import javax.jdo.PersistenceManagerFactory;
 import javax.jdo.Transaction;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 /**
  *
  * @author  timur
  */
 public abstract class TransferManager extends AbstractCell {
-    private static final Logger log = Logger.getLogger(TransferManager.class);
+    private static final Logger log = LoggerFactory.getLogger(TransferManager.class);
 	private String jdbcUrl="jdbc:postgresql://localhost/srmdcache";
 	private String jdbcDriver="org.postgresql.Driver";
 	private String user="srmdcache";
@@ -178,7 +179,7 @@ public abstract class TransferManager extends AbstractCell {
 			} catch (Exception e) {
 				log.error("Failed to initialize Data Base connection using default values");
 				log.error("jdbcUrl="+jdbcUrl+" jdbcDriver="+jdbcDriver+" dbUser="+user+" dbPass="+pass+" pgPass="+pwdfile);
-				log.error(e);
+				log.error(e.toString());
 				pm = null;
 				setDbLogging(false);
 			}
@@ -195,7 +196,7 @@ public abstract class TransferManager extends AbstractCell {
 			}
 			catch (Exception e) {
 				log.error("Failed to initialize maxNumberOfDeleteRetriesm, using default value "+maxNumberOfDeleteRetries);
-				log.error(e);
+				log.error(e.toString());
 			}
 		}
 		tmpstr = _args.getOpt("pool_manager_timeout");
@@ -326,7 +327,7 @@ public abstract class TransferManager extends AbstractCell {
 				pm = pmf.getPersistenceManager();
 				sb.append("Success...\n");
 			} catch (Exception e) {
-                log.error(e);
+                log.error(e.toString());
 				sb.append("Failure...\n");
 				sb.append("setting doDbLog back to false. \n");
 				sb.append("Try to set correct Jdbc driver, username or password for DB connection.\n");
@@ -352,7 +353,7 @@ public abstract class TransferManager extends AbstractCell {
 		}
 		catch (Exception e) {
 			log.error("Failed to initialize maxNumberOfDeleteRetries, using default value "+maxNumberOfDeleteRetries);
-			log.error(e);
+			log.error(e.toString());
 			sb.append("Failed to initialize maxNumberOfDeleteRetries, using default value "+maxNumberOfDeleteRetries+"\n");
 			sb.append(e.getMessage());
 			return sb.toString();
@@ -392,7 +393,7 @@ public abstract class TransferManager extends AbstractCell {
 		} catch (Exception e) {
 			log.error("Failed to initialize Data Base connection to generate nextTransferId\n");
 			idGenerator=null;
-			log.error(e);
+			log.error(e.toString());
 			return "Failed to initialize Data Base connection to generate nextTransferId\n";
 		}
 		return "OK";
@@ -548,7 +549,7 @@ public abstract class TransferManager extends AbstractCell {
 			}
 			return sb.toString();
 		} catch(Exception e) {
-			log.error(e);
+			log.error(e.toString());
 			return e.toString();
 		}
 	}
@@ -673,7 +674,7 @@ public abstract class TransferManager extends AbstractCell {
 					   poolTimeout*1000
 				) ;
 		} catch(Exception e) {
-			log.error(e);
+			log.error(e.toString());
 			throw new CacheException(e.toString());
 		}
 		if( reply == null)
@@ -727,7 +728,7 @@ public abstract class TransferManager extends AbstractCell {
 				nextMessageID=idGenerator.nextLong();
 			} catch (Exception e)  {
 				log.error("Having trouble getting getNextMessageID from DB");
-				log.error(e);
+				log.error(e.toString());
 				log.error("will nullify requestsPropertyStorage");
 				idGenerator=null;
 				getNextMessageID();
@@ -815,7 +816,7 @@ public abstract class TransferManager extends AbstractCell {
 					tx.commit();
 					log.debug("Recording new handler into database.");
 				} catch (Exception e) {
-					log.error(e);
+					log.error(e.toString());
 				} finally {
 					rollbackIfActive(tx);
 				}
@@ -843,7 +844,7 @@ public abstract class TransferManager extends AbstractCell {
 					tx.commit();
 					log.debug("handler removed from db");
 				} catch (Exception e) {
-					log.error(e);
+					log.error(e.toString());
 				} finally {
 					rollbackIfActive(tx);
 				}
@@ -944,7 +945,7 @@ public abstract class TransferManager extends AbstractCell {
 					log.debug("["+o.toString()+"]: Recording new state of handler into database.");
 				} catch (Exception e) {
 					log.error("["+o.toString()+"]: failed to persist obhject "+o.toString());
-					log.error(e);
+					log.error(e.toString());
 				} finally {
 					rollbackIfActive(tx);
 				}

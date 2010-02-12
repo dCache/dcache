@@ -8,7 +8,8 @@ import java.io.NotSerializableException;
 import java.io.IOException;
 import java.util.concurrent.TimeoutException; // We hijack this exception.
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.dcache.vehicles.InfoGetSerialisedDataMessage;
 
@@ -46,7 +47,7 @@ import dmg.util.HttpResponseEngine;
  */
 public class InfoHttpEngine implements HttpResponseEngine, Cell {
 
-	private static Logger _log = Logger.getLogger( HttpResponseEngine.class);
+	private static Logger _log = LoggerFactory.getLogger( HttpResponseEngine.class);
 
 	private static final String INFO_CELL_NAME = "info";
 	

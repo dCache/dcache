@@ -1,6 +1,7 @@
 package org.dcache.acl.matcher;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.acl.Permission;
 import org.dcache.acl.enums.AccessAttribute;
 import org.dcache.acl.enums.AccessMask;
@@ -17,7 +18,7 @@ import org.dcache.acl.enums.OpenType;
  */
 public class AclNFSv4Matcher extends AclMatcher {
 
-    private static final Logger logger = Logger.getLogger("logger.org.dcache.authorization." + AclNFSv4Matcher.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger("logger.org.dcache.authorization." + AclNFSv4Matcher.class.getName());
 
     private static AclNFSv4Matcher _SINGLETON;
     static {

@@ -5,7 +5,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StateComposite;
 import org.dcache.services.info.base.StateExhibitor;
@@ -25,7 +26,7 @@ import org.dcache.services.info.stateInfo.ReservationInfoVisitor;
 public class ReservationByDescMaintainer extends AbstractStateWatcher {
 
     private static Logger _log =
-            Logger.getLogger( ReservationByDescMaintainer.class);
+            LoggerFactory.getLogger( ReservationByDescMaintainer.class);
 
     public static final String PATH_ELEMENT_BY_DESCRIPTION_BRANCH =
             "by-description";

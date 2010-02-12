@@ -36,7 +36,8 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Server component of migration module.
@@ -56,7 +57,7 @@ public class MigrationModuleServer
     implements CellMessageReceiver
 {
     private final static Logger _log =
-        Logger.getLogger(MigrationModuleServer.class);
+        LoggerFactory.getLogger(MigrationModuleServer.class);
 
     private Map<UUID, Request> _requests = new ConcurrentHashMap();
     private P2PClient _p2p;

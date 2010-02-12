@@ -12,13 +12,14 @@ import diskCacheV111.util.* ;
 import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.cells.CellCommandListener;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HsmStorageInterpreter
     implements CellCommandListener
 {
    private static final Logger _log =
-       Logger.getLogger(HsmStorageInterpreter.class);
+       LoggerFactory.getLogger(HsmStorageInterpreter.class);
 
    private final HsmStorageHandler2 _storageHandler ;
    private final JobScheduler       _fetchQueue     ;

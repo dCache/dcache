@@ -31,7 +31,8 @@ import org.dcache.pool.repository.Allocator;
 import org.dcache.util.PortRange;
 import org.dcache.util.NetworkUtils;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.ftp.*;
 
 /**
@@ -41,9 +42,9 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         MoverProtocol, ChecksumMover, ErrorListener
 {
     private final static Logger _log =
-        Logger.getLogger(GFtpProtocol_2_nio.class);
+        LoggerFactory.getLogger(GFtpProtocol_2_nio.class);
     private final static Logger _logSpaceAllocation =
-        Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." +
+        LoggerFactory.getLogger("logger.dev.org.dcache.poolspacemonitor." +
                          GFtpProtocol_2_nio.class.getName());
 
     /** The minimum number of bytes to increment the space allocation. */
@@ -262,17 +263,17 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
 
     /** Utility method for logging. */
     public void say(String str) {
-        _log.info(str);
+        _log.info(str.toString());
     }
 
     /** Utility method for reporting errors. */
     public void esay(String str) {
-        _log.error(str);
+        _log.error(str.toString());
     }
 
     /** Utility method for reporting errors. */
     public void esay(Throwable t) {
-        _log.error(t);
+        _log.error(t.toString());
     }
 
     public String toString() {

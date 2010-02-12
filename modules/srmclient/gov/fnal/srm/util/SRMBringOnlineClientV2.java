@@ -376,7 +376,7 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
         try {
             abortAllPendingFiles();
         }catch(Exception e) {
-            logger.elog(e);
+            logger.elog(e.toString());
         }
     }
     

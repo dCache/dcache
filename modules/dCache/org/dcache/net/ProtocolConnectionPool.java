@@ -9,12 +9,13 @@ import java.nio.channels.SocketChannel;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.util.PortRange;
 
 public class ProtocolConnectionPool extends Thread {
 
-    private static Logger _logSocketIO = Logger.getLogger("logger.dev.org.dcache.io.socket");
+    private static Logger _logSocketIO = LoggerFactory.getLogger("logger.dev.org.dcache.io.socket");
     private final ServerSocketChannel _serverSocketChannel;
     private final Map<Object, SocketChannel> _acceptedSockets = new HashMap<Object, SocketChannel>();
     private final ChallengeReader _challengeReader;
@@ -147,7 +148,7 @@ public class ProtocolConnectionPool extends Thread {
  * all binds, accepts, connects and closees in dcap and FTP (nio code only)
  * used logging category:
  *
- * private static Logger _logSocketIO = Logger.getLogger("logger.dev.org.dcache.io.socket");
+ * private static Logger _logSocketIO = LoggerFactory.getLogger("logger.dev.org.dcache.io.socket");
  *
  * TODO: find and trace others as well
  * all calls surrounded with

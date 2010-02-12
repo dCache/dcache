@@ -24,7 +24,8 @@ import java.util.EnumSet;
 import java.util.Collections;
 import java.util.regex.Pattern;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.util.Checksum;
 import org.dcache.util.Glob;
 import org.dcache.util.Interval;
@@ -71,7 +72,7 @@ public class BasicNameSpaceProvider
     private final StorageInfoExtractable _extractor;
     private final AttributeChecksumBridge _attChecksumImpl;
 
-    private static final Logger _logNameSpace =  Logger.getLogger("logger.org.dcache.namespace." + BasicNameSpaceProvider.class.getName());
+    private static final Logger _logNameSpace =  LoggerFactory.getLogger("logger.org.dcache.namespace." + BasicNameSpaceProvider.class.getName());
     private final NameSpaceProvider _cacheLocationProvider;
 
     private final AccessLatency _defaultAccessLatency;
@@ -488,7 +489,7 @@ public class BasicNameSpaceProvider
 
         }catch ( Exception e) {
             _logNameSpace.error("!! Problem determining path of "+pnfsId);
-            _logNameSpace.error(e);
+            _logNameSpace.error(e.toString());
         }
         return pnfsFile.getPath();
 

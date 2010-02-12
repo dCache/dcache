@@ -93,7 +93,8 @@ import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.util.JDC;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -102,7 +103,7 @@ import org.apache.log4j.Logger;
  */
 public abstract class Job  {
 
-    private static final Logger logger = Logger.getLogger(Job.class);
+    private static final Logger logger = LoggerFactory.getLogger(Job.class);
 
     // this is the map from jobIds to jobs
     // job ids are referenced from jobs
@@ -276,7 +277,7 @@ public abstract class Job  {
         } catch(Throwable t) {
             // if saving fails we do not want to fail the request
 
-            logger.error(t);
+            logger.error(t.toString());
 
         } finally {
             wunlock();
@@ -806,7 +807,7 @@ public abstract class Job  {
                 try {
                         getJobStorage().saveJob(this,true);
                 }catch (java.sql.SQLException sqle) {
-                    logger.error(sqle);
+                    logger.error(sqle.toString());
                 }
             }
         } finally {

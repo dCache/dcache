@@ -22,7 +22,8 @@ import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
 import org.apache.axis.types.URI;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.axis.types.URI.MalformedURIException;
 
 /**
@@ -32,7 +33,7 @@ import org.apache.axis.types.URI.MalformedURIException;
 
 public class SrmGetPermission {
         private static Logger logger =
-                Logger.getLogger(SrmGetPermission.class);
+                LoggerFactory.getLogger(SrmGetPermission.class);
 	private final static String SFN_STRING="?SFN=";
 	AbstractStorageElement storage;
 	SrmGetPermissionRequest request;
@@ -59,7 +60,7 @@ public class SrmGetPermission {
             response = getFailedResponse(" malformed uri : "+mue.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
         } catch(SRMException srme) {
-            logger.error(srme);
+            logger.error(srme.toString());
             response = getFailedResponse(srme.toString());
         }
 		return response;
@@ -146,7 +147,7 @@ public class SrmGetPermission {
 				p.setOwner(owner);
 			}
 			catch (SRMException srme) {
-				logger.warn(srme);
+				logger.warn(srme.toString());
 				p.getStatus().setStatusCode(TStatusCode.SRM_FAILURE);
 				p.getStatus().setExplanation(uriarray[i]+" "+srme.getMessage());
 				haveFailure = true;

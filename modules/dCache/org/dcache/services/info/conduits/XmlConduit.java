@@ -6,7 +6,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.serialisation.XmlSerialiser;
 
@@ -23,7 +24,7 @@ import org.dcache.services.info.serialisation.XmlSerialiser;
  */
 public class XmlConduit extends AbstractThreadedConduit {
 
-	private static Logger _log = Logger.getLogger( XmlConduit.class);
+	private static Logger _log = LoggerFactory.getLogger( XmlConduit.class);
 
 	private static final int DEFAULT_PORT = 22112;
 	

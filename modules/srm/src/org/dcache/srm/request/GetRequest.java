@@ -85,14 +85,15 @@ import org.dcache.srm.v2_2.TGetRequestFileStatus;
 import org.dcache.srm.v2_2.SrmStatusOfGetRequestResponse;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.ArrayOfTGetRequestFileStatus;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /*
  * @author  timur
  */
 public final class GetRequest extends ContainerRequest {
     private final static Logger logger =
-            Logger.getLogger(GetRequest.class);
+            LoggerFactory.getLogger(GetRequest.class);
     /** array of protocols supported by client or server (copy) */
     protected String[] protocols;
 
@@ -330,7 +331,7 @@ public final class GetRequest extends ContainerRequest {
         for(TGetRequestFileStatus fs :arrayOfTGetRequestFileStatus.getStatusArray()) {
             s += " FileStatusCode = "+fs.getStatus().getStatusCode();
         }
-        logger.debug(s);
+        logger.debug(s.toString());
         return response;
     }
 

@@ -88,14 +88,15 @@ import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TOverwriteMode;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMReleasedException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 /**
  *
  * @author  timur
  */
 public final class PutRequest extends ContainerRequest{
     private final static Logger logger =
-            Logger.getLogger(PutRequest.class);
+            LoggerFactory.getLogger(PutRequest.class);
 
     // private PutFileRequest fileRequests[];
     protected String[] protocols;
@@ -244,7 +245,7 @@ public final class PutRequest extends ContainerRequest{
         }
         catch(org.dcache.srm.SRMException srme) {
             logger.error(" protocols are not supported");
-            logger.error(srme);
+            logger.error(srme.toString());
             //setFailedStatus ("protocols are not supported");
             return;
         }
@@ -361,7 +362,7 @@ public final class PutRequest extends ContainerRequest{
         for(TPutRequestFileStatus fs :arrayOfTPutRequestFileStatus.getStatusArray()) {
             s += " FileStatusCode = "+fs.getStatus().getStatusCode();
         }
-        logger.debug(s);
+        logger.debug(s.toString());
         return response;
     }
 

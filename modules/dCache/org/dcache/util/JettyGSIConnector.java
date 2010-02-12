@@ -32,7 +32,8 @@ import org.eclipse.jetty.io.bio.SocketEndPoint;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.bio.SocketConnector;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.globus.axis.gsi.GSIConstants.*;
 
@@ -52,7 +53,7 @@ public class JettyGSIConnector
     extends SocketConnector
 {
     private static final Logger _log =
-        Logger.getLogger(JettyGSIConnector.class);
+        LoggerFactory.getLogger(JettyGSIConnector.class);
 
     protected static final String MODE_SSL = "ssl";
     protected static final String MODE_GSI = "gsi";
@@ -494,11 +495,11 @@ public class JettyGSIConnector
 
                 super.run();
             } catch (IOException e) {
-                _log.warn(e);
+                _log.warn(e.toString());
                 try {
                     close();
                 } catch (IOException e2) {
-                    _log.warn(e2);
+                    _log.warn(e2.toString());
                 }
             }
         }

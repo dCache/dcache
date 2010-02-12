@@ -14,7 +14,8 @@ import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
 import org.dcache.cells.AbstractCell;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.URL;
 import javax.naming.InitialContext;
@@ -35,7 +36,7 @@ public class JettyCell extends AbstractCell {
     public static final String JETTY_PORT = "jetty_Port";
 //    max Threads for the Jetty Server maybe later configurable
     public static final int MAX_THREADS = 100;
-    private static final Logger _log = Logger.getLogger(JettyCell.class);
+    private static final Logger _log = LoggerFactory.getLogger(JettyCell.class);
 //    path to the .war files with the webapps, will be set by the batch file
     private final String _webappsPath;
 //    defaulted with 8080

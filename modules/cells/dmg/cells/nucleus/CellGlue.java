@@ -7,7 +7,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import  java.lang.reflect.* ;
 import  java.text.*;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 //
 // package
 //
@@ -38,9 +39,9 @@ class CellGlue {
    private ThreadGroup          _killerThreadGroup = null ;
 
    private final static Logger _logMessages =
-       Logger.getLogger("logger.org.dcache.cells.messages");
+       LoggerFactory.getLogger("logger.org.dcache.cells.messages");
    private final static Logger _logGlue =
-       Logger.getLogger(CellGlue.class);
+       LoggerFactory.getLogger(CellGlue.class);
 
    CellGlue( String cellDomainName ){
 

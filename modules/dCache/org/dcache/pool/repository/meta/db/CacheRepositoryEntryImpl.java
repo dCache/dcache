@@ -6,7 +6,8 @@ import java.io.File;
 import java.util.List;
 import java.lang.ref.SoftReference;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.sleepycat.util.RuntimeExceptionWrapper;
 
@@ -25,7 +26,7 @@ import diskCacheV111.vehicles.StorageInfo;
 public class CacheRepositoryEntryImpl implements MetaDataRecord
 {
     private static Logger _log =
-        Logger.getLogger("logger.org.dcache.repository");
+        LoggerFactory.getLogger("logger.org.dcache.repository");
 
     private final CacheRepositoryEntryState _state;
     private final PnfsId _pnfsId;
@@ -255,7 +256,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
 
             _log.debug("No entry found for " + id);
         } catch (ClassCastException e) {
-            _log.warn(e);
+            _log.warn(e.toString());
         } catch (RuntimeExceptionWrapper e) {
             /* BerkeleyDB wraps internal exceptions. We ignore class
              * cast and class not found exceptions, since they are a
@@ -266,7 +267,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
                 throw e;
             }
 
-            _log.warn(e);
+            _log.warn(e.toString());
         }
 
         return null;

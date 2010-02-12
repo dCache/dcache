@@ -83,7 +83,7 @@ public class SrmDCacheConnector {
     private String logFile;
     static org.dcache.srm.util.Configuration configuration;
 
-    private org.apache.log4j.Logger log;
+    private org.slf4j.Logger log;
     private static SrmDCacheConnector instance = null;
 
 
@@ -106,7 +106,7 @@ public class SrmDCacheConnector {
 
 
     private SrmDCacheConnector(String configFileName) throws Exception{
-            log = org.apache.log4j.Logger.getLogger(this.getClass().getName());
+            log = org.slf4j.LoggerFactory.getLogger(this.getClass().getName());
      org.jdom.input.SAXBuilder builder = new org.jdom.input.SAXBuilder();
      System.out.println("srmConfigFile is "+configFileName);
      java.io.File srmConfigFile = new java.io.File(configFileName);

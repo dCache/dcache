@@ -19,7 +19,8 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Utility class to periodically register a door in a login broker.
@@ -29,7 +30,7 @@ public class LoginBrokerHandler
     implements CellCommandListener
 {
     private final static Logger _log =
-        Logger.getLogger(LoginBrokerHandler.class);
+        LoggerFactory.getLogger(LoginBrokerHandler.class);
 
     private CellPath _loginBroker;
     private String _protocolFamily;
@@ -48,7 +49,7 @@ public class LoginBrokerHandler
         try {
             setAddresses(NetworkUtils.getLocalAddressesV4());
         } catch (SocketException e) {
-            _log.fatal("Failed to obtain the IP addresses of this host: " +
+            _log.error("Failed to obtain the IP addresses of this host: " +
                        e.getMessage());
         }
     }

@@ -76,7 +76,8 @@ import java.util.HashSet;
 import java.util.Set;
 import org.dcache.srm.scheduler.JobIdGenerator ;
 import org.dcache.srm.scheduler.JobIdGeneratorFactory;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class is used by srm to generate long and int ids
@@ -91,7 +92,7 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
     private String user;
     private String pass;
     private String nextRequestIdTableName;
-    private static Logger logger = Logger.getLogger(RequestsPropertyStorage.class);
+    private static Logger logger = LoggerFactory.getLogger(RequestsPropertyStorage.class);
     private int nextIntBase;
     private static int NEXT_INT_STEP=1000;
     private int nextIntIncrement=NEXT_INT_STEP;

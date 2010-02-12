@@ -119,7 +119,8 @@ import org.dcache.commons.stats.rrd.RrdRequestExecutionTimeGauges;
 import org.dcache.commons.stats.MonitoringProxy;
 import java.lang.reflect.Method;
 import java.util.concurrent.TimeoutException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * SRM class creates an instance of SRM client class and publishes it on a
@@ -128,7 +129,7 @@ import org.apache.log4j.Logger;
  * @author  timur
  */
 public class SRM {
-    private static final Logger logger = Logger.getLogger(SRM.class);
+    private static final Logger logger = LoggerFactory.getLogger(SRM.class);
     private String name;
     private InetAddress host;
     private SRMAuthorization authorization;
@@ -449,7 +450,7 @@ public class SRM {
         public void AdvisoryDeleteFailed(String reason) {
             error = " advisoryDelete(" + user + "," + path + ") AdvisoryDeleteFailed: " + reason;
             success = false;
-            logger.error(error);
+            logger.error(error.toString());
             done();
         }
 
@@ -460,14 +461,14 @@ public class SRM {
 
         public void Exception(Exception e) {
             error = " advisoryDelete(" + user + "," + path + ") Exception :" + e;
-            logger.error(error);
+            logger.error(error.toString());
             success = false;
             done();
         }
 
         public void Timeout() {
             error = " advisoryDelete(" + user + "," + path + ") Timeout ";
-            logger.error(error);
+            logger.error(error.toString());
             success = false;
             done();
         }
@@ -514,7 +515,7 @@ public class SRM {
         if (user == null) {
             String error = "advisoryDelete: user is unknown," +
                     " user needs authorization to delete ";
-            logger.error(error);
+            logger.error(error.toString());
             throw new IllegalArgumentException(error);
         }
 
@@ -524,14 +525,14 @@ public class SRM {
                 if (!Tools.sameHost(configuration.getSrmHosts(),
                         gurl.getHost())) {
                     String error = "advisoryDelete: surl is not local : " + gurl.getURL();
-                    logger.error(error);
+                    logger.error(error.toString());
                     throw new IllegalArgumentException(error);
                 }
             } catch (RuntimeException re) {
-                logger.error(re);
+                logger.error(re.toString());
                 throw re;
             } catch (Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
 
@@ -553,7 +554,7 @@ public class SRM {
 
 
             } catch (RuntimeException re) {
-                logger.error(re);
+                logger.error(re.toString());
                 throw re;
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -611,7 +612,7 @@ public class SRM {
             if (srcSURLS == null || srcSURLS.length == 0 ||
                     destSURLS == null || destSURLS.length == 0) {
                 String error = " number of source or destination SURLs is zero";
-                logger.error(error);
+                logger.error(error.toString());
                 return createFailedRequestStatus(error);
 
             }
@@ -678,7 +679,7 @@ public class SRM {
             logger.debug(" copy returns RequestStatus = " + rs);
             return rs;
         } catch (Exception e) {
-            logger.error(e);
+            logger.error(e.toString());
             return createFailedRequestStatus("copy request generated error : " + e);
         }
     }
@@ -742,7 +743,7 @@ public class SRM {
             logger.debug("get() initial RequestStatus = " + rs);
             return rs;
         } catch (Exception e) {
-            logger.error(e);
+            logger.error(e.toString());
             return createFailedRequestStatus("get error " + e);
         }
 
@@ -802,7 +803,7 @@ public class SRM {
                 if (!Tools.sameHost(configuration.getSrmHosts(),
                         url.getHost())) {
                     String error = "getFileMetaData: surl is not local : " + url.getURL();
-                    logger.error(error);
+                    logger.error(error.toString());
                     throw new IllegalArgumentException(error);
                 }
 
@@ -871,7 +872,7 @@ public class SRM {
             return createFailedRequestStatus("getRequestStatus() request #" + requestId +
                     " was not found", requestId);
         } catch (Exception e) {
-            logger.error(e);
+            logger.error(e.toString());
             return createFailedRequestStatus("getting request #" + requestId +
                     " generated error : " + e, requestId);
         }
@@ -994,7 +995,7 @@ public class SRM {
             // return status
             return r.getRequestStatus();
         } catch (Exception e) {
-            logger.error(e);
+            logger.error(e.toString());
             return createFailedRequestStatus("put(): error " + e);
         }
     }
@@ -1156,7 +1157,7 @@ public class SRM {
                 GetRequest gr = (GetRequest) ContainerRequest.getRequest(requestId);
                 sb.append(gr).append('\n');
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire);
+                logger.error(ire.toString());
             }
         }
 
@@ -1170,7 +1171,7 @@ public class SRM {
                 GetRequest gr = (GetRequest) ContainerRequest.getRequest(requestId);
                 sb.append(gr).append('\n');
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire);
+                logger.error(ire.toString());
             }
         }
 
@@ -1184,7 +1185,7 @@ public class SRM {
                 GetRequest gr = (GetRequest) ContainerRequest.getRequest(requestId);
                 sb.append(gr).append('\n');
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire);
+                logger.error(ire.toString());
             }
         }
 
@@ -1198,7 +1199,7 @@ public class SRM {
                 GetRequest gr = (GetRequest) ContainerRequest.getRequest(requestId);
                 sb.append(gr).append('\n');
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire);
+                logger.error(ire.toString());
             }
         }
     }
@@ -1255,7 +1256,7 @@ public class SRM {
                 PutRequest pr = (PutRequest) ContainerRequest.getRequest(requestId);
                 sb.append(pr).append('\n');
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire);
+                logger.error(ire.toString());
             }
         }
     }
@@ -1268,7 +1269,7 @@ public class SRM {
                 PutRequest pr = (PutRequest) ContainerRequest.getRequest(requestId);
                 sb.append(pr).append('\n');
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire);
+                logger.error(ire.toString());
             }
         }
     }
@@ -1281,7 +1282,7 @@ public class SRM {
                 PutRequest pr = (PutRequest) ContainerRequest.getRequest(requestId);
                 sb.append(pr).append('\n');
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire);
+                logger.error(ire.toString());
             }
         }
     }
@@ -1294,7 +1295,7 @@ public class SRM {
                 PutRequest pr = (PutRequest) ContainerRequest.getRequest(requestId);
                 sb.append(pr).append('\n');
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire);
+                logger.error(ire.toString());
             }
         }
     }
@@ -1333,7 +1334,7 @@ public class SRM {
                 CopyRequest cr = (CopyRequest) ContainerRequest.getRequest(requestId);
                 sb.append(cr).append('\n');
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire);
+                logger.error(ire.toString());
             }
         }
     }
@@ -1346,7 +1347,7 @@ public class SRM {
                 CopyRequest cr = (CopyRequest) ContainerRequest.getRequest(requestId);
                 sb.append(cr).append('\n');
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire);
+                logger.error(ire.toString());
             }
         }
     }
@@ -1359,7 +1360,7 @@ public class SRM {
                 CopyRequest cr = (CopyRequest) ContainerRequest.getRequest(requestId);
                 sb.append(cr).append('\n');
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire);
+                logger.error(ire.toString());
             }
         }
     }
@@ -1372,7 +1373,7 @@ public class SRM {
                 CopyRequest cr = (CopyRequest) ContainerRequest.getRequest(requestId);
                 sb.append(cr).append('\n');
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire);
+                logger.error(ire.toString());
             }
         }
     }
@@ -1411,7 +1412,7 @@ public class SRM {
                 BringOnlineRequest pr = (BringOnlineRequest) ContainerRequest.getRequest(requestId);
                 sb.append(pr).append('\n');
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire);
+                logger.error(ire.toString());
             }
         }
     }
@@ -1424,7 +1425,7 @@ public class SRM {
                 BringOnlineRequest pr = (BringOnlineRequest) ContainerRequest.getRequest(requestId);
                 sb.append(pr).append('\n');
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire);
+                logger.error(ire.toString());
             }
         }
     }
@@ -1437,7 +1438,7 @@ public class SRM {
                 BringOnlineRequest pr = (BringOnlineRequest) ContainerRequest.getRequest(requestId);
                 sb.append(pr).append('\n');
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire);
+                logger.error(ire.toString());
             }
         }
     }
@@ -1450,7 +1451,7 @@ public class SRM {
                 BringOnlineRequest pr = (BringOnlineRequest) ContainerRequest.getRequest(requestId);
                 sb.append(pr).append('\n');
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire);
+                logger.error(ire.toString());
             }
         }
     }
@@ -1496,7 +1497,7 @@ public class SRM {
                 Request r = (Request) Request.getRequest(requestId);
                 sb.append(r).append('\n');
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire);
+                logger.error(ire.toString());
             }
         }
     }

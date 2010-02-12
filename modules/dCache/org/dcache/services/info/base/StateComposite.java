@@ -10,7 +10,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A StateComposite is an aggregation of zero or more StateComponents.  StateComposites
@@ -34,7 +35,7 @@ import org.apache.log4j.Logger;
  */
 public class StateComposite implements StateComponent {
 
-	private static final Logger _log = Logger.getLogger(StateComposite.class);
+	private static final Logger _log = LoggerFactory.getLogger(StateComposite.class);
 
 
 	/** Minimum lifetime for on-the-fly created StateComposites, in seconds */
@@ -381,7 +382,7 @@ public class StateComposite implements StateComponent {
 		}
 
 		if( childToVisit == null) {
-			_log.error("Tried to visit null child in " + ourPath != null ? ourPath : "(top)");
+			_log.error("Tried to visit null child in " + ourPath != null ? ourPath.toString() : "(top)");
 			return;
 		}
 

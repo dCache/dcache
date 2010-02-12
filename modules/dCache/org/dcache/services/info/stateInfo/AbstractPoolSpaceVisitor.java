@@ -1,6 +1,7 @@
 package org.dcache.services.info.stateInfo;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StatePath;
 
@@ -18,7 +19,7 @@ public abstract class AbstractPoolSpaceVisitor extends SkeletonListVisitor {
 	// This is protected to allow inheriting classes to limit the scope of the visitor
 	protected static StatePath POOLS_PATH = new StatePath( "pools");
 	
-	private static Logger _log = Logger.getLogger( AbstractPoolSpaceVisitor.class);
+	private static Logger _log = LoggerFactory.getLogger( AbstractPoolSpaceVisitor.class);
 
 	private SpaceInfo _currentPoolSpaceInfo;
 	private StatePath _currentPoolSpacePath = null;

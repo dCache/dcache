@@ -40,7 +40,8 @@ import diskCacheV111.vehicles.IpProtocolInfo;
 import java.io.IOException;
 import java.util.Iterator;
 import diskCacheV111.doors.FTPTransactionLog;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.namespace.PermissionHandler;
 import org.dcache.namespace.ChainedPermissionHandler;
 import org.dcache.namespace.PosixPermissionHandler;
@@ -51,7 +52,7 @@ import org.dcache.acl.enums.AccessType;
 
 public class TransferManagerHandler implements CellMessageAnswerable {
     private static final Logger log =
-            Logger.getLogger(TransferManagerHandler.class);
+            LoggerFactory.getLogger(TransferManagerHandler.class);
 	private final TransferManager manager;
 	private TransferManagerMessage transferRequest;
 	private CellPath sourcePath;
@@ -203,7 +204,7 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 				);
 		}
 		catch(Exception ee ) {
-			log.error(ee);
+			log.error(ee.toString());
 			//we do not need to send the new message
 			// since the original reply has not been sent yet
 			transferRequest.setFailed(2, ee);
@@ -356,7 +357,7 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 				);
 		}
 		catch(Exception ee ) {
-			log.error(ee);
+			log.error(ee.toString());
 			sendErrorReply(4,ee);
 			return ;
 		}
@@ -394,7 +395,7 @@ public class TransferManagerHandler implements CellMessageAnswerable {
                         );
             }
             catch(Exception ee ) {
-                    log.error(ee);
+                    log.error(ee.toString());
                     transferRequest.setFailed(2, ee);
                     return ;
             }
@@ -487,7 +488,7 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 			protocol_info = manager.getProtocolInfo(getId(),transferRequest);
 		}
 		catch(IOException ioe) {
-			log.error(ioe);
+			log.error(ioe.toString());
 			//we do not need to send the new message
 			// since the original reply has not been sent yet
 			sendErrorReply(4,ioe);
@@ -524,7 +525,7 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 				);
 		}
 		catch(Exception e ) {
-			log.error(e);
+			log.error(e.toString());
 			sendErrorReply(4,e);
 			return ;
 		}
@@ -586,7 +587,7 @@ public class TransferManagerHandler implements CellMessageAnswerable {
                             );
 		}
 		catch(Exception ee ) {
-			log.error(ee);
+			log.error(ee.toString());
 			sendErrorReply(4,ee);
 			return ;
 		}
@@ -658,7 +659,7 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 					);
 			}
 			catch(Exception ee ) {
-				log.error(ee);
+				log.error(ee.toString());
 				sendErrorReply();
 				return ;
 				}
@@ -734,7 +735,7 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 			manager.sendMessage(new CellMessage(sourcePath,errorReply));
 		}
 		catch(Exception e) {
-			log.error(e);
+			log.error(e.toString());
 			//can not do much more here!!!
 		}
 		Long longId = new Long(id);
@@ -785,7 +786,7 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 			manager.sendMessage(new CellMessage(sourcePath,errorReply));
 		}
 		catch(Exception e) {
-			log.error(e);
+			log.error(e.toString());
 			//can not do much more here!!!
 		}
 		Long longId = new Long(id);
@@ -820,7 +821,7 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 			manager.sendMessage(new CellMessage(sourcePath,errorReply));
 		}
 		catch(Exception e)  {
-			log.error(e);
+			log.error(e.toString());
 			//can not do much more here!!!
 		}
 		Long longId = new Long(id);
@@ -929,7 +930,7 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 			manager.sendMessage( new CellMessage( new CellPath (  pool), killMessage )  );
 		}
 		catch(Exception e) {
-			log.error(e);
+			log.error(e.toString());
 		}
 	}
 

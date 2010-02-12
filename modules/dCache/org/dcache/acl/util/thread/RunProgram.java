@@ -5,14 +5,15 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author David Melkumyan, DESY Zeuthen
  *
  */
 public class RunProgram {
-    static Logger logger = Logger.getLogger("logger.org.dcache.authorization." + RunProgram.class.getName());
+    static Logger logger = LoggerFactory.getLogger("logger.org.dcache.authorization." + RunProgram.class.getName());
 
     public static String LINE_SEPARATOR = System.getProperty("line.separator");
 

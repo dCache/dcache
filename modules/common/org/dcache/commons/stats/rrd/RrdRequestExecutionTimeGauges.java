@@ -11,7 +11,8 @@ import java.util.TimerTask;
 import java.util.Map;
 import java.util.HashMap;
 import java.io.IOException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.Random;
 import java.io.File;
 
@@ -22,7 +23,7 @@ import java.io.File;
  * @author timur
  */
 public class RrdRequestExecutionTimeGauges<T> {
-    private static final Logger logger = Logger.getLogger(RrdRequestExecutionTimeGauges.class);
+    private static final Logger logger = LoggerFactory.getLogger(RrdRequestExecutionTimeGauges.class);
     private final Map<T,RRDRequestExecutionTimeGauge> rrdgauges =
             new HashMap<T,RRDRequestExecutionTimeGauge>();
     private final RequestExecutionTimeGauges<T> gauges;

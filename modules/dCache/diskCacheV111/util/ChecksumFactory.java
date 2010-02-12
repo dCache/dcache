@@ -28,11 +28,12 @@ import  diskCacheV111.vehicles.PnfsFlagMessage;
 import  java.security.MessageDigest ;
 import  java.security.NoSuchAlgorithmException ;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class ChecksumFactory {
 
-    private final static Logger _log = Logger.getLogger(ChecksumFactory.class);
+    private final static Logger _log = LoggerFactory.getLogger(ChecksumFactory.class);
 
     protected static String[] _types = { "ADLER32","MD5","MD4" };
 
@@ -71,7 +72,7 @@ public abstract class ChecksumFactory {
               return stringTypes.toArray(new String[1]);
            }
 
-       } catch ( Exception ex){ _log.error(ex); }
+       } catch ( Exception ex){ _log.error(ex.toString()); }
 
        return null;
     }
@@ -106,7 +107,7 @@ public abstract class ChecksumFactory {
 class GenericIdChecksumFactory extends ChecksumFactory
 {
     private final static Logger _log =
-        Logger.getLogger(GenericIdChecksumFactory.class);
+        LoggerFactory.getLogger(GenericIdChecksumFactory.class);
 
     private int _type;
 
@@ -148,7 +149,7 @@ class GenericIdChecksumFactory extends ChecksumFactory
            if ( checksumValue != null )
               return create(checksumValue);
         } catch ( Exception e){
-          _log.error(e);
+          _log.error(e.toString());
         }
 
 /*

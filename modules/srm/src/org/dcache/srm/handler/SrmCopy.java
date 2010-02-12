@@ -28,7 +28,8 @@ import org.dcache.srm.scheduler.Scheduler;
 import org.apache.axis.types.URI;
 import org.dcache.srm.request.ContainerRequest;
 import org.dcache.srm.SRMProtocol;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -37,7 +38,7 @@ import org.apache.log4j.Logger;
 
 public class SrmCopy {
     private static Logger logger = 
-            Logger.getLogger(SrmCopy.class);
+            LoggerFactory.getLogger(SrmCopy.class);
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement storage;
     SrmCopyRequest         request;
@@ -76,7 +77,7 @@ public class SrmCopy {
         try {
             response = srmCopy();
         } catch(Exception e) {
-            logger.error(e);
+            logger.error(e.toString());
             response = getFailedResponse("Exception : "+e.toString());
         }
         return response;
@@ -193,7 +194,7 @@ public class SrmCopy {
             response = ((CopyRequest)r).getSrmCopyResponse();
             return response;
         } catch(Exception e) {
-            logger.error(e);
+            logger.error(e.toString());
             return getFailedResponse("copy request generated error : "+e.toString(),
                     TStatusCode.SRM_INTERNAL_ERROR);
         }

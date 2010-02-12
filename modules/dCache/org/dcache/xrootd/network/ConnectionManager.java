@@ -5,12 +5,13 @@ import java.net.Socket;
 import java.util.Iterator;
 import java.util.Vector;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ConnectionManager {
 
     private final static Logger _log =
-        Logger.getLogger(ConnectionManager.class);
+        LoggerFactory.getLogger(ConnectionManager.class);
 
     private static ConnectionManager instance = null;
 

@@ -7,7 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.cells.AbstractCell;
 import org.dcache.services.info.base.BadStatePathException;
 import org.dcache.services.info.base.State;
@@ -41,7 +42,7 @@ import dmg.util.Args;
 
 public class InfoProvider extends AbstractCell {
 
-	private static Logger _log = Logger.getLogger(InfoProvider.class);
+	private static Logger _log = LoggerFactory.getLogger(InfoProvider.class);
 
 	private static final String ADMIN_INTERFACE_OK = "Done.";
 	private static final String ADMIN_INTERFACE_NONE = "(none)";

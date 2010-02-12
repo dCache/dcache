@@ -86,7 +86,8 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.namespace.NameSpaceProvider;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.JdbcConnectionPool;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *   <pre> Space Manager dCache service provides ability
@@ -128,7 +129,7 @@ public final class Manager
 
 	JdbcConnectionPool connection_pool;
 	DBManager manager;
-	private static Logger logger = Logger.getLogger("logger.org.dcache.spacemanagent."+Manager.class.getName());
+	private static Logger logger = LoggerFactory.getLogger("logger.org.dcache.spacemanagent."+Manager.class.getName());
 
 	public Manager(String name, String argString) throws Exception {
 		super( name ,Manager.class.getName(), argString , false );

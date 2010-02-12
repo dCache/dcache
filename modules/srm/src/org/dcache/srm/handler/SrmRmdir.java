@@ -29,7 +29,8 @@ import java.util.Comparator;
 import org.dcache.srm.SRMDuplicationException;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMInvalidPathException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.axis.types.URI.MalformedURIException;
 
 
@@ -40,7 +41,7 @@ import org.apache.axis.types.URI.MalformedURIException;
 
 public class SrmRmdir {
         private static Logger logger = 
-            Logger.getLogger(SrmRmdir.class);
+            LoggerFactory.getLogger(SrmRmdir.class);
 	private final static String SFN_STRING="?SFN=";
 	AbstractStorageElement storage;
 	SrmRmdirRequest           request;
@@ -67,7 +68,7 @@ public class SrmRmdir {
             response = getFailedResponse(" malformed uri : "+mue.getMessage(),
             TStatusCode.SRM_INVALID_REQUEST);
         } catch(SRMException srme) {
-            logger.error(srme);
+            logger.error(srme.toString());
             response = getFailedResponse(srme.toString());
 		}
 		return response;
@@ -118,7 +119,7 @@ public class SrmRmdir {
 			return;
 		} 
 		catch (Exception e) {
-			logger.warn(e);
+			logger.warn(e.toString());
 			response.getReturnStatus().setStatusCode(
                                 TStatusCode.SRM_FAILURE);
 			response.getReturnStatus().setExplanation(

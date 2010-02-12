@@ -6,12 +6,13 @@ import java.util.Iterator;
 import org.dcache.xrootd.core.connection.PhysicalXrootdConnection;
 import org.dcache.xrootd.protocol.messages.AbstractRequestMessage;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class LogicalStreamManager {
 
     private final static Logger _log =
-        Logger.getLogger(LogicalStreamManager.class);
+        LoggerFactory.getLogger(LogicalStreamManager.class);
 
     protected HashMap streams = new HashMap();
     protected int maxLogicalStreams = 100;

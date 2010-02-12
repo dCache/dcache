@@ -3,7 +3,8 @@ package org.dcache.services.info.gathers;
 import java.util.Date;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.BooleanStateValue;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StateComposite;
@@ -19,7 +20,7 @@ import diskCacheV111.vehicles.Message;
 
 public class LinkgroupDetailsMsgHandler implements MessageHandler {
 
-	private static Logger _log = Logger.getLogger( LinkgroupDetailsMsgHandler.class);
+	private static Logger _log = LoggerFactory.getLogger( LinkgroupDetailsMsgHandler.class);
 	private static final StatePath LINKGROUPS_PATH = new StatePath("linkgroups");
 	private static final StatePath SUMMARY_LINKGROUP_BLANKET_AUTH_ALL = StatePath.parsePath( "summary.linkgroup.blanket-auth.all");
 	private static final StatePath SUMMARY_LINKGROUP_BLANKET_AUTH_BY_VO = StatePath.parsePath( "summary.linkgroup.blanket-auth.by-VO");

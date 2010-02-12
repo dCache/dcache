@@ -20,7 +20,8 @@ import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.request.sql.LsFileRequestStorage;
 import org.dcache.srm.request.sql.LsRequestStorage;
 import org.dcache.srm.SRM;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.axis.types.URI.MalformedURIException;
 import java.sql.SQLException;
 
@@ -28,7 +29,7 @@ import java.sql.SQLException;
 
 public class SrmStatusOfLsRequest {
         private static Logger logger = 
-            Logger.getLogger(SrmStatusOfLsRequest.class);
+            LoggerFactory.getLogger(SrmStatusOfLsRequest.class);
         private final static String SFN_STRING="?SFN=";
         AbstractStorageElement storage;
         SrmStatusOfLsRequestRequest request;
@@ -68,11 +69,11 @@ public class SrmStatusOfLsRequest {
                     response = getFailedResponse(" malformed uri : "+mue.getMessage(),
                             TStatusCode.SRM_INVALID_REQUEST);
                 } catch(SQLException sqle) {
-                    logger.error(sqle);
+                    logger.error(sqle.toString());
                     response = getFailedResponse("sql error "+sqle.getMessage(),
                             TStatusCode.SRM_INTERNAL_ERROR);
                 } catch(SRMException srme) {
-                    logger.error(srme);
+                    logger.error(srme.toString());
                     response = getFailedResponse(srme.toString());
                 }        
                 return response;

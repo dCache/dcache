@@ -20,7 +20,8 @@ import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
 import org.dcache.srm.FileMetaData;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.axis.types.URI.MalformedURIException;
 import java.sql.SQLException;
 /**
@@ -29,7 +30,7 @@ import java.sql.SQLException;
  */
 public class SrmPutDone {
     private static Logger logger = 
-            Logger.getLogger(SrmPutDone.class);
+            LoggerFactory.getLogger(SrmPutDone.class);
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement storage;
     SrmPutDoneRequest srmPutDoneRequest;
@@ -71,11 +72,11 @@ public class SrmPutDone {
             response = getFailedResponse(" malformed uri : "+mue.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
         } catch(SQLException sqle) {
-            logger.error(sqle);
+            logger.error(sqle.toString());
             response = getFailedResponse("sql error "+sqle.getMessage(),
                     TStatusCode.SRM_INTERNAL_ERROR);
         } catch(SRMException srme) {
-            logger.error(srme);
+            logger.error(srme.toString());
             response = getFailedResponse(srme.toString());
         } catch(IllegalStateTransition ist) {
             logger.error("Illegal State Transition : " +ist.getMessage());

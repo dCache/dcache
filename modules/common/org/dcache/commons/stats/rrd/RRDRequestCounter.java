@@ -15,7 +15,8 @@ import org.rrd4j.ConsolFun;
 import org.rrd4j.DsType;
 import org.rrd4j.core.Sample;
 import org.rrd4j.core.Util;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.rrd4j.graph.RrdGraphDef;
 import org.rrd4j.graph.RrdGraph;
 import java.awt.image.BufferedImage;
@@ -40,7 +41,7 @@ public class RRDRequestCounter {
     private static final int DEFAULT_IMAGE_HEIGHT=167;
 
 
-    private static final Logger logger = Logger.getLogger(RRDRequestCounter.class);
+    private static final Logger logger = LoggerFactory.getLogger(RRDRequestCounter.class);
     private RequestCounter counter;
 
     private String rrdFileName;

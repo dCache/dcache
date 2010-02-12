@@ -4,7 +4,8 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.xrootd.core.connection.PhysicalXrootdConnection;
 import org.dcache.xrootd.core.stream.LogicalStream;
 import org.dcache.xrootd.core.stream.StreamListener;
@@ -31,9 +32,9 @@ import org.dcache.xrootd.util.FileStatus;
 public class XrootdMoverListener implements StreamListener {
 
     private final static Logger _log =
-        Logger.getLogger(XrootdMoverListener.class);
+        LoggerFactory.getLogger(XrootdMoverListener.class);
 
-    private final static Logger _logSpaceAllocation = Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + XrootdMoverListener.class.getName());
+    private final static Logger _logSpaceAllocation = LoggerFactory.getLogger("logger.dev.org.dcache.poolspacemonitor." + XrootdMoverListener.class.getName());
     private XrootdProtocol_2 mover;
     private static final int BLOCK_SIZE = (50*1024*1024) ;
     private long currentFileSize = 0;

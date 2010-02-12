@@ -5,7 +5,8 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.FloatingPointStateValue;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StatePath;
@@ -24,7 +25,7 @@ import dmg.cells.services.login.LoginBrokerInfo;
  */
 public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 
-	private static Logger _log = Logger.getLogger( LoginBrokerLsMsgHandler.class);
+	private static Logger _log = LoggerFactory.getLogger( LoginBrokerLsMsgHandler.class);
 
 	private static final StatePath PATH_TO_DOORS = new StatePath( "doors");
 

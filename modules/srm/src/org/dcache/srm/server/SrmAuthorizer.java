@@ -99,7 +99,7 @@ public class SrmAuthorizer {
    public static final String REMOTE_ADDR = "REMOTE_ADDR";
    private org.dcache.srm.SRMAuthorization authorization;
    private org.dcache.srm.request.RequestCredentialStorage credential_storage;
-   public static org.apache.log4j.Logger log = org.apache.log4j.Logger.getLogger(
+   public static org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(
              SrmAuthorizer.class);
    private static boolean initialized = false;
    private String logConfigFile;
@@ -127,7 +127,7 @@ public class SrmAuthorizer {
             log.debug("Successfully initialized");
       } catch (Exception e) {
          e.printStackTrace();
-         log.fatal("Failed to initialize: exception is " + e);
+         log.error("Failed to initialize: exception is " + e);
          throw new RuntimeException(e);
       }
    }
@@ -217,9 +217,9 @@ public class SrmAuthorizer {
          log.debug("About to return RequestCredential = " + rc);
          return rc;
       } catch(Exception e) {
-         log.fatal(e);
+         log.error(e.toString());
          RuntimeException re = new RuntimeException(e.toString());
-         log.fatal("About to throw runtime " +
+         log.error("About to throw runtime " +
             "exception" + re + "generated from " + e);
          throw re;
       }

@@ -4,7 +4,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
@@ -28,7 +29,7 @@ import org.dcache.services.info.stateInfo.SimpleStringMapVisitor;
  */
 public class LinkgroupTotalSpaceMaintainer extends AbstractStateWatcher {
 
-	private static Logger _log = Logger.getLogger( LinkgroupTotalSpaceMaintainer.class);
+	private static Logger _log = LoggerFactory.getLogger( LinkgroupTotalSpaceMaintainer.class);
 	
 	private static final StatePath RESERVATIONS = new StatePath( "reservations");
 	private static final StatePath LINKGROUPS = new StatePath( "linkgroups");

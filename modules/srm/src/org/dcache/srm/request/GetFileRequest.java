@@ -96,14 +96,15 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TGetRequestFileStatus;
 import org.apache.axis.types.URI;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 /**
  *
  * @author  timur
  * @version
  */
 public final class GetFileRequest extends FileRequest {
-    private final static Logger logger = Logger.getLogger(GetFileRequest.class);
+    private final static Logger logger = LoggerFactory.getLogger(GetFileRequest.class);
 
     // the globus url class created from surl_string
     private GlobusURL surl;
@@ -295,7 +296,7 @@ public final class GetFileRequest extends FileRequest {
                 }
                 catch(SRMAuthorizationException srmae) {
                     String error =srmae.getMessage();
-                    logger.error(error);
+                    logger.error(error.toString());
                     try {
                         setStateAndStatusCode(
                                 State.FAILED,
@@ -310,7 +311,7 @@ public final class GetFileRequest extends FileRequest {
                 catch(Exception srme) {
                     String error =
                     "can not obtain turl for file:"+srme;
-                    logger.error(error);
+                    logger.error(error.toString());
                     try {
                         setState(State.FAILED,error);
                     }
@@ -392,7 +393,7 @@ public final class GetFileRequest extends FileRequest {
         try {
              fileStatus.setSourceSURL(new URI(getSurlString()));
         } catch (Exception e) {
-            logger.error(e);
+            logger.error(e.toString());
             throw new java.sql.SQLException("wrong surl format");
         }
 
@@ -401,7 +402,7 @@ public final class GetFileRequest extends FileRequest {
             try {
             fileStatus.setTransferURL(new URI(turlstring));
             } catch (Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
                 throw new java.sql.SQLException("wrong turl format");
             }
 
@@ -423,7 +424,7 @@ public final class GetFileRequest extends FileRequest {
         try {
             surlReturnStatus.setSurl(new URI(getSurlString()));
         } catch (Exception e) {
-            logger.error(e);
+            logger.error(e.toString());
             throw new java.sql.SQLException("wrong surl format");
         }
         surlReturnStatus.setStatus(returnStatus);
@@ -451,7 +452,7 @@ public final class GetFileRequest extends FileRequest {
                     return g_turl;
                 }
                 catch(MalformedURLException murle) {
-                    logger.error(murle);
+                    logger.error(murle.toString());
                     throw new SRMException(murle.toString());
                 }
             }
@@ -506,12 +507,12 @@ public final class GetFileRequest extends FileRequest {
                     if(!Tools.sameHost(getConfiguration().getSrmHosts(),
                     getSurl().getHost())) {
                         String error ="surl is not local : "+getSurl().getURL();
-                        logger.error(error);
+                        logger.error(error.toString());
                         throw new FatalJobFailure(error);
                     }
                 }
                 catch(java.net.UnknownHostException uhe) {
-                    logger.error(uhe);
+                    logger.error(uhe.toString());
                     throw new FatalJobFailure(uhe.toString());
                 }
 
@@ -576,7 +577,7 @@ public final class GetFileRequest extends FileRequest {
             getStorage().getFileInfo(getUser(),path,true,callbacks);
         }
         catch(Exception e) {
-            logger.error(e);
+            logger.error(e.toString());
             throw new NonFatalJobFailure(e.toString());
         }
     }
@@ -592,7 +593,7 @@ public final class GetFileRequest extends FileRequest {
                     getRequestId().longValue() ,callbacks);
         }
         catch(Exception e) {
-            logger.error(e);
+            logger.error(e.toString());
             throw new NonFatalJobFailure(e.toString());
         }
     }
@@ -604,7 +605,7 @@ public final class GetFileRequest extends FileRequest {
             try {
                 getRequest().resetRetryDeltaTime();
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire);
+                logger.error(ire.toString());
             }
         }
         if(State.isFinalState(state)) {
@@ -615,7 +616,7 @@ public final class GetFileRequest extends FileRequest {
                 try {
                     user = getUser();
                 } catch (SRMInvalidRequestException ire) {
-                    logger.error (ire) ;
+                    logger.error(ire.toString()) ;
                     return;
                 }
                 getStorage().unPinFile(user,getFileId(),callbacks, getPinId());
@@ -777,7 +778,7 @@ public final class GetFileRequest extends FileRequest {
                 logger.error("GetCallbacks error: "+ reason);
             }
             catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
 
@@ -793,7 +794,7 @@ public final class GetFileRequest extends FileRequest {
                 logger.error("GetCallbacks error: "+ error);
             }
             catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
 
@@ -809,7 +810,7 @@ public final class GetFileRequest extends FileRequest {
                 logger.error("GetCallbacks exception",e);
             }
             catch(Exception e1) {
-                logger.error(e1);
+                logger.error(e1.toString());
             }
         }
 
@@ -826,7 +827,7 @@ public final class GetFileRequest extends FileRequest {
                 logger.error("GetCallbacks error: "+ reason);
             }
             catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
 
         }
@@ -857,14 +858,14 @@ public final class GetFileRequest extends FileRequest {
                             scheduler.schedule(fr);
                         }
                         catch(Exception ie) {
-                            logger.error(ie);
+                            logger.error(ie.toString());
                         }
                     }
                 }
 
             }
             catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
 
@@ -882,7 +883,7 @@ public final class GetFileRequest extends FileRequest {
                 logger.error("GetCallbacks Timeout");
             }
             catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
 
@@ -918,7 +919,7 @@ public final class GetFileRequest extends FileRequest {
                 logger.error("ThePinCallbacks error: "+ error);
             }
             catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
 
@@ -934,7 +935,7 @@ public final class GetFileRequest extends FileRequest {
                 logger.error("ThePinCallbacks exception",e);
             }
             catch(Exception e1) {
-                logger.error(e1);
+                logger.error(e1.toString());
             }
         }
 
@@ -954,7 +955,7 @@ public final class GetFileRequest extends FileRequest {
                 logger.error("GetCallbacks Timeout");
             }
             catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
 
@@ -974,13 +975,13 @@ public final class GetFileRequest extends FileRequest {
                             scheduler.schedule(fr);
                         }
                         catch(Exception ie) {
-                            logger.error(ie);
+                            logger.error(ie.toString());
                         }
                     }
                 }
             }
             catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
 
@@ -997,7 +998,7 @@ public final class GetFileRequest extends FileRequest {
                 logger.error("ThePinCallbacks error: "+ reason);
             }
             catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
 
@@ -1038,7 +1039,7 @@ public final class GetFileRequest extends FileRequest {
                 logger.error("TheUninCallbacks error: "+ error);
             }
             catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
 
@@ -1060,7 +1061,7 @@ public final class GetFileRequest extends FileRequest {
                 logger.error("TheUninCallbacks exception",e);
             }
             catch(Exception e1) {
-                logger.error(e1);
+                logger.error(e1.toString());
             }
         }
 
@@ -1086,7 +1087,7 @@ public final class GetFileRequest extends FileRequest {
                 logger.error("TheUninCallbacks Timeout");
             }
             catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
 
@@ -1102,12 +1103,12 @@ public final class GetFileRequest extends FileRequest {
                         scheduler.schedule(fr);
                     }
                     catch(Exception ie) {
-                        logger.error(ie);
+                        logger.error(ie.toString());
                     }
                 }
             }
             catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
 
@@ -1130,7 +1131,7 @@ public final class GetFileRequest extends FileRequest {
                 logger.error("TheUninCallbacks error: "+ reason);
             }
             catch(Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
             }
         }
 

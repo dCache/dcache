@@ -3,7 +3,8 @@ package org.dcache.pool.repository.meta.db;
 import java.io.File;
 import java.io.FileNotFoundException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
@@ -22,7 +23,7 @@ import com.sleepycat.bind.serial.StoredClassCatalog;
 public class MetaDataRepositoryDatabase
 {
     private static Logger _log =
-        Logger.getLogger("logger.org.dcache.repository");
+        LoggerFactory.getLogger("logger.org.dcache.repository");
 
     private final Environment env;
 
@@ -48,7 +49,7 @@ public class MetaDataRepositoryDatabase
                 public void exceptionThrown(ExceptionEvent event) {
                     if (event.getException() instanceof RunRecoveryException) {
                         setFailed();
-                        _log.fatal("Pool restart required due to Berkeley DB failure: "
+                        _log.error("Pool restart required due to Berkeley DB failure: "
                                    + event.getException().getMessage());
                     }
                 }

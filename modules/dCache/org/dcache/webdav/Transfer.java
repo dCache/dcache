@@ -41,7 +41,8 @@ import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.dcache.namespace.FileAttribute.*;
 
@@ -51,7 +52,7 @@ import static org.dcache.namespace.FileAttribute.*;
  */
 public abstract class Transfer implements Comparable<Transfer>
 {
-    private static final Logger _log = Logger.getLogger(Transfer.class);
+    private static final Logger _log = LoggerFactory.getLogger(Transfer.class);
 
     private static final int FILE_UMASK = 0644;
     private static final int FILE_UMASK_ANONYMOUS = 0666;

@@ -13,7 +13,8 @@ import java.util.Collection;
 import java.util.Enumeration;
 import java.util.concurrent.CountDownLatch;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
 import org.dcache.vehicles.XrootdProtocolInfo;
@@ -35,7 +36,7 @@ import org.dcache.util.NetworkUtils;
 
 public class XrootdProtocol_2 implements MoverProtocol
 {
-    private static final Logger _log = Logger.getLogger(XrootdProtocol_2.class);
+    private static final Logger _log = LoggerFactory.getLogger(XrootdProtocol_2.class);
 
     private static final int[] DEFAULT_PORTRANGE = {20000, 25000};
     private static final int LISTEN_TIMEOUT = 10 * 60 * 1000;

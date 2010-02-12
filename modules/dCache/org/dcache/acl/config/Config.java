@@ -5,7 +5,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.acl.ACLException;
 import org.dcache.acl.util.io.FileTools;
 
@@ -17,7 +18,7 @@ import org.dcache.acl.util.io.FileTools;
 public class Config {
 
     // Logger
-    private static final Logger _logger = Logger.getLogger("logger.org.dcache.authorization." + Config.class.getName());
+    private static final Logger _logger = LoggerFactory.getLogger("logger.org.dcache.authorization." + Config.class.getName());
 
     // Constants
     protected static final String SEPARATOR_COMMA = ", ";

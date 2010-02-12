@@ -155,7 +155,8 @@ import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TReturnStatus;
 import javax.naming.Context;
 import javax.naming.InitialContext;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.log4j.xml.DOMConfigurator;
 import java.lang.reflect.Method;
 import java.lang.reflect.Constructor;
@@ -184,7 +185,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
     	JDC.setSchedulerContext("SRMServerV2");
         try {
             // srmConn = SrmDCacheConnector.getInstance();
-            log = Logger.getLogger("logger.org.dcache.authorization."+
+            log = LoggerFactory.getLogger("logger.org.dcache.authorization."+
                 this.getClass().getName());
             Context logctx = new InitialContext();
             String srmConfigFile =
@@ -199,7 +200,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                         "  <env-entry-type>java.lang.String</env-entry-type>\n"+
                         " </env-entry>";
 
-                log.error(error);
+                log.error(error.toString());
                 log.error(error_details);
                 throw new java.rmi.RemoteException(error );
             }
@@ -308,13 +309,13 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                     Object response = handleGetResponseMethod.invoke(handler,(Object[])null);
                     return response;
                 } catch(Exception e) {
-                    log.fatal("handler invocation failed",e);
+                    log.error("handler invocation failed",e);
                     return getFailedResponse(capitalizedRequestName,
                             TStatusCode.SRM_FAILURE,
                          "handler invocation failed"+ e.getMessage());
                 }
             } catch(Exception e) {
-                log.fatal(" handleRequest: ",e);
+                log.error(" handleRequest: ",e);
                 try{
                     return getFailedResponse(capitalizedRequestName,
                             TStatusCode.SRM_INTERNAL_ERROR,
@@ -350,7 +351,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
 		// A hack to handle SrmPingResponse which does not have "setReturnStatus" method
 		// I put it here cause it will go away as soon as this method is present
 		// (by Dmitry Litvintsev (litvinse@fnal.gov))
-		log.fatal("getFailedResponse invocation failed for "+capitalizedRequestName+"Response.setReturnStatus");
+		log.error("getFailedResponse invocation failed for "+capitalizedRequestName+"Response.setReturnStatus");
 		if (capitalizedRequestName.equals("SrmPing")) {
 			Class handlerClass = Class.forName("org.dcache.srm.handler."+capitalizedRequestName);
 			Method getFailedRespose = handlerClass.getMethod("getFailedResponse",new Class[]{String.class});
@@ -358,7 +359,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
 		}
 	}
         catch(Exception e) {
-            log.fatal("getFailedResponse invocation failed",e);
+            log.error("getFailedResponse invocation failed",e);
             Method setStatusCode = responseClass.getMethod("setStatusCode",new Class[]{TStatusCode.class});
             Method setExplanation = responseClass.getMethod("setExplanation",new Class[]{String.class});
             setStatusCode.invoke(response, new Object[]{statusCode});

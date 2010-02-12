@@ -79,7 +79,8 @@ import org.dcache.srm.SRMUser;
 import diskCacheV111.srm.RequestFileStatus;
 import org.dcache.srm.v2_2.*;
 import org.dcache.srm.SRMException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This abstract class represents an "SRM request"
@@ -95,7 +96,7 @@ import org.apache.log4j.Logger;
  */
 
 public abstract class ContainerRequest extends Request {
-    private static final Logger logger = Logger.getLogger(ContainerRequest.class);
+    private static final Logger logger = LoggerFactory.getLogger(ContainerRequest.class);
     // dcache  requires that once client created a connection to a dcache door,
     // it uses the same door to make all following dcap transfers
     // therefore we need to synchronize the recept of dcap turls
@@ -508,7 +509,7 @@ public abstract class ContainerRequest extends Request {
                     logger.error("fr is "+fr);
                 }
             }catch (Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
                 got_exception++;
                 failure=true;
             }
@@ -643,7 +644,7 @@ public abstract class ContainerRequest extends Request {
                     num_of_failed ++;
                 }
             }catch (Exception e) {
-                logger.error(e);
+                logger.error(e.toString());
                 num_of_failed ++;
             }
         }
@@ -709,7 +710,7 @@ public abstract class ContainerRequest extends Request {
                 sb.append(" number of files:").append(fileRequests.length);
             }
         }catch(Exception e) {
-            logger.error(e);
+            logger.error(e.toString());
         }
 
     }

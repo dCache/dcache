@@ -15,7 +15,8 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.HashSet;
 import java.sql.*;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.util.JdbcConnectionPool;
 
 public class DBManager {
@@ -24,7 +25,7 @@ public class DBManager {
 	private DBManager() {
 	}
 	private static Logger _logger =
-		Logger.getLogger("logger.org.dcache.db.sql");
+		LoggerFactory.getLogger("logger.org.dcache.db.sql");
 
 	synchronized public void initConnectionPool(String url,
 				       String driver,
