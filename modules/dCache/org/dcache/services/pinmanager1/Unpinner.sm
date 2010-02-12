@@ -11,7 +11,7 @@
 %import diskCacheV111.vehicles.PnfsFlagMessage
 %import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage
 %import diskCacheV111.vehicles.PoolSetStickyMessage
-%import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
+%import org.dcache.vehicles.PnfsGetFileAttributes
 
 %start UnpinnerFSM::Init
 %map UnpinnerFSM
@@ -25,7 +25,7 @@ Init
                 }
         go
                 [ ctxt.isRetry() ]
-                GettingPnfsMetaData
+                CheckingThatFileExists
                 {
                 }
         go
@@ -53,7 +53,7 @@ Entry
 
         answerArrived(message: PnfsFlagMessage)
                [ ctxt.isRetry() ]
-               GettingPnfsMetaData
+               CheckingThatFileExists
                {
                }
 
@@ -62,26 +62,33 @@ Entry
                {
                         fail(message.getErrorObject());
                }
- }
+}
 
-GettingPnfsMetaData
+CheckingThatFileExists
 Entry
 {
-        getPnfsMetadata();
+        checkThatFileExists();
 }
 {
         timeout
                 nil
                 {
-                        getPnfsMetadata();
+                        checkThatFileExists();
                 }
-        answerArrived(message: PnfsGetFileMetaDataMessage)
+        answerArrived(message: PnfsGetFileAttributes)
+                [ message.getReturnCode() == CacheException.NOT_IN_TRASH ||
+                  message.getReturnCode() == CacheException.FILE_NOT_FOUND]
+                Done
+                {
+                        fileRemoved();
+                }
+        answerArrived(message: PnfsGetFileAttributes)
                 [ message.getReturnCode() != 0 ]
                 Done
                 {
-                   fileRemoved();
+                        fail(message.getErrorObject());
                 }
-        answerArrived(message: PnfsGetFileMetaDataMessage)
+        answerArrived(message: PnfsGetFileAttributes)
                 UnsettingStickyFlags
                 {
 
@@ -184,13 +191,13 @@ Default
                              + context.getState().getName()
                              + ": " + context.getTransition());
                 }
-        answerArrived(message: PnfsGetFileMetaDataMessage)
+        answerArrived(message: PnfsGetFileAttributes)
                 [ message.getReturnCode() != 0 ]
                 Done
                 {
                         fail(message.getErrorObject());
                 }
-        answerArrived(message: PnfsGetFileMetaDataMessage)
+        answerArrived(message: PnfsGetFileAttributes)
                 Done
                 {
                         fail("Unexpected answer received in state "

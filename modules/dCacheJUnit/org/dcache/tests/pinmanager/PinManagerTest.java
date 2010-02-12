@@ -34,8 +34,6 @@ import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsCreateDirectoryMessage;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
-import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
-import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
