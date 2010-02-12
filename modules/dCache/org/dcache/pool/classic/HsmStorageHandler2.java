@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.EnumSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.Executor;
@@ -62,6 +63,7 @@ import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.cells.AbstractCellComponent;
+import org.dcache.namespace.FileAttribute;
 
 public class HsmStorageHandler2
     extends AbstractCellComponent
@@ -913,7 +915,7 @@ public class HsmStorageHandler2
                  */
                 try {
                     _log.debug("Checking if file still exists");
-                    _pnfs.getFileMetaDataById(pnfsId);
+                    _pnfs.getFileAttributes(pnfsId, EnumSet.noneOf(FileAttribute.class));
                 } catch (CacheException e) {
                     switch (e.getRc()) {
                     case CacheException.FILE_NOT_FOUND:

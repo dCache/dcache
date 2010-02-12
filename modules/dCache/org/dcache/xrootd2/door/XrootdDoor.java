@@ -654,7 +654,7 @@ public class XrootdDoor
 
     private FileMetaData getFileMetaData(FsPath fullPath) throws CacheException
     {
-        return _pnfs.getFileMetaDataByPath(fullPath.toString()).getMetaData();
+        return new FileMetaData(_pnfs.getFileAttributes(fullPath.toString(), FileMetaData.getKnownFileAttributes()));
     }
 
     public FileMetaData[] getMultipleFileMetaData(String[] allPaths)

@@ -21,7 +21,6 @@ import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
 import diskCacheV111.vehicles.PnfsFlagMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
-import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.PnfsMessage;
@@ -342,42 +341,6 @@ public class PnfsHandler
       return pnfsRequest( sInfo ) ;
 
    }
-
-   public PnfsGetFileMetaDataMessage getFileMetaDataByPath( String pnfsPath )
-          throws CacheException                {
-
-      return getFileMetaDataByPath(pnfsPath, true);
-
-   }
-
-
-   public PnfsGetFileMetaDataMessage getFileMetaDataByPath( String pnfsPath , boolean followLinks)
-       throws CacheException                {
-
-        return getFileMetaDataByPath(pnfsPath, followLinks, false);
-    }
-
-      public PnfsGetFileMetaDataMessage getFileMetaDataByPath( String pnfsPath ,
-          boolean followLinks,
-          boolean requestChecksum)
-       throws CacheException                {
-
-        PnfsGetFileMetaDataMessage fileMetaData = new PnfsGetFileMetaDataMessage();
-        fileMetaData.setPnfsPath(pnfsPath);
-        fileMetaData.setResolve(followLinks);
-        fileMetaData.setChecksumsRequested(requestChecksum);
-        return pnfsRequest( fileMetaData ) ;
-
-    }
-
-
-   public PnfsGetFileMetaDataMessage getFileMetaDataById( PnfsId pnfsId )
-   throws CacheException                {
-
-    PnfsGetFileMetaDataMessage fileMetaData = new PnfsGetFileMetaDataMessage(pnfsId);
-    return pnfsRequest( fileMetaData ) ;
-}
-
 
     public PnfsId getParentOf(PnfsId pnfsId)
         throws CacheException
