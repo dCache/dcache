@@ -57,6 +57,7 @@ public class PnfsManagerTest {
      * make Cells happy
      */
     private static final CellAdapterHelper SYSTEM_CELL_HOLDER = new CellAdapterHelper("PnfsManagerTest", "");
+    private static final String OSM_URI_STEM = "osm://example-osm-instance/";
 
     private static PnfsManagerV3 _pnfsManager;
     private static Connection _conn;
@@ -388,7 +389,8 @@ public class PnfsManagerTest {
 
         StorageInfo si = pnfsCreateEntryMessage.getStorageInfo();
 
-        si.addLocation(new URI("osm://osm?tape"));
+
+        si.addLocation(new URI( OSM_URI_STEM + "?store=tape"));
         si.isSetAddLocation(true);
 
         PnfsSetStorageInfoMessage setStorageInfoMessage =
@@ -412,7 +414,7 @@ public class PnfsManagerTest {
 
         StorageInfo si = pnfsCreateEntryMessage.getStorageInfo();
 
-        si.addLocation(new URI("osm://osm?tape"));
+        si.addLocation(new URI( OSM_URI_STEM + "?store=tape1"));
         si.isSetAddLocation(true);
 
         PnfsSetStorageInfoMessage setStorageInfoMessage =
@@ -420,14 +422,14 @@ public class PnfsManagerTest {
 
         _pnfsManager.setStorageInfo(setStorageInfoMessage);
 
-        si.addLocation(new URI("osm://osm?tape2"));
+        si.addLocation(new URI( OSM_URI_STEM + "?store=tape2"));
         si.isSetAddLocation(true);
 
         setStorageInfoMessage =
             new PnfsSetStorageInfoMessage(pnfsCreateEntryMessage.getPnfsId(), si, NameSpaceProvider.SI_APPEND);
 
         _pnfsManager.setStorageInfo(setStorageInfoMessage);
-        assertEquals("failed to add second tape locatgion", 0,setStorageInfoMessage.getReturnCode() );
+        assertEquals("failed to add second tape location", 0,setStorageInfoMessage.getReturnCode() );
 
     }
 
