@@ -2,11 +2,11 @@ package org.dcache.admin.webadmin.jettycell;
 
 import java.util.concurrent.ExecutionException;
 import javax.naming.NamingException;
-import org.eclipse.jetty.deploy.WebAppDeployer;
+
+import org.eclipse.jetty.webapp.WebAppContext;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.server.handler.DefaultHandler;
 import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.handler.RequestLogHandler;
@@ -36,6 +36,8 @@ public class JettyCell extends AbstractCell {
     public static final String JETTY_PORT = "jetty_Port";
 //    max Threads for the Jetty Server maybe later configurable
     public static final int MAX_THREADS = 100;
+    public static final String WEBAPP_CONTEXT = "/webadmin";
+    private static final String WEBDEFAULT_XML = "/webdefault.xml";
     private static final Logger _log = LoggerFactory.getLogger(JettyCell.class);
 //    path to the .war files with the webapps, will be set by the batch file
     private final String _webappsPath;
@@ -64,54 +66,60 @@ public class JettyCell extends AbstractCell {
     }
 
     @Override
-    protected void init() throws NamingException, Exception {
+    protected void init() throws Exception {
         super.init();
         _log.debug("initialising");
         this.createJetty();
     }
 
-    private void createJetty() throws NamingException, Exception {
- 
-            System.setProperty("jetty.home", JettyCell.class.getResource("/").toExternalForm());
-//        create the server
-            _server = new Server(_jettyPort);
-            QueuedThreadPool threadPool = new QueuedThreadPool();
-            threadPool.setMaxThreads(MAX_THREADS);
-            _server.setThreadPool(threadPool);
-            Connector connector = new SelectChannelConnector();
-            connector.setPort(_jettyPort);
-            connector.setMaxIdleTime(MAX_IDLE_TIME);
-            _server.setConnectors(new Connector[]{connector});
-            HandlerCollection handlers = new HandlerCollection();
-            ContextHandlerCollection contexts = new ContextHandlerCollection();
-            RequestLogHandler requestLogHandler = new RequestLogHandler();
-            handlers.setHandlers(new Handler[]{contexts, new DefaultHandler(), requestLogHandler});
+    private void createJetty() {
+
+        _server = new Server(_jettyPort);
+        createAndSetThreadPool();
+        _server.setConnectors(new Connector[]{initConnector()});
+        createAndSetHandlers();
         try {
-            _server.setHandler(handlers);
-//          create the Web Application deployer
-            WebAppDeployer deployer1 = new WebAppDeployer();
-            deployer1.setContexts(contexts);
-            deployer1.setWebAppDir(_webappsPath);
-            deployer1.setParentLoaderPriority(false);
-            deployer1.setExtract(true);
-            deployer1.setAllowDuplicates(false);
-            _log.debug(_resourceURL.toExternalForm());
-            deployer1.setDefaultsDescriptor(_resourceURL.toExternalForm() + "/webdefault.xml");
-            _server.addLifeCycle(deployer1);
+//            make the cell known for the webapps
             InitialContext namingContext = new InitialContext();
             namingContext.bind(JETTYCELL_NAMING_CONTEXT, this);
             _log.debug("starting server");
             _server.start();
-
         } catch (NamingException ex) {
             _log.error("Namingcontext couldn't initialise (jndi-lib in classpath?) " +
                     ex.getMessage());
-            throw ex;
         } catch (Exception e) {
             _log.error("Jettyserver threw Exception: " + e.getMessage());
             _server.destroy();
-            throw e;
         }
+    }
 
+    private void createAndSetThreadPool() {
+        QueuedThreadPool threadPool = new QueuedThreadPool();
+        threadPool.setMaxThreads(MAX_THREADS);
+        _server.setThreadPool(threadPool);
+    }
+
+    private Connector initConnector() {
+        Connector connector = new SelectChannelConnector();
+        connector.setPort(_jettyPort);
+        connector.setMaxIdleTime(MAX_IDLE_TIME);
+        return connector;
+    }
+
+    private void createAndSetHandlers() {
+        RequestLogHandler requestLogHandler = new RequestLogHandler();
+        HandlerCollection handlers = new HandlerCollection();
+        handlers.setHandlers(new Handler[]{(Handler) createWebappContext(), new DefaultHandler(), requestLogHandler});
+        _server.setHandler(handlers);
+    }
+
+    private WebAppContext createWebappContext() {
+        WebAppContext webappContext = new WebAppContext();
+        _log.debug(_resourceURL.toExternalForm());
+        webappContext.setDefaultsDescriptor(_resourceURL.toExternalForm() + WEBDEFAULT_XML);
+        webappContext.setContextPath(WEBAPP_CONTEXT);
+        webappContext.setWar(_webappsPath + WEBAPP_CONTEXT + ".war");
+        webappContext.setExtractWAR(true);
+        return webappContext;
     }
 }
