@@ -1,6 +1,11 @@
 package org.dcache.services.info.base;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -220,6 +225,82 @@ public class TestStateExhibitorTests {
 
         assertTrue( "VerifyingVisitor is satisfied", visitor.satisfied());
     }
+
+    @Test
+    public void testListItemExhibitor() {
+        StatePath path = StatePath.parsePath( "SimpleWidget");
+        String type = "widget";
+        String idName = "id";
+
+        _exhibitor.addListItem( path, type, idName);
+
+        AssertableMetadataCapturingVisitor visitor = new AssertableMetadataCapturingVisitor();
+        _exhibitor.visitState( visitor);
+        visitor.assertListMetadata( path, type, idName);
+    }
+
+    @Test
+    public void testTwoListItemExhibitor() {
+        StatePath path1 = StatePath.parsePath( "SimpleWidget");
+        String type1 = "widget";
+        String idName1 = "id";
+
+        StatePath path2 = StatePath.parsePath( "bobble");
+        String type2 = "bibble";
+        String idName2 = "name";
+
+        _exhibitor.addListItem( path1, type1, idName1);
+        _exhibitor.addListItem( path2, type2, idName2);
+
+        AssertableMetadataCapturingVisitor visitor = new AssertableMetadataCapturingVisitor();
+        _exhibitor.visitState( visitor);
+        visitor.assertListMetadata( path1, type1, idName1);
+        visitor.assertListMetadata( path2, type2, idName2);
+    }
+
+    @Test
+    public void testSingleDepthSingleListItemExhibitor() {
+        StatePath path = StatePath.parsePath( "widgets.SimpleWidget");
+        String type = "widget";
+        String idName = "id";
+
+        _exhibitor.addListItem( path, type, idName);
+
+        AssertableMetadataCapturingVisitor visitor = new AssertableMetadataCapturingVisitor();
+        _exhibitor.visitState( visitor);
+        visitor.assertListMetadata( path, type, idName);
+    }
+
+    @Test
+    public void testSingleDepthTwoListItemsExhibitor() {
+        StatePath path1 = StatePath.parsePath( "widgets.SimpleWidget");
+        StatePath path2 = StatePath.parsePath( "widgets.ComplexWidget");
+        String type = "widget";
+        String idName = "id";
+
+        _exhibitor.addListItem( path1, type, idName);
+        _exhibitor.addListItem( path2, type, idName);
+
+        AssertableMetadataCapturingVisitor visitor = new AssertableMetadataCapturingVisitor();
+        _exhibitor.visitState( visitor);
+        visitor.assertListMetadata( path1, type, idName);
+        visitor.assertListMetadata( path2, type, idName);
+    }
+
+    @Test
+    public void testTwoDeepSingleListItemExhibitor() {
+        StatePath path = StatePath.parsePath( "widgets.boringWidgets.SimpleWidget");
+        String type = "widget";
+        String idName = "id";
+
+        _exhibitor.addListItem( path, type, idName);
+
+        AssertableMetadataCapturingVisitor visitor = new AssertableMetadataCapturingVisitor();
+        _exhibitor.visitState( visitor);
+        visitor.assertListMetadata( path, type, idName);
+    }
+
+
 
     /**
      * TESTS INVOLVING CLONED Node STRUCTURE
@@ -756,7 +837,7 @@ public class TestStateExhibitorTests {
      * {@link TestStateExhibitor#visitState(StateVisitor)} and the
      * VerifyingVisitor is checked to see whether it is satisfied with the
      * result.
-     * 
+     *
      * @param metricValue
      *            the metric value to check.
      * @param useClone
@@ -776,7 +857,7 @@ public class TestStateExhibitorTests {
     /**
      * Similar to {@link #assertSingleMetricOk} but visit the state using
      * {@link TestStateExhibitor#visitClonedState(StateVisitor)}
-     * 
+     *
      * @param metricValue
      */
     private void assertSingleMetricClonedOk( StateValue metricValue) {
@@ -797,7 +878,7 @@ public class TestStateExhibitorTests {
      * after the transition using the
      * {@link TestStateExhibitor#visitState(StateVisitor, StateTransition)}
      * method. Check that the VerifyingVisitor is satisfied.
-     * 
+     *
      * @param metricValue
      */
     private void assertSingleMetricTransitionOk( StateValue metricValue) {
@@ -813,4 +894,104 @@ public class TestStateExhibitorTests {
         assertTrue( "VerifyingVisitor is satisfied", visitor.satisfied());
     }
 
+
+    /**
+     *  Visitor that collects metadata and allows list-assertions to be made about collected data.
+     */
+    private static class AssertableMetadataCapturingVisitor implements StateVisitor {
+
+        private static final StatePath ROOT_PATH = null;
+
+        Map<StatePath, Map<String,String>> _collectedMetadata = new HashMap<StatePath, Map<String,String>>();
+
+        private Map<String,String> getMetadataForPath( StatePath path) {
+            return _collectedMetadata.get( path);
+        }
+
+        private void assertListItemMetadata( StatePath path, String expectedType, String expectedIdName) {
+            Map<String,String> pathMetadata = getMetadataForPath( path);
+
+            String discoveredType = pathMetadata.get(  State.METADATA_BRANCH_CLASS_KEY);
+            String discoveredIdName = pathMetadata.get( State.METADATA_BRANCH_IDNAME_KEY);
+
+            assertEquals( "class mismatch: " + path, expectedType, discoveredType);
+            assertEquals( "idName mismatch: " + path, expectedIdName, discoveredIdName);
+        }
+
+        private void assertBranchHasNoMetadata( StatePath path) {
+            Map<String,String> pathMetadata = getMetadataForPath( path);
+            String pathLabel = path != ROOT_PATH ? path.toString() : "(root)";
+            assertNull( "checking branch has no metadata: " + pathLabel, pathMetadata);
+        }
+
+        private void assertBranchAndParentsHaveNoMetadata( final StatePath path) {
+            StatePath currentPath = path;
+
+            while( !currentPath.isSimplePath()) {
+                assertBranchHasNoMetadata( currentPath);
+
+                currentPath = currentPath.parentPath();
+            }
+
+            assertBranchHasNoMetadata( currentPath);
+        }
+
+        private void assertParentBranchesHaveNoMetadata( StatePath listItemPath) {
+            if( !listItemPath.isSimplePath()) {
+                StatePath parentPath = listItemPath.parentPath();
+                assertBranchAndParentsHaveNoMetadata( parentPath);
+            }
+
+            assertBranchHasNoMetadata( ROOT_PATH);
+        }
+
+        public void assertListMetadata( StatePath path, String type, String idName) {
+            assertListItemMetadata( path, type, idName);
+            assertParentBranchesHaveNoMetadata( path);
+        }
+
+        @Override
+        public void visitBoolean( StatePath path, BooleanStateValue value) {
+        }
+
+        @Override
+        public void visitCompositePostDescend( StatePath path,
+                                               Map<String, String> metadata) {
+        }
+
+        @Override
+        public void visitCompositePostSkipDescend( StatePath path,
+                                                   Map<String, String> metadata) {
+        }
+
+        @Override
+        public void visitCompositePreDescend( StatePath path,
+                                              Map<String, String> metadata) {
+            if( metadata != null)
+                _collectedMetadata.put( path, metadata);
+        }
+
+        @Override
+        public void visitCompositePreLastDescend( StatePath path,
+                                                  Map<String, String> metadata) {
+        }
+
+        @Override
+        public void visitCompositePreSkipDescend( StatePath path,
+                                                  Map<String, String> metadata) {
+        }
+
+        @Override
+        public void visitFloatingPoint( StatePath path,
+                                        FloatingPointStateValue value) {
+        }
+
+        @Override
+        public void visitInteger( StatePath path, IntegerStateValue value) {
+        }
+
+        @Override
+        public void visitString( StatePath path, StringStateValue value) {
+        }
+    }
 }
