@@ -55,7 +55,8 @@
         <fileset dir="${libDir}/security" includes="**/*.jar" />
         <fileset dir="${glite.untarred}" includes="**/*.jar" />
         <fileset dir="${libDir}/terapaths" includes="*.jar" />
-        <fileset dir="${libDir}/log4j" includes="*.jar" />
+        <fileset dir="${libDir}/slf4j" includes="*.jar" />
+	<fileset dir="${libDir}/log4j" includes="*.jar" />
         <pathelement location="${libDir}/jdom/jdom.jar" />
         <pathelement location="${classesDir}/cells.jar" />
         <fileset dir="${libDir}/servlet-api/" includes="*.jar" />
@@ -307,6 +308,16 @@
                 <include name="bcprov-jdk15-143.jar" />
             </fileset>
         </copy>
+
+	<!-- slf4j -->
+        <mkdir dir="${srmclient.bin.dir}/lib/slf4j/" />
+        <copy todir="${srmclient.bin.dir}/lib/slf4j">
+          <fileset dir="${libDir}/slf4j/">
+            <include name="*.jar" />
+          </fileset>
+        </copy>
+
+
 
     </target>
 
