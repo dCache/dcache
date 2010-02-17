@@ -2,16 +2,8 @@
 
 package org.dcache.pool.classic;
 
-import java.io.BufferedReader;
-import java.io.EOFException;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.FileNotFoundException;
 import java.io.PrintWriter;
-import java.io.RandomAccessFile;
-import java.io.StringWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
@@ -19,15 +11,11 @@ import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.MissingResourceException;
 import java.util.NoSuchElementException;
-import java.util.StringTokenizer;
 import java.util.TreeSet;
 
 import org.slf4j.Logger;
@@ -35,13 +23,10 @@ import org.slf4j.LoggerFactory;
 
 import org.dcache.pool.FaultListener;
 import org.dcache.pool.FaultEvent;
-import org.dcache.pool.repository.v3.RepositoryException;
 import org.dcache.pool.repository.v5.CacheRepositoryV5;
 import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.SpaceRecord;
 import org.dcache.pool.repository.EntryState;
-import org.dcache.pool.repository.WriteHandle;
-import org.dcache.pool.repository.ReadHandle;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.AbstractStateChangeListener;
 import org.dcache.pool.repository.StateChangeEvent;
@@ -58,11 +43,8 @@ import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolCellInfo;
 import diskCacheV111.repository.CacheRepositoryEntryInfo;
 import diskCacheV111.repository.RepositoryCookie;
-import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CacheFileAvailable;
-import diskCacheV111.util.Checksum;
-import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.HsmSet;
@@ -70,9 +52,7 @@ import diskCacheV111.util.IoBatchable;
 import diskCacheV111.util.JobScheduler;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.SimpleJobScheduler;
-import diskCacheV111.util.SysTimer;
 import diskCacheV111.util.UnitInteger;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.InfoMessage;
@@ -89,7 +69,6 @@ import diskCacheV111.vehicles.PoolCheckable;
 import diskCacheV111.vehicles.PoolDeliverFileMessage;
 import diskCacheV111.vehicles.PoolFetchFileMessage;
 import diskCacheV111.vehicles.PoolFileCheckable;
-import diskCacheV111.vehicles.PoolFlushControlMessage;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 import diskCacheV111.vehicles.PoolMgrReplicateFileMsg;
@@ -104,17 +83,13 @@ import diskCacheV111.vehicles.PoolUpdateCacheStatisticsMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.RemoveFileInfoMessage;
 import diskCacheV111.vehicles.StorageInfo;
-import dmg.cells.nucleus.Reply;
 import dmg.cells.nucleus.DelayedReply;
-import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.cells.services.SetupInfoMessage;
 import dmg.util.Args;
-import dmg.util.CommandException;
 import dmg.util.CommandSyntaxException;
 
 public class PoolV4
@@ -123,9 +98,6 @@ public class PoolV4
                CellCommandListener,
                CellMessageReceiver
 {
-    private static final String MAX_SPACE = "use-max-space";
-    private static final String PREALLOCATED_SPACE = "use-preallocated-space";
-
     private final static int DUP_REQ_NONE = 0;
     private final static int DUP_REQ_IGNORE = 1;
     private final static int DUP_REQ_REFRESH = 2;
@@ -162,7 +134,6 @@ public class PoolV4
 
     private Account _account;
 
-    private String _pnfsManagerName = "PnfsManager";
     private String _poolManagerName = "PoolManager";
     private String _poolupDestination = "PoolManager";
 
