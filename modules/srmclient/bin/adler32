@@ -27,14 +27,10 @@ SRM_CP=$SRM_PATH/lib/srm_client.jar
 SRM_CP=$SRM_CP:$SRM_PATH/lib/srm.jar
 
 # globus cog
-SRM_CP=$SRM_CP:$SRM_PATH/lib/globus/cryptix.jar
-SRM_CP=$SRM_CP:$SRM_PATH/lib/globus/ce-jdk13-120.jar
-SRM_CP=$SRM_CP:$SRM_PATH/lib/globus/log4j-1.2.8.jar
-SRM_CP=$SRM_CP:$SRM_PATH/lib/globus/cog-jglobus.jar
-SRM_CP=$SRM_CP:$SRM_PATH/lib/globus/cryptix-asn1.jar
-SRM_CP=$SRM_CP:$SRM_PATH/lib/globus/cryptix32.jar
-SRM_CP=$SRM_CP:$SRM_PATH/lib/globus/junit.jar
-SRM_CP=$SRM_CP:$SRM_PATH/lib/globus/puretls.jar
+for jar in $SRM_PATH/lib/globus/*jar
+do
+    SRM_CP=$SRM_CP:${jar}
+done
 
 
 OPTIONS="-Djava.protocol.handler.pkgs=org.globus.net.protocol"
