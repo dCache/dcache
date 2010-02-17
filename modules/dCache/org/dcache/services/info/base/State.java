@@ -405,14 +405,35 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
      */
     @Override
     public void visitState( StateVisitor visitor, StatePath start) {
+        if( _log.isDebugEnabled())
+            _log.debug( "visitor " + visitor.getClass().getSimpleName() + " wishing to visit current state");
+
         try {
+            long beforeLock = System.currentTimeMillis();
+
+            if( _log.isDebugEnabled())
+                _log.debug( "visitor " + visitor.getClass().getSimpleName() + " acquiring read lock");
+
             _stateReadLock.lock();
 
+            long afterLock = System.currentTimeMillis();
+
+            if( _log.isDebugEnabled())
+                _log.debug( "visitor " + visitor.getClass().getSimpleName() + " acquired read lock (took " + (afterLock - beforeLock) / 1000.0 + " ms), starting visit.");
+
             _state.acceptVisitor( null, start, visitor);
+
+            long afterVisit = System.currentTimeMillis();
+
+            if( _log.isDebugEnabled())
+                _log.debug( "visitor " + visitor.getClass().getSimpleName() + " completed visit (took " + (afterVisit - afterLock) / 1000.0 + " ms), releasing read lock.");
 
         } finally {
             _stateReadLock.unlock();
         }
+
+        if( _log.isDebugEnabled())
+            _log.debug( "visitor " + visitor.getClass().getSimpleName() + " finished.");
     }
 
     /**
@@ -429,13 +450,36 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
     @Override
     public void visitState( StateTransition transition, StateVisitor visitor,
                             StatePath start) {
+        if( _log.isDebugEnabled())
+            _log.debug( "visitor " + visitor.getClass().getSimpleName() + " wishing to visit post-transition state");
+
         try {
+            long beforeLock = System.currentTimeMillis();
+
+            if( _log.isDebugEnabled())
+                _log.debug( "visitor " + visitor.getClass().getSimpleName() + " acquiring read lock.");
+
             _stateReadLock.lock();
 
+            long afterLock = System.currentTimeMillis();
+
+            if( _log.isDebugEnabled())
+                _log.debug( "visitor " + visitor.getClass().getSimpleName() + " acquired read lock (took " + (afterLock - beforeLock) / 1000.0 + " ms), starting visit.");
+
+
             _state.acceptVisitor( transition, null, start, visitor);
+
+            long afterVisit = System.currentTimeMillis();
+
+            if( _log.isDebugEnabled())
+                _log.debug( "visitor " + visitor.getClass().getSimpleName() + " completed visit (took " + (afterVisit - afterLock) / 1000.0 + " ms), releasing read lock.");
+
         } finally {
             _stateReadLock.unlock();
         }
+
+        if( _log.isDebugEnabled())
+            _log.debug( "visitor " + visitor.getClass().getSimpleName() + " finished");
     }
 
     /**
