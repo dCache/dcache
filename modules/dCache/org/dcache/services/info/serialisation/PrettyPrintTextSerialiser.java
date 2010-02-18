@@ -1,7 +1,10 @@
 package org.dcache.services.info.serialisation;
 
-import java.util.BitSet;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 
 import org.dcache.services.info.base.BooleanStateValue;
 import org.dcache.services.info.base.FloatingPointStateValue;
@@ -13,204 +16,392 @@ import org.dcache.services.info.base.StateValue;
 import org.dcache.services.info.base.StateVisitor;
 import org.dcache.services.info.base.StringStateValue;
 
-
 /**
  * Create a pretty-print output of dCache state using ASCII-art.
  * <p>
- * This output has the advantage of making the tree structure more
- * clear (compared to SimpleTextSerialiser) but the disadvantage of
- * taking up more space.
+ * This output has the advantage of making the tree structure more clear
+ * (compared to SimpleTextSerialiser) but the disadvantage of taking up more
+ * space.
  *
  * @see SimpleTextSerialiser
  */
 public class PrettyPrintTextSerialiser implements StateVisitor, StateSerialiser {
 
-	private static final String MARK_STR  = " | ";
-	private static final String SPACE_STR = "   ";
-	private static final String DCACHE_LABEL = "dCache";
+    private static final String ROOT_ELEMENT_LABEL = "dCache";
 
-	private StringBuilder _out;
-	private String _prefix;
-	private BitSet _tails = new BitSet();
-	private int _depth;
-	private boolean _nextShouldHaveBlankLine;
-	private final StateExhibitor _exhibitor;
+    private final StateExhibitor _exhibitor;
+    private final Stack<Chunk> _lastChunkStack = new Stack<Chunk>();
+    private final List<Chunk> _pendingChunks = new ArrayList<Chunk>();
 
-	public PrettyPrintTextSerialiser( StateExhibitor exhibitor) {
-		_exhibitor = exhibitor;
-	}
+    private StatePath _topMostElement;
+    private StringBuilder _out;
+    private boolean _foundSomething;
+    private boolean _nextChunkHasStalk;
 
-	/**
-	 * Our official name.
-	 */
-	public String getName() {
-		return "pretty-print";
-	}
+    public PrettyPrintTextSerialiser( StateExhibitor exhibitor) {
+        _exhibitor = exhibitor;
+    }
 
+    /**
+     * Our official name.
+     */
+    public String getName() {
+        return "pretty-print";
+    }
 
-	/**
-	 * Build out pretty-print output.
-	 * <p>
-	 * NB.  This method is <i>not</i> thread-safe.
-	 */
-	public String serialise( StatePath path) {
-	    clearState();
-		_exhibitor.visitState(this, path);
-		return _out.toString();
-	}
-
-	/**
-	 * Provide serialisation, starting from top-most dCache state.
-	 */
-	public String serialise() {
+    /**
+     * Build out pretty-print output.
+     * <p>
+     * NB. This method is <i>not</i> thread-safe.
+     */
+    public String serialise( StatePath path) {
         clearState();
-        _exhibitor.visitState(this);
+        _topMostElement = path;
+
+        _exhibitor.visitState( this, path);
+
+        String output = "";
+
+        if( _foundSomething) {
+            String header = buildHeader(path.toString());
+            _out.append( header + "\n");
+            flushPendingChunks();
+            output = _out.toString();
+        }
+
+        return output;
+    }
+
+    /**
+     * Provide serialisation, starting from top-most dCache state.
+     */
+    public String serialise() {
+        clearState();
+        _topMostElement = null;
+        String header = buildHeader(null);
+        _out.append( header + "\n");
+        _exhibitor.visitState( this);
+        flushPendingChunks();
         return _out.toString();
-	}
+    }
 
+    public String buildHeader( String path) {
+        StringBuilder sb = new StringBuilder();
+        sb.append( "[" + ROOT_ELEMENT_LABEL);
+        if( path != null)
+            sb.append(  "." + path);
+        sb.append( "]");
+        return sb.toString();
+    }
 
-	private void clearState() {
-	    _out = new StringBuilder();
-	    _tails.clear();
-	    _prefix = "";
-	    _depth = 0;  // Shouldn't be necessary
-	    _nextShouldHaveBlankLine = false;
-	}
+    private void flushPendingChunks() {
+        for( Chunk chunk : _pendingChunks) {
+            String chunkOutput = chunk.getOutput();
+            _out.append( chunkOutput);
+        }
+    }
 
+    private void clearState() {
+        _out = new StringBuilder();
+        _pendingChunks.clear();
+        _foundSomething = false;
+        _nextChunkHasStalk = true;
+        _lastChunkStack.clear();
+        _lastChunkStack.add( new Chunk());
+    }
 
+    /* Calls we ignore */
+    public void visitCompositePreSkipDescend( StatePath path,
+                                              Map<String, String> metadata) {
+    }
 
-	/* When skipping, do nothing */
-	public void visitCompositePreSkipDescend( StatePath path, Map<String, String> metadata) {}
-	public void visitCompositePostSkipDescend( StatePath path, Map<String, String> metadata) {}
+    public void visitCompositePostSkipDescend( StatePath path,
+                                               Map<String, String> metadata) {
+    }
 
-	public void visitCompositePreDescend(StatePath path,
-			Map<String, String> metadata) {
+    public void visitCompositePreLastDescend( StatePath path,
+                                              Map<String, String> metadata) {
+    }
 
-		StringBuilder labelSB = new StringBuilder();
+    private boolean arePathsSame( StatePath p1, StatePath p2) {
+        if( p1 == null && p2 == null)
+            return true;
+        return (p1 == null) ? false : p1.equals( p2);
+    }
 
-		if( _depth == 0) {
-			labelSB.append( DCACHE_LABEL);
+    public void visitCompositePreDescend( StatePath path,
+                                          Map<String, String> metadata) {
 
-			if( path != null) {
-				labelSB.append( ".");
-				labelSB.append( path);
-			}
+        _foundSomething = true;
 
-		} else {
-			boolean added = false;
+        if( arePathsSame( path, _topMostElement))
+            return;
 
-			outputEmpty();
+        addBranchChunk( path.getLastElement(), metadata);
+        descend();
+        _nextChunkHasStalk = true;
+    }
 
-			if( metadata != null) {
-				String className = metadata.get(State.METADATA_BRANCH_CLASS_KEY);
-				String idName = metadata.get(State.METADATA_BRANCH_IDNAME_KEY);
+    private void addBranchChunk( String name, Map<String, String> metadata) {
+        String type = null;
+        String idName = null;
 
-				if( className != null && idName != null) {
-					labelSB.append( className);
-					labelSB.append( ", ");
-					labelSB.append( idName);
-					labelSB.append( "=\"");
-					labelSB.append( path.getLastElement());
-					labelSB.append( "\"");
-					added = true;
-				}
-			}
+        if( metadata != null) {
+            type = metadata.get( State.METADATA_BRANCH_CLASS_KEY);
+            idName = metadata.get( State.METADATA_BRANCH_IDNAME_KEY);
+        }
 
-			if( !added)
-				labelSB.append( path.getLastElement());
-		}
+        EndOfChunkItem item;
 
-		outputBranch( labelSB.toString());
+        if( type != null && idName != null) {
+            item = new ListItem( _nextChunkHasStalk, type, idName, name);
+        } else {
+            item = new BranchItem( _nextChunkHasStalk, name);
+        }
 
-		_tails.set( _depth);
-		_depth++;
-		updatePrefix();
+        addSiblingChunk( item);
+    }
 
-		_nextShouldHaveBlankLine = true;
-	}
+    private Chunk getThisBranchLastChunk() {
+        return _lastChunkStack.lastElement();
+    }
 
-	public void visitCompositePreLastDescend(StatePath path,
-			Map<String, String> metadata) {
-		_tails.clear( _depth-1);
-		updatePrefix();
-	}
+    private void setThisBranchLastChunk( Chunk chunk) {
+        int lastItemIndex = _lastChunkStack.size() - 1;
+        _lastChunkStack.set( lastItemIndex, chunk);
+    }
 
-	public void visitCompositePostDescend(StatePath path,
-			Map<String, String> metadata) {
-		_depth--;
-		updatePrefix();
+    private void addSiblingChunk( EndOfChunkItem item) {
+        Chunk siblingChunk = getThisBranchLastChunk();
 
-		_nextShouldHaveBlankLine = true;
-	}
+        Chunk thisChunk = siblingChunk.newSiblingChunk( item);
 
-	public void visitBoolean(StatePath path, BooleanStateValue value)             { outputMetric( path.getLastElement(), value); }
-	public void visitFloatingPoint(StatePath path, FloatingPointStateValue value) { outputMetric( path.getLastElement(), value); }
-	public void visitInteger(StatePath path, IntegerStateValue value)             { outputMetric( path.getLastElement(), value); }
-	public void visitString(StatePath path, StringStateValue value)               { outputMetric( path.getLastElement(), value); }
+        _pendingChunks.add( thisChunk);
 
+        setThisBranchLastChunk( thisChunk);
+    }
 
-	/**
-	 * Output a generic metric
-	 * @param name the name of the metric
-	 * @param value the StateValue object representing the metric's value.
-	 */
-	private void outputMetric( String name, StateValue value) {
+    private void descend() {
+        Chunk siblingChunk = getThisBranchLastChunk();
+        _lastChunkStack.add( siblingChunk.newPhantomChildChunk());
+    }
 
-		if( _nextShouldHaveBlankLine) {
-			_nextShouldHaveBlankLine = false;
-			outputEmpty();
-		}
+    public void visitCompositePostDescend( StatePath path,
+                                           Map<String, String> metadata) {
+        Chunk lastChunk = getThisBranchLastChunk();
+        lastChunk.setEndOfList();
+        ascend();
+    }
 
-		_out.append( _prefix);
-		_out.append( " +--");
-		_out.append(name);
-		_out.append( ": ");
-		if( value instanceof StringStateValue)
-			_out.append( "\"");
-		_out.append( value.toString());
-		if( value instanceof StringStateValue)
-			_out.append( "\"");
-		_out.append( "  [");
-		_out.append( value.getTypeName());
-		_out.append( "]\n");
-	}
+    private void ascend() {
+        _lastChunkStack.pop();
+        _nextChunkHasStalk = true;
+    }
 
+    public void visitBoolean( StatePath path, BooleanStateValue value) {
+        addMetricChunk( path, value);
+    }
 
-	/**
-	 * Print a new branch.
-	 * @param name the name of the branch.
-	 */
-	private void outputBranch( String name) {
-		_out.append( _prefix);
+    public void visitFloatingPoint( StatePath path,
+                                    FloatingPointStateValue value) {
+        addMetricChunk( path, value);
+    }
 
-		if( _depth > 0)
-			_out.append( " +-");
+    public void visitInteger( StatePath path, IntegerStateValue value) {
+        addMetricChunk( path, value);
+    }
 
-		_out.append( "[");
-		_out.append( name);
-		_out.append("]\n");
-	}
+    public void visitString( StatePath path, StringStateValue value) {
+        addMetricChunk( path, value);
+    }
 
+    private void addMetricChunk( StatePath path, StateValue value) {
+        String name = path.getLastElement();
+        EndOfChunkItem item = new MetricItem( _nextChunkHasStalk, name, value);
+        addSiblingChunk( item);
+        _nextChunkHasStalk = false;
+    }
 
-	/**
-	 * Output an empty line.
-	 */
-	private void outputEmpty() {
-		_out.append( _prefix);
-		_out.append( MARK_STR);
-		_out.append( "\n");
-	}
+    /**
+     * This class represents one or two horizontal lines of output. It may
+     * represent some dCache item (a metric or branch), or is a phantom.
+     * Phantoms take up no vertical space but introduce a new Stem.
+     */
+    private static class Chunk {
+        private static final EndOfChunkItem END_ITEM_FOR_PHANTOM_CHUNK = null;
 
+        private final List<Stem> _stems = new ArrayList<Stem>();
+        private final EndOfChunkItem _endItem;
+        private Stem _stemForChild = null;
 
-	/**
-	 * Update the prefix, based on changing value of _tails.
-	 */
-	private void updatePrefix() {
-		StringBuilder sb = new StringBuilder();
+        @SuppressWarnings("unchecked")
+        public Chunk() {
+            this( END_ITEM_FOR_PHANTOM_CHUNK, Collections.EMPTY_LIST);
+        }
 
-		for( int i = 0; i < _depth-1; i++)
-			sb.append( _tails.get(i) ? MARK_STR : SPACE_STR);
+        public Chunk( List<Stem> stems) {
+            this( END_ITEM_FOR_PHANTOM_CHUNK, stems);
+        }
 
-		_prefix = sb.toString();
-	}
+        public Chunk( EndOfChunkItem item, List<Stem> stems) {
+            _endItem = item;
+            _stems.addAll( stems);
+        }
+
+        public boolean isPhantom() {
+            return _endItem == END_ITEM_FOR_PHANTOM_CHUNK;
+        }
+
+        private Stem addNewEndStem() {
+            Stem newStem = new Stem();
+            _stems.add( newStem);
+            return newStem;
+        }
+
+        public String getOutput() {
+            return isPhantom() ? "" : getNonPhantomOutput();
+        }
+
+        private String getNonPhantomOutput() {
+            StringBuilder sb = new StringBuilder();
+
+            String stemsPrefix = buildStemsPrefix();
+
+            for( String endItemLine : _endItem.getOutput()) {
+                sb.append( stemsPrefix);
+                sb.append( endItemLine);
+            }
+
+            return sb.toString();
+        }
+
+        private String buildStemsPrefix() {
+            StringBuilder sb = new StringBuilder();
+
+            for( Stem stem : _stems)
+                sb.append( stem.getOutput());
+
+            return sb.toString();
+        }
+
+        public Chunk newSiblingChunk( EndOfChunkItem item) {
+            return new Chunk( item, _stems);
+        }
+
+        public Chunk newPhantomChildChunk() {
+            Chunk childChunk = new Chunk( _stems);
+            _stemForChild = childChunk.addNewEndStem();
+            return childChunk;
+        }
+
+        public void setEndOfList() {
+            if( _stemForChild != null)
+                _stemForChild.setInvisable();
+        }
+    }
+
+    /** The Stem class represents the potential to draw a vertical line */
+    private static class Stem {
+        public static final String STEM_ITEM = " | ";
+        public static final String BLANK_ITEM = "   ";
+
+        private boolean _visable = true;
+
+        public void setInvisable() {
+            _visable = false;
+        }
+
+        public String getOutput() {
+            return _visable ? STEM_ITEM : BLANK_ITEM;
+        }
+    }
+
+    /**
+     * Objects of this class represents something to be displayed at the
+     * right-hand end of a chunk past the Stems, if any. An EndOfChunkItem
+     * may have a "stalk": this introduces a one-line spacer between this
+     * chunk and the previous chunk, where the end-item is displayed with a
+     * vertical line joining it to the previous end-item.
+     */
+    private static abstract class EndOfChunkItem {
+        private final boolean _hasStalk;
+
+        public EndOfChunkItem( boolean hasStalk) {
+            _hasStalk = hasStalk;
+        }
+
+        public List<String> getOutput() {
+            List<String> output = new ArrayList<String>();
+
+            if( _hasStalk)
+                output.add( Stem.STEM_ITEM + "\n");
+
+            output.add( " +-" + getItemLabel() + "\n");
+
+            return output;
+        }
+
+        abstract String getItemLabel();
+    }
+
+    /** Represent a metric as an EndOfChunkItem */
+    private static class MetricItem extends EndOfChunkItem {
+        private final String _label;
+
+        public MetricItem( boolean hasStalk, String name, StateValue metric) {
+            super( hasStalk);
+
+            String value = getValueOfMetric( metric);
+            String type = metric.getTypeName();
+
+            _label = "-" + name + ": " + value + "  [" + type + "]";
+        }
+
+        private String getValueOfMetric( StateValue metricValue) {
+            String value;
+
+            if( metricValue instanceof StringStateValue)
+                value = "\"" + metricValue.toString() + "\"";
+            else
+                value = metricValue.toString();
+
+            return value;
+        }
+
+        @Override
+        String getItemLabel() {
+            return _label;
+        }
+    }
+
+    /** Represent a branch as an EndOfChunkItem */
+    private static class BranchItem extends EndOfChunkItem {
+        private final String _label;
+
+        public BranchItem( boolean hasStalk, String name) {
+            super( hasStalk);
+            _label = "[" + name + "]";
+        }
+
+        @Override
+        String getItemLabel() {
+            return _label;
+        }
+    }
+
+    /** Represent a list-item as an EndOfChunkItem */
+    private static class ListItem extends EndOfChunkItem {
+        private final String _label;
+
+        public ListItem( boolean hasStalk, String type, String idName,
+                         String name) {
+            super( hasStalk);
+            _label = "[" + type + ", " + idName + "=\"" + name + "\"]";
+        }
+
+        @Override
+        String getItemLabel() {
+            return _label;
+        }
+    }
 }
