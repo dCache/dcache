@@ -31,7 +31,7 @@ public class StateMaintainerTests extends InfoBaseTestHelper {
         /**
          * Create a new SlowCaretaker that delays all processUpdate() calls
          * by some fixed delay
-         * 
+         *
          * @param delay the delay in milliseconds
          */
         public SlowCaretaker( long delay) {
@@ -129,7 +129,7 @@ public class StateMaintainerTests extends InfoBaseTestHelper {
          * Specify when this StateCaretaker should claim is the earliest that
          * a metric will expire. If this method is not called then the
          * StateCaretaker will claim to have no expiring metrics.
-         * 
+         *
          * @see waitForMetricExpiry
          * @param metricExpiryDate
          */
@@ -141,7 +141,7 @@ public class StateMaintainerTests extends InfoBaseTestHelper {
          * Specify an expected number of
          * {@link StateCaretaker#processUpdate(StateUpdate)} calls. This is
          * used by the {@link #waitForUpdates()} method.
-         * 
+         *
          * @param count
          *            the number of processUpdate calls that are expected.
          */
@@ -160,7 +160,7 @@ public class StateMaintainerTests extends InfoBaseTestHelper {
         /**
          * Wait until the expected number of calls to
          * {@link #processUpdate(StateUpdate)} method have happened.
-         * 
+         *
          * @throws InterruptedException
          *             if calling Thread was interrupted whilst waiting for
          *             updates to complete.
@@ -178,7 +178,7 @@ public class StateMaintainerTests extends InfoBaseTestHelper {
          * Wait until the StateMaintainer has called
          * {@link removeExpiredMetrics}. If this has already happened then
          * this method will return straight away.
-         * 
+         *
          * @throws InterruptedException
          *             if calling Thread was interrupted whilst waiting for
          *             removeExpiredMetrics to be called.
@@ -318,9 +318,9 @@ public class StateMaintainerTests extends InfoBaseTestHelper {
 
     /**
      * TEST ABILITY TO REMOVE EXPIRED METRICS
-     * 
+     *
      * @throws InterruptedException
-     * 
+     *
      */
 
     @Test(timeout = 1000)
