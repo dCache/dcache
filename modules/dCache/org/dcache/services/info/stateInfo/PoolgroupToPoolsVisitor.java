@@ -25,7 +25,7 @@ public class PoolgroupToPoolsVisitor implements StateVisitor {
 	private static Logger _log = LoggerFactory.getLogger( PoolgroupToPoolsVisitor.class);
 
 	private static final StatePath POOLGROUPS_PATH = new StatePath( "poolgroups");
-	
+
 	/**
 	 * Obtain a Map between a poolgroup and the pools that are currently members of this poolgroup.
 	 * @return
@@ -33,10 +33,10 @@ public class PoolgroupToPoolsVisitor implements StateVisitor {
 	public static Map <String,Set<String>> getDetails( StateExhibitor exhibitor) {
 		if( _log.isInfoEnabled())
 			_log.info( "Gathering current status");
-		
+
 		PoolgroupToPoolsVisitor visitor = new PoolgroupToPoolsVisitor();
-		exhibitor.visitState(visitor, POOLGROUPS_PATH);		
-		return visitor._poolgroups;		
+		exhibitor.visitState(visitor, POOLGROUPS_PATH);
+		return visitor._poolgroups;
 	}
 
 	/**
@@ -48,18 +48,18 @@ public class PoolgroupToPoolsVisitor implements StateVisitor {
 	public static Map <String,Set<String>> getDetails( StateExhibitor exhibitor, StateTransition transition) {
 		if( _log.isInfoEnabled())
 			_log.info( "Gathering status after transition");
-		
+
 		PoolgroupToPoolsVisitor visitor = new PoolgroupToPoolsVisitor();
-		exhibitor.visitState(transition, visitor, POOLGROUPS_PATH);		
-		return visitor._poolgroups;		
+		exhibitor.visitState(transition, visitor, POOLGROUPS_PATH);
+		return visitor._poolgroups;
 	}
 
-	
+
 	Map <String,Set<String>> _poolgroups = new HashMap<String,Set<String>>();
 	Set<String> _currentPoolgroupPools;
 	StatePath _poolMembershipPath;
 
-	public void visitCompositePreDescend( StatePath path, Map<String,String> metadata) {			
+	public void visitCompositePreDescend( StatePath path, Map<String,String> metadata) {
 		if( _log.isDebugEnabled())
 			_log.debug( "Examining "+path);
 
@@ -70,27 +70,27 @@ public class PoolgroupToPoolsVisitor implements StateVisitor {
 
 			_currentPoolgroupPools = new HashSet<String>();
 			_poolgroups.put( path.getLastElement(), _currentPoolgroupPools);
-			
+
 			_poolMembershipPath = path.newChild("pools");
 		}
-		
+
 		// If something like poolgroups.<some poolgroup>.pools.<some pool>
 		if( _poolMembershipPath != null && _poolMembershipPath.isParentOf(path)) {
 			if( _log.isDebugEnabled())
 				_log.debug( "Found pool "+path.getLastElement());
-			
+
 			_currentPoolgroupPools.add( path.getLastElement());
 		}
 	}
-	
-	public void visitCompositePreLastDescend( StatePath path, Map<String,String> metadata) {}		
+
+	public void visitCompositePreLastDescend( StatePath path, Map<String,String> metadata) {}
 	public void visitCompositePostDescend( StatePath path, Map<String,String> metadata) {}
 	public void visitCompositePreSkipDescend( StatePath path, Map<String,String> metadata) {}
 	public void visitCompositePostSkipDescend( StatePath path, Map<String,String> metadata) {}
 	public void visitString( StatePath path, StringStateValue value) {}
 	public void visitBoolean( StatePath path, BooleanStateValue value) {}
 	public void visitInteger( StatePath path, IntegerStateValue value) {}
-	public void visitFloatingPoint( StatePath path, FloatingPointStateValue value) {}		
+	public void visitFloatingPoint( StatePath path, FloatingPointStateValue value) {}
 }
 
 
