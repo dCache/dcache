@@ -16,10 +16,10 @@ import org.dcache.services.info.base.StringStateValue;
  * The constructor should be called with the StatePath of the parent StateComposite.  Each
  * child of this StateComposite is considered a item within the list and newListItem() will be
  * called for each such list.  Subclasses may overload that method.
- * 
+ *
  * The method getKey() will return the last item, as recorded by the subclass calling
- * super.newListItem( key), typically done within an overloaded method newListitem. 
- * 
+ * super.newListItem( key), typically done within an overloaded method newListitem.
+ *
  * @author Paul Millar <paul.millar@desy.de>
  */
 public class SkeletonListVisitor implements StateVisitor {
@@ -27,7 +27,7 @@ public class SkeletonListVisitor implements StateVisitor {
 	private static Logger _log = LoggerFactory.getLogger( SkeletonListVisitor.class);
 
 	final private StatePath _pathToList;
-	
+
 	/** The key of the current branch */
 	private String _thisKey;
 
@@ -41,7 +41,7 @@ public class SkeletonListVisitor implements StateVisitor {
 
 		_pathToList = pathToList;
 	}
-	
+
 	/**
 	 * The super-Class should override one of the following four methods
 	 */
@@ -58,7 +58,7 @@ public class SkeletonListVisitor implements StateVisitor {
 		if( _pathToList.isParentOf( path)) {
 			if( _log.isDebugEnabled())
 				_log.debug( "Entering " + path);
-			
+
 			newListItem( path.getLastElement());
 		}
 	}
@@ -67,11 +67,11 @@ public class SkeletonListVisitor implements StateVisitor {
 		if( _pathToList.isParentOf( path)) {
 			if( _log.isDebugEnabled())
 				_log.debug( "Leaving " + path);
-			
+
 			exitingListItem( path.getLastElement());
 		}
 	}
-	
+
 	/**
 	 * Method called whenever a new list item is visited.
 	 * @param listItemName the name of the list item to record.
@@ -83,7 +83,7 @@ public class SkeletonListVisitor implements StateVisitor {
 
 		_thisKey = listItemName;
 	}
-	
+
 	/**
 	 * Method called whenever the visitor is leaving a list item.
 	 * @param listItemName the name of the list item that is being left.
@@ -91,24 +91,24 @@ public class SkeletonListVisitor implements StateVisitor {
 	protected void exitingListItem( String listItemName) {
 		if( _log.isDebugEnabled())
 			_log.debug( "Resetting _thisKey to null on leaving " + listItemName);
-		
+
 		_thisKey = null;
 	}
-	
+
 	/**
-	 * Obtain the StatePath to the parent object for all list items. 
+	 * Obtain the StatePath to the parent object for all list items.
 	 */
 	protected StatePath getPathToList() {
 		return _pathToList;
 	}
-	
+
 	/**
 	 * @return the name of the last item in the list, or null if not currently within a list item.
 	 */
 	protected String getKey() {
 		return _thisKey;
 	}
-	
+
 	/**
 	 * Check whether the visitor is within (underneath) the list item.  If so,
 	 * then getKey() will return the valid key.
