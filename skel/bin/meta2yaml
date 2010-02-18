@@ -3,117 +3,29 @@
 usage() # $1 = exit status
 {
     echo "Dumps pool meta data catalogue to YAML format."
-    echo 
+    echo
     echo "Usage: $(basename $0) [OPTION]... DIR"
-    echo 
+    echo
     echo "Valid options are:"
-    echo "   -d=<path to dcache installation>   default is /opt/d-cache"
-    echo    
+    echo "   -d <path to dcache installation>   default is /opt/d-cache"
+    echo
     echo "DIR is the pool meta data directory."
     exit $1
 }
 
-# Generic option parser. Both single and multi character options are
-# supported. Single character options start with a single dash and
-# multi character options with a double dash. Single character options
-# can be combined, e.g. rather than -a -b -c one can use -abc.
-#
-# The first argument is a list of valid options. Remaining arguments 
-# are the options to be parsed. When finding an option not in the list
-# of valid options, the usage() is called.
-#
-# Parsing stops when no arguments are left or a non-option argument 
-# is found.
-#
-# Options can have an optional value. 
-#
-# For each option found the variable opt_X, where X is the 
-# option, is defined. If a value is provided for the option, then 
-# opt_X is set to that value, otherwise to 1.
-# 
-# The return value is the number of words consumed.
-#
-parseOptions() # $1 = list of valid options
-{
-    local valid=$1
-    local count=0
-    local name
-    local value
+ourHomeDir="/opt/d-cache"
 
-    shift
-    while [ $# -gt 0 ]; do
-	local option=$1
-	case $option in
-	    --*=*)
-		option=${option#--}
-		name=${option%=*}
-		value=${option#*=}
-		;;
-
-	    -?=*)
-		name=${option:1:1}
-		value=${option#*=}
-		;;
-
-	    --?*)
-		name=${option:2}
-		value=1
-		;;
-
-	    -?*)
-		option=${option#-}
-		while [ -n "$option" ]; do
-		    name=${option:0:1}
-		    if ! contains $name "$valid"; then
-			usage 1
-		    fi
-
-		    option=${option:1}
-
-		    eval "opt_${name}=1"
-		done
-		let count=count+1
-		shift
-		continue
-		;;
-		
-	    *)
-		break
-		;;
-	esac
-
-	if ! contains $name "$valid"; then
-	    usage 1
-	fi
-
-	eval "opt_${name}=${value}"
-
-	shift
-	let count=count+1
-    done
-
-    return $count
-}
-
-
-# Parse global options
-parseOptions "d" $*
-shift $?
-ourHomeDir=${opt_d:-/opt/d-cache}
+# Parse options
+while getopts d: opt "$@"; do
+    case $opt in
+        d) ourHomeDir="$OPTARG";;
+    esac
+done
+shift `expr $OPTIND - 1`
 
 # Directory argument must be left
 if [ $# -ne 1 ]; then
     usage 1
-fi
-
-# Read dCacheSetup
-if [ -r ${ourHomeDir}/config/dCacheSetup ] ; then
-    . ${ourHomeDir}/config/dCacheSetup
-else
-    print "${ourHomeDir}/config/dCacheSetup does not exist. You have
-           to install and setup dCache before you can use this
-           script." 1>&2
-    exit 1
 fi
 
 # Generate class path
@@ -123,7 +35,16 @@ fi
 
 CLASSPATH=${ourHomeDir}/classes/cells.jar:${ourHomeDir}/classes/dcache.jar:${externalLibsClassPath}
 
+# Find Java
+if [ -n "$JAVA_HOME" ]; then
+    JAVA="$JAVA_HOME/bin/java"
+else
+    JAVA="$(which java)"
+fi
+if [ ! -x "$JAVA" ]; then
+    echo "java not found; please define JAVA_HOME"
+    exit 1
+fi
 
-
-
-${java} -cp ${CLASSPATH} org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository $1
+# Dump to yaml
+"${JAVA}" -cp "${CLASSPATH}" org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository "$1"
