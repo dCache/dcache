@@ -646,7 +646,7 @@
               +-->
           <object rdn="GlueSALocalID"
                   select="/d:dCache/d:nas/d:nas"
-                  classes="GlueSATop GlueSA GlueSAAccessControlBase GlueSAState GlueSchemaVersion">
+                  classes="GlueSATop GlueSA GlueSAAccessControlBase GlueSAState GlueSchemaVersion GlueKey">
 
             <!-- Publish a VOInfo object for write units -->
             <object rdn="GlueVOInfoLocalID"
@@ -1103,9 +1103,7 @@
               </suppress>
             </attr>
 
-            <attr name="GlueChunkKey">
-              <parent-rdn rdn="GlueSEUniqueID"/>
-            </attr>
+            <attr name="GlueChunkKey"><parent-rdn rdn="GlueSEUniqueID"/></attr>
           </object>
 
           <!--+
@@ -1142,7 +1140,7 @@
           <object rdn="GlueSALocalID"
                   xml-src="tape-info"
                   select="/tape-info/collection"
-                  classes="GlueSATop GlueSA GlueSAAccessControlBase GlueSAState GlueSchemaVersion">
+                  classes="GlueSATop GlueSA GlueSAAccessControlBase GlueSAState GlueSchemaVersion GlueKey">
 
             <!-- Publish a VOInfo object for each vo in write-paths -->
             <object rdn="GlueVOInfoLocalID"
@@ -1245,6 +1243,8 @@
                         path="space/reserved"/>
               </scale>
             </attr>
+
+            <attr name="GlueChunkKey"><parent-rdn rdn="GlueSEUniqueID"/></attr>
           </object>
 
 
@@ -1284,7 +1284,7 @@
               +-->
           <object rdn="GlueSALocalID"
                   list="SRM-supported-VOs"
-                  classes="GlueSATop GlueSA GlueSAAccessControlBase GlueSchemaVersion">
+                  classes="GlueSATop GlueSA GlueSAAccessControlBase GlueSchemaVersion GlueKey">
 
             <!-- Suppress publishing any object if there's no map entry -->
             <suppress test="0"
@@ -1329,6 +1329,7 @@
             <attr name="GlueSACapability">InstalledNearlineCapacity=0</attr>
           </object>
 
+          <attr name="GlueChunkKey"><parent-rdn rdn="GlueSEUniqueID"/></attr>
         </object>
 
 
