@@ -22,17 +22,17 @@ PNFS_START=yes
 PNFS_OVERWRITE=no
 
 # SERVER_ID defaults to `hostname -d`
-#SERVER_ID=domain.name 
+#SERVER_ID=domain.name
 
 
 #  ----  Name Space Node
 #
-#  The name space node is the node that exports the name space 
-#  through NFS. For PNFS this will be the node running the PNFS 
-#  daemons. For Chimera this will be any node running the Chimera 
+#  The name space node is the node that exports the name space
+#  through NFS. For PNFS this will be the node running the PNFS
+#  daemons. For Chimera this will be any node running the Chimera
 #  NFSv3 daemon.
-#    
-#  This variable was formally known as the "ADMIN_NODE" and now 
+#
+#  This variable was formally known as the "ADMIN_NODE" and now
 #  has been renamed.
 #
 #NAMESPACE_NODE=myNameSpaceNode
@@ -50,14 +50,15 @@ PNFS_OVERWRITE=no
 #
 NODE_TYPE=
 
-#  ---- Custom services to be started on this node 
+#  ---- Custom services to be started on this node
 #
 #  White space separated list of services or domains to start on this
 #  host.  Legitimate service names are
 #
 #    dcap, gPlazma, xrootd, gridftp, gsidcap, srm, transfermanagers,
-#    spacemanager, admin, infoProvider, chimera, pnfs, httpd, utility, 
-#    dir, info, statistics, lm, dCache, replica, webdav
+#    spacemanager, admin, infoProvider, chimera, pnfs, httpd, utility,
+#    dir, info, statistics, lm, dCache, replica, webdav, kerberosdcap,
+#    kerberosftp, weakftp
 #
 #  or any domain name prefix. These services are started in addition
 #  to the services selected by the NODE_TYPE parameter.

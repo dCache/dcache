@@ -33,7 +33,24 @@ printDomains() # $1 = service
             ;;
 
         gridftp)
-            printf "%s" "gridftp-${hostname}Domain "
+            for i in ${DCACHE_CONFIG}/gridftp*Setup; do
+                door=$(echo $i | sed -e "s#.*gridftpdoor\(.*\)Setup#\1#")
+                printf "%s" "gridftp${door}-${hostname}Domain "
+            done
+            ;;
+
+         weakftp)
+            for i in ${DCACHE_CONFIG}/weakftp*Setup; do
+                door=$(echo $i | sed -e "s#.*weakftpdoor\(.*\)Setup#\1#")
+                printf "%s" "weakftp${door}-${hostname}Domain "
+            done
+            ;;
+
+        kerberosftp)
+            for i in ${DCACHE_CONFIG}/kerberosftp*Setup; do
+                door=$(echo $i | sed -e "s#.*kerberosftpdoor\(.*\)Setup#\1#")
+                printf "%s" "kerberosftp${door}-${hostname}Domain "
+            done
             ;;
 
         webdav)
@@ -41,7 +58,17 @@ printDomains() # $1 = service
             ;;
 
         gsidcap)
-            printf "%s" "gsidcap-${hostname}Domain "
+            for i in ${DCACHE_CONFIG}/gsidcap*Setup; do
+                door=$(echo $i | sed -e "s#.*gsidcapdoor\(.*\)Setup#\1#")
+                printf "%s" "gsidcap${door}-${hostname}Domain "
+            done
+            ;;
+
+        kerberosdcap)
+            for i in ${DCACHE_CONFIG}/kerberosdcap*Setup; do
+                door=$(echo $i | sed -e "s#.*kerberosdcapdoor\(.*\)Setup#\1#")
+                printf "%s" "kerberosdcap${door}-${hostname}Domain "
+            done
             ;;
 
         srm)
@@ -259,15 +286,27 @@ getService() # $1 = domain name
                 RET="xrootd"
                 ;;
 
-            gridftp-*Domain)
+            gridftp*-*Domain)
                 RET="gridftp"
+                ;;
+
+            weakftp*-*Domain)
+                RET="weakftp"
+                ;;
+
+            kerberosftp*-*Domain)
+                RET="kerberosftp"
                 ;;
 
             webdav-*Domain)
                 RET="webdav"
                 ;;
 
-            gsidcap-*Domain)
+            kerberosdcap*-*Domain)
+                RET="kerberosdcap"
+                ;;
+
+            gsidcap*-*Domain)
                 RET="gsidcap"
                 ;;
 
@@ -424,11 +463,25 @@ getConfigurationFile() # $1 = service or domain
         xrootd|xrootd-*Domain)
             filename="xrootdDoorSetup"
             ;;
-        gridftp|gridftp-*Domain)
-            filename="gridftpdoorSetup"
+        weakftp|weakftp*-*Domain)
+	    tmp=${name%%-*Domain}
+            filename="weakftpdoor${tmp#weakftp}Setup"
             ;;
-        gsidcap|gsidcap-*Domain)
-            filename="gsidcapdoorSetup"
+        kerberosftp|kerberosftp*-*Domain)
+	    tmp=${name%%-*Domain}
+            filename="kerberosftpdoor${tmp#kerberosftp}Setup"
+            ;;
+        gridftp|gridftp*-*Domain)
+	    tmp=${name%%-*Domain}
+            filename="gridftpdoor${tmp#gridftp}Setup"
+            ;;
+        kerberosdcap|kerberosdcap*-*Domain)
+	    tmp=${name%%-*Domain}
+            filename="kerberosdcapdoor${tmp#kerberosdcap}Setup"
+            ;;
+        gsidcap|gsidcap*-*Domain)
+	    tmp=${name%%-*Domain}
+            filename="gsidcapdoor${tmp#gsidcap}Setup"
             ;;
         admin|adminDoorDomain)
             filename="adminDoorSetup"
@@ -499,10 +552,29 @@ getJob() # $1 = service
             RET="${DCACHE_JOBS}/xrootdDoor"
             ;;
         gridftp)
-            RET="${DCACHE_JOBS}/gridftpdoor"
+            door=${domain#gridftp}
+            door=${door%-${hostname}Domain}
+            RET="${DCACHE_JOBS}/gridftpdoor${door}"
+            ;;
+        weakftp)
+            door=${domain#weakftp}
+            door=${door%-${hostname}Domain}
+            RET="${DCACHE_JOBS}/weakftpdoor${door}"
+            ;;
+        kerberosftp)
+            door=${domain#kerberosftp}
+            door=${door%-${hostname}Domain}
+            RET="${DCACHE_JOBS}/kerberosftpdoor${door}"
+            ;;
+        kerberosdcap)
+            door=${domain#kerberosdcap}
+            door=${door%-${hostname}Domain}
+            RET="${DCACHE_JOBS}/kerberosdcapdoor${door}"
             ;;
         gsidcap)
-            RET="${DCACHE_JOBS}/gsidcapdoor"
+            door=${domain#gsidcap}
+            door=${door%-${hostname}Domain}
+            RET="${DCACHE_JOBS}/gsidcapdoor${door}"
             ;;
         admin)
             RET="${DCACHE_JOBS}/adminDoor"
