@@ -1,0 +1,30 @@
+@CHARSET "UTF-8";
+/*
+    Document   : dCacheservices.css
+    Created on : Feb 18, 2010, 10:40:14 AM
+    Author     : jans
+    Description:
+        Purpose of the stylesheet follows.
+*/
+
+h1{
+    text-align: center;
+}
+
+#services {
+    float: left;
+    width:100%;
+}
+div.link_container {
+    background-color: #6699cc;
+    border-width: medium;
+    border-color: black;
+    border-style: solid;
+}
+
+div.link {
+    float:left;
+    width: 25%;
+    text-align: center;
+    color: white;
+}

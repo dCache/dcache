@@ -1,0 +1,47 @@
+@CHARSET "UTF-8";
+/*
+    Document   : newCascadeStyleSheet
+    Created on : 06-Nov-2009, 15:15:59
+    Author     : jans
+    Description:
+        common styles for all pages
+
+*/
+
+img {
+    border: 0;
+}
+
+body {
+    background: #FFCC66 url("./images/bg.jpg");
+}
+
+/*to get a non scrolling header use <div id="head"></div>*/
+#head {
+    position:absolute;
+    margin:0;
+    top:0;
+    left:0;
+    display:block;
+    width:100%;
+    height:100px;
+}
+/*for the main part always use this <div id="main"></div>*/
+#main {
+    position:absolute;
+    left:0;
+    top:100px;
+    bottom:50px;
+    width:100%;
+    font-size:1em;
+    z-index:4;
+    overflow:auto;
+}
+/*if you need a footer...*/
+#footer {
+    margin-top: 200px;
+}
+/*the dcache bird in the middle please*/
+#bird_large {
+    text-align: center;
+}
