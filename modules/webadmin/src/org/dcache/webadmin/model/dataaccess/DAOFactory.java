@@ -1,7 +1,5 @@
 package org.dcache.webadmin.model.dataaccess;
 
-import org.dcache.webadmin.model.exceptions.DAOException;
-
 /**
  * The instantiation of DAOs is abstracted this way to make Unittests with
  * Helper DAOs/DAO-Factories possible.
@@ -9,6 +7,7 @@ import org.dcache.webadmin.model.exceptions.DAOException;
  */
 public interface DAOFactory {
 
-    public PoolsDAO getPoolsDAO() throws DAOException;
+    public PoolsDAO getPoolsDAO();
+
     public void setDefaultXMLDataGatherer(XMLDataGatherer xmlDataGatherer);
 }

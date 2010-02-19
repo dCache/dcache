@@ -1,5 +1,7 @@
 package org.dcache.webadmin.model.dataaccess.impl;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.List;
@@ -7,6 +9,7 @@ import org.dcache.webadmin.model.businessobjects.NamedCell;
 import org.dcache.webadmin.model.businessobjects.Pool;
 import org.dcache.webadmin.model.dataaccess.XMLDataGatherer;
 import org.dcache.webadmin.model.exceptions.DataGatheringException;
+import org.dcache.webadmin.view.beans.PoolBean;
 
 /**
  * XML-Data Source for Unit Tests with standardized XML-Output.
@@ -28,10 +31,10 @@ public class XMLDataGathererHelper implements XMLDataGatherer {
     public static final long POOL2_PRECIOUS_SPACE = 0;
     public static final long POOL2_TOTAL_SPACE = 0;
     public static final long POOL2_USED_SPACE = 0;
-    public static final String TESTCELL_NAME = "myFirstPool";
-    public static final String TESTCELL_DOMAIN = "myFirstPoolDomain";
-    public static final String TESTCELL2_NAME = "mySecondPool";
-    public static final String TESTCELL2_DOMAIN = "mySecondPoolDomain";
+    public static final String TESTCELL_NAME = POOL1_NAME;
+    public static final String TESTCELL_DOMAIN = POOL1_DOMAIN;
+    public static final String TESTCELL2_NAME = POOL2_NAME;
+    public static final String TESTCELL2_DOMAIN = POOL2_DOMAIN;
     public static final String EMPTY_TESTCELL_NAME = "";
     public static final String EMPTY_TESTCELL_DOMAIN = "";
     public static final String emptyXmlcontent = "";
@@ -247,13 +250,41 @@ public class XMLDataGathererHelper implements XMLDataGatherer {
         testNamedCell2.setCellName(TESTCELL2_NAME);
         testNamedCell2.setDomainName(TESTCELL2_DOMAIN);
 
-        namedCells.add(testNamedCell);
+        namedCells.add(testNamedCell2);
 
         NamedCell testNamedCell3 = new NamedCell();
         testNamedCell3.setCellName(EMPTY_TESTCELL_NAME);
         testNamedCell3.setDomainName(EMPTY_TESTCELL_DOMAIN);
 
-        namedCells.add(testNamedCell);
+        namedCells.add(testNamedCell3);
         return namedCells;
+    }
+
+    public static List<PoolBean> createExpectedPoolBeans() {
+        List<PoolBean> poolBeans = new ArrayList(2);
+        PoolBean poolBean1 = new PoolBean();
+        poolBean1.setDomainName(POOL1_DOMAIN);
+        poolBean1.setEnabled(IS_POOL1_ENABLED);
+        poolBean1.setFreeSpace(POOL1_FREE_SPACE);
+        poolBean1.setName(POOL1_NAME);
+        poolBean1.setPreciousSpace(POOL1_PRECIOUS_SPACE);
+        poolBean1.setTotalSpace(POOL1_TOTAL_SPACE);
+        poolBean1.setUsedSpace(POOL1_USED_SPACE);
+        poolBeans.add(poolBean1);
+
+        PoolBean poolBean2 = new PoolBean();
+
+        poolBean2.setDomainName(POOL2_DOMAIN);
+        poolBean2.setEnabled(IS_POOL2_ENABLED);
+        poolBean2.setFreeSpace(POOL2_FREE_SPACE);
+        poolBean2.setName(POOL2_NAME);
+        poolBean2.setPreciousSpace(POOL2_PRECIOUS_SPACE);
+        poolBean2.setTotalSpace(POOL2_TOTAL_SPACE);
+        poolBean2.setUsedSpace(POOL2_USED_SPACE);
+        poolBeans.add(poolBean2);
+
+        Collections.sort(poolBeans);
+
+        return poolBeans;
     }
 }

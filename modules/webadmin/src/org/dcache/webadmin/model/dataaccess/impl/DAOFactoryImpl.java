@@ -4,7 +4,6 @@ import org.dcache.webadmin.model.dataaccess.PoolsDAO;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.apache.log4j.Logger;
 import org.dcache.webadmin.model.dataaccess.XMLDataGatherer;
-import org.dcache.webadmin.model.exceptions.DAOException;
 
 /**
  * Factory class for the DAOs. The whole design with an factory is mainly
@@ -16,7 +15,7 @@ public class DAOFactoryImpl implements DAOFactory {
     private Logger _log = Logger.getLogger(DAOFactory.class);
     private XMLDataGatherer _defaultXmlDataGatherer = null;
 
-    public PoolsDAO getPoolsDAO() throws DAOException {
+    public PoolsDAO getPoolsDAO() {
         _log.debug("PoolsDAO requested");
         if (_defaultXmlDataGatherer == null) {
             throw new IllegalStateException("DefaultXmlDataGatherer not set");
@@ -26,7 +25,7 @@ public class DAOFactoryImpl implements DAOFactory {
     }
 
     public void setDefaultXMLDataGatherer(XMLDataGatherer xmlDataGatherer) {
-        _log.debug("PoolsDAO xmlDataGatherer set" + xmlDataGatherer.toString());
+        _log.debug("PoolsDAO xmlDataGatherer set " + xmlDataGatherer.toString());
         _defaultXmlDataGatherer = xmlDataGatherer;
     }
 }
