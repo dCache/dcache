@@ -16,28 +16,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -50,10 +50,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -63,10 +63,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -91,12 +91,19 @@ import org.apache.axis.types.URI;
 import org.dcache.srm.v2_2.*;
 
 public class SRMSetPermissionClientV2 extends SRMClient {
+        //
+        // SRM v2.2 WSDL srmSetPermission requires non-nullable groupid string
+        // dCache SRM ignores this value and uses group id it retrieves from
+        // file metadata on the server side. SRM developers agreed to treat hyphen
+        // as "unspecified". No chage of ownership happens.
+        //
+        private static final String DEFAULT_DUMMY_GROUP_ID = "-";
 	private org.ietf.jgss.GSSCredential cred = null;
 	private GlobusURL surl;
 	private String surl_string;
 	private ISRM srm;
-	
-	public SRMSetPermissionClientV2(Configuration configuration, 
+
+	public SRMSetPermissionClientV2(Configuration configuration,
 					  GlobusURL surl, String surl_string) {
 		super(configuration);
 		this.surl       = surl;
@@ -109,23 +116,22 @@ public class SRMSetPermissionClientV2 extends SRMClient {
 			System.err.println("Couldn't getGssCredential.");
 		}
 	}
-	
+
 	public void connect() throws Exception {
 		GlobusURL srmUrl = surl;
-		srm = new SRMClientV2(srmUrl, 
+		srm = new SRMClientV2(srmUrl,
 				      getGssCredential(),
 				      configuration.getRetry_timeout(),
 				      configuration.getRetry_num(),
-				      configuration.getLogger(),
-				      doDelegation, 
+				      doDelegation,
 				      fullDelegation,
 				      gss_expected_name,
 				      configuration.getWebservice_path());
 	}
-	
+
 	public void start() throws Exception {
 		try {
-			if (cred.getRemainingLifetime() < 60) 
+			if (cred.getRemainingLifetime() < 60)
 				throw new Exception(
 					"Remaining lifetime of credential is less than a minute.");
 		}
@@ -138,29 +144,29 @@ public class SRMSetPermissionClientV2 extends SRMClient {
 		TPermissionType type = TPermissionType.fromString(configuration.getSetPermissionType());
 		req.setPermissionType(type);
 		TPermissionMode mode = null;
-		if ( configuration.getSetOwnerPermissionMode() != null ) { 
+		if ( configuration.getSetOwnerPermissionMode() != null ) {
 			mode = TPermissionMode.fromString(configuration.getSetOwnerPermissionMode());
 		}
 		req.setOwnerPermission(mode);
 		ArrayOfTGroupPermission arrayOfGroupPermissions = new ArrayOfTGroupPermission();
 		TGroupPermission grouppermissions[] = null;
-		if ( configuration.getSetGroupPermissionMode()!=null ) { 
+		if ( configuration.getSetGroupPermissionMode()!=null ) {
 			grouppermissions = new  TGroupPermission[1];
 			grouppermissions[0] = new TGroupPermission();
 			grouppermissions[0].setMode(TPermissionMode.fromString(configuration.getSetGroupPermissionMode()));
-			grouppermissions[0].setGroupID("500");
+			grouppermissions[0].setGroupID(DEFAULT_DUMMY_GROUP_ID);
 		}
 		arrayOfGroupPermissions.setGroupPermissionArray(grouppermissions);
 		req.setArrayOfGroupPermissions(arrayOfGroupPermissions);
 		TPermissionMode other = null;
-		if ( configuration.getSetOtherPermissionMode()!=null) { 
+		if ( configuration.getSetOtherPermissionMode()!=null) {
 			other = TPermissionMode.fromString(configuration.getSetOtherPermissionMode());
 		}
 		req.setOtherPermission(other);
 		SrmSetPermissionResponse resp = srm.srmSetPermission(req);
-		try { 
+		try {
 			TReturnStatus rs   = resp.getReturnStatus();
-			if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {  
+			if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
 				TStatusCode rc  = rs.getStatusCode();
 				StringBuffer sb = new StringBuffer();
 				sb.append("Return code: "+rc.toString()+"\n");
@@ -168,11 +174,11 @@ public class SRMSetPermissionClientV2 extends SRMClient {
 				System.out.println(sb.toString());
 				System.exit(1);
 			}
-			else { 
-				System.exit(0);	
+			else {
+				System.exit(0);
 			}
 		}
-		catch (Exception e) { 
+		catch (Exception e) {
 			throw e;
 		}
 	}
