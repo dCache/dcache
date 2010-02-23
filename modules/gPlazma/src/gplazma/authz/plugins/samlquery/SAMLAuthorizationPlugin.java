@@ -31,7 +31,7 @@ import org.apache.log4j.Logger;
  */
 
 public abstract class SAMLAuthorizationPlugin extends RecordMappingPlugin {
-    
+
     private static final Logger logger = Logger.getLogger(SAMLAuthorizationPlugin.class);
     private String mappingServiceURL;
     private GlobusCredential serviceCredential;

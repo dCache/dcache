@@ -12,15 +12,15 @@ public class PasswordRecord extends AuthorizationRecordBase
 	{
         this(user, passwd, readOnly, priority, uid, gids, home, root, fsroot,false);
 	}
-    
+
     public PasswordRecord(String user,
-                         String passwd, boolean readOnly, 
+                         String passwd, boolean readOnly,
                          int priority, int uid,int[] gids,
                          String home,String root,String fsroot,
                          boolean isPlain)
     {
         super(user, readOnly, priority, uid, gids, home, root, fsroot);
-        
+
         if(isPlain)
         {
             setPassword(passwd);
@@ -34,7 +34,7 @@ public class PasswordRecord extends AuthorizationRecordBase
 
  	public String serialize()
  	{
-	    
+	
  		String str = getUsername() + " " +
  			Password + " " +
  		  readOnlyStr() + " " +

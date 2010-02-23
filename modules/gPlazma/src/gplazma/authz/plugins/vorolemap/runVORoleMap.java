@@ -11,7 +11,7 @@ public class runVORoleMap {
 
 
  public static void main(String[] args) {
-      /**                                                                                                                                                                                               
+      /**
       if(args.length != 3) {
          System.out.println("Usage: thisfilename <path to map> <dn> <fqan>");
          return;

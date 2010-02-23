@@ -138,7 +138,7 @@ import gplazma.authz.util.NameRolePair;
  */
 
 public class AuthorizationController {
-    
+
     private static final Logger log = Logger.getLogger(AuthorizationController.class);
     private AuthorizationConfig authConfig=null;
     private AuthorizationPluginLoader plugin_loader;
@@ -163,35 +163,35 @@ public class AuthorizationController {
     public static final int capnulllen = capnull.length();
     public static final String rolenull ="/Role=NULL";
     public static final int rolenulllen = rolenull.length();
-    
+
     static {
         Logger.getLogger(org.glite.security.trustmanager.CRLFileTrustManager.class.getName()).setLevel(Level.ERROR);
         Logger.getLogger("org.glite.security.trustmanager.ContextWrapper").setLevel(Level.OFF);
         Logger.getLogger("org.glite.security.trustmanager.axis.AXISSocketFactory").setLevel(Level.OFF);
         Logger.getLogger("org.glite.security.util.DirectoryList").setLevel(Level.OFF);
     }
-    
+
 
     public AuthorizationController()
     throws AuthorizationException {
         this(null, random.nextInt(Integer.MAX_VALUE));
     }
-    
+
     public AuthorizationController(String authservConfigFilePath)
     throws AuthorizationException {
         this(authservConfigFilePath, random.nextInt(Integer.MAX_VALUE));
     }
-    
+
     public AuthorizationController(long authRequestID)
     throws AuthorizationException {
         this(null, authRequestID);
     }
-    
+
     //public AuthorizationController(CellAdapter caller)
     //throws AuthorizationException {
     //    this(null, random.nextInt(Integer.MAX_VALUE), caller);
     //}
-    
+
     public AuthorizationController(String authConfigFilePath, long authRequestID)
     throws AuthorizationException {
         this.authRequestID=authRequestID;
@@ -239,18 +239,18 @@ public class AuthorizationController {
 
         return authorize(chain, desiredUserName, serviceUrl, socket);
     }
-    
+
     public Map <NameRolePair, gPlazmaAuthorizationRecord> authorize(X509Certificate[] chain, String desiredUserName, String serviceUrl, Socket socket)
     throws AuthorizationException {
         AuthorizationException authexceptions=null;
-        
+
         try {
             setUseSAZ(authConfig.getSazClientOn());
         } catch(Exception e) {
             authexceptions = new AuthorizationException("\nException thrown by " + authConfig.getClass().getName() + ": " + e.getMessage());
             throw authexceptions;
         }
-        
+
         if (getUseSAZ()) {
             SAZAuthorizationPlugin sazclient;
             GSSContext context=null;
@@ -278,7 +278,7 @@ public class AuthorizationController {
                     if(context!=null) context.dispose();
                     if(sazsocket!=null) sazsocket.close();
                 } catch (Exception de) {
-                    String error = authexceptions==null?"":authexceptions.getMessage() + 
+                    String error = authexceptions==null?"":authexceptions.getMessage() +
                             ": Exception thrown by SAZAuthorizationPlugin: " + de.getMessage();
                     authexceptions = new AuthorizationException(error);
                 }
@@ -288,15 +288,15 @@ public class AuthorizationController {
                 if(context!=null) context.dispose();
                 if(sazsocket!=null) sazsocket.close();
             } catch (Exception de) {
-                String error = authexceptions==null?"":authexceptions.getMessage() + 
+                String error = authexceptions==null?"":authexceptions.getMessage() +
                         ": Exception thrown by SAZAuthorizationPlugin: " + de.getMessage();
                 authexceptions = new AuthorizationException(error);
             }
         }
-        
+
         String subjectDN;
         Collection <String> roles;
-        
+
         try {
             subjectDN = X509CertUtil.getSubjectFromX509Chain(chain, omitEmail);
             if(omitEmail) log.warn("Removed email field from DN: " + subjectDN);
@@ -306,7 +306,7 @@ public class AuthorizationController {
                 throw new AuthorizationException("Could not extract subject DN from certificate chain");
             else throw new AuthorizationException("Could not extract subject DN from certificate chain: "  + msg);
         }
-        
+
         try {
             roles = X509CertUtil.getFQANsFromX509Chain(chain, authConfig.getVOMSValidation());
         } catch(Exception e) {            String msg = e.getMessage();
@@ -314,18 +314,18 @@ public class AuthorizationController {
                 throw new AuthorizationException("for subject DN " + subjectDN);
             else throw new AuthorizationException("for subject DN " + subjectDN + " " + msg);
         }
-        
+
         return authorize(subjectDN, roles, chain, desiredUserName, serviceUrl, socket);
-        
+
     }
-    
+
     public Map <NameRolePair, gPlazmaAuthorizationRecord>
         authorize(String subjectDN, Collection <String> roles, X509Certificate[] chain, String desiredUserName, String serviceUrl, Socket socket)
             throws AuthorizationException {
         Map <NameRolePair, gPlazmaAuthorizationRecord> records = new LinkedHashMap <NameRolePair, gPlazmaAuthorizationRecord>();
-        
+
         AuthorizationException authexceptions=null;
-        
+
         Iterator <String> roleIter = roles.iterator();
         if(!roleIter.hasNext()) roleIter = new NullIterator<String>();
         while (roleIter.hasNext()) {
@@ -363,13 +363,13 @@ public class AuthorizationController {
         }
         throw authexceptions;
     }
-    
-    
+
+
     public gPlazmaAuthorizationRecord authorize(String subjectDN, String role, X509Certificate[] chain, String desiredUserName, String serviceUrl, Socket socket)
     throws AuthorizationException {
         gPlazmaAuthorizationRecord r = null;
         AuthorizationException authexceptions=null;
-        
+
         AuthorizationPlugin p;
         Iterator plugins = plugin_loader.getPlugins();
         while (r==null && plugins.hasNext()) {
@@ -384,9 +384,9 @@ public class AuthorizationController {
                 //if(ae.getMessage().equals(AuthorizationPlugin.REVOCATION_MESSAGE)) throw authexceptions;
             }
         }
-        
+
         if(authexceptions!=null && r==null) throw authexceptions;
-        
+
         return r;
     }
 
@@ -402,10 +402,10 @@ public class AuthorizationController {
             }
             throw new java.util.NoSuchElementException("no more nulls");
         }
-        
+
         public void remove() {}
     }
-    
+
     public static String getFormattedAuthRequestID(long id) {
         String idstr;
         idstr = String.valueOf(id);
@@ -422,9 +422,9 @@ public class AuthorizationController {
     public void setUseSAZ(boolean boolarg) {
         use_saz = boolarg;
     }
-    
+
     public boolean getUseSAZ() {
         return use_saz;
     }
-    
+
 } //end of class AuthorizationController

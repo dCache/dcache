@@ -60,7 +60,7 @@ public class DCacheSRMauthzRecordsService {
     throws IOException {
 
      try {
-        String fileSeparator = System.getProperty("file.separator"); 
+        String fileSeparator = System.getProperty("file.separator");
         String[] testFilenamePath = filename.split(fileSeparator);
         String testFilename = testFilenamePath[testFilenamePath.length-1];
          if (!testFilename.equals(STORAGE_AUTHZ_FILENAME)) {
@@ -144,7 +144,7 @@ public class DCacheSRMauthzRecordsService {
             }
         }
     }
-                                                                                                                                                                                                     
+
     private gPlazmaAuthorizationRecord readNextAuthorizationRecord(String line, BufferedReader reader)
     throws IOException {
         StringTokenizer t = new StringTokenizer(line);
@@ -252,6 +252,6 @@ public class DCacheSRMauthzRecordsService {
     }
 
 
-  
+
 }
 

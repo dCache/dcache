@@ -107,7 +107,7 @@ public class GridMapFileHandler {
 		return quotedString;
 	}	
 	
-	public String getMappedUsername(String gridDN) 
+	public String getMappedUsername(String gridDN)
 	throws Exception {
 		return removeQuotes((String)gridMap.get(gridDN));
 	}	

@@ -11,13 +11,13 @@ public class runDCacheSRMauthzRecordsService {
 
 
  public static void main(String[] args) {
-                                                                                                                                                                                                     
+
       if(args.length != 2) {
          System.out.println("Usage: runDCacheSRMauthzRecordsService <path to storage-authzdb> <Username>");
          return;
       }
 
-      storageAuthzConfPath = (args[0]);       
+      storageAuthzConfPath = (args[0]);
       user_name = (args[1]);
 
       try {

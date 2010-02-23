@@ -137,7 +137,7 @@ public class VORoleMapHandler {
 		return quotedString;
 	}	
 	
-	public String getMappedUsername(String gridFineGrainSecureId) 
+	public String getMappedUsername(String gridFineGrainSecureId)
 	throws Exception {
 		gridFineGrainSecureId = gridFineGrainSecureId.trim();
 		return removeQuotes((String)gridFineGrainMap.get(gridFineGrainSecureId));
@@ -149,7 +149,7 @@ public class VORoleMapHandler {
 		return gridFineGrainMapMultiple.get(gridFineGrainSecureId);
 	}
 
-	public String getMappedUsername(String gridFineGrainSecureId, String username) 
+	public String getMappedUsername(String gridFineGrainSecureId, String username)
 	throws Exception {
 		gridFineGrainSecureId = gridFineGrainSecureId.trim();
     LinkedList<String> mapValues = getMappedUsernames(gridFineGrainSecureId);

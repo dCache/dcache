@@ -3,7 +3,7 @@
 
 /*
  * VORoleMapAuthzPlugin.java
- * 
+ *
  * Created on March 30, 2005
  */
 
