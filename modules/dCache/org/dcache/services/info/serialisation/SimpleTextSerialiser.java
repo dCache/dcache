@@ -101,7 +101,6 @@ public class SimpleTextSerialiser implements StateVisitor, StateSerialiser {
 		}
 	}
 
-	public void visitCompositePreLastDescend(StatePath path, Map<String, String> metadata) {}
 	public void visitCompositePreSkipDescend(StatePath path, Map<String, String> metadata) {}
 	public void visitCompositePostSkipDescend(StatePath path, Map<String, String> metadata) {}
 

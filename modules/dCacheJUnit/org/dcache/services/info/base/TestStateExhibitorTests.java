@@ -972,11 +972,6 @@ public class TestStateExhibitorTests {
         }
 
         @Override
-        public void visitCompositePreLastDescend( StatePath path,
-                                                  Map<String, String> metadata) {
-        }
-
-        @Override
         public void visitCompositePreSkipDescend( StatePath path,
                                                   Map<String, String> metadata) {
         }

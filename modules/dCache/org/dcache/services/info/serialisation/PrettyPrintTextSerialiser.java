@@ -119,10 +119,6 @@ public class PrettyPrintTextSerialiser implements StateVisitor, StateSerialiser 
                                                Map<String, String> metadata) {
     }
 
-    public void visitCompositePreLastDescend( StatePath path,
-                                              Map<String, String> metadata) {
-    }
-
     private boolean arePathsSame( StatePath p1, StatePath p2) {
         if( p1 == null && p2 == null)
             return true;

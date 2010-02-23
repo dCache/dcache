@@ -105,7 +105,6 @@ public class XmlSerialiser implements StateVisitor, StateSerialiser {
 	/* Deal with branch movement */
 	public void visitCompositePreDescend( StatePath path, Map<String,String> metadata)      { enteringBranch( path, metadata); }
 	public void visitCompositePreSkipDescend( StatePath path, Map<String,String> metadata)  { enteringBranch( path, metadata); }
-	public void visitCompositePreLastDescend( StatePath path, Map<String,String> metadata)  {}
 	public void visitCompositePostDescend( StatePath path, Map<String,String> metadata)     { exitingBranch( path, metadata); }
 	public void visitCompositePostSkipDescend( StatePath path, Map<String,String> metadata) { exitingBranch( path, metadata); }
 

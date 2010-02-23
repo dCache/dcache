@@ -271,15 +271,9 @@ public class StateComposite implements StateComponent {
 
 		visitor.visitCompositePreDescend( path, branchMetadata);
 
-		// Iterate over our children
-		for(Iterator<Map.Entry<String, StateComponent>> itr = _children.entrySet().iterator(); itr.hasNext();) {
-			Map.Entry<String, StateComponent> mapEntry = itr.next();
-
+        for( Map.Entry<String, StateComponent> mapEntry : _children.entrySet()) {
 			String childName = mapEntry.getKey();
 			StateComponent child = mapEntry.getValue();
-
-			if (!itr.hasNext())
-				visitor.visitCompositePreLastDescend( path, branchMetadata);
 
 			child.acceptVisitor( buildChildPath( path, childName), null, visitor);
 		}
@@ -332,15 +326,8 @@ public class StateComposite implements StateComponent {
 
 		Set<String> children = buildChildrenList( changeSet);
 
-		// Iterate over our children
-		for(Iterator<String> itr = children.iterator(); itr.hasNext();) {
-			String childName = itr.next();
-
-			if (!itr.hasNext())
-				visitor.visitCompositePreLastDescend(ourPath, branchMetadata);
-
+        for( String childName : children)
 			visitNamedChild( visitor, ourPath, childName, null, transition, changeSet);
-		}
 
 		visitor.visitCompositePostDescend(ourPath, branchMetadata);
 	}

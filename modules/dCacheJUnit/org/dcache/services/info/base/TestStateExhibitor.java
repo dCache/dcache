@@ -154,13 +154,9 @@ public class TestStateExhibitor implements StateExhibitor, Cloneable {
 
             visitor.visitCompositePreDescend( ourPath, visitMetadata);
 
-            int counter = 0;
             for( Map.Entry<String, Node> entry : _children.entrySet()) {
                 String childName = entry.getKey();
                 Node child = entry.getValue();
-
-                if( counter++ == _children.size() - 1)
-                    visitor.visitCompositePreLastDescend( ourPath, visitMetadata);
 
                 StatePath childPath = (ourPath == null)
                         ? new StatePath( childName)

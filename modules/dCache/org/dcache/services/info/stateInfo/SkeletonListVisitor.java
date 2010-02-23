@@ -51,7 +51,6 @@ public class SkeletonListVisitor implements StateVisitor {
 
 	public void visitCompositePreSkipDescend(StatePath path, Map<String, String> metadata) {}
 	public void visitCompositePostSkipDescend(StatePath path, Map<String, String> metadata) {}
-	public void visitCompositePreLastDescend(StatePath path, Map<String, String> metadata) {}
 
 	public void visitCompositePreDescend(StatePath path, Map<String, String> metadata) {
 		if( _pathToList.isParentOf( path)) {

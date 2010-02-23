@@ -38,7 +38,6 @@ public interface StateVisitor {
 
 	/** StateComposites call pre- and post- traversal */
 	void visitCompositePreDescend( StatePath path, Map<String,String> metadata);
-	void visitCompositePreLastDescend( StatePath path, Map<String,String> metadata);
 	void visitCompositePostDescend( StatePath path, Map<String,String> metadata);
 
 	/** StateComposites call these methods when skipping over higher-level state */

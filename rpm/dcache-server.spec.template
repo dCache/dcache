@@ -75,8 +75,6 @@ fi
 /opt/d-cache/
 %attr(0755,root,root) /opt/d-cache/install/install.sh
 %attr(0755,root,root) /opt/d-cache/install/deploy_srmv2.sh
-%attr(0755,root,root) /opt/d-cache/jobs/generic.lib.sh
-%attr(0755,root,root) /opt/d-cache/jobs/wrapper2.sh
 %attr(0755,root,root) /opt/d-cache/jobs/initPackage.sh
 %attr(0755,root,root) /opt/d-cache/jobs/hsmcp.sh
 %attr(0755,root,root) /opt/d-cache/jobs/hsmcpV4.sh
