@@ -72,6 +72,8 @@ public class UniversalSpringCell
     extends AbstractCell
     implements BeanPostProcessor
 {
+    private final static long WAIT_FOR_FILE_SLEEP = 30000;
+
     /**
      * Spring application context. All beans are created through this
      * context.
@@ -160,15 +162,16 @@ public class UniversalSpringCell
          */
         startTimeoutTask();
 
-        /* Execute setup. In case the setup file is missing, we wait
-         * until it becomes available.
+        /* To ensure that all required file systems are mounted, the
+         * admin may specify some required files. We will block until
+         * they become available.
          */
-        if (_setupFile != null) {
-            while (!_setupFile.exists()) {
-                error("Setup does not exists; waiting");
-                Thread.sleep(30000);
-            }
-        }
+        waitForFiles();
+
+        /* The setup may be provided as static configuration in the
+         * domain context, as a setup file on disk or through a setup
+         * controller cell.
+         */
         executeSetup();
 
         /* Now that everything is instantiated and configured, we can
@@ -201,6 +204,35 @@ public class UniversalSpringCell
         _lifeCycleAware.clear();
     }
 
+    private File firstMissing(File[] files)
+    {
+        for (File file: files) {
+            if (!file.exists()) {
+                return file;
+            }
+        }
+        return null;
+    }
+
+    private void waitForFiles()
+        throws InterruptedException
+    {
+        String s = getArgs().getOpt("waitForFiles");
+        if (s != null) {
+            String[] paths = s.split(":");
+            File[] files = new File[paths.length];
+            for (int i = 0; i < paths.length; i++) {
+                files[i] = new File(paths[i]);
+            }
+
+            File missing;
+            while ((missing = firstMissing(files)) != null) {
+                warn(String.format("File missing: %s; sleeping %d seconds", missing, WAIT_FOR_FILE_SLEEP / 1000));
+                Thread.sleep(WAIT_FOR_FILE_SLEEP);
+            }
+        }
+    }
+
     private void executeSetup()
         throws IOException, CommandException
     {
@@ -209,7 +241,7 @@ public class UniversalSpringCell
         }
 
         executeDefinedSetup();
-        if (_setupFile != null) {
+        if (_setupFile != null && _setupFile.isFile()) {
             execFile(_setupFile);
         }
 
