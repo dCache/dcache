@@ -783,7 +783,7 @@ public class XrootdDoor extends AbstractCell
 
     public FileMetaData getFileMetaData(String path) throws CacheException
     {
-        return _pnfs.getFileMetaDataByPath(path).getMetaData();
+        return new FileMetaData(_pnfs.getFileAttributes(path, FileMetaData.getKnownFileAttributes()));
     }
 
     public FileMetaData[] getMultipleFileMetaData (String[] allPaths)

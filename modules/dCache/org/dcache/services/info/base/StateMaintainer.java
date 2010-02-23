@@ -3,6 +3,7 @@ package org.dcache.services.info.base;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
@@ -42,7 +43,7 @@ public class StateMaintainer implements StateUpdateManager {
 
     /**
      * Create a new StateMaintainer with a link to some StateCaretaker
-     * 
+     *
      * @param caretaker
      *            the StateCaretaker that will undertake the business logic
      *            of updating dCache state.
@@ -54,7 +55,7 @@ public class StateMaintainer implements StateUpdateManager {
 
     /**
      * Alter which StateCaretaker the StateMaintainer will use.
-     * 
+     *
      * @param caretaker
      */
     void setStateCaretaker( final StateCaretaker caretaker) {
@@ -132,7 +133,7 @@ public class StateMaintainer implements StateUpdateManager {
             if( _metricExpiryFuture.cancel( CANCEL_RUNNING_METRIC_EXPUNGE))
                 _metricExpiryDate = null;
         }
-        
+
         if( _metricExpiryDate == null)
             scheduleMetricExpunge( earliestMetricExpiry);
     }
@@ -142,7 +143,7 @@ public class StateMaintainer implements StateUpdateManager {
      * {@link StateCaretaker#removeExpiredMetrics()} then call
      * {@link #scheduleScheduleMetricExpunge()} to schedule the next metric
      * purge activity. If whenExpunge is null then no action is taken.
-     * 
+     *
      * @param whenExpunge
      *            some time in the future to schedule a task or null.
      */
@@ -159,14 +160,18 @@ public class StateMaintainer implements StateUpdateManager {
         if( _log.isDebugEnabled())
             _log.debug( "Scheduling next metric purge in " + Double.valueOf( delay/1000.0) + " s");
 
-        _metricExpiryFuture = _scheduler.schedule( new FireAndForgetTask( new Runnable() {
-            public void run() {
-                _log.debug( "Starting metric purge");
-                _caretaker.removeExpiredMetrics();
-                scheduleMetricExpunge();
-                _log.debug( "Metric purge completed");
-            }
-        }), delay, TimeUnit.MILLISECONDS);
+        try {
+            _metricExpiryFuture = _scheduler.schedule( new FireAndForgetTask( new Runnable() {
+                public void run() {
+                    _log.debug( "Starting metric purge");
+                    _caretaker.removeExpiredMetrics();
+                    scheduleMetricExpunge();
+                    _log.debug( "Metric purge completed");
+                }
+            }), delay, TimeUnit.MILLISECONDS);
+        } catch( RejectedExecutionException e) {
+            _log.debug( "Failed to enqueue expunge task as queue is not accepting further work.");
+        }
     }
 
     /**

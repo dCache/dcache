@@ -38,7 +38,6 @@ import diskCacheV111.vehicles.PnfsCreateDirectoryMessage;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
-import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
 //import diskCacheV111.vehicles.PnfsGetParentMessage;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PnfsRenameMessage;
@@ -49,6 +48,7 @@ import java.net.URI;
 import org.dcache.commons.util.SqlHelper;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.namespace.FileAttribute;
 
 public class PnfsManagerTest {
@@ -189,10 +189,12 @@ public class PnfsManagerTest {
 
         assertTrue("failed to clear cache location", pnfsClearcacheLocationMessage.getReturnCode() == 0 );
 
-        PnfsGetFileMetaDataMessage pnfsGetFileMetaDataMessage = new PnfsGetFileMetaDataMessage(pnfsCreateEntryMessage.getPnfsId());
+        PnfsGetFileAttributes pnfsGetFileAttributes =
+            new PnfsGetFileAttributes(pnfsCreateEntryMessage.getPnfsId(),
+                                      EnumSet.noneOf(FileAttribute.class));
 
-       _pnfsManager.getFileAttributes(pnfsGetFileMetaDataMessage);
-       assertTrue("file still exist after removing last location entry", pnfsGetFileMetaDataMessage.getReturnCode() == CacheException.FILE_NOT_FOUND );
+       _pnfsManager.getFileAttributes(pnfsGetFileAttributes);
+       assertTrue("file still exist after removing last location entry", pnfsGetFileAttributes.getReturnCode() == CacheException.FILE_NOT_FOUND );
     }
 
     @Test

@@ -26,6 +26,7 @@ public class TestStateExhibitor implements StateExhibitor, Cloneable {
      */
     private static class Node {
         private final Map<String, Node> _children = new HashMap<String, Node>();
+        private final Map<String, String> _metadata = new HashMap<String, String>();
         private final StateValue _metricValue;
 
         public Node() {
@@ -44,7 +45,7 @@ public class TestStateExhibitor implements StateExhibitor, Cloneable {
          * Obtain a child Node with corresponding name. If Node doesn't exist
          * it is created. If metric is null, any created node will be a
          * branch, otherwise it will be a metric node.
-         * 
+         *
          * @param childName
          * @param metric
          * @return
@@ -66,7 +67,7 @@ public class TestStateExhibitor implements StateExhibitor, Cloneable {
 
         /**
          * Add a metric at the specific StatePath
-         * 
+         *
          * @param path
          * @param metric
          */
@@ -81,7 +82,7 @@ public class TestStateExhibitor implements StateExhibitor, Cloneable {
 
         /**
          * Ensure we have a branch at specific StatePath.
-         * 
+         *
          * @param path
          */
         public void addBranch( StatePath path) {
@@ -91,10 +92,22 @@ public class TestStateExhibitor implements StateExhibitor, Cloneable {
                 child.addBranch( path.childPath());
         }
 
+        public void addListItem( StatePath path, String type, String idName) {
+            String childName = path.getFirstElement();
+            Node child = getOrCreateChild( childName, null);
+
+            if( !path.isSimplePath()) {
+                child.addListItem( path.childPath(), type, idName);
+            } else {
+                child._metadata.put( State.METADATA_BRANCH_CLASS_KEY, type);
+                child._metadata.put( State.METADATA_BRANCH_IDNAME_KEY, idName);
+            }
+        }
+
         /**
          * Support skipping when the current node might be skipped. If the
          * skipPath is null then visit() method is called.
-         * 
+         *
          * @param visitor
          * @param ourPath
          * @param skipPath
@@ -109,7 +122,9 @@ public class TestStateExhibitor implements StateExhibitor, Cloneable {
             String childName = skipPath.getFirstElement();
 
             if( _children.containsKey( childName)) {
-                visitor.visitCompositePreSkipDescend( ourPath, null);
+                Map<String,String> visitMetadata = _metadata.isEmpty() ? null : _metadata;
+
+                visitor.visitCompositePreSkipDescend( ourPath, visitMetadata);
 
                 Node childNode = _children.get( childName);
                 StatePath childPath = ourPath == null
@@ -118,14 +133,14 @@ public class TestStateExhibitor implements StateExhibitor, Cloneable {
                 childNode.visitWithSkip( visitor, childPath,
                                          skipPath.childPath());
 
-                visitor.visitCompositePostSkipDescend( ourPath, null);
+                visitor.visitCompositePostSkipDescend( ourPath, visitMetadata);
             }
         }
 
         /**
          * Visit the current state. This simulates visiting a real dCache
          * state.
-         * 
+         *
          * @param visitor
          * @param ourPath
          */
@@ -135,7 +150,9 @@ public class TestStateExhibitor implements StateExhibitor, Cloneable {
                 return;
             }
 
-            visitor.visitCompositePreDescend( ourPath, null);
+            Map<String,String> visitMetadata = _metadata.isEmpty() ? null : _metadata;
+
+            visitor.visitCompositePreDescend( ourPath, visitMetadata);
 
             int counter = 0;
             for( Map.Entry<String, Node> entry : _children.entrySet()) {
@@ -143,7 +160,7 @@ public class TestStateExhibitor implements StateExhibitor, Cloneable {
                 Node child = entry.getValue();
 
                 if( counter++ == _children.size() - 1)
-                    visitor.visitCompositePreLastDescend( ourPath, null);
+                    visitor.visitCompositePreLastDescend( ourPath, visitMetadata);
 
                 StatePath childPath = (ourPath == null)
                         ? new StatePath( childName)
@@ -152,13 +169,13 @@ public class TestStateExhibitor implements StateExhibitor, Cloneable {
                 child.visit( visitor, childPath);
             }
 
-            visitor.visitCompositePostDescend( ourPath, null);
+            visitor.visitCompositePostDescend( ourPath, visitMetadata);
         }
 
         /**
          * Apply a StateTransition to a tree of Nodes. This is does
          * iteratively.
-         * 
+         *
          * @param transition
          * @param myPath
          */
@@ -218,7 +235,7 @@ public class TestStateExhibitor implements StateExhibitor, Cloneable {
          * StateComponent is a metric (i.e., a subclass of StateValue) then
          * the new Node will be created with that StateValue. If not, then a
          * branch Node (simulating StateComposite) is created.
-         * 
+         *
          * @param newValue
          * @return
          */
@@ -274,6 +291,10 @@ public class TestStateExhibitor implements StateExhibitor, Cloneable {
         _rootNode.addBranch( path);
     }
 
+    public void addListItem( StatePath path, String type, String idName) {
+        _rootNode.addListItem( path, type, idName);
+    }
+
     @Override
     public void visitState( StateVisitor visitor) {
         _rootNode.visit( visitor, null);
@@ -282,7 +303,7 @@ public class TestStateExhibitor implements StateExhibitor, Cloneable {
     /**
      * This is a special version of the {@link #visitState(StateVisitor)}
      * method. It exists to allow easy testing of the clone method.
-     * 
+     *
      * @param visitor
      */
     public void visitClonedState( StateVisitor visitor) {

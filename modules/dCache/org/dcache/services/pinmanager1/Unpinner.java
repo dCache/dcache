@@ -1,13 +1,18 @@
 package org.dcache.services.pinmanager1;
 
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.*;
+import diskCacheV111.vehicles.PnfsFlagMessage;
+import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
+import diskCacheV111.vehicles.PoolSetStickyMessage;
+import org.dcache.vehicles.PnfsGetFileAttributes;
+import org.dcache.namespace.FileAttribute;
 
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.EnumSet;
 
 /**
  * Background task used to perform the actual unpinning operation.
@@ -21,7 +26,7 @@ class Unpinner extends SMCTask
     protected final Pin _pin;
     protected final UnpinnerContext _fsm;
     protected final CellPath _pnfsManager;
-    protected  final List<String> locations = new ArrayList<String>();
+    protected final List<String> locations = new ArrayList<String>();
     protected final boolean isOldStylePin;
     protected final boolean _retry;
 
@@ -114,13 +119,14 @@ class Unpinner extends SMCTask
         sendMessage(_pnfsManager, pfm, 5*60*1000);
     }
 
-    void  getPnfsMetadata()
+    void checkThatFileExists()
     {
-        info("getPnfsMetadata");
-        PnfsGetFileMetaDataMessage getMetadata =
-            new PnfsGetFileMetaDataMessage(_job.getPnfsId());
-        getMetadata.setReplyRequired(true);
-        sendMessage(_pnfsManager, getMetadata, 5*60*1000);
+        info("checkThatFileExists");
+        PnfsGetFileAttributes message =
+            new PnfsGetFileAttributes(_job.getPnfsId(),
+                                      EnumSet.noneOf(FileAttribute.class));
+        message.setReplyRequired(true);
+        sendMessage(_pnfsManager, message, 5*60*1000);
     }
 
     void findCacheLocations()

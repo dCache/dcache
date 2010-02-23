@@ -3,6 +3,7 @@ package org.dcache.acl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.EnumSet;
 
 import org.apache.log4j.Logger;
 import org.dcache.acl.ACE;
@@ -12,6 +13,8 @@ import org.dcache.acl.config.AclConfig;
 import org.dcache.acl.enums.RsType;
 import org.dcache.acl.handler.DefaultACLHandler;
 import org.dcache.acl.parser.ACEParser;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.vehicles.FileAttributes;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileMetaData;
@@ -134,7 +137,7 @@ public class AclCell extends CellAdapter {
             pnfsId = new PnfsId(args.argv(0));
 
         } catch (IllegalArgumentException ee) {
-            pnfsId = _pnfs.getFileMetaDataByPath(args.argv(0)).getPnfsId();
+            pnfsId = _pnfs.getPnfsIdByPath(args.argv(0));
         }
 
         // now we know pnfsId. 'convert' it to rsId (attribute rs_id in t_acl table)
@@ -271,14 +274,15 @@ public class AclCell extends CellAdapter {
         try {
 
             pnfsId = new PnfsId(args.argv(0));
-            fileMetaData = _pnfs.getFileMetaDataById(pnfsId).getMetaData();
-
+            fileMetaData =
+                new FileMetaData(_pnfs.getFileAttributes(pnfsId, FileMetaData.getKnownFileAttributes()));
         } catch (IllegalArgumentException ee) {
-
             String path = args.argv(0);
-            pnfsId = _pnfs.getFileMetaDataByPath(path).getPnfsId();
-            fileMetaData = _pnfs.getFileMetaDataByPath(path).getMetaData();
-
+            EnumSet<FileAttribute> request = EnumSet.of(FileAttribute.PNFSID);
+            request.addAll(FileMetaData.getKnownFileAttributes());
+            FileAttributes attributes = _pnfs.getFileAttributes(path, request);
+            fileMetaData = new FileMetaData(attributes);
+            pnfsId = attributes.getPnfsId();
         }
 
         // get rs_id

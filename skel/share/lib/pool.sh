@@ -219,7 +219,7 @@ addPool() # in $1 = pool, in $2 = path, in $3 = domain, in $4 = use fqdn, in $5 
     file="${pool_config}/${hostname}.domains"
     if [ ! -f "$file" ]; then
         echo "${domain%Domain}" >> "$file" || exit 1
-    elif ! grep -q "${domain%Domain}" "$file"; then
+    elif ! grep "${domain%Domain}" "$file" >/dev/null; then
         echo "${domain%Domain}" >> "$file" || exit 1
     fi
 
