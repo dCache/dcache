@@ -10,7 +10,8 @@ import org.dcache.vehicles.gPlazmaDelegationInfo;
 import org.dcache.vehicles.AuthorizationMessage;
 import org.dcache.srm.security.SslGsiSocketFactory;
 import org.dcache.cells.CellStub;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import gplazma.authz.AuthorizationException;
 import gplazma.authz.records.gPlazmaAuthorizationRecord;
 import gplazma.authz.util.X509CertUtil;
@@ -40,7 +41,8 @@ import dmg.cells.nucleus.CDC;
 
 public class AuthzQueryHelper
 {
-    private static final Logger log = Logger.getLogger(AuthzQueryHelper.class);
+    private static final Logger log =
+        LoggerFactory.getLogger(AuthzQueryHelper.class);
 
     private long authRequestID;
     private static final Random random = new Random();
@@ -310,7 +312,7 @@ public class AuthzQueryHelper
                 } else {
                     sb.append("NOT AUTHORIZED");
                 }
-                log.debug(sb);
+                log.debug(sb.toString());
             }
         }
     }

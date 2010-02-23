@@ -84,7 +84,8 @@ import org.dcache.vehicles.AuthorizationMessage;
 import org.dcache.vehicles.gPlazmaDelegationInfo;
 import org.globus.gsi.gssapi.net.impl.GSIGssSocket;
 import org.ietf.jgss.*;
-import org.apache.log4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -104,7 +105,7 @@ import java.security.cert.X509Certificate;
  **/
 public class GPLAZMA extends AbstractCell
 {
-  private static final Logger log = Logger.getLogger(GPLAZMA.class);
+  private static final Logger log = LoggerFactory.getLogger(GPLAZMA.class);
 
   /** Location of gss files **/
   private static final String SERVICE_KEY =
@@ -119,9 +120,6 @@ public class GPLAZMA extends AbstractCell
 
   /** Class for persisting and retrieving AuthorizationRecords **/
   protected AuthRecordPersistenceManager authzPersistenceManager;
-
-  /** Specifies logging level **/
-  private Level loglevel = Level.ERROR;
 
   /** Thread pool to handle multiple simultaneous authentication
    *  requests. **/
@@ -209,35 +207,6 @@ public class GPLAZMA extends AbstractCell
 
     say(this.toString() + " started");
   }
-
-  /**
-   * Sets the logging level.
-  */
-  public final static String hh_set_LogLevel = "<loglevel>" ;
-  public final static String fh_set_LogLevel =
-    " set LogLevel <loglevel>\n"+
-    "        Sets the log level. Choices are DEBUG, INFO, WARN, ERROR.\n"+
-    "\n";
-  public String ac_set_LogLevel_$_1( Args args ) {
-    String newlevel  = (args.argv(0)).toUpperCase();
-      if( newlevel.equals("DEBUG") ||
-          newlevel.equals("INFO")  ||
-          newlevel.equals("WARN")  ||
-          newlevel.equals("ERROR") ||
-          newlevel.equals("FATAL")  ) {
-        log.setLevel(Level.toLevel(newlevel.toUpperCase()));
-        try {
-            sendMessage(new CellMessage(new CellPath("System"), "log4j appender set stdout " + newlevel), true, false);
-        } catch (NoRouteToCellException nre) {
-            log.warn("Message to change appender log level failed: NoRouteToCell for " + "System@" + getCellDomainName());
-        }
-      }
-      else
-        return "Log level not set. Allowed values are DEBUG, INFO, WARN, ERROR.";
-
-    return "Log level set to " + log.getLevel();
-  }
-
 
   public final static String hh_get_mapping =
     "\"<DN>\" [\"FQAN1\",...,\"FQANn\"]";
@@ -443,7 +412,7 @@ public class GPLAZMA extends AbstractCell
           log.debug("delegation succeeded");
         }
       } catch (Throwable t) {
-        log.error(t);
+        log.error(t.toString());
         // we do not propogate this exception since some exceptions
         // we catch are not serializable!!!
         //throw new Exception(t.toString());
@@ -634,7 +603,7 @@ public class GPLAZMA extends AbstractCell
                   r = authzPersistenceManager.find(authrec.getId());
               } while (r!=null && !r.equals(authrec));
           } catch (Exception e) {
-              log.error(e);
+              log.error(e.toString());
           }
           if (r==null) {
             log.debug("auth object not found in database, persisting ");
@@ -642,7 +611,7 @@ public class GPLAZMA extends AbstractCell
           }
 
       } catch (Exception ae) {
-        log.error(ae);
+        log.error(ae.toString());
         writethis = ae;
       }
 
