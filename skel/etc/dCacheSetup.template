@@ -843,6 +843,10 @@ cacheInfo=companion
 #
 #trash=
 
+#  -----------------------------------------------------------------------
+#       PNFS Cleaner
+#  -----------------------------------------------------------------------
+#
 #  ---- Cleaner settings
 #
 #   The cleaner stores persistency information in subdirectories of
@@ -1523,7 +1527,7 @@ statisticsLocation=${ourHomeDir}/statistics
 #       Pools will be removed from the list when their status becomes "enabled"
 #       or after they have been in the list for cleanerRecover seconds.
 #
-#cleanerRecover=240
+#cleanerRecover=1800
 
 #   ----- DISK Chimera Cleaner settings
 #
@@ -1537,25 +1541,24 @@ statisticsLocation=${ourHomeDir}/statistics
 #
 #cleanerProcessFilesPerRun=500
 
-#  -----------------------------------------------------------------------
-#       HSM Chimera Cleaner functionality
-#  -----------------------------------------------------------------------
+#   ----- HSM Chimera Cleaner functionality
+#
 #   The HSM cleaner is disabled by default.
 #   To enable HSM cleaner, set the following variable to 'enabled' for the Chimera domain:
 #
-#hsmChimeraCleaner=disabled
+#hsmCleaner=disabled
 
 #   ----- HSM Chimera Cleaner settings
 #
 #    1) Cleaning request timeout in seconds. If the HSM-pool takes longer
 #       than the specified timeout, the pool is placed in the Black List.
 #
-#hsmTimeout=120
+#hsmCleanerTimeout=120
 
 #    2) The maximal number of concurrent requests to remove HSM-stored files
 #       sent to a single HSM.
 #
-#hsmMaxRequests=100
+#hsmCleanerRequest=100
 
 #  -----------------------------------------------------------------------
 #       WebDAV
@@ -1711,3 +1714,31 @@ statisticsLocation=${ourHomeDir}/statistics
 #   client certificate for authentication.
 #
 #webdavNeedClientAuth=false
+
+#  -----------------------------------------------------------------------
+#         WebDav Web Interface Configuration
+#  -----------------------------------------------------------------------
+
+#  ---- Directory locations for dCache webDav web interface
+#
+#   The following four variables specify the location of the
+#   image and style directories for the dCache-internal webdav server.
+#   These images and stylesheet affect the appereance of the webdav
+#   websites in the browser. Dcache provides the default layout.
+#   In case you wish to define your own images or/and stylesheet, create a
+#   directory "local" in the  ${ourHomeDir} and put your files into
+#   this directory.
+#   Then your paths should be relative to the directory "${ourHomeDir}/local"
+#   (like listed below).
+#
+#   Do not change them unless you know what you are doing.
+#
+#logoPath=images/logo.png
+#dirIconPath=images/directoryIcon.png
+#fileIconPath=images/fileIcon.png
+#cssPath=styles/webdav.css
+
+#webdavLogoPath=${logoPath}
+#webdavDirIconPath=${dirIconPath}
+#webdavFileIconPath=${fileIconPath}
+#webdavCssPath=${cssPath}

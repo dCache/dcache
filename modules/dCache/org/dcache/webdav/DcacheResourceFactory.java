@@ -46,7 +46,6 @@ import diskCacheV111.vehicles.HttpDoorUrlInfoMessage;
 import diskCacheV111.vehicles.HttpProtocolInfo;
 import diskCacheV111.vehicles.GFtpProtocolInfo;
 import diskCacheV111.vehicles.ProtocolInfo;
-import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.IoDoorInfo;
 import diskCacheV111.vehicles.IoDoorEntry;
@@ -66,9 +65,7 @@ import org.dcache.util.list.ListDirectoryHandler;
 
 import dmg.util.Args;
 import dmg.util.CollectionFactory;
-import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
 
 import org.apache.log4j.Logger;
@@ -155,6 +152,11 @@ public class DcacheResourceFactory
     private List<FsPath> _allowedPaths =
         Collections.singletonList(new FsPath());
     private InetAddress _internalAddress;
+    private String _logoPath;
+    private String _webdavStylesheetPath;
+    private String _iconDirPath;
+    private String _iconFilePath;
+    private String _path;
 
     public DcacheResourceFactory()
         throws UnknownHostException
@@ -358,6 +360,62 @@ public class DcacheResourceFactory
     }
 
     /**
+     * @return the logoPath
+     */
+    public String getLogoPath() {
+        return _logoPath;
+    }
+
+    /**
+     * @param logoPath the the path to the logo icon (for example dCache logo).
+     */
+    public void setLogoPath(String logoPath) {
+        this._logoPath = logoPath;
+    }
+
+    /**
+     * @return the stylesheetPath
+     */
+    public String getStylesheetPath() {
+        return _webdavStylesheetPath;
+    }
+
+    /**
+     * @param webdavStylesheetPath: the path to the css-file.
+     */
+    public void setWebdavStylesheetPath(String webdavStylesheetPath) {
+        this._webdavStylesheetPath = webdavStylesheetPath;
+    }
+
+    /**
+     * @return the _iconDirPath
+     */
+    public String getIconDirPath() {
+        return _iconDirPath;
+    }
+
+    /**
+     * @param iconDirPath: the path to the directory icon.
+     */
+    public void setIconDirPath(String iconDirPath) {
+        this._iconDirPath = iconDirPath;
+    }
+
+    /**
+     * @return the _iconFilePath
+     */
+    public String getIconFilePath() {
+        return _iconFilePath;
+    }
+
+    /**
+     * @param iconFilePath: the path to the file icon.
+     */
+    public void setIconFilePath(String iconFilePath) {
+        this._iconFilePath = iconFilePath;
+    }
+
+    /**
      * Sets the ScheduledExecutorService used for periodic tasks.
      */
     public void setExecutor(ScheduledExecutorService executor)
@@ -558,41 +616,122 @@ public class DcacheResourceFactory
      * stream.
      */
     public void list(FsPath path, OutputStream out)
-        throws InterruptedException, CacheException
-    {
+            throws InterruptedException, CacheException {
         final XmlWriter w = new XmlWriter(out);
         DirectoryListPrinter printer =
-            new DirectoryListPrinter()
-            {
-                public Set<FileAttribute> getRequiredAttributes()
-                {
-                    return EnumSet.of(MODIFICATION_TIME,TYPE);
-                }
-                public void print(FileAttributes dirAttr, DirectoryEntry entry)
-                {
-                    FileAttributes attr = entry.getFileAttributes();
-                    Date mtime = new Date(attr.getModificationTime());
-                    w.open("tr");
-                    w.open("td");
-                    if (attr.getFileType() == DIR) {
-                        w.begin("a").writeAtt("href", entry.getName() + "/").open().writeText(entry.getName() + "/").close();
-                    } else {
-                        w.begin("a").writeAtt("href", entry.getName()).open().writeText(entry.getName()).close();
+                new DirectoryListPrinter() {
+
+                    public Set<FileAttribute> getRequiredAttributes() {
+                        return EnumSet.of(MODIFICATION_TIME, TYPE);
                     }
-                    w.close("td");
-                    w.begin("td").open().writeText(mtime.toString()).close();
-                    w.close("tr");
-                }
-            };
+
+                    public void print(FileAttributes dirAttr, DirectoryEntry entry) {
+                        FileAttributes attr = entry.getFileAttributes();
+                        Date mtime = new Date(attr.getModificationTime());
+                        w.open("tr");
+                        w.open("td");
+
+                        if (attr.getFileType() == DIR) {
+
+                            w.begin("div").writeAtt("class", "directoryicon").open();
+                            w.begin("img").writeAtt("class", "scaled").writeAtt("src", _iconDirPath).writeAtt("alt", "").open().close();
+                            w.close("div");
+                            w.close("td");
+                            w.open("td");
+                            w.begin("a").writeAtt("href", _path.concat(entry.getName()) + "/").open().writeText(entry.getName() + "/").close();
+
+                        } else {
+
+                            w.begin("div").writeAtt("class", "fileicon").open();
+                            w.begin("img").writeAtt("class", "scaled").writeAtt("src", _iconFilePath).writeAtt("alt", "").open().close();
+                            w.close("div");
+                            w.close("td");
+                            w.open("td");
+                            w.begin("a").writeAtt("href", _path.concat(entry.getName())).open().writeText(entry.getName()).close();
+
+                        }
+                        w.close("td");
+                        w.begin("td").open().writeText(mtime.toString()).close();
+                        w.close("tr");
+                    }
+                };
+
         w.open("html");
+        w.open("head");
+        w.begin("title").open().writeText("dCache.org - File System").close();
+
+        w.begin("link").writeAtt("rel", "stylesheet").writeAtt("type", "text/css").writeAtt("href", _webdavStylesheetPath).open().close();
+
+        w.close("head");
         w.open("body");
+        w.begin("div").writeAtt("id", "navi").open();
+        w.begin("div").writeAtt("class", "figure").open();
+        w.begin("img").writeAtt("class", "scaled").writeAtt("src", _logoPath).open().close();
+        w.close("div");
+
+        if (getSubject() != null) {
+
+            w.begin("p").open().writeText(getSubject().getPrincipals().toString()).close();
+
+        } else {
+            w.writeData("<br>");
+
+        }
 
         Request request = HttpManager.request();
-        w.begin("h1").open().writeText(request.getAbsolutePath()).close();
+        String[] splitPath = request.getAbsolutePath().split("/");
+
+        w.open("p");
+
+        String constructLink = "";
+        String link = "";
+
+        if (request.getAbsolutePath().equals("/")) {
+
+            w.begin("a").writeAtt("href", "/").open().writeText("/").close();
+
+        } else {
+            for (String i : splitPath) {
+
+                if (i.equals("")) {
+                    continue;
+                }
+
+                constructLink = constructLink.concat("/").concat(i);
+                link = String.format(
+                        "<a href=%s>/%s</a>", constructLink,
+                        i);
+                w.begin("a").writeAtt("href", constructLink).open().writeText("/").writeText(i).close();
+            }
+        }
+
+        _path = constructLink.concat("/");
+
+        w.close("p");
+        w.close("div");
+        w.begin("div").writeAtt("id", "wrap").open();
+        w.begin("div").writeAtt("class", "content").open();
+        w.begin("h1").open().writeText("File System").close();
+
         w.open("table");
+        w.open("thead");
+        w.open("tr");
+        w.open("th");
+        w.close("th");
+        w.begin("th").open().writeText("Name").close();
+        w.begin("th").open().writeText("Last Modified").close();
+        w.close("tr");
+        w.close("thead");
+        w.open("tbody");
         _list.printDirectory(getSubject(), printer,
-                             new File(path.toString()), null, null);
+                new File(path.toString()), null, null);
+        w.close("tbody");
         w.close("table");
+        w.close("div");
+        w.begin("div").writeAtt("id", "footer").open();
+        w.writeText("www.dCache.org");
+        w.close("div");
+        w.close("div");
         w.close("body");
         w.close("html");
         w.flush();

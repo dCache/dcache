@@ -45,16 +45,34 @@
     </property>
 
     <property name="handler">
-      <bean id="handlers" class="org.eclipse.jetty.server.handler.HandlerList">
-        <property name="handlers">
-          <list>
-            <bean class="org.dcache.webdav.MiltonHandler">
-              <property name="httpManager" ref="milton"/>
-            </bean>
-            <bean class="org.eclipse.jetty.server.handler.DefaultHandler"/>
-          </list>
-        </property>
-      </bean>
+        <bean id="handlers" class="org.eclipse.jetty.server.handler.HandlerList">
+            <property name="handlers">
+                <list>
+                    <bean class="org.eclipse.jetty.server.handler.ContextHandler">
+                        <property name="contextPath" value="${webdavContextPath}"/>
+                        <property name="handler">
+                            <bean class="org.eclipse.jetty.server.handler.ResourceHandler">
+                                <property name="directoriesListed" value="true"/>
+                                <property name="resourceBase" value="${ourHomeDir}/local/"/>
+                            </bean>
+                        </property>
+                    </bean>
+                    <bean class="org.eclipse.jetty.server.handler.ContextHandler">
+                        <property name="contextPath" value="${webdavContextPath}"/>
+                        <property name="handler">
+                            <bean class="org.eclipse.jetty.server.handler.ResourceHandler">
+                                <property name="directoriesListed" value="true"/>
+                                <property name="resourceBase" value="${ourHomeDir}/docs/"/>
+                            </bean>
+                        </property>
+                    </bean>
+                    <bean class="org.dcache.webdav.MiltonHandler">
+                        <property name="httpManager" ref="milton"/>
+                    </bean>
+                    <bean class="org.eclipse.jetty.server.handler.DefaultHandler"/>
+                </list>
+            </property>
+        </bean>
     </property>
   </bean>
 </beans>

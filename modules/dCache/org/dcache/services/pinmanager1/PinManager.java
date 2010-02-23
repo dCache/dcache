@@ -296,7 +296,7 @@ public class PinManager extends AbstractCell implements Runnable  {
     }
 
 
-    public  final static String hh_bulk_pin = "<file> <seconds> # pins pnfsids from <file> for <seconds>";
+    public  final static String hh_bulk_pin = "<file> <seconds> # pin pnfsids from <file> for <seconds>";
     public String fh_bulk_pin =
         "pin a list of pnfsids from a file for a specified number of seconds\n"+
         "read a list of pnfsids to pin from a file\n"+
@@ -343,6 +343,49 @@ public class PinManager extends AbstractCell implements Runnable  {
 
     }
 
+    public  final static String hh_bulk_unpin = " [-force] <file> # unpin pnfsids from <file>";
+    public String fh_bulk_unpin =
+        "unpin a list of pnfsids from a file\n"+
+        "read a list of pnfsids to pin from a file\n"+
+        "each line in a file is a pnfsid\n";
+    public Object ac_bulk_unpin_$_1( final Args args ) throws Exception {
+       final DelayedReply reply = new DelayedReply();
+        Thread t = new Thread("bulk unpin") {
+                @Override
+                public void run() {
+                    try {
+                        boolean force = args.getOpt("force") != null;
+                        String fileName = args.argv(0) ;
+                        File file = new File(fileName);
+                        if(!file.canRead()) {
+                            reply.send("file "+fileName+" can not be read");
+                            return;
+                        }
+                        BulkUnpinJob unpinJob = new BulkUnpinJob(fileName, force);
+                        int id = nextInteractiveJobId.incrementAndGet();
+                        interactiveJobs.put(id,unpinJob);
+                        reply.send( "bulk unpin started, bulk job id="+id);
+                    } catch (NoRouteToCellException nrtce) {
+                        logger.error("bulk unpin cell communication failure:  "+nrtce.getMessage());
+                    } catch (IOException ioe) {
+                        logger.warn("bulk unpinning failed due to IO error: " +
+                                ioe.getMessage());
+                        try {
+                            reply.send("bulk unpinning failed due to IO error: " +
+                                ioe.getMessage());
+                        }catch(Exception e) {
+                            logger.error(e);
+                        }
+                    } catch (InterruptedException ie) {
+                        logger.warn("bulk unpin interrupted: "+ie.getMessage());
+                    }
+                }
+            };
+        t.start();
+
+        return reply;
+
+    }
 
     public final static String hh_unpin = " [-force] [<pinRequestId>] <pnfsId> " +
         "# unpin a a file by pinRequestId and by pnfsId or just by pnfsId" ;
@@ -1122,14 +1165,12 @@ public class PinManager extends AbstractCell implements Runnable  {
                 return;
             }
             info("need to extend the lifetime of the request");
-            job.setReplyRequired(false);
             info("starting extender");
             new Extender(this,pin,pinRequest,job,
                     expiration);
         } catch (PinDBException pdbe ) {
             error("extend lifetime: "+pdbe);
             db.rollbackDBOperations();
-            job.setReplyRequired(true);
             job.returnFailedResponse(pdbe);
         }
         finally {
@@ -1338,9 +1379,6 @@ public class PinManager extends AbstractCell implements Runnable  {
                     pinRequestIdLong = pinRequestId;
                     pinRequestToUnpinJobMap.put(
                             pinRequestIdLong,job);
-                    if(job.getPinManagerMessage() != null) {
-                        job.getPinManagerMessage().setReplyRequired(false);
-                    }
                     db.updatePin(pin.getId(),null,null,
                             PinManagerPinState.UNPINNING);
                     info("starting unpinnerfor request with id = "+pinRequestId);
@@ -1377,11 +1415,8 @@ public class PinManager extends AbstractCell implements Runnable  {
             error("unpin: "+pdbe.toString());
             db.rollbackDBOperations();
             job.returnFailedResponse(pdbe);
-            if(job.getPinManagerMessage() != null) {
-                job.getPinManagerMessage().setReplyRequired(true);
-                if(pinRequestIdLong != null) {
-                    pinRequestToUnpinJobMap.remove(pinRequestIdLong);
-                }
+            if(pinRequestIdLong != null) {
+                pinRequestToUnpinJobMap.remove(pinRequestIdLong);
             }
             return;
         }
@@ -1474,14 +1509,10 @@ public class PinManager extends AbstractCell implements Runnable  {
                 return;
             }
 
-            if(job.getPinManagerMessage() != null &&
-                    job.getPinManagerMessage().getReplyRequired() ) {
-                pinRequestIdLong = new Long(job.getPinRequestId());
+            pinRequestIdLong = new Long(job.getPinRequestId());
 
-                pinRequestToUnpinJobMap.put(
-                        pinRequestIdLong,job);
-                job.getPinManagerMessage().setReplyRequired(false);
-            }
+            pinRequestToUnpinJobMap.put(
+                    pinRequestIdLong,job);
             db.updatePin(pin.getId(),null,null,
                     PinManagerPinState.UNPINNING);
             info("starting unpinner for request with id = "+job.getPinRequestId());
@@ -1510,7 +1541,6 @@ public class PinManager extends AbstractCell implements Runnable  {
             if(job.getPinManagerMessage()  != null) {
 
                 if(pinRequestIdLong != null) {
-                    job.getPinManagerMessage().setReplyRequired(true);
                     pinRequestToUnpinJobMap.remove(pinRequestIdLong);
                 }
             }
@@ -2244,12 +2274,6 @@ public class PinManager extends AbstractCell implements Runnable  {
             }
         }
 
-        public void setReplyRequired(boolean isRequired) {
-            if(pinManagerMessage != null) {
-                pinManagerMessage.setReplyRequired(isRequired);
-            }
-        }
-
         public void failResponse(Object reason,int rc ) {
             logger.error("failResponse: "+reason+" rc="+rc);
             this.errorObject = reason;
@@ -2271,8 +2295,10 @@ public class PinManager extends AbstractCell implements Runnable  {
 
         public void returnResponse( ) {
             info("returnResponse");
-             state = PinManagerJobState.COMPLETED;
-            if(pinManagerMessage != null && cellMessage != null ) {
+            state = PinManagerJobState.COMPLETED;
+            if(pinManagerMessage != null &&
+               cellMessage != null       &&
+               pinManagerMessage.getReplyRequired()) {
 
                 try {
                     pinManagerMessage.setReply();
@@ -2371,6 +2397,72 @@ public class PinManager extends AbstractCell implements Runnable  {
             StringBuilder sb = new StringBuilder();
             //state is active
             sb.append("BulkPinJob ").append(getState());
+            sb.append('\n');
+
+            for (Map.Entry<Integer,PinManagerJobImpl> e:  jobs.entrySet()) {
+                sb.append(' ').append(e.getKey()).append(':');
+                sb.append(e.getValue()).append('\n');
+            }
+            return sb.toString();
+        }
+    }
+
+    private class BulkUnpinJob implements InteractiveJob  {
+
+        private PinManagerJobState state = PinManagerJobState.ACTIVE;
+        Map<Integer,PinManagerJobImpl> jobs =
+                new HashMap<Integer,PinManagerJobImpl>();
+        BulkUnpinJob(String fileName, boolean force) throws IOException {
+            FileReader fr = new FileReader(fileName);
+            BufferedReader reader = new BufferedReader(fr);
+            try {
+                String line;
+                while((line = reader.readLine()) != null) {
+                    line = line.trim();
+                    if(line.isEmpty() || line.startsWith("#")) continue;
+                    PnfsId pnfsId = new PnfsId(line);
+
+                    PinManagerJobImpl job =
+                        new PinManagerJobImpl(PinManagerJobType.UNPIN,
+                        null,null,pnfsId,0,null,null,null,null);
+                    Integer id= nextInteractiveJobId.incrementAndGet();
+                    jobs.put(id,job);
+                    interactiveJobs.put(id, job);
+                }
+            } finally {
+                reader.close();
+            }
+            for(PinManagerJobImpl job:jobs.values()) {
+                try {
+                    unpin(job,force);
+                } catch (PinException pinException) {
+                    job.returnFailedResponse(pinException);
+                }
+            }
+
+        }
+
+        public PinManagerJobState getState() {
+            if(state == PinManagerJobState.COMPLETED) {
+                return state;
+            }
+            //state is active
+            for(PinManagerJobImpl job:jobs.values()) {
+                //there is at least one active job,
+                // leave state as active
+                if(job.getState() ==  PinManagerJobState.ACTIVE) {
+                    return state;
+                }
+            }
+            //no active job found
+            return state =  PinManagerJobState.COMPLETED;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            //state is active
+            sb.append("BulkUnpinJob ").append(getState());
             sb.append('\n');
 
             for (Map.Entry<Integer,PinManagerJobImpl> e:  jobs.entrySet()) {
