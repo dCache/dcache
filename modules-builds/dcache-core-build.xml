@@ -431,10 +431,7 @@
         <copy file="${dcache.src}/diskCacheV111/docs/statisticsHelp.html" todir="${server.bin.dir}/docs" />
         <!-- startup scripts  for official distribution -->
         <!-- common -->
-        <copy file="${dcache.src}/diskCacheV111/jobs/generic.lib.sh" todir="${server.bin.dir}/jobs" />
-        <copy file="${dcache.src}/diskCacheV111/jobs/wrapper2.sh" todir="${server.bin.dir}/jobs" />
         <copy file="${dcache.src}/diskCacheV111/jobs/initPackage.sh" todir="${server.bin.dir}/jobs" />
-        <copy file="${dcache.src}/diskCacheV111/jobs/needFulThings.sh" todir="${server.bin.dir}/jobs" />
 
         <!-- HSM flush scripts -->
         <copy file="${dcache.src}/diskCacheV111/jobs/encp.sh" todir="${server.bin.dir}/jobs" />

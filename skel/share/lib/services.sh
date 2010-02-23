@@ -466,39 +466,6 @@ getConfigurationValue() # in $1 = service or domain, in $2 = key, out $3 = value
     loadConfigurationFile $1 $prefix && eval $3=\"\${${prefix}_$2}\"
 }
 
-# Returns the program path used when starting and stopping a service.
-getJob() # in $1 = service, out $2 = job
-{
-    local ret
-    case "${service}" in
-        srm)
-            ret="${DCACHE_BIN}/dcache-srm"
-            ;;
-        dcap)
-            # $domain has the format 'dcap${door}-${host}Domain'
-            door=${domain#dcap}
-            door=${door%-${hostname}Domain}
-            ret="${DCACHE_JOBS}/door${door}"
-            ;;
-        xrootd)
-            ret="${DCACHE_JOBS}/xrootdDoor"
-            ;;
-        gridftp)
-            ret="${DCACHE_JOBS}/gridftpdoor"
-            ;;
-        gsidcap)
-            ret="${DCACHE_JOBS}/gsidcapdoor"
-            ;;
-        admin)
-            ret="${DCACHE_JOBS}/adminDoor"
-            ;;
-        *)
-            ret="${DCACHE_JOBS}/${service}"
-            ;;
-    esac
-    eval $2=\"$ret\"
-}
-
 getBatchFile() # in $1 = service or domain, out $2 = batch file
 {
     local filename
@@ -569,14 +536,6 @@ runDomain() # in $1 = domain, in $2 = action
     action=$2
 
     getService "$1" service || return
-    getJob "$service" program || return
-
-    if [ ! -x "$program" ]; then
-        fail 1 "$program not found. The dCache domain $domain is
-                probably not configured on this host. If you recently
-                configured it, then you may need to rerun the
-                install.sh script to enable it."
-    fi
 
     case "${service}" in
         pool)
@@ -595,7 +554,7 @@ runDomain() # in $1 = domain, in $2 = action
             esac
             ;;
         srm)
-            "${program}" ${action} || return
+            "${DCACHE_BIN}/dcache-srm" ${action} || return
             ;;
         *)
             case "$action" in

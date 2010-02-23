@@ -12,17 +12,6 @@ then
 	DCACHE_HOME=`dirname $pwd`
 fi
 
-goUp() {
-  m=`pwd`
-  m=`basename $m`
-  cd ..
-  if [ -L $m ] ; then
-     m=`( ls -l $m | awk '{ print $11 }')`
-     m=`echo $m | awk -F/ '{ for(i=1;i<NF;i++)printf "%s/",$i }'`
-     cd $m
-  fi
-}
-
 targetOfLink() {
    ls -l $1 | awk '{
       for(i=1;i<=NF;i++){
@@ -55,7 +44,7 @@ else
 fi
 #
 echo ""
-echo "   Sanning dCache batch files"
+echo "   Scanning dCache batch files"
 echo ""
 for batchName in *.batch  ; do
    domainName=`echo $batchName | awk -F. '{print $1}'`
@@ -76,36 +65,6 @@ for batchName in *.batch  ; do
    else
       ln -s dCacheSetup ${domainSetup}
    fi
-   #
-   goUp 
-   cd jobs
-   #
-   if [ -L $domainName ] ;  then
-      r=`targetOfLink $domainName`
-      if [ "$r" != "wrapper2.sh" ] ; then
-         echo "    $domainName is link to $r, but should point to wrapper2.sh"
-      fi
-   elif [ -f $domainName ] ; then
-      echo "        !!! $domainName is a file, but should point to wrapper2.sh"
-   else
-      ln -s wrapper2.sh $domainName
-   fi
-   #
-   #
-   domainLib=${domainName}.lib.sh
-   if [ -L $domainLib ] ;  then
-      r=`targetOfLink ${domainLib}`
-      if [ "$r" != "generic.lib.sh" ] ; then
-         echo "    $domainLib is link to $r, but should point to generic.lib.sh"
-      fi
-   elif [ -f $domainLib ] ; then
-      echo "        !!! $domainLib is a file, but should point to generic.lib.sh"
-   else
-      ln -s generic.lib.sh ${domainLib}
-   fi
-   #
-   goUp
-   cd config
 done
 #
 echo ""
@@ -154,14 +113,6 @@ if [ \( ! -f ./server_key \) -o \( ! -f ./host_key \) ] ; then
 else
   echo "Ok"
 fi
-printf " Checking JVM ........ "
-version=`$java -version 2>&1 | grep version | awk '{print $3}'`
-x=`expr $version : "\"\(.*\)\"" | awk -F. '{ print $2 }'`
-if [ "$x" -lt 3 ] ; then
-   echo "Failed : Insufficient Java Version : $version"
-   exit 4
-fi
-echo "Ok"
 #
 printf " Checking Cells ...... "
 if [ ! -f "../classes/cells.jar" ] ; then
