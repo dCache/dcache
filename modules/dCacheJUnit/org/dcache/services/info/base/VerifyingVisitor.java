@@ -41,9 +41,6 @@ public class VerifyingVisitor implements StateVisitor {
 		/** Have we visited this metric? (only used for metrics) */
 		private boolean _haveSeen;
 
-		/** Have we been given the pre-last notification? */
-		private boolean _haveSeenPreLast;
-
 		/** Which PreDescends we have seen?: only used when this._type == BRANCH */
 		private final Set<String> _preDescend = new HashSet<String>();
 
@@ -215,19 +212,6 @@ public class VerifyingVisitor implements StateVisitor {
 			_preDescend.add( childName);
 		}
 
-		void markPreLastDescend() throws UnexpectedVisitDataException {
-			if( _type != StateComponentType.BRANCH)
-				throw new UnexpectedVisitDataException( "preLastDescend for non-branch");
-
-			if( _children.size() == 0)
-				throw new UnexpectedVisitDataException( "preLastDescend when we have no children");
-
-			if( _visitedChildren != _children.size()-1)
-				throw new UnexpectedVisitDataException( "preLastDescend when number of remaining children != 1;  children " + _children.size() + ", visitedChildren " + _visitedChildren+ ", count "+_preDescend.size());
-
-			_haveSeenPreLast = true;
-		}
-
 		void markPostDescend( String childName) throws UnexpectedVisitDataException {
 			if( _type != StateComponentType.BRANCH)
 				throw new UnexpectedVisitDataException( "postDescend for non-branch "+ childName);
@@ -348,11 +332,6 @@ public class VerifyingVisitor implements StateVisitor {
 					return false;
 				}
 
-				if( _branchChildren > 0 && !_haveSeenPreLast) {
-					System.out.println( "["+pathName + "] missing preLast");
-					return false;
-				}
-
 				if( _visitedChildren != _children.size()) {
 					System.out.println( "["+pathName + "] missing visited children, expected "+ Integer.toString( _children.size())+", got "+Integer.toString( _visitedChildren));
 					return false;
@@ -445,11 +424,6 @@ public class VerifyingVisitor implements StateVisitor {
 					return false;
 				}
 
-				if( _haveSeenPreLast) {
-					System.out.println( "["+pathName + "] unexpected preLast in skip parent");
-					return false;
-				}
-
 				return true;
 			}
 
@@ -477,11 +451,6 @@ public class VerifyingVisitor implements StateVisitor {
 
 				if( _postDescend.size() != 0) {
 					System.out.println( "["+pathName + "] postDescend count: expected 0, got " + _postDescend.size());
-					return false;
-				}
-
-				if( _haveSeenPreLast) {
-					System.out.println( "["+pathName + "] unexpected preLast in skip parent");
 					return false;
 				}
 
@@ -562,11 +531,6 @@ public class VerifyingVisitor implements StateVisitor {
 
 			if( _postSkipDescend != null) {
 				System.out.println( "["+pathName + "] unexpectedly got a postSkip: " + _postSkipDescend);
-				return false;
-			}
-
-			if( _haveSeenPreLast) {
-				System.out.println( "["+pathName + "] unexpected preLast in skip parent");
 				return false;
 			}
 
@@ -807,18 +771,6 @@ public class VerifyingVisitor implements StateVisitor {
 		try {
 			thisBranch = getBranch( path.parentPath());
 			thisBranch.markPreDescend( path.getLastElement());
-		} catch (UnexpectedVisitDataException e) {
-			System.out.println( e.getMessage());
-			_encounteredException = true;
-		}
-	}
-
-	public void visitCompositePreLastDescend( StatePath path, Map<String,String> metadata) {
-		ComponentInfo thisBranch;
-
-		try {
-			thisBranch = getBranch(path);
-			thisBranch.markPreLastDescend();
 		} catch (UnexpectedVisitDataException e) {
 			System.out.println( e.getMessage());
 			_encounteredException = true;
