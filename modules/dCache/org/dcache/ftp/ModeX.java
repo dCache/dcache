@@ -134,7 +134,7 @@ public class ModeX extends Mode
 
         /** Buffer for representing a block header. */
         protected ByteBuffer _header =
-            ByteBuffer.allocateDirect(HEADER_LENGTH);
+            ByteBuffer.allocate(HEADER_LENGTH);
 
         /** Buffer for reading commands from the receiver. */
         protected ByteBuffer _command =
@@ -329,11 +329,11 @@ public class ModeX extends Mode
 
         /** Buffer for representing a block header. */
         protected ByteBuffer _header =
-            ByteBuffer.allocateDirect(HEADER_LENGTH);
+            ByteBuffer.allocate(HEADER_LENGTH);
 
         /** Buffer for reading commands from the receiver. */
         protected ByteBuffer _command =
-            ByteBuffer.allocateDirect(128);
+            ByteBuffer.allocate(128);
 
         public Receiver(SocketChannel socket)
         {

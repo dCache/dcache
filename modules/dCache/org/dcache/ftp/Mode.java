@@ -35,7 +35,7 @@ public abstract class Mode extends AbstractMultiplexerListener
     private   long              _fileSize;
 
     /** Buffer for transferTo and transferFrom. */
-    private   ByteBuffer        _buffer = ByteBuffer.allocateDirect(8192);
+    private   ByteBuffer        _buffer = ByteBuffer.allocate(8192);
 
     /** The address to connect to for outgoing connections. */
     private   SocketAddress     _address;

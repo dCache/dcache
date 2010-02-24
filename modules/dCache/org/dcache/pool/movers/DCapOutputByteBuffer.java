@@ -15,7 +15,7 @@ public class DCapOutputByteBuffer  {
         _buffer = buffer ;
     }
     public DCapOutputByteBuffer(int size ){
-        _buffer = ByteBuffer.allocateDirect(size) ;
+        _buffer = ByteBuffer.allocate(size) ;
     }
     public ByteBuffer buffer(){ return _buffer ; }
     public void writeACK(int command) throws IOException {

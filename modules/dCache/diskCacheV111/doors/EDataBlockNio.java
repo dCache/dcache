@@ -146,7 +146,7 @@ public class EDataBlockNio {
 
     public long readHeader(SocketChannel socketChannel) {
         if (header == null) {
-            header = ByteBuffer.allocateDirect(HEADER_LENGTH);
+            header = ByteBuffer.allocate(HEADER_LENGTH);
         }
         int len = 0;
         header.clear();
@@ -176,7 +176,7 @@ public class EDataBlockNio {
     public long readData(SocketChannel socketChannel, long size) {
         try {
             if (data == null || data.capacity() < (int) size) {
-                data = ByteBuffer.allocateDirect((int) size);
+                data = ByteBuffer.allocate((int) size);
             }
         } catch (OutOfMemoryError e) {
             // System.out.println("EDataBlock(" + _myName + ").read():

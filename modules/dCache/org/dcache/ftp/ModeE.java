@@ -83,7 +83,7 @@ public class ModeE extends Mode
 
         /** Buffer for sending the block header. */
         protected ByteBuffer _header =
-            ByteBuffer.allocateDirect(HEADER_LENGTH);
+            ByteBuffer.allocate(HEADER_LENGTH);
 
         public Sender(SocketChannel socket) {
             _socket  = socket;
@@ -202,7 +202,7 @@ public class ModeE extends Mode
 
         /** Buffer for receiving the block header. */
         protected ByteBuffer _header =
-            ByteBuffer.allocateDirect(HEADER_LENGTH);
+            ByteBuffer.allocate(HEADER_LENGTH);
 
         public Receiver(SocketChannel socket) {
             _socket   = socket;

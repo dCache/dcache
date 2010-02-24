@@ -88,10 +88,10 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
     private void initialiseBuffer(MoverIoBuffer bufferSize) {
         try {
             _bigBuffer = _bigBuffer
-                    == null ? ByteBuffer.allocateDirect(bufferSize.getIoBufferSize()) :
+                    == null ? ByteBuffer.allocate(bufferSize.getIoBufferSize()) :
                         _bigBuffer;
         } catch (OutOfMemoryError om) {
-            _bigBuffer = ByteBuffer.allocateDirect(32 * 1024);
+            _bigBuffer = ByteBuffer.allocate(32 * 1024);
         }
     }
 

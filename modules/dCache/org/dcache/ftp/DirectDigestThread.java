@@ -16,7 +16,7 @@ public class DirectDigestThread extends DigestThread
     public void run()
     {
 	try {
-            ByteBuffer buffer = ByteBuffer.allocateDirect(BLOCK_SIZE);
+            ByteBuffer buffer = ByteBuffer.allocate(BLOCK_SIZE);
 	    long position = 0;
             long read;
 

@@ -209,7 +209,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
 	    try {
 		info("Starting mode S proxy from "
                      + inputAddress + " to " + outputAddress);
-		ByteBuffer buffer = ByteBuffer.allocateDirect(128 * 1024);
+		ByteBuffer buffer = ByteBuffer.allocate(128 * 1024);
 		while (_input.read(buffer) != -1) {
 		    buffer.flip();
                     reading = false;
