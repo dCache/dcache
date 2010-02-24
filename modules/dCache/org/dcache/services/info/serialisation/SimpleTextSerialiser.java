@@ -40,6 +40,7 @@ public class SimpleTextSerialiser implements StateVisitor, StateSerialiser {
         _exhibitor = exhibitor;
     }
 
+    @Override
     public String serialise( StatePath start) {
         _result = new StringBuilder();
         _startPath = start;
@@ -54,38 +55,46 @@ public class SimpleTextSerialiser implements StateVisitor, StateSerialiser {
         return _result.toString();
     }
 
+    @Override
     public String serialise() {
         return serialise( null);
     }
 
 
+    @Override
     public String getName() {
         return NAME;
     }
 
+    @Override
     public void visitBoolean(StatePath path, BooleanStateValue value) {
         outputMetric( path, value.toString(), value.getTypeName());
         _lastStateComponentPath = path;
     }
 
+    @Override
     public void visitFloatingPoint(StatePath path, FloatingPointStateValue value) {
         outputMetric( path, value.toString(), value.getTypeName());
         _lastStateComponentPath = path;
     }
 
+    @Override
     public void visitInteger(StatePath path, IntegerStateValue value) {
         outputMetric( path, value.toString(), value.getTypeName());
         _lastStateComponentPath = path;
     }
 
+    @Override
     public void visitString(StatePath path, StringStateValue value) {
         outputMetric( path, "\""+value+"\"", value.getTypeName());
         _lastStateComponentPath = path;
     }
 
+    @Override
     public void visitCompositePreDescend(StatePath path, Map<String, String> metadata) {
         _lastStateComponentPath = path;
     }
+    @Override
     public void visitCompositePostDescend(StatePath path, Map<String, String> metadata) {
 
         // If we just traversed a path without it containing any elements, treat it as a list.
@@ -101,8 +110,13 @@ public class SimpleTextSerialiser implements StateVisitor, StateSerialiser {
         }
     }
 
-    public void visitCompositePreSkipDescend(StatePath path, Map<String, String> metadata) {}
-    public void visitCompositePostSkipDescend(StatePath path, Map<String, String> metadata) {}
+    @Override
+    public void visitCompositePreSkipDescend(StatePath path, Map<String, String> metadata) {
+    }
+
+    @Override
+    public void visitCompositePostSkipDescend(StatePath path, Map<String, String> metadata) {
+    }
 
     /**
      * Output a single line, corresponding to a metric value.

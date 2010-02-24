@@ -45,6 +45,7 @@ public class PrettyPrintTextSerialiser implements StateVisitor, StateSerialiser 
     /**
      * Our official name.
      */
+    @Override
     public String getName() {
         return "pretty-print";
     }
@@ -54,6 +55,7 @@ public class PrettyPrintTextSerialiser implements StateVisitor, StateSerialiser 
      * <p>
      * NB. This method is <i>not</i> thread-safe.
      */
+    @Override
     public String serialise( StatePath path) {
         clearState();
         _topMostElement = path;
@@ -75,6 +77,7 @@ public class PrettyPrintTextSerialiser implements StateVisitor, StateSerialiser 
     /**
      * Provide serialisation, starting from top-most dCache state.
      */
+    @Override
     public String serialise() {
         clearState();
         _topMostElement = null;
@@ -111,10 +114,12 @@ public class PrettyPrintTextSerialiser implements StateVisitor, StateSerialiser 
     }
 
     /* Calls we ignore */
+    @Override
     public void visitCompositePreSkipDescend( StatePath path,
                                               Map<String, String> metadata) {
     }
 
+    @Override
     public void visitCompositePostSkipDescend( StatePath path,
                                                Map<String, String> metadata) {
     }
@@ -125,6 +130,7 @@ public class PrettyPrintTextSerialiser implements StateVisitor, StateSerialiser 
         return (p1 == null) ? false : p1.equals( p2);
     }
 
+    @Override
     public void visitCompositePreDescend( StatePath path,
                                           Map<String, String> metadata) {
 
@@ -182,6 +188,7 @@ public class PrettyPrintTextSerialiser implements StateVisitor, StateSerialiser 
         _lastChunkStack.add( siblingChunk.newPhantomChildChunk());
     }
 
+    @Override
     public void visitCompositePostDescend( StatePath path,
                                            Map<String, String> metadata) {
         Chunk lastChunk = getThisBranchLastChunk();
@@ -194,19 +201,23 @@ public class PrettyPrintTextSerialiser implements StateVisitor, StateSerialiser 
         _nextChunkHasStalk = true;
     }
 
+    @Override
     public void visitBoolean( StatePath path, BooleanStateValue value) {
         addMetricChunk( path, value);
     }
 
+    @Override
     public void visitFloatingPoint( StatePath path,
                                     FloatingPointStateValue value) {
         addMetricChunk( path, value);
     }
 
+    @Override
     public void visitInteger( StatePath path, IntegerStateValue value) {
         addMetricChunk( path, value);
     }
 
+    @Override
     public void visitString( StatePath path, StringStateValue value) {
         addMetricChunk( path, value);
     }

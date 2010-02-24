@@ -61,6 +61,7 @@ public class XmlSerialiser implements StateVisitor, StateSerialiser {
      *  Serialise the current dCache state into XML;
      *  @return a String containing dCache current state as XML data.
      */
+    @Override
     public String serialise() {
         return serialise( null);
     }
@@ -72,6 +73,7 @@ public class XmlSerialiser implements StateVisitor, StateSerialiser {
      *  @param start the StatePath to start serialising data.
      *  @return a String containing dCache current state as XML data.
      */
+    @Override
     public String serialise( StatePath start) {
         _out = new StringBuilder();
         _isTopBranch = true;
@@ -98,32 +100,49 @@ public class XmlSerialiser implements StateVisitor, StateSerialiser {
     }
 
 
+    @Override
     public String getName() {
         return NAME;
     }
 
     /* Deal with branch movement */
-    public void visitCompositePreDescend( StatePath path, Map<String,String> metadata)      { enteringBranch( path, metadata); }
-    public void visitCompositePreSkipDescend( StatePath path, Map<String,String> metadata)  { enteringBranch( path, metadata); }
-    public void visitCompositePostDescend( StatePath path, Map<String,String> metadata)     { exitingBranch( path, metadata); }
-    public void visitCompositePostSkipDescend( StatePath path, Map<String,String> metadata) { exitingBranch( path, metadata); }
+    @Override
+    public void visitCompositePreDescend( StatePath path, Map<String,String> metadata) {
+        enteringBranch( path, metadata);
+    }
+    @Override
+    public void visitCompositePreSkipDescend( StatePath path, Map<String,String> metadata) {
+        enteringBranch( path, metadata);
+    }
+    @Override
+    public void visitCompositePostDescend( StatePath path, Map<String,String> metadata) {
+        exitingBranch( path, metadata);
+    }
+    @Override
+    public void visitCompositePostSkipDescend( StatePath path, Map<String,String> metadata) {
+        exitingBranch( path, metadata);
+    }
 
     /* Deal with metric values */
+    @Override
     public void visitInteger( StatePath path, IntegerStateValue value) {
         emitLastBeginElement( false);
         addElement( buildMetricElement( path.getLastElement(), value.getTypeName(), value.toString()));
     }
 
+    @Override
     public void visitString( StatePath path, StringStateValue value) {
         emitLastBeginElement( false);
         addElement( buildMetricElement( path.getLastElement(), value.getTypeName(), xmlTextMarkup(value.toString())));
     }
 
+    @Override
     public void visitBoolean( StatePath path, BooleanStateValue value) {
         emitLastBeginElement( false);
         addElement( buildMetricElement( path.getLastElement(), value.getTypeName(), value.toString()));
     }
 
+    @Override
     public void visitFloatingPoint( StatePath path, FloatingPointStateValue value) {
         emitLastBeginElement( false);
         addElement( buildMetricElement( path.getLastElement(), value.getTypeName(), value.toString()));

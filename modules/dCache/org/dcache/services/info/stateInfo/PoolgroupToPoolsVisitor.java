@@ -59,6 +59,7 @@ public class PoolgroupToPoolsVisitor implements StateVisitor {
     Set<String> _currentPoolgroupPools;
     StatePath _poolMembershipPath;
 
+    @Override
     public void visitCompositePreDescend( StatePath path, Map<String,String> metadata) {
         if( _log.isDebugEnabled())
             _log.debug( "Examining "+path);
@@ -83,13 +84,27 @@ public class PoolgroupToPoolsVisitor implements StateVisitor {
         }
     }
 
-    public void visitCompositePostDescend( StatePath path, Map<String,String> metadata) {}
-    public void visitCompositePreSkipDescend( StatePath path, Map<String,String> metadata) {}
-    public void visitCompositePostSkipDescend( StatePath path, Map<String,String> metadata) {}
-    public void visitString( StatePath path, StringStateValue value) {}
-    public void visitBoolean( StatePath path, BooleanStateValue value) {}
-    public void visitInteger( StatePath path, IntegerStateValue value) {}
-    public void visitFloatingPoint( StatePath path, FloatingPointStateValue value) {}
+    @Override
+    public void visitCompositePostDescend( StatePath path, Map<String,String> metadata) {
+    }
+    @Override
+    public void visitCompositePreSkipDescend( StatePath path, Map<String,String> metadata) {
+    }
+    @Override
+    public void visitCompositePostSkipDescend( StatePath path, Map<String,String> metadata) {
+    }
+    @Override
+    public void visitString( StatePath path, StringStateValue value) {
+    }
+    @Override
+    public void visitBoolean( StatePath path, BooleanStateValue value) {
+    }
+    @Override
+    public void visitInteger( StatePath path, IntegerStateValue value) {
+    }
+    @Override
+    public void visitFloatingPoint( StatePath path, FloatingPointStateValue value) {
+    }
 }
 
 

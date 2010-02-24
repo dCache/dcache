@@ -45,14 +45,27 @@ public class SkeletonListVisitor implements StateVisitor {
     /**
      * The super-Class should override one of the following four methods
      */
-    public void visitBoolean(StatePath path, BooleanStateValue value) {}
-    public void visitFloatingPoint(StatePath path, FloatingPointStateValue value) {}
-    public void visitInteger(StatePath path, IntegerStateValue value) {}
-    public void visitString(StatePath path, StringStateValue value) {}
+    @Override
+    public void visitBoolean(StatePath path, BooleanStateValue value) {
+    }
+    @Override
+    public void visitFloatingPoint(StatePath path, FloatingPointStateValue value) {
+    }
+    @Override
+    public void visitInteger(StatePath path, IntegerStateValue value) {
+    }
+    @Override
+    public void visitString(StatePath path, StringStateValue value) {
+    }
 
-    public void visitCompositePreSkipDescend(StatePath path, Map<String, String> metadata) {}
-    public void visitCompositePostSkipDescend(StatePath path, Map<String, String> metadata) {}
+    @Override
+    public void visitCompositePreSkipDescend(StatePath path, Map<String, String> metadata) {
+    }
+    @Override
+    public void visitCompositePostSkipDescend(StatePath path, Map<String, String> metadata) {
+    }
 
+    @Override
     public void visitCompositePreDescend(StatePath path, Map<String, String> metadata) {
         if( _pathToList.isParentOf( path)) {
             if( _log.isDebugEnabled())
@@ -62,6 +75,7 @@ public class SkeletonListVisitor implements StateVisitor {
         }
     }
 
+    @Override
     public void visitCompositePostDescend(StatePath path, Map<String, String> metadata) {
         if( _pathToList.isParentOf( path)) {
             if( _log.isDebugEnabled())
