@@ -18,18 +18,17 @@ public class FlatFileStore implements FileStore
 
     public FlatFileStore(File baseDir) throws FileNotFoundException
     {
-        if (!baseDir.exists()) {
-            throw new FileNotFoundException(baseDir + " does not exist.");
-        }
-
         if (!baseDir.isDirectory()) {
-            throw new FileNotFoundException(baseDir + " Not a directory.");
+            throw new FileNotFoundException("No such directory: " + baseDir);
         }
 
         _dataDir = new File(baseDir, "data");
-
-        if (!_dataDir.isDirectory()) {
-            throw new FileNotFoundException(_dataDir + " does not exist or not a directory.");
+        if (!_dataDir.exists()) {
+            if (!_dataDir.mkdir()) {
+                throw new FileNotFoundException("Failed to create directory: " + _dataDir);
+            }
+        } else if (!_dataDir.isDirectory()) {
+            throw new FileNotFoundException("No such directory: " + _dataDir);
         }
     }
 

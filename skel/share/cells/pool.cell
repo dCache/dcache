@@ -5,7 +5,6 @@ check -strong pool
 
 #
 onerror continue
-
   set context -c poolIoQueue ""
   set context -c checkRepository        true
   set context -c waitForRepositoryReady false
@@ -26,10 +25,34 @@ onerror continue
   set context -c xrootdMoverMaxFrameSize 2097152
 onerror shutdown
 
-#
-# NIO ftp mover
-#
-define context MoverMap endDefine
+define context PoolDefaults endDefine
+   set heartbeat 30
+   set sticky allowed
+   set report remove on
+   set breakeven 0.7
+   set gap 4294967296
+   set duplicate request none
+   set p2p separated
+
+   flush set max active 1000
+   flush set interval 60
+   flush set retry delay 60
+
+   rh set max active 0
+   st set max active 0
+   rh set timeout 14400
+   st set timeout 14400
+
+   mover set max active 100
+   p2p set max active 10
+   pp set port 0
+   pp set max active 10
+   jtm set timeout -queue=io -lastAccess=0 -total=0
+   jtm set timeout -queue=p2p -lastAccess=0 -total=0
+   csm set checksumtype adler32
+   csm set policy -frequently=off
+   csm set policy -onread=off -onwrite=on -onrestore=off -ontransfer=off -enforcecrc=on -getcrcfromhsm=off
+
    movermap define DCap-3  org.dcache.pool.movers.DCapProtocol_3_nio
    movermap define GFtp-1  org.dcache.pool.movers.GFtpProtocol_2_nio
    movermap define GFtp-2  org.dcache.pool.movers.GFtpProtocol_2_nio
@@ -44,7 +67,7 @@ endDefine
 # an option.
 ###############################################
 create org.dcache.cells.UniversalSpringCell ${0} \
-    "!MoverMap classpath:org/dcache/pool/classic/pool.xml \
+    "!PoolDefaults classpath:org/dcache/pool/classic/pool.xml \
     -export -cellClass=Pool -poolname=${0} -pooldir=${1} \
     -setupClass=pool -setupFile=${1}/setup \
     -poolIoQueue=${poolIoQueue} \

@@ -2,6 +2,7 @@ package org.dcache.pool.repository.meta.file;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.util.Collection;
 import java.util.Set;
 import java.util.HashSet;
@@ -35,12 +36,16 @@ public class FileMetaDataRepository
 
     public FileMetaDataRepository(FileStore fileStore,
                                   File baseDir)
-
+        throws FileNotFoundException
     {
     	_fileStore = fileStore;
     	_metadir = new File(baseDir, DIRECTORY_NAME);
         if (!_metadir.exists()) {
-            _metadir.mkdir();
+            if (!_metadir.mkdir()) {
+                throw new FileNotFoundException("Failed to create directory: " + _metadir);
+            }
+        } else if (!_metadir.isDirectory()) {
+            throw new FileNotFoundException("No such directory: " + _metadir);
         }
     }
 
