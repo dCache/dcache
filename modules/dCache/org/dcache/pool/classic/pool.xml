@@ -25,6 +25,7 @@
         flushMessageTarget=broadcast
         sweeper=org.dcache.pool.classic.SpaceSweeper2
         workerThreads=5
+        maxDiskSpace=Infinity
       </value>
     </property>
   </bean>
@@ -137,6 +138,7 @@
     <property name="spaceSweeperPolicy" ref="sweeper"/>
     <property name="volatile"
               value="#{ '${lfs}' == 'volatile' or '${lfs}' == 'transient' }"/>
+    <property name="maxDiskSpace" value="${maxDiskSpace}"/>
     <property name="metaDataStore">
       <bean class="org.dcache.pool.repository.ConsistentStore">
         <constructor-arg ref="csm"/>

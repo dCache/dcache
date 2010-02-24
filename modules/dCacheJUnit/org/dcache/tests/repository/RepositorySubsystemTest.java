@@ -216,7 +216,7 @@ public class RepositorySubsystemTest
          * created.
          */
         initRepository();
-        repository.init(0);
+        repository.init();
         createEntry(id1, info1, EntryState.PRECIOUS,
                     Arrays.asList(new StickyRecord("system", 0)));
         createEntry(id2, info2, EntryState.CACHED,
@@ -229,7 +229,7 @@ public class RepositorySubsystemTest
         /* Create repository.
          */
         initRepository();
-        repository.init(0);
+        repository.init();
 
         /* Remove scan notifications from queue.
          */
@@ -305,7 +305,7 @@ public class RepositorySubsystemTest
     public void testInitTwiceFails()
         throws IOException, RepositoryException
     {
-        repository.init(0);
+        repository.init();
     }
 
     @Test

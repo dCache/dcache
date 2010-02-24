@@ -33,6 +33,7 @@ import org.dcache.pool.FaultListener;
 import org.dcache.pool.FaultAction;
 import org.dcache.cells.CellInfoProvider;
 import org.dcache.cells.AbstractCellComponent;
+import org.dcache.cells.CellCommandListener;
 import org.dcache.util.CacheExceptionFactory;
 import static org.dcache.pool.repository.EntryState.*;
 
@@ -56,12 +57,14 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Date;
 
+import dmg.util.Args;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class CacheRepositoryV5
     extends AbstractCellComponent
-    implements Repository
+    implements Repository, CellCommandListener
 {
     /**
     * time in millisecs added to each sticky expiration task
@@ -131,6 +134,16 @@ public class CacheRepositoryV5
     private PnfsHandler _pnfs;
     private boolean _checkRepository = true;
     private boolean _volatile = false;
+
+    /**
+     * Pool size configured through the 'max disk space' command.
+     */
+    private long _runtimeMaxSize = Long.MAX_VALUE;
+
+    /**
+     * Pool size configured in the configuration files.
+     */
+    private long _staticMaxSize = Long.MAX_VALUE;
 
     public CacheRepositoryV5()
     {
@@ -223,6 +236,15 @@ public class CacheRepositoryV5
         _sweeper = sweeper;
     }
 
+    public synchronized void setMaxDiskSpace(String size)
+    {
+        _staticMaxSize = UnitInteger.parseUnitLong(size);
+
+        if (_initialised) {
+            updateAccountSize();
+        }
+    }
+
     /**
      * Loads the repository from the on disk state. Must be done
      * exactly once before any other operation can be performed.
@@ -231,7 +253,7 @@ public class CacheRepositoryV5
      * @throws IOException if an io error occurs
      * @throws RepositoryException in case of other internal errors
      */
-    public synchronized void init(int flags)
+    public synchronized void init()
         throws IOException, RepositoryException, IllegalStateException
     {
         assert _pnfs != null : "Pnfs handler must be set";
@@ -242,7 +264,6 @@ public class CacheRepositoryV5
             if (_initialised)
                 throw new IllegalStateException("Can only load repository once.");
             _initialised = true;
-
 
             _log.warn("Reading inventory from " + _store);
 
@@ -263,6 +284,7 @@ public class CacheRepositoryV5
 
                 /* Collect all entries.
                  */
+                _log.info("Checking meta data for " + ids.size() + " files");
                 for (PnfsId id: ids) {
                     MetaDataRecord entry = readMetaDataRecord(id);
                     if (entry == null)  {
@@ -282,50 +304,21 @@ public class CacheRepositoryV5
                     _allEntries.put(id, entry);
                 }
 
-                _log.info("Registering files with event listeners");
-
-
-                /* Detect overbooking.
+                /* Allocate space.
                  */
-                long total = _account.getTotal();
-                if (usedDataSpace > total) {
-                    String error =
-                        "Overbooked, " + usedDataSpace +
-                        " bytes of data exceeds inventory size of " +
-                        total + " bytes";
-                    if ((flags & ALLOW_SPACE_RECOVERY) == 0)
-                        throw new CacheException(206, error);
+                _log.info("Pool contains " + usedDataSpace + " bytes of data");
+                _account.setTotal(usedDataSpace);
+                _account.allocateNow(usedDataSpace);
 
-                    _log.error(error.toString());
-
-                    if (usedDataSpace - removableSpace > total) {
-                        throw new
-                            CacheException("Inventory overbooked and excess data is not removable. Cannot recover.");
-                    }
-
-                    _log.warn("Found " + removableSpace + " bytes of removable data. Proceeding by removing excess data.");
-                }
-
-                /* Allocate space and resolve overbooking in LRU order.
+                /* Register with event listeners in LRU order. The
+                 * sweeper relies on the LRU order.
                  */
+                _log.info("Registering files in sweeper");
                 List<MetaDataRecord> entries =
                     new ArrayList<MetaDataRecord>(_allEntries.values());
-                Collections.sort(entries, new MetaDataLRUOrder(_sweeper));
+                Collections.sort(entries, new MetaDataLRUOrder());
                 for (MetaDataRecord entry: entries) {
-                    if (!_account.allocateNow(entry.getSize())) {
-                        throw new RuntimeException("File registration failed: Pool is out of space.");
-                    }
-
                     stateChanged(entry, NEW, entry.getState());
-
-                    if (_sweeper.isRemovable(entry) && usedDataSpace > total) {
-                        long size = entry.getSize();
-                        _log.error("Pool overbooked: " + entry.getPnfsId()
-                                   + " removed");
-                        usedDataSpace -= size;
-                        removableSpace -= size;
-                        setState(entry, REMOVED);
-                    }
                 }
 
                 if (usedDataSpace != _account.getUsed()) {
@@ -335,9 +328,16 @@ public class CacheRepositoryV5
                     throw new RuntimeException(String.format("Bug detected: Removable space is not what we expected (%d vs %d)", removableSpace, _account.getRemovable()));
                 }
 
-                for (MetaDataRecord entry: _allEntries.values())
-                    if (entry.isSticky())
+                /* Register sweeper timeouts.
+                 */
+                _log.info("Registering sticky bits");
+                for (MetaDataRecord entry: _allEntries.values()) {
+                    if (entry.isSticky()) {
                         scheduleExpirationTask(entry);
+                    }
+                }
+
+                updateAccountSize();
 
                 _log.info(String.format("Inventory contains %d files; total size is %d; used space is %d; free space is %d.",
                                         _allEntries.size(), _account.getTotal(),
@@ -718,11 +718,13 @@ public class CacheRepositoryV5
         pw.println("Check Repository  : " + getPeriodicChecks());
 
         SpaceRecord space = getSpaceRecord();
-        pw.println("Diskspace usage   : ");
         long total = space.getTotalSpace();
         long used = total - space.getFreeSpace();
         long precious = space.getPreciousSpace();
+        long fsFree = _store.getFreeSpace();
+        long fsTotal = _store.getTotalSpace();
 
+        pw.println("Diskspace usage   : ");
         pw.println("    Total    : " + UnitInteger.toUnitString(total));
         pw.println("    Used     : " + used + "    ["
                    + (((float) used) / ((float) total)) + "]");
@@ -734,11 +736,14 @@ public class CacheRepositoryV5
                    + "    ["
                    + (((float) space.getRemovableSpace()) / ((float) total))
                    + "]");
-    }
-
-    public synchronized void printSetup(PrintWriter pw)
-    {
-        pw.println("set max diskspace " + _account.getTotal());
+        pw.println("File system");
+        pw.println("    Size: " + fsTotal);
+        pw.println("    Free: " + fsFree +
+                   "    [" + (((float) fsFree) / fsTotal) + "]");
+        pw.println("Limits for maximum disk space");
+        pw.println("    File system          : " + (fsFree + used));
+        pw.println("    Statically configured: " + UnitInteger.toUnitString(_staticMaxSize));
+        pw.println("    Runtime configured   : " + UnitInteger.toUnitString(_runtimeMaxSize));
     }
 
     public void shutdown()
@@ -1060,5 +1065,98 @@ public class CacheRepositoryV5
     public String getPoolName()
     {
          return getCellName();
+    }
+
+    public final static String hh_set_max_diskspace =
+        "<bytes>[<unit>]|Infinity # unit = k|m|g|t";
+    public final static String fh_set_max_diskspace =
+        "Sets the maximum disk space to be used by this pool. Overrides\n" +
+        "whatever maximum was defined in the configuration file. The value\n" +
+        "will be saved to the pool setup file if the save command is\n" +
+        "executed. If inf is specified, then the pool will return to the\n" +
+        "size configured in the configuration file, or no maximum if such a\n" +
+        "size is not defined.";
+    public String ac_set_max_diskspace_$_1(Args args)
+    {
+        _runtimeMaxSize = UnitInteger.parseUnitLong(args.argv(0));
+        if (_initialised) {
+            updateAccountSize();
+        }
+        return "";
+    }
+
+    public void printSetup(PrintWriter pw)
+    {
+        if (_runtimeMaxSize < Long.MAX_VALUE) {
+            pw.println("set max diskspace " + _runtimeMaxSize);
+        }
+    }
+
+    private long getConfiguredMaxSize()
+    {
+        if (_runtimeMaxSize < Long.MAX_VALUE) {
+            return _runtimeMaxSize;
+        } else {
+            return _staticMaxSize;
+        }
+    }
+
+    private long getFileSystemMaxSize()
+    {
+        return _store.getFreeSpace() + _account.getUsed();
+    }
+
+    private boolean isTotalSpaceReported()
+    {
+        return _store.getTotalSpace() > 0;
+    }
+
+    /**
+     * Updates the total size of the Account based on the configured
+     * limits and the available disk space.
+     *
+     * Notice that if the configured limits are larger than the file
+     * system or if there are no configured limits, then the size is
+     * going to be an overapproximation based on the current amount of
+     * used space and the amount of free space on disk. This is so
+     * because the Account object does not accurately track space that
+     * has been reserved but not yet written to disk. In this case the
+     * periodic health check will adjust the pool size when a more
+     * accurate limit can be determined.
+     */
+    private void updateAccountSize()
+    {
+        if (!_initialised) {
+            throw new IllegalStateException("Pool is not yet initialized");
+        }
+
+        synchronized (_account) {
+            long configuredMaxSize = getConfiguredMaxSize();
+            long fileSystemMaxSize = getFileSystemMaxSize();
+            boolean hasConfiguredMaxSize = (configuredMaxSize < Long.MAX_VALUE);
+            long used = _account.getUsed();
+
+            if (!isTotalSpaceReported()) {
+                _log.warn("Java reported the file system size as 0. This typically happens on Solaris with a 32-bit JVM. Please use a 64-bit JVM.");
+                if (!hasConfiguredMaxSize) {
+                    throw new IllegalStateException("Failed to determine file system size. A pool size must be configured.");
+                }
+            }
+
+            if (hasConfiguredMaxSize && fileSystemMaxSize < configuredMaxSize) {
+                _log.warn(String.format("Configured pool size (%d) is larger than what is available on disk (%d)", configuredMaxSize, fileSystemMaxSize));
+            }
+
+            if (configuredMaxSize < used) {
+                _log.warn(String.format("Configured pool size (%d) is smaller than what is used already (%d)", configuredMaxSize, used));
+            }
+
+            long newSize =
+                Math.max(used, Math.min(configuredMaxSize, fileSystemMaxSize));
+            if (newSize != _account.getTotal()) {
+                _log.info("Adjusting pool size to " + newSize);
+                _account.setTotal(newSize);
+            }
+        }
     }
 }

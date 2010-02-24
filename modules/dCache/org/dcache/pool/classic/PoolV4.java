@@ -120,7 +120,6 @@ public class PoolV4
      * used by PoolManager to recognize pool restarts
      */
     private final long _serialId = System.currentTimeMillis();
-    private int _recoveryFlags = 0;
     private final PoolV2Mode _poolMode = new PoolV2Mode();
     private boolean _reportOnRemovals = false;
     private boolean _suppressHsmLoad = false;
@@ -174,12 +173,6 @@ public class PoolV4
     private boolean _running = false;
     private double _breakEven = 250.0;
 
-    //
-    // arguments :
-    // [-recover-space[=no]] : default : no
-    // [-recover-control[=no]] : default : no
-    // [-recover-anyway[=no]] : default : no
-    //
     public PoolV4(String poolName, String args)
     {
         _poolName = poolName;
@@ -193,23 +186,6 @@ public class PoolV4
         // the setup is done.
         //
         _pingThread = new PoolManagerPingThread();
-
-        String recover = _args.getOpt("recover-control");
-        if ((recover != null) && (!recover.equals("no"))) {
-            _recoveryFlags |= Repository.ALLOW_CONTROL_RECOVERY;
-            _log.info("Enabled : recover-control");
-        }
-        recover = _args.getOpt("recover-space");
-        if ((recover != null) && (!recover.equals("no"))) {
-            _recoveryFlags |= Repository.ALLOW_SPACE_RECOVERY;
-            _log.info("Enabled : recover-space");
-        }
-
-        recover = _args.getOpt("recover-anyway");
-        if ((recover != null) && (!recover.equals("no"))) {
-            _recoveryFlags |= Repository.ALLOW_RECOVER_ANYWAY;
-            _log.info("Enabled : recover-anyway");
-        }
 
         //
         // get additional tags
@@ -426,7 +402,7 @@ public class PoolV4
 
         _log.info("Running repository");
         try {
-            _repository.init(_recoveryFlags);
+            _repository.init();
             enablePool();
             _flushingThread.start();
         } catch (Throwable e) {
@@ -812,13 +788,6 @@ public class PoolV4
                    + _version + ")");
         pw.println("Gap               : " + _gap);
         pw.println("Report remove     : " + (_reportOnRemovals ? "on" : "off"));
-        pw.println("Recovery          : "
-                   + ((_recoveryFlags & Repository.ALLOW_CONTROL_RECOVERY) > 0 ? "CONTROL "
-                      : "")
-                   + ((_recoveryFlags & Repository.ALLOW_SPACE_RECOVERY) > 0 ? "SPACE "
-                      : "")
-                   + ((_recoveryFlags & Repository.ALLOW_RECOVER_ANYWAY) > 0 ? "ANYWAY "
-                      : ""));
         pw.println("Pool Mode         : " + _poolMode);
         if (_poolMode.isDisabled()) {
             pw.println("Detail            : [" + _poolStatusCode + "] "
@@ -2373,15 +2342,6 @@ public class PoolV4
     public String ac_set_sticky_$_0_1(Args args)
     {
         return "The command is deprecated and has no effect";
-    }
-
-    public String hh_set_max_diskspace = "<space>[<unit>] # unit = k|m|g";
-    public String ac_set_max_diskspace_$_1(Args args)
-    {
-        long maxDisk = UnitInteger.parseUnitLong(args.argv(0));
-        _account.setTotal(maxDisk);
-        _log.info("set maximum diskspace to " + UnitInteger.toUnitString(maxDisk));
-        return "";
     }
 
     public String hh_set_cleaning_interval = "<interval/sec>";

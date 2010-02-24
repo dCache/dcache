@@ -1,6 +1,13 @@
 package diskCacheV111.util ;
 
 public class UnitInteger {
+
+    private final static String INFINITY = "Infinity";
+    private final static long TEBI = (1 << 40);
+    private final static long GIBI = (1 << 30);
+    private final static long MEBI = (1 << 20);
+    private final static long KIBI = (1 << 10);
+
     private long _value = 0 ;
     public UnitInteger( long value ){
        _value = value ;
@@ -10,25 +17,35 @@ public class UnitInteger {
     }
     public static long parseUnitLong( String stringRep ){
        if( stringRep.length() < 1 )
-           throw new 
+           throw new
            IllegalArgumentException("Empty String") ;
+
+       if (stringRep.equals(INFINITY)) {
+           return Long.MAX_VALUE;
+       }
+
        String num = null ;
        long   multi = 0 ;
        switch( stringRep.charAt(stringRep.length()-1) ){
 
           case 'k' :
           case 'K' :
-             multi = 1024 ;
+             multi = KIBI;
              num   = stringRep.substring(0,stringRep.length()-1) ;
              break ;
           case 'm' :
           case 'M' :
-             multi = 1024 * 1024 ;
+             multi = MEBI;
              num   = stringRep.substring(0,stringRep.length()-1) ;
              break ;
           case 'g' :
           case 'G' :
-             multi = 1024 * 1024 * 1024 ;
+             multi = GIBI;
+             num   = stringRep.substring(0,stringRep.length()-1) ;
+             break ;
+          case 't' :
+          case 'T' :
+             multi = TEBI;
              num   = stringRep.substring(0,stringRep.length()-1) ;
              break ;
           default :
@@ -38,21 +55,22 @@ public class UnitInteger {
        return  Long.parseLong(num) * multi ;
     }
     public String toString(){ return ""+_value ; }
-    public String toUnitString(){ 
+    public String toUnitString(){
        return toUnitString( _value ) ;
     }
-    public static String toUnitString( long value ){ 
-       long tmp ;
-       long g = 1024 * 1024 * 1024 ;
-       long m = 1024 * 1024 ;
-       long k = 1024 ;
-       if( ( ( tmp = ( value / g ) ) > 0 ) && ( ( value % g ) == 0 ) )
-          return ""+tmp+"G" ;
-       if( ( ( tmp = ( value / m ) ) > 0 ) && ( ( value % m ) == 0 ) )
-          return ""+tmp+"M" ;
-       if( ( ( tmp = ( value / k ) ) > 0 ) && ( ( value % k ) == 0 ) )
-          return ""+tmp+"K" ;
-       return ""+value ;
+    public static String toUnitString( long value ){
+       long tmp;
+       if (value == Long.MAX_VALUE)
+           return INFINITY;
+       if( ( ( tmp = ( value / TEBI ) ) > 0 ) && ( ( value % TEBI ) == 0 ) )
+           return Long.toString(tmp) + "T";
+       if( ( ( tmp = ( value / GIBI ) ) > 0 ) && ( ( value % GIBI ) == 0 ) )
+           return Long.toString(tmp) + "G";
+       if( ( ( tmp = ( value / MEBI ) ) > 0 ) && ( ( value % MEBI ) == 0 ) )
+           return Long.toString(tmp) + "M";
+       if( ( ( tmp = ( value / KIBI ) ) > 0 ) && ( ( value % KIBI ) == 0 ) )
+           return Long.toString(tmp) + "K";
+       return Long.toString(value);
     }
     public long longValue(){ return _value ; }
     public static void main( String [] args ){

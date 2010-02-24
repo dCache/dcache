@@ -17,11 +17,6 @@ import java.util.List;
 public interface Repository
     extends Iterable<PnfsId>
 {
-    public static final int ALLOW_CONTROL_RECOVERY = 0x1;
-    public static final int ALLOW_INFO_RECOVERY = 0x2;
-    public static final int ALLOW_SPACE_RECOVERY = 0x4;
-    public static final int ALLOW_RECOVER_ANYWAY = 0x8;
-
     /**
      * Loads the repository from the on disk state. Must be done
      * exactly once before any other operation can be performed.
@@ -30,7 +25,7 @@ public interface Repository
      * @throws IOException if an io error occurs
      * @throws RepositoryException in case of other internal errors
      */
-    void init(int flags)
+    void init()
         throws IOException, RepositoryException, IllegalStateException;
 
     /**
