@@ -238,8 +238,15 @@ public class CacheRepositoryV5
 
     public synchronized void setMaxDiskSpace(String size)
     {
-        _staticMaxSize = UnitInteger.parseUnitLong(size);
+        setMaxDiskSpace(UnitInteger.parseUnitLong(size));
+    }
 
+    public synchronized void setMaxDiskSpace(long size)
+    {
+        if (size < 0) {
+            throw new IllegalArgumentException("Negative value is not allowed");
+        }
+        _staticMaxSize = size;
         if (_initialised) {
             updateAccountSize();
         }
@@ -1078,7 +1085,11 @@ public class CacheRepositoryV5
         "size is not defined.";
     public String ac_set_max_diskspace_$_1(Args args)
     {
-        _runtimeMaxSize = UnitInteger.parseUnitLong(args.argv(0));
+        long size = UnitInteger.parseUnitLong(args.argv(0));
+        if (size < 0) {
+            throw new IllegalArgumentException("Negative value is not allowed");
+        }
+        _runtimeMaxSize = size;
         if (_initialised) {
             updateAccountSize();
         }

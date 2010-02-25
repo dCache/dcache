@@ -161,7 +161,6 @@ public class RepositorySubsystemTest
         sweeper = new SpaceSweeper2();
         repository = new CacheRepositoryV5();
 
-        account.setTotal(5120);
         allocator.setAccount(account);
         repository.setCellEndpoint(cell);
         repository.setAllocator(allocator);
@@ -172,6 +171,7 @@ public class RepositorySubsystemTest
         repository.setSynchronousNotification(true);
         repository.addListener(this);
         repository.setSpaceSweeperPolicy(sweeper);
+        repository.setMaxDiskSpace(5120);
 
         sweeper.setAccount(account);
         sweeper.setRepository(repository);
@@ -410,20 +410,14 @@ public class RepositorySubsystemTest
     @Test
     public void testSetSize()
     {
-        account.setTotal(3072);
+        repository.setMaxDiskSpace(3072);
         assertSpaceRecord(3072, 0, 1024, 1024);
-    }
-
-    @Test(expected=IllegalArgumentException.class)
-    public void testSetSizeToSmall()
-    {
-        account.setTotal(3071);
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void testSetSizeNegative()
     {
-        account.setTotal(-1);
+        repository.setMaxDiskSpace(-1);
     }
 
     @Test
@@ -660,7 +654,7 @@ public class RepositorySubsystemTest
     public void testCreateEntryOutOfSpace()
         throws Throwable
     {
-        account.setTotal(3072);
+        repository.setMaxDiskSpace(3072);
         createEntry4(0, false, false, FROM_CLIENT, PRECIOUS);
         assertCanOpen(id4, size4, PRECIOUS);
         assertSpaceRecord(3072, 0, 2048, 0);
