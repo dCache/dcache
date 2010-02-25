@@ -1,0 +1,98 @@
+#
+#   The PnfsManager
+#
+
+exec file:${ourHomeDir}/share/cells/import-arguments.fragment \
+    ${0} ${1} ${2} ${3} ${4} ${5} ${6} ${7} ${8} ${9}
+
+# The following cryptic lines will do this logic:
+#
+#  if  cacheInfo=companion
+#            ==>  cacheInfoProvider=diskCacheV111.namespace.provider.SQLCacheLocationProviderFactory
+#
+#  else if    cacheInfo=<other> or missing
+#            ==>  cacheInfoProvider=diskCacheV111.namespace.provider.BasicNameSpaceProviderFactory
+#  -p.
+#
+onerror continue
+set env cacheInfoProvider diskCacheV111.namespace.provider.BasicNameSpaceProviderFactory
+define context setcontext.exe endDefine
+  set env cacheInfoProvider diskCacheV111.namespace.provider.SQLCacheLocationProviderFactory
+  set context -c pnfsNumberOfLocationThreads 0
+  set env locationThreads ${pnfsNumberOfLocationThreads}
+endDefine
+eval ${cacheInfo} companion ==
+exec context setcontext.exe -ifok=rc
+onerror shutdown
+#
+# If companionDatabaseHost and defaultPnfsServer are not set in dCacheSetup, use localhost, for pnfs use /pnfs/fs:
+#
+onerror continue
+set context -c companionDatabaseHost localhost
+set context -c defaultPnfsServer localhost
+set context -c pnfs /pnfs/fs
+set context -c pnfsInfoExtractor diskCacheV111.util.OsmInfoExtractor
+set context -c pnfsNumberOfThreads 4
+set context -c pnfsNumberOfThreadGroups 1
+set context -c pnfsNumberOfListThreads 2
+set context -c namespaceProvider diskCacheV111.namespace.provider.BasicNameSpaceProviderFactory
+set context -c pnfsDbUser        srmdcache
+set context -c pnfsDbPassword    srmdcache
+set context -c pnfsPasswordFile  ""
+set context -c pnfsFolding       false
+
+set env -c locationThreads 0
+
+#
+# defaults for Access Latency and Retention Policy
+#
+
+set context -c DefaultAccessLatency ""
+set context -c DefaultRetentionPolicy ""
+
+#
+# access to Deletion registration
+#
+set context -c  pnfsDeleteRegistration pnfs:
+set context -c  pnfsDeleteRegistrationDbUser ${pnfsDbUser}
+set context -c  pnfsDeleteRegistrationDbPass ${pnfsDbPassword}
+
+onerror shutdown
+
+# Load permission check related settings
+exec -shell file:${ourHomeDir}/share/cells/permission.fragment
+
+#
+create diskCacheV111.namespace.PnfsManagerV3 PnfsManager \
+       "${pnfsInfoExtractor} \
+        -enableLargeFileSimulation \
+        -storeFilesize  \
+        -cmRelay=broadcast \
+        -pnfsDeleteRelay=SrmSpaceManager \
+        -threads=${pnfsNumberOfThreads} \
+        -threadGroups=${pnfsNumberOfThreadGroups} \
+        -listThreads=${pnfsNumberOfListThreads} \
+        -default=${defaultPnfsServer} \
+        -pnfs=${pnfs} \
+        -aclEnabled=${aclEnabled} \
+        -aclTable=${aclTable} \
+        -aclConnDriver=${aclConnDriver} \
+        -aclConnUrl=${aclConnUrl} \
+        -aclConnUser=${aclConnUser} \
+        -aclConnPswd=${aclConnPswd} \
+        -DefaultAccessLatency=${DefaultAccessLatency} \
+        -DefaultRetentionPolicy=${DefaultRetentionPolicy} \
+        -namespace-provider=${namespaceProvider} \
+        -cachelocation-provider=${cacheInfoProvider} \
+        -cachelocation-provider-dbURL=jdbc:postgresql://${companionDatabaseHost}/companion \
+        -cachelocation-provider-jdbcDrv=org.postgresql.Driver \
+        -cachelocation-provider-dbUser=${pnfsDbUser} \
+        -cachelocation-provider-dbPass=${pnfsDbPassword} \
+        -cachelocation-provider-pgPass=${pnfsPasswordFile}  \
+        -cachelocation-threads=${locationThreads} \
+        -folding=${pnfsFolding} \
+        -delete-registration=${pnfsDeleteRegistration} \
+        -delete-registration-jdbcDrv=org.postgresql.Driver \
+        -delete-registration-dbUser=${pnfsDeleteRegistrationDbUser} \
+        -delete-registration-dbPass=${pnfsDeleteRegistrationDbPass} \
+       "

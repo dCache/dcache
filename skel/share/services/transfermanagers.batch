@@ -1,0 +1,131 @@
+#
+# SRM and related cells
+#
+
+exec file:${ourHomeDir}/share/cells/import-arguments.fragment \
+    ${0} ${1} ${2} ${3} ${4} ${5} ${6} ${7} ${8} ${9}
+
+#
+#   Make sure we got what we need.
+#
+check -strong srmPort
+
+#
+#
+#   t r a n s f e r    m a n a g e r     c e l l s
+#
+#
+#   Default values (if not specified in dCacheSetup)
+#
+onerror continue
+
+set context -c srmDbHost          localhost
+set context -c srmDatabaseHost    ${srmDbHost}
+set context -c srmDbName          dcache
+set context -c srmDbUser          srmdcache
+set context -c srmDbPassword      srmdcache
+set context -c srmPasswordFile    ""
+
+set context -c srmPoolTimeout          300
+set context -c srmPnfsTimeout          300
+set context -c srmMoverTimeout        7200
+set context -c remoteCopyMaxTransfers  150
+set context -c remoteHttpMaxTransfers   30
+set context -c srmCopyReqThreadPoolSize                250
+set context -c remoteGsiftpMaxTransfers  ${srmCopyReqThreadPoolSize}
+set context -c remoteGsiftpIoQueue       ""
+
+set context -c srmDbLogEnabled   false
+
+#login broker timeout in millis
+set context -c srmLoginBrokerUpdatePeriod 3000
+
+#pool manager timeout in seconds
+set context -c srmPoolManagerTimeout 300
+
+#
+#  ----  Usage of Srm Space Manager
+#
+#   If srmSpaceManagerEnabled is on we need to use SrmSpaceManager
+#   as both poolManager and poolProxy
+#
+onerror continue
+set context -c srmSpaceManagerEnabled no
+
+
+define env srmSpaceManagerOn.exe endExe
+  set env -c remoteTransferManagerPoolProxy        "SrmSpaceManager"
+  set env -c remoteTransferManagerPoolManager      "SrmSpaceManager"
+  set context -c srmImplicitSpaceManagerEnabled true
+  set context -c srmSpaceReservationStrict true
+endExe
+
+define env srmSpaceManagerOff.exe endExe
+  srmSpaceReservation=false
+  srmSpaceReservationStrict=false
+endExe
+
+eval ${srmSpaceManagerEnabled} yes ==
+set env srmSpaceManagerIsOn ${rc}
+exec env srmSpaceManagerOn.exe -ifok=srmSpaceManagerIsOn
+
+eval ${srmSpaceManagerEnabled} yes !=
+set env srmSpaceManagerIsOff ${rc}
+exec env srmSpaceManagerOff.exe -ifok=srmSpaceManagerIsOff
+
+set context -c remoteTransferManagerPoolProxy                "PoolManager"
+set context -c remoteTransferManagerPoolManager              "PoolManager"
+
+#
+#
+onerror shutdown
+#
+#
+
+
+#
+# RemoteHttpTransferManager
+#
+#
+create diskCacheV111.doors.RemoteHttpTransferManager RemoteHttpTransferManager \
+        "default \
+        -export \
+        -pool_manager_timeout=${srmPoolManagerTimeout} \
+        -pool_timeout=${srmPoolTimeout} \
+        -pnfs_timeout=${srmPnfsTimeout} \
+        -mover_timeout=${srmMoverTimeout} \
+        -max_transfers=${remoteHttpMaxTransfers} \
+"
+#
+# RemoteGsiftpTransferManager
+#
+create diskCacheV111.services.GsiftpTransferManager RemoteGsiftpTransferManager \
+        "default -export \
+        -pool_manager_timeout=${srmPoolManagerTimeout} \
+        -pool_timeout=${srmPoolTimeout} \
+        -pnfs_timeout=${srmPnfsTimeout} \
+        -mover_timeout=${srmMoverTimeout} \
+        -max_transfers=${remoteGsiftpMaxTransfers} \
+        -io-queue=${remoteGsiftpIoQueue} \
+        -jdbcUrl=jdbc:postgresql://${srmDatabaseHost}/${srmDbName} \
+        -jdbcDriver=org.postgresql.Driver  \
+        -dbUser=${srmDbUser} \
+        -dbPass=${srmDbPassword} \
+        -pgPass=${srmPasswordFile}   \
+        -doDbLog=${srmDbLogEnabled} \
+        -poolManager=${remoteTransferManagerPoolManager} \
+        -poolProxy=${remoteTransferManagerPoolProxy} \
+"
+#
+# Copy Manager Cell
+#
+create diskCacheV111.doors.CopyManager CopyManager \
+       "default -export \
+        -pool_manager_timeout=${srmPoolManagerTimeout} \
+        -pool_timeout=${srmPoolTimeout} \
+        -pnfs_timeout=${srmPnfsTimeout} \
+        -mover_timeout=${srmMoverTimeout} \
+        -max_transfers=${remoteCopyMaxTransfers} \
+        -poolManager=${remoteTransferManagerPoolManager} \
+        -poolProxy=${remoteTransferManagerPoolProxy} \
+"

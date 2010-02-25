@@ -1,0 +1,8 @@
+exec file:${ourHomeDir}/share/cells/import-arguments.fragment \
+    ${0} ${1} ${2} ${3} ${4} ${5} ${6} ${7} ${8} ${9}
+
+##
+##  ---- Info Cell: broadcasting to "civilisation"
+##
+
+create  org.dcache.services.info.InfoProvider info "-export"

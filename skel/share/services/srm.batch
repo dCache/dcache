@@ -1,0 +1,358 @@
+#
+# SRM cell embedded in Jetty
+#
+exec file:${ourHomeDir}/share/cells/import-arguments.fragment \
+    ${1} ${2} ${3} ${4} ${5} ${6} ${7} ${8} ${9} ${10}
+
+#
+#   Make sure we got what we need.
+#
+check -strong srmPort
+
+#
+#   Default values (if not specified in dCacheSetup)
+#
+onerror continue
+
+set context -c srmHost
+set context -c localSrmHosts
+set context -c srmVersion         version1
+set context -c srmDbHost          localhost
+set context -c srmDatabaseHost    ${srmDbHost}
+set context -c srmDbName          dcache
+set context -c srmDbUser          srmdcache
+set context -c srmDbPassword      srmdcache
+set context -c srmPasswordFile    ""
+
+set context -c useGPlazmaAuthorizationCell      true
+set context -c delegateToGPlazma    false
+set context -c useGPlazmaAuthorizationModule    false
+set context -c gplazmaPolicy      ${ourHomeDir}/etc/dcachesrm-gplazma.policy
+set context -c srmAuthzCacheLifetime   180
+
+set context -c parallelStreams      10
+
+set context -c srmTimeout           3600
+set context -c srmVacuum            true
+set context -c srmVacuumPeriod      21600
+set context -c srmBufferSize        1048576
+set context -c srmTcpBufferSize     1048576
+set context -c srmDebug             true
+
+set context -c srmJettyConnectorAcceptors 1
+set context -c srmJettyConnectorMaxIdleTime 60000
+set context -c srmJettyConnectorLowResourceMaxIdleTime 20000
+set context -c srmJettyConnectorBackLog 1024
+set context -c srmJettyThreadsMax 500
+set context -c srmJettyThreadsMin 10
+set context -c srmJettyThreadsMaxIdleTime 30000
+set context -c srmJettyThreadsMaxQueued 500
+
+set context -c srmGetReqThreadQueueSize             10000
+set context -c srmGetReqThreadPoolSize                250
+set context -c srmGetReqMaxWaitingRequests           1000
+set context -c srmGetReqReadyQueueSize              10000
+set context -c srmGetReqMaxReadyRequests             2000
+set context -c srmGetReqMaxNumberOfRetries             10
+set context -c srmGetReqRetryTimeout                60000
+set context -c srmGetReqMaxNumOfRunningBySameOwner    100
+
+set context -c srmBringOnlineReqThreadQueueSize             ${srmGetReqThreadQueueSize}
+set context -c srmBringOnlineReqThreadPoolSize              ${srmGetReqThreadPoolSize}
+set context -c srmBringOnlineReqMaxWaitingRequests          ${srmGetReqMaxWaitingRequests}
+set context -c srmBringOnlineReqReadyQueueSize              ${srmGetReqReadyQueueSize}
+set context -c srmBringOnlineReqMaxReadyRequests            ${srmGetReqMaxReadyRequests}
+set context -c srmBringOnlineReqMaxNumberOfRetries          ${srmGetReqMaxNumberOfRetries}
+set context -c srmBringOnlineReqRetryTimeout                ${srmGetReqRetryTimeout}
+set context -c srmBringOnlineReqMaxNumOfRunningBySameOwner  ${srmGetReqMaxNumOfRunningBySameOwner}
+
+set context -c srmPutReqThreadQueueSize             10000
+set context -c srmPutReqThreadPoolSize                250
+set context -c srmPutReqMaxWaitingRequests           1000
+set context -c srmPutReqReadyQueueSize              10000
+set context -c srmPutReqMaxReadyRequests             1000
+set context -c srmPutReqMaxNumberOfRetries             10
+set context -c srmPutReqRetryTimeout                60000
+set context -c srmPutReqMaxNumOfRunningBySameOwner    100
+
+set context -c srmCopyReqThreadQueueSize             10000
+set context -c srmCopyReqThreadPoolSize                250
+set context -c srmCopyReqMaxWaitingRequests           1000
+set context -c srmCopyReqMaxNumberOfRetries             10
+set context -c srmCopyReqRetryTimeout                60000
+set context -c srmCopyReqMaxNumOfRunningBySameOwner    100
+
+#
+# switches controlling srmls behavior
+# for explanation consult dCacheSetup file
+#
+set context -c srmAsynchronousLs                      false
+set context -c srmLsMaxNumberOfEntries                1000
+set context -c srmLsMaxNumberOfLevels                 100
+set context -c srmLsRequestThreadQueueSize            1000
+set context -c srmLsRequestThreadPoolSize             30
+set context -c srmLsRequestMaxWaitingRequests         1000
+set context -c srmLsRequestReadyQueueSize             1000
+set context -c srmLsRequestMaxReadyRequests           60
+set context -c srmLsRequestMaxNumberOfRetries         10
+set context -c srmLsRequestRetryTimeout               60000
+set context -c srmLsRequestMaxNumberOfRunningBySameOwner 100
+set context -c srmLsRequestLifetime                   3600000
+
+set context -c srmGetLifeTime      14400000
+set context -c srmBringOnlineLifeTime      ${srmGetLifeTime}
+set context -c srmPutLifeTime      14400000
+set context -c srmCopyLifeTime     14400000
+
+set context -c pnfsSrmPath                      /
+set context -c xrootdRootPath                   /
+set context -c webdavRootPath                   /
+set context -c httpRootPath                     ${webdavRootPath}
+
+set context -c srmPoolTimeout          300
+set context -c srmPnfsTimeout          300
+set context -c srmMoverTimeout        7200
+set context -c remoteCopyMaxTransfers  150
+set context -c remoteHttpMaxTransfers   30
+set context -c remoteGsiftpMaxTransfers  ${srmCopyReqThreadPoolSize}
+set context -c remoteGsiftpIoQueue       ""
+
+set context -c srmDbLogEnabled   false
+
+set context -c RecursiveDirectoryCreation  true
+set context -c AdvisoryDelete              true
+
+set context -c kpwdFile          ${ourHomeDir}/etc/dcache.kpwd
+
+# to enable terapath plugin uncomment:
+#set context -c qosPluginClass   org.dcache.srm.qos.terapaths.TerapathsPlugin
+#set context -c qosConfigFile    ${ourHomeDir}/config/terapaths.properties
+# to enable lambda station plugin, uncomment:
+#set context -c qosPluginClass   org.dcache.srm.qos.terapaths.LambdaStation
+#set context -c qosConfigFile    ${ourHomeDir}/config/lambdastation.properties
+
+
+set context -c overwriteEnabled false
+set context -c srmOverwriteByDefault false
+
+# variable that controls number of simultaneous rm requests
+# sent by srmrm to PnfsManager
+set context -c srmSizeOfSingleRemoveBatch 100
+
+# this is the directory in which the delegated user credentials will be stored
+# as files. We recommend set permissions to 700 on this dir
+set context -c srmUserCredentialsDirectory  ${ourHomeDir}/credentials
+
+set context -c srmPnfsManager PnfsManager
+set context -c srmPoolManager PoolManager
+
+#login broker timeout in millis
+set context -c srmLoginBrokerUpdatePeriod 3000
+
+#pool manager timeout in seconds
+set context -c srmPoolManagerTimeout 300
+
+#number of doors in the random selection
+#srm will order doors according to their load
+#and select sertain number of the least loaded
+#and then randomly choose which one to use
+set context -c srmNumberOfDoorsInRandomSelection 5
+
+#srm will hold srm requests and their history in database
+# for srmNumberOfDaysInDatabaseHistory days
+#after that they will be removed
+set context -c srmNumberOfDaysInDatabaseHistory 10
+
+# how frequently to remove old requests from the database
+set context -c srmOldRequestRemovalPeriodSeconds 60
+
+# srmJdbcMonitoringLogEnabled is set to true srm will store sufficient
+# information about srm requests and their execution history in database
+# for monitoring interface to work
+# if it is set to false, only the absiolutely necessary information will be stored
+set context -c srmJdbcMonitoringLogEnabled false
+
+#jdbc updates are now queued and their execution is
+#decoupled from the execution of the srm requests
+# the srmJdbcExecutionThreadNum controls the number of the threads
+#that will be dedicated to execution of these updates
+# and the srmMaxNumberOfJdbcTasksInQueue controls the maximum
+# length of the queue
+set context -c srmJdbcExecutionThreadNum 5
+set context -c srmMaxNumberOfJdbcTasksInQueue 1000
+
+
+# if the srm is restarted and there are pending requests
+# their state will change to Failed or Done
+# if srmCleanPendingRequestsOnRestart is true
+set context -c srmCleanPendingRequestsOnRestart false
+
+# perform the lookup of the client hostname on basis of client ip
+# the result is used in pool pool selection
+# if srmClientDNSLookup is set to false
+# client ip is used
+set context -c srmClientDNSLookup false
+
+
+#
+#  ----  Usage of Srm Space Manager
+#
+#   If srmSpaceManagerEnabled is on we need to use SrmSpaceManager
+#   as both poolManager and poolProxy
+#
+onerror continue
+set context -c srmSpaceManagerEnabled no
+
+
+define env srmSpaceManagerOn.exe endExe
+  set context -c srmImplicitSpaceManagerEnabled true
+  set context -c srmSpaceReservationStrict true
+endExe
+
+define env srmSpaceManagerOff.exe endExe
+  srmSpaceReservation=false
+  srmSpaceReservationStrict=false
+endExe
+
+eval ${srmSpaceManagerEnabled} yes ==
+set env srmSpaceManagerIsOn ${rc}
+exec env srmSpaceManagerOn.exe -ifok=srmSpaceManagerIsOn
+
+eval ${srmSpaceManagerEnabled} yes !=
+set env srmSpaceManagerIsOff ${rc}
+exec env srmSpaceManagerOff.exe -ifok=srmSpaceManagerIsOff
+
+# srmCustomGetHostByAddr enables using the BNL developed procedure
+# for host by ip resolution if standard InetAddress method failed
+#
+set context -c srmCustomGetHostByAddr false
+
+#
+# turning this on turns off the latest changes that made service
+# to honor the srm client's prococol list order for
+# get/put commands
+# this is needed temprorarily to support old srmcp clients
+set context -c srmIgnoreClientProtocolOrder false
+
+#
+#
+onerror shutdown
+#
+### This would do the same and leave ${srmDbHost} unset
+#onerror continue
+#set context localhost.exe "set context -c srmDatabaseHost localhost"
+#set context srmdbhost.exe "set context -c srmDatabaseHost ${srmDbHost}"
+#check srmDbHost
+#set context srmDbHostIsSet ${rc}
+#exec context srmdbhost.exe -ifok=srmDbHostIsSet
+#exec context localhost.exe -ifnotok=srmDbHostIsSet
+#onerror shutdown
+#
+
+create org.dcache.cells.UniversalSpringCell jsrm \
+   "classpath:diskCacheV111/srm/jsrm.xml \
+        -srmCellName=${0} \
+        -srmPort=${srmPort} \
+        -srmVersion=${srmVersion}  \
+        -srmTimeout=${srmTimeout} \
+        -srmPnfsManager=${srmPnfsManager} \
+        -srmPnfsTimeout=${srmPnfsTimeout} \
+        -srmPoolManager=${srmPoolManager} \
+        -srmPoolManagerTimeout=${srmPoolManagerTimeout} \
+        -srmVacuum=${srmVacuum} \
+        -srmVacuumPeriod=${srmVacuumPeriod} \
+        -pnfsSrmPath=${pnfsSrmPath} \
+        -xrootdRootPath=${xrootdRootPath} \
+        -httpRootPath=${httpRootPath} \
+        -srmImplicitSpaceManagerEnabled=${srmImplicitSpaceManagerEnabled} \
+        -srmSpaceReservationStrict=${srmSpaceReservationStrict} \
+        -srmUserCredentialDirectory=${srmUserCredentialsDirectory} \
+        -srmBufferSize=${srmBufferSize} \
+        -srmTcpBufferSize=${srmTcpBufferSize} \
+        -parallelStreams=${parallelStreams} \
+        -srmDebug=${srmDebug} \
+        -srmGetLifeTime=${srmGetLifeTime} \
+        -srmBringOnlineLifeTime=${srmBringOnlineLifeTime} \
+        -srmPutLifeTime=${srmPutLifeTime} \
+        -srmCopyLifeTime=${srmCopyLifeTime} \
+        -srmGetReqThreadQueueSize=${srmGetReqThreadQueueSize} \
+        -srmGetReqThreadPoolSize=${srmGetReqThreadPoolSize} \
+        -srmGetReqMaxWaitingRequests=${srmGetReqMaxWaitingRequests} \
+        -srmGetReqReadyQueueSize=${srmGetReqReadyQueueSize} \
+        -srmGetReqMaxReadyRequests=${srmGetReqMaxReadyRequests} \
+        -srmGetReqMaxNumberOfRetries=${srmGetReqMaxNumberOfRetries} \
+        -srmGetReqRetryTimeout=${srmGetReqRetryTimeout} \
+        -srmGetReqMaxNumOfRunningBySameOwner=${srmGetReqMaxNumOfRunningBySameOwner} \
+        -srmBringOnlineReqThreadQueueSize=${srmBringOnlineReqThreadQueueSize} \
+        -srmBringOnlineReqThreadPoolSize=${srmBringOnlineReqThreadPoolSize} \
+        -srmBringOnlineReqMaxWaitingRequests=${srmBringOnlineReqMaxWaitingRequests} \
+        -srmBringOnlineReqReadyQueueSize=${srmBringOnlineReqReadyQueueSize} \
+        -srmBringOnlineReqMaxReadyRequests=${srmBringOnlineReqMaxReadyRequests} \
+        -srmBringOnlineReqMaxNumberOfRetries=${srmBringOnlineReqMaxNumberOfRetries} \
+        -srmBringOnlineReqRetryTimeout=${srmBringOnlineReqRetryTimeout} \
+        -srmBringOnlineReqMaxNumOfRunningBySameOwner=${srmBringOnlineReqMaxNumOfRunningBySameOwner} \
+        -srmPutReqThreadQueueSize=${srmPutReqThreadQueueSize} \
+        -srmPutReqThreadPoolSize=${srmPutReqThreadPoolSize} \
+        -srmPutReqMaxWaitingRequests=${srmPutReqMaxWaitingRequests} \
+        -srmPutReqReadyQueueSize=${srmPutReqReadyQueueSize} \
+        -srmPutReqMaxReadyRequests=${srmPutReqMaxReadyRequests} \
+        -srmPutReqMaxNumberOfRetries=${srmPutReqMaxNumberOfRetries} \
+        -srmPutReqRetryTimeout=${srmPutReqRetryTimeout} \
+        -srmPutReqMaxNumOfRunningBySameOwner=${srmPutReqMaxNumOfRunningBySameOwner} \
+        -srmCopyReqThreadQueueSize=${srmCopyReqThreadQueueSize} \
+        -srmCopyReqThreadPoolSize=${srmCopyReqThreadPoolSize} \
+        -srmCopyReqMaxWaitingRequests=${srmCopyReqMaxWaitingRequests} \
+        -srmCopyReqMaxNumberOfRetries=${srmCopyReqMaxNumberOfRetries} \
+        -srmCopyReqRetryTimeout=${srmCopyReqRetryTimeout} \
+        -srmCopyReqMaxNumOfRunningBySameOwner=${srmCopyReqMaxNumOfRunningBySameOwner} \
+        -RecursiveDirectoryCreation=${RecursiveDirectoryCreation} \
+        -AdvisoryDelete=${AdvisoryDelete} \
+        -jdbcUrl=jdbc:postgresql://${srmDatabaseHost}/${srmDbName} \
+        -jdbcDriver=org.postgresql.Driver \
+        -srmDbUser=${srmDbUser} \
+        -srmDbPassword=${srmDbPassword} \
+        -srmPasswordFile=${srmPasswordFile}   \
+        -srmJdbcMonitoringLogEnabled=${srmJdbcMonitoringLogEnabled} \
+        -srmNumberOfDaysInDatabaseHistory=${srmNumberOfDaysInDatabaseHistory} \
+        -srmOldRequestRemovalPeriodSeconds=${srmOldRequestRemovalPeriodSeconds} \
+        -srmJdbcExecutionThreadNum=${srmJdbcExecutionThreadNum} \
+        -srmMaxNumberOfJdbcTasksInQueue=${srmMaxNumberOfJdbcTasksInQueue} \
+        -useGPlazmaAuthorizationCell=${useGPlazmaAuthorizationCell} \
+        -delegateToGPlazma=${delegateToGPlazma} \
+        -useGPlazmaAuthorizationModule=${useGPlazmaAuthorizationModule} \
+        -gplazmaPolicy=${gplazmaPolicy} \
+        -srmAuthzCacheLifetime=${srmAuthzCacheLifetime} \
+        -srmLoginBroker=srm-LoginBroker \
+        -protocolFamily=SRM \
+        -protocolVersion=1.1.1 \
+        -kpwdFile=${kpwdFile} \
+        -srmLoginBrokerUpdatePeriod=${srmLoginBrokerUpdatePeriod} \
+        -srmNumberOfDoorsInRandomSelection=${srmNumberOfDoorsInRandomSelection} \
+        -overwriteEnabled=${overwriteEnabled} \
+        -srmOverwriteByDefault=${srmOverwriteByDefault} \
+        -srmCustomGetHostByAddr=${srmCustomGetHostByAddr} \
+        -srmIgnoreClientProtocolOrder=${srmIgnoreClientProtocolOrder}\
+        -srmSizeOfSingleRemoveBatch=${srmSizeOfSingleRemoveBatch}\
+        -srmCleanPendingRequestsOnRestart=${srmCleanPendingRequestsOnRestart}\
+        -srmAsynchronousLs=${srmAsynchronousLs}\
+        -srmLsMaxNumberOfEntries=${srmLsMaxNumberOfEntries}\
+        -srmLsMaxNumberOfLevels=${srmLsMaxNumberOfLevels}\
+        -srmLsRequestLifetime=${srmLsRequestLifetime}\
+        -srmLsRequestThreadQueueSize=${srmLsRequestThreadQueueSize}\
+        -srmLsRequestThreadPoolSize=${srmLsRequestThreadPoolSize}\
+        -srmLsRequestMaxWaitingRequests=${srmLsRequestMaxWaitingRequests}\
+        -srmLsRequestReadyQueueSize=${srmLsRequestReadyQueueSize}\
+        -srmLsRequestMaxReadyRequests=${srmLsRequestMaxReadyRequests}\
+        -srmLsRequestMaxNumberOfRetries=${srmLsRequestMaxNumberOfRetries}\
+        -srmLsRequestRetryTimeout=${srmLsRequestRetryTimeout}\
+        -srmLsRequestMaxNumberOfRunningBySameOwner=${srmLsRequestMaxNumberOfRunningBySameOwner}\
+        -srmClientDNSLookup=${srmClientDNSLookup}\
+        -srmJettyConnectorAcceptors=${srmJettyConnectorAcceptors}\
+        -srmJettyConnectorMaxIdleTime=${srmJettyConnectorMaxIdleTime}\
+        -srmJettyConnectorLowResourceMaxIdleTime=${srmJettyConnectorLowResourceMaxIdleTime}\
+        -srmJettyConnectorBackLog=${srmJettyConnectorBackLog}\
+        -srmJettyThreadsMax=${srmJettyThreadsMax}\
+        -srmJettyThreadsMin=${srmJettyThreadsMin}\
+        -srmJettyThreadsMaxIdleTime=${srmJettyThreadsMaxIdleTime}\
+        -srmJettyThreadsMaxQueued=${srmJettyThreadsMaxQueued}\
+       "

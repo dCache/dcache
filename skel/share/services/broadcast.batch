@@ -1,0 +1,48 @@
+#  -----------------------------------------------------------------------
+#          Broadcast Cell
+#  -----------------------------------------------------------------------
+
+exec file:${ourHomeDir}/share/cells/import-arguments.fragment \
+    ${0} ${1} ${2} ${3} ${4} ${5} ${6} ${7} ${8} ${9}
+
+#
+#  ----  Registration of the Replica Manager
+#
+#   If replicaManager is on, it needs some messages broadcasted:
+#   It is off by default
+onerror continue
+set context -c replicaManager no
+define env replicaManagerOn.exe endExe
+  set env -c broadcastSetupReplicaManager1 "register diskCacheV111.vehicles.PoolStatusChangedMessage       replicaManager"
+  set env -c broadcastSetupReplicaManager2 "register diskCacheV111.vehicles.PnfsModifyCacheLocationMessage replicaManager"
+  set env -c broadcastSetupReplicaManager3 "register diskCacheV111.vehicles.PoolRemoveFilesMessage         replicaManager"
+endExe
+eval ${replicaManager} yes ==
+exec env replicaManagerOn.exe -ifok
+set env -c broadcastSetupReplicaManager1 ""
+set env -c broadcastSetupReplicaManager2 ""
+set env -c broadcastSetupReplicaManager3 ""
+onerror shutdown
+
+#
+#  ----  The broadcast Setup
+#
+define context broadcastSetup endDefine
+
+   ${broadcastSetupReplicaManager1}
+   ${broadcastSetupReplicaManager2}
+   ${broadcastSetupReplicaManager3}
+
+   register diskCacheV111.vehicles.PoolRemoveFilesMessage         billing
+
+   register diskCacheV111.vehicles.PoolFileFlushedMessage         SrmSpaceManager
+   register diskCacheV111.vehicles.PoolRemoveFilesMessage         SrmSpaceManager
+   register diskCacheV111.vehicles.PoolRemoveFilesMessage         PinManager
+   register diskCacheV111.vehicles.PoolManagerPoolUpMessage       PoolManager
+endDefine
+
+#
+#  ----  Startup
+#
+create dmg.cells.services.multicaster.BroadcastCell broadcast  \
+          "default -export"

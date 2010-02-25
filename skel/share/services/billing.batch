@@ -1,0 +1,43 @@
+# Billing Cell
+
+exec file:${ourHomeDir}/share/cells/import-arguments.fragment \
+    ${0} ${1} ${2} ${3} ${4} ${5} ${6} ${7} ${8} ${9}
+
+# Defaults
+onerror continue
+set context -c billingDb ${ourHomeDir}/billing
+set context -c billingDisableTxt
+
+#
+#     Additional params, if 'billingToDb' is 'yes'
+define env billingToDb.exe endExe
+  set context -c billingDatabaseHost localhost
+  set context -c billingDbUser srmdcache
+  set context -c billingDbPass srmdcache
+  set context -c billingDbName billing
+  set context -c billingDbPgPassFileName
+  set context -c billingDbCommitRows 100
+  set context -c billingDbCommitIntervalInMilliseconds 30000
+
+  set env -c billingDbParams "\
+        -useSQL \
+        -jdbcUrl=jdbc:postgresql://${billingDatabaseHost}/${billingDbName} \
+        -jdbcDriver=org.postgresql.Driver \
+        -dbUser=${billingDbUser} \
+        -dbPass=${billingDbPass} \
+        -pgPass=${billingDbPgPassFileName} \
+        -dbCommitNumber=${billingDbCommitRows} \
+        -dbCommitTime=${billingDbCommitIntervalInMilliseconds} \
+       "
+endExe
+eval ${billingToDb} yes ==
+exec env billingToDb.exe -ifok
+onerror shutdown
+
+
+create diskCacheV111.cells.BillingCell billing \
+       "${billingDb} \
+        -printMode=2 \
+        ${billingDisableTxt} \
+        ${billingDbParams} \
+       "

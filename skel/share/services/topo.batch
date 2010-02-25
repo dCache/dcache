@@ -1,0 +1,8 @@
+
+exec file:${ourHomeDir}/share/cells/import-arguments.fragment \
+    ${0} ${1} ${2} ${3} ${4} ${5} ${6} ${7} ${8} ${9}
+
+create org.dcache.cells.UniversalSpringCell topo \
+   "classpath:org/dcache/services/topology/topology.xml \
+    -export \
+    -cellClass=TopoCell"

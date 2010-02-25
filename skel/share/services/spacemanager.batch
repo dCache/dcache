@@ -1,0 +1,51 @@
+#
+# SRM Space Manager
+#
+
+exec file:${ourHomeDir}/share/cells/import-arguments.fragment \
+    ${0} ${1} ${2} ${3} ${4} ${5} ${6} ${7} ${8} ${9}
+
+# Defaults
+onerror continue
+set context -c srmDbHost          localhost
+set context -c srmDatabaseHost    ${srmDbHost}
+set context -c srmDbName          dcache
+set context -c srmDbUser          srmdcache
+set context -c srmDbPassword      srmdcache
+
+# if space reservation request does not specify access latency
+# we will assign this access latency by default
+set context -c DefaultAccessLatency NEARLINE
+set context -c SpaceManagerDefaultAccessLatency ${DefaultAccessLatency}
+set context -c DefaultAccessLatencyForSpaceReservation ${SpaceManagerDefaultAccessLatency}
+
+# if the transfer request come from the door, and there was not prior
+# space reservation made for this file, should we try to reserve
+# space before satisfying the request
+set context -c SpaceManagerReserveSpaceForNonSRMTransfers false
+
+# LinkGroupAuthorizationFile contains the list of FQANs that are allowed to
+# make space reservations in a given link group
+set context -c SpaceManagerLinkGroupAuthorizationFileName ""
+
+set context -c srmSpaceManagerEnabled no
+
+onerror shutdown
+
+create diskCacheV111.services.space.Manager SrmSpaceManager \
+       "default \
+        -export \
+        -jdbcUrl=jdbc:postgresql://${srmDatabaseHost}/${srmDbName} \
+        -jdbcDriver=org.postgresql.Driver \
+        -dbUser=${srmDbUser} \
+        -dbPass=${srmDbPassword} \
+        -poolManager=PoolManager \
+        -pnfsManager=PnfsManager \
+        -defaultAccessLatencyForSpaceReservation=${DefaultAccessLatencyForSpaceReservation} \
+        -reserveSpaceForNonSRMTransfers=${SpaceManagerReserveSpaceForNonSRMTransfers} \
+        -deleteStoredFileRecord=false \
+        -returnFlushedSpaceToReservation=true \
+        -returnRemovedSpaceToReservation=true \
+        -linkGroupAuthorizationFileName=${SpaceManagerLinkGroupAuthorizationFileName} \
+        -spaceManagerEnabled=${srmSpaceManagerEnabled} \
+"

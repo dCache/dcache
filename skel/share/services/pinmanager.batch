@@ -1,0 +1,47 @@
+# ----------------------------------------------------------------------
+#           Pin Manager Cell
+# ----------------------------------------------------------------------
+
+exec file:${ourHomeDir}/share/cells/import-arguments.fragment \
+    ${0} ${1} ${2} ${3} ${4} ${5} ${6} ${7} ${8} ${9}
+
+# Defaults
+onerror continue
+
+set context -c srmDbHost localhost
+set context -c srmDbName          dcache
+set context -c srmDbUser          srmdcache
+set context -c srmDbPassword      srmdcache
+set context -c srmPasswordFile    ""
+
+set context -c spaceManagerDatabaseHost  ${srmDbHost}
+
+set context -c pinManagerDbHost ${srmDbHost}
+set context -c pinManagerDbName ${srmDbName}
+set context -c pinManagerDbUser ${srmDbUser}
+set context -c pinManagerDbPassword ${srmDbPassword}
+set context -c pinManagerPasswordFile "${srmPasswordFile}"
+
+# in seconds, -1 for infinite
+set context -c pinManagerMaxPinDuration "-1"
+
+set context -c pinManagerMaxActiveJdbcConnections    50
+set context -c pinManagerMaxJdbcConnectionsWaitSec   180
+set context -c pinManagerMaxIdleJdbcConnections      10
+
+onerror shutdown
+
+create org.dcache.services.pinmanager1.PinManager PinManager \
+       "default \
+        -export  \
+        -jdbcDriver=org.postgresql.Driver \
+        -jdbcUrl=jdbc:postgresql://${pinManagerDbHost}/${pinManagerDbName} \
+        -dbUser=${pinManagerDbUser} \
+        -dbPass=${pinManagerDbPassword} \
+        -pgPass=${pinManagerPasswordFile} \
+        -maxPinDuration=${pinManagerMaxPinDuration} \
+        -maxActiveJdbcConnections=${pinManagerMaxActiveJdbcConnections} \
+        -maxJdbcConnectionsWaitSec=${pinManagerMaxJdbcConnectionsWaitSec} \
+        -maxIdleJdbcConnections=${pinManagerMaxIdleJdbcConnections} \
+        -stageConfigurationFilePath=${stageConfigurationFilePath} \
+       "
