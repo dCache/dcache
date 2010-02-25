@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.TreeSet;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -108,6 +110,9 @@ public class PoolV4
     private final static int P2P_CACHED = 1;
     private final static int P2P_PRECIOUS = 2;
 
+    private final static Pattern TAG_PATTERN =
+        Pattern.compile("([^=]+)=(\\S*)\\s*");
+
     private final static Logger _log = LoggerFactory.getLogger(PoolV4.class);
 
     private final String _poolName;
@@ -192,14 +197,13 @@ public class PoolV4
         //
         for (Map.Entry<String,String> option: _args.options().entrySet()) {
             String key = option.getKey();
-            _log.info("Tag scanning : " + key);
             if ((key.length() > 4) && key.startsWith("tag.")) {
                 _tags.put(key.substring(4), option.getValue());
             }
         }
 
         for (Map.Entry<String, String> e: _tags.entrySet() ) {
-            _log.info(" Extra Tag Option : " + e.getKey() + " -> "+ e.getValue());
+            _log.info("Tag: " + e.getKey() + "="+ e.getValue());
         }
     }
 
@@ -360,6 +364,28 @@ public class PoolV4
     public void setReplicaStatePolicy(ReplicaStatePolicy replicaStatePolicy)
     {
         _replicaStatePolicy = replicaStatePolicy;
+    }
+
+    public void setTags(String tags)
+    {
+        Map<String,String> newTags = new HashMap<String,String>();
+        Matcher matcher = TAG_PATTERN.matcher(tags);
+        while (matcher.lookingAt()) {
+            String tag = matcher.group(1);
+            String value = matcher.group(2);
+            newTags.put(tag, value);
+            matcher.region(matcher.end(), matcher.regionEnd());
+        }
+
+        if (matcher.regionStart() != matcher.regionEnd()) {
+            String msg = "Cannot parse '" + tags.substring(matcher.regionStart()) + "'";
+            throw new IllegalArgumentException(msg);
+        }
+
+        for (Map.Entry<String,String> e: newTags.entrySet()) {
+            _tags.put(e.getKey(), e.getValue());
+            _log.info("Tag: " + e.getKey() + "="+ e.getValue());
+        }
     }
 
     /**
