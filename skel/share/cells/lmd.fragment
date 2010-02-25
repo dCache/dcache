@@ -1,0 +1,12 @@
+define context lmd.defaults endDefine
+  define ${broker.domain}
+  listen ${broker.domain}
+
+  define *
+  defaultroute * ${broker.domain}
+  connect * ${broker.domain}
+endDefine
+
+create dmg.cells.services.LocationManager lmd \
+       "!lmd.defaults ${broker.port} -strict=no -noclient -setup=${dcache.home}/etc/lm.config"
+#

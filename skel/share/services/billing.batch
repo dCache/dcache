@@ -1,12 +1,9 @@
 # Billing Cell
 
-exec file:${ourHomeDir}/share/cells/import-arguments.fragment \
-    ${0} ${1} ${2} ${3} ${4} ${5} ${6} ${7} ${8} ${9}
-
 # Defaults
 onerror continue
-set context -c billingDb ${ourHomeDir}/billing
-set context -c billingDisableTxt
+set context -c billingDb ${dcache.home}/billing
+set context -c billingDisableTxt ""
 
 #
 #     Additional params, if 'billingToDb' is 'yes'

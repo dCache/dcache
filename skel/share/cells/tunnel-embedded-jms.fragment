@@ -1,0 +1,3 @@
+# embedded-jms is the legacy name for a hybrid tunnel
+
+exec file:{dcache.home}/share/cells/tunnel-hybrid.fragment

@@ -1,0 +1,4 @@
+#
+#   Configure cell communication
+#
+exec file:${dcache.home}/share/cells/tunnel-${broker.scheme}.fragment

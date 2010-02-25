@@ -2,20 +2,18 @@
 #      GridFTP Door
 #
 
-exec file:${ourHomeDir}/share/cells/import-arguments.fragment \
-    ${1} ${2} ${3} ${4} ${5} ${6} ${7} ${8} ${9} ${10}
+check -strong port
 
 # Define defaults
 onerror continue
-set context -c gsiFtpPortNumber        2811
 set context -c spaceReservation        false
 set context -c spaceReservationStrict  false
 set context -c performanceMarkerPeriod 70
-set context -c kpwdFile          ${ourHomeDir}/etc/dcache.kpwd
+set context -c kpwdFile          ${dcache.home}/etc/dcache.kpwd
 set context -c useGPlazmaAuthorizationCell    true
 set context -c delegateToGPlazma    false
 set context -c useGPlazmaAuthorizationModule  false
-set context -c gplazmaPolicy     ${ourHomeDir}/etc/dcachesrm-gplazma.policy
+set context -c gplazmaPolicy     ${dcache.home}/etc/dcachesrm-gplazma.policy
 set context -c gsiftpPoolManagerTimeout  5400
 set context -c gsiftpPoolTimeout          600
 set context -c gsiftpPnfsTimeout          300
@@ -50,11 +48,11 @@ set context -c gsiftpPoolProxy                "PoolManager"
 set context -c gsiftpPoolManager              "PoolManager"
 onerror shutdown
 
-exec file:${ourHomeDir}/share/cells/stage.fragment doors
-exec file:${ourHomeDir}/share/cells/permission.fragment
+exec file:${dcache.home}/share/cells/stage.fragment doors
+exec file:${dcache.home}/share/cells/permission.fragment
 
-create dmg.cells.services.login.LoginManager ${0} \
-            "${gsiFtpPortNumber} \
+create dmg.cells.services.login.LoginManager ${cell.name} \
+            "${port} \
              -export \
              diskCacheV111.doors.GsiFtpDoorV1 \
              -prot=raw \

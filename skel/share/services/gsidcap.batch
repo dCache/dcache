@@ -1,13 +1,13 @@
 # Starts a GSI DCAP cell
 
-exec file:${ourHomeDir}/share/cells/import-arguments.fragment \
-    ${1} ${2} ${3} ${4} ${5} ${6} ${7} ${8} ${9} ${10}
+# Required variables
+check -strong port
 
 # Defaults
 onerror continue
 set context -c useGPlazmaAuthorizationModule  false
 set context -c useGPlazmaAuthorizationCell    true
-set context -c gplazmaPolicy               ${ourHomeDir}/etc/dcachesrm-gplazma.policy
+set context -c gplazmaPolicy               ${dcache.home}/etc/dcachesrm-gplazma.policy
 set context -c gsidcapIoQueue              ""
 set context -c gsidcapIoQueueOverwrite     denied
 set context -c gsidcapMaxLogin             1500
@@ -27,17 +27,13 @@ exec env srmSpaceManagerOn.exe -ifok
 set context -c doorPoolManager              "PoolManager"
 onerror shutdown
 
-# Required variables
-check -strong dCapGsiPort
-
 # External definitions
-exec file:${ourHomeDir}/share/cells/stage.fragment doors
-exec file:${ourHomeDir}/share/cells/permission.fragment
+exec file:${dcache.home}/share/cells/stage.fragment doors
+exec file:${dcache.home}/share/cells/permission.fragment
 
 #
-#
-create dmg.cells.services.login.LoginManager ${0} \
-             "${dCapGsiPort} \
+create dmg.cells.services.login.LoginManager ${cell.name} \
+             "${port} \
               diskCacheV111.doors.DCapDoor \
               -export \
               -prot=telnet -localOk \

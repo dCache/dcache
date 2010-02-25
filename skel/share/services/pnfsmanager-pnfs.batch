@@ -2,9 +2,6 @@
 #   The PnfsManager
 #
 
-exec file:${ourHomeDir}/share/cells/import-arguments.fragment \
-    ${0} ${1} ${2} ${3} ${4} ${5} ${6} ${7} ${8} ${9}
-
 # The following cryptic lines will do this logic:
 #
 #  if  cacheInfo=companion
@@ -47,8 +44,8 @@ set env -c locationThreads 0
 # defaults for Access Latency and Retention Policy
 #
 
-set context -c DefaultAccessLatency ""
-set context -c DefaultRetentionPolicy ""
+set context -c DefaultAccessLatency NEARLINE
+set context -c DefaultRetentionPolicy CUSTODIAL
 
 #
 # access to Deletion registration
@@ -60,7 +57,7 @@ set context -c  pnfsDeleteRegistrationDbPass ${pnfsDbPassword}
 onerror shutdown
 
 # Load permission check related settings
-exec -shell file:${ourHomeDir}/share/cells/permission.fragment
+exec -shell file:${dcache.home}/share/cells/permission.fragment
 
 #
 create diskCacheV111.namespace.PnfsManagerV3 PnfsManager \

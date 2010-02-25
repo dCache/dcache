@@ -1,9 +1,9 @@
 #
-#  Don't continue if the pool list file is not known
+#  Do not continue if the pool name and path are unknown
 #
-check -strong pool
+check -strong name
+check -strong path
 
-#
 onerror continue
   set context -c poolIoQueue ""
   set context -c checkRepository        true
@@ -23,11 +23,13 @@ onerror continue
   set context -c xrootdMoverMaxMemoryPerConnection 16777216
   set context -c xrootdMoverMaxMemory 67108864
   set context -c xrootdMoverMaxFrameSize 2097152
+  set context -c maxDiskSpace Infinity
+  set context -c lfs none
+  set context -c tags ""
 onerror shutdown
 
 define context PoolDefaults endDefine
    set heartbeat 30
-   set sticky allowed
    set report remove on
    set breakeven 0.7
    set gap 4294967296
@@ -60,16 +62,11 @@ define context PoolDefaults endDefine
    movermap define Xrootd-2  org.dcache.xrootd2.pool.XrootdProtocol_3
 endDefine
 
-# This defines how to instantiate the pool code.
-#
-# Notice that most of the following arguments are redundant, since
-# the values will be picked up from the context if not defined as
-# an option.
-###############################################
-create org.dcache.cells.UniversalSpringCell ${0} \
+create org.dcache.cells.UniversalSpringCell ${cell.name} \
     "!PoolDefaults classpath:org/dcache/pool/classic/pool.xml \
-    -export -cellClass=Pool -poolname=${0} -pooldir=${1} \
-    -setupClass=pool -setupFile=${1}/setup \
+    -export -cellClass=Pool -poolname=${name} -pooldir=${path} \
+    -maxDiskSpace=${maxDiskSpace} \
+    -setupClass=pool -setupFile=${path}/setup \
     -poolIoQueue=${poolIoQueue} \
     -checkRepository=${checkRepository} \
     -allowPassivePool=${gsiftpAllowPassivePool} \
@@ -87,7 +84,8 @@ create org.dcache.cells.UniversalSpringCell ${0} \
     -xrootd-mover-max-memory-per-connection=${xrootdMoverMaxMemoryPerConnection} \
     -xrootd-mover-max-memory=${xrootdMoverMaxMemory} \
     -xrootd-mover-max-frame-size=${xrootdMoverMaxFrameSize} \
-    -${2} -${3} -${4} -${5} -${6} -${7} -${8}"
+    -lfs=${lfs} \
+    -tags=${tags}"
 
 
 

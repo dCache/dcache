@@ -1,11 +1,4 @@
-#
-#   The 'remove' handler (informs the dCache about pfns removes)
-#
-
-exec file:${ourHomeDir}/share/cells/import-arguments.fragment \
-    ${0} ${1} ${2} ${3} ${4} ${5} ${6} ${7} ${8} ${9}
-
-# Default value to be backwards compatible:
+# Defaults for cleaner
 onerror continue
 set context -c trash ""
 set context -c cleanerDB /opt/pnfsdb/pnfs/trash/2
@@ -29,3 +22,19 @@ create diskCacheV111.cells.CleanerV2 cleaner \
          -processFilesPerRun=${cleanerProcessFilesPerRun} \
          -archive=${cleanerArchive} \
   "
+
+
+# Defaults for HSM cleaner
+onerror continue
+set context -c hsmCleaner disabled
+set context -c hsmCleanerTrash /opt/pnfsdb/pnfs/trash/1
+set context -c hsmCleanerRepository /opt/pnfsdb/pnfs/trash/1/current
+
+define context hsmcleaner.exe endDefine
+  create org.dcache.services.hsmcleaner.HSMCleaner hsmcleaner
+endDefine
+
+eval ${hsmCleaner} enabled ==
+exec context hsmcleaner.exe -ifok
+
+onerror shutdown

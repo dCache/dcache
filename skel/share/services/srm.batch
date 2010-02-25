@@ -1,21 +1,21 @@
 #
 # SRM cell embedded in Jetty
 #
-exec file:${ourHomeDir}/share/cells/import-arguments.fragment \
-    ${1} ${2} ${3} ${4} ${5} ${6} ${7} ${8} ${9} ${10}
 
 #
 #   Make sure we got what we need.
 #
-check -strong srmPort
+check -strong port
+
+exec file:${dcache.home}/share/cells/threadmanager.fragment
 
 #
 #   Default values (if not specified in dCacheSetup)
 #
 onerror continue
 
-set context -c srmHost
-set context -c localSrmHosts
+set context -c srmHost ""
+set context -c localSrmHosts ""
 set context -c srmVersion         version1
 set context -c srmDbHost          localhost
 set context -c srmDatabaseHost    ${srmDbHost}
@@ -27,7 +27,7 @@ set context -c srmPasswordFile    ""
 set context -c useGPlazmaAuthorizationCell      true
 set context -c delegateToGPlazma    false
 set context -c useGPlazmaAuthorizationModule    false
-set context -c gplazmaPolicy      ${ourHomeDir}/etc/dcachesrm-gplazma.policy
+set context -c gplazmaPolicy      ${dcache.home}/etc/dcachesrm-gplazma.policy
 set context -c srmAuthzCacheLifetime   180
 
 set context -c parallelStreams      10
@@ -122,14 +122,14 @@ set context -c srmDbLogEnabled   false
 set context -c RecursiveDirectoryCreation  true
 set context -c AdvisoryDelete              true
 
-set context -c kpwdFile          ${ourHomeDir}/etc/dcache.kpwd
+set context -c kpwdFile          ${dcache.home}/etc/dcache.kpwd
 
 # to enable terapath plugin uncomment:
 #set context -c qosPluginClass   org.dcache.srm.qos.terapaths.TerapathsPlugin
-#set context -c qosConfigFile    ${ourHomeDir}/config/terapaths.properties
+#set context -c qosConfigFile    ${dcache.home}/config/terapaths.properties
 # to enable lambda station plugin, uncomment:
 #set context -c qosPluginClass   org.dcache.srm.qos.terapaths.LambdaStation
-#set context -c qosConfigFile    ${ourHomeDir}/config/lambdastation.properties
+#set context -c qosConfigFile    ${dcache.home}/config/lambdastation.properties
 
 
 set context -c overwriteEnabled false
@@ -141,7 +141,7 @@ set context -c srmSizeOfSingleRemoveBatch 100
 
 # this is the directory in which the delegated user credentials will be stored
 # as files. We recommend set permissions to 700 on this dir
-set context -c srmUserCredentialsDirectory  ${ourHomeDir}/credentials
+set context -c srmUserCredentialsDirectory  ${dcache.home}/credentials
 
 set context -c srmPnfsManager PnfsManager
 set context -c srmPoolManager PoolManager
@@ -210,8 +210,9 @@ define env srmSpaceManagerOn.exe endExe
 endExe
 
 define env srmSpaceManagerOff.exe endExe
-  srmSpaceReservation=false
-  srmSpaceReservationStrict=false
+  set context -c srmImplicitSpaceManagerEnabled false
+  set context -c srmSpaceReservation false
+  set context -c srmSpaceReservationStrict false
 endExe
 
 eval ${srmSpaceManagerEnabled} yes ==
@@ -251,8 +252,8 @@ onerror shutdown
 
 create org.dcache.cells.UniversalSpringCell jsrm \
    "classpath:diskCacheV111/srm/jsrm.xml \
-        -srmCellName=${0} \
-        -srmPort=${srmPort} \
+        -srmCellName=${cell.name} \
+        -srmPort=${port} \
         -srmVersion=${srmVersion}  \
         -srmTimeout=${srmTimeout} \
         -srmPnfsManager=${srmPnfsManager} \

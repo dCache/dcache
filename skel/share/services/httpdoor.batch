@@ -1,19 +1,17 @@
 #
 #      HTTP Door
 
-exec file:${ourHomeDir}/share/cells/import-arguments.fragment \
-    ${1} ${2} ${3} ${4} ${5} ${6} ${7} ${8} ${9} ${10}
+check -strong port
 
 # Defaults
 onerror continue
-set context -c httpPortNumber        2880
 set context -c httpAllowedPaths      ""
 set context -c httpRootPath          /
 set context -c httpMaxLogin          100
 
 #
-create dmg.cells.services.login.LoginManager ${0} \
-            "${httpPortNumber} \
+create dmg.cells.services.login.LoginManager ${cell.name} \
+            "${port} \
              -export \
              diskCacheV111.doors.HttpDoor \
              -prot=raw \

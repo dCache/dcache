@@ -2,17 +2,16 @@
 #      WebDAV Door
 #
 
-exec file:${ourHomeDir}/share/cells/import-arguments.fragment \
-    ${1} ${2} ${3} ${4} ${5} ${6} ${7} ${8} ${9} ${10}
+check -strong port
 
 # Define defaults
 onerror continue
+
 set context -c webdavProtocol http
 set context -c webdavPnfsTimeout 120000
 set context -c webdavPoolManagerTimeout 300000
 set context -c webdavPoolTimeout 10000
 set context -c webdavGplazmaTimeout 180000
-set context -c webdavPort 2880
 set context -c webdavAddress 0.0.0.0
 set context -c webdavInternalAddress ""
 set context -c webdavRootPath /
@@ -32,7 +31,7 @@ set context -c loginBrokerUpdateThreshold 0.1
 set context -c loginBroker LoginBroker
 set context -c useGPlazmaAuthorizationCell true
 set context -c useGPlazmaAuthorizationModule false
-set context -c gplazmaPolicy ${ourHomeDir}/etc/dcachesrm-gplazma.policy
+set context -c gplazmaPolicy ${dcache.home}/etc/dcachesrm-gplazma.policy
 
 set context -c logoPath images/logo.png
 set context -c dirIconPath images/directoryIcon.png
@@ -45,9 +44,9 @@ define env webdav-http.exe enddefine
 enddefine
 
 define env webdav-https.exe enddefine
-  set context -c keyStore ${ourHomeDir}/etc/hostcert.p12
+  set context -c keyStore ${dcache.home}/etc/hostcert.p12
   set context -c keyStorePassword dcache
-  set context -c trustStore ${ourHomeDir}/etc/certificates.jks
+  set context -c trustStore ${dcache.home}/etc/certificates.jks
   set context -c trustStorePassword dcache
 
   set context -c webdavKeyStore ${keyStore}
@@ -64,7 +63,7 @@ exec env webdav-${webdavProtocol}.exe
 
 onerror shutdown
 
-create org.dcache.cells.UniversalSpringCell ${0} \
+create org.dcache.cells.UniversalSpringCell ${cell.name} \
    "classpath:org/dcache/webdav/webdav-${webdavProtocol}.xml \
     -keyStore=${keyStore} \
     -keyStorePassword=${keyStorePassword} \
@@ -77,7 +76,7 @@ create org.dcache.cells.UniversalSpringCell ${0} \
     -webdavPoolManagerTimeout=${webdavPoolManagerTimeout} \
     -webdavPoolTimeout=${webdavPoolTimeout} \
     -webdavGplazmaTimeout=${webdavGplazmaTimeout} \
-    -webdavPort=${webdavPort} \
+    -webdavPort=${port} \
     -webdavAddress=${webdavAddress} \
     -webdavInternalAddress=${webdavInternalAddress} \
     -webdavRootPath=${webdavRootPath} \

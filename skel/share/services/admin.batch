@@ -1,8 +1,5 @@
 # Starts admin door
 
-exec file:${ourHomeDir}/share/cells/import-arguments.fragment \
-    ${0} ${1} ${2} ${3} ${4} ${5} ${6} ${7} ${8} ${9}
-
 # Define defaults
 onerror continue
 set context -c knownUsersFile    ${keyBase}/authorized_keys
@@ -15,7 +12,7 @@ set context -c adminHistoryFile  ""
 onerror shutdown
 
 # Required variables
-check -strong  adminPort
+check -strong port
 
 #   the rest is the ssh control path.
 #   The current setup allows localhost login
@@ -34,12 +31,12 @@ check -strong  adminPort
 create dmg.cells.services.login.SshKeyManager    skm
 
 #create dmg.cells.services.login.LoginManager slm \
-#      "${sshPort}  \
+#      "${port}  \
 #       dmg.cells.services.StreamLoginCell \
 #       -prot=ssh -auth=dmg.cells.services.login.SshSAuth_X"
 
 create dmg.cells.services.login.LoginManager alm \
-      "${adminPort}  \
+      "${port}  \
        dmg.cells.services.login.StreamObjectCell \
        -prot=ssh -auth=dmg.cells.services.login.SshSAuth_A \
        -history=${adminHistoryFile} \

@@ -1,0 +1,7 @@
+eval ${domain.name} ${broker.domain} ==
+exec file:${dcache.home}/share/cells/lmd.fragment -ifok
+
+create dmg.cells.services.RoutingManager  RoutingMgr
+create dmg.cells.services.LocationManager lm \
+      "${broker.host} ${broker.port}"
+

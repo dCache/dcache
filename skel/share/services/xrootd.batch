@@ -2,9 +2,6 @@
 # Xrootd door
 #
 
-exec file:${ourHomeDir}/share/cells/import-arguments.fragment \
-    ${1} ${2} ${3} ${4} ${5} ${6} ${7} ${8} ${9} ${10}
-
 # Defaults
 onerror continue
 #  set context -c xrootdAuthzPlugin org.dcache.xrootd2.security.plugins.tokenauthz.TokenAuthorizationFactory
@@ -18,10 +15,11 @@ onerror continue
 onerror shutdown
 
 # Required variables
-check -strong xrootdPort
+check -strong port
 
 #
-create org.dcache.cells.UniversalSpringCell ${0} \
+create org.dcache.cells.UniversalSpringCell ${cell.name} \
        "classpath:org/dcache/xrootd2/door/xrootd.xml -export\
-       -cellClass=XrootdDoor"
+       -cellClass=XrootdDoor
+       -xrootdPort=${port}"
 

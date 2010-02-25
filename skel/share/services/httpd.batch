@@ -2,11 +2,8 @@
 #   Make sure we got what we need.
 #
 
-exec file:${ourHomeDir}/share/cells/import-arguments.fragment \
-    ${0} ${1} ${2} ${3} ${4} ${5} ${6} ${7} ${8} ${9}
-
 # Required variables
-check -strong httpdPort config
+check -strong port config
 
 #
 define context TransferObserverSetup endDefine
@@ -23,7 +20,7 @@ create diskCacheV111.cells.TransferObserverV1 TransferObserver \
 #   The web server part
 #
 onerror continue
-set context -c styles ${ourHomeDir}/docs/styles
+set context -c styles ${dcache.home}/docs/styles
 onerror shutdown
 define context httpdSetup endDefine
    set alias homeerror context home.html
@@ -140,7 +137,7 @@ define context online.html endDefine
 endDefine
 # copy context:online.html context:setup.html
 #
-create dmg.cells.services.HttpServiceCell  httpd  ${httpdPort}
+create dmg.cells.services.HttpServiceCell  ${cell.name}  ${port}
 #
 #create diskCacheV111.services.web.PoolInfoObserverV2 poolCollector \
 #               "PoolManager \

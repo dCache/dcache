@@ -1,0 +1,2 @@
+create org.dcache.cells.UniversalSpringCell JMS \
+     "-cellType=System -cellClass=JMS classpath:org/dcache/cells/amq.xml"
