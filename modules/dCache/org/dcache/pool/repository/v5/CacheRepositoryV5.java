@@ -236,7 +236,7 @@ public class CacheRepositoryV5
         _sweeper = sweeper;
     }
 
-    public synchronized void setMaxDiskSpace(String size)
+    public synchronized void setMaxDiskSpaceString(String size)
     {
         setMaxDiskSpace(UnitInteger.parseUnitLong(size));
     }

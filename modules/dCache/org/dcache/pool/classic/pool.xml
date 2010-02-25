@@ -138,7 +138,7 @@
     <property name="spaceSweeperPolicy" ref="sweeper"/>
     <property name="volatile"
               value="#{ '${lfs}' == 'volatile' or '${lfs}' == 'transient' }"/>
-    <property name="maxDiskSpace" value="${maxDiskSpace}"/>
+    <property name="maxDiskSpaceString" value="${maxDiskSpace}"/>
     <property name="metaDataStore">
       <bean class="org.dcache.pool.repository.ConsistentStore">
         <constructor-arg ref="csm"/>
