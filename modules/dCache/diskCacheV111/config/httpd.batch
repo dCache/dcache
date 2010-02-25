@@ -1,9 +1,0 @@
-onerror shutdown
-
-exec -shell file:${ourHomeDir}/share/cells/logging.fragment
-exec -shell file:${ourHomeDir}/share/cells/setup.fragment
-exec -shell file:${ourHomeDir}/share/cells/tunnel.fragment
-exec -shell file:${ourHomeDir}/share/cells/billing.cell
-exec -shell file:${ourHomeDir}/share/cells/srm-loginbroker.cell
-exec -shell file:${ourHomeDir}/share/cells/httpd.cell
-

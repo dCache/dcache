@@ -1,6 +1,0 @@
-#
-# default values
-#
-set context -c serviceLocatorHost localhost
-set context -c serviceLocatorPort 11111
-

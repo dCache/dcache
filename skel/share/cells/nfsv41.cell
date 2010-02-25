@@ -1,9 +1,0 @@
-#
-#    NFSv4.1    D o o r
-#
-
-exec file:${ourHomeDir}/share/cells/import-arguments.fragment \
-    ${1} ${2} ${3} ${4} ${5} ${6} ${7} ${8} ${9} ${10}
-
-create org.dcache.cells.UniversalSpringCell ${0} \
-        "classpath:org/dcache/chimera/nfsv41/door/nfsv41.xml -export"

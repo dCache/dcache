@@ -1,9 +1,0 @@
-onerror shutdown
-
-exec -shell file:${ourHomeDir}/share/cells/logging.fragment
-exec -shell file:${ourHomeDir}/share/cells/setup.fragment
-exec -shell file:${ourHomeDir}/share/cells/tunnel.fragment
-exec -shell file:${ourHomeDir}/share/cells/pnfsmanager-pnfs.cell
-exec -shell file:${ourHomeDir}/share/cells/cleaner-pnfs.cell
-exec -shell file:${ourHomeDir}/share/cells/hsmcleaner-pnfs.cell
-exec -shell file:${ourHomeDir}/share/cells/acl.cell

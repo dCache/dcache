@@ -1,9 +1,0 @@
-onerror shutdown
-
-exec -shell file:${ourHomeDir}/share/cells/logging.fragment
-exec -shell file:${ourHomeDir}/share/cells/setup.fragment
-exec -shell file:${ourHomeDir}/share/cells/tunnel.fragment
-
-copy file:${pool} context:poolList
-exec -loop=poolList file:${ourHomeDir}/share/cells/pool.cell
-
