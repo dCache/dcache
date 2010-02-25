@@ -29,22 +29,18 @@ usage()
     echo "   -d=<path to dcache installation>   default is /opt/d-cache"
     echo
     echo "Valid commands are:"
-    echo "   condrestart [<domain or service> ...]"
+    echo "   condrestart [<domain> ...]"
     echo "   dump heap [--force] <domain> <file>"
-    echo "   dump threads [<domain or service> ...]"
+    echo "   dump threads [<domain> ...]"
     echo "   import hostcert [--hostcert=<file>] [--hostkey=<file>]"
     echo "                   [--out=<file>] [--password=<password>]"
     echo "   import cacerts [--cacerts=<dir>] [--out=<file>] [--password=<password>]"
     echo "   pool create <size> <directory>"
-    echo "   pool add [--fqdn] [--domain=<domain>] [--lfs=<mode>] <pool name> <directory>"
-    echo "   pool ls"
-    echo "   pool reconstruct <pool name> <target dir>"
-    echo "   pool remove <pool name>"
-    echo "   restart [<domain or service> ...]"
-    echo "   services"
-    echo "   start [<domain or service> ...]"
+    echo "   pool reconstruct <directory> <target dir>"
+    echo "   restart [<domain> ...]"
+    echo "   start [<domain> ...]"
     echo "   status"
-    echo "   stop [<domain or service> ...]"
+    echo "   stop [<domain> ...]"
     echo "   version"
     echo
     echo "Size is specified in bytes, or optionally followed by K, M, G or T"
@@ -53,7 +49,7 @@ usage()
     exit 2
 } 1>&2
 
-# Get the canonical path of $1. Only returns a truely canonical path
+# Get the canonical path of $1. Only returns a truly canonical path
 # if readlink is available. Otherwise an absolute path which does not
 # end in a symlink is returned.
 getCanonicalPath() # in $1 = path, out $2 = canonical path
@@ -196,7 +192,14 @@ dumpHeap() # $1=force, $2=live, $3=file, $4=pid, $5=error
 # display dCache package version
 showVersion()
 {
-    ${java} -jar ${classesDir}/dcache.jar
+    "$JAVA" -jar ${classesDir}/dcache.jar
+}
+
+
+loadDomainConfiguration() # $1 = domain
+{
+    DOMAIN="$1"
+    loadConfig "dcache.*"
 }
 
 # Parse global options
@@ -224,45 +227,33 @@ ourHomeDir="${DCACHE_HOME}"   # We still use ourHomeDir in some places
 # Load libraries
 . ${DCACHE_HOME}/share/lib/paths.sh
 . ${DCACHE_LIB}/utils.sh
-. ${DCACHE_LIB}/config.sh
-. ${DCACHE_LIB}/services.sh
-. ${DCACHE_LIB}/namespace.sh
+. ${DCACHE_LIB}/services2.sh
 . ${DCACHE_LIB}/pool.sh
 
+DCACHE_CONFIG="${DCACHE_HOME}/share/defaults:${DCACHE_HOME}/etc/dcache.conf"
+
 # Check prerequisites
-require awk df egrep grep sed cat hostname wc dirname basename mount mv
+require awk df egrep grep sed cat hostname wc dirname basename mount mv tr which
 
-# Read configuration files
-readconf ${DCACHE_HOME}/etc/node_config NODE_CONFIG_ ||
-readconf ${DCACHE_HOME}/etc/door_config NODE_CONFIG_ ||
-    fail 1 "Failed to read ${DCACHE_HOME}/etc/node_config"
-loadConfigurationFile dCache dCache ||
-    fail 1 "Failed to read dCacheSetup file"
-loadConfigurationFile pool pool || loadConfigurationFile dCache pool
-
-# We sometimes need to start java; import the path from dCacheSetup
-java="${dCache_java}"
-classesDir="${dCache_classesDir}"
-
-# Sanitycheck for java
-if [ -z "${java}" ] || [ ! -x "${java}" ] || ! ${java} -version 2>&1 | egrep -e 'version "1\.[6]' >/dev/null ; then
-    fail 1 "The variable 'java' in ${ourHomeDir}/config/dCacheSetup
-            has to be set to a Java VM version 6."
+# Check for java
+if ! findJavaTool java || [ ! -x "${java}" ] || ! "$java" -version 2>&1 | egrep -e 'version "1\.[6]' >/dev/null ; then
+    fail 1 "Could not find usable Java VM. Please set JAVA_HOME to
+            the path to Java 6 or newer."
 fi
+JAVA="$java"
 
 determineHostName
 
 case "$1" in
     start)
         shift
-        domains=$(printExpandedServiceAndDomainList "$@")
-
-        if isNameSpaceMountNeeded $domains; then
-            autoMountNameSpace
-        fi
+        domains=$(printDomains "$@")
 
         for domain in $domains; do
-            runDomain $domain start || :
+	    (
+		loadDomainConfiguration "$domain"
+                domainStart || :
+	    )
         done
 
         touch $DCACHE_LOCK 2> /dev/null || :
@@ -270,13 +261,16 @@ case "$1" in
 
     stop)
         shift
-        domains=$(printExpandedServiceAndDomainList "$@")
+        domains=$(printDomains "$@")
 
         reverse domains_backward $domains
         for domain in $domains_backward; do
-            if getPidOfDomain $domain pid; then
-                runDomain $domain stop || :
-            fi
+	    (
+		loadDomainConfiguration "$domain"
+		if pid=$(printDaemonPid); then
+                    domainStop || :
+		fi
+            )
         done
 
         rm -f $DCACHE_LOCK
@@ -284,71 +278,62 @@ case "$1" in
 
     restart)
         shift
-        domains=$(printExpandedServiceAndDomainList "$@")
+        domains=$(printDomains "$@")
 
         reverse domains_backward $domains
         for domain in $domains_backward; do
-            if getPidOfDomain $domain pid; then
-                runDomain $domain stop || :
-            fi
+	    (
+		loadDomainConfiguration "$domain"
+                if pid=$(printDaemonPid); then
+                    domainStop || :
+		fi
+	    )
         done
 
-        if isNameSpaceMountNeeded $domains; then
-            autoMountNameSpace
-        fi
-
         for domain in $domains; do
-            runDomain $domain start || :
+	    (
+		loadDomainConfiguration "$domain"
+                domainStart || :
+            )
         done
         ;;
 
     condrestart)
         shift
-        domains=$(printExpandedServiceAndDomainList "$@")
+        domains=$(printDomains "$@")
 
         reverse domains_backward $domains
         for domain in $domains_backward; do
-            if getPidOfDomain $domain pid; then
-		running_domains="$running_domains $domain"
-                runDomain $domain stop || :
-            fi
+	    (
+		loadDomainConfiguration "$domain"
+		if pid=$(printDaemonPid); then
+		    running_domains="$running_domains $domain"
+                    domainStop
+		fi
+	    )
         done
 
         reverse domains_to_start $running_domains
         for domain in $domains_to_start; do
-            runDomain $domain start || :
+	    (
+		loadDomainConfiguration "$domain"
+		domainStart
+            )
         done
         ;;
 
     status)
-        domains=$(printAllDomains)
+        domains=$(printDomains "*")
         maxWidth width $domains
-        format="%-${width}s %-16s %s\n"
-        printf "$format" "Domain" "Service" "Status"
+        format="%-${width}s %-10s %5s\n"
+        printf "$format" "Domain" "Status" "PID"
         for domain in $domains; do
-            if ! getPidOfDomain $domain pid; then
-                status="stopped"
-            elif getJavaPidOfDomain $domain pid; then
-                status="running"
-            else
-                status="restarting"
-            fi
-
-            getService $domain service || service=
-
-            printf "$format" "$domain" "$service" "$status"
-        done
-        ;;
-
-    services)
-        domains=$(printAllDomains)
-        maxWidth width $domains
-        format="%-${width}s %-16s %s\n"
-        printf "$format" "Domain" "Service" "Log"
-        for domain in $domains; do
-            getService $domain service || service=
-            getLogOfDomain ${domain} log && [ -f "$log" ] || log=
-            printf "$format" "$domain" "$service" "$log"
+	    (
+		loadDomainConfiguration "$domain"
+		status=$(printDomainStatus)
+		pid=$(printJavaPid) || :
+		printf "$format" "$domain" "$status" "$pid"
+            )
         done
         ;;
 
@@ -367,34 +352,6 @@ case "$1" in
         shift
 
         case "$command" in
-            ls)
-                [ $# -gt 0 ] && usage
-
-                domains=$(printAllPoolDomains)
-                pools=$(printAllPools $domains)
-                maxWidth width_1 $pools
-                maxWidth width_2 $domains
-                format="%-${width_1}s %-${width_2}s %-9s %7s%7s %s\n"
-                printf "$format" "Pool" "Domain" "LFS" "Size" "Free" "Path"
-                for domain in $domains; do
-                    printPoolsInDomain $domain | while read pool path param; do
-                        lfs=$(echo $param | sed -n -e 's/.*lfs=\([^ ]*\).*/\1/p')
-                        if [ -f "${path}/setup" ]; then
-                            getSizeOfPool "$path" size
-                            getFreeSpace "$path" free
-                            printf "$format" "$pool" "$domain" "$lfs" "$size" "$free" "$path"
-                        else
-                            printf "$format" "$pool" "$domain" "$lfs" "-" "-" "$path (missing)"
-                        fi
-                    done
-                done
-
-                echo
-                printp "Disk space is measured in GiB. Free space is
-                        reported for the partition containing the pool,
-                        not for the pool itself."
-                ;;
-
             create)
                 [ $# -ne 2 ] && usage
 
@@ -404,50 +361,15 @@ case "$1" in
                 createPool ${size} ${path}
                 ;;
 
-            add)
-                parseOptions "domain fqdn lfs" "$@" || shift $?
-
-                [ $# -ne 2 ] && usage
-                pool=$1
-                path=$2
-
-                addPool ${pool} ${path} ${opt_domain:-"${hostname}Domain"} ${opt_fqdn:-0} ${opt_lfs:-precious}
-                ;;
-
-            remove)
-                [ $# -ne 1 ] && usage
-                pool=$1
-                removePool ${pool}
-                ;;
-
             reconstruct)
                 [ $# -ne 2 ] && usage
-                pool="$1"
+                src="$1"
                 dst="$2"
 
-                # First find the domain containing the pool
-                domains=$(printAllPoolDomains)
-                if ! getDomainOfPool domain "$pool" $domains; then
-                    fail 2 "Cannot find a pool named $pool."
-                fi
-
-                # Make sure the pool is not running right now
-                if getPidOfDomain "$domain" pid; then
-                    fail 1 "$domain contains $pool, however the domain is
-                            still running. Please stop the domain before
-                            attempting to reconstruct the meta data. The
-                            domain can be stopped using the command
-                            '$0 stop $domain'."
-                fi
-
-                # Find the path to the pool
-                getPoolPath "$pool" "$domain" path || fail 1 "Failed to locate pool"
-
                 # Check that we have a meta directory
-                if [ ! -d "$path/meta" ]; then
-                    fail 2 "$pool appears to be stored in $path, however the
-                            pool appears not to have a Berkeley DB holding the
-                            meta data, as there is no $path/meta directory."
+                if [ ! -d "$src/meta" ]; then
+                    fail 2 "The pool appears not to have a Berkeley DB holding
+                            the meta data, as there is no $src/meta directory."
                 fi
 
                 # Make sure the destination does not exist
@@ -458,13 +380,12 @@ case "$1" in
 
                 # Reconstruct the DB
                 mkdir -p "$dst" || fail 1 "Failed to create $dst"
-                reconstructMeta "${path}/meta" "${dst}" || fail 1 "Operation aborted"
+                reconstructMeta "${src}/meta" "${dst}" || fail 1 "Operation aborted"
 
-                printp "The pool meta data database of $pool was reconstructed
+                printp "The pool meta data database of $src was reconstructed
                         and stored in $dst. You have to manually replace
-                        $path/meta with the content of $dst."
+                        $src/meta with the content of $dst."
                 ;;
-
 
             *)
                 usage
@@ -489,54 +410,58 @@ case "$1" in
 
                 [ $# -ne 2 ] && usage
 
-                domain=$1
-                file=$2
+                (
+		    loadDomainConfiguration "$1"
 
-                findJavaTool jmap ||
-                fail 1 "Could not find the jmap command, part of the Java 6
-                        JDK. This command is required for producing a heap
-                        dump. Please ensure that either jmap is in the path
-                        or update dCacheSetup to point to its location."
+                    file=$2
 
-                if [ -f ${file} ]; then
-                    fail 1 "${file} already exists. Heap not dumped."
-                fi
+                    findJavaTool jmap ||
+                    fail 1 "Could not find the jmap command, part of the Java 6
+                            JDK. This command is required for producing a heap
+                            dump. Please ensure that either jmap is in the path
+                            or update dCacheSetup to point to its location."
 
-                if ! getJavaPidOfDomain ${domain} pid; then
-                    fail 1 "Domain ${domain} is not running."
-                fi
+                    if [ -f ${file} ]; then
+                        fail 1 "${file} already exists. Heap not dumped."
+                    fi
 
-                if [ -z "$opt_force" ]; then
-                    dumpHeap "" "live" "$file" "$pid" \
-                         "Failed to dump the heap; please consult
-                          the previous error message for possible
-                          reasons. The dump might succeed when using
-                          the --force option."
-                else
-                    dumpHeap "force" "" "$file" "$pid" \
-                         "Failed to dump the heap; please consult
-                          the previous error message for possible
-                          reasons."
-                fi
+                    if ! pid=$(printJavaPid); then
+                        fail 1 "Domain ${DOMAIN} is not running."
+                    fi
 
-                printp "The heap of domain ${domain} has been written to
-                        ${file}. Notice that the file might contain
-                        confidential information."
+                    if [ -z "$opt_force" ]; then
+                        dumpHeap "" "live" "$file" "$pid" \
+                            "Failed to dump the heap; please consult
+                             the previous error message for possible
+                             reasons. The dump might succeed when using
+                             the --force option."
+                    else
+                        dumpHeap "force" "" "$file" "$pid" \
+                            "Failed to dump the heap; please consult
+                             the previous error message for possible
+                             reasons."
+                    fi
+
+                    printp "The heap of domain ${DOMAIN} has been written to
+                            ${file}. Notice that the file might contain
+                            confidential information."
+                )
                 ;;
 
             threads)
-                domains=$(printExpandedServiceAndDomainList "$@")
-                for domain in $domains; do
-                    if getJavaPidOfDomain ${domain} pid; then
-                        if ! kill -s QUIT "${pid}"; then
-                            fail 1 "Failed to dump stack traces. Likely
-                                    the current user does not have the
-                                    proper permissions."
+                for domain in $(printDomains "$@"); do
+	            (
+		        loadDomainConfiguration "$domain"
+                        if pid=$(printJavaPid); then
+                            if ! kill -s QUIT "${pid}"; then
+                                fail 1 "Failed to dump stack traces. Likely
+                                        the current user does not have the
+                                        proper permissions."
+                            fi
+                            printp "Stack traces for $domain have been written to $DCACHE_LOG_FILE."
                         fi
-                    fi
+                    )
                 done
-
-                printp "Stack traces have been written to the log files."
                 ;;
 
             *)

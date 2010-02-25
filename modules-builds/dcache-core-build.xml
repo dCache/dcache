@@ -388,31 +388,8 @@
         <!-- jar file  -->
         <copy file="${classesDir}/dcache.jar" todir="${server.bin.dir}/classes" />
 
-        <!-- .batch file - e.g. domains  -->
-        <copy file="${dcache.src}/diskCacheV111/config/dCache.batch" todir="${server.bin.dir}/config" />
-        <copy file="${dcache.src}/diskCacheV111/config/pnfs.batch" todir="${server.bin.dir}/config" />
-        <copy file="${dcache.src}/diskCacheV111/config/lm.batch" todir="${server.bin.dir}/config" />
-        <copy file="${dcache.src}/diskCacheV111/config/dir.batch" todir="${server.bin.dir}/config" />
-        <copy file="${dcache.src}/diskCacheV111/config/door.batch" todir="${server.bin.dir}/config" />
-        <copy file="${dcache.src}/diskCacheV111/config/authdoor.batch" todir="${server.bin.dir}/config" />
-        <copy file="${dcache.src}/diskCacheV111/config/adminDoor.batch" todir="${server.bin.dir}/config" />
-        <copy file="${dcache.src}/diskCacheV111/config/httpd.batch" todir="${server.bin.dir}/config" />
-        <copy file="${dcache.src}/diskCacheV111/config/pool.batch" todir="${server.bin.dir}/config" />
-        <copy file="${dcache.src}/diskCacheV111/config/replica.batch" todir="${server.bin.dir}/config" />
-        <copy file="${dcache.src}/diskCacheV111/config/utility.batch" todir="${server.bin.dir}/config" />
-        <copy file="${dcache.src}/diskCacheV111/config/statistics.batch" todir="${server.bin.dir}/config" />
-        <copy file="${dcache.src}/diskCacheV111/config/xrootdDoor.batch" todir="${server.bin.dir}/config" />
-        <copy file="${dcache.src}/diskCacheV111/config/chimera.batch" todir="${server.bin.dir}/config" />
-        <copy file="${dcache.src}/diskCacheV111/config/nfsv41.batch" todir="${server.bin.dir}/config" />
-        <copy file="${dcache.src}/diskCacheV111/config/info.batch" todir="${server.bin.dir}/config" />
-        <copy file="${dcache.src}/diskCacheV111/config/webdav.batch" todir="${server.bin.dir}/config" />
-        <copy file="${dcache.src}/diskCacheV111/config/webadmin.batch" todir="${server.bin.dir}/config" />
-        <copy file="${dcache.src}/diskCacheV111/config/jsrm.batch" todir="${server.bin.dir}/config" />
-        <!--<copy file="${dcache.src}/diskCacheV111/config/aclcell.batch" todir="${server.bin.dir}/config" /> -->
-
         <!-- configs  -->
         <copy file="${dcache.src}/diskCacheV111/config/PoolManager.conf" todir="${server.bin.dir}/config" />
-        <copy file="${dcache.src}/diskCacheV111/config/lm.config" todir="${server.bin.dir}/config" />
 
         <!-- pool setup template  -->
         <copy file="${dcache.src}/diskCacheV111/config/setup.temp" todir="${server.bin.dir}/config" />
@@ -593,12 +570,6 @@
 
         <!-- .batch file - e.g. domains  -->
         <copy file="${dcache.src}/diskCacheV111/config/srm.batch" todir="${server.bin.dir}/config" />
-        <copy file="${dcache.src}/diskCacheV111/config/transfermanagers.batch" todir="${server.bin.dir}/config" />
-        <copy file="${dcache.src}/diskCacheV111/config/spacemanager.batch" todir="${server.bin.dir}/config" />
-        <copy file="${dcache.src}/diskCacheV111/config/httpdoor.batch" todir="${server.bin.dir}/config" />
-        <copy file="${dcache.src}/diskCacheV111/config/gridftpdoor.batch" todir="${server.bin.dir}/config" />
-        <copy file="${dcache.src}/diskCacheV111/config/gsidcapdoor.batch" todir="${server.bin.dir}/config" />
-        <copy file="${dcache.src}/diskCacheV111/config/gPlazma.batch" todir="${server.bin.dir}/config" />
 
         <!-- Web services stuff   -->
         <copy file="${dcache.src}/diskCacheV111/config/JHRM.map" todir="${server.bin.dir}/config" />

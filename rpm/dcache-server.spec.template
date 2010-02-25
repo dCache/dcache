@@ -74,10 +74,13 @@ fi
 %defattr(-,root,root)
 /opt/d-cache/
 %attr(0755,root,root) /opt/d-cache/install/install.sh
+%attr(0755,root,root) /opt/d-cache/install/preparePnfs.sh
 %attr(0755,root,root) /opt/d-cache/install/deploy_srmv2.sh
+%attr(0755,root,root) /opt/d-cache/install/migrate-config-to-197.sh
 %attr(0755,root,root) /opt/d-cache/jobs/initPackage.sh
 %attr(0755,root,root) /opt/d-cache/jobs/hsmcp.sh
 %attr(0755,root,root) /opt/d-cache/jobs/hsmcpV4.sh
+%attr(0755,root,root) /opt/d-cache/bin/dcache
 %attr(0755,root,root) /opt/d-cache/bin/dcache-srm
 %attr(0755,root,root) /opt/d-cache/libexec/chimera/chimera-nfs-run.sh
 %attr(0755,root,root) /opt/d-cache/libexec/chimera/chimera-cli.sh
@@ -90,6 +93,8 @@ fi
 %config(noreplace) /opt/d-cache/config/*.batch
 %config(noreplace) /opt/d-cache/etc/srm_setup.env
 %config(noreplace) /opt/d-cache/etc/tc-config.xml
+%config(noreplace) /opt/d-cache/etc/layouts/*.conf
+%config(noreplace) /opt/d-cache/etc/dcache.conf
 %config /opt/d-cache/share/cells/*.cell
 %changelog
 

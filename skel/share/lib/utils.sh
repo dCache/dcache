@@ -133,24 +133,36 @@ findJavaTool() # in $1 = tool
 {
     eval local path=\$$1
 
+    # Check for cached or predefined result
     if [ -n "$path" ]; then
         if [ ! -x "$path" ]; then
             return 0
         fi
-    else
-        path="$(dirname ${java})/$1"
+    fi
+
+    # See if JAVA is predefined
+    if [ -n "$JAVA" ]; then
+        path="$(dirname ${JAVA})/$1"
         if [ -x "$path" ]; then
             eval $1=\"$path\"
             return 0
         fi
+    fi
 
-        if [ -n "$JAVA_HOME" ]; then
-            path="$JAVA_HOME/bin/$1"
-            if [ -x "$path" ]; then
-                eval $1=\"$path\"
-                return 0
-            fi
+    # Look in JAVA_HOME
+    if [ -n "$JAVA_HOME" ]; then
+        path="$JAVA_HOME/bin/$1"
+        if [ -x "$path" ]; then
+            eval $1=\"$path\"
+            return 0
         fi
+    fi
+
+    # Check if it is on the path
+    path="$(which $1)"
+    if [ -x "$path" ]; then
+        eval $1=\"$path\"
+        return 0
     fi
 
     return 1

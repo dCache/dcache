@@ -129,18 +129,11 @@ createPool() # in $1 = size, in $2 = path
                 has ${ds} GiB of free space. Operation aborted."
     fi
 
-    # Why does node_config contain default values for new pools? That
-    # will for sure confuse our users, since they are made to believe
-    # they can adjust the number of movers by changing node_config;
-    # which is not the case!
-    movers="$NODE_CONFIG_NUMBER_OF_MOVERS"
-
     mkdir -p "${path}" "${path}/data" "${path}/control" ||
     fail 1 "Failed to create directory tree"
 
     set_size="s:set max diskspace 100g:set max diskspace ${size}g:g"
-    set_movers="s:mover set max active 10:mover set max active ${movers}:g"
-    sed -e "$set_size" -e "$set_movers" ${pool_config}/setup.temp > ${path}/setup || exit 1
+    sed -e "$set_size" ${DCACHE_CONFIG}/setup.temp > ${path}/setup || exit 1
 
     printp "Created a $size GiB pool in $path. The pool cannot be used
             until it has been added to a domain. Use 'pool add' to do so."\
