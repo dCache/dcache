@@ -9,6 +9,11 @@ import java.net.Inet4Address;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.MalformedURLException;
+
 import org.apache.log4j.Logger;
 
 /**
@@ -73,6 +78,28 @@ public abstract class NetworkUtils {
             return socket.getLocalAddress();
         } finally {
             socket.close();
+        }
+    }
+
+    /**
+     * Like URI.toURL, but translates exceptions to URISyntaxException
+     * with a descriptive error message.
+     */
+    public static URL toURL(URI uri)
+        throws URISyntaxException
+    {
+        try {
+            return uri.toURL();
+        } catch (IllegalArgumentException e) {
+            URISyntaxException exception =
+                new URISyntaxException(uri.toString(), e.getMessage());
+            exception.initCause(e);
+            throw exception;
+        } catch (MalformedURLException e) {
+            URISyntaxException exception =
+                new URISyntaxException(uri.toString(), e.getMessage());
+            exception.initCause(e);
+            throw exception;
         }
     }
 }
