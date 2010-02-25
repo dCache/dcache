@@ -27,7 +27,8 @@ public class      CellShell
    private int          _errorCode      = 0 ;
    private String       _errorMsg       = null ;
    private String       _doOnExit       = null ;
-   private final Map<String, Object> _environment = CollectionFactory.newConcurrentHashMap();
+   private final Map<String, Object> _environment =
+       CollectionFactory.newConcurrentHashMap();
    private final ClassLoaderFactory _classLoaderFactory  = new ClassLoaderFactory() ;
    private CommandInterpreter _externalInterpreter = null  ;
    private String             _classProvider       = null ;
@@ -40,6 +41,19 @@ public class      CellShell
       } catch (CommandExitException e) {
       }
    }
+
+    /**
+     * Returns the environment of the shell.
+     *
+     * The map is backed by the shell's environment. Any modification
+     * to the map changes the shell environment and any change in the
+     * shell environment is reflected in the map.
+     */
+    public Map<String,Object> environment()
+    {
+        return _environment;
+    }
+
    public String getReplacement( String name ){
       Object o = getDictionaryEntry( name ) ;
       return o == null ? null : o.toString() ;
@@ -220,7 +234,7 @@ public class      CellShell
    }
 
    @Override
-public String command( String c ) throws CommandExitException {
+   public String command( String c ) throws CommandExitException {
       StringTokenizer st = new StringTokenizer( c , "\n" ) ;
       StringBuilder    sb = new StringBuilder();
       for( ; st.hasMoreTokens() ; ){
@@ -1763,7 +1777,9 @@ public String command( String c ) throws CommandExitException {
         String scheme = uri.getScheme();
         String ssp = uri.getSchemeSpecificPart();
 
-        if (scheme.equals("context")) {
+        if (scheme == null) {
+            return new InputStreamReader(uri.toURL().openStream());
+        } else if (scheme.equals("context")) {
             String host = uri.getHost();
             String path = uri.getPath();
             if (host == null) {
