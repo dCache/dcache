@@ -4,7 +4,12 @@ package org.dcache.srm.util;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.MessageDigest;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Arrays;
 import java.util.zip.Adler32;
+import org.globus.ftp.FeatureList;
 import org.globus.ftp.GridFTPClient;
 import org.globus.ftp.DataChannelAuthentication;
 import org.globus.ftp.GridFTPSession;
@@ -45,7 +50,7 @@ public class GridftpClient
     private final static int FirstByteTimeout=60*60; //one hour
     private final static int NextByteTimeout=60*10; //10 minutes
 
-    private final FnalGridFTPClient _client;
+    private final GridFTPClient _client;
     private final String _host;
     private String _cksmType;
     private String _cksmValue;
@@ -60,7 +65,8 @@ public class GridftpClient
     private long _transferred = 0;
     private boolean _closed = false;
 
-    private static String[] cksmTypeList = { "adler32","MD5","MD4" };
+    private static List<String> cksmTypeList =
+            Arrays.asList(new String[]{ "ADLER32","MD5","MD4" });
 
     public GridftpClient(String host, int port,
                          int tcpBufferSize,
@@ -94,7 +100,7 @@ public class GridftpClient
         _host = host;
         logger.debug("connecting to "+_host+" on port "+port);
 
-        _client  = new FnalGridFTPClient(_host, port);
+        _client  = new GridFTPClient(_host, port);
         _client.setLocalTCPBufferSize(_tcpBufferSize);
         logger.debug("gridFTPClient tcp buffer size is set to "+_tcpBufferSize);
         _client.authenticate(cred); /* use credentials */
@@ -242,8 +248,7 @@ public class GridftpClient
                UnexpectedReplyCodeException
     {
         logger.debug(" sending wait command to ncsa host " + _host);
-        GridFTPControlChannel channel = _client.getControlChannel();
-        Reply reply = channel.execute(new Command("SITE","WAIT"));
+        Reply reply = _client.quote("SITE WAIT");
         logger.debug("Reply is "+reply);
         if(Reply.isPositiveCompletion( reply)) {
             logger.debug("sending wait command successful");
@@ -461,14 +466,6 @@ public class GridftpClient
         if(use_chksum || _cksmType != null) {
 
             sendCksmValue(source);
-            /*
-              try {
-              sendAddler32Checksum(source.getAdler32());
-              }
-              catch(Exception e) {
-              logger.debug("could not set addler 32 "+e.toString());
-              }
-            */
         }
 
         _current_source_sink = source;
@@ -493,51 +490,74 @@ public class GridftpClient
     }
 
     private void sendCksmValue(IDiskDataSourceSink source)
-        throws IOException,NoSuchAlgorithmException
-    {
-        String myType = _cksmType;
-        if ( _cksmType == null  || _cksmType.equals("negotiate") )
-            myType = cksmTypeList[0];
+        throws IOException,NoSuchAlgorithmException,
+            ClientException, ServerException {
 
-        if ( _cksmValue == null )
-           _cksmValue = source.getCksmValue(myType);
+        String commonCksumAlogorithm = getCommonChecksumAlgorithm();
 
-        // send gridftp message
+        if ( commonCksumAlogorithm == null) return;
+
         try {
-            _client.sendCksmValue(myType,_cksmValue);
+            if ( commonCksumAlogorithm.equals(_cksmType) && _cksmValue != null) {
+                _client.setChecksum(_cksmType,_cksmValue);
+            } else {
+                String checkusValue =  source.getCksmValue(commonCksumAlogorithm);
+                _client.setChecksum(commonCksumAlogorithm,checkusValue);
+            }
         } catch ( Exception ex ){
             // send cksm error is often expected for non dCache sites
             logger.debug("Was not able to send checksum value:"+ex.toString());
         }
     }
 
+    public String getCommonChecksumAlgorithm() throws IOException,
+            ClientException, ServerException {
+
+        if (!_client.isFeatureSupported(FeatureList.CKSUM)) return null;
+
+        List<String> algorithms = _client.getSupportedCksumAlgorithms();
+
+
+
+        if(_cksmType == null || _cksmType.equals("negotiate") ) {
+            List<String> supportedByClientAndServer = new ArrayList(cksmTypeList);
+            supportedByClientAndServer.retainAll(algorithms);
+
+            //exit if no common algorithms are supported
+            if(supportedByClientAndServer.isEmpty()) return null;
+
+            return supportedByClientAndServer.get(0);
+        }
+
+        if( algorithms.contains(_cksmType)) {
+            // checksum type is specified, but is not supported by the server
+            return _cksmType;
+        }
+
+        return null;
+    }
+
    public Checksum negotiateCksm(String path)
    throws IOException,
        ServerException,
+       ClientException,
        ChecksumNotSupported,
        ChecksumValueFormatException
    {
+        String commonAlgorithm = getCommonChecksumAlgorithm();
+        if(commonAlgorithm == null) {
+           throw new ChecksumNotSupported("Checksum is not supported : " +
+                   "couldn't negotiate type value",0);
 
-       for ( int i = 0; i < cksmTypeList.length; ++i){
-              try {
-                 String serverCksmValue = _client.getCksmValue(cksmTypeList[i],path);
-                 logger.debug("Negotiated type:"+cksmTypeList[i]+", value:"+serverCksmValue);
-                 return new Checksum(cksmTypeList[i],serverCksmValue);
-              } catch ( ChecksumNotSupported ex ){
-                 int majorCode = ex.getCode()/10;
-                 logger.error("code:"+Integer.toString(ex.getCode()));
-                 if ( majorCode == 50 )
-                    logger.error("Checksum is not supported:"+ex.toString()+" continuing search");
-                 else
-                    break;
-              }
         }
-        throw new ChecksumNotSupported("Checksum is not supported : couldn't negotiate type value",0);
+        String serverCksmValue = _client.getChecksum(commonAlgorithm, path);
+        return new Checksum(commonAlgorithm,serverCksmValue);
    }
 
     private void verifyCksmValue(IDiskDataSourceSink source,String remotePath)
         throws IOException,
         ServerException,
+        ClientException,
         NoSuchAlgorithmException,
         ChecksumNotSupported,
         ChecksumValueFormatException
@@ -549,7 +569,8 @@ public class GridftpClient
         if ( _cksmType.equals("negotiate") )
            serverChecksum = negotiateCksm(remotePath);
         else
-           serverChecksum = new Checksum(_cksmType,_client.getCksmValue(_cksmType,remotePath));
+           serverChecksum = new Checksum(_cksmType,
+                   _client.getChecksum(_cksmType,remotePath));
 
         if ( _cksmValue == null )
             _cksmValue = source.getCksmValue(serverChecksum.type);
@@ -590,7 +611,7 @@ public class GridftpClient
         catch(Exception e) {
         }
     }
-    
+
     /** Getter for property streamsNum.
      * @return Value of property streamsNum.
      *
@@ -651,7 +672,11 @@ public class GridftpClient
      *
      */
     public static void setSupportedChecksumTypes(String[] types){
-         cksmTypeList = types;
+
+         cksmTypeList = new ArrayList();
+         for(String algorithm: types){
+             cksmTypeList.add(algorithm.toUpperCase());
+         }
     }
 
     public static final void main( String[] args ) throws Exception {
@@ -746,7 +771,7 @@ public class GridftpClient
         private boolean _done = false;
         private final boolean _emode;
         private final boolean _passive_server_mode;
-        private final FnalGridFTPClient _client;
+        private final GridFTPClient _client;
         private Exception _throwable;
         private final String _path;
         private final IDiskDataSourceSink _source_sink;
@@ -754,7 +779,7 @@ public class GridftpClient
         private long _size;
         private Thread _runner;
 
-        public TransferThread(FnalGridFTPClient client,
+        public TransferThread(GridFTPClient client,
                               String path,
                               IDiskDataSourceSink source_sink,
                               boolean emode,
@@ -1031,96 +1056,6 @@ public class GridftpClient
             return _diskFile.length();
         }
 
-    }
-
-    private static class FnalGridFTPClient extends GridFTPClient {
-        public FnalGridFTPClient(String host, int port)
-            throws IOException,ServerException
-        {
-            super(host,port);
-        }
-
-        public GridFTPControlChannel getControlChannel() {
-            return (GridFTPControlChannel)controlChannel;
-        }
-
-        private void sendAddler32Checksum(String adler32String)
-            throws IOException, ServerException
-        {
-            Reply reply = quote("SITE CHKSUM "+ adler32String);
-            if(Reply.isPositiveCompletion( reply)) {
-            } else {
-                throw new IOException(reply.getMessage());
-            }
-
-        }
-
-        public void sendCksmValue(String type,String value)
-            throws IOException, ServerException
-        {
-            try {
-                Reply reply = quote("SCKS "+type+" "+value);
-
-                if ( !Reply.isPositiveCompletion(reply) ){
-                    if ( type.equalsIgnoreCase("adler32") ){
-                        sendAddler32Checksum(value);
-                        return;
-                    }
-                    throw new IOException(reply.getMessage());
-                }
-            } catch ( ServerException ex ){
-                if ( type.equalsIgnoreCase("adler32") ){
-                    sendAddler32Checksum(value);
-                    return;
-                }
-                throw ex;
-            }
-        }
-
-        public String getCksmValue(String type,String path)
-        throws IOException,
-            ServerException,
-            ChecksumNotSupported,
-            ChecksumValueFormatException
-        {
-            try {
-               org.globus.ftp.vanilla.Reply reply = quote("CKSM "+type+" 0 -1 "+path);
-               if ( !org.globus.ftp.vanilla.Reply.isPositiveCompletion(reply) ){
-                  throw new ChecksumNotSupported("Checksum type "+type+" can not be retrieved:"+reply.getMessage(),reply.getCode());
-               }
-               return validateChecksumTypeValue(type,reply.getMessage());
-            } catch ( org.globus.ftp.exception.ServerException ex){
-              throw new ChecksumNotSupported("Checksum type "+type+" can not be retrieved:"+ex.toString(),parseCode(ex.toString()));
-            }
-        }
-
-        private String validateChecksumTypeValue(String type,String value)
-        throws ChecksumValueFormatException {
-            if(type.equalsIgnoreCase("adler32")) {
-                try {
-                  long lvalue = Long.parseLong(value,16);
-                } catch(Exception e) {
-                    throw new
-                        ChecksumValueFormatException("value = "+value+
-                        " caused by:"+ e.getMessage());
-                }
-            }
-
-            return value;
-
-        }
-        private int parseCode(String msg){
-         try {
-            String delim = "Unexpected reply:";
-            int pos = msg.indexOf(delim);
-            if ( pos != -1 ){
-               pos += delim.length() + 1;
-               String codeS = msg.substring(pos,pos+3);
-               return Integer.parseInt(codeS);
-            }
-         } catch ( Exception ex){ }
-         return 1;
-       }
     }
 
     public static String long32bitToHexString(long value){
