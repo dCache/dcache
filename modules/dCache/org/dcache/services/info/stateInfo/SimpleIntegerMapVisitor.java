@@ -24,7 +24,7 @@ import org.dcache.services.info.base.StateTransition;
  *   "item2" --> Long(30)
  *   "item3" --> Long(50)
  * </pre>
- * 
+ *
  * @author Paul Millar <paul.millar@desy.de>
  */
 public class SimpleIntegerMapVisitor extends SimpleSkeletonMapVisitor {
@@ -40,7 +40,7 @@ public class SimpleIntegerMapVisitor extends SimpleSkeletonMapVisitor {
 		exhibitor.visitState( visitor, pathToList);
 		return visitor.getMap();
 	}
-	
+
 	/**
 	 * Build a mapping between list items and some StringStateValue value for dCache's state after
 	 * a transition has taken place.
@@ -54,15 +54,15 @@ public class SimpleIntegerMapVisitor extends SimpleSkeletonMapVisitor {
 		exhibitor.visitState(transition, visitor, pathToList);
 		return visitor.getMap();
 	}
-	
+
 	Map <String,Long> _map;
-	
+
 	public SimpleIntegerMapVisitor( StatePath pathToList, StatePath pathToMetric) {
 		super( pathToList, pathToMetric);
-		
+
 		_map = new HashMap<String,Long>();
 	}
-	
+
 	@Override
 	public void visitInteger(StatePath path, IntegerStateValue value) {
 		if( path.equals( getPathToMetric()))
