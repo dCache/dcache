@@ -28,11 +28,11 @@ import org.dcache.services.info.base.StateTransition;
  * item2 -> {i2E1, i2E2, i2E3}
  * item3 -> {i3E1}
  * </pre>
- * 
+ *
  * @author Paul Millar <paul.millar@desy.de>
  */
 public class SetMapVisitor extends SkeletonListVisitor {
-	
+
 	/**
 	 * Obtain a Map between list items and their corresponding Set of the children of some
 	 * fixed relative path for dCache's current state.  For example, if dCache currently
@@ -53,7 +53,7 @@ public class SetMapVisitor extends SkeletonListVisitor {
 	 * "item2" -> {"i2E1", "i2E2", "i2E3"}
 	 * "item3" -> {"i3E1"}
 	 * </pre>
-	 * 
+	 *
 	 * @param pathToMainList the StatePath for the common parent for the primary list
 	 * @param pathToSecondList the StatePath, relative to the list item for parent of the item list.
 	 * @return a mapping between an item and the set of items at a fixed relative path.
@@ -86,7 +86,7 @@ public class SetMapVisitor extends SkeletonListVisitor {
 	 * "item2" -> {"i2E1", "i2E2", "i2E3"}
 	 * "item3" -> {"i3E1"}
 	 * </pre>
-	 * 
+	 *
 	 * @param pathToMainList the StatePath for the common parent for the primary list
 	 * @param pathToSecondList the StatePath, relative to the list item for parent of the item list.
 	 * @return a mapping between an item and the set of items at a fixed relative path.
@@ -102,16 +102,16 @@ public class SetMapVisitor extends SkeletonListVisitor {
 
 	/** Record the relative path to the parent object of the secondard list items */
 	final private StatePath _relativePathToList;
-	
+
 	/** The mapping to return */
 	final private Map<String,Set<String>> _map = new HashMap<String,Set<String>>();
-	
-	/** The (absolute) StatePath to the current list-item's parent */ 
+
+	/** The (absolute) StatePath to the current list-item's parent */
 	private StatePath _pathToSet;
-	
+
 	/** The set of secondary list-items for the current (primary) list item */
 	private Set<String> _thisListItemSet;
-	
+
 	/**
 	 * Create a new visitor that extracts a mapping from dCache state.
 	 * @param pathToPrimaryList path of the common parent of the primary list
@@ -119,21 +119,21 @@ public class SetMapVisitor extends SkeletonListVisitor {
 	 * the common parent of the secondary list.
 	 */
 	public SetMapVisitor( StatePath pathToPrimaryList, StatePath relativePathToSecondList) {
-		super( pathToPrimaryList);	
+		super( pathToPrimaryList);
 		_relativePathToList = relativePathToSecondList;
 	}
-	
+
 	@Override
 	protected void newListItem( String listItemName) {
 		super.newListItem( listItemName);
-		
+
 		_pathToSet = getPathToList().newChild( listItemName).newChild( _relativePathToList);
-		
+
 		_thisListItemSet = new HashSet<String>();
 		_map.put( listItemName, _thisListItemSet);
 	}
-	
-	
+
+
 	@Override
 	protected void exitingListItem( String listItemName) {
 		super.exitingListItem( listItemName);
@@ -141,12 +141,12 @@ public class SetMapVisitor extends SkeletonListVisitor {
 		_pathToSet = null;
 		_thisListItemSet = null;
 	}
-	
-	
+
+
 	@Override
 	public void visitCompositePreDescend(StatePath path, Map<String, String> metadata) {
 		super.visitCompositePreDescend(path, metadata);
-		
+
 		if( isInListItem())
 			if( _pathToSet.isParentOf( path))
 				_thisListItemSet.add( path.getLastElement());
