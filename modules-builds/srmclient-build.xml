@@ -281,7 +281,7 @@
         <!-- log4j -->
         <mkdir dir="${srmclient.bin.dir}/lib/log4j" />
         <copy todir="${srmclient.bin.dir}/lib/log4j">
-            <fileset dir="${axis.untared}/lib/">
+            <fileset dir="${libDir}/log4j">
                 <include name="*.jar"/>
             </fileset>
         </copy>
