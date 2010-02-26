@@ -123,6 +123,7 @@ public class SRMSetPermissionClientV2 extends SRMClient {
 				      getGssCredential(),
 				      configuration.getRetry_timeout(),
 				      configuration.getRetry_num(),
+                                      configuration.getLogger(),
 				      doDelegation,
 				      fullDelegation,
 				      gss_expected_name,
