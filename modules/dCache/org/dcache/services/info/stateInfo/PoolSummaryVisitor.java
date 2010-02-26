@@ -11,7 +11,7 @@ import org.dcache.services.info.base.StateTransition;
 public class PoolSummaryVisitor extends AbstractPoolSpaceVisitor {
 
 	private static Logger _log = LoggerFactory.getLogger( PoolSummaryVisitor.class);
-		
+
 	/**
 	 * Obtain some summary statistics about all available pools.
 	 * @return the aggregated information about the pools.
@@ -19,14 +19,14 @@ public class PoolSummaryVisitor extends AbstractPoolSpaceVisitor {
 	static public SpaceInfo getDetails( StateExhibitor exhibitor) {
 		if( _log.isDebugEnabled())
 			_log.debug( "Gathering summary information.");
-		
+
 		PoolSummaryVisitor visitor = new PoolSummaryVisitor();
-		exhibitor.visitState(visitor, POOLS_PATH);		
+		exhibitor.visitState(visitor, POOLS_PATH);
 
 		return visitor._summaryInfo;
 	}
-	
-	
+
+
 	/**
 	 * Obtain the summary statistics about all available pools after a transition
 	 * has taken place.
@@ -36,18 +36,18 @@ public class PoolSummaryVisitor extends AbstractPoolSpaceVisitor {
 	static public SpaceInfo getDetails( StateExhibitor exhibitor, StateTransition transition) {
 		if( _log.isDebugEnabled())
 			_log.debug( "Gathering summary information.");
-		
+
 		PoolSummaryVisitor visitor = new PoolSummaryVisitor();
 		exhibitor.visitState( transition, visitor, POOLS_PATH);
-		
-		return visitor._summaryInfo;		
+
+		return visitor._summaryInfo;
 	}
-		
+
 	private SpaceInfo _summaryInfo = new SpaceInfo();
-		
+
 	@Override
-	protected void newPool( String poolName, SpaceInfo space) {		
+	protected void newPool( String poolName, SpaceInfo space) {
 		_summaryInfo.add( space);
 	}
-		
+
 }
