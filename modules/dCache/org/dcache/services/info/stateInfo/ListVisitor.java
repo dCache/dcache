@@ -12,25 +12,25 @@ import org.dcache.services.info.base.StateTransition;
 
 /**
  * A very simple StateVisitor class.  This visitor builds a list of the names of immediate
- * children of a StateComposite.  The parent StateComposite is described by the StatePath. 
+ * children of a StateComposite.  The parent StateComposite is described by the StatePath.
  * @author Paul Millar <paul.millar@desy.de>
  */
 public class ListVisitor extends SkeletonListVisitor {
-	
+
 	private static Logger _log = LoggerFactory.getLogger( ListVisitor.class);
 
-	
+
 	/**
 	 * Obtain the set of items below a certain path within the dCache state.
-	 * @param path the StatePath that is the parent to the required items. 
+	 * @param path the StatePath that is the parent to the required items.
 	 * @return the Set of all items that have the path as their parent.
 	 */
 	static public Set<String> getDetails( StateExhibitor exhibitor, StatePath path) {
 		if( _log.isDebugEnabled())
 			_log.debug( "Gathering current status for path " + path);
-		
+
 		ListVisitor visitor = new ListVisitor( path);
-		exhibitor.visitState(visitor, path);		
+		exhibitor.visitState(visitor, path);
 		return visitor.getItems();
 	}
 
@@ -44,15 +44,15 @@ public class ListVisitor extends SkeletonListVisitor {
 	static public Set<String> getDetails( StateExhibitor exhibitor, StateTransition str, StatePath path) {
 		if( _log.isDebugEnabled())
 			_log.debug( "Gathering current status for path " + path);
-		
+
 		ListVisitor visitor = new ListVisitor( path);
 		exhibitor.visitState( str, visitor, path);
-		return visitor.getItems();		
+		return visitor.getItems();
 	}
 
 	private Set<String> _listItems;
-	
-	public ListVisitor( StatePath parent) {		
+
+	public ListVisitor( StatePath parent) {
 		super( parent);
 		_listItems = new HashSet<String>();
 	}
@@ -62,7 +62,7 @@ public class ListVisitor extends SkeletonListVisitor {
 		super.newListItem( name);
 		_listItems.add( name);
 	}
-	
+
 	public Set<String> getItems() {
 		return _listItems;
 	}
