@@ -12,9 +12,9 @@ import java.util.Date;
  * StateComponents may be mortal, ephemeral or immortal.  If mortal, then the
  * <code>getExpiryDate()</code> method specifies when this StateComponent should be removed.  Ephemeral
  * StateComponents do not have a built-in expire time but do not affect the lifetime of their parent
- * StateComposite.  Immortal StateComponents never expire.   
+ * StateComposite.  Immortal StateComponents never expire.
  * <p>
- * This class implements the Composite pattern and includes support for the visitor pattern. 
+ * This class implements the Composite pattern and includes support for the visitor pattern.
  * @author Paul Millar <paul.millar@desy.de>
  */
 interface StateComponent {
@@ -28,8 +28,8 @@ interface StateComponent {
 	 * <p>
 	 * The start parameter allows an initial skip to a predefined location, before iterating over
 	 * all sub-StateComponents.  In effect, this allows visiting over only a sub-tree.
-	 * 
-	 * @param path this parameter informs an StateComponent of its location within the tree so the visit methods can include this information. 
+	 *
+	 * @param path this parameter informs an StateComponent of its location within the tree so the visit methods can include this information.
 	 * @param start the point in the tree to start visiting all children, or null to visit the whole tree.
 	 * @param visitor the object that operations should be preformed on.
 	 */
@@ -44,7 +44,7 @@ interface StateComponent {
 	 */
 	void acceptVisitor( StateTransition transition, StatePath path, StatePath start, StateVisitor visitor);
 
-	
+
 	/**
 	 * Check whether a predicate has been triggered
 	 * @param ourPath  The StatePath to this StateComponent
@@ -63,7 +63,7 @@ interface StateComponent {
 	void applyTransition( StatePath ourPath, StateTransition transition);
 
 	/**
-	 * Update a StateTransition based adding a new metric. 
+	 * Update a StateTransition based adding a new metric.
 	 * @param ourPath the StatePath of this component
 	 * @param childPath the StatePath, relative to this component, of the new metric
 	 * @param newChild the new metric value.
@@ -75,16 +75,16 @@ interface StateComponent {
 	/**
 	 * This method returns the Date at which this StateComponent should be removed from the state.
 	 * @return the Date when an object should be removed, or null indicating that either is never to
-	 * be removed or else the removal time cannot be predicted in advance. 
+	 * be removed or else the removal time cannot be predicted in advance.
 	 */
 	public Date getExpiryDate();
-	
-	
+
+
 	/**
 	 *  This method returns the earliest Date that any Mortal StateComponent underneath this
 	 *  StateComponent will expire.  This includes children of children and so on.  If this
-	 *  StateComponent contains no Mortal children then null is returned.  
-	 * @return the earliest Date when a Mortal child will expire. 
+	 *  StateComponent contains no Mortal children then null is returned.
+	 * @return the earliest Date when a Mortal child will expire.
 	 */
 	public Date getEarliestChildExpiryDate();
 
@@ -97,7 +97,7 @@ interface StateComponent {
 	 */
 	public void buildRemovalTransition( StatePath ourPath, StateTransition transition, boolean forced);
 
-	
+
 	/**
 	 *  Update a StateTransition so all components below remainingPath from the current
 	 *  StateComponent will be removed.  This is equivalent to
@@ -111,7 +111,7 @@ interface StateComponent {
 	 * @return true if the parent object should remove this object, false otherwise.
 	 */
 	boolean hasExpired();
-	
+
 	boolean isEphemeral();
 	boolean isImmortal();
 	boolean isMortal();
