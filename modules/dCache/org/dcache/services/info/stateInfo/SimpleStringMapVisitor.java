@@ -38,7 +38,7 @@ public class SimpleStringMapVisitor extends SimpleSkeletonMapVisitor {
 		exhibitor.visitState( visitor, pathToList);
 		return visitor.getMap();
 	}
-	
+
 	/**
 	 * Build a mapping between list items and some StringStateValue value for dCache's state after
 	 * a transition has taken place.
@@ -52,15 +52,15 @@ public class SimpleStringMapVisitor extends SimpleSkeletonMapVisitor {
 		exhibitor.visitState(transition, visitor, pathToList);
 		return visitor.getMap();
 	}
-	
+
 	Map <String,String> _map;
-	
+
 	public SimpleStringMapVisitor( StatePath pathToList, StatePath pathToMetric) {
 		super( pathToList, pathToMetric);
-		
+
 		_map = new HashMap<String,String>();
 	}
-	
+
 	@Override
 	public void visitString(StatePath path, StringStateValue value) {
 		if( path.equals( getPathToMetric()))
