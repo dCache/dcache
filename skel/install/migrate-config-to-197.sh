@@ -24,6 +24,13 @@ usage()
   disclaimer
 }
 
+addServiceIfNotInOwnDomain() # $1 domain $2 service
+{
+  if ! contains $2 $(printServices $(printAllDomains)); then
+    echo "[$1/$2]"
+  fi
+}
+
 # Set home path
 if [ -z "$DCACHE_HOME" ]; then
     DCACHE_HOME="/opt/d-cache"
@@ -176,6 +183,8 @@ echo "to ${DCACHE_HOME}/etc/layouts/imported.conf."
             srm)
                 echo "[$domain]"
                 echo "[$domain/srm]"
+                addServiceIfNotInOwnDomain $domain spacemanager
+                addServiceIfNotInOwnDomain $domain transfermanagers
                 ;;
             pool)
                 echo "[$domain]"
