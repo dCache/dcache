@@ -1,0 +1,89 @@
+@CHARSET "UTF-8";
+/*
+    Document   : poolList
+    Created on : 06-Nov-2009, 15:22:42
+    Author     : jans
+    Description:
+        get the nice percentage bar out of these styles.
+*/
+
+h1{
+    text-align: center;
+}
+
+div.layout_precious {
+    float: left;
+    background: red;
+    height: 10px;
+}
+
+div.layout_rest {
+    float: left;
+    background: #ff00ff;
+    height: 10px;
+}
+
+div.layout_used {
+    float: left;
+    background: green;
+    height: 10px;
+}
+
+div.layout_free {
+    float: left;
+    background: yellow;
+    height: 10px;
+}
+
+span.layout_precious {
+    color: red;
+}
+
+span.layout_used {
+    color: green;
+}
+
+span.layout_free {
+    color: yellow;
+}
+
+table
+{
+    border-spacing: 0;
+    border-collapse: collapse;
+    width: 100%;
+}
+
+td, th
+{
+    padding: 4px;
+    border: 1px solid gray;
+}
+
+th
+{
+    text-align: center;
+    background: #115259;
+    color: white;
+}
+
+th > a
+{
+    color: white;
+    text-decoration: none;
+}
+
+td
+{
+    text-align: center;
+}
+
+tr
+{
+    background: #bebebe;
+}
+
+tr.odd
+{
+    background: #efefef;
+}

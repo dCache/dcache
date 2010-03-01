@@ -1,0 +1,62 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <title>Pool Usage</title>
+        <link rel="stylesheet" type="text/css" href="common.css" />
+        <link rel="stylesheet" type="text/css" href="poolList.css" />
+    </head>
+    <body>
+        <form wicket:id="poolUsageForm">
+            <div id="head">
+                <a href="#" wicket:id="homeLink" style="color: red">
+                    <img src="./images/eagleredtrans.gif">
+                    <br />
+                    <wicket:message key="href.home"></wicket:message>
+                </a>
+            </div>
+            <div id="main">
+                <div id='bird_large'><img src="./images/eagle-grey.gif" style="border: 0"></div>
+                <h1><wicket:message key="header1"></wicket:message></h1>
+                <div>
+                    <select wicket:id="mode"/>
+                    <input type="submit" wicket:message="value:submitButton" />
+                    <span wicket:id="feedback"/>
+                </div>
+                <table>
+                    <tr>
+                        <th><wicket:message key="table1.selected.header"></wicket:message></th>
+                    <th><wicket:message key="table1.name.header"></wicket:message></th>
+                    <th><wicket:message key="table1.domainName.header"></wicket:message></th>
+                    <th><wicket:message key="table1.enabled.header"></wicket:message></th>
+                    <th><wicket:message key="table1.total.header"></wicket:message></th>
+                    <th><wicket:message key="table1.free.header"></wicket:message></th>
+                    <th><wicket:message key="table1.precious.header"></wicket:message></th>
+                    <th><span><wicket:message key="table1.layout.header1"></wicket:message>
+                            <span class="layout_precious"><wicket:message key="table1.layout.header2"></wicket:message></span>
+                            <span class="layout_used"><wicket:message key="table1.layout.header3"></wicket:message></span>
+                            <span class="layout_free"><wicket:message key="table1.layout.header4"></wicket:message></span>
+                            <wicket:message key="table1.layout.header5"></wicket:message>
+                        </span>
+                    </th>
+                    </tr>
+                    <tr wicket:id="listview">
+                        <td><input type="checkbox" wicket:id="selected"/></td>
+                        <td><span wicket:id="name"></span></td>
+                        <td><span wicket:id="domainName"></span></td>
+                        <td><span wicket:id="enabled"></span></td>
+                        <td><span wicket:id="totalSpace"></span></td>
+                        <td><span wicket:id="freeSpace"></span></td>
+                        <td><span wicket:id="preciousSpace"></span></td>
+                        <td><div>
+                                <div class="layout_precious" wicket:id="percentagePrecious" style="width: 10.0%"></div>
+                                <div class="layout_used" wicket:id="percentageUsed" style="width: 10.0%"></div>
+                                <div class="layout_free" wicket:id="percentageFree"style="width: 70.0%"></div>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </form>
+    </body>
+</html>

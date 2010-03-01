@@ -17,6 +17,7 @@ public class PoolBean implements Comparable, Serializable {
     private String _name = "";
     private String _domainName = "";
     private boolean _enabled;
+    private boolean _selected = false;
     private long _freeSpace = 0;
     private long _preciousSpace = 0;
     private long _totalSpace = 0;
@@ -183,6 +184,14 @@ public class PoolBean implements Comparable, Serializable {
      */
     public void setDomainName(String domainName) {
         this._domainName = domainName;
+    }
+
+    public boolean isSelected() {
+        return _selected;
+    }
+
+    public void setSelected(boolean selected) {
+        this._selected = selected;
     }
 
     public int compareTo(Object other) {

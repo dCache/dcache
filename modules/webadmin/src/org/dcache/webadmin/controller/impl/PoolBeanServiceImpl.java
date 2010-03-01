@@ -1,5 +1,6 @@
 package org.dcache.webadmin.controller.impl;
 
+import diskCacheV111.pools.PoolV2Mode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -75,5 +76,10 @@ public class PoolBeanServiceImpl implements PoolBeanService {
 
     private PoolsDAO getPoolsDAO() {
         return _DAOFactory.getPoolsDAO();
+    }
+
+    @Override
+    public void changePoolMode(List<PoolBean> pools, PoolV2Mode poolMode, String userName) throws PoolBeanServiceException {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }

@@ -1,4 +1,4 @@
-package org.dcache.webadmin.view.Util;
+package org.dcache.webadmin.view.util;
 
 import org.apache.wicket.markup.html.link.Link;
 
