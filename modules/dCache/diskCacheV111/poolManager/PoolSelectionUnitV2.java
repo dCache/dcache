@@ -42,7 +42,7 @@ public class PoolSelectionUnitV2
 {
 
     private static final String __version = "$Id: PoolSelectionUnitV2.java,v 1.42 2007-10-25 14:03:54 tigran Exp $";
-    private static final Logger _logPoolSelection = LoggerFactory.getLogger("logger.org.dcache.poolselection."+PoolSelectionUnitV2.class.getName());
+    private static final Logger _log = LoggerFactory.getLogger(PoolSelectionUnitV2.class);
 
 
     public String getVersion() {
@@ -1153,19 +1153,17 @@ public class PoolSelectionUnitV2
         String storeUnitName = storageInfo.getStorageClass()+"@"+storageInfo.getHsm();
         String dCacheUnitName = storageInfo.getCacheClass();
 
-        if( _logPoolSelection.isDebugEnabled() ) {
+        _log.debug("running match: type={} store={} dCacheUnit={} net={} protocol={} SI={} linkGoup={}",
+                new Object[]{
+                    type,
+                    storeUnitName,
+                    dCacheUnitName,
+                    netUnitName,
+                    protocolUnitName,
+                    storageInfo,
+                    linkGroupName
+                });
 
-            StringBuilder sb = new StringBuilder("running match: ");
-            sb.append(" type=").append(type);
-            sb.append(" store=").append(storeUnitName);
-            sb.append(" dCacheUnit=").append(dCacheUnitName);
-            sb.append(" net=").append(netUnitName);
-            sb.append(" protocol=").append(protocolUnitName);
-            sb.append(" SI=").append(storageInfo);
-            sb.append(" linkGroup=").append(linkGroupName);
-
-            _logPoolSelection.debug(sb.toString());
-        }
         Map<String, String> variableMap = (storageInfo == null ? null : storageInfo.getMap());
 
         PoolPreferenceLevel[] result = null;
@@ -1223,9 +1221,7 @@ public class PoolSelectionUnitV2
                             if ((unit = _units.get(template)) == null) {
 
                                 if ((unit = _units.get("*@*")) == null) {
-                                    if(_logPoolSelection.isDebugEnabled()) {
-                                        _logPoolSelection.debug("no matching storage unit found for: " + storeUnitName);
-                                    }
+                                    _log.debug("no matching storage unit found for: {}", storeUnitName);
                                     throw new IllegalArgumentException(
                                             "Unit not found : " + storeUnitName);
                                 }
@@ -1235,9 +1231,7 @@ public class PoolSelectionUnitV2
                                     "IllegalUnitFormat : " + storeUnitName);
                         }
                     }
-                    if(_logPoolSelection.isDebugEnabled()) {
-                        _logPoolSelection.debug("matching storage unit found for: " + storeUnitName);
-                    }
+                    _log.debug("matching storage unit found for: {}", storeUnitName);
                     list.add(unit);
                 }
             }
@@ -1246,44 +1240,32 @@ public class PoolSelectionUnitV2
                 Unit unit = findProtocolUnit(protocolUnitName);
                 //
                 if (unit == null){
-                    if(_logPoolSelection.isDebugEnabled()) {
-                        _logPoolSelection.debug("no matching protocol unit found for: " + protocolUnitName);
-                    }
+                    _log.debug("no matching protocol unit found for: {}", protocolUnitName);
                     throw new IllegalArgumentException("Unit not found : "
                             + protocolUnitName);
                 }
-                if(_logPoolSelection.isDebugEnabled()) {
-                    _logPoolSelection.debug("matching protocol unit found: " + unit);
-                }
+                _log.debug("matching protocol unit found: {}", unit);
                 list.add(unit);
             }
             if (dCacheUnitName != null) {
                 Unit unit = _units.get(dCacheUnitName);
                 if (unit == null) {
-                    if(_logPoolSelection.isDebugEnabled()) {
-                        _logPoolSelection.debug("no matching dCache unit found for: " + dCacheUnitName);
-                    }
+                    _log.debug("no matching dCache unit found for: {}", dCacheUnitName);
                     throw new IllegalArgumentException("Unit not found : "
                             + dCacheUnitName);
                 }
-                if(_logPoolSelection.isDebugEnabled()) {
-                    _logPoolSelection.debug("matching dCache unit found: " + unit);
-                }
+                _log.debug("matching dCache unit found: {}", unit);
                 list.add(unit);
             }
             if (netUnitName != null) {
                 try {
                     Unit unit = _netHandler.match(netUnitName);
                     if (unit == null) {
-                        if(_logPoolSelection.isDebugEnabled()) {
-                            _logPoolSelection.debug("no matching net unit found for: " + netUnitName);
-                        }
+                        _log.debug("no matching net unit found for: {}", netUnitName);
                         throw new IllegalArgumentException(
                                 "Unit not matched : " + netUnitName);
                     }
-                    if(_logPoolSelection.isDebugEnabled()) {
-                        _logPoolSelection.debug("matching net unit found: " + unit);
-                    }
+                    _log.debug("matching net unit found: {}" + unit);
                     list.add(unit);
                 } catch (UnknownHostException uhe) {
                     throw new IllegalArgumentException(
@@ -1319,9 +1301,7 @@ public class PoolSelectionUnitV2
             if (linkGroupName != null) {
                 linkGroup = _linkGroups.get(linkGroupName);
                 if (linkGroup == null) {
-                    if(_logPoolSelection.isDebugEnabled()) {
-                        _logPoolSelection.debug("LinkGroup not found : "+ linkGroupName );
-                    }
+                    _log.debug("LinkGroup not found : {}", linkGroupName );
                     throw new IllegalArgumentException("LinkGroup not found : "
                             + linkGroupName);
                 }
@@ -1426,9 +1406,7 @@ public class PoolSelectionUnitV2
                     for (PoolCore poolCore : link._poolList.values()) {
                         if (poolCore instanceof Pool) {
                             Pool pool = (Pool) poolCore;
-                            if( _logPoolSelection.isDebugEnabled() ) {
-                                _logPoolSelection.debug("Pool: " + pool + " can read from tape? : " + pool.canReadFromTape());
-                            }
+                            _log.debug("Pool: {} can read from tape? : {}", pool, pool.canReadFromTape());
                             if (((type == DirectionType.READ && pool.canRead())
                                  || (type == DirectionType.CACHE && pool.canReadFromTape()
                                      && poolCanStageFile(pool, storageInfo))
@@ -1439,9 +1417,7 @@ public class PoolSelectionUnitV2
                             }
                         } else {
                             for (Pool pool : ((PGroup)poolCore)._poolList.values()) {
-                                if( _logPoolSelection.isDebugEnabled() ) {
-                                    _logPoolSelection.debug("Pool: " + pool + " can read from tape? : " + pool.canReadFromTape());
-                                }
+                                _log.debug("Pool: {} can read from tape? : {}", pool, pool.canReadFromTape());
                                 if (((type == DirectionType.READ && pool.canRead())
                                      || (type == DirectionType.CACHE && pool.canReadFromTape()
                                          && poolCanStageFile(pool, storageInfo))
@@ -1461,7 +1437,7 @@ public class PoolSelectionUnitV2
             _psuReadLock.unlock();
         }
 
-        if( _logPoolSelection.isDebugEnabled() ) {
+        if( _log.isDebugEnabled() ) {
 
             StringBuilder sb = new StringBuilder("match done: ");
 
@@ -1471,7 +1447,7 @@ public class PoolSelectionUnitV2
                     sb.append(" ").append(poolName);
                 }
             }
-            _logPoolSelection.debug(sb.toString());
+            _log.debug(sb.toString());
         }
         return result;
     }
@@ -1583,18 +1559,14 @@ public class PoolSelectionUnitV2
                             // only consider link if it isn't in any link group
                             // ( "default link group" )
                             //
-                            if( _logPoolSelection.isDebugEnabled() ) {
-                                _logPoolSelection.debug("link " + link.getName() + " matching to unit " + unit);
-                            }
+                            _log.debug("link {} matching to unit {}", link.getName(), unit);
                             map.put(link.getName(), link);
                         }
                     } else if (linkGroup.contains(link)) {
                         //
                         // only take link if it is in the specified link group
                         //
-                        if( _logPoolSelection.isDebugEnabled() ) {
-                            _logPoolSelection.debug("link " + link.getName() + " matching to unit " + unit);
-                        }
+                        _log.debug("link {} matching to unit {}", link.getName(), unit);
                         map.put(link.getName(), link);
                     }
                 }
@@ -3325,9 +3297,12 @@ public class PoolSelectionUnitV2
                 }
             }
         }
-        if( _logPoolSelection.isDebugEnabled() ) {
-            _logPoolSelection.debug(pool.getName() + ": matching hsm ("+ file.getHsm() +") found?: " + rc);
-        }
+        _log.debug("{}: matching hsm ({}) found?: {}",
+                new Object[]{
+                    pool.getName(),
+                    file.getHsm(),
+                    rc
+                });
         return rc;
     }
 
