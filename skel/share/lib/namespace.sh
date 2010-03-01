@@ -11,7 +11,7 @@ isNameSpaceMountNeeded() # $* = domains
     for domain in $*; do
         getService $domain
         case "$RET" in
-            srm|pnfs)
+            pnfs)
                 return 0
                 ;;
             *)
