@@ -1,6 +1,4 @@
-package org.dcache.services.hsmcleaner;
-
-import java.util.TimerTask;
+package org.dcache.util;
 
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellPath;
@@ -15,7 +13,7 @@ import org.slf4j.LoggerFactory;
 /**
  * TimerTask to periodically register a broadcast subscription.
  */
-public class BroadcastRegistrationTask extends TimerTask
+public class BroadcastRegistrationTask implements Runnable
 {
     /** Cell used to send message. */
     private final CellEndpoint _cellEndpoint;
@@ -28,7 +26,8 @@ public class BroadcastRegistrationTask extends TimerTask
 
     private static CellPath _broadcast = new CellPath("broadcast");
 
-	private static final Logger _logger = LoggerFactory.getLogger(BroadcastRegistrationTask.class);
+    private static final Logger _logger =
+        LoggerFactory.getLogger(BroadcastRegistrationTask.class);
 
     public BroadcastRegistrationTask(CellEndpoint cellEndpoint, String eventClass, CellPath target)
     {

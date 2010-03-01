@@ -12,14 +12,16 @@ import java.util.TimerTask;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ExecutionException;
 
+import org.dcache.cells.CellStub;
 import org.dcache.cells.AbstractCell;
 import org.dcache.cells.Option;
+import org.dcache.util.BroadcastRegistrationTask;
 
 import dmg.util.Args;
+import dmg.cells.nucleus.CellPath;
 
 /**
  * This cell watches the PNFS trash directories for HSM and cleanes
@@ -58,6 +60,12 @@ public class HSMCleaner extends AbstractCell
     private Trash _trash;
     private RequestTracker _requests;
     private ScheduledExecutorService _executor;
+    private BroadcastRegistrationTask _broadcastRegistration;
+    private PoolInformationBase _pools;
+
+    private final static String POOLUP_MESSAGE =
+        diskCacheV111.vehicles.PoolManagerPoolUpMessage.class.getName();
+
 
     private final Runnable _scanTask = new Runnable() {
             public void run() {
@@ -168,13 +176,19 @@ public class HSMCleaner extends AbstractCell
         if (!_failureLocation.isDirectory())
             throw new IOException("Cannot create: " + _failureLocation);
 
+        CellPath me = new CellPath(getCellName(), getCellDomainName());
+        _broadcastRegistration =
+            new BroadcastRegistrationTask(this, POOLUP_MESSAGE, me);
         _trash = new OSMTrash(_trashLocation);
-        _requests = new RequestTracker(this);
+        _requests = new RequestTracker();
         _failures = new FailureRepository(_failureLocation);
         _limit = new Semaphore(_maxQueueLength);
+        _pools = new PoolInformationBase();
 
+        _requests.setPoolStub(new CellStub(this));
         _requests.setMaxFilesPerRequest(_maxRequests);
         _requests.setTimeout(_timeout * 1000);
+        _requests.setPoolInformationBase(_pools);
         _requests.setSuccessSink(new Sink<URI>() {
                 public void push(URI uri) {
                     onSuccess(uri);
@@ -186,14 +200,20 @@ public class HSMCleaner extends AbstractCell
                 }
             });
 
-        _executor = new ScheduledThreadPoolExecutor(1);
+        addMessageListener(_pools);
+        addCommandListener(_pools);
+        addMessageListener(_requests);
+        addCommandListener(_requests);
 
+        _executor = Executors.newSingleThreadScheduledExecutor();
         _executor.scheduleWithFixedDelay(_scanTask, _scanInterval,
                                          _scanInterval, TimeUnit.SECONDS);
         _executor.scheduleWithFixedDelay(_recoverTask, _recoverInterval,
                                          _recoverInterval, TimeUnit.SECONDS);
         _executor.scheduleWithFixedDelay(_flushTask, _flushInterval,
                                          _flushInterval, TimeUnit.SECONDS);
+        _executor.scheduleAtFixedRate(_broadcastRegistration, 0, 5,
+                                      TimeUnit.MINUTES);
     }
 
     @Override

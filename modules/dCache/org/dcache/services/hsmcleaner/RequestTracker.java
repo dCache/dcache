@@ -16,12 +16,13 @@ import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.vehicles.PoolRemoveFilesFromHSMMessage;
 
 import dmg.util.Args;
-import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.NoRouteToCellException;
 
-import org.dcache.cells.AbstractCell;
+import org.dcache.cells.CellStub;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class encapsulates the interaction with pools.
@@ -36,6 +37,9 @@ import org.dcache.cells.AbstractCell;
  */
 public class RequestTracker
 {
+    private final static Logger _log =
+        LoggerFactory.getLogger(RequestTracker.class);
+
     /**
      * Utility class to keep track of timeouts.
      */
@@ -61,19 +65,10 @@ public class RequestTracker
         }
     }
 
-    private final static String POOLUP_MESSAGE =
-        "diskCacheV111.vehicles.PoolManagerPoolUpMessage";
-
     /**
-     * Task for periodically registering the request tracker to
-     * receive pool up messages.
+     * CellStub used for sending messages to pools.
      */
-    private final BroadcastRegistrationTask _broadcastRegistration;
-
-    /**
-     * Cell used for sending messages.
-     */
-    private AbstractCell _cell;
+    private CellStub _poolStub;
 
     /**
      * Timeout for delete request.
@@ -122,21 +117,23 @@ public class RequestTracker
     /**
      * Pools currently available.
      */
-    private PoolInformationBase _pools = new PoolInformationBase();
+    private PoolInformationBase _pools;
 
-    public RequestTracker(AbstractCell cell)
+    /**
+     * Sets the CellStub for communicating with pools.
+     */
+    synchronized public void setPoolStub(CellStub stub)
     {
-        CellNucleus nucleus = cell.getNucleus();
-        CellPath me = new CellPath(nucleus.getCellName(),
-                                   nucleus.getCellDomainName());
-        _cell = cell;
-        _broadcastRegistration =
-            new BroadcastRegistrationTask(cell, POOLUP_MESSAGE, me);
-        _timer.schedule(_broadcastRegistration, 0, 300000); // 5 minutes
-        _cell.addMessageListener(this);
-        _cell.addMessageListener(_pools);
-        _cell.addCommandListener(this);
-        _cell.addCommandListener(_pools);
+        _poolStub = stub;
+    }
+
+    /**
+     * Set PoolInformationBase from which the request tracker learns
+     * about available pools.
+     */
+    synchronized public void setPoolInformationBase(PoolInformationBase pools)
+    {
+        _pools = pools;
     }
 
     /**
@@ -247,15 +244,15 @@ public class RequestTracker
                 PoolRemoveFilesFromHSMMessage message =
                     new PoolRemoveFilesFromHSMMessage(name, hsm, locations);
 
-                _cell.sendMessage(new CellMessage(new CellPath(name), message));
+                _poolStub.send(new CellPath(name), message);
 
                 Timeout timeout = new Timeout(hsm, name);
                 _timer.schedule(timeout, _timeout);
                 _poolRequests.put(hsm, timeout);
                 break;
             } catch (NoRouteToCellException e) {
-                _cell.error("Failed to send message to " + name
-                            + ": e.getMessage()");
+                _log.error("Failed to send message to " + name
+                           + ": e.getMessage()");
                 _pools.remove(pool.getName());
             }
         }
@@ -264,7 +261,7 @@ public class RequestTracker
          * all files.
          */
         if (pool == null) {
-            _cell.warn("No pools attached to " + hsm + " are available");
+            _log.warn("No pools attached to " + hsm + " are available");
 
             Iterator<URI> i = _locationsToDelete.get(hsm).iterator();
             while (i.hasNext()) {
@@ -288,8 +285,8 @@ public class RequestTracker
      */
     synchronized private void timeout(String hsm, String pool)
     {
-        _cell.error("Timeout deleting files on HSM " + hsm
-                    + " attached to " + pool);
+        _log.error("Timeout deleting files on HSM " + hsm
+                   + " attached to " + pool);
         _poolRequests.remove(hsm);
         _pools.remove(pool);
         flush(hsm);
@@ -304,7 +301,7 @@ public class RequestTracker
          * entries.
          */
         if (msg.getReturnCode() != 0) {
-            _cell.error("Received failure from pool: " + msg.getErrorObject());
+            _log.error("Received failure from pool: " + msg.getErrorObject());
             return;
         }
 
@@ -318,13 +315,13 @@ public class RequestTracker
              * not request. We log this as a warning, but otherwise
              * ignore it.
              */
-            _cell.warn("Received confirmation from a pool, for an action this cleaner did not request.");
+            _log.warn("Received confirmation from a pool, for an action this cleaner did not request.");
             return;
         }
 
         if (!failures.isEmpty())
-            _cell.warn("Failed to delete " + failures.size()
-                       + " files from HSM " + hsm + ". Will try again later.");
+            _log.warn("Failed to delete " + failures.size()
+                      + " files from HSM " + hsm + ". Will try again later.");
 
         for (URI location : success) {
             assert location.getAuthority().equals(hsm);

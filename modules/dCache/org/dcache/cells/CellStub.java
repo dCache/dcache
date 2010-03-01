@@ -34,9 +34,14 @@ public class CellStub
     {
     }
 
-    public CellStub(CellEndpoint endpoint, CellPath destination)
+    public CellStub(CellEndpoint endpoint)
     {
         setCellEndpoint(endpoint);
+    }
+
+    public CellStub(CellEndpoint endpoint, CellPath destination)
+    {
+        this(endpoint);
         setDestinationPath(destination);
     }
 

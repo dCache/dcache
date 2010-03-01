@@ -16,6 +16,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +31,6 @@ import dmg.util.Args;
 
 import org.dcache.chimera.DbConnectionInfo;
 import org.dcache.chimera.XMLconfig;
-import org.dcache.services.hsmcleaner.BroadcastRegistrationTask;
 import org.dcache.services.hsmcleaner.PoolInformationBase;
 import org.dcache.services.hsmcleaner.RequestTracker;
 import org.dcache.services.hsmcleaner.Sink;
@@ -39,6 +41,7 @@ import org.dcache.cells.AbstractCell;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.MessageCallback;
 import org.dcache.commons.util.SqlHelper;
+import org.dcache.util.BroadcastRegistrationTask;
 
 import javax.sql.DataSource;
 
@@ -123,6 +126,8 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
      */
     private final CellStub _poolStub;
 
+    private final ScheduledExecutorService _executor;
+
     public ChimeraCleaner(String cellName, String args) throws Exception {
 
         super(cellName, args);
@@ -136,10 +141,12 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
         CellPath me = new CellPath(_cellName, _nucleus.getCellDomainName());
         _broadcastRegistration =
             new BroadcastRegistrationTask(this, POOLUP_MESSAGE, me);
-        _timer.schedule(_broadcastRegistration, 0, 300000); // 5 minutes
+        _executor = Executors.newSingleThreadScheduledExecutor();
+        _executor.scheduleAtFixedRate(_broadcastRegistration, 0, 5,
+                                      TimeUnit.MINUTES);
 
-        this.addMessageListener(_pools);
-        this.addCommandListener(_pools);
+        addMessageListener(_pools);
+        addCommandListener(_pools);
 
         XMLconfig config = new XMLconfig( new File( _args.getOpt("chimeraConfig") ) );
         // for now we are looking for fsid==0 only
@@ -232,21 +239,25 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
                     throw new NumberFormatException ("Wrong value of the parameter hsmCleanerTimeout in dCacheSetup: " + timeout);
                 }
 
-                _requests = new RequestTracker(this);
+                _requests = new RequestTracker();
                 _requests.setMaxFilesPerRequest(_hsmCleanerRequest);
                 _requests.setTimeout(_hsmTimeout * 1000);
+                _requests.setPoolStub(new CellStub(this));
+                _requests.setPoolInformationBase(_pools);
 
                 _requests.setSuccessSink(new Sink<URI>() {
-                    public void push(URI uri) {
-                        onSuccess(uri);
-                    }
-                });
+                        public void push(URI uri) {
+                            onSuccess(uri);
+                        }
+                    });
 
-               _requests.setFailureSink(new Sink<URI>() {
-                    public void push(URI uri) {
-                        onFailure(uri);
-                    }
-                });
+                _requests.setFailureSink(new Sink<URI>() {
+                        public void push(URI uri) {
+                            onFailure(uri);
+                        }
+                    });
+                addMessageListener(_requests);
+                addCommandListener(_requests);
             }
 
             if (_logNamespace.isDebugEnabled()) {
