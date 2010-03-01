@@ -13,7 +13,6 @@
         <fileset dir="${libDir}/slf4j/" includes="*.jar" />
         <fileset dir="${libDir}/wicket/" includes="*.jar" />
         <fileset dir="${libDir}/servlet-api/" includes="*.jar" />
-        <!--<fileset dir="${libDir}/jetty/" includes="*.jar" />-->
     </path>
 
     <!-- PREPARE -->
@@ -49,6 +48,7 @@
                 <include name="**/*.gif" />
                 <include name="**/*.jpg" />
                 <include name="**/*.png" />
+                <include name="**/*.xml" />
             </fileset>
         </copy>
         <!--get our special, generated background picture-->

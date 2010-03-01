@@ -13,19 +13,19 @@ import org.dcache.webadmin.model.dataaccess.XMLDataGatherer;
 public class DAOFactoryImpl implements DAOFactory {
 
     private Logger _log = Logger.getLogger(DAOFactory.class);
-    private XMLDataGatherer _defaultXmlDataGatherer = null;
+    private XMLDataGatherer _defaultXMLDataGatherer;
 
     public PoolsDAO getPoolsDAO() {
         _log.debug("PoolsDAO requested");
-        if (_defaultXmlDataGatherer == null) {
+        if (_defaultXMLDataGatherer == null) {
             throw new IllegalStateException("DefaultXmlDataGatherer not set");
         }
 //      maybe better make it an singleton - they all end up using one cell anyway?
-        return new PoolsDAOImpl(_defaultXmlDataGatherer);
+        return new PoolsDAOImpl(_defaultXMLDataGatherer);
     }
 
     public void setDefaultXMLDataGatherer(XMLDataGatherer xmlDataGatherer) {
         _log.debug("PoolsDAO xmlDataGatherer set " + xmlDataGatherer.toString());
-        _defaultXmlDataGatherer = xmlDataGatherer;
+        _defaultXMLDataGatherer = xmlDataGatherer;
     }
 }
