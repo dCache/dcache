@@ -11,15 +11,16 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ExecutionException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +42,7 @@ import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 import org.dcache.cells.AbstractCell;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.MessageCallback;
+import org.dcache.cells.Option;
 import org.dcache.commons.util.SqlHelper;
 import org.dcache.util.BroadcastRegistrationTask;
 
@@ -56,278 +58,193 @@ import com.mchange.v2.c3p0.DataSources;
  * @since 1.8
  */
 
-public class ChimeraCleaner extends AbstractCell implements Runnable {
-
-    private final String _cellName;
-    private final CellNucleus _nucleus;
-    private final Args _args;
-    private long _refreshInterval = 300000; // see actual value in "refresh"
-    private long _replyTimeout = 10000; // 10 seconds
-
-    private ScheduledFuture<?> _cleanerTask;
-
-    private long _recoverTimer = 1800000L; // 30 min in milliseconds
-
-    // how many files will be processed at once, default 100 :
-    private int _processAtOnce = 100;
-
-    private RequestTracker _requests;
-
-    /**
-     * HSM Cleaner: Timeout in milliseconds for delete requests send to HSM-pools.
-     */
-    private long _hsmTimeout = 120000;
-
-    /**
-     * HSM-Cleaner: Maximum number of files to include in a single request.
-     */
-    private int _hsmCleanerRequest = 100;
-
-    /**
-     * HSM-Cleaner: Variable to check whether HSM Cleaner is enabled (value 'true')
-     * or disabled (value 'false')
-     */
-    private boolean _hsmCleanerEnabled = false;
-
-    /**
-     * Pools currently available.
-     */
-    private PoolInformationBase _pools = new PoolInformationBase();
-
-    private DataSource _dbConnectionDataSource;
-
-    private final static String POOLUP_MESSAGE =
+public class ChimeraCleaner extends AbstractCell implements Runnable
+{
+    private static final String POOLUP_MESSAGE =
         diskCacheV111.vehicles.PoolManagerPoolUpMessage.class.getName();
 
-    /**
-     * Task for periodically registering the cleaner at the broadcast
-     * to receive pool up messages.
-     */
-    private final BroadcastRegistrationTask _broadcastRegistration;
+    private static final Logger _log =
+        LoggerFactory.getLogger(ChimeraCleaner.class);
 
-    /**
-     * List of pools that are excluded from cleanup
-     */
-    private final ConcurrentHashMap<String, Long> _poolsBlackList = new ConcurrentHashMap<String, Long>();
+    @Option(
+        name="chimeraConfig",
+        description="Chimera configuration file",
+        required=true)
+    protected File _chimeraConfigFile;
 
-    /**
-     * Logger
-     */
-    private static final Logger _logNamespace = LoggerFactory.getLogger("logger.org.dcache.namespace."+ ChimeraCleaner.class.getName());
+    @Option(
+        name="refresh",
+        description="Refresh interval",
+        defaultValue="300",
+        unit="seconds"
+    )
+    protected long _refreshInterval;
 
-    /**
-     * cell communication stub to Broadcaster cell.
-     */
-    private final CellStub _broadcasterStub;
+    @Option(
+        name="recover",
+        description="",
+        defaultValue="1800",
+        unit="seconds"
+    )
+    protected long _recoverTimer;
 
-    /**
-     * cell communication stub to pools.
-     */
-    private final CellStub _poolStub;
+    @Option(
+        name="poolTimeout",
+        description="",
+        defaultValue="10",
+        unit="seconds"
+    )
+    protected long _replyTimeout;
 
-    private final ScheduledExecutorService _executor;
+    @Option(
+        name="processFilesPerRun",
+        description="The number of files to process at once",
+        defaultValue="100",
+        unit="files"
+    )
+    protected int _processAtOnce;
 
-    public ChimeraCleaner(String cellName, String args) throws Exception {
+    @Option(
+        name="reportRemove",
+        description="The cell to report removes to",
+        defaultValue="none"
+    )
+    protected String _reportTo;
 
+    @Option(
+        name="hsmCleaner",
+        description="Whether to enable the HSM cleaner",
+        defaultValue="false"
+    )
+    protected boolean _hsmCleanerEnabled;
+
+    @Option(
+        name="hsmCleanerRequest",
+        description="Maximum number of files to include in a single request",
+        defaultValue="100",
+        unit="files"
+    )
+    protected int _hsmCleanerRequest;
+
+    @Option(
+        name="hsmCleanerTimeout",
+        description="Timeout in milliseconds for delete requests send to HSM-pools",
+        defaultValue="120",
+        unit="seconds"
+    )
+    protected long _hsmTimeout;
+
+    @Option(
+        name="threads",
+        description="Size of thread pool",
+        defaultValue="5"
+    )
+    protected int _threadPoolSize;
+
+    private final ConcurrentHashMap<String, Long> _poolsBlackList =
+        new ConcurrentHashMap<String, Long>();
+
+    private RequestTracker _requests;
+    private ScheduledExecutorService _executor;
+    private ScheduledFuture<?> _cleanerTask;
+    private PoolInformationBase _pools = new PoolInformationBase();
+    private DataSource _dbConnectionDataSource;
+    private BroadcastRegistrationTask _broadcastRegistration;
+    private CellStub _broadcasterStub;
+    private CellStub _poolStub;
+
+    public ChimeraCleaner(String cellName, String args)
+        throws InterruptedException, ExecutionException
+    {
         super(cellName, args);
+        doInit();
+    }
 
-        _cellName = cellName;
-        _args = getArgs();
-        _nucleus = getNucleus();
-
+    @Override
+    protected void init()
+        throws Exception
+    {
         useInterpreter(true);
+
+        _executor = Executors.newScheduledThreadPool(_threadPoolSize);
+
+        // for now we are looking for fsid==0 only
+        XMLconfig config = new XMLconfig(_chimeraConfigFile);
+        DbConnectionInfo dbinfo = config.getDbInfo(0);
+        dbInit(dbinfo.getDBurl(), dbinfo.getDBdrv(), dbinfo.getDBuser(), dbinfo.getDBpass());
+
+        if (!_reportTo.equals("none")) {
+            _broadcasterStub = new CellStub();
+            _broadcasterStub.setCellEndpoint(this);
+            _broadcasterStub.setDestination(_reportTo);
+        }
+
+        if (_hsmCleanerEnabled) {
+            _requests = new RequestTracker();
+            _requests.setMaxFilesPerRequest(_hsmCleanerRequest);
+            _requests.setTimeout(_hsmTimeout * 1000);
+            _requests.setPoolStub(new CellStub(this));
+                _requests.setPoolInformationBase(_pools);
+            _requests.setSuccessSink(new Sink<URI>() {
+                    public void push(final URI uri) {
+                        _executor.execute(new Runnable() {
+                                public void run()
+                                {
+                                    onSuccess(uri);
+                                }
+                            });
+                    }
+                });
+            _requests.setFailureSink(new Sink<URI>() {
+                    public void push(final URI uri) {
+                        _executor.execute(new Runnable() {
+                                public void run()
+                                {
+                                    onFailure(uri);
+                                }
+                            });
+                    }
+                });
+            addMessageListener(_requests);
+            addCommandListener(_requests);
+        }
 
         addMessageListener(_pools);
         addCommandListener(_pools);
 
-        XMLconfig config = new XMLconfig( new File( _args.getOpt("chimeraConfig") ) );
-        // for now we are looking for fsid==0 only
+        _poolStub = new CellStub();
+        _poolStub.setCellEndpoint(this);
+        _poolStub.setTimeout(_replyTimeout * 1000);
 
-        DbConnectionInfo dbinfo = config.getDbInfo(0);
-        /*
-         * make use of c3po db connection pool
-         */
-        this.dbInit(dbinfo.getDBurl(), dbinfo.getDBdrv(), dbinfo.getDBuser(), dbinfo.getDBpass() );
+        CellPath me = new CellPath(getCellName(), getCellDomainName());
+        _broadcastRegistration =
+            new BroadcastRegistrationTask(this, POOLUP_MESSAGE, me);
+        _executor.scheduleAtFixedRate(_broadcastRegistration, 0, 5,
+                                      TimeUnit.MINUTES);
 
-        try {
-
-            // Usage : ...
-            // [-refresh=<refreshInterval_in_sec.>]
-            // [-processFilesPerRun=<filesPerRun] default : 100
-
-            String threadsString = _args.getOpt("threads");
-            int threads =
-                (threadsString != null) ? Integer.parseInt(threadsString) : 5;
-            _executor = Executors.newScheduledThreadPool(threads);
-
-            String refreshString = _args.getOpt("refresh");
-            if (refreshString != null) {
-                try {
-
-                    _refreshInterval = Long.parseLong(refreshString) * 1000L;
-                } catch (NumberFormatException ee) {
-                    throw new NumberFormatException ("Wrong value of the parameter cleanerRefresh in dCacheSetup: " + refreshString);
-                }
-            }
-
-            String cleanerRecover = _args.getOpt("recover");
-            if (cleanerRecover != null) {
-                try {
-                    _recoverTimer = Long.parseLong(cleanerRecover) * 1000L;
-                } catch (NumberFormatException ee) {
-                    throw new NumberFormatException ("Wrong value of the parameter cleanerRecover in dCacheSetup: " + cleanerRecover);
-                }
-            }
-
-            String cleanerPoolTimeout = _args.getOpt("poolTimeout");
-            if (cleanerPoolTimeout != null) {
-                try {
-                    _replyTimeout = Long.parseLong(cleanerPoolTimeout) * 1000L;
-                } catch (NumberFormatException ee) {
-                    throw new NumberFormatException ("Wrong value of the parameter cleanerPoolTimeout in dCacheSetup: " + cleanerPoolTimeout);
-                }
-            }
-
-            String tmp = _args.getOpt("processFilesPerRun");
-            if (tmp != null) {
-                try {
-                    _processAtOnce = Integer.parseInt(tmp);
-                } catch (NumberFormatException ee) {
-                    throw new NumberFormatException ("Wrong value of the parameter cleanerProcessFilesPerRun in dCacheSetup: " + tmp);
-                }
-            }
-
-            String reportTo = _args.getOpt("reportRemove" );
-            if( reportTo != null && reportTo.length() > 0 && !reportTo.equals("none") ) {
-                 _broadcasterStub = new CellStub();
-                 _broadcasterStub.setCellEndpoint(this);
-                 _broadcasterStub.setDestination(reportTo);
-                _logNamespace.debug("Remove report sent to " + reportTo);
-            }else{
-                 _broadcasterStub = null;
-                _logNamespace.debug("Remove report disabled");
-            }
-
-            String hsmCleaner = _args.getOpt("hsmCleaner");
-            if(hsmCleaner.equalsIgnoreCase("enabled")) {
-               _hsmCleanerEnabled = true;
-               _logNamespace.info("HSM Cleaner enabled.");
-            }else if(hsmCleaner.equalsIgnoreCase("disabled")){
-                _hsmCleanerEnabled = false;
-                _logNamespace.info("HSM Cleaner disabled.");
-            }else{
-                throw new IllegalArgumentException ("Wrong value of the parameter hsmCleaner in dCacheSetup: " + hsmCleaner);
-            }
-
-            if (_hsmCleanerEnabled) {
-
-                String maxRequests = _args.getOpt("hsmCleanerRequest");
-                try {
-                    _hsmCleanerRequest = Integer.parseInt(maxRequests);
-                } catch (NumberFormatException ee) {
-                    throw new NumberFormatException ("Wrong value of the parameter hsmCleanerRequest in dCacheSetup: " + maxRequests);
-                }
-
-                //timeout for HSM :
-                String timeout = _args.getOpt("hsmCleanerTimeout");
-                try {
-                   _hsmTimeout = Integer.parseInt(timeout) * 1000;
-                } catch (NumberFormatException ee) {
-                    throw new NumberFormatException ("Wrong value of the parameter hsmCleanerTimeout in dCacheSetup: " + timeout);
-                }
-
-                _requests = new RequestTracker();
-                _requests.setMaxFilesPerRequest(_hsmCleanerRequest);
-                _requests.setTimeout(_hsmTimeout * 1000);
-                _requests.setPoolStub(new CellStub(this));
-                _requests.setPoolInformationBase(_pools);
-
-                _requests.setSuccessSink(new Sink<URI>() {
-                        public void push(final URI uri) {
-                            _executor.execute(new Runnable() {
-                                    public void run()
-                                    {
-                                        onSuccess(uri);
-                                    }
-                                });
-                        }
-                    });
-
-                _requests.setFailureSink(new Sink<URI>() {
-                        public void push(final URI uri) {
-                            _executor.execute(new Runnable() {
-                                    public void run()
-                                    {
-                                        onFailure(uri);
-                                    }
-                                });
-                        }
-                    });
-                addMessageListener(_requests);
-                addCommandListener(_requests);
-            }
-
-            if (_logNamespace.isDebugEnabled()) {
-                 _logNamespace.debug("Refresh Interval set to (in milliseconds): " + _refreshInterval);
-                 _logNamespace.debug("Number of files processed at once : "+ _processAtOnce);
-                 if (_hsmCleanerEnabled ){
-                     _logNamespace.debug("Timeout for cleaning requests to HSM-pools (ms) : " + _hsmTimeout);
-                     _logNamespace.debug("Maximal number of concurrent requests to a single HSM : "+ _hsmCleanerRequest);
-                 }
-            }
-
-            CellPath me = new CellPath(_cellName, _nucleus.getCellDomainName());
-            _broadcastRegistration =
-                new BroadcastRegistrationTask(this, POOLUP_MESSAGE, me);
-            _executor.scheduleAtFixedRate(_broadcastRegistration, 0, 5,
-                                          TimeUnit.MINUTES);
-
-            _poolStub = new CellStub();
-            _poolStub.setCellEndpoint(this);
-            _poolStub.setTimeout(_replyTimeout);
-
-            _cleanerTask =
-                _executor.scheduleWithFixedDelay(this,
-                                                 _refreshInterval,
-                                                 _refreshInterval,
-                                                 TimeUnit.MILLISECONDS);
-        } catch (Exception e) {
-            _logNamespace.error("Exception occurred while running cleaner constructor: "+ e);
-            start();
-            kill();
-            throw e;
-        }
-        start();
+        _cleanerTask =
+            _executor.scheduleWithFixedDelay(this,
+                                             _refreshInterval,
+                                             _refreshInterval,
+                                             TimeUnit.SECONDS);
     }
 
-    void dbInit(String jdbcUrl, String jdbcClass, String user, String pass ) throws SQLException {
-
+    void dbInit(String jdbcUrl, String jdbcClass, String user, String pass )
+        throws SQLException, ClassNotFoundException
+    {
         if ((jdbcUrl == null) || (jdbcClass == null) || (user == null)
-                || (pass == null) ) {
+            || (pass == null) ) {
             throw new IllegalArgumentException("Not enough arguments to Init SQL database");
         }
 
-        try {
+        // Add driver to JDBC
+        Class.forName(jdbcClass);
 
-            // Add driver to JDBC
-            Class.forName(jdbcClass);
+        DataSource unpooled = DataSources.unpooledDataSource(jdbcUrl, user, pass);
+        _dbConnectionDataSource = DataSources.pooledDataSource( unpooled );
 
-            DataSource unpooled = DataSources.unpooledDataSource(jdbcUrl, user, pass);
-            _dbConnectionDataSource = DataSources.pooledDataSource( unpooled );
-
-            if (_logNamespace.isDebugEnabled()){
-                _logNamespace.debug("Database connection with jdbcUrl="
-                            + jdbcUrl + "; user=" + user + "; pass=" + pass);
-            }
-
-        } catch (SQLException sqe) {
-            _logNamespace.error("Failed to connect to database: " + sqe);
-            throw sqe;
-        } catch (Exception ex) {
-            _logNamespace.error("Failed to connect to database: ", ex);
-            throw new SQLException(ex.toString());
-        }
-
+        _log.info("Database connection with jdbcUrl={}; user={}",
+                  jdbcUrl, user);
     }
 
     @Override
@@ -341,28 +258,25 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
     public void run() {
 
         try {
-            if (_logNamespace.isDebugEnabled()){
-                _logNamespace.debug("*********NEW_RUN*************");
-                _logNamespace.debug("INFO: Refresh Interval (milliseconds): "+ _refreshInterval);
-                _logNamespace.debug("INFO: Number of files processed at once: " + _processAtOnce);
+            _log.info("*********NEW_RUN*************");
+
+            if (_log.isDebugEnabled()){
+                _log.debug("INFO: Refresh Interval (seconds): " + _refreshInterval);
+                _log.debug("INFO: Number of files processed at once: " + _processAtOnce);
             }
 
             // get list of pool names from the trash_table
-            List<String> poolListDB = getPoolList();
+            List<String> poolList = getPoolList();
 
-            if (_logNamespace.isDebugEnabled()){
-                _logNamespace.debug("List of Pools from the trash-table : "+ poolListDB);
+            if (_log.isDebugEnabled()){
+                _log.debug("List of Pools from the trash-table : "+ poolList);
             }
 
-            String[] poolList = poolListDB.toArray(new String[poolListDB.size()]);
-
-
-            // if there are some pools in the blackPoolList (i.e., pools that are down/do not exist),
-            //extract them from the poolListDB
+            // if there are some pools in the blackPoolList (i.e.,
+            //pools that are down/do not exist), extract them from the
+            //poolList
             if (_poolsBlackList.size() > 0) {
-
-                _logNamespace.debug("htBlackPools.size()="+ _poolsBlackList.size());
-
+                _log.debug("htBlackPools.size()="+ _poolsBlackList.size());
 
                 for (Map.Entry<String, Long> blackListEntry : _poolsBlackList.entrySet()) {
                     String poolName = blackListEntry.getKey();
@@ -371,40 +285,21 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
                     //check, if it is time to remove pool from the black list
                     if ((valueTime != 0)
                         && (_recoverTimer > 0)
-                        && ((System.currentTimeMillis() - valueTime) > _recoverTimer)) {
-
+                        && ((System.currentTimeMillis() - valueTime) > _recoverTimer * 1000)) {
                         _poolsBlackList.remove(poolName);
-                        if (_logNamespace.isDebugEnabled()) {
-                            _logNamespace.debug("Remove the following pool from the Black List : "+ poolName);
+                        if (_log.isDebugEnabled()) {
+                            _log.debug("Remove the following pool from the Black List : "+ poolName);
                         }
                     }
                 }
 
-                Set<String> keyBlackPools = _poolsBlackList.keySet();
-
-                List<String> blackPoolListNew = new ArrayList<String>(keyBlackPools);
-
-                Collection<String> toRemove_coll = new ArrayList<String>(poolListDB);
-                toRemove_coll.removeAll(blackPoolListNew);
-                poolList = toRemove_coll.toArray(new String[toRemove_coll.size()]);
-
+                poolList.removeAll(_poolsBlackList.keySet());
             }
 
-            if ((poolList != null) && (poolList.length > 0)) {
-
-                if (_logNamespace.isDebugEnabled()) {
-
-                    _logNamespace.debug("The following pools are sent to runDelete(..):");
-
-                    for (int x = 0; x < poolList.length; x++) {
-                        _logNamespace.debug("poolList[i=" + x + "]="+ poolList[x]);
-                    }
-
-                    _logNamespace.debug(" poolList.length="+ poolList.length);
-                }
-
+            if (!poolList.isEmpty()) {
+                _log.debug("The following pools are sent to runDelete(..): {}",
+                           poolList);
                 runDelete(poolList);
-
             }
 
             //HSM part
@@ -418,13 +313,13 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
                 }
             }
         } catch (SQLException e) {
-            _logNamespace.error("Database failure: " + e.getMessage());
+            _log.error("Database failure: " + e.getMessage());
         } catch (InterruptedException e) {
-            _logNamespace.info("Cleaner was interrupted");
+            _log.info("Cleaner was interrupted");
         } catch (URISyntaxException e) {
-            _logNamespace.error("Invalid HSM URI: " + e.getMessage());
+            _log.error("Invalid HSM URI: " + e.getMessage());
         } catch (RuntimeException e) {
-            _logNamespace.error("Bug detected" , e);
+            _log.error("Bug detected" , e);
         }
     }
 
@@ -487,7 +382,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
      *
      */
 
-    void removeFiles(String poolname, String[] filelist) {
+    void removeFiles(String poolname, List<String> filelist) {
 
         /*
          * FIXME: we send remove to the broadcaster even if we failed to
@@ -507,7 +402,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
                 stRemoveFiles.setString(2, filename);
                 int rc = stRemoveFiles.executeUpdate();
             } catch (SQLException e) {
-                _logNamespace.error("Failed to remove entries frm DB: " + e.getMessage());
+                _log.error("Failed to remove entries frm DB: " + e.getMessage());
             } finally {
                 SqlHelper.tryToClose(stRemoveFiles);
                 SqlHelper.tryToClose(dbConnection);
@@ -524,19 +419,18 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
      * @throws java.sql.SQLException
      * @throws java.lang.InterruptedException
      */
-    private void runDelete(String[] poolList) throws SQLException, InterruptedException {
-
-        for (int i = 0; (i < poolList.length) && !Thread.interrupted(); i++) {
-
-            String thisPool = poolList[i];
-
-            _logNamespace.info("runDelete(): Now processing pool : "+ thisPool);
-
-            //only if pool is not in poolsBlackPool start cleaning
-            if (! _poolsBlackList.containsKey(thisPool)) {
-            cleanPoolComplete(thisPool);
+    private void runDelete(List<String> poolList)
+        throws SQLException, InterruptedException
+    {
+        for (String pool: poolList) {
+            if (Thread.interrupted()) {
+                throw new InterruptedException("Cleaner interrupted");
             }
 
+            _log.info("runDelete(): Now processing pool {}", pool);
+            if (!_poolsBlackList.containsKey(pool)) {
+                cleanPoolComplete(pool);
+            }
         }
     }
 
@@ -552,17 +446,15 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
     private void sendRemoveToPoolCleaner(String poolName,
             List<String> removeList) throws InterruptedException {
 
-        if (_logNamespace.isDebugEnabled()) {
-            _logNamespace.debug("sendRemoveToPoolCleaner: poolName="+ poolName);
-            _logNamespace.debug("sendRemoveToPoolCleaner: removeList="+ removeList);
+        if (_log.isDebugEnabled()) {
+            _log.debug("sendRemoveToPoolCleaner: poolName="+ poolName);
+            _log.debug("sendRemoveToPoolCleaner: removeList="+ removeList);
         }
         PoolRemoveFilesMessage msg = new PoolRemoveFilesMessage(poolName);
-        String[] pnfsList = removeList.toArray(new String[removeList.size()]);
-
-        msg.setFiles(pnfsList);
+        msg.setFiles(removeList.toArray(new String[0]));
 
         MessageCallback<PoolRemoveFilesMessage> callback =
-                new RemoveMessageCallback(poolName, pnfsList);
+                new RemoveMessageCallback(poolName, removeList);
 
         /*
          * we may use sendAndWait here. Unfortunately, PoolRemoveFilesMessage
@@ -573,7 +465,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
          */
         synchronized(callback) {
             _poolStub.send(new CellPath(poolName), msg, PoolRemoveFilesMessage.class, callback);
-            callback.wait(_replyTimeout);
+            callback.wait(_replyTimeout * 1000);
         }
     }
 
@@ -592,7 +484,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
         }
 
         if ( poolUpMessage.getPoolMode().isDisabled() ) {
-            _poolsBlackList.putIfAbsent(poolName, Long.valueOf(System.currentTimeMillis()));
+            _poolsBlackList.putIfAbsent(poolName, System.currentTimeMillis());
         }
     }
 
@@ -609,8 +501,8 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
         Connection dbConnection = null;
         List<String> filePartList = new ArrayList<String>();
 
-        if(_logNamespace.isDebugEnabled()) {
-        	_logNamespace.debug("CleanPoolComplete(): poolname= " + poolName);
+        if(_log.isDebugEnabled()) {
+        	_log.debug("CleanPoolComplete(): poolname= " + poolName);
         }
 
         ResultSet rs = null;
@@ -631,9 +523,9 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
 
                 filePartList.add(filename);
                 counter++;
-                if(_logNamespace.isDebugEnabled()) {
-                    _logNamespace.debug("filename=" + filename);
-                    _logNamespace.debug("counter=" + counter);
+                if(_log.isDebugEnabled()) {
+                    _log.debug("filename=" + filename);
+                    _log.debug("counter=" + counter);
                 }
                 if (counter == _processAtOnce || rs.isLast()) {
                     sendRemoveToPoolCleaner(poolName,filePartList);
@@ -656,15 +548,15 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
      *
      * @param fileList list of files to be removed
      */
-    private void informBroadcaster(String[] fileList){
+    private void informBroadcaster(List<String> fileList){
 
-        if( fileList == null || fileList.length == 0 ) return;
-
-        if( _broadcasterStub == null ) return ;
+        if (fileList.isEmpty() || _broadcasterStub == null) {
+            return;
+        }
 
         try {
             PoolRemoveFilesMessage msg = new PoolRemoveFilesMessage("") ;
-            msg.setFiles( fileList ) ;
+            msg.setFiles(fileList.toArray(new String[0]));
 
             /*
              * no rely required
@@ -672,10 +564,10 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
             msg.setReplyRequired(false);
 
             _broadcasterStub.send( msg ) ;
-            _logNamespace.debug("have broadcasted 'remove files' message to " +
+            _log.debug("have broadcasted 'remove files' message to " +
                                 _broadcasterStub.getDestinationPath());
         } catch (NoRouteToCellException e) {
-            _logNamespace.debug("Failed to broadcast 'remove files' message: " +
+            _log.debug("Failed to broadcast 'remove files' message: " +
                                 e.getMessage());
         }
      }
@@ -737,7 +629,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
 
     void removeFilesHSM (String ilocation) throws SQLException {
 
-            _logNamespace.debug("HSM-ChimeraCleaner: remove entries from the trash-table. ilocation=" + ilocation);
+            _log.debug("HSM-ChimeraCleaner: remove entries from the trash-table. ilocation=" + ilocation);
 
             Connection dbConnection = null;
             PreparedStatement stRemoveFiles = null;
@@ -749,7 +641,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
                  stRemoveFiles.setString(1, ilocation);
                  int rc = stRemoveFiles.executeUpdate();
              } catch (SQLException e) {
-                _logNamespace.error("HSM-ChimeraCleaner: Failed to remove entries from the trash-table: " + e.getMessage());
+                _log.error("HSM-ChimeraCleaner: Failed to remove entries from the trash-table: " + e.getMessage());
              } finally {
                     SqlHelper.tryToClose(stRemoveFiles);
                     SqlHelper.tryToClose(dbConnection);
@@ -767,8 +659,8 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
      */
     private void runDeleteHSM(List<String> ilocationListHSM) throws SQLException, InterruptedException, URISyntaxException {
 
-         if(_logNamespace.isDebugEnabled()) {
-             _logNamespace.debug("HSM-ChimeraCleaner. Locations to be deleted: " + ilocationListHSM);
+         if(_log.isDebugEnabled()) {
+             _log.debug("HSM-ChimeraCleaner. Locations to be deleted: " + ilocationListHSM);
          }
 
          for (String ilocation: ilocationListHSM) {
@@ -778,8 +670,8 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
 
             URI locationURI = new URI(ilocation);
 
-            if(_logNamespace.isDebugEnabled()) {
-                _logNamespace.debug("Submitting a request to delete a file: " + locationURI);
+            if(_log.isDebugEnabled()) {
+                _log.debug("Submitting a request to delete a file: " + locationURI);
             }
 
             _requests.submit(locationURI);
@@ -787,27 +679,26 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
     }
 
     ////////////////////////////////////////////////////////////////////////////
-    public static String hh_rundelete = " # run Cleaner ";
-    public String ac_rundelete(Args args) throws SQLException, InterruptedException {
-
-        List<String> tmpPoolList = getPoolList();
-        runDelete(tmpPoolList.toArray(new String[tmpPoolList.size()]));
-
+    public static final String hh_rundelete = " # run Cleaner ";
+    public String ac_rundelete(Args args)
+        throws SQLException, InterruptedException
+    {
+        runDelete(getPoolList());
         return "";
     }
 
-    public static String hh_show_info = " # show info ";
+    public static final String hh_show_info = " # show info ";
     public String ac_show_info(Args args) throws Exception {
 
         StringBuilder sb = new StringBuilder();
 
-            sb.append("Refresh Interval (ms) : ").append(_refreshInterval).append("\n");
-            sb.append("Reply Timeout (ms): ").append(_replyTimeout).append("\n");
-            sb.append("Recover Timer (min): ").append(_recoverTimer/1000L/60L).append("\n");
+            sb.append("Refresh Interval (sec) : ").append(_refreshInterval).append("\n");
+            sb.append("Reply Timeout (sec): ").append(_replyTimeout).append("\n");
+            sb.append("Recover Timer (min): ").append(_recoverTimer/60L).append("\n");
             sb.append("Number of files processed at once: ").append(_processAtOnce);
             if ( _hsmCleanerEnabled ) {
                 sb.append("\n HSM Cleaner enabled. Info : \n");
-                sb.append("Timeout for cleaning requests to HSM-pools (ms): ").append(_hsmTimeout).append("\n");
+                sb.append("Timeout for cleaning requests to HSM-pools (sec): ").append(_hsmTimeout).append("\n");
                 sb.append("Maximal number of concurrent requests to a single HSM : ").append(_hsmCleanerRequest);
             } else {
                sb.append("\n HSM Cleaner disabled.");
@@ -816,7 +707,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
     }
 
 
-    public static String hh_ls_blacklist = " # list pools in the Black List";
+    public static final String hh_ls_blacklist = " # list pools in the Black List";
     public String ac_ls_blacklist(Args args) throws Exception {
 
 
@@ -829,7 +720,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
         return sb.toString();
     }
 
-    public static String hh_remove_from_blacklist = "<poolName> # remove this pool from the Black List";
+    public static final String hh_remove_from_blacklist = "<poolName> # remove this pool from the Black List";
     public String ac_remove_from_blacklist_$_1(Args args) throws Exception {
 
         String poolName = args.argv(0);
@@ -867,14 +758,14 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
 
     }
 
-    public static String hh_clean_file = "<pnfsID> # clean this file (file will be deleted from DISK)";
+    public static final String hh_clean_file = "<pnfsID> # clean this file (file will be deleted from DISK)";
     public String ac_clean_file_$_1(Args args) throws Exception {
 
         return adminCleanFileDisk(args.argv(0));
 
     }
 
-    public static String hh_clean_pool = "<poolName> # clean this pool ";
+    public static final String hh_clean_pool = "<poolName> # clean this pool ";
     public String ac_clean_pool_$_1(Args args) throws Exception {
 
         String poolName = args.argv(0);
@@ -886,33 +777,32 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
     }
     }
 
-    public static String hh_set_refresh = "[<refreshTimeInSeconds>]";
+    public static final String hh_set_refresh = "[<refreshTimeInSeconds>]";
     public static final String fh_set_refresh =
         "Alters refresh rate and triggers a new run. Maximum rate is every 5 seconds.";
-    public String ac_set_refresh_$_0_1( Args args ) throws Exception{
+    public String ac_set_refresh_$_0_1(Args args)
+    {
+        if (args.argc() > 0) {
+            long newRefresh = Long.parseLong(args.argv(0));
+            if (newRefresh < 5) {
+                throw new IllegalArgumentException("Time must be greater than 5 seconds");
+            }
 
-       if( args.argc() > 0 ){
-          long newRefresh = Long.parseLong(args.argv(0)) * 1000L;
-          if( newRefresh < 5000L ) {
-             throw new
-             IllegalArgumentException("Time must be greater than 5 seconds");
-          }
+            _refreshInterval = newRefresh;
 
-          _refreshInterval = newRefresh;
-
-          if (_cleanerTask != null) {
-              _cleanerTask.cancel(true);
-          }
-          _cleanerTask =
-              _executor.scheduleWithFixedDelay(this,
-                                               0,
-                                               _refreshInterval,
-                                               TimeUnit.MILLISECONDS);
-       }
-       return "Refresh set to "+(_refreshInterval/1000L)+" seconds" ;
+            if (_cleanerTask != null) {
+                _cleanerTask.cancel(true);
+            }
+            _cleanerTask =
+                _executor.scheduleWithFixedDelay(this,
+                                                 0,
+                                                 _refreshInterval,
+                                                 TimeUnit.SECONDS);
+        }
+        return "Refresh set to " + _refreshInterval + " seconds";
     }
 
-    public static String hh_set_processedAtOnce = "<processedAtOnce> # max number of files sent to pool for processing at once " ;
+    public static final String hh_set_processedAtOnce = "<processedAtOnce> # max number of files sent to pool for processing at once " ;
     public String ac_set_processedAtOnce_$_1( Args args ) throws Exception {
 
        if( args.argc() > 0 ){
@@ -929,7 +819,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
 
     /////  HSM admin commands /////
 
-    public static String hh_rundelete_hsm = " # run HSM Cleaner";
+    public static final String hh_rundelete_hsm = " # run HSM Cleaner";
     public String ac_rundelete_hsm(Args args) throws Exception {
         if ( _hsmCleanerEnabled ) {
           List<String> tmpLocationsHSM = getHsmLocations();
@@ -973,7 +863,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
     }
 
     //explicitly clean HSM-file
-    public static String hh_clean_file_hsm = "<pnfsID> # clean this file on HSM (file will be deleted from HSM)";
+    public static final String hh_clean_file_hsm = "<pnfsID> # clean this file on HSM (file will be deleted from HSM)";
     public String ac_clean_file_hsm_$_1(Args args) throws SQLException, URISyntaxException  {
 
       if ( _hsmCleanerEnabled ) {
@@ -986,7 +876,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
       }
     }
 
-    public static String hh_hsm_set_MaxFilesPerRequest = "<number> # maximal number of concurrent requests to a single HSM";
+    public static final String hh_hsm_set_MaxFilesPerRequest = "<number> # maximal number of concurrent requests to a single HSM";
     public String ac_hsm_set_MaxFilesPerRequest_$_1(Args args) throws NumberFormatException {
 
        if ( _hsmCleanerEnabled ) {
@@ -1006,17 +896,17 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
 
     }
 
-    public static String hh_hsm_set_TimeOut = "<seconds> # cleaning request timeout in seconds (for HSM-pools)";
+    public static final String hh_hsm_set_TimeOut = "<seconds> # cleaning request timeout in seconds (for HSM-pools)";
     public String ac_hsm_set_TimeOut_$_1(Args args) throws NumberFormatException {
 
       if ( _hsmCleanerEnabled ) {
         if( args.argc() > 0 ){
              long timeOutHSM = Long.valueOf(args.argv(0));
 
-             _hsmTimeout = timeOutHSM * 1000;
+             _hsmTimeout = timeOutHSM;
           }
 
-          return "Timeout for cleaning requests to HSM-pools is set to "+ _hsmTimeout + "milliseconds";
+          return "Timeout for cleaning requests to HSM-pools is set to "+ _hsmTimeout + " seconds";
        } else {
          return "HSM Cleaner is disabled.";
        }
@@ -1039,7 +929,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
         try {
            removeFilesHSM(uri.toString());
        } catch (SQLException e) {
-           _logNamespace.error("HSM-ChimeraCleaner : Error when deleting from the trash-table " + e.getMessage());
+           _log.error("HSM-ChimeraCleaner : Error when deleting from the trash-table " + e.getMessage());
        }
     }
 
@@ -1048,16 +938,16 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
      */
     protected void onFailure(URI uri)
     {
-       _logNamespace.info("Failed to delete a file " + uri + " from HSM. Will try again later.");
+        _log.info("Failed to delete a file {} from HSM. Will try again later.", uri);
     }
 
     private class RemoveMessageCallback
             implements MessageCallback<PoolRemoveFilesMessage> {
 
         private final String _poolName;
-        private final String[] _filesToRemove;
+        private final List<String> _filesToRemove;
 
-        RemoveMessageCallback(String poolName, String[] filesToRemove) {
+        RemoveMessageCallback(String poolName, List<String> filesToRemove) {
             _poolName = poolName;
             _filesToRemove = filesToRemove;
         }
@@ -1075,22 +965,11 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
         public synchronized void failure(int rc, Object o) {
             try {
                 if( o instanceof String[] ) {
-                    String[] notRemoved = (String[])o;
-                    // find out which files were successfully removed from the pool and store them in 'okRemoved'
-                    Collection<String> filesToBeRemoved = Arrays.asList(_filesToRemove); //A
-                    Collection<String> filesNotRemoved = Arrays.asList(notRemoved); //B
-                    Collection<String> okRemoved_coll = new ArrayList<String>(); //C
-
-                    Iterator<String> iter = filesToBeRemoved.iterator();
-                    while(iter.hasNext()) {
-                        String currentFile = iter.next();
-                        if ( !filesNotRemoved.contains(currentFile) ){
-                            okRemoved_coll.add(currentFile);  //C=A-B
-                        }
-                    }
-
-                    String[] okRemoved = okRemoved_coll.toArray(new String[okRemoved_coll.size()]);
-                    removeFiles(_poolName, okRemoved);
+                    Set<String> notRemoved =
+                        new HashSet<String>(Arrays.asList((String[]) o));
+                    List<String> removed = new ArrayList(_filesToRemove);
+                    removed.removeAll(notRemoved);
+                    removeFiles(_poolName, removed);
                 }
             } finally {
                 notifyAll();
@@ -1100,7 +979,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
         @Override
         public synchronized void noroute() {
             try {
-                 _logNamespace.warn("Pool " + _poolName + " is down.");
+                _log.warn("Pool {} is down.", _poolName);
                 _poolsBlackList.put(_poolName, System.currentTimeMillis());
             } finally {
                 notifyAll();
@@ -1110,7 +989,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
         @Override
         public synchronized void timeout() {
             try {
-                _logNamespace.warn("remove message to " + _poolName + " timed out.");
+                _log.warn("remove message to {} timed out.", _poolName);
                 _poolsBlackList.put(_poolName, System.currentTimeMillis());
             } finally {
                 notifyAll();
