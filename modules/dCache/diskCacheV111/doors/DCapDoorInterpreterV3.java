@@ -1278,7 +1278,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             try{
                 _pnfsId         = new PnfsId(_vargs.argv(0)) ;
                 _getStorageInfo = new PnfsGetStorageInfoMessage( _pnfsId ) ;
-                _getStorageInfo.setAccessMask(_accessMask);
             }catch(Exception ee ){
                 //
                 // seems not to be a pnfsId, might be a url.
@@ -1299,15 +1298,11 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
             say( "Requesting storageInfo for "+_getStorageInfo ) ;
 
+            _getStorageInfo.setAccessMask(_accessMask);
             _getStorageInfo.setId(_sessionId) ;
 
-            synchronized( _messageLock ){
-                _cell.sendMessage(
-                new CellMessage(
-                new CellPath( _pnfsManagerName )  ,
-                _getStorageInfo
-                )
-                ) ;
+            synchronized (_messageLock) {
+                _pnfs.send(_getStorageInfo);
             }
             setStatus( "WaitingForPnfs" ) ;
         }
@@ -1317,7 +1312,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             try{
                 _pnfsId          = new PnfsId(_vargs.argv(0)) ;
                 _getFileMetaData = new PnfsGetFileMetaDataMessage( _pnfsId ) ;
-                _getFileMetaData.setAccessMask(_accessMask);
             }catch(Exception ee ){
                 //
                 // seems not to be a pnfsId, might be a url.
@@ -1337,16 +1331,13 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
             say( "Requesting FileMetaData for "+_getFileMetaData ) ;
 
+            _getFileMetaData.setAccessMask(_accessMask);
             _getFileMetaData.setId(_sessionId) ;
 
-            synchronized( _messageLock ){
-                _cell.sendMessage(
-                new CellMessage(
-                new CellPath( _pnfsManagerName )  ,
-                _getFileMetaData
-                )
-                ) ;
+            synchronized (_messageLock) {
+                _pnfs.send(_getFileMetaData);
             }
+
             setStatus( "WaitingForPnfs (FileMetaData)" ) ;
         }
         public void
@@ -2521,12 +2512,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 flag.setReplyRequired(false) ;
                 flag.setValue(checksumString);
 
-                _cell.sendMessage(
-                new CellMessage(
-                new CellPath("PnfsManager") ,
-                flag
-                )
-                );
+                _pnfs.send(flag);
             }catch(Exception eee ){
                 _log.error("Failed to send crc to PnfsManager : "+eee ) ;
             }
