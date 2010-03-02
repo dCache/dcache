@@ -43,7 +43,7 @@ This package contains the server components.
 
 
 %pre
-if [ -f ${RPM_INSTALL_PREFIX}/bin/dcache ] && [ -f ${RPM_INSTALL_PREFIX}/jobs/needFulThings.sh ]; then
+if [ -f ${RPM_INSTALL_PREFIX}/bin/dcache ]; then
    ${RPM_INSTALL_PREFIX}/bin/dcache stop
 fi
 
