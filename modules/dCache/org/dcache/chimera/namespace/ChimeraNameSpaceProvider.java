@@ -64,7 +64,7 @@ public class ChimeraNameSpaceProvider
     private final Args         _args;
     private final ChimeraStorageInfoExtractable _extractor;
 
-    private static final Logger _logNameSpace =  LoggerFactory.getLogger("logger.org.dcache.namespace");
+    private static final Logger _log =  LoggerFactory.getLogger(ChimeraNameSpaceProvider.class);
 
     private final diskCacheV111.util.AccessLatency _defaultAccessLatency;
     private final diskCacheV111.util.RetentionPolicy _defaultRetentionPolicy;
@@ -157,9 +157,8 @@ public class ChimeraNameSpaceProvider
 
     public void setFileMetaData(Subject subject, PnfsId pnfsId, FileMetaData metaData) {
 
-    	if(_logNameSpace.isDebugEnabled() ) {
-    		_logNameSpace.debug ("setFileMetaData:" + pnfsId + " " + metaData);
-    	}
+        _log.debug ("setFileMetaData: {} {}", pnfsId, metaData);
+
         FsInode inode = new FsInode(_fs, pnfsId.toIdString() );
 
         try {
@@ -175,7 +174,7 @@ public class ChimeraNameSpaceProvider
             inode.setStat(inodeStat);
 
         }catch(ChimeraFsException hfe) {
-        	_logNameSpace.error("setFileMetadata failed: " + hfe.getMessage());
+            _log.error("setFileMetadata failed: {}", hfe.getMessage());
         }
 
         return ;
@@ -313,9 +312,7 @@ public class ChimeraNameSpaceProvider
 
     public void addCacheLocation(Subject subject, PnfsId pnfsId, String cacheLocation) throws CacheException {
 
-    	if(_logNameSpace.isDebugEnabled() ) {
-    		_logNameSpace.debug ("add cache location "+ cacheLocation +" for "+pnfsId);
-    	}
+        _log.debug ("add cache location {} for {}", cacheLocation, pnfsId);
 
         try {
         	FsInode inode = new FsInode(_fs, pnfsId.toIdString());
@@ -323,7 +320,7 @@ public class ChimeraNameSpaceProvider
         }catch(FileNotFoundHimeraFsException e) {
             throw new FileNotFoundCacheException("No such file: " + pnfsId);
         } catch (ChimeraFsException e){
-            _logNameSpace.error("Exception in addCacheLocation "+e);
+            _log.error("Exception in addCacheLocation {}", e);
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
         }
     }
@@ -348,9 +345,7 @@ public class ChimeraNameSpaceProvider
 
     public void clearCacheLocation(Subject subject, PnfsId pnfsId, String cacheLocation, boolean removeIfLast) throws CacheException {
 
-    	if(_logNameSpace.isDebugEnabled() ) {
-    		_logNameSpace.debug("clearCacheLocation : "+cacheLocation+" for "+pnfsId) ;
-    	}
+        _log.debug("clearCacheLocation : {} for {}", cacheLocation, pnfsId) ;
 
         try {
         	FsInode inode = new FsInode(_fs, pnfsId.toIdString());
@@ -361,15 +356,13 @@ public class ChimeraNameSpaceProvider
         	List<StorageLocatable> locations = _fs.getInodeLocations(inode, StorageGenericLocation.DISK);
         	    if( locations.isEmpty() ) {
 
-        	        if(_logNameSpace.isDebugEnabled() ) {
-        	            _logNameSpace.debug("last location cleaned. removeing file " + inode) ;
-        	        }
+                        _log.debug("last location cleaned. removing file {}", inode) ;
         	        _fs.remove(inode);
         	    }
         	}
 
         } catch (ChimeraFsException e){
-            _logNameSpace.error("Exception in clearCacheLocation for : "+pnfsId+" -> "+e);
+            _log.error("Exception in clearCacheLocation for {} : {}", pnfsId, e);
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
         }
     }
@@ -403,9 +396,7 @@ public class ChimeraNameSpaceProvider
 
     public StorageInfo getStorageInfo(Subject subject, PnfsId pnfsId) throws CacheException {
 
-    	if(_logNameSpace.isDebugEnabled() ) {
-    		_logNameSpace.debug ("getStorageInfo for " + pnfsId);
-    	}
+        _log.debug ("getStorageInfo for {}", pnfsId);
 
         FsInode inode = new FsInode(_fs, pnfsId.toString());
         return _extractor.getStorageInfo(inode);
@@ -413,9 +404,7 @@ public class ChimeraNameSpaceProvider
 
     public void setStorageInfo(Subject subject, PnfsId pnfsId, StorageInfo storageInfo, int accessMode) throws CacheException {
 
-    	if(_logNameSpace.isDebugEnabled() ) {
-    		_logNameSpace.debug ("setStorageInfo for " + pnfsId);
-    	}
+        _log.debug ("setStorageInfo for {}", pnfsId);
 
         FsInode inode = new FsInode(_fs, pnfsId.toString());
         _extractor.setStorageInfo(inode, storageInfo, accessMode);
@@ -438,7 +427,7 @@ public class ChimeraNameSpaceProvider
                 keys[i] = entry.getKey() ;
             }
         }catch(Exception e){
-            _logNameSpace.error(e.getMessage());
+            _log.error(e.getMessage());
         }
 
         return keys;
@@ -454,7 +443,7 @@ public class ChimeraNameSpaceProvider
             attr =  flags.get(attribute);
 
         }catch( Exception e){
-            _logNameSpace.error(e.getMessage());
+            _log.error(e.getMessage());
         }
 
         return attr;
@@ -469,7 +458,7 @@ public class ChimeraNameSpaceProvider
             flags.remove( attribute ) ;
             info.writeCacheInfo( inode ) ;
         }catch( Exception e){
-            _logNameSpace.error(e.getMessage());
+            _log.error(e.getMessage());
         }
     }
 
@@ -484,7 +473,7 @@ public class ChimeraNameSpaceProvider
 
             info.writeCacheInfo( inode ) ;
        }catch( Exception e){
-           _logNameSpace.error(e.getMessage());
+           _log.error(e.getMessage());
        }
     }
 
@@ -572,7 +561,7 @@ public class ChimeraNameSpaceProvider
         try {
             inodeParent = _fs.getParentOf(inodeOfResource);
         }catch(ChimeraFsException e) {
-            _logNameSpace.error("getParentOf failed : " + e);
+            _log.error("getParentOf failed : {}", e);
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
         }
 
@@ -712,7 +701,7 @@ public class ChimeraNameSpaceProvider
 
     @Override
     public void setFileAttributes(Subject subject, PnfsId pnfsId, FileAttributes attr) throws CacheException {
-        _logNameSpace.debug("File attributes update: " + attr.getDefinedAttributes());
+        _log.debug("File attributes update: {}", attr.getDefinedAttributes());
 
         StorageInfo dir = null;
         FsInode inode = new FsInode(_fs, pnfsId.toIdString());
@@ -805,10 +794,10 @@ public class ChimeraNameSpaceProvider
         } catch (FileNotFoundHimeraFsException e) {
             throw new FileNotFoundCacheException("No such file or directory: " + pnfsId);
         } catch (ChimeraFsException e) {
-            _logNameSpace.error("Exception in setFileAttributes: " + e);
+            _log.error("Exception in setFileAttributes: {}", e);
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
         } catch (IOException e) {
-            _logNameSpace.error("Exception in setFileAttributes: " + e);
+            _log.error("Exception in setFileAttributes: {}", e);
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
         }
 
@@ -854,14 +843,14 @@ public class ChimeraNameSpaceProvider
         } catch (FileNotFoundHimeraFsException e) {
             throw new FileNotFoundCacheException("No such file or directory: " + path);
         } catch (ChimeraFsException e) {
-            _logNameSpace.error("Exception in list: " + e);
+            _log.error("Exception in list: {}", e);
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
         } catch (ACLException e) {
-            _logNameSpace.error("Exception in list: " + e);
+            _log.error("Exception in list: {}", e);
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                      e.getMessage());
         } catch (IOException e) {
-            _logNameSpace.error("Exception in list: " + e);
+            _log.error("Exception in list: {}", e);
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
         }
     }
