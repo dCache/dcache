@@ -27,7 +27,6 @@ import org.dcache.xdr.OncRpcException;
 import org.acplt.oncrpc.apps.jportmap.OncRpcEmbeddedPortmap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.nfs.ExportFile;
@@ -70,10 +69,13 @@ import org.dcache.cells.CellMessageReceiver;
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.chimera.nfs.v3.MountServer;
+import org.dcache.chimera.nfs.v3.xdr.mount_prot;
 import org.dcache.chimera.nfs.v4.MDSOperationFactory;
 import org.dcache.chimera.nfs.v4.xdr.layouttype4;
+import org.dcache.chimera.nfs.v4.xdr.nfs4_prot;
 import org.dcache.chimera.nfs.v4.xdr.nfsv4_1_file_layout_ds_addr4;
 import org.dcache.chimera.nfsv41.Utils;
+import org.dcache.xdr.OncRpcProgram;
 import org.dcache.xdr.RpcDispatchable;
 import org.dcache.xdr.RpcDispatcher;
 import org.dcache.xdr.RpcParserProtocolFilter;
@@ -152,13 +154,14 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         final NFSv41DeviceManager _dm = this;
 
-        final Map<Integer, RpcDispatchable> programs = new HashMap<Integer, RpcDispatchable>();
+        final Map<OncRpcProgram, RpcDispatchable> programs = new HashMap<OncRpcProgram, RpcDispatchable>();
 
         new Thread("NFSv4.1 Door Thread") {
             @Override
             public void run() {
                 try {
-                    NFSServerV41 nfs4 = new NFSServerV41( new MDSOperationFactory(), _dm, _fileFileSystemProvider, _exportFile );
+                    NFSServerV41 nfs4 = new NFSServerV41( new MDSOperationFactory(),
+                            _dm, _fileFileSystemProvider, _exportFile );
 
                     new OncRpcEmbeddedPortmap(2000);
 
@@ -170,8 +173,8 @@ public class NFSv41Door extends AbstractCellComponent implements
 
                     MountServer ms = new MountServer(_exportFile, _fileFileSystemProvider);
 
-                    programs.put(100003, nfs4);
-                    programs.put(100005, ms);
+                    programs.put(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), nfs4);
+                    programs.put(new OncRpcProgram(mount_prot.MOUNT_PROGRAM, mount_prot.MOUNT_V3), ms);
 
                     final ProtocolFilter rpcFilter = new RpcParserProtocolFilter();
                     final ProtocolFilter rpcProcessor = new RpcProtocolFilter();
@@ -220,9 +223,6 @@ public class NFSv41Door extends AbstractCellComponent implements
                     // TODO: kill the cell
                     _log.error(e.toString());
                 } catch (IOException e) {
-                    // TODO: kill the cell
-                    _log.error(e.toString());
-                } catch (ChimeraFsException e) {
                     // TODO: kill the cell
                     _log.error(e.toString());
                 }

@@ -36,6 +36,7 @@ import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
 import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
 import org.dcache.util.PortRange;
+import org.dcache.xdr.OncRpcProgram;
 import org.dcache.xdr.RpcDispatchable;
 import org.dcache.xdr.RpcDispatcher;
 import org.dcache.xdr.RpcParserProtocolFilter;
@@ -58,7 +59,8 @@ public class NFSv4MoverHandler {
     private final int _localPort;
 
     private final Map<stateid4, MoverBridge> _activeIO = new HashMap<stateid4, MoverBridge>();
-    private final EDSNFSv4OperationFactory _operationFactory = new EDSNFSv4OperationFactory(_activeIO);
+    private final NFSv4OperationFactory _operationFactory =
+            new EDSNFSv4OperationFactory(_activeIO);
     private final NFSServerV41 _embededDS;
 
     public NFSv4MoverHandler(PortRange portRange)
@@ -69,8 +71,8 @@ public class NFSv4MoverHandler {
 
         _embededDS = new NFSServerV41(_operationFactory, new DeviceManager(), _fs, null);
 
-        final Map<Integer, RpcDispatchable> programs = new HashMap<Integer, RpcDispatchable>();
-        programs.put(100003, _embededDS);
+        final Map<OncRpcProgram, RpcDispatchable> programs = new HashMap<OncRpcProgram, RpcDispatchable>();
+        programs.put(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _embededDS);
 
         final ProtocolFilter rpcFilter = new RpcParserProtocolFilter();
         final ProtocolFilter rpcProcessor = new RpcProtocolFilter();

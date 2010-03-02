@@ -10,6 +10,7 @@ import org.dcache.chimera.nfs.v3.MountServer;
 import org.dcache.chimera.nfs.v3.NfsServerV3;
 import org.dcache.chimera.nfs.v3.xdr.mount_prot;
 import org.dcache.chimera.nfs.v3.xdr.nfs3_prot;
+import org.dcache.xdr.OncRpcProgram;
 import org.dcache.xdr.OncRpcSvc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,8 +64,8 @@ public class NFSv3 {
         MountServer ms = new MountServer(_exports, _fs);
 
         _service = new OncRpcSvc(DEFAULT_PORT);
-        _service.register(nfs3_prot.NFS_PROGRAM, nfs3);
-        _service.register(mount_prot.MOUNT_PROGRAM, ms);
+        _service.register(new OncRpcProgram(nfs3_prot.NFS_PROGRAM, nfs3_prot.NFS_V3), nfs3);
+        _service.register(new OncRpcProgram(mount_prot.MOUNT_PROGRAM, mount_prot.MOUNT_V3), ms);
         _service.start();
     }
 
