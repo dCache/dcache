@@ -25,8 +25,6 @@ import org.dcache.xdr.XdrEncodingStream;
 
 public class NFSv41ProtocolMover implements ManualMover {
 
-    private static final int DEFAULT_PORT = 2052;
-
     private final CellEndpoint _cell;
     private long _bytesTransferred = 0;
     private long _lastAccessTime = 0;
@@ -34,7 +32,7 @@ public class NFSv41ProtocolMover implements ManualMover {
     private long _ended = 0;
 
     private int _ioMode = MoverProtocol.READ;
-    private static final Logger _log = LoggerFactory.getLogger(NFSv41ProtocolMover.class.getName());
+    private static final Logger _log = LoggerFactory.getLogger(NFSv41ProtocolMover.class);
 
     private static NFSv4MoverHandler _nfsIO;
     static {
@@ -44,7 +42,7 @@ public class NFSv41ProtocolMover implements ManualMover {
             if( dcachePorts != null) {
                 portRange = PortRange.valueOf(dcachePorts);
             }else{
-                portRange = new PortRange(DEFAULT_PORT);
+                portRange = new PortRange(0);
             }
             _nfsIO = new NFSv4MoverHandler(portRange);
         }catch(Exception e) {
@@ -117,7 +115,7 @@ public class NFSv41ProtocolMover implements ManualMover {
             Allocator allocator, int access)
             throws Exception {
 
-        _log.debug("new IO request for " + pnfsId + " access: " + (access == MoverProtocol.READ ? "r" : "w"));
+        _log.debug("new IO request for {} access: {}", pnfsId, (access == MoverProtocol.READ ? "r" : "w"));
 
         if( _nfsIO == null ) {
             throw new IllegalStateException("NFS mover not ready");
@@ -126,7 +124,7 @@ public class NFSv41ProtocolMover implements ManualMover {
 
         InetAddress localAddress = NetworkUtils.getLocalAddressForClient(nfs4ProtocolInfo.getHosts());
 
-        _log.debug("using local interface: " + localAddress);
+        _log.debug("using local interface: {}", localAddress);
 
         _ioMode = access;
         stateid4 stateid = ((NFS4ProtocolInfo) protocol).stateId();
@@ -181,7 +179,7 @@ public class NFSv41ProtocolMover implements ManualMover {
         }
 
         _ended = System.currentTimeMillis();
-        _log.debug("IO request for " + pnfsId + " done.");
+        _log.debug("IO request for {} done", pnfsId);
     }
 
     /*
