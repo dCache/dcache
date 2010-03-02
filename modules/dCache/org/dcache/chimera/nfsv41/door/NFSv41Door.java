@@ -244,7 +244,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         String poolName = message.getPoolName();
 
-        _log.debug("NFS mover ready: " + poolName);
+        _log.debug("NFS mover ready: {}", poolName);
 
         InetSocketAddress poolAddress = message.socketAddress();
         NFS4IoDevice device = _poolNameToIpMap.get(poolName);
@@ -272,8 +272,13 @@ public class NFSv41Door extends AbstractCellComponent implements
                 device = new NFS4IoDevice(deviceID, deviceAddr);
                 _poolNameToIpMap.put(poolName, device);
                 _deviceMap.put(deviceID, device);
-                _log.debug("pool " + poolName + " mapped to deviceid " + deviceID
-                        + " " + message.getId() + " inet: " + poolAddress);
+                _log.debug("pool {} mapped to deviceid {} {} inet: {}",
+                        new Object[]{
+                            poolName,
+                            deviceID,
+                            message.getId(),
+                            poolAddress
+                        });
             }
 
             XdrDecodingStream xdr = new XdrBuffer(ByteBuffer.wrap(message.challange()));
@@ -289,7 +294,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             }
 
         } catch (UnknownHostException ex) {
-            _log.error("Invald address returned by " + poolName + " : " + ex.getMessage() );
+            _log.error("Invald address returned by {} : {}", poolName, ex.getMessage() );
         } catch (OncRpcException ex) {
            // forced by interface
             throw new RuntimeException(ex);
@@ -303,9 +308,7 @@ public class NFSv41Door extends AbstractCellComponent implements
     protected void messageArrived(DoorTransferFinishedMessage transferFinishedMessage) {
 
         NFS4ProtocolInfo protocolInfo = (NFS4ProtocolInfo)transferFinishedMessage.getProtocolInfo();
-        if(_log.isDebugEnabled() ) {
-            _log.debug("Mover " + protocolInfo.stateId() + " done.");
-        }
+        _log.debug("Mover {} done.", protocolInfo.stateId());
         _ioMessages.remove(protocolInfo.stateId());
     }
 
@@ -375,22 +378,22 @@ public class NFSv41Door extends AbstractCellComponent implements
         PoolMgrSelectPoolMsg getPoolMessage;
 
         if ( (iomode == layoutiomode4.LAYOUTIOMODE4_READ) || !storageInfo.isCreatedOnly() ) {
-            _log.debug("looking for read pool for " + pnfsId.toString());
+            _log.debug("looking for read pool for {}", pnfsId);
             getPoolMessage = new PoolMgrSelectReadPoolMsg(pnfsId,
                     storageInfo, protocolInfo, storageInfo.getFileSize());
         } else {
-            _log.debug("looking for write pool for " + pnfsId.toString());
+            _log.debug("looking for write pool for {}", pnfsId);
             getPoolMessage = new PoolMgrSelectWritePoolMsg(pnfsId,
                     storageInfo, protocolInfo, 0);
         }
 
-        _log.debug("requesting pool for IO: " + pnfsId );
+        _log.debug("requesting pool for IO: {}" + pnfsId );
         try {
             getPoolMessage = _poolManagerStub.sendAndWait(getPoolMessage);
         }catch (CacheException e) {
             throw new ChimeraNFSException(nfsstat4.NFS4ERR_LAYOUTTRYLATER, e.getMessage() );
         }
-        _log.debug("pool received. Requesting the file: " + getPoolMessage.getPoolName());
+        _log.debug("pool received. Requesting the file: {}", getPoolMessage.getPoolName());
 
         PoolIoFileMessage poolIOMessage ;
         if ( (iomode == layoutiomode4.LAYOUTIOMODE4_READ) || !storageInfo.isCreatedOnly() ) {
@@ -408,7 +411,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         }catch(CacheException e) {
             throw new ChimeraNFSException(nfsstat4.NFS4ERR_LAYOUTTRYLATER, e.getMessage() );
         }
-        _log.debug("mover ready: pool=" + getPoolMessage.getPoolName() + " moverid=" +
+        _log.debug("mover ready: pool={} moverid={}", getPoolMessage.getPoolName(),
                 poolIOMessage.getMoverId());
         _ioMessages.put( protocolInfo.stateId(), poolIOMessage);
 
@@ -437,7 +440,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             device = _requestReplyMap.remove(stateid);
         }
 
-        _log.debug("request: " + stateid + " : received device: " + device.getDeviceId());
+        _log.debug("request: {} : received device: {}", stateid, device.getDeviceId());
 
         return device;
     }
@@ -469,9 +472,7 @@ public class NFSv41Door extends AbstractCellComponent implements
     @Override
     public void releaseDevice(stateid4 stateid) {
 
-        if(_log.isDebugEnabled()) {
-            _log.debug("Releasing device by stateid: " + stateid);
-        }
+        _log.debug("Releasing device by stateid: {}", stateid);
 
         PoolIoFileMessage poolIoFileMessage = _ioMessages.remove(stateid);
         if (poolIoFileMessage != null) {
@@ -480,20 +481,18 @@ public class NFSv41Door extends AbstractCellComponent implements
                     new PoolMoverKillMessage(poolIoFileMessage.getPoolName(),
                     poolIoFileMessage.getMoverId());
 
-            if(_log.isDebugEnabled()) {
-                _log.debug("Sending KILL to " + poolIoFileMessage.getMoverId() + "@"
-                    +poolIoFileMessage.getPoolName() );
-            }
+            _log.debug("Sending KILL to {}@{}", poolIoFileMessage.getMoverId(),
+                poolIoFileMessage.getPoolName() );
 
             try {
                 _poolManagerStub.send(new CellPath(poolIoFileMessage.getPoolName()),
                                       message);
             } catch (NoRouteToCellException e) {
-                _log.error("Failed to kill mover: " + e.getMessage());
+                _log.error("Failed to kill mover: {}", e.getMessage());
             }
 
         }else{
-            _log.warn("Can't find mover by stateid: " + stateid);
+            _log.warn("Can't find mover by stateid: {}", stateid);
         }
     }
 

@@ -120,7 +120,7 @@ public class NFSv4MoverHandler {
             }
         }
         _localPort = tcp_handler.getPort();
-        _log.debug("NFSv4MoverHandler created on port:" + tcp_handler.getPort());
+        _log.debug("NFSv4MoverHandler created on port: {}", tcp_handler.getPort());
     }
 
     /**
@@ -129,7 +129,7 @@ public class NFSv4MoverHandler {
      * @param moverBridge
      */
     public void addHandler(MoverBridge moverBridge) {
-        _log.debug("added io handler: " + moverBridge);
+        _log.debug("added io handler: {}", moverBridge);
         _activeIO.put( moverBridge.getStateid() , moverBridge );
     }
 
@@ -139,7 +139,7 @@ public class NFSv4MoverHandler {
      * @param moverBridge
      */
     public void removeHandler(MoverBridge moverBridge) {
-        _log.debug("removing io handler: " + moverBridge);
+        _log.debug("removing io handler: {}", moverBridge);
         _activeIO.remove(moverBridge.getStateid());
     }
 

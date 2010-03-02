@@ -65,9 +65,12 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
                 res.resok4.eof = true;
             }
 
-            if( _log.isDebugEnabled() ) {
-                _log.debug("MOVER: " + bytesReaded + "@"  +offset +" readed, " + _args.opread.count.value.value + " requested.");
-            }
+            _log.debug("MOVER: {}@{} readed, {} requested.",
+                    new Object[]{
+                        bytesReaded,
+                        offset,
+                        _args.opread.count.value.value
+                    });
 
         }catch(IOHimeraFsException hioe) {
             res.status = nfsstat4.NFS4ERR_IO;

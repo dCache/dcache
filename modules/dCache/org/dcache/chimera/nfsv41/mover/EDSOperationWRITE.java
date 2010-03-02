@@ -7,9 +7,7 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.IOHimeraFsException;
-import org.dcache.chimera.nfs.ExportFile;
 import org.dcache.chimera.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.chimera.nfs.ChimeraNFSException;
 import org.dcache.chimera.nfs.v4.CompoundContext;
@@ -26,7 +24,6 @@ import org.dcache.chimera.nfs.v4.xdr.uint32_t;
 import org.dcache.chimera.nfs.v4.xdr.verifier4;
 
 import org.dcache.pool.movers.MoverProtocol;
-import org.dcache.xdr.RpcCall;
 
 public class EDSOperationWRITE extends AbstractNFSv4Operation {
 
@@ -83,7 +80,12 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
             res.resok4.writeverf = new verifier4();
             res.resok4.writeverf.value = new byte[nfs4_prot.NFS4_VERIFIER_SIZE];
 
-            _log.debug("MOVER: " + bytesWritten + "@"  +offset +" written, " + bytesWritten + " requested.");
+            _log.debug("MOVER: {}@{} written, {} requested.",
+                    new Object[]{
+                        bytesWritten,
+                        offset,
+                        bytesWritten
+                    });
 
         }catch(IOHimeraFsException hioe) {
             _log.debug(hioe.getMessage());
