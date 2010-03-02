@@ -1,0 +1,6 @@
+#
+# embedded NFSv4 server to export chimera namespace
+#
+
+create org.dcache.cells.UniversalSpringCell ${cell.name} \
+        "classpath:org/dcache/chimera/nfsv41/door/nfsv3.xml -export"

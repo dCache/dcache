@@ -429,12 +429,9 @@
         <copy file="${libDir}/Chimera/commons-logging.jar" todir="${server.bin.dir}/classes/chimera" />
         <copy file="${libDir}/dbcp/c3p0.properties" todir="${server.bin.dir}/config" />
         <copy file="${libDir}/dbcp/c3p0-0.9.1.2.jar" todir="${server.bin.dir}/classes/dbcp" />
-        <copy file="${libDir}/Chimera/run.xml" tofile="${server.bin.dir}/libexec/chimera/chimera-nfs-run.xml" />
-        <copy file="${libDir}/Chimera/chimera-nfs-run.sh" tofile="${server.bin.dir}/libexec/chimera/chimera-nfs-run.sh" />
         <copy file="${libDir}/Chimera/chimera-get-acl.sh" tofile="${server.bin.dir}/libexec/chimera/chimera-get-acl.sh" />
         <copy file="${libDir}/Chimera/chimera-set-acl.sh" tofile="${server.bin.dir}/libexec/chimera/chimera-set-acl.sh" />
         <copy file="${libDir}/Chimera/chimera-cli.sh" tofile="${server.bin.dir}/libexec/chimera/chimera-cli.sh" />
-        <chmod file="${server.bin.dir}/libexec/chimera/chimera-nfs-run.sh" perm="ugo+rx" />
         <chmod file="${server.bin.dir}/libexec/chimera/chimera-set-acl.sh" perm="ugo+rx" />
         <chmod file="${server.bin.dir}/libexec/chimera/chimera-get-acl.sh" perm="ugo+rx" />
         <chmod file="${server.bin.dir}/libexec/chimera/pnfs2chimera.sh" perm="ugo+rx" />

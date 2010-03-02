@@ -9,19 +9,9 @@
         <property name="location" value="domaincontext:"/>
         <property name="properties">
             <value>
-                poolManager=PoolManager
-                poolManagerTimeout=28000
-                pnfsManager=PnfsManager
-                pnfsManagerTimeout=28000
                 chimeraConfig=${config}/chimera-config.xml
             </value>
         </property>
-    </bean>
-
-    <bean id="poolManagerStub" class="org.dcache.cells.CellStub">
-        <description>Pool manager cell stub</description>
-        <property name="timeout" value="${poolManagerTimeout}"/>
-        <property name="destination" value="${poolManager}"/>
     </bean>
 
     <bean id="chimeraXmlConfig" class="java.io.File">
@@ -47,20 +37,9 @@
         </constructor-arg>
     </bean>
 
-    <bean id="pnfs" class="diskCacheV111.util.PnfsHandler">
-        <description>PNFS manager client module</description>
-        <constructor-arg>
-            <bean class="dmg.cells.nucleus.CellPath">
-                <constructor-arg value="${pnfsManager}"/>
-            </bean>
-        </constructor-arg>
-    </bean>
-
-    <bean id="door" class="org.dcache.chimera.nfsv41.door.NFSv41Door"
+    <bean id="door" class="org.dcache.chimera.nfsv41.door.NFSv3"
         init-method="init">
-        <description>dCache implementation of NFSv4.1 MDS (door)</description>
-        <property name="poolManagerStub" ref="poolManagerStub"/>
-        <property name="pnfsHandler" ref="pnfs"/>
+        <description>Chimera Namespace export</description>
         <property name="fileSystemProvider" ref="fileSystem"/>
         <property name="exportFile" ref="export" />
     </bean>
