@@ -34,6 +34,12 @@
         </javac>
         <!--for the unittests it is neccessary to have the classes included into
             junit-build.xml - easiest way seems to be a jar file-->
+        <copy todir="${webappBuildDir}">
+            <fileset dir="${webappDir.src}">
+                <include name="**/*.html" />
+                <include name="**/*.properties" />
+            </fileset>
+        </copy>
         <jar destfile="${webappBuildDir}/webadmin.jar" basedir="${webappBuildDir}"/>
     </target>
 
