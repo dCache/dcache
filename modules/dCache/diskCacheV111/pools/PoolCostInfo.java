@@ -95,10 +95,6 @@ public class PoolCostInfo implements java.io.Serializable {
                 throw new IllegalArgumentException("total >= removable");
             }
 
-            if( total < free + removable + precious ) {
-                throw new IllegalArgumentException("total >= free + removable + precious");
-            }
-
            _total     = total ;
            _free      = free ;
            _precious  = precious ;
