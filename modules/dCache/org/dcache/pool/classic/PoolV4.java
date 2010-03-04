@@ -1705,13 +1705,6 @@ public class PoolV4
         throws CacheException
     {
         if (msg instanceof PoolCheckable) {
-            if (_poolMode.isDisabled(PoolV2Mode.DISABLED) ||
-                _poolMode.isDisabled(PoolV2Mode.DISABLED_FETCH)) {
-
-                _log.warn("PoolCheckable request rejected due to " + _poolMode);
-                throw new CacheException(104, "Pool is disabled");
-            }
-
             if (msg instanceof PoolFileCheckable) {
                 checkFile((PoolFileCheckable) msg);
             }
