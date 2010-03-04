@@ -85,10 +85,6 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
         return t < o ? -1 : 1;
     }
 
-    public int intValue() {
-        return hashCode();
-    }
-
     public int getDatabaseId() {
         return (((_a[0]) & 0xFF) << 8) | ((_a[1]) & 0xFF);
     }

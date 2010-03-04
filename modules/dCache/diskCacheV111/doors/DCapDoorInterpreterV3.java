@@ -1548,7 +1548,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                     append(world.canExecute()?"x":"-").
                     append(" ") ;
 
-                    sb.append("-st_ino=").append(_pnfsId.intValue()&0xfffffff) ;
+                    sb.append("-st_ino=").append(_pnfsId.toString().hashCode()&0xfffffff) ;
 
                     println( sb.toString() ) ;
                     removeUs() ;

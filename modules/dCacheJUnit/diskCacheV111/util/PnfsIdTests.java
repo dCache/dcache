@@ -339,24 +339,6 @@ public class PnfsIdTests {
         assertEquals( "toBinPnfsId", ENCODED_TOBINPNFSID_CHIMERA, encodedResult);
     }
 
-    @Test
-    public void testSimpleIntValue() {
-        int value = _simplePnfsId.intValue();
-        assertEquals( "intValue", PNFS_SIMPLE_ID.hashCode(), value);
-    }
-
-    @Test
-    public void testDomainIntValue() {
-        int value = _domainPnfsId.intValue();
-        assertEquals( "intValue", PNFS_DOMAIN_ID.hashCode(), value);
-    }
-
-    @Test
-    public void testIntValue() {
-        int value = _chimeraId.intValue();
-        assertEquals( "intValue", CHIMERA_ID.hashCode(), value);
-    }
-
     /*
      * The following three tests (methods with names like "test*Serialise")
      * are intended to check that the previous branch-release of dCache can
