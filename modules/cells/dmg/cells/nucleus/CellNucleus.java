@@ -4,8 +4,9 @@ import dmg.util.Args;
 import dmg.util.PinboardAppender;
 import java.io.*;
 import java.util.*;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.lang.reflect.*;
 import java.net.Socket;
@@ -21,8 +22,8 @@ import org.apache.log4j.NDC;
  * @author Patrick Fuhrmann
  * @version 0.1, 15 Feb 1998
  */
-public class CellNucleus implements Runnable, ThreadFactory {
-
+public class CellNucleus implements ThreadFactory
+{
     private static final  int    INITIAL  =  0;
     private static final  int    ACTIVE   =  1;
     private static final  int    REMOVING =  2;
@@ -32,10 +33,6 @@ public class CellNucleus implements Runnable, ThreadFactory {
     private final  String    _cellName;
     private final  String    _cellType;
     private        ThreadGroup _threads      = null;
-    private final  Thread    _eventThread;
-    private final  BlockingQueue<CellEvent> _eventQueue;
-    private        Thread    _killThread     = null;
-    private        KillEvent _killEvent      = null;
     private final  Cell      _cell;
     private final  Date      _creationTime   = new Date();
     private        int       _state          = INITIAL;
@@ -49,9 +46,10 @@ public class CellNucleus implements Runnable, ThreadFactory {
 
     //  have to be synchronized map
     private final  Map<UOID, CellLock> _waitHash = new HashMap<UOID, CellLock>();
-    private        boolean   _runAsyncCallback = false;
-
     private String _cellClass;
+
+    private volatile ExecutorService _callbackExecutor;
+    private volatile ExecutorService _messageExecutor;
 
     public CellNucleus(Cell cell, String name) {
 
@@ -117,9 +115,9 @@ public class CellNucleus implements Runnable, ThreadFactory {
         } catch(SecurityException se) {
             _threads = null;
         }
-        _eventQueue  = new LinkedBlockingQueue<CellEvent>();
-        _eventThread = newThread(this, "Messages");
-        _eventThread.start();
+
+        _callbackExecutor = Executors.newSingleThreadExecutor(this);
+        _messageExecutor = Executors.newSingleThreadExecutor(this);
 
         nsay("Created : "+name);
         _state = ACTIVE;
@@ -134,9 +132,17 @@ public class CellNucleus implements Runnable, ThreadFactory {
     void setSystemNucleus(CellNucleus nucleus) {
         __cellGlue.setSystemNucleus(nucleus);
     }
+
     public void setAsyncCallback(boolean asyncCallback) {
-        _runAsyncCallback = asyncCallback;
+        if (asyncCallback) {
+            _callbackExecutor =
+                Executors.newCachedThreadPool(this);
+        } else {
+            _callbackExecutor =
+                Executors.newSingleThreadExecutor(this);
+        }
     }
+
     public String getCellName() { return _cellName; }
     public String getCellType() { return _cellType; }
 
@@ -232,6 +238,28 @@ public class CellNucleus implements Runnable, ThreadFactory {
     }
     public int    getPrintoutLevel(String cellName) {
         return __cellGlue.getPrintoutLevel(cellName);
+    }
+
+    /**
+     * Executor used for message callbacks.
+     */
+    public void setCallbackExecutor(ExecutorService executor)
+    {
+        if (executor == null) {
+            throw new IllegalArgumentException("null is not allowed");
+        }
+        _callbackExecutor = executor;
+    }
+
+    /**
+     * Executor used for incoming message delivery.
+     */
+    public void setMessageExecutor(ExecutorService executor)
+    {
+        if (executor == null) {
+            throw new IllegalArgumentException("null is not allowed");
+        }
+        _messageExecutor = executor;
     }
 
     public void   sendMessage(CellMessage msg)
@@ -503,116 +531,6 @@ public class CellNucleus implements Runnable, ThreadFactory {
         }
     }
 
-    public void run() {
-        if (Thread.currentThread() == _eventThread) {
-            nsay("messageThread : started");
-
-            boolean done = false;
-            while (!done) {
-                try {
-                    CellEvent event = _eventQueue.take();
-                    EventLogger.queueEnd(event);
-
-                    if (event instanceof LastMessageEvent) {
-                        nsay("messageThread : LastMessageEvent arrived");
-                        _cell.messageArrived((MessageEvent)event);
-                        break;
-                    } else if (event instanceof RoutedMessageEvent) {
-                        nsay("messageThread : RoutedMessageEvent arrived");
-                        _cell.messageArrived((RoutedMessageEvent)event);
-                    } else if (event instanceof MessageEvent) {
-                        MessageEvent msgEvent = (MessageEvent) event;
-                        nsay("messageThread : MessageEvent arrived");
-                        CellMessage msg;
-                        try {
-                            msg = new CellMessage(msgEvent.getMessage());
-                        } catch (SerializationException e) {
-                            CellMessage envelope = msgEvent.getMessage();
-                            _logCell.fatal(String.format("Discarding a malformed message from %s with UOID %s and session [%s]: %s",
-                                                         envelope.getSourcePath(),
-                                                         envelope.getUOID(),
-                                                         envelope.getSession(),
-                                                         e.getMessage()), e);
-                            continue;
-                        }
-                        CDC.setMessageContext(msg);
-                        try {
-                            //
-                            // deserialize the message
-                            //
-                            if (_logMessages.isDebugEnabled()) {
-                                String messageObject = msg.getMessageObject() == null? "NULL" : msg.getMessageObject().getClass().getName();
-                                _logMessages.debug("nucleusMessageArrived src=" + msg.getSourceAddress() +
-                                                   " dest=" + msg.getDestinationAddress() + " [" + messageObject + "] UOID=" + msg.getUOID().toString());
-                            }
-                            //
-                            // and deliver it
-                            //
-                            nsay("messageThread : delivering message : "+msg);
-                            _cell.messageArrived(new MessageEvent(msg));
-                            nsay("messageThread : delivering message done : "+msg);
-                        } catch (RuntimeException e) {
-                            if (!msg.isReply()) {
-                                try {
-                                    msg.revertDirection();
-                                    msg.setMessageObject(e);
-                                    sendMessage(msg);
-                                } catch (NoRouteToCellException f) {
-                                    esay("PANIC : Problem returning answer : " + f);
-                                }
-                            }
-                            throw e;
-                        } finally {
-                            CDC.clearMessageContext();
-                        }
-                    }
-                } catch (InterruptedException e) {
-                    if (_state == REMOVING) {
-                        done = true;
-                    }
-                } catch (Throwable e) {
-                    Thread t = Thread.currentThread();
-                    t.getUncaughtExceptionHandler().uncaughtException(t, e);
-                }
-            }
-            nsay("messageThread : stopped");
-            NDC.remove();
-        } else if (Thread.currentThread() == _killThread) {
-            nsay("killerThread : started");
-            KillEvent  event = _killEvent;
-            _state =  REMOVING;
-            addToEventQueue(new LastMessageEvent());
-            try {
-                _cell.prepareRemoval(event);
-            } catch(Throwable nse) {
-                esay(nse);
-            }
-
-            nsay("killerThread : waiting for all threads in "+_threads+" to finish");
-
-            try {
-                Collection<Thread> threads = getNonDaemonThreads(_threads);
-
-                /* Some threads shut down asynchronously. Give them
-                 * one second before we start to kill them.
-                 */
-                while (!joinThreads(threads, 1000)) {
-                    killThreads(threads);
-                }
-                _threads.destroy();
-            } catch (IllegalThreadStateException e) {
-                _threads.setDaemon(true);
-            } catch (InterruptedException e) {
-                nesay("killerThread : Interrupted while waiting for threads");
-            }
-            __cellGlue.destroy(this);
-            _state =  DEAD;
-            nsay("killerThread : stopped");
-
-            PinboardAppender.removePinboard(_cellName);
-        }
-    }
-
     private Runnable wrapLoggingContext(final Runnable runnable)
     {
         final Stack stack = NDC.cloneStack();
@@ -660,7 +578,15 @@ public class CellNucleus implements Runnable, ThreadFactory {
 
     int  getUnique() { return __cellGlue.getUnique(); }
 
-    int  getEventQueueSize() { return _eventQueue.size(); }
+    int getEventQueueSize()
+    {
+        if (_messageExecutor instanceof ThreadPoolExecutor) {
+            ThreadPoolExecutor executor =
+                (ThreadPoolExecutor) _messageExecutor;
+            return executor.getQueue().size();
+        }
+        return 0;
+    }
 
     void addToEventQueue(CellEvent ce) {
         //
@@ -688,7 +614,7 @@ public class CellNucleus implements Runnable, ThreadFactory {
             //   - asynchronous, but we have a callback to call
             //   - synchronous
             //
-            CellMessage msg = ((MessageEvent)ce).getMessage();
+            final CellMessage msg = ((MessageEvent) ce).getMessage();
             if (msg != null) {
                 nsay("addToEventQueue : message arrived : "+msg);
                 CellLock lock;
@@ -703,102 +629,33 @@ public class CellNucleus implements Runnable, ThreadFactory {
                     //
                     nsay("addToEventQueue : lock found for : "+msg);
                     if (lock.isSync()) {
-                        nsay("addToEventQueue : is synchronized : "+msg);
+                        nsay("addToEventQueue : is synchronous : "+msg);
                         synchronized (lock) {
                             lock.setObject(msg);
                             lock.notifyAll();
                         }
                         nsay("addToEventQueue : dest. was triggered : "+msg);
                     } else {
-                        CellMessageAnswerable callback = lock.getCallback();
-                        nsay("addToEventQueue : is asynchronized : "+msg);
-
-                        CDC oldCdc = new CDC();
-                        try {
-                            CDC.setCellsContext(this);
-
-                            CellMessage answer = null;
-                            Object      obj;
-                            try {
-                                answer = new CellMessage(msg);
-                                CDC.setMessageContext(answer);
-                                obj    = answer.getMessageObject();
-                            } catch(SerializationException nse) {
-                                nesay(nse.getMessage());
-                                obj = nse;
-                            }
-
-                            if (_runAsyncCallback) {
-                                final Object                asyncObj      = obj;
-                                final CellLock              asyncLock     = lock;
-                                final CellMessageAnswerable asyncCallback = callback;
-                                final CellMessage           asyncAnswer   = answer;
-                                newThread(new Runnable() {
-                                        public void run() {
-                                            nsay("Starting async callback");
-                                            try {
-                                                EventLogger.sendEnd(asyncLock.getMessage());
-                                                if (asyncObj instanceof Exception) {
-                                                    asyncCallback.
-                                                        exceptionArrived(asyncLock.getMessage(),
-                                                                         (Exception)asyncObj);
-                                                } else {
-                                                    asyncCallback.
-                                                        answerArrived(asyncLock.getMessage(),
-                                                                      asyncAnswer);
-                                                }
-                                            } catch(Throwable t) {
-                                                esay(t);
-                                            }
-                                            nsay("Async Callback done");
-                                        }
-                                    }).start();
-
-                            } else {
-                                try {
-                                    EventLogger.sendEnd(lock.getMessage());
-                                    if (obj instanceof Exception) {
-                                        callback.exceptionArrived(lock.getMessage(),
-                                                                  (Exception)obj);
-                                    } else {
-                                        callback.answerArrived(lock.getMessage(),
-                                                               answer);
-                                    }
-                                } catch(Throwable t) {
-                                    esay(t);
-                                }
-                            }
-                            nsay("addToEventQueue : callback done for : "+msg);
-                        } finally {
-                            oldCdc.apply();
-                        }
+                        nsay("addToEventQueue : is asynchronous : "+msg);
+                        _callbackExecutor.execute(new CallbackTask(lock, msg));
                     }
                     return;
                 }
             }     // end of : msg != null
         }        // end of : ce instanceof MessageEvent
 
-        EventLogger.queueBegin(ce);
-
-        /* _eventQueue is an unbounded queue and hence always has
-         * spare capacity. Thus the add method is guaranteed to
-         * succeed. In contrast to the put method, add cannot fail
-         * with an InterruptedException.
-         */
-        _eventQueue.add(ce);
+        _messageExecutor.execute(new DeliverMessageTask(ce));
     }
 
-    void sendKillEvent(KillEvent ce) {
+    void sendKillEvent(KillEvent ce)
+    {
         nsay("sendKillEvent : received "+ce);
-        _killEvent  = ce;
-        _killThread = new Thread(__cellGlue.getKillerThreadGroup(),
-                                 this,
-                                 "killer-"+_cellName);
-        _killThread.start();
-        nsay("sendKillEvent : "+_killThread.getName()+" started on group "+
-             _killThread.getThreadGroup().getName());
-
+        Thread thread = new KillerThread(ce);
+        thread.start();
+        nsay("sendKillEvent : " + thread.getName()+" started on group "+
+             thread.getThreadGroup().getName());
     }
+
     //
     // helper to get version string from arbitrary object
     //
@@ -1068,6 +925,184 @@ public class CellNucleus implements Runnable, ThreadFactory {
             log(_logNucleus, Level.ERROR, t);
         } else {
             log(_logNucleus, Level.INFO, t);
+        }
+    }
+
+    private class KillerThread extends Thread
+    {
+        private final KillEvent _event;
+
+        public KillerThread(KillEvent event)
+        {
+            _event = event;
+        }
+
+        public void run()
+        {
+            nsay("killerThread : started");
+            _state = REMOVING;
+            addToEventQueue(new LastMessageEvent());
+            try {
+                _cell.prepareRemoval(_event);
+            } catch (Throwable e) {
+                Thread t = Thread.currentThread();
+                t.getUncaughtExceptionHandler().uncaughtException(t, e);
+            }
+
+            _callbackExecutor.shutdown();
+            _messageExecutor.shutdown();
+
+            nsay("killerThread : waiting for all threads in "+_threads+" to finish");
+
+            try {
+                Collection<Thread> threads = getNonDaemonThreads(_threads);
+
+                /* Some threads shut down asynchronously. Give them
+                 * one second before we start to kill them.
+                 */
+                while (!joinThreads(threads, 1000)) {
+                    killThreads(threads);
+                }
+                _threads.destroy();
+            } catch (IllegalThreadStateException e) {
+                _threads.setDaemon(true);
+            } catch (InterruptedException e) {
+                nesay("killerThread : Interrupted while waiting for threads");
+            }
+            __cellGlue.destroy(CellNucleus.this);
+            _state = DEAD;
+            nsay("killerThread : stopped");
+
+            PinboardAppender.removePinboard(_cellName);
+        }
+    }
+
+    private abstract class AbstractNucleusTask implements Runnable
+    {
+        protected abstract void innerRun();
+
+        public void run ()
+        {
+            CDC cdc = new CDC();
+            try {
+                CDC.setCellsContext(CellNucleus.this);
+                innerRun();
+            } catch (Throwable e) {
+                Thread t = Thread.currentThread();
+                t.getUncaughtExceptionHandler().uncaughtException(t, e);
+            } finally {
+                cdc.apply();
+            }
+        }
+    }
+
+    private class CallbackTask extends AbstractNucleusTask
+    {
+        private final CellLock _lock;
+        private final CellMessage _message;
+
+        public CallbackTask(CellLock lock, CellMessage message)
+        {
+            _lock = lock;
+            _message = message;
+        }
+
+        public void innerRun()
+        {
+            CellMessageAnswerable callback =
+                _lock.getCallback();
+
+            CellMessage answer;
+            Object obj;
+            try {
+                answer = new CellMessage(_message);
+                CDC.setMessageContext(answer);
+                obj = answer.getMessageObject();
+            } catch (SerializationException e) {
+                nesay(e.getMessage());
+                obj = e;
+                answer = null;
+            }
+
+            EventLogger.sendEnd(_lock.getMessage());
+            if (obj instanceof Exception) {
+                callback.
+                    exceptionArrived(_lock.getMessage(), (Exception) obj);
+            } else {
+                callback.
+                    answerArrived(_lock.getMessage(), answer);
+            }
+            nsay("addToEventQueue : callback done for : " + _message);
+        }
+    }
+
+    private class DeliverMessageTask extends AbstractNucleusTask
+    {
+        private final CellEvent _event;
+
+        public DeliverMessageTask(CellEvent event)
+        {
+            _event = event;
+            EventLogger.queueBegin(_event);
+        }
+
+        public void innerRun()
+        {
+            EventLogger.queueEnd(_event);
+
+            if (_event instanceof LastMessageEvent) {
+                nsay("messageThread : LastMessageEvent arrived");
+                _cell.messageArrived((MessageEvent) _event);
+            } else if (_event instanceof RoutedMessageEvent) {
+                nsay("messageThread : RoutedMessageEvent arrived");
+                _cell.messageArrived((RoutedMessageEvent) _event);
+            } else if (_event instanceof MessageEvent) {
+                MessageEvent msgEvent = (MessageEvent) _event;
+                nsay("messageThread : MessageEvent arrived");
+                CellMessage msg;
+                try {
+                    msg = new CellMessage(msgEvent.getMessage());
+                } catch (SerializationException e) {
+                    CellMessage envelope = msgEvent.getMessage();
+                    _logCell.fatal(String.format("Discarding a malformed message from %s with UOID %s and session [%s]: %s",
+                                                 envelope.getSourcePath(),
+                                                 envelope.getUOID(),
+                                                 envelope.getSession(),
+                                                 e.getMessage()), e);
+                    return;
+                }
+
+                CDC.setMessageContext(msg);
+                try {
+                    //
+                    // deserialize the message
+                    //
+                    if (_logMessages.isDebugEnabled()) {
+                        String messageObject = msg.getMessageObject() == null? "NULL" : msg.getMessageObject().getClass().getName();
+                        _logMessages.debug("nucleusMessageArrived src=" + msg.getSourceAddress() +
+                                           " dest=" + msg.getDestinationAddress() + " [" + messageObject + "] UOID=" + msg.getUOID().toString());
+                    }
+                    //
+                    // and deliver it
+                    //
+                    nsay("messageThread : delivering message : "+msg);
+                    _cell.messageArrived(new MessageEvent(msg));
+                    nsay("messageThread : delivering message done : "+msg);
+                } catch (RuntimeException e) {
+                    if (!msg.isReply()) {
+                        try {
+                            msg.revertDirection();
+                            msg.setMessageObject(e);
+                            sendMessage(msg);
+                        } catch (NoRouteToCellException f) {
+                            esay("PANIC : Problem returning answer : " + f);
+                        }
+                    }
+                    throw e;
+                } finally {
+                    CDC.clearMessageContext();
+                }
+            }
         }
     }
 }
