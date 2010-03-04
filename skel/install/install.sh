@@ -504,80 +504,6 @@ dcacheInstallPnfsMountPoints()
 }
 
 
-
-dcacheInstallChimeraMountPointServer()
-{  
-  local pnfsServer
-  local localhostName
-  local tryToMount
-  local cmdline
-  local counter
-  local mountrc
-  if [ ! -d "${NODE_CONFIG_PNFS_ROOT}" ] ; then
-    mkdir "${NODE_CONFIG_PNFS_ROOT}"
-  fi
-  dcacheInstallGetNameSpaceServer
-  pnfsServer=$RET
-  localhostName=`fqdn_os`
-  tryToMount=1
-  if [ -z "${pnfsServer}" ] ; then
-    logmessage ERROR "Unable to determine Name Server node exiting as an error."
-    exit 1
-  fi
-  if [ "$pnfsServer" == "$localhostName" ] ; then
-    pnfsServer="localhost"
-  fi
-  if [ -n "$(mount | grep "${pnfsServer}" )" ] ; then
-    tryToMount=0
-  fi
-  if [ -n "$(mount | grep "/pnfs" )" ] ; then
-    tryToMount=0
-  fi
-  if [ "${tryToMount}" == "0" ] ; then
-    logmessage INFO "Already Mounted ${pnfsServer}"
-  else
-    cmdline="mount -o intr,rw,hard ${pnfsServer}:/pnfs /pnfs"
-    counter=1
-    logmessage INFO "Need to mount ${pnfsServer}"
-    while [ "${tryToMount}" == "1" ] ; do
-      $cmdline
-      mountrc=$?
-      if [ "${mountrc}" == "0" ] ; then
-        logmessage INFO "Successflly mounted Chimera running $cmdline"
-        tryToMount=0
-      else
-        let counter="$counter + 1"
-        if [ "$counter" == "12" ] ; then
-          logmessage ERROR "Failed running $cmdline and giving up"
-          tryToMount=0
-        else
-          logmessage INFO "Trying to mount Chimera failed, will retry."
-          logmessage DEBUG "Using command: $cmdline"
-        fi
-      fi
-      sleep 1
-    done
-  fi
-}
-
-
-
-dcacheInstallChimeraMountPoints()
-{
-  logmessage DEBUG "dcacheInstallChimeraMountPoints.start"
-  # Creating /pnfs/fs and Symbolic Link /pnfs/fs/usr to /pnfs/<domain> 
-  # (e.g. /pnfs/fnal.gov) for GridFTP
-
-  if contains chimeraDomain $DOMAINS; then
-      /etc/init.d/portmap restart    
-      dcacheInstallChimeraMountPointServer
-  elif isNameSpaceMountNeeded $DOMAINS; then
-      dcacheInstallChimeraMountPointServer
-  fi  
-  
-  logmessage DEBUG "dcacheInstallChimeraMountPoints.stop"
-}
-
 dcacheInstallMountPoints()
 {
   logmessage DEBUG "dcacheInstallMountPoints.start"
@@ -586,10 +512,6 @@ dcacheInstallMountPoints()
   if [ "${nameServerFormat}" == "pnfs" ]
   then
     dcacheInstallPnfsMountPoints
-  fi
-  if [ "${nameServerFormat}" == "chimera" ]
-  then
-    dcacheInstallChimeraMountPoints
   fi
   logmessage DEBUG "dcacheInstallMountPoints.stop"
   
