@@ -32,15 +32,13 @@ set context -c loginBrokerUpdateThreshold 0.1
 set context -c loginBroker LoginBroker
 set context -c useGPlazmaAuthorizationCell true
 set context -c useGPlazmaAuthorizationModule false
-<<<<<<< .working
 set context -c gplazmaPolicy ${ourHomeDir}/etc/dcachesrm-gplazma.policy
-=======
+
 set context -c logoPath images/logo.png
 set context -c dirIconPath images/directoryIcon.png
 set context -c fileIconPath images/fileIcon.png
 set context -c cssPath styles/webdav.css
 set context -c webdavContextPath /.webdav
->>>>>>> .merge-right.r13353
 
 define env webdav-http.exe enddefine
   set context -c webdavAnonymousAccess READONLY
