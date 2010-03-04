@@ -6,7 +6,6 @@
 %class Companion
 %package org.dcache.pool.p2p
 %access package
-%import diskCacheV111.vehicles.Message
 %import diskCacheV111.vehicles.DoorTransferFinishedMessage
 
 %start FSM::Init

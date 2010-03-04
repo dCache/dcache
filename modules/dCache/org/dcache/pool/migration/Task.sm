@@ -5,8 +5,7 @@
 %class Task
 %package org.dcache.pool.migration
 %access package
-%import diskCacheV111.vehicles.*
-%import static diskCacheV111.util.CacheException.*;
+%import static diskCacheV111.util.CacheException.*
 
 %start TASK::Queued
 %map TASK
