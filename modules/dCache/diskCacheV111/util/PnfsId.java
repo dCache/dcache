@@ -3,6 +3,7 @@
 package diskCacheV111.util;
 
 import java.io.Serializable;
+import java.util.Arrays;
 
 /**
  * Immutable representation of a pnfsId
@@ -13,60 +14,64 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
     private final static int NEW_ID_SIZE = 18; // chimera
 
     private final byte[] _a;
+    @Deprecated
     private final String _idString;
     private final String _domain;
-
-    // we call to often toString() on pnfsId
+    @Deprecated
     private final String _toString;
 
     private static final long serialVersionUID = -112220393521303857L;
 
-    public PnfsId(String idString, String domain) {
-        this(idString + "." + domain);
+    public PnfsId(String id, String domain) {
+        this(_stringToBytes(id), domain);
     }
 
-    public PnfsId(String idString) {
-        int i = idString.indexOf('.');
-        if (i < 0) {
-            _a = _stringToBytes(idString);
-            _domain = null;
-        } else {
-            _a = _stringToBytes(idString.substring(0, i));
-            if (i < (idString.length() - 1)) {
-                _domain = idString.substring(i + 1);
-            } else {
-                _domain = null;
-            }
-        }
-        _idString = bytesToHexString(_a);
-        _toString = _idString + (_domain != null ? "." + _domain : "");
+    public PnfsId(String s) {
+        this(stringToId(s), stringToDomain(s));
     }
 
-    public PnfsId(byte[] idBytes) {
+    public PnfsId(byte[] id) {
+        this(id, null);
+    }
 
-        int length = idBytes.length;
+    public PnfsId(byte[] id, String domain) {
+        int length = id.length;
         if (length != OLD_ID_SIZE && length != NEW_ID_SIZE) {
             throw new IllegalArgumentException("Illegal pnfsid string length");
         }
-
         _a = new byte[length];
+        System.arraycopy(id, 0, _a, 0, length);
 
-        System.arraycopy(idBytes, 0, _a, 0, _a.length);
         _idString = bytesToHexString(_a);
-        _domain = null;
-        _toString = _idString;
+        if (domain != null) {
+            _domain = domain.intern();
+            _toString = _idString + "." + _domain;
+        } else {
+            _domain = null;
+            _toString = _idString;
+        }
     }
 
     public boolean equals(Object o) {
-        return (o instanceof PnfsId) && o.toString().equals(this.toString());
+        if (this == o) {
+            return true;
+        }
+
+        if (!(o instanceof PnfsId)) {
+            return false;
+        }
+
+        PnfsId other = (PnfsId) o;
+        return Arrays.equals(_a, other._a)
+            && (_domain == other._domain
+                || (_domain != null && _domain.equals(other._domain)));
     }
 
     public int hashCode() {
-        return toString().hashCode();
+        return Arrays.hashCode(_a) ^ ((_domain == null) ? 0 : _domain.hashCode());
     }
 
     public int compareTo(PnfsId pnfsId) {
-
         if( pnfsId == this ) return 0;
 
         int i = 0;
@@ -93,11 +98,11 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
     }
 
     public String getId() {
-        return _idString;
+        return bytesToHexString(_a);
     }
 
     public String toString() {
-        return _toString;
+        return getId() + ((_domain != null) ? "." + _domain : "");
     }
 
     public String toIdString() {
@@ -115,7 +120,7 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
     }
 
     public String toShortString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         int i = 0;
         for (i = 0; i < 2; i++)
             sb.append(byteToHexString(_a[i]));
@@ -124,6 +129,24 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
         for (; i < _a.length; i++)
             sb.append(byteToHexString(_a[i]));
         return sb.toString();
+    }
+
+    private static final byte[] stringToId(String s) {
+        int i = s.indexOf('.');
+        if (i < 0) {
+            return  _stringToBytes(s);
+        } else {
+            return _stringToBytes(s.substring(0, i));
+        }
+    }
+
+    private static final String stringToDomain(String s) {
+        int i = s.indexOf('.');
+        if (i < 0 || i == s.length() - 1) {
+            return null;
+        } else {
+            return s.substring(i + 1);
+        }
     }
 
     private static String byteToHexString(byte b) {
@@ -184,7 +207,7 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
                 throw new IllegalArgumentException("Illegal use of *");
             }
             int diff = 2 * OLD_ID_SIZE - idString.length() + 1;
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             sb.append(idString.substring(0, p));
             for (int i = 0; i < diff; i++)
                 sb.append("0");
@@ -194,7 +217,7 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
         if (idString.length() > (2 * a.length)) {
             throw new IllegalArgumentException("Illegal pnfsid string length");
         } else if (idString.length() < (2 * a.length)) {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             int m = 2 * OLD_ID_SIZE - idString.length();
             for (int i = 0; i < m; i++)
                 sb.append("0");
@@ -215,11 +238,10 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
      * @return pnfsid as byte array
      */
     public byte[] toBinPnfsId() {
-        int len = _idString.length();
-        switch (len) {
-        case OLD_ID_SIZE * 2: // old pnfsid
-            return PnfsIdUtil.toBinPnfsId(_idString);
-        case NEW_ID_SIZE * 2: // himera
+        switch (_a.length) {
+        case OLD_ID_SIZE: // old pnfsid
+            return PnfsIdUtil.toBinPnfsId(getId());
+        case NEW_ID_SIZE: // himera
             return getBytes();
         default:
             return null;
@@ -246,5 +268,4 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
             System.exit(4);
         }
     }
-
 }
