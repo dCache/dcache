@@ -24,7 +24,9 @@
         pnfsmanager=PnfsManager
         flushMessageTarget=broadcast
         sweeper=org.dcache.pool.classic.SpaceSweeper2
-        workerThreads=5
+        maxWorkerThreads=5
+        maxMessageThreads=10
+        maxCallbackThreads=10
         maxDiskSpace=Infinity
       </value>
     </property>
@@ -130,7 +132,7 @@
         class="org.dcache.pool.repository.v5.CacheRepositoryV5"
         destroy-method="shutdown">
     <description>Repository manager</description>
-    <property name="executor" ref="threadPool"/>
+    <property name="executor" ref="workerThreadPool"/>
     <property name="pnfsHandler" ref="pnfs"/>
     <property name="periodicChecks" value="${checkRepository}"/>
     <property name="account" ref="account"/>
@@ -217,15 +219,33 @@
     <property name="destination" value="PoolManager"/>
   </bean>
 
-  <bean id="threadPool"
+  <bean id="workerThreadPool"
         class="java.util.concurrent.Executors"
         factory-method="newScheduledThreadPool"
         destroy-method="shutdown">
-    <constructor-arg value="${workerThreads}"/>
+    <description>Thread pool for background tasks</description>
+    <constructor-arg value="1"/>
+    <property name="maximumPoolSize" value="${maxWorkerThreads}"/>
     <property name="executeExistingDelayedTasksAfterShutdownPolicy"
               value="false"/>
     <property name="continueExistingPeriodicTasksAfterShutdownPolicy"
               value="false"/>
+  </bean>
+
+  <bean id="messageThreadPool"
+        class="java.util.concurrent.Executors"
+        factory-method="newCachedThreadPool"
+        destroy-method="shutdown">
+    <description>Thread pool for message processing</description>
+    <property name="maximumPoolSize" value="${maxMessageThreads}"/>
+  </bean>
+
+  <bean id="callbackThreadPool"
+        class="java.util.concurrent.Executors"
+        factory-method="newCachedThreadPool"
+        destroy-method="shutdown">
+    <description>Thread pool for message callbacks</description>
+    <property name="maximumPoolSize" value="${maxCallbackThreads}"/>
   </bean>
 
   <bean id="pinManagerStub" class="org.dcache.cells.CellStub">
@@ -242,14 +262,14 @@
     <property name="checksumModule" ref="csm"/>
     <property name="pnfs" ref="pnfsStub"/>
     <property name="pool" ref="poolStub"/>
-    <property name="executor" ref="threadPool"/>
+    <property name="executor" ref="workerThreadPool"/>
   </bean>
 
   <bean id="migration" class="org.dcache.pool.migration.MigrationModule"
         destroy-method="cancelAll">
     <description>Replica migration module client</description>
     <property name="repository" ref="rep"/>
-    <property name="executor" ref="threadPool"/>
+    <property name="executor" ref="workerThreadPool"/>
     <property name="pnfsStub" ref="pnfsStub"/>
     <property name="poolStub" ref="poolStub"/>
     <property name="poolManagerStub" ref="poolManagerStub"/>
@@ -262,7 +282,7 @@
     <property name="repository" ref="rep"/>
     <property name="migrationModule" ref="migration"/>
     <property name="PPClient" ref="pp"/>
-    <property name="executor" ref="threadPool"/>
+    <property name="executor" ref="workerThreadPool"/>
     <property name="checksumModule" ref="csm"/>
   </bean>
 
