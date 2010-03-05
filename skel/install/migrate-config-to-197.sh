@@ -31,6 +31,19 @@ addServiceIfNotInOwnDomain() # $1 domain $2 service
   fi
 }
 
+fileNotPrecious() # $1 filename
+{
+  if [ ! -e "$1" ]; then
+    return 0
+  fi
+
+  sed 's/^[ \t]*#.*$//;s/^[ \t]*$//' "$1" | while read line; do
+    if [ -n "$line" ]; then
+      return 1
+    fi
+  done
+}
+
 # Set home path
 if [ -z "$DCACHE_HOME" ]; then
     DCACHE_HOME="/opt/d-cache"
@@ -76,7 +89,7 @@ fi
 
 
 if [ -z "$force" ]; then
-    if [ -e "${DCACHE_HOME}/etc/dcache.conf" ]; then
+    if ! fileNotPrecious "${DCACHE_HOME}/etc/dcache.conf"; then
         echo "Cannot proceed because ${DCACHE_HOME}/etc/dcache.conf already exists."
         exit 1
     fi
