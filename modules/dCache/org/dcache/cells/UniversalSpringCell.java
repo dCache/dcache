@@ -15,6 +15,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileWriter;
@@ -152,6 +153,14 @@ public class UniversalSpringCell
         _context =
             new UniversalSpringCellApplicationContext(getArgs());
 
+        /* Cell threading is configurable through arguments to
+         * UniversalSpringCell. The executors have to be created as
+         * beans in the Spring file, however the names of the beans
+         * are provided as cell arguments.
+         */
+        setupCellExecutors(args.getOpt("callbackExecutor"),
+                           args.getOpt("messageExecutor"));
+
         /* This is a NOP except if somebody subclassed
          * UniversalSpringCell.
          */
@@ -202,6 +211,25 @@ public class UniversalSpringCell
         _infoProviders.clear();
         _setupProviders.clear();
         _lifeCycleAware.clear();
+    }
+
+    private void setupCellExecutors(String callbackExecutor, String messageExecutor)
+    {
+        if (callbackExecutor != null) {
+            Object executor = getBean(callbackExecutor);
+            if (!(executor instanceof ExecutorService)) {
+                throw new IllegalStateException("No such bean: " + callbackExecutor);
+            }
+            getNucleus().setCallbackExecutor((ExecutorService) executor);
+        }
+
+        if (messageExecutor != null) {
+            Object executor = getBean(messageExecutor);
+            if (!(executor instanceof ExecutorService)) {
+                throw new IllegalStateException("No such bean: " + messageExecutor);
+            }
+            getNucleus().setMessageExecutor((ExecutorService) executor);
+        }
     }
 
     private File firstMissing(File[] files)
