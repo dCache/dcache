@@ -36,14 +36,17 @@ public class PoolV2Mode implements java.io.Serializable {
     } ;
     private int _mode = ENABLED ;
 
+    @Override
     public String toString() {
-        if (_mode == ENABLED)
+        int mode = getMode();
+
+        if (mode == ENABLED)
             return "enabled";
 
         StringBuilder sb = new StringBuilder();
         sb.append("disabled(");
         boolean first = true;
-        for (int i = 0, mode = _mode; i < __modeString.length; i++) {
+        for (String modeString: __modeString) {
             mode >>= 1;
             if ((mode & 1) != 0) {
                 if (first) {
@@ -51,7 +54,7 @@ public class PoolV2Mode implements java.io.Serializable {
                 } else {
                     sb.append(',');
                 }
-                sb.append(__modeString[i]);
+                sb.append(modeString);
             }
         }
         sb.append(")");
@@ -91,7 +94,7 @@ public class PoolV2Mode implements java.io.Serializable {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public synchronized boolean equals(Object obj) {
         if (this == obj)
             return true;
 
@@ -102,7 +105,7 @@ public class PoolV2Mode implements java.io.Serializable {
     }
 
     @Override
-    public int hashCode() {
+    public synchronized int hashCode() {
         return _mode;
     }
 }

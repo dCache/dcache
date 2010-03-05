@@ -19,6 +19,7 @@ import java.util.NoSuchElementException;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -118,8 +119,9 @@ public class PoolV4
     private final String _poolName;
     private final Args _args;
 
-    private final Map<?,?> _moverAttributes = new HashMap();
-    private final Map<String, Class<?>> _moverHash = new HashMap<String, Class<?>>();
+    private final Map<String, Class<?>> _moverHash =
+        new ConcurrentHashMap<String, Class<?>>();
+
     /**
      * pool start time identifier.
      * used by PoolManager to recognize pool restarts
@@ -529,27 +531,27 @@ public class PoolV4
             }
         }
 
-        private boolean isConfigured()
+        private synchronized boolean isConfigured()
         {
             return _isConfigured;
         }
 
-        private JobScheduler getDefaultScheduler()
+        private synchronized JobScheduler getDefaultScheduler()
         {
             return _list.get(0);
         }
 
-        private Collection<JobScheduler> getSchedulers()
+        private synchronized Collection<JobScheduler> getSchedulers()
         {
             return Collections.unmodifiableCollection(_list);
         }
 
-        private JobScheduler getSchedulerByName(String queueName)
+        private synchronized JobScheduler getSchedulerByName(String queueName)
         {
             return _hash.get(queueName);
         }
 
-        private JobScheduler getSchedulerById(int id)
+        private synchronized JobScheduler getSchedulerById(int id)
         {
             int pos = id % 10;
             if (pos >= _list.size()) {
@@ -559,12 +561,12 @@ public class PoolV4
             return  _list.get(pos);
         }
 
-        public JobInfo getJobInfo(int id)
+        public synchronized JobInfo getJobInfo(int id)
         {
             return getSchedulerById(id).getJobInfo(id);
         }
 
-        public int add(String queueName, Runnable runnable, int priority)
+        public synchronized int add(String queueName, Runnable runnable, int priority)
             throws InvocationTargetException
         {
             JobScheduler js =
@@ -574,29 +576,29 @@ public class PoolV4
                 ? add(runnable, priority) : js.add(runnable, priority);
         }
 
-        public int add(Runnable runnable) throws InvocationTargetException
+        public synchronized int add(Runnable runnable) throws InvocationTargetException
         {
             return getDefaultScheduler().add(runnable);
         }
 
-        public int add(Runnable runnable, int priority)
+        public synchronized int add(Runnable runnable, int priority)
             throws InvocationTargetException
         {
             return getDefaultScheduler().add(runnable, priority);
         }
 
-        public void kill(int jobId, boolean force)
+        public synchronized void kill(int jobId, boolean force)
             throws NoSuchElementException
         {
             getSchedulerById(jobId).kill(jobId, force);
         }
 
-        public void remove(int jobId) throws NoSuchElementException
+        public synchronized void remove(int jobId) throws NoSuchElementException
         {
             getSchedulerById(jobId).remove(jobId);
         }
 
-        public StringBuffer printJobQueue(StringBuffer sb)
+        public synchronized StringBuffer printJobQueue(StringBuffer sb)
         {
             if (sb == null) {
                 sb = new StringBuffer();
@@ -607,7 +609,7 @@ public class PoolV4
             return sb;
         }
 
-        public int getMaxActiveJobs()
+        public synchronized int getMaxActiveJobs()
         {
             int sum = 0;
             for (JobScheduler s : _list) {
@@ -616,7 +618,7 @@ public class PoolV4
             return sum;
         }
 
-        public int getActiveJobs()
+        public synchronized int getActiveJobs()
         {
             int sum = 0;
             for (JobScheduler s : _list) {
@@ -625,7 +627,7 @@ public class PoolV4
             return sum;
         }
 
-        public int getQueueSize()
+        public synchronized int getQueueSize()
         {
             int sum = 0;
             for (JobScheduler s : _list) {
@@ -634,11 +636,11 @@ public class PoolV4
             return sum;
         }
 
-        public void setMaxActiveJobs(int maxJobs)
+        public synchronized void setMaxActiveJobs(int maxJobs)
         {
         }
 
-        public List<JobInfo>  getJobInfos()
+        public synchronized List<JobInfo> getJobInfos()
         {
             List<JobInfo> list = new ArrayList<JobInfo>();
             for (JobScheduler s : _list) {
@@ -661,7 +663,7 @@ public class PoolV4
             return -1;
         }
 
-        public void printSetup(PrintWriter pw)
+        public synchronized void printSetup(PrintWriter pw)
         {
             for (JobScheduler s : _list) {
                 pw.println("mover set max active -queue="
@@ -669,7 +671,7 @@ public class PoolV4
             }
         }
 
-        public JobInfo findJob(String client, long id)
+        public synchronized JobInfo findJob(String client, long id)
         {
             for (JobInfo info : getJobInfos()) {
                 if (client.equals(info.getClientName())
@@ -680,7 +682,7 @@ public class PoolV4
             return null;
         }
 
-        public void shutdown()
+        public synchronized void shutdown()
         {
             for (JobScheduler s: _list) {
                 s.shutdown();
@@ -1413,19 +1415,7 @@ public class PoolV4
             }
             Constructor<?> moverCon = mover.getConstructor(argsClass);
             Object[] args = { getCellEndpoint() };
-            MoverProtocol instance = (MoverProtocol) moverCon.newInstance(args);
-
-            for (Map.Entry<?,?> attribute : _moverAttributes.entrySet()) {
-                try {
-                    Object key = attribute.getKey();
-                    Object value = attribute.getValue();
-                    instance.setAttribute(key.toString(), value);
-                } catch (IllegalArgumentException e) {
-                    _log.error("Failed to set mover attribute: " + e.getMessage());
-                }
-            }
-
-            return instance;
+            return (MoverProtocol) moverCon.newInstance(args);
         } catch (Exception e) {
             _log.error("Could not create mover for " + moverClassName, e);
             return null;
@@ -1686,18 +1676,8 @@ public class PoolV4
         messageArrived(PoolCheckFreeSpaceMessage msg)
         throws CacheException
     {
-        if (_poolMode.isDisabled(PoolV2Mode.DISABLED)) {
-
-            _log.warn("PoolCheckFreeSpaceMessage request rejected due to "
-                      + _poolMode);
-            throw new CacheException(104, "Pool is disabled");
-        }
-
-        // long freeSpace = _repository.getFreeSpace() ;
-        long freeSpace = 1024L * 1024L * 1024L * 100L;
-        msg.setFreeSpace(freeSpace);
+        msg.setFreeSpace(_account.getFree());
         msg.setSucceeded();
-
         return msg;
     }
 
