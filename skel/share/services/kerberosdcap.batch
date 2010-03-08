@@ -1,0 +1,68 @@
+# Kerberos DCAP cell
+
+check -strong port
+
+# Defaults
+onerror continue
+set context -c useGPlazmaAuthorizationModule  false
+set context -c useGPlazmaAuthorizationCell    true
+set context -c gplazmaPolicy               ${dcache.home}/etc/dcachesrm-gplazma.policy
+set context -c kerberosdcapIoQueue              ""
+set context -c kerberosdcapIoQueueOverwrite     denied
+set context -c kerberosdcapMaxLogin             1500
+
+#
+#  ----  Usage of Srm Space Manager
+#
+#   If srmSpaceManagerEnabled is on we need to use SrmSpaceManager
+#   as both poolManager and poolProxy
+#
+set context -c srmSpaceManagerEnabled no
+define env srmSpaceManagerOn.exe endExe
+  set env -c doorPoolManager      "SrmSpaceManager"
+endExe
+eval ${srmSpaceManagerEnabled} yes ==
+exec env srmSpaceManagerOn.exe -ifok
+set context -c doorPoolManager              "PoolManager"
+onerror shutdown
+
+
+# External definitions
+exec file:${dcache.home}/share/cells/stage.fragment doors
+exec file:${dcache.home}/share/cells/permission.fragment
+
+#
+#
+create dmg.cells.services.login.LoginManager ${cell.name} \
+             "${port} \
+              diskCacheV111.doors.DCapDoor \
+              -export \
+              -keepAlive=300 \
+              -acceptErrorWait=60000 \
+              -prot=telnet -localOk \
+              -maxLogin=${kerberosdcapMaxLogin} \
+              -poolManager=${doorPoolManager}  \
+              -loginBroker=LoginBroker \
+              -brokerUpdateTime=120 \
+              -protocolFamily=dcap \
+              -protocolVersion=1.3.0 \
+              -keepPrincipal \
+              -authorization=strong \
+              -poolProxy=PoolManager \
+              -permission-handler=${permissionHandler} \
+              -aclTable=${aclTable} \
+              -aclConnDriver=${aclConnDriver} \
+              -aclConnUrl=${aclConnUrl} \
+              -aclConnUser=${aclConnUser} \
+              -aclConnPswd=${aclConnPswd} \
+              -stageConfigurationFilePath=${stageConfigurationFilePath} \
+              -io-queue=${kerberosdcapIoQueue} \
+              -io-queue-overwrite=${kerberosdcapIoQueueOverwrite} \
+              -use-gplazma-authorization-module=${useGPlazmaAuthorizationModule} \
+              -use-gplazma-authorization-cell=${useGPlazmaAuthorizationCell} \
+              -gplazma-authorization-module-policy=${gplazmaPolicy} \
+              -socketfactory=javatunnel.TunnelServerSocketCreator,javatunnel.GssTunnel,host/${host.fqdn}@${kerberosRealm} \
+"
+
+#
+#
