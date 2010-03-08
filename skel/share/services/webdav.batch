@@ -63,6 +63,16 @@ exec env webdav-${webdavProtocol}.exe
 
 onerror shutdown
 
+# Validate parameters
+define env verify-http.exe enddefine
+enddefine
+
+define env verify-https.exe enddefine
+  check -strong webdavKeyStorePassword
+enddefine
+
+exec env verify-${webdavProtocol}.exe
+
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
    "classpath:org/dcache/webdav/webdav-${webdavProtocol}.xml \
     -keyStore=${keyStore} \
