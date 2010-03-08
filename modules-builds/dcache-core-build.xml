@@ -406,9 +406,6 @@
         </copy>
         <copy file="${dcache.src}/diskCacheV111/docs/skins/home-skin-basic.html" todir="${server.bin.dir}/docs/skins" />
         <copy file="${dcache.src}/diskCacheV111/docs/statisticsHelp.html" todir="${server.bin.dir}/docs" />
-        <!-- startup scripts  for official distribution -->
-        <!-- common -->
-        <copy file="${dcache.src}/diskCacheV111/jobs/initPackage.sh" todir="${server.bin.dir}/jobs" />
 
         <!-- HSM flush scripts -->
         <copy file="${dcache.src}/diskCacheV111/jobs/encp.sh" todir="${server.bin.dir}/jobs" />

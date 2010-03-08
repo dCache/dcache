@@ -77,7 +77,6 @@ fi
 %attr(0755,root,root) /opt/d-cache/install/preparePnfs.sh
 %attr(0755,root,root) /opt/d-cache/install/deploy_srmv2.sh
 %attr(0755,root,root) /opt/d-cache/install/migrate-config-to-197.sh
-%attr(0755,root,root) /opt/d-cache/jobs/initPackage.sh
 %attr(0755,root,root) /opt/d-cache/jobs/hsmcp.sh
 %attr(0755,root,root) /opt/d-cache/jobs/hsmcpV4.sh
 %attr(0755,root,root) /opt/d-cache/bin/dcache
