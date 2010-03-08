@@ -11,46 +11,6 @@
 #  /opt/d-cache/share/doc/xylophone/Guide.txt
 
 
-# Utility function for printing to stderr with a line width
-# maximum of 75 characters. Longer lines are broken into several
-# lines. Each argument is interpreted as a separate paragraph.
-printp() # $* = list of paragraphs
-{
-    local line
-    local line2
-
-    while [ $# -gt 0 ]; do
-        # If line is non empty, then we need to print a
-        # paragraph separator.
-        if [ -n "$line" ]; then
-            echo
-        fi
-        line=
-        for word in $1; do
-            line2="$line $word"
-            if [ ${#line2} -gt 75 ]; then
-                echo $line >&2
-                line=$word
-            else
-                line=$line2
-            fi
-        done
-        echo $line
-        shift
-    done
-}
-
-
-#  Read in the dCacheSetup file
-readSetup()
-{
-    if [ -r $dCacheSetupFile ]; then
-        . $dCacheSetupFile
-    else
-        printp "[WARNING] The dCacheSetup file (expected in $dCacheSetupDir) could not be read."
-    fi
-}
-
 #  Apply any sanity checks before launching the XSLT processor
 sanityCheck()
 {
@@ -66,26 +26,45 @@ sanityCheck()
 }
 
 
-#  Default value for ourHomeDir
-if [ -z "$ourHomeDir" ]; then
-    ourHomeDir=/opt/d-cache
+# Initialize environment. /etc/default/ is the normal place for this
+# on several Linux variants. For other systems we provide
+# /etc/dcache.env. Those files will typically declare JAVA_HOME and
+# DCACHE_HOME and nothing else.
+[ -f /etc/default/dcache ] && . /etc/default/dcache
+[ -f /etc/dcache.env ] && . /etc/dcache.env
+
+# Set home path
+if [ -z "$DCACHE_HOME" ]; then
+    DCACHE_HOME="/opt/d-cache"
 fi
+if [ ! -d "$DCACHE_HOME" ]; then
+    echo "$DCACHE_HOME is not a directory"
+    exit 2
+fi
+ourHomeDir="${DCACHE_HOME}"   # We still use ourHomeDir in some places
 
-#  Default values: don't edit these values; instead, change them in dCacheSetup
-dCacheSetupDir=$ourHomeDir/config
-dCacheSetupFile=$dCacheSetupDir/dCacheSetup
-xsltProcessor=saxon
-xylophoneConfigurationFile=glue-1.3.xml
-xylophoneConfigurationDir=$ourHomeDir/etc
-httpHost=localhost
-httpPort=2288
-xylophoneXSLTDir=$ourHomeDir/share/xml/xylophone
-saxonDir=$ourHomeDir/classes/saxon
+# Load libraries
+. "${DCACHE_HOME}/share/lib/paths.sh"
+. "${DCACHE_LIB}/utils.sh"
+. "${DCACHE_LIB}/services2.sh"
 
+# Check for java
+if ! findJavaTool java; then
+    fail 1 "Could not find usable Java VM. Please set JAVA_HOME."
+fi
+JAVA="$java"
 
-#  Import the dCacheSetup configuration.
-readSetup
+# Import configuration
+loadConfig xsltProcessor xylophoneConfigurationFile xylophoneConfigurationDir httpHost httpPort xylophoneXSLTDir saxonDir
 
+xsltProcessor="${XSLTPROCESSOR:-saxon}"
+xylophoneConfigurationFile="${XYLOPHONECONFIGURATIONFILE:-glue-1.3.xml}"
+xylophoneConfigurationDir="${XYLOPHONECONFIGURATIONDIR:-${DCACHE_HOME}/etc}"
+httpHost="${HTTPHOST:-localhost}"
+httpPort="${HTTPPORT:-2288}"
+xylophoneXSLTDir="${XYLOPHONEXSLTDIR:-${DCACHE_HOME}/share/xml/xylophone}"
+saxonDir="${SAXONDIR:-${DCACHE_HOME}/classes/saxon}"
+dCacheSetupFile="$DCACHE_HOME/etc/dcache.conf"
 
 #  Apply any environment overrides
 if [ -n "$XSLT_PROCESSOR" ]; then
@@ -106,9 +85,9 @@ fi
 
 
 #  Build derived variables after allowing changes from default values
-xylophoneXSLTFile=$xylophoneXSLTDir/xsl/xylophone.xsl
-xylophoneXMLFile=$xylophoneConfigurationDir/$xylophoneConfigurationFile
-dCacheInfoUri=http://${httpHost}:${httpPort}/info
+xylophoneXSLTFile="$xylophoneXSLTDir/xsl/xylophone.xsl"
+xylophoneXMLFile="$xylophoneConfigurationDir/$xylophoneConfigurationFile"
+dCacheInfoUri="http://${httpHost}:${httpPort}/info"
 
 
 sanityCheck
@@ -121,7 +100,7 @@ case $xsltProcessor in
 	;;
 
   saxon)
-	${java} -classpath ${saxonDir}/saxon.jar com.icl.saxon.StyleSheet "$xylophoneXMLFile" "$xylophoneXSLTFile" xml-src-uri="$dCacheInfoUri"
+	"${JAVA}" -classpath "${saxonDir}/saxon.jar" com.icl.saxon.StyleSheet "$xylophoneXMLFile" "$xylophoneXSLTFile" xml-src-uri="$dCacheInfoUri"
 	;;
     
   *)

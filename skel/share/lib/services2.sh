@@ -3,7 +3,7 @@
 # Invokes the dCache boot loader
 bootLoader()
 {
-    $JAVA -client -cp "$DCACHE_HOME/classes/dcache.jar:$DCACHE_HOME/classes/cells.jar:$DCACHE_HOME/classes/log4j/*" "-Ddcache.home=$DCACHE_HOME" org.dcache.boot.BootLoader -f="$DCACHE_CONFIG" "$@"
+    $JAVA -client -cp "$DCACHE_HOME/classes/dcache.jar:$DCACHE_HOME/classes/cells.jar:$DCACHE_HOME/classes/log4j/*" "-Ddcache.home=$DCACHE_HOME" org.dcache.boot.BootLoader -f="$DCACHE_SETUP" "$@"
 }
 
 # Prints all domains that match a given pattern
@@ -73,7 +73,7 @@ domainStart()
     # Build classpath
     classpath="${DCACHE_HOME}/classes/cells.jar:${DCACHE_HOME}/classes/dcache.jar"
     if [ "$DCACHE_JAVA_CLASSPATH" ]; then
-        classpath="${tmp}:${DCACHE_JAVA_CLASSPATH}"
+        classpath="${classpath}:${DCACHE_JAVA_CLASSPATH}"
     fi
     if [ -r "${DCACHE_HOME}/classes/extern.classpath" ]; then
         . "${DCACHE_HOME}/classes/extern.classpath"
@@ -107,7 +107,7 @@ domainStart()
     # Start daemon
     rm -f "$DCACHE_RESTART_FILE"
     cd "$DCACHE_HOME"
-    CLASSPATH="$classpath" /bin/sh "${DCACHE_HOME}/share/lib/daemon" ${DCACHE_USER:+-u} ${DCACHE_USER:+"$DCACHE_USER"} -l -r "$DCACHE_RESTART_FILE" -d "$DCACHE_RESTART_DELAY" -f -c "$DCACHE_PID_JAVA" -p "$DCACHE_PID_DAEMON" -o "$DCACHE_LOG_FILE" "$JAVA" ${DCACHE_JAVA_OPTIONS} ${DCACHE_JAVA_OPTIONS_EXTRA} "-Ddcache.home=$DCACHE_HOME" org.dcache.boot.BootLoader -f="$DCACHE_CONFIG" start "$DOMAIN"
+    CLASSPATH="$classpath" /bin/sh "${DCACHE_HOME}/share/lib/daemon" ${DCACHE_USER:+-u} ${DCACHE_USER:+"$DCACHE_USER"} -l -r "$DCACHE_RESTART_FILE" -d "$DCACHE_RESTART_DELAY" -f -c "$DCACHE_PID_JAVA" -p "$DCACHE_PID_DAEMON" -o "$DCACHE_LOG_FILE" "$JAVA" ${DCACHE_JAVA_OPTIONS} "-Ddcache.home=$DCACHE_HOME" org.dcache.boot.BootLoader -f="$DCACHE_SETUP" start "$DOMAIN"
 
     # Wait for confirmation
     printf "Starting ${DOMAIN} "

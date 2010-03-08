@@ -1,0 +1,18 @@
+#
+# Thread manager
+#
+
+exec file:${ourHomeDir}/share/cells/import-arguments.fragment \
+    ${0} ${1} ${2} ${3} ${4} ${5} ${6} ${7} ${8} ${9}
+
+# Define defaults
+onerror continue
+set context -c threadManagerThreads 200
+set context -c threadManagerTimeout 15
+onerror shutdown
+
+create diskCacheV111.util.ThreadManager ThreadManager \
+       "default \
+       -num-threads=${threadManagerThreads} \
+       -thread-timeout=${threadManagerTimeout} \
+"
