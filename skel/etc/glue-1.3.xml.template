@@ -1466,9 +1466,11 @@
         <map name="cell-version-to-dcache-version">
           <lookup default="UNDEFINEDVALUE"
                   path="/d:dCache/d:domains/d:domain[@name='dCacheDomain']/d:cells/d:cell[@name='PoolManager']/d:version/d:metric[@name='release']"/>
-        </map> (ns=<map name="PnfsManager-domain-to-namespace-impl">
-          <lookup default="UNDEFINEDVALUE"
-                  path="/d:dCache/d:domains/d:domain[@name='dCacheDomain']/d:routing/d:named-cells/d:cell[@name='PnfsManager']/d:domainref/@name"/>
+        </map> (ns=<map name="cleaner-class-to-namespace-impl">
+          <lookup path="/d:dCache/d:domains/d:domain/d:cells/d:cell/d:metric[@name='class'][.='org.dcache.chimera.namespace.ChimeraCleaner']">
+            <lookup default="UNDEFINEDVALUE"
+                    path="/d:dCache/d:domains/d:domain/d:cells/d:cell/d:metric[@name='class'][.='diskCacheV111.cells.CleanerV2']"/>
+          </lookup>
         </map>)</attr>
 
       <!-- GlueSESizeTotal and GlueSESizeFree are marked as
@@ -1789,9 +1791,11 @@
       <sub match="NEARLINE"  replace-with="Nearline"/>
     </map>
 
-    <map name="PnfsManager-domain-to-namespace-impl">
-      <sub match="pnfsDomain"    replace-with="PNFS"/>
-      <sub match="chimeraDomain" replace-with="Chimera"/>
+    <map name="cleaner-class-to-namespace-impl">
+      <sub match="org.dcache.chimera.namespace.ChimeraCleaner"
+           replace-with="Chimera" />
+      <sub match="diskCacheV111.cells.CleanerV2"
+           replace-with="PNFS" />
       <default value="UNDEFINEDVALUE"/>
     </map>
   </mapping>
