@@ -97,6 +97,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         try {
             _serviceContext = getServiceContext();
         } catch( Exception e ) {
+            error(e.toString());
             reply("500 Error: " + e.toString());
             return;
         }

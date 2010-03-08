@@ -1,5 +1,5 @@
 #
-#      GridFTP Door
+#      KerberosFTP Door
 #
 
 check -strong port
@@ -27,6 +27,8 @@ set context -c gsiftpIoQueue                  ""
 set context -c overwriteEnabled false
 set context -c gsiftpAllowPassivePool false
 set context -c FtpTLogDir ""
+set context -c kerberosKdcList localhost.localdomain
+set context -c kerberosScvPrincipal ftp/${host.fqdn}@${kerberosRealm}
 
 #
 #  ----  Usage of Srm Space Manager
@@ -53,7 +55,9 @@ exec file:${dcache.home}/share/cells/permission.fragment
 create dmg.cells.services.login.LoginManager ${cell.name} \
             "${port} \
              -export \
-             diskCacheV111.doors.GsiFtpDoorV1 \
+             diskCacheV111.doors.KerberosFtpDoorV1 \
+             -kdc-list=${kerberosKdcList} \
+             -svc-principal=${kerberosScvPrincipal} \
              -prot=raw \
              -clientDataPortRange=${clientDataPortRange} \
              -poolProxy=${gsiftpPoolProxy}  \
@@ -61,7 +65,7 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
              -root=${ftpBase} \
              -maxLogin=${gsiftpMaxLogin} \
              -brokerUpdateTime=5 \
-             -protocolFamily=gsiftp \
+             -protocolFamily=gkftp \
              -protocolVersion=1.0.0 \
              -loginBroker=LoginBroker \
              -space-reservation=${spaceReservation} \
@@ -75,7 +79,7 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
              -defaultStreamsPerClient=${gsiftpDefaultStreamsPerClient} \
              -deleteOnConnectionClosed=${gsiftpDeleteOnConnectionClosed} \
              -use-gplazma-authorization-cell=${useGPlazmaAuthorizationCell} \
-             -delegate-to-gplazma=${delegateToGPlazma} \
+             -delegate-to-gplazma=false \
              -use-gplazma-authorization-module=${useGPlazmaAuthorizationModule} \
              -gplazma-authorization-module-policy=${gplazmaPolicy} \
              -io-queue=${gsiftpIoQueue} \
