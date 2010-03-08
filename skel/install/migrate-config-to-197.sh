@@ -267,6 +267,8 @@ echo "to ${DCACHE_HOME}/etc/layouts/imported.conf."
             httpd)
                 echo "[$domain]"
                 echo "[$domain/httpd]"
+                echo "[$domain/billing]"
+                echo "[$domain/srm-loginbroker]"
                 ;;
             utility)
                 echo "[$domain]"
