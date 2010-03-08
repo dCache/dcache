@@ -22,7 +22,7 @@ eval ${cacheInfo} companion ==
 exec context setcontext.exe -ifok=rc
 onerror shutdown
 #
-# If companionDatabaseHost and defaultPnfsServer are not set in dCacheSetup, use localhost, for pnfs use /pnfs/fs:
+# If companionDatabaseHost and defaultPnfsServer are not set in dcache.conf, use localhost, for pnfs use /pnfs/fs:
 #
 onerror continue
 set context -c companionDatabaseHost localhost

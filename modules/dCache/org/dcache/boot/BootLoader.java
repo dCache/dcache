@@ -122,9 +122,9 @@ public class BootLoader
                                                 Set<String> keys)
     {
         for (String key: keys) {
-            String var = key.toUpperCase().replace('.', '_').replace('-', '-').replace("\\", "\\\\").replace("$", "\\$").replace("\"", "\\\"");
+            String var = key.toUpperCase().replace('.', '_').replace('-', '-').replace("\\", "\\\\").replace("$", "\\$").replace("'", "\\'");
             String value = properties.getReplacement(key);
-            System.out.println(var + "=\"" + value + "\"");
+            System.out.println(var + "='" + value + "'");
         }
     }
 

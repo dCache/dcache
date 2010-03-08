@@ -237,8 +237,6 @@ ourHomeDir="${DCACHE_HOME}"   # We still use ourHomeDir in some places
 . ${DCACHE_LIB}/services2.sh
 . ${DCACHE_LIB}/pool.sh
 
-DCACHE_CONFIG="${DCACHE_HOME}/share/defaults:${DCACHE_HOME}/etc/dcache.conf"
-
 # Check prerequisites
 require awk df egrep grep sed cat hostname wc dirname basename mount mv tr which
 
@@ -426,7 +424,7 @@ case "$1" in
                     fail 1 "Could not find the jmap command, part of the Java 6
                             JDK. This command is required for producing a heap
                             dump. Please ensure that either jmap is in the path
-                            or update dCacheSetup to point to its location."
+                            or update JAVA_HOME."
 
                     if [ -f ${file} ]; then
                         fail 1 "${file} already exists. Heap not dumped."
@@ -509,7 +507,7 @@ case "$1" in
                 findJavaTool keytool ||
                 fail 1 "Could not find the keytool command, part of the Java
                         JRE. Please ensure that either keytool is in the path
-                        or update dCacheSetup to point to its location."
+                        or update JAVA_HOME."
 
                 opt_password="${dCache_trustStorePassword:-dcache}"
                 opt_out="${dCache_trustStore:-${DCACHE_HOME}/etc/certificates.jks}"

@@ -1,14 +1,9 @@
 #
-# SRM and related cells
-#
-
-
-#
 #
 #   t r a n s f e r    m a n a g e r     c e l l s
 #
 #
-#   Default values (if not specified in dCacheSetup)
+#   Default values
 #
 onerror continue
 

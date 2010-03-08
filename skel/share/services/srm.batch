@@ -10,7 +10,7 @@ check -strong port
 exec file:${dcache.home}/share/cells/threadmanager.fragment
 
 #
-#   Default values (if not specified in dCacheSetup)
+#   Default values
 #
 onerror continue
 

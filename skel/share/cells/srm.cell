@@ -11,11 +11,7 @@ exec file:${ourHomeDir}/share/cells/import-arguments.fragment \
 check -strong srmPort
 
 #
-#
-#   srm     c e l l
-#
-#
-#   Default values (if not specified in dCacheSetup)
+#   Default values
 #
 onerror continue
 
