@@ -109,10 +109,10 @@ library_include_HEADERS = $(h_sources)
 lib_LTLIBRARIES = libdcap.la libpdcap.la
 libdcap_la_SOURCES = $(c_sources)
 libdcap_la_LIBADD = -lpthread -ldl
-libdcap_la_LDFLAGS = -no-undefined -version-number $(LIBRARY_VERSION)
+libdcap_la_LDFLAGS = -no-undefined -version-info $(LIBRARY_VERSION)
 libpdcap_la_SOURCES = $(p_loadsrc)
 libpdcap_la_LIBADD = libdcap.la
-libpdcap_la_LDFLAGS = -no-undefined -version-number $(LIBRARY_VERSION)
+libpdcap_la_LDFLAGS = -no-undefined -version-info $(LIBRARY_VERSION)
 
 #bin_PROGRAMS = dccp dcap_test
 

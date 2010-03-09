@@ -1,14 +1,28 @@
 
 #define VER(a) #a " " __DATE__ " " __TIME__ ;
-#define VERLONG(a) #a " " __DATE__ " " __TIME__ " ";
 
+const int dc_getProtocol()
+{
+	return @VER_ARCHITECTURE@;
+}
+
+const int dc_getMajor()
+{
+	return @VER_MAJOR@;
+}
+
+const int dc_getMinor()
+{
+	return @VER_MINOR@;
+}
+
+const char *dc_getPatch()
+{
+	return &"@VER_PATCH@";
+}
+
+/*depricated method please use above methods*/
 const char *getDcapVersion()
 {
-	return VER( version-@PROTOCOL_VERSION@ );
+	return VER( version-1-@VER_ARCHITECTURE@-@VER_MAJOR@ );
 }
-
-const char *getDcapVersionLong()
-{
-	return VERLONG( version-@PROTOCOL_VERSION@ );
-}
-

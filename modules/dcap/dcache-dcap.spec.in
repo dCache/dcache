@@ -17,7 +17,7 @@ Summary: dCache Client
 Vendor: dcache.org
 Name: @PACKAGE@
 Version: @VERSION@
-Release: 1rc
+Release: @VER_PATCH@
 Prefix: /opt/d-cache/dcap
 #BuildRoot: %{_tmppath}/%{name}-%{version}-build
 BuildRoot: %{_tmppath}/%{name}-root

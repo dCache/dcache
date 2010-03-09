@@ -20,7 +20,7 @@ AUX_DIST             =  $(ac_aux_dir)/config.guess \
                         $(ac_aux_dir)/config.sub \
                         $(ac_aux_dir)/install-sh \
                         $(ac_aux_dir)/ltmain.sh \
-                        $(ac_aux_dir)/missing 
+                        $(ac_aux_dir)/missing
 
 MAINTAINERCLEANFILES = Makefile.in aclocal.m4 configure config-h.in \
                         stamp-h.in $(AUX_DIST)
@@ -66,7 +66,9 @@ docfiles = \
 	ChangeLog \
 	INSTALL \
 	NEWS \
-	README
+	README \
+	COPYING.LIB \
+	LICENSE
 
 
 

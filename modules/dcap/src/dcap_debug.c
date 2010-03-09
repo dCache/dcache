@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: dcap_debug.c,v 1.33 2006-09-22 13:38:07 tigran Exp $
  */
@@ -22,8 +22,11 @@
 #include "system_io.h"
 
 
-extern const char * getDcapVersion();
 
+extern const int dc_getProtocol();
+extern const int dc_getMajor();
+extern const int dc_getMinor();
+extern const char * dc_getPatch();
 
 typedef struct {
 	int debugLevel;
@@ -45,7 +48,7 @@ void dc_setDebugLevel(unsigned int newLevel)
 	if(isChangable) {
 		if(newLevel == DC_NO_OUTPUT ) {
 			debugLevel = DC_NO_OUTPUT;
-		}else{ 
+		}else{
 			debugLevel |= newLevel;
 		}
 	}
@@ -68,7 +71,7 @@ int string2debugLevel( const char *str)
 	/* try to look at as number */
 
 	i = atoi(str);
-	
+
 	if( i != 0 ) {
 		return i;
 	}
@@ -110,7 +113,7 @@ void dc_setStrDebugLevel(const char *str)
 #define MAX_MESSAGE_LEN 2048
 
 void dc_debug(unsigned int level, const char *str, ...)
-{	
+{
 	va_list args;
 	char msg[MAX_MESSAGE_LEN];
 	int len;
@@ -132,7 +135,7 @@ void dc_debug(unsigned int level, const char *str, ...)
 		system_write(debug_stream, msg, len);
 		system_write(debug_stream, "\n", 1);
 	}
-	
+
 	return;
 }
 
@@ -152,7 +155,7 @@ void init_dc_debug()
 		dc_setDebugLevel(atoi(env));
 		isChangable = 0;
 	}
-	
+
 	out_file = (char *)getenv("DCACHE_DEBUG_FILE");
 	if(out_file != NULL) {
 		efd = system_open(out_file, O_WRONLY | O_APPEND | O_CREAT, 0644 );
@@ -165,5 +168,9 @@ void init_dc_debug()
 		debug_stream = 2; /* stderr */
 	}
 
-	dc_debug(DC_INFO, "Dcap Version %s", getDcapVersion() );
+	dc_debug(DC_INFO, "Dcap Version %d.%d.%d-%s",
+		dc_getProtocol(),
+		dc_getMajor(),
+		dc_getMinor(),
+		dc_getPatch());
 }

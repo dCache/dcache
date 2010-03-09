@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: wdccp.c,v 1.6 2006-07-17 15:13:36 tigran Exp $
  */
@@ -70,33 +70,33 @@ char *path2filename(const char *path, const char *filename)
 	char *oFile;
 	int dirLen;
 	int fileLen;
-	
+
 	oFile = strrchr( filename, PATH_SEPARATOR );
 	if( oFile != NULL ) {
 		++oFile;
 	}else{
 		oFile = (char *)filename;
 	}
-	
+
 	dirLen = strlen(path);
 	if( path[ dirLen -1 ] ==  PATH_SEPARATOR ) {
 		--dirLen;
 	}
 	fileLen = strlen(oFile);
-	
-	
+
+
 	/* 2 extra butes for '/' and '\0' at the end */
 	newFile = malloc( dirLen + fileLen + 2 );
 	if( newFile == NULL ) {
 		perror("malloc: ");
 		return NULL;
 	}
-	
+
 	memcpy(newFile, path, dirLen);
 	newFile[dirLen] = PATH_SEPARATOR ;
 	memcpy( newFile + dirLen + 1, oFile, fileLen);
 	newFile[dirLen + 1 + fileLen] = '\0';
-	
+
 	return newFile;
 }
 
@@ -132,8 +132,8 @@ int file2file( const char *source, const char *destination, int overwrite, size_
 #else
 	mode_t mode = 0666;
 #endif /* WIN32 */
-	
-	errno = 0;	
+
+	errno = 0;
 
 	if(strcmp(source, STDIN) == 0) {
 		src = fileno(stdin);
@@ -146,7 +146,7 @@ int file2file( const char *source, const char *destination, int overwrite, size_
 	}
 
 	if( ! isStdin ) {
-	
+
 		rc = stat(source, &sbuf) ;
 		if( (rc == 0) && ( S_ISDIR(sbuf.st_mode) || S_ISCHR(sbuf.st_mode)) ) {
 			fprintf(stderr,"file %s: Not a regular file\n",source);
@@ -159,14 +159,14 @@ int file2file( const char *source, const char *destination, int overwrite, size_
 			mode = sbuf.st_mode & 0777;
 			/* tell to pool how many bytes we want to write */
 			extracommand[0] = '\0';
-			sprintf(extracommand, "-alloc-size=%ld",sbuf.st_size); 
+			sprintf(extracommand, "-alloc-size=%ld",sbuf.st_size);
 			dc_setExtraOption(extracommand);
 		}
 	}
 
 	if( ! isStdout ) {
-	
-		if ( (stat( destination, &sbuf) == 0) &&  S_ISDIR(sbuf.st_mode) ) {		
+
+		if ( (stat( destination, &sbuf) == 0) &&  S_ISDIR(sbuf.st_mode) ) {
 			isDir = 1;
 			real_destination = path2filename(destination, isStdin ? "stdin" : source);
 			if( real_destination == NULL ) {
@@ -175,7 +175,7 @@ int file2file( const char *source, const char *destination, int overwrite, size_
 		}else{
 			real_destination = (char *)destination;
 		}
-	
+
 		if( overwrite && (access(real_destination, F_OK) == 0)) {
 			fprintf(stderr, "   Skipping existing file %s.\n", real_destination);
 			if( isDir ){
@@ -184,14 +184,14 @@ int file2file( const char *source, const char *destination, int overwrite, size_
 			return 0;
 		}
 	}
-	
+
 	if( !isStdin ) {
 		src = dc_open(source, O_RDONLY|O_BINARY);
 		if( src < 0 ) {
 			dc_perror("Can't open source file");
 			return -1;
 		}
-		
+
 /*		dc_noBuffering(src); */
 	}
 
@@ -204,7 +204,7 @@ int file2file( const char *source, const char *destination, int overwrite, size_
 			}
 			return -1;
 		}
-		
+
 		if( unsafeWrite ) {
 			dc_unsafeWrite( dest );
 		}
@@ -217,23 +217,23 @@ int file2file( const char *source, const char *destination, int overwrite, size_
 	time(&starttime);
 	rc = copyfile(src, dest, buffer_size, &size);
 	time(&endtime);
-	
+
 	if ( ! isStdin && (dc_close(src) < 0) ) {
 		dc_perror("Failed to close source file");
 		rc = -1;
 	}
 
 	if (! isStdout ) {
-		if (dc_close(dest) < 0) {  
+		if (dc_close(dest) < 0) {
 			dc_perror("Failed to close destination file");
 			rc = -1;
 		}
-		
+
 		if( isDir ) {
 			free(real_destination);
 		}
 	}
-	
+
 	if (rc != -1 )  {
 		copy_time = endtime-starttime ;
 		fprintf(stderr,"%s => %s: %lld bytes in %lu seconds",source, destination, (off_t)size, copy_time);
@@ -265,7 +265,7 @@ int copyfile(int src, int dest, size_t bufsize, off_t *size)
 {
 	ssize_t n, m ;
 	char * cpbuf;
-	size_t count;	
+	size_t count;
 	off_t total_bytes = 0;
 	size_t off;
 
@@ -275,14 +275,14 @@ int copyfile(int src, int dest, size_t bufsize, off_t *size)
 		return -1;
 	}
 
-	do{	
+	do{
 		off = 0;
-		do{	
+		do{
 			n = dc_read(src, cpbuf + off, bufsize - off);
-			if( n <=0 ) break; 
+			if( n <=0 ) break;
 			off += n;
 		} while (off != bufsize );
-		
+
 		/* do not continue if read fails*/
 		if (n < 0) {
 			/* Read failed. */
@@ -296,7 +296,7 @@ int copyfile(int src, int dest, size_t bufsize, off_t *size)
 			total_bytes += off;
 			while ((count != off) && ((m = dc_write(dest, cpbuf+count, off-count)) > 0))
 				count += m;
- 
+
 			if (m < 0) {
 				/* Write failed. */
 				free(cpbuf);
@@ -305,11 +305,11 @@ int copyfile(int src, int dest, size_t bufsize, off_t *size)
 		}
 
 	} while (n != 0);
-	
+
 	if(size != NULL) {
 		*size = total_bytes;
 	}
-	
+
 	free(cpbuf);
 	return 0;
 }
@@ -325,17 +325,20 @@ int copyfile(int src, int dest, size_t bufsize, off_t *size)
 static
 void usage()
 {
-
-	fprintf(stderr,"DiskCache Copy Program. LibDCAP version: %s\n", getDcapVersion());
+	fprintf(stderr,"DiskCache Copy Program. LibDCAP version: %d.%d.%d-%s\n",
+		dc_getProtocol(),
+		dc_getMajor(),
+		dc_getMinor(),
+		dc_getPatch());
 	fprintf(stderr,"Usage:  dccp [-d <debugLevel>]  [-h <replyhostname>] [-i]\n");
 	fprintf(stderr,"    [-B <bufferSize>] [-X <extraOption>]\n");
 	fprintf(stderr,"    [-u] [-p <first port>[:last port]]\n");
 	fprintf(stderr,"    [-r <buffers size>] [-s <buffer size>] [-n] [-c] <src> <dest>\n");
-	
+
 	/* some help */
 
 	fprintf(stderr, "\n\n");
-	fprintf(stderr, "\t-A                            : active client mode ( client connects to the pool).\n");	
+	fprintf(stderr, "\t-A                            : active client mode ( client connects to the pool).\n");
 	fprintf(stderr, "\t-d <debugLevel>               : set debug level.\n");
 	fprintf(stderr, "\t-h <replyhostname>            : specify hostname for data connection.\n");
 	fprintf(stderr, "\t-i                            : do not overwrite existing files.\n");
@@ -387,12 +390,12 @@ main(int argc, char *argv[])
 	}
 
 	while( (c = getopt(argc, argv, "Ad:o:h:iX:PB:p:T:r:s:w:nuc")) != EOF) {
-	
+
 		switch(c) {
-			case 'd':				
+			case 'd':
 				dc_setStrDebugLevel(optarg);
 				break;
-			case 'o':				
+			case 'o':
 				dc_setOpenTimeout(atol(optarg));
 				break;
 			case 'h':
@@ -412,21 +415,21 @@ main(int argc, char *argv[])
 				break;
 			case 'u':
 				unsafeWrite = 1;
-				break;				
+				break;
 			case 'p':
 				lastP = strchr(optarg, ':');
 				if( lastP == NULL ) {
 				    first_port = atoi(optarg);
 					last_port = first_port;
 				}else{
-				    firstP = optarg; 
-					lastP[0] = '\0';					
-					
+				    firstP = optarg;
+					lastP[0] = '\0';
+
 				    first_port = atoi(firstP);
 					last_port = atoi(lastP +1);
-										
+
 				}
-				
+
 				dc_setCallbackPortRange(first_port, last_port);
 				break;
 			case 'T':
@@ -445,7 +448,7 @@ main(int argc, char *argv[])
 				doCheckSum = 0;
 			case 'A':
 				dc_setClientActive();
-				break;				
+				break;
 			case '?':
 				usage();
 		}
@@ -474,12 +477,12 @@ main(int argc, char *argv[])
 	rc = 0;
 
 	do {
-	
+
 		rc |= file2file(argv[argc - file_count], outfile,overwrite,  buffer_size , unsafeWrite, doCheckSum);
-		
+
 		if( (rc != 0) && stopOnError )
-			break;		
-		
+			break;
+
 	}while(--file_count  > 1);
 
 	return rc;
