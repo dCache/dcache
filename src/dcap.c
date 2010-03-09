@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: dcap.c,v 1.268 2006-09-26 07:40:28 tigran Exp $
  */
@@ -173,7 +173,7 @@ int init_hostname()
 			dc_debug(DC_ERROR, "Failed to get local host name.");
 			return -1;
 		}
-		
+
 		/* trying to get full fully-qualified domain name. */
 		he = (struct hostent *) gethostbyname((const char *) hostName);
 		if (he != NULL) {
@@ -183,7 +183,7 @@ int init_hostname()
 		}else{
 			dc_debug(DC_INFO, "Unable to get FQDN for host %s.", hostName);
 		}
-		
+
 		dc_debug(DC_INFO, "Setting hostname to %s.", hostName);
 	}
 
@@ -202,19 +202,19 @@ cache_open(vsp_Node * node )
 	/* if node->dataFd != -1 - we need just to reconnect */
 	if(node->dataFd != -1) {
 		old_fd = node->dataFd;
-		
+
 		deleteQueue(node->queueID);
 		node->queueID = newCounter();
-		
+
 		if( newQueue(node->queueID) == NULL) {
 			dc_debug(DC_ERROR, "Failed to create new message queue.");
 			return -1;
 		}
-			
+
 		if (ascii_open_conversation(node) < 0) {
 			return -1;
 		}
-		
+
 		shutdown(old_fd, SHUT_RDWR);
 		new_fd = node->dataFd;
 		node->dataFd = dup2(node->dataFd, old_fd);
@@ -223,14 +223,14 @@ cache_open(vsp_Node * node )
 			dc_debug(DC_ERROR, "dup2 failed. Reconnection impossible.");
 			return -1;
 		}
-		
+
 		system_close(new_fd);
-		
+
 		/* ascii_open_conversation attaches new file descriptor to node */
 		node_detach_fd(node, new_fd);
 		/* node_detach_fd sets new_fd as node->dataFd */
 		node->dataFd = old_fd;
-		
+
 		/* correct all descriptors */
 		node_dupToAll(node, node->dataFd);
 		return 0;
@@ -241,23 +241,23 @@ cache_open(vsp_Node * node )
 	if( newQueue(node->queueID) == NULL) {
 		dc_debug(DC_ERROR, "Failed to create new message queue.");
 		return -1;
-	}	
-	
+	}
+
 	if ( initControlLine(node) < 0) {
 		return -1;
 	}
 
-	/* find out our host anme if we need it */	
+	/* find out our host anme if we need it */
 	if( (node->asciiCommand == DCAP_CMD_OPEN) ||
 		(node->asciiCommand == DCAP_CMD_TRUNC) ||
 		(node->asciiCommand == DCAP_CMD_STAGE) ||
 		(node->asciiCommand == DCAP_CMD_CHECK) ||
 		(node->asciiCommand == DCAP_CMD_OPENDIR) ) {
-		
+
 		m_lock(&bindLock);
 		rc = init_hostname();
 		m_unlock(&bindLock);
-		
+
 		if(rc < 0 ) {
 			return -1;
 		}
@@ -268,7 +268,7 @@ cache_open(vsp_Node * node )
 	/* create data socket only for IO operatios ( open ) */
 
 	if( (node->asciiCommand == DCAP_CMD_OPEN ) ||
-		(node->asciiCommand == DCAP_CMD_OPENDIR ) || 
+		(node->asciiCommand == DCAP_CMD_OPENDIR ) ||
 		(node->asciiCommand == DCAP_CMD_TRUNC) ) {
 
 		m_lock(&bindLock);
@@ -277,17 +277,17 @@ cache_open(vsp_Node * node )
 				dc_debug(DC_ERROR, "Callback socket not created.");
 				m_unlock(&bindLock);
 				return -1;
-			}	
+			}
 		}
-		m_unlock(&bindLock);		
-	
+		m_unlock(&bindLock);
+
 		node->data_port = callBackPort;
 	}
 
 	if (ascii_open_conversation(node) < 0) {
 		return -1;
 	}
-	
+
 	dc_debug(DC_TRACE, "cache_open -> OK");
 	return 0;
 }
@@ -303,7 +303,7 @@ initControlLine(struct vsp_node * node)
 	if (ret < 0) {		/* we got an error */
 		dc_debug(DC_ERROR, "Failed to create a control line");
 		return -1;
-	} 
+	}
 
 	return 0;
 }
@@ -326,16 +326,16 @@ serverConnect(struct vsp_node * node)
 
 	if(node->url != NULL) {
 		dcache_host = node->url->host;
-	}else{	
+	}else{
 		dcache_host = getenv("DCACHE_DOOR");
 		/* to be backward compatible */
 		if (dcache_host == NULL) {
 			dcache_host = getenv("DCACHE_HOST");
-		} 
+		}
 	}
 
-	if (dcache_host == NULL) {	
-	
+	if (dcache_host == NULL) {
+
 		/* check for </pnfs/../dcap.LOCK file, and wait untill it will gone */
 		/* use config_file as temporary store for lock file name */
 		len = strlen(node->directory) + strlen(PNFS_DC_LOCK) + 1;	/* dir/file */
@@ -343,7 +343,7 @@ serverConnect(struct vsp_node * node)
 		if (conf_file == NULL) {
 			dc_errno = DESYS;
 			return -1;
-		}	
+		}
 		sprintf(conf_file, "%s%s", node->directory, PNFS_DC_LOCK);
 		while(access(conf_file, F_OK) == 0 ) {
 			/* if lock file exist, wait a bit and try again */
@@ -358,12 +358,12 @@ serverConnect(struct vsp_node * node)
 			Sleep(DC_LOCK_TIME*1000);
 #endif /* WIN32 */
 		}
-		
+
 		if(isLocked) {
 			dc_debug(DC_INFO, "DCAP unLocked.");
 		}
 		free(conf_file);
-		
+
 		len = strlen(node->directory) + strlen(PNFS_DC_CONF) + 1;	/* dir/file */
 		conf_file = malloc(len + 1);
 		if (conf_file == NULL) {
@@ -371,8 +371,8 @@ serverConnect(struct vsp_node * node)
 			return -1;
 		}
 		sprintf(conf_file, "%s%s", node->directory, PNFS_DC_CONF);
-		dc_debug(DC_INFO, "Using config file %s",conf_file); 
-		
+		dc_debug(DC_INFO, "Using config file %s",conf_file);
+
 		/* open config file and read line by line ... */
 		cf = system_fopen(conf_file, "r");
 		if (cf == NULL) {
@@ -382,22 +382,22 @@ serverConnect(struct vsp_node * node)
 			return -1;
 		}
 
-		/* take exclusive access to user servers list */		
-		lockMember();					
+		/* take exclusive access to user servers list */
+		lockMember();
 		while (system_fgets(buffer, MAXHOSTNAMELEN, cf) != NULL) {
 			buffer[MAXHOSTNAMELEN] = '\0';
 			if (buffer[0] == '#') {
 				continue;
 			}
-			
+
 			srv = (server *)parseConfig(buffer);
 			if(srv == NULL) {
 				continue;
 			}
-			
+
 			buffer[0] = '\0';
 			sprintf(buffer, "%s:%d", srv->hostname, srv->port);
-			
+
 			if ((node->fd = getMember(buffer)) != -1) {
 
 				/* If dcap was locked by LOCK file in pnfs, check status of
@@ -411,30 +411,30 @@ serverConnect(struct vsp_node * node)
 						/* remove file descriptor from the list of control lines in use */
 						deleteMemberByValue(node->fd);
 
-						/* we are no longer interesting in the messages which cames 
+						/* we are no longer interesting in the messages which cames
 													via old control line*/
 						pollDelete(node->fd);
 
 						/* file descriptor can be reused by system */
 						system_close(node->fd);
 						node->fd = -1;
-						continue;						
+						continue;
 					}
-					
+
 				}
-			
+
 				dc_debug(DC_INFO, "Using existing control connection to %s:%d.",
 					srv->hostname, srv->port);
-					
+
 				/* existing connection + tunnel */
 				node->tunnel = srv->tunnel;
 				free(srv->hostname);
 				free(srv);
-				
+
 				unlockMember();
 				system_fclose(cf);
 				free(conf_file);
-				
+
 				/* cleanup memory used by Door selection mechanism */
 				if(serversNumber) {
 					for(i=0; i< serversNumber; i++) {
@@ -443,13 +443,13 @@ serverConnect(struct vsp_node * node)
 					}
 					free(allServers);
 				}
-				
+
 				return 1;
 			}else{
 				tmp = realloc(allServers, sizeof(server *)*(serversNumber + 1));
 				if(tmp == NULL ) {
 					dc_debug(DC_ERROR, "Memory allocation failed.");
-					
+
 					/* if there are some servers in the list, then try to yse them */
 					if(!serversNumber) {
 						return -1;
@@ -457,10 +457,10 @@ serverConnect(struct vsp_node * node)
 						break;
 					}
 				}
-				
+
 				tmp[serversNumber] = srv;
 				serversNumber++;
-				allServers = tmp;								
+				allServers = tmp;
 			}
 		}
 
@@ -476,7 +476,7 @@ serverConnect(struct vsp_node * node)
 			newQueue(0);
 
 			while(serversNumber) {
-				/* try to choose server randomly to simulate 
+				/* try to choose server randomly to simulate
 					the load balancing */
 #ifdef WIN32
 				i = rand()%serversNumber;
@@ -485,7 +485,7 @@ serverConnect(struct vsp_node * node)
 #endif
 				dc_debug(DC_INFO, "Creating a new control connection to %s:%d.",
 					allServers[i]->hostname, allServers[i]->port);
-				
+
 				if( dc_errno == DECONNECT ) {
 					/* for the next iteration,
 					 * we do not care about old connect problem */
@@ -500,7 +500,7 @@ serverConnect(struct vsp_node * node)
 					free(allServers[i]);
 					allServers[i] = allServers[--serversNumber];
 				}else{
-					dc_debug(DC_INFO, "Established control connection to %s:%d.", 
+					dc_debug(DC_INFO, "Established control connection to %s:%d.",
 						allServers[i]->hostname, allServers[i]->port);
 
 					/* add entry in the servers list */
@@ -522,35 +522,35 @@ serverConnect(struct vsp_node * node)
 				}
 			}
 		}
-		
+
 		unlockMember();
-		
+
 		system_fclose(cf);
 		free(conf_file);
 		if (node->fd < 0) {
 			return -1;
 		}
 		return 0;
-	
+
 	} else {
-		
+
 		dc_debug(DC_TRACE, "Using environment variable as configuration");
 		lockMember();
 		if ((node->fd = getMember(dcache_host)) != -1) {
-		
+
 			srv = parseConfig(node->url == NULL ? dcache_host : url2config(node->url, buffer) );
 			if (srv == NULL) {
 				unlockMember();
 				return -1;
 			}
 			node->tunnel = srv->tunnel;
-						
+
 			dc_debug(DC_INFO, "Using existing control connection to %s.", dcache_host);
 			unlockMember();
 
 			free(srv->hostname);
 			free(srv);
-			
+
 			return 1;
 		}
 
@@ -569,14 +569,14 @@ serverConnect(struct vsp_node * node)
 		if (node->fd < 0) {
 			dc_debug(DC_INFO, "Failed to connect to %s:%d", srv->hostname, srv->port);
 			free(srv->hostname);
-			free(srv);			
+			free(srv);
 			return -1;
 		}
 		dc_debug(DC_INFO, "Connected to %s:%d", srv->hostname, srv->port);
 		node->tunnel = srv->tunnel;
 		free(srv->hostname);
 		free(srv);
-		
+
 		return 0;
 	}
 
@@ -612,7 +612,7 @@ parseConfig(const char *str)
 	srv->hostname = NULL;
 	srv->port = -1;
 	srv->tunnel = NULL;
-	
+
 	arg = lineParser(str, ":");
 	if( (arg == NULL) || (arg[0] == NULL) ) {
 		free(srv);
@@ -624,14 +624,14 @@ parseConfig(const char *str)
 		/* unknown situation! problem with memmory ? */
 		srv->hostname = strdup(arg[0]);
 	}else{
-	
+
 		/* if tunnel type specified, then hostname is a second field */
 		if( tt[1] != NULL ) {
 			srv->hostname = tt[1];
 			configType = tt[0];
 		}else{
 			srv->hostname = tt[0];
-			
+
 		}
 	}
 
@@ -644,7 +644,7 @@ parseConfig(const char *str)
 	}
 
 	if( (configTunnel != NULL) || (getenv("DCACHE_IO_TUNNEL") != NULL) || (tunnel != NULL)) {
-	
+
 		/* ENV -> command line -> config file */
 		s = getenv("DCACHE_IO_TUNNEL");
 		if(s == NULL) {
@@ -655,44 +655,44 @@ parseConfig(const char *str)
 		if(tT == NULL) {
 			tT = tunnelType;
 		}
-		
+
 		if( configType == NULL ) {
 			configType = arg[3];
 		}
-				
+
 		if( (tT == NULL ) || ( ( configType != NULL) && ( strcmp( tT , configType ) == 0 ) ) ) {
 
 			srv->tunnel = addIoPlugin(s);
 			if(srv->tunnel == NULL ) {
 				dc_debug(DC_INFO,"Tunnel %s empty or unavailable, using plain.", s);
-			}else{		
-				dc_debug(DC_INFO, "Added IO tunneling plugin %s for %s:%d.", s , srv->hostname, srv->port); 
+			}else{
+				dc_debug(DC_INFO, "Added IO tunneling plugin %s for %s:%d.", s , srv->hostname, srv->port);
 			}
 
 		}else{
 			dc_debug(DC_INFO, "Tunnel type missmatch: requested [%s] provided [%s]. Skipping...",
 					tT, configType == NULL ? "null" : configType );
-			
+
 			if(srv->hostname!= NULL) {
 				free(srv->hostname);
 			}
 			if(srv->tunnel != NULL ) {
 				free(srv->tunnel);
 			}
-			
+
 			free(srv);
 			srv = NULL;
 		}
-		
+
 	}else{
 		dc_debug(DC_INFO, "No IO tunneling plugin specified for %s:%d.", srv->hostname, srv->port);
 	}
 
-	
+
 	/* cleanup */
 	for(i = 0; arg[i] != NULL; i++ ) {
 		free(arg[i]);
-	}	
+	}
 	free(arg);
 
 	/* if tunnelType and hostname specidied, cleanup tunnelType */
@@ -749,13 +749,13 @@ cache_connect(server * srv)
 	}
 
 	setTunnelPair(fd, srv->tunnel);
-	
+
 	if( sayHello(fd, srv->tunnel) < 0 ) {
 		system_close(fd);
 		dc_errno = DEHELLO;
 		return -1;
 	}
-		
+
 	return fd;
 }
 
@@ -790,14 +790,14 @@ sayHello(int fd, ioTunnel *en)
 		return -1;
 	}
 	pollAdd(fd);
-	
+
 	aM = getControlMessage(HAVETO, NULL);
 	if( aM == NULL ) {
 		pollDelete(fd);
 		errno = EIO;
 		return -1;
 	}
-	
+
 	/* FIXME: implement result recognition */
 	free(aM);
 
@@ -812,30 +812,30 @@ create_data_socket(int *dataFd, unsigned short *cbPort)
 #if defined(__linux__) || defined(__GNU__) || defined(__FreeBSD_kernel__)
 	socklen_t       addrSize;
 #else
-	size_t          addrSize;	
+	size_t          addrSize;
 #endif
 	int             bindResult;
 	int             i;
-	
+
 	*dataFd = socket(AF_INET, SOCK_STREAM, 0);
 	if (*dataFd < 0) {
 		dc_errno = DESOCKET;
 		return *dataFd;
 	}
-	
+
 	memset((char *) &me, 0, sizeof(me));
 	me.sin_family = AF_INET;
 	me.sin_addr.s_addr = htonl(INADDR_ANY);
-	
+
 
 
 	/* get port range from environment */
 	getPortRange();
 
-	
-	/* try to get free slot in range of TCP ports */	
+
+	/* try to get free slot in range of TCP ports */
 	for( i = 0 ; i < callBackPortRange; i++) {
-	
+
 		*cbPort += i;
 		me.sin_port = htons(*cbPort + i);
 		addrSize = sizeof(me);
@@ -843,7 +843,7 @@ create_data_socket(int *dataFd, unsigned short *cbPort)
 		if( bindResult == 0) break;
 
 	}
-	
+
 	if (bindResult < 0) {
 		dc_errno = DEBIND;
 		system_close(*dataFd);
@@ -888,7 +888,7 @@ ascii_open_conversation(struct vsp_node * node)
 #endif
 
 	sprintf(openStr, "%d 0 client %s \"%s\"", node->queueID,
-	                                          asciiCommand(node->asciiCommand), 
+	                                          asciiCommand(node->asciiCommand),
 											  node->asciiCommand == DCAP_CMD_TRUNC ? node->ipc : node->pnfsId );
 
 	switch( node->asciiCommand ) {
@@ -899,22 +899,22 @@ ascii_open_conversation(struct vsp_node * node)
 #else
 			if( node->flags == O_RDONLY) {
 #endif /* WIN32 */
-			
+
 				sprintf(openStr, "%s r", openStr);
 				invalid_flag = 0;
 				if( (node->url == NULL) && (node->directory != NULL ) && (node->file_name != NULL) ) {
 					sprintf(openStr, "%s -path=%s/%s", openStr, node->directory, node->file_name );
-				}				
+				}
 			}
-			
+
 			if (node->flags & O_WRONLY) {
 				sprintf(openStr, "%s w", openStr);
 				invalid_flag = 0;
 				if( (node->url == NULL) && (node->directory != NULL ) && (node->file_name != NULL) ) {
 					sprintf(openStr, "%s -path=%s/%s", openStr, node->directory, node->file_name );
-				}				
+				}
 			}
-			
+
 			if (node->flags & O_RDWR) {
 				sprintf(openStr, "%s rw", openStr);
 				invalid_flag = 0;
@@ -922,15 +922,15 @@ ascii_open_conversation(struct vsp_node * node)
 					sprintf(openStr, "%s -path=%s/%s", openStr, node->directory, node->file_name );
 				}
 			}
-			
-			
+
+
 			/*
 			 *  send file permissions in case of create with URL syntax
 			 */
 			if( (node->flags & O_CREAT) && (node->url != NULL) ) {
 				sprintf(openStr, "%s -mode=0%o", openStr, node->mode);
 			}
-			
+
 			if ( node->asciiCommand == DCAP_CMD_TRUNC ) {
 				if( node->url == NULL ) {
 					sprintf(openStr, "%s -truncate=\"%s\"", openStr, node->pnfsId);
@@ -941,17 +941,17 @@ ascii_open_conversation(struct vsp_node * node)
 
 			sprintf(openStr, "%s %s %u", openStr, hostName, node->data_port);
 			sprintf(openStr, "%s -timeout=%ld", openStr, openTimeOut);
-		
+
 			if(onError != onErrorDefault) {
 				sprintf(openStr, "%s -onerror=%s", openStr, onError == onErrorFail? "fail" : "retry");
 			}else{
-				sprintf(openStr, "%s -onerror=%s", openStr, "default");		
+				sprintf(openStr, "%s -onerror=%s", openStr, "default");
 			}
-		
+
 			if( rqReceiveBuffer != 0 ) {
 				sprintf(openStr, "%s -send=%d", openStr, rqReceiveBuffer );
 			}
-		
+
 			if( rqSendBuffer!= 0 ) {
 				sprintf(openStr, "%s -receive=%d", openStr,  rqSendBuffer);
 			}
@@ -971,15 +971,15 @@ ascii_open_conversation(struct vsp_node * node)
 			break;
 		case DCAP_CMD_MKDIR:
 		case DCAP_CMD_CHMOD:
-			sprintf(openStr, "%s -mode=%d", openStr, node->mode);		
+			sprintf(openStr, "%s -mode=%d", openStr, node->mode);
 			invalid_flag = 0;
-			break;		
+			break;
 		case DCAP_CMD_CHOWN:
-			sprintf(openStr, "%s -owner=%d:%d", openStr, node->uid, node->gid);		
+			sprintf(openStr, "%s -owner=%d:%d", openStr, node->uid, node->gid);
 			invalid_flag = 0;
-			break;					
+			break;
 		case DCAP_CMD_STAT:
-		case DCAP_CMD_LSTAT:		
+		case DCAP_CMD_LSTAT:
 		case DCAP_CMD_FSTAT:
 		case DCAP_CMD_UNLINK:
 		case DCAP_CMD_RMDIR:
@@ -992,7 +992,7 @@ ascii_open_conversation(struct vsp_node * node)
 		case DCAP_CMD_RENAME:
 			sprintf(openStr, "%s %s", openStr, node->ipc);
 			invalid_flag = 0;
-			break;			
+			break;
 		default:
 			dc_debug(DC_ERROR, "Invalid DCAP command %d", node->asciiCommand);
 			break;
@@ -1003,7 +1003,7 @@ ascii_open_conversation(struct vsp_node * node)
 		free(openStr);
 		return -1;
 	}
-		
+
 	if(extraOption != NULL) {
 		sprintf(openStr, "%s %s", openStr, extraOption);
 		free(extraOption);
@@ -1016,40 +1016,40 @@ ascii_open_conversation(struct vsp_node * node)
 	/* getControlMessage(MAYBE, NULL); */
 	free(openStr);
 
-	if ( (node->asciiCommand == DCAP_CMD_OPEN ) || 
-		(node->asciiCommand == DCAP_CMD_OPENDIR ) || 
+	if ( (node->asciiCommand == DCAP_CMD_OPEN ) ||
+		(node->asciiCommand == DCAP_CMD_OPENDIR ) ||
 		(node->asciiCommand == DCAP_CMD_TRUNC ) ) {
-	
+
     	if(data_hello_conversation(node) < 0) {
     		return -1;
 		}
-		
+
 	}else{
 
 		aM = getControlMessage(HAVETO, node);
 		if( (aM == NULL) || ( aM->type == ASCII_FAILED )) {
-		
+
 			if(aM != NULL) {
 				if(aM->msg != NULL) {
 					free(aM->msg);
 				}
 				free(aM);
 			}
-			
+
 			return -1;
 		}
 
 		switch( aM->type ) {
-		
+
 			case ASCII_STAT:
 				node->ipc = aM->msg;
 				break;
 			default:
 				free(aM->msg);
 				break;
-		}	
+		}
 
-		free(aM);				
+		free(aM);
 	}
 
 	return 0;
@@ -1067,12 +1067,12 @@ int sendControlMessage(int to, const char *buff, size_t len, ioTunnel *en)
 	int n;
 	struct pollfd  pfd;
 	char *debugMessage;
-	
+
 	pfd.fd = to;
 	pfd.events = POLLOUT;
-	
-	n = poll(&pfd, 1, 1000*10); /* 10 seconds */		
-	
+
+	n = poll(&pfd, 1, 1000*10); /* 10 seconds */
+
 	if( (n == 1) && ( (pfd.revents & POLLERR) || (pfd.revents & POLLHUP) ) ) {
 		dc_debug(DC_ERROR, "Unable to send control message, line [%d] is down", to);
 		n = -1;
@@ -1095,13 +1095,13 @@ asciiMessage *getControlMessage(int mode, struct vsp_node *node)
 	int rc;
 	int pass = 0;
 	int queueID;
-	
+
 	if( node == NULL ) {
 		queueID = 0;
 	}else{
 		queueID = node->queueID;
 	}
-	
+
 	while(1){
 		m_lock(&bindLock);
 		rc = queueGetMessage(queueID, &aM);
@@ -1109,13 +1109,13 @@ asciiMessage *getControlMessage(int mode, struct vsp_node *node)
 			m_unlock(&bindLock);
 			return aM;
 		}
-		
+
 		if( dcap_poll(mode, node, POLL_CONTROL) < 0 ) {
 			dc_debug(DC_ERROR, "getControlMessage: poll fail.");
 			m_unlock(&bindLock);
 			return NULL;
 		}
-		
+
 		m_unlock(&bindLock);
 		pass++;
 	}
@@ -1140,7 +1140,7 @@ data_hello_conversation(struct vsp_node * node)
 #if defined(__linux__) || defined(__GNU__) || defined(__FreeBSD_kernel__)
 	socklen_t       addrSize;
 #else
-	size_t          addrSize;	
+	size_t          addrSize;
 #endif
 	struct in_addr *addr;
 	struct hostent *hostEnt;
@@ -1161,7 +1161,7 @@ data_hello_conversation(struct vsp_node * node)
 		}
 
 		node->dataFd =  callBackSocket;
-	
+
 		if( getDataMessage(node) < 0 ) {
 			node->dataFd = -1;
 			m_unlock(&acceptLock);
@@ -1172,7 +1172,7 @@ data_hello_conversation(struct vsp_node * node)
 		/* check that we did not connect to the pool ( passive mode) */
 		if( node->isPassive ) {
 			m_unlock(&acceptLock);
-			return 0;			
+			return 0;
 		}
 
 		addrSize = sizeof(him);
@@ -1186,7 +1186,7 @@ data_hello_conversation(struct vsp_node * node)
 			dc_debug(DC_ERROR, "Accept failed.");
 			node->dataFd = -1;
 			m_unlock(&acceptLock);
-			return -1;			
+			return -1;
 		}
 
 		addr = (struct in_addr *) & (him.sin_addr);
@@ -1212,14 +1212,14 @@ data_hello_conversation(struct vsp_node * node)
 
 			dc_debug(DC_INFO, "Socket RECEIVE buffer size changed to %d", node->rcvBuf);
 		}
-#endif /* SO_RCVBUF */	
+#endif /* SO_RCVBUF */
 
 #ifdef  SO_SNDBUF
 		if( (rqSendBuffer != 0) && (node->sndBuf==0) ) {
 			/*
 				tune the socket buffer size
 			*/
-			
+
 			node->sndBuf = rqSendBuffer > 4096 ? rqSendBuffer : 4096 ;
 			while ( (node->sndBuf > 4096) &&
 					(setsockopt(newFd, SOL_SOCKET, SO_SNDBUF,
@@ -1245,7 +1245,7 @@ data_hello_conversation(struct vsp_node * node)
 			m_unlock(&acceptLock);
 			return 0;
 		}
-				
+
 		queueAddAccepted(sessionId, newFd);
 		m_unlock(&acceptLock);
 
@@ -1258,26 +1258,26 @@ int writeOK(int fd)
 	return 1;
 #else
 	struct pollfd pd[1];
-	
+
 	pd[0].fd = fd;
 	pd[0].events = POLLOUT;
-	
-	poll(pd, (unsigned long)1, -1);		
-			
+
+	poll(pd, (unsigned long)1, -1);
+
 
 	if( (pd[0].revents &  POLLHUP ) || (pd[0].revents & POLLERR) ) {
 		dc_debug(DC_ERROR, "[%d] socket in %s state", fd,
 				pd[0].revents == POLLHUP? "HANGUP" : "ERROR");
 		return 0;
 	}
-	
+
 	if(pd[0].revents & POLLOUT) {
 		return 1;
 	}
 
 	dc_debug(DC_ERROR, "[%d] socket in UNKNOWN(%d) state", fd, pd[0].revents);
-		
-	/* it's safe to indicate error condition on unkown state */		
+
+	/* it's safe to indicate error condition on unkown state */
 	return 0;
 #endif /* WIN32 */
 }
@@ -1289,9 +1289,9 @@ int sendDataMessage(struct vsp_node *node, char *message, int sizeOfMessage, int
 	int try = 0;
 	int rc = 0;
 	int err = 0;
-	
+
 	dc_debug(DC_CALLS, "Entered sendDataMessage.");
-again:	
+again:
 	if( (rc == -1) || (!writeOK(node->dataFd)) ) {
 		dc_debug(DC_ERROR, "sendDataMessage: going to reconnect ");
 		if (reconnected(node, DCFT_CONNECT_ONLY, -1) !=0) {
@@ -1303,39 +1303,39 @@ again:
 		}
 	}
 	ret = writen(node->dataFd, message, sizeOfMessage, NULL);
-	
+
 	if( ret < sizeOfMessage ) {
 		dc_debug(DC_ERROR, "sendDataMessage: write message failed => ret = %d.", ret);
 		rc = -1;
 		err = 1;
 		goto end;
 	}
-	
+
 	if( getDataMessage(node) < 0 ) {
 		rc =  -1;
 		dc_debug(DC_ERROR, "get data message failed");
 		goto end;
 	}
-	
+
 	if ( get_ack(node->dataFd, result) < 0 ) {
 		rc = -1;
 		goto end;
 	}
-	
-	if(asciiConfirm) {	
+
+	if(asciiConfirm) {
 		aM = getControlMessage(HAVETO, node);
 		if( (aM == NULL) || (aM->type != asciiConfirm ) ) {
 			rc = -1;
 		}
 		free(aM);
 	}
-	
+
 end:
 	/* try to recover broken connections if message is not "CLOSE" and do it only once */
 	if( (rc == -1) && ( ((int32_t *)message)[1] != (int32_t)htonl(IOCMD_CLOSE) ) && (!try) ) {
 		goto again;
 	}
-	
+
 	return rc;
 }
 
@@ -1380,14 +1380,14 @@ get_reply(int dataFd)
 		reply.code = IOCMD_ERROR;
 		return reply;
 	}
-	
-	acksize = ntohl(acksize_net);	
+
+	acksize = ntohl(acksize_net);
 	if( acksize <=0 ) {
 		dc_debug(DC_ERROR, "[%d] He..!? reply is [0x%.8X](%d).", dataFd, acksize_net, acksize);
 		reply.code = IOCMD_ERROR;
-		return reply;		
+		return reply;
 	}
-	
+
 	dc_debug(DC_TRACE, "[%d] Got reply %dx%d bytes len.", dataFd, tmp,acksize);
 	ackinfo = (int32_t *) malloc(acksize);
 
@@ -1408,7 +1408,7 @@ get_reply(int dataFd)
 
 	reply.result = ntohl(ackinfo[2]);	/* this is result field */
 
-	dc_debug(DC_TRACE, "[%d] Reply: code[%d] response[%d] result[%d].", dataFd, 
+	dc_debug(DC_TRACE, "[%d] Reply: code[%d] response[%d] result[%d].", dataFd,
 			reply.code, reply.in_response, reply.result);
 
 	if (reply.result == 0) {
@@ -1443,7 +1443,7 @@ get_reply(int dataFd)
 				text[lg] = '\0';
 				dc_debug(DC_ERROR, "Server Message: %s", text);
 				free(text);
-			}   
+			}
 		}
 	}
 
@@ -1451,7 +1451,7 @@ get_reply(int dataFd)
 	return reply;
 }
 
-int 
+int
 get_data(struct vsp_node * node)
 {
 	ConfirmationBlock tmp = get_reply(node->dataFd);
@@ -1463,7 +1463,7 @@ get_data(struct vsp_node * node)
 	return 0;
 }
 
-int 
+int
 get_fin(struct vsp_node * node)
 {
 	ConfirmationBlock tmp = get_reply(node->dataFd);
@@ -1511,9 +1511,9 @@ void dc_setReplyHostName(const char *s)
 
    if( hostName != NULL )
         free(hostName);
-		
-	dc_debug(DC_INFO, "Binding client callback hostname to %s.", s);        
-    hostName = (char *)strdup(s);       
+
+	dc_debug(DC_INFO, "Binding client callback hostname to %s.", s);
+    hostName = (char *)strdup(s);
 }
 
 
@@ -1554,11 +1554,11 @@ int reconnected( struct vsp_node *node, int flag, int64_t size)
 		if(!newControlLine(node) ) {
 			return 1;
 		}
-		
+
 	}
 
 	dc_debug(DC_INFO, "[%d] Data connection down. Trying to reconnect.", node->dataFd);
-			
+
 	if(cache_open(node) < 0) {
 		dc_debug(DC_ERROR, "[%d] Failed to recover  broken data connection.", node->dataFd);
 		return 1;
@@ -1570,7 +1570,7 @@ int reconnected( struct vsp_node *node, int flag, int64_t size)
 	}
 
 	dc_debug(DC_INFO, "[%d] Broken connection recovered.", node->dataFd);
-	return 0;	
+	return 0;
 }
 
 
@@ -1612,9 +1612,9 @@ dc_set_pos(struct vsp_node *node, int flag, int64_t size)
 
 			readmsg[4] = htonl(IOCMD_SEEK_SET);
 
-			msglen = 7;		
+			msglen = 7;
 			break;
-		
+
 		case DCFT_POSITION :
 			readmsg[0] = htonl(16);
 			readmsg[1] = htonl(IOCMD_SEEK);
@@ -1631,24 +1631,24 @@ dc_set_pos(struct vsp_node *node, int flag, int64_t size)
 
 			msglen = 5;
 			break;
-		
+
 		case DCFT_CONNECT_ONLY :
             readmsg[0] = htonl(16);
             readmsg[1] = htonl(IOCMD_SEEK);
             readmsg[4] = htonl(IOCMD_SEEK_SET);
-                                                                                
+
             size = htonll(node->pos);
-                                                                                
+
             memcpy( (char *) &readmsg[2],(char *) &size, sizeof(size));
-                                                                                
+
             msglen = 5;
             break;
 
 		default:
 			return 1;
-		
+
 	}
-	
+
 	tmp = sendDataMessage(node, (char *) readmsg, msglen*sizeof(int32_t), ASCII_NULL, NULL);
 
 	if (tmp != 0) {
@@ -1663,7 +1663,7 @@ dc_set_pos(struct vsp_node *node, int flag, int64_t size)
 			return 0;
 		}
 	}
- 
+
 
     return 1;
 
@@ -1684,21 +1684,21 @@ dc_setExtraOption( char *s)
 	if(extraOption != NULL) {
 		old = strlen(extraOption);
 	}
-	
+
 	new = strlen(s) + old + 1; /* have an space between options */
-	
+
 	tmp = (char *) malloc( new +1 );
 	if(tmp == NULL) {
 		return;
 	}
-	
+
 	tmp[0] = '\0';
-	
-	if(extraOption != NULL) {		
+
+	if(extraOption != NULL) {
 		memcpy(tmp, extraOption, old);
 		pos += old;
 	}
-		
+
 	memcpy(tmp + pos, s, strlen(s) );
 	pos += strlen(s);
 	memcpy(tmp + pos , " ", 1);
@@ -1720,7 +1720,7 @@ void dc_setOnError(int e)
 	if( ( e == onErrorRetry ) || ( e == onErrorFail ) ) {
 		onError = e;
 	}
-	
+
 	return;
 }
 
@@ -1731,11 +1731,11 @@ void dc_unsafeWrite(int fd)
 
 	node = get_vsp_node(fd);
 	if (node != NULL) {
-		dc_debug(DC_INFO, "Unsafe write for [%d].",node->queueID); 
+		dc_debug(DC_INFO, "Unsafe write for [%d].",node->queueID);
 		node->unsafeWrite = 1;
 		m_unlock(&node->mux);
 	}
-	
+
 	return;
 }
 
@@ -1746,20 +1746,20 @@ int newControlLine(struct vsp_node *node)
 	lockMember();
 	deleteMemberByValue(node->fd);
 	unlockMember();
-	
-	/* we are no longer interesting in the messages which cames 
+
+	/* we are no longer interesting in the messages which cames
 												via old control line*/
 	pollDelete(node->fd);
 
 	/* file descriptor can be reused by system */
 	system_close(node->fd);
-	
+
 	if ( initControlLine(node) < 0) {
 		return 0;
 	}
-		
+
 	return 1;
-	
+
 }
 
 
@@ -1794,21 +1794,14 @@ void dc_setTunnelType(const char *tT)
 	m_unlock(&bindLock);
 }
 
-extern const char * getDcapVersion();
+extern const int dc_getProtocol();
+extern const int dc_getMajor();
+
 
 void getRevision( revision *rev )
 {
-	char *version;
-	char *s;
-	version = strdup( getDcapVersion() ); /* for example: version-1-2-23 */
-
-	s = strrchr(version, '-');
-	rev->Min = atoi( s + 1 );
-	s[0] = '\0';
-
-	s = strrchr(version, '-');
-	rev->Maj = atoi( s + 1 );
-	free(version);
+	rev->Maj = dc_getProtocol();
+	rev->Min = dc_getMajor();
 }
 
 
@@ -1826,9 +1819,9 @@ void dc_setTCPSendBuffer( int newSize )
 void dc_setTCPReceiveBuffer( int newSize )
 {
 	m_lock(&bindLock);
-	
+
 	rqReceiveBuffer = newSize;
-	
+
 	m_unlock(&bindLock);
 }
 
@@ -1838,8 +1831,8 @@ static void getPortRange()
 
     char *first;
 	char *last;
-	
-	
+
+
 	first = getenv("DCACHE_CBPORT");
 	if( first != NULL ) {
 		last = strchr(first, ':');
@@ -1847,7 +1840,7 @@ static void getPortRange()
 			callBackPort = atoi(first);
 			callBackPortRange = 1;
 		}else{  /* range defined */
-		
+
 			first = xstrndup(first, last - first);
 			callBackPort = atoi(first);
 			free(first);
@@ -1855,7 +1848,7 @@ static void getPortRange()
 			callBackPortRange = atoi(last) - callBackPort;
 			if( callBackPortRange <=0 ) callBackPortRange = 1;
 		}
-		
+
 		dc_debug(DC_INFO, "callback port = %d:%d",callBackPort,  callBackPort + callBackPortRange );
 	}
 }

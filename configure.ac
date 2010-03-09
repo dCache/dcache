@@ -9,22 +9,26 @@ AC_CONFIG_AUX_DIR(config)
 AC_CANONICAL_SYSTEM
 AM_CONFIG_HEADER(src/debug_level.h)
 
-BRUTTAG='$Name:  $'
 
-dnl -------------------------------------------------------------------------
-dnl Hack to get the current version
-dnl -------------------------------------------------------------------------
-CVSVERSION=`echo $BRUTTAG | cut -d':' -f2 | tr '_' '.' | tr -d 'v$ '`
-if test "A" = A$CVSVERSION; then
-    CVSVERSION=`date '+20%y%m%d%H'`
-    CVSVERSION="cvs"$CVSVERSION
+dnl uncomment when tagging
+#RELEASE=TRUE
+
+VER_ARCHITECTURE=2
+VER_MAJOR=44
+VER_MINOR=0
+VER_PATCH=0
+if test "A" = A$RELEASE; then
+    VER_PATCH=${VER_PATCH}_`date '+20%y%m%d%H'`
 fi
 
-AM_INIT_AUTOMAKE(dcache-dcap,$CVSVERSION)
+AM_INIT_AUTOMAKE(dcache-dcap,$VER_ARCHITECTURE.$VER_MAJOR.$VER_MINOR,"support@dcache.org","dcache-dcap","http://www.dcache.org/")
 
-PROTOCOL_VERSION=1-2-44
-AC_SUBST(PROTOCOL_VERSION)
-LIBRARY_VERSION=`tr - : <<< ${PROTOCOL_VERSION}`
+AC_SUBST(VER_ARCHITECTURE)
+AC_SUBST(VER_MAJOR)
+AC_SUBST(VER_MINOR)
+AC_SUBST(VER_PATCH)
+
+LIBRARY_VERSION="$VER_ARCHITECTURE:$VER_MAJOR:1"
 AC_SUBST(LIBRARY_VERSION)
 
 AC_PROG_CC

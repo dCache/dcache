@@ -152,7 +152,13 @@ extern void dc_unsafeWrite(int);
 extern void dc_setReplyHostName(const char *s);
 extern void dc_setCallbackPort(unsigned short);
 extern void dc_setCallbackPortRange(unsigned short, unsigned short);
+/*depricated*/
 extern const char * getDcapVersion();
+/*Replacements for depricated method getDcapVersion*/
+extern const int dc_getProtocol();
+extern const int dc_getMajor();
+extern const int dc_getMinor();
+
 extern void dc_setTunnel( const char *);
 extern void dc_setTunnelType( const char *);
 

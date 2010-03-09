@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: dccp.c,v 1.77 2007-02-22 10:19:46 tigran Exp $
  */
@@ -93,14 +93,14 @@ int main(int argc, char *argv[])
 
 	extraOption[0] = '\0';
 	allocSpaceOption[0] = '\0';
-	
+
 	while( (c = getopt(argc, argv, "Ad:o:h:iX:Pt:l:aB:b:up:T:r:s:w:cC:")) != EOF) {
-	
+
 		switch(c) {
-			case 'd':				
+			case 'd':
 				dc_setStrDebugLevel(optarg);
 				break;
-			case 'o':				
+			case 'o':
 				dc_setOpenTimeout(atol(optarg));
 				break;
 			case 'h':
@@ -140,13 +140,13 @@ int main(int argc, char *argv[])
 					last_port = first_port;
 				}else{
 				    firstP = optarg; /*just to be simple */
-					lastP[0] = '\0';					
-					
+					lastP[0] = '\0';
+
 				    first_port = atoi(firstP);
 					last_port = atoi(lastP +1);
-										
+
 				}
-				
+
 				dc_setCallbackPortRange(first_port, last_port);
 				break;
 			case 'T':
@@ -166,13 +166,13 @@ int main(int argc, char *argv[])
 				break;
 			case 'A':
 				dc_setClientActive();
-				break;				
-			case 'C':				
+				break;
+			case 'C':
 				dc_setCloseTimeout(atoi(optarg));
 				break;
 			case '?':
 				usage();
-				
+
 		}
 	}
 
@@ -183,7 +183,7 @@ int main(int argc, char *argv[])
 #ifndef WIN32
 	dcap_signal();
 #endif
- 
+
 	inpfile = argv[optind];
 	if(stage) {
 		dc_setExtraOption(extraOption);
@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
 			fprintf(stderr,"file %s: Not a regular file\n",inpfile);
 			return -1 ;
 		}
-		
+
 		if( rc == 0 ) {
 			/* if file do not exist it can be a url, and
 				dc_open will handle this */
@@ -246,14 +246,14 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "%s: Skipping existing file %s.\n", argv[0], filename);
 		return 0;
 	}
-	
+
 	errno = 0 ;
 
-	if(!isStdin) { 
-		dc_setExtraOption(extraOption); 
+	if(!isStdin) {
+		dc_setExtraOption(extraOption);
 		src = dc_open(inpfile,O_RDONLY | O_BINARY );
 		if (src < 0) {
-			dc_perror("Can't open source file");	
+			dc_perror("Can't open source file");
 			return -1;
 		}
 	}
@@ -270,7 +270,7 @@ int main(int argc, char *argv[])
 	mode = _S_IWRITE ;
 #endif /* WIN32 */
 
-	dc_setExtraOption(extraOption); 
+	dc_setExtraOption(extraOption);
 	dc_setExtraOption(allocSpaceOption);
 	dest = dc_open( filename, O_WRONLY|O_CREAT|O_TRUNC|O_BINARY, mode|S_IWUSR);
 	if (dest < 0) {
@@ -289,20 +289,20 @@ int main(int argc, char *argv[])
 	time(&starttime);
 	rc = copyfile(src, dest, buffer_size, &size);
 	time(&endtime);
-	
+
 	if (dc_close(src) < 0) {
 		perror("Failed to close source file");
 		rc = -1;
 	}
 
-	if (dc_close(dest) < 0) {  
+	if (dc_close(dest) < 0) {
 		perror("Failed to close destination file");
 		dc_stat64( outfile, &sbuf2);
 		mode = sbuf2.st_mode & S_IFMT;
 		if (mode == S_IFREG) dc_unlink(outfile);
 		rc = -1;
-	}	
-	
+	}
+
 	if (rc != -1 )  {
 		copy_time = endtime-starttime ;
 		fprintf(stderr,"%llu bytes in %lu seconds",(off64_t)size, copy_time);
@@ -313,7 +313,7 @@ int main(int argc, char *argv[])
 		}
 	}else{
 		fprintf(stderr,"dccp failed.\n");
-		
+
 		/* remove destination if copy failed */
 		dc_stat64( outfile, &sbuf2);
 		mode = sbuf2.st_mode & S_IFMT;
@@ -327,7 +327,7 @@ int copyfile(int src, int dest, size_t bufsize, off64_t *size)
 {
 	ssize_t n, m ;
 	char * cpbuf;
-	size_t count;	
+	size_t count;
 	off64_t total_bytes = 0;
 	size_t off;
 
@@ -337,14 +337,14 @@ int copyfile(int src, int dest, size_t bufsize, off64_t *size)
 		return -1;
 	}
 
-	do{	
+	do{
 		off = 0;
-		do{	
+		do{
 			n = dc_read(src, cpbuf + off, bufsize - off);
-			if( n <=0 ) break; 
+			if( n <=0 ) break;
 			off += n;
 		} while (off != bufsize );
-		
+
 		/* do not continue if read fails*/
 		if (n < 0) {
 			/* Read failed. */
@@ -358,7 +358,7 @@ int copyfile(int src, int dest, size_t bufsize, off64_t *size)
 			total_bytes += (off64_t)off;
 			while ((count != off) && ((m = dc_write(dest, cpbuf+count, off-count)) > 0))
 				count += m;
- 
+
 			if (m < 0) {
 				/* Write failed. */
 				free(cpbuf);
@@ -367,11 +367,11 @@ int copyfile(int src, int dest, size_t bufsize, off64_t *size)
 		}
 
 	} while (n != 0);
-	
+
 	if(size != NULL) {
 		*size = total_bytes;
 	}
-	
+
 	free(cpbuf);
 	return 0;
 }
@@ -379,13 +379,18 @@ int copyfile(int src, int dest, size_t bufsize, off64_t *size)
 void usage()
 {
 
-	fprintf(stderr,"DiskCache Copy Program. LibDCAP version: %s\n", getDcapVersion());
+	fprintf(stderr,"DiskCache Copy Program. LibDCAP version: %d.%d.%d-%s\n",
+        dc_getProtocol(),
+        dc_getMajor(),
+        dc_getMinor(),
+        dc_getPatch());
+
 	fprintf(stderr,"Usage:  dccp [-d <debugLevel>]  [-h <replyhostname>] [-i]\n");
 	fprintf(stderr,"    [-P [-t <time in seconds>] [-l <stage location>] ]\n");
 	fprintf(stderr,"    [-a] [-b <read_ahead bufferSize>] [-B <bufferSize>]\n");
 	fprintf(stderr,"    [-X <extraOption>] [-u] [-p <first port>[:last port]]\n");
 	fprintf(stderr,"    [-r <buffers size>] [-s <buffer size>] [-c] [-C <seconds>] <src> <dest>\n");
-	
+
 	/* some help */
 
 	fprintf(stderr, "\n\n");
