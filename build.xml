@@ -3,7 +3,6 @@
 <project name="dCacheBuild" default="help" basedir=".">
 
     <property name="buildTop" location="${basedir}" />
-
     <!--
         build constants.
         If you want to change default values use -D option in command line,
