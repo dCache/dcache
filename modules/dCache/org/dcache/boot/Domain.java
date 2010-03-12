@@ -99,7 +99,8 @@ public class Domain
      */
     private boolean isScoped(String scope, String name)
     {
-        return name.startsWith(scope) && name.charAt(scope.length()) == '/';
+        return scope.length() < name.length() &&
+            name.startsWith(scope) && name.charAt(scope.length()) == '/';
     }
 
     /**
