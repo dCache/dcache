@@ -42,6 +42,7 @@ import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.TimeoutCacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.vehicles.HttpDoorUrlInfoMessage;
 import diskCacheV111.vehicles.HttpProtocolInfo;
 import diskCacheV111.vehicles.GFtpProtocolInfo;
@@ -498,9 +499,10 @@ public class DcacheResourceFactory
             return getResource(path, attributes);
         } catch (FileNotFoundCacheException e) {
             return null;
+        } catch (PermissionDeniedCacheException e) {
+            throw new ForbiddenException(e.getMessage(), e, null);
         } catch (CacheException e) {
-            // TODO
-            throw new RuntimeException(e);
+            throw new WebDavException(e.getMessage(), e, null);
         }
     }
 
