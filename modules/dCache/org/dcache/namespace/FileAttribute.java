@@ -57,6 +57,7 @@ public enum FileAttribute {
         case SIZE:
             return FATTR4_SIZE;
         case TYPE:
+        case SIMPLE_TYPE:
             return FATTR4_TYPE;
         default:
             return null;
