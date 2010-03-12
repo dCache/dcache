@@ -24,9 +24,15 @@
         pnfsmanager=PnfsManager
         flushMessageTarget=broadcast
         sweeper=org.dcache.pool.classic.SpaceSweeper2
-        maxWorkerThreads=5
-        maxMessageThreads=10
-        maxCallbackThreads=10
+        workerThreads=5
+        messageThreads=5
+        messageThreadsMax=50
+        messageThreadsKeepAliveTime=60
+        messageThreadsQueueMax=1000
+        callbackThreads=5
+        callbackThreadsMax=50
+        callbackThreadsKeepAliveTime=60
+        callbackThreadsQueueMax=1000
         maxDiskSpace=Infinity
       </value>
     </property>
@@ -88,11 +94,6 @@
               value="#{ '${lfs}' == 'none' }"/>
   </bean>
 
-  <!-- The PnfsHandler class takes a CellPath constructor
-       argument. Notice how we can instantiate such an object
-       'inline'. Spring calls this an anonymous bean, since we didn't
-       give it a name and we cannot reference it from anywhere else.
-  -->
   <bean id="pnfs" class="diskCacheV111.util.PnfsHandler">
     <description>PNFS manager client module</description>
     <constructor-arg>
@@ -224,8 +225,7 @@
         factory-method="newScheduledThreadPool"
         destroy-method="shutdown">
     <description>Thread pool for background tasks</description>
-    <constructor-arg value="1"/>
-    <property name="maximumPoolSize" value="${maxWorkerThreads}"/>
+    <constructor-arg value="${workerThreads}"/>
     <property name="executeExistingDelayedTasksAfterShutdownPolicy"
               value="false"/>
     <property name="continueExistingPeriodicTasksAfterShutdownPolicy"
@@ -233,19 +233,33 @@
   </bean>
 
   <bean id="messageThreadPool"
-        class="java.util.concurrent.Executors"
-        factory-method="newCachedThreadPool"
+        class="java.util.concurrent.ThreadPoolExecutor"
         destroy-method="shutdown">
     <description>Thread pool for message processing</description>
-    <property name="maximumPoolSize" value="${maxMessageThreads}"/>
+    <constructor-arg value="${messageThreads}"/>
+    <constructor-arg value="${messageThreadsMax}"/>
+    <constructor-arg value="${messageThreadsKeepAliveTime}"/>
+    <constructor-arg value="#{ T(java.util.concurrent.TimeUnit).SECONDS }"/>
+    <constructor-arg>
+      <bean class="java.util.concurrent.ArrayBlockingQueue">
+        <constructor-arg value="${messageThreadsQueueMax}"/>
+      </bean>
+    </constructor-arg>
   </bean>
 
   <bean id="callbackThreadPool"
-        class="java.util.concurrent.Executors"
-        factory-method="newCachedThreadPool"
+        class="java.util.concurrent.ThreadPoolExecutor"
         destroy-method="shutdown">
     <description>Thread pool for message callbacks</description>
-    <property name="maximumPoolSize" value="${maxCallbackThreads}"/>
+    <constructor-arg value="${callbackThreads}"/>
+    <constructor-arg value="${callbackThreadsMax}"/>
+    <constructor-arg value="${callbackThreadsKeepAliveTime}"/>
+    <constructor-arg value="#{ T(java.util.concurrent.TimeUnit).SECONDS }"/>
+    <constructor-arg>
+      <bean class="java.util.concurrent.ArrayBlockingQueue">
+        <constructor-arg value="${callbackThreadsQueueMax}"/>
+      </bean>
+    </constructor-arg>
   </bean>
 
   <bean id="pinManagerStub" class="org.dcache.cells.CellStub">
