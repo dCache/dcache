@@ -9,6 +9,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.RejectedExecutionException;
 import java.lang.reflect.*;
 import java.net.Socket;
 
@@ -619,44 +620,49 @@ public class CellNucleus implements ThreadFactory
                 ce = new MessageEvent(((RoutedMessageEvent)ce).getMessage());
             }
         }
-        if (ce instanceof MessageEvent) {
-            //
-            // we have to cover 3 cases :
-            //   - absolutely asynchronous request
-            //   - asynchronous, but we have a callback to call
-            //   - synchronous
-            //
-            final CellMessage msg = ((MessageEvent) ce).getMessage();
-            if (msg != null) {
-                nsay("addToEventQueue : message arrived : "+msg);
-                CellLock lock;
 
-                synchronized (_waitHash) {
-                    lock = _waitHash.remove(msg.getLastUOID());
-                }
+        try {
+            if (ce instanceof MessageEvent) {
+                //
+                // we have to cover 3 cases :
+                //   - absolutely asynchronous request
+                //   - asynchronous, but we have a callback to call
+                //   - synchronous
+                //
+                final CellMessage msg = ((MessageEvent) ce).getMessage();
+                if (msg != null) {
+                    nsay("addToEventQueue : message arrived : "+msg);
+                    CellLock lock;
 
-                if (lock != null) {
-                    //
-                    // we were waiting for you (sync or async)
-                    //
-                    nsay("addToEventQueue : lock found for : "+msg);
-                    if (lock.isSync()) {
-                        nsay("addToEventQueue : is synchronous : "+msg);
-                        synchronized (lock) {
-                            lock.setObject(msg);
-                            lock.notifyAll();
-                        }
-                        nsay("addToEventQueue : dest. was triggered : "+msg);
-                    } else {
-                        nsay("addToEventQueue : is asynchronous : "+msg);
-                        _callbackExecutor.execute(new CallbackTask(lock, msg));
+                    synchronized (_waitHash) {
+                        lock = _waitHash.remove(msg.getLastUOID());
                     }
-                    return;
-                }
-            }     // end of : msg != null
-        }        // end of : ce instanceof MessageEvent
 
-        _messageExecutor.execute(new DeliverMessageTask(ce));
+                    if (lock != null) {
+                        //
+                        // we were waiting for you (sync or async)
+                        //
+                        nsay("addToEventQueue : lock found for : "+msg);
+                        if (lock.isSync()) {
+                            nsay("addToEventQueue : is synchronous : "+msg);
+                            synchronized (lock) {
+                                lock.setObject(msg);
+                                lock.notifyAll();
+                            }
+                            nsay("addToEventQueue : dest. was triggered : "+msg);
+                        } else {
+                            nsay("addToEventQueue : is asynchronous : "+msg);
+                            _callbackExecutor.execute(new CallbackTask(lock, msg));
+                        }
+                        return;
+                    }
+                }     // end of : msg != null
+            }        // end of : ce instanceof MessageEvent
+
+            _messageExecutor.execute(new DeliverMessageTask(ce));
+        } catch (RejectedExecutionException e) {
+            _logNucleus.error("Message queue overflow. Dropping " + ce);
+        }
     }
 
     void sendKillEvent(KillEvent ce)
