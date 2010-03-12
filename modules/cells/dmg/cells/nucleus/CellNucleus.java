@@ -51,6 +51,9 @@ public class CellNucleus implements ThreadFactory
     private volatile ExecutorService _callbackExecutor;
     private volatile ExecutorService _messageExecutor;
 
+    private boolean _isPrivateCallbackExecutor = true;
+    private boolean _isPrivateMessageExecutor = true;
+
     public CellNucleus(Cell cell, String name) {
 
         this(cell, name, "Generic");
@@ -131,16 +134,6 @@ public class CellNucleus implements ThreadFactory
     }
     void setSystemNucleus(CellNucleus nucleus) {
         __cellGlue.setSystemNucleus(nucleus);
-    }
-
-    public void setAsyncCallback(boolean asyncCallback) {
-        if (asyncCallback) {
-            _callbackExecutor =
-                Executors.newCachedThreadPool(this);
-        } else {
-            _callbackExecutor =
-                Executors.newSingleThreadExecutor(this);
-        }
     }
 
     public String getCellName() { return _cellName; }
@@ -240,26 +233,44 @@ public class CellNucleus implements ThreadFactory
         return __cellGlue.getPrintoutLevel(cellName);
     }
 
+    public synchronized void setAsyncCallback(boolean asyncCallback)
+    {
+        if (asyncCallback) {
+            setCallbackExecutor(Executors.newCachedThreadPool(this));
+        } else {
+            setCallbackExecutor(Executors.newSingleThreadExecutor(this));
+        }
+        _isPrivateCallbackExecutor = true;
+    }
+
     /**
      * Executor used for message callbacks.
      */
-    public void setCallbackExecutor(ExecutorService executor)
+    public synchronized void setCallbackExecutor(ExecutorService executor)
     {
         if (executor == null) {
             throw new IllegalArgumentException("null is not allowed");
         }
+        if (_isPrivateCallbackExecutor) {
+            _callbackExecutor.shutdown();
+        }
         _callbackExecutor = executor;
+        _isPrivateCallbackExecutor = false;
     }
 
     /**
      * Executor used for incoming message delivery.
      */
-    public void setMessageExecutor(ExecutorService executor)
+    public synchronized void setMessageExecutor(ExecutorService executor)
     {
         if (executor == null) {
             throw new IllegalArgumentException("null is not allowed");
         }
+        if (_isPrivateMessageExecutor) {
+            _messageExecutor.shutdown();
+        }
         _messageExecutor = executor;
+        _isPrivateMessageExecutor = false;
     }
 
     public void   sendMessage(CellMessage msg)
@@ -934,6 +945,7 @@ public class CellNucleus implements ThreadFactory
 
         public KillerThread(KillEvent event)
         {
+            super(__cellGlue.getKillerThreadGroup(), "killer-" + _cellName);
             _event = event;
         }
 
@@ -949,8 +961,14 @@ public class CellNucleus implements ThreadFactory
                 t.getUncaughtExceptionHandler().uncaughtException(t, e);
             }
 
-            _callbackExecutor.shutdown();
-            _messageExecutor.shutdown();
+            synchronized (this) {
+                if (_isPrivateCallbackExecutor) {
+                    _callbackExecutor.shutdown();
+                }
+                if (_isPrivateMessageExecutor) {
+                    _messageExecutor.shutdown();
+                }
+            }
 
             nsay("killerThread : waiting for all threads in "+_threads+" to finish");
 
