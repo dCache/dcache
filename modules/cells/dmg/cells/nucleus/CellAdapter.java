@@ -5,10 +5,6 @@ import java.util.*;
 import java.io.*;
 import java.lang.reflect.*;
 
-import org.apache.log4j.Level;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  *
  *
@@ -149,74 +145,62 @@ public class   CellAdapter
      *  &lt;cellName&gt;Setup and "!&lt;setupContextName&gt;"
      *
      */
-    public void executeSetupContext() {
-        if (_autoSetup != null)_executeDomainContext(_autoSetup);
+    public void executeSetupContext()
+    {
+        if (_autoSetup != null) {
+            executeDomainContext(_autoSetup);
+        }
         _autoSetup = null;
-        if (_definedSetup != null)_executeDomainContext(_definedSetup);
+        if (_definedSetup != null) {
+            executeDomainContext(_definedSetup);
+        }
         _definedSetup = null;
     }
-    public void executeDomainContext(String name) throws IOException {
-        if (name == null)return;
 
-        BufferedReader reader = null;
-
-        try {
-            reader = new BufferedReader(
-                                        _nucleus.getDomainContextReader(name));
-
-            String line = null;
-            while ((line = reader.readLine()) != null) {
-                // cleanup the line
-                line = line.trim();
-                if (line.length() == 0)continue;
-                if (line.charAt(0) == '#')continue;
+    protected void executeDomainContext(String name)
+    {
+        if (name != null) {
+            try {
+                Reader in = _nucleus.getDomainContextReader(name);
                 try {
-                    String answer = command(line);
-                } catch (CommandExitException ee) {
-                    esay(name+" : "+line +"\n" + name + " : "+ee.toString());
+                    CellShell shell = new CellShell(this);
+                    Writer out = _nucleus.createErrorLogWriter();
+                    Writer err = _nucleus.createInfoLogWriter();
+                    shell.execute("context:" + name, in, out, err, new Args(""));
+                } finally {
+                    in.close();
                 }
+            } catch (FileNotFoundException e) {
+                // Ignored: Context variable is not defined
+            } catch (CommandExitException e) {
+                esay(e.getMessage());
+            } catch (IOException e) {
+                esay(e.getMessage());
             }
-        } finally {
-            if (reader != null) try {reader.close(); } catch (IOException ioe) {}
         }
     }
+
     public void setAsyncCallback(boolean async) {
         _nucleus.setAsyncCallback(async);
     }
-    public String ac_exec_context_$_1(Args args) throws CommandException {
+
+    public final static String hh_exec_context = "<var> [<arg> ...]";
+    public final static String fh_exec_context =
+        "Executes the batch script in the context variable.";
+    public String ac_exec_context_$_1_99(Args args)
+        throws IOException, CommandExitException
+    {
+        StringWriter out = new StringWriter();
+        String var = args.argv(0);
+        Reader in = _nucleus.getDomainContextReader(var);
         try {
-            executeDomainContext(args.argv(0));
-        } catch (Exception e) {
-            throw new CommandException(99, args.argv(0)+" : "+e.toString());
-        }
-        return "";
-    }
-    private void _executeDomainContext(String name) {
-        if (name == null)return;
-
-        BufferedReader reader = null;
-        try {
-
-            reader = new BufferedReader(_nucleus.getDomainContextReader(name));
-
-            String line = null;
-            while ((line = reader.readLine()) != null) {
-                if (line.length() == 0)continue;
-                if (line.charAt(0) == '#')continue;
-                try {
-                    say("Executing : "+line);
-                    String answer = command(line);
-                    say("answer    : "+answer);
-                } catch (Exception ee) {
-                    esay(name+" : "+line +"\n" + name + " : "+ee.toString());
-
-                }
-            }
-        } catch (IOException e) {
-            //          esay(name + " : "+e.toString());
+            args.shift();
+            CellShell shell = new CellShell(this);
+            shell.execute("context:" + var, in, out, out, args);
         } finally {
-            if (reader != null) try { reader.close(); } catch (IOException e) {}
+            in.close();
         }
+        return out.toString();
     }
 
     /**

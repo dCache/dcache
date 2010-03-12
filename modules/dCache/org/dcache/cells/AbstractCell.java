@@ -349,7 +349,6 @@ public class AbstractCell extends CellAdapter
      * <code>executeInit</code>.
      */
     protected void executeDefinedSetup()
-        throws IOException
     {
         if (_definedSetup != null) {
             executeDomainContext(_definedSetup);

@@ -42,6 +42,12 @@ public class      CellShell
       }
    }
 
+    public CellShell(CellAdapter cell)
+    {
+        this(cell.getNucleus());
+        _externalInterpreter = cell;
+    }
+
     /**
      * Returns the environment of the shell.
      *

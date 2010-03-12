@@ -2,6 +2,7 @@ package dmg.cells.nucleus;
 
 import dmg.util.Args;
 import dmg.util.PinboardAppender;
+import dmg.util.Log4jWriter;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -802,6 +803,16 @@ public class CellNucleus implements ThreadFactory
     //
     CellTunnelInfo [] getCellTunnelInfos() { return __cellGlue.getCellTunnelInfos(); }
     //
+
+    public Writer createErrorLogWriter()
+    {
+        return new Log4jWriter(_logCell, Level.ERROR);
+    }
+
+    public Writer createInfoLogWriter()
+    {
+        return new Log4jWriter(_logCell, Level.INFO);
+    }
 
     public static final int  PRINT_CELL          =    1;
     public static final int  PRINT_ERROR_CELL    =    2;
