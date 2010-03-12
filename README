@@ -52,7 +52,7 @@ Structure of Build framework:
 To be able to use build environment ANT >= 1.6 should
 be installed on the system. Please note, that there is no possibility to
 have two different versions of ANT in parallel.
-                                
+
                                 
 1. Setup the Build environment
 
