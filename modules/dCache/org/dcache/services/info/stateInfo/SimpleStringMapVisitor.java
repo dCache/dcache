@@ -35,7 +35,7 @@ public class SimpleStringMapVisitor extends SimpleSkeletonMapVisitor {
 	 */
 	public static final Map<String,String> buildMap( StateExhibitor exhibitor, StatePath pathToList, StatePath pathToMetric) {
 		SimpleStringMapVisitor visitor = new SimpleStringMapVisitor( pathToList, pathToMetric);
-		exhibitor.visitState( visitor, pathToList);
+		exhibitor.visitState( visitor);
 		return visitor.getMap();
 	}
 
@@ -49,7 +49,7 @@ public class SimpleStringMapVisitor extends SimpleSkeletonMapVisitor {
 	 */
 	public static final Map<String,String> buildMap( StateExhibitor exhibitor, StateTransition transition, StatePath pathToList, StatePath pathToMetric) {
 		SimpleStringMapVisitor visitor = new SimpleStringMapVisitor( pathToList, pathToMetric);
-		exhibitor.visitState(transition, visitor, pathToList);
+		exhibitor.visitState(visitor, transition);
 		return visitor.getMap();
 	}
 

@@ -19,7 +19,8 @@ import org.junit.Test;
 public class TestStateExhibitorTests {
 
     TestStateExhibitor _exhibitor;
-    static final StatePath METRIC_PATH = StatePath.parsePath( "aa.bb.metric value");
+    static final StatePath METRIC_PATH =
+            StatePath.parsePath( "aa.bb.metric value");
 
     @Before
     public void setUp() throws Exception {
@@ -64,8 +65,8 @@ public class TestStateExhibitorTests {
         StatePath metricPath1 = metricBranch.newChild( "metric 1");
         StatePath metricPath2 = metricBranch.newChild( "metric 2");
 
-        StateValue metricValue1 = new StringStateValue(
-                                                        "a typical string value");
+        StateValue metricValue1 =
+                new StringStateValue( "a typical string value");
         StateValue metricValue2 = new IntegerStateValue( 42);
 
         _exhibitor.addMetric( metricPath1, metricValue1);
@@ -196,13 +197,17 @@ public class TestStateExhibitorTests {
     public void testRealisticExample() {
         StatePath link1Pool1 = StatePath.parsePath( "links.link-1.pools.pool1");
         StatePath link1Pool2 = StatePath.parsePath( "links.link-1.pools.pool2");
-        StatePath link1ReadPrefPath = StatePath.parsePath( "links.link-1.prefs.read");
+        StatePath link1ReadPrefPath =
+                StatePath.parsePath( "links.link-1.prefs.read");
         StateValue link1ReadPrefMetric = new IntegerStateValue( 5);
-        StatePath link1WritePrefPath = StatePath.parsePath( "links.link-1.prefs.write");
+        StatePath link1WritePrefPath =
+                StatePath.parsePath( "links.link-1.prefs.write");
         StateValue link1WritePrefMetric = new IntegerStateValue( 7);
-        StatePath link1P2pPrefPath = StatePath.parsePath( "links.link-1.prefs.p2p");
+        StatePath link1P2pPrefPath =
+                StatePath.parsePath( "links.link-1.prefs.p2p");
         StateValue link1P2pPrefMetric = new IntegerStateValue( 11);
-        StatePath link1CachePrefPath = StatePath.parsePath( "links.link-1.prefs.cache");
+        StatePath link1CachePrefPath =
+                StatePath.parsePath( "links.link-1.prefs.cache");
         StateValue link1CachePrefMetric = new IntegerStateValue( 13);
 
         _exhibitor.addBranch( link1Pool1);
@@ -234,7 +239,8 @@ public class TestStateExhibitorTests {
 
         _exhibitor.addListItem( path, type, idName);
 
-        AssertableMetadataCapturingVisitor visitor = new AssertableMetadataCapturingVisitor();
+        AssertableMetadataCapturingVisitor visitor =
+                new AssertableMetadataCapturingVisitor();
         _exhibitor.visitState( visitor);
         visitor.assertListMetadata( path, type, idName);
     }
@@ -252,7 +258,8 @@ public class TestStateExhibitorTests {
         _exhibitor.addListItem( path1, type1, idName1);
         _exhibitor.addListItem( path2, type2, idName2);
 
-        AssertableMetadataCapturingVisitor visitor = new AssertableMetadataCapturingVisitor();
+        AssertableMetadataCapturingVisitor visitor =
+                new AssertableMetadataCapturingVisitor();
         _exhibitor.visitState( visitor);
         visitor.assertListMetadata( path1, type1, idName1);
         visitor.assertListMetadata( path2, type2, idName2);
@@ -266,7 +273,8 @@ public class TestStateExhibitorTests {
 
         _exhibitor.addListItem( path, type, idName);
 
-        AssertableMetadataCapturingVisitor visitor = new AssertableMetadataCapturingVisitor();
+        AssertableMetadataCapturingVisitor visitor =
+                new AssertableMetadataCapturingVisitor();
         _exhibitor.visitState( visitor);
         visitor.assertListMetadata( path, type, idName);
     }
@@ -281,7 +289,8 @@ public class TestStateExhibitorTests {
         _exhibitor.addListItem( path1, type, idName);
         _exhibitor.addListItem( path2, type, idName);
 
-        AssertableMetadataCapturingVisitor visitor = new AssertableMetadataCapturingVisitor();
+        AssertableMetadataCapturingVisitor visitor =
+                new AssertableMetadataCapturingVisitor();
         _exhibitor.visitState( visitor);
         visitor.assertListMetadata( path1, type, idName);
         visitor.assertListMetadata( path2, type, idName);
@@ -289,18 +298,18 @@ public class TestStateExhibitorTests {
 
     @Test
     public void testTwoDeepSingleListItemExhibitor() {
-        StatePath path = StatePath.parsePath( "widgets.boringWidgets.SimpleWidget");
+        StatePath path =
+                StatePath.parsePath( "widgets.boringWidgets.SimpleWidget");
         String type = "widget";
         String idName = "id";
 
         _exhibitor.addListItem( path, type, idName);
 
-        AssertableMetadataCapturingVisitor visitor = new AssertableMetadataCapturingVisitor();
+        AssertableMetadataCapturingVisitor visitor =
+                new AssertableMetadataCapturingVisitor();
         _exhibitor.visitState( visitor);
         visitor.assertListMetadata( path, type, idName);
     }
-
-
 
     /**
      * TESTS INVOLVING CLONED Node STRUCTURE
@@ -331,13 +340,17 @@ public class TestStateExhibitorTests {
     public void testClonedRealisticExample() {
         StatePath link1Pool1 = StatePath.parsePath( "links.link-1.pools.pool1");
         StatePath link1Pool2 = StatePath.parsePath( "links.link-1.pools.pool2");
-        StatePath link1ReadPrefPath = StatePath.parsePath( "links.link-1.prefs.read");
+        StatePath link1ReadPrefPath =
+                StatePath.parsePath( "links.link-1.prefs.read");
         StateValue link1ReadPrefMetric = new IntegerStateValue( 5);
-        StatePath link1WritePrefPath = StatePath.parsePath( "links.link-1.prefs.write");
+        StatePath link1WritePrefPath =
+                StatePath.parsePath( "links.link-1.prefs.write");
         StateValue link1WritePrefMetric = new IntegerStateValue( 7);
-        StatePath link1P2pPrefPath = StatePath.parsePath( "links.link-1.prefs.p2p");
+        StatePath link1P2pPrefPath =
+                StatePath.parsePath( "links.link-1.prefs.p2p");
         StateValue link1P2pPrefMetric = new IntegerStateValue( 11);
-        StatePath link1CachePrefPath = StatePath.parsePath( "links.link-1.prefs.cache");
+        StatePath link1CachePrefPath =
+                StatePath.parsePath( "links.link-1.prefs.cache");
         StateValue link1CachePrefMetric = new IntegerStateValue( 13);
 
         _exhibitor.addBranch( link1Pool1);
@@ -400,90 +413,7 @@ public class TestStateExhibitorTests {
         VerifyingVisitor visitor = new VerifyingVisitor();
         visitor.addExpectedMetric( metricPath, metricValue);
 
-        _exhibitor.visitState( visitor, (StatePath) null);
-
-        assertTrue( "visitor is satisfied", visitor.satisfied());
-    }
-
-    @Test
-    public void testSingleMetricSkipOneElement() {
-        StatePath metricPath = StatePath.parsePath( "aa.bb.metric");
-        StateValue metricValue = new StringStateValue( "some string");
-        StatePath skipPath = StatePath.parsePath( "aa");
-
-        _exhibitor.addMetric( metricPath, metricValue);
-
-        VerifyingVisitor visitor = new VerifyingVisitor();
-        visitor.addExpectedMetric( metricPath, metricValue);
-        visitor.setSkip( skipPath);
-
-        _exhibitor.visitState( visitor, skipPath);
-
-        assertTrue( "visitor is satisfied", visitor.satisfied());
-    }
-
-    @Test
-    public void testSingleMetricSkipTwoElements() {
-        StatePath metricPath = StatePath.parsePath( "aa.bb.metric");
-        StateValue metricValue = new StringStateValue( "some string");
-        StatePath skipPath = StatePath.parsePath( "aa.bb");
-
-        _exhibitor.addMetric( metricPath, metricValue);
-
-        VerifyingVisitor visitor = new VerifyingVisitor();
-        visitor.addExpectedMetric( metricPath, metricValue);
-        visitor.setSkip( skipPath);
-
-        _exhibitor.visitState( visitor, skipPath);
-
-        assertTrue( "visitor is satisfied", visitor.satisfied());
-    }
-
-    @Test
-    public void testSingleMetricSkipAllElements() {
-        StatePath metricPath = StatePath.parsePath( "aa.bb.metric");
-        StateValue metricValue = new StringStateValue( "some string");
-        StatePath skipPath = StatePath.parsePath( "aa.bb.metric");
-
-        _exhibitor.addMetric( metricPath, metricValue);
-
-        VerifyingVisitor visitor = new VerifyingVisitor();
-        visitor.addExpectedMetric( metricPath, metricValue);
-        visitor.setSkip( skipPath);
-
-        _exhibitor.visitState( visitor, skipPath);
-
-        assertTrue( "visitor is satisfied", visitor.satisfied());
-    }
-
-    @Test
-    public void testSingleBranchSkipOneElement() {
-        StatePath skipPath = StatePath.parsePath( "aa");
-        StatePath branchPath = skipPath.newChild( StatePath.parsePath( "list.list-item"));
-
-        _exhibitor.addBranch( branchPath);
-
-        VerifyingVisitor visitor = new VerifyingVisitor();
-        visitor.addExpectedBranch( branchPath);
-        visitor.setSkip( skipPath);
-
-        _exhibitor.visitState( visitor, skipPath);
-
-        assertTrue( "visitor is satisfied", visitor.satisfied());
-    }
-
-    @Test
-    public void testSingleBranchSkipTwoElement() {
-        StatePath skipPath = StatePath.parsePath( "aa.list");
-        StatePath branchPath = skipPath.newChild( StatePath.parsePath( "list-item"));
-
-        _exhibitor.addBranch( branchPath);
-
-        VerifyingVisitor visitor = new VerifyingVisitor();
-        visitor.addExpectedBranch( branchPath);
-        visitor.setSkip( skipPath);
-
-        _exhibitor.visitState( visitor, skipPath);
+        _exhibitor.visitState( visitor);
 
         assertTrue( "visitor is satisfied", visitor.satisfied());
     }
@@ -491,268 +421,6 @@ public class TestStateExhibitorTests {
     /**
      * TESTS INVOLVING SKIPPING AND TRANSITION
      */
-
-    /**
-     * TestStateExhibitor has a single metric. The StateTransition does
-     * nothing. We skip nothing.
-     */
-    @Test
-    public void testSingleMetricTransitionEmptyAndSkipNull() {
-        StatePath metricPath = StatePath.parsePath( "aa.bb.metric");
-        StateValue metricValue = new StringStateValue( "some string");
-
-        _exhibitor.addMetric( metricPath, metricValue);
-
-        MalleableStateTransition transition = new MalleableStateTransition();
-
-        VerifyingVisitor visitor = new VerifyingVisitor();
-        visitor.addExpectedMetric( metricPath, metricValue);
-
-        _exhibitor.visitState( transition, visitor, null);
-
-        assertTrue( "visitor is satisfied", visitor.satisfied());
-    }
-
-    /**
-     * TestStateExhibitor has a single metric. The StateTransition does
-     * nothing. We skip the first path element.
-     */
-    @Test
-    public void testSingleMetricTransitionEmptySkipOneElement() {
-        StatePath skipPath = StatePath.parsePath( "aa");
-        StatePath metricPath = skipPath.newChild( StatePath.parsePath( "bb.metric"));
-        StateValue metricValue = new StringStateValue( "some string");
-
-        _exhibitor.addMetric( metricPath, metricValue);
-
-        MalleableStateTransition transition = new MalleableStateTransition();
-
-        VerifyingVisitor visitor = new VerifyingVisitor();
-        visitor.addExpectedMetric( metricPath, metricValue);
-        visitor.setSkip( skipPath);
-
-        _exhibitor.visitState( transition, visitor, skipPath);
-
-        assertTrue( "visitor is satisfied", visitor.satisfied());
-    }
-
-    /**
-     * TestStateExhibitor has a single metric. The StateTransition does
-     * nothing. We skip two path elements.
-     */
-    @Test
-    public void testSingleMetricTransitionEmptySkipTwoElements() {
-        StatePath skipPath = StatePath.parsePath( "aa.bb");
-        StatePath metricPath = skipPath.newChild( "metric");
-        StateValue metricValue = new StringStateValue( "some string");
-
-        _exhibitor.addMetric( metricPath, metricValue);
-
-        MalleableStateTransition transition = new MalleableStateTransition();
-
-        VerifyingVisitor visitor = new VerifyingVisitor();
-        visitor.addExpectedMetric( metricPath, metricValue);
-        visitor.setSkip( skipPath);
-
-        _exhibitor.visitState( transition, visitor, skipPath);
-
-        assertTrue( "visitor is satisfied", visitor.satisfied());
-    }
-
-    /**
-     * TestStateExhibitor has a single metric. The StateTransition does
-     * nothing. We skip all path elements.
-     */
-    @Test
-    public void testSingleMetricTransitionEmptySkipAllElements() {
-        StatePath skipPath = StatePath.parsePath( "aa.bb.metric");
-        StatePath metricPath = new StatePath( skipPath);
-        StateValue metricValue = new StringStateValue( "some string");
-
-        _exhibitor.addMetric( metricPath, metricValue);
-
-        MalleableStateTransition transition = new MalleableStateTransition();
-
-        VerifyingVisitor visitor = new VerifyingVisitor();
-        visitor.addExpectedMetric( metricPath, metricValue);
-        visitor.setSkip( skipPath);
-
-        _exhibitor.visitState( transition, visitor, skipPath);
-
-        assertTrue( "visitor is satisfied", visitor.satisfied());
-    }
-
-    /**
-     * TestStateExhibitor has a single branch. The StateTransition does
-     * nothing. We the first path element.
-     */
-    @Test
-    public void testSingleBranchTransitionEmptySkipOneElement() {
-        StatePath skipPath = StatePath.parsePath( "aa");
-        StatePath branchPath = skipPath.newChild( StatePath.parsePath( "list.list-item"));
-
-        _exhibitor.addBranch( branchPath);
-
-        MalleableStateTransition transition = new MalleableStateTransition();
-
-        VerifyingVisitor visitor = new VerifyingVisitor();
-        visitor.addExpectedBranch( branchPath);
-        visitor.setSkip( skipPath);
-
-        _exhibitor.visitState( transition, visitor, skipPath);
-
-        assertTrue( "visitor is satisfied", visitor.satisfied());
-    }
-
-    /**
-     * TestStateExhibitor has a single branch. The StateTransition does
-     * nothing. We two path elements.
-     */
-    @Test
-    public void testSingleBranchTransitionEmptySkipTwoElement() {
-        StatePath skipPath = StatePath.parsePath( "aa.list");
-        StatePath branchPath = skipPath.newChild( StatePath.parsePath( "list-item"));
-
-        _exhibitor.addBranch( branchPath);
-
-        MalleableStateTransition transition = new MalleableStateTransition();
-
-        VerifyingVisitor visitor = new VerifyingVisitor();
-        visitor.addExpectedBranch( branchPath);
-        visitor.setSkip( skipPath);
-
-        _exhibitor.visitState( transition, visitor, skipPath);
-
-        assertTrue( "visitor is satisfied", visitor.satisfied());
-    }
-
-    /**
-     * TestStateExhibitor is empty. The StateTransition adds a single metric.
-     * We skip nothing.
-     */
-    @Test
-    public void testEmptyTransitionAddSingleMetricSkipNull() {
-        StatePath metricPath = StatePath.parsePath( "aa.bb.metric");
-        StateValue metricValue = new StringStateValue( "some string");
-
-        MalleableStateTransition transition = new MalleableStateTransition();
-        transition.updateTransitionForNewMetric( metricPath, metricValue, 0);
-
-        VerifyingVisitor visitor = new VerifyingVisitor();
-        visitor.addExpectedMetric( metricPath, metricValue);
-
-        _exhibitor.visitState( transition, visitor, null);
-
-        assertTrue( "visitor is satisfied", visitor.satisfied());
-    }
-
-    /**
-     * TestStateExhibitor is empty. The StateTransition adds a single metric.
-     * We skip the first path element.
-     */
-    @Test
-    public void testEmptyTransitionAddSingleMetricSkipOneElement() {
-        StatePath skipPath = StatePath.parsePath( "aa");
-        StatePath metricPath = skipPath.newChild( StatePath.parsePath( "bb.metric"));
-        StateValue metricValue = new StringStateValue( "some string");
-
-        MalleableStateTransition transition = new MalleableStateTransition();
-        transition.updateTransitionForNewMetric( metricPath, metricValue, 0);
-
-        VerifyingVisitor visitor = new VerifyingVisitor();
-        visitor.addExpectedMetric( metricPath, metricValue);
-        visitor.setSkip( skipPath);
-
-        _exhibitor.visitState( transition, visitor, skipPath);
-
-        assertTrue( "visitor is satisfied", visitor.satisfied());
-    }
-
-    /**
-     * TestStateExhibitor is empty. The StateTransition adds a single metric.
-     * We skip two path elements.
-     */
-    @Test
-    public void testEmptyTransitionAddSingleMetricSkipTwoElements() {
-        StatePath skipPath = StatePath.parsePath( "aa.bb");
-        StatePath metricPath = skipPath.newChild( "metric");
-        StateValue metricValue = new StringStateValue( "some string");
-
-        MalleableStateTransition transition = new MalleableStateTransition();
-        transition.updateTransitionForNewMetric( metricPath, metricValue, 0);
-
-        VerifyingVisitor visitor = new VerifyingVisitor();
-        visitor.addExpectedMetric( metricPath, metricValue);
-        visitor.setSkip( skipPath);
-
-        _exhibitor.visitState( transition, visitor, skipPath);
-
-        assertTrue( "visitor is satisfied", visitor.satisfied());
-    }
-
-    /**
-     * TestStateExhibitor is empty. The StateTransition adds a single metric.
-     * We skip all path elements.
-     */
-    @Test
-    public void testEmptyTransitionAddSingleMetricSkipAllElements() {
-        StatePath skipPath = StatePath.parsePath( "aa.bb.metric");
-        StatePath metricPath = new StatePath( skipPath);
-        StateValue metricValue = new StringStateValue( "some string");
-
-        MalleableStateTransition transition = new MalleableStateTransition();
-        transition.updateTransitionForNewMetric( metricPath, metricValue, 0);
-
-        VerifyingVisitor visitor = new VerifyingVisitor();
-        visitor.addExpectedMetric( metricPath, metricValue);
-        visitor.setSkip( skipPath);
-
-        _exhibitor.visitState( transition, visitor, skipPath);
-
-        assertTrue( "visitor is satisfied", visitor.satisfied());
-    }
-
-    /**
-     * TestStateExhibitor is empty. The StateTransition adds a single branch.
-     * We skip first path element.
-     */
-    @Test
-    public void testEmptyTransitionAddsSingleBranchSkipOneElement() {
-        StatePath skipPath = StatePath.parsePath( "aa");
-        StatePath branchPath = skipPath.newChild( StatePath.parsePath( "list.list-item"));
-
-        MalleableStateTransition transition = new MalleableStateTransition();
-        transition.updateTransitionForNewBranch( branchPath, 0);
-
-        VerifyingVisitor visitor = new VerifyingVisitor();
-        visitor.addExpectedBranch( branchPath);
-        visitor.setSkip( skipPath);
-
-        _exhibitor.visitState( transition, visitor, skipPath);
-
-        assertTrue( "visitor is satisfied", visitor.satisfied());
-    }
-
-    /**
-     * TestStateExhibitor is empty. The StateTransition adds a single branch.
-     * We skip two path elements.
-     */
-    @Test
-    public void testEmptyStateTransitionAddsSingleBranchSkipTwoElement() {
-        StatePath skipPath = StatePath.parsePath( "aa.list");
-        StatePath branchPath = skipPath.newChild( StatePath.parsePath( "list-item"));
-
-        MalleableStateTransition transition = new MalleableStateTransition();
-        transition.updateTransitionForNewBranch( branchPath, 0);
-
-        VerifyingVisitor visitor = new VerifyingVisitor();
-        visitor.addExpectedBranch( branchPath);
-        visitor.setSkip( skipPath);
-
-        _exhibitor.visitState( transition, visitor, skipPath);
-
-        assertTrue( "visitor is satisfied", visitor.satisfied());
-    }
 
     /**
      * TestStateExhibitor has a single metric. The StateTransition adds a
@@ -769,48 +437,14 @@ public class TestStateExhibitorTests {
         _exhibitor.addMetric( existingMetricPath, existingMetricValue);
 
         MalleableStateTransition transition = new MalleableStateTransition();
-        transition.updateTransitionForNewMetric(
-                                                 newMetricPath,
-                                                 newMetricValue,
-                                                 metricBranchPath._elements.size());
+        transition.updateTransitionForNewMetric( newMetricPath, newMetricValue,
+                metricBranchPath._elements.size());
 
         VerifyingVisitor visitor = new VerifyingVisitor();
         visitor.addExpectedMetric( existingMetricPath, existingMetricValue);
         visitor.addExpectedMetric( newMetricPath, newMetricValue);
 
-        _exhibitor.visitState( transition, visitor, null);
-
-        assertTrue( "visitor is satisfied", visitor.satisfied());
-    }
-
-    /**
-     * TestStateExhibitor has a single metric. The StateTransition adds a
-     * sibling metric, we skip the first branch.
-     */
-    @Test
-    public void testSingleMetricTransitionAddsSiblingSingleMetricSkipOneElement() {
-
-        StatePath skipPath = StatePath.parsePath( "aa");
-        StatePath metricBranchPath = skipPath.newChild( "bb");
-        StatePath existingMetricPath = metricBranchPath.newChild( "metric1");
-        StateValue existingMetricValue = new StringStateValue( "metric1 value");
-        StatePath newMetricPath = metricBranchPath.newChild( "metric2");
-        StateValue newMetricValue = new StringStateValue( "metric2 value");
-
-        _exhibitor.addMetric( existingMetricPath, existingMetricValue);
-
-        MalleableStateTransition transition = new MalleableStateTransition();
-        transition.updateTransitionForNewMetric(
-                                                 newMetricPath,
-                                                 newMetricValue,
-                                                 metricBranchPath._elements.size());
-
-        VerifyingVisitor visitor = new VerifyingVisitor();
-        visitor.addExpectedMetric( existingMetricPath, existingMetricValue);
-        visitor.addExpectedMetric( newMetricPath, newMetricValue);
-        visitor.setSkip( skipPath);
-
-        _exhibitor.visitState( transition, visitor, skipPath);
+        _exhibitor.visitState( visitor, transition);
 
         assertTrue( "visitor is satisfied", visitor.satisfied());
     }
@@ -838,10 +472,8 @@ public class TestStateExhibitorTests {
      * VerifyingVisitor is checked to see whether it is satisfied with the
      * result.
      *
-     * @param metricValue
-     *            the metric value to check.
-     * @param useClone
-     *            if true then visitClonedState() is used instead of
+     * @param metricValue the metric value to check.
+     * @param useClone if true then visitClonedState() is used instead of
      *            visitState()
      */
     private void assertSingleMetricOk( StateValue metricValue) {
@@ -894,40 +526,49 @@ public class TestStateExhibitorTests {
         assertTrue( "VerifyingVisitor is satisfied", visitor.satisfied());
     }
 
-
     /**
-     *  Visitor that collects metadata and allows list-assertions to be made about collected data.
+     * Visitor that visits all the state, collects metadata and allows
+     * list-assertions to be made about collected data.
      */
-    private static class AssertableMetadataCapturingVisitor implements StateVisitor {
+    private static class AssertableMetadataCapturingVisitor implements
+            StateVisitor {
 
         private static final StatePath ROOT_PATH = null;
 
-        Map<StatePath, Map<String,String>> _collectedMetadata = new HashMap<StatePath, Map<String,String>>();
+        Map<StatePath, Map<String, String>> _collectedMetadata =
+                new HashMap<StatePath, Map<String, String>>();
 
-        private Map<String,String> getMetadataForPath( StatePath path) {
+        private Map<String, String> getMetadataForPath( StatePath path) {
             return _collectedMetadata.get( path);
         }
 
-        private void assertListItemMetadata( StatePath path, String expectedType, String expectedIdName) {
-            Map<String,String> pathMetadata = getMetadataForPath( path);
+        private void assertListItemMetadata( StatePath path,
+                                             String expectedType,
+                                             String expectedIdName) {
+            Map<String, String> pathMetadata = getMetadataForPath( path);
 
-            String discoveredType = pathMetadata.get(  State.METADATA_BRANCH_CLASS_KEY);
-            String discoveredIdName = pathMetadata.get( State.METADATA_BRANCH_IDNAME_KEY);
+            String discoveredType =
+                    pathMetadata.get( State.METADATA_BRANCH_CLASS_KEY);
+            String discoveredIdName =
+                    pathMetadata.get( State.METADATA_BRANCH_IDNAME_KEY);
 
-            assertEquals( "class mismatch: " + path, expectedType, discoveredType);
-            assertEquals( "idName mismatch: " + path, expectedIdName, discoveredIdName);
+            assertEquals( "class mismatch: " + path, expectedType,
+                    discoveredType);
+            assertEquals( "idName mismatch: " + path, expectedIdName,
+                    discoveredIdName);
         }
 
         private void assertBranchHasNoMetadata( StatePath path) {
-            Map<String,String> pathMetadata = getMetadataForPath( path);
+            Map<String, String> pathMetadata = getMetadataForPath( path);
             String pathLabel = path != ROOT_PATH ? path.toString() : "(root)";
-            assertNull( "checking branch has no metadata: " + pathLabel, pathMetadata);
+            assertNull( "checking branch has no metadata: " + pathLabel,
+                    pathMetadata);
         }
 
         private void assertBranchAndParentsHaveNoMetadata( final StatePath path) {
             StatePath currentPath = path;
 
-            while( !currentPath.isSimplePath()) {
+            while (!currentPath.isSimplePath()) {
                 assertBranchHasNoMetadata( currentPath);
 
                 currentPath = currentPath.parentPath();
@@ -945,7 +586,8 @@ public class TestStateExhibitorTests {
             assertBranchHasNoMetadata( ROOT_PATH);
         }
 
-        public void assertListMetadata( StatePath path, String type, String idName) {
+        public void assertListMetadata( StatePath path, String type,
+                                        String idName) {
             assertListItemMetadata( path, type, idName);
             assertParentBranchesHaveNoMetadata( path);
         }
@@ -960,20 +602,10 @@ public class TestStateExhibitorTests {
         }
 
         @Override
-        public void visitCompositePostSkipDescend( StatePath path,
-                                                   Map<String, String> metadata) {
-        }
-
-        @Override
         public void visitCompositePreDescend( StatePath path,
                                               Map<String, String> metadata) {
             if( metadata != null)
                 _collectedMetadata.put( path, metadata);
-        }
-
-        @Override
-        public void visitCompositePreSkipDescend( StatePath path,
-                                                  Map<String, String> metadata) {
         }
 
         @Override
@@ -987,6 +619,11 @@ public class TestStateExhibitorTests {
 
         @Override
         public void visitString( StatePath path, StringStateValue value) {
+        }
+
+        @Override
+        public boolean isVisitable( StatePath path) {
+            return true;
         }
     }
 }

@@ -16,7 +16,7 @@ import org.dcache.services.info.base.StateTransition;
  */
 public class PoolSpaceVisitor extends AbstractPoolSpaceVisitor {
 
-	private static Logger _log = LoggerFactory.getLogger( PoolSpaceVisitor.class);
+	private static final Logger _log = LoggerFactory.getLogger( PoolSpaceVisitor.class);
 
 	/**
 	 * Obtain a Map between pools and their space information for current dCache state.
@@ -28,7 +28,7 @@ public class PoolSpaceVisitor extends AbstractPoolSpaceVisitor {
 
 		PoolSpaceVisitor visitor = new PoolSpaceVisitor();
 
-		exhibitor.visitState( visitor, POOLS_PATH);
+		exhibitor.visitState( visitor);
 
 		return visitor._poolgroups;
 	}
@@ -44,16 +44,11 @@ public class PoolSpaceVisitor extends AbstractPoolSpaceVisitor {
 			_log.info( "Gathering status after transition");
 
 		PoolSpaceVisitor visitor = new PoolSpaceVisitor();
-		exhibitor.visitState( transition, visitor, POOLS_PATH);
+		exhibitor.visitState( visitor, transition);
 		return visitor._poolgroups;
 	}
 
 	private Map <String,SpaceInfo> _poolgroups = new HashMap<String,SpaceInfo>();
-
-	/*
-	public PoolSpaceVisitor() {
-		super();
-	}*/
 
 	@Override
 	protected void newPool( String poolName, SpaceInfo space) {

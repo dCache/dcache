@@ -59,7 +59,7 @@ public class ReservationInfoVisitor extends SkeletonListVisitor {
         _log.debug( "Gathering reservation information.");
 
         ReservationInfoVisitor visitor = new ReservationInfoVisitor();
-        exhibitor.visitState( visitor, RESERVATIONS_PATH);
+        exhibitor.visitState( visitor);
 
         return visitor.getReservations();
     }
@@ -79,7 +79,7 @@ public class ReservationInfoVisitor extends SkeletonListVisitor {
         _log.debug( "Gathering reservation information.");
 
         ReservationInfoVisitor visitor = new ReservationInfoVisitor();
-        exhibitor.visitState( transition, visitor, RESERVATIONS_PATH);
+        exhibitor.visitState( visitor, transition);
 
         return visitor.getReservations();
     }

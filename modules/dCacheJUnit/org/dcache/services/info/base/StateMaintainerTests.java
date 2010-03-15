@@ -52,11 +52,6 @@ public class StateMaintainerTests extends InfoBaseTestHelper {
             }
         }
 
-        public synchronized void blockOnCount( int desiredCount) throws InterruptedException {
-            while( _count < desiredCount)
-                wait();
-        }
-
         @Override
         public Date getEarliestMetricExpiryDate() {
             return null;
@@ -193,34 +188,6 @@ public class StateMaintainerTests extends InfoBaseTestHelper {
                 if( !_metricExpired)
                     _metricExpiryDate.wait();
             }
-        }
-
-        /*
-         * METHODS THAT QUERY ACTIVITY
-         */
-
-        /**
-         * Obtain the List of StateUpdate objects that the StateMaintainer
-         * has called {@link #processUpdate(StateUpdate)} with.
-         */
-        public List<StateUpdate> getUpdates() {
-            return new LinkedList<StateUpdate>( _updates);
-        }
-
-        /**
-         * @return the number of times StateMaintainer has called
-         *         {@link #processUpdate(StateUpdate)}.
-         */
-        public int getProcessUpdateCount() {
-            return _updates.size();
-        }
-
-        /**
-         * @return whether StateMaintainer has called
-         *         {@link #removeExpiredMetrics()}.
-         */
-        public boolean metricExpired() {
-            return _metricExpired;
         }
     }
 

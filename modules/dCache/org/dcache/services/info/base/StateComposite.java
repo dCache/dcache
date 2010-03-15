@@ -4,10 +4,7 @@ package org.dcache.services.info.base;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -232,51 +229,22 @@ public class StateComposite implements StateComponent {
      * to represent the skipping down to the starting point, or not.
      *
      * @param path the path to the current position in the State.
-     * @param start the residual path to skip.
      * @param visitor the object that implements the StateVisitor class.
      */
-    public void acceptVisitor(StatePath path, StatePath start, StateVisitor visitor) {
+    @Override
+    public void acceptVisitor(StatePath path, StateVisitor visitor) {
         if( _log.isDebugEnabled())
-            _log.debug( "acceptVisitor( " + (path != null ? path : "(null)") + ", " + (start != null ? start : "(null)") + " )");
+            _log.debug( "acceptVisitor( " + (path != null ? path : "(null)") + ")");
 
         Map<String,String> branchMetadata = getMetadataInfo();
-
-        if( start != null) {
-            String childName = start.getFirstElement();
-
-            if( _children.containsKey( childName)) {
-                visitor.visitCompositePreSkipDescend( path, branchMetadata);
-
-                StateComponent child = _children.get( childName);
-                StatePath childStartPath = start.childPath();
-                child.acceptVisitor( buildChildPath( path, childName), childStartPath, visitor);
-
-                visitor.visitCompositePostSkipDescend( path, branchMetadata);
-
-            } else {
-
-                if( _log.isDebugEnabled())
-                    _log.debug( this.toString() + " no children when accepting for " + start);
-
-                /**
-                 * No data is available at this level.  This is because the
-                 * client has specified a start-path that (currently) doesn't exist.
-                 * The path may be "correct" and will be filled with data "soon",
-                 * or may be "incorrect" and data will never appear here.
-                 * <p>
-                 * Since we cannot distinguish between the two, we silently fail.
-                 */
-            }
-            return;
-        }
 
         visitor.visitCompositePreDescend( path, branchMetadata);
 
         for( Map.Entry<String, StateComponent> mapEntry : _children.entrySet()) {
             String childName = mapEntry.getKey();
             StateComponent child = mapEntry.getValue();
-
-            child.acceptVisitor( buildChildPath( path, childName), null, visitor);
+            StatePath childPath = buildChildPath( path, childName);
+            child.acceptVisitor( childPath, visitor);
         }
 
         visitor.visitCompositePostDescend( path, branchMetadata);
@@ -287,147 +255,63 @@ public class StateComposite implements StateComponent {
      * Simulate the effects of the StateTransition, so allowing the StateVisitor to visit the dCache
      * State after the transition has taken effect.
      */
-    public void acceptVisitor( StateTransition transition, StatePath ourPath, StatePath startPath, StateVisitor visitor) {
+    @Override
+    public void acceptVisitor( StateTransition transition, StatePath ourPath, StateVisitor visitor) {
 
         if( _log.isDebugEnabled())
-            _log.debug( "acceptVisitor( " + (transition != null ? "not null" : "(null)")+ ", " + (ourPath != null ? ourPath : "(null)") + ", " + (startPath != null ? startPath : "(null)") + " )");
+            _log.debug( "acceptVisitor( " + (transition != null ? "not null" : "(null)")+ ", " + (ourPath != null ? ourPath : "(null)") + ")");
 
         assert( transition != null);
 
         Map<String,String> branchMetadata = getMetadataInfo();
 
-        StateChangeSet changeSet = transition.getStateChangeSet( ourPath);
-
-        /** If start is not yet null, iterate down directly */
-        if( startPath != null) {
-            String childName = startPath.getFirstElement();
-
-            if( haveChild( changeSet, childName)) {
-                visitor.visitCompositePreSkipDescend(ourPath, branchMetadata);
-                visitNamedChild( visitor, ourPath, childName, startPath, transition, changeSet);
-                visitor.visitCompositePostSkipDescend(ourPath, branchMetadata);
-            } else {
-
-                if( _log.isDebugEnabled())
-                    _log.debug( this.toString() + " no children when accepting for " + startPath);
-
-                /**
-                 * No data is available at this level.  This is because the
-                 * client has specified a start-path that (currently) doesn't exist.
-                 * The path may be "correct" and will be filled with data "soon",
-                 * or may be "incorrect" and data will never appear here.
-                 * <p>
-                 * Since we cannot distinguish between the two, we silently fail.
-                 */
-            }
-            return;
-        }
-
         visitor.visitCompositePreDescend(ourPath, branchMetadata);
 
-        Set<String> children = buildChildrenList( changeSet);
+        StateChangeSet changeSet = transition.getStateChangeSet( ourPath);
+        Map<String,StateComponent> futureChildren = getFutureChildren( changeSet);
 
-        for( String childName : children)
-            visitNamedChild( visitor, ourPath, childName, null, transition, changeSet);
+        for( Map.Entry<String, StateComponent> mapEntry : futureChildren.entrySet()) {
+            String childName = mapEntry.getKey();
+            StateComponent child = mapEntry.getValue();
+            StatePath childPath = buildChildPath( ourPath, childName);
+            child.acceptVisitor( transition, childPath, visitor);
+        }
 
         visitor.visitCompositePostDescend(ourPath, branchMetadata);
     }
 
 
-    /**
-     * Visit a specific child.  This is somewhat tricky as we must be careful, when there is
-     * a transition, which child we visit.
-     */
-    private void visitNamedChild( StateVisitor visitor, StatePath ourPath, String childName, StatePath startPath, StateTransition transition, StateChangeSet changeSet) {
-
-        StateComponent childToVisit = _children.get( childName);
-
-        if( changeSet != null) {
-            /**
-             *  A fresh child is one that is either new or an updated value for
-             *  an existing child.
-             */
-            StateComponent freshChild = changeSet.getFreshChildValue( childName);
-
-            /**
-             *  If the child is new then _children.containsKey( childName) is false.   If
-             *  this is so, we always visit it.
-             *
-             *  If the is an updated value then things are slightly more tricky.
-             *  If updated child is a StateValue (i.e., a metric), then always
-             *  visit the updated value.  If the child is a StateComposite (a branch) then
-             *  visit the existing child.  This is because changes are recorded against
-             *  the existing StateComposites whenever an existing StateComposite exists.
-             *
-             *  NB.  Here we assume that childToVisit != null is
-             *       equivalent to _children.containsKey( childName).
-             *       In the absence of bugs, this is true since null
-             *       is not an allowed StateComponent
-             */
-            if( freshChild != null && !(childToVisit != null && childToVisit instanceof StateComposite))
-                childToVisit = freshChild;
-        }
-
-        if( childToVisit == null) {
-            _log.error("Tried to visit null child in " + ourPath != null ? ourPath.toString() : "(top)");
-            return;
-        }
-
-        StatePath childStartPath = startPath != null ? startPath.childPath() : null;
-        childToVisit.acceptVisitor( transition, buildChildPath( ourPath, childName), childStartPath, visitor);
-    }
 
     /**
-     * Obtain a child based on StateTransition.  If transition is null, only get this
-     * child from local store, otherwise StateTransition will be considered.
-     * @param ourPath the StatePath for this StateComposite
-     * @param transition the transition under consideration, or null
-     * @param childName the name of the child StateComponent
-     * @return the value of the child after transition.
+     * Return what this._children will look like after a StateChangeSet has been applied.
      */
-    private boolean haveChild( StateChangeSet changeSet, String childName) {
-
-        boolean currentlyHaveChild = _children.containsKey( childName);
-
-        if( changeSet != null) {
-
-            if( currentlyHaveChild) {
-                if( changeSet.childIsRemoved( childName))
-                    return false;
-
-            } else {
-                if( changeSet.childIsNew( childName))
-                    return true;
-            }
-        }
-
-        return currentlyHaveChild;
-    }
-
-
-    /**
-     * Build a Set of our children, potentially taking into account a StateTransition.
-     * The transition may be null, in which case this is equivalent to <code>_children.keySet()</code>
-     */
-    private Set<String> buildChildrenList( StateChangeSet changeSet) {
+    private Map<String,StateComponent> getFutureChildren( StateChangeSet changeSet) {
         if( changeSet == null)
-            return _children.keySet();
+            return _children;
 
-        Set<String> allChildren = new HashSet<String>();
+        Map<String,StateComponent> futureChildren = new HashMap<String,StateComponent>( _children);
 
-        Set<String> newChildren = changeSet.getNewChildren();
+        for( String childName : changeSet.getNewChildren()) {
+            StateComponent childValue = changeSet.getNewChildValue( childName);
+            futureChildren.put( childName, childValue);
+        }
 
-        if( newChildren != null)
-            allChildren.addAll( newChildren);
+        for( String childName : changeSet.getUpdatedChildren()) {
+            StateComponent childValue = changeSet.getUpdatedChildValue( childName);
 
-        allChildren.addAll( _children.keySet());
+            // When updating a branch (i.e., not a new branch) updates to child
+            // StateComposite objects are children of the existing branch, not
+            // the future one.
+            if( childValue instanceof StateComposite)
+                continue;
 
-        Set<String> removedChildren = changeSet.getRemovedChildren();
+            futureChildren.put(  childName, childValue);
+        }
 
-        if( removedChildren != null)
-            allChildren.removeAll( removedChildren);
+        for( String childName : changeSet.getRemovedChildren())
+            futureChildren.remove( childName);
 
-        return allChildren;
+        return futureChildren;
     }
 
 

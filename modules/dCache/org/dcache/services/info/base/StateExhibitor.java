@@ -21,44 +21,13 @@ package org.dcache.services.info.base;
 public interface StateExhibitor {
 
     /**
-     * Query the current state of dCache. All of the state is visited.
-     *
-     * @param visitor
-     *            the StateVisitor object that compiles the information about
-     *            dCache state.
+     * Query the current state of dCache.
      */
     public void visitState( StateVisitor visitor);
 
     /**
      * Query the future state of dCache after a StateTransition has been
-     * applied. All of the state is visited.
-     *
-     * @param visitor
-     *            the StateVisitor that compiles the information about future
-     *            dCache state.
-     * @param transition
-     *            the change that will be applied.
+     * applied.
      */
     public void visitState( StateVisitor visitor, StateTransition transition);
-
-    /**
-     * Query the current state of dCache. Those elements leading up to the
-     * start StatePath will be visited with special methods.
-     *
-     * @param visitor
-     * @param start
-     */
-    public void visitState( StateVisitor visitor, StatePath start);
-
-    /**
-     * Visit the future state of dCache after a StateTransition has been
-     * applied. Those elements leading up to the start StatePath will be
-     * visited with special methods.
-     *
-     * @param transition
-     * @param visitor
-     * @param start
-     */
-    public void visitState( StateTransition transition, StateVisitor visitor,
-                            StatePath start);
 }

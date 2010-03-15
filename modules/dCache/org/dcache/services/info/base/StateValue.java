@@ -99,25 +99,12 @@ abstract public class StateValue implements StateComponent {
 
 
 	/**
-	 * A simple wrapper to check for non-null start values.
-	 */
-    @Override
-	public void acceptVisitor( StatePath path, StatePath start, StateVisitor visitor) {
-		if( start != null)
-			return;
-
-		/** Call leaf-node specific visitor method. */
-		acceptVisitor( path, visitor);
-	}
-
-
-	/**
 	 * Sub-classes of StateValue all ignore the transition when being visited: the StateComposite takes
 	 * care of all effects from processing the transition.
 	 */
     @Override
-	public void acceptVisitor( StateTransition transition, StatePath path, StatePath start, StateVisitor visitor) {
-		acceptVisitor( path, start, visitor);
+	public void acceptVisitor( StateTransition transition, StatePath path, StateVisitor visitor) {
+		acceptVisitor( path, visitor);
 	}
 
 

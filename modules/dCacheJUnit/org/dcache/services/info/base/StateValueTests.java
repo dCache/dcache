@@ -163,34 +163,12 @@ public class StateValueTests extends InfoBaseTestHelper {
     }
 
     @Test
-    public void testAcceptVisitorNoTransitionWithSkipNullPath() {
-        TestStateValue testVal = newTestStateValue();
-        StateVisitor visitor = new VerifyingVisitor();
-
-        testVal.acceptVisitor( null, StatePath.parsePath( "aaa.bbb"), visitor);
-
-        List<TestStateValue.AcceptVisitorInfo> visitorList = testVal.getVisitorInfo();
-        assertEquals( "unexpected number of visitors", 0, visitorList.size());
-    }
-
-    @Test
-    public void testAcceptVisitorNoTransitionWithSkipRealPath() {
-        TestStateValue testVal = newTestStateValue();
-        StateVisitor visitor = new VerifyingVisitor();
-
-        testVal.acceptVisitor( StatePath.parsePath( "aa.bb"), StatePath.parsePath( "cc.dd"), visitor);
-
-        List<TestStateValue.AcceptVisitorInfo> visitorList = testVal.getVisitorInfo();
-        assertEquals( "unexpected number of visitors", 0, visitorList.size());
-    }
-
-    @Test
     public void testAcceptVisitorNoTransitionNoSkipRealPath() {
         TestStateValue testVal = newTestStateValue();
         StateVisitor visitor = new VerifyingVisitor();
         StatePath path = StatePath.parsePath( "aa.bb");
 
-        testVal.acceptVisitor( path, null, visitor);
+        testVal.acceptVisitor( path, visitor);
 
         List<TestStateValue.AcceptVisitorInfo> visitorList = testVal.getVisitorInfo();
         assertEquals( "unexpected number of visitors", 1, visitorList.size());
@@ -215,7 +193,7 @@ public class StateValueTests extends InfoBaseTestHelper {
         StatePath path = StatePath.parsePath( "aa.bb");
         StateTransition transition = new StateTransition();
 
-        testVal.acceptVisitor( transition, path, null, visitor);
+        testVal.acceptVisitor( transition, path, visitor);
 
         List<TestStateValue.AcceptVisitorInfo> visitorList = testVal.getVisitorInfo();
         assertEquals( "unexpected number of visitors", 1, visitorList.size());

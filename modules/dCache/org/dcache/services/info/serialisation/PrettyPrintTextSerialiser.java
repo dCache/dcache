@@ -13,7 +13,6 @@ import org.dcache.services.info.base.State;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateValue;
-import org.dcache.services.info.base.StateVisitor;
 import org.dcache.services.info.base.StringStateValue;
 
 /**
@@ -25,7 +24,7 @@ import org.dcache.services.info.base.StringStateValue;
  *
  * @see SimpleTextSerialiser
  */
-public class PrettyPrintTextSerialiser implements StateVisitor, StateSerialiser {
+public class PrettyPrintTextSerialiser extends SubtreeVisitor implements StateSerialiser {
 
     private static final String ROOT_ELEMENT_LABEL = "dCache";
 
@@ -59,11 +58,11 @@ public class PrettyPrintTextSerialiser implements StateVisitor, StateSerialiser 
     public String serialise( StatePath path) {
         clearState();
         _topMostElement = path;
+        setVisitScopeToSubtree( path);
 
-        _exhibitor.visitState( this, path);
+        _exhibitor.visitState( this);
 
         String output = "";
-
         if( _foundSomething) {
             String header = buildHeader(path.toString());
             _out.append( header + "\n");
@@ -81,9 +80,12 @@ public class PrettyPrintTextSerialiser implements StateVisitor, StateSerialiser 
     public String serialise() {
         clearState();
         _topMostElement = null;
+        setVisitScopeToEverything();
+
+        _exhibitor.visitState( this);
+
         String header = buildHeader(null);
         _out.append( header + "\n");
-        _exhibitor.visitState( this);
         flushPendingChunks();
         return _out.toString();
     }
@@ -113,17 +115,6 @@ public class PrettyPrintTextSerialiser implements StateVisitor, StateSerialiser 
         _lastChunkStack.add( new Chunk());
     }
 
-    /* Calls we ignore */
-    @Override
-    public void visitCompositePreSkipDescend( StatePath path,
-                                              Map<String, String> metadata) {
-    }
-
-    @Override
-    public void visitCompositePostSkipDescend( StatePath path,
-                                               Map<String, String> metadata) {
-    }
-
     private boolean arePathsSame( StatePath p1, StatePath p2) {
         if( p1 == null && p2 == null)
             return true;
@@ -133,6 +124,9 @@ public class PrettyPrintTextSerialiser implements StateVisitor, StateSerialiser 
     @Override
     public void visitCompositePreDescend( StatePath path,
                                           Map<String, String> metadata) {
+
+        if( ! isInsideScope( path))
+            return;
 
         _foundSomething = true;
 
@@ -191,6 +185,9 @@ public class PrettyPrintTextSerialiser implements StateVisitor, StateSerialiser 
     @Override
     public void visitCompositePostDescend( StatePath path,
                                            Map<String, String> metadata) {
+        if( ! isInsideScope( path))
+            return;
+
         Chunk lastChunk = getThisBranchLastChunk();
         lastChunk.setEndOfList();
         ascend();

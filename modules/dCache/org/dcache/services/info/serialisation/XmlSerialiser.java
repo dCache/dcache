@@ -8,7 +8,6 @@ import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.State;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
-import org.dcache.services.info.base.StateVisitor;
 import org.dcache.services.info.base.StringStateValue;
 
 
@@ -23,7 +22,7 @@ import org.dcache.services.info.base.StringStateValue;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class XmlSerialiser implements StateVisitor, StateSerialiser {
+public class XmlSerialiser extends SubtreeVisitor implements StateSerialiser {
 
     public static final String NAME = "xml";
 
@@ -81,9 +80,14 @@ public class XmlSerialiser implements StateVisitor, StateSerialiser {
         _indentationLevel = 0;
         updateIndentPrefix();
 
+        if( start != null)
+            setVisitScopeToSubtree( start);
+        else
+            setVisitScopeToEverything();
+
         addElement( "<?xml version=\"1.0\"?>");
 
-        _exhibitor.visitState( this, start);
+        _exhibitor.visitState( this);
 
         /**
          *  We ensure that there is always at least one element (the &lt;dCache/> element).
@@ -111,15 +115,7 @@ public class XmlSerialiser implements StateVisitor, StateSerialiser {
         enteringBranch( path, metadata);
     }
     @Override
-    public void visitCompositePreSkipDescend( StatePath path, Map<String,String> metadata) {
-        enteringBranch( path, metadata);
-    }
-    @Override
     public void visitCompositePostDescend( StatePath path, Map<String,String> metadata) {
-        exitingBranch( path, metadata);
-    }
-    @Override
-    public void visitCompositePostSkipDescend( StatePath path, Map<String,String> metadata) {
         exitingBranch( path, metadata);
     }
 

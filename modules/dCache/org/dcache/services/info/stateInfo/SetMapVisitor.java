@@ -62,7 +62,7 @@ public class SetMapVisitor extends SkeletonListVisitor {
 													StatePath pathToMainList,
 													StatePath pathToSecondList) {
 		SetMapVisitor visitor = new SetMapVisitor( pathToMainList, pathToSecondList);
-		exhibitor.visitState( visitor, pathToMainList);
+		exhibitor.visitState( visitor);
 		return visitor.getMap();
 	}
 
@@ -96,7 +96,7 @@ public class SetMapVisitor extends SkeletonListVisitor {
 														StatePath pathToMainList,
 														StatePath pathToSecondList) {
 		SetMapVisitor visitor = new SetMapVisitor( pathToMainList, pathToSecondList);
-		exhibitor.visitState(transition, visitor, pathToMainList);
+		exhibitor.visitState( visitor, transition);
 		return visitor.getMap();
 	}
 

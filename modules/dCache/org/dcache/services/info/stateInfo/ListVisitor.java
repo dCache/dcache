@@ -30,7 +30,7 @@ public class ListVisitor extends SkeletonListVisitor {
 			_log.debug( "Gathering current status for path " + path);
 
 		ListVisitor visitor = new ListVisitor( path);
-		exhibitor.visitState(visitor, path);
+		exhibitor.visitState(visitor);
 		return visitor.getItems();
 	}
 
@@ -46,7 +46,7 @@ public class ListVisitor extends SkeletonListVisitor {
 			_log.debug( "Gathering current status for path " + path);
 
 		ListVisitor visitor = new ListVisitor( path);
-		exhibitor.visitState( str, visitor, path);
+		exhibitor.visitState( visitor, str);
 		return visitor.getItems();
 	}
 

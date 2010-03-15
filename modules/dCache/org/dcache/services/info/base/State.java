@@ -372,23 +372,6 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
     }
 
     /**
-     * Visit the current status of dCache.
-     */
-    @Override
-    public void visitState( StateVisitor visitor) {
-        visitState( visitor, (StatePath) null);
-    }
-
-    /**
-     * Visit the future status of dCache after the given StateTransition has
-     * completed.
-     */
-    @Override
-    public void visitState( StateVisitor visitor, StateTransition transition) {
-        visitState( transition, visitor, null);
-    }
-
-    /**
      * Allow an arbitrary algorithm to visit the current dCache state, that
      * is, to receive call-backs describing the process of walking over the
      * state and the contents therein.
@@ -400,11 +383,9 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
      *
      * @param visitor
      *            the algorithm that wishes to visit our current state
-     * @param start
-     *            the StatePath of the point to start walking the tree.
      */
     @Override
-    public void visitState( StateVisitor visitor, StatePath start) {
+    public void visitState( StateVisitor visitor) {
         if( _log.isDebugEnabled())
             _log.debug( "visitor " + visitor.getClass().getSimpleName() + " wishing to visit current state");
 
@@ -421,7 +402,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
             if( _log.isDebugEnabled())
                 _log.debug( "visitor " + visitor.getClass().getSimpleName() + " acquired read lock (took " + (afterLock - beforeLock) / 1000.0 + " ms), starting visit.");
 
-            _state.acceptVisitor( null, start, visitor);
+            _state.acceptVisitor( null, visitor);
 
             long afterVisit = System.currentTimeMillis();
 
@@ -444,12 +425,9 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
      *            The StateTransition to consider.
      * @param visitor
      *            the algorithm to apply
-     * @param start
-     *            the "starting" point within the dCache state
      */
     @Override
-    public void visitState( StateTransition transition, StateVisitor visitor,
-                            StatePath start) {
+    public void visitState( StateVisitor visitor, StateTransition transition) {
         if( _log.isDebugEnabled())
             _log.debug( "visitor " + visitor.getClass().getSimpleName() + " wishing to visit post-transition state");
 
@@ -467,7 +445,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
                 _log.debug( "visitor " + visitor.getClass().getSimpleName() + " acquired read lock (took " + (afterLock - beforeLock) / 1000.0 + " ms), starting visit.");
 
 
-            _state.acceptVisitor( transition, null, start, visitor);
+            _state.acceptVisitor( transition, null, visitor);
 
             long afterVisit = System.currentTimeMillis();
 

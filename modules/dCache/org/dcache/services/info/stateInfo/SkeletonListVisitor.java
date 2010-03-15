@@ -7,9 +7,11 @@ import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.BooleanStateValue;
 import org.dcache.services.info.base.FloatingPointStateValue;
 import org.dcache.services.info.base.IntegerStateValue;
+import org.dcache.services.info.base.StateGuide;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateVisitor;
 import org.dcache.services.info.base.StringStateValue;
+import org.dcache.services.info.base.guides.SubtreeStateGuide;
 
 /**
  * A simple skeleton class that provides a StateVisitor that iterates over items in a list.
@@ -30,6 +32,7 @@ public class SkeletonListVisitor implements StateVisitor {
 
     /** The key of the current branch */
     private String _thisKey;
+    private final StateGuide _guide;
 
     /**
      * Instantiate the list over the items underneath pathToList.
@@ -40,6 +43,12 @@ public class SkeletonListVisitor implements StateVisitor {
             _log.debug( "Searching on path " + pathToList);
 
         _pathToList = pathToList;
+        _guide = new SubtreeStateGuide( pathToList);
+    }
+
+    @Override
+    public boolean isVisitable( StatePath path) {
+        return _guide.isVisitable( path);
     }
 
     /**
@@ -56,13 +65,6 @@ public class SkeletonListVisitor implements StateVisitor {
     }
     @Override
     public void visitString(StatePath path, StringStateValue value) {
-    }
-
-    @Override
-    public void visitCompositePreSkipDescend(StatePath path, Map<String, String> metadata) {
-    }
-    @Override
-    public void visitCompositePostSkipDescend(StatePath path, Map<String, String> metadata) {
     }
 
     @Override

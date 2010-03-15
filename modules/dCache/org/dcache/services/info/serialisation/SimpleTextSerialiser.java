@@ -8,7 +8,6 @@ import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.State;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
-import org.dcache.services.info.base.StateVisitor;
 import org.dcache.services.info.base.StringStateValue;
 
 
@@ -25,7 +24,7 @@ import org.dcache.services.info.base.StringStateValue;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class SimpleTextSerialiser implements StateVisitor, StateSerialiser {
+public class SimpleTextSerialiser extends SubtreeVisitor implements StateSerialiser {
 
     public static final String NAME = "simple";
 
@@ -44,13 +43,17 @@ public class SimpleTextSerialiser implements StateVisitor, StateSerialiser {
     public String serialise( StatePath start) {
         _result = new StringBuilder();
         _startPath = start;
+        if( start != null)
+            setVisitScopeToSubtree( start);
+        else
+            setVisitScopeToEverything();
 
         if( start != null) {
             _result.append( start.toString());
             _result.append(">\n");
         }
 
-        _exhibitor.visitState( this, start);
+        _exhibitor.visitState( this);
 
         return _result.toString();
     }
@@ -92,10 +95,15 @@ public class SimpleTextSerialiser implements StateVisitor, StateSerialiser {
 
     @Override
     public void visitCompositePreDescend(StatePath path, Map<String, String> metadata) {
+        if( !isInsideScope( path))
+            return;
+
         _lastStateComponentPath = path;
     }
     @Override
     public void visitCompositePostDescend(StatePath path, Map<String, String> metadata) {
+        if( !isInsideScope( path))
+            return;
 
         // If we just traversed a path without it containing any elements, treat it as a list.
         if( path != null && path.equals(_lastStateComponentPath) && !path.isSimplePath()) {
@@ -108,14 +116,6 @@ public class SimpleTextSerialiser implements StateVisitor, StateSerialiser {
             }
             outputMetric( path, "", type);
         }
-    }
-
-    @Override
-    public void visitCompositePreSkipDescend(StatePath path, Map<String, String> metadata) {
-    }
-
-    @Override
-    public void visitCompositePostSkipDescend(StatePath path, Map<String, String> metadata) {
     }
 
     /**

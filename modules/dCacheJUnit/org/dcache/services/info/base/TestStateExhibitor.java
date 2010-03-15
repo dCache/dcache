@@ -105,39 +105,6 @@ public class TestStateExhibitor implements StateExhibitor, Cloneable {
         }
 
         /**
-         * Support skipping when the current node might be skipped. If the
-         * skipPath is null then visit() method is called.
-         *
-         * @param visitor
-         * @param ourPath
-         * @param skipPath
-         */
-        public void visitWithSkip( StateVisitor visitor, StatePath ourPath,
-                                   StatePath skipPath) {
-            if( skipPath == null) {
-                visit( visitor, ourPath);
-                return;
-            }
-
-            String childName = skipPath.getFirstElement();
-
-            if( _children.containsKey( childName)) {
-                Map<String,String> visitMetadata = _metadata.isEmpty() ? null : _metadata;
-
-                visitor.visitCompositePreSkipDescend( ourPath, visitMetadata);
-
-                Node childNode = _children.get( childName);
-                StatePath childPath = ourPath == null
-                        ? new StatePath( childName)
-                        : ourPath.newChild( childName);
-                childNode.visitWithSkip( visitor, childPath,
-                                         skipPath.childPath());
-
-                visitor.visitCompositePostSkipDescend( ourPath, visitMetadata);
-            }
-        }
-
-        /**
          * Visit the current state. This simulates visiting a real dCache
          * state.
          *
@@ -149,6 +116,9 @@ public class TestStateExhibitor implements StateExhibitor, Cloneable {
                 _metricValue.acceptVisitor( ourPath, visitor);
                 return;
             }
+
+            if( !visitor.isVisitable( ourPath))
+                return;
 
             Map<String,String> visitMetadata = _metadata.isEmpty() ? null : _metadata;
 
@@ -313,18 +283,4 @@ public class TestStateExhibitor implements StateExhibitor, Cloneable {
         newRoot.applyTransition( transition, null);
         newRoot.visit( visitor, null);
     }
-
-    @Override
-    public void visitState( StateVisitor visitor, StatePath start) {
-        _rootNode.visitWithSkip( visitor, null, start);
-    }
-
-    @Override
-    public void visitState( StateTransition transition, StateVisitor visitor,
-                            StatePath start) {
-        Node newRoot = (Node) _rootNode.clone();
-        newRoot.applyTransition( transition, null);
-        newRoot.visitWithSkip( visitor, null, start);
-    }
-
 }

@@ -30,19 +30,17 @@ interface StateComponent {
 	 * all sub-StateComponents.  In effect, this allows visiting over only a sub-tree.
 	 *
 	 * @param path this parameter informs an StateComponent of its location within the tree so the visit methods can include this information.
-	 * @param start the point in the tree to start visiting all children, or null to visit the whole tree.
 	 * @param visitor the object that operations should be preformed on.
 	 */
-	void acceptVisitor( StatePath path, StatePath start, StateVisitor visitor);
+	void acceptVisitor( StatePath path, StateVisitor visitor);
 
 	/**
 	 * As above, but after the effects of a transition.
 	 * @param transition
 	 * @param path
-	 * @param start
 	 * @param visitor
 	 */
-	void acceptVisitor( StateTransition transition, StatePath path, StatePath start, StateVisitor visitor);
+	void acceptVisitor( StateTransition transition, StatePath path, StateVisitor visitor);
 
 
 	/**

@@ -11,10 +11,12 @@ import org.dcache.services.info.base.BooleanStateValue;
 import org.dcache.services.info.base.FloatingPointStateValue;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StateExhibitor;
+import org.dcache.services.info.base.StateGuide;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateTransition;
 import org.dcache.services.info.base.StateVisitor;
 import org.dcache.services.info.base.StringStateValue;
+import org.dcache.services.info.base.guides.SubtreeStateGuide;
 
 /**
  * Scan through a dCache state tree, building a list of poolgroup-to-pools associations.
@@ -35,7 +37,7 @@ public class PoolgroupToPoolsVisitor implements StateVisitor {
             _log.info( "Gathering current status");
 
         PoolgroupToPoolsVisitor visitor = new PoolgroupToPoolsVisitor();
-        exhibitor.visitState(visitor, POOLGROUPS_PATH);
+        exhibitor.visitState( visitor);
         return visitor._poolgroups;
     }
 
@@ -50,14 +52,19 @@ public class PoolgroupToPoolsVisitor implements StateVisitor {
             _log.info( "Gathering status after transition");
 
         PoolgroupToPoolsVisitor visitor = new PoolgroupToPoolsVisitor();
-        exhibitor.visitState(transition, visitor, POOLGROUPS_PATH);
+        exhibitor.visitState(visitor, transition);
         return visitor._poolgroups;
     }
-
 
     Map <String,Set<String>> _poolgroups = new HashMap<String,Set<String>>();
     Set<String> _currentPoolgroupPools;
     StatePath _poolMembershipPath;
+    StateGuide _guide = new SubtreeStateGuide( POOLGROUPS_PATH);
+
+    @Override
+    public boolean isVisitable( StatePath path) {
+        return _guide.isVisitable( path);
+    }
 
     @Override
     public void visitCompositePreDescend( StatePath path, Map<String,String> metadata) {
@@ -86,12 +93,6 @@ public class PoolgroupToPoolsVisitor implements StateVisitor {
 
     @Override
     public void visitCompositePostDescend( StatePath path, Map<String,String> metadata) {
-    }
-    @Override
-    public void visitCompositePreSkipDescend( StatePath path, Map<String,String> metadata) {
-    }
-    @Override
-    public void visitCompositePostSkipDescend( StatePath path, Map<String,String> metadata) {
     }
     @Override
     public void visitString( StatePath path, StringStateValue value) {

@@ -228,38 +228,6 @@ public class VerifyingVisitor implements StateVisitor {
 			_postDescend.add( childName);
 		}
 
-		void markPreSkipDescend( String childName) throws UnexpectedVisitDataException {
-			if( _type != StateComponentType.BRANCH)
-				throw new UnexpectedVisitDataException( "preSkipDescend for non-branch "+ childName);
-
-			if( !_children.containsKey( childName))
-				throw new UnexpectedVisitDataException( "preSkipDescend for unknown " + childName);
-
-			if( _preSkipDescend != null)
-				throw new UnexpectedVisitDataException( "preSkipDescend for " + childName + " when already have preSkip " + _preSkipDescend);
-
-			_visitedChildren++;
-			_preSkipDescend = childName;
-		}
-
-		void markPostSkipDescend( String childName) throws UnexpectedVisitDataException {
-			if( _type != StateComponentType.BRANCH)
-				throw new UnexpectedVisitDataException( "postSkipDescend for non-branch "+ childName);
-
-			if( !_children.containsKey( childName))
-				throw new UnexpectedVisitDataException( "postSkipDescend for unknown " + childName);
-
-			if( _postSkipDescend != null)
-				throw new UnexpectedVisitDataException( "postSkipDescend for " + childName + " when already have preSkip " + _postSkipDescend);
-
-			if( _preSkipDescend == null)
-				throw new UnexpectedVisitDataException( "postSkipDescend for " + childName + " when we haven't seen a preSkip");
-
-			if( !childName.equals( _preSkipDescend))
-				throw new UnexpectedVisitDataException( "postSkipDescend for " + childName + " when we have a different preSkip " + _preSkipDescend);
-
-			_postSkipDescend = childName;
-		}
 
 
 
@@ -268,10 +236,10 @@ public class VerifyingVisitor implements StateVisitor {
 		 * @param myPath the name for this path element: only used to enhance error messages.
 		 * @return
 		 */
-		boolean isGood( StatePath path, StatePath skip) {
+		boolean isGood( StatePath path) {
 
 			if( _type == StateComponentType.BRANCH) {
-				return isGoodBranch( path, skip);
+				return isGoodBranch( path);
 			} else {
 				if( !_haveSeen) {
 					System.out.println( "["+path.toString() + "] missing metric");
@@ -302,236 +270,32 @@ public class VerifyingVisitor implements StateVisitor {
 		 * @param emitError
 		 * @return
 		 */
-		boolean isGoodBranch( StatePath path, StatePath skip) {
+		boolean isGoodBranch( StatePath path) {
 			String pathName = path != null ? path.toString() : "(root)";
 
-			/**
-			 *  Case 1 (path is equal to skip path or is a child), or we have no skip.
-			 *
-			 *  We expect: all children are visited.
-			 */
-			if( skip == null || (path != null && skip.equalsOrHasChild(path))) {
-
-				if( _preDescend.size() != _branchChildren) {
-					System.out.println( "["+pathName + "] missing children in preDescend: expected " + _children.size() + ", got " + _preDescend.size());
-					return false;
-				}
-
-				if( _postDescend.size() != _branchChildren) {
-					System.out.println( "["+pathName + "] missing children in postDescend: expected " + _children.size() + ", got " + _postDescend.size());
-					return false;
-				}
-
-				if( _preSkipDescend != null) {
-					System.out.println( "["+pathName + "] preSkip unexpectedly not null: " + _preSkipDescend);
-					return false;
-				}
-
-				if( _postSkipDescend != null) {
-					System.out.println( "["+pathName + "] postSkip unexpectedly not null: " + _preSkipDescend);
-					return false;
-				}
-
-				if( _visitedChildren != _children.size()) {
-					System.out.println( "["+pathName + "] missing visited children, expected "+ Integer.toString( _children.size())+", got "+Integer.toString( _visitedChildren));
-					return false;
-				}
-
-				return true;
+			if( _preDescend.size() != _branchChildren) {
+			    System.out.println( "["+pathName + "] missing children in preDescend: expected " + _children.size() + ", got " + _preDescend.size());
+			    return false;
 			}
 
-
-
-			StatePath skipParent = skip.parentPath();
-
-
-			/**
-			 *  Case 2 (path is parent of skip).
-			 *
-			 *  We expect: visit the final element of the skip-path.
-			 */
-			if( skipParent == null ? path == null : skipParent.equals( path)) {
-
-				String finalElement = skip.getLastElement();
-
-				if( _children.containsKey( finalElement)) {
-
-					ComponentInfo childInfo = _children.get( finalElement);
-
-					if( childInfo._type == ComponentInfo.StateComponentType.BRANCH) {
-
-						if( _preDescend.size() != 1) {
-							System.out.println( "["+pathName + "] preDescend count: expected 1, got " + _preDescend.size());
-							return false;
-						}
-
-						if( !_preDescend.contains( finalElement)) {
-							System.out.println( "["+pathName + "] preDescend contained incorrect entry: expected " + finalElement + ", got " + _preDescend.iterator().next());
-							return false;
-						}
-
-						if( _postDescend.size() != 1) {
-							System.out.println( "["+pathName + "] postDescend count: expected 1, got " + _postDescend.size());
-							return false;
-						}
-
-						if( !_postDescend.contains( finalElement)) {
-							System.out.println( "["+pathName + "] postDescend contained incorrect entry: expected " + finalElement + ", got " + _postDescend.iterator().next());
-							return false;
-						}
-					} else {
-						if( _preDescend.size() != 0) {
-							System.out.println( "["+pathName + "] preDescend count: expected 0, got " + _preDescend.size());
-							return false;
-						}
-
-						if( _postDescend.size() != 0) {
-							System.out.println( "["+pathName + "] postDescend count: expected 0, got " + _postDescend.size());
-							return false;
-						}
-					}
-
-					if( _visitedChildren != 1) {
-						System.out.println( "["+pathName + "] number of visited children for skip-parent wrong: expected 1, got " + Integer.toString( _visitedChildren));
-						return false;
-					}
-
-				} else {
-
-					if( _preDescend.size() != 0) {
-						System.out.println( "["+pathName + "] preDescend count: expected 0, got " + _preDescend.size());
-						return false;
-					}
-
-					if( _postDescend.size() != 0) {
-						System.out.println( "["+pathName + "] postDescend count: expected 0, got " + _postDescend.size());
-						return false;
-					}
-
-					if( _visitedChildren != 0) {
-						System.out.println( "["+pathName + "] number of visited children wrong: expected 0, got " + Integer.toString( _visitedChildren));
-						return false;
-					}
-				}
-
-				if( _preSkipDescend != null) {
-					System.out.println( "["+pathName + "] preSkip unexpectedly not null: " + _preSkipDescend);
-					return false;
-				}
-
-				if( _postSkipDescend != null) {
-					System.out.println( "["+pathName + "] postSkip unexpectedly not null: " + _preSkipDescend);
-					return false;
-				}
-
-				return true;
-			}
-
-			/**
-			 *  Case 3 (path is some ancestor of skip).
-			 *
-			 *  We expect: path is an ancestor of skip path but not parent
-			 */
-			if( path == null || path.equalsOrHasChild( skipParent) ) {
-
-				// TODO this is very ugly: StatePath should be extended to support this.
-				String nextElement = skip._elements.get( path == null ? 0 : path._elements.size());
-				String nextNextElement = skip._elements.get( path == null ? 1 : path._elements.size()+1);
-
-				ComponentInfo childInfo = _children.get( nextElement);
-				boolean childHasChild = false;
-
-				if( childInfo != null && childInfo._children.containsKey( nextNextElement))
-					childHasChild = true;
-
-				if( _preDescend.size() != 0) {
-					System.out.println( "["+pathName + "] preDescend count: expected 0, got " + _preDescend.size());
-					return false;
-				}
-
-				if( _postDescend.size() != 0) {
-					System.out.println( "["+pathName + "] postDescend count: expected 0, got " + _postDescend.size());
-					return false;
-				}
-
-				if( childHasChild) {
-
-					if( _visitedChildren != 1) {
-						System.out.println( "["+pathName + "] number of visited children for skip-ancestor wrong: expected 1, got " + Integer.toString( _visitedChildren));
-						return false;
-					}
-
-					if( _preSkipDescend == null) {
-						System.out.println( "["+pathName + "] no preSkip");
-						return false;
-					}
-
-					if( !_preSkipDescend.equals( nextElement)) {
-						System.out.println( "["+pathName + "] preSkip with unexpected value: expected " + nextElement + ", got " + _preSkipDescend);
-						return false;
-					}
-
-					if( _postSkipDescend == null) {
-						System.out.println( "["+pathName + "] no postSkip");
-						return false;
-					}
-
-					if( !_postSkipDescend.equals( nextElement)) {
-						System.out.println( "["+pathName + "] postSkip with unexpected value: expected " + nextElement + ", got " + _postSkipDescend);
-						return false;
-					}
-
-				} else {
-
-					if( _visitedChildren != 0) {
-						System.out.println( "["+pathName + "] number of visited children for skip-ancestor wrong: expected 0, got " + Integer.toString( _visitedChildren));
-						return false;
-					}
-
-					if( _preSkipDescend != null) {
-						System.out.println( "["+pathName + "] preSkip found in skip-ancestor");
-						return false;
-					}
-
-					if( _postSkipDescend != null) {
-						System.out.println( "["+pathName + "] postSkip found in skip-ancestor");
-						return false;
-					}
-				}
-
-				return true;
-			}
-
-
-			/**
-			 *  Case 4 (path is outside of skip)
-			 *
-			 *  Since all other Cases above return, the code will only get here if
-			 *  path lies outside skip.
-			 */
-			if( _preDescend.size() != 0) {
-				System.out.println( "["+pathName + "] preDescend count: expected 0, got " + _preDescend.size());
-				return false;
-			}
-
-			if( _postDescend.size() != 0) {
-				System.out.println( "["+pathName + "] postDescend count: expected 0, got " + _postDescend.size());
-				return false;
-			}
-
-			if( _visitedChildren != 0) {
-				System.out.println( "["+pathName + "] number of visited children wrong: expected 0, got " + Integer.toString( _visitedChildren));
-				return false;
+			if( _postDescend.size() != _branchChildren) {
+			    System.out.println( "["+pathName + "] missing children in postDescend: expected " + _children.size() + ", got " + _postDescend.size());
+			    return false;
 			}
 
 			if( _preSkipDescend != null) {
-				System.out.println( "["+pathName + "] unexpectedly got a preSkip: " + _preSkipDescend);
-				return false;
+			    System.out.println( "["+pathName + "] preSkip unexpectedly not null: " + _preSkipDescend);
+			    return false;
 			}
 
 			if( _postSkipDescend != null) {
-				System.out.println( "["+pathName + "] unexpectedly got a postSkip: " + _postSkipDescend);
-				return false;
+			    System.out.println( "["+pathName + "] postSkip unexpectedly not null: " + _preSkipDescend);
+			    return false;
+			}
+
+			if( _visitedChildren != _children.size()) {
+			    System.out.println( "["+pathName + "] missing visited children, expected "+ Integer.toString( _children.size())+", got "+Integer.toString( _visitedChildren));
+			    return false;
 			}
 
 			return true;
@@ -555,9 +319,7 @@ public class VerifyingVisitor implements StateVisitor {
 	private final ComponentInfo _info = new ComponentInfo();
 
 	private boolean _encounteredException;
-	private boolean _seenRootPreSkip, _seenRootPostSkip;
 	private boolean _seenRootPre, _seenRootPost;
-	private StatePath _skip;
 
 	/**
 	 * Create an new VerifyingVisitor that expects to find nothing.
@@ -623,21 +385,8 @@ public class VerifyingVisitor implements StateVisitor {
 	 * @param skip
 	 */
 	protected void assertSatisfied( String msg, StateComposite root) {
-		assertSatisfiedSkip( msg, root, null);
-	}
-
-	/**
-	 * Reset the visitor, visit the structure with supplied skip and assert the visitor is
-	 * satisfied with the result.
-	 * @param msg
-	 * @param visitor
-	 * @param root
-	 * @param skip
-	 */
-	protected void assertSatisfiedSkip( String msg, StateComposite root, StatePath skip) {
-		setSkip( skip);
 		reset();
-		root.acceptVisitor( null, skip, this);
+		root.acceptVisitor( null, this);
 		assertTrue( msg, satisfied());
 	}
 
@@ -650,21 +399,8 @@ public class VerifyingVisitor implements StateVisitor {
 	 * @param skip
 	 */
 	protected void assertSatisfiedTransition( String msg, StateComposite root, StateTransition transition) {
-		assertSatisfiedTransitionSkip( msg, root, null, transition);
-	}
-
-	/**
-	 * Reset the visitor, visit the structure with supplied transition and assert the visitor is
-	 * satisfied with the result.
-	 * @param msg
-	 * @param visitor
-	 * @param root
-	 * @param skip
-	 */
-	protected void assertSatisfiedTransitionSkip( String msg, StateComposite root, StatePath skip, StateTransition transition) {
-		setSkip( skip);
 		reset();
-		root.acceptVisitor( transition, null, skip, this);
+		root.acceptVisitor( transition, null, this);
 		assertTrue( msg, satisfied());
 	}
 
@@ -676,54 +412,21 @@ public class VerifyingVisitor implements StateVisitor {
 	 * @return
 	 */
 	public boolean satisfied() {
-		boolean haveSkip = _skip != null;
 
-		if( !haveSkip && !_seenRootPre) {
+		if( !_seenRootPre) {
 			System.out.println( "Missing root pre descend");
 			return false;
 		}
 
-		if( haveSkip && _seenRootPre) {
-			System.out.println( "Unexpected root pre descend");
-			return false;
-		}
-
-		if( !haveSkip && !_seenRootPost) {
+		if( !_seenRootPost) {
 			System.out.println( "Missing root post descend");
 			return false;
 		}
 
-		if( haveSkip && _seenRootPost) {
-			System.out.println( "Unexpected root post descend");
-			return false;
-		}
-
-		if( haveSkip && !_seenRootPreSkip) {
-			System.out.println( "Missing root pre skip descend");
-			return false;
-		}
-
-		if( !haveSkip && _seenRootPreSkip) {
-			System.out.println( "Unexpected root pre skip descend");
-			return false;
-		}
-
-		if( haveSkip && !_seenRootPostSkip) {
-			System.out.println( "Missing root post skip descend");
-			return false;
-		}
-
-		if( !haveSkip && _seenRootPostSkip) {
-			System.out.println( "Unexpected root post skip descend");
-			return false;
-		}
-
-
-
 		if( _encounteredException)
 			return false;
 
-		return isGood( _info, _skip, null);
+		return isGood( _info, null);
 	}
 
 
@@ -736,18 +439,22 @@ public class VerifyingVisitor implements StateVisitor {
 	 * 		Metrics:
 	 */
 
+    @Override
 	public void visitString( StatePath path, StringStateValue value) {
 		markMetric( path, ComponentInfo.StateComponentType.STRING, value.toString());
 	}
 
+    @Override
 	public void visitInteger( StatePath path, IntegerStateValue value) {
 		markMetric( path, ComponentInfo.StateComponentType.INTEGER, value.toString());
 	}
 
+    @Override
 	public void visitBoolean( StatePath path, BooleanStateValue value) {
 		markMetric( path, ComponentInfo.StateComponentType.BOOLEAN, value.toString());
 	}
 
+    @Override
 	public void visitFloatingPoint( StatePath path, FloatingPointStateValue value) {
 		markMetric( path, ComponentInfo.StateComponentType.FLOATINGPOINT, value.toString());
 	}
@@ -757,14 +464,12 @@ public class VerifyingVisitor implements StateVisitor {
 	 * 		... and branches:
 	 */
 
+    @Override
 	public void visitCompositePreDescend( StatePath path, Map<String,String> metadata) {
 		ComponentInfo thisBranch;
 
 		if( path == null) {
-			if( _skip == null)
-				_seenRootPre = true;
-			else
-				System.out.println("Seen PreDesc for root with registered skip");
+		    _seenRootPre = true;
 			return;
 		}
 
@@ -777,14 +482,12 @@ public class VerifyingVisitor implements StateVisitor {
 		}
 	}
 
+    @Override
 	public void visitCompositePostDescend( StatePath path, Map<String,String> metadata) {
 		ComponentInfo thisBranch;
 
 		if( path == null) {
-			if( _skip == null)
-				_seenRootPost = true;
-			else
-				System.out.println("Seen PostDesc for root with registered skip");
+		    _seenRootPost = true;
 			return;
 		}
 
@@ -797,42 +500,11 @@ public class VerifyingVisitor implements StateVisitor {
 		}
 	}
 
-
-	/** StateComposites call these methods when skipping over higher-level state */
-	public void visitCompositePreSkipDescend( StatePath path, Map<String,String> metadata) {
-		ComponentInfo thisBranch;
-
-		if( path == null) {
-			_seenRootPreSkip = true;
-			return;
-		}
-
-		try {
-			thisBranch = getBranch(path.parentPath());
-			thisBranch.markPreSkipDescend(path.getLastElement());
-		} catch (UnexpectedVisitDataException e) {
-			System.out.println( e.getMessage());
-			_encounteredException = true;
-		}
-	}
-
-	public void visitCompositePostSkipDescend( StatePath path, Map<String,String> metadata) {
-		ComponentInfo thisBranch;
-
-		if( path == null) {
-			_seenRootPostSkip = true;
-			return;
-		}
-
-		try {
-			thisBranch = getBranch(path.parentPath());
-			thisBranch.markPostSkipDescend(path.getLastElement());
-		} catch (UnexpectedVisitDataException e) {
-			System.out.println( e.getMessage());
-			_encounteredException = true;
-		}
-	}
-
+    @Override
+    public boolean isVisitable( StatePath path) {
+        // TODO Auto-generated method stub
+        return true;
+    }
 
 	/**
 	 *  P R I V A T E   M E T H O D S
@@ -876,9 +548,9 @@ public class VerifyingVisitor implements StateVisitor {
 	 * @param path the path to info (used to decorate any error messages)
 	 * @return true if this ComponentInfo and all children are "good", false otherwise.
 	 */
-	private boolean isGood( ComponentInfo info, StatePath skip, StatePath path) {
+	private boolean isGood( ComponentInfo info, StatePath path) {
 
-		if( !info.isGood( path, skip))
+		if( !info.isGood( path))
 			return false;
 
 		for( Entry<String,ComponentInfo> e : info._children.entrySet()) {
@@ -887,7 +559,7 @@ public class VerifyingVisitor implements StateVisitor {
 
 			StatePath childPath = path != null ? path.newChild( childName) : new StatePath( childName);
 
-			if( !isGood( childComponentInfo, skip, childPath))
+			if( !isGood( childComponentInfo, childPath))
 				return false;
 		}
 
@@ -925,15 +597,5 @@ public class VerifyingVisitor implements StateVisitor {
 			_encounteredException = true;
 		}
 	}
-
-	/**
-	 * Register the path we will skip when visiting.
-	 * @param path the StatePath we anticipate skipping in next visit or null if no
-	 * skipping is to be done.
-	 */
-	public void setSkip( StatePath path) {
-		_skip = path;
-	}
-
 
 }

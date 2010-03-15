@@ -89,7 +89,7 @@ public class LinkInfoVisitor extends SkeletonListVisitor {
         _log.debug( "Gathering link information.");
 
         LinkInfoVisitor visitor = new LinkInfoVisitor();
-        exhibitor.visitState( visitor, LINK_PATH);
+        exhibitor.visitState( visitor);
 
         return visitor.getInfo();
     }
@@ -107,7 +107,7 @@ public class LinkInfoVisitor extends SkeletonListVisitor {
         _log.debug( "Gathering link information.");
 
         LinkInfoVisitor visitor = new LinkInfoVisitor();
-        exhibitor.visitState( transition, visitor, LINK_PATH);
+        exhibitor.visitState( visitor, transition);
 
         return visitor.getInfo();
     }
