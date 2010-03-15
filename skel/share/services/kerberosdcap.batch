@@ -1,6 +1,7 @@
 # Kerberos DCAP cell
 
 check -strong port
+check -string kerberos.service-principle-name
 
 # Defaults
 onerror continue
@@ -61,7 +62,7 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
               -use-gplazma-authorization-module=${useGPlazmaAuthorizationModule} \
               -use-gplazma-authorization-cell=${useGPlazmaAuthorizationCell} \
               -gplazma-authorization-module-policy=${gplazmaPolicy} \
-              -socketfactory=javatunnel.TunnelServerSocketCreator,javatunnel.GssTunnel,host/${host.fqdn}@${kerberosRealm} \
+              -socketfactory=javatunnel.TunnelServerSocketCreator,javatunnel.GssTunnel,${kerberos.service-principle-name} \
 "
 
 #

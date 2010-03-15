@@ -3,6 +3,8 @@
 #
 
 check -strong port
+check -string kerberos.service-principle-name
+check -string kerberos.key-distribution-center-list
 
 # Define defaults
 onerror continue
@@ -27,8 +29,6 @@ set context -c gsiftpIoQueue                  ""
 set context -c overwriteEnabled false
 set context -c gsiftpAllowPassivePool false
 set context -c FtpTLogDir ""
-set context -c kerberosKdcList localhost.localdomain
-set context -c kerberosScvPrincipal ftp/${host.fqdn}@${kerberosRealm}
 
 #
 #  ----  Usage of Srm Space Manager
@@ -56,8 +56,8 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
             "${port} \
              -export \
              diskCacheV111.doors.KerberosFtpDoorV1 \
-             -kdc-list=${kerberosKdcList} \
-             -svc-principal=${kerberosScvPrincipal} \
+             -kdc-list=${kerberos.key-distribution-center-list} \
+             -svc-principal=${kerberos.service-principle-name} \
              -prot=raw \
              -clientDataPortRange=${clientDataPortRange} \
              -poolProxy=${gsiftpPoolProxy}  \
