@@ -188,32 +188,3 @@ char * url2config( dcap_url *url , char *configLine )
 	return configLine;	
 }
 
-
-#ifdef _MAIN_
-
-static int dc_errno;
-
-main(int argc, char *argv[])
-{
-
-	dcap_url *url;
-	char str[128];
-	
-	if(argc != 2) exit(1);
-
-	url = dc_getURL(argv[1]);
-	if(url != NULL) {
-		printf("host: %s\n", url->host);
-		printf("file: %s\n", url->file);
-		printf("type: %d\n", url->type);
-		printf("prefix: %s\n", url->prefix ? url->prefix : "none");
-		printf("config line: %s\n", url2config(url, str) );
-		free(url->host);
-		free(url->file);
-		if( url->prefix != NULL) free(url->prefix);
-		free(url);
-	}
-
-}
-
-#endif /* _MAIN_ */
