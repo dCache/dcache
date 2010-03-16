@@ -93,10 +93,10 @@
     <property name="killTimeout" value="${webdavKillTimeout}"/>
     <property name="transferConfirmationTimeout" value="${webdavTransferConfirmationTimeout}"/>
     <property name="internalAddress" value="${webdavInternalAddress}"/>
-    <property name="logoPath" value="${webdavContextPath}/${webdavLogoPath}"/>
-    <property name="webdavStylesheetPath" value="${webdavContextPath}/${webdavCssPath}"/>
-    <property name="iconDirPath" value="${webdavContextPath}/${webdavDirIconPath}"/>
-    <property name="iconFilePath" value="${webdavContextPath}/${webdavFileIconPath}"/>
+    <property name="logoPath" value="${webdav.images.logo}"/>
+    <property name="iconDirPath" value="${webdav.images.directory}"/>
+    <property name="iconFilePath" value="${webdav.images.file}"/>
+    <property name="webdavStylesheetPath" value="${webdav.style.css}"/>
   </bean>
 
   <bean id="milton" class="com.bradmcevoy.http.HttpManager">

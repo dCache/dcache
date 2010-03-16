@@ -60,7 +60,7 @@ onerror shutdown
 exec -shell file:${dcache.home}/share/cells/permission.fragment
 
 #
-create diskCacheV111.namespace.PnfsManagerV3 PnfsManager \
+create diskCacheV111.namespace.PnfsManagerV3 ${cell.name} \
        "${pnfsInfoExtractor} \
         -enableLargeFileSimulation \
         -storeFilesize  \

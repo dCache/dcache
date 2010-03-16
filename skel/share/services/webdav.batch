@@ -2,68 +2,43 @@
 #      WebDAV Door
 #
 
+check -strong cell.name
 check -strong port
+check -strong webdavProtocol
+check -strong webdavPnfsTimeout
+check -strong webdavPoolManagerTimeout
+check -strong webdavPoolTimeout
+check -strong webdavGplazmaTimeout
+check -strong webdavAddress
+check -strong webdavRootPath
+check -strong webdavAllowedPaths
+check -strong webdavReadOnly
+check -strong webdavAnonymousAccess
+check -strong webdavKillTimeout
+check -strong webdavMoverTimeout
+check -strong webdavTransferConfirmationTimeout
+check -strong webdavWantClientAuth
+check -strong webdavNeedClientAuth
+check -strong pnfsmanager
+check -strong poolmanager
+check -strong gplazma
+check -strong loginBrokerUpdateTime
+check -strong loginBrokerUpdateThreshold
+check -strong useGPlazmaAuthorizationCell
+check -strong useGPlazmaAuthorizationModule
+check -strong webdav.static-content.dir.local
+check -strong webdav.static-content.dir.default
+check -strong webdav.static-content.location
+check -strong webdav.images.logo
+check -strong webdav.images.directory
+check -strong webdav.images.file
+check -strong webdav.style.css
 
-# Define defaults
-onerror continue
+check webdavInternalAddress
+check webdavIoQueue
+check loginBroker
+check gplazmaPolicy
 
-set context -c webdavProtocol http
-set context -c webdavPnfsTimeout 120000
-set context -c webdavPoolManagerTimeout 300000
-set context -c webdavPoolTimeout 10000
-set context -c webdavGplazmaTimeout 180000
-set context -c webdavAddress 0.0.0.0
-set context -c webdavInternalAddress ""
-set context -c webdavRootPath /
-set context -c webdavAllowedPaths /
-set context -c webdavReadOnly false
-
-set context -c webdavIoQueue ""
-set context -c webdavKillTimeout 1500
-set context -c webdavMoverTimeout 180000
-set context -c webdavTransferConfirmationTimeout 60000
-
-set context -c pnfsmanager PnfsManager
-set context -c poolmanager PoolManager
-set context -c gplazma gPlazma
-set context -c loginBrokerUpdateTime 30
-set context -c loginBrokerUpdateThreshold 0.1
-set context -c loginBroker LoginBroker
-set context -c useGPlazmaAuthorizationCell true
-set context -c useGPlazmaAuthorizationModule false
-set context -c gplazmaPolicy ${dcache.home}/etc/dcachesrm-gplazma.policy
-
-set context -c logoPath images/logo.png
-set context -c dirIconPath images/directoryIcon.png
-set context -c fileIconPath images/fileIcon.png
-set context -c cssPath styles/webdav.css
-set context -c webdavContextPath /.webdav
-
-define env webdav-http.exe enddefine
-  set context -c webdavAnonymousAccess READONLY
-enddefine
-
-define env webdav-https.exe enddefine
-  set context -c keyStore ${dcache.home}/etc/hostcert.p12
-  set context -c keyStorePassword dcache
-  set context -c trustStore ${dcache.home}/etc/certificates.jks
-  set context -c trustStorePassword dcache
-
-  set context -c webdavKeyStore ${keyStore}
-  set context -c webdavKeyStorePassword ${keyStorePassword}
-  set context -c webdavTrustStore ${trustStore}
-  set context -c webdavTrustStorePassword ${trustStorePassword}
-
-  set context -c webdavAnonymousAccess NONE
-  set context -c webdavWantClientAuth true
-  set context -c webdavNeedClientAuth false
-enddefine
-
-exec env webdav-${webdavProtocol}.exe
-
-onerror shutdown
-
-# Validate parameters
 define env verify-http.exe enddefine
 enddefine
 
@@ -75,10 +50,6 @@ exec env verify-${webdavProtocol}.exe
 
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
    "classpath:org/dcache/webdav/webdav-${webdavProtocol}.xml \
-    -keyStore=${keyStore} \
-    -keyStorePassword=${keyStorePassword} \
-    -trustStore=${trustStore} \
-    -trustStorePassword=${trustStorePassword} \
     -webdavKeyStore=${webdavKeyStore} \
     -webdavKeyStorePassword=${webdavKeyStorePassword} \
     -webdavTrustStorePassword=${webdavTrustStorePassword} \
@@ -108,9 +79,11 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
     -useGPlazmaAuthorizationCell=${useGPlazmaAuthorizationCell} \
     -useGPlazmaAuthorizationModule=${useGPlazmaAuthorizationModule} \
     -gplazmaPolicy=${gplazmaPolicy} \
-    -webdavLogoPath=${logoPath} \
-    -webdavDirIconPath=${dirIconPath} \
-    -webdavFileIconPath=${fileIconPath} \
-    -webdavCssPath=${cssPath} \
-    -webdavContextPath=${webdavContextPath} \
+    -webdav.static-content.dir.default=${webdav.static-content.dir.default} \
+    -webdav.static-content.dir.local=${webdav.static-content.dir.local} \
+    -webdav.static-content.location=${webdav.static-content.location} \
+    -webdav.images.logo=${webdav.images.logo} \
+    -webdav.images.directory=${webdav.images.directory} \
+    -webdav.images.file=${webdav.images.file} \
+    -webdav.style.css=${webdav.style.css} \
     -export -cellClass=WebDAVDoor"

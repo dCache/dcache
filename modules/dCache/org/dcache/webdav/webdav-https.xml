@@ -56,20 +56,20 @@
             <property name="handlers">
                 <list>
                     <bean class="org.eclipse.jetty.server.handler.ContextHandler">
-                        <property name="contextPath" value="${webdavContextPath}"/>
+                        <property name="contextPath" value="${webdav.static-content.location}"/>
                         <property name="handler">
                             <bean class="org.eclipse.jetty.server.handler.ResourceHandler">
                                 <property name="directoriesListed" value="true"/>
-                                <property name="resourceBase" value="${ourHomeDir}/local/"/>
+                                <property name="resourceBase" value="${webdav.static-content.dir.local}"/>
                             </bean>
                         </property>
                     </bean>
                     <bean class="org.eclipse.jetty.server.handler.ContextHandler">
-                        <property name="contextPath" value="${webdavContextPath}"/>
+                        <property name="contextPath" value="${webdav.static-content.location}"/>
                         <property name="handler">
                             <bean class="org.eclipse.jetty.server.handler.ResourceHandler">
                                 <property name="directoriesListed" value="true"/>
-                                <property name="resourceBase" value="${ourHomeDir}/docs/"/>
+                                <property name="resourceBase" value="${webdav.static-content.dir.default}"/>
                             </bean>
                         </property>
                     </bean>
