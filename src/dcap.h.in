@@ -93,7 +93,12 @@ extern int      dc_stat64(const char *, struct stat64 *);
 extern int      dc_lstat64(const char *, struct stat64 *);
 extern int      dc_fstat64(int , struct stat64 *);
 extern int      dc_rename(const char *, const char *);
-
+#ifdef HAVE_ACL
+extern int      dc_acl(const char *, int, int, void *);
+#endif
+#ifdef HAVE_FACL
+extern int      dc_facl(int, int, int, void *);
+#endif
 
 #ifndef WIN32
 extern DIR *    dc_opendir(const char *);

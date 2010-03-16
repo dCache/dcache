@@ -74,12 +74,27 @@ off_t lseek(int fd, off_t offset, int mode)
 	return dc_lseek(fd, offset, mode);
 }
 
+#ifdef HAVE__XSTAT
+int _xstat(int i, const char *p, struct stat *s)
+{
+	dc_debug(DC_TRACE, "Running preloaded _xstat for %s", p);
+	return dc_stat(p, s);
+}
+#endif /* HAVE__XSTAT */
+
 int __xstat(int i, const char *p, struct stat *s)
 {
 	dc_debug(DC_TRACE, "Running preloaded __xstat for %s", p);
 	return dc_stat(p, s);
 }
 
+#ifdef HAVE__LXSTAT
+int _lxstat(int i, const char *p, struct stat *s)
+{
+	dc_debug(DC_TRACE, "Running preloaded _lxstat for %s", p);
+	return dc_lstat(p, s);
+}
+#endif /* HAVE__LXSTAT */
 
 int __lxstat(int i, const char *p, struct stat *s)
 {
@@ -87,6 +102,13 @@ int __lxstat(int i, const char *p, struct stat *s)
 	return dc_lstat(p, s);
 }
 
+#ifdef HAVE__FXSTAT
+int _fxstat(int i, int fd, struct stat *s)
+{
+	dc_debug(DC_TRACE, "Running preloaded _fxstat for [%d]", fd);
+	return dc_fstat(fd, s);
+}
+#endif /* HAVE__FXSTAT */
 
 int __fxstat(int i, int fd, struct stat *s)
 {
@@ -113,6 +135,22 @@ int fstat(int fd, struct stat *s)
 	dc_debug(DC_TRACE, "Running preloaded fstat for [%d]", fd);
 	return dc_fstat(fd, s);
 }
+
+#ifdef HAVE_ACL
+int acl(const char *path, int cmd, int nentries, void *aclbufp)
+{
+	dc_debug(DC_TRACE, "Running preloaded acl for path %s, %d.", path, cmd);
+	return dc_acl(path, cmd, nentries, aclbufp);
+}
+#endif /* HAVE_ACL */
+
+#ifdef HAVE_FACL
+int facl(int fd, int cmd, int nentries, void *aclbufp)
+{
+	dc_debug(DC_TRACE, "Running preloaded facl for file ID %s, %d.", fd, cmd);
+	return dc_facl(fd, cmd, nentries, aclbufp);
+}
+#endif /* HAVE_FACL */
 
 struct dirent *readdir( DIR *dir)
 {

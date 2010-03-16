@@ -20,6 +20,7 @@ char2crc.c  \
 dcap.c  \
 dcap_accept.c  \
 dcap_access.c  \
+dcap_acl.c \
 dcap_ahead.c  \
 dcap_checksum.c  \
 dcap_chmod.c  \
