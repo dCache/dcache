@@ -18,6 +18,7 @@ import java.io.StringReader;
 import java.io.PrintStream;
 
 import org.dcache.util.ReplaceableProperties;
+import org.dcache.util.DeprecatableProperties;
 import org.dcache.util.NetworkUtils;
 
 /**
@@ -36,7 +37,7 @@ public class Layout
 
     public Layout(ReplaceableProperties config)
     {
-        _properties = new ReplaceableProperties(config);
+        _properties = new DeprecatableProperties(config);
     }
 
     public ReplaceableProperties properties()

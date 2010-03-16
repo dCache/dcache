@@ -1395,9 +1395,27 @@ public class      CellShell
     private void println(Writer out, String s)
         throws IOException
     {
-        out.append(s);
-        if ((s.length() > 0) && (s.charAt(s.length() - 1) != '\n')) {
-            out.append('\n');
+        if (!s.isEmpty()) {
+            out.append(s);
+            if ((s.length() > 0) && (s.charAt(s.length() - 1) != '\n')) {
+                out.append('\n');
+            }
+        }
+    }
+
+    public void execute(String source, Reader in, Args args)
+        throws CommandExitException, IOException
+    {
+        Writer out = _nucleus.createInfoLogWriter();
+        try {
+            Writer err = _nucleus.createErrorLogWriter();
+            try {
+                execute(source, in, out, err, args);
+            } finally {
+                err.close();
+            }
+        } finally {
+            out.close();
         }
     }
 

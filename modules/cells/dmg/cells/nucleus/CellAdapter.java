@@ -164,9 +164,7 @@ public class   CellAdapter
                 Reader in = _nucleus.getDomainContextReader(name);
                 try {
                     CellShell shell = new CellShell(this);
-                    Writer out = _nucleus.createErrorLogWriter();
-                    Writer err = _nucleus.createInfoLogWriter();
-                    shell.execute("context:" + name, in, out, err, new Args(""));
+                    shell.execute("context:" + name, in, new Args(""));
                 } finally {
                     in.close();
                 }

@@ -82,8 +82,6 @@ public class BatchCell extends CellAdapter implements Runnable
             _shell = new CellShell(nucleus);
             _shell.execute(_source,
                            _in,
-                           nucleus.createInfoLogWriter(),
-                           nucleus.createErrorLogWriter(),
                            new Args(""));
         } catch (CommandExitException e) {
             _log.error(Exceptions.getMessageWithCauses(e));
