@@ -78,6 +78,11 @@ AC_CHECK_FUNCS([strrchr])
 AC_CHECK_FUNCS([strstr])
 AC_CHECK_FUNCS([htonll])
 AC_CHECK_FUNCS([ntohll])
+AC_CHECK_FUNCS([acl])
+AC_CHECK_FUNCS([facl])
+AC_CHECK_FUNCS([_xstat])
+AC_CHECK_FUNCS([_lxstat])
+AC_CHECK_FUNCS([_fxstat])
 AC_CHECK_HEADERS([arpa/inet.h])
 AC_CHECK_HEADERS([fcntl.h])
 AC_CHECK_HEADERS([limits.h])
@@ -718,7 +723,8 @@ RENAME_SYM="rename"
 CHOWN_SYM="chown"
 WRITEV_SYM="writev"
 READV_SYM="readv"
-
+ACL_SYM="acl"
+FACL_SYM="facl"
 dnl Override defaults By OS
 case "${target_os}" in
 linux-gnu)
@@ -742,7 +748,7 @@ READDIR64_SYM="_readdir64"
 TELLDIR_SYM="_telldir"
 SEEKDIR_SYM="_seekdir"
 ;;
-sun*)
+solaris*)
 AC_MSG_RESULT([Setting SUN preload methods])
 OPENDIR_SYM="_opendir"
 CLOSEDIR_SYM="_closedir"
@@ -790,6 +796,8 @@ AC_DEFINE_UNQUOTED(RENAME_SYM,"$RENAME_SYM",[native function for native or local
 AC_DEFINE_UNQUOTED(CHOWN_SYM,"$CHOWN_SYM",[native function for native or local file system access.])
 AC_DEFINE_UNQUOTED(WRITEV_SYM,"$WRITEV_SYM",[native function for native or local file system access.])
 AC_DEFINE_UNQUOTED(READV_SYM,"$READV_SYM",[native function for native or local file system access.])
+AC_DEFINE_UNQUOTED(ACL_SYM,"$ACL_SYM",[native function for native or local file system access.])
+AC_DEFINE_UNQUOTED(FACL_SYM,"$FACL_SYM",[native function for native or local file system access.])
 
 dnl We dont test for the dependacies for the telnet plugin
 dnl as their apear to be no major ones.

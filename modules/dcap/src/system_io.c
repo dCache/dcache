@@ -84,6 +84,12 @@ static int              (*s_chmod)(const char *, mode_t);
 static int              (*s_chown)(const char *, uid_t, gid_t);
 static int              (*s_access)(const char *, int);
 static int              (*s_rename)(const char *, const char *);
+#ifdef HAVE_ACL
+static int              (*s_acl)(const char *, int, int, void *);
+#endif /* HAVE_ACL */
+#ifdef HAVE_FACL
+static int              (*s_facl)(int, int, int, void *);
+#endif /* HAVE_FACL */
 
 static FILE * (*s_fopen)(const char *, const char *);
 static FILE * (*s_fopen64)(const char *, const char *);
@@ -212,7 +218,12 @@ static int initIfNeeded()
 	s_chown = (int (*)(const char *, uid_t, gid_t))dlsym(handle, CHOWN_SYM);
 	s_access = (int (*)(const char *, int))dlsym(handle, ACCESS_SYM);
 	s_rename = (int (*)(const char *, const char *))dlsym(handle, RENAME_SYM);
-		
+#ifdef HAVE_ACL
+	s_acl = (int (*)(const char *, int, int, void *))dlsym(handle, ACL_SYM);
+#endif /* HAVE_ACL */
+#ifdef HAVE_FACL
+	s_facl = (int (*)(int, int, int, void *))dlsym(handle, FACL_SYM);
+#endif /* HAVE_FACL */
 	s_fopen = (FILE * (*)(const char * , const char *))dlsym(handle, "fopen");
 	s_fopen64 = (FILE * (*)(const char * , const char *))dlsym(handle, "fopen64");
 	s_fdopen = (FILE * (*)(int , const char *))dlsym(handle, "fdopen");
@@ -239,6 +250,13 @@ static int initIfNeeded()
 		(s_telldir == NULL) || (s_seekdir == NULL) || 
 		(s_unlink == NULL ) || (s_rmdir == NULL ) || 
 		(s_mkdir == NULL ) || (s_chmod == NULL ) || (s_access == NULL )  || 
+#ifdef HAVE_ACL
+		(s_acl == NULL ) ||
+#endif /* HAVE_ACL */
+#ifdef HAVE_FACL
+		(s_facl == NULL ) ||
+#endif /* HAVE_FACL */
+
 		(s_chown == NULL ) ) {
 		
 		/* try to write error message it's possible */
@@ -628,5 +646,19 @@ int system_rename(const char *oldPath, const char *newPath)
 {
         return initIfNeeded() == 0 ? s_rename(oldPath, newPath) : -1;
 }
+
+#ifdef HAVE_ACL
+int system_acl(const char *path, int cmd, int cnt, void *buf)
+{
+        return initIfNeeded() == 0 ? s_acl(path, cmd, cnt, buf) : -1;
+}
+#endif /* HAVE_ACL */
+
+#ifdef HAVE_FACL
+int system_facl(int fd, int cmd, int cnt, void *buf)
+{
+        return initIfNeeded() == 0 ? s_facl(fd, cmd, cnt, buf) : -1;
+}
+#endif /* HAVE_FACL */
 
 #endif /* LIBC_SYSCALLS */

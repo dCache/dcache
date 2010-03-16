@@ -60,7 +60,12 @@ extern int system_chmod(const char *, mode_t);
 extern int system_chown(const char *, uid_t, gid_t);
 extern int system_access(const char *, int);
 extern int system_rename(const char *, const char *);
-
+#ifdef HAVE_ACL
+extern int system_acl(const char *, int, int, void *);
+#endif /* HAVE_ACL */
+#ifdef HAVE_FACL
+extern int system_facl(int, int, int, void *);
+#endif /* HAVE_FACL */
 extern FILE * system_fopen( const char *, const char *);
 extern FILE * system_fopen64( const char *, const char *);
 extern FILE * system_fdopen( int, const char *);
