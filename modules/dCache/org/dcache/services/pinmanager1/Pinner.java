@@ -50,7 +50,9 @@ class Pinner extends SMCTask
         _allowedStates = allowedStates;
         _fsm = new PinnerContext(this);
         setContext(_fsm);
-        _fsm.go();
+        synchronized (this) {
+            _fsm.go();
+        }
         job.setSMCTask(this);
 
         info("Pinner constructor done");

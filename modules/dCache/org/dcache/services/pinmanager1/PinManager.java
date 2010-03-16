@@ -16,6 +16,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 import dmg.cells.nucleus.ExceptionEvent;
 import dmg.cells.nucleus.CellVersion;
+import dmg.cells.nucleus.CellNucleus;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PinManagerMessage;
 import diskCacheV111.vehicles.PinManagerPinMessage;
@@ -38,6 +39,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.regex.PatternSyntaxException;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.dcache.cells.Option;
@@ -186,6 +191,38 @@ public class PinManager extends AbstractCell implements Runnable  {
     )
     protected String _stageConfigurationFilePath;
 
+    @Option(
+        name="threadsCore",
+        description="Number of message threads",
+        defaultValue="20",
+        unit="threads"
+    )
+    protected int _threadsCore;
+
+    @Option(
+        name="threadsMax",
+        description="Maximum number of message threads",
+        defaultValue="200",
+        unit="threads"
+    )
+    protected int _threadsMax;
+
+    @Option(
+        name="threadsKeepAliveTime",
+        description="Time to keep idle threads alive",
+        defaultValue="60",
+        unit="seconds"
+    )
+    protected long _threadsKeepAliveTime;
+
+    @Option(
+        name="threadsQueueMax",
+        description="Maximum queue length before messages are rejected",
+        defaultValue="1000",
+        unit="messages"
+    )
+    protected int _threadsQueueMax;
+
     // all database oprations will be done in the lazy
     // fassion in a low priority thread
     private Thread expireRequests;
@@ -245,6 +282,14 @@ public class PinManager extends AbstractCell implements Runnable  {
             getNucleus().newThread(this,"ExpireRequestsThread");
         //databaseUpdateThread.setPriority(Thread.MIN_PRIORITY);
         expireRequests.start();
+
+        CellNucleus nucleus = getNucleus();
+        ExecutorService executor =
+            new ThreadPoolExecutor(_threadsCore, _threadsMax,
+                                   _threadsKeepAliveTime, TimeUnit.SECONDS,
+                                   new ArrayBlockingQueue<Runnable>(_threadsQueueMax));
+        nucleus.setCallbackExecutor(executor);
+        nucleus.setMessageExecutor(executor);
 
         runInventoryBeforeStartPart();
         start();
@@ -497,7 +542,7 @@ public class PinManager extends AbstractCell implements Runnable  {
    public final static String fh_jobs_clear =
         "Removes completed interactive jobs. For reference, information about\n" +
         "interactive jobs is kept until explicitly cleared.\n";
-    public synchronized String ac_jobs_clear(Args args)
+    public String ac_jobs_clear(Args args)
     {
         Iterator<InteractiveJob> i = interactiveJobs.values().iterator();
         while (i.hasNext()) {
@@ -516,7 +561,7 @@ public class PinManager extends AbstractCell implements Runnable  {
     public final static String hh_jobs_ls = "[<id1> [ ... [<idN>]]] # list all or specified jobs";
     public final static String fh_jobs_ls =
         "Lists all or specified or pin manager jobs.";
-    public synchronized String ac_jobs_ls_$_0_99(Args args)
+    public String ac_jobs_ls_$_0_99(Args args)
     {
         StringBuilder sb = new StringBuilder();
         if(args.argc() == 0 ) {
@@ -576,11 +621,11 @@ public class PinManager extends AbstractCell implements Runnable  {
     private void runInventoryAfterStartPart() throws PinDBException {
 
         // the rest can be done in parallel
-         diskCacheV111.util.ThreadManager.execute(new Runnable() {
-            public void run() {
-                unpinAllInitiallyUnpinnedPins();
-            }
-        });
+        new Thread(new Runnable() {
+                public void run() {
+                    unpinAllInitiallyUnpinnedPins();
+                }
+            }).start();
     }
 
 
@@ -623,57 +668,36 @@ public class PinManager extends AbstractCell implements Runnable  {
         }
     }
 
-
-    @Override
-    public void messageArrived( final CellMessage cellMessage ) {
-        info("messageArrived:"+cellMessage);
-         diskCacheV111.util.ThreadManager.execute(new Runnable() {
-            public void run() {
-                processMessage(cellMessage);
-            }
-        });
+    public void messageArrived(CellMessage envelope,
+                               PinManagerPinMessage message)
+        throws PinException
+    {
+        pin(message, envelope);
     }
 
-    public void processMessage( CellMessage cellMessage ) {
-        Object o = cellMessage.getMessageObject();
-        if(!(o instanceof Message )) {
-            super.messageArrived(cellMessage);
-            return;
-        }
-        Message message = (Message)o ;
-        try {
-           info("processMessage: Message  arrived:"+o +" from "+
-                   cellMessage.getSourcePath());
-            if(message instanceof PinManagerPinMessage) {
-                PinManagerPinMessage pinRequest =
-                        (PinManagerPinMessage) message;
-                pin(pinRequest, cellMessage);
-            } else if(message instanceof PinManagerUnpinMessage) {
-                PinManagerUnpinMessage unpinRequest =
-                        (PinManagerUnpinMessage) message;
-                unpin(unpinRequest, cellMessage);
-            } else if(message instanceof PinManagerExtendLifetimeMessage) {
-                PinManagerExtendLifetimeMessage extendLifetimeRequest =
-                        (PinManagerExtendLifetimeMessage) message;
-                extendLifetime(extendLifetimeRequest, cellMessage);
-            } else if (message instanceof  PoolRemoveFilesMessage) {
-                PoolRemoveFilesMessage removeFile =
-                        (PoolRemoveFilesMessage) message;
-                removeFiles(removeFile);
-            } else if (message instanceof  PinManagerMovePinMessage) {
-                PinManagerMovePinMessage movePin =
-                        (PinManagerMovePinMessage) message;
-                movePin(movePin, cellMessage);
-            } else {
-                error("unknown to Pin Manager message type :"+
-                        message.getClass().getName()+" value: "+message);
-                super.messageArrived(cellMessage);
-                return;
-            }
-        } catch(Throwable t) {
-            error(t);
-            message.setFailed(-1,t);
-        }
+    public void messageArrived(CellMessage envelope,
+                               PinManagerUnpinMessage message)
+        throws PinException
+    {
+        unpin(message, envelope);
+    }
+
+    public void messageArrived(CellMessage envelope,
+                               PinManagerExtendLifetimeMessage message)
+        throws PinException
+    {
+        extendLifetime(message, envelope);
+    }
+
+    public void messageArrived(PoolRemoveFilesMessage message)
+    {
+        removeFiles(message);
+    }
+
+    public void messageArrived(CellMessage envelope,
+                               PinManagerMovePinMessage message)
+    {
+        movePin(message, envelope);
     }
 
     @Override

@@ -45,7 +45,9 @@ class Unpinner extends SMCTask
 
         _fsm = new UnpinnerContext(this);
         setContext(_fsm);
-        _fsm.go();
+        synchronized (this) {
+            _fsm.go();
+        }
         job.setSMCTask(this);
         info("Unpinner constructor done, isOldStylePin="+isOldStylePin);
     }

@@ -30,7 +30,7 @@ class SMCTask implements CellMessageAnswerable
         _fsm = o;
     }
 
-    private void transition(String name, Object ...arguments)
+    private synchronized void transition(String name, Object ...arguments)
     {
         _cell.esay("transition("+ name+", "+java.util.Arrays.deepToString(arguments)+")");
         try {
