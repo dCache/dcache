@@ -1,4 +1,4 @@
-package org.dcache.webdav;
+package org.dcache.util;
 
 import java.util.Set;
 import java.util.EnumSet;
@@ -12,7 +12,6 @@ import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
 import org.dcache.vehicles.FileAttributes;
-import org.dcache.util.CacheExceptionFactory;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 
@@ -54,7 +53,7 @@ public abstract class Transfer implements Comparable<Transfer>
 {
     private static final Logger _log = LoggerFactory.getLogger(Transfer.class);
 
-    private static final int FILE_UMASK = 0644;
+    private static final int FILE_UMASK_AUTHENTICATED = 0644;
     private static final int FILE_UMASK_ANONYMOUS = 0666;
 
     private static final AtomicInteger _sessionCounter = new AtomicInteger();
@@ -380,7 +379,7 @@ public abstract class Transfer implements Comparable<Transfer>
             int uid = (uids.length > 0) ? (int) uids[0] : parent.getOwner();
             int gid = (gids.length > 0) ? (int) gids[0] : parent.getGroup();
             int umask =
-                (uids.length > 0) ? FILE_UMASK : FILE_UMASK_ANONYMOUS;
+                (uids.length > 0) ? FILE_UMASK_AUTHENTICATED : FILE_UMASK_ANONYMOUS;
             PnfsCreateEntryMessage msg =
                 _pnfs.createPnfsEntry(_path.toString(), uid, gid,
                                       umask & parent.getMode());
@@ -484,7 +483,7 @@ public abstract class Transfer implements Comparable<Transfer>
      *
      * @param queue The mover queue of the transfer; may be null
      */
-    void startMover(String queue)
+    public void startMover(String queue)
         throws CacheException, InterruptedException
     {
         PnfsId pnfsId = getPnfsId();

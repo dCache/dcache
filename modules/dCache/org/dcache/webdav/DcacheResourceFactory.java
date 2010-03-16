@@ -60,6 +60,8 @@ import org.dcache.acl.Origin;
 import org.dcache.auth.Subjects;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.util.Transfer;
+import org.dcache.util.PingMoversTask;
 import org.dcache.util.list.DirectoryListPrinter;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.ListDirectoryHandler;
@@ -106,6 +108,9 @@ public class DcacheResourceFactory
     private static final int DIRECTORY_UMASK = 0755;
     private static final int DIRECTORY_UMASK_ANONYMOUS = 0777;
 
+    private static final long PING_DELAY = 300000;
+
+
     /**
      * Map used to map pool redirect messages to blocking queues used
      * to hand over the redirection URL to the proper transfer
@@ -140,7 +145,6 @@ public class DcacheResourceFactory
     private int _moverTimeout = 180000;
     private long _killTimeout = 1500;
     private long _transferConfirmationTimeout = 60000;
-    private long _pingDelay = 300000;
     private int _bufferSize = 65536;
     private CellStub _poolStub;
     private CellStub _poolManagerStub;
@@ -423,8 +427,8 @@ public class DcacheResourceFactory
     public void setExecutor(ScheduledExecutorService executor)
     {
         _executor = executor;
-        _executor.scheduleAtFixedRate(new PingMoverTask(),
-                                      _pingDelay, _pingDelay,
+        _executor.scheduleAtFixedRate(new PingMoversTask(_transfers),
+                                      PING_DELAY, PING_DELAY,
                                       TimeUnit.MILLISECONDS);
     }
 
@@ -1156,42 +1160,6 @@ public class DcacheResourceFactory
         {
             if (length != null) {
                 super.setLength(length.longValue());
-            }
-        }
-    }
-
-    /**
-     * Periodic task that queries the pools for the movers of this
-     * WebDAV door. Will eventually terminate a transfer if the mover
-     * is missing or does not respond.
-     */
-    public class PingMoverTask implements Runnable
-    {
-        /**
-         * Movers which we tried to ping, but we failed to locate on
-         * the pool.
-         */
-        private Set<Transfer> _missing = new HashSet<Transfer>();
-
-        public void run()
-        {
-            try {
-                Set<Transfer> missingLastTime = _missing;
-                _missing = new HashSet<Transfer>();
-
-                for (Transfer transfer: _transfers) {
-                    try {
-                        transfer.queryMoverInfo();
-                    } catch (CacheException e) {
-                        if (missingLastTime.contains(transfer)) {
-                            transfer.finished(CacheException.TIMEOUT,
-                                              "Mover timeout");
-                        } else {
-                            _missing.add(transfer);
-                        }
-                    }
-                }
-            } catch (InterruptedException e) {
             }
         }
     }
