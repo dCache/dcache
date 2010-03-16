@@ -625,7 +625,7 @@ public class PinManager extends AbstractCell implements Runnable  {
                 public void run() {
                     unpinAllInitiallyUnpinnedPins();
                 }
-            }).start();
+            }, getCellName() + "-init").start();
     }
 
 
