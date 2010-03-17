@@ -51,11 +51,15 @@ public class DeprecatableProperties extends ReplaceableProperties
     }
 
     @Override
-    public Object put(Object key, Object value)
+    public synchronized Object put(Object key, Object value)
     {
         String s = key.toString();
         if (isObsolete(s)) {
-            throw new IllegalArgumentException(getProperty(s));
+            String error = getProperty(OBSOLETE + s);
+            if (error.isEmpty()) {
+                error = "The property " + s + " is obsolete.";
+            }
+            throw new IllegalArgumentException(error);
         }
         if (isDeprecated(s)) {
             _log.warn("The property {} is deprecated and will be removed.", s);

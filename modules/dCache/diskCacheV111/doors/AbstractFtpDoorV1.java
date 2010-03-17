@@ -529,30 +529,6 @@ public abstract class AbstractFtpDoorV1
     protected boolean _allowRelay;
 
     /**
-     * If space_reservation_enabled is true, then the door will consult
-     * the srmv2 module to check if the transfer is performed into the
-     * space that has been preallocated by the user.
-     */
-    @Option(
-        name = "space-reservation",
-        description = "SRM 2.2 style space reservation",
-        defaultValue = "false"
-    )
-    protected boolean _space_reservation_enabled;
-
-    /**
-     * This variable is only consulted if space_reservation_enabled is
-     * true. If space_reservation_strict is true then a transfer
-     * not preceded by a space allocation will fail.
-     */
-    @Option(
-        name = "space-reservation-strict",
-        description = "Whether space reservation is required",
-        defaultValue = "false"
-    )
-    protected boolean _space_reservation_strict;
-
-    /**
      * If use_gplazmaAuthzCell is true, the door will first contact
      * the GPLAZMA cell for authentification.
      */
@@ -953,9 +929,6 @@ public abstract class AbstractFtpDoorV1
         _client_data_host = _engine.getInetAddress().getHostName();
 
         debug("FTP Door: client hostname = " + _client_data_host);
-
-        if (!_space_reservation_enabled)
-            _space_reservation_strict = false;
 
         if (_local_host == null)
             _local_host = _engine.getLocalAddress().getHostName();

@@ -31,7 +31,7 @@ set context -c srmSpaceManagerEnabled no
 
 onerror shutdown
 
-create diskCacheV111.services.space.Manager SrmSpaceManager \
+create diskCacheV111.services.space.Manager ${cell.name} \
        "default \
         -export \
         -jdbcUrl=jdbc:postgresql://${srmDatabaseHost}/${srmDbName} \
