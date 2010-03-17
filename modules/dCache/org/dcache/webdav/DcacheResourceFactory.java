@@ -794,7 +794,7 @@ public class DcacheResourceFactory
             new ReadTransfer(_pnfs, subject, path, pnfsid);
         _transfers.add(transfer);
         try {
-            Integer sessionId = transfer.getSessionId();
+            Integer sessionId = (int) transfer.getSessionId();
             transfer.setPnfsId(pnfsid);
             transfer.readNameSpaceEntry();
             transfer.selectPool();
@@ -862,7 +862,7 @@ public class DcacheResourceFactory
         Transfer transfer = null;
         ProtocolInfo protocolInfo = message.getProtocolInfo();
         if (protocolInfo instanceof HttpProtocolInfo) {
-            Integer sessionId =
+            int sessionId =
                 ((HttpProtocolInfo) protocolInfo).getSessionId();
             transfer = _downloads.get(sessionId);
         } else {
@@ -952,6 +952,8 @@ public class DcacheResourceFactory
             setPoolManagerStub(_poolManagerStub);
             setPoolStub(_poolStub);
             setBillingStub(_billingStub);
+            setClientAddress(new InetSocketAddress(Subjects.getOrigin(subject).getAddress(),
+                                                   PROTOCOL_INFO_UNKNOWN_PORT));
         }
 
         protected ProtocolInfo createProtocolInfo()
@@ -966,7 +968,7 @@ public class DcacheResourceFactory
                                      PROTOCOL_INFO_UNKNOWN_PORT,
                                      _cellName, _domainName,
                                      _path.toString());
-            protocolInfo.setSessionId(_sessionId);
+            protocolInfo.setSessionId((int) getSessionId());
             return protocolInfo;
         }
 
@@ -1000,7 +1002,7 @@ public class DcacheResourceFactory
         {
             super.finished(error);
 
-            _downloads.remove(getSessionId());
+            _downloads.remove((int) getSessionId());
             _transfers.remove(this);
 
             if (error == null) {

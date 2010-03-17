@@ -10,9 +10,9 @@ import diskCacheV111.util.CacheException;
  * Task that queries the pools for a set of movers. Will eventually
  * terminate a transfer if the mover is missing or does not respond.
  */
-public class PingMoversTask implements Runnable
+public class PingMoversTask<T extends Transfer> implements Runnable
 {
-    private final Collection<Transfer> _transfers;
+    private final Collection<T> _transfers;
 
     /**
      * Movers which we tried to ping, but we failed to locate on
@@ -26,7 +26,7 @@ public class PingMoversTask implements Runnable
      * current set of transfers to monitor. The set must be thread
      * safe.
      */
-    public PingMoversTask(Collection<Transfer> transfers)
+    public PingMoversTask(Collection<T> transfers)
     {
         _transfers = transfers;
     }

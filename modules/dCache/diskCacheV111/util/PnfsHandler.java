@@ -44,6 +44,8 @@ import org.dcache.acl.enums.AccessMask;
 
 import javax.security.auth.Subject;
 
+import static org.dcache.namespace.FileAttribute.*;
+
 public class PnfsHandler
     implements CellMessageSender
 {
@@ -256,18 +258,69 @@ public class PnfsHandler
         }
    }
 
-   public PnfsCreateEntryMessage createPnfsDirectory( String path )
-          throws CacheException                {
+    public PnfsCreateEntryMessage createPnfsDirectory(String path)
+        throws CacheException
+    {
+        return pnfsRequest(new PnfsCreateDirectoryMessage(path));
+    }
 
-       return pnfsRequest(new PnfsCreateDirectoryMessage( path ) ) ;
+    public PnfsCreateEntryMessage createPnfsDirectory(String path, int uid, int gid, int mode)
+        throws CacheException
+    {
+        return pnfsRequest(new PnfsCreateDirectoryMessage(path, uid, gid, mode));
+    }
 
-   }
-   public PnfsCreateEntryMessage createPnfsDirectory( String path , int uid , int gid , int mode )
-          throws CacheException                {
+    /**
+     * Creates a directory and all its parent directories.
+     *
+     * All the directories created will inherit the owner, group and
+     * mode of their parent directory.
+     *
+     * REVISIT: Should eventually be moved to PnfsManager with a flag
+     * in the PnfsCreateEntryMessage indicating whether parent
+     * directories should be created.
+     *
+     * @returns the FileAttributes of <code>path</code>
+     */
+    public FileAttributes createDirectories(FsPath path)
+        throws CacheException
+    {
+        FsPath parent = path.getParent();
 
-       return pnfsRequest(new PnfsCreateDirectoryMessage( path , uid , gid , mode )) ;
+        FileAttributes attributes;
+        try {
+            attributes =
+                getFileAttributes(parent.toString(),
+                                  EnumSet.of(OWNER,OWNER_GROUP,MODE));
+        } catch (FileNotFoundCacheException e) {
+            attributes = createDirectories(parent);
+        } catch (NotInTrashCacheException e) {
+            attributes = createDirectories(parent);
+        }
 
-   }
+        PnfsCreateEntryMessage message =
+            createPnfsDirectory(path.toString(),
+                                attributes.getOwner(),
+                                attributes.getGroup(),
+                                attributes.getMode());
+
+        /* In case of incomplete create, delete the directory right
+         * away.
+         */
+        if (message.getStorageInfo() == null) {
+            try {
+                deletePnfsEntry(message.getPnfsId(), path.toString());
+            } catch (FileNotFoundCacheException e) {
+                // Already gone, so never mind
+            } catch (CacheException e) {
+                _logNameSpace.error(e.toString());
+            }
+
+            throw new CacheException("Failed to create directory: " + path);
+        }
+
+        return message.getFileAttributes();
+    }
 
    public PnfsCreateEntryMessage createPnfsEntry( String path )
           throws CacheException                {
@@ -520,6 +573,4 @@ public class PnfsHandler
     public void setFileAttributes(PnfsId pnfsid, FileAttributes attr) throws CacheException {
         pnfsRequest(new PnfsSetFileAttributes(pnfsid, attr));
     }
-
-
 }

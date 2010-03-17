@@ -835,7 +835,7 @@ public class XrootdDoor extends AbstractCell
             msg.setResult(wrapper.getErrorCode(), wrapper.getErrorMsg());
         }
 
-        msg.setTrasaction(_transactionPrefix + wrapper.getFileHandle());
+        msg.setTransaction(_transactionPrefix + wrapper.getFileHandle());
 
         try {
             sendMessage(new CellMessage(new CellPath("billing"), msg));
