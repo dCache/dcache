@@ -18,7 +18,13 @@ import dmg.util.Args;
 import dmg.util.CommandException;
 
 import org.dcache.util.ReplaceableProperties;
+import org.dcache.util.DeprecatableProperties;
 import org.dcache.util.Glob;
+
+import org.apache.log4j.LogManager;
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.SimpleLayout;
+import org.apache.log4j.ConsoleAppender;
 
 /**
  * Boot loader for dCache. This class contains the main method of
@@ -87,7 +93,7 @@ public class BootLoader
         throws IOException
     {
         for (String path: paths) {
-            config = new ReplaceableProperties(config);
+            config = new DeprecatableProperties(config);
             File file = new File(path);
             if (file.isFile()) {
                 config.loadFile(file);
@@ -144,6 +150,12 @@ public class BootLoader
             if (args.argc() < 1) {
                 help();
             }
+
+            /* Basic logging setup that will be used until the real
+             * log4j configuration is loaded.
+             */
+            LogManager.resetConfiguration();
+            BasicConfigurator.configure(new ConsoleAppender(new SimpleLayout(), ConsoleAppender.SYSTEM_ERR));
 
             ReplaceableProperties config = getDefaults();
             String tmp = args.getOpt(OPT_CONFIG_FILE);

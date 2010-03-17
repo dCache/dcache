@@ -11,6 +11,7 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 
 import org.dcache.util.ReplaceableProperties;
+import org.dcache.util.DeprecatableProperties;
 import org.dcache.util.NetworkUtils;
 
 import dmg.cells.nucleus.SystemCell;
@@ -21,6 +22,9 @@ import dmg.util.CommandException;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.Level;
+import org.apache.log4j.PropertyConfigurator;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.xml.DOMConfigurator;
 
 /**
  * Domain encapsulates the configuration of a domain and its
@@ -33,6 +37,12 @@ public class Domain
     private static final String PROPERTY_DOMAIN_SERVICE_URI = "domain.service.uri";
     private static final String PROPERTY_DOMAIN_PRELOAD = "domain.preload";
 
+    private static final String PROPERTY_LOG4J_CONFIG = "dcache.log4j.configuration";
+
+    private static final String SCHEME_FILE = "file";
+    private static final String SUFFIX_PROPERTIES = ".properties";
+    private static final String SUFFIX_XML = ".xml";
+
     private static final Logger _log = Logger.getLogger(SystemCell.class);
 
     private final ReplaceableProperties _properties;
@@ -40,7 +50,7 @@ public class Domain
 
     public Domain(String name, ReplaceableProperties defaults)
     {
-        _properties = new ReplaceableProperties(defaults);
+        _properties = new DeprecatableProperties(defaults);
         _properties.put(PROPERTY_DOMAIN_NAME, name);
         _services = new ArrayList<ReplaceableProperties>();
     }
@@ -53,7 +63,7 @@ public class Domain
     public ReplaceableProperties createService(String name)
     {
         ReplaceableProperties service =
-            new ReplaceableProperties(_properties);
+            new DeprecatableProperties(_properties);
         service.put(PROPERTY_DOMAIN_SERVICE, name);
         _services.add(service);
         return service;
@@ -67,8 +77,9 @@ public class Domain
     public void start()
         throws URISyntaxException, CommandException, IOException
     {
-        String domainName = getName();
+        initializeLogging();
 
+        String domainName = getName();
         SystemCell systemCell = new SystemCell(domainName);
         _log.info("Starting " + domainName);
 
@@ -80,6 +91,39 @@ public class Domain
 
         if (_services.isEmpty()) {
             _log.warn("No services found. Domain appears to be empty.");
+        }
+    }
+
+    private void initializeLogging()
+        throws URISyntaxException
+    {
+        String property = _properties.getReplacement(PROPERTY_LOG4J_CONFIG);
+        if (property == null) return;
+
+        URI uri = new URI(property);
+        String path = uri.getPath();
+        if (path == null) {
+            throw new URISyntaxException(property, "Path is missing");
+        }
+
+        boolean isFile =
+            uri.getScheme() == null || uri.getScheme().equals(SCHEME_FILE);
+
+        LogManager.resetConfiguration();
+        if (path.endsWith(SUFFIX_PROPERTIES)) {
+            if (isFile) {
+                PropertyConfigurator.configureAndWatch(path);
+            } else {
+                PropertyConfigurator.configure(NetworkUtils.toURL(uri));
+            }
+        } else if (path.endsWith(SUFFIX_XML)) {
+            if (isFile) {
+                DOMConfigurator.configureAndWatch(path);
+            } else {
+                DOMConfigurator.configure(NetworkUtils.toURL(uri));
+            }
+        } else {
+            throw new URISyntaxException(property, "Unknown file ending");
         }
     }
 
@@ -198,8 +242,6 @@ public class Domain
         InputStream input = NetworkUtils.toURL(resource).openStream();
         try {
             shell.execute(resource.toString(), new InputStreamReader(input),
-                          new Log4jWriter(_log, Level.INFO),
-                          new Log4jWriter(_log, Level.ERROR),
                           new Args(""));
         } finally {
             input.close();

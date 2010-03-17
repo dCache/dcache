@@ -2,8 +2,8 @@ package dmg.cells.services;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellShell;
+import dmg.cells.nucleus.CellNucleus;
 import dmg.util.Args;
-import dmg.util.Log4jWriter;
 import dmg.util.CommandExitException;
 import dmg.util.Exceptions;
 
@@ -14,12 +14,12 @@ import java.io.StringReader;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.Level;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class BatchCell extends CellAdapter implements Runnable
 {
-    private final static Logger _log = Logger.getLogger(BatchCell.class);
+    private final static Logger _log = LoggerFactory.getLogger(BatchCell.class);
 
     private final Reader _in;
     private final String _source;
@@ -78,19 +78,15 @@ public class BatchCell extends CellAdapter implements Runnable
     {
         try {
             initLoggingContext();
-            _shell = new CellShell(getNucleus());
+            CellNucleus nucleus = getNucleus();
+            _shell = new CellShell(nucleus);
             _shell.execute(_source,
                            _in,
-                           new Log4jWriter(_log, Level.INFO),
-                           new Log4jWriter(_log, Level.ERROR),
                            new Args(""));
         } catch (CommandExitException e) {
-            int rc = e.getErrorCode();
-            if (rc == 666) {
-                _log.fatal(Exceptions.getMessageWithCauses(e));
+            _log.error(Exceptions.getMessageWithCauses(e));
+            if (e.getErrorCode() == 666) {
                 System.exit(6);
-            } else {
-                _log.error(Exceptions.getMessageWithCauses(e));
             }
         } catch (IOException e) {
             _log.error("I/O error: " + e.getMessage());

@@ -1,18 +1,16 @@
-package org.dcache.webdav;
+package org.dcache.util;
 
 import java.util.Set;
 import java.util.EnumSet;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.net.InetSocketAddress;
 import javax.security.auth.Subject;
 
 import com.sun.security.auth.UserPrincipal;
 
-import org.dcache.acl.Origin;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
 import org.dcache.vehicles.FileAttributes;
-import org.dcache.util.CacheExceptionFactory;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 
@@ -20,6 +18,10 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.NotFileCacheException;
+import diskCacheV111.util.NotInTrashCacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.DirNotExistsCacheException;
+import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.FsPath;
 
 import diskCacheV111.vehicles.IoDoorEntry;
@@ -40,30 +42,37 @@ import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.cells.nucleus.CDC;
+import dmg.util.TimebasedCounter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.dcache.namespace.FileAttribute.*;
+import static org.dcache.namespace.FileType.*;
 
 /**
- * Encapulates information about and typical operations of a
- * transfer. The class is abstract and must be subclassed.
+ * Facade for transfer related operations. Encapulates information
+ * about and typical operations of a transfer.
+ *
+ * The class is abstract and must be subclassed.
  */
 public abstract class Transfer implements Comparable<Transfer>
 {
     private static final Logger _log = LoggerFactory.getLogger(Transfer.class);
 
-    private static final int FILE_UMASK = 0644;
+    private static final int FILE_UMASK_AUTHENTICATED = 0644;
     private static final int FILE_UMASK_ANONYMOUS = 0666;
 
-    private static final AtomicInteger _sessionCounter = new AtomicInteger();
+    private static final TimebasedCounter _sessionCounter =
+        new TimebasedCounter();
 
     protected final PnfsHandler _pnfs;
     protected final long _startedAt;
     protected final FsPath _path;
     protected final Subject _subject;
-    protected final int _sessionId;
+    protected final long _sessionId;
+    protected final Object _session;
 
     protected CellStub _poolManager;
     protected CellStub _pool;
@@ -80,6 +89,7 @@ public abstract class Transfer implements Comparable<Transfer>
     private CacheException _error;
     private StorageInfo _storageInfo;
     private boolean _isWrite;
+    private InetSocketAddress _clientAddress;
 
     /**
      * Constructs a new Transfer object.
@@ -94,7 +104,8 @@ public abstract class Transfer implements Comparable<Transfer>
         _subject = subject;
         _path = path;
         _startedAt = System.currentTimeMillis();
-        _sessionId = _sessionCounter.getAndIncrement();
+        _sessionId = _sessionCounter.next();
+        _session = CDC.getSession();
     }
 
     /**
@@ -114,7 +125,7 @@ public abstract class Transfer implements Comparable<Transfer>
     @Override
     public int compareTo(Transfer o)
     {
-        return o.getSessionId() - getSessionId();
+        return Long.signum(o.getSessionId() - getSessionId());
     }
 
     /**
@@ -122,7 +133,7 @@ public abstract class Transfer implements Comparable<Transfer>
      * uniquely identifies this transfer object within this VM
      * instance.
      */
-    public int getSessionId()
+    public long getSessionId()
     {
         return _sessionId;
     }
@@ -253,6 +264,21 @@ public abstract class Transfer implements Comparable<Transfer>
     }
 
     /**
+     * The transaction uniquely (with a high probably) identifies this
+     * transfer.
+     */
+    public synchronized String getTransaction()
+    {
+        if (_session != null) {
+            return _session.toString() + "-" + _sessionId;
+        } else if (_domainName != null) {
+            return _domainName + "-" + _sessionId;
+        } else {
+            return String.valueOf(_sessionId);
+        }
+    }
+
+    /**
      * Signals that the mover of this transfer finished.
      */
     public synchronized void finished(CacheException error)
@@ -319,6 +345,20 @@ public abstract class Transfer implements Comparable<Transfer>
     }
 
     /**
+     * The client address is the socket address from which the
+     * transfer was initiated.
+     */
+    public synchronized void setClientAddress(InetSocketAddress address)
+    {
+        _clientAddress = address;
+    }
+
+    public synchronized InetSocketAddress getClientAddress()
+    {
+        return _clientAddress;
+    }
+
+    /**
      * Blocks until the mover of this transfer finished, or until
      * a timeout is reached. Relies on the
      * DoorTransferFinishedMessage being injected into the
@@ -327,6 +367,7 @@ public abstract class Transfer implements Comparable<Transfer>
      * @param millis The timeout in milliseconds
      * @return true when the mover has finished
      * @throws CacheException if the mover failed
+     * @throws InterruptedException if the thread is interrupted
      */
     public synchronized boolean waitForMover(long millis)
         throws CacheException, InterruptedException
@@ -349,25 +390,79 @@ public abstract class Transfer implements Comparable<Transfer>
      */
     public synchronized IoDoorEntry getIoDoorEntry()
     {
-        Origin origin = Subjects.getOrigin(_subject);
         return new IoDoorEntry(_sessionId,
                                _pnfsid,
                                _poolName,
                                _status,
                                _startedAt,
-                               origin.getAddress().getHostAddress());
+                               _clientAddress.getAddress().getHostAddress());
     }
 
     /**
-     * Creates a new name space entry for the file to
-     * transfer. This will fill in the PnfsId and StorageInfo of
-     * the file and mark the transfer as an upload.
+     * Creates a new name space entry for the file to transfer. This
+     * will fill in the PnfsId and StorageInfo of the file and mark
+     * the transfer as an upload.
      *
      * Will fail if the subject of the transfer doesn't have
      * permission to create the file.
      *
-     * @param parent FileAttributes containing at least the owner
-     *               and group of the parent directory
+     * @throws CacheException if creating the entry failed
+     */
+    public void createNameSpaceEntry()
+        throws CacheException
+    {
+        String parent = _path.getParent().toString();
+        FileAttributes attributes;
+        try {
+            attributes =
+                _pnfs.getFileAttributes(parent,
+                                        EnumSet.of(TYPE,OWNER,OWNER_GROUP,MODE));
+        } catch (NotInTrashCacheException e) {
+            throw new DirNotExistsCacheException(e.getMessage());
+        } catch (FileNotFoundCacheException e) {
+            throw new DirNotExistsCacheException(e.getMessage());
+        }
+
+        FileType type = attributes.getFileType();
+        if (type == REGULAR || type == SPECIAL) {
+            throw new NotDirCacheException("No such directory: " + parent);
+        }
+        createNameSpaceEntry(attributes);
+    }
+
+    /**
+     * Creates a new name space entry for the file to transfer. This
+     * will fill in the PnfsId and StorageInfo of the file and mark
+     * the transfer as an upload.
+     *
+     * Will fail if the subject of the transfer doesn't have
+     * permission to create the file.
+     *
+     * If the parent directories don't exist, then they will be
+     * created.
+     *
+     * @throws CacheException if creating the entry failed
+     */
+    public void createNameSpaceEntryWithParents()
+        throws CacheException
+    {
+        try {
+            createNameSpaceEntry();
+        } catch (DirNotExistsCacheException e) {
+            createNameSpaceEntry(_pnfs.createDirectories(_path.getParent()));
+        }
+    }
+
+    /**
+     * Creates a new name space entry for the file to transfer. This
+     * will fill in the PnfsId and StorageInfo of the file and mark
+     * the transfer as an upload.
+     *
+     * Will fail if the subject of the transfer doesn't have
+     * permission to create the file.
+     *
+     * @param parent FileAttributes containing at least the owner,
+     *               group and mode of the parent directory
      * @throws CacheException if creating the entry failed
      */
     public void createNameSpaceEntry(FileAttributes parent)
@@ -380,7 +475,7 @@ public abstract class Transfer implements Comparable<Transfer>
             int uid = (uids.length > 0) ? (int) uids[0] : parent.getOwner();
             int gid = (gids.length > 0) ? (int) gids[0] : parent.getGroup();
             int umask =
-                (uids.length > 0) ? FILE_UMASK : FILE_UMASK_ANONYMOUS;
+                (uids.length > 0) ? FILE_UMASK_AUTHENTICATED : FILE_UMASK_ANONYMOUS;
             PnfsCreateEntryMessage msg =
                 _pnfs.createPnfsEntry(_path.toString(), uid, gid,
                                       umask & parent.getMode());
@@ -472,6 +567,7 @@ public abstract class Transfer implements Comparable<Transfer>
                                                  protocolInfo,
                                                  storageInfo.getFileSize());
             }
+            request.setId(_sessionId);
 
             setPool(_poolManager.sendAndWait(request).getPoolName());
         } finally {
@@ -484,7 +580,7 @@ public abstract class Transfer implements Comparable<Transfer>
      *
      * @param queue The mover queue of the transfer; may be null
      */
-    void startMover(String queue)
+    public void startMover(String queue)
         throws CacheException, InterruptedException
     {
         PnfsId pnfsId = getPnfsId();
@@ -497,8 +593,6 @@ public abstract class Transfer implements Comparable<Transfer>
 
         setStatus("Pool " + pool + ": Creating mover");
         try {
-            Origin origin = Subjects.getOrigin(_subject);
-            String address = origin.getAddress().getHostAddress();
             ProtocolInfo protocolInfo = createProtocolInfoForPool();
             PoolIoFileMessage message;
             if (isWrite()) {
@@ -511,10 +605,8 @@ public abstract class Transfer implements Comparable<Transfer>
                                                protocolInfo, storageInfo);
             }
             message.setIoQueueName(queue);
-
-            // the transaction string will be used by the pool as
-            // initiator (-> table join in Billing DB)
-            //         poolMessage.setInitiator(_transactionPrefix + protocolInfo.getXrootdFileHandle());
+            message.setInitiator(getTransaction());
+            message.setId(_sessionId);
 
             /* As always, PoolIoFileMessage has to be sent via the
              * PoolManager (which could be the SpaceManager).
@@ -617,7 +709,6 @@ public abstract class Transfer implements Comparable<Transfer>
     public void notifyBilling(int code, String error)
     {
         try {
-            Origin origin = Subjects.getOrigin(_subject);
             String owner = Subjects.getDn(_subject);
             if (owner == null)  {
                 Set<UserPrincipal> principals =
@@ -640,7 +731,8 @@ public abstract class Transfer implements Comparable<Transfer>
             }
             msg.setPath(_path.toString());
             msg.setTransactionTime(_startedAt);
-            msg.setClient(origin.getAddress().getHostAddress());
+            msg.setTransaction(getTransaction());
+            msg.setClient(_clientAddress.getAddress().getHostAddress());
             msg.setPnfsId(getPnfsId());
             msg.setResult(code, error);
             msg.setStorageInfo(_storageInfo);

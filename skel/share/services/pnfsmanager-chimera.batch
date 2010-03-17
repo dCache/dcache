@@ -15,7 +15,7 @@ onerror shutdown
 # Load permission check related settings
 exec -shell file:${dcache.home}/share/cells/permission.fragment
 
-create diskCacheV111.namespace.PnfsManagerV3 PnfsManager \
+create diskCacheV111.namespace.PnfsManagerV3 ${cell.name} \
         "org.dcache.chimera.namespace.ChimeraOsmStorageInfoExtractor \
         -cmRelay=broadcast \
         -threads=${pnfsNumberOfThreads} \

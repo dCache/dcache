@@ -33,7 +33,6 @@ import com.bradmcevoy.http.Resource;
 import com.bradmcevoy.http.Request;
 import com.bradmcevoy.http.HttpManager;
 import com.bradmcevoy.http.ResourceFactory;
-import com.bradmcevoy.http.SecurityManager;
 import com.bradmcevoy.http.XmlWriter;
 
 import diskCacheV111.util.FsPath;
@@ -60,6 +59,8 @@ import org.dcache.acl.Origin;
 import org.dcache.auth.Subjects;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.util.Transfer;
+import org.dcache.util.PingMoversTask;
 import org.dcache.util.list.DirectoryListPrinter;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.ListDirectoryHandler;
@@ -106,6 +107,9 @@ public class DcacheResourceFactory
     private static final int DIRECTORY_UMASK = 0755;
     private static final int DIRECTORY_UMASK_ANONYMOUS = 0777;
 
+    private static final long PING_DELAY = 300000;
+
+
     /**
      * Map used to map pool redirect messages to blocking queues used
      * to hand over the redirection URL to the proper transfer
@@ -140,13 +144,11 @@ public class DcacheResourceFactory
     private int _moverTimeout = 180000;
     private long _killTimeout = 1500;
     private long _transferConfirmationTimeout = 60000;
-    private long _pingDelay = 300000;
     private int _bufferSize = 65536;
     private CellStub _poolStub;
     private CellStub _poolManagerStub;
     private CellStub _billingStub;
     private PnfsHandler _pnfs;
-    private SecurityManager _securityManager;
     private String _ioQueue;
     private String _cellName;
     private String _domainName;
@@ -163,7 +165,6 @@ public class DcacheResourceFactory
     public DcacheResourceFactory()
         throws UnknownHostException
     {
-        _securityManager = new NullSecurityManager();
         _internalAddress = InetAddress.getLocalHost();
     }
 
@@ -351,16 +352,6 @@ public class DcacheResourceFactory
         _list = list;
     }
 
-    public SecurityManager getSecurityManager()
-    {
-        return _securityManager;
-    }
-
-    public void setSecurityManager(SecurityManager securityManager)
-    {
-        _securityManager = securityManager;
-    }
-
     /**
      * @return the logoPath
      */
@@ -423,8 +414,8 @@ public class DcacheResourceFactory
     public void setExecutor(ScheduledExecutorService executor)
     {
         _executor = executor;
-        _executor.scheduleAtFixedRate(new PingMoverTask(),
-                                      _pingDelay, _pingDelay,
+        _executor.scheduleAtFixedRate(new PingMoversTask(_transfers),
+                                      PING_DELAY, PING_DELAY,
                                       TimeUnit.MILLISECONDS);
     }
 
@@ -473,12 +464,6 @@ public class DcacheResourceFactory
         }
 
         return getResource(getFullPath(path));
-    }
-
-    @Override
-    public String getSupportedLevels()
-    {
-        return "1,2";
     }
 
     /**
@@ -809,7 +794,7 @@ public class DcacheResourceFactory
             new ReadTransfer(_pnfs, subject, path, pnfsid);
         _transfers.add(transfer);
         try {
-            Integer sessionId = transfer.getSessionId();
+            Integer sessionId = (int) transfer.getSessionId();
             transfer.setPnfsId(pnfsid);
             transfer.readNameSpaceEntry();
             transfer.selectPool();
@@ -877,7 +862,7 @@ public class DcacheResourceFactory
         Transfer transfer = null;
         ProtocolInfo protocolInfo = message.getProtocolInfo();
         if (protocolInfo instanceof HttpProtocolInfo) {
-            Integer sessionId =
+            int sessionId =
                 ((HttpProtocolInfo) protocolInfo).getSessionId();
             transfer = _downloads.get(sessionId);
         } else {
@@ -967,6 +952,8 @@ public class DcacheResourceFactory
             setPoolManagerStub(_poolManagerStub);
             setPoolStub(_poolStub);
             setBillingStub(_billingStub);
+            setClientAddress(new InetSocketAddress(Subjects.getOrigin(subject).getAddress(),
+                                                   PROTOCOL_INFO_UNKNOWN_PORT));
         }
 
         protected ProtocolInfo createProtocolInfo()
@@ -981,7 +968,7 @@ public class DcacheResourceFactory
                                      PROTOCOL_INFO_UNKNOWN_PORT,
                                      _cellName, _domainName,
                                      _path.toString());
-            protocolInfo.setSessionId(_sessionId);
+            protocolInfo.setSessionId((int) getSessionId());
             return protocolInfo;
         }
 
@@ -1015,7 +1002,7 @@ public class DcacheResourceFactory
         {
             super.finished(error);
 
-            _downloads.remove(getSessionId());
+            _downloads.remove((int) getSessionId());
             _transfers.remove(this);
 
             if (error == null) {
@@ -1156,42 +1143,6 @@ public class DcacheResourceFactory
         {
             if (length != null) {
                 super.setLength(length.longValue());
-            }
-        }
-    }
-
-    /**
-     * Periodic task that queries the pools for the movers of this
-     * WebDAV door. Will eventually terminate a transfer if the mover
-     * is missing or does not respond.
-     */
-    public class PingMoverTask implements Runnable
-    {
-        /**
-         * Movers which we tried to ping, but we failed to locate on
-         * the pool.
-         */
-        private Set<Transfer> _missing = new HashSet<Transfer>();
-
-        public void run()
-        {
-            try {
-                Set<Transfer> missingLastTime = _missing;
-                _missing = new HashSet<Transfer>();
-
-                for (Transfer transfer: _transfers) {
-                    try {
-                        transfer.queryMoverInfo();
-                    } catch (CacheException e) {
-                        if (missingLastTime.contains(transfer)) {
-                            transfer.finished(CacheException.TIMEOUT,
-                                              "Mover timeout");
-                        } else {
-                            _missing.add(transfer);
-                        }
-                    }
-                }
-            } catch (InterruptedException e) {
             }
         }
     }

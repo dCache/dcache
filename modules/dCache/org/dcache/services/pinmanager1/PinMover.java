@@ -54,7 +54,9 @@ class PinMover extends SMCTask
          _envelope = envelope;
         _fsm = new PinMoverContext(this);
         setContext(_fsm);
-        _fsm.go();
+        synchronized (this) {
+            _fsm.go();
+        }
         info("PinMover constructor done");
     }
 

@@ -3,26 +3,49 @@
 #
 
 check -strong port
+check -strong cell.name
+check -strong clientDataPortRange
+check -strong gsiftpMaxLogin
+check -strong loginBroker
+check -strong loginBrokerUpdateTime
+check -strong performanceMarkerPeriod
+check -strong gsiftpPoolManagerTimeout
+check -strong gsiftpPoolTimeout
+check -strong gsiftpPnfsTimeout
+check -strong gsiftpMaxRetries
+check -strong gsiftpMaxStreamsPerClient
+check -strong gsiftpDefaultStreamsPerClient
+check -strong gsiftpDeleteOnConnectionClosed
+check gplazmaPolicy
+check gsiftpIoQueue
+check kpwdFile
+check gsiftpAdapterInternalInterface
+check -strong overwriteEnabled
+check -strong gsiftpAllowPassicPool
+check FtpTLogDir
 
-#
-#    Default for all our variables
-#
 onerror continue
-set context -c performanceMarkerPeriod 70
-set context -c kpwdFile          ${dcache.home}/etc/dcache.kpwd
-set context -c gsiftpPoolManagerTimeout  5400
-set context -c gsiftpPoolTimeout          600
-set context -c gsiftpPnfsTimeout          300
-set context -c gsiftpMaxRetries            80
-set context -c gsiftpMaxStreamsPerClient   10
-set context -c gsiftpDefaultStreamsPerClient  1
-set context -c gsiftpDeleteOnConnectionClosed true
-set context -c gsiftpMaxLogin                 100
-set context -c gsiftpAdapterInternalInterface ""
-set context -c gsiftpIoQueue                  ""
-set context -c overwriteEnabled false
-set context -c gsiftpAllowPassivePool false
-set context -c FtpTLogDir ""
+
+# Use gsiftpPoolProxy if defined
+define env usePoolProxy end
+set env -c myPoolProxy ${gsiftpPoolProxy}
+end
+
+check -strong gsiftpPoolProxy
+exec env usePoolProxy -ifok
+
+# Use gsiftpPoolManager if defined
+define env usePoolManager end
+set env -c myPoolManager ${gsftpPoolManager}
+end
+
+check -strong gsiftpPoolManager
+exec env usePoolManager -ifok
+
+# Otherwise use poolmanager
+set env -c myPoolProxy ${poolmanager}
+set env -c myPoolManager ${poolmanager}
+
 onerror shutdown
 
 exec file:${dcache.home}/share/cells/stage.fragment doors
@@ -34,12 +57,11 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
              diskCacheV111.doors.WeakFtpDoorV1 \
              -prot=raw \
              -clientDataPortRange=${clientDataPortRange} \
-             -root=${ftpBase} \
              -maxLogin=${gsiftpMaxLogin} \
-             -brokerUpdateTime=5 \
+             -brokerUpdateTime=${loginBrokerUpdateTime} \
              -protocolFamily=ftp \
              -protocolVersion=1.0.0 \
-             -loginBroker=LoginBroker \
+             -loginBroker=${loginBroker} \
              -perfMarkerPeriod=${performanceMarkerPeriod} \
              -poolManagerTimeout=${gsiftpPoolManagerTimeout} \
              -poolTimeout=${gsiftpPoolTimeout} \

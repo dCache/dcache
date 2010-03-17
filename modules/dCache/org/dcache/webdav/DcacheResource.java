@@ -41,13 +41,13 @@ public class DcacheResource
     @Override
     public Object authenticate(String user, String password)
     {
-        return _factory.getSecurityManager().authenticate(user, password);
+        return user;
     }
 
     @Override
     public boolean authorise(Request request, Request.Method method, Auth auth)
     {
-        return _factory.getSecurityManager().authorise(request, method, auth, this);
+        return true;
     }
 
     @Override
@@ -77,7 +77,7 @@ public class DcacheResource
     @Override
     public String getRealm()
     {
-        return _factory.getSecurityManager().getRealm();
+        return "dCache";
     }
 
     @Override

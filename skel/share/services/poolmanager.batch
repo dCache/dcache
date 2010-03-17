@@ -4,7 +4,7 @@
 exec -shell file:${dcache.home}/share/cells/stage.fragment PoolManager
 
 # Start PoolManager
-create org.dcache.cells.UniversalSpringCell PoolManager \
+create org.dcache.cells.UniversalSpringCell ${cell.name} \
    "classpath:diskCacheV111/poolManager/poolmanager.xml \
     -setupFile=${config}/PoolManager.conf \
     -export \

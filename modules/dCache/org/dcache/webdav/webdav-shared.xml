@@ -66,20 +66,22 @@
   <bean id="dispatch-filter"
         class="org.dcache.webdav.DcacheStandardFilter">
     <description>Dispatches HTTP requests to handlers</description>
-    <property name="httpManager" ref="milton"/>
+  </bean>
+
+  <bean id="authentication-service"
+        class="com.bradmcevoy.http.AuthenticationService">
+    <description>Milton authentication service</description>
   </bean>
 
   <bean id="response-handler"
-        class="com.bradmcevoy.http.DefaultResponseHandler">
+        class="com.bradmcevoy.http.webdav.DefaultWebDavResponseHandler">
     <description>Generates WebDAV responses</description>
+    <constructor-arg ref="authentication-service"/>
   </bean>
 
   <bean id="resource-factory" class="org.dcache.webdav.DcacheResourceFactory"
         init-method="init">
     <description>Exposes dCache resources to Milton WebDAV library</description>
-    <property name="securityManager">
-      <bean class="org.dcache.webdav.NullSecurityManager"/>
-    </property>
     <property name="pnfsStub" ref="pnfs-stub"/>
     <property name="poolManagerStub" ref="pool-manager-stub"/>
     <property name="poolStub" ref="pool-stub"/>
@@ -93,16 +95,17 @@
     <property name="killTimeout" value="${webdavKillTimeout}"/>
     <property name="transferConfirmationTimeout" value="${webdavTransferConfirmationTimeout}"/>
     <property name="internalAddress" value="${webdavInternalAddress}"/>
-    <property name="logoPath" value="${webdavContextPath}/${webdavLogoPath}"/>
-    <property name="webdavStylesheetPath" value="${webdavContextPath}/${webdavCssPath}"/>
-    <property name="iconDirPath" value="${webdavContextPath}/${webdavDirIconPath}"/>
-    <property name="iconFilePath" value="${webdavContextPath}/${webdavFileIconPath}"/>
+    <property name="logoPath" value="${webdav.images.logo}"/>
+    <property name="iconDirPath" value="${webdav.images.directory}"/>
+    <property name="iconFilePath" value="${webdav.images.file}"/>
+    <property name="webdavStylesheetPath" value="${webdav.style.css}"/>
   </bean>
 
   <bean id="milton" class="com.bradmcevoy.http.HttpManager">
     <description>Implementation of the WebDAV protocol</description>
     <constructor-arg ref="resource-factory"/>
     <constructor-arg ref="response-handler"/>
+    <constructor-arg ref="authentication-service"/>
     <property name="filters">
       <list>
         <ref bean="logging-filter"/>

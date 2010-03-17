@@ -51,7 +51,7 @@ public class InfoMessage implements java.io.Serializable {
    public String getMessage(){ return _message ; }
    public int    getResultCode(){ return _resultCode ; }
    public long   getTimestamp(){ return _timestamp ; }
-   public synchronized void   setTrasaction( String transaction ) {
+   public synchronized void   setTransaction( String transaction ) {
        _transaction = transaction;
    }
    public synchronized String getTransaction() {

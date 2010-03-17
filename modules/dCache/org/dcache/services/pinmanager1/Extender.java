@@ -31,7 +31,9 @@ class Extender extends SMCTask
         _job = job;
         _fsm = new ExtenderContext(this);
         setContext(_fsm);
-        _fsm.go();
+        synchronized (this) {
+            _fsm.go();
+        }
         job.setSMCTask(this);
         info("Extender constructor done ");
     }

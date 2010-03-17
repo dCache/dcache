@@ -54,7 +54,15 @@ public class MiltonHandler
         CDC.createSession();
         NDC.push(CDC.getSession().toString());
         try {
-            ServletRequest req = new ServletRequest(request);
+            ServletRequest req = new ServletRequest(request) {
+                    @Override
+                    public String getExpectHeader() {
+                        /* Jetty deals with expect headers, so no
+                         * reason for Milton to worry about them.
+                         */
+                        return "";
+                    }
+                };
             ServletResponse resp = new ServletResponse(response);
             baseRequest.setHandled(true);
             _httpManager.process(req, resp);

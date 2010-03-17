@@ -35,8 +35,10 @@ public class Log4jWriter
     public void flush()
     {
         flushCompletedLines();
-        _logger.log(_level, _buffer.toString());
-        _buffer.delete(0, _buffer.length());
+        if (_buffer.length() > 0) {
+            _logger.log(_level, _buffer.toString());
+            _buffer.delete(0, _buffer.length());
+        }
     }
 
     public void write(char[] cbuf, int off, int len)

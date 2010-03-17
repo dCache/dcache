@@ -365,43 +365,6 @@ public class CommandInterpreter implements Interpretable {
    }
 
    /**
-    * execute the content of the <i>source</i> file as a set of commands.
-    *
-    * @param source file to execute
-    * @throws CommandException
-    * @throws IOException
-    */
-   public void execute(File source) throws CommandException, IOException {
-
-       BufferedReader br = new BufferedReader(new FileReader(source));
-       String line;
-       try {
-           int lineCount = 0;
-           while ((line = br.readLine()) != null) {
-
-               ++lineCount;
-
-               line = line.trim();
-               if (line.length() == 0)
-                   continue;
-               if (line.charAt(0) == '#')
-                   continue;
-               try {
-                   command(new Args(line));
-               } catch (CommandException ce) {
-                   throw new CommandException("Error executing line " + lineCount + " : " + ce.getErrorMessage());
-               }
-           }
-       } finally {
-           try {
-               br.close();
-           } catch (IOException dummy) {
-               // ignored
-           }
-       }
-
-   }
-   /**
      * Is a convenient method of <code>command(Args args)</code>.
      * All Exceptions are catched and converted to a meaningful
      * String except the CommandExitException which allows the
@@ -639,4 +602,6 @@ public class CommandInterpreter implements Interpretable {
 //          System.out.println("!!!    acl["+i+"] : "+acls[i]);
 //       }
    }
+
+
 }

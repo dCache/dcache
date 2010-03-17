@@ -3,4 +3,4 @@
 #      available doors and their loads
 #
 
-create dmg.cells.services.login.LoginBroker LoginBroker "default -export"
+create dmg.cells.services.login.LoginBroker ${cell.name} "default -export"
