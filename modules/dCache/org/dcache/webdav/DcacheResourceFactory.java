@@ -33,7 +33,6 @@ import com.bradmcevoy.http.Resource;
 import com.bradmcevoy.http.Request;
 import com.bradmcevoy.http.HttpManager;
 import com.bradmcevoy.http.ResourceFactory;
-import com.bradmcevoy.http.SecurityManager;
 import com.bradmcevoy.http.XmlWriter;
 
 import diskCacheV111.util.FsPath;
@@ -150,7 +149,6 @@ public class DcacheResourceFactory
     private CellStub _poolManagerStub;
     private CellStub _billingStub;
     private PnfsHandler _pnfs;
-    private SecurityManager _securityManager;
     private String _ioQueue;
     private String _cellName;
     private String _domainName;
@@ -167,7 +165,6 @@ public class DcacheResourceFactory
     public DcacheResourceFactory()
         throws UnknownHostException
     {
-        _securityManager = new NullSecurityManager();
         _internalAddress = InetAddress.getLocalHost();
     }
 
@@ -355,16 +352,6 @@ public class DcacheResourceFactory
         _list = list;
     }
 
-    public SecurityManager getSecurityManager()
-    {
-        return _securityManager;
-    }
-
-    public void setSecurityManager(SecurityManager securityManager)
-    {
-        _securityManager = securityManager;
-    }
-
     /**
      * @return the logoPath
      */
@@ -477,12 +464,6 @@ public class DcacheResourceFactory
         }
 
         return getResource(getFullPath(path));
-    }
-
-    @Override
-    public String getSupportedLevels()
-    {
-        return "1,2";
     }
 
     /**

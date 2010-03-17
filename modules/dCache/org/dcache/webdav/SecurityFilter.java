@@ -5,6 +5,7 @@ import com.bradmcevoy.http.FilterChain;
 import com.bradmcevoy.http.Request;
 import com.bradmcevoy.http.Response;
 import com.bradmcevoy.http.ServletRequest;
+import com.bradmcevoy.http.HttpManager;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.security.auth.Subject;
@@ -75,6 +76,8 @@ public class SecurityFilter implements Filter
                         final Request request,
                         final Response response)
     {
+        HttpManager manager = filterChain.getHttpManager();
+
         /* Only a subset of the HTTP methods are allowed in read-only
          * mode.
          */
@@ -86,7 +89,7 @@ public class SecurityFilter implements Filter
             case PROPFIND:
                 break;
             default:
-                response.setStatus(Response.Status.SC_METHOD_NOT_ALLOWED);
+                manager.getResponseHandler().respondMethodNotAllowed(new EmptyResource(request), response, request);
                 return;
             }
         }
@@ -136,15 +139,13 @@ public class SecurityFilter implements Filter
             case OPTIONS:
             case PROPFIND:
                 if (_anonymousAccess == AnonymousAccess.NONE) {
-                    response.setStatus(Response.Status.SC_UNAUTHORIZED);
-                    response.setAuthenticateHeader(getRealm());
+                    manager.getResponseHandler().respondUnauthorised(new EmptyResource(request), response, request);
                     return;
                 }
                 break;
             default:
                 if (_anonymousAccess != AnonymousAccess.FULL) {
-                    response.setStatus(Response.Status.SC_UNAUTHORIZED);
-                    response.setAuthenticateHeader(getRealm());
+                    manager.getResponseHandler().respondUnauthorised(new EmptyResource(request), response, request);
                     return;
                 }
                 break;

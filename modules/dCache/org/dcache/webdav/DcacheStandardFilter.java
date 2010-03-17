@@ -15,6 +15,7 @@ import com.bradmcevoy.http.Handler;
 import com.bradmcevoy.http.HttpManager;
 import com.bradmcevoy.http.exceptions.ConflictException;
 import com.bradmcevoy.http.exceptions.NotAuthorizedException;
+import com.bradmcevoy.http.exceptions.BadRequestException;
 
 /**
  * Custom StandardFilter for Milton.
@@ -32,35 +33,8 @@ public class DcacheStandardFilter implements Filter
     private final static Logger log =
         LoggerFactory.getLogger(DcacheStandardFilter.class);
 
-    public static final String METHOD_NOT_IMPLEMENTED_HTML =
-        "<html><body><h1>Method Not Implemented</h1></body></html>";
-    public final static String INTERNAL_SERVER_ERROR_HTML =
-        "<html><body><h1>Internal Server Error (500)</h1></body></html>";
     public final static String FORBIDDEN_HTML =
         "<html><body><h1>Permission denied (403)</h1></body></html>";
-
-    private final Map<Request.Method, Handler> _handlers =
-        new ConcurrentHashMap<Request.Method, Handler>();
-
-    private HttpManager _manager;
-
-    public void setHttpManager(HttpManager manager)
-    {
-        _manager = manager;
-        _handlers.put(Request.Method.HEAD, manager.getHeadHandler());
-        _handlers.put(Request.Method.PROPFIND, manager.getPropFindHandler());
-        _handlers.put(Request.Method.PROPPATCH, manager.getPropPatchHandler());
-        _handlers.put(Request.Method.MKCOL, manager.getMkColHandler());
-        _handlers.put(Request.Method.COPY, manager.getCopyHandler());
-        _handlers.put(Request.Method.MOVE, manager.getMoveHandler());
-        _handlers.put(Request.Method.LOCK, manager.getLockHandler());
-        _handlers.put(Request.Method.UNLOCK, manager.getUnlockHandler());
-        _handlers.put(Request.Method.DELETE, manager.getDeleteHandler());
-        _handlers.put(Request.Method.GET, manager.getGetHandler());
-        _handlers.put(Request.Method.OPTIONS, manager.getOptionsHandler());
-        _handlers.put(Request.Method.POST, manager.getPostHandler());
-        _handlers.put(Request.Method.PUT, manager.getPutHandler());
-    }
 
     private void errorResponse(Response response,
                                Response.Status status, String error)
@@ -75,40 +49,38 @@ public class DcacheStandardFilter implements Filter
 
     public void process(FilterChain chain, Request request, Response response)
     {
-        if (_manager != chain.getHttpManager()) {
-            throw new IllegalArgumentException("FilterChain belongs to wrong HttpManager");
-        }
+        HttpManager manager = chain.getHttpManager();
 
         try {
             Request.Method method = request.getMethod();
-            Handler handler = _handlers.get(method);
+            Handler handler = manager.getMethodHandler(method);
             if (handler == null) {
-                errorResponse(response, Response.Status.SC_NOT_IMPLEMENTED,
-                              METHOD_NOT_IMPLEMENTED_HTML);
+                manager.getResponseHandler().respondMethodNotImplemented(new EmptyResource(request), response, request);
                 return;
             }
 
-            handler.process(_manager, request, response);
-        } catch (ConflictException ex) {
-            _manager.getResponseHandler().respondConflict(ex.getResource(),
-                                                          response, request,
-                                                          INTERNAL_SERVER_ERROR_HTML);
-        } catch (NotAuthorizedException ex) {
-            _manager.getResponseHandler().respondUnauthorised(ex.getResource(),
-                                                              response, request);
+            handler.process(manager,request,response);
+        } catch (BadRequestException e) {
+            manager.getResponseHandler().respondBadRequest(e.getResource(),
+                                                           response, request);
+        } catch (ConflictException e) {
+            manager.getResponseHandler().respondConflict(e.getResource(),
+                                                         response, request,
+                                                         e.getMessage());
+        } catch (NotAuthorizedException e) {
+            manager.getResponseHandler().respondUnauthorised(e.getResource(),
+                                                             response, request);
         } catch (ForbiddenException e) {
             errorResponse(response,
                           Response.Status.SC_FORBIDDEN, FORBIDDEN_HTML);
         } catch (WebDavException e) {
             log.warn("Internal server error: " + e);
-            errorResponse(response,
-                          Response.Status.SC_INTERNAL_SERVER_ERROR,
-                          INTERNAL_SERVER_ERROR_HTML);
+            manager.getResponseHandler().respondServerError(request, response,
+                                                            e.getMessage());
         } catch (RuntimeException e) {
             log.error("Internal server error", e);
-            errorResponse(response,
-                          Response.Status.SC_INTERNAL_SERVER_ERROR,
-                          INTERNAL_SERVER_ERROR_HTML);
+            manager.getResponseHandler().respondServerError(request, response,
+                                                            e.getMessage());
         } finally {
             response.close();
         }
