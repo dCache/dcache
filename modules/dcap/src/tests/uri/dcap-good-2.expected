@@ -1,0 +1,6 @@
+URL: dcap:///path/to/file
+  host: dcache.to
+  file: path/to/file
+  type: 1
+  prefix: none
+  config line: dcache.to

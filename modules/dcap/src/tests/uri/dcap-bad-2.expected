@@ -1,0 +1,2 @@
+URL: dcap:relative-path/to/file
+  dc_getURL() returned NULL
