@@ -17,9 +17,6 @@
             </fileset>
             <mapper type="glob" from="*.template" to="*" />
             <filterset>
-                <filter token="rpmMacrosFile" value="${server.rpmMacrosFile}" />
-                <!-- This is only used in the rpmrc file -->
-
                 <filter token="rpmRpmDir" value="${rpmRpmDir}" />
                 <!-- These are used in the rpmmacros file -->
                 <filter token="rpmSrpmDir" value="${rpmSrpmDir}" />
@@ -34,8 +31,7 @@
             <!-- output="${buildDir}/rpm.log" -->
             <arg value="--buildroot" />
             <arg file="${package.root.dir}/server" />
-            <arg value="--rcfile" />
-            <arg file="/usr/lib/rpm/rpmrc:${server.rpmRcFile}" />
+            <arg value="--macros=/usr/lib/rpm/macros:${server.rpmMacrosFile}" />
             <!-- some documentation claims that /usr/lib/rpm/rpmrc
                                                             will always be parsed. But it currently isnt if not set here -->
             <arg value="-bb" />
