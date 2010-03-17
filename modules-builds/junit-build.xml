@@ -28,7 +28,7 @@
         <pathelement location="${unittest.build.dir}" />
         <pathelement location="${buildTop}/modules/dCache/diskCacheV111/config" />
         <pathelement location="${webappBuildDir}/webadmin.jar" />
-        <pathelement location="${libDir}/wicket/wicket-1.4.1.jar" />
+        <fileset dir="${libDir}/wicket/" includes="*.jar" />
         <fileset dir="${libDir}/servlet-api/" includes="*.jar" />
     </path>
 
