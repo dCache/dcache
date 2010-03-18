@@ -3768,11 +3768,6 @@ public final class Manager
 			info.isSetAccessLatency(true);
 			info.setRetentionPolicy(s.getRetentionPolicy());
 			info.isSetRetentionPolicy(true);
-
-                        if (info.getFileSize() == 0) {
-                                info.setFileSize(f.getSizeInBytes());
-                        }
-
 			//
 			// send message to PnfsManager
 			//
@@ -4465,7 +4460,9 @@ public final class Manager
                 }
 		else {
                         if (isReply&&selectPool.getReturnCode()==0) {
-                                logger.debug("selectPool: file is not null, calling updateSpaceFile()");
+                                if (logger.isDebugEnabled()) {
+                                        logger.debug("selectPool: file is not null, calling updateSpaceFile()");
+                                }
                                 updateSpaceFile(file.getId(),null,null,pnfsId,null,null,null);
                         }
 		}
@@ -4505,9 +4502,6 @@ public final class Manager
                         selectPool.setLinkGroup(linkGroupName);
                         StorageInfo storageInfo = selectPool.getStorageInfo();
                         storageInfo.setKey("SpaceToken",Long.toString(spaceId));
-                        if (storageInfo.getFileSize() == 0 && file != null) {
-                                storageInfo.setFileSize(file.getSizeInBytes());
-                        }
                         //
                         // add Space Token description
                         //
