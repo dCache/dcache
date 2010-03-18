@@ -15,6 +15,7 @@ import static org.junit.Assert.fail;
 import java.util.Date;
 import java.util.Set;
 
+import org.dcache.services.info.base.guides.SubtreeStateGuide;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -1511,6 +1512,60 @@ public class StateCompositeTest extends InfoBaseTestHelper {
         visitor.assertSatisfiedTransition( "checking state contains two branches", _rootComposite, transition);
     }
 
+    /*
+     * TESTS FOR StateGuide SUPPORT IN StateComposite
+     */
+    @Test
+    public void testVisitGuide() {
+        StateGuide guide = new SubtreeStateGuide( BRANCH_EPHEMERAL_PATH);
+        GuidedVerifyingVisitor visitor = new GuidedVerifyingVisitor( guide);
+        visitor.addExpectedBranch( BRANCH_EPHEMERAL_PATH);
+
+        visitor.assertSatisfied( "visiting just ephemeral-branch", _rootComposite);
+    }
+
+    @Test
+    public void testVisitGuideWithMetrics() throws MetricStatePathException {
+        String metric1Name = "string-metric-1";
+        StatePath metric1Path = BRANCH_MORTAL_PATH.newChild( metric1Name);
+        StateValue metric1Value = new StringStateValue( "Metric 1 value", 100);
+        addMetric( metric1Path, metric1Value);
+
+        String metric2Name = "string-metric-2";
+        StatePath metric2Path = BRANCH_MORTAL_PATH.newChild( metric2Name);
+        StateValue metric2Value = new StringStateValue( "Metric 2 value", 100);
+        addMetric( metric2Path, metric2Value);
+
+        StateGuide guide = new SubtreeStateGuide( BRANCH_MORTAL_PATH);
+        GuidedVerifyingVisitor visitor = new GuidedVerifyingVisitor( guide);
+        visitor.addExpectedMetric( metric1Path, metric1Value);
+        visitor.addExpectedMetric( metric2Path, metric2Value);
+
+        visitor.assertSatisfied( "visiting just mortal-branch with metrics", _rootComposite);
+    }
+
+    @Test
+    public void testVisitGuidePostTransitionAddingMetrics() throws MetricStatePathException {
+        MalleableStateTransition transition = new MalleableStateTransition();
+
+        String metric1Name = "string-metric-1";
+        StatePath metric1Path = BRANCH_MORTAL_PATH.newChild( metric1Name);
+        StateValue metric1Value = new StringStateValue( "Metric 1 value", 100);
+        transition.updateTransitionForNewMetric( metric1Path, metric1Value, 1);
+
+        String metric2Name = "string-metric-2";
+        StatePath metric2Path = BRANCH_MORTAL_PATH.newChild( metric2Name);
+        StateValue metric2Value = new StringStateValue( "Metric 2 value", 100);
+        transition.updateTransitionForNewMetric( metric2Path, metric2Value, 1);
+
+        StateGuide guide = new SubtreeStateGuide( BRANCH_MORTAL_PATH);
+        GuidedVerifyingVisitor visitor = new GuidedVerifyingVisitor( guide);
+        visitor.addExpectedMetric( metric1Path, metric1Value);
+        visitor.addExpectedMetric( metric2Path, metric2Value);
+
+        visitor.assertSatisfiedTransition( "visiting just mortal-branch post transition",
+                _rootComposite, transition);
+    }
 
     /**
      * Quickly add a metric to a StateComposite by creating a StateTransition and applying it.

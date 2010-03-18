@@ -244,7 +244,8 @@ public class StateComposite implements StateComponent {
             String childName = mapEntry.getKey();
             StateComponent child = mapEntry.getValue();
             StatePath childPath = buildChildPath( path, childName);
-            child.acceptVisitor( childPath, visitor);
+            if( visitor.isVisitable( childPath))
+                child.acceptVisitor( childPath, visitor);
         }
 
         visitor.visitCompositePostDescend( path, branchMetadata);
@@ -274,7 +275,9 @@ public class StateComposite implements StateComponent {
             String childName = mapEntry.getKey();
             StateComponent child = mapEntry.getValue();
             StatePath childPath = buildChildPath( ourPath, childName);
-            child.acceptVisitor( transition, childPath, visitor);
+
+            if( visitor.isVisitable( childPath))
+                child.acceptVisitor( transition, childPath, visitor);
         }
 
         visitor.visitCompositePostDescend(ourPath, branchMetadata);

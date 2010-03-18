@@ -229,12 +229,12 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
                     _log.debug( "checking watcher " + thisWatcher +" predicate " + thisPredicate);
 
                 hasBeenTriggered = _state.predicateHasBeenTriggered( null,
-                                                                     thisPredicate,
-                                                                     transition);
+                        thisPredicate,
+                        transition);
 
                 if( hasBeenTriggered)
                     break; // we only need one predicate to match, so quit
-                           // early.
+                // early.
             }
 
             if( hasBeenTriggered) {
@@ -402,7 +402,8 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
             if( _log.isDebugEnabled())
                 _log.debug( "visitor " + visitor.getClass().getSimpleName() + " acquired read lock (took " + (afterLock - beforeLock) / 1000.0 + " ms), starting visit.");
 
-            _state.acceptVisitor( null, visitor);
+            if( visitor.isVisitable( null))
+                _state.acceptVisitor( null, visitor);
 
             long afterVisit = System.currentTimeMillis();
 
@@ -444,8 +445,8 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
             if( _log.isDebugEnabled())
                 _log.debug( "visitor " + visitor.getClass().getSimpleName() + " acquired read lock (took " + (afterLock - beforeLock) / 1000.0 + " ms), starting visit.");
 
-
-            _state.acceptVisitor( transition, null, visitor);
+            if( visitor.isVisitable( null))
+                _state.acceptVisitor( transition, null, visitor);
 
             long afterVisit = System.currentTimeMillis();
 
