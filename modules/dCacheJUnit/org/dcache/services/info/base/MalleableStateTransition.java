@@ -22,7 +22,7 @@ public class MalleableStateTransition extends StateTransition {
      * to an empty state the first call has {@code existing} of zero and the
      * second has the length of the common parent path. The following code
      * illustrates this.
-     * 
+     *
      * <pre>
      * StatePath commonPath = StatePath.parsePath( &quot;aa.bb&quot;);
      * StatePath path1 = commonPath.newChildPath( &quot;metric1&quot;);
@@ -32,10 +32,10 @@ public class MalleableStateTransition extends StateTransition {
      * transition.updateTransitionForNewMetric( path2, metric2,
      *                                          commonPath._elements.size());
      * </pre>
-     * 
+     *
      * This method may be used for updating a metric by specifying an {@code
      * existing} value equal to the metric's StatePath length.
-     * 
+     *
      * @param path
      *            the StatePath of the metric
      * @param metricValue
@@ -69,7 +69,7 @@ public class MalleableStateTransition extends StateTransition {
 
     /**
      * Update the StateTransition so a new branch is created.
-     * 
+     *
      * @param path
      *            the StatePath of the branch
      * @param existing
@@ -101,7 +101,7 @@ public class MalleableStateTransition extends StateTransition {
 
     /**
      * Update a StateTransition so the metric at StatePath is to be removed.
-     * 
+     *
      * @param path
      *            the StatePath for the metric to be removed.
      */
@@ -126,7 +126,7 @@ public class MalleableStateTransition extends StateTransition {
      * Provide a cryptic but human-readable String describing the
      * MalleableStateTransition. This is intended only for debugging
      * purposes.
-     * 
+     *
      * @return a description of this StateTransition.
      */
     public String debugInfo() {
