@@ -70,7 +70,9 @@ public class StatePath {
      */
     private StatePath( List<String> elements, int elementCount) {
         _elements = new ArrayList<String>(elementCount);
-        _elements.addAll(elements);
+
+        for( String element : elements)
+            _elements.add(  element.intern());
     }
 
     /**

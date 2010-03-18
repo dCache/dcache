@@ -6,6 +6,8 @@ import static org.junit.Assert.*;
 
 import org.junit.Test;
 import org.dcache.services.info.base.StatePath;
+
+import java.util.Arrays;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -522,6 +524,30 @@ public class StatePathTest extends InfoBaseTestHelper {
         }
     }
 
+
+    @Test
+    public void testParseAndListFromStringCopyEqual() {
+        String elementName = "element-1";
+        StatePath pathFromParser = StatePath.parsePath( elementName);
+
+        String copyOfElementName = new String(elementName);
+        assertNotSame( "asserting String not intern()ed", elementName, copyOfElementName);
+        StatePath pathFromList = StatePath.buildFromList( Arrays.asList( copyOfElementName));
+
+        assertEquals( "", pathFromParser, pathFromList);
+    }
+
+    @Test
+    public void testListAndParseFromStringCopyEqual() {
+        String elementName = "element-1";
+        StatePath pathFromList = StatePath.buildFromList( Arrays.asList( elementName));
+
+        String copyOfElementName = new String(elementName);
+        assertNotSame( "asserting String not intern()ed", elementName, copyOfElementName);
+        StatePath pathFromParser = new StatePath(elementName);
+
+        assertEquals( "", pathFromParser, pathFromList);
+    }
 
     /**
      *   S A N I T Y---C H E C K   T E S T S
