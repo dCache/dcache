@@ -47,7 +47,6 @@ public class CleanerV2 extends CellAdapter implements Runnable {
     private String _broadcastCellName  = null ;
     private File   _moveAwayLocation   = null ;
 
-    private boolean _useFilesystem      = true ;
     private boolean _usePnfsManager     = true ;
     private boolean _cleanUpAfterwards  = false ;
     private String  _pnfsManagerName    = "PnfsManager" ;
@@ -120,7 +119,6 @@ public class CleanerV2 extends CellAdapter implements Runnable {
             //              [-recover=<timer/Min>]
             //              [-reportRemove=<cellName>]
             //              [-usePnfsManager=[<pnfsManagerName>] | off | on ] default : PnfsManager
-            //              [-useFilesystem=on|off ]  default : on
             //              [-archive=log|zip|none  default : none
             //              [-moveAwayLocation=<moveAwayLocation>] default : remove
             //              [-nullBug] # debug only
@@ -227,10 +225,7 @@ public class CleanerV2 extends CellAdapter implements Runnable {
             if( ( tmp != null ) && ( tmp.length() > 0 ) ){
                if( tmp.equalsIgnoreCase("off")|| tmp.equalsIgnoreCase("no") ){
                   _usePnfsManager  = false ;
-               }else if( tmp.equalsIgnoreCase("on") || tmp.equalsIgnoreCase("yes") ){
-                  _usePnfsManager  = true ;
-               }else{
-                  _usePnfsManager  = true ;
+               }else if( !tmp.equalsIgnoreCase("on") && !tmp.equalsIgnoreCase("yes") ){
                   _pnfsManagerName = tmp ;
                }
             }
@@ -247,17 +242,7 @@ public class CleanerV2 extends CellAdapter implements Runnable {
                say( "Using PnfsManager Name    : "+_pnfsManagerName ) ;
                say( "Using PnfsManager Timeout : "+_pnfsManagerTimeout);
             }
-            tmp = _args.getOpt("useFilesystem") ;
-            if( ( tmp != null ) && ( tmp.length() > 0 ) ){
-               if( tmp.equalsIgnoreCase("on") || tmp.equalsIgnoreCase("yes") )_useFilesystem = true ;
-               else if( tmp.equalsIgnoreCase("off") || tmp.equalsIgnoreCase("no") )_useFilesystem = false ;
-               else
-                  throw new
-                  IllegalArgumentException("Invalid argument to : -useFilesystem = "+tmp ) ;
-            }
-            say("Using Pnfs Filesystem for cacheInfo : "+_useFilesystem ) ;
-
-            tmp = _args.getOpt("processFilesPerRun");
+	    tmp = _args.getOpt("processFilesPerRun");
             if( tmp != null )try{ _processInOnce = Integer.parseInt(tmp) ; }catch(Exception ee ){}
 
             say("Processing "+_processInOnce+" files per run");
@@ -304,7 +289,6 @@ public class CleanerV2 extends CellAdapter implements Runnable {
         if( _recoverTimer > 0L ){
            pw.println("  Next Recover Run  : "+(( _recoverTimer - (System.currentTimeMillis() - _previousRecoverRun ))/60000L)+" Minutes");
         }
-        pw.println("  Use Pnfs FS       : " + _useFilesystem ) ;
         pw.println("  Use Pnfs Manager  : " + _usePnfsManager ) ;
         if( _usePnfsManager ){
             pw.println("  PnfsManager Name     : " + _pnfsManagerName ) ;
@@ -1103,7 +1087,6 @@ public class CleanerV2 extends CellAdapter implements Runnable {
            try{
               Set<String> list = new HashSet<String>() ;
 
-              if( _useFilesystem )getCacheInfoFromPnfsFilesystem( new File(_trashLocation, fileList[i]) , list ) ;
 
               if( _usePnfsManager )getCacheInfoFromPnfsManager( pnfsId , list ) ;
 
@@ -1189,50 +1172,6 @@ public class CleanerV2 extends CellAdapter implements Runnable {
 
        return ;
 
-   }
-   private void getCacheInfoFromPnfsFilesystem(  File file , Set<String> externalList ) throws Exception {
-
-       BufferedReader br = null ;
-
-       try{
-          br = new BufferedReader( new FileReader( file ) );
-       }catch( IOException ioe ){
-          esay( "IO error while opening file "+file) ;
-          esay(ioe);
-          throw ioe  ;
-       }
-
-       try{
-          int state = 0 ;
-          String s = null ;
-          while( ( s = br.readLine() ) != null ) {
-             say(""+state+" : "+s ) ;
-             s = s.trim();
-             //
-	     // first line contains statistics only,
-             // so skip it.
-             //
-	     if( state == 0 ){
-                //
-                // get the version
-                //
-                int version = Integer.parseInt(new StringTokenizer(s,",").nextToken());
-                state = version == 1 ? 2 : 1 ;
-             }else if( state == 1 ){
-                state = 2 ;
-             }else if( state == 2 ){
-                externalList.add(s);
-             }
-
- 	  }
-       }catch(Exception ee ){
-          _exceptionCounter ++ ;
-	  esay( "Io or syntax error in [" + file + "] (not removed) : "+ee );
-          throw ee  ;
-       }finally{
-    	   try{ br.close(); }catch(Exception closee ){}
-       }
-       return  ;
    }
    public String hh_report_remove = "<reportRemoveReceiver>|off" ;
    public String ac_report_remove_$_1( Args args ){
