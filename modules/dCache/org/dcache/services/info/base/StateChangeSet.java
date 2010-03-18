@@ -10,7 +10,7 @@ import java.util.Set;
 /**
  * Information about all changes a particular StateComposite should undertake
  * as the result of transition.
- * 
+ *
  * @author Paul Millar <paul.millar@desy.de>
  */
 public class StateChangeSet {
@@ -26,7 +26,7 @@ public class StateChangeSet {
 
     /**
      * Record that a new child is to be added to this StateComposite.
-     * 
+     *
      * @param childName
      *            the name of the child
      * @param value
@@ -39,7 +39,7 @@ public class StateChangeSet {
 
     /**
      * Record that a child is to be updated.
-     * 
+     *
      * @param path
      *            the StatePath of the StateComposite that contains this
      *            child.
@@ -55,7 +55,7 @@ public class StateChangeSet {
 
     /**
      * Record that a child is to be removed.
-     * 
+     *
      * @param path
      *            the StatePath of the StateComposite that contains this
      *            child.
@@ -70,7 +70,7 @@ public class StateChangeSet {
     /**
      * Record that this StateTransition adds a child to this (presumably)
      * StateComposite that is Immortal.
-     * 
+     *
      * @param path
      */
     protected void recordChildIsImmortal() {
@@ -81,7 +81,7 @@ public class StateChangeSet {
      * Record that the _whenIShouldExpire Date should be changed. If a new
      * value is already set for this transition, it is only updated if the
      * new value will occur sooner than the currently record value.
-     * 
+     *
      * @param childExpiryDate
      *            the new Date to be used.
      */
@@ -97,7 +97,7 @@ public class StateChangeSet {
 
     /**
      * Discover the new whenIShouldExpire Date, if one is present.
-     * 
+     *
      * @param path
      *            the StatePath of the StateComposite
      * @return the new Data, if one exists, or null.
@@ -109,7 +109,7 @@ public class StateChangeSet {
     /**
      * Record that the named child StateComponent has had some activity
      * during a StateTransition.
-     * 
+     *
      * @param path
      *            the StateComposite that is iterating into a child.
      * @param childName
@@ -122,7 +122,7 @@ public class StateChangeSet {
     /**
      * Return the Set of child names for children of path that have been
      * iterated into when building the StateTransition.
-     * 
+     *
      * @param path
      *            the StatePath of the StateComposite
      * @return a Set of child names, or null if this StateComposite was not
@@ -134,7 +134,7 @@ public class StateChangeSet {
 
     /**
      * Check whether a child has altered.
-     * 
+     *
      * @param path
      *            the StateComposite that is the parent of the child.
      * @param childName
@@ -151,7 +151,7 @@ public class StateChangeSet {
     /**
      * Return whether this Transition introduces an Immortal child that is a
      * child of this StatePath
-     * 
+     *
      * @param path
      * @return
      */
@@ -161,7 +161,7 @@ public class StateChangeSet {
 
     /**
      * Returns whether a particular named child is to be removed.
-     * 
+     *
      * @param path
      *            The StatePath of the StateComposite
      * @param name
@@ -174,7 +174,7 @@ public class StateChangeSet {
 
     /**
      * Returns whether a particular named child is to be updated.
-     * 
+     *
      * @param path
      *            The StatePath of the StateComposite
      * @param name
@@ -188,7 +188,7 @@ public class StateChangeSet {
     /**
      * Remove the named child from the list of those to be removed. If the
      * named child isn't to be removed then this method has no effect.
-     * 
+     *
      * @param childName
      */
     protected void ensureChildNotRemoved( String childName) {
@@ -197,7 +197,7 @@ public class StateChangeSet {
 
     /**
      * Returns whether a particular named child is to be added.
-     * 
+     *
      * @param path
      *            The StatePath of the StateComposite
      * @param name
@@ -214,7 +214,7 @@ public class StateChangeSet {
      * <p>
      * If the child is new or is to be updated then the new value is return.
      * If the child is to be deleted or is unmodified, then null is returned.
-     * 
+     *
      * @param path
      *            the StatePath of the containing StateComposite
      * @param childName
@@ -232,7 +232,7 @@ public class StateChangeSet {
     /**
      * Obtain a collection of all new Children of the StateComposite pointed
      * to by path.
-     * 
+     *
      * @param path
      *            the path of the StateComposite
      * @return a collection of new children.
@@ -243,7 +243,7 @@ public class StateChangeSet {
 
     /**
      * Obtain a collection of all children to be removed.
-     * 
+     *
      * @param path
      *            the StatePath of the StateComposite
      * @return a collection of children's names.
@@ -254,7 +254,7 @@ public class StateChangeSet {
 
     /**
      * Obtain a collection of all children that are to be update.
-     * 
+     *
      * @param path
      *            the StatePath of the StateComposite
      * @return a collection of children's names.
@@ -273,7 +273,7 @@ public class StateChangeSet {
      * <li>to be removed
      * </ul>
      * then null is returned.
-     * 
+     *
      * @param path
      * @param childName
      * @return
@@ -286,7 +286,7 @@ public class StateChangeSet {
      * Obtain the new value for a child of some StateComposite. This is a
      * value registered as a new child value. If this metric is not new, null
      * is returned.
-     * 
+     *
      * @param path
      * @param childName
      * @return
@@ -297,7 +297,7 @@ public class StateChangeSet {
 
     /**
      * Dump our contents to a (quite verbose) String.
-     * 
+     *
      * @return
      */
     protected String dumpContents() {
@@ -337,7 +337,7 @@ public class StateChangeSet {
      * affected.
      * <p>
      * It is intended this is done before adding a child entry.
-     * 
+     *
      * @param childName
      */
     private void purgeChildEntries( String childName) {
