@@ -163,6 +163,7 @@ extern const char * getDcapVersion();
 extern const int dc_getProtocol();
 extern const int dc_getMajor();
 extern const int dc_getMinor();
+extern const char *dc_getPatch();
 
 extern void dc_setTunnel( const char *);
 extern void dc_setTunnelType( const char *);
