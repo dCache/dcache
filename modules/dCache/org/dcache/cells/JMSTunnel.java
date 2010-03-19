@@ -12,6 +12,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.io.PrintWriter;
 import java.io.ByteArrayOutputStream;
 
@@ -110,13 +111,12 @@ public class JMSTunnel
          */
         _nucleus.routeAdd(new CellRoute(null, getCellName(), CellRoute.DEFAULT));
         _connection = _factory.createConnection();
+        _connection.start();
 
         _arp = new ArpServer(getNucleus(), _connection);
         _sender = new Sender(_connection);
         _receiver = new Receiver(_connection);
         _receiver.addConsumer(getCellDomainName());
-
-        _connection.start();
     }
 
     protected String getDomainQueue(String domain)
@@ -394,7 +394,7 @@ public class JMSTunnel
         implements MessageListener
     {
         /** JMS Message ID to ARP lookup. */
-        private final Map<String,Lookup> _lookups = new HashMap();
+        private final Map<String,Lookup> _lookups = new ConcurrentHashMap();
 
         /** ARP cache. */
         private final Map<String,CacheEntry> _cache = new LinkedHashMap();
@@ -497,7 +497,7 @@ public class JMSTunnel
         }
 
         /** Called by JMS on ARP reply. */
-        synchronized public void onMessage(Message message)
+        public void onMessage(Message message)
         {
             try {
                 Lookup lookup = _lookups.remove(message.getJMSCorrelationID());
