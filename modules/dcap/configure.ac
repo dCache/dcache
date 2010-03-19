@@ -11,7 +11,7 @@ AM_CONFIG_HEADER(src/debug_level.h)
 
 
 dnl uncomment when tagging
-#RELEASE=TRUE
+RELEASE=TRUE
 
 VER_ARCHITECTURE=2
 VER_MAJOR=45
@@ -524,30 +524,35 @@ GCC32DBGPTHR_LIBS_NOT=1
 
 
 dnl set the verion of globus fully detected and the library linking.
-
+want_globus=no
 if test "0" = "${GCC32DBGPTHR_LIBS_NOT}" ; then
 GLOBUS_LIBS=${GLOBUS_GCC32DBGPTHR_LIBS}
 PKGDEPVDT=1
+want_globus=yes
 fi
 
 if test "0" = "${GCC32PTHR_LIBS_NOT}" ; then
 GLOBUS_LIBS=${GCC32PTHR_LIBS}
 PKGDEPVDT=1
+want_globus=yes
 fi
 
 if test "0" = "${GCC64DBGPTHR_LIBS_NOT}" ; then
 GLOBUS_LIBS=${GLOBUS_GCC64DBGPTHR_LIBS}
 PKGDEPVDT=1
+want_globus=yes
 fi
 
 if test "0" = "${GCC64PTHR_LIBS_NOT}" ; then
 GLOBUS_LIBS=${GLOBUS_GCC64PTHR_LIBS}
 PKGDEPVDT=1
+want_globus=yes
 fi
 
 if test "0" = "${EPEL_LIBS_NOT}" ; then
 GLOBUS_LIBS=${GLOBUS_EPEL_LIBS}
 PKGDEPEPEL=1
+want_globus=yes
 fi
 
 
@@ -806,7 +811,7 @@ notelnet="0"
 
 dnl Do the conditional compilation flags in rest of autotools.
 
-AM_CONDITIONAL([WANT_LIBGSITUNNEL], [test "${noglobus}" = "0"])
+AM_CONDITIONAL([WANT_LIBGSITUNNEL], [test "${want_globus}" = "yes"])
 AM_CONDITIONAL([WANT_LIBGSSTUNNEL], [test "${nokrb}" = "0"])
 AM_CONDITIONAL([WANT_LIBTELNETTUNNEL], [test "${notelnet}" = "0"])
 AM_CONDITIONAL([WANT_LIBSSLTUNNEL], [test "${nossl}" = "0"])
