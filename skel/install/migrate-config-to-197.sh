@@ -185,6 +185,14 @@ echo "to ${DCACHE_HOME}/etc/layouts/imported.conf."
                 echo "[$domain]"
                 echo "[$domain/gridftp]"
                 ;;
+            kerberosftp)
+                echo "[$domain]"
+                echo "[$domain/kerberosftp]"
+                ;;
+            weakftp)
+                echo "[$domain]"
+                echo "[$domain/ftp]"
+                ;;
             webdav)
                 echo "[$domain]"
                 echo "[$domain/webdav]"
@@ -192,6 +200,10 @@ echo "to ${DCACHE_HOME}/etc/layouts/imported.conf."
             gsidcap)
                 echo "[$domain]"
                 echo "[$domain/gsidcap]"
+                ;;
+            kerberosdcap)
+                echo "[$domain]"
+                echo "[$domain/kerberosdcap]"
                 ;;
             srm)
                 echo "[$domain]"
@@ -207,8 +219,8 @@ echo "to ${DCACHE_HOME}/etc/layouts/imported.conf."
                     echo "path=$path"
 
                     tags=
-                    for param in $params; do 
-                        case "$param" in 
+                    for param in $params; do
+                        case "$param" in
                             lfs=*|waitForFiles=*)
                                 echo $param
                                 ;;
@@ -274,6 +286,10 @@ echo "to ${DCACHE_HOME}/etc/layouts/imported.conf."
                 echo "[$domain]"
                 echo "[$domain/gsi-pam]"
                 echo "[$domain/pinmanager]"
+                ;;
+            statistics)
+                echo "[$domain]"
+                echo "[$domain/statistics]"
                 ;;
             chimera|pnfs)
                 echo "[namespaceDomain]"
