@@ -34,7 +34,24 @@ printDomains() # in $1 = service
             ;;
 
         gridftp)
-            printf "%s" "gridftp-${hostname}Domain "
+            for i in ${DCACHE_CONFIG}/gridftpdoor*Setup; do
+                door=$(echo $i | sed -e "s#.*gridftpdoor\(.*\)Setup#\1#")
+                printf "%s" "gridftp${door}-${hostname}Domain "
+            done
+            ;;
+
+        weakftp)
+            for i in ${DCACHE_CONFIG}/weakftpdoor*Setup; do
+                door=$(echo $i | sed -e "s#.*weakftpdoor\(.*\)Setup#\1#")
+                printf "%s" "weakftp${door}-${hostname}Domain "
+            done
+            ;;
+
+        kerberosftp)
+            for i in ${DCACHE_CONFIG}/kerberosftpdoor*Setup; do
+                door=$(echo $i | sed -e "s#.*kerberosftpdoor\(.*\)Setup#\1#")
+                printf "%s" "kerberosftp${door}-${hostname}Domain "
+            done
             ;;
 
         webdav)
@@ -42,7 +59,17 @@ printDomains() # in $1 = service
             ;;
 
         gsidcap)
-            printf "%s" "gsidcap-${hostname}Domain "
+            for i in ${DCACHE_CONFIG}/gsidcapdoor*Setup; do
+                door=$(echo $i | sed -e "s#.*gsidcapdoor\(.*\)Setup#\1#")
+                printf "%s" "gsidcap${door}-${hostname}Domain "
+            done
+            ;;
+
+        kerberosdcap)
+            for i in ${DCACHE_CONFIG}/kerberosdcapdoor*Setup; do
+                door=$(echo $i | sed -e "s#.*kerberosdcapdoor\(.*\)Setup#\1#")
+                printf "%s" "kerberosdcap${door}-${hostname}Domain "
+            done
             ;;
 
         srm)
@@ -249,9 +276,12 @@ getService() # in $1 = domain name, out $2 = service
             dcap*-*Domain)   ret="dcap" ;;
             gPlazma-*Domain) ret="gPlazma" ;;
             xrootd-*Domain)  ret="xrootd" ;;
-            gridftp-*Domain) ret="gridftp" ;;
+            gridftp*-*Domain) ret="gridftp" ;;
+            weakftp*-*Domain) ret="weakftp" ;;
+            kerberosftp*-*Domain) ret="kerberosftp" ;;
             webdav-*Domain)  ret="webdav" ;;
-            gsidcap-*Domain) ret="gsidcap" ;;
+            gsidcap*-*Domain) ret="gsidcap" ;;
+            kerberosdcap*-*Domain) ret="kerberosdcap" ;;
             srm-*Domain)     ret="srm" ;;
             adminDoorDomain) ret="admin" ;;
             *Domain)         ret="${1%Domain}" ;;
@@ -407,11 +437,25 @@ getConfigurationFile() # in $1 = service or domain, out $2 = configuration file
         xrootd|xrootd-*Domain)
             filename="xrootdDoorSetup"
             ;;
-        gridftp|gridftp-*Domain)
-            filename="gridftpdoorSetup"
+        weakftp|weakftp*-*Domain)
+	    tmp=${name%%-*Domain}
+            filename="weakftpdoor${tmp#weakftp}Setup"
             ;;
-        gsidcap|gsidcap-*Domain)
-            filename="gsidcapdoorSetup"
+        kerberosftp|kerberosftp*-*Domain)
+	    tmp=${name%%-*Domain}
+            filename="kerberosftpdoor${tmp#kerberosftp}Setup"
+            ;;
+        gridftp|gridftp*-*Domain)
+	    tmp=${name%%-*Domain}
+            filename="gridftpdoor${tmp#gridftp}Setup"
+            ;;
+        kerberosdcap|kerberosdcap*-*Domain)
+	    tmp=${name%%-*Domain}
+            filename="kerberosdcapdoor${tmp#kerberosdcap}Setup"
+            ;;
+        gsidcap|gsidcap*-*Domain)
+	    tmp=${name%%-*Domain}
+            filename="gsidcapdoor${tmp#gsidcap}Setup"
             ;;
         admin|adminDoorDomain)
             filename="adminDoorSetup"
@@ -464,290 +508,4 @@ getConfigurationValue() # in $1 = service or domain, in $2 = key, out $3 = value
     local prefix
     prefix=$(echo $1 | sed -e 's/_/__/g' -e 's/-/_/g')
     loadConfigurationFile $1 $prefix && eval $3=\"\${${prefix}_$2}\"
-}
-
-getBatchFile() # in $1 = service or domain, out $2 = batch file
-{
-    local filename
-    local name
-    name="$1"
-
-    if ! getConfigurationValue "$name" batch filename || [ -z "$filename" ]; then
-	case "${name}" in
-            srm|srm-*Domain)
-		filename="srm.batch"
-		;;
-            dcap)
-		filename="door.batch"
-		;;
-            dcap*-*Domain)
-		name=${name%%-*Domain}
-		filename="door${name#dcap}.batch"
-		;;
-            xrootd|xrootd-*Domain)
-		filename="xrootdDoor.batch"
-		;;
-            gridftp|gridftp-*Domain)
-		filename="gridftpdoor.batch"
-		;;
-            gsidcap|gsidcap-*Domain)
-		filename="gsidcapdoor.batch"
-		;;
-            admin|adminDoorDomain)
-		filename="adminDoor.batch"
-		;;
-            gPlazma|gPlazma-*Domain)
-		filename="gPlazma.batch"
-		;;
-            webdav|webdav-*Domain)
-		filename="webdav.batch"
-		;;
-            *Domain)
-		if contains $name $(printAllPoolDomains); then
-		    filename="pool.batch"
-		else
-		    filename="${name%Domain}.batch"
-		fi
-		;;
-            *)
-		filename="${name}.batch"
-		;;
-	esac
-    fi
-
-    if [ -f "${DCACHE_CONFIG}/${filename}" ] ; then
-        eval $2=\"${DCACHE_CONFIG}/${filename}\"
-    else
-        return 1
-    fi
-}
-
-# Starts or stops a given domain.
-runDomain() # in $1 = domain, in $2 = action
-{
-    local domain
-    local action
-    local service
-    local program
-    local door
-    local poolFile
-
-    domain=$1
-    action=$2
-
-    getService "$1" service || return
-
-    case "${service}" in
-        pool)
-            case "$action" in
-                start)
-		    getPoolListFile "$domain" poolFile
-		    if [ ! -f "${poolFile}" ] ; then
-			fail 4 "Pool file not found: ${poolFile}"
-		    fi
-
-		    ( domainStart "$domain" "pool=${poolFile}" ) || return
-                    ;;
-                stop)
-                    ( domainStop "$domain" ) || return
-                    ;;
-            esac
-            ;;
-        srm)
-            "${DCACHE_BIN}/dcache-srm" ${action} || return
-            ;;
-        *)
-            case "$action" in
-                start)
-		    ( domainStart "$domain" ) || return
-                    ;;
-                stop)
-                    ( domainStop "$domain" ) || return
-                    ;;
-            esac
-            ;;
-    esac
-}
-
-# Start domain. Use runDomain rather than calling this function
-# directly.
-domainStart() # $1 = domain, $2+ = domain parameters
-{
-    local domain
-    local log
-    local tmp
-    local java_options
-    local domain_domains
-    local stopFile
-    local javaPidFile
-    local daemonPidFile
-    local setupFile
-    local batchFile
-    local pid
-    local java
-
-    domain="$1"
-    shift
-
-    # Don't do anything if already running
-    if getPidOfDomain "$domain" tmp; then
-        fail 1 "${domain} is already running"
-    fi
-
-    # Construct Java options
-    getConfigurationValue "$domain" java_options java_options || true
-    java_options="${java_options} -Djava.endorsed.dirs=${DCACHE_HOME}/classes/endorsed"
-
-    # Activate GSI key pair caching
-    if ! echo "${java_options}" | grep "\-Dorg\.globus\.jglobus\.delegation\.cache\.lifetime=" >/dev/null; then
-        java_options="${java_options} -Dorg.globus.jglobus.delegation.cache.lifetime=30000"
-    fi
-
-    # Telnet port (what is this used for?)
-    if getConfigurationValue "$domain" telnetPort tmp && [ "$tmp" ]; then
-        domain_options="$domain_options -telnet ${tmp}"
-    elif getConfigurationValue "$domain" telnet tmp && [ "$tmp" ]; then
-        domain_options="$domain_options -telnet ${tmp}"
-    fi
-
-    # Debug switch
-    if getConfigurationValue "$domain" debug tmp && [ "${tmp}" ]; then
-        domain_options="$domain_options -debug"
-    fi
-
-    # Locate setup file
-    if ! getConfigurationFile "$domain" setupFile; then
-        fail 1 "Failed to find setup file for $domain"
-    fi
-
-    # Determine batch file
-    if ! getBatchFile "$domain" batchFile; then
-        fail 5 "Cannot find batch file for ${domain}"
-    fi
-
-    # Build classpath
-    classpath="${DCACHE_HOME}/classes/cells.jar:${DCACHE_HOME}/classes/dcache.jar"
-    if getConfigurationValue "$domain" classpath tmp && [ "$tmp" ]; then
-        classpath="${tmp}:${classpath}"
-    fi
-    if [ -r "${DCACHE_HOME}/classes/extern.classpath" ]; then
-        . "${DCACHE_HOME}/classes/extern.classpath"
-        classpath="${classpath}:${externalLibsClassPath}"
-    fi
-
-    # LD_LIBRARY_PATH override
-    if getConfigurationValue "$domain" libbrarypath LD_LIBRARY_PATH && [ "$LD_LIBRARY_PATH" ]; then
-        export LD_LIBRARY_PATH
-    fi
-
-    # Unpriviledged user
-    getConfigurationValue "$domain" user user || true
-
-    # Find JRE
-    if ! getConfigurationValue "$domain" java java || [ ! -x "$java" ]; then
-	if [ -x "${DCACHE_HOME}/jre/bin/java" ]; then
-            java="${DCACHE_HOME}/jre/bin/java"
-	else
-	    fail 1 "Could not find Java executable"
-	fi
-    fi
-
-    # Prepare log file
-    getLogOfDomain "$domain" log
-    if getConfigurationValue "$domain" logMode tmp && [ "$tmp" = "new" ]; then
-        mv -f "${log}" "${log}.old"
-    fi
-    touch "${log}" || fail 1 "Could not write to log file ${log}"
-
-    # Delay between automatic restarts
-    if getConfigurationValue "$domain" config tmp && [ -f "${tmp}/delay" ] ; then
-        delay=$(cat "${tmp}/delay")
-    else
-        delay=10
-    fi
-
-    # Various control files
-    getJavaPidFile "$domain" javaPidFile
-    getDaemonPidFile "$domain" daemonPidFile
-    getStopFile "$domain" stopFile
-
-    # Source dcache.local.sh
-    if [ -f "${DCACHE_JOBS}/dcache.local.sh" ]  ; then
-        . "${DCACHE_JOBS}/dcache.local.sh"
-    fi
-
-    # Execute dcache.local.run.sh
-    if [ -f "${DCACHE_JOBS}/dcache.local.run.sh" ]; then
-        if ! "${DCACHE_JOBS}/dcache.local.run.sh" $action; then
-            fail $? "Site local script ${DCACHE_JOBS}/dcache.local.run.sh failed: errno = $?"
-        fi
-    fi
-
-    # Start daemon
-    rm -f "$stopFile"
-    cd $DCACHE_HOME
-    CLASSPATH="$classpath" /bin/sh ${DCACHE_HOME}/share/lib/daemon ${user:+-u} ${user:+"$user"} -r "$stopFile" -d "$delay" -f -c "$javaPidFile" -p "$daemonPidFile" -o "$log" "$java" ${java_options} dmg.cells.services.Domain "${domain}" ${domain_options} -batch "$batchFile" -param "ourHomeDir=${DCACHE_HOME}" "setupFile=${setupFile}" "$@" 
-
-    # Wait for confirmation
-    printf "Starting ${domain} "
-    for c in 6 5 4 3 2 1 0; do
-        if getPidFromFile "$javaPidFile" pid && isRunning "$pid"; then
-            echo "done"
-            return
-        fi
-        sleep 1
-        printf "$c "
-    done
-
-    echo "failed"
-    grep PANIC "${log}"
-    exit 4
-}
-
-# Stop domain. Use runDomain rather than calling this function
-# directly.
-domainStop() # $1 = domain
-{
-    local domain
-    local javaPid
-    local daemonPid
-    local stopFile
-
-    domain="$1"
-
-    if ! getPidOfDomain "$domain" daemonPid; then
-        return 0
-    fi
-
-    # Fail if we don't have permission to signal the daemon
-    if ! kill -0 $daemonPid; then
-	fail 1 "Failed to kill ${domain}"
-    fi
-
-    # Stopping a dCache domain for good requires that we supress the
-    # automatic restart by creating a stop file.
-    getStopFile "$domain" stopFile
-    touch "$stopFile" 2>/dev/null
-
-    if getJavaPidOfDomain "$domain" javaPid; then
-	kill -TERM $javaPid 1>/dev/null 2>/dev/null || true
-    fi
-
-    printf "Stopping ${domain} (pid=$daemonPid) "
-    for c in  0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
-        if ! isRunning $daemonPid; then
-            rm -f "$daemonPidFile" "$javaPidFile"
-            echo "done"
-            return
-        fi
-        printf "$c "
-        sleep 1
-        if [ $c -eq 9 ] ; then
-	    if getJavaPidOfDomain "$domain" javaPid; then
-		kill -9 $javaPid 1>/dev/null 2>/dev/null || true
-	    fi
-        fi
-    done
-    echo
-    fail 4 "Giving up. ${domain} might still be running."
 }
