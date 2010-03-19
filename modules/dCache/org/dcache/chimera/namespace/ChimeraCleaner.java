@@ -265,11 +265,11 @@ public class ChimeraCleaner extends AbstractCell implements Runnable {
 
         } catch (Exception e) {
             _logNamespace.error("Exception occurred while running cleaner constructor: "+ e);
-            start();
+            doInit();
             kill();
             throw e;
         }
-        start();
+        doInit();
     }
 
     void dbInit(String jdbcUrl, String jdbcClass, String user, String pass ) throws SQLException {
