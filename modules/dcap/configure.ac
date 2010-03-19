@@ -14,7 +14,7 @@ dnl uncomment when tagging
 #RELEASE=TRUE
 
 VER_ARCHITECTURE=2
-VER_MAJOR=44
+VER_MAJOR=45
 VER_MINOR=0
 VER_PATCH=0
 if test "A" = A$RELEASE; then
