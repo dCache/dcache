@@ -6,7 +6,8 @@
 
 package gplazma.authz;
 
-import org.apache.log4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.io.*;
@@ -19,7 +20,7 @@ import java.lang.*;
 
 public class AuthorizationConfig {
 
-    private static final Logger log = Logger.getLogger(AuthorizationConfig.class);
+    private static final Logger log = LoggerFactory.getLogger(AuthorizationConfig.class);
     private long authRequestID;
 
     private String authConfigFileName;
@@ -71,10 +72,6 @@ public class AuthorizationConfig {
         authConfigFileName = filename;
         log.debug("AuthorizationConfig reading " + filename);
         read(filename);
-    }
-
-    public void setLogLevel	(Level level) {
-        log.setLevel(level);
     }
 
     private synchronized void read(String filename) throws IOException {

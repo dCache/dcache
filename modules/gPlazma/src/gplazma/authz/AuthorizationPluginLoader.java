@@ -10,11 +10,12 @@ import java.util.*;
 import java.lang.reflect.Method;
 import java.lang.reflect.Constructor;
 
-import org.apache.log4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AuthorizationPluginLoader {
 
-    private static final Logger log = Logger.getLogger(AuthorizationPluginLoader.class);
+    private static final Logger log = LoggerFactory.getLogger(AuthorizationPluginLoader.class);
 
     private AuthorizationConfig authConfig;
     private Vector pluginPriorityConfig;
@@ -42,10 +43,6 @@ public class AuthorizationPluginLoader {
     public AuthorizationPluginLoader(AuthorizationConfig authConfig, long authRequestID) {
         this.authConfig = authConfig;
         this.authRequestID=authRequestID;
-    }
-
-    public void setLogLevel	(Level level) {
-        log.setLevel(level);
     }
 
     private void buildDCacheAuthzPolicy()

@@ -17,7 +17,8 @@ import java.security.cert.X509Certificate;
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSContext;
 import org.gridforum.jgss.ExtendedGSSContext;
-import org.apache.log4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import gplazma.authz.records.*;
 import gplazma.authz.AuthorizationException;
@@ -30,7 +31,7 @@ import gplazma.authz.plugins.RecordMappingPlugin;
  */
 
 public class VORoleMapAuthzPlugin extends RecordMappingPlugin {
-    private static final Logger logger = Logger.getLogger(VORoleMapAuthzPlugin.class);
+    private static final Logger logger = LoggerFactory.getLogger(VORoleMapAuthzPlugin.class);
     private String gridVORoleMapPath;
     private long authRequestID=0;
     gPlazmaAuthorizationRecord authRecord;
@@ -92,7 +93,6 @@ public class VORoleMapAuthzPlugin extends RecordMappingPlugin {
 
         try {
             voRoleMapHandler = new VORoleMapHandler(gridVORoleMapPath, getAuthRequestID());
-            voRoleMapHandler.setLogLevel(logger.getLevel());
         } catch(Exception ase) {
             logger.error("Exception in reading authz-vorole-mapping configuration file: ");
             logger.error(gridVORoleMapPath + " " + ase);

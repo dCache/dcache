@@ -6,7 +6,8 @@
 
 package gplazma.authz.plugins.gridmapfile;
 
-import org.apache.log4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.io.*;
@@ -21,7 +22,7 @@ import gplazma.authz.AuthorizationController;
  */
 
 public class GridMapFileHandler {
-  private static final Logger log = Logger.getLogger(GridMapFileHandler.class);
+  private static final Logger log = LoggerFactory.getLogger(GridMapFileHandler.class);
   private static String logpattern = "%d{MM/dd HH:mm:ss,SSS} %C{1} authRequestID ";
 
     private static final String GRIDMAP_FILENAME="grid-mapfile";
@@ -45,10 +46,6 @@ public class GridMapFileHandler {
         log.debug("GridMapFileHandler reading " + filename);
         read(filename);
 
-  }
-
-  public void setLogLevel(Level level) {
-        log.setLevel(level);
   }
 
   private synchronized void read(String filename) throws IOException {
@@ -91,8 +88,8 @@ public class GridMapFileHandler {
 				fillMap(gridSubjectDN, mappedUsername);
 			}
 		}
-	}	
-	
+	}
+
 	private void fillMap(String subjectDN, String username) {
 		String mapValue = username.trim();
 		String mapKey = subjectDN.trim();
@@ -105,11 +102,11 @@ public class GridMapFileHandler {
 			quotedString = quotedString.replace('\"',' ').trim();
 		}
 		return quotedString;
-	}	
-	
+	}
+
 	public String getMappedUsername(String gridDN)
 	throws Exception {
 		return removeQuotes((String)gridMap.get(gridDN));
-	}	
+	}
 
 } //end of GridMapFileHandler

@@ -23,7 +23,8 @@ import gplazma.authz.AuthorizationException;
 import gplazma.authz.util.X509CertUtil;
 import gplazma.authz.records.gPlazmaAuthorizationRecord;
 import gplazma.authz.plugins.RecordMappingPlugin;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -32,7 +33,7 @@ import org.apache.log4j.Logger;
 
 public abstract class SAMLAuthorizationPlugin extends RecordMappingPlugin {
 
-    private static final Logger logger = Logger.getLogger(SAMLAuthorizationPlugin.class);
+    private static final Logger logger = LoggerFactory.getLogger(SAMLAuthorizationPlugin.class);
     private String mappingServiceURL;
     private GlobusCredential serviceCredential;
     private String targetServiceName;

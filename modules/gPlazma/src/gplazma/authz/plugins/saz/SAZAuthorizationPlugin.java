@@ -1,7 +1,8 @@
 package gplazma.authz.plugins.saz;
 
 //import org.dcache.auth.UserAuthRecord;
-import org.apache.log4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.Socket;
 import java.security.cert.X509Certificate;
@@ -22,17 +23,11 @@ public class SAZAuthorizationPlugin extends AuthorizationPlugin {
 
   private long authRequestID=0;
   private ReadWriteSocket rwSocket;
-  private static final Logger log = Logger.getLogger(SAZAuthorizationPlugin.class);
-  private static String logpattern = "%d{MM/dd HH:mm:ss,SSS} %m%n";
-  private static PatternLayout loglayout = new PatternLayout(logpattern);
+  private static final Logger log = LoggerFactory.getLogger(SAZAuthorizationPlugin.class);
 
   public SAZAuthorizationPlugin(long authRequestID) throws AuthorizationException {
     super(authRequestID);
     log.info("saz plugin now loaded");
-  }
-
-  public void setLogLevel	(String level) {
-    log.setLevel(Level.toLevel(level));
   }
 
   public gPlazmaAuthorizationRecord authorize(X509Certificate[] certs, String desiredUserName, String serviceUrl, Socket socket)

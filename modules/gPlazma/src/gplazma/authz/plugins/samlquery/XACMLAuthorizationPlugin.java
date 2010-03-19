@@ -18,7 +18,8 @@ import gplazma.authz.records.gPlazmaAuthorizationRecord;
 import org.opensciencegrid.authz.xacml.common.LocalId;
 import org.opensciencegrid.authz.xacml.common.XACMLConstants;
 import org.opensciencegrid.authz.xacml.client.MapCredentialsClient;
-import org.apache.log4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.ietf.jgss.GSSException;
 import org.glite.voms.VOMSAttribute;
 
@@ -30,7 +31,7 @@ import org.glite.voms.VOMSAttribute;
 public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
 
     private static final HashMap<String, TimedLocalId> UsernameMap = new HashMap();
-    private static final Logger logger = Logger.getLogger(XACMLAuthorizationPlugin.class);
+    private static final Logger logger = LoggerFactory.getLogger(XACMLAuthorizationPlugin.class);
 
 
     public XACMLAuthorizationPlugin(String mappingServiceURL, String storageAuthzPath, long authRequestID) {

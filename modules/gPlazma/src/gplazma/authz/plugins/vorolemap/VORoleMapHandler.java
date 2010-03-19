@@ -6,7 +6,8 @@
 
 package gplazma.authz.plugins.vorolemap;
 
-import org.apache.log4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.io.*;
@@ -20,7 +21,7 @@ import gplazma.authz.AuthorizationController;
  */
 
 public class VORoleMapHandler {
-  private static final Logger log = Logger.getLogger(VORoleMapHandler.class);
+  private static final Logger log = LoggerFactory.getLogger(VORoleMapHandler.class);
   private static String logpattern = "%d{MM/dd HH:mm:ss,SSS} %C{1} authRequestID ";
 
   private static final String GRID_VOROLE_AUTHZ_DB="grid-vorolemap";
@@ -45,10 +46,6 @@ public class VORoleMapHandler {
      	}
     log.debug("VORoleMapHandler reading " + filename);
     read(filename);
-  }
-
-  public void setLogLevel(Level level) {
-        log.setLevel(level);
   }
 
   private synchronized void read(String filename) throws IOException {
@@ -76,7 +73,7 @@ public class VORoleMapHandler {
   private void read(BufferedReader reader)
 	throws IOException {
         boolean eof = false;
-        String line;	
+        String line;
 
       while((line = reader.readLine()) != null) {
       String thisLine = line.trim();
@@ -98,7 +95,7 @@ public class VORoleMapHandler {
 			if(thirdQuote == -1) {
 					mappedUsername = thisLine.substring(secondQuote+1).trim();
 					//System.out.println("mappedUsername parsed from file as: " +mappedUsername);
-			}	
+			}
 			else {
 				int fourthQuote = thisLine.indexOf('\"', thirdQuote+1);
 				if(fourthQuote == -1) {
@@ -115,7 +112,7 @@ public class VORoleMapHandler {
 				fillMap(gridFineGrainIdentity, mappedUsername);
 			}
 		}
-	}	
+	}
 
 	private void fillMap(String gridFineGrainIdentity, String username) {
 		String mapValue = username;
@@ -135,8 +132,8 @@ public class VORoleMapHandler {
 			quotedString = quotedString.replace('\"',' ').trim();
 		}
 		return quotedString;
-	}	
-	
+	}
+
 	public String getMappedUsername(String gridFineGrainSecureId)
 	throws Exception {
 		gridFineGrainSecureId = gridFineGrainSecureId.trim();
