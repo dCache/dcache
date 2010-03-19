@@ -157,6 +157,7 @@ rm -rf $RPM_BUILD_ROOT
 %{prefix}/bin/dcsuck
 %{prefix}/bin/readv_test
 %{prefix}/bin/wdccp
+%{prefix}/bin/dcap_url-test
 
 %files -n libdcap
 %ifarch x86_64
