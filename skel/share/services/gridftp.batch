@@ -2,6 +2,8 @@
 #      GridFTP Door
 #
 
+onerror shutdown
+
 check -strong port
 check -strong cell.name
 check -strong srmSpaceManagerEnabled
@@ -20,12 +22,14 @@ check -strong gsiftpDeleteOnConnectionClosed
 check -strong useGPlazmaAuthorizationCell
 check -strong delegateToGPlazma
 check -strong useGPlazmaAuthorizationModule
+check gsiftpPoolManager
+check gsiftpPoolProxy
 check gplazmaPolicy
 check gsiftpIoQueue
 check kpwdFile
 check gsiftpAdapterInternalInterface
 check -strong overwriteEnabled
-check -strong gsiftpAllowPassicPool
+check -strong gsiftpAllowPassivePool
 check FtpTLogDir
 
 onerror continue
@@ -35,7 +39,7 @@ define env usePoolProxy end
 set env -c myPoolProxy ${gsiftpPoolProxy}
 end
 
-check -strong gsiftpPoolProxy
+eval "${gsiftpPoolProxy}" "" !=
 exec env usePoolProxy -ifok
 
 # Use gsiftpPoolManager if defined
@@ -43,7 +47,7 @@ define env usePoolManager end
 set env -c myPoolManager ${gsftpPoolManager}
 end
 
-check -strong gsiftpPoolManager
+eval "${gsiftpPoolManager}" "" !=
 exec env usePoolManager -ifok
 
 # Otherwise use space manager, if enabled

@@ -2,6 +2,8 @@
 #      FTP Door
 #
 
+onerror shutdown
+
 check -strong port
 check -strong cell.name
 check -strong clientDataPortRange
@@ -16,12 +18,14 @@ check -strong gsiftpMaxRetries
 check -strong gsiftpMaxStreamsPerClient
 check -strong gsiftpDefaultStreamsPerClient
 check -strong gsiftpDeleteOnConnectionClosed
+check gsiftpPoolManager
+check gsiftpPoolProxy
 check gplazmaPolicy
 check gsiftpIoQueue
 check kpwdFile
 check gsiftpAdapterInternalInterface
 check -strong overwriteEnabled
-check -strong gsiftpAllowPassicPool
+check -strong gsiftpAllowPassivePool
 check FtpTLogDir
 
 onerror continue
@@ -31,7 +35,7 @@ define env usePoolProxy end
 set env -c myPoolProxy ${gsiftpPoolProxy}
 end
 
-check -strong gsiftpPoolProxy
+eval "${gsiftpPoolProxy}" "" !=
 exec env usePoolProxy -ifok
 
 # Use gsiftpPoolManager if defined
@@ -39,7 +43,7 @@ define env usePoolManager end
 set env -c myPoolManager ${gsftpPoolManager}
 end
 
-check -strong gsiftpPoolManager
+eval "${gsiftpPoolManager}" "" !=
 exec env usePoolManager -ifok
 
 # Otherwise use poolmanager
