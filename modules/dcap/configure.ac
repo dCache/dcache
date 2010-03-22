@@ -532,7 +532,7 @@ want_globus=yes
 fi
 
 if test "0" = "${GCC32PTHR_LIBS_NOT}" ; then
-GLOBUS_LIBS=${GCC32PTHR_LIBS}
+GLOBUS_LIBS=${GLOBUS_GCC32PTHR_LIBS}
 PKGDEPVDT=1
 want_globus=yes
 fi
