@@ -4,9 +4,15 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
            http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
 
+    <bean id="infoCellStub"
+        class="org.dcache.webadmin.model.dataaccess.impl.ServletContextCellStub">
+        <constructor-arg type="java.lang.String" value="info"/>
+        <property name="timeout" value="4000"/>
+    </bean>
 
     <bean id="XMLDataGatherer"
         class="org.dcache.webadmin.model.dataaccess.impl.CellXMLDataGatherer">
+        <property name="infoCellStub" ref="infoCellStub"/>
     </bean>
 
     <bean id="DAOFactory" class="org.dcache.webadmin.model.dataaccess.impl.DAOFactoryImpl">
