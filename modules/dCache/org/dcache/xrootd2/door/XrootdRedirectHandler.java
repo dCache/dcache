@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Collections;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.nio.channels.ClosedChannelException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
@@ -31,7 +30,6 @@ import org.dcache.xrootd2.protocol.messages.StatxResponse;
 import org.dcache.xrootd2.protocol.messages.SyncRequest;
 import org.dcache.xrootd2.protocol.messages.WriteRequest;
 import org.dcache.xrootd2.security.AuthorizationHandler;
-import org.dcache.xrootd2.util.DoorRequestMsgWrapper;
 import org.dcache.xrootd2.util.FileStatus;
 import org.dcache.xrootd2.util.ParseException;
 import org.dcache.xrootd2.core.XrootdRequestHandler;
@@ -42,7 +40,6 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FileMetaData.Permissions;
-import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
 
@@ -78,8 +75,6 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
     private final static SecureRandom _random = new SecureRandom();
 
     private final XrootdDoor _door;
-
-    private final static AtomicInteger _handleCounter = new AtomicInteger();
 
     /**
      * The set of threads which currently process an xrootd request
@@ -158,17 +153,14 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
             (InetSocketAddress) channel.getLocalAddress();
         InetSocketAddress remoteAddress =
             (InetSocketAddress) channel.getRemoteAddress();
-        DoorRequestMsgWrapper info = new DoorRequestMsgWrapper();
         String path = req.getPath();
         int options = req.getOptions();
         boolean isWrite = req.isNew() || req.isReadWrite();
 
-        _log.info("Opening " + path + (isWrite ? " for write" : " for read"));
+        _log.info("Opening {} for {}", path, (isWrite ? "write" : "read"));
         if (_log.isDebugEnabled()) {
             logDebugOnOpen(req);
         }
-
-        info.setpath(path);
 
         try {
             if (isWrite && _door.isReadOnly()) {
@@ -205,10 +197,6 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                     throw new CacheException(CacheException.PERMISSION_DENIED,
                                               "authorization check failed: " +
                                               e.getMessage());
-                } finally {
-                    if (authzHandler.getUser() != null) {
-                        info.setUser(authzHandler.getUser());
-                    }
                 }
 
                 if (!isAuthorized) {
@@ -220,64 +208,35 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                 // request can refer to the lfn.  In this case the real
                 // path is delivered by the authz plugin
                 if (authzHandler.providesPFN()) {
-                    _log.info("access granted for LFN=" + path +
-                              " PFN=" + authzHandler.getPFN());
+                    _log.info("access granted for LFN={} PFN={}",
+                              path, authzHandler.getPFN());
 
                     // get the real path (pfn) which we will open
                     path = authzHandler.getPFN();
-                    info.setpath(path);
                 }
             }
 
             ////////////////////////////////////////////////////////////////
             // interact with core dCache to open the requested file
-            PnfsGetStorageInfoMessage msg;
+            long checksum = req.calcChecksum();
+            XrootdTransfer transfer;
             if (isWrite) {
                 boolean createDir = (options & XrootdProtocol.kXR_mkpath) ==
                     XrootdProtocol.kXR_mkpath;
-                msg = _door.createNewPnfsEntry(path, createDir);
+                transfer =
+                    _door.write(remoteAddress, path, checksum, createDir);
             } else {
-                msg = _door.getStorageInfo(path);
+                transfer =
+                    _door.read(remoteAddress, path, checksum);
             }
 
-            StorageInfo storageInfo = msg.getStorageInfo();
-            FileMetaData metaData = msg.getMetaData();
-            PnfsId pnfsid = msg.getPnfsId();
-            boolean success = false;
-            try {
-                info.setMappedIds(metaData.getGid(), metaData.getUid());
-                info.setPnfsId(pnfsid);
-
-                // get unique fileHandle (PnfsId is not unique in case the
-                // same file is opened more than once in this
-                // door-instance)
-                int fileHandle = _handleCounter.getAndIncrement();
-
-                info.setFileHandle(fileHandle);
-
-                long checksum = req.calcChecksum();
-                _log.debug("checksum of openrequest: " + checksum);
-
-                InetSocketAddress redirectAddress =
-                    _door.transfer(remoteAddress, path, pnfsid, storageInfo,
-                                   fileHandle, checksum, isWrite);
-
-                // ok, open was successful
-                respond(ctx, event,
-                        new RedirectResponse(req.getStreamID(),
-                                             redirectAddress.getHostName(),
-                                             redirectAddress.getPort()));
-                success = true;
-            } finally {
-                if (!success && isWrite) {
-                    try {
-                        _door.deletePnfsEntry(pnfsid);
-                    } catch (CacheException e) {
-                        _log.error(String.format("Failed to initiate write transfer, but removing the dangling name space entry for [%s] failed too [%s]",
-                                                 pnfsid, e.getMessage()));
-                    }
-                }
-            }
+            // ok, open was successful
+            InetSocketAddress address = transfer.getRedirect();
+            _log.info("Redirecting to {}", address);
+            respond(ctx, event,
+                    new RedirectResponse(req.getStreamID(),
+                                         address.getHostName(),
+                                         address.getPort()));
         } catch (CacheException e) {
             switch (e.getRc()) {
             case CacheException.FILE_NOT_FOUND:
@@ -317,11 +276,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                                                e.getMessage(), e.getRc()));
                 break;
             }
-            info.fileOpenFailed(e.getRc(), e.getMessage());
         } catch (InterruptedException e) {
-            info.fileOpenFailed(CacheException.DEFAULT_ERROR_CODE,
-                                "Open was interrupted");
-
             /* Interrupt may be caused by cell shutdown or client
              * disconnect.  If the client disconnected, then the error
              * message will never reach the client, so saying that the
@@ -332,14 +287,10 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                              "Server shutdown");
         } catch (RuntimeException e) {
             _log.error("Open failed due to a bug", e);
-            info.fileOpenFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                e.getMessage());
             respondWithError(ctx, event, req,
                              XrootdProtocol.kXR_ServerError,
                              String.format("Internal server error (%s)",
                                            e.getMessage()));
-        } finally {
-            _door.sendBillingInfo(remoteAddress, info);
         }
     }
 
