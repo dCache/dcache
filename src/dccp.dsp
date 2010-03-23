@@ -95,9 +95,6 @@ SOURCE=.\dccp.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\getopt.c
-# End Source File
-# End Group
 # Begin Group "Header Files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"

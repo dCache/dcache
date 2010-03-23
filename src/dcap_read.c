@@ -16,14 +16,13 @@
  */
 
 
-
+#include <zlib.h>
 #include "dcap_shared.h"
 
 ssize_t dc_real_read( struct vsp_node *node, void *buff, size_t buflen);
 ssize_t dc_pread64( int fd, void *buff, size_t buflen, off64_t);
 extern off64_t dc_real_lseek(struct vsp_node *node, off64_t offset, int whence);
 extern int dc_real_fsync(struct vsp_node *);
-extern unsigned long update_adler32(unsigned long, unsigned char *, size_t);
 
 ssize_t
 dc_read(int fd, void *buff, size_t buflen)
@@ -542,7 +541,7 @@ ssize_t dc_readTo(int srcfd, int destdf, size_t size)
 				goto out;
 			}
 
-			sum = update_adler32(sum, (unsigned char *)input_buffer, blocksize);
+			sum = adler32(sum, (unsigned char *)input_buffer, blocksize);
 
 			dc_debug(DC_INFO, "block len = %d, checksum is: 0x%.8x",blocksize, sum );
 

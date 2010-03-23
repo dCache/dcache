@@ -16,6 +16,7 @@
  */
 
 #include "dcap_shared.h"
+#include <zlib.h>
 
 /*
  * reserved for future
@@ -33,11 +34,10 @@ static sumInitialValueTable csm[] = {
 };
 #endif
 
-extern unsigned long update_adler32(unsigned long, unsigned char *, size_t);
 
 void update_checkSum(checkSum *sum, unsigned char *buf, size_t len)
 {
-	sum->sum =  update_adler32(sum->sum, buf, len);
+	sum->sum =  adler32(sum->sum, buf, len);
 }
 
 

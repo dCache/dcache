@@ -14,7 +14,7 @@ dcap.h \
 dcap_errno.h
 
 
-c_sources = debug_level.h adler32.c  \
+c_sources = debug_level.h  \
 array.c  \
 char2crc.c  \
 dcap.c  \
