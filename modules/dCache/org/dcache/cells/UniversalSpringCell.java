@@ -264,17 +264,18 @@ public class UniversalSpringCell
     private void executeSetup()
         throws IOException, CommandException
     {
-        for (CellSetupProvider provider: _setupProviders) {
-            provider.beforeSetup();
-        }
-
         executeDefinedSetup();
-        if (_setupFile != null && _setupFile.isFile()) {
-            execFile(_setupFile);
-        }
 
-        for (CellSetupProvider provider: _setupProviders) {
-            provider.afterSetup();
+        if( _setupFile != null && _setupFile.isFile() ) {
+            for (CellSetupProvider provider: _setupProviders) {
+                provider.beforeSetup();
+            }
+
+            execFile(_setupFile);
+
+            for (CellSetupProvider provider: _setupProviders) {
+                provider.afterSetup();
+            }
         }
     }
 

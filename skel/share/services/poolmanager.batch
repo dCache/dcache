@@ -3,9 +3,48 @@
 # External settings
 exec -shell file:${dcache.home}/share/cells/stage.fragment PoolManager
 
+# default configuration for selection unit:
+#     all pools added into default pool group
+#     all protocols and storage groups are allowed
+#     read/write/cache/pool-2-pool allowed on all pools
+define context poolmanager.defaults endDefine
+    #
+    # The units ...
+    #
+    psu create unit -net    0.0.0.0/0.0.0.0
+    psu create unit -store  *@*
+    psu create unit -protocol */*
+
+    #
+    # The unit Groups ...
+    #
+    psu create ugroup any-store
+    psu addto ugroup any-store *@*
+
+    psu create ugroup world-net
+    psu addto ugroup world-net 0.0.0.0/0.0.0.0
+
+    psu create ugroup any-protocol
+    psu addto  ugroup any-protocol */*
+
+    #
+    # The pool groups ...
+    #
+    psu create pgroup default
+
+    #
+    # The links ...
+    #
+    psu create link default-link any-store world-net any-protocol
+    psu set link default-link -readpref=10 -writepref=10 -cachepref=10 -p2ppref=-1
+    psu add link default-link default
+
+endDefine
+
 # Start PoolManager
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
-   "classpath:diskCacheV111/poolManager/poolmanager.xml \
+   "!poolmanager.defaults \
+    classpath:diskCacheV111/poolManager/poolmanager.xml \
     -setupFile=${config}/PoolManager.conf \
     -export \
     -cellClass=PoolManager \

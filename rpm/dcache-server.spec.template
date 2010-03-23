@@ -84,7 +84,6 @@ fi
 %attr(0755,root,root) /opt/d-cache/libexec/chimera/chimera-cli.sh
 %attr(0755,root,root) /opt/d-cache/libexec/infoProvider/info-based-infoProvider.sh
 %attr(0755,root,root) /opt/d-cache/libexec/infoprovidercms.rb
-%config(noreplace) /opt/d-cache/config/PoolManager.conf
 %config(noreplace) /opt/d-cache/config/chimera-config.xml
 %config(noreplace) /opt/d-cache/config/log4j.properties
 %config(noreplace) /opt/d-cache/etc/dcachesrm-gplazma.policy

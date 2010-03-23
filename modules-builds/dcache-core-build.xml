@@ -388,9 +388,6 @@
         <!-- jar file  -->
         <copy file="${classesDir}/dcache.jar" todir="${server.bin.dir}/classes" />
 
-        <!-- configs  -->
-        <copy file="${dcache.src}/diskCacheV111/config/PoolManager.conf" todir="${server.bin.dir}/config" />
-
         <!-- pool setup template  -->
         <copy file="${dcache.src}/diskCacheV111/config/setup.temp" todir="${server.bin.dir}/config" />
 
