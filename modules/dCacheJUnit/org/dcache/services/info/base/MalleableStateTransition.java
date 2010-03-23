@@ -54,7 +54,7 @@ public class MalleableStateTransition extends StateTransition {
          * Since updateTransitionForNewBranch won't iterate down beyond the
          * last element, we must add the final iteration ourselves.
          */
-        if( !parentPath.isSimplePath())
+        if( parentPath != null && !parentPath.isSimplePath())
             getStateChangeSet( parentPath.parentPath()).recordChildItr(
                                                                         parentPath.getLastElement());
 
@@ -97,6 +97,16 @@ public class MalleableStateTransition extends StateTransition {
             currentPath = currentPath == null ? new StatePath( childName)
                     : currentPath.newChild( childName);
         }
+    }
+
+    public void updateTransitionChangingMetricToBranch( StatePath path, int existing) {
+        updateTransitionForNewBranch( path, existing);
+
+        StatePath parentPath = path.parentPath();
+        StateChangeSet scs = getOrCreateChangeSet( parentPath);
+
+        String metricName = path.getLastElement();
+        scs.recordUpdatedChild( metricName, new StateComposite());
     }
 
     /**

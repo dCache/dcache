@@ -38,6 +38,15 @@ public class MalleableStateTransitionTests {
     }
 
     @Test
+    public void testAddMetricToRoot() {
+        StatePath path = new StatePath("new-metric");
+        _transition.updateTransitionForNewMetric( path, METRIC_VALUE, 0);
+        _visitor.addExpectedMetric( path, METRIC_VALUE);
+
+        assertVisitorSatisfied();
+    }
+
+    @Test
     public void testAddTwoMetricsSameBranch() {
         StateValue metricValue1 = new StringStateValue( "some string value");
 
@@ -137,6 +146,40 @@ public class MalleableStateTransitionTests {
         // the branches leading up to the metric-branch will remain
         _visitor.addExpectedBranch( METRIC_PARENT_PATH.parentPath());
 
+        assertVisitorSatisfied();
+    }
+
+    @Test
+    public void testChangeBranchToMetric() {
+        _exhibitor.addBranch( METRIC_PATH);
+
+        StateValue metricValue = new StringStateValue("some value");
+        _transition.updateTransitionForNewMetric( METRIC_PATH, metricValue, 3);
+
+        _visitor.addExpectedMetric( METRIC_PATH, metricValue);
+        assertVisitorSatisfied();
+    }
+
+    @Test
+    public void testChangeMetricToBranch() {
+        _exhibitor.addMetric( METRIC_PATH, METRIC_VALUE);
+
+        _transition.updateTransitionChangingMetricToBranch( METRIC_PATH, 3);
+
+        _visitor.addExpectedBranch( METRIC_PATH);
+        assertVisitorSatisfied();
+    }
+
+    @Test
+    public void testChangeMetricToBranchWithSubbranch() {
+        _exhibitor.addMetric( METRIC_PATH, METRIC_VALUE);
+
+        _transition.updateTransitionChangingMetricToBranch( METRIC_PATH, 3);
+
+        StatePath branchPath = METRIC_PATH.newChild("sub-branch");
+        _transition.updateTransitionForNewBranch( branchPath, 3);
+
+        _visitor.addExpectedBranch( branchPath);
         assertVisitorSatisfied();
     }
 
