@@ -222,16 +222,16 @@ public class      CellShell
          }else if( ce instanceof CommandThrowableException ){
             CommandThrowableException cte = (CommandThrowableException)ce ;
             StringBuilder sb = new StringBuilder() ;
-            sb.append( cte.getMessage()+" -> " ) ;
+            sb.append( cte.getMessage()).append(" -> " ) ;
             Throwable t = cte.getTargetException() ;
-            sb.append( t.getClass().getName()+" : "+t.getMessage()+"\n" ) ;
+            sb.append( t.getClass().getName()).append(" : ").append(t.getMessage()).append("\n" ) ;
             return sb.toString() ;
          }else if( ce instanceof CommandPanicException ){
             CommandPanicException cpe = (CommandPanicException)ce ;
             StringBuilder sb = new StringBuilder() ;
-            sb.append( "Panic : "+cpe.getMessage()+"\n" ) ;
+            sb.append( "Panic : ").append(cpe.getMessage()).append("\n" ) ;
             Throwable t = cpe.getTargetException() ;
-            sb.append( t.getClass().getName()+" : "+t.getMessage()+"\n" ) ;
+            sb.append( t.getClass().getName()).append(" : ").append(t.getMessage()).append("\n" ) ;
             return sb.toString() ;
          }else{
             return "CommandException  :"+ce.getMessage() ;
@@ -549,9 +549,9 @@ public class      CellShell
             for( int i = 0 ; i < list.length ; i ++ ){
                CellInfo info = _nucleus.getCellInfo( list[i] ) ;
                if( info == null ){
-                  sb.append( list[i] + " (defunc)\n" ) ;
+                  sb.append( list[i] ).append(" (defunc)\n" ) ;
                }else{
-                  sb.append( info.toString() + "\n" ) ;
+                  sb.append( info.toString() ).append( "\n" ) ;
                }
             }
          }else{
@@ -1277,7 +1277,7 @@ public class      CellShell
                if( len == 40 )sb.append("...\n") ;
                else sb.append("\n") ;
             }else
-              sb.append( name+"=<"+o.getClass().getName()+">\n" ) ;
+              sb.append( name).append("=<").append(o.getClass().getName()).append(">\n" ) ;
          }
       }else{
          String name  = args.argv(0) ;
