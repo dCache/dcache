@@ -244,6 +244,7 @@ GLOBUS_EPEL_LIBS="-lglobus_gssapi_gsi ${GLOBUS_EPEL_LIBS}"
 EPEL_LIBS_NOT=1
 ])
 
+
 dnl == 64pthreads libary checking version ==
 
 AC_CHECK_LIB(globus_common_gcc64pthr, globus_version_print, [
@@ -308,6 +309,24 @@ GCC64PTHR_LIBS_NOT=1
 
 AC_CHECK_LIB(globus_gssapi_gsi_gcc64pthr,gss_wrap, [
 GLOBUS_GCC64PTHR_LIBS="-lglobus_gssapi_gsi_gcc64pthr ${GLOBUS_GCC64PTHR_LIBS}"
+],[
+GCC64PTHR_LIBS_NOT=1
+])
+
+AC_CHECK_LIB(ltdl_gcc64pthr,lt_dlinit, [
+GLOBUS_GCC64PTHR_LIBS="-lltdl_gcc64pthr ${GLOBUS_GCC64PTHR_LIBS}"
+],[
+GCC64PTHR_LIBS_NOT=1
+])
+
+AC_CHECK_LIB(crypto_gcc64pthr,X509_new, [
+GLOBUS_GCC64PTHR_LIBS="-lcrypto_gcc64pthr ${GLOBUS_GCC64PTHR_LIBS}"
+],[
+GCC64PTHR_LIBS_NOT=1
+])
+
+AC_CHECK_LIB(ssl_gcc64pthr,SSL_new, [
+GLOBUS_GCC64PTHR_LIBS="-lssl_gcc64pthr ${GLOBUS_GCC64PTHR_LIBS}"
 ],[
 GCC64PTHR_LIBS_NOT=1
 ])
@@ -381,8 +400,23 @@ GLOBUS_GCC64DBGPTHR_LIBS="-lglobus_gssapi_gsi_gcc64dbgpthr ${GLOBUS_GCC64DBGPTHR
 GCC64DBGPTHR_LIBS_NOT=1
 ])
 
+AC_CHECK_LIB(ltdl_gcc64dbgpthr,lt_dlinit, [
+GLOBUS_GCC64DBGPTHR_LIBS="-lltdl_gcc64dbgpthr ${GLOBUS_GCC64DBGPTHR_LIBS}"
+],[
+GCC64DBGPTHR_LIBS_NOT=1
+])
 
+AC_CHECK_LIB(crypto_gcc64dbgpthr,X509_new, [
+GLOBUS_GCC64DBGPTHR_LIBS="-lcrypto_gcc64dbgpthr ${GLOBUS_GCC64DBGPTHR_LIBS}"
+],[
+GCC64DBGPTHR_LIBS_NOT=1
+])
 
+AC_CHECK_LIB(ssl_gcc64dbgpthr,SSL_new, [
+GLOBUS_GCC64DBGPTHR_LIBS="-lssl_gcc64dbgpthr ${GLOBUS_GCC64DBGPTHR_LIBS}"
+],[
+GCC64DBGPTHR_LIBS_NOT=1
+])
 
 
 dnl == 32pthreads libary checking version ==
@@ -453,6 +487,25 @@ GLOBUS_GCC32PTHR_LIBS="-lglobus_gssapi_gsi_gcc32pthr ${GLOBUS_GCC32PTHR_LIBS}"
 GCC32PTHR_LIBS_NOT=1
 ])
 
+AC_CHECK_LIB(ltdl_gcc32pthr,lt_dlinit, [
+GLOBUS_GCC32PTHR_LIBS="-lltdl_gcc32pthr ${GLOBUS_GCC32PTHR_LIBS}"
+],[
+GCC32PTHR_LIBS_NOT=1
+])
+
+AC_CHECK_LIB(crypto_gcc32pthr,X509_new, [
+GLOBUS_GCC32PTHR_LIBS="-lcrypto_gcc32pthr ${GLOBUS_GCC32PTHR_LIBS}"
+],[
+GCC32PTHR_LIBS_NOT=1
+])
+
+AC_CHECK_LIB(ssl_gcc32pthr,SSL_new, [
+GLOBUS_GCC32PTHR_LIBS="-lssl_gcc32pthr ${GLOBUS_GCC32PTHR_LIBS}"
+],[
+GCC32PTHR_LIBS_NOT=1
+])
+
+
 dnl == 32dbgpthr libary checking version ==
 
 AC_CHECK_LIB(globus_common_gcc32dbgpthr, globus_version_print, [
@@ -521,6 +574,23 @@ GLOBUS_GCC32DBGPTHR_LIBS="-lglobus_gssapi_gsi_gcc32dbgpthr ${GLOBUS_GCC32DBGPTHR
 GCC32DBGPTHR_LIBS_NOT=1
 ])
 
+AC_CHECK_LIB(ltdl_gcc32dbgpthr,lt_dlinit, [
+GLOBUS_GCC32DBGPTHR_LIBS="-lltdl_gcc32dbgpthr ${GLOBUS_GCC32DBGPTHR_LIBS}"
+],[
+GCC32DBGPTHR_LIBS_NOT=1
+])
+
+AC_CHECK_LIB(crypto_gcc32dbgpthr,X509_new, [
+GLOBUS_GCC32DBGPTHR_LIBS="-lcrypto_gcc32dbgpthr ${GLOBUS_GCC32DBGPTHR_LIBS}"
+],[
+GCC32DBGPTHR_LIBS_NOT=1
+])
+
+AC_CHECK_LIB(ssl_gcc32dbgpthr,SSL_new, [
+GLOBUS_GCC32DBGPTHR_LIBS="-lssl_gcc32dbgpthr ${GLOBUS_GCC32DBGPTHR_LIBS}"
+],[
+GCC32DBGPTHR_LIBS_NOT=1
+])
 
 
 dnl set the verion of globus fully detected and the library linking.
