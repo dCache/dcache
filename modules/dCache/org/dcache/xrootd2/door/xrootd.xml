@@ -9,23 +9,7 @@
     <property name="location" value="domaincontext:"/>
     <property name="properties">
       <value>
-        xrootdPort=1094
-        xrootdPoolTimeout=4000
-        xrootdThreads=1000
-        xrootdMaxChannelMemorySize=16777216
-        xrootdMaxTotalMemorySize=16777216
-        xrootdRootPath=/
-        xrootdAllowedPaths=
-        xrootdPoolManager=PoolManager
-        xrootdPoolManagerTimeout=5400000
-        xrootdMoverTimeout=180000
         nostrongauthorization=
-        xrootdIsReadOnly=true
-        xrootdAuthzPlugin=org.dcache.xrootd2.security.plugins.tokenauthz.NoAuthorizationFactory
-        pnfsmanager=PnfsManager
-        loginBrokerUpdateTime=30
-        loginBrokerUpdateThreshold=0.1
-        loginBroker=LoginBroker
       </value>
     </property>
   </bean>
@@ -38,7 +22,7 @@
   <bean id="pool-manager-stub" class="org.dcache.cells.CellStub">
     <description>Pool manager cell stub</description>
     <property name="timeout" value="${xrootdPoolManagerTimeout}"/>
-    <property name="destination" value="${xrootdPoolManager}"/>
+    <property name="destination" value="${poolmanager}"/>
   </bean>
 
   <bean id="billing-stub" class="org.dcache.cells.CellStub">

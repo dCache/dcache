@@ -2,24 +2,46 @@
 # Xrootd door
 #
 
-# Defaults
-onerror continue
-#  set context -c xrootdAuthzPlugin org.dcache.xrootd2.security.plugins.tokenauthz.TokenAuthorizationFactory
-  set context -c xrootdIsReadOnly true
-  set context -c xrootdAllowedPaths ""
-  set context -c xrootdIoQueue ""
-  set context -c xrootdAuthzPlugin org.dcache.xrootd2.security.plugins.tokenauthz.NoAuthorizationFactory
-  set context -c xrootdAuthzKeystore /opt/d-cache/etc/keystore
-  set context -c xrootdMaxLogin 50
-  set context -c xrootdMaxOpenFilesPerConnection 5000
-onerror shutdown
-
-# Required variables
+check -strong cell.name
 check -strong port
+check -strong xrootdPoolTimeout
+check -strong xrootdThreads
+check -strong xrootdMaxChannelMemorySize
+check -strong xrootdRootPath
+check -strong xrootdPoolManagerTimeout
+check -strong xrootdMoverTimeout
+check -strong xrootdAuthzPlugin
+check -strong xrootdAuthzKeystore
+check -strong xrootdIsReadOnly
+check -strong poolmanager
+check -strong pnfsmanager
+check -strong loginBrokerUpdateTime
+check -strong loginBrokerUpdateThreshold
 
-#
+check xrootdAllowedPaths
+check xrootdIoQueue
+check loginBroker
+
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
        "classpath:org/dcache/xrootd2/door/xrootd.xml -export\
-       -cellClass=XrootdDoor
-       -xrootdPort=${port}"
+       -cellClass=XrootdDoor \
+       -xrootdPort=${port} \
+       -xrootdPoolTimeout=${xrootdPoolTimeout} \
+       -xrootdThreads=${xrootdThreads} \
+       -xrootdMaxChannelMemorySize=${xrootdMaxChannelMemorySize} \
+       -xrootdMaxTotalMemorySize=${xrootdMaxTotalMemorySize} \
+       -xrootdRootPath=${xrootdRootPath} \
+       -xrootdAllowedPaths=${xrootdAllowedPaths} \
+       -xrootdPoolManagerTimeout=${xrootdPoolManagerTimeout} \
+       -xrootdMoverTimeout=${xrootdMoverTimeout} \
+       -xrootdAuthzPlugin=${xrootdAuthzPlugin} \
+       -xrootdIoQueue=${xrootdIoQueue} \
+       -xrootdAuthzKeystore=${xrootdAuthzKeystore} \
+       -xrootdIsReadOnly=${xrootdIsReadOnly} \
+       -poolmanager=${poolmanager} \
+       -pnfsmanager=${pnfsmanager} \
+       -loginBrokerUpdateTime=${loginBrokerUpdateTime} \
+       -loginBrokerUpdateThreshold=${loginBrokerUpdateThreshold} \
+       -loginBroker=${loginBroker} \
+       "
 
