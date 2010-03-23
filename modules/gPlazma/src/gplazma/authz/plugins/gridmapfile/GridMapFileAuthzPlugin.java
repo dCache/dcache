@@ -16,7 +16,8 @@ import java.security.cert.X509Certificate;
 
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSName;
-import org.apache.log4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import gplazma.authz.records.*;
 import gplazma.authz.AuthorizationException;
@@ -28,7 +29,7 @@ import gplazma.authz.plugins.RecordMappingPlugin;
  */
 
 public class GridMapFileAuthzPlugin extends RecordMappingPlugin {
-    private static final Logger logger = Logger.getLogger(GridMapFileAuthzPlugin.class);
+    private static final Logger logger = LoggerFactory.getLogger(GridMapFileAuthzPlugin.class);
     private String gridMapFilePath;
     gPlazmaAuthorizationRecord authRecord;
     GSSContext context;
@@ -70,7 +71,6 @@ public class GridMapFileAuthzPlugin extends RecordMappingPlugin {
 
         try {
             gridmapServ = new GridMapFileHandler(gridMapFilePath, getAuthRequestID());
-            gridmapServ.setLogLevel(logger.getLevel());
         }
         catch(Exception ase) {
             logger.error("Exception in reading grid-mapfile configuration file: ");

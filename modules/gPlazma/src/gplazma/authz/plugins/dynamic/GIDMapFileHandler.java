@@ -1,6 +1,7 @@
 package gplazma.authz.plugins.dynamic;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.io.*;
@@ -9,7 +10,7 @@ import java.text.MessageFormat;
 
 public class GIDMapFileHandler {
 
-  private static final Logger log = Logger.getLogger(GIDMapFileHandler.class);
+  private static final Logger log = LoggerFactory.getLogger(GIDMapFileHandler.class);
   private static final String GIDMAP_FILENAME ="grid-gidmap";
   private HashMap gidMap = new HashMap();
   private static HashMap gidMap_static;

@@ -2,6 +2,8 @@
 #      WebDAV Door
 #
 
+onerror shutdown
+
 check -strong cell.name
 check -strong port
 check -strong webdavProtocol

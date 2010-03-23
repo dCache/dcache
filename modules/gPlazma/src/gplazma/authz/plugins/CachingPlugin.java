@@ -1,5 +1,6 @@
 package gplazma.authz.plugins;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by IntelliJ IDEA.
@@ -9,7 +10,7 @@ import org.apache.log4j.Logger;
  * To change this template use File | Settings | File Templates.
  */
 public abstract class CachingPlugin extends AuthorizationPlugin {
-    private static final Logger logger = Logger.getLogger(CachingPlugin.class);
+    private static final Logger logger = LoggerFactory.getLogger(CachingPlugin.class);
 
     // we want caching to be enabled by default
     long cache_lifetime=30000;

@@ -9,45 +9,36 @@
     <property name="location" value="domaincontext:"/>
     <property name="properties">
       <value>
-        xrootdPort=1094
-        xrootdPoolTimeout=4000
-        xrootdThreads=1000
-        xrootdMaxChannelMemorySize=16777216
-        xrootdMaxTotalMemorySize=16777216
-        xrootdRootPath=/
-        xrootdAllowedPaths=
-        xrootdPoolManager=PoolManager
-        xrootdPoolManagerTimeout=5400000
         nostrongauthorization=
-        xrootdIsReadOnly=true
-        xrootdAuthzPlugin=org.dcache.xrootd2.security.plugins.tokenauthz.NoAuthorizationFactory
-        pnfsmanager=PnfsManager
-        loginBrokerUpdateTime=30
-        loginBrokerUpdateThreshold=0.1
-        loginBroker=LoginBroker
       </value>
     </property>
   </bean>
 
-  <bean id="poolStub" class="org.dcache.cells.CellStub">
+  <bean id="pool-stub" class="org.dcache.cells.CellStub">
     <description>Pool cell stub</description>
     <property name="timeout" value="${xrootdPoolTimeout}"/>
   </bean>
 
-  <bean id="poolManagerStub" class="org.dcache.cells.CellStub">
+  <bean id="pool-manager-stub" class="org.dcache.cells.CellStub">
     <description>Pool manager cell stub</description>
     <property name="timeout" value="${xrootdPoolManagerTimeout}"/>
-    <property name="destination" value="${xrootdPoolManager}"/>
+    <property name="destination" value="${poolmanager}"/>
   </bean>
 
-  <bean id="scheduledThreadPool"
+  <bean id="billing-stub" class="org.dcache.cells.CellStub">
+    <description>Billing communication stub</description>
+    <property name="destination" value="billing"/>
+  </bean>
+
+  <bean id="scheduled-thread-pool"
         class="java.util.concurrent.Executors"
-        factory-method="newSingleThreadScheduledExecutor"
+        factory-method="newScheduledThreadPool"
         destroy-method="shutdown">
     <description>Thread pool for scheduled activities</description>
+    <constructor-arg value="1"/>
   </bean>
 
-  <bean id="requestThreadPool"
+  <bean id="request-thread-pool"
         class="org.jboss.netty.handler.execution.MemoryAwareThreadPoolExecutor"
         destroy-method="shutdown">
     <description>Thread pool for xrootd request processing</description>
@@ -56,21 +47,21 @@
     <constructor-arg value="${xrootdMaxTotalMemorySize}"/>
   </bean>
 
-  <bean id="acceptThreadPool"
+  <bean id="accept-thread-pool"
         class="java.util.concurrent.Executors"
         factory-method="newCachedThreadPool"
         destroy-method="shutdown">
     <description>Thread pool for accepting connections</description>
   </bean>
 
-  <bean id="ioThreadPool"
+  <bean id="io-thread-pool"
         class="java.util.concurrent.Executors"
         factory-method="newCachedThreadPool"
         destroy-method="shutdown">
     <description>Thread pool for asynchronous I/O processing</description>
   </bean>
 
-  <bean id="connectionTracker"
+  <bean id="connection-tracker"
         class="org.dcache.xrootd2.core.ConnectionTracker">
     <description>Administrative interface to manage connections</description>
   </bean>
@@ -79,9 +70,9 @@
         init-method="init">
     <description>Netty based Xrootd service</description>
     <property name="port" value="${xrootdPort}"/>
-    <property name="requestExecutor" ref="requestThreadPool"/>
-    <property name="channelFactory" ref="channelFactory"/>
-    <property name="connectionTracker" ref="connectionTracker"/>
+    <property name="requestExecutor" ref="request-thread-pool"/>
+    <property name="channelFactory" ref="channel-factory"/>
+    <property name="connectionTracker" ref="connection-tracker"/>
     <property name="door" ref="door"/>
   </bean>
 
@@ -94,38 +85,41 @@
     </constructor-arg>
   </bean>
 
-  <bean id="channelFactory"
+  <bean id="channel-factory"
         class="org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory">
     <description>Creates Netty channels</description>
-    <constructor-arg ref="acceptThreadPool"/>
-    <constructor-arg ref="ioThreadPool"/>
+    <constructor-arg ref="accept-thread-pool"/>
+    <constructor-arg ref="io-thread-pool"/>
   </bean>
 
-  <bean id="authorizationFactory" class="${xrootdAuthzPlugin}"
+  <bean id="authorization-factory" class="${xrootdAuthzPlugin}"
         init-method="init">
     <description>Authorization plugin</description>
     <property name="keystore" value="${xrootdAuthzKeystore}"/>
     <property name="noStrongAuthorization" value="${nostrongauthorization}"/>
   </bean>
 
-  <bean id="door" class="org.dcache.xrootd2.door.XrootdDoor">
+  <bean id="door" class="org.dcache.xrootd2.door.XrootdDoor"
+        init-method="init">
     <description>Gateway between xrootd protocol handler and dCache</description>
-    <property name="poolStub" ref="poolStub"/>
-    <property name="poolManagerStub" ref="poolManagerStub"/>
+    <property name="poolStub" ref="pool-stub"/>
+    <property name="poolManagerStub" ref="pool-manager-stub"/>
+    <property name="billingStub" ref="billing-stub"/>
     <property name="authorizedWritePaths" value="${xrootdAllowedPaths}"/>
-    <property name="authorizationFactory" ref="authorizationFactory"/>
+    <property name="authorizationFactory" ref="authorization-factory"/>
     <property name="pnfsHandler" ref="pnfs"/>
-    <property name="transactionPrefix" value="door:${thisCell}@${thisDomain}:"/>
     <property name="readOnly" value="${xrootdIsReadOnly}"/>
     <property name="ioQueue" value="${xrootdIoQueue}"/>
     <property name="rootPath" value="${xrootdRootPath}"/>
+    <property name="moverTimeout" value="${xrootdMoverTimeout}"/>
+    <property name="executor" ref="scheduled-thread-pool"/>
   </bean>
 
   <bean id="lb" class="org.dcache.util.LoginBrokerHandler"
         init-method="start"
         destroy-method="stop">
     <description>Notifies LoginBroker </description>
-    <property name="executor" ref="scheduledThreadPool"/>
+    <property name="executor" ref="scheduled-thread-pool"/>
     <property name="updateTime" value="${loginBrokerUpdateTime}"/>
     <property name="updateThreshold" value="${loginBrokerUpdateThreshold}"/>
     <property name="protocolEngine" value="org.dcache.xrootd2.door.XrootdDoor"/>
@@ -138,6 +132,4 @@
       </bean>
     </property>
   </bean>
-
-
 </beans>

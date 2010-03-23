@@ -1,7 +1,8 @@
 package gplazma.authz.plugins.samlquery;
 
 import org.apache.log4j.Appender;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.log4j.ConsoleAppender;
 import org.opensciencegrid.authz.client.PRIMAAuthzModule;
 import org.opensciencegrid.authz.common.LocalId;
@@ -23,7 +24,7 @@ import gplazma.authz.AuthorizationException;
  * To change this template use File | Settings | File Templates.
  */
 public class SAML1AuthorizationPlugin extends SAMLAuthorizationPlugin {
-    private static final Logger logger = Logger.getLogger(SAML1AuthorizationPlugin.class);
+    private static final Logger logger = LoggerFactory.getLogger(SAML1AuthorizationPlugin.class);
     private static final HashMap<String, TimedLocalId> UsernameMap = new HashMap();
 
     public SAML1AuthorizationPlugin(String mappingServiceURL, String storageAuthzPath, long authRequestID) {

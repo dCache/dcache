@@ -3,4 +3,4 @@
 #
 
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
-        "classpath:org/dcache/chimera/nfsv41/door/nfsv3.xml -export"
+        "classpath:org/dcache/chimera/nfsv41/door/nfsv3.xml"

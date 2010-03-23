@@ -117,14 +117,12 @@ import java.security.cert.X509Certificate;
 import java.security.cert.CRLException;
 import java.security.cert.CertificateException;
 
-//import org.apache.log4j.Logger;
-//import org.apache.log4j.Level;
-
 import org.ietf.jgss.GSSContext;
 import org.globus.gsi.gssapi.net.GssSocket;
 import org.globus.gsi.gssapi.GSSConstants;
 import org.gridforum.jgss.ExtendedGSSContext;
-import org.apache.log4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import gplazma.authz.plugins.AuthorizationPlugin;
 import gplazma.authz.plugins.saz.SAZAuthorizationPlugin;
 import gplazma.authz.records.gPlazmaAuthorizationRecord;
@@ -139,7 +137,7 @@ import gplazma.authz.util.NameRolePair;
 
 public class AuthorizationController {
 
-    private static final Logger log = Logger.getLogger(AuthorizationController.class);
+    private static final Logger log = LoggerFactory.getLogger(AuthorizationController.class);
     private AuthorizationConfig authConfig=null;
     private AuthorizationPluginLoader plugin_loader;
 
@@ -163,14 +161,6 @@ public class AuthorizationController {
     public static final int capnulllen = capnull.length();
     public static final String rolenull ="/Role=NULL";
     public static final int rolenulllen = rolenull.length();
-
-    static {
-        Logger.getLogger(org.glite.security.trustmanager.CRLFileTrustManager.class.getName()).setLevel(Level.ERROR);
-        Logger.getLogger("org.glite.security.trustmanager.ContextWrapper").setLevel(Level.OFF);
-        Logger.getLogger("org.glite.security.trustmanager.axis.AXISSocketFactory").setLevel(Level.OFF);
-        Logger.getLogger("org.glite.security.util.DirectoryList").setLevel(Level.OFF);
-    }
-
 
     public AuthorizationController()
     throws AuthorizationException {
@@ -411,12 +401,6 @@ public class AuthorizationController {
         idstr = String.valueOf(id);
         while (idstr.length()<10) idstr = " " + idstr;
         return " " + idstr;
-    }
-
-    public void setLogLevel	(Level level) {
-        log.setLevel(level);
-        authConfig.setLogLevel(log.getLevel());
-        plugin_loader.setLogLevel(log.getLevel());
     }
 
     public void setUseSAZ(boolean boolarg) {

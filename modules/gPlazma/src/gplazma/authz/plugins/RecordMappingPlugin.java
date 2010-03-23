@@ -4,7 +4,8 @@ import gplazma.authz.records.DCacheSRMauthzRecordsService;
 import gplazma.authz.records.DynamicAuthorizationRecord;
 import gplazma.authz.records.gPlazmaAuthorizationRecord;
 import gplazma.authz.AuthorizationException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * RecordMappingPlugin.java
@@ -14,7 +15,7 @@ import org.apache.log4j.Logger;
  * To change this template use File | Settings | File Templates.
  */
 public abstract class RecordMappingPlugin extends CachingPlugin {
-    private static final Logger logger = Logger.getLogger(RecordMappingPlugin.class);
+    private static final Logger logger = LoggerFactory.getLogger(RecordMappingPlugin.class);
     public String storageAuthzPath;
 
 
