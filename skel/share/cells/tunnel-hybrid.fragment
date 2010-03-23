@@ -1,5 +1,7 @@
+onerror continue
+
 eval ${domain.name} ${broker.domain} ==
-exec file:{dcache.home}/share/cells/jms-broker.fragment -ifok
+exec file:${dcache.home}/share/cells/jms-broker.fragment -ifok
 
 eval ${domain.name} ${broker.domain} !=
-exec file:{dcache.home}/share/cells/tunnel-jms.fragment -ifok
+exec file:${dcache.home}/share/cells/tunnel-jms.fragment -ifok
