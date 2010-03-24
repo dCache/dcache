@@ -125,6 +125,11 @@ AC_TYPE_UID_T
 AC_C_BIGENDIAN
 
 
+dnl Store the compile flags prior to testing the presance.
+
+_cppflags="${CPPFLAGS}"
+_ldflags="${LDFLAGS}"
+_ldlibpath="${LD_LIBRARY_PATH}"
 
 dnl === openssl stuff ===
 
@@ -134,25 +139,30 @@ AC_CHECK_HEADERS([openssl/err.h], [], [nossl=1])
 if test "${nossl}" != "0" ; then
 AC_MSG_RESULT([Disabling ssl plugin as header files not found.])
 else
-AC_CHECK_LIB(ssl,SSL_library_init,[],[nossl=1])
+AC_CHECK_LIB(ssl,SSL_library_init,[
+SSL_LIBS="-lssl ${SSL_LIBS}"
+],[
+nossl=1
+])
 fi
+AC_SUBST(SSL_LIBS)
+
+CPPFLAGS=${_cppflags}
+LDFLAGS=${_ldflags}
+LD_LIBRARY_PATH=${_ldlibpath}
+
 
 dnl === Globus stuff ===
 noglobus=0
 EPEL_LIBS_NOT=0
 
-dnl Store the compile flags prior to testing the presance.
-
-_cppflags="${CPPFLAGS}"
-_ldflags="${LDFLAGS}"
-_ldlibpath="${LD_LIBRARY_PATH}"
 
 AC_ARG_WITH(globus-lib,
 [ --with-globus-lib[[=DIR]] use libglobus libdir],[
 if test "X${withval}" != "X" ; then
 GLOBUS_LIB_DIR=$withval
 LDFLAGS="${LDFLAGS} -L$withval"
-export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${withval}"
+LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${withval}"
 fi
 ])
 AC_ARG_WITH(globus-include,
@@ -310,26 +320,6 @@ GCC64PTHR_LIBS_NOT=1
 
 AC_CHECK_LIB(globus_gssapi_gsi_gcc64pthr,gss_wrap, [
 GLOBUS_GCC64PTHR_LIBS="-lglobus_gssapi_gsi_gcc64pthr ${GLOBUS_GCC64PTHR_LIBS}"
-],[
-GCC64PTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(ltdl_gcc64pthr,lt_dlinit, [
-GLOBUS_GCC64PTHR_LIBS="-lltdl_gcc64pthr ${GLOBUS_GCC64PTHR_LIBS}"
-],[
-GCC64PTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(crypto_gcc64pthr,X509_new, [
-GLOBUS_GCC64PTHR_LIBS="-lcrypto_gcc64pthr ${GLOBUS_GCC64PTHR_LIBS}"
-],[
-GCC64PTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(ssl_gcc64pthr,SSL_new, [
-GLOBUS_GCC64PTHR_LIBS="-lssl_gcc64pthr ${GLOBUS_GCC64PTHR_LIBS}"
-],[
-GCC64PTHR_LIBS_NOT=1
 ])
 
 
@@ -397,24 +387,6 @@ GCC64DBGPTHR_LIBS_NOT=1
 
 AC_CHECK_LIB(globus_gssapi_gsi_gcc64dbgpthr,gss_wrap, [
 GLOBUS_GCC64DBGPTHR_LIBS="-lglobus_gssapi_gsi_gcc64dbgpthr ${GLOBUS_GCC64DBGPTHR_LIBS}"
-],[
-GCC64DBGPTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(ltdl_gcc64dbgpthr,lt_dlinit, [
-GLOBUS_GCC64DBGPTHR_LIBS="-lltdl_gcc64dbgpthr ${GLOBUS_GCC64DBGPTHR_LIBS}"
-],[
-GCC64DBGPTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(crypto_gcc64dbgpthr,X509_new, [
-GLOBUS_GCC64DBGPTHR_LIBS="-lcrypto_gcc64dbgpthr ${GLOBUS_GCC64DBGPTHR_LIBS}"
-],[
-GCC64DBGPTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(ssl_gcc64dbgpthr,SSL_new, [
-GLOBUS_GCC64DBGPTHR_LIBS="-lssl_gcc64dbgpthr ${GLOBUS_GCC64DBGPTHR_LIBS}"
 ],[
 GCC64DBGPTHR_LIBS_NOT=1
 ])
@@ -488,24 +460,6 @@ GLOBUS_GCC32PTHR_LIBS="-lglobus_gssapi_gsi_gcc32pthr ${GLOBUS_GCC32PTHR_LIBS}"
 GCC32PTHR_LIBS_NOT=1
 ])
 
-AC_CHECK_LIB(ltdl_gcc32pthr,lt_dlinit, [
-GLOBUS_GCC32PTHR_LIBS="-lltdl_gcc32pthr ${GLOBUS_GCC32PTHR_LIBS}"
-],[
-GCC32PTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(crypto_gcc32pthr,X509_new, [
-GLOBUS_GCC32PTHR_LIBS="-lcrypto_gcc32pthr ${GLOBUS_GCC32PTHR_LIBS}"
-],[
-GCC32PTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(ssl_gcc32pthr,SSL_new, [
-GLOBUS_GCC32PTHR_LIBS="-lssl_gcc32pthr ${GLOBUS_GCC32PTHR_LIBS}"
-],[
-GCC32PTHR_LIBS_NOT=1
-])
-
 
 dnl == 32dbgpthr libary checking version ==
 
@@ -575,24 +529,6 @@ GLOBUS_GCC32DBGPTHR_LIBS="-lglobus_gssapi_gsi_gcc32dbgpthr ${GLOBUS_GCC32DBGPTHR
 GCC32DBGPTHR_LIBS_NOT=1
 ])
 
-AC_CHECK_LIB(ltdl_gcc32dbgpthr,lt_dlinit, [
-GLOBUS_GCC32DBGPTHR_LIBS="-lltdl_gcc32dbgpthr ${GLOBUS_GCC32DBGPTHR_LIBS}"
-],[
-GCC32DBGPTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(crypto_gcc32dbgpthr,X509_new, [
-GLOBUS_GCC32DBGPTHR_LIBS="-lcrypto_gcc32dbgpthr ${GLOBUS_GCC32DBGPTHR_LIBS}"
-],[
-GCC32DBGPTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(ssl_gcc32dbgpthr,SSL_new, [
-GLOBUS_GCC32DBGPTHR_LIBS="-lssl_gcc32dbgpthr ${GLOBUS_GCC32DBGPTHR_LIBS}"
-],[
-GCC32DBGPTHR_LIBS_NOT=1
-])
-
 
 dnl set the verion of globus fully detected and the library linking.
 want_globus=no
@@ -639,7 +575,7 @@ dnl restore the compile flags to what they where before checking for globus.
 
 CPPFLAGS=${_cppflags}
 LDFLAGS=${_ldflags}
-export LD_LIBRARY_PATH=${_ldlibpath}
+LD_LIBRARY_PATH=${_ldlibpath}
 
 
 
@@ -696,7 +632,7 @@ AC_SUBST(KRB_LIBS)
 
 CPPFLAGS=${_cppflags}
 LDFLAGS=${_ldflags}
-export LD_LIBRARY_PATH=${_ldlibpath}
+LD_LIBRARY_PATH=${_ldlibpath}
 
 dnl ====================
 dnl Check and set Prefix

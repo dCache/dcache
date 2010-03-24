@@ -7,7 +7,7 @@ AM_CFLAGS=$(CWFLAG) \
 lib_LTLIBRARIES = libsslTunnel.la
 
 libsslTunnel_la_SOURCES = $(c_sources)  $(h_sources)
-libsslTunnel_la_LIBADD = -lssl -lcrypto
+libsslTunnel_la_LIBADD = $(SSL_LIBS)
 libsslTunnel_la_LDFLAGS = -no-undefined -avoid-version -module
 
 .PHONY: tags
