@@ -881,7 +881,9 @@ public final class Manager
 		"[-acclat=AccessLatency] [-retpol=RetentionPolicy] [-desc=Description] " +
 		" [-lgid=LinkGroupId]" +
 		" [-lg=LinkGroupName]" +
-		" <sizeInBytes> <lifetimeInSecs (use quotes around negative one)>";
+		" <sizeInBytes> <lifetimeInSecs (use quotes around negative one)> \n"+
+                " default value for AccessLatency is "+defaultLatency+ "\n"+
+                " default value for RetentionPolicy is "+defaultPolicy;
 
 	public String ac_reserve_$_2(Args args) throws Exception {
 		long sizeInBytes=0L;
@@ -906,8 +908,9 @@ public final class Manager
 		String policyString  = args.getOpt("retpol");
 
 		AccessLatency latency = latencyString==null?
-			defaultLatency:AccessLatency.getAccessLatency(latencyString);
-		RetentionPolicy policy = RetentionPolicy.getRetentionPolicy(policyString);
+                    defaultLatency:AccessLatency.getAccessLatency(latencyString);
+		RetentionPolicy policy = policyString==null?
+                    defaultPolicy:RetentionPolicy.getRetentionPolicy(policyString);
 
 		String lgIdString = args.getOpt("lgid");
 		String lgName     = args.getOpt("lg");
