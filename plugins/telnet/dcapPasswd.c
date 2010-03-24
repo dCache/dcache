@@ -5,6 +5,7 @@
 #include <errno.h> 
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <stdlib.h>
 
 int main (int argn, char **argv) { 
   int valid_change;
