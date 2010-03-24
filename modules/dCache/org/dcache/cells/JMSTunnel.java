@@ -75,7 +75,8 @@ public class JMSTunnel
     private final static long ARP_TIMEOUT = 10000;
     private final static long CACHE_TIME = 120000;
 
-    private final static String ARP_TOPIC = "cells.arp";
+    public final static String ARP_TOPIC = "cells.arp";
+    public final static String WILDCARD_QUERY = "*";
 
     private final Set<String> _localExports = new HashSet();
 
@@ -726,7 +727,7 @@ public class JMSTunnel
             try {
                 TextMessage textMessage = (TextMessage) message;
                 String name = textMessage.getText();
-                if (_names.contains(name)) {
+                if (_names.contains(name) || name.equals(WILDCARD_QUERY)) {
                     TextMessage reply = _session.createTextMessage(_domain);
                     reply.setText(_domain);
                     reply.setJMSCorrelationID(textMessage.getJMSMessageID());

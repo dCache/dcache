@@ -2,10 +2,13 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:task="http://www.springframework.org/schema/task"
+       xmlns:amq="http://activemq.apache.org/schema/core"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
            http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
            http://www.springframework.org/schema/task
-           http://www.springframework.org/schema/task/spring-task-3.0.xsd">
+           http://www.springframework.org/schema/task/spring-task-3.0.xsd
+           http://activemq.apache.org/schema/core
+           http://activemq.apache.org/schema/core/activemq-core.xsd">
 
   <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
     <description>Imported configuration data</description>
@@ -14,27 +17,34 @@
       <value>
         topoWaitTime=300000
         topoTimeout=20000
-        topologyClass=org.dcache.services.topology.ClassicCellsTopology
       </value>
     </property>
   </bean>
 
-  <bean id="topology" class="${topologyClass}">
+  <amq:connectionFactory id="connectionFactory" brokerURL="vm://localhost"/>
+
+  <bean id="stub" class="org.dcache.cells.CellStub">
+    <description>Stub for cells communication</description>
+    <property name="timeout" value="${topoTimeout}"/>
+  </bean>
+
+  <bean id="topology" class="org.dcache.services.topology.JmsCellsTopology"
+        init-method="start" destroy-method="stop">
+    <description>Updatable topology map of all domains</description>
     <property name="cellStub" ref="stub"/>
+    <property name="connectionFactory" ref="connectionFactory"/>
+    <property name="executor" ref="scheduler"/>
   </bean>
 
   <bean id="ui" class="org.dcache.services.topology.CellsTopologyInterpreter">
+    <description>Command line interface for topology map</description>
     <property name="cellsTopology" ref="topology"/>
-  </bean>
-
-  <bean id="stub" class="org.dcache.cells.CellStub">
-    <property name="timeout" value="${topoTimeout}"/>
   </bean>
 
   <task:scheduled-tasks scheduler="scheduler">
     <task:scheduled ref="topology" method="update" fixed-delay="${topoWaitTime}"/>
   </task:scheduled-tasks>
-    
-  <task:scheduler id="scheduler" pool-size="1"/>
+
+  <task:scheduler id="scheduler" pool-size="5"/>
 
 </beans>
