@@ -213,8 +213,7 @@ public final class SrmReserveSpaceCompanion
 
         Reserve reserve =
                 new Reserve(
-                user.getVoGroup(),
-                user.getVoRole(),
+                user,
                 sizeInBytes,
                 retentionPolicy,
                 accessLatency,
