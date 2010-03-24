@@ -1,30 +1,26 @@
 package org.dcache.boot;
 
-import java.util.List;
-import java.util.Map;
-import java.util.ArrayList;
-import java.net.URL;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
-import org.dcache.util.ReplaceableProperties;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
+import org.apache.log4j.xml.DOMConfigurator;
 import org.dcache.util.DeprecatableProperties;
 import org.dcache.util.NetworkUtils;
+import org.dcache.util.ReplaceableProperties;
 
-import dmg.cells.nucleus.SystemCell;
 import dmg.cells.nucleus.CellShell;
+import dmg.cells.nucleus.SystemCell;
 import dmg.util.Args;
-import dmg.util.Log4jWriter;
 import dmg.util.CommandException;
-
-import org.apache.log4j.Logger;
-import org.apache.log4j.Level;
-import org.apache.log4j.PropertyConfigurator;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.xml.DOMConfigurator;
 
 /**
  * Domain encapsulates the configuration of a domain and its
