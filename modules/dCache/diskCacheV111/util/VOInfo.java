@@ -15,19 +15,19 @@ package diskCacheV111.util;
  */
 public class VOInfo implements java.io.Serializable{
     static final long serialVersionUID = -8014669884189610627L;
-    
+
     private String voGroup;
     private String voRole;
-    
+
     /** Creates a new instance of VOInfo */
     public VOInfo(String voGroup,String voRole) {
-        if(voGroup == null || voRole == null) {
-            throw new IllegalArgumentException("null group or role");
+        if(voGroup == null) {
+            throw new IllegalArgumentException("null group");
         }
         this.voGroup = voGroup;
         this.voRole = voRole;
     }
-    
+
     public String toString(){
         return voGroup+":"+voRole;
     }
@@ -39,11 +39,11 @@ public class VOInfo implements java.io.Serializable{
     public String getVoRole() {
         return voRole;
     }
-    
+
     public int hashCode(){
         return voGroup.hashCode() ^ voRole.hashCode();
     }
-    
+
     public boolean equals(Object o) {
         if(o == null || !(o instanceof VOInfo )){
             return false;
@@ -51,5 +51,5 @@ public class VOInfo implements java.io.Serializable{
         VOInfo voinfo = (VOInfo) o;
         return voGroup.equals(voinfo.voGroup) && voRole.equals(voinfo.voRole) ;
     }
-    
+
 }

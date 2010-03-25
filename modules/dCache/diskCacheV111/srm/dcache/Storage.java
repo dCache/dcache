@@ -3468,7 +3468,7 @@ public class Storage
         AuthorizationRecord duser = (AuthorizationRecord) user;
         _log.debug("srmGetSpaceTokens ("+description+")");
         GetSpaceTokens getTokens =
-            new GetSpaceTokens(duser.getVoGroup(), duser.getVoRole(),
+            new GetSpaceTokens(duser,
                                description);
         try {
             getTokens = _spaceManagerStub.sendAndWait(getTokens);

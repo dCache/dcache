@@ -11,6 +11,7 @@ package diskCacheV111.services.space.message;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.AccessLatency;
+import org.dcache.auth.AuthorizationRecord;
 
 
 /**
@@ -20,8 +21,7 @@ import diskCacheV111.util.AccessLatency;
 public class Reserve extends Message{
     static final long serialVersionUID = 8295404238593418916L;
     private long spaceToken;
-    private String voGroup;
-    private String voRole;
+    private AuthorizationRecord authRecord;
     private long sizeInBytes;
     private RetentionPolicy retentionPolicy;
     private AccessLatency accessLatency;
@@ -31,17 +31,15 @@ public class Reserve extends Message{
     /** Creates a new instance of Reserve */
     public Reserve() {
     }
-    
+
     public Reserve(
-            String voGroup, 
-            String voRole,
-            long sizeInBytes, 
+            AuthorizationRecord authRecord,
+            long sizeInBytes,
             RetentionPolicy retentionPolicy,
             AccessLatency accessLatency,
             long lifetime,
             String description){
-        this.voGroup = voGroup;
-        this.voRole = voRole;
+        this.authRecord = authRecord;
         this.sizeInBytes = sizeInBytes;
         this.lifetime = lifetime;
         this.accessLatency = accessLatency;
@@ -106,19 +104,12 @@ public class Reserve extends Message{
         this.description = description;
     }
 
-    public String getVoGroup() {
-        return voGroup;
+    public AuthorizationRecord getAuthRecord() {
+        return authRecord;
     }
 
-    public void setVoGroup(String voGroup) {
-        this.voGroup = voGroup;
+    public void setAuthRecord(AuthorizationRecord authRecord) {
+        this.authRecord = authRecord;
     }
 
-    public String getVoRole() {
-        return voRole;
-    }
-
-    public void setVoRole(String voRole) {
-        this.voRole = voRole;
-    }
 }
