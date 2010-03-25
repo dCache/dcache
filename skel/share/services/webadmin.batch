@@ -1,7 +1,10 @@
-
 create org.dcache.admin.webadmin.jettycell.JettyCell webadmin \
-          "default  \
-           -export  \
-           -webapps_Path=${dcache.home}/classes/webapps  \
-           -jetty_Port=8080  \
+          "-webappsPath=${webadminWebappsPath}  \
+           -httpPort=${webadminHttpPort}  \
+           -httpsPort=${webadminHttpsPort}  \
+           -keystore=${keyStore}  \
+           -keystoreType=PKCS12  \
+           -keystorePassword=${keyStorePassword}  \
+           -truststore=${trustStore}  \
+           -truststorePassword=${trustStorePassword}  \
 "

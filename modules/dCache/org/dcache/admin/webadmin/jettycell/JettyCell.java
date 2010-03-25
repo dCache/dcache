@@ -19,6 +19,8 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URL;
 import javax.naming.InitialContext;
+import org.dcache.cells.Option;
+import org.eclipse.jetty.server.ssl.SslSelectChannelConnector;
 
 /**
  *
@@ -26,23 +28,51 @@ import javax.naming.InitialContext;
  */
 public class JettyCell extends AbstractCell {
 
+//    where to find the jettyhost
+    public static final String IPV4_INETADDR_ANY = "0.0.0.0";
 //    the context where the Jettycell can be found in order to reference it
 //    from within the webapps
     public static final String JETTYCELL_NAMING_CONTEXT = "jettycell";
     public static final int MAX_IDLE_TIME = 30000;
-//    args entry to the webapps path
-    public static final String WEBAPPS_PATH = "webapps_Path";
-//    args entry to the jetty port
-    public static final String JETTY_PORT = "jetty_Port";
 //    max Threads for the Jetty Server maybe later configurable
     public static final int MAX_THREADS = 100;
     public static final String WEBAPP_CONTEXT = "/webadmin";
     private static final String WEBDEFAULT_XML = "/webdefault.xml";
     private static final Logger _log = LoggerFactory.getLogger(JettyCell.class);
-//    path to the .war files with the webapps, will be set by the batch file
-    private final String _webappsPath;
-//    defaulted with 8080
-    private int _jettyPort = 8080;
+    @Option(name = "webappsPath",
+    description = "path to the .war files with the webapps",
+    required = true)
+    private String _webappsPath;
+    @Option(name = "httpPort",
+    description = "Port where Jetty is connectable via http",
+    required = true)
+    private int _httpPort;
+    @Option(name = "httpsPort",
+    description = "Port where Jetty is connectable via https",
+    required = true)
+    private int _httpsPort;
+    @Option(name = "keystore",
+    description = "The keystore for SSL",
+    required = true)
+    private String _keystore;
+    @Option(name = "keystoreType",
+    description = "The keystoreType for SSL",
+    required = true)
+    private String _keystoreType;
+    @Option(name = "keystorePassword",
+    description = "The keystore password",
+    log = false,
+    required = true)
+    private String _keystorePassword;
+    @Option(name = "truststore",
+    description = "The truststore for SSL",
+    required = true)
+    private String _truststore;
+    @Option(name = "truststorePassword",
+    description = "The truststore password",
+    log = false,
+    required = true)
+    private String _trustPassword;
 //    URL to the ressources folder of jetty (will be put inside of dcache.jar)
 //    dont know how to get rid of the hardcoding, should be
 //    package of class+/resources
@@ -52,17 +82,13 @@ public class JettyCell extends AbstractCell {
     /**
      * @param cellName Name of the Cell
      * @param args the arguments delivered when the BatchCell creates the Jettycell
-     * these are needed:
-     * Jettycell.WEBAPPS_PATH - path to the webapps folder with the .war file
      */
     public JettyCell(String cellName, String args) throws InterruptedException,
             ExecutionException {
         super(cellName, args);
         _log.debug("constructor entered");
-        _webappsPath = getArgs().getOpt(WEBAPPS_PATH);
-        _jettyPort = Integer.parseInt(getArgs().getOpt(JETTY_PORT));
         doInit();
-        _log.debug("Constructor called");
+        _log.debug("Constructor successfully called");
     }
 
     @Override
@@ -73,10 +99,9 @@ public class JettyCell extends AbstractCell {
     }
 
     private void createJetty() {
-
-        _server = new Server(_jettyPort);
+        _server = new Server(_httpPort);
         createAndSetThreadPool();
-        _server.setConnectors(new Connector[]{initConnector()});
+        _server.setConnectors(new Connector[]{createSimpleConnector(), createSslConnector()});
         createAndSetHandlers();
         try {
 //            make the cell known for the webapps
@@ -99,17 +124,32 @@ public class JettyCell extends AbstractCell {
         _server.setThreadPool(threadPool);
     }
 
-    private Connector initConnector() {
+    private Connector createSimpleConnector() {
         Connector connector = new SelectChannelConnector();
-        connector.setPort(_jettyPort);
+        connector.setPort(_httpPort);
         connector.setMaxIdleTime(MAX_IDLE_TIME);
+        return connector;
+    }
+
+    private Connector createSslConnector() {
+        SslSelectChannelConnector connector = new SslSelectChannelConnector();
+        connector.setPort(_httpsPort);
+        connector.setHost(IPV4_INETADDR_ANY);
+        connector.setKeystore(_keystore);
+        connector.setKeystoreType(_keystoreType);
+        connector.setPassword(_keystorePassword);
+        connector.setTruststore(_truststore);
+        connector.setTrustPassword(_trustPassword);
+        connector.setWantClientAuth(true);
+        connector.setNeedClientAuth(false);
         return connector;
     }
 
     private void createAndSetHandlers() {
         RequestLogHandler requestLogHandler = new RequestLogHandler();
         HandlerCollection handlers = new HandlerCollection();
-        handlers.setHandlers(new Handler[]{(Handler) createWebappContext(), new DefaultHandler(), requestLogHandler});
+        handlers.setHandlers(new Handler[]{(Handler) createWebappContext(),
+                    new DefaultHandler(), requestLogHandler});
         _server.setHandler(handlers);
     }
 
