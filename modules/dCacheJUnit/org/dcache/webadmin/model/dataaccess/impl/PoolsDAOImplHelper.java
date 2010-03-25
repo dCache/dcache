@@ -1,5 +1,6 @@
 package org.dcache.webadmin.model.dataaccess.impl;
 
+import diskCacheV111.pools.PoolV2Mode;
 import java.util.Set;
 import java.util.HashSet;
 import org.dcache.webadmin.model.businessobjects.NamedCell;
@@ -24,7 +25,8 @@ public class PoolsDAOImplHelper implements PoolsDAO {
         _namedCell = XMLDataGathererHelper.getExpectedNamedCells();
     }
 
-    public Set<Pool> getPools() throws DAOException {
+    @Override
+    public Set<Pool> getPools() {
         return _pools;
     }
 
@@ -32,7 +34,8 @@ public class PoolsDAOImplHelper implements PoolsDAO {
         _pools.clear();
     }
 
-    public Set<NamedCell> getNamedCells() throws DAOException {
+    @Override
+    public Set<NamedCell> getNamedCells() {
         return _namedCell;
     }
 
@@ -46,5 +49,16 @@ public class PoolsDAOImplHelper implements PoolsDAO {
 
     public void addPool(Pool pool) {
         _pools.add(pool);
+    }
+
+    @Override
+    public void changePoolMode(Set<String> poolIds, PoolV2Mode poolMode, String userName) throws DAOException {
+        for (String poolId : poolIds) {
+            for (Pool pool : _pools) {
+                if (pool.getName().equals(poolId)) {
+                    pool.setEnabled(false);
+                }
+            }
+        }
     }
 }

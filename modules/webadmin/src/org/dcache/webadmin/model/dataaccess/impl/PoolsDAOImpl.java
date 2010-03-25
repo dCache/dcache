@@ -1,5 +1,6 @@
 package org.dcache.webadmin.model.dataaccess.impl;
 
+import diskCacheV111.pools.PoolV2Mode;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -76,5 +77,10 @@ public class PoolsDAOImpl implements PoolsDAO {
 
     private String getNamedCellsXML() throws DataGatheringException {
         return _xmlDataGatherer.getXML(NAMEDCELLS_PATH);
+    }
+
+    @Override
+    public void changePoolMode(Set<String> poolIds, PoolV2Mode poolMode, String userName) throws DAOException {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }

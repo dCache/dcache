@@ -4,6 +4,7 @@ import diskCacheV111.pools.PoolV2Mode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.List;
 import java.util.Map;
@@ -27,12 +28,13 @@ import org.dcache.webadmin.view.beans.PoolBean;
 public class PoolBeanServiceImpl implements PoolBeanService {
 
     private static final Logger _log = LoggerFactory.getLogger(PoolBeanServiceImpl.class.getName());
-    private DAOFactory _DAOFactory;
+    private DAOFactory _daoFactory;
 
     public PoolBeanServiceImpl(DAOFactory DAOFactory) {
-        _DAOFactory = DAOFactory;
+        _daoFactory = DAOFactory;
     }
 
+    @Override
     public List<PoolBean> getPoolBeans() throws PoolBeanServiceException {
         try {
             Set<Pool> pools = getPoolsDAO().getPools();
@@ -52,8 +54,8 @@ public class PoolBeanServiceImpl implements PoolBeanService {
         }
     }
 
-    public void setDAOFactory(DAOFactory DAOFactory) {
-        _DAOFactory = DAOFactory;
+    public void setDAOFactory(DAOFactory daoFactory) {
+        _daoFactory = daoFactory;
     }
 
     private PoolBean createPoolBean(Pool pool, Map<String, NamedCell> namedCells) {
@@ -75,11 +77,28 @@ public class PoolBeanServiceImpl implements PoolBeanService {
     }
 
     private PoolsDAO getPoolsDAO() {
-        return _DAOFactory.getPoolsDAO();
+        return _daoFactory.getPoolsDAO();
     }
 
     @Override
-    public void changePoolMode(List<PoolBean> pools, PoolV2Mode poolMode, String userName) throws PoolBeanServiceException {
-        throw new UnsupportedOperationException("Not supported yet.");
+    public void changePoolMode(List<PoolBean> pools, PoolV2Mode poolMode,
+            String userName) throws PoolBeanServiceException {
+        _log.debug("Change Pool mode called: {}", poolMode);
+        Set<String> poolIds = getSelectedIds(pools);
+        try {
+            getPoolsDAO().changePoolMode(poolIds, poolMode, userName);
+        } catch (DAOException ex) {
+            throw new PoolBeanServiceException(ex);
+        }
+    }
+
+    private Set<String> getSelectedIds(List<PoolBean> pools) {
+        Set<String> poolIds = new HashSet<String>();
+        for (PoolBean pool : pools) {
+            if (pool.isSelected()) {
+                poolIds.add(pool.getName());
+            }
+        }
+        return poolIds;
     }
 }

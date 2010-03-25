@@ -10,9 +10,11 @@ import org.dcache.webadmin.model.dataaccess.XMLDataGatherer;
  */
 public class DAOFactoryImplHelper implements DAOFactory {
 
+    PoolsDAOImplHelper _poolsDao = new PoolsDAOImplHelper();
+
     @Override
     public PoolsDAO getPoolsDAO() {
-        return new PoolsDAOImplHelper();
+        return _poolsDao;
     }
 
     public void setDefaultXMLDataGatherer(XMLDataGatherer xmlDataGatherer) {
