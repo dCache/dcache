@@ -98,9 +98,27 @@
 <!--+
     |  Output a comment line.  This may wrap if it's too long.
     +-->
-<xsl:template match="*|@*|text()" mode="emit-as-comment">
+<xsl:template match="comment" mode="emit-comment">
+  <xsl:param name="path-stack"/>
+  <xsl:param name="list-item"/>
+
   <xsl:call-template name="output-line">
-    <xsl:with-param name="text">#  <xsl:value-of select="."/></xsl:with-param>
+    <xsl:with-param name="text">#  <xsl:apply-templates select="*|text()" mode="eval-attr">
+        <xsl:with-param name="path-stack" select="$path-stack"/>
+        <xsl:with-param name="list-item" select="$list-item"/>
+	<xsl:with-param name="depth" select="count(ancestor-or-self::object)"/>
+      </xsl:apply-templates>
+    </xsl:with-param>
+  </xsl:call-template>
+</xsl:template>
+
+
+<!--+
+    |  Catch explicit comment
+    +-->
+<xsl:template match="@comment" mode="emit-comment">
+  <xsl:call-template name="output-comment">
+    <xsl:with-param name="text" select="."/>
   </xsl:call-template>
 </xsl:template>
 
