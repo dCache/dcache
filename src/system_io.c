@@ -34,6 +34,79 @@
 static MUTEX(gLock);
 static void *handle;
 
+/*
+ *  Convert from (void *) to different function pointer
+ *  types.  For details why this is necessary, please
+ *  see dlsym man-page:
+ *
+ *    http://www.opengroup.org/onlinepubs/009695399/functions/dlsym.html
+ */
+union pointer_converter {
+  void *symbol;
+  int (*s_open)           (const char *, int, ...);
+  ssize_t (*s_read)       (int, void *, size_t);
+  ssize_t (*s_readv)      (int, const struct iovec *vector, int count);
+  ssize_t (*s_pread)      (int, void *, size_t, off_t);
+  ssize_t (*s_pread64)    (int, void *, size_t, off64_t);
+  ssize_t (*s_write)      (int, const void *, size_t);
+  ssize_t (*s_writev)     (int, const struct iovec *vector, int count);
+  ssize_t (*s_pwrite)     (int, const void *, size_t, off_t);
+  ssize_t (*s_pwrite64)   (int, const void *, size_t, off64_t);
+  off64_t (*s_lseek64)    (int, off64_t, int);
+  int (*s_close)          (int);
+#ifdef _STAT_VER
+  int (*s_stat)           (int , const char *, struct stat *);
+  int (*s_fstat)          (int, int, struct stat *);
+  int (*s_stat64)         (int , const char *, struct stat64 *);
+  int (*s_lstat64)        (int , const char *, struct stat64 *);
+  int (*s_lstat)          (int , const char *, struct stat *);
+  int (*s_fstat64)        (int, int, struct stat64 *);
+#else
+  int (*s_stat)           (const char *, struct stat *);
+  int (*s_fstat)          (int, struct stat *);
+  int (*s_stat64)         (const char *, struct stat64 *);
+  int (*s_lstat64)        (const char *, struct stat64 *);
+  int (*s_lstat)          (const char *, struct stat *);
+  int (*s_fstat64)        (int, struct stat64 *);
+#endif
+  int (*s_fsync)          (int);
+  int (*s_dup)            (int);
+  int (*s_closedir)       (DIR *);
+  DIR *(*s_opendir)       (const char *);
+  struct dirent *(*s_readdir) (DIR *);
+  struct dirent64 *(*s_readdir64) (DIR *);
+  off_t (*s_telldir)      (DIR *);
+  void (*s_seekdir)       (DIR *, off_t);
+  int (*s_unlink)         (const char *);
+  int (*s_rmdir)          (const char *);
+  int (*s_mkdir)          (const char *, mode_t);
+  int (*s_chmod)          (const char *, mode_t);
+  int (*s_chown)          (const char *, uid_t, gid_t);
+  int (*s_access)         (const char *, int);
+  int (*s_rename)         (const char *, const char *);
+  int (*s_acl)            (const char *, int, int, void *);
+  int (*s_facl)           (int, int, int, void *);
+  FILE *(*s_fopen)        (const char *, const char *);
+  FILE *(*s_fopen64)      (const char *, const char *);
+  FILE *(*s_fdopen)       (int, const char *);
+  int (*s_fclose)         (FILE *);
+  size_t (*s_fwrite)      (const void *, size_t, size_t, FILE *);
+  size_t (*s_fread)       (void *, size_t, size_t, FILE *);
+  int (*s_fseeko64)       (FILE *, off64_t, int);
+  off64_t (*s_ftello64)   (FILE *);
+  int (*s_ferror)         (FILE *);
+  int (*s_fflush)         (FILE *);
+  int (*s_feof)           (FILE *);
+  char *(*s_fgets)        (char *, int, FILE *);
+  int (*s_fgetc)          (FILE *);
+};
+
+#define ASSIGN_FN(FN_VARIABLE, CONVERTER, HANDLE, SYMBOL) \
+  do {                                                    \
+    CONVERTER.symbol = dlsym( HANDLE, SYMBOL);            \
+    FN_VARIABLE = CONVERTER. FN_VARIABLE;                 \
+  } while(0)
+
 #ifndef LIBC
 #define LIBC NULL
 #endif
@@ -126,7 +199,7 @@ static void stat64to32(struct stat *st32, const struct stat64 *st64)
 
 static int initIfNeeded()
 {
-
+	union pointer_converter convert;
 	char *em;
 
 	sigset_t block_set;
@@ -173,70 +246,63 @@ static int initIfNeeded()
 	}
 	#endif
 
-	s_open = (int (*)(const char * , int, ... ))dlsym(handle, OPEN_SYM);
-	s_read = (ssize_t (*)(int , void *, size_t ))dlsym(handle, READ_SYM);
-	s_readv = (ssize_t (*)(int, const struct iovec *vector, int count))dlsym(handle, READV_SYM);
-	s_pread = (ssize_t (*)(int , void *, size_t, off_t ))dlsym(handle, PREAD_SYM);
-	s_pread64 = (ssize_t (*)(int , void *, size_t, off64_t ))dlsym(handle, PREAD64_SYM);
-	s_write = (ssize_t (*)(int ,const void *, size_t ))dlsym(handle, WRITE_SYM);
-	s_writev = (ssize_t (*)(int, const struct iovec *vector, int count))dlsym(handle, WRITEV_SYM);
-	s_pwrite = (ssize_t (*)(int ,const void *, size_t, off_t ))dlsym(handle, PWRITE_SYM);	
-	s_pwrite64= (ssize_t (*)(int ,const void *, size_t, off64_t ))dlsym(handle, PWRITE64_SYM);
-	s_lseek64 = (off64_t (*)(int ,off64_t, int ))dlsym(handle, LSEEK64_SYM);
-	s_close = (int (*)(int))dlsym(handle, CLOSE_SYM);
-		 
-#ifdef _STAT_VER
-	s_stat =  (int(*)(int , const char *, struct stat *))dlsym(handle,STAT64_SYM);
-	s_stat64 =  (int(*)(int , const char *, struct stat64 *))dlsym(handle,STAT64_SYM);	
-	s_lstat =  (int(*)(int , const char *, struct stat *))dlsym(handle,LSTAT_SYM);
-	s_lstat64 =  (int(*)(int , const char *, struct stat64 *))dlsym(handle,LSTAT64_SYM);
-	s_fstat =  (int(*)(int, int, struct stat *))dlsym(handle, FSTAT_SYM);
-	s_fstat64 =  (int(*)(int, int, struct stat64 *))dlsym(handle, FSTAT64_SYM);
-#else
-	s_stat =  (int(*)(const char *, struct stat *))dlsym(handle,STAT64_SYM);
-	s_stat64 =  (int(*)( const char *, struct stat64 *))dlsym(handle,STAT64_SYM);	
-	s_lstat =  (int(*)(const char *, struct stat *))dlsym(handle,LSTAT_SYM);
-	s_lstat64 =  (int(*)(const char *, struct stat64 *))dlsym(handle,LSTAT64_SYM);
-	s_fstat =  (int(*)(int, struct stat *))dlsym(handle, FSTAT_SYM);
-	s_fstat64 =  (int(*)(int, struct stat64 *))dlsym(handle, FSTAT64_SYM);
-#endif
-	s_fsync = (int (*)(int))dlsym(handle, FSYNC_SYM);
-	
-	s_dup = (int (*)(int))dlsym(handle, DUP_SYM);
+    
+	ASSIGN_FN( s_open,     convert, handle, OPEN_SYM);
+	ASSIGN_FN( s_read,     convert, handle, READ_SYM);
+	ASSIGN_FN( s_readv,    convert, handle, READV_SYM);
+	ASSIGN_FN( s_pread,    convert, handle, PREAD_SYM);
+	ASSIGN_FN( s_pread64,  convert, handle, PREAD64_SYM);
+	ASSIGN_FN( s_write,    convert, handle, WRITE_SYM);
+	ASSIGN_FN( s_writev,   convert, handle, WRITEV_SYM);
+	ASSIGN_FN( s_pwrite,   convert, handle, PWRITE_SYM);
+	ASSIGN_FN( s_pwrite64, convert, handle, PWRITE64_SYM);
+	ASSIGN_FN( s_lseek64,  convert, handle, LSEEK64_SYM);
+	ASSIGN_FN( s_close,    convert, handle, CLOSE_SYM);		 
+	ASSIGN_FN( s_stat,     convert, handle, STAT64_SYM);
+	ASSIGN_FN( s_stat64,   convert, handle, STAT64_SYM);
+	ASSIGN_FN( s_lstat,    convert, handle, LSTAT_SYM);
+	ASSIGN_FN( s_lstat64,  convert, handle, LSTAT64_SYM);
+	ASSIGN_FN( s_fstat,    convert, handle, FSTAT_SYM);
+	ASSIGN_FN( s_fstat64,  convert, handle, FSTAT64_SYM);
 
-	s_opendir = (DIR *(*)(const char *))dlsym(handle, OPENDIR_SYM);
-	s_closedir = (int (*)(DIR *))dlsym(handle, CLOSEDIR_SYM);
-	s_readdir = (struct dirent *(*)(DIR *))dlsym(handle, READDIR_SYM);
-	s_readdir64 = (struct dirent64 *(*)(DIR *))dlsym(handle, READDIR64_SYM);
-	s_telldir = (off_t (*)(DIR *))dlsym(handle, TELLDIR_SYM);
-	s_seekdir = (void (*)(DIR *, off_t))dlsym(handle, SEEKDIR_SYM);
+	ASSIGN_FN( s_fsync,    convert, handle, FSYNC_SYM);
 
-	s_unlink = (int (*)(const char *))dlsym(handle, UNLINK_SYM);
-	s_rmdir = (int (*)(const char *))dlsym(handle, RMDIR_SYM);
-	s_mkdir = (int (*)(const char *, mode_t))dlsym(handle, MKDIR_SYM);
-	s_chmod = (int (*)(const char *, mode_t))dlsym(handle, CHMOD_SYM);
-	s_chown = (int (*)(const char *, uid_t, gid_t))dlsym(handle, CHOWN_SYM);
-	s_access = (int (*)(const char *, int))dlsym(handle, ACCESS_SYM);
-	s_rename = (int (*)(const char *, const char *))dlsym(handle, RENAME_SYM);
+	ASSIGN_FN( s_dup,      convert, handle, DUP_SYM);
+
+	ASSIGN_FN( s_opendir,  convert, handle, OPENDIR_SYM);
+	ASSIGN_FN( s_closedir, convert, handle, CLOSEDIR_SYM);
+	ASSIGN_FN( s_readdir,  convert, handle, READDIR_SYM);
+	ASSIGN_FN( s_readdir64, convert, handle, READDIR64_SYM);
+	ASSIGN_FN( s_telldir,  convert, handle, TELLDIR_SYM);
+	ASSIGN_FN( s_seekdir,  convert, handle, SEEKDIR_SYM);
+
+	ASSIGN_FN( s_unlink,   convert, handle, UNLINK_SYM);
+	ASSIGN_FN( s_rmdir,    convert, handle, RMDIR_SYM);
+	ASSIGN_FN( s_mkdir,    convert, handle, MKDIR_SYM);
+	ASSIGN_FN( s_chmod,    convert, handle, CHMOD_SYM);
+	ASSIGN_FN( s_chown,    convert, handle, CHOWN_SYM);
+	ASSIGN_FN( s_access,   convert, handle, ACCESS_SYM);
+	ASSIGN_FN( s_rename,   convert, handle, RENAME_SYM);
 #ifdef HAVE_ACL
-	s_acl = (int (*)(const char *, int, int, void *))dlsym(handle, ACL_SYM);
+	ASSIGN_FN( s_acl,      convert, handle, ACL_SYM);
 #endif /* HAVE_ACL */
 #ifdef HAVE_FACL
-	s_facl = (int (*)(int, int, int, void *))dlsym(handle, FACL_SYM);
+	ASSIGN_FN( s_facl,     convert, handle, FACL_SYM);
 #endif /* HAVE_FACL */
-	s_fopen = (FILE * (*)(const char * , const char *))dlsym(handle, "fopen");
-	s_fopen64 = (FILE * (*)(const char * , const char *))dlsym(handle, "fopen64");
-	s_fdopen = (FILE * (*)(int , const char *))dlsym(handle, "fdopen");
-	s_fread = (size_t (*)(void *, size_t, size_t, FILE * ))dlsym(handle, "fread");
-	s_fwrite = (size_t (*)(const void *, size_t, size_t, FILE * ))dlsym(handle, "fwrite");
-	s_fseeko64 = (int (*)(FILE * , off64_t, int ))dlsym(handle, "fseeko64");
-	s_fclose = (int (*)(FILE *))dlsym(handle, "fclose");		 
-	s_fflush = (int (*)(FILE *))dlsym(handle, "fflush");
-	s_ftello64 = (off64_t (*)(FILE *))dlsym(handle, "ftello64");
-	s_feof = (int (*)(FILE *))dlsym(handle, "feof");
-	s_ferror = (int (*)(FILE *))dlsym(handle, "ferror");
-	s_fgets = (char *(*)(char *, int , FILE *))dlsym(handle, "fgets");
-	s_fgetc = (int (*)(FILE *))dlsym(handle, "fgetc");
+
+	ASSIGN_FN( s_fopen,    convert, handle, "fopen");
+	ASSIGN_FN( s_fopen64,  convert, handle, "fopen64");
+	ASSIGN_FN( s_fdopen,   convert, handle, "fdopen");
+	ASSIGN_FN( s_fread,    convert, handle, "fread");
+	ASSIGN_FN( s_fwrite,   convert, handle, "fwrite");
+	ASSIGN_FN( s_fseeko64, convert, handle, "fseeko64");
+	ASSIGN_FN( s_fclose,   convert, handle, "fclose");
+	ASSIGN_FN( s_fflush,   convert, handle, "fflush");
+	ASSIGN_FN( s_ftello64, convert, handle, "ftello64");
+	ASSIGN_FN( s_feof,     convert, handle, "feof");
+	ASSIGN_FN( s_ferror,   convert, handle, "ferror");
+	ASSIGN_FN( s_fgets,    convert, handle, "fgets");
+	ASSIGN_FN( s_fgetc,    convert, handle, "fgetc");
 	
 	if( (s_open == NULL) || (s_read == NULL) ||
 		(s_pread == NULL) || (s_write == NULL) || 
