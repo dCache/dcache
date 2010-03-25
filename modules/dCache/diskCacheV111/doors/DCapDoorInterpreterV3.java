@@ -964,9 +964,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }catch(IllegalArgumentException iae ) {
             DCapUrl url = new DCapUrl( args.argv(0) );
             String  fileName = url.getFilePart() ;
-            if( fileName == null )
-                throw new
-                IllegalArgumentException("Not a valid filepart in : "+args.argv(0));
             assumedLocations = _pnfs.getCacheLocationsByPath( fileName ) ;
         }
 
@@ -1286,10 +1283,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 //
                 DCapUrl url      = new DCapUrl( _vargs.argv(0)) ;
                 String  fileName = url.getFilePart() ;
-                if( fileName == null )
-                    throw new
-                    IllegalArgumentException("Not a valid filepart in : "+_vargs.argv(0));
-
                 _getStorageInfo = new PnfsGetStorageInfoMessage() ;
                 _getStorageInfo.setPnfsPath( fileName ) ;
                 _info.setPath(fileName);
@@ -1320,10 +1313,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 //
                 DCapUrl url      = new DCapUrl( _vargs.argv(0)) ;
                 String  fileName = url.getFilePart() ;
-                if( fileName == null )
-                    throw new
-                    IllegalArgumentException("Not a valid filepart in : "+_vargs.argv(0));
-
                 _getFileMetaData = new PnfsGetFileMetaDataMessage() ;
                 _getFileMetaData.setPnfsPath( fileName ) ;
                 _getFileMetaData.setResolve(resolvePath);
