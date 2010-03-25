@@ -314,8 +314,7 @@ public class SrmReserveSpaceCompanion implements CellMessageAnswerable {
 
             Reserve reserve =
             new Reserve(
-                    user.getVoGroup(),
-                    user.getVoRole(),
+                    user,
                     sizeInBytes,
                     retentionPolicy,
                     accessLatency,

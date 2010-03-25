@@ -258,10 +258,8 @@ public class SrmReleaseSpaceCompanion implements CellMessageAnswerable {
             new Release(spaceToken,
                     spaceToReleaseInBytes
                     );
-            say("setting group="+user.getVoGroup()+", role="+user.getVoRole());
-            release.setVoGroup(user.getVoGroup());
-            release.setVoRole(user.getVoRole());
-
+            say("setting user="+user);
+            release.setAuthRecord(user);
             state = WAITING_SPACE_MANAGER_RESPONSE_STATE;
             try {
                 cell.sendMessage( new CellMessage(

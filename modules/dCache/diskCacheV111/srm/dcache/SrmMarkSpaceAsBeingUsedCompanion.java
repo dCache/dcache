@@ -325,8 +325,7 @@ public class SrmMarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable {
            Use use =
             new Use(
                     spaceToken,
-                    user.getVoGroup(),
-                    user.getVoRole(),
+                    user,
                     pnfPath,
                     null,
                     sizeInBytes,
