@@ -9,8 +9,7 @@
 
 package diskCacheV111.services.space.message;
 import diskCacheV111.vehicles.Message;
-import diskCacheV111.util.RetentionPolicy;
-import diskCacheV111.util.AccessLatency;
+import org.dcache.auth.AuthorizationRecord;
 
 
 /**
@@ -22,13 +21,9 @@ public class Release extends Message{
     private long spaceToken;
     private Long releaseSizeInBytes; // all if null
     private long remainingSizeInBytes;
-    private String voGroup=null;
-    private String voRole=null;
+    private AuthorizationRecord authRecord ;
 
     /** Creates a new instance of Reserve */
-    public Release() {
-    }
-    
     public Release(
             long spaceToken,
             Long releaseSizeInBytes){
@@ -36,30 +31,24 @@ public class Release extends Message{
         this.releaseSizeInBytes = releaseSizeInBytes;
         setReplyRequired(true);
     }
-    
+
     public Release(
             long spaceToken,
-            Long releaseSizeInBytes, 
-            String group,
-            String role) {
+            Long releaseSizeInBytes,
+            AuthorizationRecord authRecord ) {
         this.spaceToken = spaceToken;
         this.releaseSizeInBytes = releaseSizeInBytes;
-        this.voGroup=group;
-        this.voRole=role;
+        this.authRecord=authRecord;
         setReplyRequired(true);
     }
 
-    public void setVoGroup(String group) { 
-        voGroup=group;
+    public AuthorizationRecord getAuthRecord() {
+        return authRecord;
     }
 
-    public void setVoRole(String role) { 
-        voRole=role;
+    public void setAuthRecord(AuthorizationRecord authRecord) {
+        this.authRecord = authRecord;
     }
-
-    public String getVoGroup() { return voGroup; }
-
-    public String getVoRole() { return voRole; }
 
     public long getSpaceToken() {
         return spaceToken;

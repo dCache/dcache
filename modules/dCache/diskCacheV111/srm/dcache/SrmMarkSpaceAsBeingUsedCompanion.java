@@ -201,8 +201,7 @@ public final class SrmMarkSpaceAsBeingUsedCompanion
                 callbacks);
         Use use = new Use(
                 spaceToken,
-                user.getVoGroup(),
-                user.getVoRole(),
+                user,
                 pnfPath,
                 null,
                 sizeInBytes,

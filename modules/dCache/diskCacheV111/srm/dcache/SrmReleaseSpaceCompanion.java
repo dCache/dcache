@@ -156,9 +156,8 @@ public final class SrmReleaseSpaceCompanion
         Release release =
                 new Release(spaceToken,
                 spaceToReleaseInBytes);
-        _log.debug("setting group=" + user.getVoGroup() + ", role=" + user.getVoRole());
-        release.setVoGroup(user.getVoGroup());
-        release.setVoRole(user.getVoRole());
+        _log.debug("setting user="+user);
+        release.setAuthRecord(user);
         spaceManagerStub.send(release, Release.class,
                 new ThreadManagerMessageCallback(companion));
     }
