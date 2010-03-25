@@ -163,8 +163,17 @@ public class ACLPermissionHandler implements PermissionHandler
             org.dcache.acl.enums.FileAttribute nfs4 = a.toNfs4Attribute();
             AccessType allowed;
             if (nfs4 == null) {
+                /* REVISIT: Temporary workaround to resolve a
+                 * regression in 1.9.6 and 1.9.7. The problem is that
+                 * not all dCache attributes have obvious mappings to
+                 * NFS4 attributes. Thus with the current Matcher API,
+                 * we cannot check whether we would be allowed to read
+                 * those attributes.
+                 */
+//                 allowed =
+//                     AccessType.ACCESS_UNDEFINED;
                 allowed =
-                    AccessType.ACCESS_UNDEFINED;
+                    AccessType.ACCESS_ALLOWED;
             } else {
                 allowed =
                     AccessType.valueOf(AclNFSv4Matcher.isAllowed(permission,

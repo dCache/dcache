@@ -120,6 +120,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         private       CellInfo    _info;
         private final CellMessage _message;
         private       long        _lastMessage = 0;
+        private       boolean     _present;
 
         private CellQueryInfo(String destination)
         {
@@ -152,12 +153,18 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         {
             _info = info;
             _diff = (_lastMessage = System.currentTimeMillis()) - _start;
+            _present = true;
         }
 
         private boolean isOk()
         {
             return (System.currentTimeMillis() - _lastMessage) <
                 (3 * _sleepHandler._regularPeriod);
+        }
+
+        private boolean isPresent()
+        {
+            return _present;
         }
     }
 
@@ -398,7 +405,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                 if (pingTime > minPingTime) {
                     if (info.isOk()) {
                         buf.append("" + cellInfo.getDomainName() + " " + cellInfo + " " + pingTime + "\n");
-                    } else {
+                    } else if (info.isPresent()) {
                         buf.append("" + cellInfo.getDomainName() + " " + cellInfo + "\n");
                     }
                 }
@@ -733,14 +740,13 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                         "time",    "Creation Time",
                         "version", "Version");
 
-        for (Object i : _infoMap.values()) {
+        for (CellQueryInfo info : _infoMap.values()) {
             try {
-                CellQueryInfo info = (CellQueryInfo)i;
                 CellInfo cellInfo = info.getCellInfo();
                 long     pingTime = info.getPingTime();
                 if (info.isOk()) {
                     printCellInfoRow(cellInfo, pingTime, page);
-                } else {
+                } else if( info.isPresent()) {
                     printOfflineCellInfoRow(info.getName(),
                                             (cellInfo == null ||
                                              cellInfo.getDomainName().length() == 0)
