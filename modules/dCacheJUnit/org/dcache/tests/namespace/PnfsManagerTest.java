@@ -455,6 +455,19 @@ public class PnfsManagerTest {
             CacheException.FILE_NOT_FOUND, message.getReturnCode() );
     }
 
+    @Test
+    public void testStorageInfoNoTags() throws Exception {
+
+        FsInode dir = _fs.mkdir("/notags");
+        FsInode inode = _fs.createFile(dir, "afile");
+        PnfsGetStorageInfoMessage pnfsGetStorageInfoMessage =
+            new PnfsGetStorageInfoMessage( new PnfsId(inode.toString()));
+        _pnfsManager.getFileAttributes(pnfsGetStorageInfoMessage);
+
+        assertEquals("failed to get storageInfo for a directory without tags", 0,pnfsGetStorageInfoMessage.getReturnCode() );
+
+    }
+
     @AfterClass
     public static void tearDown() throws Exception {
 

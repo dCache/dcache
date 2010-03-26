@@ -182,32 +182,34 @@ public class ChimeraOsmStorageInfoExtractor implements
 
         try {
 
-            String[] OSMTemplate = getTag(dirInode, "OSMTemplate");
-            if (OSMTemplate == null) {
-                throw new CacheException(37, "OSMTemplate tag not found");
-            }
             HashMap<String, String> hash = new HashMap<String, String>();
+            String store = null;
+            String group = null;
 
-            for ( String line: OSMTemplate) {
-                StringTokenizer st = new StringTokenizer(line);
-                if (st.countTokens() < 2)
-                    continue;
-                hash.put(st.nextToken(), st.nextToken());
-            }
+            String[] OSMTemplate = getTag(dirInode, "OSMTemplate");
 
-            String store = hash.get("StoreName");
-            if (store == null) {
-                throw new CacheException(37, "StoreName not found in template");
+            if (OSMTemplate != null) {
+
+                for ( String line: OSMTemplate) {
+                    StringTokenizer st = new StringTokenizer(line);
+                    if (st.countTokens() < 2)
+                        continue;
+                    hash.put(st.nextToken(), st.nextToken());
+                }
+
+                store = hash.get("StoreName");
+                if (store == null) {
+                    throw new CacheException(37, "StoreName not found in template");
+                }
+
             }
 
             String [] sGroup = getTag(dirInode, "sGroup");
-            if( sGroup == null ) {
-                throw new CacheException(37, "sGroup tag not found");
+            if( sGroup != null ) {
+                group = sGroup[0].trim();
             }
 
-            String gr = sGroup[0].trim();
-
-            OSMStorageInfo info = new OSMStorageInfo(store, gr);
+            OSMStorageInfo info = new OSMStorageInfo(store, group);
             info.addKeys(hash);
 
             si = info;
