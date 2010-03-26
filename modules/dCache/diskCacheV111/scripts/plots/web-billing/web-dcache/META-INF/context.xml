@@ -1,0 +1,10 @@
+<Context path="/web-dcache" docBase="web-dcache" reloadable="true" crossContext="true" >
+<!-- Extra info begin -->
+<Resource name="jdbc/postgres" auth="Container" type="javax.sql.DataSource" 
+          driverClassName="org.postgresql.Driver"
+          url="jdbc:postgresql://127.0.0.1:5432/billing"
+          username="username" password="password" maxActive="20" maxIdle="10" maxWait="-1"/>
+
+<!-- Extra info end -->
+        <Logger className="org.apache.catalina.logger.SystemOutLogger" verbosity="3" timestamp="true"/>
+</Context>

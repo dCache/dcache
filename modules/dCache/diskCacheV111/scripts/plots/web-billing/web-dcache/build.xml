@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE project [<!ENTITY buildfile SYSTEM "./build-user.xml">]>
+<project name="web-dcache" default="all" basedir=".">
+    &buildfile;
+    <property environment="env"/>
+    <property name="web-dcache.location" value="."/>
+    <property name="tomcat.location" value="${env.CATALINA_HOME}"/>
+    <path id="project.classpath">
+        <pathelement location="${web-dcache.location}/WEB-INF/classes"/>
+        <pathelement location="${web-dcache.location}/WEB-INF/lib/xbean.jar"/>
+        <pathelement location="${web-dcache.location}/WEB-INF/lib/js.jar"/>
+        <pathelement location="${web-dcache.location}/WEB-INF/lib/jsr173_api.jar"/>
+        <pathelement location="${web-dcache.location}/WEB-INF/lib/commons-beanutils-1.6.1.jar"/>
+        <pathelement location="${web-dcache.location}/WEB-INF/lib/commons-collections.jar"/>
+        <pathelement location="${web-dcache.location}/WEB-INF/lib/commons-digester-1.6.jar"/>
+        <pathelement location="${web-dcache.location}/WEB-INF/lib/commons-logging-api-1.0.4.jar"/>
+        <pathelement location="${tomcat.location}/common/lib/commons-el.jar"/>
+        <pathelement location="${tomcat.location}/common/lib/jasper-compiler.jar"/>
+        <pathelement location="${tomcat.location}/common/lib/jasper-compiler-jdt.jar"/>
+        <pathelement location="${tomcat.location}/common/lib/jasper-runtime.jar"/>
+        <pathelement location="${tomcat.location}/common/lib/jsp-api.jar"/>
+        <pathelement location="${tomcat.location}/common/lib/naming-factory.jar"/>
+        <pathelement location="${tomcat.location}/common/lib/naming-factory-dbcp.jar"/>
+        <pathelement location="${tomcat.location}/common/lib/naming-resources.jar"/>
+        <pathelement location="${tomcat.location}/common/lib/servlet-api.jar"/>
+        <pathelement location="${tomcat.location}/common/lib/postgresql.jar"/>
+        <pathelement location="${tomcat.location}/common/endorsed/xercesImpl.jar"/>
+        <pathelement location="${tomcat.location}/common/endorsed/xml-apis.jar"/>
+    </path>
+
+    <target name="clean" description="Removes previous build">
+      <delete verbose="true">
+        <fileset dir="${web-dcache.location}/WEB-INF/classes">
+          <include name="**/*.class"/>
+        </fileset>
+      </delete>
+    </target>
+
+    <target name="build" if="env.CATALINA_HOME">
+       <echo message="${ant.project.name}: CATALINA_HOME=${env.CATALINA_HOME}"/>
+       <echo message="${ant.project.name}: ${ant.file}"/>
+        <javac destdir="${web-dcache.location}/WEB-INF/classes">
+            <src path="${web-dcache.location}/src/java"/>
+            <classpath refid="project.classpath"/>
+        </javac>
+    </target>
+
+    <target name="goodbye" unless="env.CATALINA_HOME">
+      <fail message="FATAL: CATALINA_HOME is not set!"/>
+    </target>
+
+    <target name="all" depends="build,goodbye">
+<!--      <echo message="${ant.project.name}: CATALINA_HOME=${env.CATALINA_HOME}"/> -->
+    </target>
+</project>

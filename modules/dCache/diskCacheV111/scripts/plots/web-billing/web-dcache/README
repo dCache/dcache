@@ -1,0 +1,18 @@
+dCache Monitoring
+
+
+THIS PROJECT IS CURRENTLY IN BETA STATE
+The monitoring system for dCache is built as a separate application using Java servlet technology and works in the Apache Tomcat servlet container. It consists from two parts - the first one works with the database where dCache system puts the detailed information about the data transfers, and the second one is a presentation layer.
+
+Such modular architecture allows to use the tools which do best in each case. The backend part is built using Java and JDBC database driver API and is configurable using XML configuration files. The frontend part is built with OpenLaszlo technology, which allows developers to create applications with the rich user interface capabilities of desktop client software. OpenLaszlo applications are written in XML and JavaScript - just like DHTML, but portable across browsers.
+
+The monitoring system builds the set of plots for various datasets and various time intervals - day, week, month, year... The datasets, the time intervals and data presentation are configurable via XML configuration files. The changes in the configuration can be activated remotely by the system administrator.
+
+The total number of plots varies from system to system and currently is about 50 - 60. This system is in the development for a several months and is used by CDF and CMS dCache systems at Fermilab.
+
+
+If you want to try it for your dCache installation you can find two war files you need on this page. The first one (lps.war) contains the development version of OpenLaszlo server and the application which displays the plots. The second one (web-dcache.war) contains the backend part which talks to the database and prepares the plots.
+
+This project is under development, the code is changing frequently, some parts of the code can be changed considerably, some parts can disappear.
+
+06/19/07

@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tables>
+
+  <table id="dc_rd_daily">
+    <create>
+	<![CDATA[
+      select date(datestamp), count(*), sum(fullsize) as fullSize, sum(transfersize) as transferSize 
+      into dc_rd_daily from billinginfo 
+      where isnew='f' and errorcode=0 
+      group by date(datestamp) order by date
+      ]]>
+    </create>
+    <update>
+      <query>
+        delete from dc_rd_daily where date between current_date-6 and current_date
+      </query>
+      <query>
+        insert into dc_rd_daily
+        select date(datestamp), count(*), sum(fullsize) as fullSize, sum(transfersize) as transferSize 
+        from billinginfo
+        where datestamp between current_date-6 and now() and isnew='f' and errorcode=0 
+        group by date(datestamp) order by date
+      </query>
+    </update>
+  </table>
+
+  <table id="dc_wr_daily">
+    <create>
+      select date(datestamp), count(*), sum(fullsize) as fullSize, sum(transfersize) as transferSize 
+      into dc_wr_daily from billinginfo
+      where isnew='t' and errorcode=0 
+      group by date(datestamp) order by date
+    </create>
+    <update>
+      <query>
+        delete from dc_wr_daily where date between current_date-6 and current_date
+      </query>
+      <query>
+        insert into dc_wr_daily
+        select date(datestamp), count(*), sum(fullsize) as fullSize, sum(transfersize) as transferSize 
+        from billinginfo
+        where datestamp between current_date-6 and now() and isnew='t' and errorcode=0 
+        group by date(datestamp) order by date
+      </query>
+    </update>
+  </table>
+
+  <table id="en_rd_daily">
+    <create>
+      select date(datestamp), count(*), sum(fullsize) as fullSize
+      into en_rd_daily from storageinfo
+      where action='restore' and errorcode=0 group by date(datestamp) order by date
+    </create>
+    <update>
+      <query>
+        delete from en_rd_daily where date between current_date-6 and current_date
+      </query>
+      <query>
+        insert into en_rd_daily
+        select date(datestamp), count(*), sum(fullsize) as fullSize
+        from storageinfo
+        where datestamp between current_date-6 and now() and action='restore' and errorcode=0 
+        group by date(datestamp) order by date
+      </query>
+    </update>
+  </table>
+
+  <table id="en_wr_daily">
+    <create>
+      select date(datestamp), count(*), sum(fullsize) as fullSize
+      into en_wr_daily from storageinfo
+      where action='store' and errorcode=0 group by date(datestamp) order by date
+    </create>
+    <update>
+      <query>
+        delete from en_wr_daily where date between current_date-6 and current_date
+      </query>
+      <query>
+        insert into en_wr_daily
+        select date(datestamp), count(*), sum(fullsize) as fullSize
+        from storageinfo
+        where datestamp between current_date-6 and now() and action='store' and errorcode=0 
+        group by date(datestamp) order by date
+      </query>
+    </update>
+  </table>
+
+  <table id="hits_daily">
+    <create>
+      select date(datestamp), count(*), 
+      count(nullif(filecached='f','f')) as notcached, count(nullif(filecached='t','f')) as cached
+      into hits_daily from hitinfo
+      where errorcode=0 
+      group by date(datestamp) order by date
+    </create>
+    <update>
+      <query>
+        delete from hits_daily where date between current_date-6 and current_date
+      </query>
+      <query>
+        insert into hits_daily
+        select date(datestamp), count(*), 
+        count(nullif(filecached='f','f')) as notcached, count(nullif(filecached='t','f')) as cached
+        from hitinfo
+        where datestamp between current_date-6 and now() and errorcode=0 
+        group by date(datestamp) order by date
+      </query>
+    </update>
+  </table>
+
+  <table id="cost_daily">
+    <create>
+      select date(datestamp), count(*), avg(cost)::real, stddev(cost)::real
+      into cost_daily from costinfo
+      where errorcode=0 
+      group by date(datestamp) order by date
+    </create>
+    <update>
+      <query>
+        delete from cost_daily where date between current_date-6 and current_date
+      </query>
+      <query>
+        insert into cost_daily
+        select date(datestamp), count(*), avg(cost)::real, stddev(cost)::real
+        from costinfo
+        where datestamp between current_date-6 and now() and errorcode=0 
+        group by date(datestamp) order by date
+      </query>
+    </update>
+  </table>
+
+  <table id="dc_tm_daily">
+    <create>
+      select date(datestamp), 
+      avg(connectiontime)/1000 as avg, min(connectiontime)/1000 as min, 
+      max(connectiontime)/1000 as max, stddev(connectiontime)/1000 as stddev, count(*)
+      into dc_tm_daily from billinginfo
+      where errorcode=0 
+      group by date(datestamp) order by date
+    </create>
+    <update>
+      <query>
+        delete from dc_tm_daily where date between current_date-6 and current_date
+      </query>
+      <query>
+        insert into dc_tm_daily
+        select date(datestamp), 
+        avg(connectiontime)/1000 as avg, min(connectiontime)/1000 as min, 
+        max(connectiontime)/1000 as max, stddev(connectiontime)/1000 as stddev, count(*)
+        from billinginfo
+        where datestamp between current_date-6 and now() and errorcode=0 
+        group by date(datestamp) order by date
+      </query>
+    </update>
+  </table>
+
+  <table id="dc_p2p_daily">
+    <create>
+      select date(datestamp), count(*), sum(fullsize) as fullSize, sum(transfersize) as transferSize 
+      into dc_p2p_daily from billinginfo_p2p
+      where errorcode=0 
+      group by date(datestamp) order by date
+    </create>
+    <update>
+      <query>
+        delete from dc_p2p_daily where date between current_date-6 and current_date
+      </query>
+      <query>
+        insert into dc_p2p_daily
+        select date(datestamp), count(*), sum(fullsize) as fullSize, sum(transfersize) as transferSize 
+        from billinginfo_p2p
+        where datestamp between current_date-6 and now() and errorcode=0 
+        group by date(datestamp) order by date
+      </query>
+    </update>
+  </table>
+
+<!-- <execute>Now let's execute</execute> -->
+</tables>
