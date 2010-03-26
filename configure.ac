@@ -14,15 +14,14 @@ dnl uncomment when tagging
 #RELEASE=TRUE
 
 VER_ARCHITECTURE=2
-VER_MAJOR=46
+VER_MAJOR=47
 VER_MINOR=0
 VER_PATCH=0
 if test "A" = A$RELEASE; then
     VER_PATCH=${VER_PATCH}_`date '+20%y%m%d%H'`
 fi
 
-AM_INIT_AUTOMAKE(dcache-dcap,$VER_ARCHITECTURE.$VER_MAJOR.$VER_MINOR,"support@dcache.org","dcache-dcap","http://www.dcache.org/")
-
+AM_INIT_AUTOMAKE(dcap,$VER_ARCHITECTURE.$VER_MAJOR.$VER_MINOR,"support@dcache.org","dcap","http://www.dcache.org/")
 AC_SUBST(VER_ARCHITECTURE)
 AC_SUBST(VER_MAJOR)
 AC_SUBST(VER_MINOR)
@@ -843,4 +842,4 @@ AC_OUTPUT(Makefile \
   plugins/gssapi/Makefile \
   plugins/ssl/Makefile \
   plugins/telnet/Makefile \
-  dcache-dcap.spec )
+  dcap.spec )
