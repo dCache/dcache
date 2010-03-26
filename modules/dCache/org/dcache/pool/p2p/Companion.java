@@ -38,11 +38,11 @@ import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.IoJobInfo;
-import diskCacheV111.movers.DCapConstants;
 
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
+import org.dcache.pool.movers.DCapConstants;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

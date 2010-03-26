@@ -17,8 +17,6 @@ import dmg.cells.nucleus.DelayedReply;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 
-import diskCacheV111.movers.DCapConstants;
-import diskCacheV111.movers.DCapDataOutputStream;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.CacheException;
@@ -32,6 +30,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.dcache.namespace.FileAttribute;
+import org.dcache.pool.movers.DCapConstants;
+import org.dcache.pool.movers.DCapDataOutputStream;
 import org.dcache.util.list.DirectoryListSource;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.util.list.DirectoryEntry;
