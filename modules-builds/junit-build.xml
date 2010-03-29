@@ -30,6 +30,7 @@
         <pathelement location="${webappBuildDir}/webadmin.jar" />
         <fileset dir="${libDir}/wicket/" includes="*.jar" />
         <fileset dir="${libDir}/servlet-api/" includes="*.jar" />
+        <pathelement location="${libDir}/jing/jing-20091111.jar" />
     </path>
 
 
