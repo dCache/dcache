@@ -65,4 +65,21 @@ public class StorageInfoComparatorTests {
                 .isOK( PNFS_ID));
     }
 
+    @Test
+    public void testStorageInfoDiffersByKey() throws CacheException {
+        StorageInfo si1 = new GenericStorageInfo( "osm", "h1:raw");
+        StorageInfo si2 = new GenericStorageInfo( "osm", "h1:raw");
+
+        // Typical values from PNFS namespace-provider
+        si1.setKey( "c", "1:b7ed7a02");
+        si1.setKey( "l", "1024000");
+        si1.setKey( "h", "no");
+        si1.setKey( "al", "ONLINE");
+        si1.setKey( "rp", "REPLICA");
+
+        _nsp1.setStorageInfo( Subjects.ROOT, PNFS_ID, si1, 1);
+        _nsp2.setStorageInfo( Subjects.ROOT, PNFS_ID, si2, 1);
+
+        assertTrue( "Checking pnfsId storage-info differing only by keys", _comparator.isOK( PNFS_ID));
+    }
 }

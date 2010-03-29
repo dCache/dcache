@@ -1,6 +1,7 @@
 package org.dcache.chimera.migration;
 
 import java.io.PrintStream;
+import java.util.Map;
 
 import org.dcache.auth.Subjects;
 
@@ -95,6 +96,25 @@ public class StorageInfoComparator implements PnfsIdValidator {
             return false;
         }
 
+
+        /*
+         *  PNFS parses the various "keys" in a file's level-2 metadata to obtain
+         *  a set of keyword-value pairs.  These values are then evaluated to
+         *  obtain information like the file's checksum(s), AccessLatency and
+         *  Retention policy information.  Chimera has no level-2 metadata, so
+         *  current does not create any flag entries; moreover, with PNFS,
+         *  whether a file's AccessLatency and RetentionPolicy is in the flags
+         *  depends on whether this information was taken from the file's level-2
+         *  metadata or whether it came from the directory (or dCache defaults).
+         *  Therefore it is hard for Chimera to emulate PNFS's behaviour accurately.
+         *
+         *  The (Generic)StorageInfo class equals method is sensitive to the flags.
+         *  So, as a work-around, we remove all key/flag entries before checking
+         *  equality.
+         */
+        removeAllKeys( si1);
+        removeAllKeys( si2);
+
         if( si1.equals( si2))
             return true;
 
@@ -108,6 +128,15 @@ public class StorageInfoComparator implements PnfsIdValidator {
         }
 
         return false;
+    }
+
+
+    private void removeAllKeys( StorageInfo si) {
+        Map<String,String> keyMap = si.getMap();
+
+        for( String key : keyMap.keySet()) {
+            si.setKey( key, null);
+        }
     }
 
 }
