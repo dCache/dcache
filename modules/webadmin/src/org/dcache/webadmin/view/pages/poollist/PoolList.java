@@ -14,6 +14,7 @@ import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
+import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.StringResourceModel;
@@ -33,6 +34,7 @@ import org.slf4j.Logger;
  */
 public class PoolList extends WebPage {
 
+    private static final int DEFAULT_DROP_DOWN_CHOICE = 0;
     private List<PoolBean> _poolBeans;
     private SelectOption _selectedOption;
     private static final Logger _log = LoggerFactory.getLogger(PoolList.class);
@@ -40,15 +42,26 @@ public class PoolList extends WebPage {
     public PoolList() {
         Form headerForm = new PoolUsageForm("poolUsageForm");
         headerForm.add(new CustomLink("homeLink", getApplication().getHomePage()));
-        DropDownChoice dropDownChoice = new DropDownChoice("mode",
-                new PropertyModel(this, "_selectedOption"),
-                getDropDownModes(), new ChoiceRenderer<SelectOption>("value"));
-        headerForm.add(dropDownChoice);
+        headerForm.add(createPoolModeDropDown("mode"));
         headerForm.add(new FeedbackPanel("feedback"));
         getPoolsAction();
-        ListView poolListView = new PoolBeanListView("listview", getPoolBeans());
+        ListView poolListView = new PoolBeanListView("listview",
+                new PropertyModel(this, "_poolBeans"));
         headerForm.add(poolListView);
         add(headerForm);
+    }
+
+    private DropDownChoice createPoolModeDropDown(String id) {
+        List<SelectOption> dropDownChoices = getDropDownModes();
+        DropDownChoice dropDownChoice = new DropDownChoice(id,
+                new PropertyModel(this, "_selectedOption"),
+                dropDownChoices, new ChoiceRenderer<SelectOption>("value"));
+        setDefaultChoice(dropDownChoices);
+        return dropDownChoice;
+    }
+
+    private void setDefaultChoice(List<SelectOption> dropDownChoices) {
+        _selectedOption = dropDownChoices.get(DEFAULT_DROP_DOWN_CHOICE);
     }
 
     private List<SelectOption> getDropDownModes() {
@@ -70,25 +83,15 @@ public class PoolList extends WebPage {
         return ((WebAdminInterface) getApplication()).getPoolBeanService();
     }
 
-    private List<PoolBean> getPoolsAction() {
+    private void getPoolsAction() {
         try {
             _log.debug("getPoolListAction called");
-            setPoolBeans(getPoolBeanService().getPoolBeans());
+            this._poolBeans = getPoolBeanService().getPoolBeans();
         } catch (PoolBeanServiceException ex) {
             this.error(getErrorMessage("error.getPoolsFailed") + ex.getMessage());
             _log.debug("getPoolListAction failed {}", ex.getMessage());
-            setPoolBeans(null);
+            this._poolBeans = null;
         }
-
-        return getPoolBeans();
-    }
-
-    private void setPoolBeans(List<PoolBean> poolBeanList) {
-        this._poolBeans = poolBeanList;
-    }
-
-    private List<PoolBean> getPoolBeans() {
-        return this._poolBeans;
     }
 
     private class PoolUsageForm extends Form {
@@ -102,9 +105,10 @@ public class PoolList extends WebPage {
             _log.debug("button pressed");
             if (_poolBeans != null && _selectedOption != null) {
                 try {
-                    _log.debug("selected: {}",_selectedOption.getValue());
+                    _log.debug("selected: {}", _selectedOption.getValue());
                     PoolV2Mode poolMode = new PoolV2Mode(_selectedOption.getKey());
                     getPoolBeanService().changePoolMode(_poolBeans, poolMode, "Jan");
+                    getPoolsAction();
                 } catch (PoolBeanServiceException ex) {
                     _log.error("something went wrong with enable/disable");
                     this.error(getErrorMessage("error.changePoolModeFailed") + ex.getMessage());
@@ -113,16 +117,15 @@ public class PoolList extends WebPage {
         }
     }
 
-    private class PoolBeanListView extends EvenOddListView {
+    private class PoolBeanListView extends EvenOddListView<PoolBean> {
 
-        PoolBeanListView(String id, List items) {
-            super(id, items);
+        PoolBeanListView(String id, IModel<? extends List<PoolBean>> model) {
+            super(id, model);
         }
 
         @Override
-        protected void populateItem(final ListItem item) {
-            super.populateItem(item);
-            PoolBean poolBean = (PoolBean) item.getModelObject();
+        protected void populateItem(final ListItem<PoolBean> item) {
+            PoolBean poolBean = item.getModelObject();
             item.add(new CheckBox("selected", new PropertyModel<Boolean>(poolBean, "selected")));
             item.add(new Label("name", poolBean.getName()));
             item.add(new Label("domainName", poolBean.getDomainName()));

@@ -1,30 +1,33 @@
 package org.dcache.webadmin.view.util;
 
 import java.util.List;
-import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
-import org.apache.wicket.model.AbstractReadOnlyModel;
+import org.apache.wicket.markup.html.list.OddEvenListItem;
+import org.apache.wicket.model.IModel;
 
 /**
  * A Listview that marks each odditem with a CSS-usable Attribute class="odd"
+ * and each even item with class="even"
  * @author jans
  */
-public class EvenOddListView extends ListView {
+public abstract class EvenOddListView<T> extends ListView<T> {
 
-    public EvenOddListView(String id, List items) {
+    public EvenOddListView(String id) {
+        super(id);
+    }
+
+    public EvenOddListView(String id, List<? extends T> items) {
         super(id, items);
     }
 
-    @Override
-    protected void populateItem(final ListItem item) {
-//        add class="odd" to each odd row, to be able to cause a different look through css
-        item.add(new AttributeModifier("class", true, new AbstractReadOnlyModel<String>() {
+    public EvenOddListView(String id, IModel<? extends java.util.List<? extends T>> model) {
+        super(id, model);
+    }
 
-            @Override
-            public String getObject() {
-                return (item.getIndex() % 2 == 1) ? "odd" : "";
-            }
-        }));
+    @Override
+    protected ListItem<T> newItem(int index) {
+        return new OddEvenListItem<T>(index,
+                getListItemModel(getModel(), index));
     }
 }
