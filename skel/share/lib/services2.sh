@@ -3,7 +3,24 @@
 # Invokes the dCache boot loader
 bootLoader()
 {
-    $JAVA -client -cp "$DCACHE_HOME/classes/dcache.jar:$DCACHE_HOME/classes/cells.jar:$DCACHE_HOME/classes/log4j/*:$DCACHE_HOME/classes/slf4j/*" "-Ddcache.home=$DCACHE_HOME" org.dcache.boot.BootLoader -f="$DCACHE_SETUP" "$@"
+    local quietFlag
+    shouldBootLoaderBeQuiet && quietFlag="-q"
+    $JAVA -client -cp "$DCACHE_HOME/classes/dcache.jar:$DCACHE_HOME/classes/cells.jar:$DCACHE_HOME/classes/log4j/*:$DCACHE_HOME/classes/slf4j/*" "-Ddcache.home=$DCACHE_HOME" org.dcache.boot.BootLoader -f="$DCACHE_SETUP" $quietFlag "$@"
+}
+
+shouldBootLoaderBeQuiet()
+{
+    [ -n "$BOOTLOADER_IS_QUIET" ]
+}
+
+setBootLoaderQuiet()
+{
+    BOOTLOADER_IS_QUIET=1
+}
+
+setBootLoaderNoisy()
+{
+    unset BOOTLOADER_IS_QUIET
 }
 
 # Prints all domains that match a given pattern

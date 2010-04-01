@@ -252,7 +252,9 @@ determineHostName
 case "$1" in
     start)
         shift
+        setBootLoaderNoisy
         domains=$(printDomains "$@")
+        setBootLoaderQuiet
 
         for domain in $domains; do
 	    (
@@ -266,6 +268,7 @@ case "$1" in
 
     stop)
         shift
+        setBootLoaderQuiet
         domains=$(printDomains "$@")
 
         reverse domains_backward $domains
@@ -283,7 +286,9 @@ case "$1" in
 
     restart)
         shift
+        setBootLoaderNoisy
         domains=$(printDomains "$@")
+        setBootLoaderQuiet
 
         reverse domains_backward $domains
         for domain in $domains_backward; do
@@ -305,7 +310,9 @@ case "$1" in
 
     condrestart)
         shift
+        setBootLoaderNoisy
         domains=$(printDomains "$@")
+        setBootLoaderQuiet
 
         reverse domains_backward $domains
         for domain in $domains_backward; do
@@ -328,6 +335,7 @@ case "$1" in
         ;;
 
     status)
+        setBootLoaderQuiet
         domains=$(printDomains "*")
         maxWidth width $domains
         format="%-${width}s %-10s %5s\n"
