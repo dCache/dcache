@@ -9,6 +9,7 @@
 
 package org.dcache.auth;
 import java.util.List;
+import java.util.HashSet;
 import java.io.Serializable;
 import javax.persistence.Entity;
 import javax.persistence.Inheritance;
@@ -184,5 +185,31 @@ public class GroupList implements Serializable{
 
     public int hashCode(){
         return toShortString().hashCode();
+    }
+
+    /**
+     *
+     * @return UserAuthRecord which corresponds to this GroupList
+     */
+    @Transient
+    public UserAuthRecord getUserAuthRecord() {
+        int i=0, glsize = groups.size();
+        int GIDS[] = (glsize > 0) ? new int[glsize] : null;
+        for(Group group : groups) {
+             GIDS[i++] = group.getGid();
+        }
+        return new UserAuthRecord(
+                authRecord.getIdentity(),
+                authRecord.getName(),
+                attribute,
+                authRecord.isReadOnly(),
+                authRecord.getPriority(),
+                authRecord.getUid(),
+                GIDS,
+                authRecord.getHome(),
+                authRecord.getRoot(),
+                "/",
+                new HashSet<String>());
+
     }
 }

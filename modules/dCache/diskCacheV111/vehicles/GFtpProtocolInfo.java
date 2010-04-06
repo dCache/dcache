@@ -67,6 +67,8 @@ COPYRIGHT STATUS:
 package diskCacheV111.vehicles ;
 
 import diskCacheV111.util.VOInfo;
+import org.dcache.auth.AuthorizationRecord;
+
 
 public class GFtpProtocolInfo implements IpProtocolInfo , GridProtocolInfo {
     private String _name  = "Unkown" ;
@@ -113,13 +115,14 @@ public class GFtpProtocolInfo implements IpProtocolInfo , GridProtocolInfo {
      * Added for GFtp/2. We rely on default initialisation to false.
      */
     private boolean _passive;
-    private final VOInfo _voInfo;
+    private AuthorizationRecord _authRecord;
 
     private static final long serialVersionUID = 5591743387114320262L;
 
     public GFtpProtocolInfo( String protocol, int major , int minor ,
                              String host , int port, int start, int min,
-                             int max, int bufferSize ,long offset, long size, VOInfo voInfo){
+                             int max, int bufferSize ,long offset, long size,
+                             AuthorizationRecord authRecord){
         _name  = protocol ;
         _minor = minor ;
         _major = major ;
@@ -128,11 +131,12 @@ public class GFtpProtocolInfo implements IpProtocolInfo , GridProtocolInfo {
         _parallelStart = start;
         _parallelMin = min;
         _parallelMax = max;
-	_bufferSize = bufferSize;
+        _bufferSize = bufferSize;
         _offset = offset;
         _size = size;
-        _voInfo = voInfo;
+        _authRecord=authRecord;
     }
+
     //
     //  the ProtocolInfo interface
     //
@@ -262,10 +266,7 @@ public class GFtpProtocolInfo implements IpProtocolInfo , GridProtocolInfo {
         return _checksumType;
     }
 
-
-    public VOInfo getVOInfo() {
-
-        return _voInfo;
-
+   public AuthorizationRecord getAuthorizationRecord() {
+        return _authRecord;
     }
 }

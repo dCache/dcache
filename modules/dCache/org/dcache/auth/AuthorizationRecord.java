@@ -11,6 +11,7 @@ package org.dcache.auth;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.io.Serializable;
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -376,5 +377,26 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     @Transient
     public Subject getSubject() {
         return Subjects.getSubject(this);
+    }
+    
+    /**
+     *
+     * @return UserAuthRecord which corresponds to this GroupList
+     */
+    @Transient
+    public UserAuthRecord getUserAuthRecord() {
+        return new UserAuthRecord(
+                getIdentity(),
+                getName(),
+                getPrimaryAttribute(),
+                isReadOnly(),
+                getPriority(),
+                getUid(),
+                getGids(),
+                getHome(),
+                getRoot(),
+                "/",
+                new HashSet<String>());
+
     }
 }

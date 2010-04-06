@@ -27,6 +27,7 @@ import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.RetentionPolicy;
 import org.dcache.auth.UserAuthRecord;
+import org.dcache.auth.AuthorizationRecord;
 import org.dcache.auth.Subjects;
 
 import diskCacheV111.util.PnfsHandler;
@@ -144,7 +145,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     /**
      * user record to use.
      */
-    private UserAuthRecord _userAuthRecord = null;
+    private UserAuthRecord _userAuthRecord;
+    private AuthorizationRecord _userAuthorizationRecord;
 
     /**
      * gPlaza door connector
@@ -165,10 +167,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     private boolean _ioQueueAllowOverwrite = false ;
     private boolean _readOnly = false;
 
-    /**
-     * DN+Role based information
-     */
-    private VOInfo _voInfo = null;
 
     // flag defined in batch file to allow/disallow AccessLatency and RetentionPolicy re-definition
 
@@ -440,9 +438,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             throw new
             CommandException( 5 , "Duplicated session id" ) ;
 
-        if( _userAuthRecord == null ){
-            _userAuthRecord = getUserMetadata( _user.getName(), _user.getRole() ) ;
-        }
+        getUserMetadata() ;
 
         //VP
         try{
@@ -494,9 +490,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             throw new
             CommandException( 5 , "Duplicated session id" ) ;
 
-        if( _userAuthRecord == null ){
-            _userAuthRecord = getUserMetadata( _user.getName(), _user.getRole() ) ;
-        }
+        getUserMetadata();
 
         if ( !_checkStagePermission.canPerformStaging(_subject) ) {
            return sessionId + " 0 " + _ourName + " ok ";
@@ -625,9 +619,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             throw new
             CommandException( 5 , "Duplicated session id" ) ;
 
-        if( _userAuthRecord == null ){
-            _userAuthRecord = getUserMetadata( _user.getName(), _user.getRole() ) ;
-        }
+        getUserMetadata();
 
         try{
             //
@@ -661,9 +653,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             throw new
             CommandException( 5 , "Duplicated session id" ) ;
 
-        if( _userAuthRecord == null ){
-            _userAuthRecord = getUserMetadata( _user.getName(), _user.getRole() ) ;
-        }
+        getUserMetadata();
 
         try{
             //
@@ -696,9 +686,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             throw new
             CommandException( 5 , "Duplicated session id" ) ;
 
-        if( _userAuthRecord == null ){
-            _userAuthRecord = getUserMetadata( _user.getName(), _user.getRole() ) ;
-        }
+        getUserMetadata();
 
         try{
             //
@@ -730,9 +718,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             throw new
             CommandException( 5 , "Duplicated session id" ) ;
 
-        if( _userAuthRecord == null ){
-            _userAuthRecord = getUserMetadata( _user.getName(), _user.getRole() ) ;
-        }
+        getUserMetadata();
 
         try{
             //
@@ -764,9 +750,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             throw new
             CommandException( 5 , "Duplicated session id" ) ;
 
-        if( _userAuthRecord == null ){
-            _userAuthRecord = getUserMetadata( _user.getName(), _user.getRole() ) ;
-        }
+        getUserMetadata();
 
         try{
             //
@@ -798,9 +782,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                     throw new
                     CommandException( 5 , "Duplicated session id" ) ;
 
-                if( _userAuthRecord == null ){
-                    _userAuthRecord = getUserMetadata( _user.getName(), _user.getRole() ) ;
-                }
+                getUserMetadata();
 
                 try{
                     //
@@ -832,9 +814,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                     throw new
                     CommandException( 5 , "Duplicated session id" ) ;
 
-                if( _userAuthRecord == null ){
-                    _userAuthRecord = getUserMetadata( _user.getName(), _user.getRole() ) ;
-                }
+                getUserMetadata();
 
                 try{
                     //
@@ -865,9 +845,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             throw new
             CommandException( 5 , "Duplicated session id" ) ;
 
-        if( _userAuthRecord == null ){
-            _userAuthRecord = getUserMetadata( _user.getName(), _user.getRole() ) ;
-        }
+        getUserMetadata();
 
         try{
             //
@@ -952,9 +930,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             throw new
             CommandException( 5 , "Duplicated session id" ) ;
 
-        if( _userAuthRecord == null ){
-            _userAuthRecord = getUserMetadata( _user.getName(), _user.getRole() ) ;
-        }
+        getUserMetadata();
 
         List<String> assumedLocations;
 
@@ -1937,10 +1913,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             append(_commandId).append(" ").
             append(_vargs.getName()).append(" ");
 
-            if (_userAuthRecord == null) {
-                _userAuthRecord = getUserMetadata(_user.getName(), _user.getRole());
-            }
-                String path = _getFileMetaData.getPnfsPath();
+            getUserMetadata();
+
+            String path = _getFileMetaData.getPnfsPath();
             String parent = new File(path).getParent();
             say("Creating directory \"" + path + "\", with mode=" + _perm);
 
@@ -2174,8 +2149,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             //
             _protocolInfo = new DCapProtocolInfo( "DCap",3,0, _hosts , port  ) ;
             _protocolInfo.setSessionId( _sessionId ) ;
-            if( _voInfo != null ) {
-                _protocolInfo.setVOInfo(_voInfo);
+            if(_userAuthorizationRecord != null ) {
+                _protocolInfo.setAuthorizationRecord(_userAuthorizationRecord);
             }
 
             _isHsmRequest = ( args.getOpt("hsm") != null  );
@@ -2248,10 +2223,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             //
             // first we have to findout if we are allowed to create a file.
             //
-            if (_userAuthRecord == null) {
-                _userAuthRecord = getUserMetadata(_user.getName(), _user.getRole());
-            }
-
+            getUserMetadata();
+            
             _log.debug("IoHandler::storageInfoNotAvailable Door authenticated for " + _user.getName() + "(" + _user.getRole() + "," + _userAuthRecord.UID + ","
                     + _userAuthRecord.GID + "," + _userHome + ")");
 
@@ -2746,9 +2719,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             }
 
             try {
-                if (_userAuthRecord == null) {
-                    _userAuthRecord = getUserMetadata(_user.getName(), _user.getRole());
-                }
+
+                getUserMetadata();
 
                 if (_permissionHandler.canListDir(_pnfsId, _subject, _origin) != AccessType.ACCESS_ALLOWED) {
                     sendReply("fileMetaDataAvailable", 19, "failed 19 \"Permission denied to list directory\" EACCES");
@@ -2946,14 +2918,18 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     }
 
     @SuppressWarnings("deprecation")
-    private UserAuthRecord getUserMetadata(String name, String role) throws CacheException {
-
+    private void getUserMetadata() throws CacheException {
+        if(_userAuthRecord != null) {
+            return;
+        }
+        String name = _user.getName();
+        String role = _user.getRole();
         UserAuthRecord user = null ;
 
         if( _authService != null ) {
             try {
-                user = _authService.getUserRecord(name, role);
-                _voInfo = new VOInfo(user.getGroup(), user.getRole() );
+                _userAuthorizationRecord = _authService.getUserRecord(name, role);
+                user = _userAuthorizationRecord.getUserAuthRecord();
             } catch (AuthorizationException e) {
                 user = new UserAuthRecord("nobody", name, role, true, 0, -1, -1, "/", "/", "/", new HashSet<String>(0)) ;
             }
@@ -2982,7 +2958,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             CacheException( 2 , "User "+name+" role: "+  role +" is not authorized") ;
         }
 
-        return user;
+        _userAuthRecord = user;
     }
 
     public void   messageArrived( CellMessage msg ){

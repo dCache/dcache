@@ -260,9 +260,10 @@ public final class Manager
 		}
 	}
 
-
+    @Override
 	public CellVersion getCellVersion(){ return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision: 1.63 $" ); }
 
+    @Override
 	public void getInfo(java.io.PrintWriter printWriter) {
 		printWriter.println("space.Manager "+getCellName());
 		printWriter.println("spaceManagerEnabled="+spaceManagerEnabled);
@@ -1296,6 +1297,7 @@ public final class Manager
     {
         new Thread()
         {
+            @Override
             public void run()
             {
                 fixMissingSize();
@@ -1558,7 +1560,7 @@ public final class Manager
 			nextLongIncrement =0;
 			incrementNextLongBase();
 		}
-		long nextLong = nextLongBase +(nextLongIncrement++);;
+		long nextLong = nextLongBase +(nextLongIncrement++);
                 if (logger.isDebugEnabled()) {
                         logger.debug(" return nextLong="+nextLong);
                 }
@@ -1584,7 +1586,7 @@ public final class Manager
 			_nextLongBase = nextLongBase+ NEXT_LONG_STEP;
 		}
 
-		long nextLong = nextLongBase +(nextLongIncrement++);;
+		long nextLong = nextLongBase +(nextLongIncrement++);
                 if (logger.isDebugEnabled()) {
                         logger.debug(" return nextLong="+nextLong);
                 }
@@ -3311,6 +3313,7 @@ public final class Manager
 
 	}
 
+    @Override
 	public void messageArrived( final CellMessage cellMessage ) {
 		diskCacheV111.util.ThreadManager.execute(new Runnable() {
 				public void run() {
@@ -3448,6 +3451,7 @@ public final class Manager
 		}
 	}
 
+    @Override
 	public void messageToForward(final CellMessage cellMessage ){
 		diskCacheV111.util.ThreadManager.execute(new Runnable() {
 				public void run() {
@@ -3502,6 +3506,7 @@ public final class Manager
 		super.messageToForward(cellMessage) ;
 	}
 
+    @Override
 	public void exceptionArrived(ExceptionEvent ee) {
 		logger.error("Exception Arrived: "+ee);
 		super.exceptionArrived(ee);
@@ -3840,19 +3845,16 @@ public final class Manager
 		reserve.setSpaceToken(reservationId);
 	}
 
-	public File reserveAndUseSpace(String pnfsPath,PnfsId pnfsId,long size,AccessLatency latency,RetentionPolicy policy,VOInfo voinfo)
+	public File reserveAndUseSpace(String pnfsPath,PnfsId pnfsId,long size,
+            AccessLatency latency,RetentionPolicy policy,
+            AuthorizationRecord authRecord)
 		throws SQLException,java.io.IOException,SpaceException {
 		long sizeInBytes = size;
 		long lifetime    = 1000*60*60;
-		String voGroup   = null;
-		String voRole    = null;
-		if(voinfo != null){
-			voGroup = voinfo.getVoGroup();
-			voRole = voinfo.getVoRole();
-		}
 		String description = null;
-		long reservationId = reserveSpace(voGroup,voRole,sizeInBytes,latency,policy,lifetime,description);
-		long fileId = useSpace(reservationId,voGroup,voRole,sizeInBytes,lifetime,pnfsPath,pnfsId);
+		long reservationId = reserveSpace(authRecord,sizeInBytes,latency,policy,lifetime,description);
+        Space space = getSpace(reservationId);
+		long fileId = useSpace(reservationId,space.getVoGroup(),space.getVoGroup(),sizeInBytes,lifetime,pnfsPath,pnfsId);
 		File file = getFile(fileId);
 		return file;
 	}
@@ -4530,19 +4532,19 @@ public final class Manager
 			}
 			return;
 		}
-                if (logger.isDebugEnabled()) {
-                        logger.debug("selectPool("+selectPool +")");
-                }
+        if (logger.isDebugEnabled()) {
+                logger.debug("selectPool("+selectPool +")");
+        }
 		String pnfsPath = selectPool.getPnfsPath();
 		PnfsId pnfsId = selectPool.getPnfsId();
 		if( !(selectPool instanceof PoolMgrSelectWritePoolMsg)||pnfsPath == null) {
-                        if (logger.isDebugEnabled()) {
-                                logger.debug("selectPool: pnfsPath is null");
-                        }
+            if (logger.isDebugEnabled()) {
+                    logger.debug("selectPool: pnfsPath is null");
+            }
 			if(!isReply) {
-                                if (logger.isDebugEnabled()) {
-                                        logger.debug("just forwarding the message to "+ poolManager);
-                                }
+                if (logger.isDebugEnabled()) {
+                        logger.debug("just forwarding the message to "+ poolManager);
+                }
 				cellMessage.getDestinationPath().add( new CellPath(poolManager) ) ;
 				cellMessage.nextDestination() ;
 				sendMessage(cellMessage) ;
@@ -4551,16 +4553,16 @@ public final class Manager
 		}
 		File file = null;
 		try {
-                        if (logger.isDebugEnabled()) {
-                                logger.debug("selectPool: getFiles("+pnfsPath+")");
-                        }
-                        Set<File> files = getFiles(pnfsPath);
-                        for (File f: files) {
-                                if (f.getPnfsId()==null) {
-                                        file=f;
-                                        break;
-                                }
-                        }
+            if (logger.isDebugEnabled()) {
+                    logger.debug("selectPool: getFiles("+pnfsPath+")");
+            }
+            Set<File> files = getFiles(pnfsPath);
+            for (File f: files) {
+                    if (f.getPnfsId()==null) {
+                            file=f;
+                            break;
+                    }
+            }
 		}
 		catch (Exception e) {
 			logger.error(e.getMessage());
@@ -4574,11 +4576,13 @@ public final class Manager
                         rp  = storageInfo.getRetentionPolicy();
                         defaultSpaceToken=storageInfo.getMap().get("writeToken");
                         ProtocolInfo protocolInfo = selectPool.getProtocolInfo();
-                        VOInfo voinfo = null;
+                        AuthorizationRecord authRecord = null;
                         if(protocolInfo instanceof GridProtocolInfo) {
-                                voinfo = ((GridProtocolInfo)protocolInfo).getVOInfo();
+                                authRecord = ((GridProtocolInfo)protocolInfo).getAuthorizationRecord();
                                 if (logger.isDebugEnabled()) {
-                                        logger.debug("protocol info is GridProtocolInfo voinfo="+voinfo);
+                                        logger.debug("protocol info is " +
+                                                "GridProtocolInfo "+
+                                                " authRecord="+authRecord);
                                 }
                         }
                         if (defaultSpaceToken==null) {
@@ -4586,12 +4590,16 @@ public final class Manager
                                         if (logger.isDebugEnabled()) {
                                                 logger.debug("selectPool: file is not found, no prior reservations for this file, calling reserveAndUseSpace()");
                                         }
+
                                         file = reserveAndUseSpace(pnfsPath,
                                                                   null,
                                                                   selectPool.getFileSize(),
                                                                   al,
                                                                   rp,
-                                                                  voinfo);
+                                                                  authRecord);
+                                        if (logger.isDebugEnabled()) {
+                                                logger.debug("selectPool: file is not found, reserveAndUseSpace() returned "+file);
+                                        }
                                 }
                                 else {
                                         if (logger.isDebugEnabled()) {
@@ -4615,9 +4623,9 @@ public final class Manager
                                 String voGroup   = null;
                                 String voRole    = null;
                                 long lifetime    = 1000*60*60;
-                                if(voinfo != null){
-                                        voGroup = voinfo.getVoGroup();
-                                        voRole = voinfo.getVoRole();
+                                if(authRecord != null) {
+                                    voGroup = authRecord.getVoGroup();
+                                    voRole = authRecord.getVoRole();
                                 }
                                 long spaceToken = Long.parseLong(defaultSpaceToken);
                                 long fileId     = useSpace(spaceToken,
@@ -4629,7 +4637,7 @@ public final class Manager
                                                            selectPool.getPnfsId());
                                 file = getFile(fileId);
                         }
-                }
+        }
 		else {
                         if (isReply&&selectPool.getReturnCode()==0) {
                                 if (logger.isDebugEnabled()) {
@@ -4638,33 +4646,33 @@ public final class Manager
                                 updateSpaceFile(file.getId(),null,null,pnfsId,null,null,null);
                         }
 		}
-                if (isReply&&selectPool.getReturnCode()!=0) {
-                        Connection connection = null;
-                        try {
-                                connection = connection_pool.getConnection();
-                                connection.setAutoCommit(false);
-                                removePnfsIdOfFileInSpace(connection,file.getId(),null);
-                                connection.commit();
-                                connection_pool.returnConnection(connection);
+        if (isReply&&selectPool.getReturnCode()!=0) {
+                Connection connection = null;
+                try {
+                        connection = connection_pool.getConnection();
+                        connection.setAutoCommit(false);
+                        removePnfsIdOfFileInSpace(connection,file.getId(),null);
+                        connection.commit();
+                        connection_pool.returnConnection(connection);
+                        connection = null;
+                }
+                catch(SQLException sqle) {
+                        logger.error(sqle.getMessage());
+                        if (connection!=null) {
+                                try {
+                                        connection.rollback();
+                                }
+                                catch (SQLException e) {}
+                                connection_pool.returnFailedConnection(connection);
                                 connection = null;
                         }
-                        catch(SQLException sqle) {
-                                logger.error(sqle.getMessage());
-                                if (connection!=null) {
-                                        try {
-                                                connection.rollback();
-                                        }
-                                        catch (SQLException e) {}
-                                        connection_pool.returnFailedConnection(connection);
-                                        connection = null;
-                                }
-                        }
-                        finally {
-                                if(connection != null) {
-                                        connection_pool.returnConnection(connection);
-                                }
+                }
+                finally {
+                        if(connection != null) {
+                                connection_pool.returnConnection(connection);
                         }
                 }
+        }
 		if(!isReply) {
                         long spaceId     = file.getSpaceId();
                         Space space      = getSpace(spaceId);

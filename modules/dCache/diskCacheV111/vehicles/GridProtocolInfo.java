@@ -9,13 +9,13 @@
 
 package diskCacheV111.vehicles;
 
-import diskCacheV111.util.VOInfo;
+import org.dcache.auth.AuthorizationRecord;
 /**
  *
  * @author timur
  */
 public interface GridProtocolInfo extends ProtocolInfo {
 
-    public VOInfo getVOInfo();
+    public AuthorizationRecord getAuthorizationRecord();
 
 }

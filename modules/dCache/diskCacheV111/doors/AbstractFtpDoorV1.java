@@ -3254,14 +3254,6 @@ public abstract class AbstractFtpDoorV1
         // Find a pool suitable for the transfer.
 
         _transfer.state = "waiting for pool selection by PoolManager";
-        VOInfo voInfo = null;
-        if(_pwdRecord != null ) {
-            String group = _pwdRecord.getGroup();
-            String role = _pwdRecord.getRole();
-            if(group != null && role != null) {
-                voInfo =new VOInfo(group, role);
-            }
-        }
         GFtpProtocolInfo protocolInfo =
             new GFtpProtocolInfo("GFtp",
                                  version,
@@ -3272,7 +3264,7 @@ public abstract class AbstractFtpDoorV1
                                  parallelMin,
                                  parallelMax,
                                  bufSize, 0, 0,
-                                 voInfo);
+                                 authRecord);
 
         PoolMgrSelectPoolMsg request;
         if (isWrite) {
@@ -3307,14 +3299,6 @@ public abstract class AbstractFtpDoorV1
          * the protocol info (this behaviour is consistent with dCache
          * 1.7).
          */
-        voInfo = null;
-        if(_pwdRecord != null ) {
-            String group = _pwdRecord.getGroup();
-            String role = _pwdRecord.getRole();
-            if(group != null && role != null) {
-                voInfo =new VOInfo(group, role);
-            }
-        }
         if (_transfer.adapter != null) {
             protocolInfo =
                 new GFtpProtocolInfo("GFtp",
@@ -3327,7 +3311,7 @@ public abstract class AbstractFtpDoorV1
                                      bufSize,
                                      offset,
                                      size,
-                                     voInfo);
+                                     authRecord);
         } else {
             protocolInfo =
                 new GFtpProtocolInfo("GFtp",
@@ -3340,7 +3324,7 @@ public abstract class AbstractFtpDoorV1
                                      bufSize,
                                      offset,
                                      size,
-                                     voInfo);
+                                     authRecord);
         }
 
         protocolInfo.setDoorCellName(getCellName());

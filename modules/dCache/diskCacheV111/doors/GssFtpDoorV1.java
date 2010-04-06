@@ -313,25 +313,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         }
 
         GroupList grplist  = _userAuthGroupLists.next();
-        String fqan = grplist.getAttribute();
-        int i=0, glsize = grplist.getGroups().size();
-        int GIDS[] = (glsize > 0) ? new int[glsize] : null;
-        for(Group group : grplist.getGroups()) {
-             GIDS[i++] = group.getGid();
-        }
-        _pwdRecord = new UserAuthRecord(
-                authRecord.getIdentity(),
-                authRecord.getName(),
-                fqan,
-                authRecord.isReadOnly(),
-                authRecord.getPriority(),
-                authRecord.getUid(),
-                GIDS,
-                authRecord.getHome(),
-                authRecord.getRoot(),
-                "/",
-                new HashSet<String>());
-
+        _pwdRecord = grplist.getUserAuthRecord();
         _user = _pwdRecord.Username;
 
         if(_pathRoot == null) {

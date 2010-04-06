@@ -68,7 +68,7 @@ public class GplazmaService {
         }
     }
 
-   public UserAuthRecord getUserRecord(String userPrincipal ,String userRole)
+   public AuthorizationRecord getUserRecord(String userPrincipal ,String userRole)
        throws AuthorizationException
     {
         AuthorizationRecord authRecord;
@@ -97,39 +97,11 @@ public class GplazmaService {
             authRecord = RecordConvert.gPlazmaToAuthorizationRecord(authzMappingrecords);
         }
 
-
-        if (authRecord == null) return null;
-
-        Set<GroupList> uniqueGroupListSet = new LinkedHashSet<GroupList>(authRecord.getGroupLists());
-        Iterator<GroupList> _userAuthGroupLists = uniqueGroupListSet.iterator();
-
-        if (_userAuthGroupLists == null || !_userAuthGroupLists.hasNext()) return null;
-
-        GroupList grplist  = _userAuthGroupLists.next();
-        String fqan = grplist.getAttribute();
-        int i=0, glsize = grplist.getGroups().size();
-        int GIDS[] = (glsize > 0) ? new int[glsize] : null;
-        for(Group group : grplist.getGroups()) {
-             GIDS[i++] = group.getGid();
-        }
-        pwdRecord = new UserAuthRecord(
-                authRecord.getIdentity(),
-                authRecord.getName(),
-                fqan,
-                authRecord.isReadOnly(),
-                authRecord.getPriority(),
-                authRecord.getUid(),
-                GIDS,
-                authRecord.getHome(),
-                authRecord.getRoot(),
-                "/",
-                new HashSet<String>());
-
         if(_logAuth.isDebugEnabled() ) {
-            _logAuth.debug("Mapped [ " + userPrincipal + " ]" + "[ " + userRole + " ] to : " + pwdRecord);
+            _logAuth.debug("Mapped [ " + userPrincipal + " ]" + "[ " + userRole + " ] to : " + authRecord);
         }
 
-        return pwdRecord;
+        return authRecord;
 
     }
 
