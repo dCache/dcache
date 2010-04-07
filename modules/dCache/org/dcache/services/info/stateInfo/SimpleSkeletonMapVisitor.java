@@ -11,12 +11,12 @@ import org.dcache.services.info.base.StatePath;
  * <p>
  * To achieve this, the super-Class should override one of the visit*() methods, use
  * getPathToMetric() to test whether the metric is to be selected and getKey() as the key
- * in the corresponding Map. 
+ * in the corresponding Map.
  * <p>
- * The super-Class should also implement the getMap() method that should return a 
+ * The super-Class should also implement the getMap() method that should return a
  * Map of the correct type for the StateValue super-Class (metric type) under
  * consideration.
- * 
+ *
  * @author Paul Millar <paul.millar@desy.de>
  */
 public class SimpleSkeletonMapVisitor extends SkeletonListVisitor {
@@ -60,7 +60,7 @@ public class SimpleSkeletonMapVisitor extends SkeletonListVisitor {
 
 		_pathToMetric = getPathToList().newChild( listItemName).newChild( _relativePathToMetric);
 	}
-	
+
 	protected StatePath getPathToMetric() {
 		return _pathToMetric;
 	}

@@ -24,7 +24,7 @@ import org.dcache.services.info.stateInfo.SpaceInfo;
  * The NormalisaedAccessSpace (NAS) maintainer updates the <code>nas</code>
  * branch of the dCache state based on changes to pool space usage or
  * pool-link membership.
- * 
+ *
  * A NAS is a set of pools. They are somewhat similar to a poolgroup except
  * that dCache PSU has no knowledge of them. Each NAS has the following
  * properties:
@@ -35,7 +35,7 @@ import org.dcache.services.info.stateInfo.SpaceInfo;
  * of units that might select these pools and the set of operations permitted
  * through the link.
  * </ol>
- * 
+ *
  * Because of the way NAS are constructed, all pools of a single NAS have
  * well-defined relationship to the links: for each link, either all pools of
  * the same NAS are accessible or all pools are not accessible.
@@ -147,7 +147,7 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
          * network ones are ignored. Pools that differ only in their access
          * by network or protocol units are grouped together into a common
          * NAS.
-         * 
+         *
          * @param link The LinkInfo object that describes the link
          * @param unitTypeName the name given to these type of unit by
          *            LinkInfoVisitor
@@ -168,7 +168,7 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
 
         /**
          * Update paint information for a specific unit.
-         * 
+         *
          * @param linkName the String identifier for this link
          * @param operation one of the LinkInfo.OPERATIONS {READ, WRITE,
          *            CACHE, P2P}
@@ -233,7 +233,7 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
         /**
          * Return the name of the NAS this painted pool should be
          * within.
-         * 
+         *
          * @return a unique name for the NAS this PaintInfo is
          *         representative of.
          */
@@ -274,7 +274,7 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
 
                 processedOperations.add( operation);
 
-                if( unitsDescription == null) 
+                if( unitsDescription == null)
                     continue;
 
                 if( sb.length() != 0)
@@ -341,7 +341,7 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
         /**
          * Return the Set of units that match for links that were painted to
          * this pool's information.
-         * 
+         *
          * @param unitType the type of unit {DCACHE, STORE, NETWORK, PROTO}
          * @param operation the type of operation {READ, WRITE, P2P, STAGE}
          * @return the Set of units, or null if the selection is invalid.
@@ -362,7 +362,7 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
          * Obtain a Map between operations (such as read, write, ...) and the
          * Set of units that select those operations for a given unitType
          * (such as dcache, store, ..)
-         * 
+         *
          * @param unitType a considered unit type.
          * @return the corresponding Mapping or null if unit type isn't
          *         considered.
@@ -415,7 +415,7 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
          * links store unit and dCache units is set. It is anticipated that
          * any subsequent pools added to this NAS will have the same set of
          * links (so, same set of store and dCache units). This is checked.
-         * 
+         *
          * @param poolId
          * @param spaceInfo
          * @param pInfo
@@ -436,7 +436,7 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
 
         /**
          * Report a NAS' overall storage information.
-         * 
+         *
          * @return
          */
         SpaceInfo getSpaceInfo() {
@@ -445,7 +445,7 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
 
         /**
          * Discover all links that refer to a NAS
-         * 
+         *
          * @return
          */
         Set<String> getLinks() {
@@ -455,7 +455,7 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
         /**
          * Discover whether any of the pools given in the Set of poolIDs has
          * been registered as part of this NAS.
-         * 
+         *
          * @param pools the Set of PoolIDs
          * @return true if at least one member of the provided Set is a
          *         member of this NAS.
@@ -466,7 +466,7 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
 
         /**
          * Add a set of metrics for this NAS
-         * 
+         *
          * @param update
          */
         void addMetrics( StateUpdate update, String nasName) {
@@ -527,7 +527,7 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
     /**
      * Create a new secondary information provider that uses the provided
      * StateExhibitor to query the current and future dCache state.
-     * 
+     *
      * @param exhibitor
      */
     public NormalisedAccessSpaceMaintainer( StateExhibitor exhibitor) {
@@ -557,7 +557,7 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
 
     /**
      * Build a mapping of NasInfo objects.
-     * 
+     *
      * @param links
      */
     private Map<String, NasInfo> buildNas(
@@ -579,7 +579,7 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
                  * It is possible that a pool is accessible from a link yet
                  * no such pool is known; for example, as the info service is
                  * "booting up".  We work-around this issue by creating a new
-                 * PaintInfo for for this pool. 
+                 * PaintInfo for for this pool.
                  */
                 if( poolPaintInfo == null) {
                     _log.debug( "Inconsistency in information: pool " +
@@ -620,7 +620,7 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
 
     /**
      * Build a StateUpdate with the metrics that need to be updated.
-     * 
+     *
      * @param update
      * @param existingLinks
      * @param futureLinks
@@ -667,13 +667,13 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
      * Build up a Set of pools that have altered; either pools that have been
      * added, that have been removed or have changed their details. More
      * succinctly, this is:
-     * 
+     *
      * <pre>
      * (currentPools \ futurePools) U (futurePools \ currentPools)
      * </pre>
-     * 
+     *
      * where the sets here are each Map's Map.EntrySet.
-     * 
+     *
      * @param currentPools Map between poolID and corresponding SpaceInfo for
      *            current pools
      * @param futurePools Map between poolID and corresponding SpaceInfo for

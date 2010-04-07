@@ -33,14 +33,14 @@ public class PoolsSummaryMaintainer extends AbstractStateWatcher {
 		return PREDICATE_PATHS;
 	}
 
-	
+
 	/**
 	 * Something's changed, recalculate the summary information.
 	 */
 	@Override
     public void trigger(StateTransition str, StateUpdate update) {
 		super.trigger( str, update);
-		
+
 		if( _log.isInfoEnabled())
 			_log.info( "Watcher " + this.getClass().getSimpleName() + " triggered");
 
@@ -49,9 +49,9 @@ public class PoolsSummaryMaintainer extends AbstractStateWatcher {
 
 		if( _log.isDebugEnabled())
 			_log.debug( "got summary: " + info.toString());
-		
+
 		// Add our new information as immortal data
-		info.addMetrics( update, SUMMARY_POOLS_SPACE_PATH, true);		
+		info.addMetrics( update, SUMMARY_POOLS_SPACE_PATH, true);
 	}
 
 }

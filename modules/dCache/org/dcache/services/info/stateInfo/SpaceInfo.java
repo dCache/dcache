@@ -8,7 +8,7 @@ import diskCacheV111.pools.PoolCostInfo;
 
 /**
  * Information about some (generic) space.
- * 
+ *
  * @author Paul Millar <paul.millar@desy.de>
  */
 public class SpaceInfo {
@@ -24,7 +24,7 @@ public class SpaceInfo {
 	private long _precious;
 	private long _removable;
 	private long _used;
-	
+
 	public SpaceInfo( long totalSpace, long freeSpace, long preciousSpace, long removableSpace) {
 		_total = totalSpace;
 		_free = freeSpace;
@@ -34,7 +34,7 @@ public class SpaceInfo {
 		// Derived data.
 		_used = totalSpace - freeSpace;
 	}
-	
+
 	/**
 	 * Create a new SpaceInfo that duplicates information in otherInfo
 	 * @param otherInfo the SpaceInfo to duplicate
@@ -50,17 +50,17 @@ public class SpaceInfo {
 	public SpaceInfo() {
 		_total = _free = _precious = _removable = _used = 0;
 	}
-	
-	
+
+
 	/**
 	 * Create an initially-empty space information.
 	 * @param capacity the size of the space.
 	 */
 	public SpaceInfo( long capacity) {
-		_free = _total = capacity; 
+		_free = _total = capacity;
 		_used = _precious = _removable = 0;
 	}
-	
+
 	public SpaceInfo( PoolCostInfo.PoolSpaceInfo spaceInfo) {
 		_total = spaceInfo.getTotalSpace();
 		_free = spaceInfo.getFreeSpace();
@@ -82,7 +82,7 @@ public class SpaceInfo {
 	public int hashCode() {
 		return (int)_total+(int)_free+(int)_precious+(int)_removable;
 	}
-	
+
 	/**
 	 * Increase space values by the values specified in otherSpace
 	 * @param otherSpace the SpaceInfo to add
@@ -90,14 +90,14 @@ public class SpaceInfo {
 	public void add( SpaceInfo otherSpace) {
 		if( otherSpace == null)
 			return;
-		
+
 		_total += otherSpace._total;
 		_free += otherSpace._free;
 		_precious += otherSpace._precious;
 		_removable += otherSpace._removable;
 		_used += otherSpace._used;
 	}
-	
+
 	public void setTotal( long totalSpace) {
 		_total = totalSpace;
 	}
@@ -109,15 +109,15 @@ public class SpaceInfo {
 	public void setPrecious( long preciousSpace) {
 		_precious = preciousSpace;
 	}
-	
+
 	public void setRemovable( long removableSpace) {
 		_removable = removableSpace;
 	}
-	
+
 	public void setUsed( long usedSpace) {
 		_used = usedSpace;
 	}
-	
+
 	/**
 	 * Add additional space unconditionally to the recorded total space.
 	 * @param extraTotalSpace amount to add
@@ -141,7 +141,7 @@ public class SpaceInfo {
 	public void addToRemovable( long extraRemovableSpace) {
 		_removable += extraRemovableSpace;
 	}
-	
+
 	/**
 	 * Add additional space unconditionally to the recorded precious space
 	 * @param extraPreciousSpace amount to add
@@ -157,24 +157,24 @@ public class SpaceInfo {
 	public void addToUsed( long extraUsedSpace) {
 		_used += extraUsedSpace;
 	}
-	
+
 	/**
 	 * Update the precious space, applying a delta.
 	 * If the delta would be impossible, it is capped.
-	 * The free space is also adjusted. 
+	 * The free space is also adjusted.
 	 * @param change the change to precious space: positive number increases space usage.
 	 */
 	public void updatePrecious( long change) {
 		if( change > _free)
 			change = _free;
-		
+
 		if( change < -_precious)
 			change = -_precious;
-		
+
 		_precious += change;
-		recalcFree();			
+		recalcFree();
 	}
-	
+
 	/**
 	 * Update the space used to store removable data.  The
 	 * value is updated by applying a delta.  If the delta would
@@ -184,14 +184,14 @@ public class SpaceInfo {
 	public void updateRemovable( long change) {
 		if( change > _free)
 			change = _free;
-		
+
 		if( change < -_removable)
 			change = -_removable;
-		
+
 		_removable += change;
-		recalcFree();		
+		recalcFree();
 	}
-	
+
 	/**
 	 * Recalculate the free space based on total capacity, precious
 	 * removable and pinned.  If the free-space would
@@ -202,7 +202,7 @@ public class SpaceInfo {
 		_used = _precious + _removable;
 		_free = _used < _total ? _total - _used : 0;
 	}
-	
+
 	public long getTotal() {
 		return _total;
 	}
@@ -214,15 +214,15 @@ public class SpaceInfo {
 	public long getPrecious() {
 		return _precious;
 	}
-	
+
 	public long getRemovable() {
 		return _removable;
 	}
-	
+
 	public long getUsed() {
 		return _used;
 	}
-	
+
 	/**
 	 * Add StateUpdate entries to update dCache state that add or update the standard metrics
 	 * values.  All metrics are added under a common StatePath.  StateValues will be Mortal and
@@ -238,12 +238,12 @@ public class SpaceInfo {
 		update.appendUpdate(path.newChild(PATH_ELEMENT_REMOVABLE), new IntegerStateValue( _removable, duration));
 		update.appendUpdate(path.newChild(PATH_ELEMENT_USED), new IntegerStateValue( _used, duration));
 	}
-	
+
 	/**
 	 * Add StateUpdate entries to update dCache state that add or update the standard metrics
 	 * values.  All metrics are added under a common StatePath.  StateValues will be Ephemeral
 	 * or Immortal
-	 * @param update the StateUpdate to append these values.  
+	 * @param update the StateUpdate to append these values.
 	 * @param path the StatePath under which the StateValues will be added.
 	 * @param isImmortal if true, the metric will be immortal, otherwise ephemeral.
 	 */
@@ -254,8 +254,8 @@ public class SpaceInfo {
 		update.appendUpdate(path.newChild(PATH_ELEMENT_REMOVABLE), new IntegerStateValue( _removable, isImmortal));
 		update.appendUpdate(path.newChild(PATH_ELEMENT_USED), new IntegerStateValue( _used, isImmortal));
 	}
-	
-	
+
+
 	/**
 	 * A string describing this SpaceInfo object.
 	 */

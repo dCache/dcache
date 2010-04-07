@@ -30,7 +30,7 @@ public class LinkInfo {
         public String getPathElement() {
             return _pathElement;
         }
-        
+
         public String getNasNamePrefix() {
             return _nasNamePrefix;
         }
@@ -54,7 +54,7 @@ public class LinkInfo {
         public String getPathElement() {
             return _pathElement;
         }
-        
+
         public String getNasNamePrefix() {
             return _nasNamePrefix;
         }

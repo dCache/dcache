@@ -15,7 +15,7 @@ import org.dcache.services.info.stateInfo.SimpleIntegerMapVisitor;
 import org.dcache.services.info.stateInfo.SimpleStringMapVisitor;
 
 /**
- * The SrmSpaceManager records some capacity information about a linkgroup; specifically, 
+ * The SrmSpaceManager records some capacity information about a linkgroup; specifically,
  * just the Free and Reserved spaces.   The Total and Used sizes are not maintained, so
  * must be calculated from other information.
  * <p>
@@ -23,20 +23,20 @@ import org.dcache.services.info.stateInfo.SimpleStringMapVisitor;
  * SRM space reservations.  Total space is the sum of Free- and Used- space in the linkgroup.
  * <p>
  * This StateWatcher maintains a linkgroup's Total and Used space metrics by triggering
- * when these values change. 
- * 
+ * when these values change.
+ *
  * @author Paul Millar <paul.millar@desy.de>
  */
 public class LinkgroupTotalSpaceMaintainer extends AbstractStateWatcher {
 
 	private static Logger _log = LoggerFactory.getLogger( LinkgroupTotalSpaceMaintainer.class);
-	
+
 	private static final StatePath RESERVATIONS = new StatePath( "reservations");
 	private static final StatePath LINKGROUPS = new StatePath( "linkgroups");
 	private static final StatePath LINKGROUPREF = new StatePath( "linkgroupref");
 	private static final StatePath SPACE_USED = StatePath.parsePath("space.used");
 	private static final StatePath SPACE_FREE = StatePath.parsePath("space.free");
-	
+
 	private static final String PREDICATE_PATHS[] = { "reservations.*.space.used",
 													"linkgroups.*.space.free",
 													"linkgroups.*.reservations.*"};
@@ -61,7 +61,7 @@ public class LinkgroupTotalSpaceMaintainer extends AbstractStateWatcher {
 	}
 
 	@Override
-	public void trigger( StateTransition str, StateUpdate update) {	    
+	public void trigger( StateTransition str, StateUpdate update) {
 	    super.trigger( str, update);
 
 		if( _log.isInfoEnabled())
@@ -69,15 +69,15 @@ public class LinkgroupTotalSpaceMaintainer extends AbstractStateWatcher {
 
 		// Build a mapping of how linkgroup-IDs map to the corresponding space.free metric
 		Map<String,Long> freeSpaceAfter = SimpleIntegerMapVisitor.buildMap( _exhibitor, str, LINKGROUPS, SPACE_FREE);
-		
+
 		// Build a mapping of how reservation-IDs map to space.used metric
 		Map<String,Long> usedSpaceAfter = SimpleIntegerMapVisitor.buildMap( _exhibitor, str, RESERVATIONS, SPACE_USED);
-		
+
 		// Build a mapping of reservation-IDs to linkgroup-IDs
 		Map<String,String> reservationToLinkgroup = SimpleStringMapVisitor.buildMap( _exhibitor, str, RESERVATIONS, LINKGROUPREF);
-		
+
 		Set<String> linkgroupsToUpdate = new HashSet<String>();
-		
+
 		// Update our list of linkgroups to update
 		addLinkgroupsWhereUsedSpaceChanged( linkgroupsToUpdate, usedSpaceAfter, reservationToLinkgroup);
 		addLinkgroupsWhereFreeChanged( linkgroupsToUpdate, freeSpaceAfter);
@@ -90,8 +90,8 @@ public class LinkgroupTotalSpaceMaintainer extends AbstractStateWatcher {
 
 		addLinkgroupChanges( update, linkgroupsToUpdate, str, freeSpaceAfter, usedSpaceAfter, reservationToLinkgroup);
 	}
-	
-	
+
+
 	/**
 	 * Provide a the set of linkgroup-IDs where at least one reservation has changed its Used
 	 * space metric.
@@ -110,9 +110,9 @@ public class LinkgroupTotalSpaceMaintainer extends AbstractStateWatcher {
 
 		if( _log.isDebugEnabled())
 			_log.debug( "Updates due to reservation used space changing:");
-		
+
 		// Add the corresponding linkgroup for each space that has changed.
-		for( String reservationId : usedSpaceAfter.keySet()) {				
+		for( String reservationId : usedSpaceAfter.keySet()) {
 			if( !usedSpaceAfter.get( reservationId).equals( usedSpaceNow.get( reservationId))) {
 				String linkgroupId = reservationToLinkgroup.get( reservationId);
 
@@ -123,17 +123,17 @@ public class LinkgroupTotalSpaceMaintainer extends AbstractStateWatcher {
 			}
 		}
 	}
-	
-	
+
+
 	/**
-	 * Provide the Set of linkgroup-IDs where the linkgroup's Free space metric will change. 
+	 * Provide the Set of linkgroup-IDs where the linkgroup's Free space metric will change.
 	 * @param transition the StateTransition under consideration.
 	 * @return the Set of linkgroup-IDs where the Free space metric will change.
 	 */
 	private void addLinkgroupsWhereFreeChanged( Set<String> linkgroupsToUpdate,
 												Map<String, Long> freeSpaceAfter) {
 
-		// Build map from linkgroup-ID to used metric, both now and after. 
+		// Build map from linkgroup-ID to used metric, both now and after.
 		Map<String,Long> freeSpaceNow = SimpleIntegerMapVisitor.buildMap( _exhibitor, LINKGROUPS, SPACE_USED);
 
 		if( freeSpaceNow.equals( freeSpaceAfter)) {
@@ -154,46 +154,46 @@ public class LinkgroupTotalSpaceMaintainer extends AbstractStateWatcher {
 			}
 		}
 	}
-	
+
 	private void addLinkgroupChanges( StateUpdate update, Set<String> linkgroupsToUpdate, StateTransition str,
 										Map<String,Long> freeStateAfter, Map<String,Long> usedSpaceAfter,
 										Map<String,String> reservationToLinkgroup) {
 
 		for( String linkgroupId : linkgroupsToUpdate) {
-			
+
 			if( _log.isDebugEnabled())
 				_log.debug( "Building update for linkgroup " + linkgroupId);
 
 			StatePath thisLinkgroupSpace = LINKGROUPS.newChild( linkgroupId).newChild("space");
-			
+
 			/**
 			 *  Update the new space.used metric for this linkgroup.
-			 */			
+			 */
 			long used = 0;
-			
+
 			for( Map.Entry<String, Long> entry : usedSpaceAfter.entrySet()) {
 				if( linkgroupId.equals( reservationToLinkgroup.get( entry.getKey())))
-					used += entry.getValue().longValue();				  
+					used += entry.getValue().longValue();
 			}
 
 			update.appendUpdate( thisLinkgroupSpace.newChild( "used"), new IntegerStateValue( used));
 
-			
+
 			/**
 			 *  Try to update the space.total metric for this linkgroup, if we don't yet know this
 			 *  linkgroup's free metric then this will not be possible.
-			 */			
+			 */
 			Long freeLong = freeStateAfter.get( linkgroupId);
-			
+
 			if( freeLong != null) {
 				update.appendUpdate( thisLinkgroupSpace.newChild( "total"),
 									new IntegerStateValue( used + freeLong.longValue()));
-			} else {	
+			} else {
 				if( _log.isDebugEnabled())
 					_log.debug( "failed to find linkgroup "+linkgroupId+" in freeStateAfter");
 			}
 		}
-		
+
 	}
 
 }
