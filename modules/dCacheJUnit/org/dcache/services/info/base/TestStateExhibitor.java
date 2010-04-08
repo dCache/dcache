@@ -1,7 +1,5 @@
 package org.dcache.services.info.base;
 
-import static org.junit.Assert.fail;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -138,84 +136,6 @@ public class TestStateExhibitor implements StateExhibitor, Cloneable {
             visitor.visitCompositePostDescend( ourPath, visitMetadata);
         }
 
-        /**
-         * Apply a StateTransition to a tree of Nodes. This is does
-         * iteratively.
-         *
-         * @param transition
-         * @param myPath
-         */
-        public void applyTransition( StateTransition transition,
-                                     StatePath myPath) {
-            StateChangeSet scs = transition.getStateChangeSet( myPath);
-
-            if( scs == null)
-                return;
-
-            // Add new children.
-            for( String newChildName : scs.getNewChildren()) {
-                if( _children.containsKey( newChildName))
-                    fail( "Attempt to add new child " + newChildName +
-                          " when existing child already exists");
-
-                StateComponent newChildValue = scs.getNewChildValue( newChildName);
-                _children.put( newChildName,
-                               newNodeFromStateComponent( newChildValue));
-            }
-
-            // Update value of children.
-            for( String updatedChildName : scs.getUpdatedChildren()) {
-                if( !_children.containsKey( updatedChildName))
-                    fail( "Attempt to update child " + updatedChildName +
-                          " when existing child doesn't exist");
-
-                StateComponent updatedChildValue = scs.getUpdatedChildValue( updatedChildName);
-                _children.put( updatedChildName,
-                               newNodeFromStateComponent( updatedChildValue));
-            }
-
-            // Remove children.
-            for( String removedChildName : scs.getRemovedChildren()) {
-                if( !_children.containsKey( removedChildName))
-                    fail( "Attempt to remove a child " + removedChildName +
-                          " when child doesn't exist");
-
-                _children.remove( removedChildName);
-            }
-
-            // Iterate down into those children
-            for( String itrChildName : scs.getItrChildren())
-                if( _children.containsKey( itrChildName)) {
-                    StatePath childPath = myPath == null
-                            ? new StatePath( itrChildName)
-                            : myPath.newChild( itrChildName);
-                    _children.get( itrChildName).applyTransition( transition,
-                                                                  childPath);
-                } else {
-                    fail( "Attempt to iterate down into non-existing child");
-                }
-        }
-
-        /**
-         * Create a new Node that is based on a given StateComponent. If the
-         * StateComponent is a metric (i.e., a subclass of StateValue) then
-         * the new Node will be created with that StateValue. If not, then a
-         * branch Node (simulating StateComposite) is created.
-         *
-         * @param newValue
-         * @return
-         */
-        private static Node newNodeFromStateComponent( StateComponent newValue) {
-            Node newNode;
-
-            if( newValue instanceof StateValue) {
-                newNode = new Node( (StateValue) newValue);
-            } else {
-                newNode = new Node();
-            }
-
-            return newNode;
-        }
 
         @Override
         public Object clone() {
@@ -274,13 +194,6 @@ public class TestStateExhibitor implements StateExhibitor, Cloneable {
      */
     public void visitClonedState( StateVisitor visitor) {
         Node newRoot = (Node) _rootNode.clone();
-        newRoot.visit( visitor, null);
-    }
-
-    @Override
-    public void visitState( StateVisitor visitor, StateTransition transition) {
-        Node newRoot = (Node) _rootNode.clone();
-        newRoot.applyTransition( transition, null);
         newRoot.visit( visitor, null);
     }
 }

@@ -1,9 +1,8 @@
 package org.dcache.services.info.stateInfo;
 
+import org.dcache.services.info.base.StateExhibitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.dcache.services.info.base.StateExhibitor;
-import org.dcache.services.info.base.StateTransition;
 
 /**
  * Scan through the current list of pools and calculate aggregated statistics.
@@ -22,26 +21,9 @@ public class PoolSummaryVisitor extends AbstractPoolSpaceVisitor {
 
 		PoolSummaryVisitor visitor = new PoolSummaryVisitor();
 		exhibitor.visitState(visitor);
-
 		return visitor._summaryInfo;
 	}
 
-
-	/**
-	 * Obtain the summary statistics about all available pools after a transition
-	 * has taken place.
-	 * @param transition the transition that is to be processed.
-	 * @return the new pool summary information after the transition.
-	 */
-	static public SpaceInfo getDetails( StateExhibitor exhibitor, StateTransition transition) {
-		if( _log.isDebugEnabled())
-			_log.debug( "Gathering summary information.");
-
-		PoolSummaryVisitor visitor = new PoolSummaryVisitor();
-		exhibitor.visitState( visitor, transition);
-
-		return visitor._summaryInfo;
-	}
 
 	private final SpaceInfo _summaryInfo = new SpaceInfo();
 

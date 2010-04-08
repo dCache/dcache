@@ -9,16 +9,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
-import org.dcache.services.info.base.StateTransition;
 import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.stateInfo.LinkInfo;
 import org.dcache.services.info.stateInfo.LinkInfoVisitor;
 import org.dcache.services.info.stateInfo.PoolSpaceVisitor;
 import org.dcache.services.info.stateInfo.SpaceInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The NormalisaedAccessSpace (NAS) maintainer updates the <code>nas</code>
@@ -435,24 +434,6 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
         }
 
         /**
-         * Report a NAS' overall storage information.
-         *
-         * @return
-         */
-        SpaceInfo getSpaceInfo() {
-            return _spaceInfo;
-        }
-
-        /**
-         * Discover all links that refer to a NAS
-         *
-         * @return
-         */
-        Set<String> getLinks() {
-            return _representativePaintInfo.getLinks();
-        }
-
-        /**
          * Discover whether any of the pools given in the Set of poolIDs has
          * been registered as part of this NAS.
          *
@@ -522,8 +503,6 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
         }
     }
 
-    private final StateExhibitor _exhibitor;
-
     /**
      * Create a new secondary information provider that uses the provided
      * StateExhibitor to query the current and future dCache state.
@@ -531,7 +510,7 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
      * @param exhibitor
      */
     public NormalisedAccessSpaceMaintainer( StateExhibitor exhibitor) {
-        _exhibitor = exhibitor;
+        // TODO remove this constructor
     }
 
     @Override
@@ -540,16 +519,16 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
     }
 
     @Override
-    public void trigger( StateTransition transition, StateUpdate update) {
+    public void trigger( StateUpdate update, StateExhibitor currentState, StateExhibitor futureState) {
         Map<String, LinkInfo> currentLinks =
-                LinkInfoVisitor.getDetails( _exhibitor);
+                LinkInfoVisitor.getDetails( currentState);
         Map<String, LinkInfo> futureLinks =
-                LinkInfoVisitor.getDetails( _exhibitor, transition);
+                LinkInfoVisitor.getDetails( futureState);
 
         Map<String, SpaceInfo> currentPools =
-                PoolSpaceVisitor.getDetails( _exhibitor);
+                PoolSpaceVisitor.getDetails( currentState);
         Map<String, SpaceInfo> futurePools =
-                PoolSpaceVisitor.getDetails( _exhibitor, transition);
+                PoolSpaceVisitor.getDetails( futureState);
 
         buildUpdate( update, currentPools, futurePools, currentLinks,
                      futureLinks);

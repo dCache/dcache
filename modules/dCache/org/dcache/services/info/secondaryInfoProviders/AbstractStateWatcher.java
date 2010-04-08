@@ -6,8 +6,8 @@ package org.dcache.services.info.secondaryInfoProviders;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePathPredicate;
-import org.dcache.services.info.base.StateTransition;
 import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StateWatcher;
 
@@ -40,7 +40,7 @@ abstract public class AbstractStateWatcher implements StateWatcher {
 	abstract protected String[] getPredicates();
 
 	@Override
-	public synchronized void trigger( StateTransition transiton, StateUpdate update) {
+	public synchronized void trigger( StateUpdate update, StateExhibitor currentState, StateExhibitor futureState) {
 		_counter++;
 	}
 

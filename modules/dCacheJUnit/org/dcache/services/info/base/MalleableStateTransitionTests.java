@@ -189,7 +189,8 @@ public class MalleableStateTransitionTests {
      * current MalleableStateTransition.
      */
     private void assertVisitorSatisfied() {
-        _exhibitor.visitState( _visitor, _transition);
+        StateExhibitor futureState = new PostTransitionStateExhibitor( _exhibitor, _transition);
+        futureState.visitState( _visitor);
         assertTrue( "visitor satisfied", _visitor.satisfied());
     }
 

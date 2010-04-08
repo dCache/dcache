@@ -7,7 +7,6 @@ import java.util.Set;
 
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
-import org.dcache.services.info.base.StateTransition;
 
 /**
  * The SetMapVisitor builds a Map between a list of items and some list
@@ -63,40 +62,6 @@ public class SetMapVisitor extends SkeletonListVisitor {
 													StatePath pathToSecondList) {
 		SetMapVisitor visitor = new SetMapVisitor( pathToMainList, pathToSecondList);
 		exhibitor.visitState( visitor);
-		return visitor.getMap();
-	}
-
-	/**
-	 * Obtain a Map between list items and their corresponding Set of the children of some
-	 * fixed relative path for dCache's future state after the transition has been applied.
-	 * For example, if dCache's future state contains:
-	 * <pre>
-	 * aa.bb.item1.cc.dd.i1E1
-	 * aa.bb.item1.cc.dd.i1E2
-	 * aa.bb.item1.cc.dd.i1E3
-	 * aa.bb.item2.cc.dd.i2E1
-	 * aa.bb.item2.cc.dd.i2E2
-	 * aa.bb.item2.cc.dd.i2E3
-	 * aa.bb.item3.cc.dd.i3E1
-	 * </pre>
-	 * then, with pathToMainList of aa.bb and pathToSecondList of cc.dd, the output
-	 * would be the mapping:
-	 * <pre>
-	 * "item1" -> {"i1E1", "i1E2", "i1E3"}
-	 * "item2" -> {"i2E1", "i2E2", "i2E3"}
-	 * "item3" -> {"i3E1"}
-	 * </pre>
-	 *
-	 * @param pathToMainList the StatePath for the common parent for the primary list
-	 * @param pathToSecondList the StatePath, relative to the list item for parent of the item list.
-	 * @return a mapping between an item and the set of items at a fixed relative path.
-	 */
-	static public Map<String,Set<String>> getDetails( StateExhibitor exhibitor,
-														StateTransition transition,
-														StatePath pathToMainList,
-														StatePath pathToSecondList) {
-		SetMapVisitor visitor = new SetMapVisitor( pathToMainList, pathToSecondList);
-		exhibitor.visitState( visitor, transition);
 		return visitor.getMap();
 	}
 

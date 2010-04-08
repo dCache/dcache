@@ -207,6 +207,8 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
     public StateUpdate checkWatchers( StateTransition transition) {
 
         StateUpdate update = new StateUpdate();
+        StateExhibitor currentState = this;
+        StateExhibitor futureState = null;
 
         for( StateWatcherInfo thisWatcherInfo : _watchers) {
 
@@ -241,7 +243,10 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
                 if( _log.isInfoEnabled())
                     _log.info( "triggering watcher " + thisWatcher);
                 thisWatcherInfo.incrementCounter();
-                thisWatcher.trigger( transition, update);
+                if( futureState == null)
+                    futureState = new PostTransitionStateExhibitor( currentState, transition);
+
+                thisWatcher.trigger( update, currentState, futureState);
             }
         }
 
@@ -416,49 +421,6 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
 
         if( _log.isDebugEnabled())
             _log.debug( "visitor " + visitor.getClass().getSimpleName() + " finished.");
-    }
-
-    /**
-     * Allow an arbitrary algorithm to visit what dCache state would look
-     * like <i>after</i> a StateTransition has been applied.
-     *
-     * @param transition
-     *            The StateTransition to consider.
-     * @param visitor
-     *            the algorithm to apply
-     */
-    @Override
-    public void visitState( StateVisitor visitor, StateTransition transition) {
-        if( _log.isDebugEnabled())
-            _log.debug( "visitor " + visitor.getClass().getSimpleName() + " wishing to visit post-transition state");
-
-        try {
-            long beforeLock = System.currentTimeMillis();
-
-            if( _log.isDebugEnabled())
-                _log.debug( "visitor " + visitor.getClass().getSimpleName() + " acquiring read lock.");
-
-            _stateReadLock.lock();
-
-            long afterLock = System.currentTimeMillis();
-
-            if( _log.isDebugEnabled())
-                _log.debug( "visitor " + visitor.getClass().getSimpleName() + " acquired read lock (took " + (afterLock - beforeLock) / 1000.0 + " ms), starting visit.");
-
-            if( visitor.isVisitable( null))
-                _state.acceptVisitor( transition, null, visitor);
-
-            long afterVisit = System.currentTimeMillis();
-
-            if( _log.isDebugEnabled())
-                _log.debug( "visitor " + visitor.getClass().getSimpleName() + " completed visit (took " + (afterVisit - afterLock) / 1000.0 + " ms), releasing read lock.");
-
-        } finally {
-            _stateReadLock.unlock();
-        }
-
-        if( _log.isDebugEnabled())
-            _log.debug( "visitor " + visitor.getClass().getSimpleName() + " finished");
     }
 
     /**

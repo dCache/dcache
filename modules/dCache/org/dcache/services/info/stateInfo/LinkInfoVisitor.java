@@ -4,13 +4,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
-import org.dcache.services.info.base.StateTransition;
 import org.dcache.services.info.stateInfo.LinkInfo.UNIT_TYPE;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Scan through the known list of links and build up an associated collection
@@ -90,24 +89,6 @@ public class LinkInfoVisitor extends SkeletonListVisitor {
 
         LinkInfoVisitor visitor = new LinkInfoVisitor();
         exhibitor.visitState( visitor);
-
-        return visitor.getInfo();
-    }
-
-    /**
-     * Obtain information about the set of links after a StateTransition has
-     * been applied.
-     *
-     * @param transition the StateTransition describing the pending changes
-     *            to dCache state.
-     * @return a Mapping between a link's ID and the corresponding LinkInfo.
-     */
-    public static Map<String, LinkInfo> getDetails( StateExhibitor exhibitor,
-                                                    StateTransition transition) {
-        _log.debug( "Gathering link information.");
-
-        LinkInfoVisitor visitor = new LinkInfoVisitor();
-        exhibitor.visitState( visitor, transition);
 
         return visitor.getInfo();
     }

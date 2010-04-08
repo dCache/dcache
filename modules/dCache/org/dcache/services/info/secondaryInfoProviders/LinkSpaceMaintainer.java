@@ -6,10 +6,9 @@ import java.util.Set;
 
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
-import org.dcache.services.info.base.StateTransition;
 import org.dcache.services.info.base.StateUpdate;
-import org.dcache.services.info.stateInfo.SetMapVisitor;
 import org.dcache.services.info.stateInfo.PoolSpaceVisitor;
+import org.dcache.services.info.stateInfo.SetMapVisitor;
 import org.dcache.services.info.stateInfo.SpaceInfo;
 
 /**
@@ -26,7 +25,6 @@ public class LinkSpaceMaintainer extends AbstractStateWatcher {
 
 	private static final StatePath LINKS_PATH = new StatePath( "links");
 	private static final StatePath POOL_MEMBERSHIP_REL_PATH = new StatePath( "pools");
-	private final StateExhibitor _exhibitor;
 
 	/**
 	 * Create a new secondary information provider that uses the provided StateExhibitor
@@ -34,7 +32,7 @@ public class LinkSpaceMaintainer extends AbstractStateWatcher {
 	 * @param exhibitor
 	 */
 	public LinkSpaceMaintainer( StateExhibitor exhibitor) {
-		_exhibitor = exhibitor;
+	    // TODO remove this constructor
 	}
 
 	@Override
@@ -43,16 +41,16 @@ public class LinkSpaceMaintainer extends AbstractStateWatcher {
 	}
 
 	@Override
-    public void trigger(StateTransition str, StateUpdate update) {
-	    super.trigger( str, update);
+    public void trigger(StateUpdate update, StateExhibitor currentState, StateExhibitor futureState) {
+	    super.trigger( update, currentState, futureState);
 
-		Map<String,Set<String>> futureLinksToPools = SetMapVisitor.getDetails( _exhibitor, str, LINKS_PATH, POOL_MEMBERSHIP_REL_PATH);
-		Map<String,SpaceInfo> futurePoolSize = PoolSpaceVisitor.getDetails( _exhibitor, str);
+		Map<String,Set<String>> futureLinksToPools = SetMapVisitor.getDetails( futureState, LINKS_PATH, POOL_MEMBERSHIP_REL_PATH);
+		Map<String,SpaceInfo> futurePoolSize = PoolSpaceVisitor.getDetails( futureState);
 
 		Set<String> linksToUpdate = new HashSet<String>();
 
-		addLinksWhereLinkHasChanged( linksToUpdate, futureLinksToPools);
-		addLinksWherePoolsHaveChanged( linksToUpdate, futureLinksToPools, futurePoolSize);
+		addLinksWhereLinkHasChanged( currentState, linksToUpdate, futureLinksToPools);
+		addLinksWherePoolsHaveChanged( currentState, linksToUpdate, futureLinksToPools, futurePoolSize);
 
 		if( linksToUpdate.isEmpty())
 			return;
@@ -68,9 +66,9 @@ public class LinkSpaceMaintainer extends AbstractStateWatcher {
 	 * @param linksToUpdate the Set of links to recalculate: link names will be added here.
 	 * @param futureLinksToPools the mapping between a link's name and the Set of pools that are associated with that link after the transition.
 	 */
-	private void addLinksWhereLinkHasChanged( Set<String> linksToUpdate, Map<String,Set<String>> futureLinksToPools) {
+	private void addLinksWhereLinkHasChanged( StateExhibitor currentState, Set<String> linksToUpdate, Map<String,Set<String>> futureLinksToPools) {
 
-		Map<String,Set<String>> currentLinksToPools = SetMapVisitor.getDetails( _exhibitor, LINKS_PATH, POOL_MEMBERSHIP_REL_PATH);
+		Map<String,Set<String>> currentLinksToPools = SetMapVisitor.getDetails( currentState, LINKS_PATH, POOL_MEMBERSHIP_REL_PATH);
 
 		if( currentLinksToPools.equals( futureLinksToPools))
 			return;
@@ -104,10 +102,10 @@ public class LinkSpaceMaintainer extends AbstractStateWatcher {
 	 * @param futureLinksToPools the future mapping between a link's name and the set of pools associated with that link
 	 * @param futurePoolSize the future mapping between a pool's name and its size information.
 	 */
-	private void addLinksWherePoolsHaveChanged( Set<String> linksToUpdate, Map<String, Set<String>> futureLinksToPools, Map<String,SpaceInfo> futurePoolSize) {
+	private void addLinksWherePoolsHaveChanged( StateExhibitor currentState, Set<String> linksToUpdate, Map<String, Set<String>> futureLinksToPools, Map<String,SpaceInfo> futurePoolSize) {
 
 		// Get the current pool space information
-		Map<String,SpaceInfo> currentPoolSize = PoolSpaceVisitor.getDetails( _exhibitor);
+		Map<String,SpaceInfo> currentPoolSize = PoolSpaceVisitor.getDetails( currentState);
 
 		if( futurePoolSize.equals( currentPoolSize))
 			return;

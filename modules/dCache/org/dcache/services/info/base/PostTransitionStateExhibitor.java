@@ -260,9 +260,4 @@ public class PostTransitionStateExhibitor implements StateExhibitor {
         StateVisitor preTransitionVisitor = new PreTransitionVisitor( visitor);
         _currentStateExhibitor.visitState( preTransitionVisitor);
     }
-
-    @Override
-    public void visitState( StateVisitor visitor, StateTransition transition) {
-        throw new RuntimeException( "not implemented: will go away");
-    }
 }

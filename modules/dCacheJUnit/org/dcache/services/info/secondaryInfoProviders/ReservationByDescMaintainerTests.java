@@ -8,8 +8,10 @@ import java.util.Set;
 
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.MalleableStateTransition;
+import org.dcache.services.info.base.PostTransitionStateExhibitor;
 import org.dcache.services.info.base.QueuingStateUpdateManager;
 import org.dcache.services.info.base.StateComposite;
+import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StateWatcher;
@@ -48,7 +50,7 @@ public class ReservationByDescMaintainerTests {
 
         StateLocation.transitionAddsReservation( _transition, id, 0);
 
-        _watcher.trigger( _transition, _update);
+        triggerWatcher();
 
         assertEquals( "Check number of purges", 0, _update.countPurges());
         assertEquals( "Check number of updates", 0, _update.count());
@@ -78,7 +80,7 @@ public class ReservationByDescMaintainerTests {
         StateLocation.transitionAddsReservationSpace( _transition, 2, id, total, used, allocated, free);
         StateLocation.transitionAddsReservationState( _transition, 2, id, ReservationInfo.State.RESERVED);
 
-        _watcher.trigger( _transition, _update);
+        triggerWatcher();
 
         assertEquals( "Check number of purges", 0, _update.countPurges());
 
@@ -97,16 +99,16 @@ public class ReservationByDescMaintainerTests {
         ids.add( id);
         assertList( "reservations list", expectedSummary.newChild( "reservations"), ids);
     }
-    
+
     @Test
     public void testReservationTransitionUpdatesVo() {
         String id = "id";
-        
+
         String oldVo = "atlas";
         String oldGroup = "/" + oldVo;
         String oldRole = "";
         String oldFQAN = oldGroup;
-        
+
         String description = "SCRATCH";
 
         long total = 10;
@@ -126,19 +128,19 @@ public class ReservationByDescMaintainerTests {
 
         StateLocation.transitionAddsReservationAuth( _transition, 4, id, newFQAN, newGroup, newRole);
 
-        _watcher.trigger( _transition, _update);
-        
+        triggerWatcher();
+
         // SIP should purge the old atlas information
         assertEquals( "Check number of purges", 1, _update.countPurges());
 
         // Check that new summary is created with the new VO.
-        
+
         StatePath expectedSummaryBase = SUMMARY_RESERVATIONS_BY_VO.newChild( newVo).newChild( "by-description").newChild( description);
 
         assertStringMetric( "checking new vo summary", expectedSummaryBase.newChild( "vo"), newVo);
-        
+
         StatePath expectedSummarySpace = expectedSummaryBase.newChild( "space");
-        
+
         assertIntegerMetric( "checking total", expectedSummarySpace.newChild( "total"), total);
         assertIntegerMetric( "checking used", expectedSummarySpace.newChild( "used"), used);
         assertIntegerMetric( "checking allocated", expectedSummarySpace.newChild( "allocated"), allocated);
@@ -167,7 +169,7 @@ public class ReservationByDescMaintainerTests {
 
         StateLocation.transitionAddsReservationSpaceTotal( _transition, 4, id, newTotal);
 
-        _watcher.trigger( _transition, _update);
+        triggerWatcher();
 
         assertEquals( "Check number of purges", 0, _update.countPurges());
 
@@ -209,7 +211,7 @@ public class ReservationByDescMaintainerTests {
                                                       resv2Allocated, resv2Free);
         StateLocation.transitionAddsReservationState( _transition, 2, resv2Id, ReservationInfo.State.RESERVED);
 
-        _watcher.trigger( _transition, _update);
+        triggerWatcher();
 
         assertEquals( "Check number of purges", 0, _update.countPurges());
 
@@ -262,7 +264,7 @@ public class ReservationByDescMaintainerTests {
                                                       resv2Allocated, resv2Free);
         StateLocation.transitionAddsReservationState( _transition, 2, resv2Id, ReservationInfo.State.RESERVED);
 
-        _watcher.trigger( _transition, _update);
+        triggerWatcher();
 
         assertEquals( "Check number of purges", 0, _update.countPurges());
 
@@ -317,7 +319,7 @@ public class ReservationByDescMaintainerTests {
                                                       resv2Allocated, resv2Free);
         StateLocation.transitionAddsReservationState( _transition, 2, resv2Id, ReservationInfo.State.RESERVED);
 
-        _watcher.trigger( _transition, _update);
+        triggerWatcher();
 
         assertEquals( "Check number of purges", 0, _update.countPurges());
 
@@ -369,7 +371,7 @@ public class ReservationByDescMaintainerTests {
 
         StateLocation.transitionRemovesReservation( _transition, resv2Id);
 
-        _watcher.trigger( _transition, _update);
+        triggerWatcher();
 
         StatePath expectedSummary = SUMMARY_RESERVATIONS_BY_VO.newChild( vo);
 
@@ -409,7 +411,7 @@ public class ReservationByDescMaintainerTests {
 
         StateLocation.transitionRemovesReservation( _transition, resv2Id);
 
-        _watcher.trigger( _transition, _update);
+        triggerWatcher();
 
         StatePath expectedSummary = SUMMARY_RESERVATIONS_BY_VO.newChild( vo).newChild( "by-description").newChild( resvDesc);
 
@@ -463,7 +465,7 @@ public class ReservationByDescMaintainerTests {
 
         StateLocation.transitionRemovesReservation( _transition, resv2Id);
 
-        _watcher.trigger( _transition, _update);
+        triggerWatcher();
 
         StatePath vo2BasePath = SUMMARY_RESERVATIONS_BY_VO.newChild( resv2Vo);
 
@@ -487,5 +489,11 @@ public class ReservationByDescMaintainerTests {
 
     private void assertPurge( String msg, StatePath path)  {
         assertTrue( msg + " [" + path.toString() + "]", _update.hasPurge( path));
+    }
+
+    private void triggerWatcher()
+    {
+        StateExhibitor futureState = new PostTransitionStateExhibitor( _exhibitor, _transition);
+        _watcher.trigger( _update, _exhibitor, futureState);
     }
 }

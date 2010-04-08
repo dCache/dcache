@@ -375,31 +375,6 @@ public class TestStateExhibitorTests {
     }
 
     /**
-     * TESTS INVOLVING TRANSITIONS
-     */
-
-    @Test
-    public void testSingleStringMetricTransitionExhibitor() {
-        assertSingleMetricTransitionOk( new StringStateValue(
-                                                              "a typical string value"));
-    }
-
-    @Test
-    public void testSingleIntegerMetricTransitionExhibitor() {
-        assertSingleMetricTransitionOk( new IntegerStateValue( 42));
-    }
-
-    @Test
-    public void testSingleFloatingPointMetricTransitionExhibitor() {
-        assertSingleMetricTransitionOk( new FloatingPointStateValue( 42.3));
-    }
-
-    @Test
-    public void testSingleBooleanMetricTransitionExhibitor() {
-        assertSingleMetricTransitionOk( new BooleanStateValue( true));
-    }
-
-    /**
      * TESTS INVOLVING SKIPPING
      */
 
@@ -414,37 +389,6 @@ public class TestStateExhibitorTests {
         visitor.addExpectedMetric( metricPath, metricValue);
 
         _exhibitor.visitState( visitor);
-
-        assertTrue( "visitor is satisfied", visitor.satisfied());
-    }
-
-    /**
-     * TESTS INVOLVING SKIPPING AND TRANSITION
-     */
-
-    /**
-     * TestStateExhibitor has a single metric. The StateTransition adds a
-     * sibling metric, we skip none.
-     */
-    @Test
-    public void testSingleMetricTransitionAddsSiblingSingleMetricSkipNull() {
-        StatePath metricBranchPath = StatePath.parsePath( "aa.bb");
-        StatePath existingMetricPath = metricBranchPath.newChild( "metric1");
-        StateValue existingMetricValue = new StringStateValue( "metric1 value");
-        StatePath newMetricPath = metricBranchPath.newChild( "metric2");
-        StateValue newMetricValue = new StringStateValue( "metric2 value");
-
-        _exhibitor.addMetric( existingMetricPath, existingMetricValue);
-
-        MalleableStateTransition transition = new MalleableStateTransition();
-        transition.updateTransitionForNewMetric( newMetricPath, newMetricValue,
-                metricBranchPath._elements.size());
-
-        VerifyingVisitor visitor = new VerifyingVisitor();
-        visitor.addExpectedMetric( existingMetricPath, existingMetricValue);
-        visitor.addExpectedMetric( newMetricPath, newMetricValue);
-
-        _exhibitor.visitState( visitor, transition);
 
         assertTrue( "visitor is satisfied", visitor.satisfied());
     }
@@ -498,30 +442,6 @@ public class TestStateExhibitorTests {
         addSingleMetricAndUpdateVisitor( visitor, metricValue);
 
         _exhibitor.visitClonedState( visitor);
-
-        assertTrue( "VerifyingVisitor is satisfied", visitor.satisfied());
-    }
-
-    /**
-     * Create a new {@link MalleableStateTransition}. Update this
-     * MalleableStateTransition so the transition will add a single metric to
-     * a predefined location. Create a new {@link VerifyingVisitor}, which is
-     * told to expect the same metric at the same location. Visit the state
-     * after the transition using the
-     * {@link TestStateExhibitor#visitState(StateVisitor, StateTransition)}
-     * method. Check that the VerifyingVisitor is satisfied.
-     *
-     * @param metricValue
-     */
-    private void assertSingleMetricTransitionOk( StateValue metricValue) {
-        VerifyingVisitor visitor = new VerifyingVisitor();
-
-        visitor.addExpectedMetric( METRIC_PATH, metricValue);
-
-        MalleableStateTransition transition = new MalleableStateTransition();
-        transition.updateTransitionForNewMetric( METRIC_PATH, metricValue, 0);
-
-        _exhibitor.visitState( visitor, transition);
 
         assertTrue( "VerifyingVisitor is satisfied", visitor.satisfied());
     }

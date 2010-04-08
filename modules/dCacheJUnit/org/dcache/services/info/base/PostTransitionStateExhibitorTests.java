@@ -323,12 +323,6 @@ public class PostTransitionStateExhibitorTests {
         assertVisitorSatisfied();
     }
 
-    @Test(expected = RuntimeException.class)
-    public void testVisitWithTransitionNotAllowed() {
-        StateTransition transition = new StateTransition();
-        _post.visitState( _visitor, transition);
-    }
-
     /*
      * SUPPORT METHODS ...
      */

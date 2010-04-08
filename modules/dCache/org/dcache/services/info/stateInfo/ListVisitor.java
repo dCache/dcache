@@ -1,13 +1,12 @@
 package org.dcache.services.info.stateInfo;
 
-import java.util.Set;
 import java.util.HashSet;
+import java.util.Set;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
-import org.dcache.services.info.base.StateTransition;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -34,23 +33,7 @@ public class ListVisitor extends SkeletonListVisitor {
 		return visitor.getItems();
 	}
 
-	/**
-	 * Obtain the set of items below a certain path within the future dCache state
-	 * after a StateTransition has been applied.
-	 * @param str the StateTransition that is pending.
-	 * @param path the StatePath that is the parent to the require list of items.
-	 * @return the Set of all items that have the path as their parent.
-	 */
-	static public Set<String> getDetails( StateExhibitor exhibitor, StateTransition str, StatePath path) {
-		if( _log.isDebugEnabled())
-			_log.debug( "Gathering current status for path " + path);
-
-		ListVisitor visitor = new ListVisitor( path);
-		exhibitor.visitState( visitor, str);
-		return visitor.getItems();
-	}
-
-	private Set<String> _listItems;
+	private final Set<String> _listItems;
 
 	public ListVisitor( StatePath parent) {
 		super( parent);

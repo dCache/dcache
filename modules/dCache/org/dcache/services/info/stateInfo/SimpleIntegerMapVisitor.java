@@ -6,7 +6,6 @@ import java.util.Map;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
-import org.dcache.services.info.base.StateTransition;
 
 /**
  * Build a Map<String,Long> that maps between a particular entry in a list of items
@@ -41,21 +40,7 @@ public class SimpleIntegerMapVisitor extends SimpleSkeletonMapVisitor {
 		return visitor.getMap();
 	}
 
-	/**
-	 * Build a mapping between list items and some StringStateValue value for dCache's state after
-	 * a transition has taken place.
-	 * @param transition the StateTransition to consider.
-	 * @param pathToList the StatePath of the list's parent StateComposite.
-	 * @param pathToMetric the StatePath, relative to the list item, of the StringStateValue
-	 * @return the mapping between list items and the metric values.
-	 */
-	public static final Map<String,Long> buildMap( StateExhibitor exhibitor, StateTransition transition, StatePath pathToList, StatePath pathToMetric) {
-		SimpleIntegerMapVisitor visitor = new SimpleIntegerMapVisitor( pathToList, pathToMetric);
-		exhibitor.visitState( visitor, transition);
-		return visitor.getMap();
-	}
-
-	Map <String,Long> _map;
+	private final Map <String,Long> _map;
 
 	public SimpleIntegerMapVisitor( StatePath pathToList, StatePath pathToMetric) {
 		super( pathToList, pathToMetric);

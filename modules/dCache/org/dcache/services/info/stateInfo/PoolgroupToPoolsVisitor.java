@@ -5,18 +5,17 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.BooleanStateValue;
 import org.dcache.services.info.base.FloatingPointStateValue;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StateGuide;
 import org.dcache.services.info.base.StatePath;
-import org.dcache.services.info.base.StateTransition;
 import org.dcache.services.info.base.StateVisitor;
 import org.dcache.services.info.base.StringStateValue;
 import org.dcache.services.info.base.guides.SubtreeStateGuide;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Scan through a dCache state tree, building a list of poolgroup-to-pools associations.
@@ -38,21 +37,6 @@ public class PoolgroupToPoolsVisitor implements StateVisitor {
 
         PoolgroupToPoolsVisitor visitor = new PoolgroupToPoolsVisitor();
         exhibitor.visitState( visitor);
-        return visitor._poolgroups;
-    }
-
-    /**
-     * Obtain a Map between a poolgroup and the pools that will be members of this poolgroup after
-     * the given StateTransition
-     * @param transition the StateTransition to consider
-     * @return
-     */
-    public static Map <String,Set<String>> getDetails( StateExhibitor exhibitor, StateTransition transition) {
-        if( _log.isInfoEnabled())
-            _log.info( "Gathering status after transition");
-
-        PoolgroupToPoolsVisitor visitor = new PoolgroupToPoolsVisitor();
-        exhibitor.visitState(visitor, transition);
         return visitor._poolgroups;
     }
 

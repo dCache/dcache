@@ -5,17 +5,16 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StateComposite;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
-import org.dcache.services.info.base.StateTransition;
 import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StringStateValue;
 import org.dcache.services.info.stateInfo.ReservationInfo;
 import org.dcache.services.info.stateInfo.ReservationInfoVisitor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The ReservationByDescMaintainer class implements StateWatcher. It
@@ -211,8 +210,6 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher {
         }
     }
 
-    private final StateExhibitor _exhibitor;
-
     /**
      * Create a new secondary information provider that uses the provided
      * StateExhibitor to query the current and future dCache state.
@@ -220,7 +217,7 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher {
      * @param exhibitor access to dCache's state
      */
     public ReservationByDescMaintainer( StateExhibitor exhibitor) {
-        _exhibitor = exhibitor;
+        // TODO remove this constructor
     }
 
     @Override
@@ -229,11 +226,11 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher {
     }
 
     @Override
-    public void trigger( StateTransition str, StateUpdate update) {
+    public void trigger( StateUpdate update, StateExhibitor currentState, StateExhibitor futureState) {
         Map<String, ReservationInfo> currentResv =
-                ReservationInfoVisitor.getDetails( _exhibitor);
+                ReservationInfoVisitor.getDetails( currentState);
         Map<String, ReservationInfo> futureResv =
-                ReservationInfoVisitor.getDetails( _exhibitor, str);
+                ReservationInfoVisitor.getDetails( futureState);
 
         // build mapping from description to summary data
         Map<String, Map<String, ReservationSummaryInfo>> currentSummary =

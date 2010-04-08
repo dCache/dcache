@@ -3,10 +3,9 @@ package org.dcache.services.info.stateInfo;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.dcache.services.info.base.StateExhibitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.dcache.services.info.base.StateExhibitor;
-import org.dcache.services.info.base.StateTransition;
 
 /**
  * Scan through dCache state and build a map containing all pools and
@@ -27,28 +26,11 @@ public class PoolSpaceVisitor extends AbstractPoolSpaceVisitor {
 			_log.info( "Gathering current status");
 
 		PoolSpaceVisitor visitor = new PoolSpaceVisitor();
-
 		exhibitor.visitState( visitor);
-
 		return visitor._poolgroups;
 	}
 
-	/**
-	 * Obtain a Map between pools and their space information for the dCache state after
-	 * the supplied StateTransition has been applied.
-	 * @param transition  the StateTransition to consider.
-	 * @return Map between a pool's name and that pool's SpaceInfo
-	 */
-	public static Map <String,SpaceInfo> getDetails( StateExhibitor exhibitor, StateTransition transition) {
-		if( _log.isInfoEnabled())
-			_log.info( "Gathering status after transition");
-
-		PoolSpaceVisitor visitor = new PoolSpaceVisitor();
-		exhibitor.visitState( visitor, transition);
-		return visitor._poolgroups;
-	}
-
-	private Map <String,SpaceInfo> _poolgroups = new HashMap<String,SpaceInfo>();
+	private final Map <String,SpaceInfo> _poolgroups = new HashMap<String,SpaceInfo>();
 
 	@Override
 	protected void newPool( String poolName, SpaceInfo space) {

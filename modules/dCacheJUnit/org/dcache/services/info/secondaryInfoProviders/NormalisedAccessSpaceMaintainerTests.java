@@ -8,7 +8,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.dcache.services.info.base.MalleableStateTransition;
+import org.dcache.services.info.base.PostTransitionStateExhibitor;
 import org.dcache.services.info.base.QueuingStateUpdateManager;
+import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StateWatcher;
@@ -18,7 +20,7 @@ import org.dcache.services.info.stateInfo.SpaceInfo;
 import org.junit.Before;
 import org.junit.Test;
 
-// FIXME the tests do not check that pools are partitioned correctly. 
+// FIXME the tests do not check that pools are partitioned correctly.
 public class NormalisedAccessSpaceMaintainerTests {
 
     public static final StatePath PATH_NAS = new StatePath("nas");
@@ -49,7 +51,7 @@ public class NormalisedAccessSpaceMaintainerTests {
 
         StateLocation.transitionAddsPoolgroup( _transition, poolgroupName, 0);
 
-        _watcher.trigger( _transition, _update);
+        triggerWatcher();
 
         // we expect NASM to establish a NAS.
         assertEquals( "checking number of purges", 0, _update.countPurges());
@@ -66,7 +68,7 @@ public class NormalisedAccessSpaceMaintainerTests {
 
         StateLocation.transitionAddsPool( _transition, poolName, 0);
 
-        _watcher.trigger( _transition, _update);
+        triggerWatcher();
 
         // we expect NASM to establish a NAS.
         assertEquals( "checking number of purges", 0, _update.countPurges());
@@ -82,7 +84,7 @@ public class NormalisedAccessSpaceMaintainerTests {
 
         StateLocation.transitionAddsPoolMetrics( _transition, poolName, 0, new SpaceInfo( 10, 8, 1, 1));
 
-        _watcher.trigger( _transition, _update);
+        triggerWatcher();
 
         // Structure hasn't changed, we don't purge.
         assertEquals( "checking number of purges", 0, _update.countPurges());
@@ -104,7 +106,7 @@ public class NormalisedAccessSpaceMaintainerTests {
         StateLocation.transitionAddsPoolMetrics( _transition, pool1Name, 0, new SpaceInfo( 10, 8, 1, 1));
         StateLocation.transitionAddsPoolMetrics( _transition, pool2Name, 1, new SpaceInfo( 20, 16, 2, 2));
 
-        _watcher.trigger( _transition, _update);
+        triggerWatcher();
 
         // Structure hasn't changed, we don't purge.
         assertEquals( "checking number of purges", 0, _update.countPurges());
@@ -127,7 +129,7 @@ public class NormalisedAccessSpaceMaintainerTests {
         StateLocation.putPoolSpaceMetrics( _exhibitor, poolName, new SpaceInfo( 10, 8, 1, 1));
         StateLocation.transitionAddsPoolMetrics( _transition, poolName, 4, new SpaceInfo( 10, 6, 2, 2));
 
-        _watcher.trigger( _transition, _update);
+        triggerWatcher();
 
         Set<String> expectedPools = new HashSet<String>();
         expectedPools.add( poolName);
@@ -146,7 +148,7 @@ public class NormalisedAccessSpaceMaintainerTests {
         StateLocation.putLink( _exhibitor, linkName);
         StateLocation.transitionAddsPoolInLink( _transition, linkName, poolName, 2);
 
-        _watcher.trigger( _transition, _update);
+        triggerWatcher();
 
         assertEquals( "checking number of purges", 1, _update.countPurges());
 
@@ -170,7 +172,7 @@ public class NormalisedAccessSpaceMaintainerTests {
 
         StateLocation.transitionAddsPoolInLink( _transition, linkName, poolName, 2);
 
-        _watcher.trigger( _transition, _update);
+        triggerWatcher();
 
         assertEquals( "checking number of purges", 1, _update.countPurges());
 
@@ -201,7 +203,7 @@ public class NormalisedAccessSpaceMaintainerTests {
 
         StateLocation.transitionAddsPoolMetrics( _transition, pool2Name, 1, pool2Info);
 
-        _watcher.trigger( _transition, _update);
+        triggerWatcher();
 
         assertEquals( "checking number of purges", 0, _update.countPurges());
 
@@ -223,7 +225,7 @@ public class NormalisedAccessSpaceMaintainerTests {
 
         StateLocation.transitionAddsLinkPrefs( _transition, linkName, 2, 0, 0, 0, 0);
 
-        _watcher.trigger( _transition, _update);
+        triggerWatcher();
 
         assertEquals( "checking number of purges", 1, _update.countPurges());
 
@@ -244,7 +246,7 @@ public class NormalisedAccessSpaceMaintainerTests {
 
         StateLocation.transitionAddsLinkPrefs( _transition, linkName, 2, 5, 0, 0, 0);
 
-        _watcher.trigger( _transition, _update);
+        triggerWatcher();
 
         assertEquals( "checking number of purges", 1, _update.countPurges());
 
@@ -267,7 +269,7 @@ public class NormalisedAccessSpaceMaintainerTests {
 
         StateLocation.transitionAddsLinkPrefs( _transition, linkName, 2, 0, 0, 0, 0);
 
-        _watcher.trigger( _transition, _update);
+        triggerWatcher();
 
         assertEquals( "checking number of purges", 1, _update.countPurges());
 
@@ -289,7 +291,7 @@ public class NormalisedAccessSpaceMaintainerTests {
 
         StateLocation.transitionAddsLinkPrefs( _transition, linkName, 2, 5, 0, 0, 0);
 
-        _watcher.trigger( _transition, _update);
+        triggerWatcher();
 
         assertEquals( "checking number of purges", 1, _update.countPurges());
 
@@ -313,7 +315,7 @@ public class NormalisedAccessSpaceMaintainerTests {
 
         StateLocation.transitionAddsLinkPrefs( _transition, linkName, 2, 5, 5, 0, 0);
 
-        _watcher.trigger( _transition, _update);
+        triggerWatcher();
 
         assertEquals( "checking number of purges", 1, _update.countPurges());
 
@@ -342,7 +344,7 @@ public class NormalisedAccessSpaceMaintainerTests {
         StateLocation.transitionAddsLinkPrefs( _transition, link1Name, 2, 5, 5, 0, 0);
         StateLocation.transitionAddsLinkPrefs( _transition, link2Name, 2, 5, 0, 0, 0);
 
-        _watcher.trigger( _transition, _update);
+        triggerWatcher();
 
         assertEquals( "checking number of purges", 1, _update.countPurges());
 
@@ -378,7 +380,7 @@ public class NormalisedAccessSpaceMaintainerTests {
         StateLocation.transitionAddsLinkPrefs( _transition, link1Name, 2, 5, 0, 0, 0);
         StateLocation.transitionAddsLinkPrefs( _transition, link2Name, 2, 5, 0, 0, 0);
 
-        _watcher.trigger( _transition, _update);
+        triggerWatcher();
 
         Set<String> expectedPools = new HashSet<String>();
         expectedPools.add( pool1Name);
@@ -402,5 +404,9 @@ public class NormalisedAccessSpaceMaintainerTests {
         StateLocation.assertSpaceMetrics( update, nasPath.newChild( "space"), info);
     }
 
-
+    private void triggerWatcher()
+    {
+        StateExhibitor futureState = new PostTransitionStateExhibitor( _exhibitor, _transition);
+        _watcher.trigger( _update, _exhibitor, futureState);
+    }
 }

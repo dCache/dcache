@@ -6,13 +6,12 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
-import org.dcache.services.info.base.StateTransition;
 import org.dcache.services.info.base.StringStateValue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The ReservationInfoVisitor class is a StateVisitor that builds up
@@ -64,27 +63,7 @@ public class ReservationInfoVisitor extends SkeletonListVisitor {
         return visitor.getReservations();
     }
 
-    /**
-     * Obtain information about the set of reservations after a
-     * StateTransition has been applied.
-     *
-     * @param transition the StateTransition describing the pending changes
-     *            to dCache state.
-     * @return a Mapping between a reservation's ID and a corresponding
-     *         ReservationInfo object.
-     */
-    public static Map<String, ReservationInfo> getDetails(
-                                                           StateExhibitor exhibitor,
-                                                           StateTransition transition) {
-        _log.debug( "Gathering reservation information.");
-
-        ReservationInfoVisitor visitor = new ReservationInfoVisitor();
-        exhibitor.visitState( visitor, transition);
-
-        return visitor.getReservations();
-    }
-
-    private HashMap<String, ReservationInfo> _reservations =
+    private final HashMap<String, ReservationInfo> _reservations =
             new HashMap<String, ReservationInfo>();
 
     /*
