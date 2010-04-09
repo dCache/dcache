@@ -26,15 +26,6 @@ public class LinkSpaceMaintainer extends AbstractStateWatcher {
 	private static final StatePath LINKS_PATH = new StatePath( "links");
 	private static final StatePath POOL_MEMBERSHIP_REL_PATH = new StatePath( "pools");
 
-	/**
-	 * Create a new secondary information provider that uses the provided StateExhibitor
-	 * to query the current and future dCache state.
-	 * @param exhibitor
-	 */
-	public LinkSpaceMaintainer( StateExhibitor exhibitor) {
-	    // TODO remove this constructor
-	}
-
 	@Override
 	protected String[] getPredicates() {
 		return PREDICATE_PATHS;

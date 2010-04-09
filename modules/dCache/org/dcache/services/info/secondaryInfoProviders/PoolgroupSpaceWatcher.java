@@ -32,15 +32,6 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 	private static final StatePath POOLGROUPS_PATH = new StatePath( "poolgroups");
 	private static final StatePath POOL_MEMBERSHIP_REL_PATH = new StatePath( "pools");
 
-	/**
-	 * Create a new secondary information provider that uses the provided StateExhibitor
-	 * to query the current and future dCache state.
-	 * @param exhibitor
-	 */
-	public PoolgroupSpaceWatcher( StateExhibitor exhibitor) {
-	    // TODO remove this constructor
-	}
-
 	@Override
 	protected String[] getPredicates() {
 		return PREDICATE_PATHS;

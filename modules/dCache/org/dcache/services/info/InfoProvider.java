@@ -33,9 +33,7 @@ import org.dcache.services.info.serialisation.StateSerialiser;
 import org.dcache.services.info.serialisation.XmlSerialiser;
 import org.dcache.vehicles.InfoGetSerialisedDataMessage;
 
-import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
@@ -48,7 +46,7 @@ public class InfoProvider extends AbstractCell {
 	private static final String ADMIN_INTERFACE_NONE = "(none)";
 	private static final String ADMIN_INTERFACE_LIST_PREFIX = "  ";
 	private static final String TOPLEVEL_DIRECTORY_LABEL = "(top)";
-	
+
 
 	/** The name of the serialiser we use by default: must exist as key in _availableSerialisers */
 	private static final String DEFAULT_SERIALISER_NAME = SimpleTextSerialiser.NAME;
@@ -116,7 +114,7 @@ public class InfoProvider extends AbstractCell {
         StateExhibitor exhibitor = _state;
 
         /**
-         * 
+         *
          * Build our list of possible serialisers.
          */
         _availableSerialisers = new HashMap<String,StateSerialiser>();
@@ -129,14 +127,14 @@ public class InfoProvider extends AbstractCell {
         buildMessageHandlerChain();
         startDgaScheduler( exhibitor);
         addDefaultConduits( exhibitor);
-        addDefaultWatchers( exhibitor);
+        addDefaultWatchers();
         startConduits();
 
         doInit();
     }
 
     @Override
-    public void init() {        
+    public void init() {
 		_log.info( "InfoProvider starting...");
 	}
 
@@ -147,7 +145,7 @@ public class InfoProvider extends AbstractCell {
     public void cleanUp() {
 		stopConduits();
 		_scheduler.shutdown();
-		
+
 		try {
             _sum.shutdown();
         } catch (InterruptedException e) {
@@ -313,13 +311,13 @@ public class InfoProvider extends AbstractCell {
 	/**
 	 *   S T A T E   W A T C H E R S
 	 */
-	private void addDefaultWatchers( StateExhibitor exhibitor) {
-	    _observatory.addStateWatcher(new PoolgroupSpaceWatcher( exhibitor));
-	    _observatory.addStateWatcher(new PoolsSummaryMaintainer( exhibitor));
-	    _observatory.addStateWatcher(new LinkgroupTotalSpaceMaintainer( exhibitor));
-	    _observatory.addStateWatcher(new LinkSpaceMaintainer( exhibitor));
-	    _observatory.addStateWatcher(new NormalisedAccessSpaceMaintainer( exhibitor));
-	    _observatory.addStateWatcher(new ReservationByDescMaintainer( exhibitor));
+	private void addDefaultWatchers() {
+	    _observatory.addStateWatcher(new PoolgroupSpaceWatcher());
+	    _observatory.addStateWatcher(new PoolsSummaryMaintainer());
+	    _observatory.addStateWatcher(new LinkgroupTotalSpaceMaintainer());
+	    _observatory.addStateWatcher(new LinkSpaceMaintainer());
+	    _observatory.addStateWatcher(new NormalisedAccessSpaceMaintainer());
+	    _observatory.addStateWatcher(new ReservationByDescMaintainer());
 	}
 
 

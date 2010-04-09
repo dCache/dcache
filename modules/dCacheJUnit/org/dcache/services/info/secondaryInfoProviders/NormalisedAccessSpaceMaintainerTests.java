@@ -36,7 +36,7 @@ public class NormalisedAccessSpaceMaintainerTests {
     @Before
     public void setUp() throws Exception {
         _exhibitor = new TestStateExhibitor();
-        _watcher = new NormalisedAccessSpaceMaintainer( _exhibitor);
+        _watcher = new NormalisedAccessSpaceMaintainer();
         _sum = new QueuingStateUpdateManager();
         _update = new StateUpdate();
         _transition = new MalleableStateTransition();

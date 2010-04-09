@@ -34,7 +34,7 @@ public class ReservationByDescMaintainerTests {
     @Before
     public void setUp() {
         _exhibitor = new TestStateExhibitor();
-        _watcher = new ReservationByDescMaintainer( _exhibitor);
+        _watcher = new ReservationByDescMaintainer();
         _sum = new QueuingStateUpdateManager();
         _update = new StateUpdate();
         _transition = new MalleableStateTransition();

@@ -210,16 +210,6 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher {
         }
     }
 
-    /**
-     * Create a new secondary information provider that uses the provided
-     * StateExhibitor to query the current and future dCache state.
-     *
-     * @param exhibitor access to dCache's state
-     */
-    public ReservationByDescMaintainer( StateExhibitor exhibitor) {
-        // TODO remove this constructor
-    }
-
     @Override
     protected String[] getPredicates() {
         return PREDICATE_PATHS;

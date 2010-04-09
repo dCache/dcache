@@ -14,15 +14,6 @@ public class PoolsSummaryMaintainer extends AbstractStateWatcher {
 	private static final StatePath SUMMARY_POOLS_SPACE_PATH = StatePath.parsePath("summary.pools.space");
 
 	/**
-	 * Create a new secondary information provider that uses the provided StateExhibitor
-	 * to query the current and future dCache state.
-	 * @param exhibitor
-	 */
-	public PoolsSummaryMaintainer( StateExhibitor exhibitor) {
-	    // TODO remove this constructor
-	}
-
-	/**
 	 * Provide a list of the paths we're interested in.
 	 */
 	@Override
