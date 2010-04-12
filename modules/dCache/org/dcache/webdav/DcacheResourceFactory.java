@@ -25,6 +25,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.net.URL;
+import java.net.HttpURLConnection;
 import javax.security.auth.Subject;
 import java.security.AccessController;
 
@@ -33,6 +35,7 @@ import com.bradmcevoy.http.Request;
 import com.bradmcevoy.http.HttpManager;
 import com.bradmcevoy.http.ResourceFactory;
 import com.bradmcevoy.http.XmlWriter;
+import com.bradmcevoy.http.Range;
 
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.CacheException;
@@ -159,6 +162,7 @@ public class DcacheResourceFactory
     private String _iconDirPath;
     private String _iconFilePath;
     private String _path;
+    private boolean _doRedirectOnRead = true;
 
     public DcacheResourceFactory()
         throws UnknownHostException
@@ -308,6 +312,20 @@ public class DcacheResourceFactory
     public void setIoQueue(String ioQueue)
     {
         _ioQueue = (ioQueue != null && !ioQueue.isEmpty()) ? ioQueue : null;
+    }
+
+    /**
+     * Sets whether read requests are redirected to the pool. If not,
+     * then the door will act as a proxy.
+     */
+    public void setRedirectOnReadEnabled(boolean redirect)
+    {
+        _doRedirectOnRead = redirect;
+    }
+
+    public boolean isRedirectOnReadEnabled()
+    {
+        return _doRedirectOnRead;
     }
 
     /**
@@ -570,6 +588,38 @@ public class DcacheResourceFactory
     }
 
     /**
+     * Reads the content of a file. The door will relay all data from
+     * a pool.
+     */
+    public void readFile(FsPath path, PnfsId pnfsid,
+                         OutputStream outputStream, Range range)
+        throws CacheException, InterruptedException, IOException
+    {
+        ReadTransfer transfer = beginRead(path, pnfsid);
+        try {
+            transfer.relayData(outputStream, range);
+        } catch (CacheException e) {
+            transfer.notifyBilling(e.getRc(), e.getMessage());
+            throw e;
+        } catch (InterruptedException e) {
+            transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                   "Transfer interrupted");
+            throw e;
+        } catch (IOException e) {
+            transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                   e.toString());
+            throw e;
+        } catch (RuntimeException e) {
+            transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                   e.toString());
+            throw e;
+        } finally {
+            _downloads.remove(transfer.getSessionId());
+            _transfers.remove(transfer);
+        }
+    }
+
+    /**
      * Performs a directory listing returning a list of Resource
      * objects.
      */
@@ -786,7 +836,7 @@ public class DcacheResourceFactory
     public String getReadUrl(FsPath path, PnfsId pnfsid)
         throws CacheException, InterruptedException
     {
-        return read(path, pnfsid).getRedirect();
+        return beginRead(path, pnfsid).getRedirect();
     }
 
     /**
@@ -796,7 +846,7 @@ public class DcacheResourceFactory
      * @param pnfsid The PNFS ID of the file.
      * @return ReadTransfer encapsulating the read operation
      */
-    public ReadTransfer read(FsPath path, PnfsId pnfsid)
+    private ReadTransfer beginRead(FsPath path, PnfsId pnfsid)
         throws CacheException, InterruptedException
     {
         Subject subject = getSubject();
@@ -1008,6 +1058,48 @@ public class DcacheResourceFactory
             super(pnfs, subject, path);
             setPnfsId(pnfsid);
         }
+
+        public void relayData(OutputStream outputStream, Range range)
+            throws IOException, CacheException, InterruptedException
+        {
+            setStatus("Mover " + getPool() + "/" + getMoverId() +
+                      ": Opening data connection");
+            URL url = new URL(getRedirect());
+            HttpURLConnection connection =
+                (HttpURLConnection) url.openConnection();
+            try {
+                if (range != null) {
+                    connection.addRequestProperty("Range", String.format("bytes=%d-%d", range.getStart(), range.getFinish()));
+                }
+
+                connection.connect();
+
+                InputStream inputStream = connection.getInputStream();
+                try {
+                    setStatus("Mover " + getPool() + "/" + getMoverId() +
+                              ": Sending data");
+
+                    byte[] buffer = new byte[_bufferSize];
+                    int read;
+                    while ((read = inputStream.read(buffer)) > -1) {
+                        outputStream.write(buffer, 0, read);
+                    }
+                    outputStream.flush();
+                } finally {
+                    inputStream.close();
+                }
+
+                if (!waitForMover(_transferConfirmationTimeout)) {
+                    throw new CacheException("Missing transfer confirmation from pool");
+                }
+            } catch (SocketTimeoutException e) {
+                throw new TimeoutCacheException("Server is busy (internal timeout)");
+            } finally {
+                setStatus(null);
+                connection.disconnect();
+            }
+        }
+
 
         @Override
         public synchronized void finished(CacheException error)

@@ -20,6 +20,7 @@ import com.bradmcevoy.http.exceptions.NotAuthorizedException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.NotInTrashCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 
 import org.dcache.vehicles.FileAttributes;
@@ -48,7 +49,20 @@ public class DcacheFileResource
                             Map<String,String> params, String contentType)
         throws IOException, NotAuthorizedException
     {
-        throw new RuntimeException("Request should have been redirected");
+        try {
+            _factory.readFile(new FsPath(_path), _attributes.getPnfsId(),
+                              out, range);
+        } catch (PermissionDeniedCacheException e) {
+            throw new ForbiddenException(e.getMessage(), e, this);
+        } catch (FileNotFoundCacheException e) {
+            throw new ForbiddenException(e.getMessage(), e, this);
+        } catch (NotInTrashCacheException e) {
+            throw new ForbiddenException(e.getMessage(), e, this);
+        } catch (CacheException e) {
+            throw new WebDavException(e.getMessage(), e, this);
+        } catch (InterruptedException e) {
+            throw new WebDavException("Transfer was interrupted", e, this);
+        }
     }
 
     @Override
@@ -75,7 +89,11 @@ public class DcacheFileResource
         try {
             switch (request.getMethod()) {
             case GET:
-                return _factory.getReadUrl(_path, _attributes.getPnfsId());
+                if (_factory.isRedirectOnReadEnabled()) {
+                    return _factory.getReadUrl(_path, _attributes.getPnfsId());
+                }
+                return null;
+
             default:
                 return null;
             }
