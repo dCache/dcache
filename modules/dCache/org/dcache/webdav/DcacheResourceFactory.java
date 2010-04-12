@@ -8,7 +8,6 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Date;
 import java.util.Collections;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -60,6 +59,7 @@ import org.dcache.auth.Subjects;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Transfer;
+import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.PingMoversTask;
 import org.dcache.util.list.DirectoryListPrinter;
 import org.dcache.util.list.DirectoryEntry;
@@ -111,13 +111,11 @@ public class DcacheResourceFactory
 
 
     /**
-     * Map used to map pool redirect messages to blocking queues used
-     * to hand over the redirection URL to the proper transfer
-     * request. All access must be synchronized on the monitor of the
-     * map.
+     * Used to hand over the redirection URL to the proper transfer
+     * request.
      */
-    private final BlockingQueueMap<RedirectKey,String> _redirect =
-        new BlockingQueueMap<RedirectKey,String>();
+    private final MultiMap<RedirectKey,HttpTransfer> _redirect =
+        new ArrayHashMultiMap<RedirectKey,HttpTransfer>();
 
     /**
      * In progress write transfers.
@@ -778,6 +776,7 @@ public class DcacheResourceFactory
         pnfs.renameEntry(pnfsId, newPath.toString());
     }
 
+
     /**
      * Returns a read URL for a file.
      *
@@ -785,6 +784,19 @@ public class DcacheResourceFactory
      * @param pnfsid The PNFS ID of the file.
      */
     public String getReadUrl(FsPath path, PnfsId pnfsid)
+        throws CacheException, InterruptedException
+    {
+        return read(path, pnfsid).getRedirect();
+    }
+
+    /**
+     * Initiates a read operation.
+     *
+     * @param path The full path of the file.
+     * @param pnfsid The PNFS ID of the file.
+     * @return ReadTransfer encapsulating the read operation
+     */
+    public ReadTransfer read(FsPath path, PnfsId pnfsid)
         throws CacheException, InterruptedException
     {
         Subject subject = getSubject();
@@ -800,13 +812,13 @@ public class DcacheResourceFactory
             transfer.selectPool();
 
             RedirectKey key = new RedirectKey(pnfsid, transfer.getPool());
-            BlockingQueue<String> queue = _redirect.put(key);
+            _redirect.put(key, transfer);
             try {
                 _downloads.put(sessionId, transfer);
                 transfer.startMover(_ioQueue);
                 transfer.setStatus("Mover " + transfer.getPool() + "/" +
                                    transfer.getMoverId() + ": Waiting for URI");
-                uri = queue.poll(_moverTimeout, TimeUnit.MILLISECONDS);
+                uri = transfer.waitForRedirect(_moverTimeout);
                 if (uri == null) {
                     throw new TimeoutCacheException("Server is busy (internal timeout)");
                 }
@@ -815,7 +827,7 @@ public class DcacheResourceFactory
                 if (uri == null) {
                     _downloads.remove(sessionId);
                 }
-                _redirect.remove(key, queue);
+                _redirect.remove(key, transfer);
             }
             transfer.setStatus("Mover " + transfer.getPool() + "/" +
                                transfer.getMoverId() + ": Waiting for completion");
@@ -835,7 +847,7 @@ public class DcacheResourceFactory
                 _transfers.remove(transfer);
             }
         }
-        return uri;
+        return transfer;
     }
 
     /**
@@ -847,9 +859,9 @@ public class DcacheResourceFactory
         RedirectKey key =
             new RedirectKey(new PnfsId(message.getPnfsId()),
                             envelope.getSourceAddress().getCellName());
-        BlockingQueue<String> list = _redirect.remove(key);
-        if (list != null) {
-            list.offer(message.getUrl());
+        HttpTransfer transfer = _redirect.remove(key);
+        if (transfer != null) {
+            transfer.redirect(message.getUrl());
         }
     }
 
@@ -941,7 +953,7 @@ public class DcacheResourceFactory
     /**
      * Specialisation of the Transfer class for HTTP transfers.
      */
-    private class HttpTransfer extends Transfer
+    private class HttpTransfer extends RedirectedTransfer<String>
     {
 
         public HttpTransfer(PnfsHandler pnfs, Subject subject, FsPath path)

@@ -9,8 +9,8 @@ import java.util.ArrayList;
  * A simple multi map implementation based on a HashTable and an
  * ArrayList per key. The implementation is tuned for a low number of
  * entries per key.
- *
- * Notice that the implementation is not thread safe.
+
+ * ArrayHashMultiMap is thread safe.
  */
 public class ArrayHashMultiMap<K,V> implements MultiMap<K,V>
 {
@@ -19,7 +19,7 @@ public class ArrayHashMultiMap<K,V> implements MultiMap<K,V>
     /**
      * Adds a key value pair. Existing entries are not replaced.
      */
-    public void put(K key, V value)
+    public synchronized void put(K key, V value)
     {
         List<V> list = _table.get(key);
         if (list == null) {
@@ -32,7 +32,7 @@ public class ArrayHashMultiMap<K,V> implements MultiMap<K,V>
     /**
      * Removes a particular key value pair.
      */
-    public void remove(K key, V value)
+    public synchronized void remove(K key, V value)
     {
         List<V> list = _table.get(key);
         if (list != null) {
@@ -48,7 +48,7 @@ public class ArrayHashMultiMap<K,V> implements MultiMap<K,V>
      * for that key with the put method, or null if the key is not in
      * the collection.
      */
-    public V remove(K key)
+    public synchronized V remove(K key)
     {
         List<V> list = _table.get(key);
         if (list == null) {
