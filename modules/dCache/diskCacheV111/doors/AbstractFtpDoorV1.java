@@ -3308,7 +3308,7 @@ public abstract class AbstractFtpDoorV1
                                                     protocolInfo,
                                                     _allo);
         } else {   //transfer: 'retrieve'
-            Subject subject = getSubject();
+            Subject subject = getCompleteSubject();
             int allowedStates =
                 _checkStagePermission.canPerformStaging(subject)
                 ? RequestContainerV5.allStates
@@ -4581,9 +4581,33 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    private final Subject getSubject()
+    /**
+     * Returns the Subject that was authenticated by the door. Only
+     * the Principals of the current _pwdRecord are included.
+     */
+    protected Subject getSubject()
     {
+        if (_pwdRecord == null) {
+            return Subjects.NOBODY;
+        }
         Subject subject = Subjects.getSubject(_pwdRecord, true);
+        subject.getPrincipals().add(_origin);
+        subject.setReadOnly();
+        return subject;
+    }
+
+    /**
+     * Returns the Subject that was authenticated by the door. The
+     * Subject will contain all Principals of the user, not just the
+     * Principals of the current _pwdRecord.
+     */
+    protected Subject getCompleteSubject()
+    {
+        if (authRecord == null) {
+            return getSubject();
+        }
+
+        Subject subject = Subjects.getSubject(authRecord);
         subject.getPrincipals().add(_origin);
         subject.setReadOnly();
         return subject;
