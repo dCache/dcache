@@ -276,18 +276,6 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
             return;
         }
 
-        if (_permissionHandler instanceof GrantAllPermissionHandler) {
-            Subject subject;
-            if(authRecord != null) {
-                subject = Subjects.getSubject(authRecord);
-            } else {
-                subject = Subjects.getSubject(_pwdRecord, true);
-            }
-            subject.getPrincipals().add(_origin);
-            subject.setReadOnly();
-            _pnfs.setSubject(subject);
-        }
-
         resetPwdRecord();
 
         reply("200 User "+_user+" logged in");
@@ -302,12 +290,21 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
             setNextPwdRecord();
         } else {
             _userAuthGroupLists = null;
+            setSubjectForPnfsHandler(Subjects.NOBODY);
+        }
+    }
+
+    protected void setSubjectForPnfsHandler(Subject subject)
+    {
+        if (_permissionHandler instanceof GrantAllPermissionHandler) {
+            _pnfs.setSubject(subject);
         }
     }
 
     protected boolean setNextPwdRecord()
     {
         if (_userAuthGroupLists == null || !_userAuthGroupLists.hasNext()) {
+            setSubjectForPnfsHandler(Subjects.NOBODY);
             _pwdRecord = null;
             return false;
         }
@@ -328,6 +325,9 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
                 _pathRoot = "/";
             }
         }
+
+        setSubjectForPnfsHandler(getSubject());
+
         return true;
     }
 
