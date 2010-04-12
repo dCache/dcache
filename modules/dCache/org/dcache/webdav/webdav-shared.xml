@@ -99,7 +99,7 @@
     <property name="iconDirPath" value="${webdav.images.directory}"/>
     <property name="iconFilePath" value="${webdav.images.file}"/>
     <property name="webdavStylesheetPath" value="${webdav.style.css}"/>
-    <property name="redirectOnRead" value="${webdav.redirect.on-read}"/>
+    <property name="redirectOnReadEnabled" value="${webdav.redirect.on-read}"/>
   </bean>
 
   <bean id="milton" class="com.bradmcevoy.http.HttpManager">
