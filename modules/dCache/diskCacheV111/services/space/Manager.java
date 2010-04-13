@@ -4069,6 +4069,7 @@ public final class Manager
 							null,
 							Integer.valueOf(FileState.RESERVED.getStateId()),
 							f);
+					removePnfsIdOfFileInSpace(connection,f.getId(), null);
 
 				}
 				connection.commit();
@@ -4586,7 +4587,7 @@ public final class Manager
                                 }
                         }
                         if (defaultSpaceToken==null) {
-                                if(reserveSpaceForNonSRMTransfers) {
+                                if(reserveSpaceForNonSRMTransfers && authRecord != null) {
                                         if (logger.isDebugEnabled()) {
                                                 logger.debug("selectPool: file is not found, no prior reservations for this file, calling reserveAndUseSpace()");
                                         }
