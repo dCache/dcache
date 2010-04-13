@@ -545,7 +545,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         }
     }
 
-    public static final String hh_ac_kill_mover = " <pool> <moverid> # kill mover on the pool";
+    public static final String hh_kill_mover = " <pool> <moverid> # kill mover on the pool";
     public String ac_kill_mover_$_2(Args args) throws Exception {
         int mover = Integer.parseInt(args.argv(1));
         String pool = args.argv(0);
@@ -557,7 +557,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         return "";
     }
 
-    public static final String hh_ac_set_thread_count = " <count> # set number of concurrent threads";
+    public static final String hh_set_thread_count = " <count> # set number of threads for processing NFS requests";
     public String ac_set_thread_count_$_1(Args args) throws Exception {
         _controller.setReadThreadsCount(Integer.valueOf(args.argv(0)));
         return "Thread count: " + _controller.getReadThreadsCount();
