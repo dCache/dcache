@@ -190,6 +190,70 @@ public class CellStub
         return sendAndWait(_destination, msg, type);
     }
 
+
+    public <T extends Serializable> T sendAndWait(CellPath path,
+                                                  Serializable msg,
+                                                  Class<T> type)
+       throws CacheException, InterruptedException
+    {
+       return sendAndWait(path, msg, type, _timeout);
+    }
+
+
+    /**
+     * Sends a message and waits for the reply. The reply is expected
+     * to contain a message object of the specified type. If this is
+     * not the case, an exception is thrown.
+     *
+     * @param  msg     the message object to send
+     * @param  type    the expected type of the reply
+     * @param  timeout  the time to wait for the reply
+     * @return         the message object from the reply
+     * @throws InterruptedException If the thread is interrupted
+     * @throws CacheException If the message could not be sent, a
+     *       timeout occured, or the object in the reply was of the
+     *       wrong type.
+     */
+    public <T extends Serializable> T
+                      sendAndWait(Serializable msg, Class<T> type, long timeout)
+        throws CacheException, InterruptedException
+    {
+        return sendAndWait(_destination, msg, type, timeout);
+    }
+
+
+
+    /**
+     * Sends a message and waits for the reply. The reply is expected
+     * to contain a message object of the same type as the message
+     * object that was sent, and the return code of that message is
+     * expected to be zero. If either is not the case, an exception is
+     * thrown.
+     *
+     * @param  path    the destination cell
+     * @param  msg     the message object to send
+     * @param  timeout  the time to wait for the reply
+     * @return         the message object from the reply
+     * @throws InterruptedException If the thread is interrupted
+     * @throws CacheException If the message could not be sent, a
+     *       timeout occured, the object in the reply was of the wrong
+     *       type, or the return code was non-zero.
+     */
+    public <T extends Message> T sendAndWait(CellPath path, T msg, long timeout)
+        throws CacheException, InterruptedException
+    {
+        msg.setReplyRequired(true);
+
+        T reply = (T) sendAndWait(path, msg, msg.getClass(), timeout);
+
+        if (reply.getReturnCode() != 0) {
+            throw CacheExceptionFactory.exceptionOf(reply);
+        }
+
+        return reply;
+    }
+
+
     /**
      * Sends a message and waits for the reply. The reply is expected
      * to contain a message object of the specified type. If this is
@@ -198,6 +262,7 @@ public class CellStub
      * @param  path    the destination cell
      * @param  msg     the message object to send
      * @param  type    the expected type of the reply
+     * @param  timeout  the time to wait for the reply
      * @return         the message object from the reply
      * @throws InterruptedException If the thread is interrupted
      * @throws CacheException If the message could not be sent, a
@@ -206,7 +271,8 @@ public class CellStub
      */
     public <T extends Serializable> T sendAndWait(CellPath path,
                                                   Serializable msg,
-                                                  Class<T> type)
+                                                  Class<T> type,
+                                                  long timeout)
         throws CacheException, InterruptedException
     {
         CellMessage replyMessage;
@@ -214,10 +280,10 @@ public class CellStub
             CellMessage envelope = new CellMessage(path, msg);
             if (_retryOnNoRouteToCell) {
                 replyMessage =
-                    _endpoint.sendAndWaitToPermanent(envelope, _timeout);
+                    _endpoint.sendAndWaitToPermanent(envelope, timeout);
             } else {
                 replyMessage =
-                    _endpoint.sendAndWait(envelope, _timeout);
+                    _endpoint.sendAndWait(envelope, timeout);
             }
         } catch (NoRouteToCellException e) {
             /* From callers point of view a timeout due to a lost
