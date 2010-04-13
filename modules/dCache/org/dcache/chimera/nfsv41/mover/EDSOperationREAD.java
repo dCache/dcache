@@ -45,11 +45,10 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
             }
 
             ByteBuffer bb = ByteBuffer.allocate(count);
-
             FileChannel fc = moverBridge.getFileChannel();
-            IOReadFile in = new IOReadFile(fc);
 
-            int bytesReaded = in.read(bb, offset, count);
+            bb.rewind();
+            int bytesReaded = fc.read(bb, offset);
 
             if( bytesReaded < 0 ) {
                 throw new IOHimeraFsException("IO not allowed");
@@ -90,26 +89,4 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
         context.processedOperations().add(_result);
         return res.status == nfsstat4.NFS4_OK;
     }
-
-    private static class IOReadFile {
-
-        private final FileChannel _fc;
-
-        public IOReadFile(FileChannel fc) {
-            _fc = fc;
-        }
-
-        public int read(ByteBuffer bb, long off, long len) throws IOException {
-
-            bb.rewind();
-            return _fc.read(bb, off);
-
-        }
-
-        public long size() throws IOException {
-            return _fc.size();
-        }
-    }
-
-
 }
