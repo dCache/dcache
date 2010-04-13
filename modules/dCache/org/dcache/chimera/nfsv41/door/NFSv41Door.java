@@ -305,7 +305,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     }
 
-    protected void messageArrived(DoorTransferFinishedMessage transferFinishedMessage) {
+    public void messageArrived(DoorTransferFinishedMessage transferFinishedMessage) {
 
         NFS4ProtocolInfo protocolInfo = (NFS4ProtocolInfo)transferFinishedMessage.getProtocolInfo();
         _log.debug("Mover {} done.", protocolInfo.stateId());
