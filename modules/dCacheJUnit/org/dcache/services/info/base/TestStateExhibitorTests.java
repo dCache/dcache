@@ -311,70 +311,7 @@ public class TestStateExhibitorTests {
         visitor.assertListMetadata( path, type, idName);
     }
 
-    /**
-     * TESTS INVOLVING CLONED Node STRUCTURE
-     */
-
-    @Test
-    public void testSingleStringMetricClonedExhibitor() {
-        assertSingleMetricClonedOk( new StringStateValue(
-                                                          "a typical string value"));
-    }
-
-    @Test
-    public void testSingleIntegerMetricClonedExhibitor() {
-        assertSingleMetricClonedOk( new IntegerStateValue( 42));
-    }
-
-    @Test
-    public void testSingleFloatingPointMetricClonedExhibitor() {
-        assertSingleMetricClonedOk( new FloatingPointStateValue( 42.3));
-    }
-
-    @Test
-    public void testSingleBooleanMetricClonedExhibitor() {
-        assertSingleMetricClonedOk( new BooleanStateValue( true));
-    }
-
-    @Test
-    public void testClonedRealisticExample() {
-        StatePath link1Pool1 = StatePath.parsePath( "links.link-1.pools.pool1");
-        StatePath link1Pool2 = StatePath.parsePath( "links.link-1.pools.pool2");
-        StatePath link1ReadPrefPath =
-                StatePath.parsePath( "links.link-1.prefs.read");
-        StateValue link1ReadPrefMetric = new IntegerStateValue( 5);
-        StatePath link1WritePrefPath =
-                StatePath.parsePath( "links.link-1.prefs.write");
-        StateValue link1WritePrefMetric = new IntegerStateValue( 7);
-        StatePath link1P2pPrefPath =
-                StatePath.parsePath( "links.link-1.prefs.p2p");
-        StateValue link1P2pPrefMetric = new IntegerStateValue( 11);
-        StatePath link1CachePrefPath =
-                StatePath.parsePath( "links.link-1.prefs.cache");
-        StateValue link1CachePrefMetric = new IntegerStateValue( 13);
-
-        _exhibitor.addBranch( link1Pool1);
-        _exhibitor.addBranch( link1Pool2);
-        _exhibitor.addMetric( link1ReadPrefPath, link1ReadPrefMetric);
-        _exhibitor.addMetric( link1WritePrefPath, link1WritePrefMetric);
-        _exhibitor.addMetric( link1P2pPrefPath, link1P2pPrefMetric);
-        _exhibitor.addMetric( link1CachePrefPath, link1CachePrefMetric);
-
-        VerifyingVisitor visitor = new VerifyingVisitor();
-
-        visitor.addExpectedBranch( link1Pool1);
-        visitor.addExpectedBranch( link1Pool2);
-        visitor.addExpectedMetric( link1ReadPrefPath, link1ReadPrefMetric);
-        visitor.addExpectedMetric( link1WritePrefPath, link1WritePrefMetric);
-        visitor.addExpectedMetric( link1P2pPrefPath, link1P2pPrefMetric);
-        visitor.addExpectedMetric( link1CachePrefPath, link1CachePrefMetric);
-
-        _exhibitor.visitClonedState( visitor);
-
-        assertTrue( "VerifyingVisitor is satisfied", visitor.satisfied());
-    }
-
-    /**
+    /*
      * TESTS INVOLVING SKIPPING
      */
 
@@ -426,22 +363,6 @@ public class TestStateExhibitorTests {
         addSingleMetricAndUpdateVisitor( visitor, metricValue);
 
         _exhibitor.visitState( visitor);
-
-        assertTrue( "VerifyingVisitor is satisfied", visitor.satisfied());
-    }
-
-    /**
-     * Similar to {@link #assertSingleMetricOk} but visit the state using
-     * {@link TestStateExhibitor#visitClonedState(StateVisitor)}
-     *
-     * @param metricValue
-     */
-    private void assertSingleMetricClonedOk( StateValue metricValue) {
-        VerifyingVisitor visitor = new VerifyingVisitor();
-
-        addSingleMetricAndUpdateVisitor( visitor, metricValue);
-
-        _exhibitor.visitClonedState( visitor);
 
         assertTrue( "VerifyingVisitor is satisfied", visitor.satisfied());
     }

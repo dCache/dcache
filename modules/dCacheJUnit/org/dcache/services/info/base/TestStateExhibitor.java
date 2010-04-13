@@ -9,9 +9,6 @@ import java.util.Map;
  * dCache state. Classes that implement the StateVisitor interface may visit
  * this state, allowing unit testing.
  * <p>
- * The class has support for simulating the effect of visiting dCache state with a
- * StateTransition and for a non-null skip value.
- * <p>
  * When using a StateTransition object, either when visiting or when updating
  * the metrics it is possible that the StateTransition contains an invalid
  * transition. If such an inconsistency is detected then
@@ -135,39 +132,9 @@ public class TestStateExhibitor implements StateExhibitor, Cloneable {
 
             visitor.visitCompositePostDescend( ourPath, visitMetadata);
         }
-
-
-        @Override
-        public Object clone() {
-            Node newNode;
-
-            /**
-             * For branch Node objects (corresponding to a StateComposite
-             * object) we clone each of the children and update the cloned
-             * Node.
-             */
-            if( !isMetric()) {
-                newNode = new Node();
-
-                for( Map.Entry<String, Node> entry : _children.entrySet()) {
-                    String childName = entry.getKey();
-                    Node thisNodeChildNode = entry.getValue();
-                    Node cloneNodeChildNode = (Node) thisNodeChildNode.clone();
-                    newNode._children.put( childName, cloneNodeChildNode);
-                }
-            } else {
-                /**
-                 * NB. we don't bother to clone the StateValue since
-                 * subclasses of StateValue are immutable.
-                 */
-                newNode = new Node( _metricValue);
-            }
-
-            return newNode;
-        }
     }
 
-    Node _rootNode = new Node();
+    private final Node _rootNode = new Node();
 
     public void addMetric( StatePath path, StateValue metric) {
         _rootNode.addMetric( path, metric);
@@ -184,16 +151,5 @@ public class TestStateExhibitor implements StateExhibitor, Cloneable {
     @Override
     public void visitState( StateVisitor visitor) {
         _rootNode.visit( visitor, null);
-    }
-
-    /**
-     * This is a special version of the {@link #visitState(StateVisitor)}
-     * method. It exists to allow easy testing of the clone method.
-     *
-     * @param visitor
-     */
-    public void visitClonedState( StateVisitor visitor) {
-        Node newRoot = (Node) _rootNode.clone();
-        newRoot.visit( visitor, null);
     }
 }
