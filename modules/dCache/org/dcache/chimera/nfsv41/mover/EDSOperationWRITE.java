@@ -1,7 +1,6 @@
 package org.dcache.chimera.nfsv41.mover;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Map;
 
@@ -59,13 +58,13 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
             int count = _args.opwrite.data.remaining();
 
             FileChannel fc = moverBridge.getFileChannel();
-            IOWriteFile out = new IOWriteFile(fc);
 
             if( offset + count > moverBridge.getAllocated() ) {
                 moverBridge.getAllocator().allocate(INC_SPACE);
                 moverBridge.setAllocated(moverBridge.getAllocated() + INC_SPACE);
             }
-            int bytesWritten = out.write(_args.opwrite.data, offset, count);
+            _args.opwrite.data.rewind();
+            int bytesWritten = fc.write(_args.opwrite.data, offset);
 
             if( bytesWritten < 0 ) {
                 throw new IOHimeraFsException("IO not allowed");
@@ -106,25 +105,4 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
         context.processedOperations().add(_result);
         return res.status == nfsstat4.NFS4_OK;
     }
-
-    private static class IOWriteFile {
-
-        private final FileChannel _fc;
-
-        public IOWriteFile(FileChannel fc) {
-            _fc = fc;
-        }
-
-        public int write(ByteBuffer bb, long off, long len) throws IOException {
-
-            bb.rewind();
-            return _fc.write(bb, off);
-        }
-
-        public long size() throws IOException {
-            return _fc.size();
-        }
-
-    }
-
 }
