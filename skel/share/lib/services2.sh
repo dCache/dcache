@@ -104,7 +104,6 @@ domainStart()
         fi
     fi
 
-    local domain_java_options="${DCACHE_JAVA_OPTIONS}"
     if [ "${DCACHE_TERRACOTTA_ENABLED:-false}" = "true" ] ; then
         local terracotta_dso_env_sh="${DCACHE_TERRACOTTA_INSTALL_DIR}/bin/dso-env.sh"
         if [ ! -f "${terracotta_dso_env_sh}" ] ; then
@@ -119,13 +118,12 @@ domainStart()
         # Result of this script execution is the definition of the options needed for startup of the jvm
         # defined in ${TC_JAVA_OPTS}
         . ${terracotta_dso_env_sh}
-        domain_java_options="${domain_java_options} ${TC_JAVA_OPTS}"
     fi
 
     # Start daemon
     rm -f "$DCACHE_RESTART_FILE"
     cd "$DCACHE_HOME"
-    CLASSPATH="$classpath" /bin/sh "${DCACHE_HOME}/share/lib/daemon" ${DCACHE_USER:+-u} ${DCACHE_USER:+"$DCACHE_USER"} -l -r "$DCACHE_RESTART_FILE" -d "$DCACHE_RESTART_DELAY" -f -c "$DCACHE_PID_JAVA" -p "$DCACHE_PID_DAEMON" -o "$DCACHE_LOG_FILE" "$JAVA" ${domain_java_options} "-Ddcache.home=$DCACHE_HOME" org.dcache.boot.BootLoader -f="$DCACHE_SETUP" start "$DOMAIN"
+    CLASSPATH="$classpath" /bin/sh "${DCACHE_HOME}/share/lib/daemon" ${DCACHE_USER:+-u} ${DCACHE_USER:+"$DCACHE_USER"} -l -r "$DCACHE_RESTART_FILE" -d "$DCACHE_RESTART_DELAY" -f -c "$DCACHE_PID_JAVA" -p "$DCACHE_PID_DAEMON" -o "$DCACHE_LOG_FILE" "$JAVA" ${DCACHE_JAVA_OPTIONS} ${TC_JAVA_OPTS} "-Ddcache.home=$DCACHE_HOME" org.dcache.boot.BootLoader -f="$DCACHE_SETUP" start "$DOMAIN"
 
     # Wait for confirmation
     printf "Starting ${DOMAIN} "
