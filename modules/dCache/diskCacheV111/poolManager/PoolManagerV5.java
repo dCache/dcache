@@ -19,7 +19,6 @@ import org.dcache.poolmanager.Utils;
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.Version;
 import diskCacheV111.vehicles.GenericStorageInfo;
@@ -67,7 +66,6 @@ public class PoolManagerV5
     private Map _readHandlerList   = new HashMap() ;
     private final Object  _readHandlerLock   = new Object() ;
 
-    private PnfsHandler       _pnfsHandler  ;
     private PoolSelectionUnit _selectionUnit ;
     private PoolMonitorV5     _poolMonitor   ;
 
@@ -82,7 +80,6 @@ public class PoolManagerV5
 
     private RequestContainerV5 _requestContainer ;
     private WatchdogThread     _watchdog         = null ;
-    private PartitionManager   _partitionManager ;
 
     private boolean _sendCostInfo  = false ;                   //VP
     private boolean _quotasEnabled = false ;
@@ -105,16 +102,6 @@ public class PoolManagerV5
     public void setCostModule(CostModule costModule)
     {
         _costModule = costModule;
-    }
-
-    public void setPartitionManager(PartitionManager partitionManager)
-    {
-        _partitionManager = partitionManager;
-    }
-
-    public void setPnfsHandler(PnfsHandler pnfsHandler)
-    {
-        _pnfsHandler = pnfsHandler;
     }
 
     public void setPoolMonitor(PoolMonitorV5 poolMonitor)
