@@ -49,12 +49,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
-import diskCacheV111.vehicles.PoolAcceptFileMessage;
-import diskCacheV111.vehicles.PoolDeliverFileMessage;
 import diskCacheV111.vehicles.PoolIoFileMessage;
-import diskCacheV111.vehicles.PoolMgrSelectPoolMsg;
-import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
-import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
 import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
 import diskCacheV111.vehicles.StorageInfo;
@@ -75,6 +70,7 @@ import org.dcache.chimera.nfs.v4.xdr.layouttype4;
 import org.dcache.chimera.nfs.v4.xdr.nfs4_prot;
 import org.dcache.chimera.nfs.v4.xdr.nfsv4_1_file_layout_ds_addr4;
 import org.dcache.chimera.nfsv41.Utils;
+import org.dcache.poolmanager.PoolManagerAdapter;
 import org.dcache.xdr.OncRpcProgram;
 import org.dcache.xdr.RpcDispatchable;
 import org.dcache.xdr.RpcDispatcher;
@@ -117,6 +113,12 @@ public class NFSv41Door extends AbstractCellComponent implements
      * Cell communication helper.
      */
     private CellStub _poolManagerStub;
+
+    /**
+     * Communication with the PoolManager.
+     */
+    private PoolManagerAdapter _poolManagerAdapter;
+
 
     private PnfsHandler _pnfsHandler;
 
@@ -375,43 +377,24 @@ public class NFSv41Door extends AbstractCellComponent implements
     private NFS4IoDevice getNFSMover(PnfsId pnfsId, StorageInfo storageInfo,
             NFS4ProtocolInfo protocolInfo, int iomode) throws InterruptedException, IOException {
 
-        PoolMgrSelectPoolMsg getPoolMessage;
-
-        if ( (iomode == layoutiomode4.LAYOUTIOMODE4_READ) || !storageInfo.isCreatedOnly() ) {
-            _log.debug("looking for read pool for {}", pnfsId);
-            getPoolMessage = new PoolMgrSelectReadPoolMsg(pnfsId,
-                    storageInfo, protocolInfo, storageInfo.getFileSize());
-        } else {
-            _log.debug("looking for write pool for {}", pnfsId);
-            getPoolMessage = new PoolMgrSelectWritePoolMsg(pnfsId,
-                    storageInfo, protocolInfo, 0);
-        }
-
-        _log.debug("requesting pool for IO: {}" + pnfsId );
+        PoolIoFileMessage poolIOMessage = null;
         try {
-            getPoolMessage = _poolManagerStub.sendAndWait(getPoolMessage);
-        }catch (CacheException e) {
-            throw new ChimeraNFSException(nfsstat4.NFS4ERR_LAYOUTTRYLATER, e.getMessage() );
-        }
-        _log.debug("pool received. Requesting the file: {}", getPoolMessage.getPoolName());
 
-        PoolIoFileMessage poolIOMessage ;
-        if ( (iomode == layoutiomode4.LAYOUTIOMODE4_READ) || !storageInfo.isCreatedOnly() ) {
-            poolIOMessage = new PoolDeliverFileMessage(
-                    getPoolMessage.getPoolName(), pnfsId,
-                    protocolInfo, storageInfo);
-        }else{
-            poolIOMessage = new PoolAcceptFileMessage(
-                    getPoolMessage.getPoolName(), pnfsId,
-                    protocolInfo, storageInfo);
-        }
+            if ((iomode == layoutiomode4.LAYOUTIOMODE4_READ) || !storageInfo.isCreatedOnly()) {
+                _log.debug("looking for read pool for {}", pnfsId);
+                poolIOMessage = _poolManagerAdapter.readFile(pnfsId, storageInfo, protocolInfo, _poolManagerStub.getTimeout());
+            } else {
+                _log.debug("looking for write pool for {}", pnfsId);
+                poolIOMessage = _poolManagerAdapter.writeFile(pnfsId, storageInfo, protocolInfo, _poolManagerStub.getTimeout());
+            }
 
-        try {
-            poolIOMessage = _poolManagerStub.sendAndWait( new CellPath(getPoolMessage.getPoolName()),  poolIOMessage);
-        }catch(CacheException e) {
-            throw new ChimeraNFSException(nfsstat4.NFS4ERR_LAYOUTTRYLATER, e.getMessage() );
+        } catch (NoRouteToCellException ex) {
+            throw new ChimeraNFSException(nfsstat4.NFS4ERR_RESOURCE, ex.getMessage());
+
+        } catch (CacheException e) {
+            throw new ChimeraNFSException(nfsstat4.NFS4ERR_LAYOUTTRYLATER, e.getMessage());
         }
-        _log.debug("mover ready: pool={} moverid={}", getPoolMessage.getPoolName(),
+        _log.debug("mover ready: pool={} moverid={}", poolIOMessage.getPoolName(),
                 poolIOMessage.getMoverId());
         _ioMessages.put( protocolInfo.stateId(), poolIOMessage);
 
@@ -516,6 +499,22 @@ public class NFSv41Door extends AbstractCellComponent implements
         nfsv4_1_file_layout_ds_addr4 file_layout = Utils.decodeFileDevice(device.getDeviceAddr().da_addr_body);
         return Utils.device2Address(file_layout.nflda_multipath_ds_list[0].value[0].na_r_addr);
 
+    }
+
+    /**
+     * Gets the generic PoolManagerAdapter to handle read and write request
+     * @return the _poolManagerAdapter
+     */
+    public PoolManagerAdapter getPoolManagerAdapter() {
+        return _poolManagerAdapter;
+    }
+
+    /**
+     * Sets the generic PoolManagerAdapter to handle read and write request
+     * @param poolManagerAdapter the _poolManagerAdapter to set
+     */
+    public void setPoolManagerAdapter(PoolManagerAdapter poolManagerAdapter) {
+        this._poolManagerAdapter = poolManagerAdapter;
     }
 
     /*
