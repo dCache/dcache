@@ -281,9 +281,10 @@ public abstract class AbstractFtpDoorV1
      *
      * For ACTIVE transfers dCache establishes the data connection.
      *
-     * Depending on the values of _allowPassivePool and _allowRelay,
-     * the data connection with the client will be established either
-     * to an adapter (proxy) at the FTP door, or to the pool directly.
+     * Depending on the values of _isProxyRequiredOnActive and
+     * _isProxyRequiredOnPassive, the data connection with the client
+     * will be established either to an adapter (proxy) at the FTP
+     * door, or to the pool directly.
      */
     protected enum Mode
     {
@@ -505,28 +506,25 @@ public abstract class AbstractFtpDoorV1
     protected boolean _removeFileOnIncompleteTransfer;
 
     /**
-     * True if passive pools are allowed, i.e., the client connects
-     * directly to the pool, bypassing the proxy at the door. Set to
-     * false if any of the pools are not at least at version 1.8.
+     * True if passive transfers have to be relayed through the door,
+     * i.e., the client must not connect directly to the pool.
      */
     @Option(
-        name = "allowPassivePool",
-        description = "Whether to allow pools to be passive",
-        defaultValue = "false"
+        name = "proxyPassive",
+        description = "Whether proxy is required for passive transfers",
+        required = true
     )
-    protected boolean _allowPassivePool;
+    protected boolean _isProxyRequiredOnPassive;
 
     /**
-     * True if active adapter is allowed, i.e., the client connects to
-     * the new proxy adapter at the door, when the pools are on the
-     * private network, for example.  Has to be set via arguments.
+     * True if active transfers have to be relayed through the door.
      */
     @Option(
-        name = "allow-relay",
-        description = "Whether to allow the use of the relay adapter",
-        defaultValue = "false"
+        name = "proxyActive",
+        description = "Whether proxy is required for active transfers",
+        required = true
     )
-    protected boolean _allowRelay;
+    protected boolean _isProxyRequiredOnActive;
 
     /**
      * If use_gplazmaAuthzCell is true, the door will first contact
@@ -2651,7 +2649,7 @@ public abstract class AbstractFtpDoorV1
             if (xferMode.equals("E") && mode == Mode.PASSIVE) {
                 throw new FTPCommandException(500, "Cannot do passive retrieve in E mode");
             }
-            if (xferMode.equals("X") && mode == Mode.PASSIVE && !_allowPassivePool) {
+            if (xferMode.equals("X") && mode == Mode.PASSIVE && _isProxyRequiredOnPassive) {
                 throw new FTPCommandException(504, "Cannot use passive X mode");
             }
             if (_pwdRecord == null) {
@@ -2936,7 +2934,7 @@ public abstract class AbstractFtpDoorV1
             if (xferMode.equals("E") && mode == Mode.ACTIVE) {
                 throw new FTPCommandException(504, "Cannot store in active E mode");
             }
-            if (xferMode.equals("X") && mode == Mode.PASSIVE && !_allowPassivePool) {
+            if (xferMode.equals("X") && mode == Mode.PASSIVE && _isProxyRequiredOnPassive) {
                 throw new FTPCommandException(504, "Cannot use passive X mode");
             }
 
@@ -3208,12 +3206,7 @@ public abstract class AbstractFtpDoorV1
          * enabled and if we can provide the address to the client
          * using a 127 response.
          */
-        boolean usePassivePool = _allowPassivePool && reply127;
-
-        /*
-         *
-         */
-
+        boolean usePassivePool = !_isProxyRequiredOnPassive && reply127;
 
         /* Set up an adapter, if needed. Since a pool may reject to be
          * passive, we need to set up an adapter even when we can use
@@ -3231,7 +3224,7 @@ public abstract class AbstractFtpDoorV1
             break;
 
         case ACTIVE:
-            if (_allowRelay) {
+            if (_isProxyRequiredOnActive) {
                 info("FTP Door: transfer creating adapter for active mode");
                 _transfer.adapter =
                     new ActiveAdapter(this, _lowDataListenPort , _highDataListenPort);

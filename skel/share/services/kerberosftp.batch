@@ -31,7 +31,8 @@ check gsiftpIoQueue
 check kpwdFile
 check gsiftpAdapterInternalInterface
 check -strong overwriteEnabled
-check -strong gsiftpAllowPassivePool
+check -strong ftp.proxy.on-passive
+check -strong ftp.proxy.on-active
 check FtpTLogDir
 
 onerror continue
@@ -108,7 +109,8 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
              -stageConfigurationFilePath=${stageConfigurationFilePath} \
              -ftp-adapter-internal-interface=${gsiftpAdapterInternalInterface} \
              -overwrite=${overwriteEnabled} \
-             -allowPassivePool=${gsiftpAllowPassivePool} \
+             -proxyPassive=${ftp.proxy.on-passive} \
+             -proxyActive=${ftp.proxy.on-active} \
              -tlog=${FtpTLogDir} \
 "
 

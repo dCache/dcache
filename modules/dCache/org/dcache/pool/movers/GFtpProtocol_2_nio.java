@@ -202,9 +202,9 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
 
         if (_cell != null) {
             Args args = _cell.getArgs();
-            if (args.getOpt("allowPassivePool") != null) {
+            if (args.getOpt("ftpProxyPassive") != null) {
                 _allowPassivePool =
-                    Boolean.parseBoolean(args.getOpt("allowPassivePool"));
+                    !Boolean.parseBoolean(args.getOpt("ftpProxyPassive"));
             }
 
             if (!jdk5 && args.getOpt("allowMmap") != null) {

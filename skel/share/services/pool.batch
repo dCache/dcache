@@ -4,11 +4,12 @@
 check -strong name
 check -strong path
 
+check -strong ftp.proxy.on-passive
+
 onerror continue
   set context -c poolIoQueue ""
   set context -c checkRepository        true
   set context -c waitForRepositoryReady false
-  set context -c gsiftpAllowPassivePool true
   set context -c gsiftpAllowMmap        false
   set context -c metaDataRepository     org.dcache.pool.repository.meta.file.FileMetaDataRepository
   set context -c metaDataRepositoryImport org.dcache.pool.repository.meta.EmptyMetaDataStore
@@ -69,7 +70,7 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
     -setupClass=pool -setupFile=${path}/setup \
     -poolIoQueue=${poolIoQueue} \
     -checkRepository=${checkRepository} \
-    -allowPassivePool=${gsiftpAllowPassivePool} \
+    -ftpProxyPassive=${ftp.proxy.on-passive} \
     -allowMmap=${gsiftpAllowMmap} \
     -metaDataRepository=${metaDataRepository} \
     -metaDataRepositoryImport=${metaDataRepositoryImport} \
