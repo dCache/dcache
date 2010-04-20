@@ -5,13 +5,13 @@ import java.net.Socket;
 
 public interface ProxyAdapter {
 
-    /** 
+    /**
      * Returns any error that occurred transfer, or null if no error
      * occurred. The transfer failed if an error is returned.
      */
     public abstract String getError();
 
-    /** 
+    /**
      * Returns true if and only if getError() return non-null.
      */
     public abstract boolean hasError();
@@ -22,7 +22,7 @@ public interface ProxyAdapter {
      */
     public abstract void setMaxBlockSize(int size);
 
-    /** 
+    /**
      * Sets the maximum number of concurrent streams allowed to the
      * client. If more streams are opened the transfer fails.
      */
@@ -35,7 +35,7 @@ public interface ProxyAdapter {
 
     /**
      * Returns the port that we use to listen for connections from the
-     * client. 
+     * client.
      *
      * This is needed in order to tell the client were to connect to.
      */
@@ -52,7 +52,7 @@ public interface ProxyAdapter {
     /**
      * Accepts and returns a connection from the client. This is used
      * in the FTP door to create a connection on which listing are
-     * transferred. 
+     * transferred.
      *
      * @todo Consider if this should be handeled differently. It seems
      * a little strange to use the SocketAdapter for this.
@@ -67,7 +67,7 @@ public interface ProxyAdapter {
 
     /**
      * Configures the adapter to transfer data from the pool to the
-     * client. 
+     * client.
      *
      * This direction is not supported in mode E.
      */
@@ -83,17 +83,17 @@ public interface ProxyAdapter {
      * The methods below are actually part of Thread API
      * They are here to satisfy the pre-existing code in AbstractFtpDoorV1
      */
-    
+
     /**
      * Start the thread driving the adapter
      */
     public abstract void start();
-    
+
     /**
      * Tests if the thread driving the adapter is alive
      */
     public abstract boolean isAlive();
-    
+
     /**
      *  Waits for the  thread driving the adapter to die.
      */

@@ -9,8 +9,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import dmg.cells.nucleus.CellAdapter;
-
 import diskCacheV111.util.ActiveAdapter;
 
 public class ActiveAdapterTest {
@@ -19,7 +17,7 @@ public class ActiveAdapterTest {
 
     @Before
     public void setUp() throws IOException {
-        activeAdapter = new ActiveAdapter((CellAdapter) null);
+        activeAdapter = new ActiveAdapter(0, 0, null, 0);
     }
 
     @After
