@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -15,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Executors;
@@ -43,8 +43,15 @@ import org.dcache.cells.AbstractCell;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.MessageCallback;
 import org.dcache.cells.Option;
-import org.dcache.commons.util.SqlHelper;
 import org.dcache.util.BroadcastRegistrationTask;
+
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowCallbackHandler;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.TransientDataAccessResourceException;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import javax.sql.DataSource;
 
@@ -148,7 +155,8 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     private ScheduledExecutorService _executor;
     private ScheduledFuture<?> _cleanerTask;
     private PoolInformationBase _pools = new PoolInformationBase();
-    private DataSource _dbConnectionDataSource;
+    private DataSource _dataSource;
+    private JdbcTemplate _db;
     private BroadcastRegistrationTask _broadcastRegistration;
     private CellStub _broadcasterStub;
     private CellStub _poolStub;
@@ -241,7 +249,8 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
         Class.forName(jdbcClass);
 
         DataSource unpooled = DataSources.unpooledDataSource(jdbcUrl, user, pass);
-        _dbConnectionDataSource = DataSources.pooledDataSource( unpooled );
+        _dataSource = DataSources.pooledDataSource( unpooled );
+        _db = new JdbcTemplate(_dataSource);
 
         _log.info("Database connection with jdbcUrl={}; user={}",
                   jdbcUrl, user);
@@ -303,64 +312,36 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
             }
 
             //HSM part
-            if(_hsmCleanerEnabled){
-                //read files from trash-table:
-                List<String> locationsListHSMdb = getHsmLocations();
-
-                //if list of files is not empty call runDeleteHSM( ... ) for these files
-                if ((locationsListHSMdb != null) && (locationsListHSMdb.size() > 0)) {
-                    runDeleteHSM(locationsListHSMdb);
-                }
+            if (_hsmCleanerEnabled){
+                runDeleteHSM();
             }
-        } catch (SQLException e) {
+        } catch (DataAccessException e) {
             _log.error("Database failure: " + e.getMessage());
         } catch (InterruptedException e) {
             _log.info("Cleaner was interrupted");
-        } catch (URISyntaxException e) {
-            _log.error("Invalid HSM URI: " + e.getMessage());
         } catch (RuntimeException e) {
             _log.error("Bug detected" , e);
         }
     }
 
-    private static final String sqlGetPoolList = "SELECT DISTINCT ilocation "
-            + "FROM t_locationinfo_trash WHERE itype=1";
+    private static final String sqlGetPoolList =
+        "SELECT DISTINCT ilocation FROM t_locationinfo_trash WHERE itype=1";
 
     /**
-     * getPoolList
-     * returns a list of pools (pool names) from the trash-table
+     * Returns a list of dinstinctpool names from the trash-table.
      *
-     * @throws java.sql.SQLException
-     * @return list of pools (pool names)
+     * @return list of pool names
      */
-
-    List<String> getPoolList() throws SQLException {
-
-        Connection dbConnection = null;
-        List<String> poollist = new ArrayList<String>();
-
-        ResultSet rs = null;
-        PreparedStatement stGetPoolList = null;
-        try {
-            dbConnection = _dbConnectionDataSource.getConnection();
-            stGetPoolList = dbConnection.prepareStatement(sqlGetPoolList);
-
-            rs = stGetPoolList.executeQuery();
-
-            while (rs.next()) {
-
-                String poolname = rs.getString("ilocation");
-
-                poollist.add(poolname);
-            }
-
-        } finally {
-            SqlHelper.tryToClose(rs);
-            SqlHelper.tryToClose(stGetPoolList);
-            SqlHelper.tryToClose(dbConnection);
-        }
-
-        return poollist;
+    List<String> getPoolList()
+    {
+        return _db.query(sqlGetPoolList,
+                         new RowMapper<String>() {
+                             public String mapRow(ResultSet rs, int rowNum)
+                                 throws SQLException
+                             {
+                                 return rs.getString("ilocation");
+                             }
+                         });
     }
 
     private static final String sqlGetPoolsForFile = "SELECT ilocation FROM t_locationinfo_trash "
@@ -373,7 +354,6 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
             + "WHERE ilocation=? AND ipnfsid=? AND itype=1";
 
     /**
-     * removeFiles
      * Delete entries from the trash-table.
      * Pool name and the file names are input parameters.
      *
@@ -381,34 +361,28 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
      * @param filelist file list for this pool
      *
      */
-
-    void removeFiles(String poolname, List<String> filelist) {
-
+    void removeFiles(final String poolname, final List<String> filelist)
+    {
         /*
          * FIXME: we send remove to the broadcaster even if we failed to
          * remove a record from the DB.
          */
         informBroadcaster(filelist);
-        Connection dbConnection = null;
-        PreparedStatement stRemoveFiles = null;
 
-        for (String filename: filelist) {
+        _db.batchUpdate(sqlRemoveFiles,
+                        new BatchPreparedStatementSetter() {
+                            public int getBatchSize()
+                            {
+                                return filelist.size();
+                            }
 
-            try {
-                dbConnection = _dbConnectionDataSource.getConnection();
-                stRemoveFiles = dbConnection.prepareStatement(sqlRemoveFiles);
-
-                stRemoveFiles.setString(1, poolname);
-                stRemoveFiles.setString(2, filename);
-                int rc = stRemoveFiles.executeUpdate();
-            } catch (SQLException e) {
-                _log.error("Failed to remove entries frm DB: " + e.getMessage());
-            } finally {
-                SqlHelper.tryToClose(stRemoveFiles);
-                SqlHelper.tryToClose(dbConnection);
-            }
-
-        }
+                            public void setValues(PreparedStatement ps, int i)
+                                throws SQLException
+                            {
+                                ps.setString(1, poolname);
+                                ps.setString(2, filelist.get(i));
+                            }
+                        });
     }
 
     /**
@@ -420,7 +394,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
      * @throws java.lang.InterruptedException
      */
     private void runDelete(List<String> poolList)
-        throws SQLException, InterruptedException
+        throws InterruptedException
     {
         for (String pool: poolList) {
             if (Thread.interrupted()) {
@@ -493,54 +467,31 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
      * delete all files from the pool 'poolName' found in the trash-table for this pool
      *
      * @param poolName name of the pool
-     * @throws java.sql.SQLException
-     * @throws java.lang.InterruptedException
      */
-    void cleanPoolComplete(String poolName) throws SQLException, InterruptedException {
+    void cleanPoolComplete(final String poolName)
+    {
+        _log.trace("CleanPoolComplete(): poolname={}", poolName);
 
-        Connection dbConnection = null;
-        List<String> filePartList = new ArrayList<String>();
+        _db.query(sqlGetFileListForPool,
+                  new Object[] { poolName },
+                  new RowCallbackHandler() {
+                      List<String> files =
+                          new ArrayList<String>(_processAtOnce);
 
-        if(_log.isDebugEnabled()) {
-        	_log.debug("CleanPoolComplete(): poolname= " + poolName);
-        }
-
-        ResultSet rs = null;
-        PreparedStatement stGetFileListForPool = null;
-        try {
-            dbConnection = _dbConnectionDataSource.getConnection();
-            stGetFileListForPool = dbConnection.prepareStatement(sqlGetFileListForPool);
-
-            stGetFileListForPool.setString(1, poolName);
-
-
-            rs = stGetFileListForPool.executeQuery();
-
-            int counter = 0;
-            while (rs.next()) {
-
-                String filename = rs.getString("ipnfsid");
-
-                filePartList.add(filename);
-                counter++;
-                if(_log.isDebugEnabled()) {
-                    _log.debug("filename=" + filename);
-                    _log.debug("counter=" + counter);
-                }
-                if (counter == _processAtOnce || rs.isLast()) {
-                    sendRemoveToPoolCleaner(poolName,filePartList);
-                    counter = 0;
-                    filePartList.clear();
-                }
-
-            }
-
-        } finally {
-            SqlHelper.tryToClose(rs);
-            SqlHelper.tryToClose(stGetFileListForPool);
-            SqlHelper.tryToClose(dbConnection);
-        }
-
+                      public void processRow(ResultSet rs)
+                          throws SQLException
+                      {
+                          try {
+                              files.add(rs.getString("ipnfsid"));
+                              if (files.size() >= _processAtOnce || rs.isLast()) {
+                                  sendRemoveToPoolCleaner(poolName, files);
+                                  files.clear();
+                              }
+                          } catch (InterruptedException e) {
+                              throw new TransientDataAccessResourceException("Cleaner was interrupted", e);
+                          }
+                      }
+                  });
     }
 
     /**
@@ -575,113 +526,52 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     //Select locations of all files stored on tape. In case itype=0  'ilocation' is an URI representing the location
     //of a file on HSM, for example:
     //osm://sample-main/?store=sql&group=chimera&bfid=3434.0.994.1188400818542)
-    private static final String sqlGetIlocationHSM = "SELECT ilocation "
-        + "FROM t_locationinfo_trash WHERE itype=0";
+    private static final String sqlGetIlocationHSM =
+        "SELECT ilocation FROM t_locationinfo_trash WHERE itype=0";
 
     /**
-     * getIlocationHSM
-     * returns a list of 'ilocation's from the trash-table (itype=0 means HSM-storage)
+     * returns a list of 'ilocation's from the trash-table (itype=0
+     * means HSM-storage)
      *
-     * @throws java.sql.SQLException
      * @return list of strings representing file locations on a HSM
-    */
-
-    List<String> getHsmLocations() throws SQLException {
-
-        Connection dbConnection = null;
-        List<String> ilocationList = new ArrayList<String>();
-
-        ResultSet rs = null;
-        PreparedStatement stGetIlocationList = null;
-        try {
-           dbConnection = _dbConnectionDataSource.getConnection();
-           stGetIlocationList = dbConnection.prepareStatement(sqlGetIlocationHSM);
-
-           rs = stGetIlocationList.executeQuery();
-
-           while (rs.next()) {
-
-              String ilocation = rs.getString("ilocation");
-              ilocationList.add(ilocation);
-           }
-
-        } finally {
-          SqlHelper.tryToClose(rs);
-          SqlHelper.tryToClose(stGetIlocationList);
-          SqlHelper.tryToClose(dbConnection);
-        }
-        return ilocationList;
-    }
-
-    //for HSM. delete files from trash-table
-    private static final String sqlRemoveHSMFiles = "DELETE FROM t_locationinfo_trash "
-                                                + "WHERE ilocation=? AND itype=0";
-
-   /**
-    * removeFilesHSM
-    * Delete entries (stored on tape, having itype=0) from the trash-table.
-    * File location on tape (ilocation) is input parameter.
-    *
-    * @param ilocation file location on tape
-    * @throws java.sql.SQLException
-    *
-    */
-
-    void removeFilesHSM (String ilocation) throws SQLException {
-
-            _log.debug("HSM-ChimeraCleaner: remove entries from the trash-table. ilocation=" + ilocation);
-
-            Connection dbConnection = null;
-            PreparedStatement stRemoveFiles = null;
-
-            try {
-                 dbConnection = _dbConnectionDataSource.getConnection();
-                 stRemoveFiles = dbConnection.prepareStatement(sqlRemoveHSMFiles);
-
-                 stRemoveFiles.setString(1, ilocation);
-                 int rc = stRemoveFiles.executeUpdate();
-             } catch (SQLException e) {
-                _log.error("HSM-ChimeraCleaner: Failed to remove entries from the trash-table: " + e.getMessage());
-             } finally {
-                    SqlHelper.tryToClose(stRemoveFiles);
-                    SqlHelper.tryToClose(dbConnection);
-             }
+     */
+    List<String> getHsmLocations()
+    {
+        return _db.query(sqlGetIlocationHSM,
+                         new RowMapper<String>() {
+                             public String mapRow(ResultSet rs, int rowNum)
+                                 throws SQLException
+                             {
+                                 return rs.getString("ilocation");
+                             }
+                         });
     }
 
     /**
-     * runDeleteHSM
      * Delete files stored on tape (HSM).
-     *
-     * @param ilocationListHSM list of pools (with files stored on tape)
-     * @throws java.sql.SQLException
-     * @throws java.lang.InterruptedException
-     * @throws URISyntaxException
      */
-    private void runDeleteHSM(List<String> ilocationListHSM) throws SQLException, InterruptedException, URISyntaxException {
-
-         if(_log.isDebugEnabled()) {
-             _log.debug("HSM-ChimeraCleaner. Locations to be deleted: " + ilocationListHSM);
-         }
-
-         for (String ilocation: ilocationListHSM) {
-            if (Thread.interrupted()) {
-                throw new InterruptedException();
-            }
-
-            URI locationURI = new URI(ilocation);
-
-            if(_log.isDebugEnabled()) {
-                _log.debug("Submitting a request to delete a file: " + locationURI);
-            }
-
-            _requests.submit(locationURI);
-         }
+    private void runDeleteHSM()
+    {
+        _db.query(sqlGetIlocationHSM,
+                  new RowCallbackHandler() {
+                      public void processRow(ResultSet rs)
+                          throws SQLException
+                      {
+                          try {
+                              URI uri = new URI(rs.getString("ilocation"));
+                              _log.debug("Submitting a request to delete a file: {}", uri);
+                              _requests.submit(uri);
+                          } catch (URISyntaxException e) {
+                              throw new DataIntegrityViolationException("Invalid URI in database: " + e.getMessage(), e);
+                          }
+                      }
+                  });
     }
 
     ////////////////////////////////////////////////////////////////////////////
     public static final String hh_rundelete = " # run Cleaner ";
     public String ac_rundelete(Args args)
-        throws SQLException, InterruptedException
+        throws InterruptedException
     {
         runDelete(getPoolList());
         return "";
@@ -731,38 +621,30 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
         return "Pool "+poolName+" was not found in the Black List ";
     }
 
-    private String adminCleanFileDisk(String filePnfsID) throws SQLException, InterruptedException {
-        Connection dbConnection = null;
-        List<String> removeFile = new ArrayList<String>(1);
-        removeFile.add(filePnfsID);
+    public static final String hh_clean_file =
+        "<pnfsID> # clean this file (file will be deleted from DISK)";
+    public String ac_clean_file_$_1(Args args)
+    {
+        final String pnfsid = args.argv(0);
+        _db.query(sqlGetPoolsForFile,
+                  new Object[] { pnfsid },
+                  new RowCallbackHandler() {
+                      List<String> removeFile =
+                          Collections.singletonList(pnfsid);
 
-        ResultSet rs = null;
-        PreparedStatement stGetPoolsForFile = null;
-        try {
-            dbConnection = _dbConnectionDataSource.getConnection();
-            stGetPoolsForFile = dbConnection.prepareStatement(sqlGetPoolsForFile);
-            stGetPoolsForFile.setString(1, filePnfsID);
-            rs = stGetPoolsForFile.executeQuery();
+                      public void processRow(ResultSet rs)
+                          throws SQLException
+                      {
+                          try {
+                              String pool = rs.getString("ilocation");
+                              sendRemoveToPoolCleaner(pool, removeFile);
+                          } catch (InterruptedException e) {
+                              throw new TransientDataAccessResourceException("Cleaner was interrupted", e);
+                          }
 
-            while (rs.next()) {
-                String poolName = rs.getString("ilocation");
-                sendRemoveToPoolCleaner(poolName, removeFile);
-            }
-
-        } finally {
-            SqlHelper.tryToClose(rs);
-            SqlHelper.tryToClose(stGetPoolsForFile);
-            SqlHelper.tryToClose(dbConnection);
-        }
-      return "";
-
-    }
-
-    public static final String hh_clean_file = "<pnfsID> # clean this file (file will be deleted from DISK)";
-    public String ac_clean_file_$_1(Args args) throws Exception {
-
-        return adminCleanFileDisk(args.argv(0));
-
+                      }
+                  });
+        return "";
     }
 
     public static final String hh_clean_pool = "<poolName> # clean this pool ";
@@ -821,59 +703,43 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
 
     public static final String hh_rundelete_hsm = " # run HSM Cleaner";
     public String ac_rundelete_hsm(Args args) throws Exception {
-        if ( _hsmCleanerEnabled ) {
-          List<String> tmpLocationsHSM = getHsmLocations();
-          runDeleteHSM(tmpLocationsHSM);
-          return "";
-         } else {
+        if (!_hsmCleanerEnabled) {
           return "HSM Cleaner is disabled.";
-         }
-    }
-
-    //select 'ilocation's where the file (ipnfsid) is stored (on TAPE, itype=0)
-    private static final String sqlGetILocationForFileHSM = "SELECT ilocation FROM t_locationinfo_trash "
-        + "WHERE ipnfsid=? AND itype=0 ORDER BY iatime";
-
-    private String adminCleanFileHsm(String filePnfsID) throws SQLException, URISyntaxException {
-        Connection dbConnection = null;
-
-        List<String> removeFile = new ArrayList<String>();
-        removeFile.add(filePnfsID);
-
-        ResultSet rs = null;
-        PreparedStatement stGetILocationOfFile = null;
-        try {
-            dbConnection = _dbConnectionDataSource.getConnection();
-            stGetILocationOfFile = dbConnection.prepareStatement(sqlGetILocationForFileHSM);
-            stGetILocationOfFile.setString(1, filePnfsID);
-            rs = stGetILocationOfFile.executeQuery();
-
-            while (rs.next()) {
-
-                String ilocation = rs.getString("ilocation");
-                URI locationURI = new URI(ilocation);
-                _requests.submit(locationURI);
-            }
-        } finally {
-            SqlHelper.tryToClose(rs);
-            SqlHelper.tryToClose(stGetILocationOfFile);
-            SqlHelper.tryToClose(dbConnection);
         }
+
+        runDeleteHSM();
         return "";
     }
 
+    //select 'ilocation's where the file (ipnfsid) is stored (on TAPE, itype=0)
+    private static final String sqlGetILocationForFileHSM =
+        "SELECT ilocation FROM t_locationinfo_trash "
+        + "WHERE ipnfsid=? AND itype=0 ORDER BY iatime";
+
     //explicitly clean HSM-file
-    public static final String hh_clean_file_hsm = "<pnfsID> # clean this file on HSM (file will be deleted from HSM)";
-    public String ac_clean_file_hsm_$_1(Args args) throws SQLException, URISyntaxException  {
+    public static final String hh_clean_file_hsm =
+        "<pnfsID> # clean this file on HSM (file will be deleted from HSM)";
+    public String ac_clean_file_hsm_$_1(Args args)
+    {
+        if (!_hsmCleanerEnabled) {
+            return "HSM Cleaner is disabled.";
+        }
 
-      if ( _hsmCleanerEnabled ) {
+        _db.query(sqlGetILocationForFileHSM,
+                  new Object[] { args.argv(0) },
+                  new RowCallbackHandler() {
+                      public void processRow(ResultSet rs)
+                          throws SQLException
+                      {
+                          try {
+                              _requests.submit(new URI(rs.getString("ilocation")));
+                          } catch (URISyntaxException e) {
+                              throw new DataIntegrityViolationException("Invalid URI in database: " + e.getMessage(), e);
+                          }
+                      }
+                  });
 
-        String filePnfsID = args.argv(0);
-        return adminCleanFileHsm(filePnfsID);
-
-      } else {
-        return "HSM Cleaner is disabled.";
-      }
+        return "";
     }
 
     public static final String hh_hsm_set_MaxFilesPerRequest = "<number> # maximal number of concurrent requests to a single HSM";
@@ -914,23 +780,31 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     }
 
     @Override
-    public CellVersion getCellVersion(){ return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision: 1.23 $" ); }
+    public CellVersion getCellVersion(){
+        return new CellVersion(diskCacheV111.util.Version.getVersion(),
+                               "$Revision: 1.23 $" );
+    }
+
     @Override
     public void getInfo( PrintWriter pw ){
         pw.println("ChimeraCleaner $Revision: 1.23 $");
     }
+
+    //for HSM. delete files from trash-table
+    private static final String sqlRemoveHSMFiles =
+        "DELETE FROM t_locationinfo_trash WHERE ilocation=? AND itype=0";
 
     /**
      * Called when a file was successfully deleted from the HSM.
      */
     protected void onSuccess(URI uri)
     {
-        //Remove these files from trash-table:
         try {
-           removeFilesHSM(uri.toString());
-       } catch (SQLException e) {
-           _log.error("HSM-ChimeraCleaner : Error when deleting from the trash-table " + e.getMessage());
-       }
+            _log.debug("HSM-ChimeraCleaner: remove entries from the trash-table. ilocation={}", uri);
+            _db.update(sqlRemoveHSMFiles, uri.toString());
+        } catch (DataAccessException e) {
+            _log.error("Error when deleting from the trash-table: " + e.getMessage());
+        }
     }
 
     /**
