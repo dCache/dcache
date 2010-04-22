@@ -36,6 +36,7 @@ import javax.security.auth.Subject;
 @Entity
 @Table(name="authrecord")
 public class AuthorizationRecord implements Serializable, SRMUser{
+    private static final long serialVersionUID = 7412538400840464074L;
     /**
      *this is the id of the authorization record that is used as 
      * a primary key in the database
