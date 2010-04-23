@@ -138,9 +138,6 @@ public class Configuration {
     private int tcp_buffer_size;
     private int parallel_streams=10;
 
-    private String[] protocols = new String[]
-    {"http","dcap","ftp","gsiftp"};
-
     private int port=8443;
     private String kpwdfile="../conf/dcache.kpwd";
     private boolean use_gplazmaAuthzCellFlag=false;
@@ -1017,20 +1014,6 @@ public class Configuration {
         this.webservice_protocol = webservice_protocol;
     }
 
-    /** Getter for property protocols.
-     * @return Value of property protocols.
-     */
-    public java.lang.String[] getProtocols() {
-        return this.protocols;
-    }
-
-    /** Setter for property protocols.
-     * @param protocols New value of property protocols.
-     */
-    public void setProtocols(java.lang.String[] protocols) {
-        this.protocols = protocols;
-    }
-
     /** Getter for property port.
      * @return Value of property port.
      */
@@ -1257,6 +1240,7 @@ public class Configuration {
     }
 
 
+    @Override
     public String toString() {
         StringBuffer sb = new StringBuffer();
         sb.append("SRM Configuration:");
@@ -1300,9 +1284,6 @@ public class Configuration {
         sb.append("\n\tjdbcUrl=").append(this.jdbcUrl);
         sb.append("\n\tjdbcClass=").append(this.jdbcClass);
         sb.append("\n\tjdbcUser=").append(this.jdbcUser);
-        for(int i = 0; i<this.protocols.length; ++i) {
-            sb.append("\n\tprotocols["+i+"]=").append(this.protocols[i]);
-        }
         sb.append("\n\t\t *** GetRequests Scheduler  Parameters **");
         sb.append("\n\t\t request Lifetime in miliseconds =").append(this.getLifetime);
         sb.append("\n\t\t max thread queue size =").append(this.getReqTQueueSize);
