@@ -213,13 +213,13 @@ public final class Manager
                     "configuration conflict: returnRemovedSpaceToReservation == " +
                     "true and deleteStoredFileRecord == true");
 		}
-        if(_args.getOpt("spaceManagerAuthorizationPolicy") != null ) {
-            spaceManagerAuthorizationPolicyClass =
-                    _args.getOpt("spaceManagerAuthorizationPolicy").trim();
-        }
-        authorizationPolicy = (SpaceManagerAuthorizationPolicy)
-            Class.forName(spaceManagerAuthorizationPolicyClass).
-            getConstructor().newInstance();
+                if(_args.getOpt("spaceManagerAuthorizationPolicy") != null ) {
+                        spaceManagerAuthorizationPolicyClass =
+                                _args.getOpt("spaceManagerAuthorizationPolicy").trim();
+                }
+                authorizationPolicy = (SpaceManagerAuthorizationPolicy)
+                        Class.forName(spaceManagerAuthorizationPolicyClass).
+                        getConstructor().newInstance();
 
 		try {
 			dbinit();
@@ -260,11 +260,11 @@ public final class Manager
 		}
 	}
 
-    @Override
-	public CellVersion getCellVersion(){ return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision: 1.63 $" ); }
+        @Override
+        public CellVersion getCellVersion(){ return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision: 1.63 $" ); }
 
-    @Override
-	public void getInfo(java.io.PrintWriter printWriter) {
+        @Override
+        public void getInfo(java.io.PrintWriter printWriter) {
 		printWriter.println("space.Manager "+getCellName());
 		printWriter.println("spaceManagerEnabled="+spaceManagerEnabled);
 		printWriter.println("JdbcUrl="+jdbcUrl);
@@ -396,23 +396,22 @@ public final class Manager
                                 for (VOInfo info : lg.getVOs()) {
                                         String group = info.getVoGroup();
                                         String role  = info.getVoRole();
-                                        if ((group.equals(voGroup)||group.equals("*"))&&
-                                            (role==null||role.equals(voRole)||role.equals("*"))) {
+                                        if (info.match(voGroup,voRole)) {
                                                 foundMatch=true;
                                                 break;
                                         }
                                 }
                                 if (!foundMatch) {
-                                StringBuilder sb = new StringBuilder();
-                                for (VOInfo info : lg.getVOs()) {
-                                        sb.append(info).append('\n');
-                                }
+                                        StringBuilder sb = new StringBuilder();
+                                        for (VOInfo info : lg.getVOs()) {
+                                                sb.append(info).append('\n');
+                                        }
                                         throw new IllegalArgumentException("cannot change voGroup:voRole to "+
                                                                            voGroup+":"+voRole+
                                                                            ". Supported vogroup:vorole pairs for this spacereservation\n"+
                                                                            sb.toString());
-                                                }
-                                        }
+                                }
+                        }
                         catch (SQLException e) {
                                 return e.toString();
                         }
@@ -3648,8 +3647,8 @@ public final class Manager
 						int vos_length = fqans.length;
 						vos = new VOInfo[vos_length];
 						for(int j = 0; j<fqans.length ; ++j) {
-                            String voRole = fqans[j].getRole();
-                            voRole = (voRole==null || voRole.equals("")) ? "*" : voRole;
+                                                        String voRole = fqans[j].getRole();
+                                                        voRole = (voRole==null || voRole.equals("")) ? "*" : voRole;
 							vos[j] = new VOInfo(fqans[j].getGroup(), voRole);
 						}
 
@@ -3807,12 +3806,12 @@ public final class Manager
 		}
 		long spaceToken = release.getSpaceToken();
 		Long spaceToReleaseInBytes = release.getReleaseSizeInBytes();
-        Space space = getSpace(spaceToken);
-        AuthorizationRecord authRecord =  release.getAuthRecord();
-        authorizationPolicy.checkReleasePermission(authRecord, space);
+                Space space = getSpace(spaceToken);
+                AuthorizationRecord authRecord =  release.getAuthRecord();
+                authorizationPolicy.checkReleasePermission(authRecord, space);
 		if(spaceToReleaseInBytes == null) {
-			updateSpaceState(spaceToken,SpaceState.RELEASED);
-			return;
+                        updateSpaceState(spaceToken,SpaceState.RELEASED);
+                        return;
 		}
 		else {
 			throw new SQLException("partial release is not supported yet");
@@ -3830,31 +3829,45 @@ public final class Manager
 			throw new SpaceException("SpaceManager is disabled in configuration");
 		}
 
-        if (reserve.getRetentionPolicy()==null) {
-                throw new IllegalArgumentException("reserveSpace : retentionPolicy=null is not supported");
-        }
+                if (reserve.getRetentionPolicy()==null) {
+                        throw new IllegalArgumentException("reserveSpace : retentionPolicy=null is not supported");
+                }
 
 		long reservationId = reserveSpace(reserve.getAuthRecord(),
-              reserve.getSizeInBytes(),
-              (reserve.getAccessLatency()==null?
-               defaultLatency:reserve.getAccessLatency()),
-              reserve.getRetentionPolicy(),
-              reserve.getLifetime(),
-              reserve.getDescription());
-
+                                                  reserve.getSizeInBytes(),
+                                                  (reserve.getAccessLatency()==null?
+                                                   defaultLatency:reserve.getAccessLatency()),
+                                                  reserve.getRetentionPolicy(),
+                                                  reserve.getLifetime(),
+                                                  reserve.getDescription());
 		reserve.setSpaceToken(reservationId);
 	}
 
-	public File reserveAndUseSpace(String pnfsPath,PnfsId pnfsId,long size,
-            AccessLatency latency,RetentionPolicy policy,
-            AuthorizationRecord authRecord)
-		throws SQLException,java.io.IOException,SpaceException {
+	public File reserveAndUseSpace(String pnfsPath,
+                                       PnfsId pnfsId,
+                                       long size,
+                                       AccessLatency latency,
+                                       RetentionPolicy policy,
+                                       AuthorizationRecord authRecord)
+		throws SQLException,
+                       java.io.IOException,SpaceException {
 		long sizeInBytes = size;
 		long lifetime    = 1000*60*60;
 		String description = null;
-		long reservationId = reserveSpace(authRecord,sizeInBytes,latency,policy,lifetime,description);
-        Space space = getSpace(reservationId);
-		long fileId = useSpace(reservationId,space.getVoGroup(),space.getVoGroup(),sizeInBytes,lifetime,pnfsPath,pnfsId);
+		long reservationId = reserveSpace(authRecord,
+                                                  sizeInBytes,
+                                                  latency,
+                                                  policy,
+                                                  lifetime,
+                                                  description);
+                Space space = getSpace(reservationId);
+		long fileId = useSpace(reservationId,
+                                       space.getVoGroup(),
+                                       space.getVoGroup(),
+                                       sizeInBytes,
+                                       lifetime,
+                                       pnfsPath,
+                                       pnfsId);
 		File file = getFile(fileId);
 		return file;
 	}
@@ -3875,7 +3888,13 @@ public final class Manager
 		PnfsId pnfsId = use.getPnfsId();
 		long lifetime = use.getLifetime();
 		boolean overwriteFlag = use.isOverwrite();
-		long fileId = useSpace(reservationId,voGroup,voRole,sizeInBytes,lifetime,pnfsPath,pnfsId);
+		long fileId = useSpace(reservationId,
+                                       voGroup,
+                                       voRole,
+                                       sizeInBytes,
+                                       lifetime,
+                                       pnfsPath,
+                                       pnfsId);
 		use.setFileId(fileId);
 	}
 
@@ -3904,7 +3923,9 @@ public final class Manager
                                              pnfsManager);
                         }
 			try {
-				PnfsSetStorageInfoMessage msg = new PnfsSetStorageInfoMessage(pnfsId,info,NameSpaceProvider.SI_OVERWRITE);
+				PnfsSetStorageInfoMessage msg = new PnfsSetStorageInfoMessage(pnfsId,
+                                                                                              info,
+                                                                                              NameSpaceProvider.SI_OVERWRITE);
 				msg.setReplyRequired(false);
 				sendMessage(new CellMessage(new CellPath(pnfsManager),msg));
 			}
@@ -3937,7 +3958,8 @@ public final class Manager
 				}
 				if(f.getState() == FileState.RESERVED ||
 				   f.getState() == FileState.TRANSFERRING) {
-					removePnfsIdOfFileInSpace(connection,f.getId(),
+					removePnfsIdOfFileInSpace(connection,
+                                                                  f.getId(),
 								  Integer.valueOf(FileState.RESERVED.getStateId()));
 					connection.commit();
 					connection_pool.returnConnection(connection);
@@ -4314,97 +4336,93 @@ public final class Manager
 		}
         }
 
-	private long reserveSpace(
-		String voGroup,
-		String voRole,
-		long sizeInBytes,
-		AccessLatency latency ,
-		RetentionPolicy policy,
-		long lifetime,
-		String description)
+	private long reserveSpace(String voGroup,
+                                  String voRole,
+                                  long sizeInBytes,
+                                  AccessLatency latency ,
+                                  RetentionPolicy policy,
+                                  long lifetime,
+                                  String description)
 		throws SQLException,
-		java.io.IOException,
-                SpaceException
-    {
-            if (logger.isDebugEnabled()) {
-                    logger.debug("reserveSpace(group="+voGroup+", role="+voRole+", sz="+sizeInBytes+
-                                 ", latency="+latency+", policy="+policy+", lifetime="+lifetime+
-                                 ", description="+description);
-            }
-            boolean needHsmBackup = policy.equals(RetentionPolicy.CUSTODIAL);
-            if (logger.isDebugEnabled()) {
-                    logger.debug("policy is "+policy+", needHsmBackup is "+needHsmBackup);
-            }
-            Long[] linkGroups = findLinkGroupIds(sizeInBytes,
-                                                 voGroup,
-                                                 voRole,
-                                                 latency,
-                                                 policy);
-            if(linkGroups.length == 0) {
-                logger.warn("find LinkGroup Ids returned 0 linkGroups, no linkGroups found");
-                throw new NoFreeSpaceException(" no space available");
-            }
-            Long linkGroupId = linkGroups[0];
-            return reserveSpaceInLinkGroup(
-                                           linkGroupId.longValue(),
-                                           voGroup,
-                                           voRole,
-                                           sizeInBytes,
-                                           latency,
-                                           policy,
-                                           lifetime,
-                                           description);
-    }
+                       java.io.IOException,
+                       SpaceException    {
+                if (logger.isDebugEnabled()) {
+                        logger.debug("reserveSpace(group="+voGroup+", role="+voRole+", sz="+sizeInBytes+
+                                     ", latency="+latency+", policy="+policy+", lifetime="+lifetime+
+                                     ", description="+description);
+                }
+                boolean needHsmBackup = policy.equals(RetentionPolicy.CUSTODIAL);
+                if (logger.isDebugEnabled()) {
+                        logger.debug("policy is "+policy+", needHsmBackup is "+needHsmBackup);
+                }
+                Long[] linkGroups = findLinkGroupIds(sizeInBytes,
+                                                     voGroup,
+                                                     voRole,
+                                                     latency,
+                                                     policy);
+                if(linkGroups.length == 0) {
+                        logger.warn("find LinkGroup Ids returned 0 linkGroups, no linkGroups found");
+                        throw new NoFreeSpaceException(" no space available");
+                }
+                Long linkGroupId = linkGroups[0];
+                return reserveSpaceInLinkGroup(
+                                               linkGroupId.longValue(),
+                                               voGroup,
+                                               voRole,
+                                               sizeInBytes,
+                                               latency,
+                                               policy,
+                                               lifetime,
+                                               description);
+        }
 
-	private long reserveSpace(
-		AuthorizationRecord authRecord,
-		long sizeInBytes,
-		AccessLatency latency ,
-		RetentionPolicy policy,
-		long lifetime,
-		String description)
+	private long reserveSpace(AuthorizationRecord authRecord,
+                                  long sizeInBytes,
+                                  AccessLatency latency ,
+                                  RetentionPolicy policy,
+                                  long lifetime,
+                                  String description)
 		throws SQLException,
-		java.io.IOException,
-                SpaceException
-    {
-            if (logger.isDebugEnabled()) {
-                    logger.debug("reserveSpace( ar="+authRecord+", sz="+sizeInBytes+
-                                 ", latency="+latency+", policy="+policy+", lifetime="+lifetime+
-                                 ", description="+description);
-            }
-            boolean needHsmBackup = policy.equals(RetentionPolicy.CUSTODIAL);
-            if (logger.isDebugEnabled()) {
-                    logger.debug("policy is "+policy+", needHsmBackup is "+needHsmBackup);
-            }
-            Set<LinkGroup> linkGroups = findLinkGroupIds(sizeInBytes,
-                                                 latency,
-                                                 policy);
-            if(linkGroups.isEmpty()) {
-                logger.warn("find LinkGroups returned 0 linkGroups, no linkGroups found");
-                throw new NoFreeSpaceException(" no space available");
-            }
-            SpaceAuthorizationException sae = null;
-            for(LinkGroup linkGroup:linkGroups) {
-                 try {
-                     VOInfo voInfo =
-                             authorizationPolicy.checkReservePermission(
-                             authRecord, linkGroup);
-                        return reserveSpaceInLinkGroup(
-                                                       linkGroup.getId(),
-                                                       voInfo.getVoGroup(),
-                                                       voInfo.getVoRole(),
-                                                       sizeInBytes,
-                                                       latency,
-                                                       policy,
-                                                       lifetime,
-                                                       description);
-                    } catch(SpaceAuthorizationException sae1) {
-                        sae = sae1;
-                    }
-			}
-
-            throw sae;
-    }
+                       java.io.IOException,
+                       SpaceException {
+                if (logger.isDebugEnabled()) {
+                        logger.debug("reserveSpace( ar="+authRecord+", sz="+sizeInBytes+
+                                     ", latency="+latency+", policy="+policy+", lifetime="+lifetime+
+                                     ", description="+description);
+                }
+                boolean needHsmBackup = policy.equals(RetentionPolicy.CUSTODIAL);
+                if (logger.isDebugEnabled()) {
+                        logger.debug("policy is "+policy+", needHsmBackup is "+needHsmBackup);
+                }
+                Set<LinkGroup> linkGroups = findLinkGroupIds(sizeInBytes,
+                                                             latency,
+                                                             policy);
+                if(linkGroups.isEmpty()) {
+                        logger.warn("find LinkGroups returned 0 linkGroups, no linkGroups found");
+                        throw new NoFreeSpaceException(" no space available");
+                }
+                SpaceAuthorizationException sae = null;
+                for(LinkGroup linkGroup:linkGroups) {
+                        try {
+                                VOInfo voInfo =
+                                        authorizationPolicy.checkReservePermission(authRecord,
+                                                                                   linkGroup);
+                                return reserveSpaceInLinkGroup(
+                                                               linkGroup.getId(),
+                                                               voInfo.getVoGroup(),
+                                                               voInfo.getVoRole(),
+                                                               sizeInBytes,
+                                                               latency,
+                                                               policy,
+                                                               lifetime,
+                                                               description);
+                        }
+                        catch(SpaceAuthorizationException sae1) {
+                                sae = sae1;
+                        }
+                }
+                throw sae;
+        }
 
 	private long reserveSpaceInLinkGroup(
 		long linkGroupId,
@@ -4533,19 +4551,19 @@ public final class Manager
 			}
 			return;
 		}
-        if (logger.isDebugEnabled()) {
-                logger.debug("selectPool("+selectPool +")");
-        }
+                if (logger.isDebugEnabled()) {
+                        logger.debug("selectPool("+selectPool +")");
+                }
 		String pnfsPath = selectPool.getPnfsPath();
 		PnfsId pnfsId = selectPool.getPnfsId();
 		if( !(selectPool instanceof PoolMgrSelectWritePoolMsg)||pnfsPath == null) {
-            if (logger.isDebugEnabled()) {
-                    logger.debug("selectPool: pnfsPath is null");
-            }
+                        if (logger.isDebugEnabled()) {
+                                logger.debug("selectPool: pnfsPath is null");
+                        }
 			if(!isReply) {
-                if (logger.isDebugEnabled()) {
-                        logger.debug("just forwarding the message to "+ poolManager);
-                }
+                                if (logger.isDebugEnabled()) {
+                                        logger.debug("just forwarding the message to "+ poolManager);
+                                }
 				cellMessage.getDestinationPath().add( new CellPath(poolManager) ) ;
 				cellMessage.nextDestination() ;
 				sendMessage(cellMessage) ;
@@ -4554,16 +4572,16 @@ public final class Manager
 		}
 		File file = null;
 		try {
-            if (logger.isDebugEnabled()) {
-                    logger.debug("selectPool: getFiles("+pnfsPath+")");
-            }
-            Set<File> files = getFiles(pnfsPath);
-            for (File f: files) {
-                    if (f.getPnfsId()==null) {
-                            file=f;
-                            break;
-                    }
-            }
+                        if (logger.isDebugEnabled()) {
+                                logger.debug("selectPool: getFiles("+pnfsPath+")");
+                        }
+                        Set<File> files = getFiles(pnfsPath);
+                        for (File f: files) {
+                                if (f.getPnfsId()==null) {
+                                        file=f;
+                                        break;
+                                }
+                        }
 		}
 		catch (Exception e) {
 			logger.error(e.getMessage());
@@ -4638,7 +4656,7 @@ public final class Manager
                                                            selectPool.getPnfsId());
                                 file = getFile(fileId);
                         }
-        }
+                }
 		else {
                         if (isReply&&selectPool.getReturnCode()==0) {
                                 if (logger.isDebugEnabled()) {
@@ -4647,33 +4665,33 @@ public final class Manager
                                 updateSpaceFile(file.getId(),null,null,pnfsId,null,null,null);
                         }
 		}
-        if (isReply&&selectPool.getReturnCode()!=0) {
-                Connection connection = null;
-                try {
-                        connection = connection_pool.getConnection();
-                        connection.setAutoCommit(false);
-                        removePnfsIdOfFileInSpace(connection,file.getId(),null);
-                        connection.commit();
-                        connection_pool.returnConnection(connection);
-                        connection = null;
-                }
-                catch(SQLException sqle) {
-                        logger.error(sqle.getMessage());
-                        if (connection!=null) {
-                                try {
-                                        connection.rollback();
-                                }
-                                catch (SQLException e) {}
-                                connection_pool.returnFailedConnection(connection);
+                if (isReply&&selectPool.getReturnCode()!=0) {
+                        Connection connection = null;
+                        try {
+                                connection = connection_pool.getConnection();
+                                connection.setAutoCommit(false);
+                                removePnfsIdOfFileInSpace(connection,file.getId(),null);
+                                connection.commit();
+                                connection_pool.returnConnection(connection);
                                 connection = null;
                         }
-                }
-                finally {
-                        if(connection != null) {
-                                connection_pool.returnConnection(connection);
+                        catch(SQLException sqle) {
+                                logger.error(sqle.getMessage());
+                                if (connection!=null) {
+                                        try {
+                                                connection.rollback();
+                                        }
+                                        catch (SQLException e) {}
+                                        connection_pool.returnFailedConnection(connection);
+                                        connection = null;
+                                }
+                        }
+                        finally {
+                                if(connection != null) {
+                                        connection_pool.returnConnection(connection);
+                                }
                         }
                 }
-        }
 		if(!isReply) {
                         long spaceId     = file.getSpaceId();
                         Space space      = getSpace(spaceId);
