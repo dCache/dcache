@@ -529,9 +529,11 @@ public class XrootdProtocol_3
 
                 if (ipsCol.size() > 0) {
                     netifsCol.add(new NetIFContainer(netif.getName(), ipsCol));
-                } else {
-                    throw new CacheException("Error: Cannot determine my ip address. Aborting transfer");
                 }
+            }
+
+            if (netifsCol.isEmpty()) {
+                throw new CacheException("Error: Cannot determine my ip address. Aborting transfer");
             }
         }
 
