@@ -738,9 +738,7 @@ public abstract class AbstractFtpDoorV1
 
     //These are the number of parallel streams to have
     //when doing mode e transfers
-    protected int _parallelStart;
-    protected int _parallelMin;
-    protected int _parallelMax;
+    protected int _parallel;
     protected int _bufSize = 0;
 
     protected String ftpDoorName = "FTP";
@@ -1008,8 +1006,7 @@ public abstract class AbstractFtpDoorV1
 
         /* Parallelism for mode E transfers.
          */
-        _parallelStart = _parallelMin = _parallelMax =
-            _defaultStreamsPerClient;
+        _parallel = _defaultStreamsPerClient;
 
         /* Permission handler.
          */
@@ -1415,12 +1412,10 @@ public abstract class AbstractFtpDoorV1
                 return;
             }
 
-            /* Kill the adapter in case of errors or if it is an
-             * ActiveAdapter (they have to be killed to shut down).
+            /* Kill the adapter in case of errors.
              */
             adapter = _transfer.adapter;
-            if (adapter != null && (adapter instanceof ActiveAdapter
-                                    || reply.getReturnCode() != 0)) {
+            if (adapter != null && reply.getReturnCode() != 0) {
                 debug("FTP Door closing adapter after message arrived.");
                 adapter.close();
                 adapterClosed = true;
@@ -1607,14 +1602,9 @@ public abstract class AbstractFtpDoorV1
         }
 
         st = real_value.split(",|;");
-        _parallelStart = Integer.parseInt(st[0]);
-        _parallelMin = Integer.parseInt(st[1]);
-        _parallelMax = Integer.parseInt(st[2]);
-
+        _parallel = Integer.parseInt(st[0]);
         if (_maxStreamsPerClient > 0) {
-            _parallelStart = Math.min(_parallelStart, _maxStreamsPerClient);
-            _parallelMin = Math.min(_parallelMin, _maxStreamsPerClient);
-            _parallelMax = Math.min(_parallelMax, _maxStreamsPerClient);
+            _parallel = Math.min(_parallel, _maxStreamsPerClient);
         }
 
         reply("200 Parallel streams set (" + opt + ")");
@@ -2565,7 +2555,7 @@ public abstract class AbstractFtpDoorV1
                 return;
             }
             retrieve(arg, prm_offset, prm_size, mode,
-                     _xferMode, _parallelStart, _parallelMin, _parallelMax,
+                     _xferMode, _parallel,
                      new InetSocketAddress(clientHost, clientPort),
                      _bufSize, false, 1);
         } finally {
@@ -2644,9 +2634,7 @@ public abstract class AbstractFtpDoorV1
      * @param mode          indicates the direction of connection
      *                      establishment
      * @param xferMode      the transfer mode to use
-     * @param parallelStart number of simultaneous streams to use
-     * @param parallelMin   number of simultaneous streams to use
-     * @param parallelMax   number of simultaneous streams to use
+     * @param parallel      number of simultaneous streams to use
      * @param client        address of the client (for active servers)
      * @param bufSize       TCP buffers size to use (send and receive),
      *                      or auto scaling when -1.
@@ -2657,7 +2645,7 @@ public abstract class AbstractFtpDoorV1
     private
         void retrieve(String file, long offset, long size,
                       Mode mode, String xferMode,
-                      int parallelStart, int parallelMin, int parallelMax,
+                      int parallel,
                       InetSocketAddress client, int bufSize,
                       boolean reply127, int version)
     {
@@ -2711,7 +2699,7 @@ public abstract class AbstractFtpDoorV1
                     if(setNextPwdRecord()) {
                         retrieve(file, offset, size,
                                  mode, xferMode,
-                                 parallelStart, parallelMin, parallelMax,
+                                 parallel,
                                  client, bufSize, reply127, version);
                         return;
                     }
@@ -2797,7 +2785,7 @@ public abstract class AbstractFtpDoorV1
                 for (;;) {
                     try {
                         transfer(mode, xferMode,
-                                 parallelStart, parallelMin, parallelMax,
+                                 parallel,
                                  client, bufSize, offset, size,
                                  storageInfo, reply127, false, version);
                         break;
@@ -2890,7 +2878,7 @@ public abstract class AbstractFtpDoorV1
         }
 
         store(arg, _mode, _xferMode,
-              _parallelStart, _parallelMin, _parallelMax,
+              _parallel,
               new InetSocketAddress(_client_data_host, _client_data_port),
               _bufSize, false, 1);
     }
@@ -2902,9 +2890,7 @@ public abstract class AbstractFtpDoorV1
      * @param mode          indicates the direction of connection
      *                      establishment
      * @param xferMode      the transfer mode to use
-     * @param parallelStart number of simultaneous streams to use
-     * @param parallelMin   number of simultaneous streams to use
-     * @param parallelMax   number of simultaneous streams to use
+     * @param parallel      number of simultaneous streams to use
      * @param client        address of the client (for active servers)
      * @param bufSize       TCP buffers size to use (send and receive),
      *                      or auto scaling when -1.
@@ -2913,7 +2899,7 @@ public abstract class AbstractFtpDoorV1
      * @param version       The mover version to use for the transfer
      */
     private void store(String file, Mode mode, String xferMode,
-                       int parallelStart, int parallelMin, int parallelMax,
+                       int parallel,
                        InetSocketAddress client, int bufSize,
                        boolean reply127, int version)
     {
@@ -2935,7 +2921,7 @@ public abstract class AbstractFtpDoorV1
                     throw new FTPCommandException(500, "Command disabled");
                 } else {
                     store(file, mode, xferMode,
-                          parallelStart, parallelMin, parallelMax,
+                          parallel,
                           client, bufSize, reply127, version);
                     return;
                 }
@@ -2946,7 +2932,7 @@ public abstract class AbstractFtpDoorV1
                     throw new FTPCommandException(554, "Anonymous write access not permitted");
                 } else {
                     store(file, mode, xferMode,
-                          parallelStart, parallelMin, parallelMax,
+                          parallel,
                           client, bufSize, reply127, version);
                     return;
                 }
@@ -3003,7 +2989,7 @@ public abstract class AbstractFtpDoorV1
                          "Permission denied for path: " + _transfer.path);
                 } else {
                     store(file, mode, xferMode,
-                          parallelStart, parallelMin, parallelMax,
+                          parallel,
                           client, bufSize, reply127, version);
                     return;
                 }
@@ -3101,8 +3087,7 @@ public abstract class AbstractFtpDoorV1
 
             _commandQueue.enableInterrupt();
             try {
-                transfer(mode, xferMode, parallelStart,
-                         parallelMin, parallelMax,
+                transfer(mode, xferMode, parallel,
                          client, bufSize, 0, 0, storageInfo,
                          reply127, true, version);
             } finally {
@@ -3192,9 +3177,7 @@ public abstract class AbstractFtpDoorV1
      * @param mode          indicates the direction of connection
      *                      establishment
      * @param xferMode      the transfer mode to use
-     * @param parallelStart number of simultaneous streams to use
-     * @param parallelMin   number of simultaneous streams to use
-     * @param parallelMax   number of simultaneous streams to use
+     * @param parallel      number of simultaneous streams to use
      * @param client        address of the client.
      * @param bufSize       TCP buffers size to use (send and receive),
      * @param offset        the position at which to begin the transfer
@@ -3209,9 +3192,7 @@ public abstract class AbstractFtpDoorV1
      */
     private synchronized void transfer(Mode              mode,
                                        String            xferMode,
-                                       int               parallelStart,
-                                       int               parallelMin,
-                                       int               parallelMax,
+                                       int               parallel,
                                        InetSocketAddress client,
                                        int               bufSize,
                                        long              offset,
@@ -3255,14 +3236,15 @@ public abstract class AbstractFtpDoorV1
             } else {
                 _transfer.adapter = _adapter;
             }
+            _transfer.adapter.setMaxStreams(_maxStreamsPerClient);
             break;
 
         case ACTIVE:
             if (_allowRelay) {
                 info("FTP Door: transfer creating adapter for active mode");
                 _transfer.adapter =
-                    new ActiveAdapter(this, _lowDataListenPort , _highDataListenPort);
-                ((ActiveAdapter)_transfer.adapter).setDestination(client.getAddress().getHostAddress(), client.getPort());
+                    new ActiveAdapter(_lowDataListenPort , _highDataListenPort, client.getAddress().getHostAddress(), client.getPort());
+                _transfer.adapter.setMaxStreams(parallel);
             }
             break;
         }
@@ -3270,7 +3252,6 @@ public abstract class AbstractFtpDoorV1
         if (_transfer.adapter != null) {
             _transfer.adapter.setMaxBlockSize(_maxBlockSize);
             _transfer.adapter.setModeE(xferMode.equals("E"));
-            _transfer.adapter.setMaxStreams(_maxStreamsPerClient);
             if (isWrite) {
                 _transfer.adapter.setDirClientToPool();
             } else {
@@ -3295,9 +3276,9 @@ public abstract class AbstractFtpDoorV1
                                  0,
                                  client.getAddress().getHostAddress(),
                                  client.getPort(),
-                                 parallelStart,
-                                 parallelMin,
-                                 parallelMax,
+                                 parallel,
+                                 parallel,
+                                 parallel,
                                  bufSize, 0, 0,
                                  voInfo);
 
@@ -3348,9 +3329,9 @@ public abstract class AbstractFtpDoorV1
                                       version, 0,
                                      _local_host,
                                      _transfer.adapter.getPoolListenerPort(),
-                                     parallelStart,
-                                     parallelMin,
-                                     parallelMax,
+                                     parallel,
+                                     parallel,
+                                     parallel,
                                      bufSize,
                                      offset,
                                      size,
@@ -3361,9 +3342,9 @@ public abstract class AbstractFtpDoorV1
                                      version, 0,
                                      client.getAddress().getHostAddress(),
                                      client.getPort(),
-                                     parallelStart,
-                                     parallelMin,
-                                     parallelMax,
+                                     parallel,
+                                     parallel,
+                                     parallel,
                                      bufSize,
                                      offset,
                                      size,
@@ -4517,7 +4498,7 @@ public abstract class AbstractFtpDoorV1
             /* Now do the transfer...
              */
             retrieve(parameters.get("path"), prm_offset, prm_size, mode,
-                     xferMode, _parallelStart, _parallelMin, _parallelMax,
+                     xferMode, _parallel,
                      new InetSocketAddress(clientHost, clientPort),
                      _bufSize, reply127, 2);
         } catch (FTPCommandException e) {
@@ -4573,7 +4554,7 @@ public abstract class AbstractFtpDoorV1
             /* Now do the transfer...
              */
             store(parameters.get("path"), mode, xferMode,
-                  _parallelStart, _parallelMin, _parallelMax,
+                  _parallel,
                   new InetSocketAddress(clientHost, clientPort),
                   _bufSize, reply127, 2);
         } catch (FTPCommandException e) {
