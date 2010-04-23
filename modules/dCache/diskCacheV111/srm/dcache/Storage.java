@@ -234,7 +234,6 @@ public class Storage
     private Args           _args;
     private String _poolManagerName;
     private String _pnfsManagerName;
-    private CellPath _poolMgrPath;
     private CellStub _pnfsStub;
     private CellStub _poolManagerStub;
     private CellStub _poolStub;
@@ -250,7 +249,6 @@ public class Storage
     private PermissionHandler permissionHandler;
     private int __pnfsTimeout = 60 ;
     private String loginBrokerName="LoginBroker";
-    private CellPath loginBrokerPath;
     private SRM srm;
     private int __poolManagerTimeout = 60;
     private String remoteGridftpTransferManagerName =
@@ -355,7 +353,6 @@ public class Storage
         __poolManagerTimeout =
             getIntOption("pool-manager-timeout", __poolManagerTimeout);
         _poolManagerName = getOption("poolManager", "PoolManager" );
-        _poolMgrPath     = new CellPath( _poolManagerName ) ;
         _poolManagerStub = new CellStub();
         _poolManagerStub.setDestination(_poolManagerName);
         _poolManagerStub.setCellEndpoint(this);
@@ -942,10 +939,23 @@ public class Storage
         sb.append("SRM Cell");
         sb.append(" storage info : ");
         StorageElementInfo info = getStorageElementInfo();
+
         if(info != null) {
             sb.append(info.toString());
         } else {
             sb.append("  info is not yet available !!!");
+        }
+
+        try {
+            String[] protocols = supportedGetProtocols();
+            sb.append("\nSupported Get Protocols :").
+                    append(Arrays.toString(protocols));
+            protocols = supportedPutProtocols();
+            sb.append("\nSupported Put Protocols :").
+                    append(Arrays.toString(protocols));
+
+        } catch (SRMException srme) {
+            _log.error("supported protocols retrieval error",srme);
         }
         sb.append('\n');
         sb.append(config.toString()).append('\n');
