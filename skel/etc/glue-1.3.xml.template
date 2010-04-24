@@ -1225,8 +1225,8 @@
             </attr>
 
             <attr name="GlueSAReservedOnlineSize">0</attr>
+            <attr name="GlueSATotalOnlineSize">0</attr>
             <attr name="GlueSAUsedOnlineSize">0</attr>
-            <attr name="GlueSAFreeOnlineSize">0</attr>
             <attr name="GlueSAFreeOnlineSize">0</attr>
 
             <attr name="GlueSAAccessControlBaseRule"
