@@ -127,8 +127,10 @@ dcacheCheckSshKeys()
     logmessage DEBUG "dcacheInstallSshKeys.start"
     if [ ! -f ${DCACHE_HOME}/config/server_key ]; then
         logmessage INFO "No SSH keys found. To use the admin service on this host generate the SSH keys like this:"
-        logmessage INFO "ssh-keygen -b 768 -t rsa1 -f ${DCACHE_HOME}/server_key -N \"\""
-        logmessage INFO "ssh-keygen -b 1024 -t rsa1 -f ${DCACHE_HOME}/host_key -N \"\""
+        logmessage INFO "ssh-keygen -b 768 -t rsa1 -f ${DCACHE_HOME}/config/server_key -N \"\""
+        logmessage INFO "ssh-keygen -b 1024 -t rsa1 -f ${DCACHE_HOME}/config/host_key -N \"\""
+        logmessage INFO "Please note that this message may not apply if the keyBase property has"
+        logmessage INFO "been changed in the dCache configuration."
     fi
     logmessage DEBUG "dcacheInstallSshKeys.stop"
 }
