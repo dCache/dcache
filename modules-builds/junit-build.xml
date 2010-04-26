@@ -62,6 +62,8 @@
                     <!--only these are valid testclasses, everything else are helpers -->
                     <include name="**/*Test.class" />
                     <include name="**/*Tests.class" />
+                    <!--exclude PinManagerTest as it only works if the local environment is set up correctly -->
+                    <exclude name="org/dcache/tests/pinmanager/PinManagerTest.class" />
                 </fileset>
             </batchtest>
         </junit>
