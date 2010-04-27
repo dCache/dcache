@@ -163,6 +163,7 @@ public class DcacheResourceFactory
     private String _iconFilePath;
     private String _path;
     private boolean _doRedirectOnRead = true;
+    private boolean _isOverwriteAllowed = false;
 
     public DcacheResourceFactory()
         throws UnknownHostException
@@ -326,6 +327,19 @@ public class DcacheResourceFactory
     public boolean isRedirectOnReadEnabled()
     {
         return _doRedirectOnRead;
+    }
+
+    /**
+     * Sets whether existing files may be overwritten.
+     */
+    public void setOverwriteAllowed(boolean allowed)
+    {
+        _isOverwriteAllowed = allowed;
+    }
+
+    public boolean isOverwriteAllowed()
+    {
+        return _isOverwriteAllowed;
     }
 
     /**
@@ -1127,6 +1141,7 @@ public class DcacheResourceFactory
         public WriteTransfer(PnfsHandler pnfs, Subject subject, FsPath path)
         {
             super(pnfs, subject, path);
+            setOverwriteAllowed(_isOverwriteAllowed);
         }
 
         public synchronized void openServerChannel()

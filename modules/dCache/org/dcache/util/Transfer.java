@@ -22,6 +22,7 @@ import diskCacheV111.util.NotInTrashCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.DirNotExistsCacheException;
 import diskCacheV111.util.NotDirCacheException;
+import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FsPath;
 
 import diskCacheV111.vehicles.IoDoorEntry;
@@ -92,6 +93,7 @@ public abstract class Transfer implements Comparable<Transfer>
     private InetSocketAddress _clientAddress;
 
     private boolean _isBillingNotified;
+    private boolean _isOverwriteAllowed;
 
     /**
      * Constructs a new Transfer object.
@@ -170,6 +172,14 @@ public abstract class Transfer implements Comparable<Transfer>
     public synchronized void setStatus(String status)
     {
         _status = status;
+    }
+
+    /**
+     * When true, existing files will be overwritten on write.
+     */
+    public synchronized void setOverwriteAllowed(boolean allowed)
+    {
+        _isOverwriteAllowed = allowed;
     }
 
     /**
@@ -478,9 +488,22 @@ public abstract class Transfer implements Comparable<Transfer>
             int gid = (gids.length > 0) ? (int) gids[0] : parent.getGroup();
             int umask =
                 (uids.length > 0) ? FILE_UMASK_AUTHENTICATED : FILE_UMASK_ANONYMOUS;
-            PnfsCreateEntryMessage msg =
-                _pnfs.createPnfsEntry(_path.toString(), uid, gid,
-                                      umask & parent.getMode());
+            PnfsCreateEntryMessage msg;
+            try {
+                msg = _pnfs.createPnfsEntry(_path.toString(), uid, gid,
+                                            umask & parent.getMode());
+            } catch (FileExistsCacheException e) {
+                /* REVISIT: This should be moved to PnfsManager with a
+                 * flag in the PnfsCreateEntryMessage.
+                 */
+                if (!_isOverwriteAllowed) {
+                    throw e;
+                }
+                _pnfs.deletePnfsEntry(_path.toString(), EnumSet.of(FileType.REGULAR));
+                msg = _pnfs.createPnfsEntry(_path.toString(), uid, gid,
+                                            umask & parent.getMode());
+            }
+
             setPnfsId(msg.getPnfsId());
             setStorageInfo(msg.getStorageInfo());
             setWrite(true);

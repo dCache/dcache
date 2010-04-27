@@ -100,6 +100,7 @@
     <property name="iconFilePath" value="${webdav.images.file}"/>
     <property name="webdavStylesheetPath" value="${webdav.style.css}"/>
     <property name="redirectOnReadEnabled" value="${webdav.redirect.on-read}"/>
+    <property name="overwriteAllowed" value="${webdav.overwrite}"/>
   </bean>
 
   <bean id="milton" class="com.bradmcevoy.http.HttpManager">

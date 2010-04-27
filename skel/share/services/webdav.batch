@@ -36,6 +36,7 @@ check -strong webdav.images.directory
 check -strong webdav.images.file
 check -strong webdav.style.css
 check -strong webdav.redirect.on-read
+check -strong webdav.overwrite
 
 check webdavInternalAddress
 check webdavIoQueue
@@ -90,4 +91,5 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
     -webdav.images.file=${webdav.images.file} \
     -webdav.style.css=${webdav.style.css} \
     -webdav.redirect.on-read=${webdav.redirect.on-read} \
+    -webdav.overwrite=${webdav.overwrite} \
     -export -cellClass=WebDAVDoor"
