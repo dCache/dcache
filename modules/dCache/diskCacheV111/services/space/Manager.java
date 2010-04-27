@@ -150,7 +150,7 @@ public final class Manager
 		connection_pool = manager.getConnectionPool();
 		spaceManagerEnabled =
 			isOptionSetToTrueOrYes("spaceManagerEnabled",spaceManagerEnabled);
-		if (logger.isDebugEnabled()) {
+		if (logger.isDebugEnabled()) { 
                         logger.debug("USING LOGGER spaceManagerEnabled="+spaceManagerEnabled);
                 }
 		if(_args.getOpt("poolManager") != null) {
@@ -264,26 +264,17 @@ public final class Manager
 		printWriter.println("JdbcUrl="+jdbcUrl);
 		printWriter.println("jdbcClass="+jdbcClass);
 		printWriter.println("databse user="+user);
-		printWriter.println("reservation space cleanup period in secs : "
-                                    +spaceReservationCleanupPeriodInSeconds);
-		printWriter.println("updateLinkGroupsPeriod="+
-                                    updateLinkGroupsPeriod);
-		printWriter.println("expireSpaceReservationsPeriod="+
-                                    expireSpaceReservationsPeriod);
-		printWriter.println("deleteStoredFileRecord="+
-                                    deleteStoredFileRecord);
+		printWriter.println("reservation space cleanup period in secs : "+spaceReservationCleanupPeriodInSeconds);
+		printWriter.println("updateLinkGroupsPeriod="+updateLinkGroupsPeriod);
+		printWriter.println("expireSpaceReservationsPeriod="+expireSpaceReservationsPeriod);
+		printWriter.println("deleteStoredFileRecord="+deleteStoredFileRecord);
 		printWriter.println("pnfsManager="+pnfsManager);
 		printWriter.println("poolManager="+poolManager);
-                printWriter.println("defaultLatencyForSpaceReservations="+
-                                    defaultLatency);
-		printWriter.println("reserveSpaceForNonSRMTransfers="+
-                                    reserveSpaceForNonSRMTransfers);
-		printWriter.println("returnFlushedSpaceToReservation="+
-                                    returnFlushedSpaceToReservation);
-		printWriter.println("returnRemovedSpaceToReservation="+
-                                    returnRemovedSpaceToReservation);
-		printWriter.println("linkGroupAuthorizationFileName="+
-                                    linkGroupAuthorizationFileName);
+                printWriter.println("defaultLatencyForSpaceReservations="+defaultLatency);
+		printWriter.println("reserveSpaceForNonSRMTransfers="+reserveSpaceForNonSRMTransfers);
+		printWriter.println("returnFlushedSpaceToReservation="+returnFlushedSpaceToReservation);
+		printWriter.println("returnRemovedSpaceToReservation="+returnRemovedSpaceToReservation);
+		printWriter.println("linkGroupAuthorizationFileName="+linkGroupAuthorizationFileName);
 	}
 
 	public String hh_release = " <spaceToken> [ <bytes> ] # release the space " +
@@ -387,7 +378,7 @@ public final class Manager
                 }
                 if (voRole!=null||voGroup!=null) {
                         // check that linkgroup allows these role/group combination
-                        try {
+		try {
                                 Space space = getSpace(reservationId);
                                 long lid = space.getLinkGroupId();
                                 LinkGroup lg = getLinkGroup(lid);
@@ -399,24 +390,25 @@ public final class Manager
                                 for (VOInfo info : lg.getVOs()) {
                                         String group = info.getVoGroup();
                                         String role  = info.getVoRole();
-                                        if (info.match(voGroup,voRole)) {
+                                        if ((group.equals(voGroup)||group.equals("*"))&&
+                                            (role==null||role.equals(voRole)||role.equals("*"))) {
                                                 foundMatch=true;
                                                 break;
                                         }
                                 }
                                 if (!foundMatch) {
-                                        StringBuilder sb = new StringBuilder();
-                                        for (VOInfo info : lg.getVOs()) {
-                                                sb.append(info).append('\n');
-                                        }
+                                StringBuilder sb = new StringBuilder();
+                                for (VOInfo info : lg.getVOs()) {
+                                        sb.append(info).append('\n');
+                                }
                                         throw new IllegalArgumentException("cannot change voGroup:voRole to "+
                                                                            voGroup+":"+voRole+
                                                                            ". Supported vogroup:vorole pairs for this spacereservation\n"+
                                                                            sb.toString());
-                                }
-                        }
+                                                }
+                                        }
                         catch (SQLException e) {
-                                return e.toString();
+                                return e.toString();   
                         }
                         catch (Exception  e) {
                                 return e.toString();
@@ -517,9 +509,7 @@ public final class Manager
 			lg = getLinkGroupByName(linkGroupName);
 			if (lgId!=0) {
 				if (lg.getId()!=lgId) {
-					sb.append("Cannot find LinkGroup with id=").
-                                                append(linkGroupId).append(" and name=").
-                                                append(linkGroupName);
+					sb.append("Cannot find LinkGroup with id=").append(linkGroupId).append(" and name=").append(linkGroupName);
 					return;
 				}
 			}
@@ -541,12 +531,7 @@ public final class Manager
 						sb.append("Space with id=").append(id).append(" not found ");
 					}
 					else {
-						sb.append("LinkGroup with id=").
-                                                        append(lg.getId()).
-                                                        append(" and name=").
-                                                        append(lg.getName()).
-                                                        append(" does not contain space with id=").
-                                                        append(id);
+						sb.append("LinkGroup with id=").append(lg.getId()).append(" and name=").append(lg.getName()).append(" does not contain space with id=").append(id);
 					}
 					return;
 				}
@@ -554,11 +539,7 @@ public final class Manager
 					Space space = (Space)i.next();
 					if (lg!=null) {
 						if (space.getLinkGroupId()!=lg.getId()) {
-							sb.append("LinkGroup with id=").
-                                                                append(lg.getId()).
-                                                                append(" and name=").
-                                                                append(lg.getName()).
-                                                                append(" does not contain space with id=").append(id);
+							sb.append("LinkGroup with id=").append(lg.getId()).append(" and name=").append(lg.getName()).append(" does not contain space with id=").append(id);
 						}
 					}
 					else {
@@ -573,12 +554,7 @@ public final class Manager
 					sb.append("Space with id=").append(id).append(" not found ");
 				}
 				else {
-					sb.append("LinkGroup with id=").
-                                                append(lg.getId()).
-                                                append(" and name=").
-                                                append(lg.getName()).
-                                                append(" does not contain space with id=").
-                                                append(id);
+					sb.append("LinkGroup with id=").append(lg.getId()).append(" and name=").append(lg.getName()).append(" does not contain space with id=").append(id);
 				}
 				return;
 			}
@@ -1265,64 +1241,64 @@ public final class Manager
                 return "please specify  \"-id=\" or \"-pnfsId=\" option";
         }
 
-        private static final Object fixMissingSizeLock = new Object();
-        private static final String SELECT_RECORDS_WITH_MISSING_SIZE =
-                String.format("select f.* from srmspacefile f, srmspace s where f.state=%d and f.sizeinbytes=0 and f.spacereservationid=s.id and s.state=%d",
-                              FileState.STORED.getStateId(),
-                              SpaceState.RESERVED.getStateId());
-        private void fixMissingSize() {
-                synchronized (fixMissingSizeLock) {
-                        try {
-                                PnfsHandler pnfs =
-                                        new PnfsHandler(Manager.this,
-                                                        new CellPath("PnfsManager"));
-                                logger.info("fix missing size: Searching for files...");
-                                HashSet<File> files =
-                                        manager.select(new FileIO(), SELECT_RECORDS_WITH_MISSING_SIZE);
-                                int counter = 0;
-                                for (File file: files) {
-                                        if (counter % 1000 == 0) {
-                                                logger.info(String.format("fix missing size: Processed %d of %d files.", counter, files.size()));
-                                        }
-                                        PnfsGetFileMetaDataMessage msg =
-                                                pnfs.getFileMetaDataById(file.getPnfsId());
-                                        long size = msg.getMetaData().getFileSize();
-                                        updateSpaceFile(file.getId(),
-                                                        null,
-                                                        null,
-                                                        null,
-                                                        size,
-                                                        null,
-                                                        null);
-                                        counter++;
-                                }
-                                logger.info("fix missing size: Done");
-                        }
-                        catch (SQLException e) {
-                                logger.error("Failure in 'fix missing size': " + e.getMessage());
-                        }
-                        catch (CacheException e) {
-                                logger.error("Failure in 'fix missing size': " + e.getMessage());
-                        }
+    private static final Object fixMissingSizeLock = new Object();
+    private static final String SELECT_RECORDS_WITH_MISSING_SIZE =
+            String.format("select f.* from srmspacefile f, srmspace s where f.state=%d and f.sizeinbytes=0 and f.spacereservationid=s.id and s.state=%d", FileState.STORED.getStateId(), SpaceState.RESERVED.getStateId());
+    private void fixMissingSize()
+    {
+        synchronized (fixMissingSizeLock) {
+            try {
+                PnfsHandler pnfs =
+                    new PnfsHandler(Manager.this,
+                                    new CellPath("PnfsManager"));
+                logger.info("fix missing size: Searching for files...");
+                HashSet<File> files =
+                    manager.select(new FileIO(), SELECT_RECORDS_WITH_MISSING_SIZE);
+                int counter = 0;
+                for (File file: files) {
+                    if (counter % 1000 == 0) {
+                        logger.info(String.format("fix missing size: Processed %d of %d files.", counter, files.size()));
+                    }
+
+                    PnfsGetFileMetaDataMessage msg =
+                        pnfs.getFileMetaDataById(file.getPnfsId());
+                    long size = msg.getMetaData().getFileSize();
+                    updateSpaceFile(file.getId(),
+                                    null,
+                                    null,
+                                    null,
+                                    size,
+                                    null,
+                                    null);
+                    counter++;
                 }
+                logger.info("fix missing size: Done");
+            } catch (SQLException e) {
+                logger.error("Failure in 'fix missing size': " + e.getMessage());
+            } catch (CacheException e) {
+                logger.error("Failure in 'fix missing size': " + e.getMessage());
+            }
         }
+    }
 
-        public static final String hh_fix_missing_size =
-                "# See full help for details";
-        public static final String fh_fix_missing_size =
-                "Cleans up after a bug that was present in dCache 1.9.1-1 to 1.9.1-3. That \n" +
-                "bug caused files to be registered with a wrong size in the space manager.\n" +
-                "Warning: This command may take a long time to complete and may consume a\n" +
-                "         lot of memory. Progress information can be found in the log file.";
-
-        public String ac_fix_missing_size(Args args) {
-                new Thread() {
-                        public void run() {
-                                fixMissingSize();
-                        }
-                }.start();
-                return "Command is executed in a background thread.";
-        }
+    public static final String hh_fix_missing_size =
+        "# See full help for details";
+    public static final String fh_fix_missing_size =
+        "Cleans up after a bug that was present in dCache 1.9.1-1 to 1.9.1-3. That \n" +
+        "bug caused files to be registered with a wrong size in the space manager.\n" +
+        "Warning: This command may take a long time to complete and may consume a\n" +
+        "         lot of memory. Progress information can be found in the log file.";
+    public String ac_fix_missing_size(Args args)
+    {
+        new Thread()
+        {
+            public void run()
+            {
+                fixMissingSize();
+            }
+        }.start();
+        return "Command is executed in a background thread.";
+    }
 
 	private static final String selectNextToken = "SELECT nexttoken  FROM "+ManagerSchemaConstants.SpaceManagerNextIdTableName;
 	private static final String insertNextToken = "INSERT INTO "+ManagerSchemaConstants.SpaceManagerNextIdTableName+
@@ -2625,61 +2601,64 @@ public final class Manager
                 "SELECT * FROM "+ManagerSchemaConstants.SpaceTableName +
                 " WHERE  state = ? AND voGroup = ? AND voRole = ?";
 
-        private Set findSpacesByVoGroupAndRole(String voGroup, String voRole)
-                throws SQLException {
-                if (voGroup != null && !voGroup.isEmpty() &&
-                    voRole != null && !voRole.isEmpty()) {
-                        return manager.selectPrepared(
-                                                      new SpaceReservationIO(),
-                                                      SELECT_SPACE_TOKENS_BY_VOGROUP_AND_VOROLE,
-                                                      SpaceState.RESERVED.getStateId(),
-                                                      voGroup,
-                                                      voRole);
-                }
-                else {
-                        if (voGroup != null && !voGroup.isEmpty()) {
-                                return manager.selectPrepared(
-                                                              new SpaceReservationIO(),
-                                                              SELECT_SPACE_TOKENS_BY_VOGROUP,
-                                                              SpaceState.RESERVED.getStateId(),
-                                                              voGroup);
-                        }
-                        if (voRole != null && !voRole.isEmpty()) {
-                                return manager.selectPrepared(
-                                                              new SpaceReservationIO(),
-                                                              SELECT_SPACE_TOKENS_BY_VOROLE,
-                                                              SpaceState.RESERVED.getStateId(),
-                                                              voRole);
-                        }
-                }
-                return Collections.EMPTY_SET;
+    private Set findSpacesByVoGroupAndRole(String voGroup, String voRole)
+            throws SQLException {
+        if (voGroup != null && !voGroup.isEmpty() &&
+                voRole != null && !voRole.isEmpty()) {
+            return manager.selectPrepared(
+                    new SpaceReservationIO(),
+                    SELECT_SPACE_TOKENS_BY_VOGROUP_AND_VOROLE,
+                    SpaceState.RESERVED.getStateId(),
+                    voGroup,
+                    voRole);
+        } else {
+            if (voGroup != null && !voGroup.isEmpty()) {
+                return manager.selectPrepared(
+                        new SpaceReservationIO(),
+                        SELECT_SPACE_TOKENS_BY_VOGROUP,
+                        SpaceState.RESERVED.getStateId(),
+                        voGroup);
+            }
+            if (voRole != null && !voRole.isEmpty()) {
+                return manager.selectPrepared(
+                        new SpaceReservationIO(),
+                        SELECT_SPACE_TOKENS_BY_VOROLE,
+                        SpaceState.RESERVED.getStateId(),
+                        voRole);
+            }
         }
+        return Collections.EMPTY_SET;
+    }
 
 	public long[] getSpaceTokens(AuthorizationRecord authRecord,
   				     String description)  throws SQLException{
-                Set spaces = new HashSet();
-                if(description == null) {
-                        String voGroup=authRecord.getVoGroup();
-                        String voRole =authRecord.getVoRole();
-                        spaces.addAll(findSpacesByVoGroupAndRole(voGroup, voRole));
-                        for(GroupList groupList: authRecord.getGroupLists()) {
-                                FQAN voAttribute = new FQAN(groupList.getAttribute());
-                                voGroup = voAttribute.getGroup();
-                                voRole = voAttribute.getRole();
-                                spaces.addAll(findSpacesByVoGroupAndRole(voGroup, voRole));
-                        }
 
-                }
-                else {
-                        Set foundSpaces =manager.selectPrepared(new  SpaceReservationIO(),
-                                                                SELECT_SPACE_TOKENS_BY_DESCRIPTION,
-                                                                SpaceState.RESERVED.getStateId(),
-                                                                description);
-                        if(foundSpaces != null) {
-                                spaces.addAll(foundSpaces);
-                        }
-                }
-                Set<Long> tokenSet = new HashSet<Long>();
+        Set spaces = new HashSet();
+        if(description == null) {
+            String voGroup=authRecord.getVoGroup();
+            String voRole =authRecord.getVoRole();
+
+            spaces.addAll(findSpacesByVoGroupAndRole(voGroup, voRole));
+
+            for(GroupList groupList: authRecord.getGroupLists()) {
+                FQAN voAttribute = new FQAN(groupList.getAttribute());
+                voGroup = voAttribute.getGroup();
+                voRole = voAttribute.getRole();
+                spaces.addAll(findSpacesByVoGroupAndRole(voGroup, voRole));
+            }
+
+        }
+        else {
+            Set foundSpaces =manager.selectPrepared(new  SpaceReservationIO(),
+                                SELECT_SPACE_TOKENS_BY_DESCRIPTION,
+                                SpaceState.RESERVED.getStateId(),
+                                description);
+            if(foundSpaces != null) {
+                spaces.addAll(foundSpaces);
+            }
+        }
+
+        Set<Long> tokenSet = new HashSet<Long>();
 		for (Iterator i=spaces.iterator(); i.hasNext();){
 			Space space = (Space)i.next();
 			tokenSet.add(space.getId());
@@ -2705,7 +2684,7 @@ public final class Manager
 	public long[] getFileSpaceTokens( PnfsId pnfsId,
 					  String pnfsPath)  throws SQLException{
 
-                if (pnfsId==null&&pnfsPath==null) {
+                if (pnfsId==null&&pnfsPath==null) { 
                         throw new IllegalArgumentException("getFileSpaceTokens: all arguments are nulls, not supported");
                 }
                 HashSet files = null;
@@ -3680,7 +3659,7 @@ public final class Manager
 						    vos);
 			}
 			catch(SQLException sqle) {
-				logger.error("update of linkGroup "+linkGroupName+" failed with exception: "+sqle.getMessage());
+				logger.error("update of linkGroup "+linkGroupName+" failed with exception: "+sqle.getMessage()); 
 			}
 		}
 		latestLinkGroupUpdateTime = currentTime;
@@ -3701,8 +3680,8 @@ public final class Manager
 		boolean replicaAllowed,
 		boolean outputAllowed,
 		boolean custodialAllowed,
-		VOInfo[] linkGroupVOs)
-                throws SQLException {
+		VOInfo[] linkGroupVOs
+		) throws SQLException {
 		long id;
 		Connection connection = null;
 		try {
@@ -3774,14 +3753,14 @@ public final class Manager
 			}
                         VOsSet.close();
                         sqlStatement2.close();
-			for(VOInfo nextVo :insertVOs ) {
+			for(VOInfo nextVo :insertVOs ) { 
                                 manager.update(connection,
                                                INSERT_LINKGROUP_VO,
                                                nextVo.getVoGroup(),
                                                nextVo.getVoRole(),
                                                id);
 			}
-			for(VOInfo nextVo : deleteVOs ) {
+			for(VOInfo nextVo : deleteVOs ) { 
                                 manager.update(connection,
                                                DELETE_LINKGROUP_VO,
                                                nextVo.getVoGroup(),
@@ -3819,9 +3798,9 @@ public final class Manager
 		}
 		long spaceToken = release.getSpaceToken();
 		Long spaceToReleaseInBytes = release.getReleaseSizeInBytes();
-                Space space = getSpace(spaceToken);
-                AuthorizationRecord authRecord =  release.getAuthRecord();
-                checkReleasePermission(authRecord, space);
+        Space space = getSpace(spaceToken);
+        AuthorizationRecord authRecord =  release.getAuthRecord();
+        checkReleasePermission(authRecord, space);
 		if(spaceToReleaseInBytes == null) {
 			updateSpaceState(spaceToken,SpaceState.RELEASED);
 			return;
@@ -3842,17 +3821,17 @@ public final class Manager
 			throw new SpaceException("SpaceManager is disabled in configuration");
 		}
 
-                if (reserve.getRetentionPolicy()==null) {
-                        throw new IllegalArgumentException("reserveSpace : retentionPolicy=null is not supported");
-                }
+        if (reserve.getRetentionPolicy()==null) {
+                throw new IllegalArgumentException("reserveSpace : retentionPolicy=null is not supported");
+        }
 
 		long reservationId = reserveSpace(reserve.getAuthRecord(),
-                                                  reserve.getSizeInBytes(),
-                                                  (reserve.getAccessLatency()==null?
-                                                   defaultLatency:reserve.getAccessLatency()),
-                                                  reserve.getRetentionPolicy(),
-                                                  reserve.getLifetime(),
-                                                  reserve.getDescription());
+              reserve.getSizeInBytes(),
+              (reserve.getAccessLatency()==null?
+               defaultLatency:reserve.getAccessLatency()),
+              reserve.getRetentionPolicy(),
+              reserve.getLifetime(),
+              reserve.getDescription());
 
 		reserve.setSpaceToken(reservationId);
 	}
@@ -4339,81 +4318,87 @@ public final class Manager
 		String description)
 		throws SQLException,
 		java.io.IOException,
-                SpaceException {
-                if (logger.isDebugEnabled()) {
-                        logger.debug("reserveSpace(group="+voGroup+", role="+voRole+", sz="+sizeInBytes+
-                                     ", latency="+latency+", policy="+policy+", lifetime="+lifetime+
-                                     ", description="+description);
-                }
-                boolean needHsmBackup = policy.equals(RetentionPolicy.CUSTODIAL);
-                if (logger.isDebugEnabled()) {
-                        logger.debug("policy is "+policy+", needHsmBackup is "+needHsmBackup);
-                }
-                Long[] linkGroups = findLinkGroupIds(sizeInBytes,
-                                                     voGroup,
-                                                     voRole,
-                                                     latency,
-                                                     policy);
-                if(linkGroups.length == 0) {
-                        logger.warn("find LinkGroup Ids returned 0 linkGroups, no linkGroups found");
-                        throw new NoFreeSpaceException(" no space available");
-                }
-                Long linkGroupId = linkGroups[0];
-                return reserveSpaceInLinkGroup(linkGroupId.longValue(),
-                                               voGroup,
-                                               voRole,
-                                               sizeInBytes,
-                                               latency,
-                                               policy,
-                                               lifetime,
-                                               description);
-        }
+                SpaceException
+    {
+            if (logger.isDebugEnabled()) {
+                    logger.debug("reserveSpace(group="+voGroup+", role="+voRole+", sz="+sizeInBytes+
+                                 ", latency="+latency+", policy="+policy+", lifetime="+lifetime+
+                                 ", description="+description);
+            }
+            boolean needHsmBackup = policy.equals(RetentionPolicy.CUSTODIAL);
+            if (logger.isDebugEnabled()) {
+                    logger.debug("policy is "+policy+", needHsmBackup is "+needHsmBackup);
+            }
+            Long[] linkGroups = findLinkGroupIds(sizeInBytes,
+                                                 voGroup,
+                                                 voRole,
+                                                 latency,
+                                                 policy);
+            if(linkGroups.length == 0) {
+                logger.warn("find LinkGroup Ids returned 0 linkGroups, no linkGroups found");
+                throw new NoFreeSpaceException(" no space available");
+            }
+            Long linkGroupId = linkGroups[0];
+            return reserveSpaceInLinkGroup(
+                                           linkGroupId.longValue(),
+                                           voGroup,
+                                           voRole,
+                                           sizeInBytes,
+                                           latency,
+                                           policy,
+                                           lifetime,
+                                           description);
+    }
 
-	private long reserveSpace(AuthorizationRecord authRecord,
-                                  long sizeInBytes,
-                                  AccessLatency latency ,
-                                  RetentionPolicy policy,
-                                  long lifetime,
-                                  String description)
+	private long reserveSpace(
+		AuthorizationRecord authRecord,
+		long sizeInBytes,
+		AccessLatency latency ,
+		RetentionPolicy policy,
+		long lifetime,
+		String description)
 		throws SQLException,
-                       java.io.IOException,
-                       SpaceException {
-                if (logger.isDebugEnabled()) {
-                        logger.debug("reserveSpace( ar="+authRecord+", sz="+sizeInBytes+
-                                     ", latency="+latency+", policy="+policy+", lifetime="+lifetime+
-                                     ", description="+description);
-                }
-                boolean needHsmBackup = policy.equals(RetentionPolicy.CUSTODIAL);
-                if (logger.isDebugEnabled()) {
-                        logger.debug("policy is "+policy+", needHsmBackup is "+needHsmBackup);
-                }
-                Set<LinkGroup> linkGroups = findLinkGroupIds(sizeInBytes,
-                                                             latency,
-                                                             policy);
-                if(linkGroups.isEmpty()) {
-                        logger.warn("find LinkGroups returned 0 linkGroups, no linkGroups found");
-                        throw new NoFreeSpaceException(" no space available");
-                }
-                SpaceAuthorizationException sae = null;
-                for(LinkGroup linkGroup:linkGroups) {
-                        try {
-                                VOInfo voInfo = checkReservePermission(authRecord,
-                                                                       linkGroup);
-                                return reserveSpaceInLinkGroup(linkGroup.getId(),
-                                                               voInfo.getVoGroup(),
-                                                               voInfo.getVoRole(),
-                                                               sizeInBytes,
-                                                               latency,
-                                                               policy,
-                                                               lifetime,
-                                                               description);
-                        }
-                        catch(SpaceAuthorizationException sae1) {
-                                sae = sae1;
-                        }
-                }
-                throw sae;
-        }
+		java.io.IOException,
+                SpaceException
+    {
+            if (logger.isDebugEnabled()) {
+                    logger.debug("reserveSpace( ar="+authRecord+", sz="+sizeInBytes+
+                                 ", latency="+latency+", policy="+policy+", lifetime="+lifetime+
+                                 ", description="+description);
+            }
+            boolean needHsmBackup = policy.equals(RetentionPolicy.CUSTODIAL);
+            if (logger.isDebugEnabled()) {
+                    logger.debug("policy is "+policy+", needHsmBackup is "+needHsmBackup);
+            }
+            Set<LinkGroup> linkGroups = findLinkGroupIds(sizeInBytes,
+                                                 latency,
+                                                 policy);
+            if(linkGroups.isEmpty()) {
+                logger.warn("find LinkGroups returned 0 linkGroups, no linkGroups found");
+                throw new NoFreeSpaceException(" no space available");
+            }
+            SpaceAuthorizationException sae = null;
+            for(LinkGroup linkGroup:linkGroups) {
+                 try {
+                     VOInfo voInfo =
+                             checkReservePermission(
+                             authRecord, linkGroup);
+                        return reserveSpaceInLinkGroup(
+                                                       linkGroup.getId(),
+                                                       voInfo.getVoGroup(),
+                                                       voInfo.getVoRole(),
+                                                       sizeInBytes,
+                                                       latency,
+                                                       policy,
+                                                       lifetime,
+                                                       description);
+                    } catch(SpaceAuthorizationException sae1) {
+                        sae = sae1;
+                    }
+			}
+
+            throw sae;
+    }
 
 	private long reserveSpaceInLinkGroup(
 		long linkGroupId,
@@ -4955,66 +4940,64 @@ public final class Manager
 		}
 	}
 
-        public void checkReleasePermission(AuthorizationRecord authRecord,
-                                           Space space)
-                throws SpaceAuthorizationException {
-                String spaceGroup = space.getVoGroup();
-                String spaceRole = space.getVoRole();
+    public void checkReleasePermission(AuthorizationRecord authRecord, Space space)
+        throws SpaceAuthorizationException {
+        String spaceGroup = space.getVoGroup();
+        String spaceRole = space.getVoRole();
 
-                if((spaceGroup == null || spaceGroup.equals(authRecord.getVoGroup())) &&
-                   (spaceRole == null || spaceRole.equals(authRecord.getVoRole()))) {
-                        logger.debug("userGroup : "+authRecord.getVoGroup()+", userRole : "+
-                                     authRecord.getVoRole()+ " have permission to release ");
-                        return;
-                }
-
-                for(GroupList groupList: authRecord.getGroupLists()) {
-                        FQAN voAttribute = new FQAN(groupList.getAttribute());
-                        String userGroup = voAttribute.getGroup();
-                        String userRole = voAttribute.getRole();
-                        if((spaceGroup == null || spaceGroup.equals(userGroup)) &&
-                           (spaceRole == null || spaceRole.equals(userRole))) {
-                                logger.debug("userGroup : "+userGroup+", userRole : "+userRole+
-                                             " have permission to release ");
-                                return;
-                        }
-                }
-
-                throw new SpaceAuthorizationException("user with "+authRecord+
-                                                      " has no permission to release "+space);
+        if((spaceGroup == null || spaceGroup.equals(authRecord.getVoGroup())) &&
+            (spaceRole == null || spaceRole.equals(authRecord.getVoRole()))) {
+            logger.debug("userGroup : "+authRecord.getVoGroup()+", userRole : "+
+                    authRecord.getVoRole()+ " have permission to release ");
+            return;
         }
 
-        public VOInfo checkReservePermission(AuthorizationRecord authRecord,
-                                             LinkGroup linkGroup)
-                throws SpaceAuthorizationException {
-                VOInfo[] voInfos = linkGroup.getVOs();
-                for(VOInfo voInfo:voInfos) {
-                        String userGroup = authRecord.getVoGroup();
-                        String userRole = authRecord.getVoRole();
-                        if (VOInfo.match(voInfo,userGroup,userRole)) {
-                                if (logger.isDebugEnabled()) {
-                                        logger.debug("userGroup : "+userGroup+", userRole : "+userRole+
-                                                     " have permission to reserve ");
-                                }
-                                return new VOInfo(userGroup,userRole );
-                        }
-
-                        for(GroupList groupList: authRecord.getGroupLists()) {
-                                if (groupList.getAttribute()==null) continue;
-                                FQAN voAttribute = new FQAN(groupList.getAttribute());
-                                userGroup = voAttribute.getGroup();
-                                userRole = voAttribute.getRole();
-                                if (VOInfo.match(voInfo,userGroup,userRole)) {
-                                        if (logger.isDebugEnabled()) {
-                                                logger.debug("userGroup : "+userGroup+", userRole : "+userRole+
-                                                             " have permission to reserve ");
-                                                return new VOInfo(userGroup,userRole );
-                                        }
-                                }
-                        }
-                }
-                throw new SpaceAuthorizationException("user with "+authRecord+
-                                                      " has no permission to reserve in "+linkGroup);
+        for(GroupList groupList: authRecord.getGroupLists()) {
+            FQAN voAttribute = new FQAN(groupList.getAttribute());
+            String userGroup = voAttribute.getGroup();
+            String userRole = voAttribute.getRole();
+            if((spaceGroup == null || spaceGroup.equals(userGroup)) &&
+                (spaceRole == null || spaceRole.equals(userRole))) {
+                logger.debug("userGroup : "+userGroup+", userRole : "+userRole+
+                        " have permission to release ");
+                return;
+            }
         }
+
+        throw new SpaceAuthorizationException("user with "+authRecord+
+                " has no permission to release "+space);
+    }
+
+    public VOInfo checkReservePermission(AuthorizationRecord authRecord, LinkGroup linkGroup)
+        throws SpaceAuthorizationException {
+        VOInfo[] voInfos = linkGroup.getVOs();
+        for(VOInfo voInfo:voInfos) {
+            String lgGroup=voInfo.getVoGroup();
+            String lgRole=voInfo.getVoRole();
+            if( (lgGroup.equals("*") ||lgGroup.equals(authRecord.getVoGroup()))  &&
+                (lgRole.equals("*") ||lgRole.equals(authRecord.getVoRole()))) {
+                String userGroup = authRecord.getVoGroup();
+                String userRole = authRecord.getVoRole();
+                logger.debug("userGroup : "+userGroup+", userRole : "+userRole+
+                        " have permission to reserve ");
+                return new VOInfo(userGroup,userRole );
+            }
+
+            for(GroupList groupList: authRecord.getGroupLists()) {
+                FQAN voAttribute = new FQAN(groupList.getAttribute());
+                String userGroup = voAttribute.getGroup();
+                String userRole = voAttribute.getRole();
+                if((lgGroup.equals("*") ||lgGroup.equals(userGroup))  &&
+                   (lgRole.equals("*")  ||lgRole.equals(userRole))) {
+                    logger.debug("userGroup : "+userGroup+", userRole : "+userRole+
+                            " have permission to reserve ");
+                    return new VOInfo(userGroup,userRole );
+                }
+            }
+        }
+        throw new SpaceAuthorizationException("user with "+authRecord+
+                " has no permission to reserve in "+linkGroup);
+
+    }
 
 }
