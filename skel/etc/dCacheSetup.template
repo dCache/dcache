@@ -421,6 +421,13 @@ gplazmaPolicy=${ourHomeDir}/etc/dcachesrm-gplazma.policy
 #
 images=${ourHomeDir}/docs/images
 styles=${ourHomeDir}/docs/styles
+#
+#
+#   If the following option is yes then the httpdDomain will start the
+#   PoolCollector cell.  This cell refreshes the web pages with pool
+#   changes.
+#
+#httpdEnablePoolCollector=yes
 
 
 
