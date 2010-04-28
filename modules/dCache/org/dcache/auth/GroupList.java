@@ -34,6 +34,7 @@ import static javax.persistence.CascadeType.ALL;
 @Entity
 @Table(name="authgrouplist")
 public class GroupList implements Serializable{
+    private static final long serialVersionUID = 6742997958634986522L;
     private long id;
     private String attribute;
     private List<Group> groups;

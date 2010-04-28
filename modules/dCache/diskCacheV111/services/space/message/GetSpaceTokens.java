@@ -10,9 +10,7 @@
 package diskCacheV111.services.space.message;
 
 import diskCacheV111.vehicles.Message;
-import diskCacheV111.util.RetentionPolicy;
-import diskCacheV111.util.AccessLatency;
-import diskCacheV111.services.space.Space;
+import org.dcache.auth.AuthorizationRecord;
 
 /**
  *
@@ -22,16 +20,14 @@ public class GetSpaceTokens extends Message{
     static final long serialVersionUID = -2482510383290374236L;
     private long[] spaceTokens;
     private String description;
-    private String voRole;
-    private String voGroup;
+    private AuthorizationRecord authRecord ;
     /** Creates a new instance of Reserve */
-    public GetSpaceTokens(String voGroup, String voRole,String description) {
-        this.voGroup = voGroup;
-        this.voRole = voRole;
+    public GetSpaceTokens(AuthorizationRecord authRecord,String description) {
+        this.authRecord = authRecord;
         this.description = description;
         setReplyRequired(true);
     }
-    
+
     public long[] getSpaceTokens() {
         return spaceTokens;
     }
@@ -48,20 +44,12 @@ public class GetSpaceTokens extends Message{
         this.description = description;
     }
 
-    public String getVoRole() {
-        return voRole;
+    public AuthorizationRecord getAuthRecord() {
+        return authRecord;
     }
 
-    public void setVoRole(String voRole) {
-        this.voRole = voRole;
-    }
-
-    public String getVoGroup() {
-        return voGroup;
-    }
-
-    public void setVoGroup(String voGroup) {
-        this.voGroup = voGroup;
+    public void setAuthRecord(AuthorizationRecord authRecord) {
+        this.authRecord = authRecord;
     }
 
 }

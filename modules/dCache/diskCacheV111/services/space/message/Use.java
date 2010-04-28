@@ -12,6 +12,7 @@ import diskCacheV111.vehicles.Message;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.PnfsId;
+import org.dcache.auth.AuthorizationRecord;
 
 /**
  *
@@ -20,14 +21,13 @@ import diskCacheV111.util.PnfsId;
 public class Use extends Message{
     static final long serialVersionUID = 7864026870745603985L;
     private long spaceToken;
-    private String voGroup;
-    private String voRole;
+    private AuthorizationRecord authRecord ;
     private String pnfsName;
     private PnfsId pnfsId;
     private long sizeInBytes;
     private RetentionPolicy retentionPolicy;
     private AccessLatency accessLatency;
-    private long lifetime; //this is the lifetime of this file reservation 
+    private long lifetime; //this is the lifetime of this file reservation
                            // not file lifetime after it is written
                            // this is how long user has to write the file
     private long fileId;
@@ -35,38 +35,34 @@ public class Use extends Message{
     /** Creates a new instance of Reserve */
     public Use() {
     }
-    
+
     public Use(
             long spaceToken,
-            String voGroup, 
-            String voRole, 
+            AuthorizationRecord authRecord,
             String pnfsName,
             PnfsId pnfsId,
             long sizeInBytes,
             long lifetime){
-        
+
         this( spaceToken,
-             voGroup, 
-             voRole, 
+             authRecord,
              pnfsName,
              pnfsId,
              sizeInBytes,
              lifetime,
             false);
     }
-    
+
     public Use(
             long spaceToken,
-            String voGroup, 
-            String voRole, 
+            AuthorizationRecord authRecord,
             String pnfsName,
             PnfsId pnfsId,
             long sizeInBytes,
             long lifetime,
             boolean overwrite){
         this.spaceToken = spaceToken;
-        this.voGroup = voGroup;
-        this.voRole = voRole;
+        this.authRecord = authRecord;
         this.sizeInBytes = sizeInBytes;
         this.pnfsName= pnfsName;
         this.pnfsId = pnfsId;
@@ -140,20 +136,12 @@ public class Use extends Message{
         this.fileId = fileId;
     }
 
-    public String getVoGroup() {
-        return voGroup;
+    public AuthorizationRecord getAuthRecord() {
+        return authRecord;
     }
 
-    public void setVoGroup(String voGroup) {
-        this.voGroup = voGroup;
-    }
-
-    public String getVoRole() {
-        return voRole;
-    }
-
-    public void setVoRole(String voRole) {
-        this.voRole = voRole;
+    public void setAuthRecord(AuthorizationRecord authRecord) {
+        this.authRecord = authRecord;
     }
 
     public boolean isOverwrite() {

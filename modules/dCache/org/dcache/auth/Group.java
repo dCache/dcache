@@ -30,7 +30,7 @@ import javax.persistence.JoinColumn;
 @Entity
 @Table(name="authgroup")
 public class Group implements Serializable{
-    
+    private static final long serialVersionUID = -8679725379384055553L;
     private long id;
     private String name;
     private int gid;
