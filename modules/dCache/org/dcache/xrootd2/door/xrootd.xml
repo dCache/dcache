@@ -105,7 +105,9 @@
     <property name="poolStub" ref="pool-stub"/>
     <property name="poolManagerStub" ref="pool-manager-stub"/>
     <property name="billingStub" ref="billing-stub"/>
-    <property name="authorizedWritePaths" value="${xrootdAllowedPaths}"/>
+    <property name="writePaths" value="${xrootdWritePaths}"/>
+    <property name="readPaths" value="${xrootdReadPaths}"/>
+    <property name="user" value="${xrootdUser}"/>
     <property name="authorizationFactory" ref="authorization-factory"/>
     <property name="pnfsHandler" ref="pnfs"/>
     <property name="readOnly" value="${xrootdIsReadOnly}"/>

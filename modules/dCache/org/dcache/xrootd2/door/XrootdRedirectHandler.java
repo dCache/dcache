@@ -163,11 +163,6 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         }
 
         try {
-            if (isWrite && _door.isReadOnly()) {
-                throw new CacheException(CacheException.PERMISSION_DENIED,
-                                         "Permission denied. Door is read only.");
-            }
-
             AuthorizationHandler authzHandler =
                 _door.getAuthorizationFactory().getAuthzHandler();
             if (authzHandler != null) {

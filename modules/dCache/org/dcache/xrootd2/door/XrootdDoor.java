@@ -8,18 +8,23 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.Collections;
 import java.util.Collection;
+import java.util.Set;
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.security.auth.Subject;
+import java.security.Principal;
 import com.sun.security.auth.UnixNumericUserPrincipal;
 import com.sun.security.auth.UnixNumericGroupPrincipal;
 
+import org.dcache.auth.Subjects;
 import org.dcache.acl.Origin;
 import org.dcache.acl.enums.AuthType;
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
@@ -73,6 +78,11 @@ public class XrootdDoor
                       XROOTD_PROTOCOL_MAJOR_VERSION,
                       XROOTD_PROTOCOL_MINOR_VERSION);
 
+    public final static String USER_ROOT = "root";
+    public final static String USER_NOBODY = "nobody";
+    public final static Pattern USER_PATTERN =
+        Pattern.compile("(\\d+):((\\d+)(,(\\d+))*)");
+
     private final static Logger _log =
         LoggerFactory.getLogger(XrootdDoor.class);
 
@@ -83,15 +93,10 @@ public class XrootdDoor
     private String _cellName;
     private String _domainName;
 
-    /**
-     * Is set true only once (when plugin loading didn't succeed) to
-     * avoid multiple trials.
-     */
-    private boolean _authzPluginLoadFailed = false;
-
     private AbstractAuthorizationFactory _authzFactory;
 
-    private List<FsPath> _authorizedWritePaths = Collections.emptyList();
+    private List<FsPath> _readPaths = Collections.singletonList(new FsPath());
+    private List<FsPath> _writePaths = Collections.singletonList(new FsPath());
 
     private CellStub _poolStub;
     private CellStub _poolManagerStub;
@@ -101,6 +106,8 @@ public class XrootdDoor
 
     private PnfsHandler _pnfs;
     private boolean _isReadOnly = false;
+    private Subject _subject = Subjects.NOBODY;
+    private String _user = "nobody";
     private String _ioQueue;
 
     private FsPath _rootPath = new FsPath();
@@ -133,29 +140,57 @@ public class XrootdDoor
     }
 
     /**
-     * The list of paths which are authorized for xrootd write access.
+     * Converts a colon separated list of paths to a List of FsPath.
      */
-    public void setAuthorizedWritePaths(String s)
+    private List<FsPath> toFsPaths(String s)
     {
         List<FsPath> list = new ArrayList();
         for (String path: s.split(":")) {
             list.add(new FsPath(path));
         }
-        _authorizedWritePaths = list;
-        _log.info("allowed write paths: " + list);
+        return list;
     }
 
     /**
-     * Returns the list of authorized write paths.
+     * The list of paths which are authorized for xrootd write access.
+     */
+    public void setWritePaths(String s)
+    {
+        _writePaths = toFsPaths(s);
+    }
+
+    /**
+     * Returns the list of write paths.
      *
      * Notice that the getter uses a different property name than the
      * setter. This is because the getter returns a different type
      * than set by the setter, and hence we must not use the same
      * property name (otherwise Spring complains).
      */
-    public List<FsPath> getAuthorizedWritePathList()
+    public List<FsPath> getWritePathsList()
     {
-        return _authorizedWritePaths;
+        return _writePaths;
+    }
+
+    /**
+     * The list of paths which are authorized for xrootd write access.
+     */
+    public void setReadPaths(String s)
+    {
+        _readPaths = toFsPaths(s);
+    }
+
+    /**
+     * Returns the list of read paths.
+     *
+     * Notice that the getter uses a different property name than the
+     * setter. This is because the getter returns a different type
+     * than set by the setter, and hence we must not use the same
+     * property name (otherwise Spring complains).
+     */
+    public List<FsPath> getReadPathsList()
+    {
+        return _readPaths;
     }
 
     /**
@@ -176,6 +211,78 @@ public class XrootdDoor
     public String getRootPath()
     {
         return _rootPath.toString();
+    }
+
+    /**
+     * Sets the user identity used by the door.
+     *
+     * As xrootd in dCache is unauthenticated, we leave it to the
+     * administrator to define the subject used for authorization of
+     * name space operations.
+     *
+     * Allowed values are: 'root', 'nobody', UID:GID[,GID ...]
+     */
+    public void setUser(String user)
+    {
+        if (user.equals(USER_ROOT)) {
+            _subject = Subjects.ROOT;
+        } else if (user.equals(USER_NOBODY)) {
+            _subject = Subjects.NOBODY;
+        } else {
+            _subject = parseUidGidList(user);
+        }
+        _user = user;
+    }
+
+    /**
+     * Returns the user identity used by the door.
+     */
+    public String getUser()
+    {
+        return _user;
+    }
+
+    /**
+     * Parses a string on the form UID:GID(,GID)* and returns a
+     * corresponding Subject.
+     */
+    private Subject parseUidGidList(String user)
+    {
+        Matcher matcher = USER_PATTERN.matcher(user);
+        if (!matcher.matches()) {
+            throw new IllegalArgumentException("Invalid user string");
+        }
+
+        Subject subject = new Subject();
+        int uid = Integer.parseInt(matcher.group(1));
+        Set<Principal> principals = subject.getPrincipals();
+        principals.add(new UnixNumericUserPrincipal(uid));
+        boolean primary = true;
+        for (String group: matcher.group(2).split(",")) {
+            int gid = Integer.parseInt(group);
+            principals.add(new UnixNumericGroupPrincipal(gid, primary));
+            primary = false;
+        }
+        subject.setReadOnly();
+
+        return subject;
+    }
+
+    /**
+     * Returns a new Subject for a request.
+     *
+     * @param address The IP address from which the request originated
+     */
+    private Subject createSubject(InetAddress address)
+    {
+        Subject subject = new Subject(false,
+                                      _subject.getPrincipals(),
+                                      _subject.getPublicCredentials(),
+                                      _subject.getPrivateCredentials());
+        subject.getPrincipals().add(new Origin(AuthType.ORIGIN_AUTHTYPE_WEAK,
+                                               address));
+        subject.setReadOnly();
+        return subject;
     }
 
     /**
@@ -263,6 +370,7 @@ public class XrootdDoor
     {
         _cellName = getCellName();
         _domainName = getCellDomainName();
+        _pnfs.setSubject(_subject);
     }
 
     @Override
@@ -286,13 +394,7 @@ public class XrootdDoor
     private XrootdTransfer
         createTransfer(InetSocketAddress client, FsPath path, long checksum)
     {
-        Subject subject = new Subject();
-        subject.getPrincipals().add(new UnixNumericUserPrincipal(0));
-        subject.getPrincipals().add(new UnixNumericGroupPrincipal(0, true));
-        subject.getPrincipals().add(new Origin(AuthType.ORIGIN_AUTHTYPE_WEAK,
-                                               client.getAddress()));
-        subject.setReadOnly();
-
+        Subject subject = createSubject(client.getAddress());
         XrootdTransfer transfer =
             new XrootdTransfer(_pnfs, subject, path);
         transfer.setCellName(_cellName);
@@ -303,7 +405,6 @@ public class XrootdDoor
         transfer.setClientAddress(client);
         transfer.setChecksum(checksum);
         transfer.setFileHandle(_handleCounter.getAndIncrement());
-
         return transfer;
     }
 
@@ -312,6 +413,11 @@ public class XrootdDoor
         throws CacheException, InterruptedException
     {
         FsPath fullPath = createFullPath(path);
+
+        if (!isReadAllowed(fullPath)) {
+            throw new PermissionDeniedCacheException("Write permission denied");
+        }
+
         XrootdTransfer transfer = createTransfer(client, fullPath, checksum);
         int handle = transfer.getFileHandle();
 
@@ -360,6 +466,10 @@ public class XrootdDoor
         throws CacheException, InterruptedException
     {
         FsPath fullPath = createFullPath(path);
+
+        if (isReadOnly()) {
+            throw new PermissionDeniedCacheException("Read only door");
+        }
 
         if (!isWriteAllowed(fullPath)) {
             throw new PermissionDeniedCacheException("Write permission denied");
@@ -419,16 +529,29 @@ public class XrootdDoor
 
     /**
      * Check whether the given path matches against a list of allowed
-     * paths.
+     * write paths.
      *
      * @param path the path which is going to be checked
      */
     private boolean isWriteAllowed(FsPath path)
     {
-        if (_authorizedWritePaths.isEmpty()) {
+        for (FsPath prefix: _writePaths) {
+            if (path.startsWith(prefix)) {
             return true;
         }
-        for (FsPath prefix: _authorizedWritePaths) {
+        }
+        return false;
+    }
+
+    /**
+     * Check whether the given path matches against a list of allowed
+     * read paths.
+     *
+     * @param path the path which is going to be checked
+     */
+    private boolean isReadAllowed(FsPath path)
+    {
+        for (FsPath prefix: _readPaths) {
             if (path.startsWith(prefix)) {
                 return true;
             }
