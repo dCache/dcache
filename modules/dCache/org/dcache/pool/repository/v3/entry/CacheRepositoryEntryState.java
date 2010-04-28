@@ -24,6 +24,8 @@ public class CacheRepositoryEntryState
     // new logger concept
     private static Logger _logBussiness = Logger.getLogger("logger.org.dcache.repository");
 
+    private static final Pattern VERSION_PATTERN =
+        Pattern.compile("#\\s+version\\s+[0-9]\\.[0-9]");
 
     // format version
     private static final int FORMAT_VERSION_MAJOR = 3;
@@ -193,26 +195,14 @@ public class CacheRepositoryEntryState
         }
     }
 
-
     private void loadState() throws IOException
     {
-        BufferedReader in = null;
+        _state = EntryState.BROKEN;
 
-        List<String> lines = new ArrayList<String>();
-
+        BufferedReader in = new BufferedReader(new FileReader(_controlFile));
         try {
-
-            in = new BufferedReader( new FileReader(_controlFile) );
-
-            boolean done = false;
-            while(!done) {
-
-                String line = in.readLine();
-                if( line == null) {
-                    done = true;
-                    continue;
-                }
-
+            String line;
+            while ( (line = in.readLine()) != null) {
 
                 // ignore empty lines
                 line = line.trim();
@@ -221,11 +211,8 @@ public class CacheRepositoryEntryState
                 }
 
                 // a comment or version string
-
                 if( line.startsWith("#") ) {
-
-                    Pattern p = Pattern.compile("#\\s+version\\s+[0-9]\\.[0-9]");
-                    Matcher m = p.matcher(line);
+                    Matcher m = VERSION_PATTERN.matcher(line);
 
                     // it's the version string
                     if( m.matches() ) {
@@ -244,115 +231,97 @@ public class CacheRepositoryEntryState
                     continue;
                 }
 
-                lines.add(line);
+                if( line.equals("precious") ) {
+                    _state = EntryState.PRECIOUS;
+                    continue;
+                }
 
-            }
+                if( line.equals("cached") ) {
+                    _state = EntryState.CACHED;
+                    continue;
+                }
 
-        }finally{
-            if( in != null ) { in.close(); }
-        }
+                if( line.equals("from_client") ) {
+                    _state = EntryState.FROM_CLIENT;
+                    continue;
+                }
 
-        _state = EntryState.BROKEN;
+                if( line.equals("from_store") ) {
+                    _state = EntryState.FROM_STORE;
+                    continue;
+                }
 
-        Iterator<String> stateIterator = lines.iterator();
+                /*
+                 * backward compatibility
+                 */
 
-        while( stateIterator.hasNext() ) {
+                if( line.equals("receiving.store") ) {
+                    _state = EntryState.FROM_STORE;
+                    continue;
+                }
 
-            String state = stateIterator.next();
+                if( line.equals("receiving.cient") ) {
+                    _state = EntryState.FROM_CLIENT;
+                    continue;
+                }
 
-            if( state.equals("precious") ) {
-                _state = EntryState.PRECIOUS;
-                continue;
-            }
+                // in case of some one fixed the spelling
+                if( line.equals("receiving.client") ) {
+                    _state = EntryState.FROM_CLIENT;
+                    continue;
+                }
 
-            if( state.equals("cached") ) {
-                _state = EntryState.CACHED;
-                continue;
-            }
+                // FORMAT: sticky:owner:exipire
+                if( line.startsWith("sticky") ) {
 
-            if( state.equals("from_client") ) {
-                _state = EntryState.FROM_CLIENT;
-                continue;
-            }
+                    String[] stickyOptions = line.split(":");
 
-            if( state.equals("from_store") ) {
-                _state = EntryState.FROM_STORE;
-                continue;
-            }
+                    String owner = "repository";
+                    long expire = -1;
 
-            /*
-             * backward compatibility
-             */
+                    switch ( stickyOptions.length ) {
+                    case 1:
+                        // old style
+                        owner = "system";
+                        expire = -1;
+                        break;
+                    case 2:
+                        // only owner defined
+                        owner = stickyOptions[1];
+                        expire = -1;
+                        break;
+                    case 3:
+                        owner = stickyOptions[1];
+                        try {
+                            expire = Long.parseLong(stickyOptions[2]);
+                        }catch(NumberFormatException nfe) {
+                            // bad number
+                            _state = EntryState.BROKEN;
+                            return;
+                        }
 
-            if( state.equals("receiving.store") ) {
-                _state = EntryState.FROM_STORE;
-                continue;
-            }
-
-            if( state.equals("receiving.cient") ) {
-                _state = EntryState.FROM_CLIENT;
-                continue;
-            }
-
-            // in case of some one fixed the spelling
-            if( state.equals("receiving.client") ) {
-                _state = EntryState.FROM_CLIENT;
-                continue;
-            }
-
-            // FORMAT: sticky:owner:exipire
-
-            if( state.startsWith("sticky") ) {
-
-                String[] stickyOptions = state.split(":");
-
-                String owner = "repository";
-                long expire = -1;
-
-                switch ( stickyOptions.length ) {
-                case 1:
-                    // old style
-                    owner = "system";
-                    expire = -1;
-                    break;
-                case 2:
-                    // only owner defined
-                    owner = stickyOptions[1];
-                    expire = -1;
-                    break;
-                case 3:
-                    owner = stickyOptions[1];
-                    try {
-                        expire = Long.parseLong(stickyOptions[2]);
-                    }catch(NumberFormatException nfe) {
-                        // bad number
+                        break;
+                    default:
+                        _logBussiness.info("Unknow number of arguments in " +_controlFile.getPath() + " [" +line+"]");
                         _state = EntryState.BROKEN;
                         return;
                     }
 
-                    break;
-                default:
-                    _logBussiness.info("Unknow number of arguments in " +_controlFile.getPath() + " [" +state+"]");
-                    _state = EntryState.BROKEN;
-                    return;
+                    _sticky.addRecord(owner, expire, true);
+                    continue;
                 }
 
-                _sticky.addRecord(owner, expire, true);
-
-                continue;
+                // if none of knows states, then it's BAD state
+                _logBussiness.error("Invalid state [" + line + "] for entry " + _controlFile);
+                break;
             }
-
-
-            // if none of knows states, then it's BAD state
-            _logBussiness.error("Invalid state [" + state + "] for entry " + _controlFile);
-            break;
-
+        } finally {
+            in.close();
         }
     }
 
     public List<StickyRecord> stickyRecords()
     {
-
         return _sticky.records();
     }
 
