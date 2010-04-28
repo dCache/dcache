@@ -132,7 +132,7 @@ public class CellStub
      * @return         the message object from the reply
      * @throws InterruptedException If the thread is interrupted
      * @throws CacheException If the message could not be sent, a
-     *       timeout occured, the object in the reply was of the wrong
+     *       timeout occurred, the object in the reply was of the wrong
      *       type, or the return code was non-zero.
      */
     public <T extends Message> T sendAndWait(T msg)
@@ -153,7 +153,7 @@ public class CellStub
      * @return         the message object from the reply
      * @throws InterruptedException If the thread is interrupted
      * @throws CacheException If the message could not be sent, a
-     *       timeout occured, the object in the reply was of the wrong
+     *       timeout occurred, the object in the reply was of the wrong
      *       type, or the return code was non-zero.
      */
     public <T extends Message> T sendAndWait(CellPath path, T msg)
@@ -180,7 +180,7 @@ public class CellStub
      * @return         the message object from the reply
      * @throws InterruptedException If the thread is interrupted
      * @throws CacheException If the message could not be sent, a
-     *       timeout occured, or the object in the reply was of the
+     *       timeout occurred, or the object in the reply was of the
      *       wrong type.
      */
     public <T extends Serializable> T
@@ -211,7 +211,7 @@ public class CellStub
      * @return         the message object from the reply
      * @throws InterruptedException If the thread is interrupted
      * @throws CacheException If the message could not be sent, a
-     *       timeout occured, or the object in the reply was of the
+     *       timeout occurred, or the object in the reply was of the
      *       wrong type.
      */
     public <T extends Serializable> T
@@ -236,7 +236,7 @@ public class CellStub
      * @return         the message object from the reply
      * @throws InterruptedException If the thread is interrupted
      * @throws CacheException If the message could not be sent, a
-     *       timeout occured, the object in the reply was of the wrong
+     *       timeout occurred, the object in the reply was of the wrong
      *       type, or the return code was non-zero.
      */
     public <T extends Message> T sendAndWait(CellPath path, T msg, long timeout)
@@ -266,7 +266,7 @@ public class CellStub
      * @return         the message object from the reply
      * @throws InterruptedException If the thread is interrupted
      * @throws CacheException If the message could not be sent, a
-     *       timeout occured, or the object in the reply was of the
+     *       timeout occurred, or the object in the reply was of the
      *       wrong type.
      */
     public <T extends Serializable> T sendAndWait(CellPath path,
