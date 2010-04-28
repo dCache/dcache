@@ -198,10 +198,10 @@ public class CacheRepositoryEntryState
 
     private void loadState() throws IOException
     {
-        _state = EntryState.BROKEN;
-
         BufferedReader in = new BufferedReader(new FileReader(_controlFile));
         try {
+            _state = EntryState.BROKEN;
+
             String line;
             while ( (line = in.readLine()) != null) {
 
