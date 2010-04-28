@@ -91,6 +91,8 @@ public abstract class Transfer implements Comparable<Transfer>
     private boolean _isWrite;
     private InetSocketAddress _clientAddress;
 
+    private boolean _isBillingNotified;
+
     /**
      * Constructs a new Transfer object.
      *
@@ -701,13 +703,18 @@ public abstract class Transfer implements Comparable<Transfer>
     }
 
     /**
-     * Sends billing information to the billing cell.
+     * Sends billing information to the billing cell. Any invocation
+     * beyond the first is ignored.
      *
      * @param code The error code of the transfer; zero indicates success
      * @param error The error string of the transfer; may be empty
      */
-    public void notifyBilling(int code, String error)
+    public synchronized void notifyBilling(int code, String error)
     {
+        if (_isBillingNotified) {
+            return;
+        }
+
         try {
             String owner = Subjects.getDn(_subject);
             if (owner == null)  {
@@ -737,6 +744,8 @@ public abstract class Transfer implements Comparable<Transfer>
             msg.setResult(code, error);
             msg.setStorageInfo(_storageInfo);
             _billing.send(msg);
+
+            _isBillingNotified = true;
         } catch (NoRouteToCellException e) {
             _log.error("Failed to register transfer in billing: " +
                        e.getMessage());

@@ -1,5 +1,29 @@
+#
+# Topology cell
+#
+# Needed by info service and dCache GUI
+#
 
+define env topo-cells.exe end
 create org.dcache.cells.UniversalSpringCell topo \
-   "classpath:org/dcache/services/topology/topology.xml \
+     "classpath:org/dcache/services/topology/classic.xml \
     -export \
     -cellClass=TopoCell"
+end
+
+define env topo-jms.exe end
+  create org.dcache.cells.UniversalSpringCell topo \
+     "classpath:org/dcache/services/topology/jms.xml \
+      -export \
+      -cellClass=TopoCell"
+end
+
+define env topo-embedded-jms.exe end
+  exec env topo-jms.exe
+end
+
+define env topo-hybrid.exe end
+  exec env topo-jms.exe
+end
+
+exec env topo-${broker.scheme}.exe

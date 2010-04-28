@@ -8,7 +8,6 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Date;
 import java.util.Collections;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -26,6 +25,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.net.URL;
+import java.net.HttpURLConnection;
 import javax.security.auth.Subject;
 import java.security.AccessController;
 
@@ -34,6 +35,7 @@ import com.bradmcevoy.http.Request;
 import com.bradmcevoy.http.HttpManager;
 import com.bradmcevoy.http.ResourceFactory;
 import com.bradmcevoy.http.XmlWriter;
+import com.bradmcevoy.http.Range;
 
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.CacheException;
@@ -60,6 +62,7 @@ import org.dcache.auth.Subjects;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Transfer;
+import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.PingMoversTask;
 import org.dcache.util.list.DirectoryListPrinter;
 import org.dcache.util.list.DirectoryEntry;
@@ -111,13 +114,11 @@ public class DcacheResourceFactory
 
 
     /**
-     * Map used to map pool redirect messages to blocking queues used
-     * to hand over the redirection URL to the proper transfer
-     * request. All access must be synchronized on the monitor of the
-     * map.
+     * Used to hand over the redirection URL to the proper transfer
+     * request.
      */
-    private final BlockingQueueMap<RedirectKey,String> _redirect =
-        new BlockingQueueMap<RedirectKey,String>();
+    private final MultiMap<RedirectKey,HttpTransfer> _redirect =
+        new ArrayHashMultiMap<RedirectKey,HttpTransfer>();
 
     /**
      * In progress write transfers.
@@ -161,6 +162,7 @@ public class DcacheResourceFactory
     private String _iconDirPath;
     private String _iconFilePath;
     private String _path;
+    private boolean _doRedirectOnRead = true;
 
     public DcacheResourceFactory()
         throws UnknownHostException
@@ -310,6 +312,20 @@ public class DcacheResourceFactory
     public void setIoQueue(String ioQueue)
     {
         _ioQueue = (ioQueue != null && !ioQueue.isEmpty()) ? ioQueue : null;
+    }
+
+    /**
+     * Sets whether read requests are redirected to the pool. If not,
+     * then the door will act as a proxy.
+     */
+    public void setRedirectOnReadEnabled(boolean redirect)
+    {
+        _doRedirectOnRead = redirect;
+    }
+
+    public boolean isRedirectOnReadEnabled()
+    {
+        return _doRedirectOnRead;
     }
 
     /**
@@ -572,6 +588,38 @@ public class DcacheResourceFactory
     }
 
     /**
+     * Reads the content of a file. The door will relay all data from
+     * a pool.
+     */
+    public void readFile(FsPath path, PnfsId pnfsid,
+                         OutputStream outputStream, Range range)
+        throws CacheException, InterruptedException, IOException
+    {
+        ReadTransfer transfer = beginRead(path, pnfsid);
+        try {
+            transfer.relayData(outputStream, range);
+        } catch (CacheException e) {
+            transfer.notifyBilling(e.getRc(), e.getMessage());
+            throw e;
+        } catch (InterruptedException e) {
+            transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                   "Transfer interrupted");
+            throw e;
+        } catch (IOException e) {
+            transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                   e.toString());
+            throw e;
+        } catch (RuntimeException e) {
+            transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                   e.toString());
+            throw e;
+        } finally {
+            _downloads.remove(transfer.getSessionId());
+            _transfers.remove(transfer);
+        }
+    }
+
+    /**
      * Performs a directory listing returning a list of Resource
      * objects.
      */
@@ -778,6 +826,7 @@ public class DcacheResourceFactory
         pnfs.renameEntry(pnfsId, newPath.toString());
     }
 
+
     /**
      * Returns a read URL for a file.
      *
@@ -785,6 +834,19 @@ public class DcacheResourceFactory
      * @param pnfsid The PNFS ID of the file.
      */
     public String getReadUrl(FsPath path, PnfsId pnfsid)
+        throws CacheException, InterruptedException
+    {
+        return beginRead(path, pnfsid).getRedirect();
+    }
+
+    /**
+     * Initiates a read operation.
+     *
+     * @param path The full path of the file.
+     * @param pnfsid The PNFS ID of the file.
+     * @return ReadTransfer encapsulating the read operation
+     */
+    private ReadTransfer beginRead(FsPath path, PnfsId pnfsid)
         throws CacheException, InterruptedException
     {
         Subject subject = getSubject();
@@ -800,13 +862,13 @@ public class DcacheResourceFactory
             transfer.selectPool();
 
             RedirectKey key = new RedirectKey(pnfsid, transfer.getPool());
-            BlockingQueue<String> queue = _redirect.put(key);
+            _redirect.put(key, transfer);
             try {
                 _downloads.put(sessionId, transfer);
                 transfer.startMover(_ioQueue);
                 transfer.setStatus("Mover " + transfer.getPool() + "/" +
                                    transfer.getMoverId() + ": Waiting for URI");
-                uri = queue.poll(_moverTimeout, TimeUnit.MILLISECONDS);
+                uri = transfer.waitForRedirect(_moverTimeout);
                 if (uri == null) {
                     throw new TimeoutCacheException("Server is busy (internal timeout)");
                 }
@@ -815,7 +877,7 @@ public class DcacheResourceFactory
                 if (uri == null) {
                     _downloads.remove(sessionId);
                 }
-                _redirect.remove(key, queue);
+                _redirect.remove(key, transfer);
             }
             transfer.setStatus("Mover " + transfer.getPool() + "/" +
                                transfer.getMoverId() + ": Waiting for completion");
@@ -835,7 +897,7 @@ public class DcacheResourceFactory
                 _transfers.remove(transfer);
             }
         }
-        return uri;
+        return transfer;
     }
 
     /**
@@ -847,9 +909,9 @@ public class DcacheResourceFactory
         RedirectKey key =
             new RedirectKey(new PnfsId(message.getPnfsId()),
                             envelope.getSourceAddress().getCellName());
-        BlockingQueue<String> list = _redirect.remove(key);
-        if (list != null) {
-            list.offer(message.getUrl());
+        HttpTransfer transfer = _redirect.remove(key);
+        if (transfer != null) {
+            transfer.redirect(message.getUrl());
         }
     }
 
@@ -941,7 +1003,7 @@ public class DcacheResourceFactory
     /**
      * Specialisation of the Transfer class for HTTP transfers.
      */
-    private class HttpTransfer extends Transfer
+    private class HttpTransfer extends RedirectedTransfer<String>
     {
 
         public HttpTransfer(PnfsHandler pnfs, Subject subject, FsPath path)
@@ -996,6 +1058,48 @@ public class DcacheResourceFactory
             super(pnfs, subject, path);
             setPnfsId(pnfsid);
         }
+
+        public void relayData(OutputStream outputStream, Range range)
+            throws IOException, CacheException, InterruptedException
+        {
+            setStatus("Mover " + getPool() + "/" + getMoverId() +
+                      ": Opening data connection");
+            URL url = new URL(getRedirect());
+            HttpURLConnection connection =
+                (HttpURLConnection) url.openConnection();
+            try {
+                if (range != null) {
+                    connection.addRequestProperty("Range", String.format("bytes=%d-%d", range.getStart(), range.getFinish()));
+                }
+
+                connection.connect();
+
+                InputStream inputStream = connection.getInputStream();
+                try {
+                    setStatus("Mover " + getPool() + "/" + getMoverId() +
+                              ": Sending data");
+
+                    byte[] buffer = new byte[_bufferSize];
+                    int read;
+                    while ((read = inputStream.read(buffer)) > -1) {
+                        outputStream.write(buffer, 0, read);
+                    }
+                    outputStream.flush();
+                } finally {
+                    inputStream.close();
+                }
+
+                if (!waitForMover(_transferConfirmationTimeout)) {
+                    throw new CacheException("Missing transfer confirmation from pool");
+                }
+            } catch (SocketTimeoutException e) {
+                throw new TimeoutCacheException("Server is busy (internal timeout)");
+            } finally {
+                setStatus(null);
+                connection.disconnect();
+            }
+        }
+
 
         @Override
         public synchronized void finished(CacheException error)

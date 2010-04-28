@@ -21,8 +21,10 @@ import org.dcache.util.ReplaceableProperties;
 import org.dcache.util.DeprecatableProperties;
 import org.dcache.util.Glob;
 
+import org.apache.log4j.Appender;
+import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
-import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Logger;
 import org.apache.log4j.SimpleLayout;
 import org.apache.log4j.ConsoleAppender;
 
@@ -43,6 +45,7 @@ public class BootLoader
     private static final String CMD_LIST = "list";
     private static final String CMD_CONFIG = "config";
 
+    private static final char OPT_SILENT = 'q';
     private static final String OPT_CONFIG_FILE = "f";
     private static final String OPT_CONFIG_FILE_DELIMITER = ":";
     private static final String OPT_DOMAIN = "domain";
@@ -54,23 +57,35 @@ public class BootLoader
 
     private static void help()
     {
-        System.err.println("Usage:");
+        System.err.println("SYNOPSIS:");
+        System.err.println("  java org.dcache.util.BootLoader [-q] [-f=FILE[:FILE...]] CMD [ARGS]");
         System.err.println();
-        System.err.println("  java org.dcache.util.BootLoader [-f=FILE[:FILE...]] CMD [ARGS]");
+        System.err.println("OPTIONS:");
+        System.err.println("    q    Do not emit warnings if configuration assigns values to deprecated");
+        System.err.println("         or obsolete properties.");
         System.err.println();
-        System.err.println("where FILE is a path to a dCache setup file and");
-        System.err.println("CMD [ARGS] is one of the following commands:");
+        System.err.println("    f    Supply the path to the dCache setup files.  Each supplied FILE is");
+        System.err.println("         is either a file or a directory.  If FILE is a file then it is read");
+        System.err.println("         as a dCache configuration file.  If FILE is a directory then all");
+        System.err.println("         files in that directory that end .properties are parsed.");
         System.err.println();
-        System.err.println(" start DOMAIN");
-        System.err.println("      starts domain DOMAIN");
-        System.err.println(" config [-shell] [KEY ...]");
-        System.err.println("      prints configuration values");
-        System.err.println(" config [-shell] -domain=DOMAIN [KEY ...]");
-        System.err.println("      prints domain specific configuration values");
-        System.err.println(" list");
-        System.err.println("      lists all configured domains");
-        System.err.println(" list PATTERN");
-        System.err.println("      lists all configured domains matching a given pattern");
+        System.err.println("    CMD  The operation to undertake.  The following ARGS, if required, are");
+        System.err.println("         the arguments for the command.  Whether ARGS is required and their");
+        System.err.println("         effect is command-specific.  The commands and possible arguments are");
+        System.err.println("         described below.");
+        System.err.println();
+        System.err.println("COMMANDS:");
+        System.err.println("   start  start the domain ARGS.  ARGS is a single word: the name of the");
+        System.err.println("          domain.");
+        System.err.println();
+        System.err.println("   config prints all configuration values.  If -shell is included in ARGS");
+        System.err.println("          then the result is formatted as assignment statements for a");
+        System.err.println("          POSIX-compliant shell.  If -domain=DOMAIN is included in ARGS");
+        System.err.println("          then the list will be the configuration values for domain DOMAIN");
+        System.err.println();
+        System.err.println("   list   list the configured domains.  If ARGS is specified then it is");
+        System.err.println("          taken as a glob pattern and only those domains that match");
+        System.err.println("          it will be printed.");
         System.exit(1);
     }
 
@@ -154,8 +169,8 @@ public class BootLoader
             /* Basic logging setup that will be used until the real
              * log4j configuration is loaded.
              */
-            LogManager.resetConfiguration();
-            BasicConfigurator.configure(new ConsoleAppender(new SimpleLayout(), ConsoleAppender.SYSTEM_ERR));
+            Level level = args.isOneCharOption( OPT_SILENT) ? Level.ERROR : Level.WARN;
+            logToConsoleAtLevel( level);
 
             ReplaceableProperties config = getDefaults();
             String tmp = args.getOpt(OPT_CONFIG_FILE);
@@ -228,5 +243,16 @@ public class BootLoader
             e.printStackTrace();
             System.exit(1);
         }
+    }
+
+    private static void logToConsoleAtLevel(Level level)
+    {
+        LogManager.resetConfiguration();
+
+        Logger root = LogManager.getRootLogger();
+        root.setLevel( level);
+
+        Appender console = new ConsoleAppender(new SimpleLayout(), ConsoleAppender.SYSTEM_ERR);
+        root.addAppender( console);
     }
 }
