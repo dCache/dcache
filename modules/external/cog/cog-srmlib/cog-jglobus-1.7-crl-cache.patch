@@ -73,5 +73,5 @@ diff -r1.11 CertificateRevocationLists.java
 >              long now = System.currentTimeMillis();
 >              if (lastRefresh + lifetime <= now) {
 > 		 reload(getDefaultCRLLocations());
+>                lastRefresh = now;
 > 	     }
-> 	     lastRefresh = now;
