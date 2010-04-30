@@ -217,11 +217,12 @@ echo "to ${DCACHE_HOME}/etc/layouts/imported.conf."
                     echo "[$domain/pool]"
                     echo "name=$pool"
                     echo "path=$path"
+                    echo 'waitForFiles=${path}/setup'
 
                     tags=
                     for param in $params; do
                         case "$param" in
-                            lfs=*|waitForFiles=*)
+                            lfs=*)
                                 echo $param
                                 ;;
                             recover*|sticky=*)
