@@ -3,6 +3,7 @@ package org.dcache.webdav;
 import java.util.List;
 import java.util.Collections;
 import java.util.Date;
+import java.util.UUID;
 
 import com.bradmcevoy.http.Resource;
 import com.bradmcevoy.http.PropFindableResource;
@@ -10,6 +11,11 @@ import com.bradmcevoy.http.MoveableResource;
 import com.bradmcevoy.http.CollectionResource;
 import com.bradmcevoy.http.Request;
 import com.bradmcevoy.http.Auth;
+import com.bradmcevoy.http.LockableResource;
+import com.bradmcevoy.http.LockInfo;
+import com.bradmcevoy.http.LockTimeout;
+import com.bradmcevoy.http.LockToken;
+import com.bradmcevoy.http.LockResult;
 import com.bradmcevoy.http.exceptions.ConflictException;
 
 import diskCacheV111.util.FsPath;
@@ -24,8 +30,11 @@ import org.dcache.vehicles.FileAttributes;
  */
 public class DcacheResource
     implements Comparable<DcacheResource>,
-               Resource, PropFindableResource, MoveableResource
+               Resource, PropFindableResource, MoveableResource,
+               LockableResource
 {
+    private static final LockToken NO_LOCK = null;
+
     protected final DcacheResourceFactory _factory;
     protected final FileAttributes _attributes;
     protected FsPath _path;
@@ -109,5 +118,47 @@ public class DcacheResource
         } catch (CacheException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Returns a LockToken with a zero lifetime. Mac OS X insists on
+     * lock support before it allows writing to a WebDAV
+     * store. However locking in the current Milton lib is too fragile
+     * for us to really support for locking.
+     *
+     * For that reason we always return a LockToken with zero
+     * lifetime. Eventually we should implement full locking.
+     */
+    protected LockToken createNullLock()
+    {
+        return new LockToken(UUID.randomUUID().toString(),
+                             new LockInfo(LockInfo.LockScope.SHARED,
+                                          LockInfo.LockType.WRITE,
+                                          "",
+                                          LockInfo.LockDepth.ZERO),
+                             new LockTimeout(0L));
+    }
+
+    @Override
+    public LockResult lock(LockTimeout timeout, LockInfo lockInfo)
+    {
+        return LockResult.success(createNullLock());
+    }
+
+    @Override
+    public LockResult refreshLock(String token)
+    {
+        return LockResult.success(createNullLock());
+    }
+
+    @Override
+    public void unlock(String tokenId)
+    {
+    }
+
+    @Override
+    public LockToken getCurrentLock()
+    {
+        return NO_LOCK;
     }
 }
