@@ -36,6 +36,7 @@ import org.dcache.util.PingMoversTask;
 
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellMessageReceiver;
+import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellStub;
 
 import diskCacheV111.movers.NetIFContainer;
@@ -68,7 +69,8 @@ import org.slf4j.LoggerFactory;
  */
 public class XrootdDoor
     extends AbstractCellComponent
-    implements CellMessageReceiver
+    implements CellMessageReceiver,
+               CellCommandListener
 {
     public final static String XROOTD_PROTOCOL_STRING = "Xrootd";
     public final static int XROOTD_PROTOCOL_MAJOR_VERSION = 2;
