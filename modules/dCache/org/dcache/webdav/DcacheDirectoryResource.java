@@ -3,6 +3,7 @@ package org.dcache.webdav;
 import java.util.List;
 import java.util.Map;
 import java.util.Collections;
+import java.util.UUID;
 import java.io.OutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,9 +15,13 @@ import com.bradmcevoy.http.PutableResource;
 import com.bradmcevoy.http.GetableResource;
 import com.bradmcevoy.http.DeletableResource;
 import com.bradmcevoy.http.MakeCollectionableResource;
+import com.bradmcevoy.http.LockingCollectionResource;
 import com.bradmcevoy.http.Auth;
 import com.bradmcevoy.http.Range;
 import com.bradmcevoy.http.Request;
+import com.bradmcevoy.http.LockInfo;
+import com.bradmcevoy.http.LockTimeout;
+import com.bradmcevoy.http.LockToken;
 import com.bradmcevoy.http.exceptions.NotAuthorizedException;
 import com.bradmcevoy.http.exceptions.ConflictException;
 
@@ -35,7 +40,7 @@ import org.dcache.vehicles.FileAttributes;
 public class DcacheDirectoryResource
     extends DcacheResource
     implements PutableResource, GetableResource, DeletableResource,
-               MakeCollectionableResource
+               MakeCollectionableResource, LockingCollectionResource
 {
     public DcacheDirectoryResource(DcacheResourceFactory factory,
                                    FsPath path, FileAttributes attributes)
@@ -153,5 +158,19 @@ public class DcacheDirectoryResource
         } catch (CacheException e) {
             throw new WebDavException(e.getMessage(), e, this);
         }
+    }
+
+    @Override
+    public LockToken createAndLock(String name, LockTimeout timeout, LockInfo lockInfo)
+    {
+        /* We do not currently support createAndLock, but as Mac OS X
+         * insists on lock support before it allows writing to a
+         * WebDAV store, we return a lock with zero lifetime.
+         *
+         * We do not currently create the entry, as the normal action
+         * after createAndLock is to perform a PUT which immediately
+         * overwrites the empty site.
+         */
+        return createNullLock();
     }
 }
