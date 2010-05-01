@@ -1,7 +1,9 @@
 <FindBugsFilter>
      <Match>
-       <Package name="org.dcache.srm.v2_1" />
-       <Package name="org.dcache.srm.v2_2" />
+       <Or>
+         <Package name="org.dcache.srm.v2_2" />
+         <Package name="org.dcache.srm.client.axis" />
+       </Or>
      </Match>
 </FindBugsFilter>
 
