@@ -239,7 +239,7 @@ public final class PutCompanion implements MessageCallback<PnfsMessage>
                 String errorString = "GetStorageInfoFailed message.getReturnCode" +
                         " () != 0, error="+error;
                 unregisterAndFailCreator(errorString);
-                _log.error(errorString.toString());
+                _log.error(errorString);
                 callbacks.GetStorageInfoFailed("GetStorageInfoFailed " +
                         "PnfsGetStorageInfoMessage.getReturnCode () != 0 => " +
                         "parrent directory does not exist");
@@ -299,7 +299,7 @@ public final class PutCompanion implements MessageCallback<PnfsMessage>
             if (attributes.getFileType() != FileType.DIR) {
                 String error ="file "+metadata_msg.getPnfsPath()+
                 " is not a directory";
-                    _log.error(error.toString());
+                    _log.error(error);
                     unregisterAndFailCreator(error);
                     callbacks.InvalidPathError(error);
                     return;
@@ -619,7 +619,7 @@ public final class PutCompanion implements MessageCallback<PnfsMessage>
     PutCompanion thisCreator) {
         long creater_operTime=0;
         long currentTime=0;
-        PutCompanion creatorCompanion = null;
+        PutCompanion creatorCompanion;
         synchronized( directoryCreators) {
             if(directoryCreators.containsKey(pnfsPath)) {
                 creatorCompanion = directoryCreators.get(pnfsPath);
@@ -642,8 +642,7 @@ public final class PutCompanion implements MessageCallback<PnfsMessage>
             }
         }
 
-        if(creatorCompanion != null &&
-            currentTime - creater_operTime > PNFS_TIMEOUT ) {
+        if(currentTime - creater_operTime > PNFS_TIMEOUT ) {
             creatorCompanion.unregisterAndFailCreator("pnfs manager timeout");
         }
         return false;

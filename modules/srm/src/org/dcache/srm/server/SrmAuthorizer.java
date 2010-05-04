@@ -99,9 +99,8 @@ public class SrmAuthorizer {
    public static final String REMOTE_ADDR = "REMOTE_ADDR";
    private org.dcache.srm.SRMAuthorization authorization;
    private org.dcache.srm.request.RequestCredentialStorage credential_storage;
-   public static org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(
+   private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(
              SrmAuthorizer.class);
-   private static boolean initialized = false;
    private String logConfigFile;
    private Configuration config;
    public SrmAuthorizer(SrmDCacheConnector srmConn) {
@@ -117,13 +116,12 @@ public class SrmAuthorizer {
          }
          // Below re-checks config file periodically; default 60 seconds
          // DOMConfigurator.configureAndWatch(logConfigFile);
-         config = srmConn.configuration;
+         config = SrmDCacheConnector.configuration;
          authorization =
             config.getAuthorization();
          credential_storage =
             srmConn.getSrm().getRequestCredentialStorage();
 
-            initialized = true;
             log.debug("Successfully initialized");
       } catch (Exception e) {
          e.printStackTrace();

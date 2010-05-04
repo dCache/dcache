@@ -972,7 +972,9 @@ public final class CopyFileRequest extends FileRequest {
 				try {
 					logger.debug(" deleting proxy file"+proxy_file);
 					java.io.File f = new java.io.File(proxy_file);
-					f.delete();
+					if(!f.delete() ) {
+     					logger.error("error deleting proxy cash "+proxy_file);
+                    }
 				}
 				catch(Exception e) {
 					logger.error("error deleting proxy cash "+proxy_file);
@@ -1570,8 +1572,8 @@ public final class CopyFileRequest extends FileRequest {
 	public  TCopyRequestFileStatus getTCopyRequestFileStatus() throws java.sql.SQLException {
 		TCopyRequestFileStatus copyRequestFileStatus = new TCopyRequestFileStatus();
 		copyRequestFileStatus.setFileSize(new org.apache.axis.types.UnsignedLong(size));
-		copyRequestFileStatus.setEstimatedWaitTime(new Integer((int)(getRemainingLifetime()/1000)));
-		copyRequestFileStatus.setRemainingFileLifetime(new Integer((int)(getRemainingLifetime()/1000)));
+		copyRequestFileStatus.setEstimatedWaitTime((int)(getRemainingLifetime()/1000));
+		copyRequestFileStatus.setRemainingFileLifetime((int)(getRemainingLifetime()/1000));
 		org.apache.axis.types.URI to_surl;
 		org.apache.axis.types.URI from_surl;
 		try { to_surl= new URI(getTo_url());

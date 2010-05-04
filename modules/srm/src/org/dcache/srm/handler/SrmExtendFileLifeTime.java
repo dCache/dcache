@@ -130,7 +130,7 @@ public class SrmExtendFileLifeTime {
             try{
                 int lifetimeLeft =
                         storage.srmExtendSurlLifetime(user,path,newFileLifetime);
-                surlStatus[i].setFileLifetime(new Integer(lifetimeLeft));
+                surlStatus[i].setFileLifetime(lifetimeLeft);
                 surlStatus[i].setStatus(new TReturnStatus(
                         TStatusCode.SRM_SUCCESS,"ok"));
             } catch(SRMException e) {
@@ -238,7 +238,7 @@ public class SrmExtendFileLifeTime {
                 int lifetimeLeftSec = lifetimeLeftMillis>=0 
                     ?(int)(lifetimeLeftMillis/1000)
                     :(int)lifetimeLeftMillis;
-                surlStatus[i].setFileLifetime(new Integer(lifetimeLeftSec));
+                surlStatus[i].setFileLifetime(lifetimeLeftSec);
                 surlStatus[i].setStatus(new TReturnStatus(
                         TStatusCode.SRM_SUCCESS,"ok"));
             } catch(SRMReleasedException e) {

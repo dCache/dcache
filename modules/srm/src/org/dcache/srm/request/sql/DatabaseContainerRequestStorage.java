@@ -100,7 +100,7 @@ public abstract class DatabaseContainerRequestStorage extends DatabaseRequestSto
         ResultSet fileIdsSet = sqlStatement.executeQuery(sqlStatementString);
         java.util.Set utilset = new java.util.HashSet();
         while(fileIdsSet.next()) {
-            utilset.add(new Long(fileIdsSet.getLong(1)));
+            utilset.add(fileIdsSet.getLong(1));
         }
         fileIdsSet.close();
         sqlStatement.close();

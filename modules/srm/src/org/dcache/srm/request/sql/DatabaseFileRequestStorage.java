@@ -87,8 +87,8 @@ public abstract class DatabaseFileRequestStorage extends DatabaseJobStorage  {
     long LASTSTATETRANSITIONTIME,
     java.sql.ResultSet set,
     int next_index) throws java.sql.SQLException {
-        Long REQUESTID = new Long(set.getLong(next_index++));
-        Long CREDENTIALID = new Long(set.getLong(next_index++));
+        Long REQUESTID = set.getLong(next_index++);
+        Long CREDENTIALID = set.getLong(next_index++);
         String STATUSCODE= set.getString(next_index++);
         return getFileRequest(
         _con, 

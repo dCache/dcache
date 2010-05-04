@@ -214,7 +214,7 @@ import static org.dcache.namespace.FileAttribute.*;
  * @version 	0.9, 20 June 2002
  */
 
-public class Storage
+public final class Storage
         extends AbstractCell
         implements AbstractStorageElement, Runnable
 {
@@ -552,7 +552,7 @@ public class Storage
         if((jdbcPass==null && jdbcPwdfile==null)) {
             String error = "database parameters are not specified; use options " +
                 "-jdbcUrl, -jdbcDriver, -dbUser and -dbPass/-pgPass";
-            _log.error(error.toString());
+            _log.error(error);
             throw new Exception(error);
         }
         config.setJdbcUrl(getOption("jdbcUrl"));
@@ -1483,12 +1483,12 @@ public class Storage
 
     public void log(String s)
     {
-        _log.info(s.toString());
+        _log.info(s);
     }
 
     public void elog(String s)
     {
-        _log.error(s.toString());
+        _log.error(s);
     }
 
     public void elog(Throwable t)
@@ -1743,7 +1743,7 @@ public class Storage
                 String error = "verifyUserPathIsInTheRoot error:"+
                         "user's path "+absolutePath+
                         " is not subpath of the user's root" +user_root;
-                _log.warn(error.toString());
+                _log.warn(error);
                 return false;
             }
 
@@ -2253,7 +2253,7 @@ public class Storage
         } catch (CacheException e) {
             String msg = " local copy failed with code =" + e.getRc() +
                 " details: " + e.getMessage();
-            _log.warn(msg.toString());
+            _log.warn(msg);
             throw new SRMException(msg, e);
         } catch (InterruptedException e) {
             throw new SRMException("Request to CopyManager was interrupted", e);

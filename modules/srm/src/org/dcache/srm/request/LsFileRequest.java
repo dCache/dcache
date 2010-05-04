@@ -560,8 +560,8 @@ public final class LsFileRequest extends FileRequest {
                 TMetaDataPathDetail metaDataPathDetail =
                         new TMetaDataPathDetail();
                 metaDataPathDetail.setPath(path);
-                metaDataPathDetail.setLifetimeAssigned(new Integer(-1));
-                metaDataPathDetail.setLifetimeLeft(new Integer(-1));
+                metaDataPathDetail.setLifetimeAssigned(-1);
+                metaDataPathDetail.setLifetimeLeft(-1);
                 metaDataPathDetail.setSize(new org.apache.axis.types.UnsignedLong(fmd.size));
                 if(fmd.isDirectory) {
                         metaDataPathDetail.setType(TFileType.DIRECTORY);

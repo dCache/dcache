@@ -116,7 +116,9 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
       this.credentialsDirectory = configuration.getCredentialsDirectory();
       File dir = new File(credentialsDirectory);
       if(!dir.exists()) {
-          dir.mkdir();
+          if(!dir.mkdir()) {
+              logger.error("failed to create directory "+credentialsDirectory);
+          }
       }
       if(!dir.isDirectory() || !dir.canWrite()) {
           logger.error("credential directory "+credentialsDirectory+
@@ -266,7 +268,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
             // we expect a single record, so the loop below is fine
             //
             if(set.next()) { 
-                credential = new RequestCredential(new Long(set.getLong("id")),
+                credential = new RequestCredential(set.getLong("id"),
                                                    set.getLong("creationtime"),
                                                    set.getString("credentialname"),
                                                    set.getString("role"),

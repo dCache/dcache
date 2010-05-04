@@ -124,7 +124,7 @@ public class SrmRm {
 		TSURLReturnStatus[] surlReturnStatusArray =
 			new TSURLReturnStatus[surls.length];
 		boolean any_failed=false;
-		String error = "";
+		StringBuilder error = new StringBuilder();
 		RemoveFile callbacks[] = new RemoveFile[surls.length];
 		for (int i = 0; i < surls.length; i++) {
 			surlReturnStatusArray[i] = new TSURLReturnStatus();
@@ -169,8 +169,9 @@ public class SrmRm {
 					if (callbacks[i].getStatus().getStatusCode() !=
 					    TStatusCode.SRM_SUCCESS) {
 						any_failed=true;
-						error=error+
-							surlReturnStatusArray[i].getStatus().getExplanation()+'\n';
+						error.append(
+                           surlReturnStatusArray[i].getStatus().getExplanation());
+                        error.append('\n');
 					}
 				}
 			}

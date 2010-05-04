@@ -19,7 +19,7 @@ public class LambdaStationPlugin implements QOSPlugin {
 	private String lambdaStationConf = null;
 	private String lambdaStationScript = null;
 	private AbstractStorageElement storage = null;
-	private ArrayList tickets = new ArrayList();
+	private ArrayList<LambdaStationTicket> tickets = new ArrayList();
 	
 	public LambdaStationPlugin(){}
 	
@@ -27,19 +27,28 @@ public class LambdaStationPlugin implements QOSPlugin {
 		lambdaStationConf = configuration.getQosConfigFile();
                 storage = configuration.getStorage();
 		Properties properties = new Properties();
-		try {
-                        properties.load(new FileInputStream(lambdaStationConf));
-                }
-                catch(FileNotFoundException ex) {
-                        logger.error(ex.toString());
-                        return;
-                }
-                catch(IOException ex) {
-                        logger.error(ex.toString());
-                        return;
-                }
 
-        	this.lambdaStationScript = properties.getProperty("l_station_script","/opt/d-cache/conf/l_station_script.sh");
+        FileInputStream fis;
+		try {
+            fis = new FileInputStream(lambdaStationConf);
+        }
+        catch(FileNotFoundException ex) {
+                logger.error(ex.toString());
+                return;
+        }
+        try {
+            properties.load(fis);
+        } catch(IOException ex) {
+                logger.error("failed to load configuration ",ex);
+                return;
+        } finally {
+            try {
+                fis.close();
+            } catch (IOException ex) {
+                logger.error("failed to close "+lambdaStationConf, ex);
+            }
+        }
+        this.lambdaStationScript = properties.getProperty("l_station_script","/opt/d-cache/conf/l_station_script.sh");
 		this.lambdaStationMap = new LambdaStationMap(properties.getProperty("l_station_map","/opt/d-cache/conf/l_station_map.xml"));
 	}
 	
@@ -67,17 +76,18 @@ public class LambdaStationPlugin implements QOSPlugin {
 	}
 	
 	public void addTicket(QOSTicket qosTicket) {
-		tickets.add(qosTicket);
+           if (qosTicket instanceof LambdaStationTicket) {
+                LambdaStationTicket ls_ticket =
+                    (LambdaStationTicket)qosTicket; 
+		tickets.add(ls_ticket);
+           }
 	}
 
 	public boolean submit() {
 		boolean result = true;
-		for (int i=0; i<tickets.size(); i++) {
-			LambdaStationTicket	ls_ticket = (LambdaStationTicket)tickets.get(i);
-			if (ls_ticket instanceof LambdaStationTicket) {
-				ls_ticket.OpenTicket(lambdaStationScript);
-				result = !result ? isTicketEnabled(ls_ticket) : result;
-			}
+		for (LambdaStationTicket ls_ticket:tickets) {
+                    ls_ticket.OpenTicket(lambdaStationScript);
+                    result = !result ? isTicketEnabled(ls_ticket) : result;
 		}
 		return result;
 	}
@@ -88,7 +98,7 @@ public class LambdaStationPlugin implements QOSPlugin {
 			boolean sEnabled = ls_ticket.srcEnabled();
 			boolean dEnabled = ls_ticket.dstEnabled();
 			logger.debug("src enabled="+sEnabled+" dst enabled="+dEnabled);
-			return ((sEnabled & dEnabled) & (ls_ticket.getLocalTicketID() != 0));
+			return sEnabled && dEnabled && ls_ticket.getLocalTicketID() != 0;
 		}
 		else
 			return false;

@@ -357,10 +357,10 @@ public final class PutRequest extends ContainerRequest{
         arrayOfTPutRequestFileStatus.setStatusArray(
             getArrayOfTPutRequestFileStatus(surls));
         response.setArrayOfFileStatuses(arrayOfTPutRequestFileStatus);
-        String s ="getSrmStatusOfPutRequestResponse:";
-        s+= " StatusCode = "+response.getReturnStatus().getStatusCode().toString();
+        StringBuilder s =new StringBuilder("getSrmStatusOfPutRequestResponse:");
+        s.append(" StatusCode = "+response.getReturnStatus().getStatusCode());
         for(TPutRequestFileStatus fs :arrayOfTPutRequestFileStatus.getStatusArray()) {
-            s += " FileStatusCode = "+fs.getStatus().getStatusCode();
+            s.append(" FileStatusCode = "+fs.getStatus().getStatusCode());
         }
         logger.debug(s.toString());
         return response;

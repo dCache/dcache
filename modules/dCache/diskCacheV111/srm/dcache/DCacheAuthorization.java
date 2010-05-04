@@ -453,6 +453,7 @@ public final class DCacheAuthorization implements SRMAuthorization {
 
     private boolean sameDesiredUserName(String requestDesiredUserName) {
       if(desiredUserName==null && requestDesiredUserName==null) return true;
+      if(desiredUserName == null) return false;
       return (desiredUserName.equals(requestDesiredUserName));
     }
   }

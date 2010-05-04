@@ -272,7 +272,7 @@ public final class ReserveSpaceRequest extends Request {
             response.setSpaceToken(getSpaceToken());
             response.setSizeOfTotalReservedSpace(new UnsignedLong(sizeInBytes) );
             response.setSizeOfGuaranteedReservedSpace(new UnsignedLong(sizeInBytes));
-            response.setLifetimeOfReservedSpace(new Integer((int)(spaceReservationLifetime/1000L)));
+            response.setLifetimeOfReservedSpace((int)(spaceReservationLifetime/1000L));
             return response;
         } finally {
             runlock();
@@ -290,7 +290,7 @@ public final class ReserveSpaceRequest extends Request {
             response.setSpaceToken(getSpaceToken());
             response.setSizeOfTotalReservedSpace(new UnsignedLong(sizeInBytes) );
             response.setSizeOfGuaranteedReservedSpace(new UnsignedLong(sizeInBytes));
-            response.setLifetimeOfReservedSpace(new Integer((int)(spaceReservationLifetime/1000L)));
+            response.setLifetimeOfReservedSpace((int)(spaceReservationLifetime/1000L));
             return response;
         } finally {
             runlock();

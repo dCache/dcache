@@ -510,7 +510,7 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
 			//we consider running and runningWithoutThreadStateJobsNum as occupying slots in the
 			// thread pool, even if the runningWithoutThreadState jobs are not actually running,
 			// but waiting for the notifications
-			if(getTotalRunningThreads() + getTotalRunningWithoutThreadState() >threadPoolSize) {
+			if(getTotalRunningThreads() + getTotalRunningWithoutThreadState() >getThreadPoolSize()) {
 				break;
 			}
 
@@ -595,7 +595,7 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
             //we consider running and runningWithoutThreadStateJobsNum as occupying slots in the
             // thread pool, even if the runningWithoutThreadState jobs are not actually running,
             // but waiting for the notifications
-            if(getTotalRunningThreads() + getTotalRunningWithoutThreadState() >threadPoolSize) {
+            if(getTotalRunningThreads() + getTotalRunningWithoutThreadState() >getThreadPoolSize()) {
                 break;
             }
            logger.debug("updateThreadQueue(), found job id "+job.getId());
@@ -1511,7 +1511,7 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
         sb.append("          max number of jobs Running By the same owner="+maxRunningByOwner).append('\n');
         sb.append("          total number of jobs in Running State ="+getTotalRunningState()).append('\n');
         sb.append("          total number of jobs in RunningWithoutThread State ="+getTotalRunningWithoutThreadState()).append('\n');
-        sb.append("          threadPoolSize="+threadPoolSize).append('\n');
+        sb.append("          threadPoolSize="+getThreadPoolSize()).append('\n');
         sb.append("          total number of threads running ="+getTotalRunningThreads()).append('\n');
         sb.append("          retryTimeout="+retryTimeout).append('\n');
         sb.append("          maxThreadQueueSize="+maxThreadQueueSize).append('\n');

@@ -355,8 +355,8 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             if(!set.next()) {
                 return null;
             }
-            Long ID = new Long(set.getLong(1));
-            Long NEXTJOBID = new Long(set.getLong(2));
+            Long ID = set.getLong(1);
+            Long NEXTJOBID = set.getLong(2);
             long CREATIONTIME = set.getLong(3);
             long LIFETIME = set.getLong(4);
             int STATE = set.getInt(5);
@@ -557,7 +557,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             logger.debug("executing statement: "+sqlStatementString);
             ResultSet set = sqlStatement.executeQuery(sqlStatementString);
             while(set.next()) {
-                Long ID = new Long(set.getLong(1));
+                Long ID = set.getLong(1);
                 Long NEXTJOBID = new Long(set.getLong(2));
                 //Date CREATIONTIME = set.getDate(3);
                 long CREATIONTIME = set.getLong(3);
@@ -663,7 +663,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             // requests
             java.util.Set idsSet = new java.util.HashSet();
             while(set.next()) {
-                idsSet.add(new Long(set.getLong(1)));
+                idsSet.add(set.getLong(1));
             }
             
             set.close();
@@ -717,7 +717,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
             // requests
             java.util.Set idsSet = new java.util.HashSet();
             while(set.next()) {
-                idsSet.add(new Long(set.getLong(1)));
+                idsSet.add(set.getLong(1));
             }
             
             set.close();
@@ -763,7 +763,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
             logger.debug("executing statement: "+sqlStatementString);
             ResultSet set = sqlStatement.executeQuery(sqlStatementString);
             while(set.next()) {
-                Long ID = new Long(set.getLong(1));
+                Long ID = set.getLong(1);
                 jobIds.add(ID);
             }
             
@@ -1349,7 +1349,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
     
     public void run(){
         long update_period = configuration.getOldRequestRemovePeriodSecs()*1000L;
-        long history_lifetime = configuration.getNumDaysHistory()*24*3600*1000L;
+        long history_lifetime = 1000L*24*3600*configuration.getNumDaysHistory();
         JDC.setSchedulerContext(getClass().getName());
         while(true) {
             try {
