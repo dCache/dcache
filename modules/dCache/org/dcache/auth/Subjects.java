@@ -7,16 +7,12 @@ import java.util.ArrayList;
 import java.util.NoSuchElementException;
 import javax.security.auth.Subject;
 import java.security.Principal;
-import com.sun.security.auth.UnixNumericUserPrincipal;
-import com.sun.security.auth.UnixNumericGroupPrincipal;
-import com.sun.security.auth.UserPrincipal;
 import org.dcache.acl.Origin;
 
 import org.globus.gsi.jaas.GlobusPrincipal;
-import org.glite.security.voms.FQAN;
 
-public class Subjects
-{
+public class Subjects {
+
     /**
      * The subject representing the root user, that is, a user that is
      * empowered to do everything.
@@ -24,11 +20,10 @@ public class Subjects
     public static final Subject ROOT;
     public static final Subject NOBODY;
 
-    static
-    {
+    static {
         ROOT = new Subject();
-        ROOT.getPrincipals().add(new UnixNumericUserPrincipal(0));
-        ROOT.getPrincipals().add(new UnixNumericGroupPrincipal(0, true));
+        ROOT.getPrincipals().add(new UidPrincipal(0));
+        ROOT.getPrincipals().add(new GidPrincipal(0, true));
         ROOT.setReadOnly();
 
         NOBODY = new Subject();
@@ -39,20 +34,18 @@ public class Subjects
      * Returns true if and only if the subject is root, that is, has
      * the user ID 0.
      */
-    public static boolean isRoot(Subject subject)
-    {
+    public static boolean isRoot(Subject subject) {
         return hasUid(subject, 0);
     }
 
     /**
      * Returns true if and only if the subject has the given user ID.
      */
-    public static boolean hasUid(Subject subject, long uid)
-    {
-        Set<UnixNumericUserPrincipal> principals =
-            subject.getPrincipals(UnixNumericUserPrincipal.class);
-        for (UnixNumericUserPrincipal principal: principals) {
-            if (principal.longValue() == uid) {
+    public static boolean hasUid(Subject subject, long uid) {
+        Set<UidPrincipal> principals =
+                subject.getPrincipals(UidPrincipal.class);
+        for (UidPrincipal principal : principals) {
+            if (principal.getUid() == uid) {
                 return true;
             }
         }
@@ -62,12 +55,11 @@ public class Subjects
     /**
      * Returns true if and only if the subject has the given group ID.
      */
-    public static boolean hasGid(Subject subject, long gid)
-    {
-        Set<UnixNumericGroupPrincipal> principals =
-            subject.getPrincipals(UnixNumericGroupPrincipal.class);
-        for (UnixNumericGroupPrincipal principal: principals) {
-            if (principal.longValue() == gid) {
+    public static boolean hasGid(Subject subject, long gid) {
+        Set<GidPrincipal> principals =
+                subject.getPrincipals(GidPrincipal.class);
+        for (GidPrincipal principal : principals) {
+            if (principal.getGid() == gid) {
                 return true;
             }
         }
@@ -77,14 +69,13 @@ public class Subjects
     /**
      * Returns the users IDs of a subject.
      */
-    public static long[] getUids(Subject subject)
-    {
-        Set<UnixNumericUserPrincipal> principals =
-            subject.getPrincipals(UnixNumericUserPrincipal.class);
+    public static long[] getUids(Subject subject) {
+        Set<UidPrincipal> principals =
+                subject.getPrincipals(UidPrincipal.class);
         long[] uids = new long[principals.size()];
         int i = 0;
-        for (UnixNumericUserPrincipal principal: principals) {
-            uids[i++] = principal.longValue();
+        for (UidPrincipal principal : principals) {
+            uids[i++] = principal.getUid();
         }
         return uids;
     }
@@ -93,18 +84,17 @@ public class Subjects
      * Returns the group IDs of a subject. If the user has a primary
      * group, then first element will be a primary group ID.
      */
-    public static long[] getGids(Subject subject)
-    {
-        Set<UnixNumericGroupPrincipal> principals =
-            subject.getPrincipals(UnixNumericGroupPrincipal.class);
+    public static long[] getGids(Subject subject) {
+        Set<GidPrincipal> principals =
+                subject.getPrincipals(GidPrincipal.class);
         long[] gids = new long[principals.size()];
         int i = 0;
-        for (UnixNumericGroupPrincipal principal: principals) {
+        for (GidPrincipal principal : principals) {
             if (principal.isPrimaryGroup()) {
                 gids[i++] = gids[0];
-                gids[0] = principal.longValue();
+                gids[0] = principal.getGid();
             } else {
-                gids[i++] = principal.longValue();
+                gids[i++] = principal.getGid();
             }
         }
         return gids;
@@ -116,13 +106,12 @@ public class Subjects
      * @throws NoSuchElementException if subject has no primary group
      */
     public static long getPrimaryGid(Subject subject)
-        throws NoSuchElementException
-    {
-        Set<UnixNumericGroupPrincipal> principals =
-            subject.getPrincipals(UnixNumericGroupPrincipal.class);
-        for (UnixNumericGroupPrincipal principal: principals) {
+            throws NoSuchElementException {
+        Set<GidPrincipal> principals =
+                subject.getPrincipals(GidPrincipal.class);
+        for (GidPrincipal principal : principals) {
             if (principal.isPrimaryGroup()) {
-                return principal.longValue();
+                return principal.getGid();
             }
         }
         throw new NoSuchElementException("Subject has no primary group");
@@ -137,8 +126,7 @@ public class Subjects
      * @param NoSuchElementException if there is more than one origin
      */
     public static Origin getOrigin(Subject subject)
-        throws NoSuchElementException
-    {
+            throws NoSuchElementException {
         Set<Origin> principals = subject.getPrincipals(Origin.class);
         if (principals.size() == 0) {
             return null;
@@ -157,10 +145,9 @@ public class Subjects
      *
      * @param NoSuchElementException if there is more than one DN
      */
-    public static String getDn(Subject subject)
-    {
+    public static String getDn(Subject subject) {
         Set<GlobusPrincipal> principals =
-            subject.getPrincipals(GlobusPrincipal.class);
+                subject.getPrincipals(GlobusPrincipal.class);
         if (principals.size() == 0) {
             return null;
         }
@@ -173,16 +160,15 @@ public class Subjects
     /**
      * Returns the collection of FQANs of a subject.
      */
-    public static Collection<String> getFqans(Subject subject)
-    {
+    public static Collection<String> getFqans(Subject subject) {
         Set<FQANPrincipal> principals =
-            subject.getPrincipals(FQANPrincipal.class);
+                subject.getPrincipals(FQANPrincipal.class);
         if (principals.size() == 0) {
             return Collections.emptySet();
         }
 
         Collection<String> fqans = new ArrayList<String>();
-        for (FQANPrincipal principal: principals) {
+        for (FQANPrincipal principal : principals) {
             fqans.add(principal.getName());
         }
         return fqans;
@@ -190,22 +176,21 @@ public class Subjects
 
     /**
      * Maps an AuthorizationRecord to a Subject. The Subject will
-     * contain the UID (UnixNumericalUserPrincipal), GID
-     * (UnixNumericGroupPrincipal), the mapped user name
-     * (UserPrincipal), the DN (GlobusPrincipal), and FQAN
+     * contain the UID (UidPrincipal), GID
+     * (GidPrincipal), the mapped user name
+     * (UserNamePrincipal), the DN (GlobusPrincipal), and FQAN
      * (FQANPrincipal) of the AuthorizationRecord object.
      */
-    public static Subject getSubject(AuthorizationRecord record)
-    {
+    public static Subject getSubject(AuthorizationRecord record) {
         Subject subject = new Subject();
         Set<Principal> principals = subject.getPrincipals();
-        principals.add(new UnixNumericUserPrincipal(record.getUid()));
-        principals.add(new UserPrincipal(record.getIdentity()));
+        principals.add(new UidPrincipal(record.getUid()));
+        principals.add(new UserNamePrincipal(record.getIdentity()));
 
         boolean primary = true;
-        for (GroupList list: record.getGroupLists()) {
-            for (Group group: list.getGroups()) {
-                principals.add(new UnixNumericGroupPrincipal(group.getGid(), primary));
+        for (GroupList list : record.getGroupLists()) {
+            for (Group group : list.getGroups()) {
+                principals.add(new GidPrincipal(group.getGid(), primary));
             }
             String fqan = list.getAttribute();
             if (fqan != null && !fqan.isEmpty()) {
@@ -224,19 +209,18 @@ public class Subjects
 
     /**
      * Maps a UserAuthBase to a Subject.  The Subject will contain the
-     * UID (UnixNumericalUserPrincipal), GID
-     * (UnixNumericGroupPrincipal), DN (GlobusPrincipal), and FQAN
+     * UID (UidPrincipal), GID
+     * (GidPrincipal), DN (GlobusPrincipal), and FQAN
      * (FQANPrincipal) principals.
      *
      * @param user UserAuthBase to convert
      * @param primary Whether the groups of user are the primary groups
      */
-    public final static Subject getSubject(UserAuthBase user, boolean primary)
-    {
+    public final static Subject getSubject(UserAuthBase user, boolean primary) {
         Subject subject = new Subject();
         Set<Principal> principals = subject.getPrincipals();
-        principals.add(new UnixNumericUserPrincipal(user.UID));
-        principals.add(new UnixNumericGroupPrincipal(user.GID, primary));
+        principals.add(new UidPrincipal(user.UID));
+        principals.add(new GidPrincipal(user.GID, primary));
 
         String dn = user.DN;
         if (dn != null && !dn.isEmpty()) {
