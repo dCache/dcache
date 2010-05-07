@@ -954,18 +954,6 @@ public class Storage
         } else {
             sb.append("  info is not yet available !!!");
         }
- 
-        try {
-            String[] protocols = supportedGetProtocols();
-            sb.append("\nSupported Get Protocols :").
-                    append(Arrays.toString(protocols));
-            protocols = supportedPutProtocols();
-            sb.append("\nSupported Put Protocols :").
-                    append(Arrays.toString(protocols));
-
-        } catch (SRMException srme) {
-            _log.error("supported protocols retrieval error",srme);
-        }
         sb.append('\n');
         sb.append(config.toString()).append('\n');
         try {
