@@ -260,7 +260,7 @@ public class PoolSelectionUnitTest {
 
 
         _ci.command("psu set allpoolsactive off");
-        StorageInfo si = PoolSelectionUnitV2.storageInfoOf("*", "*");
+        StorageInfo si = GenericStorageInfo.valueOf("*", "*");
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.READ,  // operation
@@ -287,7 +287,7 @@ public class PoolSelectionUnitTest {
 
 
         _ci.command("psu set allpoolsactive on");
-        StorageInfo si = PoolSelectionUnitV2.storageInfoOf("*", "*");
+        StorageInfo si = GenericStorageInfo.valueOf("*", "*");
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.READ,  // operation
@@ -310,7 +310,7 @@ public class PoolSelectionUnitTest {
 
 
         _ci.command("psu set allpoolsactive on");
-        StorageInfo si = PoolSelectionUnitV2.storageInfoOf("*", "*");
+        StorageInfo si = GenericStorageInfo.valueOf("*", "*");
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.WRITE,  // operation
@@ -332,7 +332,7 @@ public class PoolSelectionUnitTest {
 
 
         _ci.command("psu set allpoolsactive on");
-        StorageInfo si = PoolSelectionUnitV2.storageInfoOf("h1:u1@osm", "*");
+        StorageInfo si = GenericStorageInfo.valueOf("h1:u1@osm", "*");
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.WRITE,  // operation
@@ -354,7 +354,7 @@ public class PoolSelectionUnitTest {
 
 
         _ci.command("psu set allpoolsactive on");
-        StorageInfo si = PoolSelectionUnitV2.storageInfoOf("h1:u1@osm", "*");
+        StorageInfo si = GenericStorageInfo.valueOf("h1:u1@osm", "*");
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.READ,  // operation
@@ -377,7 +377,7 @@ public class PoolSelectionUnitTest {
 
         _ci.command("psu set allpoolsactive on");
         _ci.command("psu set disabled h1-read");
-        StorageInfo si = PoolSelectionUnitV2.storageInfoOf("h1:u1@osm", "*");
+        StorageInfo si = GenericStorageInfo.valueOf("h1:u1@osm", "*");
 
 
         PoolPreferenceLevel[] preference = _psu.match(
@@ -430,7 +430,7 @@ public class PoolSelectionUnitTest {
         _ci.command("psu set allpoolsactive on");
         _ci.command(new Args("psu create linkGroup h1-link-group"));
         _ci.command(new Args("psu addto linkGroup h1-link-group h1-read-link" ) );
-        StorageInfo si = PoolSelectionUnitV2.storageInfoOf("h1:u1@osm", "*");
+        StorageInfo si = GenericStorageInfo.valueOf("h1:u1@osm", "*");
 
 
         PoolPreferenceLevel[] preference = _psu.match(
@@ -487,7 +487,7 @@ public class PoolSelectionUnitTest {
 
         _ci.command("psu set allpoolsactive on");
         _ci.command("psu set pool h1-read rdonly");
-        StorageInfo si = PoolSelectionUnitV2.storageInfoOf("h1:u1@osm", "*");
+        StorageInfo si = GenericStorageInfo.valueOf("h1:u1@osm", "*");
 
         PoolPreferenceLevel[] preference =
             _psu.match(DirectionType.P2P,  // operation
