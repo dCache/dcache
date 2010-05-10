@@ -14,6 +14,7 @@ import java.util.Random;
 import dmg.security.CellUser;
 import dmg.security.digest.Md5;
 import dmg.util.StreamEngine;
+import java.util.Collections;
 
 
 public class      SshStreamEngine
@@ -575,7 +576,7 @@ public class      SshStreamEngine
                SshCmsgUser user = new SshCmsgUser( packet ) ;
                
                printout( "SshStreamEngine : SSH_CMSG_USER : User = "+user.getUser() ) ;
-               _remoteUser = new CellUser( user.getUser() , null, null) ;
+               _remoteUser = new CellUser( user.getUser(), Collections.EMPTY_LIST) ;
                if( _serverAuth.authUser( _remoteAddress , _remoteUser.getName() ) ){
                    state  = ST_PREPARE ;
                    writePacket( ok ) ;

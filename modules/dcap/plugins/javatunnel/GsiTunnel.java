@@ -31,8 +31,6 @@ class GsiTunnel extends GssTunnel  {
 
     private ExtendedGSSContext _e_context = null;
 
-    MessageProp _prop =  new MessageProp(true);
-
     private static final String service_key           = "/etc/grid-security/hostkey.pem";
     private static final String service_cert          = "/etc/grid-security/hostcert.pem";
     private static final String service_trusted_certs = "/etc/grid-security/certificates";
@@ -93,16 +91,16 @@ class GsiTunnel extends GssTunnel  {
         try {
 
             Iterator<String> fqans = X509CertUtil.getFQANsFromContext(gssContext).iterator();
-            if (fqans.hasNext()) {
+            while (fqans.hasNext()) {
                 String fqanValue = fqans.next();
                 FQAN fqan = new FQAN(fqanValue);
-                _group = fqan.getGroup();
+                String group = fqan.getGroup();
                 String role = fqan.getRole();
 
                 if(role == null  || role.equals("") ) {
-                    _role = _group;
+                    _roles.add(group);
                 }else{
-                    _role = _group + "/Role=" + role;
+                    _roles.add(group + "/Role=" + role);
                 }
             }
 

@@ -68,11 +68,10 @@ public class GplazmaService {
         }
     }
 
-   public AuthorizationRecord getUserRecord(String userPrincipal ,String userRole)
+   public AuthorizationRecord getUserRecord(String userPrincipal ,List<String> userRoles)
        throws AuthorizationException
     {
         AuthorizationRecord authRecord;
-        UserAuthRecord pwdRecord = null;
 
         /*
          * for now we request only one role and take only one record
@@ -80,7 +79,7 @@ public class GplazmaService {
 
         if( _use_gplazmaAuthzCell ) {
             // cell
-            AuthenticationMessage authmessage = _authHelp.authorize(userPrincipal, userRole);
+            AuthenticationMessage authmessage = _authHelp.authorize(userPrincipal, userRoles);
             AuthorizationMessage authzmsg = new AuthorizationMessage(authmessage);
             authRecord = authzmsg.getAuthorizationRecord();
         }else{
@@ -88,17 +87,14 @@ public class GplazmaService {
             if (gplazmaPolicyFilePath == null) {
                 throw new IllegalArgumentException("-gplazma-authorization-module-policy not specified");
             }
-            _authServ = new AuthorizationController(gplazmaPolicyFilePath);
-            gPlazmaAuthorizationRecord gauthrec = _authServ.authorize(userPrincipal, userRole, null, null, null, null);
-            //LinkedList<gPlazmaAuthorizationRecord> gauthlist = new LinkedList<gPlazmaAuthorizationRecord>();
-            //gauthlist.add(gauthrec);
-            Map <NameRolePair, gPlazmaAuthorizationRecord> authzMappingrecords = new LinkedHashMap <NameRolePair, gPlazmaAuthorizationRecord>();
-            authzMappingrecords.put(new NameRolePair(userPrincipal, userRole), gauthrec);
+            Map <NameRolePair, gPlazmaAuthorizationRecord> authzMappingrecords =
+                    _authServ.authorize(userPrincipal, userRoles, null, null, null, null);
+
             authRecord = RecordConvert.gPlazmaToAuthorizationRecord(authzMappingrecords);
         }
 
         if(_logAuth.isDebugEnabled() ) {
-            _logAuth.debug("Mapped [ " + userPrincipal + " ]" + "[ " + userRole + " ] to : " + authRecord);
+            _logAuth.debug("Mapped [ " + userPrincipal + " ]" + "[ " + userRoles + " ] to : " + authRecord);
         }
 
         return authRecord;

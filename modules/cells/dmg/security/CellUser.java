@@ -1,19 +1,19 @@
 package dmg.security;
 
 import java.security.Principal;
+import java.util.ArrayList;
+import java.util.List;
 
 public class CellUser implements Principal, java.io.Serializable {
 
     private static final long serialVersionUID = 7437573242083470794L;
 
     private String _name = null;
-    private String _group = null;
-    private String _role = null;
+    private final List<String> _roles = new ArrayList<String>();
 
-    public CellUser(String name, String group, String role) {
+    public CellUser(String name, List<String> roles) {
         _name = name;
-        _group = group;
-        _role = role;
+        _roles.addAll(roles);
     }
 
     public String getName() {
@@ -24,29 +24,22 @@ public class CellUser implements Principal, java.io.Serializable {
         _name = newName;
     }
 
-    public String getGroup() {
-        return _group;
-    }
-
-    public void setGroup(String newGroup) {
-        _group = newGroup;
-    }
-
-    public String getRole() {
-        return _role;
+    public List<String> getRoles() {
+        return _roles;
     }
 
     /**
-     * set new role. If newRole is <i>null</i> old role remain
-     * @param newRole
+     * add new roles.
+     * @param newRoles
      */
-    public void setRole(String newRole) {
-        if (newRole != null) _role = newRole;
+    public void setRoles(List<String> newRoles) {
+        assert newRoles != null;
+        _roles.addAll(newRoles);
     }
 
     @Override
     public String toString() {
-        return _name + ":" + _role + ":" + _group;
+        return _name + ":" + _roles ;
     }
 
 }

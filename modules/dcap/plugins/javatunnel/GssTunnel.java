@@ -6,6 +6,8 @@ package javatunnel;
 
 import java.net.*;
 import java.io.*;
+import java.util.List;
+import java.util.ArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.ietf.jgss.*;
@@ -28,9 +30,7 @@ class GssTunnel extends TunnelConverter {
     private String _principalStr = null;
     private boolean _useChannelBinding = true;
 
-    // quick hack for VOMS
-    protected String _group = null;
-    protected String _role = null;
+    protected final List<String> _roles = new ArrayList<String>();
 
     protected GssTunnel() {}
 
@@ -231,14 +231,9 @@ class GssTunnel extends TunnelConverter {
         return _myPrincipal.toString();
     }
 
-	@Override
-    public String getGroup() {
-		return _group;
-	}
-
-	@Override
-    public String getRole() {
-		return _role;
-	}
+    @Override
+    public List<String> getRoles() {
+        return _roles;
+    }
 
 }

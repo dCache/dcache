@@ -2225,8 +2225,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             //
             getUserMetadata();
             
-            _log.debug("IoHandler::storageInfoNotAvailable Door authenticated for " + _user.getName() + "(" + _user.getRole() + "," + _userAuthRecord.UID + ","
-                    + _userAuthRecord.GID + "," + _userHome + ")");
+            _log.debug("IoHandler::storageInfoNotAvailable Door authenticated for {} ({} ,{})",
+                    new Object[] {_user.getName(), _user.getRoles(), _userAuthRecord});
 
             if( _authorizationStrong && ( _userAuthRecord.UID < 0 ) )
                 throw new
@@ -2802,7 +2802,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
          * Require by FNAL
          */
         String role = args.getOpt("role");
-        _user.setRole(role);
+        if(role != null ) {
+            _user.setRoles( Arrays.asList(role));
+        }
 
         int sessionId = args.getSessionId();
         int commandId = args.getSubSessionId();
@@ -2923,22 +2925,22 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             return;
         }
         String name = _user.getName();
-        String role = _user.getRole();
+        List<String> roles = _user.getRoles();
         UserAuthRecord user = null ;
 
         if( _authService != null ) {
             try {
-                _userAuthorizationRecord = _authService.getUserRecord(name, role);
+                _userAuthorizationRecord = _authService.getUserRecord(name, roles);
                 user = _userAuthorizationRecord.getUserAuthRecord();
             } catch (AuthorizationException e) {
-                user = new UserAuthRecord("nobody", name, role, true, 0, -1, -1, "/", "/", "/", new HashSet<String>(0)) ;
+                user = new UserAuthRecord("nobody", name, roles.toString(), true, 0, -1, -1, "/", "/", "/", new HashSet<String>(0)) ;
             }
         }else{
-            user = new UserAuthRecord("nobody", name, role, true, 0, -1, -1, "/", "/", "/", new HashSet<String>(0)) ;
+            user = new UserAuthRecord("nobody", name, roles.toString(), true, 0, -1, -1, "/", "/", "/", new HashSet<String>(0)) ;
         }
 
         _log.info("Door authenticated for "+
-                _user.getName()+"("+_user.getRole()+","+user.UID+","+
+                _user.getName()+"("+_user.getRoles()+","+user.UID+","+
                 user.GID+","+_userHome+")");
 
         _subject = Subjects.getSubject(user, true);
@@ -2955,7 +2957,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
          */
         if( _authorizationStrong && ( user.UID < 0 ) ) {
             throw new
-            CacheException( 2 , "User "+name+" role: "+  role +" is not authorized") ;
+            CacheException( 2 , "User "+name+" role: "+  roles +" is not authorized") ;
         }
 
         _userAuthRecord = user;

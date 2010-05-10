@@ -6,6 +6,8 @@ package javatunnel;
 
 import java.net.*;
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class TunnelSocket extends Socket implements UserBindible {
 
@@ -13,7 +15,7 @@ public class TunnelSocket extends Socket implements UserBindible {
     private TunnelInputStream _in   = null;
     private Convertable _tunnel = null;
     private String _user = "nobody@NOWHERE" ;
-    private String _role = null;
+    private List<String> _roles = new ArrayList<String>();
     private String _group = null;
 
     TunnelSocket(Convertable tunnel) throws SocketException {
@@ -151,30 +153,20 @@ public class TunnelSocket extends Socket implements UserBindible {
         return _user;
     }
 
-	public String getGroup() {
-
-		return _group;
-	}
-
-	public String getRole() {
-
-		return _role;
-	}
-
-    public void setRole(String newRole) {
-        _role = newRole;
+    @Override
+    public List<String> getRoles() {
+        return _roles;
     }
 
-    public void setGroup(String newGroup) {
-        _group = newGroup;
+    public void setRoles(List<String> newRoles) {
+        _roles.addAll(newRoles);
     }
 
     public boolean verify() throws IOException {
     	if (_tunnel != null) {
     		if (_tunnel.verify(this.getRawInputStream(), this.getRawOutputStream(), this)) {
     			this.setUserPrincipal(_tunnel.getUserPrincipal());
-    			this.setRole (((UserBindible)_tunnel).getRole());
-    			this.setGroup(((UserBindible)_tunnel).getGroup());
+                        this.setRoles (((UserBindible)_tunnel).getRoles());
     			return true;
     		} else
     			return false;

@@ -13,6 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import dmg.security.CellUser;
+import java.util.Collections;
+import java.util.List;
 
 public class DummyStreamEngine implements StreamEngine
 {
@@ -20,7 +22,7 @@ public class DummyStreamEngine implements StreamEngine
         LoggerFactory.getLogger(DummyStreamEngine.class);
 
     private final Socket _socket;
-    private CellUser _userName = new CellUser("Unknown", null, null);
+    private CellUser _userName = new CellUser("Unknown", Collections.EMPTY_LIST);
     private ByteChannel _channel;
 
     private OutputStream _outputStream;
@@ -41,13 +43,10 @@ public class DummyStreamEngine implements StreamEngine
             Method meth = _socket.getClass().getMethod("getUserPrincipal", new Class[0]);
             String user = (String)meth.invoke(_socket, new Object[0]);
 
-            meth = _socket.getClass().getMethod("getRole", new Class[0]);
-            String role = (String)meth.invoke(_socket, new Object[0]);
+            meth = _socket.getClass().getMethod("getRoles", new Class[0]);
+            List<String> roles = (List<String>)meth.invoke(_socket, new Object[0]);
 
-            meth = _socket.getClass().getMethod("getGroup", new Class[0]);
-            String group = (String)meth.invoke(_socket, new Object[0]);
-
-            setUserName(new CellUser(user, group, role));
+            setUserName(new CellUser(user, roles));
         } catch (NoSuchMethodException nsm) {
 
         } catch (Exception e) {
