@@ -138,7 +138,28 @@ public class CellStub
     public <T extends Message> T sendAndWait(T msg)
         throws CacheException, InterruptedException
     {
-        return sendAndWait(_destination, msg);
+        return sendAndWait(msg, _timeout);
+    }
+
+    /**
+     * Sends a message and waits for the reply. The reply is expected
+     * to contain a message object of the same type as the message
+     * object that was sent, and the return code of that message is
+     * expected to be zero. If either is not the case, an exception is
+     * thrown.
+     *
+     * @param  msg     the message object to send
+     * @param  timeout in milliseconds to wait for a reply
+     * @return         the message object from the reply
+     * @throws InterruptedException If the thread is interrupted
+     * @throws CacheException If the message could not be sent, a
+     *       timeout occurred, the object in the reply was of the wrong
+     *       type, or the return code was non-zero.
+     */
+    public <T extends Message> T sendAndWait(T msg, long timeout)
+        throws CacheException, InterruptedException
+    {
+        return sendAndWait(_destination, msg, timeout);
     }
 
     /**
