@@ -4,13 +4,14 @@
 
 package javatunnel;
 
+import java.util.List;
+
 
 public interface UserBindible {
 
     public String getUserPrincipal();
-	public String getGroup();
-	public String getRole();
-	
+    public List<String> getRoles();
+
 }
 /*
  * $Log: not supported by cvs2svn $

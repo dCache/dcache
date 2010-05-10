@@ -5,6 +5,8 @@
 package javatunnel;
 
 import java.io.*;
+import java.util.Collections;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,13 +97,8 @@ class TunnelConverter implements Convertable,UserBindible  {
         return this;
     }
 
-	public String getGroup() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public String getRole() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public List<String> getRoles() {
+        return Collections.emptyList();
+    }
 }

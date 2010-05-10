@@ -8,6 +8,8 @@ import java.io.*;
 import java.net.*;
 
 import dmg.util.UserValidatable;
+import java.util.Collections;
+import java.util.List;
 
 public class SSLTunnelSocket extends Socket implements UserBindible {
 
@@ -96,8 +98,9 @@ public class SSLTunnelSocket extends Socket implements UserBindible {
 		return null;
 	}
 
-	public String getRole() {
-		return null;
-	}    
+    @Override
+    public List<String> getRoles() {
+        return Collections.emptyList();
+    }
 
 }
