@@ -21,9 +21,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.security.auth.Subject;
 import java.security.Principal;
-import com.sun.security.auth.UnixNumericUserPrincipal;
-import com.sun.security.auth.UnixNumericGroupPrincipal;
 
+import org.dcache.auth.UidPrincipal;
+import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.Subjects;
 import org.dcache.acl.Origin;
 import org.dcache.acl.enums.AuthType;
@@ -258,11 +258,11 @@ public class XrootdDoor
         Subject subject = new Subject();
         int uid = Integer.parseInt(matcher.group(1));
         Set<Principal> principals = subject.getPrincipals();
-        principals.add(new UnixNumericUserPrincipal(uid));
+        principals.add(new UidPrincipal(uid));
         boolean primary = true;
         for (String group: matcher.group(2).split(",")) {
             int gid = Integer.parseInt(group);
-            principals.add(new UnixNumericGroupPrincipal(gid, primary));
+            principals.add(new GidPrincipal(gid, primary));
             primary = false;
         }
         subject.setReadOnly();

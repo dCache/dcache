@@ -194,8 +194,6 @@ import dmg.cells.nucleus.CDC;
 
 import org.apache.log4j.NDC;
 
-import com.sun.security.auth.UnixNumericGroupPrincipal;
-import com.sun.security.auth.UnixNumericUserPrincipal;
 import javax.security.auth.Subject;
 
 import diskCacheV111.poolManager.RequestContainerV5;

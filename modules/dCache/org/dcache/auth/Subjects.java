@@ -3,6 +3,8 @@ package org.dcache.auth;
 import java.util.Set;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
+import java.util.LinkedList;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
 import javax.security.auth.Subject;
@@ -81,6 +83,43 @@ public class Subjects {
     }
 
     /**
+     * Returns the principal of the given type of the subject. Returns
+     * null if there is no such principal.
+     *
+     * @throw IllegalArguemntException is subject has more than one such principal
+     */
+    private static <T> T getUniquePrincipal(Subject subject, Class<T> type)
+        throws IllegalArgumentException
+    {
+        T result = null;
+        for (Principal principal: subject.getPrincipals()) {
+            if (type.isInstance(principal)) {
+                if (result != null) {
+                    throw new IllegalArgumentException("Subject has multiple principals of type " + type.getSimpleName());
+                }
+                result = type.cast(principal);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Returns the UID of a subject.
+     *
+     * @throws NoSuchElementException if subject has no UID
+     * @throws IllegalArgumentException is subject has more than one UID
+     */
+    public static long getUid(Subject subject)
+        throws NoSuchElementException, IllegalArgumentException
+    {
+        UidPrincipal uid = getUniquePrincipal(subject, UidPrincipal.class);
+        if (uid == null) {
+            throw new NoSuchElementException("Subject has no UID");
+        }
+        return uid.getUid();
+    }
+
+    /**
      * Returns the group IDs of a subject. If the user has a primary
      * group, then first element will be a primary group ID.
      */
@@ -101,60 +140,82 @@ public class Subjects {
     }
 
     /**
-     * Returns one of the primary group IDs of a subject.
+     * Returns the primary group ID of a subject.
      *
-     * @throws NoSuchElementException if subject has no primary group
+     * @throws NoSuchElementException if subject has no primary GID
+     * @throws IllegalArgumentException if subject has several primary GID
      */
     public static long getPrimaryGid(Subject subject)
-            throws NoSuchElementException {
+        throws NoSuchElementException, IllegalArgumentException
+    {
         Set<GidPrincipal> principals =
                 subject.getPrincipals(GidPrincipal.class);
+        int counter = 0;
+        long gid = 0;
         for (GidPrincipal principal : principals) {
             if (principal.isPrimaryGroup()) {
-                return principal.getGid();
+                gid = principal.getGid();
+                counter++;
             }
         }
-        throw new NoSuchElementException("Subject has no primary group");
+
+        if (counter == 0) {
+            throw new NoSuchElementException("Subject has no primary GID");
+        }
+        if (counter > 1) {
+            throw new IllegalArgumentException("Subject has multiple primary GIDs");
+        }
+
+        return gid;
     }
 
     /**
-     * Returns the origin of a subject. If no origin is defined, null
-     * is returned. If more than one origin is defined, then
-     * NoSuchElementException is thrown (the intuition being that
-     * there is no unique origin).
+     * Returns the origin of a subject. Returns null if subject has no
+     * origin.
      *
-     * @param NoSuchElementException if there is more than one origin
-     */
+     * @param IllegalArgumentException if there is more than one origin
+    */
     public static Origin getOrigin(Subject subject)
-            throws NoSuchElementException {
-        Set<Origin> principals = subject.getPrincipals(Origin.class);
-        if (principals.size() == 0) {
-            return null;
-        }
-        if (principals.size() > 1) {
-            throw new NoSuchElementException("Subject has no unique origin");
-        }
-        return principals.iterator().next();
+        throws IllegalArgumentException
+    {
+        return getUniquePrincipal(subject, Origin.class);
     }
 
     /**
-     * Returns the DN of a subject. If no DN is defined, null is
-     * returned. If more than one DN is defined, then
-     * NoSuchElementException is thrown (the intuition being that
-     * there is no unique DN).
+     * Returns the DN of a subject. Returns null if subject has no DN.
      *
-     * @param NoSuchElementException if there is more than one DN
+     * @param IllegalArgumentException if there is more than one origin
      */
-    public static String getDn(Subject subject) {
-        Set<GlobusPrincipal> principals =
-                subject.getPrincipals(GlobusPrincipal.class);
-        if (principals.size() == 0) {
-            return null;
+    public static String getDn(Subject subject)
+        throws IllegalArgumentException
+    {
+        GlobusPrincipal principal =
+            getUniquePrincipal(subject, GlobusPrincipal.class);
+        return (principal == null) ? null : principal.getName();
+    }
+
+    /**
+     * Returns the primary FQANs of a subject. Returns null if subject
+     * has no primary FQAN.
+     *
+     * @throws IllegalArgumentException if subject has more than one
+     *         primary FQANs
+     */
+    public static String getPrimaryFqan(Subject subject)
+        throws NoSuchElementException
+    {
+        Set<FQANPrincipal> principals =
+            subject.getPrincipals(FQANPrincipal.class);
+        String fqan = null;
+        for (FQANPrincipal principal: principals) {
+            if (principal.isPrimary()) {
+                if (fqan != null) {
+                    throw new IllegalArgumentException("Subject has multiple primary FQANs");
+                }
+                fqan = principal.getName();
+            }
         }
-        if (principals.size() > 1) {
-            throw new NoSuchElementException("Subject has no unique DN");
-        }
-        return principals.iterator().next().getName();
+        return fqan;
     }
 
     /**
@@ -175,26 +236,47 @@ public class Subjects {
     }
 
     /**
-     * Maps an AuthorizationRecord to a Subject. The Subject will
-     * contain the UID (UidPrincipal), GID
-     * (GidPrincipal), the mapped user name
-     * (UserNamePrincipal), the DN (GlobusPrincipal), and FQAN
-     * (FQANPrincipal) of the AuthorizationRecord object.
+     * Returns the the user name of a subject. If UserNamePrincipal is
+     * not defined then null is returned.
+     *
+     * @throw IllegalArgumentException if subject has more than one
+     *        user name
+     */
+    public static String getUserName(Subject subject)
+    {
+        UserNamePrincipal principal =
+            getUniquePrincipal(subject, UserNamePrincipal.class);
+        return (principal == null) ? null : principal.getName();
+    }
+
+    /**
+     * Converts an AuthorizationRecord to a Subject. The Subject will
+     * contain the UID (UidPrincipal), GID (GidPrincipal), the mapped
+     * user name (UserNamePrincipal), the DN (GlobusPrincipal), and
+     * FQAN (FQANPrincipal) of the AuthorizationRecord object.
+     *
+     * Notice that the Subject will represent a subset of the
+     * information stored in the record.
      */
     public static Subject getSubject(AuthorizationRecord record) {
         Subject subject = new Subject();
         Set<Principal> principals = subject.getPrincipals();
         principals.add(new UidPrincipal(record.getUid()));
-        principals.add(new UserNamePrincipal(record.getIdentity()));
+
+        String identity = record.getIdentity();
+        if (identity != null && !identity.isEmpty()) {
+            principals.add(new UserNamePrincipal(identity));
+        }
 
         boolean primary = true;
         for (GroupList list : record.getGroupLists()) {
-            for (Group group : list.getGroups()) {
-                principals.add(new GidPrincipal(group.getGid(), primary));
-            }
             String fqan = list.getAttribute();
             if (fqan != null && !fqan.isEmpty()) {
                 principals.add(new FQANPrincipal(fqan, primary));
+            }
+            for (Group group: list.getGroups()) {
+                principals.add(new GidPrincipal(group.getGid(), primary));
+                primary = false;
             }
             primary = false;
         }
@@ -208,10 +290,78 @@ public class Subjects {
     }
 
     /**
+     * Converts to a Subject an AuthorizationRecord. The the UID
+     * (UidPrincipal), GID (GidPrincipal), the mapped user name
+     * (UserNamePrincipal), the DN (GlobusPrincipal), and FQAN
+     * (FQANPrincipal) will be included in the AuthorizationRecord.
+     *
+     * Notice that the AuthorizationRecord will represent a subset of
+     * the information stored in the subject.
+     *
+     * All GIDs will become part of the primary group list. The
+     * primary GIDs will appear first in the primary group list.
+     */
+    public static AuthorizationRecord getAuthorizationRecord(Subject subject)
+    {
+        boolean hasUid = false;
+
+        AuthorizationRecord record = new AuthorizationRecord();
+
+        List<GroupList> groupLists = new LinkedList<GroupList>();
+
+        GroupList primaryGroupList = new GroupList();
+        primaryGroupList.setAuthRecord(record);
+        primaryGroupList.setGroups(new ArrayList<Group>());
+        groupLists.add(primaryGroupList);
+
+        for (Principal principal: subject.getPrincipals()) {
+            if (principal instanceof UidPrincipal) {
+                if (hasUid) {
+                    throw new IllegalArgumentException("Cannot convert Subject with more than one UID");
+                }
+                hasUid = true;
+                record.setUid((int) ((UidPrincipal) principal).getUid());
+            } else if (principal instanceof FQANPrincipal) {
+                FQANPrincipal fqanPrincipal = (FQANPrincipal) principal;
+                if (fqanPrincipal.isPrimary() && primaryGroupList.getAttribute() == null) {
+                    primaryGroupList.setAttribute(fqanPrincipal.getName());
+                } else {
+                    GroupList groupList = new GroupList();
+                    groupList.setAuthRecord(record);
+                    groupList.setAttribute(fqanPrincipal.getName());
+                    groupList.setGroups(new ArrayList<Group>());
+                    groupLists.add(groupList);
+                }
+            } else if (principal instanceof GidPrincipal) {
+                GidPrincipal gidPrincipal = (GidPrincipal) principal;
+                Group group = new Group();
+                group.setGid((int) gidPrincipal.getGid());
+                if (gidPrincipal.isPrimaryGroup()) {
+                    primaryGroupList.getGroups().add(0, group);
+                } else {
+                    primaryGroupList.getGroups().add(group);
+                }
+            } else if (principal instanceof GlobusPrincipal) {
+                record.setName(((GlobusPrincipal) principal).getName());
+            } else if (principal instanceof UserNamePrincipal) {
+                record.setIdentity(((UserNamePrincipal) principal).getName());
+            }
+        }
+
+        if (!hasUid) {
+            throw new IllegalArgumentException("Cannot convert Subject without UID");
+        }
+
+        record.setGroupLists(groupLists);
+        record.setId();
+
+        return record;
+    }
+
+    /**
      * Maps a UserAuthBase to a Subject.  The Subject will contain the
-     * UID (UidPrincipal), GID
-     * (GidPrincipal), DN (GlobusPrincipal), and FQAN
-     * (FQANPrincipal) principals.
+     * UID (UidPrincipal), GID (GidPrincipal), DN (GlobusPrincipal),
+     * and FQAN (FQANPrincipal) principals.
      *
      * @param user UserAuthBase to convert
      * @param primary Whether the groups of user are the primary groups

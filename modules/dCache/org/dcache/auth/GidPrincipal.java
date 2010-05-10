@@ -1,12 +1,11 @@
 package org.dcache.auth;
 
 import java.security.Principal;
+import java.io.Serializable;
 
-/**
- *
- * @author jans
- */
-public class GidPrincipal implements Principal {
+public class GidPrincipal implements Principal, Serializable
+{
+    static final long serialVersionUID = 7812225739755920892L;
 
     private long _gid;
     private boolean _isPrimaryGroup;
@@ -36,8 +35,7 @@ public class GidPrincipal implements Principal {
     @Override
     public String toString() {
         return (getClass().getName() + "[gid=" +
-                getName() + ",primay=" +
-                String.valueOf(_isPrimaryGroup) + "]");
+                getName() + ",primary=" + _isPrimaryGroup + "]");
     }
 
     @Override

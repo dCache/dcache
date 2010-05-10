@@ -1,6 +1,7 @@
 package org.dcache.auth;
 
 import java.security.Principal;
+import java.io.Serializable;
 
 /**
  * This Principal represents the trustet username of a signed in
@@ -8,7 +9,9 @@ import java.security.Principal;
  * and points out a desire to become that name as a username.
  * @author jans
  */
-public class UserNamePrincipal implements Principal {
+public class UserNamePrincipal implements Principal, Serializable
+{
+    static final long serialVersionUID = 1447288627697571301L;
 
     private String _username;
 
@@ -36,5 +39,11 @@ public class UserNamePrincipal implements Principal {
     @Override
     public int hashCode() {
         return _username.hashCode();
+    }
+
+
+    @Override
+    public String toString() {
+        return getClass().getName() + "[name=" + getName() + "]";
     }
 }

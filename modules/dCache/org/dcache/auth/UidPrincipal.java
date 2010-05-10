@@ -1,12 +1,11 @@
 package org.dcache.auth;
 
 import java.security.Principal;
+import java.io.Serializable;
 
-/**
- *
- * @author jans
- */
-public class UidPrincipal implements Principal {
+public class UidPrincipal implements Principal, Serializable
+{
+    static final long serialVersionUID = 1489893133915358418L;
 
     private long _uid;
 
@@ -42,5 +41,10 @@ public class UidPrincipal implements Principal {
         }
         UidPrincipal otherUid = (UidPrincipal) other;
         return (otherUid.getUid() == getUid());
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getName() + "[uid=" + getName() + "]";
     }
 }
