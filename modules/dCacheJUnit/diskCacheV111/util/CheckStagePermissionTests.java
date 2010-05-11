@@ -14,32 +14,26 @@ import org.junit.Before;
 import org.junit.Test;
 
 import diskCacheV111.util.CheckStagePermission;
-import diskCacheV111.util.FQAN;
-
 
 public class CheckStagePermissionTests {
 
     public static final String TEST_PREFIX = "stagePermissionFile";
     public static final String VALID_FQAN_STRING = "/atlas/Role=production";
-    public static final FQAN VALID_FQAN = new FQAN( VALID_FQAN_STRING);
 
-    public static final FQAN OTHER_VALID_FQAN = new FQAN( "/atlas");
     public static final String OTHER_VALID_FQAN_STRING = "/atlas";
 
     public static final String VALID_DN = "/DC=org/DC=example/CN=test user";
 
     public static final String TEST_DN = "/DC=org/DC=example/.*";
     public static final String TEST_FQAN_STRING = "/atlas/Role=.*";
-    public static final FQAN TEST_FQAN = new FQAN(TEST_FQAN_STRING);
 
     public static final String USER_TEST1_DN = "/DC=org/DC=example/CN=test";
-    public static final FQAN USER_TEST1_FQAN = new FQAN("/atlas/Role=production");
     public static final String USER_TEST1_FQAN_STRING = "/atlas/Role=production";
 
     public static final String USER_TEST2_DN = "/DC=org/DC=anotherExample/CN=test";
 
-    public static final FQAN EMPTY_FQAN = new FQAN( "");
     public static final String EMPTY_FQAN_STRING = "";
+    public static final String VALID_STOREUNIT = "sql:chimera@osm";
 
     File _testConfigFile;
     CheckStagePermission _check;
@@ -56,18 +50,19 @@ public class CheckStagePermissionTests {
         _testConfigFile.delete();
     }
 
+    // those 2 tests below were adopted for testing the method canPerformStaging(String dn, String fqan, String StoreUnit)
     @Test
     public void testEmptyFilepath() throws PatternSyntaxException, IOException {
         CheckStagePermission check = new CheckStagePermission( "");
-        assertTrue( "Empty filepath to config file allows user with DN and FQAN", check.canPerformStaging( VALID_DN, VALID_FQAN));
-        assertTrue( "Empty filepath to config file allows user with DN", check.canPerformStaging( VALID_DN, EMPTY_FQAN));
+        assertTrue( "Empty filepath to config file allows user with DN and FQAN", check.canPerformStaging( VALID_DN, VALID_FQAN_STRING, VALID_STOREUNIT));
+        assertTrue( "Empty filepath to config file allows user with DN", check.canPerformStaging( VALID_DN, EMPTY_FQAN_STRING, VALID_STOREUNIT));
     }
 
     @Test
     public void testNullFilepath() throws PatternSyntaxException, IOException {
         CheckStagePermission check = new CheckStagePermission( null);
-        assertTrue( "Null filepath to config file allows user with DN and FQAN", check.canPerformStaging( VALID_DN, VALID_FQAN));
-        assertTrue( "Null filepath to config file allows user with DN", check.canPerformStaging( VALID_DN, EMPTY_FQAN));
+        assertTrue( "Null filepath to config file allows user with DN and FQAN", check.canPerformStaging( VALID_DN, VALID_FQAN_STRING, VALID_STOREUNIT));
+        assertTrue( "Null filepath to config file allows user with DN", check.canPerformStaging( VALID_DN, EMPTY_FQAN_STRING, VALID_STOREUNIT));
     }
 
     @Test
@@ -81,7 +76,6 @@ public class CheckStagePermissionTests {
         assertFalse( "read still required after initial read", _check.fileNeedsRereading());
     }
 
-
     @Test
     public void testRereadNeededAfterTouch() throws PatternSyntaxException, IOException, InterruptedException {
         _check.rereadConfig();
@@ -91,157 +85,217 @@ public class CheckStagePermissionTests {
         assertTrue( "no read required after touch", _check.fileNeedsRereading());
     }
 
+    //those 14 tests below were adopted for testing the method canPerformStaging(String dn, String fqan, String StoreUnit)
     @Test
     public void testZeroLengthDNEmptyFile() throws PatternSyntaxException, IOException {
-        assertFalse( "user with ZeroLength DN and FQAN can not stage with empty file", _check.canPerformStaging("", VALID_FQAN));
+        assertFalse( "user with ZeroLength DN and FQAN can not stage with empty file", _check.canPerformStaging("", VALID_FQAN_STRING, VALID_STOREUNIT));
     }
 
     @Test
     public void testZeroLengthDN() throws PatternSyntaxException, IOException {
-        authorise( VALID_DN, null);
-        assertFalse( "user with ZeroLengthDN and FQAN can not stage", _check.canPerformStaging("", VALID_FQAN));
+        authoriseDn( VALID_DN );
+        assertFalse( "user with ZeroLengthDN and FQAN can not stage", _check.canPerformStaging("", VALID_FQAN_STRING, VALID_STOREUNIT));
     }
 
     @Test
     public void testZeroLengthDNAndFqan() throws PatternSyntaxException, IOException {
-        authorise( VALID_DN, VALID_FQAN_STRING);
-        assertFalse( "user with ZeroLengthDN and FQAN can not stage", _check.canPerformStaging("", VALID_FQAN));
+        authoriseDnFqan( VALID_DN, VALID_FQAN_STRING);
+        assertFalse( "user with ZeroLengthDN and FQAN can not stage", _check.canPerformStaging("", VALID_FQAN_STRING, VALID_STOREUNIT));
     }
 
     @Test
     public void testNullFqan() throws PatternSyntaxException, IOException {
-        authorise( VALID_DN, null);
-        assertTrue( "user with DN and FQAN=null staging when DN is in file", _check.canPerformStaging( VALID_DN, (FQAN)null));
+        authoriseDn( VALID_DN );
+        assertTrue( "user with DN and FQAN=null staging when DN is in file", _check.canPerformStaging( VALID_DN, (String)null, VALID_STOREUNIT));
     }
 
     @Test
     public void testNullFqan2() throws PatternSyntaxException, IOException {
-        authorise( VALID_DN, VALID_FQAN_STRING);
-        assertFalse( "user with DN and FQAN=null cannot stage when DN and FQAN is in file", _check.canPerformStaging( VALID_DN, (FQAN)null));
+        authoriseDnFqan( VALID_DN, VALID_FQAN_STRING);
+        assertFalse( "user with DN and FQAN=null cannot stage when DN and FQAN is in file", _check.canPerformStaging( VALID_DN, (String)null, VALID_STOREUNIT));
     }
 
     @Test()
     public void testCanStageWithEmptyFile() throws PatternSyntaxException, IOException {
-        assertFalse( "Empty file allowed user to stage", _check.canPerformStaging( VALID_DN, VALID_FQAN));
+        assertFalse( "Empty file allowed user to stage", _check.canPerformStaging( VALID_DN, VALID_FQAN_STRING, VALID_STOREUNIT));
     }
 
     @Test()
     public void testCanStageWithMissingFile() throws PatternSyntaxException, IOException {
         _testConfigFile.delete();
-        assertFalse( "Missing file allowed user to stage", _check.canPerformStaging( VALID_DN, VALID_FQAN));
+        assertFalse( "Missing file allowed user to stage", _check.canPerformStaging( VALID_DN, VALID_FQAN_STRING, VALID_STOREUNIT));
     }
 
     @Test
     public void testUserWithDnAuthorisedWithDnCanStage() throws IOException {
-        authorise( VALID_DN, null);
-        assertTrue( "user with DN staging when DN is in file", _check.canPerformStaging( VALID_DN, EMPTY_FQAN));
+        authoriseDn( VALID_DN );
+        assertTrue( "user with DN staging when DN is in file", _check.canPerformStaging( VALID_DN, EMPTY_FQAN_STRING, VALID_STOREUNIT));
     }
 
     @Test
     public void testUserWithDnFqanAuthorisedWithDnCanStage() throws IOException {
-        authorise( VALID_DN, null);
-        assertTrue( "user with DN and FQAN staging when DN is in file", _check.canPerformStaging( VALID_DN, VALID_FQAN));
+        authoriseDn( VALID_DN );
+        assertTrue( "user with DN and FQAN staging when DN is in file", _check.canPerformStaging( VALID_DN, VALID_FQAN_STRING, VALID_STOREUNIT));
     }
 
     @Test
     public void testUserWithDnAuthorisedWithDnAndFqanCanStage() throws IOException {
-        authorise( VALID_DN, VALID_FQAN_STRING);
-        assertFalse( "user with DN staging when DN and FQAN is in file", _check.canPerformStaging( VALID_DN, EMPTY_FQAN));
+        authoriseDnFqan( VALID_DN, VALID_FQAN_STRING );
+        assertFalse( "user with DN staging when DN and FQAN is in file", _check.canPerformStaging( VALID_DN, EMPTY_FQAN_STRING, VALID_STOREUNIT));
     }
 
     @Test
     public void testUserWithDnAndDifferentFqanAuthorisedWithDnAndFqanCanStage() throws IOException {
-        authorise( VALID_DN, VALID_FQAN_STRING);
-        assertFalse( "user with DN and different FQAN staging when DN and FQAN is in file", _check.canPerformStaging( VALID_DN, OTHER_VALID_FQAN));
+        authoriseDnFqan( VALID_DN, VALID_FQAN_STRING);
+        assertFalse( "user with DN and different FQAN staging when DN and FQAN is in file", _check.canPerformStaging( VALID_DN, OTHER_VALID_FQAN_STRING, VALID_STOREUNIT));
     }
 
     @Test
     public void testUserWithDnAndSameFqanAuthorisedWithDnAndFqanCanStage() throws IOException {
-        authorise( VALID_DN, VALID_FQAN_STRING);
-        assertTrue( "user with DN and same FQAN staging when DN and FQAN is in file", _check.canPerformStaging( VALID_DN, VALID_FQAN));
+        authoriseDnFqan( VALID_DN, VALID_FQAN_STRING);
+        assertTrue( "user with DN and same FQAN staging when DN and FQAN is in file", _check.canPerformStaging( VALID_DN, VALID_FQAN_STRING, VALID_STOREUNIT));
     }
 
     @Test
     public void testWildcardsMatchingDNandFQAN() throws PatternSyntaxException, IOException {
-        authorise( TEST_DN, TEST_FQAN_STRING);
-        assertTrue( "check pattern .* : user with DN and FQAN can stage when DN and FQAN are in file", _check.canPerformStaging( USER_TEST1_DN, USER_TEST1_FQAN));
+        authoriseDnFqan( TEST_DN, TEST_FQAN_STRING);
+        assertTrue( "check pattern .* : user with DN and FQAN can stage when DN and FQAN are in file", _check.canPerformStaging( USER_TEST1_DN, USER_TEST1_FQAN_STRING, VALID_STOREUNIT));
     }
 
     @Test
     public void testWildecardsNotMatchingDN() throws PatternSyntaxException, IOException {
-        authorise( TEST_DN, TEST_FQAN_STRING);
-        assertFalse( "check pattern .* : user's DN does not match, staging not allowed", _check.canPerformStaging( USER_TEST2_DN, USER_TEST1_FQAN));
+        authoriseDnFqan( TEST_DN, TEST_FQAN_STRING);
+        assertFalse( "check pattern .* : user's DN does not match, staging not allowed", _check.canPerformStaging( USER_TEST2_DN, USER_TEST1_FQAN_STRING, VALID_STOREUNIT));
     }
 
-    ///////// below there are 7 tests for canPerformStaging(String dn, String fqan)  ///////
+    // below there are 7 tests for canPerformStaging(String dn, String fqan, String storeUnit),
+    // to show that StageConfiguration.conf file may remain unchanged (using only 2 parameters as before: DN, FQAN)
+    // when the new stage permission check is performed (using DN, FQAN, StoreUnit)
     @Test
     public void testStringUserWithDnAuthorisedWithDnCanStage() throws IOException {
-        authorise( VALID_DN, null);
-        assertTrue( "user with DN staging when DN is in file", _check.canPerformStaging( VALID_DN, EMPTY_FQAN_STRING));
+        authoriseDn( VALID_DN );
+        assertTrue( "user with DN staging when DN is in file", _check.canPerformStaging( VALID_DN, EMPTY_FQAN_STRING, VALID_STOREUNIT ));
     }
 
     @Test
     public void testStringUserWithDnFqanAuthorisedWithDnCanStage() throws IOException {
-        authorise( VALID_DN, null);
-        assertTrue( "user with DN and FQAN staging when DN is in file", _check.canPerformStaging( VALID_DN, VALID_FQAN_STRING));
+        authoriseDn( VALID_DN );
+        assertTrue( "user with DN and FQAN staging when DN is in file", _check.canPerformStaging( VALID_DN, VALID_FQAN_STRING, VALID_STOREUNIT));
     }
 
     @Test
     public void testStringUserWithDnAuthorisedWithDnAndFqanCanStage() throws IOException {
-        authorise( VALID_DN, VALID_FQAN_STRING);
-        assertFalse( "user with DN staging when DN and FQAN is in file", _check.canPerformStaging( VALID_DN, EMPTY_FQAN_STRING));
+        authoriseDnFqan( VALID_DN, VALID_FQAN_STRING);
+        assertFalse( "user with DN staging when DN and FQAN is in file", _check.canPerformStaging( VALID_DN, EMPTY_FQAN_STRING, VALID_STOREUNIT));
     }
 
     @Test
     public void testStringUserWithDnAndDifferentFqanAuthorisedWithDnAndFqanCanStage() throws IOException {
-        authorise( VALID_DN, VALID_FQAN_STRING);
-        assertFalse( "user with DN and different FQAN staging when DN and FQAN is in file", _check.canPerformStaging( VALID_DN, OTHER_VALID_FQAN_STRING));
+        authoriseDnFqan( VALID_DN, VALID_FQAN_STRING);
+        assertFalse( "user with DN and different FQAN staging when DN and FQAN is in file", _check.canPerformStaging( VALID_DN, OTHER_VALID_FQAN_STRING, VALID_STOREUNIT));
     }
 
     @Test
     public void testStringUserWithDnAndSameFqanAuthorisedWithDnAndFqanCanStage() throws IOException {
-        authorise( VALID_DN, VALID_FQAN_STRING);
-        assertTrue( "user with DN and same FQAN staging when DN and FQAN is in file", _check.canPerformStaging( VALID_DN, VALID_FQAN_STRING));
+        authoriseDnFqan( VALID_DN, VALID_FQAN_STRING);
+        assertTrue( "user with DN and same FQAN staging when DN and FQAN is in file", _check.canPerformStaging( VALID_DN, VALID_FQAN_STRING, VALID_STOREUNIT));
     }
 
     @Test
     public void testStringWildcardsMatchingDNandFQAN() throws PatternSyntaxException, IOException {
-        authorise( TEST_DN, TEST_FQAN_STRING);
-        assertTrue( "check pattern .* : user with DN and FQAN can stage when DN and FQAN are in file", _check.canPerformStaging( USER_TEST1_DN, USER_TEST1_FQAN_STRING));
+        authoriseDnFqan( TEST_DN, TEST_FQAN_STRING);
+        assertTrue( "check pattern .* : user with DN and FQAN can stage when DN and FQAN are in file", _check.canPerformStaging( USER_TEST1_DN, USER_TEST1_FQAN_STRING, VALID_STOREUNIT));
     }
 
     @Test
     public void testStringWildecardsNotMatchingDN() throws PatternSyntaxException, IOException {
-        authorise( TEST_DN, TEST_FQAN_STRING);
-        assertFalse( "check pattern .* : user's DN does not match, staging not allowed", _check.canPerformStaging( USER_TEST2_DN, USER_TEST1_FQAN_STRING));
+        authoriseDnFqan( TEST_DN, TEST_FQAN_STRING);
+        assertFalse( "check pattern .* : user's DN does not match, staging not allowed", _check.canPerformStaging( USER_TEST2_DN, USER_TEST1_FQAN_STRING, VALID_STOREUNIT));
     }
 
     @Test
     public void testStringNullFqan() throws PatternSyntaxException, IOException {
-        authorise( VALID_DN, null);
-        assertTrue( "user with DN and FQAN=null staging when DN is in file", _check.canPerformStaging( VALID_DN, (String)null ));
+        authoriseDn( VALID_DN );
+        assertTrue( "user with DN and FQAN=null staging when DN is in file", _check.canPerformStaging( VALID_DN, (String)null, VALID_STOREUNIT ));
     }
 
     @Test
     public void testStringNullFqan2() throws PatternSyntaxException, IOException {
-        authorise( VALID_DN, VALID_FQAN_STRING);
-        assertFalse( "user with DN and FQAN=null cannot stage when DN and FQAN is in file", _check.canPerformStaging( VALID_DN, (String)null));
+        authoriseDnFqan( VALID_DN, VALID_FQAN_STRING);
+        assertFalse( "user with DN and FQAN=null cannot stage when DN and FQAN is in file", _check.canPerformStaging( VALID_DN, (String)null, VALID_STOREUNIT ));
     }
-    /////////////////////
 
-    private void authorise( String dn, String voms) throws IOException {
+    //new tests for the method canPerformStaging(String dn, String fqan, String storeUnit)
+
+    @Test
+    public void testNullFqanCanStage() throws PatternSyntaxException, IOException {
+        authoriseDnFqanStoreunit( VALID_DN, null, null); //config line: "/DC=org/DC=example/CN=test user"
+        assertTrue( "user with DN staging when DN is in file", _check.canPerformStaging( VALID_DN, "", VALID_STOREUNIT ));
+    }
+
+    @Test
+    public void testDnFqanCanStageWhenDnInConfigfile() throws IOException {
+        authoriseDnFqanStoreunit( VALID_DN, null, null); //config line: "/DC=org/DC=example/CN=test user"
+        assertTrue( "user with DN and FQAN staging when DN is in file", _check.canPerformStaging( VALID_DN, VALID_FQAN_STRING, VALID_STOREUNIT));
+    }
+
+    @Test
+    public void testNullFqanCannotStage() throws PatternSyntaxException, IOException {
+        authoriseDnFqanStoreunit( VALID_DN, VALID_FQAN_STRING, null); //config line: "/DC=org/DC=example/CN=test user" "/atlas/Role=production"
+        assertFalse( "user with DN and FQAN=null cannot stage when DN and FQAN is in file", _check.canPerformStaging( VALID_DN, "", VALID_STOREUNIT));
+    }
+
+    @Test
+    public void testDnFqanCanStageWhenDnFqanInConfigfile() throws IOException {
+        authoriseDnFqanStoreunit( VALID_DN, VALID_FQAN_STRING, null); //config line: "/DC=org/DC=example/CN=test user" "/atlas/Role=production"
+        assertTrue( "user with DN and FQAN staging when DN and FQAN are in file", _check.canPerformStaging( VALID_DN, VALID_FQAN_STRING, VALID_STOREUNIT));
+    }
+
+    @Test
+    public void testDnFqanStoreunitCanStageWhenDnFqanStoreunitInConfigfile() throws IOException {
+        authoriseDnFqanStoreunit( VALID_DN, VALID_FQAN_STRING, VALID_STOREUNIT); //config line: "/DC=org/DC=example/CN=test user" "/atlas/Role=production" "sql:chimera@osm"
+        assertTrue( "user with DN and FQAN staging when DN and FQAN are in file; also storage unit is in file ", _check.canPerformStaging( VALID_DN, VALID_FQAN_STRING, VALID_STOREUNIT));
+    }
+
+    @Test
+    public void testDnAndDifferentFqanAuthorisedWithDnAndFqanCanStage() throws IOException {
+        authoriseDnFqanStoreunit( VALID_DN, VALID_FQAN_STRING, null); //config line: "/DC=org/DC=example/CN=test user" "/atlas/Role=production"
+        assertFalse( "user with DN and wrong FQAN cannot stage when DN and FQAN is in file", _check.canPerformStaging( VALID_DN, OTHER_VALID_FQAN_STRING,  VALID_STOREUNIT));
+    }
+
+    @Test
+    public void testDnAndSameFqanAuthorisedWithDnAndFqanCanStage() throws IOException {
+        authoriseDnFqanStoreunit( ".*", ".*", ".*"); //config line:  ".*" ".*" ".*"
+        assertTrue( "user with DN, FQAN, and StorageGroup specified can stage in case ALL *s in ConfigFile", _check.canPerformStaging( VALID_DN, VALID_FQAN_STRING, VALID_STOREUNIT ));
+    }
+
+    /////////////////////
+    private void authoriseDn( String dn ) throws IOException {
+        authoriseDnFqanStoreunit( dn, null, null);
+    }
+
+    private void authoriseDnFqan( String dn, String fqan ) throws IOException {
+        authoriseDnFqanStoreunit( dn, fqan, null);
+    }
+
+    private void authoriseDnFqanStoreunit( String dn, String fqan, String storeUnit) throws IOException {
         StringBuffer sb = new StringBuffer();
 
         sb.append("\"");
         sb.append(dn);
         sb.append("\"");
 
-        if( voms != null) {
+        if( fqan != null) {
             sb.append("  \"");
-            sb.append( voms);
+            sb.append( fqan);
             sb.append("\"");
         }
 
+        if( storeUnit != null) {
+            sb.append("  \"");
+            sb.append( storeUnit);
+            sb.append("\"");
+        }
         sb.append("\n");
 
         saveContents( sb.toString());

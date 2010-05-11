@@ -1252,7 +1252,7 @@ public class RequestContainerV5
                 try {
                     PoolMgrSelectReadPoolMsg msg =
                         (PoolMgrSelectReadPoolMsg) envelope.getMessageObject();
-                    if (_stagePolicyDecisionPoint.canPerformStaging(msg.getSubject())) {
+                    if (_stagePolicyDecisionPoint.canPerformStaging(msg.getSubject(), msg.getStorageInfo())) {
                         return true;
                     }
                 } catch (IOException e) {

@@ -124,7 +124,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     private final Object  _messageLock     = new Object() ;
     private String  _pid             = null ;
     private String  _uid             = null ;
-    private String  _userHome        = "?" ;
+    private final String  _userHome        = "?" ;
     private int     _majorVersion    = 0 ;
     private int     _minorVersion    = 0 ;
     private Date    _startedTS       = null ;
@@ -139,8 +139,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     /**
      * Tape Protection
      */
-    private String _stageConfigurationFilePath;
-    private CheckStagePermission _checkStagePermission;
+    private final String _stageConfigurationFilePath;
+    private final CheckStagePermission _checkStagePermission;
 
     /**
      * user record to use.
@@ -1041,7 +1041,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         protected long    _statusSince     = System.currentTimeMillis() ;
         protected String  _ioHandlerQueue  = null ;
 
-        private long      _timestamp       = System.currentTimeMillis() ;
+        private final long      _timestamp       = System.currentTimeMillis() ;
         private int       _uid             = -1 ;
         private int       _gid             = -1 ;
         private String    _owner           =  "unknown";
@@ -1387,7 +1387,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     //
     //      the basic prestage handler
     //
-    private CellPath _prestagerPath = new CellPath( "Prestager" ) ;
+    private final CellPath _prestagerPath = new CellPath( "Prestager" ) ;
     protected  class PrestageHandler  extends PnfsSessionHandler  {
         private long   _time = 0L ;
         private String _destination = null ;
@@ -2434,7 +2434,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                int allowedStates;
                try {
                    allowedStates =
-                       _checkStagePermission.canPerformStaging(_subject)
+                       _checkStagePermission.canPerformStaging(_subject, _storageInfo)
                        ? RequestContainerV5.allStates
                        : RequestContainerV5.allStatesExceptStage;
                } catch (IOException e) {
