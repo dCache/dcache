@@ -2,6 +2,7 @@ package diskCacheV111.poolManager ;
 
 import java.io.PrintWriter;
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -14,6 +15,7 @@ import java.util.StringTokenizer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.log4j.NDC;
 import org.dcache.poolmanager.Utils;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
@@ -44,12 +46,15 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.DelayedReply;
+import dmg.cells.nucleus.CDC;
+import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 import dmg.util.CommandException;
 
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellMessageReceiver;
+import org.dcache.vehicles.PoolManagerSelectLinkGroupForWriteMessage;
 
 public class PoolManagerV5
     extends AbstractCellComponent
@@ -660,6 +665,126 @@ public class PoolManagerV5
        }
 
     }
+
+    private long determineExpectedFileSize(long expectedLength, StorageInfo storageInfo)
+    {
+        if (expectedLength > 0) {
+            return expectedLength;
+        }
+
+        if (storageInfo.getFileSize() > 0) {
+            return storageInfo.getFileSize();
+        }
+
+        String s = storageInfo.getKey("alloc-size");
+        if (s != null) {
+            try {
+                return Long.parseLong(s);
+            } catch (NumberFormatException e) {
+                // bad values are ignored
+            }
+        }
+
+        return 0;
+    }
+
+    public DelayedReply messageArrived(PoolManagerSelectLinkGroupForWriteMessage message)
+        throws CacheException
+    {
+        if (message.getStorageInfo() == null) {
+            throw new IllegalArgumentException("Storage info is missing");
+        }
+        if (message.getProtocolInfo() == null ){
+            throw new IllegalArgumentException("Protocol info is missing");
+        }
+
+        return new LinkGroupSelectionTask(message);
+    }
+
+    /**
+     * Task for processing link group selection messages.
+     */
+    public class LinkGroupSelectionTask
+        extends DelayedReply
+        implements Runnable
+    {
+        private final PoolManagerSelectLinkGroupForWriteMessage _message;
+        private final CDC _cdc;
+
+        public LinkGroupSelectionTask(PoolManagerSelectLinkGroupForWriteMessage message)
+        {
+            _message = message;
+            _cdc = new CDC();
+            new Thread(this, "LinkGroupSelectionTask").start();
+        }
+
+        public void run()
+        {
+            long started = System.currentTimeMillis();
+            _cdc.apply();
+            try {
+                _log.info("Select link group handler started");
+
+                _message.setLinkGroups(selectLinkGroups());
+                _message.setSucceeded();
+
+                _log.info("Select link group handler finished after {} ms",
+                          (System.currentTimeMillis() - started));
+            } catch (Exception e) {
+                _message.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                   e.getMessage());
+            } finally {
+                try {
+                    send(_message);
+                } catch (NoRouteToCellException e) {
+                    _log.error("Failed to send reply: " + e.getMessage());
+                } catch (InterruptedException e) {
+                    _log.warn("Link group selection handler was interrupted");
+                } finally {
+                    CDC.clear();
+                    NDC.remove();
+                }
+            }
+        }
+
+        protected List<String> selectLinkGroups()
+        {
+            StorageInfo storageInfo = _message.getStorageInfo();
+            ProtocolInfo protocolInfo = _message.getProtocolInfo();
+            long expectedLength =
+                determineExpectedFileSize(_message.getFileSize(), storageInfo);
+            String protocol =
+                protocolInfo.getProtocol() + "/" + protocolInfo.getMajorVersion();
+            String hostName =
+                (protocolInfo instanceof IpProtocolInfo)
+                ? ((IpProtocolInfo) protocolInfo).getHosts()[0]
+                : null;
+
+            Collection<String> linkGroups = _message.getLinkGroups();
+            if (linkGroups == null) {
+                linkGroups =
+                    Utils.linkGroupInfos(_selectionUnit, _costModule).keySet();
+            }
+
+            List<String> outputLinkGroups =
+                new ArrayList<String>(linkGroups.size());
+
+            for (String linkGroup: linkGroups) {
+                PoolPreferenceLevel [] level =
+                    _selectionUnit.match(DirectionType.WRITE,
+                                         hostName,
+                                         protocol,
+                                         storageInfo,
+                                         linkGroup);
+                if (level.length > 0) {
+                    outputLinkGroups.add(linkGroup);
+                }
+            }
+
+            return outputLinkGroups;
+        }
+    }
+
     ///////////////////////////////////////////////////////////////
     //
     // the write io request handler
@@ -705,21 +830,8 @@ public class PoolManagerV5
               return ;
            }
 
-           long expectedLength = 0L;
-           if (_request.getFileSize() > 0) {
-               expectedLength = _request.getFileSize();
-           } else if (storageInfo.getFileSize() > 0) {
-               expectedLength = storageInfo.getFileSize();
-           } else {
-               String s = storageInfo.getKey("alloc-size");
-               if (s != null) {
-                   try{
-                       expectedLength = Long.parseLong(s);
-                   } catch (NumberFormatException e) {
-                       // bad values are ignored
-                   }
-               }
-           }
+           long expectedLength =
+               determineExpectedFileSize(_request.getFileSize(), storageInfo);
 
            /* The cost module relies on the expected file size.
             */
