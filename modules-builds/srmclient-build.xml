@@ -49,8 +49,6 @@
     <path id="srmclient.classpath">
         <pathelement location="${classesDir}/srm.jar" />
         <fileset dir="${axis.untared}" includes="**/*.jar" excludes="**/log4j-*.jar"/>
-        <fileset dir="${tomcat.untared}/common/lib/" includes="*.jar" excludes="servlet-api.jar"/>
-        <fileset dir="${tomcat.untared}/server/lib/" includes="*.jar" />
         <fileset dir="${libDir}/cog" includes="**/*.jar" />
         <fileset dir="${libDir}/security" includes="**/*.jar" />
         <fileset dir="${glite.untarred}" includes="**/*.jar" />
