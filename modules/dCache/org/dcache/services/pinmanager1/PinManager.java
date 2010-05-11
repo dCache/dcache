@@ -784,7 +784,7 @@ public class PinManager extends AbstractCell implements Runnable  {
                 int allowedStates = RequestContainerV5.allStates;
                 try {
                      allowedStates =
-                             _checkStagePermission.canPerformStaging(job.getSubject(), job.storageInfo) ?
+                             _checkStagePermission.canPerformStaging(job.getSubject()) ?
                                  RequestContainerV5.allStates :
                                  RequestContainerV5.allStatesExceptStage;
                 } catch (PatternSyntaxException ex) {

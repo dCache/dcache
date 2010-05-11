@@ -3341,7 +3341,7 @@ public abstract class AbstractFtpDoorV1
             } else {   //transfer: 'retrieve'
             Subject subject = getCompleteSubject();
                 int allowedStates =
-                    _checkStagePermission.canPerformStaging(subject, storageInfo)
+                    _checkStagePermission.canPerformStaging(subject)
                     ? RequestContainerV5.allStates
                     : RequestContainerV5.allStatesExceptStage;
                 request = new PoolMgrSelectReadPoolMsg(_transfer.pnfsId,

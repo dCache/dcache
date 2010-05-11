@@ -499,6 +499,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             _userAuthRecord = getUserMetadata( _user.getName(), _user.getRole() ) ;
         }
 
+        if ( !_checkStagePermission.canPerformStaging(_subject) ) {
+           return sessionId + " 0 " + _ourName + " ok ";
+        }
         //VP
         try{
             //
@@ -1421,18 +1424,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 removeUs();
                 return;
             }
-
-            try {
-                if( !_checkStagePermission.canPerformStaging(_subject, _storageInfo) ) {
-                    sendReply( "storageInfoAvailable" , CacheException.PERMISSION_DENIED,
-                            "Staging file not allowed", "EACCES" ) ;
-                    removeUs();
-                    return;
-                }
-            } catch (IOException e) {
-                _log.error("Error while reading data from StageConfiguration.conf file : " + e.getMessage());
-            }
-
             //
             // we are not called if the pnfs request failed.
             //
@@ -2453,7 +2444,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                int allowedStates;
                try {
                    allowedStates =
-                       _checkStagePermission.canPerformStaging(_subject, _storageInfo)
+                       _checkStagePermission.canPerformStaging(_subject)
                        ? RequestContainerV5.allStates
                        : RequestContainerV5.allStatesExceptStage;
                } catch (IOException e) {
