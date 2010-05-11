@@ -1,8 +1,0 @@
-#
-#  import the setup file into our $context.
-#  don't overwrite already existing variables.
-#
-
-check -strong setupFile
-copy file:${setupFile} context:setupContext
-import context -c setupContext

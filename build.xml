@@ -57,7 +57,7 @@
     </target>
 
     <!-- init dirs, unpack external libraries -->
-    <target name="-prepare" depends="-init,-lib.tomcat.untar,-lib.axis.untar,-lib.glite.untar" />
+    <target name="-prepare" depends="-init,-lib.axis.untar,-lib.glite.untar" />
 
     <!--=======================================================================
             import component specific build modules here
@@ -83,7 +83,7 @@
                   description="Compile gPlazma package and create gplazma.jar"/>
 
     <target name="srm" depends="common,gplazma,-srm.bin"
-                  description="Compile srm package and create srm.jar and srm-tomcat.jar" />
+                  description="Compile srm package and create srm.jar" />
 
     <target name="dcache" depends="srm,-dcache.bin,-gen.bg.image,-xrootd-tokenauthz.bin, webadminPackage, -compile.junit"
                   description="Compile dcache package and create dcache.jar" />

@@ -27,7 +27,7 @@
     </tstamp>
 
     <!--
-        Untar axis, glite, tomcat, cog, glue
+        Untar axis, glite, cog, glue
     -->
 
     <property name="axis.libDir" location="${libDir}/axis" />
@@ -67,23 +67,6 @@
                 <include name="**/*.tar.gz" />
             </fileset>
         </untar>
-    </target>
-
-    <property name="tomcat.libDir" location="${libDir}/tomcat" />
-    <property name="tomcat.tarName" location="${tomcat.libDir}/apache-tomcat-5.5.20.tar.gz" />
-    <!-- A pattern uniquely identifying one tar file -->
-    <property name="tomcat.untared" location="${unpackTop}/apache-tomcat-5.5.20" />
-    <!-- This is the dir the tar will create -->
-
-    <target name="-check.lib.tomcat.uptodate" >
-        <uptodate property="lib.tomcat.uptodate" targetfile="${tomcat.untared}">
-            <srcfiles dir="${tomcat.libDir}" includes="${tomcat.tarName}" />
-        </uptodate>
-    </target>
-
-    <target name="-lib.tomcat.untar" depends="-check.lib.tomcat.uptodate" unless="lib.tomcat.uptodate">
-        <echo>Unpacking to ${tomcat.untared}</echo>
-        <untar src="${tomcat.tarName}" dest="${unpackTop}" compression="gzip" />
     </target>
 
     <property name="cog.libDir" value="${libDir}/cog" />
