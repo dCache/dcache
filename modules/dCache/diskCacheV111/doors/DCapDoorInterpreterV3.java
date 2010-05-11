@@ -1551,43 +1551,32 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
             String path = _getFileMetaData.getPnfsPath();
 
-            StringBuffer sb = new StringBuffer( );
-            sb.append(_sessionId).append(" ").
-            append(_commandId).append(" ").
-            append(_vargs.getName()).append(" ");
-
             FileMetaData meta = _getFileMetaData.getMetaData() ;
-            if (!meta.isDirectory()) {
+            try {
                 if (_readOnly) {
-                    sb.append("failed 19 \"Permission denied\" EACCES");
-                    esay("Door is configured as read-only.");
-
-                }else{
-
-                    try {
-                         if (_permissionHandler.canDeleteFile(_pnfsId, _subject, _origin) != AccessType.ACCESS_ALLOWED) {
-                             sb.append("failed 19 \"Permission denied\" EACCES");
-                             sendReply("fileMetaDataAvailable", 19, "failed 19 \"Permission denied to remove file\" EACCES");
-                             return;
-                           }
-                           _pnfs.deletePnfsEntry( path );
-                           sendRemoveInfoToBilling( path );
-                           sb.append("ok");
-                    }catch( ACLException e) {
-                        sb.append("failed 21 \"" + e.getMessage() + "\"");
-                    }catch( CacheException e) {
-                        sb.append("failed 22 \"" + e.getMessage() + "\"");
+                    sendReply("fileMetaDataAvailable", 19, "Permission denied", "EACCES");
+                } else {
+                    if (!meta.isDirectory()) {
+                        try {
+                            if (_permissionHandler.canDeleteFile(_pnfsId, _subject, _origin) != AccessType.ACCESS_ALLOWED) {
+                                sendReply("fileMetaDataAvailable", 19, "Permission denied to remove file", "EACCES");
+                                return;
+                            }
+                            _pnfs.deletePnfsEntry(path);
+                            sendReply("fileMetaDataAvailable", 0, "");
+                            sendRemoveInfoToBilling(path);
+                        } catch (ACLException e) {
+                            sendReply("fileMetaDataAvailable", 19, e.getMessage(), "EACCES");
+                        } catch (CacheException e) {
+                            sendReply("fileMetaDataAvailable", 19, e.getMessage(), "EACCES");
+                        }
+                    } else {
+                        sendReply("fileMetaDataAvailable", 17, "Path is a Directory", "EISDIR");
                     }
                 }
-
-            } else {
-                sb.append("failed 17 \"Path is a Directory\" EISDIR");
+            } finally {
+                removeUs();
             }
-
-            println( sb.toString() ) ;
-            removeUs() ;
-
-            return ;
         }
         @Override
         public String toString(){ return "uk "+super.toString() ; }
@@ -1608,41 +1597,27 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
         @Override
         public void fileMetaDataAvailable(){
-            //
-            // we are not called if the pnfs request failed.
-            //
-
-
-            StringBuffer sb = new StringBuffer( );
-            sb.append(_sessionId).append(" ").
-            append(_commandId).append(" ").
-            append(_vargs.getName()).append(" ");
 
             FileMetaData meta = _getFileMetaData.getMetaData() ;
 
             try {
-                //if (_permissionHandler.canSetAttributes(_pnfsId, _subject, _origin, FileAttribute.FATTR4_MODE) == AccessType.ACCESS_ALLOWED) {
                 if (_permissionHandler.canSetAttributes(_path, _subject, _origin, FileAttribute.FATTR4_MODE) == AccessType.ACCESS_ALLOWED) {
-                meta.setUserPermissions( new FileMetaData.Permissions ( (_permission >> 6 ) & 0x7 ) ) ;
-                meta.setGroupPermissions(new FileMetaData.Permissions ( (_permission >> 3 ) & 0x7 )) ;
-                meta.setWorldPermissions( new FileMetaData.Permissions( _permission  & 0x7 ) ) ;
+                    meta.setUserPermissions(new FileMetaData.Permissions((_permission >> 6) & 0x7));
+                    meta.setGroupPermissions(new FileMetaData.Permissions((_permission >> 3) & 0x7));
+                    meta.setWorldPermissions(new FileMetaData.Permissions(_permission & 0x7));
 
-                _pnfs.pnfsSetFileMetaData(_pnfsId, meta);
-
-                sb.append("ok");
-            }else{
-                  sb.append("failed 23 \"Permission denied\" EACCES");
+                    _pnfs.pnfsSetFileMetaData(_pnfsId, meta);
+                    sendReply("fileMetaDataAvailable", 0, "");
+                } else {
+                    sendReply("fileMetaDataAvailable", 23, "Permission denied", "EACCES");
+                }
+            } catch (ACLException e) {
+                sendReply("fileMetaDataAvailable", 23, e.getMessage(), "EACCES");
+            } catch (CacheException e) {
+                sendReply("fileMetaDataAvailable", 23, e.getMessage(), "EACCES");
+            } finally {
+                removeUs();
             }
-            } catch ( ACLException e) {
-                sb.append("failed 23 \"" + e.getMessage() + "\"");
-            } catch ( CacheException e) {
-                sb.append("failed 23 \"" + e.getMessage() + "\"");
-            }
-
-            println( sb.toString() ) ;
-            removeUs() ;
-
-            return ;
         }
         @Override
         public String toString(){ return "uk "+super.toString() ; }
@@ -1668,45 +1643,33 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         @Override
         public void fileMetaDataAvailable(){
-            //
-            // we are not called if the pnfs request failed.
-            //
-
-            StringBuffer sb = new StringBuffer( );
-            sb.append(_sessionId).append(" ").
-            append(_commandId).append(" ").
-            append(_vargs.getName()).append(" ");
 
             FileMetaData meta = _getFileMetaData.getMetaData() ;
 
             try {
-                //if (_permissionHandler.canSetAttributes(_pnfsId, _subject, _origin, FileAttribute.FATTR4_OWNER) == AccessType.ACCESS_ALLOWED) {
                 if (_permissionHandler.canSetAttributes(_path, _subject, _origin, FileAttribute.FATTR4_OWNER) == AccessType.ACCESS_ALLOWED) {
-                if( _owner >= 0 ) {
-                    meta.setUid( _owner );
+                    if (_owner >= 0) {
+                        meta.setUid(_owner);
+                    }
+
+                    if (_group >= 0) {
+                        meta.setGid(_group);
+                    }
+
+                    _pnfs.pnfsSetFileMetaData(_pnfsId, meta);
+
+                    sendReply("fileMetaDataAvailable", 0, "");
+                } else {
+                    sendReply("fileMetaDataAvailable", 23, "Permission denied", "EACCES");
                 }
-
-                if( _group >= 0 ) {
-                    meta.setGid( _group );
-                }
-
-                _pnfs.pnfsSetFileMetaData(_pnfsId, meta);
-
-                sb.append("ok");
-            }else{
-                    sb.append("failed 23 \"Permission denied\" EACCES");
-            }
-            } catch ( ACLException e) {
-                sb.append("failed 23 \"" + e.getMessage() + "\"");
-            } catch ( CacheException e) {
-                sb.append("failed 23 \"" + e.getMessage() + "\"");
+            } catch (ACLException e) {
+                sendReply("fileMetaDataAvailable", 23, e.getMessage(), "EACCES");
+            } catch (CacheException e) {
+                sendReply("fileMetaDataAvailable", 23, e.getMessage(), "EACCES");
+            } finally {
+                removeUs();
             }
 
-
-            println( sb.toString() ) ;
-            removeUs() ;
-
-            return ;
         }
         @Override
         public String toString(){ return "uk "+super.toString() ; }
@@ -1726,40 +1689,28 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         @Override
         public void fileMetaDataAvailable(){
-            //
-            // we are not called if the pnfs request failed.
-            //
-
-            StringBuffer sb = new StringBuffer( );
-            sb.append(_sessionId).append(" ").
-            append(_commandId).append(" ").
-            append(_vargs.getName()).append(" ");
 
             FileMetaData meta = _getFileMetaData.getMetaData() ;
 
             try {
-                //if (_permissionHandler.canSetAttributes(_pnfsId, _subject, _origin, FileAttribute.FATTR4_OWNER_GROUP) == AccessType.ACCESS_ALLOWED) {
                 if (_permissionHandler.canSetAttributes(_path, _subject, _origin, FileAttribute.FATTR4_OWNER_GROUP) == AccessType.ACCESS_ALLOWED) {
-                if( _group >= 0 ) {
-                    meta.setGid( _group );
+                    if (_group >= 0) {
+                        meta.setGid(_group);
+                    }
+
+                    _pnfs.pnfsSetFileMetaData(_pnfsId, meta);
+
+                    sendReply("fileMetaDataAvailable", 0, "");
+                } else {
+                    sendReply("fileMetaDataAvailable", 23, "Permission denied", "EACCES");
                 }
-
-                _pnfs.pnfsSetFileMetaData(_pnfsId, meta);
-
-                sb.append("ok");
-            }else{
-                    sb.append("failed 23 \"Permission denied\" EACCES");
+            } catch (ACLException e) {
+                sendReply("fileMetaDataAvailable", 23, e.getMessage(), "EACCES");
+            } catch (CacheException e) {
+                sendReply("fileMetaDataAvailable", 23, e.getMessage(), "EACCES");
+            } finally {
+                removeUs();
             }
-            } catch ( ACLException e) {
-                sb.append("failed 25 \"" + e.getMessage() + "\"");
-            } catch ( CacheException e) {
-                sb.append("failed 25 \"" + e.getMessage() + "\"");
-            }
-
-            println( sb.toString() ) ;
-            removeUs() ;
-
-            return ;
         }
         @Override
         public String toString(){ return "uk "+super.toString() ; }
@@ -1783,15 +1734,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         @Override
         public void fileMetaDataAvailable(){
-            //
-            // we are not called if the pnfs request failed.
-            //
 
-
-            StringBuffer sb = new StringBuffer( );
-            sb.append(_sessionId).append(" ").
-            append(_commandId).append(" ").
-            append(_vargs.getName()).append(" ");
 
             FileMetaData meta = _getFileMetaData.getMetaData() ;
 
@@ -1807,25 +1750,19 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             ( ( meta.getGid() == _userAuthRecord.GID ) && group.canWrite() ) ||
             world.canWrite() ;
 
-
-            if( ! fileWriteAllowed || _readOnly) {
-                sb.append("failed 19 \"Permission denied\" EACCES");
-                esay("Permission denied for user: " + _userAuthRecord.UID +" grop: " + _userAuthRecord.GID + "to rename a file: "+ _pnfsId);
-            }else{
-
-
-                try{
+            try {
+                if (!fileWriteAllowed || _readOnly) {
+                    sendReply("fileMetaDataAvailable", 23, "Permission denied", "EACCES");
+                    esay("Permission denied for user: " + _userAuthRecord.UID + " grop: " + _userAuthRecord.GID + "to rename a file: " + _pnfsId);
+                } else {
                     _pnfs.renameEntry(_pnfsId, _newName);
-                    sb.append("ok");
-                }catch(Exception e){
-                    sb.append("failed 23 \"" + e.getMessage() + "\"");
+                    sendReply("fileMetaDataAvailable", 23, "Permission denied", "EACCES");
                 }
-
+            } catch (Exception e) {
+                sendReply("fileMetaDataAvailable", 23, e.getMessage(), "EACCES");
+            } finally {
+                removeUs();
             }
-            println( sb.toString() ) ;
-            removeUs() ;
-
-            return ;
         }
         @Override
         public String toString(){ return "rn "+super.toString() ; }
@@ -1849,38 +1786,26 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
         @Override
         public void fileMetaDataAvailable(){
-            //
-            // we are not called if the pnfs request failed.
-            //
-
             String path = _getFileMetaData.getPnfsPath();
-
-            StringBuffer sb = new StringBuffer( );
-            sb.append(_sessionId).append(" ").
-            append(_commandId).append(" ").
-            append(_vargs.getName()).append(" ");
 
             try {
                 if (new File(path).list().length == 0) {//if directory is empty, then check permission
-                   if (_permissionHandler.canDeleteDir(_pnfsId, _subject, _origin) == AccessType.ACCESS_ALLOWED) {
-                    _pnfs.deletePnfsEntry( path );
-                      sb.append("ok");
-                } else {
-                    sb.append("failed 19 \"Permission denied\" EACCES");
-                   }
+                    if (_permissionHandler.canDeleteDir(_pnfsId, _subject, _origin) == AccessType.ACCESS_ALLOWED) {
+                        _pnfs.deletePnfsEntry(path);
+                        sendReply("fileMetaDataAvailable", 0, "");
+                    } else {
+                        sendReply("fileMetaDataAvailable", 23, "Permission denied", "EACCES");
+                    }
                 } else {//directory not empty
-                    sb.append("failed 19 \"Directory not empty. Cannot delete non-empty directory.\" EACCES");
+                    sendReply("fileMetaDataAvailable", 23, "Directory not empty", "ENOTEMPTY");
                 }
-            }catch( ACLException e) {
-                sb.append("failed 21 \"" + e.getMessage() + "\"");
-            }catch( CacheException e) {
-                sb.append("failed 21 \"" + e.getMessage() + "\"");
+            } catch (ACLException e) {
+                sendReply("fileMetaDataAvailable", 23, e.getMessage(), "EACCES");
+            } catch (CacheException e) {
+                sendReply("fileMetaDataAvailable", 23, e.getMessage(), "EACCES");
+            } finally {
+                removeUs();
             }
-
-            println( sb.toString() ) ;
-            removeUs() ;
-
-            return ;
         }
         @Override
         public String toString(){ return "uk "+super.toString() ; }
@@ -1915,11 +1840,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
             boolean rc = true;
 
-            StringBuffer sb = new StringBuffer( );
-            sb.append(_sessionId).append(" ").
-            append(_commandId).append(" ").
-            append(_vargs.getName()).append(" ");
-
             getUserMetadata();
 
             String path = _getFileMetaData.getPnfsPath();
@@ -1929,18 +1849,19 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             try {
                 if (_permissionHandler.canCreateDir(_pnfs.getPnfsIdByPath(parent), _subject, _origin) == AccessType.ACCESS_ALLOWED) {
                     _pnfs.createPnfsDirectory( path , _userAuthRecord.UID, _userAuthRecord.GID, _perm );
-                    sb.append("ok") ;
+                    sendReply("fileMetaDataNotAvailable", 0, "");
                     rc = false;
                 }else{
-                    sb.append("failed 19 \"Permission denied\" EACCES");
+                   sendReply("fileMetaDataNotAvailable", 23, "Permission denied", "EACCES");
                 }
             } catch (ACLException e) {
-                sb.append("failed 23 \"" + e.getMessage() + ". Can't make a directory\"");
+               sendReply("fileMetaDataNotAvailable", 23, e.getMessage(), "EACCES");
             } catch (CacheException e) {
-                sb.append("failed 23 \"" + e.getMessage() + ". Can't make a directory\"");
+                sendReply("fileMetaDataNotAvailable", 23, e.getMessage(), "EACCES");
+            } finally {
+                removeUs();
             }
 
-            println( sb.toString() ) ;
             return rc;
         }
 
@@ -1948,17 +1869,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         @Override
         public void fileMetaDataAvailable() {
 
-            StringBuffer sb = new StringBuffer( );
-            sb.append(_sessionId).append(" ").
-            append(_commandId).append(" ").
-            append(_vargs.getName()).append(" ");
-
-
-            sb.append("failed 20 \"Directory exist\" EEXIST");
-            println( sb.toString() ) ;
+            sendReply("fileMetaDataNotAvailable", 20, "Directory exists", "EEXIST");
             removeUs() ;
             return ;
-
         }
 
         @Override
@@ -2090,6 +2003,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                                 CacheException(4,"File not cached") ;
 
                         }
+                         sendReply( "storageInfoAvailable" , 0 , "" ) ;
             }catch(CacheException cee ){
                 // timur: since this situation can occur during the normal
                 //        operation (dc_check of non-cached file)
@@ -2098,19 +2012,13 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 //        anyway sendReply will log the response
                 _log.debug(cee.toString());
                 sendReply( "storageInfoAvailable" , cee.getRc() , cee.getMessage()) ;
-                removeUs() ;
-                return ;
             }catch(Exception ee ){
                 _log.error(ee.toString());
                 sendReply( "storageInfoAvailable" , 104 , ee.getMessage()) ;
-                removeUs() ;
-                return ;
+            }finally{
+                removeUs();
             }
 
-
-            sendReply( "storageInfoAvailable" , 0 , "" ) ;
-            removeUs() ;
-            return ;
         }
         @Override
         public String toString(){ return "ck "+super.toString() ; }
@@ -2412,8 +2320,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
                     try {
                         if (!_ioMode.equals("r") || _permissionHandler.canReadFile(_path, _subject, _origin) != AccessType.ACCESS_ALLOWED) {
-                    sendReply( "pnfsGetStorageInfoArrived", 2 ,
-                    "Permission denied" ) ;
+                    sendReply( "pnfsGetStorageInfoArrived", 2 , "Permission denied", "EACCES" ) ;
                     removeUs() ;
                     return ;
                 }
@@ -2720,7 +2627,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
 
             if( ! _fileMetaData.isDirectory() ) {
-                sendReply( "fileMetaDataAvailable" , 22 ,"\"" +path +"is not a directory\" ENOTDIR" ) ;
+                sendReply( "fileMetaDataAvailable" , 22, path +" is not a directory", "ENOTDIR" ) ;
                 removeUs()  ;
                 return ;
             }
@@ -2730,14 +2637,14 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 getUserMetadata();
 
                 if (_permissionHandler.canListDir(_pnfsId, _subject, _origin) != AccessType.ACCESS_ALLOWED) {
-                    sendReply("fileMetaDataAvailable", 19, "failed 19 \"Permission denied to list directory\" EACCES");
+                    sendReply("fileMetaDataAvailable", 19, "Permission denied to list directory", "EACCES");
                     return;
                 }
 
             } catch ( ACLException e ) {
-                sendReply("fileMetaDataAvailable", 19, "failed 19 \"" + e.getMessage() + ". Can't list a directory\" EACCES");
+                sendReply("fileMetaDataAvailable", 19, e.getMessage() + ". Can't list a directory",  "EACCES");
             } catch ( CacheException e ) {
-                sendReply("fileMetaDataAvailable", 19, "failed 19 \"" + e.getMessage() + ". Can't list a directory\" EACCES");
+                sendReply("fileMetaDataAvailable", 19, e.getMessage() + ". Can't list a directory", "EACCES");
             }
 
             PoolIoFileMessage poolIoFileMessage = new PoolIoFileMessage(_pool,_pnfsId, _protocolInfo);
