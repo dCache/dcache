@@ -3238,6 +3238,7 @@ public abstract class AbstractFtpDoorV1
                                  bufSize, 0, 0,
                                  authRecord);
 
+        Subject subject = getCompleteSubject();
         PoolMgrSelectPoolMsg request;
         if (isWrite) {
             request = new PoolMgrSelectWritePoolMsg(_transfer.pnfsId,
@@ -3245,7 +3246,6 @@ public abstract class AbstractFtpDoorV1
                                                     protocolInfo,
                                                     _allo);
         } else {   //transfer: 'retrieve'
-            Subject subject = getCompleteSubject();
             int allowedStates =
                 _checkStagePermission.canPerformStaging(subject, storageInfo)
                 ? RequestContainerV5.allStates
@@ -3255,8 +3255,8 @@ public abstract class AbstractFtpDoorV1
                                                    protocolInfo,
                                                    0L,
                                                    allowedStates);
-            request.setSubject(subject);
         }
+        request.setSubject(subject);
         request.setPnfsPath(_transfer.path);
         request = sendAndWait(new CellPath(_poolManager), request,
                               _poolManagerTimeout * 1000);

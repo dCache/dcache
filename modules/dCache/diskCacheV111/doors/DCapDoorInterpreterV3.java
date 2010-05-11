@@ -2354,12 +2354,12 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                                                 _protocolInfo,
                                                 0,
                                                 allowedStates);
-               getPoolMessage.setSubject(_subject);
                getPoolMessage.setIoQueueName(_ioQueueName );
             }
 
             if( _verbose )sendComment("opened");
 
+            getPoolMessage.setSubject(_subject);
             getPoolMessage.setId(_sessionId);
             synchronized( _messageLock ){
                 try{
