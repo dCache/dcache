@@ -21,6 +21,7 @@
         <fileset dir="${glite.untarred}" includes="**/*.jar" />
         <fileset dir="${libDir}/gplazma" includes="**/*.jar" />
         <pathelement location="${classesDir}/cells.jar" />
+        <pathelement location="${classesDir}/dcache-common.jar" />
         <pathelement location="${classesDir}/gplazma.jar" />
         <pathelement location="${libDir}/log4j/log4j-1.2.15.jar" />
         <fileset dir="${libDir}/slf4j/" includes="*.jar" />

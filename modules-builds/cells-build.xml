@@ -104,6 +104,7 @@
         <pathelement location="${libDir}/log4j/log4j-1.2.15.jar" />
         <fileset dir="${libDir}/slf4j" includes="*.jar" />
         <fileset dir="${libDir}/jline" includes="jline*.jar" />
+        <pathelement location="${classesDir}/dcache-common.jar" />
     </path>
 
     <!--
