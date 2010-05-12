@@ -58,6 +58,8 @@ public class XrootdRequestHandler extends SimpleChannelHandler
             doOnClose(ctx, e, (CloseRequest) msg);
         } else if (msg instanceof ProtocolRequest) {
             doOnProtocolRequest(ctx, e, (ProtocolRequest) msg);
+        } else if (msg instanceof RmRequest) {
+            doOnRm(ctx, e, (RmRequest) msg);
         }
     }
 
@@ -148,6 +150,10 @@ public class XrootdRequestHandler extends SimpleChannelHandler
 
     protected void doOnProtocolRequest(ChannelHandlerContext ctx, MessageEvent e, ProtocolRequest msg)
     {
+        unsupported(ctx, e, msg);
+    }
+
+    protected void doOnRm(ChannelHandlerContext ctx, MessageEvent e, RmRequest msg) {
         unsupported(ctx, e, msg);
     }
 }

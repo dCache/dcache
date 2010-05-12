@@ -13,10 +13,14 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.NoSuchElementException;
 import java.util.Stack;
 import java.util.StringTokenizer;
 
+import org.dcache.xrootd2.protocol.XrootdProtocol;
+import org.dcache.xrootd2.protocol.XrootdProtocol.FilePerm;
 
 /**
  *
@@ -60,8 +64,10 @@ public class Envelope {
             this.lfn = lfn;
             this.turlString = turl;
 
-            if (( this.access = filePermissions.indexOf(access)) == -1) {
+            if (filePermissions.containsKey(access)) {
                 throw new CorruptedEnvelopeException("file permisson flag for lfn "+lfn+" must be one out of 'read', 'write-once', 'write' or 'delete'");
+            } else {
+                this.access = filePermissions.get(access).ordinal();
             }
 
             try {
@@ -141,15 +147,19 @@ public class Envelope {
     private final static String BODY_START="-----BEGIN ENVELOPE BODY-----";
     private final static String BODY_STOP="-----END ENVELOPE BODY-----";
 
-    //  these are the possbile permission level, one file can have only one type (no combinations)
-    //  the granted rights increase in the order of appereance (e.g. delete includes write, which includes read and write-once)
-    public final static int READ = 0;
-    public final static int WRITE_ONCE = 1;
-    public final static int WRITE = 2;
-    public final static int DELETE = 3;
-
-    //  the permission level strings, used in the GridFile constructor
-    private final static List filePermissions = Arrays.asList(new String[] {"read", "write-once", "write", "delete"});
+    /* build a lookup table for the string (XML) representations of the file
+     * permissions from the enum. This will help in mapping from the string
+     * values in the authorization XML to the ordinal values associated with
+     * the enum entries. It is preferred to have the strings tied to the enum
+     * for consistency.
+     */
+    public static final Map<String, FilePerm> filePermissions =
+                                                new HashMap<String, FilePerm>();
+    static {
+        for (FilePerm fp : FilePerm.values()) {
+            filePermissions.put(fp.xmlText(), fp);
+        }
+    }
 
     //  time frame to determine whether creatin time is still valid
     private static final long TIME_OFFSET = 60;
@@ -334,7 +344,7 @@ public class Envelope {
                 stack.pop();
 
                 files.add(new GridFile(tmpLfn, tmpTURL, tmpPerm));
-                if (!filePermissions.contains(tmpPerm)) {
+                if (!filePermissions.containsKey(tmpPerm)) {
                     throw new CorruptedEnvelopeException("unknown access parameter for lfn " + tmpLfn + ": "+tmpPerm);
                 }
                 continue;

@@ -38,7 +38,10 @@ import static org.dcache.xrootd2.protocol.XrootdProtocol.*;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileMetaData;
+import diskCacheV111.util.NotFileCacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.util.FileMetaData.Permissions;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
@@ -155,9 +158,16 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
             (InetSocketAddress) channel.getRemoteAddress();
         String path = req.getPath();
         int options = req.getOptions();
-        boolean isWrite = req.isNew() || req.isReadWrite();
 
-        _log.info("Opening {} for {}", path, (isWrite ? "write" : "read"));
+        FilePerm acc;
+
+        if (req.isNew() || req.isReadWrite()) {
+            acc = FilePerm.WRITE;
+        } else {
+            acc = FilePerm.READ;
+        }
+
+        _log.info("Opening {} for {}", path, acc.xmlText());
         if (_log.isDebugEnabled()) {
             logDebugOnOpen(req);
         }
@@ -186,7 +196,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                 boolean isAuthorized = false;
                 try {
                     isAuthorized =
-                        authzHandler.checkAuthz(path, opaque, isWrite,
+                        authzHandler.checkAuthz(path, opaque, acc,
                                                 localAddress);
                 } catch (GeneralSecurityException e) {
                     throw new CacheException(CacheException.PERMISSION_DENIED,
@@ -215,7 +225,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
             // interact with core dCache to open the requested file
             long checksum = req.calcChecksum();
             XrootdTransfer transfer;
-            if (isWrite) {
+            if (acc == FilePerm.WRITE) {
                 boolean createDir = (options & XrootdProtocol.kXR_mkpath) ==
                     XrootdProtocol.kXR_mkpath;
                 transfer =
@@ -380,6 +390,93 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                              XrootdProtocol.kXR_ServerError,
                              String.format("Internal server error (%s)",
                                            e.getMessage()));
+        }
+    }
+
+    protected void doOnRm(ChannelHandlerContext ctx, MessageEvent e, RmRequest req)
+    {
+        Channel channel = e.getChannel();
+        InetSocketAddress localAddress =
+                            (InetSocketAddress) channel.getLocalAddress();
+        String path = req.getPath();
+        if (path.isEmpty()) {
+            respondWithError(ctx, e, req,
+                             kXR_ArgMissing, "no path specified");
+            return;
+        }
+
+        try {
+            AuthorizationHandler authzHandler =
+                _door.getAuthorizationFactory().getAuthzHandler();
+
+            if (authzHandler != null) {
+                Map<String, String> opaque;
+                try {
+                    opaque = req.getOpaqueMap();
+                } catch (ParseException exp) {
+                    StringBuffer msg =
+                        new StringBuffer("invalid opaque data: ");
+                    msg.append(e);
+
+                    String s = req.getOpaque();
+
+                    if (s != null) {
+                        msg.append(" opaque=").append(s);
+                    }
+
+                    throw new PermissionDeniedCacheException(msg.toString());
+                }
+
+                boolean isAuthorized = false;
+                try {
+                    isAuthorized =
+                        authzHandler.checkAuthz(path, opaque, FilePerm.DELETE,
+                                                localAddress);
+                } catch (GeneralSecurityException gse) {
+                    throw new PermissionDeniedCacheException(gse.getMessage());
+                }
+
+                if (!isAuthorized) {
+                    throw new PermissionDeniedCacheException("not authorized!");
+                }
+
+                // In case of enabled authorization, the path in the open
+                // request can refer to the lfn.  In this case the real
+                // path is delivered by the authz plugin
+                if (authzHandler.providesPFN()) {
+                    _log.info("access granted for LFN={} PFN={}",
+                              path, authzHandler.getPFN());
+
+                    // get the real path (pfn) which we will open
+                    path = authzHandler.getPFN();
+                }
+            }
+
+            _door.deleteFile(path);
+            respond(ctx, e, new OKResponse(req.getStreamID()));
+        } catch (TimeoutCacheException tce) {
+                respondWithError(ctx, e, req,
+                                 XrootdProtocol.kXR_ServerError,
+                                 "Internal timeout");
+        } catch (PermissionDeniedCacheException pdce) {
+                respondWithError(ctx, e, req,
+                                 XrootdProtocol.kXR_NotAuthorized,
+                                 pdce.getMessage());
+        } catch (NotFileCacheException nfce) {
+                respondWithError(ctx, e, req,
+                                 XrootdProtocol.kXR_InvalidRequest,
+                                 nfce.getMessage() + " Use rmdir to delete directories!");
+        } catch (CacheException ce) {
+                respondWithError(ctx, e, req,
+                                 XrootdProtocol.kXR_ServerError,
+                                 String.format("Failed to delete file (%s [%d])",
+                                               ce.getMessage(), ce.getRc()));
+        } catch (RuntimeException exp) {
+            _log.error("Rm failed due to a bug", exp);
+            respondWithError(ctx, e, req,
+                             XrootdProtocol.kXR_ServerError,
+                             String.format("Internal server error (%s)",
+                                           exp.getMessage()));
         }
     }
 

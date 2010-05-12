@@ -74,6 +74,8 @@ public class XrootdDecoder extends FrameDecoder
             return new CloseRequest(frame);
         case kXR_protocol:
             return new ProtocolRequest(frame);
+        case kXR_rm:
+            return new RmRequest(frame);
         default:
             return new UnknownRequest(frame);
         }

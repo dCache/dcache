@@ -1,6 +1,5 @@
 package org.dcache.xrootd2.protocol;
 
-
 public interface XrootdProtocol {
 
     //  current supported protocol version: 2.70
@@ -97,4 +96,24 @@ public interface XrootdProtocol {
     public final static byte kXR_useradmin = 1;
 
     public final static int DEFAULT_PORT = 1094;
+
+    /* All possible access permissions when using xrootd authZ
+     * these are the possbile permission level, one file can have only one type
+     * (no combinations) the granted rights increase in the order of appereance
+     * (e.g. delete includes write, which includes read and write-once)
+     */
+    public static enum FilePerm {
+        READ ("read"),
+        WRITE_ONCE ("write-once"),
+        WRITE ("write"),
+        DELETE ("delete");
+
+        private final String _xmlText;
+
+        FilePerm(String xmlText) {
+            _xmlText = xmlText;
+        }
+
+        public String xmlText() { return _xmlText; }
+    };
 }

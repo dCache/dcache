@@ -1,6 +1,7 @@
 package org.dcache.xrootd2.door;
 
 import java.io.IOException;
+
 import java.io.PrintWriter;
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -8,6 +9,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.Collections;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.Set;
 import java.util.HashMap;
 import java.util.ArrayList;
@@ -31,6 +33,7 @@ import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
 import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.xrootd2.protocol.XrootdProtocol;
 import org.dcache.xrootd2.security.AbstractAuthorizationFactory;
+import org.dcache.namespace.FileType;
 import org.dcache.util.Transfer;
 import org.dcache.util.PingMoversTask;
 
@@ -527,6 +530,33 @@ public class XrootdDoor
             }
         }
         return transfer;
+    }
+
+    /**
+     * Delete the file denoted by path from the namespace
+     *
+     * @param path The path of the file that is going to be deleted
+     * @throws CacheException Deletion of the file failed
+     * @throws PermissionDeniedCacheException Caller does not have permission to delete the file
+     */
+    public void deleteFile(String path)
+        throws PermissionDeniedCacheException, CacheException
+    {
+        /* create full path from given deletion path, because the door can
+         * export partial results
+         */
+        FsPath fullPath = createFullPath(path);
+
+        if (isReadOnly()) {
+            throw new PermissionDeniedCacheException("Read only door");
+        }
+
+        if (!isWriteAllowed(fullPath)) {
+            throw new PermissionDeniedCacheException("Write permission denied");
+        }
+
+        Set<FileType> allowedSet = EnumSet.of(FileType.REGULAR);
+        _pnfs.deletePnfsEntry(fullPath.toString(), allowedSet);
     }
 
     /**

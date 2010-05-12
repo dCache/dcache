@@ -1,6 +1,7 @@
 package org.dcache.xrootd2.security.plugins.tokenauthz;
 
 import java.security.GeneralSecurityException;
+
 import java.security.KeyPair;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
@@ -10,6 +11,7 @@ import java.util.Map;
 import java.net.InetSocketAddress;
 
 import org.dcache.xrootd2.protocol.XrootdProtocol;
+import org.dcache.xrootd2.protocol.XrootdProtocol.FilePerm;
 import org.dcache.xrootd2.security.AuthorizationHandler;
 import org.dcache.xrootd2.security.plugins.tokenauthz.Envelope.GridFile;
 
@@ -28,7 +30,8 @@ public class TokenAuthzHandler implements AuthorizationHandler
     }
 
     public boolean checkAuthz(String pathToOpen, Map options,
-                              boolean wantToWrite, InetSocketAddress endpoint)
+                              XrootdProtocol.FilePerm mode,
+                              InetSocketAddress endpoint)
         throws GeneralSecurityException
     {
         if (pathToOpen == null) {
@@ -46,16 +49,17 @@ public class TokenAuthzHandler implements AuthorizationHandler
                 return true;
             }
 
-            if ("read".equalsIgnoreCase(noStrongAuthz) && !wantToWrite) {
+            if ("read".equalsIgnoreCase(noStrongAuthz) &&
+                mode == FilePerm.READ) {
                 setPfn(pathToOpen);
                 return true;
             }
 
-            if ("write".equalsIgnoreCase(noStrongAuthz) && wantToWrite) {
+            if ("write".equalsIgnoreCase(noStrongAuthz) &&
+                mode == FilePerm.WRITE) {
                 setPfn(pathToOpen);
                 return true;
             }
-
 
             throw new GeneralSecurityException("No authorization token found in open request, access denied.");
         }
@@ -105,9 +109,13 @@ public class TokenAuthzHandler implements AuthorizationHandler
         // the authorization check. read access (lowest permission
         // required) is granted by default (file.getAccess() == 0), we
         // must check only in case of writing
-        if (wantToWrite) {
-            int grantedPermission = file.getAccess();
-            if (grantedPermission < Envelope.WRITE_ONCE) {
+        int grantedPermission = file.getAccess();
+        if (mode == FilePerm.WRITE) {
+            if (grantedPermission < FilePerm.WRITE_ONCE.ordinal()) {
+                return false;
+            }
+        } else if (mode == FilePerm.DELETE) {
+            if (grantedPermission < FilePerm.DELETE.ordinal()) {
                 return false;
             }
         }
