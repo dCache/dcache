@@ -53,12 +53,31 @@ public class PoolsDAOImplHelper implements PoolsDAO {
 
     @Override
     public void changePoolMode(Set<String> poolIds, PoolV2Mode poolMode, String userName) throws DAOException {
-        for (String poolId : poolIds) {
-            for (Pool pool : _pools) {
-                if (pool.getName().equals(poolId)) {
-                    pool.setEnabled(false);
+        boolean enabled = isEnabled(poolMode);
+        for (String id : poolIds) {
+            if (getAvailableIds().contains(id)) {
+                for (Pool pool : _pools) {
+                    if (pool.getName().equals(id)) {
+                        pool.setEnabled(enabled);
+                        break;
+                    }
                 }
+            } else {
+                throw new IllegalArgumentException(id + " not a preconfigured Pool");
             }
         }
+    }
+
+    private Set<String> getAvailableIds() {
+        Set<String> ids = new HashSet<String>();
+        for (Pool pool : _pools) {
+            ids.add(pool.getName());
+        }
+        return ids;
+    }
+
+    private boolean isEnabled(PoolV2Mode poolMode) {
+        return (poolMode.getMode() != PoolV2Mode.DISABLED_RDONLY &&
+                poolMode.getMode() != PoolV2Mode.DISABLED_STRICT);
     }
 }

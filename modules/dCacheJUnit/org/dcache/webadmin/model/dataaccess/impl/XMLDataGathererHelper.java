@@ -287,4 +287,11 @@ public class XMLDataGathererHelper implements XMLDataGatherer {
 
         return poolBeans;
     }
+
+    public static Set<String> getAvailableIds() {
+        Set<String> ids = new HashSet<String>();
+        ids.add(POOL1_NAME);
+        ids.add(POOL2_NAME);
+        return ids;
+    }
 }

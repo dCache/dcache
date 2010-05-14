@@ -2,6 +2,7 @@ package org.dcache.webadmin.controller.impl;
 
 import diskCacheV111.pools.PoolV2Mode;
 import java.util.List;
+import java.util.Set;
 import org.dcache.webadmin.controller.exceptions.PoolBeanServiceException;
 import org.dcache.webadmin.model.businessobjects.Pool;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
@@ -15,35 +16,58 @@ import static org.junit.Assert.*;
 
 public class PoolBeanServiceImplTest {
 
-    private static final DAOFactory DAO_FACTORY = new DAOFactoryImplHelper();
-    private PoolBeanServiceImpl _poolBeanService = null;
+    private DAOFactory _daoFactory;
+    private PoolBeanServiceImpl _poolBeanService;
+    private List<PoolBean> _expectedPoolBeans;
 
     @Before
     public void setUp() {
-        _poolBeanService = new PoolBeanServiceImpl(DAO_FACTORY);
+        _daoFactory = new DAOFactoryImplHelper();
+        _poolBeanService = new PoolBeanServiceImpl(_daoFactory);
+        _expectedPoolBeans = XMLDataGathererHelper.createExpectedPoolBeans();
     }
 
     @Test
     public void testGetPoolBeans() throws PoolBeanServiceException {
         List<PoolBean> poolBeans = _poolBeanService.getPoolBeans();
-        List<PoolBean> expectedPoolBeans = XMLDataGathererHelper.createExpectedPoolBeans();
-        assertEquals("pools not returned as expected", expectedPoolBeans, poolBeans);
+        assertEquals("pools not returned as expected", _expectedPoolBeans, poolBeans);
     }
 
     @Test
-    public void testChangePoolMode() throws PoolBeanServiceException {
-        PoolsDAOImplHelper poolsDAO = (PoolsDAOImplHelper) DAO_FACTORY.getPoolsDAO();
-
-        List<PoolBean> expectedPoolBeans = XMLDataGathererHelper.createExpectedPoolBeans();
-        // select all pools to be disabled
-        for (PoolBean poolBean : expectedPoolBeans) {
-            poolBean.setSelected(true);
-        }
-        _poolBeanService.changePoolMode(expectedPoolBeans,
-                new PoolV2Mode(PoolV2Mode.DISABLED), "testuser");
-
+    public void testChangePoolModeAllDisabled() throws PoolBeanServiceException {
+        PoolsDAOImplHelper poolsDAO = (PoolsDAOImplHelper) _daoFactory.getPoolsDAO();
+        setSelectionOfAllPoolBeans(true);
+        _poolBeanService.changePoolMode(_expectedPoolBeans,
+                new PoolV2Mode(PoolV2Mode.DISABLED_STRICT), "testuser");
         for (Pool pool : poolsDAO.getPools()) {
             assertFalse(pool.isEnabled());
+        }
+    }
+
+    @Test
+    public void testChangePoolModeAllEnabled() throws PoolBeanServiceException {
+        PoolsDAOImplHelper poolsDAO = (PoolsDAOImplHelper) _daoFactory.getPoolsDAO();
+        setSelectionOfAllPoolBeans(true);
+        _poolBeanService.changePoolMode(_expectedPoolBeans,
+                new PoolV2Mode(PoolV2Mode.ENABLED), "testuser");
+        for (Pool pool : poolsDAO.getPools()) {
+            assertTrue(pool.isEnabled());
+        }
+    }
+
+    @Test
+    public void testChangePoolModeNoneSelected() throws PoolBeanServiceException {
+        PoolsDAOImplHelper poolsDAO = (PoolsDAOImplHelper) _daoFactory.getPoolsDAO();
+        setSelectionOfAllPoolBeans(false);
+        Set<Pool> poolsBeforeChange = poolsDAO.getPools();
+        _poolBeanService.changePoolMode(_expectedPoolBeans,
+                new PoolV2Mode(PoolV2Mode.ENABLED), "testuser");
+        assertEquals(poolsBeforeChange, poolsDAO.getPools());
+    }
+
+    private void setSelectionOfAllPoolBeans(boolean selected) {
+        for (PoolBean poolBean : _expectedPoolBeans) {
+            poolBean.setSelected(selected);
         }
     }
 }
