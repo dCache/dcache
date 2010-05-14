@@ -360,8 +360,9 @@ public class Subjects {
 
     /**
      * Maps a UserAuthBase to a Subject.  The Subject will contain the
-     * UID (UidPrincipal), GID (GidPrincipal), DN (GlobusPrincipal),
-     * and FQAN (FQANPrincipal) principals.
+     * UID (UidPrincipal), GID (GidPrincipal), user name
+     * (UserNamePrincipal), DN (GlobusPrincipal), and FQAN
+     * (FQANPrincipal) principals.
      *
      * @param user UserAuthBase to convert
      * @param primary Whether the groups of user are the primary groups
@@ -371,6 +372,11 @@ public class Subjects {
         Set<Principal> principals = subject.getPrincipals();
         principals.add(new UidPrincipal(user.UID));
         principals.add(new GidPrincipal(user.GID, primary));
+
+        String name = user.Username;
+        if (name != null && !name.isEmpty()) {
+            principals.add(new UserNamePrincipal(name));
+        }
 
         String dn = user.DN;
         if (dn != null && !dn.isEmpty()) {
@@ -384,4 +390,42 @@ public class Subjects {
 
         return subject;
     }
+
+    /**
+     * Maps a UserAuthRecord to a Subject.  The Subject will contain
+     * the UID (UidPrincipal), GID (GidPrincipal), user name
+     * (UserNamePrincipal), DN (GlobusPrincipal), and FQAN
+     * (FQANPrincipal) principals.
+     *
+     * @param user UserAuthRecord to convert
+     */
+    public final static Subject getSubject(UserAuthRecord user) {
+        Subject subject = new Subject();
+        Set<Principal> principals = subject.getPrincipals();
+        principals.add(new UidPrincipal(user.UID));
+
+        boolean primary = true;
+        for (int gid: user.GIDs) {
+            principals.add(new GidPrincipal(user.GID, primary));
+            primary = false;
+        }
+
+        String name = user.Username;
+        if (name != null && !name.isEmpty()) {
+            principals.add(new UserNamePrincipal(name));
+        }
+
+        String dn = user.DN;
+        if (dn != null && !dn.isEmpty()) {
+            principals.add(new GlobusPrincipal(dn));
+        }
+
+        String fqan = user.getFqan().toString();
+        if (fqan != null && !fqan.isEmpty()) {
+            principals.add(new FQANPrincipal(fqan, true));
+        }
+
+        return subject;
+    }
+
 }

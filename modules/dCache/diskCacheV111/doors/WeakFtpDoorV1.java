@@ -51,11 +51,16 @@ import java.util.*;
 import java.io.*;
 import java.net.*;
 import java.lang.reflect.*;
-import org.dcache.auth.UserPwdRecord;
+import org.dcache.auth.UserNamePrincipal;
+import org.dcache.auth.Password;
+import org.dcache.auth.Subjects;
+import org.dcache.auth.KauthFileLoginStrategy;
 import org.ietf.jgss.*;
 import java.lang.Thread;
 import java.util.regex.*;
 import java.util.concurrent.ExecutionException;
+
+import javax.security.auth.Subject;
 
 /**
  *
@@ -76,6 +81,8 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
     {
         super.init();
         ftpDoorName = "Weak FTP";
+        _loginStrategy =
+            new KauthFileLoginStrategy(new File(_kpwdFilePath));
     }
 
     protected void secure_reply(String answer, String code) {
@@ -92,77 +99,45 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
     public void secure_command(String arg, String sectype) throws dmg.util.CommandExitException {
     }
 
-    public void ac_user(String arg) {
-        KAuthFile authf;
-        _originalPwdRecord = null;
-        _pwdRecord = null;
-        _user = null;
+    private String _user;
 
+    public void ac_user(String arg)
+    {
         if (arg.equals("")){
             println(err("USER",arg));
             return;
         }
         _user = arg;
 
-        try {
-            authf = new KAuthFile(_kpwdFilePath);
-        }
-        catch( Exception e ) {
-            println("530 Password file " + _kpwdFilePath + " not found.");
-            return;
-        }
-
-        _originalPwdRecord = _pwdRecord = authf.getUserPwdRecord(_user);
-
-        if( _pwdRecord == null || ((UserPwdRecord)_pwdRecord).isDisabled() ) {
-            _pwdRecord = null;
-            println("530 User " + _user + " not found.");
-            return;
-        }
-
-        _needPass = true;
-        if( _needPass )
-            println("331 Password required for "+_user+".");
+        println("331 Password required for "+_user+".");
     }
 
-    public void ac_pass(String arg) {
-        if( _pwdRecord == null || ((UserPwdRecord)_pwdRecord).isDisabled() ||
-        !((UserPwdRecord)_pwdRecord).isAnonymous() && ! ((UserPwdRecord)_pwdRecord).passwordIsValid(arg) ) {
-            if( _pwdRecord == null) { 
-                error("530 Login incorrect: pwd record is null");
-            } else if (((UserPwdRecord)_pwdRecord).isDisabled()) {
-                warn ("530 Login incorrect:pwd record is disabled");
-            } else if ( ! ((UserPwdRecord)_pwdRecord).passwordIsValid(arg)) {
-                warn ("530 Login incorrect: password is incorrect");
-            } 
+    public void ac_pass(String arg)
+    {
+        Subject subject = new Subject();
+        subject.getPrincipals().add(new UserNamePrincipal(_user));
+        subject.getPrivateCredentials().add(new Password(arg));
+        try {
+            login(subject);
+        } catch (PermissionDeniedCacheException e) {
+            warn("Login denied for " + subject);
             println("530 Login incorrect");
-            _user = null;
-            _pwdRecord = null;
-            _needUser = true;
-            return;
+        } catch (CacheException e) {
+            error("Login failed for " + subject + ": " + e);
+            println("530 Login failed: " + e.getMessage());
         }
 
-        _needPass = false;
-        if( ((UserPwdRecord)_pwdRecord).isAnonymous() )
-            println( "231 Anonymous read-only access allowed");
-        else
-            println( "230 User "+_user+" logged in");
-        _curDirV = _pwdRecord.Home;
-        _pathRoot = _pwdRecord.Root;
-        if ( _pathRoot == null || _pathRoot.length() == 0 )
-            _pathRoot = "/";
+        println("230 User " + _user + " logged in");
     }
 
     public void startTlog(String path, String action) {
-        if (_tLog == null) {
+        if (_tLog == null || _subject == null) {
             return;
         }
         try {
-            String user_string = _user;
-            if (_pwdRecord != null) {
-                user_string += "("+_pwdRecord.UID+"."+_pwdRecord.GID+")";
-            }
-            _tLog.begin(user_string, "weakftp", action, path,
+            String user =
+                Subjects.getUserName(_subject) + "("+Subjects.getUid(_subject) + "." + Subjects.getPrimaryGid(_subject) + ")";
+            _tLog.begin(user, "weakftp", action, path,
                         _engine.getInetAddress());
         }
         catch (Exception e) {
@@ -173,15 +148,15 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
 
     public void echoStr1(String str) {
     }
-    
+
     protected void resetPwdRecord()
     {
     }
-    
+
     protected boolean setNextPwdRecord()
     {
         return false;
     }
-    
+
 
 }

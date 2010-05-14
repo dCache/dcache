@@ -45,6 +45,6 @@ public class UidPrincipal implements Principal, Serializable
 
     @Override
     public String toString() {
-        return getClass().getName() + "[uid=" + getName() + "]";
+        return getClass().getSimpleName() + "[" + getName() + "]";
     }
 }

@@ -44,6 +44,6 @@ public class UserNamePrincipal implements Principal, Serializable
 
     @Override
     public String toString() {
-        return getClass().getName() + "[name=" + getName() + "]";
+        return getClass().getSimpleName() + "[" + getName() + "]";
     }
 }

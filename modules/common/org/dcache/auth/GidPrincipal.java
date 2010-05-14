@@ -34,8 +34,11 @@ public class GidPrincipal implements Principal, Serializable
 
     @Override
     public String toString() {
-        return (getClass().getName() + "[gid=" +
-                getName() + ",primary=" + _isPrimaryGroup + "]");
+        if (_isPrimaryGroup) {
+            return (getClass().getSimpleName() + "[" + getName() + ",primary]");
+        } else {
+            return (getClass().getSimpleName() + "[" + getName() + "]");
+        }
     }
 
     @Override

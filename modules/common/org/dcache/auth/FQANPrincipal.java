@@ -54,6 +54,6 @@ public class FQANPrincipal implements Principal, Serializable
 
     public String toString()
     {
-        return _fqan;
+        return FQANPrincipal.class.getSimpleName() + "[" + _fqan + "]";
     }
 }
