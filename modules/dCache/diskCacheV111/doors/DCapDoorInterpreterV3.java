@@ -887,6 +887,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             throw new
             CommandException( 5 , "Duplicated session id" ) ;
 
+        getUserMetadata();
+
         try{
             //
             synchronized( _messageLock ){
@@ -2138,7 +2140,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             // first we have to findout if we are allowed to create a file.
             //
             getUserMetadata();
-            
+
             _log.debug("IoHandler::storageInfoNotAvailable Door authenticated for {} ({} ,{})",
                     new Object[] {_user.getName(), _user.getRoles(), _userAuthRecord});
 
