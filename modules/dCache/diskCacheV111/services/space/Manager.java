@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -79,6 +80,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.dcache.auth.AuthorizationRecord;
 import org.dcache.auth.GroupList;
+import org.dcache.vehicles.PoolManagerSelectLinkGroupForWriteMessage;
+import dmg.cells.nucleus.NoRouteToCellException;
 
 /**
  *   <pre> Space Manager dCache service provides ability
@@ -3312,8 +3315,8 @@ public final class Manager
 
 	}
 
-    @Override
-	public void messageArrived( final CellMessage cellMessage ) {
+        @Override
+        public void messageArrived( final CellMessage cellMessage ) {
 		diskCacheV111.util.ThreadManager.execute(new Runnable() {
 				public void run() {
 					processMessage(cellMessage);
@@ -3839,7 +3842,10 @@ public final class Manager
                                                    defaultLatency:reserve.getAccessLatency()),
                                                   reserve.getRetentionPolicy(),
                                                   reserve.getLifetime(),
-                                                  reserve.getDescription());
+                                                  reserve.getDescription(),
+                                                  null,
+                                                  null,
+                                                  null);
 		reserve.setSpaceToken(reservationId);
 	}
 
@@ -3848,7 +3854,9 @@ public final class Manager
                                        long size,
                                        AccessLatency latency,
                                        RetentionPolicy policy,
-                                       AuthorizationRecord authRecord)
+                                       AuthorizationRecord authRecord,
+                                       ProtocolInfo protocolInfo,
+                                       StorageInfo storageInfo)
 		throws SQLException,
                        java.io.IOException,SpaceException {
 		long sizeInBytes = size;
@@ -3859,7 +3867,10 @@ public final class Manager
                                                   latency,
                                                   policy,
                                                   lifetime,
-                                                  description);
+                                                  description,
+                                                  protocolInfo,
+                                                  storageInfo,
+                                                  pnfsId);
                 Space space = getSpace(reservationId);
 		long fileId = useSpace(reservationId,
                                        space.getVoGroup(),
@@ -4381,7 +4392,10 @@ public final class Manager
                                   AccessLatency latency ,
                                   RetentionPolicy policy,
                                   long lifetime,
-                                  String description)
+                                  String description,
+                                  ProtocolInfo protocolInfo,
+                                  StorageInfo storageInfo,
+                                  PnfsId pnfsId)
 		throws SQLException,
                        java.io.IOException,
                        SpaceException {
@@ -4402,26 +4416,102 @@ public final class Manager
                         throw new NoFreeSpaceException(" no space available");
                 }
                 SpaceAuthorizationException sae = null;
-                for(LinkGroup linkGroup:linkGroups) {
+                //
+                // filter out groups we are not authorized to use
+                //
+                Map<String,VOInfo> linkGroupNameVoInfoMap = new HashMap<String,VOInfo>();
+                for (LinkGroup linkGroup : linkGroups) {
                         try {
                                 VOInfo voInfo =
                                         authorizationPolicy.checkReservePermission(authRecord,
                                                                                    linkGroup);
-                                return reserveSpaceInLinkGroup(
-                                                               linkGroup.getId(),
-                                                               voInfo.getVoGroup(),
-                                                               voInfo.getVoRole(),
-                                                               sizeInBytes,
-                                                               latency,
-                                                               policy,
-                                                               lifetime,
-                                                               description);
+                                linkGroupNameVoInfoMap.put(linkGroup.getName(),voInfo);
                         }
-                        catch(SpaceAuthorizationException sae1) {
-                                sae = sae1;
+                        catch (SpaceAuthorizationException e) {
+                                continue;
                         }
                 }
-                throw sae;
+                if(linkGroupNameVoInfoMap.isEmpty()) {
+                        logger.warn("Failed to find LinkGroup where user is authorized to reserve space.");
+                        throw new SpaceAuthorizationException("Failed to find LinkGroup where user is authorized to reserve space.");
+                }
+                List<String> linkGroupNames = new ArrayList<String>(linkGroupNameVoInfoMap.keySet());
+                if (logger.isDebugEnabled()) {
+                        logger.debug("Found "+linkGroups.size()+
+                                     " linkgroups "+
+                                     "protocolInfo="+(protocolInfo!=null?protocolInfo:"null")+
+                                     ", storageInfo="+(storageInfo!=null?storageInfo:"null")+
+                                     ", pnfsId="+pnfsId);
+
+                }
+                if (linkGroupNameVoInfoMap.size()>1 &&
+                    protocolInfo != null &&
+                    storageInfo  != null) {
+                        try {
+                                PoolManagerSelectLinkGroupForWriteMessage msg = new PoolManagerSelectLinkGroupForWriteMessage(pnfsId,
+                                                                                                                              storageInfo,
+                                                                                                                              protocolInfo,
+                                                                                                                              sizeInBytes);
+                                msg.setLinkGroups(linkGroupNames);
+                                CellMessage cellMessage = new CellMessage(new CellPath(poolManager),msg);
+                                logger.debug("Sending PoolManagerSelectLinkGroupForWriteMessage");
+                                //
+                                // use this for now, in the future will switch to CellStub
+                                //
+                                cellMessage = sendAndWait(cellMessage,1000*60);
+                                if(cellMessage == null ) {
+                                        throw new SpaceException("PoolManagerSelectLinkGroupForWriteMessage: request timed out "+pnfsId);
+                                }
+                                if (cellMessage.getMessageObject() == null ) {
+                                        throw new SpaceException("PoolManagerSelectLinkGroupForWriteMessage : reply message is null");
+                                }
+                                PoolManagerSelectLinkGroupForWriteMessage reply = (PoolManagerSelectLinkGroupForWriteMessage)cellMessage.getMessageObject();
+                                if(reply.getReturnCode() != 0) {
+                                        throw new SpaceException("Internal error : PoolManagerSelectLinkGroupForWriteMessage return code="+
+                                                                 reply.getReturnCode()+
+                                                                 ", message= "+
+                                                                 reply.getErrorObject().toString());
+                                }
+                                linkGroupNames=reply.getLinkGroups();
+                                if (logger.isDebugEnabled()) {
+                                        logger.debug("received PoolManagerSelectLinkGroupForWriteMessage reply, number of LinkGroups="+linkGroupNames.size());
+                                }
+                                if(linkGroupNames.isEmpty()) {
+                                        throw new SpaceAuthorizationException("PoolManagerSelectLinkGroupForWriteMessage: Failed to find LinkGroup where user is authorized to reserve space.");
+                                }
+                        }
+                        catch (SpaceAuthorizationException e)  {
+                                logger.warn(e.getMessage());
+                                throw e;
+                        }
+                        catch (SpaceException e) {
+                                logger.warn(e.getMessage());
+                                throw e;
+                        }
+                        catch(Exception e) {
+                                throw new SpaceException("Internal error : Failed to get list of link group ids from Pool Manager "+e.getMessage());
+                        }
+                }
+                String linkGroupName = linkGroupNames.get(0);
+                VOInfo voInfo        = linkGroupNameVoInfoMap.get(linkGroupName);
+                LinkGroup linkGroup  = null;
+                for (LinkGroup lg : linkGroups) {
+                        if (lg.getName().equals(linkGroupName) ) {
+                                linkGroup = lg;
+                                break;
+                        }
+                }
+                if (logger.isDebugEnabled()) {
+                        logger.debug("Chose likgroup "+linkGroup);
+                }
+                return reserveSpaceInLinkGroup(linkGroup.getId(),
+                                               voInfo.getVoGroup(),
+                                               voInfo.getVoRole(),
+                                               sizeInBytes,
+                                               latency,
+                                               policy,
+                                               lifetime,
+                                               description);
         }
 
 	private long reserveSpaceInLinkGroup(
@@ -4483,14 +4573,14 @@ public final class Manager
 	}
 
 
-	private long useSpace(
-		long reservationId,
-		String voGroup,
-		String voRole,
-		long sizeInBytes,
-		long lifetime,
-		String pnfsPath,
-		PnfsId pnfsId) throws SQLException,SpaceException {
+	private long useSpace(long reservationId,
+                              String voGroup,
+                              String voRole,
+                              long sizeInBytes,
+                              long lifetime,
+                              String pnfsPath,
+                              PnfsId pnfsId)
+                throws SQLException,SpaceException {
 		Connection connection =null;
 		pnfsPath =new FsPath(pnfsPath).toString();
 		try {
@@ -4538,7 +4628,9 @@ public final class Manager
 		}
 	}
 
-	public void selectPool(CellMessage cellMessage, boolean isReply ) throws Exception{
+	public void selectPool(CellMessage cellMessage,
+                               boolean isReply )
+                throws Exception{
 		PoolMgrSelectPoolMsg selectPool = (PoolMgrSelectPoolMsg)cellMessage.getMessageObject();
 		if(!spaceManagerEnabled ) {
 			if(!isReply) {
@@ -4555,7 +4647,7 @@ public final class Manager
                         logger.debug("selectPool("+selectPool +")");
                 }
 		String pnfsPath = selectPool.getPnfsPath();
-		PnfsId pnfsId = selectPool.getPnfsId();
+		PnfsId pnfsId   = selectPool.getPnfsId();
 		if( !(selectPool instanceof PoolMgrSelectWritePoolMsg)||pnfsPath == null) {
                         if (logger.isDebugEnabled()) {
                                 logger.debug("selectPool: pnfsPath is null");
@@ -4584,7 +4676,7 @@ public final class Manager
                         }
 		}
 		catch (Exception e) {
-			logger.error(e.getMessage());
+			logger.info(e.getMessage());
 		}
 		if(file==null) {
                         StorageInfo storageInfo = selectPool.getStorageInfo();
@@ -4611,18 +4703,23 @@ public final class Manager
                                         }
 
                                         file = reserveAndUseSpace(pnfsPath,
-                                                                  null,
+                                                                  null, //  selectPool.getPnfsId(),
                                                                   selectPool.getFileSize(),
                                                                   al,
                                                                   rp,
-                                                                  authRecord);
+                                                                  authRecord,
+                                                                  protocolInfo,
+                                                                  storageInfo);
                                         if (logger.isDebugEnabled()) {
                                                 logger.debug("selectPool: file is not found, reserveAndUseSpace() returned "+file);
                                         }
                                 }
                                 else {
                                         if (logger.isDebugEnabled()) {
-                                                logger.debug("selectPool: file is not found, no prior reservations for this file");
+                                                logger.debug("selectPool: file is not found, no prior reservations for this file reserveSpaceForNonSRMTransfers="+
+                                                             reserveSpaceForNonSRMTransfers+
+                                                             " authrecord="
+                                                             +(authRecord!=null?authRecord:"none"));
                                         }
                                         if(!isReply) {
                                                 if (logger.isDebugEnabled()) {
