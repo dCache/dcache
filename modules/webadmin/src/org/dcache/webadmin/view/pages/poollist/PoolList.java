@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.ArrayList;
 import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.markup.html.WebMarkupContainer;
-import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.CheckBox;
 import org.apache.wicket.markup.html.form.ChoiceRenderer;
@@ -25,6 +24,7 @@ import org.dcache.webadmin.view.util.EvenOddListView;
 import org.dcache.webadmin.view.WebAdminInterface;
 import org.dcache.webadmin.view.beans.PoolBean;
 import org.dcache.webadmin.view.beans.SelectOption;
+import org.dcache.webadmin.view.pages.AuthenticatedWebPage;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
 
@@ -32,7 +32,7 @@ import org.slf4j.Logger;
  * The PoolUsage Webpage
  * @author jans
  */
-public class PoolList extends WebPage {
+public class PoolList extends AuthenticatedWebPage {
 
     private static final int DEFAULT_DROP_DOWN_CHOICE = 0;
     private List<PoolBean> _poolBeans;
