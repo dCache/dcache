@@ -913,6 +913,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             throw new
             CommandException( 5 , "Duplicated session id" ) ;
 
+        if (_userAuthRecord == null) {
+            _userAuthRecord = getUserMetadata(_user.getName(), _user.getRole());
+        }
+
         try{
             //
             synchronized( _messageLock ){
