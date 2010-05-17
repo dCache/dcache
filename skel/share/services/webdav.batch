@@ -80,9 +80,6 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
     -loginBrokerUpdateTime=${loginBrokerUpdateTime} \
     -loginBrokerUpdateThreshold=${loginBrokerUpdateThreshold} \
     -loginBroker=${loginBroker} \
-    -useGPlazmaAuthorizationCell=${useGPlazmaAuthorizationCell} \
-    -useGPlazmaAuthorizationModule=${useGPlazmaAuthorizationModule} \
-    -gplazmaPolicy=${gplazmaPolicy} \
     -webdav.static-content.dir.default=${webdav.static-content.dir.default} \
     -webdav.static-content.dir.local=${webdav.static-content.dir.local} \
     -webdav.static-content.location=${webdav.static-content.location} \

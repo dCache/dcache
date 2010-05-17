@@ -16,13 +16,15 @@ import java.net.InetAddress;
 import java.util.Arrays;
 
 import org.dcache.cells.CellStub;
-import org.dcache.auth.AuthzQueryHelper;
 import org.dcache.auth.Subjects;
-import org.dcache.auth.RecordConvert;
-
-import gplazma.authz.AuthorizationController;
-import gplazma.authz.AuthorizationException;
+import org.dcache.auth.LoginStrategy;
+import org.dcache.auth.LoginReply;
+import org.dcache.auth.attributes.LoginAttribute;
+import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.Origin;
+
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,21 +56,9 @@ public class SecurityFilter implements Filter
     private static final String X509_CERTIFICATE_ATTRIBUTE =
         "javax.servlet.request.X509Certificate";
 
-    /**
-     * Defines which operations are allowed for anonymous access.
-     */
-    public enum AnonymousAccess
-    {
-        NONE, READONLY, FULL
-    }
-
     private String _realm;
     private boolean _isReadOnly;
-    private AnonymousAccess _anonymousAccess;
-    private CellStub _gPlazmaStub;
-    private String _gPlazmaPolicyFilePath;
-    private boolean _useGplazmaCell;
-    private boolean _useGplazmaModule;
+    private LoginStrategy _loginStrategy;
 
     @Override
     public void process(final FilterChain filterChain,
@@ -76,86 +66,58 @@ public class SecurityFilter implements Filter
                         final Response response)
     {
         HttpManager manager = filterChain.getHttpManager();
+        Subject subject = new Subject();
 
-        /* Only a subset of the HTTP methods are allowed in read-only
-         * mode.
-         */
-        if (_isReadOnly) {
-            switch (request.getMethod()) {
-            case GET:
-            case HEAD:
-            case OPTIONS:
-            case PROPFIND:
-                break;
-            default:
+        try {
+            HttpServletRequest servletRequest = ServletRequest.getRequest();
+
+            addX509ChainToSubject(servletRequest, subject);
+            addOriginToSubject(servletRequest, subject);
+
+            LoginReply login = _loginStrategy.login(subject);
+            subject = login.getSubject();
+
+            if (isAuthorizedMethod(request.getMethod(), login)) {
                 manager.getResponseHandler().respondMethodNotAllowed(new EmptyResource(request), response, request);
-                return;
             }
+
+            /* Add the origin of the request to the subject. This
+             * ought to be processed in the LoginStrategy, but our
+             * LoginStrategies currently do not process the Origin.
+             */
+            addOriginToSubject(servletRequest, subject);
+
+            /* Process the request as the authenticated user.
+             */
+            Subject.doAs(subject, new PrivilegedAction<Void>() {
+                    @Override
+                    public Void run()
+                        {
+                            filterChain.process(request, response);
+                            return null;
+                        }
+                });
+        } catch (PermissionDeniedCacheException e) {
+            _log.warn("Login failed for " + subject);
+            manager.getResponseHandler().respondUnauthorised(new EmptyResource(request), response, request);
+        } catch (CacheException e) {
+            _log.error("Internal server error: " + e);
+            manager.getResponseHandler().respondServerError(request, response, e.getMessage());
         }
+    }
 
-        /* Perform authentication.
-         */
-        Subject subject = null;
-
-        HttpServletRequest servletRequest = ServletRequest.getRequest();
-        Object object =
-            servletRequest.getAttribute(X509_CERTIFICATE_ATTRIBUTE);
+    private void addX509ChainToSubject(HttpServletRequest request, Subject subject)
+    {
+        Object object = request.getAttribute(X509_CERTIFICATE_ATTRIBUTE);
         if (object instanceof X509Certificate[]) {
             X509Certificate[] chain = (X509Certificate[]) object;
-
-            if (_useGplazmaCell) {
-                try {
-                    AuthzQueryHelper helper =
-                        new AuthzQueryHelper(_gPlazmaStub);
-                    subject =
-                        Subjects.getSubject(RecordConvert.gPlazmaToAuthorizationRecord(helper.authorize(chain, null).getgPlazmaAuthzMap()));
-                } catch (AuthorizationException e) {
-                    _log.info("Failed to authorize through gPlazma cell: "
-                              + e.getMessage());
-                }
-            }
-
-            if (subject == null && _useGplazmaModule) {
-                try {
-                    AuthorizationController authCtrl
-                        = new AuthorizationController(_gPlazmaPolicyFilePath);
-                    subject =
-                        Subjects.getSubject(RecordConvert.gPlazmaToAuthorizationRecord(authCtrl.authorize(chain, null, null, null)));
-                } catch (AuthorizationException e) {
-                    _log.info("Failed to authorize through gPlazma module: "
-                              + e.getMessage());
-                }
-            }
+            subject.getPublicCredentials().add(chain);
         }
+    }
 
-        /* If we don't have a subject by now, then we will try
-         * anonymous access.
-         */
-        if (subject == null) {
-            switch (request.getMethod()) {
-            case GET:
-            case HEAD:
-            case OPTIONS:
-            case PROPFIND:
-                if (_anonymousAccess == AnonymousAccess.NONE) {
-                    manager.getResponseHandler().respondUnauthorised(new EmptyResource(request), response, request);
-                    return;
-                }
-                break;
-            default:
-                if (_anonymousAccess != AnonymousAccess.FULL) {
-                    manager.getResponseHandler().respondUnauthorised(new EmptyResource(request), response, request);
-                    return;
-                }
-                break;
-            }
-
-            subject = new Subject();
-        }
-
-        /* Add the origin of the request to the subject.
-         */
-        String address = servletRequest.getRemoteAddr();
+    private void addOriginToSubject(HttpServletRequest request, Subject subject)
+    {
+        String address = request.getRemoteAddr();
         try {
             Origin origin =
                 new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
@@ -164,17 +126,34 @@ public class SecurityFilter implements Filter
         } catch (UnknownHostException e) {
             _log.warn("Failed to resolve " + address + ": " + e.getMessage());
         }
+    }
 
-        /* Process the request as the authenticated user.
-         */
-        Subject.doAs(subject, new PrivilegedAction<Void>() {
-                @Override
-                public Void run()
-                {
-                    filterChain.process(request, response);
-                    return null;
-                }
-            });
+    private boolean isAuthorizedMethod(Request.Method method, LoginReply login)
+    {
+        return (!_isReadOnly && !isUserReadOnly(login)) || isReadMethod(method);
+    }
+
+    private boolean isUserReadOnly(LoginReply login)
+    {
+        for (LoginAttribute attribute: login.getLoginAttributes()) {
+            if (attribute instanceof ReadOnly) {
+                return ((ReadOnly) attribute).isReadOnly();
+            }
+        }
+        return false;
+    }
+
+    private boolean isReadMethod(Request.Method method)
+    {
+        switch (method) {
+        case GET:
+        case HEAD:
+        case OPTIONS:
+        case PROPFIND:
+            return true;
+        default:
+            return false;
+        }
     }
 
     public String getRealm()
@@ -203,51 +182,8 @@ public class SecurityFilter implements Filter
         _isReadOnly = isReadOnly;
     }
 
-    public AnonymousAccess getAnonymousAccess()
+    public void setLoginStrategy(LoginStrategy loginStrategy)
     {
-        return _anonymousAccess;
-    }
-
-    /**
-     * Specifies which anonymous requests are allowed.
-     */
-    public void setAnonymousAccess(AnonymousAccess anonymousAccess)
-    {
-        _anonymousAccess = anonymousAccess;
-    }
-
-    public void setGplazmaStub(CellStub stub)
-    {
-        _gPlazmaStub = stub;
-    }
-
-    public void setGplazmaPolicyFilePath(String path)
-    {
-        _gPlazmaPolicyFilePath = path;
-    }
-
-    public String getGplazmaPolicyFilePath()
-    {
-        return _gPlazmaPolicyFilePath;
-    }
-
-    public void setUseGplazmaCell(boolean useCell)
-    {
-        _useGplazmaCell = useCell;
-    }
-
-    public boolean getUseGplazmaCell()
-    {
-        return _useGplazmaCell;
-    }
-
-    public void setUseGplazmaModule(boolean useModule)
-    {
-        _useGplazmaModule = useModule;
-    }
-
-    public boolean getUseGplazmaModule()
-    {
-        return _useGplazmaModule;
+        _loginStrategy = loginStrategy;
     }
 }
