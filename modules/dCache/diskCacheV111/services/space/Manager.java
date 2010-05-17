@@ -82,6 +82,7 @@ import org.dcache.auth.AuthorizationRecord;
 import org.dcache.auth.GroupList;
 import org.dcache.vehicles.PoolManagerSelectLinkGroupForWriteMessage;
 import dmg.cells.nucleus.NoRouteToCellException;
+import org.dcache.auth.Subjects;
 
 /**
  *   <pre> Space Manager dCache service provides ability
@@ -2729,11 +2730,15 @@ public final class Manager
 	}
 
 
-	public void deleteSpaceReservation(Connection connection, Space space) throws SQLException {
-		manager.delete(connection,SpaceReservationIO.DELETE_SPACE_RESERVATION,space.getId());
+	public void deleteSpaceReservation(Connection connection,
+                                           Space space) throws SQLException {
+		manager.delete(connection,
+                               SpaceReservationIO.DELETE_SPACE_RESERVATION,
+                               space.getId());
 		decrementReservedSpaceInLinkGroup(connection,
 						  space.getLinkGroupId(),
-						  space.getSizeInBytes()-space.getUsedSizeInBytes());
+						  space.getSizeInBytes()-
+                                                  space.getUsedSizeInBytes());
 	}
 
 	public void deleteSpaceReservation(long id)
@@ -4458,7 +4463,7 @@ public final class Manager
                                 //
                                 // use this for now, in the future will switch to CellStub
                                 //
-                                cellMessage = sendAndWait(cellMessage,1000*60);
+                                cellMessage = sendAndWait(cellMessage,1000L*60);
                                 if(cellMessage == null ) {
                                         throw new SpaceException("PoolManagerSelectLinkGroupForWriteMessage: request timed out "+pnfsId);
                                 }
@@ -4688,12 +4693,23 @@ public final class Manager
                         defaultSpaceToken=storageInfo.getMap().get("writeToken");
                         ProtocolInfo protocolInfo = selectPool.getProtocolInfo();
                         AuthorizationRecord authRecord = null;
-                        if(protocolInfo instanceof GridProtocolInfo) {
-                                authRecord = ((GridProtocolInfo)protocolInfo).getAuthorizationRecord();
-                                if (logger.isDebugEnabled()) {
-                                        logger.debug("protocol info is " +
-                                                "GridProtocolInfo "+
-                                                " authRecord="+authRecord);
+                        if (selectPool.getSubject()!=null) {
+                                //
+                                // use subject to extract AuthorizationRecord
+                                //
+                                authRecord = Subjects.getAuthorizationRecord(selectPool.getSubject());
+                        }
+                        else {
+                                //
+                                // below is old behavior
+                                //
+                                if(protocolInfo instanceof GridProtocolInfo) {
+                                        authRecord = ((GridProtocolInfo)protocolInfo).getAuthorizationRecord();
+                                        if (logger.isDebugEnabled()) {
+                                                logger.debug("protocol info is " +
+                                                             "GridProtocolInfo "+
+                                                             " authRecord="+authRecord);
+                                        }
                                 }
                         }
                         if (defaultSpaceToken==null) {
