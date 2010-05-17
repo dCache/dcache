@@ -178,9 +178,7 @@ import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.cells.AbstractCell;
 import org.dcache.cells.Option;
 import org.dcache.acl.ACLException;
-import org.dcache.acl.Origin;
 import org.dcache.acl.enums.AccessType;
-import org.dcache.acl.enums.AuthType;
 import org.dcache.acl.enums.FileAttribute;
 import org.dcache.acl.enums.InetAddressType;
 import org.dcache.acl.enums.AccessMask;
@@ -202,6 +200,7 @@ import org.apache.log4j.NDC;
 import javax.security.auth.Subject;
 
 import diskCacheV111.poolManager.RequestContainerV5;
+import org.dcache.auth.Origin;
 
 import static org.dcache.namespace.FileAttribute.*;
 
@@ -981,7 +980,7 @@ public abstract class AbstractFtpDoorV1
 
         /* Permission handler.
          */
-        _origin = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+	_origin = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                              _engine.getInetAddress());
 
         adminCommandListener = new AdminCommandListener();

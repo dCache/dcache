@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.NoSuchElementException;
 import javax.security.auth.Subject;
 import java.security.Principal;
-import org.dcache.acl.Origin;
 
 import org.globus.gsi.jaas.GlobusPrincipal;
 

@@ -2,9 +2,7 @@ package org.dcache.tests.namespace;
 
 import static org.junit.Assert.assertTrue;
 
-import org.dcache.acl.Origin;
 import org.dcache.acl.enums.AccessType;
-import org.dcache.acl.enums.AuthType;
 import org.dcache.tests.cells.CellAdapterHelper;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -18,6 +16,7 @@ import diskCacheV111.services.acl.UnixPermissionHandler;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.PnfsId;
 import org.dcache.auth.GidPrincipal;
+import org.dcache.auth.Origin;
 import org.dcache.auth.UidPrincipal;
 
 /**
@@ -53,7 +52,7 @@ public class UnixPermissionHandlerTest {
         permissionHandler = new UnixPermissionHandler(cell); // Initialize Permission Handler
         metadataSource = (FileMetaDataProviderHelper) permissionHandler.getMetadataSource(); // Initialize Metadata Source
 
-        origin = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG, "127.0.0.1"); // Initialize origin
+        origin = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG, "127.0.0.1"); // Initialize origin
 
         // Initialize owner subject
         subject_owner = new Subject();

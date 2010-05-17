@@ -1,7 +1,6 @@
 package diskCacheV111.services.acl;
 
 import org.dcache.acl.ACLException;
-import org.dcache.acl.Origin;
 import org.dcache.acl.enums.AccessType;
 import org.dcache.acl.enums.FileAttribute;
 
@@ -9,6 +8,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 
 import javax.security.auth.Subject;
+import org.dcache.auth.Origin;
 
 /**
  * This interface describes permissions for access-operations performed on resources.

@@ -2,8 +2,6 @@ package org.dcache.tests.namespace;
 
 import static org.junit.Assert.assertTrue;
 
-import org.dcache.acl.Origin;
-import org.dcache.acl.enums.AuthType;
 import org.dcache.acl.enums.AccessType;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -12,6 +10,7 @@ import javax.security.auth.Subject;
 import java.security.Principal;
 
 import org.dcache.auth.GidPrincipal;
+import org.dcache.auth.Origin;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.namespace.PosixPermissionHandler;
 import org.dcache.vehicles.FileAttributes;
@@ -27,7 +26,7 @@ public class PosixPermissionHandlerTest {
     @BeforeClass
     public static void setUpClass() throws Exception {
         pdp = new PosixPermissionHandler();
-        origin = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG, "127.0.0.1");
+        origin = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG, "127.0.0.1");
 
         // Initialize owner subject
         subject_owner = new Subject();

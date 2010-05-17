@@ -10,9 +10,7 @@ import java.sql.Statement;
 import java.util.Properties;
 
 import org.dcache.acl.ACL;
-import org.dcache.acl.Origin;
 import org.dcache.acl.enums.AccessType;
-import org.dcache.acl.enums.AuthType;
 import org.dcache.acl.enums.FileAttribute;
 import org.dcache.acl.enums.RsType;
 import org.dcache.acl.handler.singleton.AclHandler;
@@ -31,6 +29,7 @@ import diskCacheV111.services.acl.ACLPermissionHandler;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.PnfsId;
 import org.dcache.auth.GidPrincipal;
+import org.dcache.auth.Origin;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.commons.util.SqlHelper;
 
@@ -81,7 +80,7 @@ public class ACLPermissionHandlerTest {
 
         AclHandler.setAclConfig(aclProps);
 
-        origin = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG, "127.0.0.1"); // Initialize origin
+        origin = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG, "127.0.0.1"); // Initialize origin
 
         Principal user = new UidPrincipal(UID);
         Principal group = new GidPrincipal(GID, true);

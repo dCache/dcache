@@ -5,9 +5,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.EnumSet;
 
 import org.dcache.acl.ACL;
-import org.dcache.acl.Origin;
 import org.dcache.acl.enums.AccessType;
-import org.dcache.acl.enums.AuthType;
 import org.dcache.acl.enums.RsType;
 import org.dcache.acl.parser.ACLParser;
 import org.junit.BeforeClass;
@@ -21,6 +19,7 @@ import org.dcache.vehicles.FileAttributes;
 import diskCacheV111.util.PnfsId;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.GidPrincipal;
+import org.dcache.auth.Origin;
 import static org.dcache.namespace.FileAttribute.*;
 
 public class ACLPermissionHandlerSecondTest {
@@ -36,7 +35,7 @@ public class ACLPermissionHandlerSecondTest {
     @BeforeClass
     public static void setUpClass() throws Exception {
         pdp = new ACLPermissionHandler();
-        origin = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG, "127.0.0.1");
+        origin = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG, "127.0.0.1");
 
         Principal user = new UidPrincipal(UID);
         Principal group = new GidPrincipal(GID, true);

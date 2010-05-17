@@ -6,7 +6,6 @@ import java.lang.reflect.Constructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.dcache.acl.ACLException;
-import org.dcache.acl.Origin;
 import org.dcache.acl.enums.FileAttribute;
 
 import diskCacheV111.services.FileMetaDataSource;
@@ -18,6 +17,7 @@ import dmg.cells.nucleus.CellPath;
 import dmg.util.Args;
 
 import javax.security.auth.Subject;
+import org.dcache.auth.Origin;
 
 /**
  * Abstract class that implements interface PermissionHandler.

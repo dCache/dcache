@@ -22,13 +22,11 @@ import org.junit.Test;
 
 import org.dcache.acl.ACE;
 import org.dcache.acl.ACL;
-import org.dcache.acl.Origin;
 import org.dcache.acl.Owner;
 import org.dcache.acl.Permission;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.AceType;
 import org.dcache.acl.enums.Action;
-import org.dcache.acl.enums.AuthType;
 import org.dcache.acl.enums.FileAttribute;
 import org.dcache.acl.enums.OpenType;
 import org.dcache.acl.enums.RsType;
@@ -40,6 +38,7 @@ import org.dcache.chimera.InodeId;
 
 import javax.security.auth.Subject;
 import org.dcache.auth.GidPrincipal;
+import org.dcache.auth.Origin;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.commons.util.SqlHelper;
 
@@ -157,7 +156,7 @@ public class ACLTest {
         subjectNew.getPrincipals().add(new UidPrincipal(7));
         subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_WEAK, "127.0.0.1");
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_WEAK, "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
 
@@ -274,7 +273,7 @@ public class ACLTest {
         subjectNew.getPrincipals().add(new UidPrincipal(1000));
         subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -375,7 +374,7 @@ public class ACLTest {
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
         subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -482,7 +481,7 @@ public class ACLTest {
         subjectNew.getPrincipals().add(new UidPrincipal(UID_3));
         subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -531,7 +530,7 @@ public class ACLTest {
         subjectNew.getPrincipals().add(new UidPrincipal(UID_3));
         subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -577,7 +576,7 @@ public class ACLTest {
         subjectNew.getPrincipals().add(new UidPrincipal(UID_3));
         subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -617,7 +616,7 @@ public class ACLTest {
         subjectNew.getPrincipals().add(new UidPrincipal(UID_3));
         subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -657,7 +656,7 @@ public class ACLTest {
         subjectNew.getPrincipals().add(new UidPrincipal(UID_3));
         subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -695,7 +694,7 @@ public class ACLTest {
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
         subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -755,7 +754,7 @@ public class ACLTest {
         subjectNextUser.getPrincipals().add(new UidPrincipal(UID_2));
         subjectNextUser.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -816,7 +815,7 @@ public class ACLTest {
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
         subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -874,7 +873,7 @@ public class ACLTest {
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
         subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -921,7 +920,7 @@ public class ACLTest {
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
         subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -968,7 +967,7 @@ public class ACLTest {
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
         subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -1011,7 +1010,7 @@ public class ACLTest {
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
         subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -1054,7 +1053,7 @@ public class ACLTest {
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
         subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -1097,7 +1096,7 @@ public class ACLTest {
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
         subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_WEAK,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_WEAK,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -1138,7 +1137,7 @@ public class ACLTest {
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
         subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_WEAK,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_WEAK,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -1179,7 +1178,7 @@ public class ACLTest {
         subjectNew.getPrincipals().add(new UidPrincipal(UID_2));
         subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_WEAK,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_WEAK,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -1220,7 +1219,7 @@ public class ACLTest {
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
         subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_WEAK,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_WEAK,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -1257,7 +1256,7 @@ public class ACLTest {
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
         subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -1307,7 +1306,7 @@ public class ACLTest {
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
         subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -1382,7 +1381,7 @@ public class ACLTest {
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
         subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -1453,7 +1452,7 @@ public class ACLTest {
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
         subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);

@@ -7,7 +7,6 @@ import java.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.dcache.acl.ACLException;
-import org.dcache.acl.Origin;
 import org.dcache.acl.enums.AccessType;
 import org.dcache.acl.enums.FileAttribute;
 
@@ -20,6 +19,7 @@ import diskCacheV111.util.PnfsId;
 import dmg.cells.nucleus.CellEndpoint;
 
 import javax.security.auth.Subject;
+import org.dcache.auth.Origin;
 import org.dcache.auth.Subjects;
 
 /**

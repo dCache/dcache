@@ -1,10 +1,9 @@
-package org.dcache.acl;
+package org.dcache.auth;
 
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import org.dcache.acl.enums.AuthType;
 import java.security.Principal;
 
 /**
@@ -22,6 +21,38 @@ import java.security.Principal;
 public class Origin implements Principal, Serializable
 {
     static final long serialVersionUID = -6791417439972410727L;
+
+    public enum AuthType {
+
+        /**
+         * Principal has authenticated itself with the system that established the
+         * connection to this service (example: NFS2).
+         */
+        ORIGIN_AUTHTYPE_WEAK(0x00000000, 'W'),
+        /**
+         * Principal has authenticated itself with the service (example: gsiftp).
+         */
+        ORIGIN_AUTHTYPE_STRONG(0x00000001, 'S');
+        private final int _value;
+        private final char _abbreviation;
+
+        private AuthType(int value, char abbreviation) {
+            _value = value;
+            _abbreviation = abbreviation;
+        }
+
+        public int getValue() {
+            return _value;
+        }
+
+        public char getAbbreviation() {
+            return _abbreviation;
+        }
+
+        public boolean equals(int value) {
+            return _value == value;
+        }
+    }
 
     private static final char SEPARATOR = ':';
 
@@ -84,6 +115,7 @@ public class Origin implements Principal, Serializable
         _authType = authType;
     }
 
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         if ( _authType != null )
@@ -92,8 +124,11 @@ public class Origin implements Principal, Serializable
         return sb.toString();
     }
 
+    @Override
     public boolean equals(Object o)
     {
+        if(o == this ) return true;
+
         if (!(o instanceof Origin)) {
             return false;
         }
@@ -109,6 +144,7 @@ public class Origin implements Principal, Serializable
         return toString();
     }
 
+    @Override
     public int hashCode()
     {
         return _address.hashCode();

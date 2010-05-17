@@ -16,14 +16,13 @@ import java.net.InetAddress;
 import java.util.Arrays;
 
 import org.dcache.cells.CellStub;
-import org.dcache.acl.Origin;
-import org.dcache.acl.enums.AuthType;
 import org.dcache.auth.AuthzQueryHelper;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.RecordConvert;
 
 import gplazma.authz.AuthorizationController;
 import gplazma.authz.AuthorizationException;
+import org.dcache.auth.Origin;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -159,7 +158,7 @@ public class SecurityFilter implements Filter
         String address = servletRequest.getRemoteAddr();
         try {
             Origin origin =
-                new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+                new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                            InetAddress.getByName(address));
             subject.getPrincipals().add(origin);
         } catch (UnknownHostException e) {

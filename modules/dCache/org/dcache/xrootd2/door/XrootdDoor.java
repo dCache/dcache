@@ -27,8 +27,6 @@ import java.security.Principal;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.Subjects;
-import org.dcache.acl.Origin;
-import org.dcache.acl.enums.AuthType;
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
 import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.xrootd2.protocol.XrootdProtocol;
@@ -58,6 +56,7 @@ import diskCacheV111.vehicles.IoDoorEntry;
 import dmg.cells.nucleus.CellVersion;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
 import dmg.util.Args;
+import org.dcache.auth.Origin;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -284,7 +283,7 @@ public class XrootdDoor
                                       _subject.getPrincipals(),
                                       _subject.getPublicCredentials(),
                                       _subject.getPrivateCredentials());
-        subject.getPrincipals().add(new Origin(AuthType.ORIGIN_AUTHTYPE_WEAK,
+        subject.getPrincipals().add(new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_WEAK,
                                                address));
         subject.setReadOnly();
         return subject;

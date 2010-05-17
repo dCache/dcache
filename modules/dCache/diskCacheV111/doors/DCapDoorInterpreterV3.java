@@ -32,13 +32,12 @@ import org.dcache.auth.Subjects;
 
 import diskCacheV111.util.PnfsHandler;
 import org.dcache.acl.ACLException;
-import org.dcache.acl.Origin;
 import org.dcache.acl.enums.AccessType;
 import org.dcache.acl.enums.AccessMask;
-import org.dcache.acl.enums.AuthType;
 import org.dcache.acl.enums.FileAttribute;
 
 import javax.security.auth.Subject;
+import org.dcache.auth.Origin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.dcache.namespace.FileType;
@@ -274,7 +273,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         String check = (String)_cell.getDomainContext().get("dCapDoor-check");
         if( check != null )_checkStrict = check.equals("strict") ;
 
-        _origin = new Origin((_authorizationStrong || _authorizationRequired) ? AuthType.ORIGIN_AUTHTYPE_STRONG : AuthType.ORIGIN_AUTHTYPE_WEAK, "0");
+        _origin = new Origin((_authorizationStrong || _authorizationRequired) ? Origin.AuthType.ORIGIN_AUTHTYPE_STRONG : Origin.AuthType.ORIGIN_AUTHTYPE_WEAK, "0");
         _log.debug("Origin: " + _origin.toString());
 
         String permissionHandlerClasses = _args.getOpt("permission-handler");
