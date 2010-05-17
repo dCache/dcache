@@ -14,9 +14,11 @@ import java.nio.channels.ClosedChannelException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
+import org.dcache.chimera.DirNotEmptyHimeraFsException;
 import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.xrootd2.protocol.XrootdProtocol;
 import org.dcache.xrootd2.protocol.messages.AbstractResponseMessage;
+import org.dcache.xrootd2.protocol.messages.AuthorizableRequestMessage;
 import org.dcache.xrootd2.protocol.messages.CloseRequest;
 import org.dcache.xrootd2.protocol.messages.ErrorResponse;
 import org.dcache.xrootd2.protocol.messages.OpenRequest;
@@ -37,7 +39,11 @@ import org.dcache.xrootd2.protocol.messages.*;
 import static org.dcache.xrootd2.protocol.XrootdProtocol.*;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.DirNotExistsCacheException;
+import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileMetaData;
+import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsId;
@@ -156,83 +162,36 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
             (InetSocketAddress) channel.getLocalAddress();
         InetSocketAddress remoteAddress =
             (InetSocketAddress) channel.getRemoteAddress();
-        String path = req.getPath();
         int options = req.getOptions();
 
-        FilePerm acc;
+        FilePerm neededPerm;
 
         if (req.isNew() || req.isReadWrite()) {
-            acc = FilePerm.WRITE;
+            neededPerm = FilePerm.WRITE;
         } else {
-            acc = FilePerm.READ;
+            neededPerm = FilePerm.READ;
         }
 
-        _log.info("Opening {} for {}", path, acc.xmlText());
+        _log.info("Opening {} for {}", req.getPath(), neededPerm.xmlText());
         if (_log.isDebugEnabled()) {
             logDebugOnOpen(req);
         }
 
         try {
-            AuthorizationHandler authzHandler =
-                _door.getAuthorizationFactory().getAuthzHandler();
-            if (authzHandler != null) {
-                // all information neccessary for checking authorization
-                // is found in opaque
-                Map opaque;
-                try {
-                    opaque = req.getOpaqueMap();
-                } catch (ParseException e) {
-                    StringBuffer msg =
-                        new StringBuffer("invalid opaque data: ");
-                    msg.append(e);
-                    String s = req.getOpaque();
-                    if (s != null) {
-                        msg.append(" opaque=").append(s);
-                    }
-                    throw new CacheException(CacheException.PERMISSION_DENIED,
-                                             msg.toString());
-                }
-
-                boolean isAuthorized = false;
-                try {
-                    isAuthorized =
-                        authzHandler.checkAuthz(path, opaque, acc,
-                                                localAddress);
-                } catch (GeneralSecurityException e) {
-                    throw new CacheException(CacheException.PERMISSION_DENIED,
-                                              "authorization check failed: " +
-                                              e.getMessage());
-                }
-
-                if (!isAuthorized) {
-                    throw new CacheException(CacheException.PERMISSION_DENIED,
-                                              "not authorized");
-                }
-
-                // In case of enabled authorization, the path in the open
-                // request can refer to the lfn.  In this case the real
-                // path is delivered by the authz plugin
-                if (authzHandler.providesPFN()) {
-                    _log.info("access granted for LFN={} PFN={}",
-                              path, authzHandler.getPFN());
-
-                    // get the real path (pfn) which we will open
-                    path = authzHandler.getPFN();
-                }
-            }
-
+           String authPath = checkOperationPermission(neededPerm, req,
+                                                      localAddress);
             ////////////////////////////////////////////////////////////////
             // interact with core dCache to open the requested file
             long checksum = req.calcChecksum();
             XrootdTransfer transfer;
-            if (acc == FilePerm.WRITE) {
+            if (neededPerm == FilePerm.WRITE) {
                 boolean createDir = (options & XrootdProtocol.kXR_mkpath) ==
                     XrootdProtocol.kXR_mkpath;
                 transfer =
-                    _door.write(remoteAddress, path, checksum, createDir);
+                    _door.write(remoteAddress, authPath, checksum, createDir);
             } else {
                 transfer =
-                    _door.read(remoteAddress, path, checksum);
+                    _door.read(remoteAddress, authPath, checksum);
             }
 
             // ok, open was successful
@@ -242,45 +201,31 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                     new RedirectResponse(req.getStreamID(),
                                          address.getHostName(),
                                          address.getPort()));
-        } catch (CacheException e) {
-            switch (e.getRc()) {
-            case CacheException.FILE_NOT_FOUND:
-                respondWithError(ctx, event, req,
-                                 XrootdProtocol.kXR_FileNotOpen,
-                                 "No such file");
-                break;
-
-            case CacheException.DIR_NOT_EXISTS:
-                respondWithError(ctx, event, req,
-                                 XrootdProtocol.kXR_FileNotOpen,
-                                 "No such directory");
-                break;
-
-            case CacheException.FILE_EXISTS:
-                respondWithError(ctx, event, req,
-                                 XrootdProtocol.kXR_Unsupported,
-                                 "File already exists");
-                break;
-
-            case CacheException.TIMEOUT:
-                respondWithError(ctx, event, req,
-                                 XrootdProtocol.kXR_ServerError,
-                                 "Internal timeout");
-                break;
-
-            case CacheException.PERMISSION_DENIED:
-                respondWithError(ctx, event, req,
-                                 XrootdProtocol.kXR_NotAuthorized,
-                                 e.getMessage());
-                break;
-
-            default:
-                respondWithError(ctx, event, req,
-                                 XrootdProtocol.kXR_ServerError,
-                                 String.format("Failed to open file (%s [%d])",
-                                               e.getMessage(), e.getRc()));
-                break;
-            }
+        } catch (FileNotFoundCacheException fnfex) {
+            respondWithError(ctx, event, req,
+                             XrootdProtocol.kXR_FileNotOpen,
+                             "No such file");
+        } catch (DirNotExistsCacheException dnex) {
+            respondWithError(ctx, event, req,
+                             XrootdProtocol.kXR_FileNotOpen,
+                             "No such directory");
+        } catch (FileExistsCacheException feex) {
+            respondWithError(ctx, event, req,
+                             XrootdProtocol.kXR_Unsupported,
+                             "File already exists");
+        } catch (TimeoutCacheException tex) {
+            respondWithError(ctx, event, req,
+                             XrootdProtocol.kXR_ServerError,
+                             "Internal timeout");
+        } catch (PermissionDeniedCacheException pdex) {
+            respondWithError(ctx, event, req,
+                             XrootdProtocol.kXR_NotAuthorized,
+                             pdex.getMessage());
+        } catch (CacheException ex) {
+            respondWithError(ctx, event, req,
+                             XrootdProtocol.kXR_ServerError,
+                             String.format("Failed to open file (%s [%d])",
+                                           ex.getMessage(), ex.getRc()));
         } catch (InterruptedException e) {
             /* Interrupt may be caused by cell shutdown or client
              * disconnect.  If the client disconnected, then the error
@@ -398,61 +343,19 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         Channel channel = e.getChannel();
         InetSocketAddress localAddress =
                             (InetSocketAddress) channel.getLocalAddress();
-        String path = req.getPath();
-        if (path.isEmpty()) {
+        if (req.getPath().isEmpty()) {
             respondWithError(ctx, e, req,
                              kXR_ArgMissing, "no path specified");
             return;
         }
 
+        _log.info("Trying to delete {}", req.getPath());
+
         try {
-            AuthorizationHandler authzHandler =
-                _door.getAuthorizationFactory().getAuthzHandler();
+            String authPath = checkOperationPermission(FilePerm.DELETE,
+                                                       req, localAddress);
 
-            if (authzHandler != null) {
-                Map<String, String> opaque;
-                try {
-                    opaque = req.getOpaqueMap();
-                } catch (ParseException exp) {
-                    StringBuffer msg =
-                        new StringBuffer("invalid opaque data: ");
-                    msg.append(e);
-
-                    String s = req.getOpaque();
-
-                    if (s != null) {
-                        msg.append(" opaque=").append(s);
-                    }
-
-                    throw new PermissionDeniedCacheException(msg.toString());
-                }
-
-                boolean isAuthorized = false;
-                try {
-                    isAuthorized =
-                        authzHandler.checkAuthz(path, opaque, FilePerm.DELETE,
-                                                localAddress);
-                } catch (GeneralSecurityException gse) {
-                    throw new PermissionDeniedCacheException(gse.getMessage());
-                }
-
-                if (!isAuthorized) {
-                    throw new PermissionDeniedCacheException("not authorized!");
-                }
-
-                // In case of enabled authorization, the path in the open
-                // request can refer to the lfn.  In this case the real
-                // path is delivered by the authz plugin
-                if (authzHandler.providesPFN()) {
-                    _log.info("access granted for LFN={} PFN={}",
-                              path, authzHandler.getPFN());
-
-                    // get the real path (pfn) which we will open
-                    path = authzHandler.getPFN();
-                }
-            }
-
-            _door.deleteFile(path);
+            _door.deleteFile(authPath);
             respond(ctx, e, new OKResponse(req.getStreamID()));
         } catch (TimeoutCacheException tce) {
                 respondWithError(ctx, e, req,
@@ -488,6 +391,76 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
     protected void doOnProtocolRequest(ChannelHandlerContext ctx, MessageEvent e, ProtocolRequest msg)
     {
         unsupported(ctx, e, msg);
+    }
+
+    /**
+     * Check if the permissions on the path sent along with the request message
+     * satisfy the required permission level.
+     * @param neededPerm The permission level that is required for the operation
+     * @param req The actual request, containing path and authZ token
+     * @param localAddress The local address, needed for token endpoint
+     *        verification
+     * @return The path referring to the LFN in the request, if the request
+     *         contained a LFN. The path from the request, if the request
+     *         contained an absolute path.
+     * @throws PermissionDeniedCacheException The needed permissions are not
+     *         present in the authZ token, the authZ token is not present or
+     *         the format is corrupted.
+     */
+    private String checkOperationPermission(FilePerm neededPerm,
+                                          AuthorizableRequestMessage req,
+                                          InetSocketAddress localAddress)
+                                 throws PermissionDeniedCacheException {
+        AuthorizationHandler authzHandler =
+            _door.getAuthorizationFactory().getAuthzHandler();
+        String path = req.getPath();
+
+        if (authzHandler != null) {
+            // all information neccessary for checking authorization
+            // is found in opaque
+            Map<String, String> opaque;
+            try {
+                opaque = req.getOpaqueMap();
+            } catch (ParseException e) {
+                StringBuffer msg =
+                    new StringBuffer("invalid opaque data: ");
+                msg.append(e);
+                String s = req.getOpaque();
+                if (s != null) {
+                    msg.append(" opaque=").append(s);
+                }
+                throw new PermissionDeniedCacheException(msg.toString());
+            }
+
+            boolean isAuthorized;
+
+            try {
+                isAuthorized =
+                    authzHandler.checkAuthz(path, opaque, neededPerm,
+                                            localAddress);
+            } catch (GeneralSecurityException e) {
+                throw new PermissionDeniedCacheException("authorization check"
+                                                         + "failed: " +
+                                                         e.getMessage());
+            }
+
+            if (!isAuthorized) {
+                throw new PermissionDeniedCacheException("not authorized");
+            }
+
+            // In case of enabled authorization, the path in the open
+            // request can refer to the lfn.  In this case the real
+            // path is delivered by the authz plugin
+            if (authzHandler.providesPFN()) {
+                _log.info("access granted for LFN={} PFN={}",
+                          path, authzHandler.getPFN());
+
+                // get the real path (pfn) which we will open
+                return authzHandler.getPFN();
+            }
+        }
+
+        return path;
     }
 
     private void logDebugOnOpen(OpenRequest req)

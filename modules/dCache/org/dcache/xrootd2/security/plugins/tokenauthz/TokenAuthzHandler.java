@@ -29,7 +29,8 @@ public class TokenAuthzHandler implements AuthorizationHandler
         this.noStrongAuthz = noStrongAuthz;
     }
 
-    public boolean checkAuthz(String pathToOpen, Map options,
+    @Override
+    public boolean checkAuthz(String pathToOpen, Map<String,String> options,
                               XrootdProtocol.FilePerm mode,
                               InetSocketAddress endpoint)
         throws GeneralSecurityException
@@ -155,11 +156,13 @@ public class TokenAuthzHandler implements AuthorizationHandler
         return token.getEnvelope();
     }
 
+    @Override
     public boolean providesPFN()
     {
         return true;
     }
 
+    @Override
     public String getPFN()
     {
         return pfn;
@@ -203,6 +206,7 @@ public class TokenAuthzHandler implements AuthorizationHandler
      * Returns the FQDN of the token creator
      *
      */
+    @Override
     public String getUser()
     {
         return env == null ? null : env.getCreator();

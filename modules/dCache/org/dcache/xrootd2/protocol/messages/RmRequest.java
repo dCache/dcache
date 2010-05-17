@@ -1,14 +1,13 @@
 package org.dcache.xrootd2.protocol.messages;
 
-import java.util.Collections;
-import java.util.HashMap;
+import static org.dcache.xrootd2.protocol.XrootdProtocol.*;
+
 import java.util.Map;
 
 import org.dcache.xrootd2.util.ParseException;
 import org.jboss.netty.buffer.ChannelBuffer;
-import static org.dcache.xrootd2.protocol.XrootdProtocol.*;
 
-public class RmRequest extends AbstractRequestMessage
+public class RmRequest extends AuthorizableRequestMessage
 {
     private final String path;
     private final String opaque;
@@ -33,44 +32,21 @@ public class RmRequest extends AbstractRequestMessage
         }
     }
 
+    @Override
     public String getPath()
     {
         return path;
     }
 
+    @Override
     public String getOpaque()
     {
         return opaque;
     }
 
+    @Override
     public Map<String,String> getOpaqueMap() throws ParseException
     {
-        if (opaque == null) {
-            return Collections.emptyMap();
-        } else {
-            Map<String,String> map = new HashMap<String,String>();
-            int tokenStart;
-            int tokenEnd = 0;
-
-            while ((tokenStart = opaque.indexOf('&', tokenEnd)) != -1) {
-                tokenEnd = opaque.indexOf('&',++tokenStart);
-
-                if (tokenEnd == -1) {
-                    tokenEnd = opaque.length();
-                }
-
-                int delimiter = opaque.indexOf("=",tokenStart);
-                if (delimiter == -1 || delimiter >= tokenEnd) {
-                    throw new ParseException("Opaque information is missing "
-                          + "value for variable " +
-                          opaque.substring(tokenStart, tokenEnd));
-                }
-
-                map.put(opaque.substring(tokenStart, delimiter),
-                        opaque.substring(delimiter + 1, tokenEnd));
-            }
-
-            return map;
-        }
+       return getOpaqueMap(opaque);
     }
 }

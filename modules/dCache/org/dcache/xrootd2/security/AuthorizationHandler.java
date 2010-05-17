@@ -27,7 +27,9 @@ public interface AuthorizationHandler
      * @throws GeneralSecurityException when the process of
      * authorizing fails
      */
-    boolean checkAuthz(String pathToOpen, Map options, FilePerm mode,
+    boolean checkAuthz(String pathToOpen,
+                       Map<String,String> options,
+                       FilePerm mode,
                        InetSocketAddress localAddress)
         throws GeneralSecurityException;
 
