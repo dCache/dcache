@@ -1,17 +1,13 @@
 package org.dcache.xrootd2.door;
 
-import java.io.IOException;
-
 import java.io.PrintWriter;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.util.Collections;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.Set;
-import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -29,12 +25,10 @@ import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.Subjects;
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
 import org.dcache.vehicles.XrootdProtocolInfo;
-import org.dcache.xrootd2.protocol.XrootdProtocol;
 import org.dcache.xrootd2.security.AbstractAuthorizationFactory;
 import org.dcache.namespace.FileType;
 import org.dcache.util.Transfer;
 import org.dcache.util.PingMoversTask;
-
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.cells.CellCommandListener;
@@ -49,8 +43,6 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
-import diskCacheV111.vehicles.ProtocolInfo;
-import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.IoDoorInfo;
 import diskCacheV111.vehicles.IoDoorEntry;
 import dmg.cells.nucleus.CellVersion;
@@ -555,6 +547,29 @@ public class XrootdDoor
         }
 
         Set<FileType> allowedSet = EnumSet.of(FileType.REGULAR);
+        _pnfs.deletePnfsEntry(fullPath.toString(), allowedSet);
+    }
+
+    /**
+     * Delete the directory denoted by path from the namespace
+     *
+     * @param path The path of the directory that is going to be deleted
+     * @throws CacheException
+     * @throws InterruptedException
+     */
+    public void deleteDirectory(String path) throws CacheException
+    {
+        FsPath fullPath = createFullPath(path);
+
+        if (isReadOnly()) {
+            throw new PermissionDeniedCacheException("Read only door");
+        }
+
+        if (!isWriteAllowed(fullPath)) {
+            throw new PermissionDeniedCacheException("Write permission denied");
+        }
+
+        Set<FileType> allowedSet = EnumSet.of(FileType.DIR);
         _pnfs.deletePnfsEntry(fullPath.toString(), allowedSet);
     }
 

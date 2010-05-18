@@ -1,36 +1,23 @@
 package org.dcache.xrootd2.door;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.GeneralSecurityException;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Collections;
 import java.nio.channels.ClosedChannelException;
-import java.math.BigInteger;
 import java.security.SecureRandom;
 
-import org.dcache.chimera.DirNotEmptyHimeraFsException;
-import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.xrootd2.protocol.XrootdProtocol;
-import org.dcache.xrootd2.protocol.messages.AbstractResponseMessage;
 import org.dcache.xrootd2.protocol.messages.AuthorizableRequestMessage;
 import org.dcache.xrootd2.protocol.messages.CloseRequest;
-import org.dcache.xrootd2.protocol.messages.ErrorResponse;
 import org.dcache.xrootd2.protocol.messages.OpenRequest;
-import org.dcache.xrootd2.protocol.messages.ReadRequest;
-import org.dcache.xrootd2.protocol.messages.ReadVRequest;
 import org.dcache.xrootd2.protocol.messages.RedirectResponse;
 import org.dcache.xrootd2.protocol.messages.StatRequest;
 import org.dcache.xrootd2.protocol.messages.StatResponse;
 import org.dcache.xrootd2.protocol.messages.StatxRequest;
 import org.dcache.xrootd2.protocol.messages.StatxResponse;
-import org.dcache.xrootd2.protocol.messages.SyncRequest;
-import org.dcache.xrootd2.protocol.messages.WriteRequest;
 import org.dcache.xrootd2.security.AuthorizationHandler;
 import org.dcache.xrootd2.util.FileStatus;
 import org.dcache.xrootd2.util.ParseException;
@@ -43,15 +30,10 @@ import diskCacheV111.util.DirNotExistsCacheException;
 import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.FileNotFoundCacheException;
-import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
-import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.util.FileMetaData.Permissions;
-import diskCacheV111.vehicles.ProtocolInfo;
-import diskCacheV111.vehicles.StorageInfo;
-
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipelineCoverage;
 import org.jboss.netty.channel.Channel;
@@ -373,6 +355,54 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                 respondWithError(ctx, e, req,
                                  XrootdProtocol.kXR_ServerError,
                                  String.format("Failed to delete file (%s [%d])",
+                                               ce.getMessage(), ce.getRc()));
+        } catch (RuntimeException exp) {
+            _log.error("Rm failed due to a bug", exp);
+            respondWithError(ctx, e, req,
+                             XrootdProtocol.kXR_ServerError,
+                             String.format("Internal server error (%s)",
+                                           exp.getMessage()));
+        }
+    }
+
+    @Override
+    protected void doOnRmDir(ChannelHandlerContext ctx, MessageEvent e,
+                             RmDirRequest req)
+    {
+        Channel channel = e.getChannel();
+        InetSocketAddress localAddress =
+                            (InetSocketAddress) channel.getLocalAddress();
+        if (req.getPath().isEmpty()) {
+            respondWithError(ctx, e, req,
+                             kXR_ArgMissing, "no path specified");
+            return;
+        }
+
+        _log.error("Trying to delete directory {}", req.getPath());
+
+        try {
+            String authPath = checkOperationPermission(FilePerm.DELETE,
+                                                       req, localAddress);
+
+            _door.deleteDirectory(authPath);
+            respond(ctx, e, new OKResponse(req.getStreamID()));
+        } catch (TimeoutCacheException tce) {
+            respondWithError(ctx, e, req,
+                             XrootdProtocol.kXR_ServerError,
+                             "Internal timeout");
+        } catch (PermissionDeniedCacheException pdce) {
+            respondWithError(ctx, e, req,
+                             XrootdProtocol.kXR_NotAuthorized,
+                             pdce.getMessage());
+        } catch (FileNotFoundCacheException fnfce) {
+            respondWithError(ctx, e, req,
+                             XrootdProtocol.kXR_InvalidRequest,
+                             fnfce.getMessage());
+        } catch (CacheException ce) {
+                respondWithError(ctx, e, req,
+                                 XrootdProtocol.kXR_ServerError,
+                                 String.format("Failed to delete directory " +
+                                               "(%s [%d]).",
                                                ce.getMessage(), ce.getRc()));
         } catch (RuntimeException exp) {
             _log.error("Rm failed due to a bug", exp);

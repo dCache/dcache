@@ -60,6 +60,8 @@ public class XrootdRequestHandler extends SimpleChannelHandler
             doOnProtocolRequest(ctx, e, (ProtocolRequest) msg);
         } else if (msg instanceof RmRequest) {
             doOnRm(ctx, e, (RmRequest) msg);
+        } else if (msg instanceof RmDirRequest) {
+            doOnRmDir(ctx, e, (RmDirRequest) msg);
         }
     }
 
@@ -154,6 +156,11 @@ public class XrootdRequestHandler extends SimpleChannelHandler
     }
 
     protected void doOnRm(ChannelHandlerContext ctx, MessageEvent e, RmRequest msg) {
+        unsupported(ctx, e, msg);
+    }
+
+    protected void doOnRmDir(ChannelHandlerContext ctx, MessageEvent e, RmDirRequest msg)
+    {
         unsupported(ctx, e, msg);
     }
 }
