@@ -51,6 +51,7 @@ define env verify-https.exe enddefine
 enddefine
 
 exec env verify-${webdavProtocol}.exe
+exec file:${dcache.home}/share/cells/embedded-gPlazma.fragment
 
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
    "classpath:org/dcache/webdav/webdav-${webdavProtocol}.xml \

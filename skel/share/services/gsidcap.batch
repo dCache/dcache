@@ -30,6 +30,7 @@ onerror shutdown
 # External definitions
 exec file:${dcache.home}/share/cells/stage.fragment doors
 exec file:${dcache.home}/share/cells/permission.fragment
+exec file:${dcache.home}/share/cells/embedded-gPlazma.fragment
 
 #
 create dmg.cells.services.login.LoginManager ${cell.name} \
@@ -54,8 +55,8 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
               -stageConfigurationFilePath=${stageConfigurationFilePath} \
               -io-queue=${gsidcapIoQueue} \
               -io-queue-overwrite=${gsidcapIoQueueOverwrite} \
-              -use-gplazma-authorization-module=${useGPlazmaAuthorizationModule} \
-              -use-gplazma-authorization-cell=${useGPlazmaAuthorizationCell} \
+              -use-gplazma-authorization-cell=${useGplazma} \
+              -use-gplazma-authorization-module=false \
               -gplazma-authorization-module-policy=${gplazmaPolicy} \
               -socketfactory=javatunnel.TunnelServerSocketCreator,javatunnel.GsiTunnel,dummy"
 

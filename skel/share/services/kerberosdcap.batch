@@ -31,8 +31,9 @@ onerror shutdown
 # External definitions
 exec file:${dcache.home}/share/cells/stage.fragment doors
 exec file:${dcache.home}/share/cells/permission.fragment
+exec file:${dcache.home}/share/cells/embedded-gPlazma.fragment
 
-#
+
 #
 create dmg.cells.services.login.LoginManager ${cell.name} \
              "${port} \
@@ -59,9 +60,8 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
               -stageConfigurationFilePath=${stageConfigurationFilePath} \
               -io-queue=${kerberosdcapIoQueue} \
               -io-queue-overwrite=${kerberosdcapIoQueueOverwrite} \
-              -use-gplazma-authorization-module=${useGPlazmaAuthorizationModule} \
-              -use-gplazma-authorization-cell=${useGPlazmaAuthorizationCell} \
-              -gplazma-authorization-module-policy=${gplazmaPolicy} \
+              -use-gplazma-authorization-module=false \
+              -use-gplazma-authorization-cell=${useGplazma} \
               -socketfactory=javatunnel.TunnelServerSocketCreator,javatunnel.GssTunnel,${kerberos.service-principle-name} \
 "
 

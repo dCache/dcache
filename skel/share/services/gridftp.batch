@@ -68,6 +68,7 @@ onerror shutdown
 
 exec file:${dcache.home}/share/cells/stage.fragment doors
 exec file:${dcache.home}/share/cells/permission.fragment
+exec file:${dcache.home}/share/cells/embedded-gPlazma.fragment
 
 create dmg.cells.services.login.LoginManager ${cell.name} \
             "${port} \
@@ -90,10 +91,9 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
              -maxStreamsPerClient=${gsiftpMaxStreamsPerClient} \
              -defaultStreamsPerClient=${gsiftpDefaultStreamsPerClient} \
              -deleteOnConnectionClosed=${gsiftpDeleteOnConnectionClosed} \
-             -use-gplazma-authorization-cell=${useGPlazmaAuthorizationCell} \
+             -use-gplazma-authorization-cell=${useGplazma} \
              -delegate-to-gplazma=${delegateToGPlazma} \
-             -use-gplazma-authorization-module=${useGPlazmaAuthorizationModule} \
-             -gplazma-authorization-module-policy=${gplazmaPolicy} \
+             -use-gplazma-authorization-module=false \
              -io-queue=${gsiftpIoQueue} \
              -kpwd-file=${kpwdFile} \
              -permission-handler=${permissionHandler} \

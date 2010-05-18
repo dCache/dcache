@@ -1,6 +1,10 @@
+#fragment creates gPlazma if gPlazma is wanted as a Module
+
+define env gPlazma.exe enddefine
 # Starts the gPlazma cell
 
 # Defaults
+
 onerror continue
 set context -c srmDatabaseHost    localhost
 set context -c srmDbName          dcache
@@ -9,13 +13,11 @@ set context -c srmDbPassword      srmdcache
 set context -c gPlazmaNumberOfSimutaneousRequests  30
 set context -c gPlazmaRequestTimeout               180
 set context -c gplazmaPolicy     ${dcache.home}/etc/dcachesrm-gplazma.policy
+set env useGplazma true
 onerror shutdown
 
-define env globalgplazma.exe enddefine
-
-create org.dcache.auth.gplazma.GPLAZMA ${cell.name} \
+create org.dcache.auth.gplazma.GPLAZMA gPlazma \
           "default  \
-           -export  \
            -gplazma-authorization-module-policy=${gplazmaPolicy} \
 	   -jdbcUrl=jdbc:postgresql://${srmDatabaseHost}/${srmDbName} \
            -jdbcDriver=org.postgresql.Driver \
@@ -26,14 +28,21 @@ create org.dcache.auth.gplazma.GPLAZMA ${cell.name} \
 "
 enddefine
 
-define env error.exe enddefine
-say -level=esay Local gPlazma exists. Misconfigured instance. Killing local and starting global one.
-kill gPlazma
-enddefine
+define env gPlazmaCheck.exe enddefine
 
 # Only start gPlazma if it does not already exist
 onerror continue
 getcellinfo gPlazma
-exec env error.exe -ifok
+exec env gPlazma.exe -ifnotok
 onerror shutdown
-exec env globalgplazma.exe
+
+enddefine
+
+onerror continue
+# since gPlazma is no longer available as a module
+# ${useGPlazmaAuthorizationCell} has to be true now if eighter
+# ${useGPlazmaAuthorizationCell} or ${useGPlazmaAuthorizationModule} is true
+set env useGplazma ${useGPlazmaAuthorizationCell}
+eval "${useGPlazmaAuthorizationModule}" "true" ==
+exec env gPlazmaCheck.exe -ifok
+onerror shutdown
