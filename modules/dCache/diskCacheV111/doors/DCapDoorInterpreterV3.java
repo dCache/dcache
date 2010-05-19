@@ -1135,7 +1135,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         protected PnfsId       _pnfsId       = null ;
         protected String       _path         = null;
-        protected boolean      _isUrl        = false ;
         protected StorageInfo  _storageInfo  = null ;
         protected FileMetaData _fileMetaData = null ;
         private   long         _timer        = 0L ;
@@ -1144,19 +1143,11 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         protected Set<FileAttribute> _attributes;
         protected PnfsGetFileAttributes _message;
-        protected final Set<AccessMask> _accessMask;
 
         protected PnfsSessionHandler(int sessionId, int commandId, VspArgs args)
             throws Exception
         {
-            this(sessionId, commandId, args, EnumSet.noneOf(AccessMask.class));
-        }
-
-        protected PnfsSessionHandler(int sessionId, int commandId, VspArgs args,
-                                     Set<AccessMask> accessMask)
-            throws Exception
-        {
-            this(sessionId, commandId, args, false, true, accessMask);
+            this(sessionId, commandId, args, false, true);
             /* if is url, _path is already pointing to to correct path */
             if( _path == null ) {
                 _path           = args.getOpt("path");
@@ -1182,18 +1173,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                                      boolean metaDataOnly, boolean resolvePath)
             throws Exception
         {
-            this(sessionId, commandId, args, metaDataOnly, resolvePath,
-                 EnumSet.noneOf(AccessMask.class));
-        }
-
-        protected PnfsSessionHandler(int sessionId, int commandId, VspArgs args,
-                                     boolean metaDataOnly, boolean resolvePath,
-                                     Set<AccessMask> accessMask)
-            throws Exception
-        {
             super(sessionId, commandId, args);
-
-            _accessMask = accessMask;
 
             _attributes = FileMetaData.getKnownFileAttributes();
             if (!metaDataOnly) {
@@ -1241,7 +1221,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             askForFileAttributes() ;
         }
 
-        private void askForFileAttributes()
+        protected void askForFileAttributes()
             throws IllegalArgumentException, NoRouteToCellException
         {
             setTimer(60 * 1000);
@@ -1256,13 +1236,11 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 String fileName = url.getFilePart();
                 _message = new PnfsGetFileAttributes(fileName, _attributes);
                 _info.setPath(fileName);
-                _isUrl = true;
                 _path = fileName;
             }
 
             say("Requesting file attributes for " + _message);
 
-            _message.setAccessMask(_accessMask);
             _message.setId(_sessionId) ;
             _message.setReplyRequired(true);
 
@@ -1969,14 +1947,13 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         private boolean          _passive = false;
         private String            _accessLatency = null;
         private String            _retentionPolicy = null;
+        private boolean _isUrl;
+        private PnfsHandler _pnfs;
 
         private IoHandler( int sessionId , int commandId , VspArgs args )
         throws Exception {
 
-            super(sessionId, commandId, args,
-                  args.argv(1).equals("r")
-                  ? EnumSet.of(AccessMask.READ_DATA)
-                  : EnumSet.noneOf(AccessMask.class));
+            super(sessionId, commandId, args);
 
             _ioMode = _vargs.argv(1) ;
             int   port    = Integer.parseInt( _vargs.argv(3) ) ;
@@ -2017,6 +1994,49 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             _protocolInfo.door( new CellPath(_cell.getCellInfo().getCellName(),
                     _cell.getCellInfo().getDomainName()) ) ;
 
+        }
+
+        @Override
+        protected void askForFileAttributes()
+            throws IllegalArgumentException, NoRouteToCellException
+        {
+            setTimer(60 * 1000);
+
+            try {
+                _pnfsId = new PnfsId(_vargs.argv(0));
+                _message = new PnfsGetFileAttributes(_pnfsId, _attributes);
+            } catch (IllegalArgumentException e) {
+                /* Seems not to be a pnfsId, might be a url.
+                 */
+                DCapUrl url = new DCapUrl(_vargs.argv(0));
+                String fileName = url.getFilePart();
+                _message = new PnfsGetFileAttributes(fileName, _attributes);
+                _info.setPath(fileName);
+                _isUrl = true;
+                _path = fileName;
+            }
+
+            say("Requesting file attributes for " + _message);
+
+            if (_vargs.argv(1).equals("r")) {
+                _message.setAccessMask(EnumSet.of(AccessMask.READ_DATA));
+            }
+            _message.setId(_sessionId);
+            _message.setReplyRequired(true);
+
+            /* If _authorizationRequired is false then non-url based
+             * access bypasses authorization.
+             */
+            if (!_isUrl && !_authorizationRequired) {
+                _pnfs = new PnfsHandler(DCapDoorInterpreterV3.this._pnfs, null);
+            } else {
+                _pnfs = DCapDoorInterpreterV3.this._pnfs;
+            }
+
+            synchronized (_messageLock) {
+                _pnfs.send(_message);
+            }
+            setStatus("WaitingForPnfs");
         }
 
         public IoDoorEntry getIoDoorEntry(){
