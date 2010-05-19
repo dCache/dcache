@@ -6,15 +6,15 @@ import  java.io.OutputStream ;
 import  java.io.Reader ;
 import  java.io.Writer ;
 
-import dmg.security.CellUser;
+import javax.security.auth.Subject;
 
 public interface StreamEngine {
 
     /**
      *
-     * @return user associated with the connections
+     * @return {@link Subject} associated with the connections
      */
-   public CellUser    getUserName() ;
+   public Subject    getSubject() ;
 
    /**
     *

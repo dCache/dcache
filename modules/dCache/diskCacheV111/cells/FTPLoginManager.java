@@ -11,6 +11,7 @@ import java.util.*;
 import dmg.cells.nucleus.*; 
 import dmg.util.*;
 import dmg.protocols.telnet.* ;
+import javax.security.auth.Subject;
 
 /**
  **
@@ -132,11 +133,11 @@ public class      FTPLoginManager
       engine = _opt_raw ?
 	(StreamEngine)new DummyStreamEngine( socket ) :
 	(StreamEngine)new TelnetStreamEngine( socket, null) ;
-      
-      String       userName = engine.getUserName().getName() ; 
+
+      String name = Subjects.getDisplayName(engine.getSubject());
       _nucleus.say( "acceptThread ("+t+
-		    "): connection created for user "+userName ) ;
-      String cellName = "tn-"+userName+"*" ;
+        "): connection created for user "+name ) ;
+      String cellName = "tn-"+name+"*" ;
       
       String [] paraNames = new String[1] ;
       Object [] parameter = new Object[1] ;

@@ -12,9 +12,7 @@ import java.nio.channels.Channels;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dmg.security.CellUser;
-import java.util.Collections;
-import java.util.List;
+import javax.security.auth.Subject;
 
 public class DummyStreamEngine implements StreamEngine
 {
@@ -22,7 +20,7 @@ public class DummyStreamEngine implements StreamEngine
         LoggerFactory.getLogger(DummyStreamEngine.class);
 
     private final Socket _socket;
-    private CellUser _userName = new CellUser("Unknown", Collections.EMPTY_LIST);
+    private Subject _subject = new Subject();
     private ByteChannel _channel;
 
     private OutputStream _outputStream;
@@ -40,13 +38,10 @@ public class DummyStreamEngine implements StreamEngine
         }
 
         try {
-            Method meth = _socket.getClass().getMethod("getUserPrincipal", new Class[0]);
-            String user = (String)meth.invoke(_socket, new Object[0]);
+            Method meth = _socket.getClass().getMethod("getSubject", new Class[0]);
+            Subject subject = (Subject)meth.invoke(_socket, new Object[0]);
 
-            meth = _socket.getClass().getMethod("getRoles", new Class[0]);
-            List<String> roles = (List<String>)meth.invoke(_socket, new Object[0]);
-
-            setUserName(new CellUser(user, roles));
+            setSubject(subject);
         } catch (NoSuchMethodException nsm) {
 
         } catch (Exception e) {
@@ -54,14 +49,15 @@ public class DummyStreamEngine implements StreamEngine
         }
     }
 
-    public void setUserName(CellUser userName)
+    public void setSubject(Subject subject)
     {
-        _userName = userName;
+        _subject = subject;
     }
 
-    public CellUser getUserName()
+    @Override
+    public Subject getSubject()
     {
-        return _userName;
+        return _subject;
     }
 
     public InetAddress getInetAddress()

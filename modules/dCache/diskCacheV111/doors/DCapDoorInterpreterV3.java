@@ -8,7 +8,6 @@ import diskCacheV111.util.*;
 
 import dmg.cells.nucleus.*;
 import dmg.util.*;
-import dmg.security.CellUser;
 import diskCacheV111.services.acl.PermissionHandler;
 import diskCacheV111.services.acl.DelegatingPermissionHandler;
 import diskCacheV111.services.acl.GrantAllPermissionHandler;
@@ -33,11 +32,13 @@ import org.dcache.auth.AuthorizationRecord;
 import org.dcache.auth.Subjects;
 
 import diskCacheV111.util.PnfsHandler;
+import java.security.Principal;
 import org.dcache.acl.ACLException;
 import org.dcache.acl.enums.AccessType;
 import org.dcache.acl.enums.AccessMask;
 
 import javax.security.auth.Subject;
+import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.Origin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +46,7 @@ import org.dcache.namespace.FileType;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
+import org.globus.gsi.jaas.GlobusPrincipal;
 import static org.dcache.namespace.FileAttribute.*;
 
 public class DCapDoorInterpreterV3 implements KeepAliveListener,
@@ -107,7 +109,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     private final CellEndpoint _cell        ;
     private final Args        _args         ;
     private String      _ourName     = "server" ;
-    private CellUser    _user        = null ;
     private final PnfsHandler _pnfs         ;
     private final ConcurrentMap<Integer,SessionHandler> _sessions =
         new ConcurrentHashMap<Integer,SessionHandler>();
@@ -167,12 +168,12 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     private boolean _isAccessLatencyOverwriteAllowed = false;
     private boolean _isRetentionPolicyOverwriteAllowed = false;
 
-    public DCapDoorInterpreterV3( CellEndpoint cell , PrintWriter pw , CellUser user ) throws ACLException, UnknownHostException, IOException {
+    public DCapDoorInterpreterV3( CellEndpoint cell , PrintWriter pw , Subject subject ) throws ACLException, UnknownHostException, IOException {
 
         _out  = pw ;
         _cell = cell ;
         _args = cell.getArgs();
-        _user = user;
+        _subject = subject;
 
 
         String auth = _args.getOpt("authorization") ;
@@ -275,10 +276,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         if (permissionHandlerClasses == null ||
             permissionHandlerClasses.isEmpty()) {
             _permissionHandler = new GrantAllPermissionHandler();
-            Subject subject = new Subject();
-            subject.getPrincipals().add(_origin);
-            subject.setReadOnly();
-            _pnfs.setSubject(subject);
+
+            _subject.getPrincipals().add(_origin);
+            _subject.setReadOnly();
+            _pnfs.setSubject(_subject);
         } else {
             _permissionHandler = new DelegatingPermissionHandler(_cell);
         }
@@ -431,7 +432,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             // if user authenticated tell it to Session Handler
             if( _userAuthRecord != null ) {
 
-                se.setOwner( _user.getName() ) ;
+                se.setOwner( Subjects.getUserName(_subject) ) ;
                 if( _userAuthRecord.UID >= 0 ) {
                     se.setUid(_userAuthRecord.UID );
                 }
@@ -751,7 +752,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             // if user authenticated tell it to Session Handler
             if( _userAuthRecord != null ) {
 
-                se.setOwner( _user.getName() ) ;
+                se.setOwner( Subjects.getUserName(_subject) ) ;
                 if( _userAuthRecord.UID >= 0 ) {
                     se.setUid(_userAuthRecord.UID );
                 }
@@ -1973,11 +1974,11 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             getUserMetadata();
 
             _log.debug("IoHandler::storageInfoNotAvailable Door authenticated for {} ({} ,{})",
-                    new Object[] {_user.getName(), _user.getRoles(), _userAuthRecord});
+                    new Object[] {_subject, _userAuthRecord});
 
             if( _authorizationStrong && ( _userAuthRecord.UID < 0 ) )
                 throw new
-                CacheException( 2 , "No Meta data found for user : "+_user.getName() ) ;
+                CacheException( 2 , "No Meta data found for user : "+_subject ) ;
 
             String path = _message.getPnfsPath();
             String parent = new File(path).getParent();
@@ -2534,7 +2535,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
          */
         String role = args.getOpt("role");
         if(role != null ) {
-            _user.setRoles( Arrays.asList(role));
+            // FIXME: A special group pringipal required
+            _subject.getPrincipals().add(new FQANPrincipal(role, true));
         }
 
         int sessionId = args.getSessionId();
@@ -2655,8 +2657,15 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         if(_userAuthRecord != null) {
             return;
         }
-        String name = _user.getName();
-        List<String> roles = _user.getRoles();
+        // FIXME:
+        String name = _subject.getPrincipals(GlobusPrincipal.class).iterator().next().getName();
+
+        Set<FQANPrincipal> groupPrincipals = _subject.getPrincipals(FQANPrincipal.class);
+        List<String> roles = new ArrayList<String>(groupPrincipals.size());
+        for(Principal p : groupPrincipals) {
+            roles.add(p.getName());
+        }
+
         UserAuthRecord user = null ;
 
         if( _authService != null ) {
@@ -2670,13 +2679,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             user = new UserAuthRecord("nobody", name, roles.toString(), true, 0, -1, -1, "/", "/", "/", new HashSet<String>(0)) ;
         }
 
-        _log.info("Door authenticated for "+
-                _user.getName()+"("+_user.getRoles()+","+user.UID+","+
-                user.GID+","+_userHome+")");
+        _log.info("Door authenticated for: {}", _subject);
 
         _subject = Subjects.getSubject(user, true);
         _subject.getPrincipals().add(_origin);
-        _subject.setReadOnly();
 
         if (_permissionHandler instanceof GrantAllPermissionHandler) {
             _pnfs.setSubject(_subject);
@@ -2751,7 +2757,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         DoorRequestInfoMessage infoRemove =
                 new DoorRequestInfoMessage(_cell.getCellInfo().getCellName() + "@"
                 + _cell.getCellInfo().getDomainName(), "remove");
-        infoRemove.setOwner(_user.getName());
+        infoRemove.setOwner(Subjects.getUserName(_subject));
         infoRemove.setUid(_userAuthRecord.UID);
         infoRemove.setGid(_userAuthRecord.GID);
         infoRemove.setPath(pathToBeRemoved);

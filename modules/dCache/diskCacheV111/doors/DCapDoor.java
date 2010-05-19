@@ -12,13 +12,14 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellVersion;
-import dmg.security.CellUser;
 import dmg.util.Args;
 import dmg.util.CommandExitException;
 import dmg.util.KeepAliveListener;
 import dmg.util.StreamEngine;
+import dmg.util.Subjects;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
+import javax.security.auth.Subject;
 
 /**
   * @author Patrick Fuhrmann
@@ -38,7 +39,7 @@ public class      DCapDoor
     private BufferedReader _in;
     private PrintWriter    _out;
     private String         _host;
-    private CellUser         _username;
+    private Subject         _subject;
     private Thread         _workerThread , _anyThread ;
     private int            _commandCounter = 0;
     private String         _lastCommand    = "<init>";
@@ -72,35 +73,14 @@ public class      DCapDoor
 	   _reader   = engine.getReader();
 	   _in       = new BufferedReader( _reader );
 	   _out      = new PrintWriter( engine.getWriter() );
-	   _username = engine.getUserName();
+            _subject = engine.getSubject();
 	   _host     = engine.getInetAddress().toString();
 
            _authenticator = args.getOpt("authenticator") ;
            _authenticator = _authenticator == null ?
                             "pam" : _authenticator ;
 
-           String user = _username.getName();
-           if( args.getOpt("keepPrincipal") == null ){
-              int p = user.indexOf('@');
-              user = p < 0 ? user : user.substring(0,p);
-           }
-           int p = user.indexOf(':');
-           if( p < 0 ){
-              _username.setName(user) ;
-           }else{
-              String password = "*" ;
-              _username.setName( user.substring(0,p) );
-              password   = user.length() > (p+1) ?
-                           user.substring(p+1) :
-                           "*" ;
-
-              if( ! checkUser( _username.getName() , password ) ){
-            	  _username.setName(user) ;
-              }
-              password = "" ;
-           }
-
-           _interpreter = new DCapDoorInterpreterV3(this, _out, _username);
+           _interpreter = new DCapDoorInterpreterV3(this, _out, _subject);
            addCommandListener(_interpreter);
         }catch(Exception ee ){
            start() ;
@@ -410,13 +390,13 @@ public class      DCapDoor
     //
     @Override
     public String toString(){
-        return _username+"@"+_host+( _dcapLock ? " (LOCKED)" : "" ) ;
+        return Subjects.getDisplayName(_subject)+"@"+_host+( _dcapLock ? " (LOCKED)" : "" ) ;
     }
 
     @Override
     public void getInfo( PrintWriter pw ){
 	pw.println( "            DCapDoor" +( _dcapLock ? " (LOCKED)" : "" ));
-	pw.println( "         User  : "+_username );
+        pw.println( "         User  : "+Subjects.getDisplayName(_subject) );
 	pw.println( "         Host  : "+_host );
 	pw.println( " Last Command  : "+_lastCommand );
 	pw.println( " Command Count : "+_commandCounter );

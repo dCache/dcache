@@ -5,8 +5,7 @@
 package javatunnel;
 
 import java.io.*;
-import java.util.Collections;
-import java.util.List;
+import javax.security.auth.Subject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,17 +87,14 @@ class TunnelConverter implements Convertable,UserBindible  {
         }
         return true;
     }
-    
-    public String getUserPrincipal() {
-        return "nobody@NOWHERE";
-    }
-    
-    public Convertable makeCopy( ) {
+
+    @Override
+    public Convertable makeCopy() {
         return this;
     }
 
     @Override
-    public List<String> getRoles() {
-        return Collections.emptyList();
+    public Subject getSubject() {
+        return new Subject();
     }
 }
