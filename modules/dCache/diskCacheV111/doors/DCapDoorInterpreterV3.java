@@ -18,6 +18,8 @@ import diskCacheV111.poolManager.RequestContainerV5;
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.io.*;
 import java.net.*;
 
@@ -107,13 +109,13 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     private String      _ourName     = "server" ;
     private CellUser    _user        = null ;
     private final PnfsHandler _pnfs         ;
-    private final Map<Integer, SessionHandler>     _sessions    = new HashMap<Integer, SessionHandler>() ;
+    private final ConcurrentMap<Integer,SessionHandler> _sessions =
+        new ConcurrentHashMap<Integer,SessionHandler>();
     private String  _poolManagerName = null ;
     private String  _pnfsManagerName = null ;
 
 
     private CellPath _poolMgrPath    = null ;
-    private final Object  _messageLock     = new Object() ;
     private String  _pid             = null ;
     private String  _uid             = null ;
     private final String  _userHome        = "?" ;
@@ -361,12 +363,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     }
 
     public void keepAlive(){
-        List<SessionHandler> list = null ;
-        synchronized( this ){
-            list = new ArrayList<SessionHandler>(_sessions.values()) ;
-        }
-
-        for ( SessionHandler sh: list ){
+        for (SessionHandler sh: _sessions.values()){
             try{
                 sh.keepAlive() ;
             }catch(Throwable t ){
@@ -426,36 +423,21 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             throw new
             CommandException( 3  , "Not enough arguments for put" ) ;
 
-        if( _sessions.get( Integer.valueOf(sessionId) ) != null )
-            throw new
-            CommandException( 5 , "Duplicated session id" ) ;
-
         getUserMetadata() ;
 
-        //VP
         try{
+            SessionHandler se =  new IoHandler(sessionId,commandId,args);
 
+            // if user authenticated tell it to Session Handler
+            if( _userAuthRecord != null ) {
 
-            //
-            //  we have to make sure not to receive messages
-            //  before we have stored our sessionId in the hash.
-            //  (==synchronized)
-            //
-            synchronized( _messageLock ){
-               SessionHandler se =  new IoHandler(sessionId,commandId,args);
-
-               // if user authenticated tell it to Session Handler
-               if( _userAuthRecord != null ) {
-
-                   se.setOwner( _user.getName() ) ;
-                   if( _userAuthRecord.UID >= 0 ) {
-                       se.setUid(_userAuthRecord.UID );
-                   }
-                   if( _userAuthRecord.GID >= 0 ) {
-                       se.setGid(_userAuthRecord.GID );
-                   }
-               }
-               _sessions.put( Integer.valueOf(sessionId) , se ) ;
+                se.setOwner( _user.getName() ) ;
+                if( _userAuthRecord.UID >= 0 ) {
+                    se.setUid(_userAuthRecord.UID );
+                }
+                if( _userAuthRecord.GID >= 0 ) {
+                    se.setGid(_userAuthRecord.GID );
+                }
             }
         }catch(CacheException ce ){
             throw new CommandException(ce.getRc() ,
@@ -477,22 +459,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             throw new
             CommandException( 3  , "Not enough arguments for stage" ) ;
 
-        if( _sessions.get( Integer.valueOf(sessionId) ) != null )
-            throw new
-            CommandException( 5 , "Duplicated session id" ) ;
-
         getUserMetadata();
 
-        //VP
         try{
-            //
-            //  we have to make sure not to receive messages
-            //  before we have stored our sessionId in the hash.
-            //  (==synchronized)
-            synchronized( _messageLock ){
-                _sessions.put( Integer.valueOf(sessionId) ,
-                new PrestageHandler(sessionId,commandId,args) ) ;
-            }
+            new PrestageHandler(sessionId, commandId, args);
         }catch(CacheException ce ){
             throw new CommandException(ce.getRc() ,
             ce.getMessage() ) ;
@@ -603,18 +573,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             throw new
             CommandException( 3  , "Not enough arguments for unlink" ) ;
 
-        if( _sessions.get( Integer.valueOf(sessionId) ) != null )
-            throw new
-            CommandException( 5 , "Duplicated session id" ) ;
-
         getUserMetadata();
 
         try{
-            //
-            synchronized( _messageLock ){
-                _sessions.put( Integer.valueOf(sessionId) ,
-                new UnlinkHandler(sessionId,commandId,args,resolvePath) ) ;
-            }
+            new UnlinkHandler(sessionId, commandId, args, resolvePath);
         }catch(CacheException ce ){
             throw new CommandException(ce.getRc() ,
             ce.getMessage() ) ;
@@ -637,18 +599,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             throw new
             CommandException( 3  , "Not enough arguments for unlink" ) ;
 
-        if( _sessions.get( Integer.valueOf(sessionId) ) != null )
-            throw new
-            CommandException( 5 , "Duplicated session id" ) ;
-
         getUserMetadata();
 
         try{
-            //
-            synchronized( _messageLock ){
-                _sessions.put( Integer.valueOf(sessionId) ,
-                new RenameHandler(sessionId,commandId,args) ) ;
-            }
+            new RenameHandler(sessionId, commandId, args);
         }catch(CacheException ce ){
             throw new CommandException(ce.getRc() ,
             ce.getMessage() ) ;
@@ -670,18 +624,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             throw new
             CommandException( 3  , "Not enough arguments for rmdir" ) ;
 
-        if( _sessions.get( Integer.valueOf(sessionId) ) != null )
-            throw new
-            CommandException( 5 , "Duplicated session id" ) ;
-
         getUserMetadata();
 
         try{
-            //
-            synchronized( _messageLock ){
-                _sessions.put( Integer.valueOf(sessionId) ,
-                new RmDirHandler(sessionId,commandId,args,resolvePath) ) ;
-            }
+            new RmDirHandler(sessionId, commandId, args, resolvePath);
         }catch(CacheException ce ){
             throw new CommandException(ce.getRc() ,
             ce.getMessage() ) ;
@@ -702,18 +648,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             throw new
             CommandException( 3  , "Not enough arguments for unlink" ) ;
 
-        if( _sessions.get( Integer.valueOf(sessionId) ) != null )
-            throw new
-            CommandException( 5 , "Duplicated session id" ) ;
-
         getUserMetadata();
 
         try{
-            //
-            synchronized( _messageLock ){
-                _sessions.put( Integer.valueOf(sessionId) ,
-                new MkDirHandler(sessionId,commandId,args,resolvePath) ) ;
-            }
+            new MkDirHandler(sessionId, commandId, args, resolvePath);
         }catch(CacheException ce ){
             throw new CommandException(ce.getRc() ,
             ce.getMessage() ) ;
@@ -734,18 +672,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             throw new
             CommandException( 3  , "Not enough arguments for chown" ) ;
 
-        if( _sessions.get( Integer.valueOf(sessionId) ) != null )
-            throw new
-            CommandException( 5 , "Duplicated session id" ) ;
-
         getUserMetadata();
 
         try{
-            //
-            synchronized( _messageLock ){
-                _sessions.put( Integer.valueOf(sessionId) ,
-                new ChownHandler(sessionId,commandId,args,resolvePath) ) ;
-            }
+            new ChownHandler(sessionId, commandId, args, resolvePath);
         }catch(CacheException ce ){
             throw new CommandException(ce.getRc() ,
             ce.getMessage() ) ;
@@ -766,18 +696,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                     throw new
                     CommandException( 3  , "Not enough arguments for chgrp" ) ;
 
-                if( _sessions.get( Integer.valueOf(sessionId) ) != null )
-                    throw new
-                    CommandException( 5 , "Duplicated session id" ) ;
-
                 getUserMetadata();
 
                 try{
-                    //
-                    synchronized( _messageLock ){
-                        _sessions.put( Integer.valueOf(sessionId) ,
-                        new ChgrpHandler(sessionId,commandId,args,resolvePath) ) ;
-                    }
+                    new ChgrpHandler(sessionId, commandId, args, resolvePath);
                 }catch(CacheException ce ){
                     throw new CommandException(ce.getRc() ,
                     ce.getMessage() ) ;
@@ -798,18 +720,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                     throw new
                     CommandException( 3  , "Not enough arguments for chmod" ) ;
 
-                if( _sessions.get( Integer.valueOf(sessionId) ) != null )
-                    throw new
-                    CommandException( 5 , "Duplicated session id" ) ;
-
                 getUserMetadata();
 
                 try{
-                    //
-                    synchronized( _messageLock ){
-                        _sessions.put( Integer.valueOf(sessionId) ,
-                        new ChmodHandler(sessionId,commandId,args,resolvePath) ) ;
-                    }
+                    new ChmodHandler(sessionId, commandId, args, resolvePath);
                 }catch(CacheException ce ){
                     throw new CommandException(ce.getRc() ,
                     ce.getMessage() ) ;
@@ -829,14 +743,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             throw new
             CommandException( 3  , "Not enough arguments for opendir" ) ;
 
-        if( _sessions.get( Integer.valueOf(sessionId) ) != null )
-            throw new
-            CommandException( 5 , "Duplicated session id" ) ;
-
         getUserMetadata();
 
         try{
-            //
             SessionHandler se =  new OpenDirHandler(sessionId,commandId,args);
 
             // if user authenticated tell it to Session Handler
@@ -849,10 +758,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 if( _userAuthRecord.GID >= 0 ) {
                     se.setGid(_userAuthRecord.GID );
                 }
-            }
-
-            synchronized( _messageLock ){
-                _sessions.put( Integer.valueOf(sessionId) , se ) ;
             }
         }catch(CacheException ce ){
             throw new CommandException(ce.getRc() ,
@@ -874,18 +779,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             throw new
             CommandException( 3  , "Not enough arguments for stat" ) ;
 
-        if( _sessions.get( Integer.valueOf(sessionId) ) != null )
-            throw new
-            CommandException( 5 , "Duplicated session id" ) ;
-
         getUserMetadata();
 
         try{
-            //
-            synchronized( _messageLock ){
-                _sessions.put( Integer.valueOf(sessionId) ,
-                new StatHandler(sessionId,commandId,args,resolvePath) ) ;
-            }
+            new StatHandler(sessionId, commandId, args, resolvePath);
         }catch(CacheException ce ){
             throw new CommandException(ce.getRc() ,
             ce.getMessage() ) ;
@@ -915,10 +812,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             throw new
             CommandException( 3  , "Not enough arguments for check" ) ;
 
-        if( _sessions.get( Integer.valueOf(sessionId) ) != null )
-            throw new
-            CommandException( 5 , "Duplicated session id" ) ;
-
         getUserMetadata();
 
         List<String> assumedLocations;
@@ -937,16 +830,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             CacheException( 4 , "File is not cached" ) ;
         }
 
-        //VP
         try{
-            //
-            //  we have to make sure not to receive messages
-            //  before we have stored our sessionId in the hash.
-            //  (==synchronized)
-            synchronized( _messageLock ){
-                _sessions.put( Integer.valueOf(sessionId) ,
-                new CheckFileHandler(sessionId,commandId,args, assumedLocations) ) ;
-            }
+            new CheckFileHandler(sessionId, commandId, args, assumedLocations);
         }catch(CacheException ce ){
             throw new CommandException(ce.getRc() ,
             ce.getMessage() ) ;
@@ -956,21 +841,21 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
         return null ;
     }
-    public synchronized String
-    com_status( int sessionId , int commandId , VspArgs args )
-    throws Exception {
 
-
+    public String com_status(int sessionId, int commandId, VspArgs args)
+        throws CommandException
+    {
         _lastCommandTS = new Date() ;
-        IoHandler io = (IoHandler)_sessions.get( Integer.valueOf(sessionId) ) ;
-        if( io == null )
+        SessionHandler handler = (SessionHandler) _sessions.get(sessionId);
+        if (handler == null) {
             throw new
-            CommandException( 5 , "Session ID "+sessionId+" not found." ) ;
-
+                CommandException(5, "Session ID " + sessionId + " not found.");
+        }
 
         return ""+sessionId+" "+commandId+" "+args.getName()+
-        " ok "+" 0 " + "\""+io.toString()+ "\"" ;
+            " ok "+" 0 " + "\""+handler+ "\"" ;
     }
+
     public String hh_get_door_info = "[-binary]" ;
     public Object ac_get_door_info( Args args ){
         IoDoorInfo info = new IoDoorInfo( _cell.getCellInfo().getCellName() ,
@@ -978,13 +863,13 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         info.setProtocol("dcap","3");
         info.setOwner( _uid == null ? "0" : _uid ) ;
         info.setProcess( _pid == null ? "0" : _pid ) ;
-        List<IoDoorEntry> list = new ArrayList<IoDoorEntry>(_sessions.size()) ;
-        synchronized( this ){
-            for( SessionHandler session: _sessions.values() ){
-                if( ! ( session instanceof IoHandler ) )continue ;
-                list.add( ((IoHandler)session).getIoDoorEntry() ) ;
+        List<IoDoorEntry> list = new ArrayList<IoDoorEntry>(_sessions.size());
+        for (SessionHandler session: _sessions.values()) {
+            if (session instanceof IoHandler) {
+                list.add(((IoHandler) session).getIoDoorEntry());
             }
         }
+
         info.setIoDoorEntries( list.toArray(new IoDoorEntry[list.size()]) );
         if( args.getOpt("binary") != null )
             return info ;
@@ -1003,17 +888,18 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     public String hh_retry = "<sessionId> [-weak]" ;
     public String ac_retry_$_1( Args args ) throws Exception {
         int sessionId = Integer.parseInt(args.argv(0));
-        SessionHandler session = null ;
-        if( ( session = _sessions.get( Integer.valueOf(sessionId) ) ) == null )
-            throw new
-            CommandException( 5 , "No such session ID "+sessionId ) ;
+        SessionHandler session;
+        if ((session = _sessions.get(sessionId)) == null) {
+            throw new CommandException(5, "No such session ID " + sessionId);
+        }
 
-        if( ! ( session instanceof PnfsSessionHandler ) )
+        if (!(session instanceof PnfsSessionHandler)) {
             throw new
-            CommandException( 6 , "Not a PnfsSessionHandler "+sessionId+
-            " but "+session.getClass().getName() ) ;
+                CommandException(6, "Not a PnfsSessionHandler "+sessionId+
+                                 " but "+session.getClass().getName());
+        }
 
-        ((PnfsSessionHandler)session).again( args.getOpt("weak") == null ) ;
+        ((PnfsSessionHandler) session).again( args.getOpt("weak") == null ) ;
 
         return "" ;
     }
@@ -1039,10 +925,13 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         private String    _owner           =  "unknown";
 
         protected SessionHandler(int sessionId, int commandId, VspArgs args)
+            throws CommandException
         {
             _sessionId = sessionId ;
             _commandId = commandId ;
             _vargs     = args ;
+
+            addUs();
 
             _info      = new DoorRequestInfoMessage(
             _cell.getCellInfo().getCellName()+"@"+
@@ -1093,9 +982,20 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             msg.getErrorObject().toString() ) ;
 
         }
-        protected synchronized void removeUs(){
-            _sessions.remove( Integer.valueOf(_sessionId ) ) ;
+
+        protected void addUs()
+            throws CommandException
+        {
+            if (_sessions.putIfAbsent(_sessionId, this) != null) {
+                throw new CommandException(5, "Duplicated session id");
+            }
         }
+
+        protected void removeUs()
+        {
+            _sessions.remove(_sessionId);
+        }
+
         protected void setStatus( String status ){
             _status = status ;
             _statusSince = System.currentTimeMillis() ;
@@ -1143,7 +1043,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         protected PnfsSessionHandler(int sessionId, int commandId, VspArgs args,
                                      boolean metaDataOnly, boolean resolvePath)
-            throws NoRouteToCellException, CacheException
+            throws NoRouteToCellException, CacheException, CommandException
         {
             super(sessionId, commandId, args);
 
@@ -1236,9 +1136,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             _message.setId(_sessionId) ;
             _message.setReplyRequired(true);
 
-            synchronized (_messageLock) {
-                _pnfs.send(_message);
-            }
+            _pnfs.send(_message);
             setStatus("WaitingForPnfs");
         }
 
@@ -1307,7 +1205,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         private long   _time = 0L ;
         private String _destination = null ;
         private PrestageHandler( int sessionId , int commandId , VspArgs args )
-            throws NoRouteToCellException, CacheException
+            throws NoRouteToCellException, CacheException, CommandException
         {
             super( sessionId , commandId , args, false, true ) ;
 
@@ -1376,7 +1274,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                             int commandId,
                             VspArgs args,
                             boolean followLinks)
-            throws NoRouteToCellException, CacheException
+            throws NoRouteToCellException, CacheException, CommandException
         {
             super( sessionId , commandId , args , true , followLinks ) ;
         }
@@ -1437,7 +1335,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                               int commandId,
                               VspArgs args,
                               boolean followLinks)
-            throws NoRouteToCellException, CacheException
+            throws NoRouteToCellException, CacheException, CommandException
         {
             super( sessionId , commandId , args , true , followLinks ) ;
         }
@@ -1486,7 +1384,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                              int commandId,
                              VspArgs args,
                              boolean followLinks)
-            throws NoRouteToCellException, CacheException
+            throws NoRouteToCellException, CacheException, CommandException
         {
             super( sessionId , commandId , args , true , followLinks ) ;
 
@@ -1528,7 +1426,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         private ChownHandler(int sessionId, int commandId,
                              VspArgs args, boolean followLinks)
-            throws NoRouteToCellException, CacheException
+            throws NoRouteToCellException, CacheException, CommandException
         {
             super( sessionId , commandId , args , true , followLinks ) ;
 
@@ -1579,7 +1477,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         private ChgrpHandler(int sessionId,  int commandId,
                              VspArgs args,  boolean followLinks)
-            throws NoRouteToCellException, CacheException
+            throws NoRouteToCellException, CacheException, CommandException
         {
             super( sessionId , commandId , args , true , followLinks ) ;
 
@@ -1622,7 +1520,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         private String _newName = null;
 
         private RenameHandler(int sessionId, int commandId, VspArgs args)
-            throws NoRouteToCellException, CacheException
+            throws NoRouteToCellException, CacheException, CommandException
         {
             super( sessionId , commandId , args , true , false ) ;
             _newName = args.argv(1);
@@ -1676,7 +1574,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                              int commandId,
                              VspArgs args,
                              boolean followLinks)
-            throws NoRouteToCellException, CacheException
+            throws NoRouteToCellException, CacheException, CommandException
         {
             super( sessionId , commandId , args , true , followLinks ) ;
         }
@@ -1714,7 +1612,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                              int commandId,
                              VspArgs args,
                              boolean followLinks)
-            throws NoRouteToCellException, CacheException
+            throws NoRouteToCellException, CacheException, CommandException
         {
             super( sessionId , commandId , args , true , followLinks ) ;
 
@@ -1785,7 +1683,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         private CheckFileHandler(int sessionId, int commandId,
                                  VspArgs args, List<String> locations)
-            throws NoRouteToCellException, CacheException
+            throws NoRouteToCellException, CacheException, CommandException
         {
             super( sessionId , commandId , args, false, true ) ;
 
@@ -1944,7 +1842,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         private PnfsHandler _pnfs;
 
         private IoHandler(int sessionId, int commandId, VspArgs args)
-            throws NoRouteToCellException, CacheException
+            throws NoRouteToCellException, CacheException, CommandException
         {
             super(sessionId, commandId, args, false, true);
 
@@ -2025,9 +1923,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 _pnfs = DCapDoorInterpreterV3.this._pnfs;
             }
 
-            synchronized (_messageLock) {
-                _pnfs.send(_message);
-            }
+            _pnfs.send(_message);
             setStatus("WaitingForPnfs");
         }
 
@@ -2298,21 +2194,16 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
             getPoolMessage.setSubject(_subject);
             getPoolMessage.setId(_sessionId);
-            synchronized( _messageLock ){
-                try{
-                    _cell.sendMessage(
-                    new CellMessage(
-                    new CellPath( _isHsmRequest ?
-                    _hsmManager : _poolManagerName )  ,
-                    getPoolMessage
-                    )
-                    ) ;
-                }catch(Exception ie){
-                    sendReply( "fileAttributesAvailable" , 2 ,
-                    ie.toString() ) ;
-                    removeUs()  ;
-                    return ;
-                }
+            try {
+                _cell.sendMessage(new CellMessage(new CellPath(_isHsmRequest
+                                                               ? _hsmManager
+                                                               : _poolManagerName) ,
+                                                  getPoolMessage));
+            } catch (Exception ie) {
+                sendReply( "fileAttributesAvailable" , 2 ,
+                           ie.toString() ) ;
+                removeUs()  ;
+                return ;
             }
             setStatus( "WaitingForGetPool" ) ;
             setTimer(_poolRetry) ;
@@ -2391,29 +2282,25 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 ( _ioHandlerQueue.length() > 0 )    )poolMessage.setIoQueueName( _ioHandlerQueue ) ;
 
 
-            synchronized( _messageLock ){
-                if( _poolRequestDone ){
-                    esay("Ignoring double message");
-                    return ;
+            if( _poolRequestDone ){
+                esay("Ignoring double message");
+                return ;
+            }
+            try{
+                CellPath toPool = null ;
+                if( _poolProxy == null ){
+                    toPool = new CellPath(pool);
+                }else{
+                    toPool = new CellPath(_poolProxy);
+                    toPool.add(pool);
                 }
-                try{
-                    CellPath toPool = null ;
-                    if( _poolProxy == null ){
-                        toPool = new CellPath(pool);
-                    }else{
-                        toPool = new CellPath(_poolProxy);
-                        toPool.add(pool);
-                    }
-                    _cell.sendMessage(
-                    new CellMessage( toPool  , poolMessage )
-                    ) ;
-                    _poolRequestDone = true ;
-                }catch(Exception ie){
-                    sendReply( "poolMgrGetPoolArrived" , 2 ,
-                    ie.toString() ) ;
-                    removeUs()  ;
-                    return ;
-                }
+                _cell.sendMessage(new CellMessage(toPool, poolMessage));
+                _poolRequestDone = true ;
+            }catch(Exception ie){
+                sendReply( "poolMgrGetPoolArrived" , 2 ,
+                           ie.toString() ) ;
+                removeUs()  ;
+                return ;
             }
             setStatus( "WaitingForOpenFile" ) ;
 
@@ -2532,7 +2419,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         private String []        _hosts        = null ;
 
         private OpenDirHandler(int sessionId, int commandId, VspArgs args)
-            throws NoRouteToCellException, CacheException
+            throws NoRouteToCellException, CacheException, CommandException
         {
             super( sessionId , commandId , args , true, true ) ;
 
@@ -2594,20 +2481,14 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 poolIoFileMessage.setIoQueueName(_ioHandlerQueue);
             }
 
-            synchronized (_messageLock) {
-                try {
-                    _cell.sendMessage(new CellMessage(new CellPath(_pool),
-                            poolIoFileMessage));
-                } catch (Exception ie) {
-                    sendReply("poolMgrGetPoolArrived", 2, ie.toString());
-                    removeUs();
-                    return;
-                }
+            try {
+                _cell.sendMessage(new CellMessage(new CellPath(_pool),
+                                                  poolIoFileMessage));
+            } catch (Exception ie) {
+                sendReply("poolMgrGetPoolArrived", 2, ie.toString());
+                removeUs();
+                return;
             }
-
-
-
-            return ;
         }
 
         public void
@@ -2813,26 +2694,24 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         _userAuthRecord = user;
     }
 
-    public void   messageArrived( CellMessage msg ){
-        Object         object  = msg.getMessageObject();
-        SessionHandler handler = null ;
-        Message        reply   = null ;
+    public void  messageArrived(CellMessage msg)
+    {
+        Object object = msg.getMessageObject();
 
-        if (object instanceof Message ){
-            reply   = (Message)object ;
-            synchronized( _messageLock ){
-                handler = _sessions.get( Integer.valueOf((int)reply.getId())) ;
-                if( handler == null ){
-                    _log.warn( "Unexpected message (" + reply.getClass() + ") for session : "+
-                    reply.getId() ) ;
-                    return ;
-                }
-            }
-        }else{
-            _log.warn("Unexpected message class "+object.getClass() +
-                    "source = "+msg.getSourceAddress());
-            return ;
+        if (!(object instanceof Message)) {
+            _log.warn("Unexpected message class " + object.getClass() +
+                      "source = " + msg.getSourceAddress());
+            return;
         }
+
+        Message reply = (Message) object;
+        SessionHandler handler = _sessions.get((int) reply.getId());
+        if (handler == null) {
+            _log.warn("Unexpected message (" + reply.getClass() +
+                      ") for session : "+ reply.getId());
+            return;
+        }
+
         if( reply instanceof DoorTransferFinishedMessage ){
 
             ((IoHandler)handler).doorTransferArrived( (DoorTransferFinishedMessage)reply )  ;
