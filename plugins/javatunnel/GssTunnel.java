@@ -6,8 +6,14 @@ package javatunnel;
 
 import java.net.*;
 import java.io.*;
+import java.security.Principal;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import javax.security.auth.Subject;
+import javax.security.auth.kerberos.KerberosPrincipal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.ietf.jgss.*;
@@ -29,8 +35,6 @@ class GssTunnel extends TunnelConverter {
     MessageProp _prop =  new MessageProp(true);
     private String _principalStr = null;
     private boolean _useChannelBinding = true;
-
-    protected final List<String> _roles = new ArrayList<String>();
 
     protected GssTunnel() {}
 
@@ -218,22 +222,19 @@ class GssTunnel extends TunnelConverter {
 
 
     @Override
-    public String getUserPrincipal() {
-        return _userPrincipal == null ? "nobody@SOME.WHERE" : _userPrincipal.toString();
+    public Subject getSubject() {
+        Set<Principal> pricipals = new HashSet<Principal>();
+        try {
+            pricipals.add( new KerberosPrincipal(_context.getSrcName().toString()) );
+        }catch(GSSException e) {
+            _log.error("Failed to create a kerberos principal:", e);
+        }
+        return  new Subject(false,  pricipals , Collections.EMPTY_SET, Collections.EMPTY_SET);
     }
 
     @Override
     public Convertable makeCopy() {
         return new GssTunnel( _principalStr, true);
-    }
-
-    public String getTunnelPrincipal() {
-        return _myPrincipal.toString();
-    }
-
-    @Override
-    public List<String> getRoles() {
-        return _roles;
     }
 
 }

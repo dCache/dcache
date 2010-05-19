@@ -8,13 +8,14 @@ import java.io.*;
 import java.net.*;
 
 import dmg.util.UserValidatable;
-import java.util.Collections;
-import java.util.List;
+import java.security.Principal;
+import javax.security.auth.Subject;
+import org.dcache.auth.UserNamePrincipal;
 
 public class SSLTunnelSocket extends Socket implements UserBindible {
 
 	private Socket sock = null;
-	private String _user = "nobody@SOME.WHERE";
+        private Subject _subject = new Subject();
 
 	SSLTunnelSocket(Socket s, UserValidatable uv ) {
 	
@@ -47,7 +48,9 @@ public class SSLTunnelSocket extends Socket implements UserBindible {
 				String pass = auth.substring( auth.lastIndexOf(':') +1 );
 				
 				if( uv.validateUser( user , pass ) ) {
-					_user = user  + "@" + getInetAddress().getHostName();
+                                    Principal principal = new UserNamePrincipal(user);
+                                    _subject.getPrincipals().add(principal);
+                                    _subject.setReadOnly();
 				}								
 				
 			}
@@ -86,21 +89,13 @@ public class SSLTunnelSocket extends Socket implements UserBindible {
 		return sock.toString();
 	}
 	
-    public void setUserPrincipal(String user) {
-        _user = user;
+    public void setSubject(Subject subject) {
+        _subject = subject;
     }    
-        
-    public String getUserPrincipal() {
-        return _user;
-    }
-
-	public String getGroup() {		
-		return null;
-	}
 
     @Override
-    public List<String> getRoles() {
-        return Collections.emptyList();
+    public Subject getSubject() {
+        return _subject;
     }
 
 }

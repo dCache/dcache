@@ -8,13 +8,14 @@ import java.net.*;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import javax.security.auth.Subject;
 
 public class TunnelSocket extends Socket implements UserBindible {
 
     private TunnelOutputStream _out = null;
     private TunnelInputStream _in   = null;
     private Convertable _tunnel = null;
-    private String _user = "nobody@NOWHERE" ;
+    private Subject _subject = new Subject();
     private List<String> _roles = new ArrayList<String>();
     private String _group = null;
 
@@ -144,18 +145,13 @@ public class TunnelSocket extends Socket implements UserBindible {
     }
 
 
-    public void setUserPrincipal(String user) {
-        _user = user;
-    }
-
-
-    public String getUserPrincipal() {
-        return _user;
+    public void setSubject(Subject subject) {
+        _subject = subject;
     }
 
     @Override
-    public List<String> getRoles() {
-        return _roles;
+    public Subject getSubject() {
+        return _subject;
     }
 
     public void setRoles(List<String> newRoles) {
@@ -163,15 +159,15 @@ public class TunnelSocket extends Socket implements UserBindible {
     }
 
     public boolean verify() throws IOException {
-    	if (_tunnel != null) {
-    		if (_tunnel.verify(this.getRawInputStream(), this.getRawOutputStream(), this)) {
-    			this.setUserPrincipal(_tunnel.getUserPrincipal());
-                        this.setRoles (((UserBindible)_tunnel).getRoles());
-    			return true;
-    		} else
-    			return false;
-    	}
-    	return true;
+        if (_tunnel != null) {
+            if (_tunnel.verify(this.getRawInputStream(), this.getRawOutputStream(), this)) {
+                this.setSubject(_tunnel.getSubject());
+                return true;
+            } else {
+                return false;
+            }
+        }
+        return true;
     }
 
 }
