@@ -8,7 +8,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,7 +34,6 @@ import org.dcache.pool.repository.AbstractStateChangeListener;
 import org.dcache.pool.repository.StateChangeEvent;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.Account;
-import org.dcache.pool.repository.Repository;
 import org.dcache.pool.p2p.P2PClient;
 import org.dcache.pool.movers.MoverProtocol;
 import org.dcache.cells.CellCommandListener;
@@ -415,7 +413,7 @@ public class PoolV4
         }
 
         _p2pQueue = new SimpleJobScheduler("P2P");
-        _ioQueue = new IoQueueManager(_args.getOpt("io-queues"));
+        _ioQueue = new IoQueueManager(_args.getOpt("io-queues"), _timeoutManager);
 
         disablePool(PoolV2Mode.DISABLED_STRICT, 1, "Initializing");
         _pingThread.start();
@@ -491,203 +489,6 @@ public class PoolV4
     {
         return new CellVersion(diskCacheV111.util.Version.getVersion(),
                                "$Revision$");
-    }
-
-    private class IoQueueManager implements JobScheduler
-    {
-        private ArrayList<JobScheduler> _list = new ArrayList<JobScheduler>();
-        private HashMap<String, JobScheduler> _hash = new HashMap<String, JobScheduler>();
-        private boolean _isConfigured = false;
-
-        private IoQueueManager(String ioQueueList)
-        {
-            _isConfigured = (ioQueueList != null) && (ioQueueList.length() > 0);
-            if (!_isConfigured) {
-                ioQueueList = "regular";
-            }
-
-            for (String queueName : ioQueueList.split(",")) {
-                boolean fifo = !queueName.startsWith("-");
-                if (!fifo) {
-                    queueName = queueName.substring(1);
-                }
-
-                if (_hash.get(queueName) != null) {
-                    _log.error("Queue not created, name already exists: "
-                               + queueName);
-                    continue;
-                }
-                int id = _list.size();
-                JobScheduler job = new SimpleJobScheduler(queueName, fifo);
-                _list.add(job);
-                _hash.put(queueName, job);
-                job.setSchedulerId(id);
-                _timeoutManager.addScheduler(queueName, job);
-            }
-            if (!_isConfigured) {
-                _log.info("No custom mover queues defined");
-            } else {
-                _log.info("Mover queues defined: " + _hash.toString());
-            }
-        }
-
-        private synchronized boolean isConfigured()
-        {
-            return _isConfigured;
-        }
-
-        private synchronized JobScheduler getDefaultScheduler()
-        {
-            return _list.get(0);
-        }
-
-        private synchronized Collection<JobScheduler> getSchedulers()
-        {
-            return Collections.unmodifiableCollection(_list);
-        }
-
-        private synchronized JobScheduler getSchedulerByName(String queueName)
-        {
-            return _hash.get(queueName);
-        }
-
-        private synchronized JobScheduler getSchedulerById(int id)
-        {
-            int pos = id % 10;
-            if (pos >= _list.size()) {
-                throw new IllegalArgumentException(
-                                                   "Invalid id (doesn't below to any known scheduler)");
-            }
-            return  _list.get(pos);
-        }
-
-        public synchronized JobInfo getJobInfo(int id)
-        {
-            return getSchedulerById(id).getJobInfo(id);
-        }
-
-        public synchronized int add(String queueName, Runnable runnable, int priority)
-            throws InvocationTargetException
-        {
-            JobScheduler js =
-                (queueName == null) ? null : (JobScheduler) _hash.get(queueName);
-
-            return (js == null)
-                ? add(runnable, priority) : js.add(runnable, priority);
-        }
-
-        public synchronized int add(Runnable runnable) throws InvocationTargetException
-        {
-            return getDefaultScheduler().add(runnable);
-        }
-
-        public synchronized int add(Runnable runnable, int priority)
-            throws InvocationTargetException
-        {
-            return getDefaultScheduler().add(runnable, priority);
-        }
-
-        public synchronized void kill(int jobId, boolean force)
-            throws NoSuchElementException
-        {
-            getSchedulerById(jobId).kill(jobId, force);
-        }
-
-        public synchronized void remove(int jobId) throws NoSuchElementException
-        {
-            getSchedulerById(jobId).remove(jobId);
-        }
-
-        public synchronized StringBuffer printJobQueue(StringBuffer sb)
-        {
-            if (sb == null) {
-                sb = new StringBuffer();
-            }
-            for (JobScheduler s : _list) {
-                s.printJobQueue(sb);
-            }
-            return sb;
-        }
-
-        public synchronized int getMaxActiveJobs()
-        {
-            int sum = 0;
-            for (JobScheduler s : _list) {
-                sum += s.getMaxActiveJobs();
-            }
-            return sum;
-        }
-
-        public synchronized int getActiveJobs()
-        {
-            int sum = 0;
-            for (JobScheduler s : _list) {
-               sum += s.getActiveJobs();
-            }
-            return sum;
-        }
-
-        public synchronized int getQueueSize()
-        {
-            int sum = 0;
-            for (JobScheduler s : _list) {
-                sum += s.getQueueSize();
-            }
-            return sum;
-        }
-
-        public synchronized void setMaxActiveJobs(int maxJobs)
-        {
-        }
-
-        public synchronized List<JobInfo> getJobInfos()
-        {
-            List<JobInfo> list = new ArrayList<JobInfo>();
-            for (JobScheduler s : _list) {
-                list.addAll(s.getJobInfos());
-            }
-            return list;
-        }
-
-        public void setSchedulerId(int id)
-        {
-        }
-
-        public String getSchedulerName()
-        {
-            return "Manager";
-        }
-
-        public int getSchedulerId()
-        {
-            return -1;
-        }
-
-        public synchronized void printSetup(PrintWriter pw)
-        {
-            for (JobScheduler s : _list) {
-                pw.println("mover set max active -queue="
-                           + s.getSchedulerName() + " " + s.getMaxActiveJobs());
-            }
-        }
-
-        public synchronized JobInfo findJob(String client, long id)
-        {
-            for (JobInfo info : getJobInfos()) {
-                if (client.equals(info.getClientName())
-                    && id == info.getClientId()) {
-                    return info;
-                }
-            }
-            return null;
-        }
-
-        public synchronized void shutdown()
-        {
-            for (JobScheduler s: _list) {
-                s.shutdown();
-            }
-        }
     }
 
     /**
