@@ -460,10 +460,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }catch(CacheException ce ){
             throw new CommandException(ce.getRc() ,
             ce.getMessage() ) ;
-        }catch(Exception e){
-            e.printStackTrace();
+        }catch(RuntimeException e){
+            _log.error(e.toString(), e);
             throw new CommandException(44 , e.getMessage() ) ;
-
         }
 
         return null ;
@@ -497,9 +496,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }catch(CacheException ce ){
             throw new CommandException(ce.getRc() ,
             ce.getMessage() ) ;
-        }catch(Exception e){
+        }catch(RuntimeException e){
+            _log.error(e.toString(), e);
             throw new CommandException(44 , e.getMessage() ) ;
-
         }
         return null ;
     }
@@ -619,9 +618,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }catch(CacheException ce ){
             throw new CommandException(ce.getRc() ,
             ce.getMessage() ) ;
-        }catch(Exception e){
+        }catch(RuntimeException e){
+            _log.error(e.toString(), e);
             throw new CommandException(44 , e.getMessage() ) ;
-
         }
         return null ;
     }
@@ -653,9 +652,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }catch(CacheException ce ){
             throw new CommandException(ce.getRc() ,
             ce.getMessage() ) ;
-        }catch(Exception e){
+        }catch(RuntimeException e){
+            _log.error(e.toString(), e);
             throw new CommandException(44 , e.getMessage() ) ;
-
         }
         return null ;
     }
@@ -686,9 +685,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }catch(CacheException ce ){
             throw new CommandException(ce.getRc() ,
             ce.getMessage() ) ;
-        }catch(Exception e){
+        }catch(RuntimeException e){
+            _log.error(e.toString(), e);
             throw new CommandException(44 , e.getMessage() ) ;
-
         }
         return null ;
     }
@@ -718,9 +717,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }catch(CacheException ce ){
             throw new CommandException(ce.getRc() ,
             ce.getMessage() ) ;
-        }catch(Exception e){
-            throw new CommandException(44 , e.getMessage() ) ;
-
+        }catch(RuntimeException e){
+            _log.error(e.toString(), e);
+           throw new CommandException(44 , e.getMessage() ) ;
         }
         return null ;
     }
@@ -750,9 +749,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }catch(CacheException ce ){
             throw new CommandException(ce.getRc() ,
             ce.getMessage() ) ;
-        }catch(Exception e){
+        }catch(RuntimeException e){
+            _log.error(e.toString(), e);
             throw new CommandException(44 , e.getMessage() ) ;
-
         }
         return null ;
     }
@@ -782,9 +781,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 }catch(CacheException ce ){
                     throw new CommandException(ce.getRc() ,
                     ce.getMessage() ) ;
-                }catch(Exception e){
+                }catch(RuntimeException e){
+                    _log.error(e.toString(), e);
                     throw new CommandException(44 , e.getMessage() ) ;
-
                 }
                 return null ;
      }
@@ -814,9 +813,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 }catch(CacheException ce ){
                     throw new CommandException(ce.getRc() ,
                     ce.getMessage() ) ;
-                }catch(Exception e){
+                }catch(RuntimeException e){
+                    _log.error(e.toString(), e);
                     throw new CommandException(44 , e.getMessage() ) ;
-
                 }
                 return null ;
             }
@@ -858,10 +857,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }catch(CacheException ce ){
             throw new CommandException(ce.getRc() ,
             ce.getMessage() ) ;
-        }catch(Exception e){
-            _log.error(e.toString());
+        }catch(RuntimeException e){
+            _log.error(e.toString(), e);
             throw new CommandException(44 , e.getMessage() ) ;
-
         }
         return null ;
     }
@@ -891,9 +889,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }catch(CacheException ce ){
             throw new CommandException(ce.getRc() ,
             ce.getMessage() ) ;
-        }catch(Exception e){
+        }catch(RuntimeException e){
+            _log.error(e.toString(), e);
             throw new CommandException(44 , e.getMessage() ) ;
-
         }
         return null ;
     }
@@ -952,9 +950,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }catch(CacheException ce ){
             throw new CommandException(ce.getRc() ,
             ce.getMessage() ) ;
-        }catch(Exception e){
+        }catch(RuntimeException e){
+            _log.error(e.toString(), e);
             throw new CommandException(44 , e.getMessage() ) ;
-
         }
         return null ;
     }
@@ -1040,9 +1038,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         private int       _gid             = -1 ;
         private String    _owner           =  "unknown";
 
-        protected SessionHandler( int sessionId , int commandId , VspArgs args )
-        throws Exception {
-
+        protected SessionHandler(int sessionId, int commandId, VspArgs args)
+        {
             _sessionId = sessionId ;
             _commandId = commandId ;
             _vargs     = args ;
@@ -1144,34 +1141,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         protected Set<FileAttribute> _attributes;
         protected PnfsGetFileAttributes _message;
 
-        protected PnfsSessionHandler(int sessionId, int commandId, VspArgs args)
-            throws Exception
-        {
-            this(sessionId, commandId, args, false, true);
-            /* if is url, _path is already pointing to to correct path */
-            if( _path == null ) {
-                _path           = args.getOpt("path");
-            }
-            if(_path != null ) {
-                _info.setPath(_path);
-            }
-            String tmp = args.getOpt("timeout") ;
-            if( tmp != null ){
-                try{
-                    long timeout = Long.parseLong(tmp) ;
-                    if( timeout > 0L ){
-                        _timeout = timeout ;
-                        say("PnfsSessionHandler : user timeout set to : "+_timeout ) ;
-                        _timeout = System.currentTimeMillis() + ( _timeout * 1000L ) ;
-                    }
-                }catch(NumberFormatException e){/* 'bad' strings silently ignored */}
-            }
-
-        }
-
         protected PnfsSessionHandler(int sessionId, int commandId, VspArgs args,
                                      boolean metaDataOnly, boolean resolvePath)
-            throws Exception
+            throws NoRouteToCellException, CacheException
         {
             super(sessionId, commandId, args);
 
@@ -1180,7 +1152,28 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 _attributes.add(STORAGEINFO);
             }
 
+            String tmp = args.getOpt("timeout");
+            if (tmp != null) {
+                try {
+                    long timeout = Long.parseLong(tmp);
+                    if (timeout > 0L) {
+                        say("PnfsSessionHandler: user timeout set to " + timeout);
+                        _timeout = System.currentTimeMillis() + (timeout * 1000L);
+                    }
+                } catch (NumberFormatException e) {
+                    /* 'bad' strings silently ignored */
+                }
+            }
+
             askForFileAttributes();
+
+            /* if is url, _path is already pointing to to correct path */
+            if (_path == null) {
+                _path = args.getOpt("path");
+            }
+            if (_path != null) {
+                _info.setPath(_path);
+            }
         }
 
         @Override
@@ -1235,7 +1228,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 DCapUrl url = new DCapUrl(_vargs.argv(0));
                 String fileName = url.getFilePart();
                 _message = new PnfsGetFileAttributes(fileName, _attributes);
-                _info.setPath(fileName);
                 _path = fileName;
             }
 
@@ -1315,9 +1307,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         private long   _time = 0L ;
         private String _destination = null ;
         private PrestageHandler( int sessionId , int commandId , VspArgs args )
-        throws Exception {
-
-            super( sessionId , commandId , args ) ;
+            throws NoRouteToCellException, CacheException
+        {
+            super( sessionId , commandId , args, false, true ) ;
 
             try{ _time = Long.parseLong( args.getOpt("stagetime" ) ) ; }catch(NumberFormatException e){/* 'bad' strings silently ignored */}
             _destination = args.getOpt( "location" ) ;
@@ -1380,12 +1372,12 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     //
     protected  class StatHandler  extends PnfsSessionHandler  {
 
-        private StatHandler( int sessionId ,
-        int commandId ,
-        VspArgs args ,
-        boolean followLinks )
-        throws Exception {
-
+        private StatHandler(int sessionId,
+                            int commandId,
+                            VspArgs args,
+                            boolean followLinks)
+            throws NoRouteToCellException, CacheException
+        {
             super( sessionId , commandId , args , true , followLinks ) ;
         }
 
@@ -1441,12 +1433,12 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     //      the file unlink handler
     //
     protected  class UnlinkHandler  extends PnfsSessionHandler  {
-        private UnlinkHandler( int sessionId ,
-        int commandId ,
-        VspArgs args ,
-        boolean followLinks )
-        throws Exception {
-
+        private UnlinkHandler(int sessionId,
+                              int commandId,
+                              VspArgs args,
+                              boolean followLinks)
+            throws NoRouteToCellException, CacheException
+        {
             super( sessionId , commandId , args , true , followLinks ) ;
         }
         @Override
@@ -1489,12 +1481,13 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     protected  class ChmodHandler  extends PnfsSessionHandler  {
 
         private int _permission = 0;
-        private ChmodHandler( int sessionId ,
-        int commandId ,
-        VspArgs args ,
-        boolean followLinks )
-        throws Exception {
 
+        private ChmodHandler(int sessionId,
+                             int commandId,
+                             VspArgs args,
+                             boolean followLinks)
+            throws NoRouteToCellException, CacheException
+        {
             super( sessionId , commandId , args , true , followLinks ) ;
 
             _permission = Integer.parseInt( args.getOpt("mode") );
@@ -1533,9 +1526,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         private int _owner = -1;
         private int _group = -1;
 
-        private ChownHandler( int sessionId ,  int commandId ,  VspArgs args ,  boolean followLinks )
-        throws Exception {
-
+        private ChownHandler(int sessionId, int commandId,
+                             VspArgs args, boolean followLinks)
+            throws NoRouteToCellException, CacheException
+        {
             super( sessionId , commandId , args , true , followLinks ) ;
 
             String[] owner_group = args.getOpt("owner").split("[:]");
@@ -1583,9 +1577,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         private int _group = -1;
 
-        private ChgrpHandler( int sessionId ,  int commandId ,  VspArgs args ,  boolean followLinks )
-        throws Exception {
-
+        private ChgrpHandler(int sessionId,  int commandId,
+                             VspArgs args,  boolean followLinks)
+            throws NoRouteToCellException, CacheException
+        {
             super( sessionId , commandId , args , true , followLinks ) ;
 
             _group = Integer.parseInt(args.getOpt("group"));
@@ -1626,11 +1621,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         private String _newName = null;
 
-        private RenameHandler( int sessionId ,
-        int commandId ,
-        VspArgs args  )
-        throws Exception {
-
+        private RenameHandler(int sessionId, int commandId, VspArgs args)
+            throws NoRouteToCellException, CacheException
+        {
             super( sessionId , commandId , args , true , false ) ;
             _newName = args.argv(1);
 
@@ -1679,14 +1672,13 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     //
     protected  class RmDirHandler  extends PnfsSessionHandler  {
 
-        private RmDirHandler( int sessionId ,
-        int commandId ,
-        VspArgs args ,
-        boolean followLinks )
-        throws Exception {
-
+        private RmDirHandler(int sessionId,
+                             int commandId,
+                             VspArgs args,
+                             boolean followLinks)
+            throws NoRouteToCellException, CacheException
+        {
             super( sessionId , commandId , args , true , followLinks ) ;
-
         }
         @Override
         public void fileAttributesAvailable(){
@@ -1718,12 +1710,12 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         int _perm = 0755;
 
-        private MkDirHandler( int sessionId ,
-        int commandId ,
-        VspArgs args ,
-        boolean followLinks )
-        throws Exception {
-
+        private MkDirHandler(int sessionId,
+                             int commandId,
+                             VspArgs args,
+                             boolean followLinks)
+            throws NoRouteToCellException, CacheException
+        {
             super( sessionId , commandId , args , true , followLinks ) ;
 
             String pMode = args.getOpt("mode");
@@ -1791,10 +1783,11 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         private final List<String>  _assumedLocations;
         private final String _protocolName  ;
 
-        private CheckFileHandler( int sessionId , int commandId , VspArgs args, List<String> locations )
-        throws Exception {
-
-            super( sessionId , commandId , args ) ;
+        private CheckFileHandler(int sessionId, int commandId,
+                                 VspArgs args, List<String> locations)
+            throws NoRouteToCellException, CacheException
+        {
+            super( sessionId , commandId , args, false, true ) ;
 
             _info.setMessageType("check") ;
             _destination      = args.getOpt( "location" ) ;
@@ -1950,10 +1943,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         private boolean _isUrl;
         private PnfsHandler _pnfs;
 
-        private IoHandler( int sessionId , int commandId , VspArgs args )
-        throws Exception {
-
-            super(sessionId, commandId, args);
+        private IoHandler(int sessionId, int commandId, VspArgs args)
+            throws NoRouteToCellException, CacheException
+        {
+            super(sessionId, commandId, args, false, true);
 
             _ioMode = _vargs.argv(1) ;
             int   port    = Integer.parseInt( _vargs.argv(3) ) ;
@@ -2011,7 +2004,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 DCapUrl url = new DCapUrl(_vargs.argv(0));
                 String fileName = url.getFilePart();
                 _message = new PnfsGetFileAttributes(fileName, _attributes);
-                _info.setPath(fileName);
                 _isUrl = true;
                 _path = fileName;
             }
@@ -2539,9 +2531,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         private String           _pool         = "dirLookupPool" ;
         private String []        _hosts        = null ;
 
-        private OpenDirHandler( int sessionId , int commandId , VspArgs args )
-        throws Exception {
-
+        private OpenDirHandler(int sessionId, int commandId, VspArgs args)
+            throws NoRouteToCellException, CacheException
+        {
             super( sessionId , commandId , args , true, true ) ;
 
             int   port    = Integer.parseInt( _vargs.argv(2) ) ;
