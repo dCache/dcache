@@ -372,6 +372,16 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             }
         }
     }
+
+    /**
+     * Convenience method to start a SessionHandler.
+     */
+    private void start(SessionHandler session)
+        throws CommandException
+    {
+        session.start();
+    }
+
     //////////////////////////////////////////////////////////////////
     //
     //   the command functions  String com_<commandName>(int,int,Args)
@@ -440,6 +450,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                     se.setGid(_userAuthRecord.GID );
                 }
             }
+
+            start(se);
         }catch(CacheException ce ){
             throw new CommandException(ce.getRc() ,
             ce.getMessage() ) ;
@@ -463,7 +475,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         getUserMetadata();
 
         try{
-            new PrestageHandler(sessionId, commandId, args);
+            start(new PrestageHandler(sessionId, commandId, args));
         }catch(CacheException ce ){
             throw new CommandException(ce.getRc() ,
             ce.getMessage() ) ;
@@ -566,9 +578,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
     private synchronized String do_unlink(
     int sessionId , int commandId , VspArgs args , boolean resolvePath )
-    throws Exception {
-
-
+        throws CommandException, CacheException
+    {
         _lastCommandTS = new Date() ;
         if( args.argc() < 1 )
             throw new
@@ -577,7 +588,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         getUserMetadata();
 
         try{
-            new UnlinkHandler(sessionId, commandId, args, resolvePath);
+            start(new UnlinkHandler(sessionId, commandId, args, resolvePath));
         }catch(CacheException ce ){
             throw new CommandException(ce.getRc() ,
             ce.getMessage() ) ;
@@ -590,11 +601,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
 
 
-    private synchronized String do_rename(
-    int sessionId , int commandId , VspArgs args )
-    throws Exception {
-
-
+    private synchronized String do_rename(int sessionId, int commandId, VspArgs args)
+        throws CommandException, CacheException
+    {
         _lastCommandTS = new Date() ;
         if( args.argc() < 1 )
             throw new
@@ -603,7 +612,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         getUserMetadata();
 
         try{
-            new RenameHandler(sessionId, commandId, args);
+            start(new RenameHandler(sessionId, commandId, args));
         }catch(CacheException ce ){
             throw new CommandException(ce.getRc() ,
             ce.getMessage() ) ;
@@ -617,9 +626,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
     private synchronized String do_rmdir(
     int sessionId , int commandId , VspArgs args , boolean resolvePath )
-    throws Exception {
-
-
+        throws CommandException, CacheException
+    {
         _lastCommandTS = new Date() ;
         if( args.argc() < 1 )
             throw new
@@ -628,7 +636,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         getUserMetadata();
 
         try{
-            new RmDirHandler(sessionId, commandId, args, resolvePath);
+            start(new RmDirHandler(sessionId, commandId, args, resolvePath));
         }catch(CacheException ce ){
             throw new CommandException(ce.getRc() ,
             ce.getMessage() ) ;
@@ -641,9 +649,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
     private synchronized String do_mkdir(
     int sessionId , int commandId , VspArgs args , boolean resolvePath )
-    throws Exception {
-
-
+        throws CommandException, CacheException
+    {
         _lastCommandTS = new Date() ;
         if( args.argc() < 1 )
             throw new
@@ -652,7 +659,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         getUserMetadata();
 
         try{
-            new MkDirHandler(sessionId, commandId, args, resolvePath);
+            start(new MkDirHandler(sessionId, commandId, args, resolvePath));
         }catch(CacheException ce ){
             throw new CommandException(ce.getRc() ,
             ce.getMessage() ) ;
@@ -665,9 +672,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
     private synchronized String do_chown(
     int sessionId , int commandId , VspArgs args , boolean resolvePath )
-    throws Exception {
-
-
+        throws CommandException, CacheException
+    {
         _lastCommandTS = new Date() ;
         if( args.argc() < 1 )
             throw new
@@ -676,7 +682,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         getUserMetadata();
 
         try{
-            new ChownHandler(sessionId, commandId, args, resolvePath);
+            start(new ChownHandler(sessionId, commandId, args, resolvePath));
         }catch(CacheException ce ){
             throw new CommandException(ce.getRc() ,
             ce.getMessage() ) ;
@@ -690,8 +696,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
     private synchronized String do_chgrp(
             int sessionId , int commandId , VspArgs args , boolean resolvePath )
-            throws Exception {
-
+        throws CommandException, CacheException
+    {
                 _lastCommandTS = new Date() ;
                 if( args.argc() < 1 )
                     throw new
@@ -700,7 +706,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 getUserMetadata();
 
                 try{
-                    new ChgrpHandler(sessionId, commandId, args, resolvePath);
+                    start(new ChgrpHandler(sessionId, commandId, args, resolvePath));
                 }catch(CacheException ce ){
                     throw new CommandException(ce.getRc() ,
                     ce.getMessage() ) ;
@@ -713,9 +719,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
     private synchronized String do_chmod(
             int sessionId , int commandId , VspArgs args , boolean resolvePath )
-            throws Exception {
-
-
+        throws CommandException, CacheException
+    {
                 _lastCommandTS = new Date() ;
                 if( args.argc() < 1 )
                     throw new
@@ -724,7 +729,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 getUserMetadata();
 
                 try{
-                    new ChmodHandler(sessionId, commandId, args, resolvePath);
+                    start(new ChmodHandler(sessionId, commandId, args, resolvePath));
                 }catch(CacheException ce ){
                     throw new CommandException(ce.getRc() ,
                     ce.getMessage() ) ;
@@ -736,9 +741,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             }
 
     private synchronized String do_opendir(  int sessionId , int commandId , VspArgs args )
-    throws Exception {
-
-
+        throws CommandException, CacheException
+    {
         _lastCommandTS = new Date() ;
         if( args.argc() < 1 )
             throw new
@@ -760,6 +764,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                     se.setGid(_userAuthRecord.GID );
                 }
             }
+
+            start(se);
         }catch(CacheException ce ){
             throw new CommandException(ce.getRc() ,
             ce.getMessage() ) ;
@@ -772,9 +778,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
     private synchronized String get_stat(
     int sessionId , int commandId , VspArgs args , boolean resolvePath )
-    throws Exception {
-
-
+        throws CommandException, CacheException
+    {
         _lastCommandTS = new Date() ;
         if( args.argc() < 1 )
             throw new
@@ -783,7 +788,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         getUserMetadata();
 
         try{
-            new StatHandler(sessionId, commandId, args, resolvePath);
+            start(new StatHandler(sessionId, commandId, args, resolvePath));
         }catch(CacheException ce ){
             throw new CommandException(ce.getRc() ,
             ce.getMessage() ) ;
@@ -793,21 +798,16 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
         return null ;
     }
+
     public synchronized String com_ping( int sessionId , int commandId , VspArgs args )
-    throws Exception {
-
-
-        String problem = ""+sessionId+" "+commandId+" server pong" ;
-
-        println( problem ) ;
-
-
+    {
+        println(String.valueOf(sessionId)+" "+commandId+" server pong");
         return null ;
     }
+
     public synchronized String com_check( int sessionId , int commandId , VspArgs args )
-    throws Exception {
-
-
+        throws CommandException, CacheException
+    {
         _lastCommandTS = new Date() ;
         if( args.argc() < 1 )
             throw new
@@ -815,24 +815,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         getUserMetadata();
 
-        List<String> assumedLocations;
-
-        try {
-            PnfsId pnfsId = new PnfsId( args.argv(0));
-            assumedLocations = _pnfs.getCacheLocations( pnfsId ) ;
-        }catch(IllegalArgumentException iae ) {
-            DCapUrl url = new DCapUrl( args.argv(0) );
-            String  fileName = url.getFilePart() ;
-            assumedLocations = _pnfs.getCacheLocationsByPath( fileName ) ;
-        }
-
-        if( assumedLocations.isEmpty() ) {
-            throw new
-            CacheException( 4 , "File is not cached" ) ;
-        }
-
         try{
-            new CheckFileHandler(sessionId, commandId, args, assumedLocations);
+            start(new CheckFileHandler(sessionId, commandId, args));
         }catch(CacheException ce ){
             throw new CommandException(ce.getRc() ,
             ce.getMessage() ) ;
@@ -932,8 +916,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             _commandId = commandId ;
             _vargs     = args ;
 
-            addUs();
-
             _info      = new DoorRequestInfoMessage(
             _cell.getCellInfo().getCellName()+"@"+
             _cell.getCellInfo().getDomainName() ) ;
@@ -944,6 +926,38 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             _ioHandlerQueue = (_ioHandlerQueue == null ) || ( _ioHandlerQueue.length() == 0 ) ?
                                null : _ioHandlerQueue ;
         }
+
+        /**
+         * Called from the start method. Must perform whatever action
+         * is needed to kick of processing the request.
+         */
+        protected void doStart()
+            throws CacheException, CommandException
+        {
+        }
+
+        /**
+         * Starts the SessionHandler. This will cause the session
+         * handler to be added the session map and initiate any action
+         * required to process the request.
+         */
+        public final void start()
+            throws CommandException
+        {
+            boolean isStarted = false;
+            addUs();
+            try {
+                doStart();
+                isStarted = true;
+            } catch (CacheException e) {
+                throw new CommandException(e.getRc(), e.getMessage());
+            } finally {
+                if (!isStarted) {
+                    removeUs();
+                }
+            }
+        }
+
         protected void sendComment( String comment ){
             String reply = ""+_sessionId+" 1 "+
             _vargs.getName()+" "+comment ;
@@ -1044,7 +1058,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         protected PnfsSessionHandler(int sessionId, int commandId, VspArgs args,
                                      boolean metaDataOnly, boolean resolvePath)
-            throws NoRouteToCellException, CacheException, CommandException
+            throws CacheException, CommandException
         {
             super(sessionId, commandId, args);
 
@@ -1065,15 +1079,16 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                     /* 'bad' strings silently ignored */
                 }
             }
+        }
 
-            askForFileAttributes();
-
-            /* if is url, _path is already pointing to to correct path */
-            if (_path == null) {
-                _path = args.getOpt("path");
-            }
-            if (_path != null) {
-                _info.setPath(_path);
+        @Override
+        protected void doStart()
+            throws CacheException
+        {
+            try {
+                askForFileAttributes();
+            } catch (NoRouteToCellException e) {
+                throw new CacheException(e.getMessage());
             }
         }
 
@@ -1136,6 +1151,14 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
             _message.setId(_sessionId) ;
             _message.setReplyRequired(true);
+
+            /* if is url, _path is already pointing to to correct path */
+            if (_path == null) {
+                _path = _vargs.getOpt("path");
+            }
+            if (_path != null) {
+                _info.setPath(_path);
+            }
 
             _pnfs.send(_message);
             setStatus("WaitingForPnfs");
@@ -1206,7 +1229,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         private long   _time = 0L ;
         private String _destination = null ;
         private PrestageHandler( int sessionId , int commandId , VspArgs args )
-            throws NoRouteToCellException, CacheException, CommandException
+            throws CacheException, CommandException
         {
             super( sessionId , commandId , args, false, true ) ;
 
@@ -1216,51 +1239,49 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         @Override
         public void fileAttributesAvailable(){
-            if( _message.getFileAttributes().getFileType() != FileType.REGULAR ) {
-                sendReply( "storageInfoAvailable" , CacheException.NOT_FILE,
-                        "path is not a regular file", "EINVAL" ) ;
-                removeUs();
-                return;
-            }
             try {
-                if( !_checkStagePermission.canPerformStaging(_subject, _storageInfo) ) {
-                    sendReply( "storageInfoAvailable" , CacheException.PERMISSION_DENIED,
-                               "Staging file not allowed", "EACCES" ) ;
-                    removeUs();
+                if( _message.getFileAttributes().getFileType() != FileType.REGULAR ) {
+                    sendReply( "storageInfoAvailable" , CacheException.NOT_FILE,
+                               "path is not a regular file", "EINVAL" ) ;
                     return;
                 }
-            } catch (IOException e) {
-                _log.error("Error while reading data from StageConfiguration.conf file : " + e.getMessage());
-            }
-            //
-            // we are not called if the pnfs request failed.
-            //
-            StagerMessageV0 sm = new StagerMessageV0( _pnfsId ) ;
-            sm.setStorageInfo( _storageInfo ) ;
-            sm.setProtocol( "DCap",3,0,_destination);
-            sm.setStageTime( _time ) ;
+                try {
+                    if( !_checkStagePermission.canPerformStaging(_subject, _storageInfo) ) {
+                        sendReply( "storageInfoAvailable" , CacheException.PERMISSION_DENIED,
+                                   "Staging file not allowed", "EACCES" ) ;
+                        return;
+                    }
+                } catch (IOException e) {
+                    _log.error("Error while reading data from StageConfiguration.conf file : " + e.getMessage());
+                }
+                //
+                // we are not called if the pnfs request failed.
+                //
+                StagerMessageV0 sm = new StagerMessageV0( _pnfsId ) ;
+                sm.setStorageInfo( _storageInfo ) ;
+                sm.setProtocol( "DCap",3,0,_destination);
+                sm.setStageTime( _time ) ;
 
-            CellMessage stagerMessage = new CellMessage( _prestagerPath , sm ) ;
-            setStatus("Waiting for reply from Prestager");
-            Message msg = null ;
-            try{
-                stagerMessage = _cell.sendAndWait(  stagerMessage , 20000 ) ;
-                msg = (Message) stagerMessage.getMessageObject() ;
-            }catch(Exception ee ){
-                sendReply( "storageInfoAvailable", 2 , ee.toString() ) ;
+                CellMessage stagerMessage = new CellMessage( _prestagerPath , sm ) ;
+                setStatus("Waiting for reply from Prestager");
+                Message msg = null ;
+                try{
+                    stagerMessage = _cell.sendAndWait(  stagerMessage , 20000 ) ;
+                    msg = (Message) stagerMessage.getMessageObject() ;
+                }catch(Exception ee ){
+                    sendReply( "storageInfoAvailable", 2 , ee.toString() ) ;
+                    return ;
+                }
+                if( msg.getReturnCode() != 0 ){
+                    sendReply( "storageInfoAvailable" ,
+                               msg.getReturnCode() ,
+                               (String)msg.getErrorObject()  ) ;
+                    return ;
+                }
+                sendReply( "storageInfoAvailable" , 0 , "" ) ;
+            } finally {
                 removeUs() ;
-                return ;
             }
-            if( msg.getReturnCode() != 0 ){
-                sendReply( "storageInfoAvailable" ,
-                msg.getReturnCode() ,
-                (String)msg.getErrorObject()  ) ;
-                removeUs() ;
-                return ;
-            }
-            sendReply( "storageInfoAvailable" , 0 , "" ) ;
-            removeUs() ;
-            return ;
         }
         @Override
         public String toString(){ return "st "+super.toString() ; }
@@ -1275,7 +1296,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                             int commandId,
                             VspArgs args,
                             boolean followLinks)
-            throws NoRouteToCellException, CacheException, CommandException
+            throws CacheException, CommandException
         {
             super( sessionId , commandId , args , true , followLinks ) ;
         }
@@ -1283,29 +1304,30 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         @Override
         public void fileAttributesAvailable()
         {
-            FileMetaData meta = _fileMetaData;
-            StringBuilder sb = new StringBuilder() ;
-            sb.append(_sessionId).append(" ").
-            append(_commandId).append(" ").
-            //FIXME: do we support links?
-            // append(_vargs.getName()).append(_followLinks?" stat ":" stat ");
-            append(_vargs.getName()).append(" stat ");
+            try {
+                FileMetaData meta = _fileMetaData;
+                StringBuilder sb = new StringBuilder() ;
+                sb.append(_sessionId).append(" ").
+                    append(_commandId).append(" ").
+                    //FIXME: do we support links?
+                    // append(_vargs.getName()).append(_followLinks?" stat ":" stat ");
+                    append(_vargs.getName()).append(" stat ");
 
-            sb.append("-st_size=").append(meta.getFileSize()).append(" ");
-            sb.append("-st_uid=").append(meta.getUid()).append(" ");
-            sb.append("-st_gid=").append(meta.getGid()).append(" ");
-            sb.append("-st_atime=").append(meta.getLastAccessedTime()/1000).append(" ");
-            sb.append("-st_mtime=").append(meta.getLastModifiedTime()/1000).append(" ");
-            sb.append("-st_ctime=").append(meta.getCreationTime()/1000).append(" ");
+                sb.append("-st_size=").append(meta.getFileSize()).append(" ");
+                sb.append("-st_uid=").append(meta.getUid()).append(" ");
+                sb.append("-st_gid=").append(meta.getGid()).append(" ");
+                sb.append("-st_atime=").append(meta.getLastAccessedTime()/1000).append(" ");
+                sb.append("-st_mtime=").append(meta.getLastModifiedTime()/1000).append(" ");
+                sb.append("-st_ctime=").append(meta.getCreationTime()/1000).append(" ");
 
-            FileMetaData.Permissions user  = meta.getUserPermissions() ;
-            FileMetaData.Permissions group = meta.getGroupPermissions();
-            FileMetaData.Permissions world = meta.getWorldPermissions() ;
+                FileMetaData.Permissions user  = meta.getUserPermissions() ;
+                FileMetaData.Permissions group = meta.getGroupPermissions();
+                FileMetaData.Permissions world = meta.getWorldPermissions() ;
 
-            sb.append("-st_mode=").
-            append(meta.isRegularFile()?"-":
-                meta.isDirectory()?"d":
-                    meta.isSymbolicLink()?"l":"x").
+                sb.append("-st_mode=").
+                    append(meta.isRegularFile()?"-":
+                           meta.isDirectory()?"d":
+                           meta.isSymbolicLink()?"l":"x").
                     append(user.canRead()?"r":"-").
                     append(user.canWrite()?"w":"-").
                     append(user.canExecute()?"x":"-").
@@ -1317,11 +1339,12 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                     append(world.canExecute()?"x":"-").
                     append(" ") ;
 
-                    sb.append("-st_ino=").append(_pnfsId.toString().hashCode()&0xfffffff) ;
+                sb.append("-st_ino=").append(_pnfsId.toString().hashCode()&0xfffffff) ;
 
-                    println( sb.toString() ) ;
-                    removeUs() ;
-                    return ;
+                println( sb.toString() ) ;
+            } finally {
+                removeUs() ;
+            }
         }
         @Override
         public String toString(){ return "st "+super.toString() ; }
@@ -1336,18 +1359,19 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                               int commandId,
                               VspArgs args,
                               boolean followLinks)
-            throws NoRouteToCellException, CacheException, CommandException
+            throws CacheException, CommandException
         {
             super( sessionId , commandId , args , true , followLinks ) ;
         }
         @Override
-        public void fileAttributesAvailable(){
-            //
-            // we are not called if the pnfs request failed.
-            //
-            String path = _message.getPnfsPath();
-            FileMetaData meta = _fileMetaData;
+        public void fileAttributesAvailable()
+        {
             try {
+                //
+                // we are not called if the pnfs request failed.
+                //
+                String path = _message.getPnfsPath();
+                FileMetaData meta = _fileMetaData;
                 if (_readOnly) {
                     sendReply("fileAttributesAvailable", 19, "Permission denied", "EACCES");
                 } else {
@@ -1385,18 +1409,17 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                              int commandId,
                              VspArgs args,
                              boolean followLinks)
-            throws NoRouteToCellException, CacheException, CommandException
+            throws CacheException, CommandException
         {
             super( sessionId , commandId , args , true , followLinks ) ;
 
             _permission = Integer.parseInt( args.getOpt("mode") );
         }
         @Override
-        public void fileAttributesAvailable(){
-
-            FileMetaData meta = _fileMetaData;
-
+        public void fileAttributesAvailable()
+        {
             try {
+                FileMetaData meta = _fileMetaData;
                 if (_permissionHandler.canSetAttributes(_path, _subject, _origin, org.dcache.acl.enums.FileAttribute.FATTR4_MODE) == AccessType.ACCESS_ALLOWED) {
                     meta.setUserPermissions(new FileMetaData.Permissions((_permission >> 6) & 0x7));
                     meta.setGroupPermissions(new FileMetaData.Permissions((_permission >> 3) & 0x7));
@@ -1427,7 +1450,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         private ChownHandler(int sessionId, int commandId,
                              VspArgs args, boolean followLinks)
-            throws NoRouteToCellException, CacheException, CommandException
+            throws CacheException, CommandException
         {
             super( sessionId , commandId , args , true , followLinks ) ;
 
@@ -1478,7 +1501,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         private ChgrpHandler(int sessionId,  int commandId,
                              VspArgs args,  boolean followLinks)
-            throws NoRouteToCellException, CacheException, CommandException
+            throws CacheException, CommandException
         {
             super( sessionId , commandId , args , true , followLinks ) ;
 
@@ -1521,7 +1544,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         private String _newName = null;
 
         private RenameHandler(int sessionId, int commandId, VspArgs args)
-            throws NoRouteToCellException, CacheException, CommandException
+            throws CacheException, CommandException
         {
             super( sessionId , commandId , args , true , false ) ;
             _newName = args.argv(1);
@@ -1529,24 +1552,23 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
 
         @Override
-        public void fileAttributesAvailable(){
-
-
-            FileMetaData meta = _fileMetaData;
-
-            boolean fileWriteAllowed = false;
-
-            FileMetaData.Permissions user  = meta.getUserPermissions() ;
-            FileMetaData.Permissions group = meta.getGroupPermissions();
-            FileMetaData.Permissions world = meta.getWorldPermissions() ;
-
-
-            fileWriteAllowed =
-            ( ( meta.getUid() == _userAuthRecord.UID ) && user.canWrite()  ) ||
-            ( ( meta.getGid() == _userAuthRecord.GID ) && group.canWrite() ) ||
-            world.canWrite() ;
-
+        public void fileAttributesAvailable()
+        {
             try {
+                FileMetaData meta = _fileMetaData;
+
+                boolean fileWriteAllowed = false;
+
+                FileMetaData.Permissions user  = meta.getUserPermissions() ;
+                FileMetaData.Permissions group = meta.getGroupPermissions();
+                FileMetaData.Permissions world = meta.getWorldPermissions() ;
+
+
+                fileWriteAllowed =
+                    ( ( meta.getUid() == _userAuthRecord.UID ) && user.canWrite()  ) ||
+                    ( ( meta.getGid() == _userAuthRecord.GID ) && group.canWrite() ) ||
+                    world.canWrite() ;
+
                 if (!fileWriteAllowed || _readOnly) {
                     sendReply("fileAttributesAvailable", 23, "Permission denied", "EACCES");
                     esay("Permission denied for user: " + _userAuthRecord.UID + " grop: " + _userAuthRecord.GID + "to rename a file: " + _pnfsId);
@@ -1575,14 +1597,15 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                              int commandId,
                              VspArgs args,
                              boolean followLinks)
-            throws NoRouteToCellException, CacheException, CommandException
+            throws CacheException, CommandException
         {
             super( sessionId , commandId , args , true , followLinks ) ;
         }
         @Override
-        public void fileAttributesAvailable(){
-            String path = _message.getPnfsPath();
+        public void fileAttributesAvailable()
+        {
             try {
+                String path = _message.getPnfsPath();
                 if (new File(path).list().length == 0) {//if directory is empty, then check permission
                     if (_permissionHandler.canDeleteDir(_pnfsId, _subject, _origin) == AccessType.ACCESS_ALLOWED) {
                         _pnfs.deletePnfsEntry(path);
@@ -1613,7 +1636,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                              int commandId,
                              VspArgs args,
                              boolean followLinks)
-            throws NoRouteToCellException, CacheException, CommandException
+            throws CacheException, CommandException
         {
             super( sessionId , commandId , args , true , followLinks ) ;
 
@@ -1629,17 +1652,16 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
 
         @Override
-        public boolean fileAttributesNotAvailable() throws CacheException {
-
+        public boolean fileAttributesNotAvailable() throws CacheException
+        {
             boolean rc = true;
-
-            getUserMetadata();
-
-            String path = _message.getPnfsPath();
-            String parent = new File(path).getParent();
-            say("Creating directory \"" + path + "\", with mode=" + _perm);
-
             try {
+                getUserMetadata();
+
+                String path = _message.getPnfsPath();
+                String parent = new File(path).getParent();
+                say("Creating directory \"" + path + "\", with mode=" + _perm);
+
                 if (_permissionHandler.canCreateDir(_pnfs.getPnfsIdByPath(parent), _subject, _origin) == AccessType.ACCESS_ALLOWED) {
                     _pnfs.createPnfsDirectory( path , _userAuthRecord.UID, _userAuthRecord.GID, _perm );
                     sendReply("fileAttributesNotAvailable", 0, "");
@@ -1679,12 +1701,11 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     protected  class CheckFileHandler  extends PnfsSessionHandler  {
 
         private final String _destination  ;
-        private final List<String>  _assumedLocations;
         private final String _protocolName  ;
+        private List<String>  _assumedLocations;
 
-        private CheckFileHandler(int sessionId, int commandId,
-                                 VspArgs args, List<String> locations)
-            throws NoRouteToCellException, CacheException, CommandException
+        private CheckFileHandler(int sessionId, int commandId, VspArgs args)
+            throws CacheException, CommandException
         {
             super( sessionId , commandId , args, false, true ) ;
 
@@ -1696,8 +1717,28 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             }else{
                 _protocolName     = protocolName ;
             }
-            _assumedLocations = locations;
         }
+
+        @Override
+        protected void doStart()
+            throws CacheException
+        {
+            try {
+                PnfsId pnfsId = new PnfsId(_vargs.argv(0));
+                _assumedLocations = _pnfs.getCacheLocations(pnfsId);
+            } catch (IllegalArgumentException e) {
+                DCapUrl url = new DCapUrl(_vargs.argv(0));
+                String fileName = url.getFilePart();
+                _assumedLocations = _pnfs.getCacheLocationsByPath(fileName);
+            }
+
+            if (_assumedLocations.isEmpty()) {
+                throw new CacheException(4, "File is not cached");
+            }
+
+            super.doStart();
+        }
+
         @Override
         public void fileAttributesAvailable(){
             //
@@ -1843,7 +1884,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         private PnfsHandler _pnfs;
 
         private IoHandler(int sessionId, int commandId, VspArgs args)
-            throws NoRouteToCellException, CacheException, CommandException
+            throws CacheException, CommandException
         {
             super(sessionId, commandId, args, false, true);
 
@@ -1922,6 +1963,14 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 _pnfs = new PnfsHandler(DCapDoorInterpreterV3.this._pnfs, null);
             } else {
                 _pnfs = DCapDoorInterpreterV3.this._pnfs;
+            }
+
+            /* if is url, _path is already pointing to to correct path */
+            if (_path == null) {
+                _path = _vargs.getOpt("path");
+            }
+            if (_path != null) {
+                _info.setPath(_path);
             }
 
             _pnfs.send(_message);
@@ -2420,7 +2469,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         private String []        _hosts        = null ;
 
         private OpenDirHandler(int sessionId, int commandId, VspArgs args)
-            throws NoRouteToCellException, CacheException, CommandException
+            throws CacheException, CommandException
         {
             super( sessionId , commandId , args , true, true ) ;
 
