@@ -19,40 +19,43 @@ class IoQueueManager implements JobScheduler {
 
     private final static Logger _log = LoggerFactory.getLogger(IoQueueManager.class);
 
+    public static final String DEFAULT_QUEUE = "regular";
     private List<JobScheduler> _list = new ArrayList<JobScheduler>();
     private Map<String, JobScheduler> _hash = new HashMap<String, JobScheduler>();
-    private boolean _isConfigured = false;
 
-    public IoQueueManager(JobTimeoutManager jobTimeoutManager, String ioQueueList) {
-        _isConfigured = (ioQueueList != null) && (ioQueueList.length() > 0);
-        if (!_isConfigured) {
-            ioQueueList = "regular";
+    public IoQueueManager(JobTimeoutManager jobTimeoutManager, String[] queues) {
+
+        if(queues == null) {
+            throw new IllegalArgumentException("queue names can't be null");
         }
-        for (String queueName : ioQueueList.split(",")) {
-            boolean fifo = !queueName.startsWith("-");
-            if (!fifo) {
-                queueName = queueName.substring(1);
-            }
-            if (_hash.get(queueName) != null) {
-                _log.error("Queue not created, name already exists: " + queueName);
-                continue;
-            }
+
+        addQueue(DEFAULT_QUEUE, jobTimeoutManager);
+        for (String queueName : queues) {
+            queueName = queueName.trim();
+            if(queueName.isEmpty()) continue;
+
+            addQueue(queueName, jobTimeoutManager);
+        }
+
+        _log.info("Defined IO queues {}: " + _hash.keySet());
+    }
+
+    private void addQueue(String queueName, JobTimeoutManager jobTimeoutManager) {
+        boolean fifo = !queueName.startsWith("-");
+        if (!fifo) {
+            queueName = queueName.substring(1);
+        }
+        if (_hash.get(queueName) == null) {
+            _log.info("adding queue: {}", queueName);
             int id = _list.size();
             JobScheduler job = new SimpleJobScheduler(queueName, fifo);
             _list.add(job);
             _hash.put(queueName, job);
             job.setSchedulerId(id);
             jobTimeoutManager.addScheduler(queueName, job);
+        }else{
+            _log.warn("Queue not created, name already exists: " + queueName);
         }
-        if (!_isConfigured) {
-            _log.info("No custom mover queues defined");
-        } else {
-            _log.info("Mover queues defined: " + _hash.toString());
-        }
-    }
-
-    public synchronized boolean isConfigured() {
-        return _isConfigured;
     }
 
     public synchronized JobScheduler getDefaultScheduler() {

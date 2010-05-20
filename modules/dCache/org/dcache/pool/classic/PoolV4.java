@@ -49,7 +49,6 @@ import diskCacheV111.util.CacheFileAvailable;
 import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.HsmSet;
-import diskCacheV111.util.IoBatchable;
 import diskCacheV111.util.JobScheduler;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
@@ -57,11 +56,9 @@ import diskCacheV111.util.SimpleJobScheduler;
 import diskCacheV111.util.UnitInteger;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.InfoMessage;
-import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.vehicles.JobInfo;
 import diskCacheV111.vehicles.Message;
-import diskCacheV111.vehicles.MoverInfoMessage;
 import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.Pool2PoolTransferMsg;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
@@ -92,6 +89,7 @@ import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 import dmg.util.CommandSyntaxException;
+import java.util.Arrays;
 
 public class PoolV4
     extends AbstractCellComponent
@@ -103,14 +101,16 @@ public class PoolV4
     private final static int DUP_REQ_IGNORE = 1;
     private final static int DUP_REQ_REFRESH = 2;
 
-    private final static int P2P_INTEGRATED = 0;
-    private final static int P2P_SEPARATED = 1;
-
     private final static int P2P_CACHED = 1;
     private final static int P2P_PRECIOUS = 2;
 
     private final static Pattern TAG_PATTERN =
         Pattern.compile("([^=]+)=(\\S*)\\s*");
+
+    /**
+     * The name of a queue used by pool-to-pool transfers.
+     */
+    private final static String P2P_QUEUE_NAME= "p2p";
 
     private final static Logger _log = LoggerFactory.getLogger(PoolV4.class);
 
@@ -149,7 +149,6 @@ public class PoolV4
     private final PoolManagerPingThread _pingThread ;
     private HsmFlushController _flushingThread;
     private IoQueueManager _ioQueue ;
-    private JobScheduler _p2pQueue;
     private JobTimeoutManager _timeoutManager;
     private HsmSet _hsmSet;
     private HsmStorageHandler2 _storageHandler;
@@ -158,7 +157,6 @@ public class PoolV4
     private long _gap = 4L * 1024L * 1024L * 1024L;
     private int _p2pFileMode = P2P_CACHED;
     private int _dupRequest = DUP_REQ_IGNORE;
-    private int _p2pMode = P2P_SEPARATED;
     private P2PClient _p2pClient = null;
 
     private boolean _isVolatile = false;
@@ -345,7 +343,6 @@ public class PoolV4
     {
         assertNotRunning("Cannot set timeout manager after initialization");
         _timeoutManager = manager;
-        _timeoutManager.addScheduler("p2p", _p2pQueue);
         _timeoutManager.start();
     }
 
@@ -412,8 +409,17 @@ public class PoolV4
             throw new IllegalStateException("Volatile pool cannot have a tape backend");
         }
 
-        _p2pQueue = new SimpleJobScheduler("P2P");
-        _ioQueue = new IoQueueManager(_timeoutManager, _args.getOpt("io-queues"));
+        String ioQueues = _args.getOpt("io-queues");
+        String queues[];
+        if(ioQueues != null || !ioQueues.isEmpty()) {
+            queues = ioQueues.split(",");
+        }else{
+            queues = new String[0];
+        }
+        queues = Arrays.copyOf(queues, queues.length +1);
+        queues[queues.length -1] = P2P_QUEUE_NAME;
+
+        _ioQueue = new IoQueueManager(_timeoutManager, queues);
 
         disablePool(PoolV2Mode.DISABLED_STRICT, 1, "Initializing");
         _pingThread.start();
@@ -450,7 +456,6 @@ public class PoolV4
     public void cleanUp()
     {
         _ioQueue.shutdown();
-        _p2pQueue.shutdown();
     }
 
     /**
@@ -589,13 +594,8 @@ public class PoolV4
                       : (_dupRequest == DUP_REQ_IGNORE)
                       ? "ignore"
                       : "refresh"));
-        pw.println("set p2p "
-                   + ((_p2pMode == P2P_INTEGRATED) ? "integrated" : "separated"));
         _flushingThread.printSetup(pw);
         _ioQueue.printSetup(pw);
-        if (_p2pQueue != null) {
-            pw.println("p2p set max active " + _p2pQueue.getMaxActiveJobs());
-        }
     }
 
     public CellInfo getCellInfo(CellInfo info)
@@ -640,8 +640,6 @@ public class PoolV4
                       : (_dupRequest == DUP_REQ_IGNORE)
                       ? "Ignored"
                       : "Refreshed"));
-        pw.println("P2P Mode          : "
-                   + ((_p2pMode == P2P_INTEGRATED) ? "Integrated" : "Separated"));
         pw.println("P2P File Mode     : "
                    + ((_p2pFileMode == P2P_PRECIOUS) ? "Precious" : "Cached"));
 
@@ -649,18 +647,11 @@ public class PoolV4
             pw.println("Inventory         : " + _hybridCurrent);
         }
 
-        pw.println("Mover Queue Manager : "
-                   + (_ioQueue.isConfigured() ? "Active" : "Not Configured"));
         for (JobScheduler js : _ioQueue.getSchedulers()) {
             pw.println("Mover Queue (" + js.getSchedulerName() + ") "
                        + js.getActiveJobs() + "(" + js.getMaxActiveJobs()
                        + ")/" + js.getQueueSize());
         }
-
-        if (_p2pQueue != null)
-            pw.println("P2P   Queue " + _p2pQueue.getActiveJobs() + "("
-                       + _p2pQueue.getMaxActiveJobs() + ")/"
-                       + _p2pQueue.getQueueSize());
     }
 
     // //////////////////////////////////////////////////////////////
@@ -678,11 +669,7 @@ public class PoolV4
         if (message instanceof PoolAcceptFileMessage) {
             return _ioQueue.add(queueName, request, SimpleJobScheduler.HIGH);
         } else if (message.isPool2Pool()) {
-            if (_p2pMode == P2P_INTEGRATED) {
-                return _ioQueue.add(request, SimpleJobScheduler.HIGH);
-            } else {
-                return _p2pQueue.add(request, SimpleJobScheduler.HIGH);
-            }
+            return _ioQueue.add(P2P_QUEUE_NAME, request, SimpleJobScheduler.HIGH);
         } else {
             return _ioQueue.add(queueName, request, SimpleJobScheduler.REGULAR);
         }
@@ -1525,22 +1512,17 @@ public class PoolV4
 
                            );
 
-        if (_ioQueue.isConfigured()) {
-            for (JobScheduler js : _ioQueue.getSchedulers()) {
-                info.addExtendedMoverQueueSizes(js.getSchedulerName(), js
-						.getActiveJobs(), js.getMaxActiveJobs(), js
-						.getQueueSize());
-            }
+        for (JobScheduler js : _ioQueue.getSchedulers()) {
+            info.addExtendedMoverQueueSizes(js.getSchedulerName(),
+                    js.getActiveJobs(), js.getMaxActiveJobs(), js.getQueueSize());
         }
+
         info.setP2pClientQueueSizes(_p2pClient.getActiveJobs(), _p2pClient
                                     .getMaxActiveJobs(), _p2pClient.getQueueSize());
 
-        if (_p2pMode == P2P_SEPARATED) {
-
-            info.setP2pServerQueueSizes(_p2pQueue.getActiveJobs(), _p2pQueue
-					.getMaxActiveJobs(), _p2pQueue.getQueueSize());
-
-        }
+        JobScheduler p2pQueue = _ioQueue.getSchedulerByName(P2P_QUEUE_NAME);
+        info.setP2pServerQueueSizes(p2pQueue.getActiveJobs(),
+                p2pQueue.getMaxActiveJobs(), p2pQueue.getQueueSize());
 
         return info;
     }
@@ -1764,19 +1746,10 @@ public class PoolV4
         return "";
     }
 
-    public String hh_set_p2p = "integrated|separated";
+    public String hh_set_p2p = "integrated|separated; OBSOLETE";
     public String ac_set_p2p_$_1(Args args) throws CommandSyntaxException
     {
-        String mode = args.argv(0);
-        if (mode.equals("integrated")) {
-            _p2pMode = P2P_INTEGRATED;
-        } else if (mode.equals("separated")) {
-            _p2pMode = P2P_SEPARATED;
-        } else {
-            throw new CommandSyntaxException("Not Found : ",
-                                             "Usage : set p2p ntegrated|separated");
-        }
-        return "";
+        return "WARNING: this command is obsolete";
     }
 
     public String fh_pool_disable = "   pool disable [options] [ <errorCode> [<errorMessage>]]\n"
@@ -1942,7 +1915,8 @@ public class PoolV4
     public String ac_p2p_set_max_active_$_1(Args args)
         throws NumberFormatException, IllegalArgumentException
     {
-        return mover_set_max_active(_p2pQueue, args);
+        JobScheduler p2pQueue = _ioQueue.getSchedulerByName(P2P_QUEUE_NAME);
+        return mover_set_max_active(p2pQueue, args);
     }
 
     private String mover_set_max_active(JobScheduler js, Args args)
@@ -2002,7 +1976,8 @@ public class PoolV4
 
     public Object ac_p2p_ls_$_0_1(Args args)
     {
-        return mover_ls(_p2pQueue, args);
+        JobScheduler p2pQueue = _ioQueue.getSchedulerByName(P2P_QUEUE_NAME);
+        return mover_ls(p2pQueue, args);
     }
 
     private Object mover_ls(JobScheduler js, Args args)
@@ -2030,7 +2005,8 @@ public class PoolV4
     public String ac_p2p_remove_$_1(Args args)
         throws NoSuchElementException, NumberFormatException
     {
-        return mover_remove(_p2pQueue, args);
+        JobScheduler p2pQueue = _ioQueue.getSchedulerByName(P2P_QUEUE_NAME);
+        return mover_remove(p2pQueue, args);
     }
 
     private String mover_remove(JobScheduler js, Args args)
@@ -2050,7 +2026,8 @@ public class PoolV4
     public String ac_p2p_kill_$_1(Args args)
         throws NoSuchElementException, NumberFormatException
     {
-        return mover_kill(_p2pQueue, args);
+        JobScheduler p2pQueue = _ioQueue.getSchedulerByName(P2P_QUEUE_NAME);
+        return mover_kill(p2pQueue, args);
     }
 
     private void mover_kill(int id, boolean force)
