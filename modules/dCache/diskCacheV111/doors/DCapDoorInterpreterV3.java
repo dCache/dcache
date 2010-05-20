@@ -387,8 +387,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     //   the command functions  String com_<commandName>(int,int,Args)
     //
     public String com_hello( int sessionId , int commandId , VspArgs args )
-    throws Exception {
-
+        throws CommandException
+    {
         _lastCommandTS = new Date() ;
         if( args.argc() < 2 )
             throw new
@@ -421,14 +421,14 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         return "0 0 "+_ourName+" welcome "+_majorVersion+" "+_minorVersion ;
     }
     public String com_byebye( int sessionId , int commandId , VspArgs args )
-    throws Exception {
+        throws CommandException
+    {
         _lastCommandTS = new Date() ;
         throw new CommandExitException("byeBye",commandId)  ;
     }
     public synchronized String com_open( int sessionId , int commandId , VspArgs args )
-    throws Exception {
-
-
+        throws CacheException, CommandException
+    {
         _lastCommandTS = new Date() ;
         if( args.argc() < 4 )
             throw new
@@ -436,37 +436,27 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         getUserMetadata() ;
 
-        try{
-            SessionHandler se =  new IoHandler(sessionId,commandId,args);
+        SessionHandler se =  new IoHandler(sessionId,commandId,args);
 
-            // if user authenticated tell it to Session Handler
-            if( _userAuthRecord != null ) {
+        // if user authenticated tell it to Session Handler
+        if( _userAuthRecord != null ) {
 
-                se.setOwner( Subjects.getUserName(_subject) ) ;
-                if( _userAuthRecord.UID >= 0 ) {
-                    se.setUid(_userAuthRecord.UID );
-                }
-                if( _userAuthRecord.GID >= 0 ) {
-                    se.setGid(_userAuthRecord.GID );
-                }
+            se.setOwner( Subjects.getUserName(_subject) ) ;
+            if( _userAuthRecord.UID >= 0 ) {
+                se.setUid(_userAuthRecord.UID );
             }
-
-            start(se);
-        }catch(CacheException ce ){
-            throw new CommandException(ce.getRc() ,
-            ce.getMessage() ) ;
-        }catch(RuntimeException e){
-            _log.error(e.toString(), e);
-            throw new CommandException(44 , e.getMessage() ) ;
+            if( _userAuthRecord.GID >= 0 ) {
+                se.setGid(_userAuthRecord.GID );
+            }
         }
 
+        start(se);
         return null ;
     }
 
     public synchronized String com_stage( int sessionId , int commandId , VspArgs args )
-    throws Exception {
-
-
+        throws CacheException, CommandException
+    {
         _lastCommandTS = new Date() ;
         if( args.argc() < 1 )
             throw new
@@ -474,33 +464,25 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         getUserMetadata();
 
-        try{
-            start(new PrestageHandler(sessionId, commandId, args));
-        }catch(CacheException ce ){
-            throw new CommandException(ce.getRc() ,
-            ce.getMessage() ) ;
-        }catch(RuntimeException e){
-            _log.error(e.toString(), e);
-            throw new CommandException(44 , e.getMessage() ) ;
-        }
+        start(new PrestageHandler(sessionId, commandId, args));
         return null ;
     }
     public synchronized String com_lstat( int sessionId , int commandId , VspArgs args )
-    throws Exception {
-
+        throws CacheException, CommandException
+    {
         return get_stat( sessionId , commandId , args , false ) ;
 
     }
     public synchronized String com_stat( int sessionId , int commandId , VspArgs args )
-    throws Exception {
-
+        throws CacheException, CommandException
+    {
         return get_stat( sessionId , commandId , args , true ) ;
 
     }
 
     public synchronized String com_unlink( int sessionId , int commandId , VspArgs args )
-    throws Exception {
-
+        throws CacheException, CommandException
+    {
         if (_readOnly) {
         throw new CacheException( 2 , "Cannot execute 'unlink': Permission denied") ;
         }
@@ -509,8 +491,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     }
 
     public synchronized String com_rename( int sessionId , int commandId , VspArgs args )
-    throws Exception {
-
+        throws CacheException, CommandException
+    {
         if (_readOnly) {
         throw new CacheException( 2 , "Cannot execute 'rename': Permission denied") ;
         }
@@ -519,8 +501,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     }
 
     public synchronized String com_rmdir( int sessionId , int commandId , VspArgs args )
-    throws Exception {
-
+        throws CacheException, CommandException
+    {
         if (_readOnly) {
         throw new CacheException( 2 , "Cannot execute 'rmdir': Permission denied") ;
         }
@@ -529,8 +511,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     }
 
     public synchronized String com_mkdir( int sessionId , int commandId , VspArgs args )
-    throws Exception {
-
+        throws CacheException, CommandException
+    {
         if (_readOnly) {
         throw new CacheException( 2 , "Cannot execute 'mkdir': Permission denied") ;
         }
@@ -539,8 +521,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     }
 
     public synchronized String com_chmod( int sessionId , int commandId , VspArgs args )
-    throws Exception {
-
+        throws CacheException, CommandException
+    {
         if (_readOnly) {
         throw new CacheException( 2 , "Cannot execute 'chmod': Permission denied") ;
         }
@@ -549,19 +531,18 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     }
 
     public synchronized String com_chown( int sessionId , int commandId , VspArgs args )
-    throws Exception {
-
+        throws CacheException, CommandException
+    {
         if (_readOnly) {
         throw new CacheException( 2 , "Cannot execute 'chown': Permission denied") ;
         }
         return do_chown( sessionId , commandId , args , true ) ;
-
     }
 
 
     public synchronized String com_chgrp( int sessionId , int commandId , VspArgs args )
-    throws Exception {
-
+        throws CacheException, CommandException
+    {
         if (_readOnly) {
         throw new CacheException( 2 , "Cannot execute 'chgrp': Permission denied") ;
         }
@@ -570,8 +551,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     }
 
     public synchronized String com_opendir( int sessionId , int commandId , VspArgs args )
-    throws Exception {
-
+        throws CacheException, CommandException
+    {
         return do_opendir( sessionId , commandId , args ) ;
 
     }
@@ -587,15 +568,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         getUserMetadata();
 
-        try{
-            start(new UnlinkHandler(sessionId, commandId, args, resolvePath));
-        }catch(CacheException ce ){
-            throw new CommandException(ce.getRc() ,
-            ce.getMessage() ) ;
-        }catch(RuntimeException e){
-            _log.error(e.toString(), e);
-            throw new CommandException(44 , e.getMessage() ) ;
-        }
+        start(new UnlinkHandler(sessionId, commandId, args, resolvePath));
         return null ;
     }
 
@@ -611,15 +584,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         getUserMetadata();
 
-        try{
-            start(new RenameHandler(sessionId, commandId, args));
-        }catch(CacheException ce ){
-            throw new CommandException(ce.getRc() ,
-            ce.getMessage() ) ;
-        }catch(RuntimeException e){
-            _log.error(e.toString(), e);
-            throw new CommandException(44 , e.getMessage() ) ;
-        }
+        start(new RenameHandler(sessionId, commandId, args));
         return null ;
     }
 
@@ -635,15 +600,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         getUserMetadata();
 
-        try{
-            start(new RmDirHandler(sessionId, commandId, args, resolvePath));
-        }catch(CacheException ce ){
-            throw new CommandException(ce.getRc() ,
-            ce.getMessage() ) ;
-        }catch(RuntimeException e){
-            _log.error(e.toString(), e);
-            throw new CommandException(44 , e.getMessage() ) ;
-        }
+        start(new RmDirHandler(sessionId, commandId, args, resolvePath));
         return null ;
     }
 
@@ -658,15 +615,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         getUserMetadata();
 
-        try{
-            start(new MkDirHandler(sessionId, commandId, args, resolvePath));
-        }catch(CacheException ce ){
-            throw new CommandException(ce.getRc() ,
-            ce.getMessage() ) ;
-        }catch(RuntimeException e){
-            _log.error(e.toString(), e);
-           throw new CommandException(44 , e.getMessage() ) ;
-        }
+        start(new MkDirHandler(sessionId, commandId, args, resolvePath));
         return null ;
     }
 
@@ -681,15 +630,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         getUserMetadata();
 
-        try{
-            start(new ChownHandler(sessionId, commandId, args, resolvePath));
-        }catch(CacheException ce ){
-            throw new CommandException(ce.getRc() ,
-            ce.getMessage() ) ;
-        }catch(RuntimeException e){
-            _log.error(e.toString(), e);
-            throw new CommandException(44 , e.getMessage() ) ;
-        }
+        start(new ChownHandler(sessionId, commandId, args, resolvePath));
         return null ;
     }
 
@@ -705,15 +646,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
                 getUserMetadata();
 
-                try{
-                    start(new ChgrpHandler(sessionId, commandId, args, resolvePath));
-                }catch(CacheException ce ){
-                    throw new CommandException(ce.getRc() ,
-                    ce.getMessage() ) ;
-                }catch(RuntimeException e){
-                    _log.error(e.toString(), e);
-                    throw new CommandException(44 , e.getMessage() ) ;
-                }
+                start(new ChgrpHandler(sessionId, commandId, args, resolvePath));
                 return null ;
      }
 
@@ -728,15 +661,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
                 getUserMetadata();
 
-                try{
-                    start(new ChmodHandler(sessionId, commandId, args, resolvePath));
-                }catch(CacheException ce ){
-                    throw new CommandException(ce.getRc() ,
-                    ce.getMessage() ) ;
-                }catch(RuntimeException e){
-                    _log.error(e.toString(), e);
-                    throw new CommandException(44 , e.getMessage() ) ;
-                }
+                start(new ChmodHandler(sessionId, commandId, args, resolvePath));
                 return null ;
             }
 
@@ -750,29 +675,21 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         getUserMetadata();
 
-        try{
-            SessionHandler se =  new OpenDirHandler(sessionId,commandId,args);
+        SessionHandler se =  new OpenDirHandler(sessionId,commandId,args);
 
-            // if user authenticated tell it to Session Handler
-            if( _userAuthRecord != null ) {
+        // if user authenticated tell it to Session Handler
+        if( _userAuthRecord != null ) {
 
-                se.setOwner( Subjects.getUserName(_subject) ) ;
-                if( _userAuthRecord.UID >= 0 ) {
-                    se.setUid(_userAuthRecord.UID );
-                }
-                if( _userAuthRecord.GID >= 0 ) {
-                    se.setGid(_userAuthRecord.GID );
-                }
+            se.setOwner( Subjects.getUserName(_subject) ) ;
+            if( _userAuthRecord.UID >= 0 ) {
+                se.setUid(_userAuthRecord.UID );
             }
-
-            start(se);
-        }catch(CacheException ce ){
-            throw new CommandException(ce.getRc() ,
-            ce.getMessage() ) ;
-        }catch(RuntimeException e){
-            _log.error(e.toString(), e);
-            throw new CommandException(44 , e.getMessage() ) ;
+            if( _userAuthRecord.GID >= 0 ) {
+                se.setGid(_userAuthRecord.GID );
+            }
         }
+
+        start(se);
         return null ;
     }
 
@@ -787,15 +704,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         getUserMetadata();
 
-        try{
-            start(new StatHandler(sessionId, commandId, args, resolvePath));
-        }catch(CacheException ce ){
-            throw new CommandException(ce.getRc() ,
-            ce.getMessage() ) ;
-        }catch(RuntimeException e){
-            _log.error(e.toString(), e);
-            throw new CommandException(44 , e.getMessage() ) ;
-        }
+        start(new StatHandler(sessionId, commandId, args, resolvePath));
         return null ;
     }
 
@@ -815,15 +724,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         getUserMetadata();
 
-        try{
-            start(new CheckFileHandler(sessionId, commandId, args));
-        }catch(CacheException ce ){
-            throw new CommandException(ce.getRc() ,
-            ce.getMessage() ) ;
-        }catch(RuntimeException e){
-            _log.error(e.toString(), e);
-            throw new CommandException(44 , e.getMessage() ) ;
-        }
+        start(new CheckFileHandler(sessionId, commandId, args));
         return null ;
     }
 
@@ -2576,8 +2477,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     }
 
     @Override
-    public String execute(VspArgs args) throws Exception {
-
+    public String execute(VspArgs args)
+        throws CommandExitException
+    {
         /*
          * Legacy rone handlig.
          * Require by FNAL
@@ -2649,6 +2551,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         } catch(CacheException e) {
             return commandFailed(sessionId, commandId, args.getName(), e.getRc(),
                     e.getMessage());
+        } catch(RuntimeException e) {
+            _log.error(e.toString(), e);
+            return commandFailed(sessionId, commandId, args.getName(), 44, e.getMessage());
         }
     }
 
