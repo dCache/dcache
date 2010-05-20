@@ -30,7 +30,6 @@ import diskCacheV111.util.DirNotExistsCacheException;
 import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.FileNotFoundCacheException;
-import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.util.FileMetaData.Permissions;
@@ -320,6 +319,8 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         }
     }
 
+
+    @Override
     protected void doOnRm(ChannelHandlerContext ctx, MessageEvent e, RmRequest req)
     {
         Channel channel = e.getChannel();
@@ -347,10 +348,6 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                 respondWithError(ctx, e, req,
                                  XrootdProtocol.kXR_NotAuthorized,
                                  pdce.getMessage());
-        } catch (NotFileCacheException nfce) {
-                respondWithError(ctx, e, req,
-                                 XrootdProtocol.kXR_InvalidRequest,
-                                 nfce.getMessage() + " Use rmdir to delete directories!");
         } catch (CacheException ce) {
                 respondWithError(ctx, e, req,
                                  XrootdProtocol.kXR_ServerError,
@@ -378,7 +375,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
             return;
         }
 
-        _log.error("Trying to delete directory {}", req.getPath());
+        _log.info("Trying to delete directory {}", req.getPath());
 
         try {
             String authPath = checkOperationPermission(FilePerm.DELETE,
@@ -396,7 +393,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                              pdce.getMessage());
         } catch (FileNotFoundCacheException fnfce) {
             respondWithError(ctx, e, req,
-                             XrootdProtocol.kXR_InvalidRequest,
+                             XrootdProtocol.kXR_FSError,
                              fnfce.getMessage());
         } catch (CacheException ce) {
                 respondWithError(ctx, e, req,
@@ -405,7 +402,58 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                                                "(%s [%d]).",
                                                ce.getMessage(), ce.getRc()));
         } catch (RuntimeException exp) {
-            _log.error("Rm failed due to a bug", exp);
+            _log.error("RmDir failed due to a bug", exp);
+            respondWithError(ctx, e, req,
+                             XrootdProtocol.kXR_ServerError,
+                             String.format("Internal server error (%s)",
+                                           exp.getMessage()));
+        }
+    }
+
+    @Override
+    protected void doOnMkDir(ChannelHandlerContext ctx, MessageEvent e,
+                             MkDirRequest req) {
+        Channel channel = e.getChannel();
+        InetSocketAddress localAddress =
+                            (InetSocketAddress) channel.getLocalAddress();
+        if (req.getPath().isEmpty()) {
+            respondWithError(ctx, e, req,
+                             kXR_ArgMissing, "no path specified");
+            return;
+        }
+
+        _log.info("Trying to create directory {}", req.getPath());
+
+        try {
+            String authPath = checkOperationPermission(FilePerm.WRITE,
+                                                       req, localAddress);
+
+            _door.createDirectory(authPath, req.shouldMkPath());
+            respond(ctx, e, new OKResponse(req.getStreamID()));
+        } catch (TimeoutCacheException tce) {
+            respondWithError(ctx, e, req,
+                             XrootdProtocol.kXR_ServerError,
+                             "Internal timeout");
+        } catch (PermissionDeniedCacheException pdce) {
+            respondWithError(ctx, e, req,
+                             XrootdProtocol.kXR_NotAuthorized,
+                             pdce.getMessage());
+        } catch (FileNotFoundCacheException fnfce) {
+            respondWithError(ctx, e, req,
+                             XrootdProtocol.kXR_FSError,
+                             fnfce.getMessage());
+        } catch (FileExistsCacheException fece) {
+            respondWithError(ctx, e, req,
+                             XrootdProtocol.kXR_FSError,
+                             fece.getMessage());
+        } catch (CacheException ce) {
+                respondWithError(ctx, e, req,
+                                 XrootdProtocol.kXR_ServerError,
+                                 String.format("Failed to create directory " +
+                                               "(%s [%d]).",
+                                               ce.getMessage(), ce.getRc()));
+        } catch (RuntimeException exp) {
+            _log.error("MkDir failed due to a bug", exp);
             respondWithError(ctx, e, req,
                              XrootdProtocol.kXR_ServerError,
                              String.format("Internal server error (%s)",

@@ -1,5 +1,10 @@
 package org.dcache.xrootd2.door;
 
+import static org.dcache.namespace.FileAttribute.MODE;
+import static org.dcache.namespace.FileAttribute.OWNER;
+import static org.dcache.namespace.FileAttribute.OWNER_GROUP;
+import static org.dcache.namespace.FileAttribute.TYPE;
+
 import java.io.PrintWriter;
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -23,6 +28,7 @@ import java.security.Principal;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.Subjects;
+import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
 import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.xrootd2.security.AbstractAuthorizationFactory;
@@ -555,7 +561,6 @@ public class XrootdDoor
      *
      * @param path The path of the directory that is going to be deleted
      * @throws CacheException
-     * @throws InterruptedException
      */
     public void deleteDirectory(String path) throws CacheException
     {
@@ -571,6 +576,42 @@ public class XrootdDoor
 
         Set<FileType> allowedSet = EnumSet.of(FileType.DIR);
         _pnfs.deletePnfsEntry(fullPath.toString(), allowedSet);
+    }
+
+    /**
+     * Create the directory denoted by path in the namespace.
+     *
+     * @param path The path of the directory that is going to be created.
+     * @param createParents Indicates whether the parent directories of the
+     *        directory should be created automatically if they do not yet
+     *        exist.
+     * @throws CacheException Creation of the directory failed.
+     */
+    public void createDirectory(String path, boolean createParents)
+                                                    throws CacheException
+    {
+        FsPath fullPath = createFullPath(path);
+
+        if (isReadOnly()) {
+            throw new PermissionDeniedCacheException("Read only door");
+        }
+
+        if (!isWriteAllowed(fullPath)) {
+            throw new PermissionDeniedCacheException("Write permission denied");
+        }
+
+        if (createParents) {
+            _pnfs.createDirectories(fullPath);
+        } else {
+            String parent = fullPath.getParent().toString();
+            FileAttributes attributes =
+                _pnfs.getFileAttributes(parent,
+                                        EnumSet.of(TYPE,OWNER,OWNER_GROUP,MODE));
+            _pnfs.createPnfsDirectory(fullPath.toString(),
+                                      attributes.getOwner(),
+                                      attributes.getGroup(),
+                                      attributes.getMode());
+        }
     }
 
     /**

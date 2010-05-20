@@ -1,6 +1,5 @@
 package org.dcache.xrootd2.core;
 
-import static org.jboss.netty.channel.Channels.*;
 import org.jboss.netty.channel.SimpleChannelHandler;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.MessageEvent;
@@ -36,6 +35,7 @@ public class XrootdRequestHandler extends SimpleChannelHandler
     {
         AbstractRequestMessage msg = (AbstractRequestMessage) e.getMessage();
 
+        /* FIXME: can dispatching be done in a nicer way? */
         if (msg instanceof AuthenticationRequest) {
             doOnAuthentication(ctx, e, (AuthenticationRequest) msg);
         } else if (msg instanceof LoginRequest) {
@@ -62,6 +62,8 @@ public class XrootdRequestHandler extends SimpleChannelHandler
             doOnRm(ctx, e, (RmRequest) msg);
         } else if (msg instanceof RmDirRequest) {
             doOnRmDir(ctx, e, (RmDirRequest) msg);
+        } else if (msg instanceof MkDirRequest) {
+            doOnMkDir(ctx, e, (MkDirRequest) msg);
         }
     }
 
@@ -160,6 +162,11 @@ public class XrootdRequestHandler extends SimpleChannelHandler
     }
 
     protected void doOnRmDir(ChannelHandlerContext ctx, MessageEvent e, RmDirRequest msg)
+    {
+        unsupported(ctx, e, msg);
+    }
+
+    protected void doOnMkDir(ChannelHandlerContext ctx, MessageEvent e, MkDirRequest msg)
     {
         unsupported(ctx, e, msg);
     }
