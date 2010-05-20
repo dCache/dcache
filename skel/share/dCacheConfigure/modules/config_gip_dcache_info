@@ -225,7 +225,7 @@ config_gip_dcache_info_setup()
   if [ "X" != "X${vo2path}" ] ; then
     CMD="$CMD --vo2path ${vo2path} "
   fi
-  yaimlog DEBUG To generate the information systems configuration running $CMD
+  yaimlog DEBUG "To generate the information systems configuration running $CMD"
   $CMD
   cmdrc=$?
   if [ "${cmdrc}" != 0 ] ; then
