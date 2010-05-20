@@ -21,4 +21,10 @@ public class RootDirectory implements LoginAttribute, Serializable
     {
         return _root;
     }
+
+    @Override
+    public String toString()
+    {
+        return "RootDirectory[" + _root + "]";
+    }
 }

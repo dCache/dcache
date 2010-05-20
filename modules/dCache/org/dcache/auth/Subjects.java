@@ -12,8 +12,8 @@ import java.security.Principal;
 
 import org.globus.gsi.jaas.GlobusPrincipal;
 
-public class Subjects {
-
+public class Subjects extends dmg.util.Subjects
+{
     /**
      * The subject representing the root user, that is, a user that is
      * empowered to do everything.
@@ -37,6 +37,24 @@ public class Subjects {
      */
     public static boolean isRoot(Subject subject) {
         return hasUid(subject, 0);
+    }
+
+    /**
+     * Returns true if and only if the subject is nobody, i.e., does
+     * not have a UID.
+     *
+     * Being nobody does not imply that the user is anonymous: The
+     * subjects's identiy may have been established through some
+     * authentication mechanism. However the subject could not be
+     * assigned an internal identity in dCache.
+     */
+    public static boolean isNobody(Subject subject) {
+        for (Principal principal: subject.getPrincipals()) {
+            if (principal instanceof UidPrincipal) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

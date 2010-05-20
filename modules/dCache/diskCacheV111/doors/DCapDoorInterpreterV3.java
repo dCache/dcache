@@ -1,5 +1,3 @@
-// $Id: DCapDoorInterpreterV3.java,v 1.86 2007-07-08 17:50:47 tigran Exp $
-//
 package diskCacheV111.doors;
 
 import diskCacheV111.vehicles.*;
@@ -12,7 +10,6 @@ import diskCacheV111.services.acl.PermissionHandler;
 import diskCacheV111.services.acl.DelegatingPermissionHandler;
 import diskCacheV111.services.acl.GrantAllPermissionHandler;
 import gplazma.authz.AuthorizationException;
-import diskCacheV111.services.authorization.GplazmaService;
 import diskCacheV111.poolManager.RequestContainerV5;
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 
@@ -27,9 +24,16 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.RetentionPolicy;
-import org.dcache.auth.UserAuthRecord;
-import org.dcache.auth.AuthorizationRecord;
 import org.dcache.auth.Subjects;
+import org.dcache.auth.UnionLoginStrategy;
+import org.dcache.auth.GplazmaLoginStrategy;
+import org.dcache.auth.CachingLoginStrategy;
+import org.dcache.auth.LoginStrategy;
+import org.dcache.auth.LoginReply;
+import org.dcache.auth.attributes.LoginAttribute;
+import org.dcache.auth.attributes.ReadOnly;
+import org.dcache.auth.UserNamePrincipal;
+import org.dcache.auth.AuthzQueryHelper;
 
 import diskCacheV111.util.PnfsHandler;
 import java.security.Principal;
@@ -109,7 +113,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     private final CellEndpoint _cell        ;
     private final Args        _args         ;
     private String      _ourName     = "server" ;
-    private final PnfsHandler _pnfs         ;
     private final ConcurrentMap<Integer,SessionHandler> _sessions =
         new ConcurrentHashMap<Integer,SessionHandler>();
     private String  _poolManagerName = null ;
@@ -117,18 +120,58 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
 
     private CellPath _poolMgrPath    = null ;
-    private String  _pid             = null ;
-    private String  _uid             = null ;
-    private final String  _userHome        = "?" ;
+
+    /**
+     * The client PID set through the hello command. Only used for
+     * billing purposes.
+     */
+    private String _pid = "<unknown>";
+
+    /**
+     * The client UID set through the hello command. Used for setting
+     * the owner of new name space entries. Never used for
+     * authorization.
+     */
+    private int _uid = -1;
+
+    /**
+     * The client GID set through the hello command. Used for setting
+     * the group of new name space entries. Never used for
+     * authorization.
+     */
+    private int _gid = -1;
+
     private int     _majorVersion    = 0 ;
     private int     _minorVersion    = 0 ;
     private Date    _startedTS       = null ;
     private Date    _lastCommandTS   = null ;
-    private boolean _authorizationRequired = false ;
-    private boolean _authorizationStrong   = false ;
+
+    /**
+     * If false, then authorization checks on read and write
+     * operations are bypassed for non URL operations. If true, then
+     * such operations are subject to authorization checks.
+     */
+    private boolean _authorizationRequired = false;
+
+    /**
+     * If true, then the Subject of the request must have a UID and
+     * GID. If false, then a Subject without a UID and GID (i.e. a
+     * Nobody) will be allowed to proceed, but only allowed to perform
+     * operations authorized to world.
+     */
+    private boolean _authorizationStrong = false;
+
     protected final CellPath _billingCellPath = new CellPath("billing");
-    private final Origin _origin;
-    private Subject _subject=null;
+    private final InetAddress _clientAddress;
+
+    /**
+     * Subjected provided to us as a result of authentication in the
+     * tunnel.
+     */
+    private final Subject _authenticatedSubject;
+
+    private final LoginStrategy _loginStrategy;
+
     private final PermissionHandler _permissionHandler;
 
     /**
@@ -136,18 +179,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
      */
     private final String _stageConfigurationFilePath;
     private final CheckStagePermission _checkStagePermission;
-
-    /**
-     * user record to use.
-     */
-    private UserAuthRecord _userAuthRecord;
-    private AuthorizationRecord _userAuthorizationRecord;
-
-    /**
-     * gPlaza door connector
-     */
-    @SuppressWarnings("deprecation")
-    private GplazmaService _authService = null;
 
     private boolean _strictSize            = false ;
     private String  _poolProxy        = null ;
@@ -160,21 +191,22 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     private boolean _truncateAllowed  = false ;
     private String  _ioQueueName      = null ;
     private boolean _ioQueueAllowOverwrite = false ;
-    private boolean _readOnly = false;
-
 
     // flag defined in batch file to allow/disallow AccessLatency and RetentionPolicy re-definition
 
     private boolean _isAccessLatencyOverwriteAllowed = false;
     private boolean _isRetentionPolicyOverwriteAllowed = false;
 
-    public DCapDoorInterpreterV3( CellEndpoint cell , PrintWriter pw , Subject subject ) throws ACLException, UnknownHostException, IOException {
-
+    public DCapDoorInterpreterV3(CellEndpoint cell, PrintWriter pw, Subject subject)
+        throws ACLException, IOException, AuthorizationException
+    {
         _out  = pw ;
         _cell = cell ;
         _args = cell.getArgs();
-        _subject = subject;
-
+        _authenticatedSubject = new Subject(true,
+                                            subject.getPrincipals(),
+                                            subject.getPublicCredentials(),
+                                            subject.getPrivateCredentials());
 
         String auth = _args.getOpt("authorization") ;
         _authorizationStrong   = ( auth != null ) && auth.equals("strong") ;
@@ -184,21 +216,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         if( _authorizationRequired )_log.debug("Authorization required");
         if( _authorizationStrong   )_log.debug("Authorization strong");
 
-        if( _authorizationStrong || _authorizationRequired ) {
-
-            try {
-                _authService = new GplazmaService(_cell);
-            } catch (AuthorizationException e) {
-                /*
-                 * for not policy is unclear for me:
-                 *    do we need to fail
-                 *     or
-                 *    nobody account is used
-                 */
-                _log.error(e.toString());
-            }
-
-        }
+        _loginStrategy = createLoginStrategy();
 
         _pnfsManagerName = _args.getOpt("pnfsManager" ) ;
         _pnfsManagerName = _pnfsManagerName == null ?
@@ -227,7 +245,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
 
         _poolMgrPath     = new CellPath( _poolManagerName ) ;
-        _pnfs = new PnfsHandler( _cell , new CellPath( _pnfsManagerName ) ) ;
 
         _checkStrict     = ( _args.getOpt("check") != null ) &&
         ( _args.getOpt("check").equals("strict") ) ;
@@ -269,34 +286,82 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         String check = (String)_cell.getDomainContext().get("dCapDoor-check");
         if( check != null )_checkStrict = check.equals("strict") ;
 
-        _origin = new Origin((_authorizationStrong || _authorizationRequired) ? Origin.AuthType.ORIGIN_AUTHTYPE_STRONG : Origin.AuthType.ORIGIN_AUTHTYPE_WEAK, "0");
-        _log.debug("Origin: " + _origin.toString());
+        // TODO: This should be the source IP of the request, however
+        // this information is currently unavailable in
+        // DCapDoorInterpreterV3.
+        _clientAddress = InetAddress.getLocalHost();
 
         String permissionHandlerClasses = _args.getOpt("permission-handler");
         if (permissionHandlerClasses == null ||
             permissionHandlerClasses.isEmpty()) {
             _permissionHandler = new GrantAllPermissionHandler();
-
-            _subject.getPrincipals().add(_origin);
-            _subject.setReadOnly();
-            _pnfs.setSubject(_subject);
         } else {
             _permissionHandler = new DelegatingPermissionHandler(_cell);
         }
         _log.debug("Permission Handler: " + _permissionHandler);
 
-        _readOnly = _args.getOpt("readOnly") != null ;
-        if (_readOnly)
-        _log.debug("Door is configured as read-only");
+        if (_args.getOpt("readOnly") != null)
+            _log.debug("Door is configured as read-only");
         else
-        _log.debug("Door is configured as read/write");
+            _log.debug("Door is configured as read/write");
 
         _stageConfigurationFilePath = _args.getOpt("stageConfigurationFilePath");
         _checkStagePermission = new CheckStagePermission(_stageConfigurationFilePath);
-
         _log.debug("Check : "+(_checkStrict?"Strict":"Fuzzy"));
         _log.debug("Constructor Done" ) ;
     }
+
+    private LoginStrategy createLoginStrategy()
+        throws AuthorizationException
+    {
+        LoginStrategy gplazma =
+            new GplazmaLoginStrategy(new AuthzQueryHelper(_cell));
+        UnionLoginStrategy union = new UnionLoginStrategy();
+        union.setLoginStrategies(Collections.singletonList(gplazma));
+        if (!_authorizationStrong) {
+            union.setAnonymousAccess(UnionLoginStrategy.AccessLevel.FULL);
+        }
+        return new CachingLoginStrategy(union);
+    }
+
+    private LoginReply login(String user)
+        throws CacheException
+    {
+        /* The client can specify a custom user name to be used.
+         */
+        Subject subject;
+        if (user != null) {
+            subject = new Subject();
+            subject.getPublicCredentials().addAll(_authenticatedSubject.getPublicCredentials());
+            subject.getPrivateCredentials().addAll(_authenticatedSubject.getPrivateCredentials());
+            subject.getPrincipals().add(new UserNamePrincipal(user));
+
+            for (Principal principal: _authenticatedSubject.getPrincipals()) {
+                if (!(principal instanceof UserNamePrincipal)) {
+                    subject.getPrincipals().add(principal);
+                }
+            }
+        } else {
+            subject = _authenticatedSubject;
+        }
+
+        LoginReply login = _loginStrategy.login(subject);
+
+        Origin origin;
+        if (Subjects.isNobody(login.getSubject())) {
+            origin = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_WEAK,
+                                _clientAddress);
+        } else {
+            origin = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
+                                _clientAddress);
+        }
+        login.getSubject().getPrincipals().add(origin);
+
+        _log.info("Login completed for {}", login);
+
+        return login;
+    }
+
     private static class Version implements Comparable<Version> {
         private final int _major;
         private final int _minor;
@@ -414,10 +479,26 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
         String yourName = args.getName() ;
         if( yourName.equals("server") )_ourName = "client" ;
-        _pid = args.getOpt("pid") ;
-        _pid = _pid == null ?  "<unknown>" : _pid ;
-        _uid = args.getOpt("uid") ;
-        _uid = _uid == null ?  "<unknown>" : _uid ;
+        String pid = args.getOpt("pid");
+        if (pid != null) {
+            _pid = pid;
+        }
+        String uid = args.getOpt("uid") ;
+        if (uid != null) {
+            try {
+                _uid = Integer.parseInt(uid);
+            } catch (NumberFormatException e) {
+                _log.warn("Client specified invalid UID: " + uid);
+            }
+        }
+        String gid = args.getOpt("gid") ;
+        if (gid != null) {
+            try {
+                _gid = Integer.parseInt(gid);
+            } catch (NumberFormatException e) {
+                _log.warn("Client specified invalid GID: " + gid);
+            }
+        }
         return "0 0 "+_ourName+" welcome "+_majorVersion+" "+_minorVersion ;
     }
     public String com_byebye( int sessionId , int commandId , VspArgs args )
@@ -434,23 +515,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             throw new
             CommandException( 3  , "Not enough arguments for put" ) ;
 
-        getUserMetadata() ;
-
-        SessionHandler se =  new IoHandler(sessionId,commandId,args);
-
-        // if user authenticated tell it to Session Handler
-        if( _userAuthRecord != null ) {
-
-            se.setOwner( Subjects.getUserName(_subject) ) ;
-            if( _userAuthRecord.UID >= 0 ) {
-                se.setUid(_userAuthRecord.UID );
-            }
-            if( _userAuthRecord.GID >= 0 ) {
-                se.setGid(_userAuthRecord.GID );
-            }
-        }
-
-        start(se);
+        start(new IoHandler(sessionId,commandId,args));
         return null ;
     }
 
@@ -461,8 +526,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         if( args.argc() < 1 )
             throw new
             CommandException( 3  , "Not enough arguments for stage" ) ;
-
-        getUserMetadata();
 
         start(new PrestageHandler(sessionId, commandId, args));
         return null ;
@@ -483,59 +546,36 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     public synchronized String com_unlink( int sessionId , int commandId , VspArgs args )
         throws CacheException, CommandException
     {
-        if (_readOnly) {
-        throw new CacheException( 2 , "Cannot execute 'unlink': Permission denied") ;
-        }
         return do_unlink( sessionId , commandId , args , true ) ;
-
     }
 
     public synchronized String com_rename( int sessionId , int commandId , VspArgs args )
         throws CacheException, CommandException
     {
-        if (_readOnly) {
-        throw new CacheException( 2 , "Cannot execute 'rename': Permission denied") ;
-        }
         return do_rename( sessionId , commandId , args ) ;
-
     }
 
     public synchronized String com_rmdir( int sessionId , int commandId , VspArgs args )
         throws CacheException, CommandException
     {
-        if (_readOnly) {
-        throw new CacheException( 2 , "Cannot execute 'rmdir': Permission denied") ;
-        }
         return do_rmdir( sessionId , commandId , args , true ) ;
-
     }
 
     public synchronized String com_mkdir( int sessionId , int commandId , VspArgs args )
         throws CacheException, CommandException
     {
-        if (_readOnly) {
-        throw new CacheException( 2 , "Cannot execute 'mkdir': Permission denied") ;
-        }
         return do_mkdir( sessionId , commandId , args , true ) ;
-
     }
 
     public synchronized String com_chmod( int sessionId , int commandId , VspArgs args )
         throws CacheException, CommandException
     {
-        if (_readOnly) {
-        throw new CacheException( 2 , "Cannot execute 'chmod': Permission denied") ;
-        }
         return do_chmod( sessionId , commandId , args , true ) ;
-
     }
 
     public synchronized String com_chown( int sessionId , int commandId , VspArgs args )
         throws CacheException, CommandException
     {
-        if (_readOnly) {
-        throw new CacheException( 2 , "Cannot execute 'chown': Permission denied") ;
-        }
         return do_chown( sessionId , commandId , args , true ) ;
     }
 
@@ -543,11 +583,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     public synchronized String com_chgrp( int sessionId , int commandId , VspArgs args )
         throws CacheException, CommandException
     {
-        if (_readOnly) {
-        throw new CacheException( 2 , "Cannot execute 'chgrp': Permission denied") ;
-        }
         return do_chgrp( sessionId , commandId , args , true ) ;
-
     }
 
     public synchronized String com_opendir( int sessionId , int commandId , VspArgs args )
@@ -566,8 +602,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             throw new
             CommandException( 3  , "Not enough arguments for unlink" ) ;
 
-        getUserMetadata();
-
         start(new UnlinkHandler(sessionId, commandId, args, resolvePath));
         return null ;
     }
@@ -581,8 +615,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         if( args.argc() < 1 )
             throw new
             CommandException( 3  , "Not enough arguments for unlink" ) ;
-
-        getUserMetadata();
 
         start(new RenameHandler(sessionId, commandId, args));
         return null ;
@@ -598,8 +630,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             throw new
             CommandException( 3  , "Not enough arguments for rmdir" ) ;
 
-        getUserMetadata();
-
         start(new RmDirHandler(sessionId, commandId, args, resolvePath));
         return null ;
     }
@@ -613,8 +643,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             throw new
             CommandException( 3  , "Not enough arguments for unlink" ) ;
 
-        getUserMetadata();
-
         start(new MkDirHandler(sessionId, commandId, args, resolvePath));
         return null ;
     }
@@ -627,8 +655,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         if( args.argc() < 1 )
             throw new
             CommandException( 3  , "Not enough arguments for chown" ) ;
-
-        getUserMetadata();
 
         start(new ChownHandler(sessionId, commandId, args, resolvePath));
         return null ;
@@ -644,8 +670,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                     throw new
                     CommandException( 3  , "Not enough arguments for chgrp" ) ;
 
-                getUserMetadata();
-
                 start(new ChgrpHandler(sessionId, commandId, args, resolvePath));
                 return null ;
      }
@@ -659,8 +683,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                     throw new
                     CommandException( 3  , "Not enough arguments for chmod" ) ;
 
-                getUserMetadata();
-
                 start(new ChmodHandler(sessionId, commandId, args, resolvePath));
                 return null ;
             }
@@ -673,23 +695,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             throw new
             CommandException( 3  , "Not enough arguments for opendir" ) ;
 
-        getUserMetadata();
-
-        SessionHandler se =  new OpenDirHandler(sessionId,commandId,args);
-
-        // if user authenticated tell it to Session Handler
-        if( _userAuthRecord != null ) {
-
-            se.setOwner( Subjects.getUserName(_subject) ) ;
-            if( _userAuthRecord.UID >= 0 ) {
-                se.setUid(_userAuthRecord.UID );
-            }
-            if( _userAuthRecord.GID >= 0 ) {
-                se.setGid(_userAuthRecord.GID );
-            }
-        }
-
-        start(se);
+        start(new OpenDirHandler(sessionId,commandId,args));
         return null ;
     }
 
@@ -701,8 +707,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         if( args.argc() < 1 )
             throw new
             CommandException( 3  , "Not enough arguments for stat" ) ;
-
-        getUserMetadata();
 
         start(new StatHandler(sessionId, commandId, args, resolvePath));
         return null ;
@@ -721,8 +725,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         if( args.argc() < 1 )
             throw new
             CommandException( 3  , "Not enough arguments for check" ) ;
-
-        getUserMetadata();
 
         start(new CheckFileHandler(sessionId, commandId, args));
         return null ;
@@ -747,8 +749,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         IoDoorInfo info = new IoDoorInfo( _cell.getCellInfo().getCellName() ,
         _cell.getCellInfo().getDomainName() ) ;
         info.setProtocol("dcap","3");
-        info.setOwner( _uid == null ? "0" : _uid ) ;
-        info.setProcess( _pid == null ? "0" : _pid ) ;
+        info.setOwner(String.valueOf(_uid));
+        info.setProcess(_pid);
         List<IoDoorEntry> list = new ArrayList<IoDoorEntry>(_sessions.size());
         for (SessionHandler session: _sessions.values()) {
             if (session instanceof IoHandler) {
@@ -806,9 +808,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         protected String  _ioHandlerQueue  = null ;
 
         private final long      _timestamp       = System.currentTimeMillis() ;
-        private int       _uid             = -1 ;
-        private int       _gid             = -1 ;
-        private String    _owner           =  "unknown";
+
+        protected Subject _subject;
+        protected Origin _origin;
+        protected boolean _readOnly;
 
         protected SessionHandler(int sessionId, int commandId, VspArgs args)
             throws CommandException
@@ -821,11 +824,31 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             _cell.getCellInfo().getCellName()+"@"+
             _cell.getCellInfo().getDomainName() ) ;
 
-            try{ _uid = Integer.parseInt( args.getOpt("uid") ) ; } catch(NumberFormatException e){/* 'bad' strings silently ignored */}
-
             _ioHandlerQueue = args.getOpt("io-queue") ;
             _ioHandlerQueue = (_ioHandlerQueue == null ) || ( _ioHandlerQueue.length() == 0 ) ?
                                null : _ioHandlerQueue ;
+        }
+
+        protected void doLogin()
+            throws CacheException
+        {
+            LoginReply login = login(_vargs.getOpt("role"));
+            _subject = login.getSubject();
+            _origin = Subjects.getOrigin(_subject);
+
+            _readOnly =
+                (DCapDoorInterpreterV3.this._args.getOpt("readOnly") != null);
+            for (LoginAttribute attribute: login.getLoginAttributes()) {
+                if (attribute instanceof ReadOnly) {
+                    _readOnly |= ((ReadOnly) attribute).isReadOnly();
+                }
+            }
+
+            if (!Subjects.isNobody(_subject)) {
+                _info.setUid((int) Subjects.getUid(_subject));
+                _info.setGid((int) Subjects.getPrimaryGid(_subject));
+                _info.setOwner(Subjects.getUserName(_subject));
+            }
         }
 
         /**
@@ -848,6 +871,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             boolean isStarted = false;
             addUs();
             try {
+                doLogin();
                 doStart();
                 isStarted = true;
             } catch (CacheException e) {
@@ -918,30 +942,72 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
         @Override
         public String toString(){
-            return "["+_sessionId+"]["+_uid+"]["+_pid+"] "+
+            return "["+_sessionId+"]["+getUid()+"]["+_pid+"] "+
             _status+"("+
             ( (System.currentTimeMillis()-_statusSince)/1000 )+")" ;
         }
-        protected int getGid() {
-            return _gid;
-        }
-        protected void setGid(int gid) {
-            _gid = gid;
-            _info.setGid( gid);
-        }
-        protected String getOwner() {
-            return _owner;
-        }
-        protected void setOwner(String owner) {
-            _owner = owner;
-            _info.setOwner(owner);
-        }
-        protected int getUid() {
+
+        /**
+         * Returns the UID that is used as an owner for new name space
+         * entries.
+         */
+        protected int getUid()
+        {
+            if (!Subjects.isNobody(_subject)) {
+                return (int) Subjects.getUid(_subject);
+            }
+
+            String s = _vargs.getOpt("uid");
+            if (s != null) {
+                try {
+                    return Integer.parseInt(s);
+                } catch (NumberFormatException e) {
+                    _log.warn("Failed to parse UID: " + s);
+                }
+            }
+
             return _uid;
         }
-        protected void setUid(int uid) {
-            _uid = uid;
-            _info.setUid( uid );
+
+        /**
+         * Returns the GID that is used as an owner for new name space
+         * entries.
+         */
+        protected int getGid()
+        {
+            if (!Subjects.isNobody(_subject)) {
+                return (int) Subjects.getPrimaryGid(_subject);
+            }
+
+            String s = _vargs.getOpt("gid");
+            if (s != null) {
+                try {
+                    return Integer.parseInt(s);
+                } catch (NumberFormatException e) {
+                    _log.warn("Failed to parse GID: " + s);
+                }
+            }
+
+            return _gid;
+        }
+
+        /**
+         * Returns the value that is used as mode for new name space
+         * entries.
+         *
+         * @param mode Default value if mode was not specified
+         */
+        protected int getMode(int mode)
+        {
+            String s = _vargs.getOpt("mode");
+            if (s != null) {
+                try {
+                    mode = Integer.decode(s);
+                } catch (NumberFormatException e) {
+                    _log.warn("Failed to parse mode: " + s);
+                }
+            }
+            return mode;
         }
     }
     abstract protected  class PnfsSessionHandler  extends SessionHandler  {
@@ -956,6 +1022,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         protected Set<FileAttribute> _attributes;
         protected PnfsGetFileAttributes _message;
+        protected PnfsHandler _pnfs;
 
         protected PnfsSessionHandler(int sessionId, int commandId, VspArgs args,
                                      boolean metaDataOnly, boolean resolvePath)
@@ -979,6 +1046,17 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 } catch (NumberFormatException e) {
                     /* 'bad' strings silently ignored */
                 }
+            }
+        }
+
+        @Override
+        protected void doLogin()
+            throws CacheException
+        {
+            super.doLogin();
+            _pnfs = new PnfsHandler(_cell, new CellPath(_pnfsManagerName));
+            if (_permissionHandler instanceof GrantAllPermissionHandler) {
+                _pnfs.setSubject(_subject);
             }
         }
 
@@ -1264,6 +1342,17 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         {
             super( sessionId , commandId , args , true , followLinks ) ;
         }
+
+        @Override
+        protected void doLogin()
+            throws CacheException
+        {
+            super.doLogin();
+            if (_readOnly) {
+                throw new CacheException(2, "Cannot execute 'unlink': Permission denied") ;
+            }
+        }
+
         @Override
         public void fileAttributesAvailable()
         {
@@ -1273,31 +1362,44 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 //
                 String path = _message.getPnfsPath();
                 FileMetaData meta = _fileMetaData;
-                if (_readOnly) {
-                    sendReply("fileAttributesAvailable", 19, "Permission denied", "EACCES");
-                } else {
-                    if (!meta.isDirectory()) {
-                        try {
-                            if (_permissionHandler.canDeleteFile(_pnfsId, _subject, _origin) != AccessType.ACCESS_ALLOWED) {
-                                sendReply("fileAttributesAvailable", 19, "Permission denied to remove file", "EACCES");
-                                return;
-                            }
-                            _pnfs.deletePnfsEntry(path);
-                            sendReply("fileAttributesAvailable", 0, "");
-                            sendRemoveInfoToBilling(path);
-                        } catch (ACLException e) {
-                            sendReply("fileAttributesAvailable", 19, e.getMessage(), "EACCES");
-                        } catch (CacheException e) {
-                            sendReply("fileAttributesAvailable", 19, e.getMessage(), "EACCES");
+                if (!meta.isDirectory()) {
+                    try {
+                        if (_permissionHandler.canDeleteFile(_pnfsId, _subject, _origin) != AccessType.ACCESS_ALLOWED) {
+                            sendReply("fileAttributesAvailable", 19, "Permission denied to remove file", "EACCES");
+                            return;
                         }
-                    } else {
-                        sendReply("fileAttributesAvailable", 17, "Path is a Directory", "EISDIR");
+                        _pnfs.deletePnfsEntry(path);
+                        sendReply("fileAttributesAvailable", 0, "");
+                        sendRemoveInfoToBilling(path);
+                    } catch (ACLException e) {
+                        sendReply("fileAttributesAvailable", 19, e.getMessage(), "EACCES");
+                    } catch (CacheException e) {
+                        sendReply("fileAttributesAvailable", 19, e.getMessage(), "EACCES");
                     }
+                } else {
+                    sendReply("fileAttributesAvailable", 17, "Path is a Directory", "EISDIR");
                 }
             } finally {
                 removeUs();
             }
         }
+
+        private void sendRemoveInfoToBilling(String path)
+        {
+            CellInfo cellInfo = _cell.getCellInfo();
+            DoorRequestInfoMessage infoRemove =
+                new DoorRequestInfoMessage(cellInfo.getCellName() + "@"
+                                           + cellInfo.getDomainName(), "remove");
+            if (!Subjects.isNobody(_subject)) {
+                infoRemove.setOwner(Subjects.getUserName(_subject));
+                infoRemove.setUid((int) Subjects.getUid(_subject));
+                infoRemove.setGid((int) Subjects.getPrimaryGid(_subject));
+            }
+            infoRemove.setPath(path);
+
+            postToBilling(infoRemove);
+        }
+
         @Override
         public String toString(){ return "uk "+super.toString() ; }
     }
@@ -1314,8 +1416,19 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         {
             super( sessionId , commandId , args , true , followLinks ) ;
 
-            _permission = Integer.parseInt( args.getOpt("mode") );
+            _permission = Integer.decode(args.getOpt("mode"));
         }
+
+        @Override
+        protected void doLogin()
+            throws CacheException
+        {
+            super.doLogin();
+            if (_readOnly) {
+                throw new CacheException(2, "Cannot execute 'chmod': Permission denied");
+            }
+        }
+
         @Override
         public void fileAttributesAvailable()
         {
@@ -1359,6 +1472,16 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             _owner  = Integer.parseInt(owner_group[0]);
             if( owner_group.length == 2 ) {
                 _group = Integer.parseInt(owner_group[1]);
+            }
+        }
+
+        @Override
+        protected void doLogin()
+            throws CacheException
+        {
+            super.doLogin();
+            if (_readOnly) {
+                throw new CacheException(2, "Cannot execute 'chown': Permission denied");
             }
         }
 
@@ -1410,6 +1533,16 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
 
         @Override
+        protected void doLogin()
+            throws CacheException
+        {
+            super.doLogin();
+            if (_readOnly) {
+                throw new CacheException(2, "Cannot execute 'chgrp': Permission denied");
+            }
+        }
+
+        @Override
         public void fileAttributesAvailable(){
 
             FileMetaData meta = _fileMetaData;
@@ -1449,7 +1582,16 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         {
             super( sessionId , commandId , args , true , false ) ;
             _newName = args.argv(1);
+        }
 
+        @Override
+        protected void doLogin()
+            throws CacheException
+        {
+            super.doLogin();
+            if (_readOnly) {
+                throw new CacheException(2, "Cannot execute 'rename': Permission denied");
+            }
         }
 
         @Override
@@ -1466,13 +1608,13 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
 
                 fileWriteAllowed =
-                    ( ( meta.getUid() == _userAuthRecord.UID ) && user.canWrite()  ) ||
-                    ( ( meta.getGid() == _userAuthRecord.GID ) && group.canWrite() ) ||
-                    world.canWrite() ;
+                    (Subjects.hasUid(_subject, meta.getUid()) && user.canWrite()) ||
+                    (Subjects.hasGid(_subject, meta.getGid()) && group.canWrite()) ||
+                    world.canWrite();
 
-                if (!fileWriteAllowed || _readOnly) {
+                if (!fileWriteAllowed) {
                     sendReply("fileAttributesAvailable", 23, "Permission denied", "EACCES");
-                    esay("Permission denied for user: " + _userAuthRecord.UID + " grop: " + _userAuthRecord.GID + "to rename a file: " + _pnfsId);
+                    esay("Permission denied for " + Subjects.getDisplayName(_subject) + " to rename a file: " + _pnfsId);
                 } else {
                     _pnfs.renameEntry(_pnfsId, _newName);
                     sendReply("fileAttributesAvailable", 23, "Permission denied", "EACCES");
@@ -1502,6 +1644,17 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         {
             super( sessionId , commandId , args , true , followLinks ) ;
         }
+
+        @Override
+        protected void doLogin()
+            throws CacheException
+        {
+            super.doLogin();
+            if (_readOnly) {
+                throw new CacheException(2, "Cannot execute 'rmdir': Permission denied");
+            }
+        }
+
         @Override
         public void fileAttributesAvailable()
         {
@@ -1531,8 +1684,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
     protected  class MkDirHandler  extends PnfsSessionHandler  {
 
-        int _perm = 0755;
-
         private MkDirHandler(int sessionId,
                              int commandId,
                              VspArgs args,
@@ -1540,16 +1691,16 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             throws CacheException, CommandException
         {
             super( sessionId , commandId , args , true , followLinks ) ;
+        }
 
-            String pMode = args.getOpt("mode");
-            if( pMode != null) {
-                try {
-                    _perm = Integer.parseInt(pMode);
-                }catch(NumberFormatException e) {
-                    // do nothing
-                }
+        @Override
+        protected void doLogin()
+            throws CacheException
+        {
+            super.doLogin();
+            if (_readOnly) {
+                throw new CacheException(2, "Cannot execute 'mkdir': Permission denied");
             }
-
         }
 
         @Override
@@ -1557,14 +1708,11 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         {
             boolean rc = true;
             try {
-                getUserMetadata();
-
                 String path = _message.getPnfsPath();
                 String parent = new File(path).getParent();
-                say("Creating directory \"" + path + "\", with mode=" + _perm);
 
                 if (_permissionHandler.canCreateDir(_pnfs.getPnfsIdByPath(parent), _subject, _origin) == AccessType.ACCESS_ALLOWED) {
-                    _pnfs.createPnfsDirectory( path , _userAuthRecord.UID, _userAuthRecord.GID, _perm );
+                    _pnfs.createPnfsDirectory( path , getUid(), getGid(), getMode(0755));
                     sendReply("fileAttributesNotAvailable", 0, "");
                     rc = false;
                 }else{
@@ -1599,7 +1747,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     //
     //      the check file handler
     //
-    protected  class CheckFileHandler  extends PnfsSessionHandler  {
+    protected class CheckFileHandler  extends PnfsSessionHandler  {
 
         private final String _destination  ;
         private final String _protocolName  ;
@@ -1782,7 +1930,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         private String            _accessLatency = null;
         private String            _retentionPolicy = null;
         private boolean _isUrl;
-        private PnfsHandler _pnfs;
 
         private IoHandler(int sessionId, int commandId, VspArgs args)
             throws CacheException, CommandException
@@ -1799,9 +1946,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             //
             _protocolInfo = new DCapProtocolInfo( "DCap",3,0, _hosts , port  ) ;
             _protocolInfo.setSessionId( _sessionId ) ;
-            if(_userAuthorizationRecord != null ) {
-                _protocolInfo.setAuthorizationRecord(_userAuthorizationRecord);
-            }
 
             _isHsmRequest = ( args.getOpt("hsm") != null  );
             if( _isHsmRequest ){
@@ -1816,7 +1960,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             _checksumString = args.getOpt("checksum") ;
             _truncFile      = args.getOpt("truncate");
             _truncate       = ( _truncFile != null ) && _truncateAllowed  ;
-            _permission     = args.getOpt("mode");
             _fileCheck      = args.getOpt("skip-file-check") == null;
             _protocolInfo.fileCheckRequaried(_fileCheck);
 
@@ -1828,6 +1971,16 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             _protocolInfo.door( new CellPath(_cell.getCellInfo().getCellName(),
                     _cell.getCellInfo().getDomainName()) ) ;
 
+        }
+
+        @Override
+        protected void doLogin()
+            throws CacheException
+        {
+            super.doLogin();
+            if (!Subjects.isNobody(_subject)) {
+                _protocolInfo.setAuthorizationRecord(Subjects.getAuthorizationRecord(_subject));
+            }
         }
 
         @Override
@@ -1861,9 +2014,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
              * access bypasses authorization.
              */
             if (!_isUrl && !_authorizationRequired) {
-                _pnfs = new PnfsHandler(DCapDoorInterpreterV3.this._pnfs, null);
-            } else {
-                _pnfs = DCapDoorInterpreterV3.this._pnfs;
+                _pnfs = new PnfsHandler(_pnfs, null);
             }
 
             /* if is url, _path is already pointing to to correct path */
@@ -1912,24 +2063,12 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 throw new
                 CacheException( 2 , "No such file or directory" );
 
-            if(_readOnly ) {
-                throw new CacheException( 2 , "Read only access allowed" );
-            }
             //
             // for now we regard each error as 'file not found'
             // (so we can create it);
             //
             // first we have to findout if we are allowed to create a file.
             //
-            getUserMetadata();
-
-            _log.debug("IoHandler::storageInfoNotAvailable Door authenticated for {} ({} ,{})",
-                    new Object[] {_subject, _userAuthRecord});
-
-            if( _authorizationStrong && ( _userAuthRecord.UID < 0 ) )
-                throw new
-                CacheException( 2 , "No Meta data found for user : "+_subject ) ;
-
             String path = _message.getPnfsPath();
             String parent = new File(path).getParent();
             _log.debug("Creating file. path=_getStorageInfo.getPnfsPath()  -> path = " + path);
@@ -1945,18 +2084,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 throw new CacheException(e.getMessage());
             }
 
-            int uid = 0 ;
-            try{ uid = Integer.parseInt(_uid) ; }catch(NumberFormatException e){/* 'bad' strings silently ignored */}
-
-            int mode = 0644;
-            if( _permission != null ) {
-                try { mode = Integer.parseInt(_permission, 8); } catch(NumberFormatException e){/* 'bad' strings silently ignored */}
-            }
             PnfsCreateEntryMessage pnfsEntry =
-            _pnfs.createPnfsEntry( _message.getPnfsPath() ,
-            _userAuthRecord.UID < 0 ? uid : _userAuthRecord.UID ,
-            _userAuthRecord.GID < 0 ? 0 : _userAuthRecord.GID ,
-            mode ) ;
+                _pnfs.createPnfsEntry(_message.getPnfsPath(),
+                                      getUid(), getGid(), getMode(0644));
 
             _log.debug("storageInfoNotAvailable : created pnfsid : "
             +pnfsEntry.getPnfsId() + " path : "+pnfsEntry.getPnfsPath());
@@ -2022,7 +2152,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                             String path = _message.getPnfsPath();
                             _log.debug("truncating path " + path );
                             _pnfs.deletePnfsEntry( path );
-                            _message =   _pnfs.createPnfsEntry( path , _userAuthRecord.UID, _userAuthRecord.GID, 0644 ) ;
+                            _message = _pnfs.createPnfsEntry(path , getUid(), getGid(), getMode(0644));
                             _pnfsId = _message.getPnfsId() ;
                             _storageInfo = _message.getFileAttributes().getStorageInfo();
                         }else{
@@ -2407,9 +2537,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             }
 
             try {
-
-                getUserMetadata();
-
                 if (_permissionHandler.canListDir(_pnfsId, _subject, _origin) != AccessType.ACCESS_ALLOWED) {
                     sendReply("fileAttributesAvailable", 19, "Permission denied to list directory", "EACCES");
                     return;
@@ -2480,16 +2607,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     public String execute(VspArgs args)
         throws CommandExitException
     {
-        /*
-         * Legacy rone handlig.
-         * Require by FNAL
-         */
-        String role = args.getOpt("role");
-        if(role != null ) {
-            // FIXME: A special group pringipal required
-            _subject.getPrincipals().add(new FQANPrincipal(role, true));
-        }
-
         int sessionId = args.getSessionId();
         int commandId = args.getSubSessionId();
 
@@ -2589,11 +2706,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
     public void   getInfo( PrintWriter pw ){
         pw.println( " ----- DCapDoorInterpreterV3 ----------" ) ;
-        pw.println( "      pid  = "+_pid ) ;
-        pw.println( "      uid  = "+_uid ) ;
-        pw.println( "(auth)uid  = "+_userAuthRecord.UID ) ;
-        pw.println( "(auth)gid  = "+_userAuthRecord.GID ) ;
-        pw.println( "     home  = "+(_userHome==null?"?":_userHome) ) ;
+        pw.println( "      User = " + Subjects.getDisplayName(_authenticatedSubject));
         pw.println( "  Version  = "+_majorVersion+"/"+_minorVersion ) ;
         pw.println( "  VLimits  = "+
         (_minClientVersion==null?"*":_minClientVersion.toString() ) +":" +
@@ -2604,54 +2717,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         for( Map.Entry<Integer, SessionHandler> session: _sessions.entrySet() ){
             pw.println( session.getKey().toString()+ " -> "+session.getValue().toString() );
         }
-    }
-
-    @SuppressWarnings("deprecation")
-    private void getUserMetadata() throws CacheException {
-        if(_userAuthRecord != null) {
-            return;
-        }
-        // FIXME:
-        String name = _subject.getPrincipals(GlobusPrincipal.class).iterator().next().getName();
-
-        Set<FQANPrincipal> groupPrincipals = _subject.getPrincipals(FQANPrincipal.class);
-        List<String> roles = new ArrayList<String>(groupPrincipals.size());
-        for(Principal p : groupPrincipals) {
-            roles.add(p.getName());
-        }
-
-        UserAuthRecord user = null ;
-
-        if( _authService != null ) {
-            try {
-                _userAuthorizationRecord = _authService.getUserRecord(name, roles);
-                user = _userAuthorizationRecord.getUserAuthRecord();
-            } catch (AuthorizationException e) {
-                user = new UserAuthRecord("nobody", name, roles.toString(), true, 0, -1, -1, "/", "/", "/", new HashSet<String>(0)) ;
-            }
-        }else{
-            user = new UserAuthRecord("nobody", name, roles.toString(), true, 0, -1, -1, "/", "/", "/", new HashSet<String>(0)) ;
-        }
-
-        _log.info("Door authenticated for: {}", _subject);
-
-        _subject = Subjects.getSubject(user, true);
-        _subject.getPrincipals().add(_origin);
-
-        if (_permissionHandler instanceof GrantAllPermissionHandler) {
-            _pnfs.setSubject(_subject);
-        }
-
-        /*
-         * this block could be part of the catch {} , but
-         * in future, gPlazma can return nobody record. So let check it here
-         */
-        if( _authorizationStrong && ( user.UID < 0 ) ) {
-            throw new
-            CacheException( 2 , "User "+name+" role: "+  roles +" is not authorized") ;
-        }
-
-        _userAuthRecord = user;
     }
 
     public void  messageArrived(CellMessage msg)
@@ -2705,18 +2770,4 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             _log.info("Billing is not available.");
         }
     }
-
-    private void sendRemoveInfoToBilling(String pathToBeRemoved) {
-
-        DoorRequestInfoMessage infoRemove =
-                new DoorRequestInfoMessage(_cell.getCellInfo().getCellName() + "@"
-                + _cell.getCellInfo().getDomainName(), "remove");
-        infoRemove.setOwner(Subjects.getUserName(_subject));
-        infoRemove.setUid(_userAuthRecord.UID);
-        infoRemove.setGid(_userAuthRecord.GID);
-        infoRemove.setPath(pathToBeRemoved);
-
-        postToBilling(infoRemove);
-    }
-
 }

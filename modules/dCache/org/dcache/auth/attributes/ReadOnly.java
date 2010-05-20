@@ -21,4 +21,10 @@ public class ReadOnly implements LoginAttribute, Serializable
     {
         return _isReadOnly;
     }
+
+    @Override
+    public String toString()
+    {
+        return _isReadOnly ? "ReadOnly" : "ReadWrite";
+    }
 }

@@ -21,4 +21,10 @@ public class HomeDirectory implements LoginAttribute, Serializable
     {
         return _home;
     }
+
+    @Override
+    public String toString()
+    {
+        return "HomeDirectory[" + _home + "]";
+    }
 }

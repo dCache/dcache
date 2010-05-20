@@ -1,6 +1,7 @@
 package org.dcache.auth;
 
 import javax.security.auth.Subject;
+import java.util.Arrays;
 import java.util.Set;
 import java.util.HashSet;
 
@@ -69,5 +70,18 @@ public class LoginReply
             }
         }
         return result;
+    }
+
+    public String toString()
+    {
+        String name = Subjects.getDisplayName(_subject);
+        if (Subjects.isNobody(_subject)) {
+            return "Login[" + name + "," + _attributes + "]";
+        } else {
+            return "Login[" + name + ","
+                + Subjects.getUid(_subject) + ":"
+                + Arrays.toString(Subjects.getGids(_subject)) + ","
+                + _attributes + "]";
+        }
     }
 }

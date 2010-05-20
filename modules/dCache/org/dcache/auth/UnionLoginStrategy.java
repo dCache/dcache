@@ -59,7 +59,10 @@ public class UnionLoginStrategy implements LoginStrategy
     {
         for (LoginStrategy strategy: _loginStrategies) {
             try {
-                return strategy.login(subject);
+                LoginReply login = strategy.login(subject);
+                if (!Subjects.isNobody(login.getSubject())) {
+                    return login;
+                }
             } catch (IllegalArgumentException e) {
                 /* Our current LoginStrategies throw
                  * IllegalArgumentException when provided with a

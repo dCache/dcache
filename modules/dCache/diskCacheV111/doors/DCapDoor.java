@@ -46,7 +46,6 @@ public class      DCapDoor
     private Reader         _reader         = null;
     private CellNucleus    _nucleus        = null ;
     private boolean        _dcapLock       = true ;
-    private String         _authenticator  = null ;
 
     /**
      * DCAP command interpreter.
@@ -75,10 +74,6 @@ public class      DCapDoor
 	   _out      = new PrintWriter( engine.getWriter() );
             _subject = engine.getSubject();
 	   _host     = engine.getInetAddress().toString();
-
-           _authenticator = args.getOpt("authenticator") ;
-           _authenticator = _authenticator == null ?
-                            "pam" : _authenticator ;
 
            _interpreter = new DCapDoorInterpreterV3(this, _out, _subject);
            addCommandListener(_interpreter);
@@ -110,34 +105,7 @@ public class      DCapDoor
        if( _interpreter instanceof KeepAliveListener )
           ((KeepAliveListener)_interpreter).keepAlive();
     }
-    private boolean checkUser( String userName , String password ){
-       String [] request = new String[5] ;
 
-       request[0] = "request" ;
-       request[1] = userName ;
-       request[2] = "check-password" ;
-       request[3] = userName ;
-       request[4] = password ;
-
-       try{
-          CellMessage msg = new CellMessage( new CellPath(_authenticator) ,
-                                             request ) ;
-
-          msg = sendAndWait( msg , 10000 ) ;
-          if( msg == null )
-             throw new
-             Exception("Pam request timed out");
-
-          Object [] r = (Object [])msg.getMessageObject() ;
-
-          return ((Boolean)r[5]).booleanValue() ;
-
-       }catch(Exception ee){
-          esay(ee);
-          return false ;
-       }
-
-    }
     //
     // possible ways to bail out
     //
