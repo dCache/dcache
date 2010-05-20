@@ -50,11 +50,10 @@
 
 
     <!--
-        run all avalible tests
-           exclude files with name *Helper and all inner classes
+        run all avalible tests, or run a single one, or run all in a package
     -->
     <target name="-run.junit" depends="-compile.junit">
-
+        <property name="testdir" value=""/>
         <property name="tests.report.home" location="${buildDir}/junit-reports" />
         <mkdir dir="${tests.report.home}" />
 
@@ -67,8 +66,8 @@
                 <fileset dir="${unittest.build.dir}">
                     <!--include only Classes ending with Test or Tests - -->
                     <!--only these are valid testclasses, everything else are helpers -->
-                    <include name="**/*Test.class" />
-                    <include name="**/*Tests.class" />
+                    <include name="${testdir}**/*Test.class" />
+                    <include name="${testdir}**/*Tests.class" />
                     <!--exclude only locally running pinmanager-test-->
                     <exclude name="org/dcache/tests/pinmanager/PinManagerTest.class" />
                 </fileset>
@@ -76,5 +75,4 @@
         </junit>
 
     </target>
-
 </project>

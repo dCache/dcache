@@ -257,6 +257,8 @@
        <echo message="     test              : run all available unit tests" />
        <echo message="                       : use -Dtestcase=test.class.name" />
        <echo message="                       : to run single test only." />
+       <echo message="                       : use -Dtestdir=testdir/sub/subsub/" />
+       <echo message="                       : to run all tests in that dir/package." />
        <echo message="" />
        <echo message="" />
        <echo message="" />
