@@ -121,6 +121,11 @@ class Acceptor implements Runnable
             _serverChannel.socket().getLocalSocketAddress();
     }
 
+    synchronized Companion getSession(int id)
+    {
+        return _sessions.get(id);
+    }
+
     /**
      * Starts the acceptor.
      */
@@ -190,7 +195,7 @@ class Acceptor implements Runnable
                                 new DataInputStream(socket.getInputStream());
                             DataOutputStream out =
                                 new DataOutputStream(socket.getOutputStream());
-                            Companion companion = _sessions.get(in.readInt());
+                            Companion companion = getSession(in.readInt());
                             if (companion == null) {
                                 _log.warn("Unsolicited connection from " +
                                           socket.getRemoteSocketAddress());
