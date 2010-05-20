@@ -12,11 +12,30 @@ import org.dcache.cells.CellStub;
  */
 public class ServletContextCellStub extends CellStub {
 
+    private int _httpsPort;
+    private int _httpPort;
+    private String _dcacheName = "";
+
     public ServletContextCellStub(String destination) throws NamingException {
         InitialContext lookupContext = new InitialContext();
-        CellEndpoint endpoint = (CellEndpoint) lookupContext.lookup(
+        JettyCell jettyCell = (JettyCell) lookupContext.lookup(
                 JettyCell.JETTYCELL_NAMING_CONTEXT);
-        setCellEndpoint(endpoint);
+        _httpPort = jettyCell.getHttpPort();
+        _httpsPort = jettyCell.getHttpsPort();
+        _dcacheName = jettyCell.getDcacheName();
+        setCellEndpoint((CellEndpoint) jettyCell);
         setDestination(destination);
+    }
+
+    public String getDcacheName() {
+        return _dcacheName;
+    }
+
+    public int getHttpPort() {
+        return _httpPort;
+    }
+
+    public int getHttpsPort() {
+        return _httpsPort;
     }
 }

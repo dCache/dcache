@@ -7,4 +7,5 @@ create org.dcache.admin.webadmin.jettycell.JettyCell webadmin \
            -keystorePassword=${keyStorePassword}  \
            -truststore=${trustStore}  \
            -truststorePassword=${trustStorePassword}  \
+           -dCacheInstanceName=${webadminDCacheInstanceName}  \
 "

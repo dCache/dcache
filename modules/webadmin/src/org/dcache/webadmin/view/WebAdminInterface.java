@@ -12,6 +12,9 @@ import org.dcache.webadmin.view.pages.dcacheservices.DCacheServices;
 public class WebAdminInterface extends WebApplication {
 
     private PoolBeanService _poolBeanService;
+    private int _httpPort;
+    private int _httpsPort;
+    private String _dcacheName;
 
     @Override
     public Class<? extends Page> getHomePage() {
@@ -24,5 +27,21 @@ public class WebAdminInterface extends WebApplication {
 
     public PoolBeanService getPoolBeanService() {
         return _poolBeanService;
+    }
+
+    public void setDcacheName(String dCacheName) {
+        _dcacheName = dCacheName;
+    }
+
+    public String getDcacheName() {
+        return _dcacheName;
+    }
+
+    public void setHttpPort(int httpPort) {
+        _httpPort = httpPort;
+    }
+
+    public void setHttpsPort(int httpsPort) {
+        _httpsPort = httpsPort;
     }
 }

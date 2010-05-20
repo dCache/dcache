@@ -27,6 +27,23 @@
 
     <bean id="WebAdminInterface" class="org.dcache.webadmin.view.WebAdminInterface">
         <property name="poolBeanService" ref="PoolBeanService"/>
+        <property name="httpPort">
+            <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
+                <property name="targetBeanName" value="infoCellStub"/>
+                <property name="propertyPath" value="httpPort"/>
+            </bean>
+        </property>
+        <property name="httpsPort">
+            <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
+                <property name="targetBeanName" value="infoCellStub"/>
+                <property name="propertyPath" value="httpsPort"/>
+            </bean>
+        </property>
+        <property name="dcacheName">
+            <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
+                <property name="targetBeanName" value="infoCellStub"/>
+                <property name="propertyPath" value="dcacheName"/>
+            </bean>
+        </property>
     </bean>
-
 </beans>

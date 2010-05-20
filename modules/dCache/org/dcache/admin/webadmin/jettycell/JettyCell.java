@@ -73,6 +73,10 @@ public class JettyCell extends AbstractCell {
     log = false,
     required = true)
     private String _trustPassword;
+    @Option(name = "dCacheInstanceName",
+    description = "The dCache-Instance Name",
+    required = false)
+    private String _dcacheName;
 //    URL to the ressources folder of jetty (will be put inside of dcache.jar)
 //    dont know how to get rid of the hardcoding, should be
 //    package of class+/resources
@@ -161,5 +165,17 @@ public class JettyCell extends AbstractCell {
         webappContext.setWar(_webappsPath + WEBAPP_CONTEXT + ".war");
         webappContext.setExtractWAR(true);
         return webappContext;
+    }
+
+    public String getDcacheName() {
+        return _dcacheName;
+    }
+
+    public int getHttpPort() {
+        return _httpPort;
+    }
+
+    public int getHttpsPort() {
+        return _httpsPort;
     }
 }
