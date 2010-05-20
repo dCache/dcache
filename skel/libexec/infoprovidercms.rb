@@ -82,7 +82,7 @@ def processXML ( inFile, outFile, vos, options )
   if options.has_key?("UNIT2PATH")
     e = doc.elements['//[@name="unit-to-path"]']
     if e != nil
-      options["VO2PATH"].each do |mapping|
+      options["UNIT2PATH"].each do |mapping|
         maparray = mapping.split('^')
         if maparray.length() == 2
           newe = e.add_element("sub", { "match" => maparray[0], "replace-with" => maparray[1] })
