@@ -1,6 +1,7 @@
 package org.dcache.xrootd2.core;
 
 import org.jboss.netty.channel.SimpleChannelHandler;
+
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.ChannelPipelineCoverage;
@@ -64,6 +65,8 @@ public class XrootdRequestHandler extends SimpleChannelHandler
             doOnRmDir(ctx, e, (RmDirRequest) msg);
         } else if (msg instanceof MkDirRequest) {
             doOnMkDir(ctx, e, (MkDirRequest) msg);
+        } else if (msg instanceof MvRequest) {
+            doOnMv(ctx, e, (MvRequest) msg);
         }
     }
 
@@ -168,6 +171,11 @@ public class XrootdRequestHandler extends SimpleChannelHandler
 
     protected void doOnMkDir(ChannelHandlerContext ctx, MessageEvent e, MkDirRequest msg)
     {
+        unsupported(ctx, e, msg);
+    }
+
+    protected void doOnMv(ChannelHandlerContext ctx, MessageEvent e,
+                            MvRequest msg) {
         unsupported(ctx, e, msg);
     }
 }

@@ -615,6 +615,37 @@ public class XrootdDoor
     }
 
     /**
+     * Emulate a file-move-operation by renaming sourcePath to targetPath in
+     * the namespace
+     * @param sourcePath the original path of the file that should be moved
+     * @param targetPath the path to which the file should be moved
+     * @throws CacheException
+     */
+    public void moveFile(String sourcePath, String targetPath)
+                                                    throws CacheException
+    {
+        FsPath fullTargetPath = createFullPath(targetPath);
+        FsPath fullSourcePath = createFullPath(sourcePath);
+
+        if (isReadOnly()) {
+            throw new PermissionDeniedCacheException("Read only door");
+        }
+
+        if (!isWriteAllowed(fullSourcePath)) {
+            throw new PermissionDeniedCacheException("No write permission on" +
+                                                     " source path!");
+        }
+
+        if (!isWriteAllowed(fullTargetPath)) {
+            throw new PermissionDeniedCacheException("No write permission on" +
+                                                     " target path!");
+        }
+
+        _pnfs.renameEntry(fullSourcePath.toString(), fullTargetPath.toString(),
+                          false);
+    }
+
+    /**
      * Check whether the given path matches against a list of allowed
      * write paths.
      *

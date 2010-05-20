@@ -51,7 +51,6 @@ public class MkDirRequest extends AuthorizableRequestMessage
         return getOpaqueMap(opaque);
     }
 
-    @Override
     public String getPath() {
         return path;
     }

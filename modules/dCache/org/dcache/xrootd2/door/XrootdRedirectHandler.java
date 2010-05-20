@@ -159,7 +159,9 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         }
 
         try {
-           String authPath = checkOperationPermission(neededPerm, req,
+           String authPath = checkOperationPermission(neededPerm,
+                                                      req.getPath(),
+                                                      req,
                                                       localAddress);
             ////////////////////////////////////////////////////////////////
             // interact with core dCache to open the requested file
@@ -336,6 +338,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
 
         try {
             String authPath = checkOperationPermission(FilePerm.DELETE,
+                                                       req.getPath(),
                                                        req, localAddress);
 
             _door.deleteFile(authPath);
@@ -379,6 +382,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
 
         try {
             String authPath = checkOperationPermission(FilePerm.DELETE,
+                                                       req.getPath(),
                                                        req, localAddress);
 
             _door.deleteDirectory(authPath);
@@ -426,6 +430,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
 
         try {
             String authPath = checkOperationPermission(FilePerm.WRITE,
+                                                       req.getPath(),
                                                        req, localAddress);
 
             _door.createDirectory(authPath, req.shouldMkPath());
@@ -461,6 +466,75 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         }
     }
 
+    @Override
+    protected void doOnMv(ChannelHandlerContext ctx, MessageEvent e,
+                          MvRequest req) {
+        Channel channel = e.getChannel();
+        InetSocketAddress localAddress =
+                            (InetSocketAddress) channel.getLocalAddress();
+
+        String sourcePath = req.getSourcePath();
+        if (sourcePath.isEmpty()) {
+            respondWithError(ctx, e, req,
+                             kXR_ArgMissing, "no source path specified");
+            return;
+        }
+
+        String targetPath = req.getTargetPath();
+        if (targetPath.isEmpty()) {
+            respondWithError(ctx, e, req,
+                             kXR_ArgMissing, "no target path specified");
+        }
+
+        _log.info("Trying to rename {} to {}", req.getSourcePath(),
+                                               req.getTargetPath());
+
+        try {
+            String authSourcePath = checkOperationPermission(FilePerm.DELETE,
+                                                             req.getSourcePath(),
+                                                             req,
+                                                             localAddress);
+
+            String authTargetPath = checkOperationPermission(FilePerm.WRITE,
+                                                             req.getTargetPath(),
+                                                             req,
+                                                             localAddress);
+
+            _door.moveFile(authSourcePath, authTargetPath);
+            respond(ctx, e, new OKResponse(req.getStreamID()));
+        } catch (TimeoutCacheException tce) {
+            respondWithError(ctx, e, req,
+                             XrootdProtocol.kXR_ServerError,
+                             "Internal timeout");
+        } catch (PermissionDeniedCacheException pdce) {
+            respondWithError(ctx, e, req,
+                             XrootdProtocol.kXR_NotAuthorized,
+                             pdce.getMessage());
+        } catch (FileNotFoundCacheException fnfce) {
+            respondWithError(ctx, e, req,
+                             XrootdProtocol.kXR_FSError,
+                             String.format("Source file does not exist (%s) ",
+                                           fnfce.getMessage()));
+        } catch (FileExistsCacheException fece) {
+            respondWithError(ctx, e, req,
+                             XrootdProtocol.kXR_FSError,
+                             String.format("Will not overwrite existing file " +
+                                           "(%s).", fece.getMessage()));
+        } catch (CacheException ce) {
+                respondWithError(ctx, e, req,
+                                 XrootdProtocol.kXR_ServerError,
+                                 String.format("Failed to move file " +
+                                               "(%s [%d]).",
+                                               ce.getMessage(), ce.getRc()));
+        } catch (RuntimeException exp) {
+            _log.error("Mv failed due to a bug", exp);
+            respondWithError(ctx, e, req,
+                             XrootdProtocol.kXR_ServerError,
+                             String.format("Internal server error (%s)",
+                                           exp.getMessage()));
+        }
+    }
+
     protected void doOnClose(ChannelHandlerContext ctx, MessageEvent e, CloseRequest msg)
     {
         unsupported(ctx, e, msg);
@@ -486,12 +560,12 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
      *         the format is corrupted.
      */
     private String checkOperationPermission(FilePerm neededPerm,
-                                          AuthorizableRequestMessage req,
-                                          InetSocketAddress localAddress)
+                                            String path,
+                                            AuthorizableRequestMessage req,
+                                            InetSocketAddress localAddress)
                                  throws PermissionDeniedCacheException {
         AuthorizationHandler authzHandler =
             _door.getAuthorizationFactory().getAuthzHandler();
-        String path = req.getPath();
 
         if (authzHandler != null) {
             // all information neccessary for checking authorization

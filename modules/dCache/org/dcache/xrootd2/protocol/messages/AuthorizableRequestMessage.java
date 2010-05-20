@@ -14,7 +14,6 @@ public abstract class AuthorizableRequestMessage extends AbstractRequestMessage 
 
     public abstract Map<String,String> getOpaqueMap() throws ParseException;
     public abstract String getOpaque();
-    public abstract String getPath();
 
     /**
      * The opaque information is included in the path in a format similar to

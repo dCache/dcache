@@ -80,6 +80,8 @@ public class XrootdDecoder extends FrameDecoder
             return new RmDirRequest(frame);
         case kXR_mkdir:
             return new MkDirRequest(frame);
+        case kXR_mv:
+            return new MvRequest(frame);
         default:
             return new UnknownRequest(frame);
         }

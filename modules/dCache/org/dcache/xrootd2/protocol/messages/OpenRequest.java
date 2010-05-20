@@ -58,7 +58,6 @@ public class OpenRequest extends AuthorizableRequestMessage
         return options;
     }
 
-    @Override
     public String getPath()
     {
         return path;

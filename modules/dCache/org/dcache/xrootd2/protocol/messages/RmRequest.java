@@ -32,7 +32,6 @@ public class RmRequest extends AuthorizableRequestMessage
         }
     }
 
-    @Override
     public String getPath()
     {
         return path;
