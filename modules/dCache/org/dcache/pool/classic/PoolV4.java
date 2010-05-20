@@ -148,7 +148,7 @@ public class PoolV4
 
     private final PoolManagerPingThread _pingThread ;
     private HsmFlushController _flushingThread;
-    private JobScheduler _ioQueue ;
+    private IoQueueManager _ioQueue ;
     private JobScheduler _p2pQueue;
     private JobTimeoutManager _timeoutManager;
     private HsmSet _hsmSet;
@@ -413,7 +413,7 @@ public class PoolV4
         }
 
         _p2pQueue = new SimpleJobScheduler("P2P");
-        _ioQueue = new IoQueueManager(_args.getOpt("io-queues"), _timeoutManager);
+        _ioQueue = new IoQueueManager(_timeoutManager, _args.getOpt("io-queues"));
 
         disablePool(PoolV2Mode.DISABLED_STRICT, 1, "Initializing");
         _pingThread.start();
@@ -592,8 +592,7 @@ public class PoolV4
         pw.println("set p2p "
                    + ((_p2pMode == P2P_INTEGRATED) ? "integrated" : "separated"));
         _flushingThread.printSetup(pw);
-        if (_ioQueue != null)
-            ((IoQueueManager) _ioQueue).printSetup(pw);
+        _ioQueue.printSetup(pw);
         if (_p2pQueue != null) {
             pw.println("p2p set max active " + _p2pQueue.getMaxActiveJobs());
         }
@@ -650,16 +649,14 @@ public class PoolV4
             pw.println("Inventory         : " + _hybridCurrent);
         }
 
-        if (_ioQueue != null) {
-            IoQueueManager manager = (IoQueueManager) _ioQueue;
-            pw.println("Mover Queue Manager : "
-                       + (manager.isConfigured() ? "Active" : "Not Configured"));
-            for (JobScheduler js : manager.getSchedulers()) {
-                pw.println("Mover Queue (" + js.getSchedulerName() + ") "
-                           + js.getActiveJobs() + "(" + js.getMaxActiveJobs()
-                           + ")/" + js.getQueueSize());
-            }
+        pw.println("Mover Queue Manager : "
+                   + (_ioQueue.isConfigured() ? "Active" : "Not Configured"));
+        for (JobScheduler js : _ioQueue.getSchedulers()) {
+            pw.println("Mover Queue (" + js.getSchedulerName() + ") "
+                       + js.getActiveJobs() + "(" + js.getMaxActiveJobs()
+                       + ")/" + js.getQueueSize());
         }
+
         if (_p2pQueue != null)
             pw.println("P2P   Queue " + _p2pQueue.getActiveJobs() + "("
                        + _p2pQueue.getMaxActiveJobs() + ")/"
@@ -677,17 +674,17 @@ public class PoolV4
         throws InvocationTargetException
     {
         String queueName = message.getIoQueueName();
-        IoQueueManager queue = (IoQueueManager) _ioQueue;
+
         if (message instanceof PoolAcceptFileMessage) {
-            return queue.add(queueName, request, SimpleJobScheduler.HIGH);
+            return _ioQueue.add(queueName, request, SimpleJobScheduler.HIGH);
         } else if (message.isPool2Pool()) {
             if (_p2pMode == P2P_INTEGRATED) {
-                return queue.add(request, SimpleJobScheduler.HIGH);
+                return _ioQueue.add(request, SimpleJobScheduler.HIGH);
             } else {
                 return _p2pQueue.add(request, SimpleJobScheduler.HIGH);
             }
         } else {
-            return queue.add(queueName, request, SimpleJobScheduler.REGULAR);
+            return _ioQueue.add(queueName, request, SimpleJobScheduler.REGULAR);
         }
     }
 
@@ -709,9 +706,8 @@ public class PoolV4
              */
             if (!(message instanceof PoolAcceptFileMessage)
                 && !message.isPool2Pool()) {
-                IoQueueManager queue = (IoQueueManager) _ioQueue;
 
-                JobInfo job = queue.findJob(door, id);
+                JobInfo job = _ioQueue.findJob(door, id);
                 if (job != null) {
                     switch (_dupRequest) {
                     case DUP_REQ_NONE:
@@ -724,7 +720,7 @@ public class PoolV4
                         long jobId = job.getJobId();
                         _log.info("Dup Request : refresing <" + door + ":"
                             + id + "> old = " + jobId);
-                        queue.kill((int)jobId, true);
+                        _ioQueue.kill((int)jobId, true);
                         break;
                     default:
                         throw new RuntimeException("Dup Request : PANIC (code corrupted) <"
@@ -1529,9 +1525,8 @@ public class PoolV4
 
                            );
 
-        IoQueueManager manager = (IoQueueManager) _ioQueue;
-        if (manager.isConfigured()) {
-            for (JobScheduler js : manager.getSchedulers()) {
+        if (_ioQueue.isConfigured()) {
+            for (JobScheduler js : _ioQueue.getSchedulers()) {
                 info.addExtendedMoverQueueSizes(js.getSchedulerName(), js
 						.getActiveJobs(), js.getMaxActiveJobs(), js
 						.getQueueSize());
@@ -1932,12 +1927,10 @@ public class PoolV4
     {
         String queueName = args.getOpt("queue");
 
-        IoQueueManager ioManager = (IoQueueManager) _ioQueue;
-
         if (queueName == null)
-            return mover_set_max_active(ioManager.getDefaultScheduler(), args);
+            return mover_set_max_active(_ioQueue.getDefaultScheduler(), args);
 
-        JobScheduler js = ioManager.getSchedulerByName(queueName);
+        JobScheduler js = _ioQueue.getSchedulerByName(queueName);
 
         if (js == null)
             return "Not found : " + queueName;
@@ -1966,17 +1959,16 @@ public class PoolV4
     public Object ac_mover_queue_ls_$_0_1(Args args)
     {
         StringBuilder sb = new StringBuilder();
-        IoQueueManager manager = (IoQueueManager) _ioQueue;
 
         if (args.getOpt("l") != null) {
-            for (JobScheduler js : manager.getSchedulers()) {
+            for (JobScheduler js : _ioQueue.getSchedulers()) {
                 sb.append(js.getSchedulerName())
                     .append(" ").append(js.getActiveJobs())
                     .append(" ").append(js.getMaxActiveJobs())
                     .append(" ").append(js.getQueueSize()).append("\n");
             }
         } else {
-            for (JobScheduler js : manager.getSchedulers()) {
+            for (JobScheduler js : _ioQueue.getSchedulers()) {
                 sb.append(js.getSchedulerName()).append("\n");
             }
         }
@@ -1991,17 +1983,15 @@ public class PoolV4
             return mover_ls(_ioQueue, args);
 
         if (queueName.length() == 0) {
-            IoQueueManager manager = (IoQueueManager) _ioQueue;
             StringBuilder sb = new StringBuilder();
-            for (JobScheduler js : manager.getSchedulers()) {
+            for (JobScheduler js : _ioQueue.getSchedulers()) {
                 sb.append("[").append(js.getSchedulerName()).append("]\n");
                 sb.append(mover_ls(js, args).toString());
             }
             return sb.toString();
         }
-        IoQueueManager manager = (IoQueueManager) _ioQueue;
 
-        JobScheduler js = manager.getSchedulerByName(queueName);
+        JobScheduler js = _ioQueue.getSchedulerByName(queueName);
 
         if (js == null)
             throw new NoSuchElementException(queueName);

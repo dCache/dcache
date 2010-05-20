@@ -23,7 +23,7 @@ class IoQueueManager implements JobScheduler {
     private Map<String, JobScheduler> _hash = new HashMap<String, JobScheduler>();
     private boolean _isConfigured = false;
 
-    public IoQueueManager(String ioQueueList, JobTimeoutManager jobTimeoutManager) {
+    public IoQueueManager(JobTimeoutManager jobTimeoutManager, String ioQueueList) {
         _isConfigured = (ioQueueList != null) && (ioQueueList.length() > 0);
         if (!_isConfigured) {
             ioQueueList = "regular";
@@ -80,7 +80,7 @@ class IoQueueManager implements JobScheduler {
     }
 
     public synchronized int add(String queueName, Runnable runnable, int priority) throws InvocationTargetException {
-        JobScheduler js = (queueName == null) ? null : (JobScheduler) _hash.get(queueName);
+        JobScheduler js = (queueName == null) ? null : _hash.get(queueName);
         return (js == null) ? add(runnable, priority) : js.add(runnable, priority);
     }
 
