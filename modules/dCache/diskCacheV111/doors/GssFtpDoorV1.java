@@ -218,15 +218,6 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         return _gssIdentity.toString();
     }
 
-    protected void resetPwdRecord()
-    {
-    }
-
-    protected boolean setNextPwdRecord()
-    {
-        return false;
-    }
-
     // Some clients, even though the user is already logged in via GSS and ADAT,
     // will send a dummy PASS anyway. "Already logged in" is distracting
     // and the "Going to evaluate strong password" message is misleading

@@ -1135,8 +1135,6 @@ public abstract class AbstractFtpDoorV1
             return;
         }
 
-        resetPwdRecord();
-
         Method m = _methodDict.get(cmd);
         try {
             // Most of this info is printed above.
@@ -1701,26 +1699,16 @@ public abstract class AbstractFtpDoorV1
         }
 
         if (_isUserReadOnly) {
-            if(!setNextPwdRecord()) {
-                reply("500 Command disabled");
-                return;
-            } else {
-                ac_dele(arg);
-                return;
-            }
+            reply("500 Command disabled");
+            return;
         }
 
         String pnfsPath = absolutePath(arg);
 
         try {
             if (_permissionHandler.canDeleteFile(pnfsPath, _subject, _origin) != AccessType.ACCESS_ALLOWED) {
-                if(!setNextPwdRecord()) {
-                    reply("550 Permission denied");
-                    return;
-                } else {
-                    ac_dele(arg);
-                    return;
-                }
+                reply("550 Permission denied");
+                return;
             }
 
             _pnfs.deletePnfsEntry(pnfsPath,
@@ -1731,19 +1719,11 @@ public abstract class AbstractFtpDoorV1
             error("FTP Door: DELE got AclException: " + e.getMessage());
             return;
         } catch (PermissionDeniedCacheException e) {
-            if(!setNextPwdRecord()) {
-                reply("550 Permission denied");
-            } else {
-                ac_dele(arg);
-            }
+            reply("550 Permission denied");
             return;
         } catch (CacheException e) {
             error("FTP Door: DELE got CacheException: " + e.getMessage());
-            if(!setNextPwdRecord()) {
-                reply("550 Permission denied, reason: " + e);
-            } else {
-                ac_dele(arg);
-            }
+            reply("550 Permission denied, reason: " + e);
             return;
         }
         sendRemoveInfoToBilling(pnfsPath);
@@ -1853,46 +1833,26 @@ public abstract class AbstractFtpDoorV1
         }
 
         if (_isUserReadOnly) {
-            if(!setNextPwdRecord()) {
-                reply("500 Command disabled");
-                return;
-            } else {
-                ac_rmd(arg);
-                return;
-            }
+            reply("500 Command disabled");
+            return;
         }
 
         if (_subject.equals(Subjects.NOBODY)) {
-            if(!setNextPwdRecord()) {
-                reply("554 Anonymous write access not permitted");
-                return;
-            } else {
-                ac_rmd(arg);
-                return;
-            }
+            reply("554 Anonymous write access not permitted");
+            return;
         }
 
         String pnfsPath = absolutePath(arg);
         if (pnfsPath == null) {
-            if(!setNextPwdRecord()) {
-                reply("553 Cannot determine full directory pathname in PNFS: " + arg);
-                return;
-            } else {
-                ac_rmd(arg);
-                return;
-            }
+            reply("553 Cannot determine full directory pathname in PNFS: " + arg);
+            return;
         }
 
         try {
             PnfsId pnfsId = _pnfs.getPnfsIdByPath(pnfsPath);
             if (_permissionHandler.canDeleteDir(pnfsId, _subject, _origin) != AccessType.ACCESS_ALLOWED) {
-                if(!setNextPwdRecord()) {
-                    reply("550 Permission denied");
-                    return;
-                } else {
-                    ac_rmd(arg);
-                    return;
-                }
+                reply("550 Permission denied");
+                return;
             }
 
             _pnfs.deletePnfsEntry(pnfsPath, EnumSet.of(FileType.DIR));
@@ -1904,17 +1864,9 @@ public abstract class AbstractFtpDoorV1
         } catch (FileNotFoundCacheException e) {
             reply("550 File not found");
         } catch (PermissionDeniedCacheException e) {
-            if(!setNextPwdRecord()) {
-                reply("550 Permission denied");
-            } else {
-                ac_rmd(arg);
-            }
+            reply("550 Permission denied");
         } catch (CacheException ce) {
-            if(!setNextPwdRecord()) {
-                reply("550 Permission denied, reason: " + ce);
-            } else {
-                ac_rmd(arg);
-            }
+            reply("550 Permission denied, reason: " + ce);
         }
     }
 
@@ -1937,47 +1889,27 @@ public abstract class AbstractFtpDoorV1
         }
 
         if (_isUserReadOnly) {
-            if(!setNextPwdRecord()) {
-                reply("500 Command disabled");
-                return;
-            } else {
-                ac_mkd(arg);
-                return;
-            }
+            reply("500 Command disabled");
+            return;
         }
 
         if (_subject.equals(Subjects.NOBODY)) {
-            if(!setNextPwdRecord()) {
-                reply("554 Anonymous write access not permitted");
-                return;
-            } else {
-                ac_mkd(arg);
-                return;
-            }
+            reply("554 Anonymous write access not permitted");
+            return;
         }
 
         String pnfsPath = absolutePath(arg);
         if (pnfsPath == null) {
-            if(!setNextPwdRecord()) {
-                reply("553 Cannot create directory in PNFS: " + arg);
-                return;
-            } else {
-                ac_mkd(arg);
-                return;
-            }
+            reply("553 Cannot create directory in PNFS: " + arg);
+            return;
         }
 
         try {
             String parent = new File(pnfsPath).getParent();
             PnfsId parentId = _pnfs.getPnfsIdByPath(parent);
             if (_permissionHandler.canCreateDir(parentId, _subject, _origin) != AccessType.ACCESS_ALLOWED) {
-                if(!setNextPwdRecord()) {
-                    reply("553 Permission denied");
-                    return;
-                } else {
-                    ac_mkd(arg);
-                    return;
-                }
+                reply("553 Permission denied");
+                return;
             }
 
             _pnfs.createPnfsDirectory(pnfsPath,
@@ -1989,20 +1921,11 @@ public abstract class AbstractFtpDoorV1
             error("FTP Door: ACL module failed: " + e);
             return;
         } catch (PermissionDeniedCacheException e) {
-            if(!setNextPwdRecord()) {
-                reply("550 Permission denied");
-            } else {
-                ac_mkd(arg);
-            }
+            reply("550 Permission denied");
             return;
         } catch(CacheException ce) {
-            if(!setNextPwdRecord()) {
-                reply("553 Permission denied, reason: "+ce);
-                return;
-            } else {
-                ac_mkd(arg);
-                return;
-            }
+            reply("553 Permission denied, reason: "+ce);
+            return;
         }
         reply("200 OK");
     }
@@ -2297,13 +2220,8 @@ public abstract class AbstractFtpDoorV1
         }
 
         if (_isUserReadOnly) {
-            if(!setNextPwdRecord()) {
-                reply("500 Command disabled");
-                return;
-            } else {
-                doChmod(permstring, path);
-                return;
-            }
+            reply("500 Command disabled");
+            return;
         }
 
         if (path.equals("")){
@@ -2313,13 +2231,8 @@ public abstract class AbstractFtpDoorV1
 
         String pnfsPath = absolutePath(path);
         if (pnfsPath == null) {
-            if(!setNextPwdRecord()) {
-                reply("553 Cannot determine full directory pathname in PNFS: " + path);
-                return;
-            } else {
-                doChmod(permstring, path);
-                return;
-            }
+            reply("553 Cannot determine full directory pathname in PNFS: " + path);
+            return;
         }
 
         int newperms;
@@ -2338,18 +2251,10 @@ public abstract class AbstractFtpDoorV1
                                         EnumSet.of(PNFSID, TYPE,
                                                    OWNER, OWNER_GROUP));
         } catch (PermissionDeniedCacheException e) {
-            if(!setNextPwdRecord()) {
-                reply("550 Permission denied");
-            } else {
-                doChmod(permstring, path);
-            }
+            reply("550 Permission denied");
             return;
         } catch (CacheException ce) {
-            if(!setNextPwdRecord()) {
-                reply("550 Permission denied, reason: " + ce);
-            } else {
-                doChmod(permstring, path);
-            }
+            reply("550 Permission denied, reason: " + ce);
             return;
         }
 
@@ -2362,21 +2267,13 @@ public abstract class AbstractFtpDoorV1
 
         // Only file/directory owner can change permissions on that file/directory
         if (!Subjects.hasUid(_subject, myUid)) {
-            if(!setNextPwdRecord()) {
-                reply("550 Permission denied. Only owner can change permissions.");
-            } else {
-                doChmod(permstring, path);
-            }
+            reply("550 Permission denied. Only owner can change permissions.");
             return;
         }
 
         // Chmod on symbolic links not yet supported (should change perms on file/dir pointed to)
         if (isASymLink) {
-            if(!setNextPwdRecord()) {
-                reply("502 chmod of symbolic links is not yet supported.");
-            } else {
-                doChmod(permstring, path);
-            }
+            reply("502 chmod of symbolic links is not yet supported.");
             return;
         }
 
@@ -2702,13 +2599,6 @@ public abstract class AbstractFtpDoorV1
             //PnfsId pnfsId = _pnfs.getPnfsIdByPath(_transfer.path);
             try {
                 if (_permissionHandler.canReadFile(_transfer.path, _subject, _origin) != AccessType.ACCESS_ALLOWED) {
-                    if(setNextPwdRecord()) {
-                        retrieve(file, offset, size,
-                                 mode, xferMode,
-                                 parallel,
-                                 client, bufSize, reply127, version);
-                        return;
-                    }
                     throw new FTPCommandException(550, "Permission denied");
                 }
             }catch(ACLException e) {
@@ -2923,25 +2813,11 @@ public abstract class AbstractFtpDoorV1
             }
 
             if (_isUserReadOnly) {
-                if(!setNextPwdRecord()) {
-                    throw new FTPCommandException(500, "Command disabled");
-                } else {
-                    store(file, mode, xferMode,
-                          parallel,
-                          client, bufSize, reply127, version);
-                    return;
-                }
+                throw new FTPCommandException(500, "Command disabled");
             }
 
             if (_subject.equals(Subjects.NOBODY)) {
-                if(!setNextPwdRecord()) {
-                    throw new FTPCommandException(554, "Anonymous write access not permitted");
-                } else {
-                    store(file, mode, xferMode,
-                          parallel,
-                          client, bufSize, reply127, version);
-                    return;
-                }
+                throw new FTPCommandException(554, "Anonymous write access not permitted");
             }
 
             /* Set ownership and other information for transfer.
@@ -2988,17 +2864,10 @@ public abstract class AbstractFtpDoorV1
             String parent = new File(_transfer.path).getParent();
             PnfsId parentId = _pnfs.getPnfsIdByPath(parent);
             if (_permissionHandler.canCreateFile(parentId, _subject, _origin) != AccessType.ACCESS_ALLOWED) {
-                if(!setNextPwdRecord()) {
-                    throw new FTPCommandException
-                        (550,
-                         "Permission denied",
-                         "Permission denied for path: " + _transfer.path);
-                } else {
-                    store(file, mode, xferMode,
-                          parallel,
-                          client, bufSize, reply127, version);
-                    return;
-                }
+                throw new FTPCommandException
+                    (550,
+                     "Permission denied",
+                     "Permission denied for path: " + _transfer.path);
             }
 
             /* Create PNFS entry.
@@ -3554,11 +3423,7 @@ public abstract class AbstractFtpDoorV1
                 _pnfs.getFileAttributes(path, EnumSet.of(PNFSID, SIZE));
             PnfsId pnfsId = attributes.getPnfsId();
             if (_permissionHandler.canGetAttributes(pnfsId, _subject, _origin, FileAttribute.FATTR4_SIZE) != AccessType.ACCESS_ALLOWED) {
-                if(!setNextPwdRecord()) {
-                    reply("553 Permission denied");
-                } else {
-                    ac_size(arg);
-                }
+                reply("553 Permission denied");
                 return;
             }
             filelength = attributes.getSize();
@@ -3601,11 +3466,7 @@ public abstract class AbstractFtpDoorV1
                                         EnumSet.of(PNFSID, MODIFICATION_TIME));
             PnfsId pnfsId = attributes.getPnfsId();
             if (_permissionHandler.canGetAttributes(pnfsId, _subject, _origin, FileAttribute.FATTR4_SUPPORTED_ATTRS) != AccessType.ACCESS_ALLOWED) {
-                if(!setNextPwdRecord()) {
-                    reply("550 Permission denied");
-                } else {
-                    ac_mdtm(arg);
-                }
+                reply("550 Permission denied");
                 return;
             }
 
@@ -4049,10 +3910,6 @@ public abstract class AbstractFtpDoorV1
         _transfer.state = "mover " + transfer.moverId
             + (isWrite ? ": receiving" : ": sending");
     }
-
-    abstract protected boolean setNextPwdRecord();
-
-    abstract protected void resetPwdRecord();
 
     private class PerfMarkerTask
         extends TimerTask implements CellMessageAnswerable

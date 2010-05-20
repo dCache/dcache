@@ -145,18 +145,4 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
                   "Ignoring exception: " + e.getMessage());
         }
     }
-
-    public void echoStr1(String str) {
-    }
-
-    protected void resetPwdRecord()
-    {
-    }
-
-    protected boolean setNextPwdRecord()
-    {
-        return false;
-    }
-
-
 }
