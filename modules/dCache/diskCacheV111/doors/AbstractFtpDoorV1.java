@@ -160,9 +160,6 @@ import diskCacheV111.util.ChecksumPersistence;
 import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.Checksum;
 import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.services.acl.PermissionHandler;
-import diskCacheV111.services.acl.DelegatingPermissionHandler;
-import diskCacheV111.services.acl.GrantAllPermissionHandler;
 
 import org.dcache.namespace.FileType;
 import org.dcache.auth.FQANPrincipal;
@@ -177,10 +174,7 @@ import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.cells.AbstractCell;
 import org.dcache.cells.Option;
-import org.dcache.acl.ACLException;
 import org.dcache.acl.enums.AccessType;
-import org.dcache.acl.enums.FileAttribute;
-import org.dcache.acl.enums.InetAddressType;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
@@ -401,18 +395,6 @@ public abstract class AbstractFtpDoorV1
      * User's Origin
      */
     protected Origin _origin;
-
-    /**
-     * Permission Handler
-     */
-    protected PermissionHandler _permissionHandler;
-
-    @Option(
-        name = "permission-handler",
-        description = "Permission handler class names",
-        defaultValue = ""
-    )
-    protected String _permissionHandlerClasses;
 
     @Option(
         name = "poolManager",
@@ -1022,20 +1004,9 @@ public abstract class AbstractFtpDoorV1
 
         _pnfs = new PnfsHandler(this, new CellPath(_pnfsManager));
         _pnfs.setPnfsTimeout(_pnfsTimeout * 1000L);
+        _pnfs.setSubject(_subject);
         _listSource = new ListDirectoryHandler(_pnfs);
         addMessageListener(_listSource);
-
-        try {
-            if (_permissionHandlerClasses != null) {
-                _permissionHandler = new DelegatingPermissionHandler(this);
-            } else {
-                _permissionHandler = new GrantAllPermissionHandler();
-                _pnfs.setSubject(_subject);
-            }
-        } catch (ACLException e) {
-            throw new CacheException("Login failed due to internal error: " +
-                                     e.getMessage());
-        }
     }
 
     protected AdminCommandListener adminCommandListener;
@@ -1706,18 +1677,8 @@ public abstract class AbstractFtpDoorV1
         String pnfsPath = absolutePath(arg);
 
         try {
-            if (_permissionHandler.canDeleteFile(pnfsPath, _subject, _origin) != AccessType.ACCESS_ALLOWED) {
-                reply("550 Permission denied");
-                return;
-            }
-
             _pnfs.deletePnfsEntry(pnfsPath,
                                   EnumSet.of(FileType.REGULAR, FileType.LINK));
-
-        }catch(ACLException e) {
-            reply("550 Permission denied");
-            error("FTP Door: DELE got AclException: " + e.getMessage());
-            return;
         } catch (PermissionDeniedCacheException e) {
             reply("550 Permission denied");
             return;
@@ -1849,18 +1810,8 @@ public abstract class AbstractFtpDoorV1
         }
 
         try {
-            PnfsId pnfsId = _pnfs.getPnfsIdByPath(pnfsPath);
-            if (_permissionHandler.canDeleteDir(pnfsId, _subject, _origin) != AccessType.ACCESS_ALLOWED) {
-                reply("550 Permission denied");
-                return;
-            }
-
             _pnfs.deletePnfsEntry(pnfsPath, EnumSet.of(FileType.DIR));
-
             reply("200 OK");
-        }catch(ACLException e) {
-            reply("550 Permission denied, reason (Acl) ");
-            error("FTP Door: ACL module failed: " + e);
         } catch (FileNotFoundCacheException e) {
             reply("550 File not found");
         } catch (PermissionDeniedCacheException e) {
@@ -1905,29 +1856,16 @@ public abstract class AbstractFtpDoorV1
         }
 
         try {
-            String parent = new File(pnfsPath).getParent();
-            PnfsId parentId = _pnfs.getPnfsIdByPath(parent);
-            if (_permissionHandler.canCreateDir(parentId, _subject, _origin) != AccessType.ACCESS_ALLOWED) {
-                reply("553 Permission denied");
-                return;
-            }
-
             _pnfs.createPnfsDirectory(pnfsPath,
                                       (int) Subjects.getUid(_subject),
                                       (int) Subjects.getPrimaryGid(_subject),
                                       0755);
-        }catch(ACLException e) {
-            reply("550 Permission denied, reason (Acl) ");
-            error("FTP Door: ACL module failed: " + e);
-            return;
+            reply("200 OK");
         } catch (PermissionDeniedCacheException e) {
             reply("550 Permission denied");
-            return;
         } catch(CacheException ce) {
             reply("553 Permission denied, reason: "+ce);
-            return;
         }
-        reply("200 OK");
     }
 
     public void ac_help(String arg)
@@ -2594,20 +2532,6 @@ public abstract class AbstractFtpDoorV1
             FsPath relativeToRootPath = new FsPath(_curDirV);
             relativeToRootPath.add(file);
 
-            /* Check file permissions.
-             */
-            //PnfsId pnfsId = _pnfs.getPnfsIdByPath(_transfer.path);
-            try {
-                if (_permissionHandler.canReadFile(_transfer.path, _subject, _origin) != AccessType.ACCESS_ALLOWED) {
-                    throw new FTPCommandException(550, "Permission denied");
-                }
-            }catch(ACLException e) {
-                error("FTP Door: ACL module failed: " + e);
-                throw new FTPCommandException(550, "Permission denied, reason (Acl)");
-            } catch(NotFileCacheException ce ) {
-                throw new FTPCommandException(501, "Not a file");
-            }
-
             info("FTP Door: retrieve user=" + getUser());
             info("FTP Door: retrieve vpath=" + relativeToRootPath);
             info("FTP Door: retrieve addr=" + _engine.getInetAddress().toString());
@@ -2856,20 +2780,6 @@ public abstract class AbstractFtpDoorV1
             startTlog(_transfer.path, "write");
             debug("FTP Door: store: _tLog begin done");
 
-            /* Check if the user has permission to create the file.
-             */
-            _transfer.state = "checking permissions via permission handler";
-            info("FTP Door: store: checking permissions via permission " +
-                 "handler for path: " + _transfer.path);
-            String parent = new File(_transfer.path).getParent();
-            PnfsId parentId = _pnfs.getPnfsIdByPath(parent);
-            if (_permissionHandler.canCreateFile(parentId, _subject, _origin) != AccessType.ACCESS_ALLOWED) {
-                throw new FTPCommandException
-                    (550,
-                     "Permission denied",
-                     "Permission denied for path: " + _transfer.path);
-            }
-
             /* Create PNFS entry.
              */
             _transfer.state = "creating pnfs entry";
@@ -2980,8 +2890,6 @@ public abstract class AbstractFtpDoorV1
                                 _perfMarkerConf.period,
                                 _perfMarkerConf.period);
             }
-        } catch (ACLException e) {
-            abortTransfer(550, "Permission denied, ACL failure", e);
         } catch (FTPCommandException e) {
             abortTransfer(e.getCode(), e.getReply());
         } catch (InterruptedException e) {
@@ -3420,17 +3328,8 @@ public abstract class AbstractFtpDoorV1
         long filelength = 0;
         try {
             FileAttributes attributes =
-                _pnfs.getFileAttributes(path, EnumSet.of(PNFSID, SIZE));
-            PnfsId pnfsId = attributes.getPnfsId();
-            if (_permissionHandler.canGetAttributes(pnfsId, _subject, _origin, FileAttribute.FATTR4_SIZE) != AccessType.ACCESS_ALLOWED) {
-                reply("553 Permission denied");
-                return;
-            }
+                _pnfs.getFileAttributes(path, EnumSet.of(SIZE));
             filelength = attributes.getSize();
-        } catch(ACLException e) {
-            reply("550 Permission denied, reason (Acl) ");
-            error("FTP Door: ACL module failed: " + e);
-            return;
         } catch (PermissionDeniedCacheException e) {
             reply("550 Permission denied");
             return;
@@ -3463,21 +3362,11 @@ public abstract class AbstractFtpDoorV1
             long modification_time;
             FileAttributes attributes =
                 _pnfs.getFileAttributes(path,
-                                        EnumSet.of(PNFSID, MODIFICATION_TIME));
-            PnfsId pnfsId = attributes.getPnfsId();
-            if (_permissionHandler.canGetAttributes(pnfsId, _subject, _origin, FileAttribute.FATTR4_SUPPORTED_ATTRS) != AccessType.ACCESS_ALLOWED) {
-                reply("550 Permission denied");
-                return;
-            }
-
+                                        EnumSet.of(MODIFICATION_TIME));
             modification_time = attributes.getModificationTime();
             String time_val =
                 TIMESTAMP_FORMAT.format(new Date(modification_time));
             reply("213 " + time_val);
-        } catch(ACLException e) {
-            reply("451 Internal permission check failure: " +
-                  e.getMessage());
-            error("Error in MDTM: " + e);
         } catch (PermissionDeniedCacheException e) {
             reply("550 Permission denied");
         } catch (CacheException e) {
