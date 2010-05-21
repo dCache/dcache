@@ -11,8 +11,8 @@ import org.dcache.gplazma.SessionID;
  */
 public interface GPlazmaAuthenticationPlugin extends GPlazmaPlugin {
     public void authenticate(SessionID sID,
-                             Set<Object> publicCredential,
-                             Set<Object> privateCredential,
+                             Set<Object> publicCredentials,
+                             Set<Object> privateCredentials,
                              Set<Principal> identifiedPrincipals)
                 throws AuthenticationException;
 }
