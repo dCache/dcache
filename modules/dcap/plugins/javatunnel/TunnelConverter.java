@@ -5,6 +5,7 @@
 package javatunnel;
 
 import java.io.*;
+import javax.security.auth.Subject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -86,22 +87,14 @@ class TunnelConverter implements Convertable,UserBindible  {
         }
         return true;
     }
-    
-    public String getUserPrincipal() {
-        return "nobody@NOWHERE";
-    }
-    
-    public Convertable makeCopy( ) {
+
+    @Override
+    public Convertable makeCopy() {
         return this;
     }
 
-	public String getGroup() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public String getRole() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public Subject getSubject() {
+        return new Subject();
+    }
 }

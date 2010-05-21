@@ -1,34 +1,23 @@
 package org.dcache.xrootd2.door;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.GeneralSecurityException;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Collections;
 import java.nio.channels.ClosedChannelException;
-import java.math.BigInteger;
 import java.security.SecureRandom;
 
-import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.xrootd2.protocol.XrootdProtocol;
-import org.dcache.xrootd2.protocol.messages.AbstractResponseMessage;
+import org.dcache.xrootd2.protocol.messages.AuthorizableRequestMessage;
 import org.dcache.xrootd2.protocol.messages.CloseRequest;
-import org.dcache.xrootd2.protocol.messages.ErrorResponse;
 import org.dcache.xrootd2.protocol.messages.OpenRequest;
-import org.dcache.xrootd2.protocol.messages.ReadRequest;
-import org.dcache.xrootd2.protocol.messages.ReadVRequest;
 import org.dcache.xrootd2.protocol.messages.RedirectResponse;
 import org.dcache.xrootd2.protocol.messages.StatRequest;
 import org.dcache.xrootd2.protocol.messages.StatResponse;
 import org.dcache.xrootd2.protocol.messages.StatxRequest;
 import org.dcache.xrootd2.protocol.messages.StatxResponse;
-import org.dcache.xrootd2.protocol.messages.SyncRequest;
-import org.dcache.xrootd2.protocol.messages.WriteRequest;
 import org.dcache.xrootd2.security.AuthorizationHandler;
 import org.dcache.xrootd2.util.FileStatus;
 import org.dcache.xrootd2.util.ParseException;
@@ -37,12 +26,13 @@ import org.dcache.xrootd2.protocol.messages.*;
 import static org.dcache.xrootd2.protocol.XrootdProtocol.*;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.DirNotExistsCacheException;
+import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileMetaData;
-import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.util.FileMetaData.Permissions;
-import diskCacheV111.vehicles.ProtocolInfo;
-import diskCacheV111.vehicles.StorageInfo;
-
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipelineCoverage;
 import org.jboss.netty.channel.Channel;
@@ -153,76 +143,38 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
             (InetSocketAddress) channel.getLocalAddress();
         InetSocketAddress remoteAddress =
             (InetSocketAddress) channel.getRemoteAddress();
-        String path = req.getPath();
         int options = req.getOptions();
-        boolean isWrite = req.isNew() || req.isReadWrite();
 
-        _log.info("Opening {} for {}", path, (isWrite ? "write" : "read"));
+        FilePerm neededPerm;
+
+        if (req.isNew() || req.isReadWrite()) {
+            neededPerm = FilePerm.WRITE;
+        } else {
+            neededPerm = FilePerm.READ;
+        }
+
+        _log.info("Opening {} for {}", req.getPath(), neededPerm.xmlText());
         if (_log.isDebugEnabled()) {
             logDebugOnOpen(req);
         }
 
         try {
-            AuthorizationHandler authzHandler =
-                _door.getAuthorizationFactory().getAuthzHandler();
-            if (authzHandler != null) {
-                // all information neccessary for checking authorization
-                // is found in opaque
-                Map opaque;
-                try {
-                    opaque = req.getOpaqueMap();
-                } catch (ParseException e) {
-                    StringBuffer msg =
-                        new StringBuffer("invalid opaque data: ");
-                    msg.append(e);
-                    String s = req.getOpaque();
-                    if (s != null) {
-                        msg.append(" opaque=").append(s);
-                    }
-                    throw new CacheException(CacheException.PERMISSION_DENIED,
-                                             msg.toString());
-                }
-
-                boolean isAuthorized = false;
-                try {
-                    isAuthorized =
-                        authzHandler.checkAuthz(path, opaque, isWrite,
-                                                localAddress);
-                } catch (GeneralSecurityException e) {
-                    throw new CacheException(CacheException.PERMISSION_DENIED,
-                                              "authorization check failed: " +
-                                              e.getMessage());
-                }
-
-                if (!isAuthorized) {
-                    throw new CacheException(CacheException.PERMISSION_DENIED,
-                                              "not authorized");
-                }
-
-                // In case of enabled authorization, the path in the open
-                // request can refer to the lfn.  In this case the real
-                // path is delivered by the authz plugin
-                if (authzHandler.providesPFN()) {
-                    _log.info("access granted for LFN={} PFN={}",
-                              path, authzHandler.getPFN());
-
-                    // get the real path (pfn) which we will open
-                    path = authzHandler.getPFN();
-                }
-            }
-
+           String authPath = checkOperationPermission(neededPerm,
+                                                      req.getPath(),
+                                                      req,
+                                                      localAddress);
             ////////////////////////////////////////////////////////////////
             // interact with core dCache to open the requested file
             long checksum = req.calcChecksum();
             XrootdTransfer transfer;
-            if (isWrite) {
+            if (neededPerm == FilePerm.WRITE) {
                 boolean createDir = (options & XrootdProtocol.kXR_mkpath) ==
                     XrootdProtocol.kXR_mkpath;
                 transfer =
-                    _door.write(remoteAddress, path, checksum, createDir);
+                    _door.write(remoteAddress, authPath, checksum, createDir);
             } else {
                 transfer =
-                    _door.read(remoteAddress, path, checksum);
+                    _door.read(remoteAddress, authPath, checksum);
             }
 
             // ok, open was successful
@@ -232,45 +184,31 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                     new RedirectResponse(req.getStreamID(),
                                          address.getHostName(),
                                          address.getPort()));
-        } catch (CacheException e) {
-            switch (e.getRc()) {
-            case CacheException.FILE_NOT_FOUND:
-                respondWithError(ctx, event, req,
-                                 XrootdProtocol.kXR_FileNotOpen,
-                                 "No such file");
-                break;
-
-            case CacheException.DIR_NOT_EXISTS:
-                respondWithError(ctx, event, req,
-                                 XrootdProtocol.kXR_FileNotOpen,
-                                 "No such directory");
-                break;
-
-            case CacheException.FILE_EXISTS:
-                respondWithError(ctx, event, req,
-                                 XrootdProtocol.kXR_Unsupported,
-                                 "File already exists");
-                break;
-
-            case CacheException.TIMEOUT:
-                respondWithError(ctx, event, req,
-                                 XrootdProtocol.kXR_ServerError,
-                                 "Internal timeout");
-                break;
-
-            case CacheException.PERMISSION_DENIED:
-                respondWithError(ctx, event, req,
-                                 XrootdProtocol.kXR_NotAuthorized,
-                                 e.getMessage());
-                break;
-
-            default:
-                respondWithError(ctx, event, req,
-                                 XrootdProtocol.kXR_ServerError,
-                                 String.format("Failed to open file (%s [%d])",
-                                               e.getMessage(), e.getRc()));
-                break;
-            }
+        } catch (FileNotFoundCacheException fnfex) {
+            respondWithError(ctx, event, req,
+                             XrootdProtocol.kXR_FileNotOpen,
+                             "No such file");
+        } catch (DirNotExistsCacheException dnex) {
+            respondWithError(ctx, event, req,
+                             XrootdProtocol.kXR_FileNotOpen,
+                             "No such directory");
+        } catch (FileExistsCacheException feex) {
+            respondWithError(ctx, event, req,
+                             XrootdProtocol.kXR_Unsupported,
+                             "File already exists");
+        } catch (TimeoutCacheException tex) {
+            respondWithError(ctx, event, req,
+                             XrootdProtocol.kXR_ServerError,
+                             "Internal timeout");
+        } catch (PermissionDeniedCacheException pdex) {
+            respondWithError(ctx, event, req,
+                             XrootdProtocol.kXR_NotAuthorized,
+                             pdex.getMessage());
+        } catch (CacheException ex) {
+            respondWithError(ctx, event, req,
+                             XrootdProtocol.kXR_ServerError,
+                             String.format("Failed to open file (%s [%d])",
+                                           ex.getMessage(), ex.getRc()));
         } catch (InterruptedException e) {
             /* Interrupt may be caused by cell shutdown or client
              * disconnect.  If the client disconnected, then the error
@@ -383,6 +321,220 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         }
     }
 
+
+    @Override
+    protected void doOnRm(ChannelHandlerContext ctx, MessageEvent e, RmRequest req)
+    {
+        Channel channel = e.getChannel();
+        InetSocketAddress localAddress =
+                            (InetSocketAddress) channel.getLocalAddress();
+        if (req.getPath().isEmpty()) {
+            respondWithError(ctx, e, req,
+                             kXR_ArgMissing, "no path specified");
+            return;
+        }
+
+        _log.info("Trying to delete {}", req.getPath());
+
+        try {
+            String authPath = checkOperationPermission(FilePerm.DELETE,
+                                                       req.getPath(),
+                                                       req, localAddress);
+
+            _door.deleteFile(authPath);
+            respond(ctx, e, new OKResponse(req.getStreamID()));
+        } catch (TimeoutCacheException tce) {
+                respondWithError(ctx, e, req,
+                                 XrootdProtocol.kXR_ServerError,
+                                 "Internal timeout");
+        } catch (PermissionDeniedCacheException pdce) {
+                respondWithError(ctx, e, req,
+                                 XrootdProtocol.kXR_NotAuthorized,
+                                 pdce.getMessage());
+        } catch (CacheException ce) {
+                respondWithError(ctx, e, req,
+                                 XrootdProtocol.kXR_ServerError,
+                                 String.format("Failed to delete file (%s [%d])",
+                                               ce.getMessage(), ce.getRc()));
+        } catch (RuntimeException exp) {
+            _log.error("Rm failed due to a bug", exp);
+            respondWithError(ctx, e, req,
+                             XrootdProtocol.kXR_ServerError,
+                             String.format("Internal server error (%s)",
+                                           exp.getMessage()));
+        }
+    }
+
+    @Override
+    protected void doOnRmDir(ChannelHandlerContext ctx, MessageEvent e,
+                             RmDirRequest req)
+    {
+        Channel channel = e.getChannel();
+        InetSocketAddress localAddress =
+                            (InetSocketAddress) channel.getLocalAddress();
+        if (req.getPath().isEmpty()) {
+            respondWithError(ctx, e, req,
+                             kXR_ArgMissing, "no path specified");
+            return;
+        }
+
+        _log.info("Trying to delete directory {}", req.getPath());
+
+        try {
+            String authPath = checkOperationPermission(FilePerm.DELETE,
+                                                       req.getPath(),
+                                                       req, localAddress);
+
+            _door.deleteDirectory(authPath);
+            respond(ctx, e, new OKResponse(req.getStreamID()));
+        } catch (TimeoutCacheException tce) {
+            respondWithError(ctx, e, req,
+                             XrootdProtocol.kXR_ServerError,
+                             "Internal timeout");
+        } catch (PermissionDeniedCacheException pdce) {
+            respondWithError(ctx, e, req,
+                             XrootdProtocol.kXR_NotAuthorized,
+                             pdce.getMessage());
+        } catch (FileNotFoundCacheException fnfce) {
+            respondWithError(ctx, e, req,
+                             XrootdProtocol.kXR_FSError,
+                             fnfce.getMessage());
+        } catch (CacheException ce) {
+                respondWithError(ctx, e, req,
+                                 XrootdProtocol.kXR_ServerError,
+                                 String.format("Failed to delete directory " +
+                                               "(%s [%d]).",
+                                               ce.getMessage(), ce.getRc()));
+        } catch (RuntimeException exp) {
+            _log.error("RmDir failed due to a bug", exp);
+            respondWithError(ctx, e, req,
+                             XrootdProtocol.kXR_ServerError,
+                             String.format("Internal server error (%s)",
+                                           exp.getMessage()));
+        }
+    }
+
+    @Override
+    protected void doOnMkDir(ChannelHandlerContext ctx, MessageEvent e,
+                             MkDirRequest req) {
+        Channel channel = e.getChannel();
+        InetSocketAddress localAddress =
+                            (InetSocketAddress) channel.getLocalAddress();
+        if (req.getPath().isEmpty()) {
+            respondWithError(ctx, e, req,
+                             kXR_ArgMissing, "no path specified");
+            return;
+        }
+
+        _log.info("Trying to create directory {}", req.getPath());
+
+        try {
+            String authPath = checkOperationPermission(FilePerm.WRITE,
+                                                       req.getPath(),
+                                                       req, localAddress);
+
+            _door.createDirectory(authPath, req.shouldMkPath());
+            respond(ctx, e, new OKResponse(req.getStreamID()));
+        } catch (TimeoutCacheException tce) {
+            respondWithError(ctx, e, req,
+                             XrootdProtocol.kXR_ServerError,
+                             "Internal timeout");
+        } catch (PermissionDeniedCacheException pdce) {
+            respondWithError(ctx, e, req,
+                             XrootdProtocol.kXR_NotAuthorized,
+                             pdce.getMessage());
+        } catch (FileNotFoundCacheException fnfce) {
+            respondWithError(ctx, e, req,
+                             XrootdProtocol.kXR_FSError,
+                             fnfce.getMessage());
+        } catch (FileExistsCacheException fece) {
+            respondWithError(ctx, e, req,
+                             XrootdProtocol.kXR_FSError,
+                             fece.getMessage());
+        } catch (CacheException ce) {
+                respondWithError(ctx, e, req,
+                                 XrootdProtocol.kXR_ServerError,
+                                 String.format("Failed to create directory " +
+                                               "(%s [%d]).",
+                                               ce.getMessage(), ce.getRc()));
+        } catch (RuntimeException exp) {
+            _log.error("MkDir failed due to a bug", exp);
+            respondWithError(ctx, e, req,
+                             XrootdProtocol.kXR_ServerError,
+                             String.format("Internal server error (%s)",
+                                           exp.getMessage()));
+        }
+    }
+
+    @Override
+    protected void doOnMv(ChannelHandlerContext ctx, MessageEvent e,
+                          MvRequest req) {
+        Channel channel = e.getChannel();
+        InetSocketAddress localAddress =
+                            (InetSocketAddress) channel.getLocalAddress();
+
+        String sourcePath = req.getSourcePath();
+        if (sourcePath.isEmpty()) {
+            respondWithError(ctx, e, req,
+                             kXR_ArgMissing, "no source path specified");
+            return;
+        }
+
+        String targetPath = req.getTargetPath();
+        if (targetPath.isEmpty()) {
+            respondWithError(ctx, e, req,
+                             kXR_ArgMissing, "no target path specified");
+        }
+
+        _log.info("Trying to rename {} to {}", req.getSourcePath(),
+                                               req.getTargetPath());
+
+        try {
+            String authSourcePath = checkOperationPermission(FilePerm.DELETE,
+                                                             req.getSourcePath(),
+                                                             req,
+                                                             localAddress);
+
+            String authTargetPath = checkOperationPermission(FilePerm.WRITE,
+                                                             req.getTargetPath(),
+                                                             req,
+                                                             localAddress);
+
+            _door.moveFile(authSourcePath, authTargetPath);
+            respond(ctx, e, new OKResponse(req.getStreamID()));
+        } catch (TimeoutCacheException tce) {
+            respondWithError(ctx, e, req,
+                             XrootdProtocol.kXR_ServerError,
+                             "Internal timeout");
+        } catch (PermissionDeniedCacheException pdce) {
+            respondWithError(ctx, e, req,
+                             XrootdProtocol.kXR_NotAuthorized,
+                             pdce.getMessage());
+        } catch (FileNotFoundCacheException fnfce) {
+            respondWithError(ctx, e, req,
+                             XrootdProtocol.kXR_FSError,
+                             String.format("Source file does not exist (%s) ",
+                                           fnfce.getMessage()));
+        } catch (FileExistsCacheException fece) {
+            respondWithError(ctx, e, req,
+                             XrootdProtocol.kXR_FSError,
+                             String.format("Will not overwrite existing file " +
+                                           "(%s).", fece.getMessage()));
+        } catch (CacheException ce) {
+                respondWithError(ctx, e, req,
+                                 XrootdProtocol.kXR_ServerError,
+                                 String.format("Failed to move file " +
+                                               "(%s [%d]).",
+                                               ce.getMessage(), ce.getRc()));
+        } catch (RuntimeException exp) {
+            _log.error("Mv failed due to a bug", exp);
+            respondWithError(ctx, e, req,
+                             XrootdProtocol.kXR_ServerError,
+                             String.format("Internal server error (%s)",
+                                           exp.getMessage()));
+        }
+    }
+
     protected void doOnClose(ChannelHandlerContext ctx, MessageEvent e, CloseRequest msg)
     {
         unsupported(ctx, e, msg);
@@ -391,6 +543,76 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
     protected void doOnProtocolRequest(ChannelHandlerContext ctx, MessageEvent e, ProtocolRequest msg)
     {
         unsupported(ctx, e, msg);
+    }
+
+    /**
+     * Check if the permissions on the path sent along with the request message
+     * satisfy the required permission level.
+     * @param neededPerm The permission level that is required for the operation
+     * @param req The actual request, containing path and authZ token
+     * @param localAddress The local address, needed for token endpoint
+     *        verification
+     * @return The path referring to the LFN in the request, if the request
+     *         contained a LFN. The path from the request, if the request
+     *         contained an absolute path.
+     * @throws PermissionDeniedCacheException The needed permissions are not
+     *         present in the authZ token, the authZ token is not present or
+     *         the format is corrupted.
+     */
+    private String checkOperationPermission(FilePerm neededPerm,
+                                            String path,
+                                            AuthorizableRequestMessage req,
+                                            InetSocketAddress localAddress)
+                                 throws PermissionDeniedCacheException {
+        AuthorizationHandler authzHandler =
+            _door.getAuthorizationFactory().getAuthzHandler();
+
+        if (authzHandler != null) {
+            // all information neccessary for checking authorization
+            // is found in opaque
+            Map<String, String> opaque;
+            try {
+                opaque = req.getOpaqueMap();
+            } catch (ParseException e) {
+                StringBuffer msg =
+                    new StringBuffer("invalid opaque data: ");
+                msg.append(e);
+                String s = req.getOpaque();
+                if (s != null) {
+                    msg.append(" opaque=").append(s);
+                }
+                throw new PermissionDeniedCacheException(msg.toString());
+            }
+
+            boolean isAuthorized;
+
+            try {
+                isAuthorized =
+                    authzHandler.checkAuthz(path, opaque, neededPerm,
+                                            localAddress);
+            } catch (GeneralSecurityException e) {
+                throw new PermissionDeniedCacheException("authorization check"
+                                                         + "failed: " +
+                                                         e.getMessage());
+            }
+
+            if (!isAuthorized) {
+                throw new PermissionDeniedCacheException("not authorized");
+            }
+
+            // In case of enabled authorization, the path in the open
+            // request can refer to the lfn.  In this case the real
+            // path is delivered by the authz plugin
+            if (authzHandler.providesPFN()) {
+                _log.info("access granted for LFN={} PFN={}",
+                          path, authzHandler.getPFN());
+
+                // get the real path (pfn) which we will open
+                return authzHandler.getPFN();
+            }
+        }
+
+        return path;
     }
 
     private void logDebugOnOpen(OpenRequest req)

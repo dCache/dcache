@@ -4,14 +4,10 @@
 
 package javatunnel;
 
+import javax.security.auth.Subject;
+
 
 public interface UserBindible {
 
-    public String getUserPrincipal();
-	public String getGroup();
-	public String getRole();
-	
+    Subject getSubject();
 }
-/*
- * $Log: not supported by cvs2svn $
- */

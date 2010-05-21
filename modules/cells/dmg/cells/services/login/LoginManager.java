@@ -922,11 +922,11 @@ public void cleanUp(){
           }else if( _protocol.equals( "telnet" ) ){
               engine = new TelnetStreamEngine( _socket , (TelnetServerAuthentication)auth ) ;
           }
-          say( "acceptThread ("+t+"): connection created for user "+engine.getUserName() ) ;
+          String userName = Subjects.getDisplayName(engine.getSubject());
+          say( "acceptThread ("+t+"): connection created for user "+userName ) ;
           Object [] args ;
           //
           //
-          String userName = engine.getUserName().getName() ;
           int p = userName.indexOf('@');
 
           if( p > -1 )userName = p == 0 ? "unknown" : userName.substring(0,p);

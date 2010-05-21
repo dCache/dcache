@@ -1623,7 +1623,7 @@ public class PoolSelectionUnitV2
 
         try {
             long start = System.currentTimeMillis();
-            StorageInfo si = storageInfoOf(args.argv(1), args.argv(2));
+            StorageInfo si = GenericStorageInfo.valueOf(args.argv(1), args.argv(2));
 
             PoolPreferenceLevel[] list = match(args.argv(0).equals("*") ? DirectionType.ANY
                     : DirectionType.valueOf(args.argv(0).toUpperCase()),
@@ -2168,7 +2168,7 @@ public class PoolSelectionUnitV2
 
     public Object ac_psux_match_$_5(Args args) throws Exception {
 
-        StorageInfo si = storageInfoOf(args.argv(1), args.argv(2));
+        StorageInfo si = GenericStorageInfo.valueOf(args.argv(1), args.argv(2));
 
         PoolPreferenceLevel[] list = match(DirectionType.valueOf(args.argv(0).toUpperCase()),
                 args.argv(3).equals("*") ? null : args.argv(3),
@@ -3319,35 +3319,5 @@ public class PoolSelectionUnitV2
         }
 
         return pools;
-    }
-
-    /**
-     * Create a {@link StorageInfo} corresponding to given store unit and cacheClass
-     *
-     * @param storeUnit
-     * @param cacheClass
-     * @return StorageInfo
-     * @throws IllegalArgumentException if store unit format do not match to
-     * x:y@z or equal to '*'
-     */
-    public static StorageInfo storageInfoOf(String storeUnit, String cacheClass)
-        throws IllegalArgumentException {
-        StorageInfo si;
-
-        if (storeUnit.equals("*")) {
-            si = new GenericStorageInfo();
-        } else {
-
-            String[] unitParts = storeUnit.split("@");
-            if (unitParts.length != 2) {
-                throw new IllegalArgumentException("Invalid format: expected<x:y@z> got <" + storeUnit + ">");
-            }
-            si = new GenericStorageInfo(unitParts[1], unitParts[0]);
-        }
-
-        if (!cacheClass.equals("*")) {
-            si.setCacheClass(cacheClass);
-        }
-        return si;
     }
 }

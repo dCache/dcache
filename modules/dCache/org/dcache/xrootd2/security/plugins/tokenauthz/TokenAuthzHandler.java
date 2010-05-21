@@ -1,6 +1,7 @@
 package org.dcache.xrootd2.security.plugins.tokenauthz;
 
 import java.security.GeneralSecurityException;
+
 import java.security.KeyPair;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
@@ -10,6 +11,7 @@ import java.util.Map;
 import java.net.InetSocketAddress;
 
 import org.dcache.xrootd2.protocol.XrootdProtocol;
+import org.dcache.xrootd2.protocol.XrootdProtocol.FilePerm;
 import org.dcache.xrootd2.security.AuthorizationHandler;
 import org.dcache.xrootd2.security.plugins.tokenauthz.Envelope.GridFile;
 
@@ -27,8 +29,10 @@ public class TokenAuthzHandler implements AuthorizationHandler
         this.noStrongAuthz = noStrongAuthz;
     }
 
-    public boolean checkAuthz(String pathToOpen, Map options,
-                              boolean wantToWrite, InetSocketAddress endpoint)
+    @Override
+    public boolean checkAuthz(String pathToOpen, Map<String,String> options,
+                              XrootdProtocol.FilePerm mode,
+                              InetSocketAddress endpoint)
         throws GeneralSecurityException
     {
         if (pathToOpen == null) {
@@ -46,16 +50,17 @@ public class TokenAuthzHandler implements AuthorizationHandler
                 return true;
             }
 
-            if ("read".equalsIgnoreCase(noStrongAuthz) && !wantToWrite) {
+            if ("read".equalsIgnoreCase(noStrongAuthz) &&
+                mode == FilePerm.READ) {
                 setPfn(pathToOpen);
                 return true;
             }
 
-            if ("write".equalsIgnoreCase(noStrongAuthz) && wantToWrite) {
+            if ("write".equalsIgnoreCase(noStrongAuthz) &&
+                mode == FilePerm.WRITE) {
                 setPfn(pathToOpen);
                 return true;
             }
-
 
             throw new GeneralSecurityException("No authorization token found in open request, access denied.");
         }
@@ -105,9 +110,13 @@ public class TokenAuthzHandler implements AuthorizationHandler
         // the authorization check. read access (lowest permission
         // required) is granted by default (file.getAccess() == 0), we
         // must check only in case of writing
-        if (wantToWrite) {
-            int grantedPermission = file.getAccess();
-            if (grantedPermission < Envelope.WRITE_ONCE) {
+        int grantedPermission = file.getAccess();
+        if (mode == FilePerm.WRITE) {
+            if (grantedPermission < FilePerm.WRITE_ONCE.ordinal()) {
+                return false;
+            }
+        } else if (mode == FilePerm.DELETE) {
+            if (grantedPermission < FilePerm.DELETE.ordinal()) {
                 return false;
             }
         }
@@ -147,11 +156,13 @@ public class TokenAuthzHandler implements AuthorizationHandler
         return token.getEnvelope();
     }
 
+    @Override
     public boolean providesPFN()
     {
         return true;
     }
 
+    @Override
     public String getPFN()
     {
         return pfn;
@@ -195,6 +206,7 @@ public class TokenAuthzHandler implements AuthorizationHandler
      * Returns the FQDN of the token creator
      *
      */
+    @Override
     public String getUser()
     {
         return env == null ? null : env.getCreator();

@@ -7,15 +7,14 @@ import org.slf4j.LoggerFactory;
 import org.dcache.acl.ACE;
 import org.dcache.acl.ACL;
 import org.dcache.acl.ACLException;
-import org.dcache.acl.Origin;
 import org.dcache.acl.Owner;
 import org.dcache.acl.Permission;
 import org.dcache.acl.enums.AceFlags;
-import org.dcache.acl.enums.AuthType;
 import org.dcache.acl.enums.RsType;
 import org.dcache.acl.util.net.InetAddressMatcher;
 
 import javax.security.auth.Subject;
+import org.dcache.auth.Origin;
 import org.dcache.auth.Subjects;
 
 /**
@@ -156,7 +155,7 @@ public class AclMapper {
             break;
 
         case ANONYMOUS:
-            if ( origin != null && origin.getAuthType() == AuthType.ORIGIN_AUTHTYPE_WEAK ) {
+            if ( origin != null && origin.getAuthType() == Origin.AuthType.ORIGIN_AUTHTYPE_WEAK ) {
                 perm = new Permission(ace.getAccessMsk(), ace.getType().getValue());
             } else if (origin == null) {
                 perm = new Permission(ace.getAccessMsk(), ace.getType().getValue());
@@ -164,7 +163,7 @@ public class AclMapper {
             break;
 
         case AUTHENTICATED:
-            if ( origin != null && origin.getAuthType() == AuthType.ORIGIN_AUTHTYPE_STRONG ) {
+            if ( origin != null && origin.getAuthType() == Origin.AuthType.ORIGIN_AUTHTYPE_STRONG ) {
                 perm = new Permission(ace.getAccessMsk(), ace.getType().getValue());
             } else if (origin == null) {
                 perm = new Permission(ace.getAccessMsk(), ace.getType().getValue());

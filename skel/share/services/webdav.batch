@@ -51,6 +51,7 @@ define env verify-https.exe enddefine
 enddefine
 
 exec env verify-${webdavProtocol}.exe
+exec file:${dcache.home}/share/cells/embedded-gPlazma.fragment
 
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
    "classpath:org/dcache/webdav/webdav-${webdavProtocol}.xml \
@@ -80,9 +81,6 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
     -loginBrokerUpdateTime=${loginBrokerUpdateTime} \
     -loginBrokerUpdateThreshold=${loginBrokerUpdateThreshold} \
     -loginBroker=${loginBroker} \
-    -useGPlazmaAuthorizationCell=${useGPlazmaAuthorizationCell} \
-    -useGPlazmaAuthorizationModule=${useGPlazmaAuthorizationModule} \
-    -gplazmaPolicy=${gplazmaPolicy} \
     -webdav.static-content.dir.default=${webdav.static-content.dir.default} \
     -webdav.static-content.dir.local=${webdav.static-content.dir.local} \
     -webdav.static-content.location=${webdav.static-content.location} \

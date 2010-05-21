@@ -11,6 +11,8 @@ set context -c gPlazmaRequestTimeout               180
 set context -c gplazmaPolicy     ${dcache.home}/etc/dcachesrm-gplazma.policy
 onerror shutdown
 
+define env globalgplazma.exe enddefine
+
 create org.dcache.auth.gplazma.GPLAZMA ${cell.name} \
           "default  \
            -export  \
@@ -22,3 +24,16 @@ create org.dcache.auth.gplazma.GPLAZMA ${cell.name} \
            -num-simultaneous-requests=${gPlazmaNumberOfSimutaneousRequests} \
            -request-timeout=${gPlazmaRequestTimeout} \
 "
+enddefine
+
+define env error.exe enddefine
+say -level=esay Local gPlazma exists. Misconfigured instance. Killing local and starting global one.
+kill gPlazma
+enddefine
+
+# Only start gPlazma if it does not already exist
+onerror continue
+getcellinfo gPlazma
+exec env error.exe -ifok
+onerror shutdown
+exec env globalgplazma.exe

@@ -150,15 +150,17 @@ public class       SshLoginManager
     try{
        say( "acceptThread ("+t+"): creating protocol engine" ) ;
        SshStreamEngine engine = new SshStreamEngine( socket , this ) ;
-       say( "acceptThread ("+t+"): connection created for user "+engine.getUser() ) ;
+
+       String userPrincipal = Subjects.getUserName(engine.getSubject());
+       say( "acceptThread ("+t+"): connection created for user "+userPrincipal ) ;
        Object [] args ;
        if( _loginConType == 0 ){
           args =  new Object[2] ;
-          args[0] = getCellName()+"-"+engine.getUserName()+"*" ;
+          args[0] = getCellName()+"-"+userPrincipal+"*" ;
           args[1] = engine ;
        }else{
           args =  new Object[3] ;
-          args[0] = getCellName()+"-"+engine.getUserName()+"*" ;
+          args[0] = getCellName()+"-"+userPrincipal+"*" ;
           args[1] = engine ;
           args[2] = (Args)getArgs().clone() ;
        }

@@ -22,13 +22,11 @@ import org.junit.Test;
 
 import org.dcache.acl.ACE;
 import org.dcache.acl.ACL;
-import org.dcache.acl.Origin;
 import org.dcache.acl.Owner;
 import org.dcache.acl.Permission;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.AceType;
 import org.dcache.acl.enums.Action;
-import org.dcache.acl.enums.AuthType;
 import org.dcache.acl.enums.FileAttribute;
 import org.dcache.acl.enums.OpenType;
 import org.dcache.acl.enums.RsType;
@@ -38,29 +36,29 @@ import org.dcache.acl.mapper.AclMapper;
 import org.dcache.acl.matcher.AclNFSv4Matcher;
 import org.dcache.chimera.InodeId;
 
-import com.sun.security.auth.UnixNumericGroupPrincipal;
-import com.sun.security.auth.UnixNumericUserPrincipal;
 import javax.security.auth.Subject;
+import org.dcache.auth.GidPrincipal;
+import org.dcache.auth.Origin;
+import org.dcache.auth.UidPrincipal;
 import org.dcache.commons.util.SqlHelper;
 
 /**
  * @author Irina Kozlova, David Melkumyan
  *
  */
-
 public class ACLTest {
 
     private static Connection _conn;
-
     private static final int GID = 100;
     private static final int UID_1 = 111;
     private static final int UID_2 = 222;
     private static final int UID_3 = 1001;
+
     @BeforeClass
     public static void setUp() throws Exception {
         /*
-        * init Chimera DB
-        */
+         * init Chimera DB
+         */
 
         Class.forName("org.hsqldb.jdbcDriver");
 
@@ -143,8 +141,7 @@ public class ACLTest {
         AclHandler.setACL(newACL);
 
         // Check getACL()
-        assertFalse("List of ACEs is not empty", AclHandler.getACL(rsID)
-                .isEmpty());
+        assertFalse("List of ACEs is not empty", AclHandler.getACL(rsID).isEmpty());
 
         // Get resource ID (that was random generated) of the created ACL, check
         // equality:
@@ -156,10 +153,10 @@ public class ACLTest {
 
         // Create test user subjectNew. who_id=7 as above.
         Subject subjectNew = new Subject();
-        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( 7 ));
-        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
+        subjectNew.getPrincipals().add(new UidPrincipal(7));
+        subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_WEAK, "127.0.0.1");
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_WEAK, "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
 
@@ -183,8 +180,8 @@ public class ACLTest {
                 originNew, ownerNew, parentACL);
         //create another user (he is allowed to REMOVE file):
         Subject subjectNewUser777 = new Subject();
-        subjectNewUser777.getPrincipals().add(new UnixNumericUserPrincipal( 777 ));
-        subjectNewUser777.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
+        subjectNewUser777.getPrincipals().add(new UidPrincipal(777));
+        subjectNewUser777.getPrincipals().add(new GidPrincipal(100, true));
 
         //permissions of user 777 on parent directory
         Permission permissionParentDirUser777 = AclMapper.getPermission(subjectNewUser777,
@@ -233,7 +230,6 @@ public class ACLTest {
     }
 
     // ///////////////////////////////////////////
-
     @Test
     public void testAclOpen() throws Exception {
 
@@ -263,8 +259,7 @@ public class ACLTest {
         AclHandler.setACL(newACL);
 
         // Check getACL()
-        assertFalse("List of ACEs is not empty", AclHandler.getACL(rsID)
-                .isEmpty());
+        assertFalse("List of ACEs is not empty", AclHandler.getACL(rsID).isEmpty());
 
         // Get resource ID (that was random generated) of the created ACL, check
         // equality:
@@ -275,10 +270,10 @@ public class ACLTest {
 
         // Create test user subjectNew. who_id=1000 as above.
         Subject subjectNew = new Subject();
-        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( 1000 ));
-        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
+        subjectNew.getPrincipals().add(new UidPrincipal(1000));
+        subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -293,8 +288,7 @@ public class ACLTest {
 
         // Action LINK.
         Action actionLINK = Action.LINK;
-        Boolean checkLINK = AclNFSv4Matcher
-                .isAllowed(permissionNew, actionLINK);
+        Boolean checkLINK = AclNFSv4Matcher.isAllowed(permissionNew, actionLINK);
         assertTrue(
                 "For user who_id=1000 action LINK is allowed as bit ADD_FILE is set to allow",
                 checkLINK);
@@ -309,8 +303,7 @@ public class ACLTest {
 
         // Action READ
         Action actionREAD = Action.READ;
-        Boolean checkREAD = AclNFSv4Matcher
-                .isAllowed(permissionNew, actionREAD);
+        Boolean checkREAD = AclNFSv4Matcher.isAllowed(permissionNew, actionREAD);
         assertTrue(
                 "For user who_id=1000 action READ is allowed as bits EXECUTE, READ_DATA are allowed",
                 checkREAD);
@@ -355,7 +348,6 @@ public class ACLTest {
     }
 
     // ///////////////////////////////////////////
-
     @Test
     public void testCREATEdirAllowDeny_testLINK() throws Exception {
 
@@ -379,10 +371,10 @@ public class ACLTest {
         AclHandler.setACL(parentACL);
 
         Subject subjectNew = new Subject();
-        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_1 ));
-        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
+        subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
+        subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -402,8 +394,8 @@ public class ACLTest {
         //user 222 is NOT ALLOWED to create a new directory in this parent directory,
         //as bit ADD_SUBDIRECTORY is denied for this user on 'parent directory'
         Subject subjectUser222 = new Subject();
-        subjectUser222.getPrincipals().add(new UnixNumericUserPrincipal( UID_2 ));
-        subjectUser222.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
+        subjectUser222.getPrincipals().add(new UidPrincipal(UID_2));
+        subjectUser222.getPrincipals().add(new GidPrincipal(100, true));
 
         Permission permissionUser222 = AclMapper.getPermission(subjectUser222,
                 originNew, ownerNew, parentACL);
@@ -419,8 +411,8 @@ public class ACLTest {
         //as only bit ADD_FILE is allowed for this user on 'parent directory', and ADD_SUBDIRECTORY is not defined.
         //That is action CREATE directory is UNDEFINED for this user.
         Subject subjectUser333 = new Subject();
-        subjectUser333.getPrincipals().add(new UnixNumericUserPrincipal( 333 ));
-        subjectUser333.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
+        subjectUser333.getPrincipals().add(new UidPrincipal(333));
+        subjectUser333.getPrincipals().add(new GidPrincipal(100, true));
 
         Permission permissionUser333 = AclMapper.getPermission(subjectUser333,
                 originNew, ownerNew, parentACL);
@@ -443,26 +435,26 @@ public class ACLTest {
 
 
 
-    /*
+        /*
         // ALSO CHECK LOOKUPP "Lookup parent directory". Bit to check: EXECUTE
         Action actionLOOKUPP = Action.LOOKUPP;
         // USE: isAllowed(Permission perm, Action action)
         Boolean checkLOOKUPP = AclNFSv4Matcher.isAllowed(permissionNew,
-                actionLOOKUPP);
+        actionLOOKUPP);
         assertTrue(
-                "user who_id=7 is allowed to LOOKUPP filename as bit EXECUTE is allowed ",
-                checkLOOKUPP);
+        "user who_id=7 is allowed to LOOKUPP filename as bit EXECUTE is allowed ",
+        checkLOOKUPP);
 
         // ALSO CHECK READLINK "Read symbolic link". Bit to check: EXECUTE
         Action actionREADLINK = Action.READLINK;
         Boolean checkREADLINK = AclNFSv4Matcher.isAllowed(permissionNew,
-                actionREADLINK);
+        actionREADLINK);
         boolean isAllowedOrNot = (checkREADLINK != null && checkREADLINK.equals( Boolean.TRUE) );
         assertTrue(
-                "user who_id=1001 is allowed to READLINK : bit EXECUTE is allowed ",
-                isAllowedOrNot);
+        "user who_id=1001 is allowed to READLINK : bit EXECUTE is allowed ",
+        isAllowedOrNot);
 
-    */
+         */
     }
     // ///////////////////////////////////////////
 
@@ -486,10 +478,10 @@ public class ACLTest {
         AclHandler.setACL(newACL);
 
         Subject subjectNew = new Subject();
-        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_3 ));
-        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
+        subjectNew.getPrincipals().add(new UidPrincipal(UID_3));
+        subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -517,7 +509,6 @@ public class ACLTest {
     }
 
     // ///////////////////////////////////////////
-
     @Test
     public void testCREATEfileDeny() throws Exception {
 
@@ -526,8 +517,7 @@ public class ACLTest {
 
         List<ACE> aces = new ArrayList<ACE>();
 
-        aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0, AccessMask.ADD_FILE
-                .getValue(), Who.USER, 1001, ACE.DEFAULT_ADDRESS_MSK, 0));
+        aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0, AccessMask.ADD_FILE.getValue(), Who.USER, 1001, ACE.DEFAULT_ADDRESS_MSK, 0));
 
         aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
                 AccessMask.ADD_SUBDIRECTORY.getValue(), Who.USER, 1001,
@@ -537,10 +527,10 @@ public class ACLTest {
         AclHandler.setACL(newACL);
 
         Subject subjectNew = new Subject();
-        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_3 ));
-        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
+        subjectNew.getPrincipals().add(new UidPrincipal(UID_3));
+        subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -568,7 +558,6 @@ public class ACLTest {
     }
 
     // ///////////////////////////////////////////
-
     @Test
     public void testREADallow() throws Exception {
 
@@ -577,19 +566,17 @@ public class ACLTest {
 
         List<ACE> aces = new ArrayList<ACE>();
 
-        aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0, AccessMask.EXECUTE
-                .getValue()
-                + AccessMask.READ_DATA.getValue(), Who.USER, 1001,
+        aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0, AccessMask.EXECUTE.getValue() + AccessMask.READ_DATA.getValue(), Who.USER, 1001,
                 ACE.DEFAULT_ADDRESS_MSK, 0));
 
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
 
         Subject subjectNew = new Subject();
-        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_3 ));
-        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
+        subjectNew.getPrincipals().add(new UidPrincipal(UID_3));
+        subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -608,7 +595,6 @@ public class ACLTest {
     }
 
     // ///////////////////////////////////////////
-
     @Test
     public void testREADdeny() throws Exception {
 
@@ -617,8 +603,7 @@ public class ACLTest {
 
         List<ACE> aces = new ArrayList<ACE>();
 
-        aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0, AccessMask.EXECUTE
-                .getValue(), Who.USER, 1001, ACE.DEFAULT_ADDRESS_MSK, 0));
+        aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0, AccessMask.EXECUTE.getValue(), Who.USER, 1001, ACE.DEFAULT_ADDRESS_MSK, 0));
 
         aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0,
                 AccessMask.READ_DATA.getValue(), Who.USER, 1001,
@@ -628,10 +613,10 @@ public class ACLTest {
         AclHandler.setACL(newACL);
 
         Subject subjectNew = new Subject();
-        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_3 ));
-        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
+        subjectNew.getPrincipals().add(new UidPrincipal(UID_3));
+        subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -650,7 +635,6 @@ public class ACLTest {
     }
 
     // ///////////////////////////////////////////
-
     @Test
     public void testREADdeny2() throws Exception {
 
@@ -659,8 +643,7 @@ public class ACLTest {
 
         List<ACE> aces = new ArrayList<ACE>();
 
-        aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0, AccessMask.EXECUTE
-                .getValue(), Who.USER, 1001, ACE.DEFAULT_ADDRESS_MSK, 0));
+        aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0, AccessMask.EXECUTE.getValue(), Who.USER, 1001, ACE.DEFAULT_ADDRESS_MSK, 0));
 
         aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
                 AccessMask.READ_DATA.getValue(), Who.USER, 1001,
@@ -670,10 +653,10 @@ public class ACLTest {
         AclHandler.setACL(newACL);
 
         Subject subjectNew = new Subject();
-        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_3 ));
-        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
+        subjectNew.getPrincipals().add(new UidPrincipal(UID_3));
+        subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -692,7 +675,6 @@ public class ACLTest {
     }
 
     // ///////////////////////////////////////////
-
     @Test
     public void testREADDIRallow() throws Exception {
 
@@ -709,10 +691,10 @@ public class ACLTest {
         AclHandler.setACL(newACL);
 
         Subject subjectNew = new Subject();
-        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_1 ));
-        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
+        subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
+        subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -731,7 +713,6 @@ public class ACLTest {
     }
 
     // ///////////////////////////////////////////
-
     @Test
     public void testREMOVEDirectory() throws Exception {
 
@@ -766,14 +747,14 @@ public class ACLTest {
         AclHandler.setACL(parentACL);
 
         Subject subjectNew = new Subject();
-        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_1 ));
-        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
+        subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
+        subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
         Subject subjectNextUser = new Subject();
-        subjectNextUser.getPrincipals().add(new UnixNumericUserPrincipal( UID_2 ));
-        subjectNextUser.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
+        subjectNextUser.getPrincipals().add(new UidPrincipal(UID_2));
+        subjectNextUser.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -809,7 +790,6 @@ public class ACLTest {
     }
 
     /////////////////////////////////////////////
-
     @Test
     public void testREMOVEFileAllow() throws Exception {
 
@@ -822,8 +802,7 @@ public class ACLTest {
         List<ACE> aces = new ArrayList<ACE>();
         List<ACE> parentAces = new ArrayList<ACE>();
 
-        aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0, AccessMask.DELETE
-                .getValue(), Who.USER, 111, ACE.DEFAULT_ADDRESS_MSK, 0));
+        aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0, AccessMask.DELETE.getValue(), Who.USER, 111, ACE.DEFAULT_ADDRESS_MSK, 0));
 
         parentAces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 1,
                 AccessMask.DELETE_CHILD.getValue(), Who.USER, 111,
@@ -833,10 +812,10 @@ public class ACLTest {
         AclHandler.setACL(newACL);
 
         Subject subjectNew = new Subject();
-        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_1 ));
-        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
+        subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
+        subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -869,7 +848,6 @@ public class ACLTest {
     }
 
     // ///////////////////////////////////////////
-
     @Test
     public void testREMOVEFileDeny() throws Exception {
 
@@ -882,8 +860,7 @@ public class ACLTest {
         List<ACE> aces = new ArrayList<ACE>();
         List<ACE> parentAces = new ArrayList<ACE>();
 
-        aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0, AccessMask.DELETE
-                .getValue(), Who.USER, 111, ACE.DEFAULT_ADDRESS_MSK, 0));
+        aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0, AccessMask.DELETE.getValue(), Who.USER, 111, ACE.DEFAULT_ADDRESS_MSK, 0));
 
         parentAces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 1,
                 AccessMask.DELETE_CHILD.getValue(), Who.USER, 111,
@@ -893,10 +870,10 @@ public class ACLTest {
         AclHandler.setACL(newACL);
 
         Subject subjectNew = new Subject();
-        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_1 ));
-        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
+        subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
+        subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -923,7 +900,6 @@ public class ACLTest {
     }
 
     // ///////////////////////////////////////////
-
     @Test
     public void testRENAMEDirAllow() throws Exception {
 
@@ -933,7 +909,7 @@ public class ACLTest {
         List<ACE> parentAces = new ArrayList<ACE>();
 
         parentAces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
-                AccessMask.DELETE_CHILD.getValue()|AccessMask.ADD_SUBDIRECTORY.getValue(), Who.USER,
+                AccessMask.DELETE_CHILD.getValue() | AccessMask.ADD_SUBDIRECTORY.getValue(), Who.USER,
                 111, ACE.DEFAULT_ADDRESS_MSK, 0));
 
 
@@ -941,10 +917,10 @@ public class ACLTest {
         AclHandler.setACL(parentACL);
 
         Subject subjectNew = new Subject();
-        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_1 ));
-        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
+        subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
+        subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -968,7 +944,6 @@ public class ACLTest {
     }
 
     // ///////////////////////////////////////////
-
     @Test
     public void testRENAMEdirDeny() throws Exception {
 
@@ -989,10 +964,10 @@ public class ACLTest {
         AclHandler.setACL(parentACL);
 
         Subject subjectNew = new Subject();
-        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_1 ));
-        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
+        subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
+        subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -1012,7 +987,6 @@ public class ACLTest {
     }
 
     // ///////////////////////////////////////////
-
     @Test
     public void testRENAMEdirDeny2() throws Exception {
 
@@ -1033,10 +1007,10 @@ public class ACLTest {
         AclHandler.setACL(newACL);
 
         Subject subjectNew = new Subject();
-        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_1 ));
-        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
+        subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
+        subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -1055,7 +1029,6 @@ public class ACLTest {
     }
 
     // ///////////////////////////////////////////
-
     @Test
     public void testRENAMEfileAllow() throws Exception {
 
@@ -1077,10 +1050,10 @@ public class ACLTest {
         AclHandler.setACL(newACL);
 
         Subject subjectNew = new Subject();
-        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_1 ));
-        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
+        subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
+        subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -1099,7 +1072,6 @@ public class ACLTest {
     }
 
     // ///////////////////////////////////////////
-
     @Test
     public void testRENAMEfileDeny() throws Exception {
 
@@ -1121,10 +1093,10 @@ public class ACLTest {
         AclHandler.setACL(newACL);
 
         Subject subjectNew = new Subject();
-        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_1 ));
-        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
+        subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
+        subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_WEAK,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_WEAK,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -1144,7 +1116,6 @@ public class ACLTest {
     }
 
     // ///////////////////////////////////////////
-
     @Test
     public void testRENAMEfileDeny2() throws Exception {
 
@@ -1157,17 +1128,16 @@ public class ACLTest {
                 AccessMask.DELETE_CHILD.getValue(), Who.USER, 111,
                 ACE.DEFAULT_ADDRESS_MSK, 0));
 
-        aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0, AccessMask.ADD_FILE
-                .getValue(), Who.USER, 111, ACE.DEFAULT_ADDRESS_MSK, 1));
+        aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0, AccessMask.ADD_FILE.getValue(), Who.USER, 111, ACE.DEFAULT_ADDRESS_MSK, 1));
 
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
 
         Subject subjectNew = new Subject();
-        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_1 ));
-        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
+        subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
+        subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_WEAK,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_WEAK,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -1205,10 +1175,10 @@ public class ACLTest {
         AclHandler.setACL(newACL);
 
         Subject subjectNew = new Subject();
-        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_2 ));
-        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
+        subjectNew.getPrincipals().add(new UidPrincipal(UID_2));
+        subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_WEAK,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_WEAK,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -1226,7 +1196,6 @@ public class ACLTest {
     }
 
     // ///////////////////////////////////////////
-
     @Test
     public void testWRITEfileDeny() throws Exception {
 
@@ -1247,10 +1216,10 @@ public class ACLTest {
         AclHandler.setACL(newACL);
 
         Subject subjectNew = new Subject();
-        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_1 ));
-        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
+        subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
+        subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_WEAK,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_WEAK,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -1269,7 +1238,6 @@ public class ACLTest {
     }
 
     // ///////////////////////////////////////////
-
     @Test
     public void testWRITEfileAllowed() throws Exception {
 
@@ -1278,21 +1246,17 @@ public class ACLTest {
 
         List<ACE> aces = new ArrayList<ACE>();
 
-        aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0, AccessMask.EXECUTE
-                .getValue()
-                | AccessMask.READ_DATA.getValue()
-                | AccessMask.WRITE_DATA.getValue()
-                | AccessMask.APPEND_DATA.getValue(), Who.USER, 111,
+        aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0, AccessMask.EXECUTE.getValue() | AccessMask.READ_DATA.getValue() | AccessMask.WRITE_DATA.getValue() | AccessMask.APPEND_DATA.getValue(), Who.USER, 111,
                 ACE.DEFAULT_ADDRESS_MSK, 0));
 
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
 
         Subject subjectNew = new Subject();
-        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_1 ));
-        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
+        subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
+        subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -1311,7 +1275,6 @@ public class ACLTest {
     }
 
     // ///////////////////////////////////////////
-
     @Test
     public void testSETATTRfileAllowed() throws Exception {
 
@@ -1321,7 +1284,7 @@ public class ACLTest {
         List<ACE> aces = new ArrayList<ACE>();
 
         int // masks = (AccessMask.APPEND_DATA.getValue());
-        masks = (AccessMask.WRITE_ATTRIBUTES.getValue());
+                masks = (AccessMask.WRITE_ATTRIBUTES.getValue());
         masks |= (AccessMask.WRITE_ACL.getValue());
         masks |= (AccessMask.WRITE_OWNER.getValue());
 
@@ -1340,10 +1303,10 @@ public class ACLTest {
         AclHandler.setACL(newACL);
 
         Subject subjectNew = new Subject();
-        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_1 ));
-        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
+        subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
+        subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -1387,7 +1350,6 @@ public class ACLTest {
     }
 
     // ///////////////////////////////////////////
-
     @Test
     public void testGETATTRreadACLAllowed() throws Exception {
         // Test description.
@@ -1416,10 +1378,10 @@ public class ACLTest {
         AclHandler.setACL(newACL);
 
         Subject subjectNew = new Subject();
-        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_1 ));
-        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
+        subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
+        subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -1462,7 +1424,6 @@ public class ACLTest {
     }
 
     // ///////////////////////////////////////////
-
     @Test
     public void testGETATTRreadAttributeAllowed() throws Exception {
         // Test description.
@@ -1478,8 +1439,7 @@ public class ACLTest {
 
         List<ACE> aces = new ArrayList<ACE>();
 
-        aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0, AccessMask.READ_ACL
-                .getValue(), Who.USER, 111, ACE.DEFAULT_ADDRESS_MSK, 0));
+        aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0, AccessMask.READ_ACL.getValue(), Who.USER, 111, ACE.DEFAULT_ADDRESS_MSK, 0));
 
         aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
                 AccessMask.READ_ATTRIBUTES.getValue(), Who.USER, 111,
@@ -1489,10 +1449,10 @@ public class ACLTest {
         AclHandler.setACL(newACL);
 
         Subject subjectNew = new Subject();
-        subjectNew.getPrincipals().add(new UnixNumericUserPrincipal( UID_1 ));
-        subjectNew.getPrincipals().add(new UnixNumericGroupPrincipal( 100, true ));
+        subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
+        subjectNew.getPrincipals().add(new GidPrincipal(100, true));
 
-        Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+        Origin originNew = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                 "127.0.0.1");
 
         Owner ownerNew = new Owner(0, 0);
@@ -1542,8 +1502,9 @@ public class ACLTest {
 
     static void tryToClose(Statement o) {
         try {
-            if (o != null)
+            if (o != null) {
                 o.close();
+            }
         } catch (SQLException e) {
             // _logNamespace.error("tryToClose PreparedStatement", e);
         }

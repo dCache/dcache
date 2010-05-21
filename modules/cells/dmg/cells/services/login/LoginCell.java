@@ -7,6 +7,7 @@ import java.util.* ;
 import java.io.* ;
 import java.net.* ;
 import java.lang.reflect.* ;
+import javax.security.auth.Subject;
 
 
 /**
@@ -23,7 +24,7 @@ public class      LoginCell
   private BufferedReader _in ;
   private PrintWriter    _out ;
   private InetAddress    _host ;
-  private String         _user ;
+  private Subject         _subject ;
   private Thread         _workerThread ;
   private CellShell      _shell ; 
   private String         _prompt = null ;
@@ -43,7 +44,7 @@ public class      LoginCell
          _reader = engine.getReader() ;
          _in   = new BufferedReader( _reader ) ;
          _out  = new PrintWriter( engine.getWriter() ) ;
-         _user = engine.getUserName().getName() ;
+         _subject = engine.getSubject();
          _host = engine.getInetAddress() ;
 
          _loadShells( args ) ;
@@ -77,7 +78,7 @@ public class      LoginCell
      for( int i= 0 ; i < objList.length ; i++ )
          objList[i] = new Object[_signature[i].length] ;
          
-     objList[0][0] = _user ;
+     objList[0][0] = _subject ;
      objList[0][1] = getNucleus() ;
      objList[0][2] = (Args)args.clone() ;
      objList[1][0] = getNucleus() ;
@@ -179,10 +180,10 @@ public class      LoginCell
   //
   // the cell implemetation 
   //
-   public String toString(){ return _user+"@"+_host ; }
+   public String toString(){ return Subjects.getDisplayName(_subject)+"@"+_host ; }
    public void getInfo( PrintWriter pw ){
      pw.println( "            Generic Login Cell" ) ;
-     pw.println( "         User  : "+_user ) ;
+     pw.println( "         User  : "+Subjects.getDisplayName(_subject) ) ;
      pw.println( "         Host  : "+_host ) ;
      pw.println( " Last Command  : "+_lastCommand ) ;
      pw.println( " Command Count : "+_commandCounter ) ;

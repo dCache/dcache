@@ -13,7 +13,6 @@ import dmg.util.Args;
 
 //dcache
 import diskCacheV111.util.Base64;
-import diskCacheV111.util.KAuthFile;
 import org.dcache.auth.*;
 import gplazma.authz.AuthorizationException;
 import diskCacheV111.services.acl.GrantAllPermissionHandler;
@@ -21,6 +20,7 @@ import diskCacheV111.services.acl.GrantAllPermissionHandler;
 //java
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.io.File;
 import java.util.Iterator;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -53,8 +53,6 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     // For multiple attribute support
     //protected AuthenticationMessage authmessage;
 
-    protected Iterator<GroupList> _userAuthGroupLists;
-
     /** Creates a new instance of GsiFtpDoorV1 */
     public GssFtpDoorV1(String name, StreamEngine engine, Args args)
         throws InterruptedException, ExecutionException
@@ -68,6 +66,14 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     {
         super.init();
         _gssFlavor = "unknown";
+
+        if (_use_gplazmaAuthzCell || _use_gplazmaAuthzModule) {
+            _loginStrategy =
+                new GplazmaLoginStrategy(new AuthzQueryHelper(this));
+        } else {
+            _loginStrategy =
+                new KauthFileLoginStrategy(new File(_kpwdFilePath));
+        }
     }
 
     protected void secure_reply(String answer, String code) {
@@ -206,129 +212,10 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
                                "$Revision: 1.18 $" );
     }
 
-    public void ac_user(String arg) {
-
-        KAuthFile authf;
-
-        _pwdRecord = null;
-        authRecord = null;
-        _user = null;
-        info("GssFtpDoorV1::ac_user <" + arg + ">");
-        if (arg.equals("")) {
-            reply(err("USER",arg));
-            return;
-        }
-
-        if (_serviceContext == null || !_serviceContext.isEstablished()) {
-            reply("530 Authentication required");
-            return;
-        }
-
-        _user = arg;
-        _dnUser = _gssIdentity.toString();
-        if( _use_gplazmaAuthzCell || _use_gplazmaAuthzModule ) {
-            try {
-                authRecord = authorize();
-            } catch(AuthorizationException ae) {
-                error(ae);
-                reply("530 User Authorization failed: " + ae.getMessage());
-                return;
-
-            }
-        } else {
-            try {
-                authf = new KAuthFile(_kpwdFilePath);
-            } catch( Exception e ) {
-                reply("530 User authentication file not found: " + e);
-                return;
-            }
-
-            if (_user.equals(GLOBUS_URL_COPY_DEFAULT_USER)) {
-                info("GssFtpDoorV1::ac_user: non-gplazma special case, user is " + _user);
-                _user = authf.getIdMapping(_gssIdentity.toString() );
-                if (_user == null) {
-                    reply("530 User Name for GSI Identity" +
-                    _gssIdentity.toString() + " not found.");
-                    return;
-                }
-            }
-            _pwdRecord = authf.getUserRecord(_user);
-
-            if ( _pwdRecord == null ) {
-                reply("530 User " + _user + " not found.");
-                return;
-            }
-            debug(_user+" has record "+_pwdRecord);
-
-            info("GssFtpDoorV1::ac_user: looking up: " +
-                 _gssIdentity.toString());
-            if ( !((UserAuthRecord)_pwdRecord).hasSecureIdentity(_gssIdentity.toString()) ) {
-                _pwdRecord = null;
-                reply("530 Permission denied");
-                return;
-            }
-            _pathRoot = _pwdRecord.Root;
-            _curDirV = _pwdRecord.Home;
-        }
-
-        if (_pwdRecord == null && authRecord == null) {
-            reply("530 Permission denied");
-            return;
-        }
-
-        resetPwdRecord();
-
-        reply("200 User "+_user+" logged in");
-    }
-
-    public void resetPwdRecord()
+    @Override
+    protected String getUser()
     {
-        if (authRecord != null) {
-            Set<GroupList> uniqueGroupListSet = new LinkedHashSet<GroupList>(
-                    authRecord.getGroupLists());
-            _userAuthGroupLists = uniqueGroupListSet.iterator();
-            setNextPwdRecord();
-        } else {
-            _userAuthGroupLists = null;
-            setSubjectForPnfsHandler(Subjects.NOBODY);
-        }
-    }
-
-    protected void setSubjectForPnfsHandler(Subject subject)
-    {
-        if (_permissionHandler instanceof GrantAllPermissionHandler) {
-            _pnfs.setSubject(subject);
-        }
-    }
-
-    protected boolean setNextPwdRecord()
-    {
-        if (_userAuthGroupLists == null || !_userAuthGroupLists.hasNext()) {
-            setSubjectForPnfsHandler(Subjects.NOBODY);
-            _pwdRecord = null;
-            return false;
-        }
-
-        GroupList grplist  = _userAuthGroupLists.next();
-        _pwdRecord = grplist.getUserAuthRecord();
-        _user = _pwdRecord.Username;
-
-        if(_pathRoot == null) {
-            _curDirV = _pwdRecord.Home;
-            _pathRoot = _pwdRecord.Root;
-
-            if (_curDirV == null || _curDirV.length() == 0 ) {
-                _curDirV ="/";
-            }
-
-            if (_pathRoot == null || _pathRoot.length() == 0) {
-                _pathRoot = "/";
-            }
-        }
-
-        setSubjectForPnfsHandler(getSubject());
-
-        return true;
+        return _gssIdentity.toString();
     }
 
     // Some clients, even though the user is already logged in via GSS and ADAT,
@@ -339,13 +226,10 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     public void ac_pass(String arg) {
         debug("GssFtpDoorV1::ac_pass: PASS is a no-op with " +
                 "GSSAPI authentication.");
-        if ( _pwdRecord != null || _gssIdentity != null ) {
+        if (_subject != null) {
             reply(ok("PASS"));
-            return;
-        }
-        else {
+        } else {
             reply("500 Send USER first");
-            return;
         }
     }
 
@@ -355,12 +239,4 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
      * specific to the particular security mechanism.
      */
     protected abstract GSSContext getServiceContext() throws GSSException;
-
-    /**
-     * Communicates with gPlazma in protocol and configuration  appropriate
-     * manner in order to receiceve authorization
-     * @return AuthorizationRecord obtained from gPlazma service
-     */
-    protected abstract AuthorizationRecord authorize()
-            throws AuthorizationException ;
 }

@@ -57,7 +57,6 @@ import org.dcache.cells.CellStub;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
-import org.dcache.acl.Origin;
 import org.dcache.auth.Subjects;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.FileAttribute;
@@ -72,6 +71,7 @@ import dmg.util.Args;
 import dmg.util.CollectionFactory;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
+import org.dcache.auth.Origin;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -22,6 +22,8 @@ import dmg.cells.nucleus.CellNucleus;
 import dmg.util.Args;
 import dmg.util.CommandExitException;
 import dmg.util.StreamEngine;
+import javax.security.auth.Subject;
+import dmg.util.Subjects;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,7 +61,7 @@ public class StreamObjectCell
 
     private StreamEngine _engine;
     private InetAddress _host;
-    private String _user;
+    private Subject _subject;
     private Thread _workerThread;
     private CellNucleus _nucleus;
     private File _historyFile;
@@ -89,7 +91,7 @@ public class StreamObjectCell
 
             _log.info("StreamObjectCell " + getCellName() + "; arg0=" + args.argv(0));
 
-            _user = engine.getUserName().getName();
+            _subject = engine.getSubject();
             _host = engine.getInetAddress();
 
             prepareClass(args.argv(0));
@@ -177,7 +179,7 @@ public class StreamObjectCell
         switch (commandConstMode) {
         case 0:
             args = new Object[3];
-            args[0] = _user;
+            args[0] = Subjects.getUserName(_subject);
             args[1] = getNucleus();
             args[2] = extArgs;
             break;

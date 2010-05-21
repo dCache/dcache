@@ -10,6 +10,8 @@ import java.io.*;
 import java.util.Iterator;
 
 //jgss
+import javax.security.auth.Subject;
+import org.dcache.auth.FQANPrincipal;
 import org.ietf.jgss.*;
 
 // globus gsi
@@ -21,6 +23,7 @@ import org.globus.gsi.GlobusCredential;
 import org.globus.gsi.gssapi.GSSConstants;
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
 import org.globus.gsi.TrustedCertificates;
+import org.globus.gsi.jaas.GlobusPrincipal;
 import org.gridforum.jgss.ExtendedGSSContext;
 import org.gridforum.jgss.ExtendedGSSManager;
 
@@ -31,11 +34,10 @@ class GsiTunnel extends GssTunnel  {
 
     private ExtendedGSSContext _e_context = null;
 
-    MessageProp _prop =  new MessageProp(true);
-
     private static final String service_key           = "/etc/grid-security/hostkey.pem";
     private static final String service_cert          = "/etc/grid-security/hostcert.pem";
     private static final String service_trusted_certs = "/etc/grid-security/certificates";
+    private Subject _subject = new Subject();
 
     // Creates a new instance of GssTunnel
     public GsiTunnel(String dummy) {
@@ -73,6 +75,7 @@ class GsiTunnel extends GssTunnel  {
 
         try {
         	if( super.verify(in, out, addon) ) {
+                    _subject.getPrincipals().add( new GlobusPrincipal(_e_context.getSrcName().toString()) );
         		scanExtendedAttributes(_e_context);
         	}
         } catch( Exception e) {
@@ -93,17 +96,20 @@ class GsiTunnel extends GssTunnel  {
         try {
 
             Iterator<String> fqans = X509CertUtil.getFQANsFromContext(gssContext).iterator();
-            if (fqans.hasNext()) {
+            boolean primary = true;
+            while (fqans.hasNext()) {
                 String fqanValue = fqans.next();
                 FQAN fqan = new FQAN(fqanValue);
-                _group = fqan.getGroup();
+                String group = fqan.getGroup();
                 String role = fqan.getRole();
-
+                String s;
                 if(role == null  || role.equals("") ) {
-                    _role = _group;
+                    s = group;
                 }else{
-                    _role = _group + "/Role=" + role;
+                    s = group + "/Role=" + role;
                 }
+                _subject.getPrincipals().add( new FQANPrincipal(s, primary));
+                primary = false;
             }
 
         } catch (AuthorizationException e) {
@@ -112,4 +118,8 @@ class GsiTunnel extends GssTunnel  {
 
     }
 
+    @Override
+    public Subject getSubject() {
+        return _subject;
+    }
 }

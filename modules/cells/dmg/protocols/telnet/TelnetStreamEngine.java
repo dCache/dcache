@@ -5,9 +5,9 @@ import java.io.* ;
 import java.util.* ;
 import java.lang.reflect.* ;
 
-import dmg.security.CellUser;
 import dmg.util.* ;
-
+import javax.security.auth.Subject;
+import org.dcache.auth.UserNamePrincipal;
 
 public class  TelnetStreamEngine extends DummyStreamEngine
 {
@@ -107,16 +107,10 @@ public class  TelnetStreamEngine extends DummyStreamEngine
               throw new TelnetAuthenticationException("Host "+hostAddress+": Tunnel verification failed!" ) ;
           }
 
-          meth = socket.getClass().getMethod("getUserPrincipal", new Class[0]);
-          String user = (String) meth.invoke(socket, new Object[0]);
+          meth = socket.getClass().getMethod("getSubject", new Class[0]);
+          Subject subject = (Subject) meth.invoke(socket, new Object[0]);
 
-          meth = socket.getClass().getMethod("getRole", new Class[0]);
-          String role = (String) meth.invoke(socket, new Object[0]);
-
-          meth = socket.getClass().getMethod("getGroup", new Class[0]);
-          String group = (String) meth.invoke(socket, new Object[0]);
-
-          setUserName(new CellUser(user, group, role));
+          setSubject(subject);
 
       }catch(NoSuchMethodException nsm){
     	  // nsm.printStackTrace();
@@ -195,7 +189,10 @@ public class  TelnetStreamEngine extends DummyStreamEngine
       BufferedReader r  = new BufferedReader( _reader ) ;
       String user = r.readLine() ;
       if( _serverAuth.isUserOk( host , user ) ){
-          setUserName(new CellUser(user, null, null));
+          UserNamePrincipal principal = new UserNamePrincipal(user);
+          Subject subject = new Subject();
+          subject.getPrincipals().add(principal);
+          setSubject(subject);
          return ;
       }
       setPasswordMode( true ) ;
@@ -204,7 +201,10 @@ public class  TelnetStreamEngine extends DummyStreamEngine
       String password = r.readLine() ;
       if( _serverAuth.isPasswordOk( host , user , password ) ){
          setPasswordMode( false ) ;
-         setUserName(new CellUser(user, null, null));
+          UserNamePrincipal principal = new UserNamePrincipal(user);
+          Subject subject = new Subject();
+          subject.getPrincipals().add(principal);
+          setSubject(subject);
          _writer.write("\n\n") ;
          _writer.flush();
          return ;

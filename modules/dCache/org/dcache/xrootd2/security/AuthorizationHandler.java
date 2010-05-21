@@ -4,7 +4,7 @@ import java.security.GeneralSecurityException;
 import java.util.Map;
 import java.net.InetSocketAddress;
 
-import org.dcache.xrootd2.door.XrootdDoor;
+import org.dcache.xrootd2.protocol.XrootdProtocol.FilePerm;
 
 /**
  * The interface to different authorization plugins .
@@ -13,7 +13,7 @@ import org.dcache.xrootd2.door.XrootdDoor;
  */
 public interface AuthorizationHandler
 {
-    /**
+   /**
      * This method examines the granted permissions of the path (file)
      * which is going to be opened. It then checks whether the
      * permissions are sufficient to open the file in the requested
@@ -21,13 +21,15 @@ public interface AuthorizationHandler
      *
      * @param pathToOpen the file which is checked
      * @param options the opaque data from the open request
-     * @param wantToWrite the requested mode
+     * @param mode the requested mode
      * @return true, if and only if access is granted according to the
      * requested open mode (authorization successful).
      * @throws GeneralSecurityException when the process of
      * authorizing fails
      */
-    boolean checkAuthz(String pathToOpen, Map options, boolean wantToWrite,
+    boolean checkAuthz(String pathToOpen,
+                       Map<String,String> options,
+                       FilePerm mode,
                        InetSocketAddress localAddress)
         throws GeneralSecurityException;
 

@@ -33,9 +33,15 @@ import org.dcache.vehicles.AuthorizationMessage;
 import org.dcache.auth.AuthorizationRecord;
 import org.dcache.auth.AuthzQueryHelper;
 import org.dcache.auth.RecordConvert;
+import org.dcache.auth.Subjects;
+import org.dcache.auth.UserNamePrincipal;
 import java.util.List;
 import java.util.Collections;
+import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.CacheException;
 
+import javax.security.auth.Subject;
+import javax.security.auth.kerberos.KerberosPrincipal;
 
 /**
  *
@@ -81,15 +87,13 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1 {
     }
 
     public void startTlog(String path, String action) {
-        if (_tLog == null) {
+        if (_tLog == null || _subject == null) {
             return;
         }
         try {
-            String user_string = _user;
-            if (_pwdRecord != null) {
-                user_string += "("+_pwdRecord.UID+"."+_pwdRecord.GID+")";
-            }
-            _tLog.begin(user_string, "krbftp", action, path,
+            String user =
+                Subjects.getUserName(_subject) + "("+Subjects.getUid(_subject) + "." + Subjects.getPrimaryGid(_subject) + ")";
+            _tLog.begin(user, "krbftp", action, path,
                         _engine.getInetAddress());
         }
         catch (Exception e) {
@@ -154,31 +158,33 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1 {
         return context;
     }
 
-    /**
-     * Communicates with gPlazma in protocol and configuration  appropriate
-     * manner in order to receiceve authorization
-     * @return AuthorizationRecord obtained from gPlazma service
-     */
-    protected AuthorizationRecord authorize()
-            throws AuthorizationException {
-        if (_use_gplazmaAuthzCell) {
-            AuthzQueryHelper authHelper  = new AuthzQueryHelper(this);
-            List<String> emptyRolesList= Collections.emptyList();
-            AuthorizationMessage authorizationMessage =
-                    authHelper.getAuthorization(_dnUser,emptyRolesList, _user);
-            return authorizationMessage.getAuthorizationRecord();
-        } else  if ( _use_gplazmaAuthzModule) {
-            AuthorizationController authCtrl =
-                new AuthorizationController(_gplazmaPolicyFilePath);
-            List<String> emptyRolesList= Collections.emptyList();
-            return RecordConvert.gPlazmaToAuthorizationRecord(
-                authCtrl.authorize(_dnUser, emptyRolesList,
-                    null,_user, null,null));
-        }  else {
-            throw new AuthorizationException(
-                    "_use_gplazmaAuthzCell is false and " +
-                    "_use_gplazmaAuthzModule is false");
+    @Override
+    public void ac_user(String arg)
+    {
+        if (arg.equals("")) {
+            reply(err("USER",arg));
+            return;
         }
 
+        if (_serviceContext == null || !_serviceContext.isEstablished()) {
+            reply("530 Authentication required");
+            return;
+        }
+
+        Subject subject = new Subject();
+        subject.getPrincipals().add(new UserNamePrincipal(arg));
+        subject.getPrincipals().add(new KerberosPrincipal(_gssIdentity.toString()));
+        subject.getPrincipals().add(_origin);
+
+        try {
+            login(subject);
+            reply("200 User " + arg + " logged in");
+        } catch (PermissionDeniedCacheException e) {
+            warn("Login denied for " + subject);
+            println("530 Login incorrect");
+        } catch (CacheException e) {
+            error("Login failed for " + subject + ": " + e);
+            println("530 Login failed: " + e.getMessage());
+        }
     }
 }

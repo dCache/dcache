@@ -11,9 +11,12 @@ import java.net.Socket;
 import java.util.Date;
 import java.util.Random;
 
-import dmg.security.CellUser;
 import dmg.security.digest.Md5;
 import dmg.util.StreamEngine;
+import dmg.util.Subjects;
+import java.security.Principal;
+import javax.security.auth.Subject;
+import org.dcache.auth.UserNamePrincipal;
 
 
 public class      SshStreamEngine
@@ -33,7 +36,7 @@ public class      SshStreamEngine
    private final Object        _closeLock = new Object() ;
    
    private InetAddress   _remoteAddress = null ;
-   private CellUser      _remoteUser    = null ;
+   private Subject      _remoteUser    = null ;
    
    public final static int   SERVER_MODE = 1 ;
    public final static int   CLIENT_MODE = 2 ;
@@ -69,8 +72,8 @@ public class      SshStreamEngine
    public Socket       getSocket(){ return _socket ; }
    public InputStream  getInputStream() { return new SshInputStream( this ) ; }
    public OutputStream getOutputStream(){ return new SshOutputStream( this ) ; }
-   public CellUser       getUser(){ return _remoteUser ; }
-   public CellUser       getUserName(){ return _remoteUser ; }
+   public String       getName(){ return Subjects.getUserName(_remoteUser); }
+   public Subject      getSubject(){ return _remoteUser ; }
    public InetAddress  getInetAddress(){ return _remoteAddress ; }
    public InetAddress getLocalAddress() { return _socket.getLocalAddress();}
 
@@ -441,7 +444,7 @@ public class      SshStreamEngine
                // of the modulus bytes.
                //
                SshRsaKey userKey = _serverAuth.authRsa( _remoteAddress , 
-                                                        _remoteUser.getName() ,
+                                                        getName() ,
                                                         rsa.getKey() ) ;
                if( userKey == null ){
                   printerr( "SshStreamEngine : SSH_CMSG_AUTH_RSA : Key not found" ) ;
@@ -476,7 +479,7 @@ public class      SshStreamEngine
                // of the modulus bytes.
                //
                SshRsaKey hostKey = _serverAuth.authRhostsRsa( _remoteAddress ,
-                                                              _remoteUser.getName() ,
+                                                              getName() ,
                                                               rsa.getUserName() ,
                                                               rsa.getKey()         ) ;
                if( hostKey == null ){
@@ -575,8 +578,10 @@ public class      SshStreamEngine
                SshCmsgUser user = new SshCmsgUser( packet ) ;
                
                printout( "SshStreamEngine : SSH_CMSG_USER : User = "+user.getUser() ) ;
-               _remoteUser = new CellUser( user.getUser() , null, null) ;
-               if( _serverAuth.authUser( _remoteAddress , _remoteUser.getName() ) ){
+                Principal principal = new UserNamePrincipal(user.getUser());
+                _remoteUser = new Subject();
+                _remoteUser.getPrincipals().add(principal);
+               if( _serverAuth.authUser( _remoteAddress , getName() ) ){
                    state  = ST_PREPARE ;
                    writePacket( ok ) ;
                }else{
@@ -596,7 +601,7 @@ public class      SshStreamEngine
                      new SshCmsgAuthPassword( packet) ;
 
                 if( _serverAuth.authPassword( _remoteAddress ,
-                                              _remoteUser.getName() ,
+                                              getName() ,
                                               psw.getPassword() ) ){
                    writePacket( ok ) ;
                    state    = ST_PREPARE ;

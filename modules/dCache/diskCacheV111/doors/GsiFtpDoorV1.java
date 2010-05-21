@@ -36,6 +36,15 @@ import org.dcache.vehicles.AuthorizationMessage;
 import org.dcache.auth.AuthorizationRecord;
 import org.dcache.auth.AuthzQueryHelper;
 import org.dcache.auth.RecordConvert;
+import org.dcache.auth.Subjects;
+import org.dcache.auth.UserNamePrincipal;
+
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
+
+import java.security.cert.X509Certificate;
+import javax.security.auth.Subject;
+
 /**
  *
  * @author  timur
@@ -59,6 +68,8 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
         defaultValue="/etc/grid-security/certificates"
     )
     protected String service_trusted_certs;
+
+    private String _user;
 
     /** Creates a new instance of GsiFtpDoorV1 */
     public GsiFtpDoorV1(String name, StreamEngine engine, Args args)
@@ -123,15 +134,13 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
     }
 
     public void startTlog(String path,String action) {
-        if (_tLog == null) {
+        if (_tLog == null || _subject == null) {
             return;
         }
         try {
-            String user_string = _user;
-            if (_pwdRecord != null) {
-                user_string += "("+_pwdRecord.UID+"."+_pwdRecord.GID+")";
-            }
-            _tLog.begin(user_string, "gsiftp", action, path,
+            String user =
+                _user + "("+Subjects.getUid(_subject) + "." + Subjects.getPrimaryGid(_subject) + ")";
+            _tLog.begin(user, "gsiftp", action, path,
                         _engine.getInetAddress());
         }
         catch (Exception e) {
@@ -166,45 +175,52 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
 
         return context;
     }
-    /**
-     * Communicates with gPlazma in protocol and configuration  appropriate
-     * manner in order to receiceve authorization
-     * @return AuthorizationRecord obtained from gPlazma service
-     */
-    protected AuthorizationRecord authorize()
-            throws AuthorizationException {
-        if (_use_gplazmaAuthzCell) {
-            AuthzQueryHelper authHelper = new AuthzQueryHelper(this);
-            authHelper.setDelegateToGplazma(_delegate_to_gplazma);
-            AuthorizationMessage authorizationMessage;
-            if (_user.equals(GLOBUS_URL_COPY_DEFAULT_USER)) {
-                info("GssFtpDoorV1::ac_user: gplazma special case, user is " +
-                        _user);
-                authorizationMessage =
-                        authHelper.getAuthorization(_serviceContext);
-            } else {
-                authorizationMessage =
-                        authHelper.getAuthorization(_serviceContext, _user);
 
-            }
-            return authorizationMessage.getAuthorizationRecord();
-        } else  if ( _use_gplazmaAuthzModule) {
-            AuthorizationController authCtrl =
-                    new AuthorizationController(_gplazmaPolicyFilePath);
-            if (_user.equals(GLOBUS_URL_COPY_DEFAULT_USER)) {
-                info("GssFtpDoorV1::ac_user: gplazma special case, user is " +
-                        _user);
-                return RecordConvert.gPlazmaToAuthorizationRecord(
-                        authCtrl.authorize(_serviceContext, null, null, null));
-            } else {
-                return RecordConvert.gPlazmaToAuthorizationRecord(
-                        authCtrl.authorize(_serviceContext, _user, null, null));
-            }
-        }  else {
-            throw new AuthorizationException(
-                    "_use_gplazmaAuthzCell is false and " +
-                    "_use_gplazmaAuthzModule is false");
+    @Override
+    public void ac_user(String arg)
+    {
+        if (arg.equals("")) {
+            reply(err("USER",arg));
+            return;
         }
 
+        if (_serviceContext == null || !_serviceContext.isEstablished()) {
+            reply("530 Authentication required");
+            return;
+        }
+
+        Subject subject = new Subject();
+        try {
+            subject.getPrincipals().add(_origin);
+
+            if (!arg.equals(GLOBUS_URL_COPY_DEFAULT_USER)) {
+                subject.getPrincipals().add(new UserNamePrincipal(arg));
+            }
+
+            if (!(_serviceContext instanceof ExtendedGSSContext)) {
+                throw new RuntimeException("GSSContext not instance of ExtendedGSSContext");
+            }
+
+            ExtendedGSSContext extendedcontext =
+                (ExtendedGSSContext) _serviceContext;
+            X509Certificate[] chain =
+                (X509Certificate[]) extendedcontext.inquireByOid(GSSConstants.X509_CERT_CHAIN);
+            subject.getPublicCredentials().add(chain);
+
+            login(subject);
+
+            _user = arg;
+
+            reply("200 User " + arg + " logged in");
+        } catch (GSSException e) {
+            error("Failed to extract X509 chain: " + e);
+            println("530 Login failed: " + e.getMessage());
+        } catch (PermissionDeniedCacheException e) {
+            warn("Login denied for " + subject);
+            println("530 Login incorrect");
+        } catch (CacheException e) {
+            error("Login failed for " + subject + ": " + e);
+            println("530 Login failed: " + e.getMessage());
+        }
     }
 }

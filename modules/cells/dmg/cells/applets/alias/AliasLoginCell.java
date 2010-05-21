@@ -7,6 +7,7 @@ import   dmg.util.* ;
 import java.util.* ;
 import java.io.* ;
 import java.net.* ;
+import javax.security.auth.Subject;
 
 
 /**
@@ -23,7 +24,7 @@ public class      AliasLoginCell
   private ObjectInputStream     _in ;
   private ObjectOutputStream    _out ;
   private InetAddress    _host ;
-  private String         _user ;
+  private Subject         _subject ;
   private Thread         _workerThread ;
   private Gate           _readyGate   = new Gate(false) ;
   private Hashtable      _hash = new Hashtable() ;
@@ -40,7 +41,7 @@ public class      AliasLoginCell
      
         _out  = new ObjectOutputStream( _engine.getOutputStream() ) ;
         _in   = new ObjectInputStream(  _engine.getInputStream() ) ;
-        _user = _engine.getUserName().getName() ;
+        _subject = _engine.getSubject();
         _host = _engine.getInetAddress() ;
      }catch(Exception e ){
         start() ;

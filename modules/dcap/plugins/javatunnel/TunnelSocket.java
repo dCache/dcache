@@ -6,14 +6,17 @@ package javatunnel;
 
 import java.net.*;
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+import javax.security.auth.Subject;
 
 public class TunnelSocket extends Socket implements UserBindible {
 
     private TunnelOutputStream _out = null;
     private TunnelInputStream _in   = null;
     private Convertable _tunnel = null;
-    private String _user = "nobody@NOWHERE" ;
-    private String _role = null;
+    private Subject _subject = new Subject();
+    private List<String> _roles = new ArrayList<String>();
     private String _group = null;
 
     TunnelSocket(Convertable tunnel) throws SocketException {
@@ -142,44 +145,29 @@ public class TunnelSocket extends Socket implements UserBindible {
     }
 
 
-    public void setUserPrincipal(String user) {
-        _user = user;
+    public void setSubject(Subject subject) {
+        _subject = subject;
     }
 
-
-    public String getUserPrincipal() {
-        return _user;
+    @Override
+    public Subject getSubject() {
+        return _subject;
     }
 
-	public String getGroup() {
-
-		return _group;
-	}
-
-	public String getRole() {
-
-		return _role;
-	}
-
-    public void setRole(String newRole) {
-        _role = newRole;
-    }
-
-    public void setGroup(String newGroup) {
-        _group = newGroup;
+    public void setRoles(List<String> newRoles) {
+        _roles.addAll(newRoles);
     }
 
     public boolean verify() throws IOException {
-    	if (_tunnel != null) {
-    		if (_tunnel.verify(this.getRawInputStream(), this.getRawOutputStream(), this)) {
-    			this.setUserPrincipal(_tunnel.getUserPrincipal());
-    			this.setRole (((UserBindible)_tunnel).getRole());
-    			this.setGroup(((UserBindible)_tunnel).getGroup());
-    			return true;
-    		} else
-    			return false;
-    	}
-    	return true;
+        if (_tunnel != null) {
+            if (_tunnel.verify(this.getRawInputStream(), this.getRawOutputStream(), this)) {
+                this.setSubject(_tunnel.getSubject());
+                return true;
+            } else {
+                return false;
+            }
+        }
+        return true;
     }
 
 }

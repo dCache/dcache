@@ -142,9 +142,7 @@ class SelfTest {
                // Convertable tunnel = new TunnelConverter();
                 TunnelSocket ts = (TunnelSocket)s;
                 ts.verify();
-                System.out.println( ts.getUserPrincipal() );
-                System.out.println( ts.getGroup() );
-                System.out.println( ts.getRole() );
+                System.out.println( ts.getSubject() );
 
                    out  = s.getOutputStream();
                    in  =  s.getInputStream();

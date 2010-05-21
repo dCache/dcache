@@ -1,7 +1,7 @@
 package org.dcache.xrootd2.core;
 
-import static org.jboss.netty.channel.Channels.*;
 import org.jboss.netty.channel.SimpleChannelHandler;
+
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.ChannelPipelineCoverage;
@@ -36,6 +36,7 @@ public class XrootdRequestHandler extends SimpleChannelHandler
     {
         AbstractRequestMessage msg = (AbstractRequestMessage) e.getMessage();
 
+        /* FIXME: can dispatching be done in a nicer way? */
         if (msg instanceof AuthenticationRequest) {
             doOnAuthentication(ctx, e, (AuthenticationRequest) msg);
         } else if (msg instanceof LoginRequest) {
@@ -58,6 +59,14 @@ public class XrootdRequestHandler extends SimpleChannelHandler
             doOnClose(ctx, e, (CloseRequest) msg);
         } else if (msg instanceof ProtocolRequest) {
             doOnProtocolRequest(ctx, e, (ProtocolRequest) msg);
+        } else if (msg instanceof RmRequest) {
+            doOnRm(ctx, e, (RmRequest) msg);
+        } else if (msg instanceof RmDirRequest) {
+            doOnRmDir(ctx, e, (RmDirRequest) msg);
+        } else if (msg instanceof MkDirRequest) {
+            doOnMkDir(ctx, e, (MkDirRequest) msg);
+        } else if (msg instanceof MvRequest) {
+            doOnMv(ctx, e, (MvRequest) msg);
         }
     }
 
@@ -148,6 +157,25 @@ public class XrootdRequestHandler extends SimpleChannelHandler
 
     protected void doOnProtocolRequest(ChannelHandlerContext ctx, MessageEvent e, ProtocolRequest msg)
     {
+        unsupported(ctx, e, msg);
+    }
+
+    protected void doOnRm(ChannelHandlerContext ctx, MessageEvent e, RmRequest msg) {
+        unsupported(ctx, e, msg);
+    }
+
+    protected void doOnRmDir(ChannelHandlerContext ctx, MessageEvent e, RmDirRequest msg)
+    {
+        unsupported(ctx, e, msg);
+    }
+
+    protected void doOnMkDir(ChannelHandlerContext ctx, MessageEvent e, MkDirRequest msg)
+    {
+        unsupported(ctx, e, msg);
+    }
+
+    protected void doOnMv(ChannelHandlerContext ctx, MessageEvent e,
+                            MvRequest msg) {
         unsupported(ctx, e, msg);
     }
 }

@@ -1,15 +1,18 @@
 package org.dcache.xrootd2.door;
 
-import java.io.IOException;
+import static org.dcache.namespace.FileAttribute.MODE;
+import static org.dcache.namespace.FileAttribute.OWNER;
+import static org.dcache.namespace.FileAttribute.OWNER_GROUP;
+import static org.dcache.namespace.FileAttribute.TYPE;
+
 import java.io.PrintWriter;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.util.Collections;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.Set;
-import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -21,19 +24,17 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.security.auth.Subject;
 import java.security.Principal;
-import com.sun.security.auth.UnixNumericUserPrincipal;
-import com.sun.security.auth.UnixNumericGroupPrincipal;
 
+import org.dcache.auth.UidPrincipal;
+import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.Subjects;
-import org.dcache.acl.Origin;
-import org.dcache.acl.enums.AuthType;
+import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
 import org.dcache.vehicles.XrootdProtocolInfo;
-import org.dcache.xrootd2.protocol.XrootdProtocol;
 import org.dcache.xrootd2.security.AbstractAuthorizationFactory;
+import org.dcache.namespace.FileType;
 import org.dcache.util.Transfer;
 import org.dcache.util.PingMoversTask;
-
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.cells.CellCommandListener;
@@ -48,13 +49,12 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
-import diskCacheV111.vehicles.ProtocolInfo;
-import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.IoDoorInfo;
 import diskCacheV111.vehicles.IoDoorEntry;
 import dmg.cells.nucleus.CellVersion;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
 import dmg.util.Args;
+import org.dcache.auth.Origin;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -258,11 +258,11 @@ public class XrootdDoor
         Subject subject = new Subject();
         int uid = Integer.parseInt(matcher.group(1));
         Set<Principal> principals = subject.getPrincipals();
-        principals.add(new UnixNumericUserPrincipal(uid));
+        principals.add(new UidPrincipal(uid));
         boolean primary = true;
         for (String group: matcher.group(2).split(",")) {
             int gid = Integer.parseInt(group);
-            principals.add(new UnixNumericGroupPrincipal(gid, primary));
+            principals.add(new GidPrincipal(gid, primary));
             primary = false;
         }
         subject.setReadOnly();
@@ -281,7 +281,7 @@ public class XrootdDoor
                                       _subject.getPrincipals(),
                                       _subject.getPublicCredentials(),
                                       _subject.getPrivateCredentials());
-        subject.getPrincipals().add(new Origin(AuthType.ORIGIN_AUTHTYPE_WEAK,
+        subject.getPrincipals().add(new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_WEAK,
                                                address));
         subject.setReadOnly();
         return subject;
@@ -527,6 +527,122 @@ public class XrootdDoor
             }
         }
         return transfer;
+    }
+
+    /**
+     * Delete the file denoted by path from the namespace
+     *
+     * @param path The path of the file that is going to be deleted
+     * @throws CacheException Deletion of the file failed
+     * @throws PermissionDeniedCacheException Caller does not have permission to delete the file
+     */
+    public void deleteFile(String path)
+        throws PermissionDeniedCacheException, CacheException
+    {
+        /* create full path from given deletion path, because the door can
+         * export partial results
+         */
+        FsPath fullPath = createFullPath(path);
+
+        if (isReadOnly()) {
+            throw new PermissionDeniedCacheException("Read only door");
+        }
+
+        if (!isWriteAllowed(fullPath)) {
+            throw new PermissionDeniedCacheException("Write permission denied");
+        }
+
+        Set<FileType> allowedSet = EnumSet.of(FileType.REGULAR);
+        _pnfs.deletePnfsEntry(fullPath.toString(), allowedSet);
+    }
+
+    /**
+     * Delete the directory denoted by path from the namespace
+     *
+     * @param path The path of the directory that is going to be deleted
+     * @throws CacheException
+     */
+    public void deleteDirectory(String path) throws CacheException
+    {
+        FsPath fullPath = createFullPath(path);
+
+        if (isReadOnly()) {
+            throw new PermissionDeniedCacheException("Read only door");
+        }
+
+        if (!isWriteAllowed(fullPath)) {
+            throw new PermissionDeniedCacheException("Write permission denied");
+        }
+
+        Set<FileType> allowedSet = EnumSet.of(FileType.DIR);
+        _pnfs.deletePnfsEntry(fullPath.toString(), allowedSet);
+    }
+
+    /**
+     * Create the directory denoted by path in the namespace.
+     *
+     * @param path The path of the directory that is going to be created.
+     * @param createParents Indicates whether the parent directories of the
+     *        directory should be created automatically if they do not yet
+     *        exist.
+     * @throws CacheException Creation of the directory failed.
+     */
+    public void createDirectory(String path, boolean createParents)
+                                                    throws CacheException
+    {
+        FsPath fullPath = createFullPath(path);
+
+        if (isReadOnly()) {
+            throw new PermissionDeniedCacheException("Read only door");
+        }
+
+        if (!isWriteAllowed(fullPath)) {
+            throw new PermissionDeniedCacheException("Write permission denied");
+        }
+
+        if (createParents) {
+            _pnfs.createDirectories(fullPath);
+        } else {
+            String parent = fullPath.getParent().toString();
+            FileAttributes attributes =
+                _pnfs.getFileAttributes(parent,
+                                        EnumSet.of(TYPE,OWNER,OWNER_GROUP,MODE));
+            _pnfs.createPnfsDirectory(fullPath.toString(),
+                                      attributes.getOwner(),
+                                      attributes.getGroup(),
+                                      attributes.getMode());
+        }
+    }
+
+    /**
+     * Emulate a file-move-operation by renaming sourcePath to targetPath in
+     * the namespace
+     * @param sourcePath the original path of the file that should be moved
+     * @param targetPath the path to which the file should be moved
+     * @throws CacheException
+     */
+    public void moveFile(String sourcePath, String targetPath)
+                                                    throws CacheException
+    {
+        FsPath fullTargetPath = createFullPath(targetPath);
+        FsPath fullSourcePath = createFullPath(sourcePath);
+
+        if (isReadOnly()) {
+            throw new PermissionDeniedCacheException("Read only door");
+        }
+
+        if (!isWriteAllowed(fullSourcePath)) {
+            throw new PermissionDeniedCacheException("No write permission on" +
+                                                     " source path!");
+        }
+
+        if (!isWriteAllowed(fullTargetPath)) {
+            throw new PermissionDeniedCacheException("No write permission on" +
+                                                     " target path!");
+        }
+
+        _pnfs.renameEntry(fullSourcePath.toString(), fullTargetPath.toString(),
+                          false);
     }
 
     /**

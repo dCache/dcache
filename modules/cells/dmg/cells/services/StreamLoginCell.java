@@ -8,6 +8,7 @@ import   dmg.cells.services.login.* ;
 import java.util.* ;
 import java.io.* ;
 import java.net.* ;
+import javax.security.auth.Subject;
 
 
 /**
@@ -24,7 +25,7 @@ public class      StreamLoginCell
   private ControlBufferedReader _in ;
   private PrintWriter    _out ;
   private InetAddress    _host ;
-  private String         _user ;
+  private Subject         _subject ;
   private Thread         _workerThread ;
   private CellShell      _shell ; 
   private String         _destination = null ;
@@ -43,7 +44,7 @@ public class      StreamLoginCell
      _reader  = engine.getReader() ;
      _in      = new ControlBufferedReader( _reader ) ;
      _out     = new PrintWriter( engine.getWriter() ) ;
-     _user    = engine.getUserName().getName() ;
+     _subject    = engine.getSubject();
      _host    = engine.getInetAddress() ;
       
      _shell        = new CellShell( _nucleus ) ;
@@ -187,10 +188,10 @@ public class      StreamLoginCell
   //
   // the cell implemetation 
   //
-   public String toString(){ return _user+"@"+_host ; }
+   public String toString(){ return Subjects.getDisplayName(_subject)+"@"+_host ; }
    public void getInfo( PrintWriter pw ){
      pw.println( "            Stream LoginCell" ) ;
-     pw.println( "         User  : "+_user ) ;
+     pw.println( "         User  : "+Subjects.getDisplayName(_subject) ) ;
      pw.println( "         Host  : "+_host ) ;
      pw.println( " Last Command  : "+_lastCommand ) ;
      pw.println( " Command Count : "+_commandCounter ) ;

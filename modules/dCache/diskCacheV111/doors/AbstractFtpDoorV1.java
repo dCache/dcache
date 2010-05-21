@@ -160,23 +160,21 @@ import diskCacheV111.util.ChecksumPersistence;
 import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.Checksum;
 import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.services.acl.PermissionHandler;
-import diskCacheV111.services.acl.DelegatingPermissionHandler;
-import diskCacheV111.services.acl.GrantAllPermissionHandler;
 
 import org.dcache.namespace.FileType;
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.UserAuthBase;
 import org.dcache.auth.AuthorizationRecord;
+import org.dcache.auth.LoginReply;
+import org.dcache.auth.LoginStrategy;
+import org.dcache.auth.attributes.LoginAttribute;
+import org.dcache.auth.attributes.ReadOnly;
+import org.dcache.auth.attributes.HomeDirectory;
+import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.cells.AbstractCell;
 import org.dcache.cells.Option;
-import org.dcache.acl.ACLException;
-import org.dcache.acl.Origin;
 import org.dcache.acl.enums.AccessType;
-import org.dcache.acl.enums.AuthType;
-import org.dcache.acl.enums.FileAttribute;
-import org.dcache.acl.enums.InetAddressType;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
@@ -187,18 +185,16 @@ import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.util.list.DirectoryStream;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.Glob;
-import org.dcache.auth.Subjects;
 import org.globus.gsi.jaas.GlobusPrincipal;
 
 import dmg.cells.nucleus.CDC;
 
 import org.apache.log4j.NDC;
 
-import com.sun.security.auth.UnixNumericGroupPrincipal;
-import com.sun.security.auth.UnixNumericUserPrincipal;
 import javax.security.auth.Subject;
 
 import diskCacheV111.poolManager.RequestContainerV5;
+import org.dcache.auth.Origin;
 
 import static org.dcache.namespace.FileAttribute.*;
 
@@ -399,18 +395,6 @@ public abstract class AbstractFtpDoorV1
      * User's Origin
      */
     protected Origin _origin;
-
-    /**
-     * Permission Handler
-     */
-    protected PermissionHandler _permissionHandler;
-
-    @Option(
-        name = "permission-handler",
-        description = "Permission handler class names",
-        defaultValue = ""
-    )
-    protected String _permissionHandlerClasses;
 
     @Option(
         name = "poolManager",
@@ -661,13 +645,9 @@ public abstract class AbstractFtpDoorV1
     private final static ExecutorService _executor =
         Executors.newCachedThreadPool();
 
-    protected String         _dnUser;
     private   Thread         _workerThread;
     protected int            _commandCounter = 0;
     protected String         _lastCommand    = "<init>";
-
-    //XXX this should get set when we authenicate the user
-    protected String         _user       = "nobody";
 
     protected String         _client_data_host;
     protected int            _client_data_port = 20;
@@ -685,9 +665,8 @@ public abstract class AbstractFtpDoorV1
 
     protected boolean _confirmEOFs = false;
 
-    protected UserAuthBase _pwdRecord;
-    AuthorizationRecord authRecord=null;
-    protected UserAuthBase _originalPwdRecord;
+    protected Subject _subject;
+    protected boolean _isUserReadOnly;
     protected String _pathRoot;
     protected String _curDirV;
     protected String _xferMode = "S";
@@ -695,6 +674,8 @@ public abstract class AbstractFtpDoorV1
 
     /** Tape Protection */
     protected CheckStagePermission _checkStagePermission;
+
+    protected LoginStrategy _loginStrategy;
 
     /**
      *   NEW
@@ -981,33 +962,51 @@ public abstract class AbstractFtpDoorV1
 
         /* Permission handler.
          */
-        Subject subject;
-        _origin = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+	_origin = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                              _engine.getInetAddress());
-        if (_permissionHandlerClasses != null) {
-            _permissionHandler = new DelegatingPermissionHandler(this);
-            subject = null;
-        } else {
-            _permissionHandler = new GrantAllPermissionHandler();
-            subject = new Subject();
-            subject.getPrincipals().add(_origin);
-            subject.setReadOnly();
-        }
-
-        _pnfs = new PnfsHandler(this, new CellPath(_pnfsManager));
-        _pnfs.setPnfsTimeout(_pnfsTimeout * 1000L);
-        _pnfs.setSubject(subject);
-        _listSource = new ListDirectoryHandler(_pnfs);
 
         adminCommandListener = new AdminCommandListener();
         addCommandListener(adminCommandListener);
-        addMessageListener(_listSource);
 
         _checkStagePermission = new CheckStagePermission(_stageConfigurationFilePath);
 
         useInterpreter(true);
 
         _workerThread = new Thread(this);
+    }
+
+    /**
+     * Subject is logged in using the current login strategy.
+     */
+    protected void login(Subject subject)
+        throws CacheException
+    {
+        LoginReply login = _loginStrategy.login(subject);
+        _subject = login.getSubject();
+
+        /* The origin ought to be part of the subject sent to the
+         * LoginStrategy, however due to the policy that
+         * LoginStrategies only provide what they recognize, we cannot
+         * rely on the Origin surviving. Hence we add it to the
+         * result. REVISIT
+         */
+        _subject.getPrincipals().add(_origin);
+
+        for (LoginAttribute attribute: login.getLoginAttributes()) {
+            if (attribute instanceof RootDirectory) {
+                _pathRoot = ((RootDirectory) attribute).getRoot();
+            } else if (attribute instanceof HomeDirectory) {
+                _curDirV = ((HomeDirectory) attribute).getHome();
+            } else if (attribute instanceof ReadOnly) {
+                _isUserReadOnly = ((ReadOnly) attribute).isReadOnly();
+            }
+        }
+
+        _pnfs = new PnfsHandler(this, new CellPath(_pnfsManager));
+        _pnfs.setPnfsTimeout(_pnfsTimeout * 1000L);
+        _pnfs.setSubject(_subject);
+        _listSource = new ListDirectoryHandler(_pnfs);
+        addMessageListener(_listSource);
     }
 
     protected AdminCommandListener adminCommandListener;
@@ -1018,9 +1017,9 @@ public abstract class AbstractFtpDoorV1
         {
             IoDoorInfo doorInfo = new IoDoorInfo(getCellName(),
                                                  getCellDomainName());
+            long[] uids = (_subject != null) ? Subjects.getUids(_subject) : new long[0];
             doorInfo.setProtocol("GFtp","1");
-            doorInfo.setOwner(_pwdRecord == null ? "0" : Integer.toString(_pwdRecord.UID));
-            //doorInfo.setProcess( _pid == null ? "0" : _pid ) ;
+            doorInfo.setOwner((uids.length == 0) ? "0" : Long.toString(uids[0]));
             doorInfo.setProcess("0");
             if (_transfer != null) {
                 IoDoorEntry[] entries = {
@@ -1106,8 +1105,6 @@ public abstract class AbstractFtpDoorV1
             reply(err(cmd,arg));
             return;
         }
-
-        resetPwdRecord();
 
         Method m = _methodDict.get(cmd);
         try {
@@ -1325,17 +1322,22 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
+    protected String getUser()
+    {
+        return Subjects.getUserName(_subject);
+    }
+
     @Override
     public String toString()
     {
-        return _user + "@" + _client_data_host;
+        return getUser() + "@" + _client_data_host;
     }
 
     @Override
     public void getInfo(PrintWriter pw)
     {
         pw.println( "            FTPDoor");
-        pw.println( "         User  : " + _dnUser == null? _user : _dnUser);
+        pw.println( "         User  : " + getUser());
         pw.println( "    User Host  : " + _client_data_host);
         pw.println( "   Local Host  : " + _local_host);
         pw.println( " Last Command  : " + _lastCommand);
@@ -1667,50 +1669,22 @@ public abstract class AbstractFtpDoorV1
             return;
         }
 
-        if (_pwdRecord.isReadOnly()) {
-            if(!setNextPwdRecord()) {
-                reply("500 Command disabled");
-                return;
-            } else {
-                ac_dele(arg);
-                return;
-            }
+        if (_isUserReadOnly) {
+            reply("500 Command disabled");
+            return;
         }
 
         String pnfsPath = absolutePath(arg);
 
         try {
-            if (_permissionHandler.canDeleteFile(pnfsPath, getSubject(), _origin) != AccessType.ACCESS_ALLOWED) {
-                if(!setNextPwdRecord()) {
-                    reply("550 Permission denied");
-                    return;
-                } else {
-                    ac_dele(arg);
-                    return;
-                }
-            }
-
             _pnfs.deletePnfsEntry(pnfsPath,
                                   EnumSet.of(FileType.REGULAR, FileType.LINK));
-
-        }catch(ACLException e) {
-            reply("550 Permission denied");
-            error("FTP Door: DELE got AclException: " + e.getMessage());
-            return;
         } catch (PermissionDeniedCacheException e) {
-            if(!setNextPwdRecord()) {
-                reply("550 Permission denied");
-            } else {
-                ac_dele(arg);
-            }
+            reply("550 Permission denied");
             return;
         } catch (CacheException e) {
             error("FTP Door: DELE got CacheException: " + e.getMessage());
-            if(!setNextPwdRecord()) {
-                reply("550 Permission denied, reason: " + e);
-            } else {
-                ac_dele(arg);
-            }
+            reply("550 Permission denied, reason: " + e);
             return;
         }
         sendRemoveInfoToBilling(pnfsPath);
@@ -1809,7 +1783,7 @@ public abstract class AbstractFtpDoorV1
             return;
         }
 
-        if (_pwdRecord == null) {
+        if (_subject == null) {
             reply("530 Not logged in.");
             return;
         }
@@ -1819,76 +1793,38 @@ public abstract class AbstractFtpDoorV1
             return;
         }
 
-        if (_pwdRecord.isReadOnly()) {
-            if(!setNextPwdRecord()) {
-                reply("500 Command disabled");
-                return;
-            } else {
-                ac_rmd(arg);
-                return;
-            }
+        if (_isUserReadOnly) {
+            reply("500 Command disabled");
+            return;
         }
 
-        if (_pwdRecord.isAnonymous()) {
-            if(!setNextPwdRecord()) {
-                reply("554 Anonymous write access not permitted");
-                return;
-            } else {
-                ac_rmd(arg);
-                return;
-            }
+        if (_subject.equals(Subjects.NOBODY)) {
+            reply("554 Anonymous write access not permitted");
+            return;
         }
 
         String pnfsPath = absolutePath(arg);
         if (pnfsPath == null) {
-            if(!setNextPwdRecord()) {
-                reply("553 Cannot determine full directory pathname in PNFS: " + arg);
-                return;
-            } else {
-                ac_rmd(arg);
-                return;
-            }
+            reply("553 Cannot determine full directory pathname in PNFS: " + arg);
+            return;
         }
 
         try {
-            PnfsId pnfsId = _pnfs.getPnfsIdByPath(pnfsPath);
-            if (_permissionHandler.canDeleteDir(pnfsId, getSubject(), _origin) != AccessType.ACCESS_ALLOWED) {
-                if(!setNextPwdRecord()) {
-                    reply("550 Permission denied");
-                    return;
-                } else {
-                    ac_rmd(arg);
-                    return;
-                }
-            }
-
             _pnfs.deletePnfsEntry(pnfsPath, EnumSet.of(FileType.DIR));
-
             reply("200 OK");
-        }catch(ACLException e) {
-            reply("550 Permission denied, reason (Acl) ");
-            error("FTP Door: ACL module failed: " + e);
         } catch (FileNotFoundCacheException e) {
             reply("550 File not found");
         } catch (PermissionDeniedCacheException e) {
-            if(!setNextPwdRecord()) {
-                reply("550 Permission denied");
-            } else {
-                ac_rmd(arg);
-            }
+            reply("550 Permission denied");
         } catch (CacheException ce) {
-            if(!setNextPwdRecord()) {
-                reply("550 Permission denied, reason: " + ce);
-            } else {
-                ac_rmd(arg);
-            }
+            reply("550 Permission denied, reason: " + ce);
         }
     }
 
 
     public void ac_mkd(String arg)
     {
-        if (_pwdRecord == null) {
+        if (_subject == null) {
             reply("530 Not logged in.");
             return;
         }
@@ -1903,73 +1839,33 @@ public abstract class AbstractFtpDoorV1
             return;
         }
 
-        if (_pwdRecord.isReadOnly()) {
-            if(!setNextPwdRecord()) {
-                reply("500 Command disabled");
-                return;
-            } else {
-                ac_mkd(arg);
-                return;
-            }
+        if (_isUserReadOnly) {
+            reply("500 Command disabled");
+            return;
         }
 
-        if (_pwdRecord.isAnonymous()) {
-            if(!setNextPwdRecord()) {
-                reply("554 Anonymous write access not permitted");
-                return;
-            } else {
-                ac_mkd(arg);
-                return;
-            }
+        if (_subject.equals(Subjects.NOBODY)) {
+            reply("554 Anonymous write access not permitted");
+            return;
         }
 
         String pnfsPath = absolutePath(arg);
         if (pnfsPath == null) {
-            if(!setNextPwdRecord()) {
-                reply("553 Cannot create directory in PNFS: " + arg);
-                return;
-            } else {
-                ac_mkd(arg);
-                return;
-            }
+            reply("553 Cannot create directory in PNFS: " + arg);
+            return;
         }
 
         try {
-            String parent = new File(pnfsPath).getParent();
-            PnfsId parentId = _pnfs.getPnfsIdByPath(parent);
-            if (_permissionHandler.canCreateDir(parentId, getSubject(), _origin) != AccessType.ACCESS_ALLOWED) {
-                if(!setNextPwdRecord()) {
-                    reply("553 Permission denied");
-                    return;
-                } else {
-                    ac_mkd(arg);
-                    return;
-                }
-            }
-
-            _pnfs.createPnfsDirectory(pnfsPath, _pwdRecord.UID, _pwdRecord.GID, 0755);
-
-        }catch(ACLException e) {
-            reply("550 Permission denied, reason (Acl) ");
-            error("FTP Door: ACL module failed: " + e);
-            return;
+            _pnfs.createPnfsDirectory(pnfsPath,
+                                      (int) Subjects.getUid(_subject),
+                                      (int) Subjects.getPrimaryGid(_subject),
+                                      0755);
+            reply("200 OK");
         } catch (PermissionDeniedCacheException e) {
-            if(!setNextPwdRecord()) {
-                reply("550 Permission denied");
-            } else {
-                ac_mkd(arg);
-            }
-            return;
+            reply("550 Permission denied");
         } catch(CacheException ce) {
-            if(!setNextPwdRecord()) {
-                reply("553 Permission denied, reason: "+ce);
-                return;
-            } else {
-                ac_mkd(arg);
-                return;
-            }
+            reply("553 Permission denied, reason: "+ce);
         }
-        reply("200 OK");
     }
 
     public void ac_help(String arg)
@@ -2251,7 +2147,7 @@ public abstract class AbstractFtpDoorV1
 
     public void doChmod(String permstring, String path)
     {
-        if (_pwdRecord == null) {
+        if (_subject == null) {
             reply("530 Not logged in.");
             return;
         }
@@ -2261,14 +2157,9 @@ public abstract class AbstractFtpDoorV1
             return;
         }
 
-        if (_pwdRecord.isReadOnly()) {
-            if(!setNextPwdRecord()) {
-                reply("500 Command disabled");
-                return;
-            } else {
-                doChmod(permstring, path);
-                return;
-            }
+        if (_isUserReadOnly) {
+            reply("500 Command disabled");
+            return;
         }
 
         if (path.equals("")){
@@ -2278,13 +2169,8 @@ public abstract class AbstractFtpDoorV1
 
         String pnfsPath = absolutePath(path);
         if (pnfsPath == null) {
-            if(!setNextPwdRecord()) {
-                reply("553 Cannot determine full directory pathname in PNFS: " + path);
-                return;
-            } else {
-                doChmod(permstring, path);
-                return;
-            }
+            reply("553 Cannot determine full directory pathname in PNFS: " + path);
+            return;
         }
 
         int newperms;
@@ -2303,18 +2189,10 @@ public abstract class AbstractFtpDoorV1
                                         EnumSet.of(PNFSID, TYPE,
                                                    OWNER, OWNER_GROUP));
         } catch (PermissionDeniedCacheException e) {
-            if(!setNextPwdRecord()) {
-                reply("550 Permission denied");
-            } else {
-                doChmod(permstring, path);
-            }
+            reply("550 Permission denied");
             return;
         } catch (CacheException ce) {
-            if(!setNextPwdRecord()) {
-                reply("550 Permission denied, reason: " + ce);
-            } else {
-                doChmod(permstring, path);
-            }
+            reply("550 Permission denied, reason: " + ce);
             return;
         }
 
@@ -2326,22 +2204,14 @@ public abstract class AbstractFtpDoorV1
         int          myGid      = attributes.getGroup();
 
         // Only file/directory owner can change permissions on that file/directory
-        if (myUid != _pwdRecord.UID) {
-            if(!setNextPwdRecord()) {
-                reply("550 Permission denied. Only owner can change permissions.");
-            } else {
-                doChmod(permstring, path);
-            }
+        if (!Subjects.hasUid(_subject, myUid)) {
+            reply("550 Permission denied. Only owner can change permissions.");
             return;
         }
 
         // Chmod on symbolic links not yet supported (should change perms on file/dir pointed to)
         if (isASymLink) {
-            if(!setNextPwdRecord()) {
-                reply("502 chmod of symbolic links is not yet supported.");
-            } else {
-                doChmod(permstring, path);
-            }
+            reply("502 chmod of symbolic links is not yet supported.");
             return;
         }
 
@@ -2640,7 +2510,7 @@ public abstract class AbstractFtpDoorV1
             if (xferMode.equals("X") && mode == Mode.PASSIVE && _isProxyRequiredOnPassive) {
                 throw new FTPCommandException(504, "Cannot use passive X mode");
             }
-            if (_pwdRecord == null) {
+            if (_subject == null) {
                 throw new FTPCommandException(530, "Not logged in.");
             }
 
@@ -2650,9 +2520,9 @@ public abstract class AbstractFtpDoorV1
 
             /* Set ownership and other information for transfer.
              */
-            _transfer.info.setOwner(_dnUser == null? _user : _dnUser);
-            _transfer.info.setGid(_pwdRecord.GID);
-            _transfer.info.setUid(_pwdRecord.UID);
+            _transfer.info.setOwner(getUser());
+            _transfer.info.setGid((int) Subjects.getPrimaryGid(_subject));
+            _transfer.info.setUid((int) Subjects.getUid(_subject));
             _transfer.client_host = client.getHostName();
             _transfer.client_port = client.getPort();
 
@@ -2662,28 +2532,7 @@ public abstract class AbstractFtpDoorV1
             FsPath relativeToRootPath = new FsPath(_curDirV);
             relativeToRootPath.add(file);
 
-            /* Check file permissions.
-             */
-            //PnfsId pnfsId = _pnfs.getPnfsIdByPath(_transfer.path);
-            try {
-                if (_permissionHandler.canReadFile(_transfer.path, getSubject(), _origin) != AccessType.ACCESS_ALLOWED) {
-                    if(setNextPwdRecord()) {
-                        retrieve(file, offset, size,
-                                 mode, xferMode,
-                                 parallel,
-                                 client, bufSize, reply127, version);
-                        return;
-                    }
-                    throw new FTPCommandException(550, "Permission denied");
-                }
-            }catch(ACLException e) {
-                error("FTP Door: ACL module failed: " + e);
-                throw new FTPCommandException(550, "Permission denied, reason (Acl)");
-            } catch(NotFileCacheException ce ) {
-                throw new FTPCommandException(501, "Not a file");
-            }
-
-            info("FTP Door: retrieve user=" + _user);
+            info("FTP Door: retrieve user=" + getUser());
             info("FTP Door: retrieve vpath=" + relativeToRootPath);
             info("FTP Door: retrieve addr=" + _engine.getInetAddress().toString());
 
@@ -2883,37 +2732,23 @@ public abstract class AbstractFtpDoorV1
                 throw new FTPCommandException(501, "STOR command not understood");
             }
 
-            if (_pwdRecord == null) {
+            if (_subject == null) {
                 throw new FTPCommandException(530, "Not logged in.");
             }
 
-            if (_pwdRecord.isReadOnly()) {
-                if(!setNextPwdRecord()) {
-                    throw new FTPCommandException(500, "Command disabled");
-                } else {
-                    store(file, mode, xferMode,
-                          parallel,
-                          client, bufSize, reply127, version);
-                    return;
-                }
+            if (_isUserReadOnly) {
+                throw new FTPCommandException(500, "Command disabled");
             }
 
-            if (_pwdRecord.isAnonymous()) {
-                if(!setNextPwdRecord()) {
-                    throw new FTPCommandException(554, "Anonymous write access not permitted");
-                } else {
-                    store(file, mode, xferMode,
-                          parallel,
-                          client, bufSize, reply127, version);
-                    return;
-                }
+            if (_subject.equals(Subjects.NOBODY)) {
+                throw new FTPCommandException(554, "Anonymous write access not permitted");
             }
 
             /* Set ownership and other information for transfer.
              */
-            _transfer.info.setOwner(_dnUser == null? _user : _dnUser);
-            _transfer.info.setGid(_pwdRecord.GID);
-            _transfer.info.setUid(_pwdRecord.UID);
+            _transfer.info.setOwner(getUser());
+            _transfer.info.setGid((int) Subjects.getPrimaryGid(_subject));
+            _transfer.info.setUid((int) Subjects.getUid(_subject));
             _transfer.client_host = client.getHostName();
             _transfer.client_port = client.getPort();
 
@@ -2936,7 +2771,7 @@ public abstract class AbstractFtpDoorV1
             // for monitoring
             _transfer.state = "waiting for storage info";
 
-            info("FTP Door: store user=" + _user);
+            info("FTP Door: store user=" + getUser());
             info("FTP Door: store path=" + _transfer.path);
             info("FTP Door: store addr=" + _engine.getInetAddress().toString());
             //XXX When we upgrade to the GSSAPI version of GSI
@@ -2944,27 +2779,6 @@ public abstract class AbstractFtpDoorV1
             //in the userprincipal spot
             startTlog(_transfer.path, "write");
             debug("FTP Door: store: _tLog begin done");
-
-            /* Check if the user has permission to create the file.
-             */
-            _transfer.state = "checking permissions via permission handler";
-            info("FTP Door: store: checking permissions via permission " +
-                 "handler for path: " + _transfer.path);
-            String parent = new File(_transfer.path).getParent();
-            PnfsId parentId = _pnfs.getPnfsIdByPath(parent);
-            if (_permissionHandler.canCreateFile(parentId, getSubject(), _origin) != AccessType.ACCESS_ALLOWED) {
-                if(!setNextPwdRecord()) {
-                    throw new FTPCommandException
-                        (550,
-                         "Permission denied",
-                         "Permission denied for path: " + _transfer.path);
-                } else {
-                    store(file, mode, xferMode,
-                          parallel,
-                          client, bufSize, reply127, version);
-                    return;
-                }
-            }
 
             /* Create PNFS entry.
              */
@@ -2984,8 +2798,8 @@ public abstract class AbstractFtpDoorV1
              */
             try {
                 pnfsEntry = _pnfs.createPnfsEntry(_transfer.path,
-                                                  _pwdRecord.UID,
-                                                  _pwdRecord.GID,
+                                                  (int) Subjects.getUid(_subject),
+                                                  (int) Subjects.getPrimaryGid(_subject),
                                                   0644);
             } catch (FileExistsCacheException fnfe) {
                 if(_overwrite) {
@@ -2993,8 +2807,8 @@ public abstract class AbstractFtpDoorV1
                          _transfer.path + "\" exists, and will be overwritten");
                     _pnfs.deletePnfsEntry( _transfer.path);
                     pnfsEntry = _pnfs.createPnfsEntry(_transfer.path,
-                                                      _pwdRecord.UID,
-                                                      _pwdRecord.GID,
+                                                      (int) Subjects.getUid(_subject),
+                                                      (int) Subjects.getPrimaryGid(_subject),
                                                       0644);
                 } else {
                     throw new FTPCommandException(553,
@@ -3011,8 +2825,8 @@ public abstract class AbstractFtpDoorV1
                          _transfer.path + "\" exists, and will be overwritten");
                     _pnfs.deletePnfsEntry(_transfer.path);
                     pnfsEntry = _pnfs.createPnfsEntry(_transfer.path,
-                                                      _pwdRecord.UID,
-                                                      _pwdRecord.GID,
+                                                      (int) Subjects.getUid(_subject),
+                                                      (int) Subjects.getPrimaryGid(_subject),
                                                       0644);
                 } else {
                     throw new FTPCommandException(553,
@@ -3076,8 +2890,6 @@ public abstract class AbstractFtpDoorV1
                                 _perfMarkerConf.period,
                                 _perfMarkerConf.period);
             }
-        } catch (ACLException e) {
-            abortTransfer(550, "Permission denied, ACL failure", e);
         } catch (FTPCommandException e) {
             abortTransfer(e.getCode(), e.getReply());
         } catch (InterruptedException e) {
@@ -3238,7 +3050,7 @@ public abstract class AbstractFtpDoorV1
                                  parallel,
                                  parallel,
                                  bufSize, 0, 0,
-                                 authRecord);
+                                 Subjects.getAuthorizationRecord(_subject));
 
         PoolMgrSelectPoolMsg request;
         if (isWrite) {
@@ -3247,9 +3059,8 @@ public abstract class AbstractFtpDoorV1
                                                     protocolInfo,
                                                     _allo);
         } else {   //transfer: 'retrieve'
-            Subject subject = getCompleteSubject();
             int allowedStates =
-                _checkStagePermission.canPerformStaging(subject)
+                _checkStagePermission.canPerformStaging(_subject, storageInfo)
                 ? RequestContainerV5.allStates
                 : RequestContainerV5.allStatesExceptStage;
             request = new PoolMgrSelectReadPoolMsg(_transfer.pnfsId,
@@ -3257,8 +3068,8 @@ public abstract class AbstractFtpDoorV1
                                                    protocolInfo,
                                                    0L,
                                                    allowedStates);
-            request.setSubject(subject);
         }
+        request.setSubject(_subject);
         request.setPnfsPath(_transfer.path);
         request = sendAndWait(new CellPath(_poolManager), request,
                               _poolManagerTimeout * 1000);
@@ -3285,7 +3096,7 @@ public abstract class AbstractFtpDoorV1
                                      bufSize,
                                      offset,
                                      size,
-                                     authRecord);
+                                     Subjects.getAuthorizationRecord(_subject));
         } else {
             protocolInfo =
                 new GFtpProtocolInfo("GFtp",
@@ -3298,7 +3109,7 @@ public abstract class AbstractFtpDoorV1
                                      bufSize,
                                      offset,
                                      size,
-                                     authRecord);
+                                     Subjects.getAuthorizationRecord(_subject));
         }
 
         protocolInfo.setDoorCellName(getCellName());
@@ -3508,7 +3319,7 @@ public abstract class AbstractFtpDoorV1
             return;
         }
 
-        if (_pwdRecord == null) {
+        if (_subject == null) {
             reply("530 Not logged in.");
             return;
         }
@@ -3517,21 +3328,8 @@ public abstract class AbstractFtpDoorV1
         long filelength = 0;
         try {
             FileAttributes attributes =
-                _pnfs.getFileAttributes(path, EnumSet.of(PNFSID, SIZE));
-            PnfsId pnfsId = attributes.getPnfsId();
-            if (_permissionHandler.canGetAttributes(pnfsId, getSubject(), _origin, FileAttribute.FATTR4_SIZE) != AccessType.ACCESS_ALLOWED) {
-                if(!setNextPwdRecord()) {
-                    reply("553 Permission denied");
-                } else {
-                    ac_size(arg);
-                }
-                return;
-            }
+                _pnfs.getFileAttributes(path, EnumSet.of(SIZE));
             filelength = attributes.getSize();
-        } catch(ACLException e) {
-            reply("550 Permission denied, reason (Acl) ");
-            error("FTP Door: ACL module failed: " + e);
-            return;
         } catch (PermissionDeniedCacheException e) {
             reply("550 Permission denied");
             return;
@@ -3549,7 +3347,7 @@ public abstract class AbstractFtpDoorV1
             return;
         }
 
-        if (_pwdRecord == null) {
+        if (_subject == null) {
             reply("530 Not logged in.");
             return;
         }
@@ -3564,25 +3362,11 @@ public abstract class AbstractFtpDoorV1
             long modification_time;
             FileAttributes attributes =
                 _pnfs.getFileAttributes(path,
-                                        EnumSet.of(PNFSID, MODIFICATION_TIME));
-            PnfsId pnfsId = attributes.getPnfsId();
-            if (_permissionHandler.canGetAttributes(pnfsId, getSubject(), _origin, FileAttribute.FATTR4_SUPPORTED_ATTRS) != AccessType.ACCESS_ALLOWED) {
-                if(!setNextPwdRecord()) {
-                    reply("550 Permission denied");
-                } else {
-                    ac_mdtm(arg);
-                }
-                return;
-            }
-
+                                        EnumSet.of(MODIFICATION_TIME));
             modification_time = attributes.getModificationTime();
             String time_val =
                 TIMESTAMP_FORMAT.format(new Date(modification_time));
             reply("213 " + time_val);
-        } catch(ACLException e) {
-            reply("451 Internal permission check failure: " +
-                  e.getMessage());
-            error("Error in MDTM: " + e);
         } catch (PermissionDeniedCacheException e) {
             reply("550 Permission denied");
         } catch (CacheException e) {
@@ -3767,7 +3551,7 @@ public abstract class AbstractFtpDoorV1
 
     public void ac_mlst(String arg)
     {
-        if (_pwdRecord == null) {
+        if (_subject == null) {
             reply("530 Not logged in.");
             return;
         }
@@ -3808,7 +3592,7 @@ public abstract class AbstractFtpDoorV1
 
     public void ac_mlsd(String arg)
     {
-        if (_pwdRecord == null) {
+        if (_subject == null) {
             reply("530 Not logged in.");
             return;
         }
@@ -4015,10 +3799,6 @@ public abstract class AbstractFtpDoorV1
         _transfer.state = "mover " + transfer.moverId
             + (isWrite ? ": receiving" : ": sending");
     }
-
-    abstract protected boolean setNextPwdRecord();
-
-    abstract protected void resetPwdRecord();
 
     private class PerfMarkerTask
         extends TimerTask implements CellMessageAnswerable
@@ -4512,46 +4292,14 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    /**
-     * Returns the Subject that was authenticated by the door. Only
-     * the Principals of the current _pwdRecord are included.
-     */
-    protected Subject getSubject()
-    {
-        if (_pwdRecord == null) {
-            return Subjects.NOBODY;
-        }
-        Subject subject = Subjects.getSubject(_pwdRecord, true);
-        subject.getPrincipals().add(_origin);
-        subject.setReadOnly();
-        return subject;
-    }
-
-    /**
-     * Returns the Subject that was authenticated by the door. The
-     * Subject will contain all Principals of the user, not just the
-     * Principals of the current _pwdRecord.
-     */
-    protected Subject getCompleteSubject()
-    {
-        if (authRecord == null) {
-            return getSubject();
-        }
-
-        Subject subject = Subjects.getSubject(authRecord);
-        subject.getPrincipals().add(_origin);
-        subject.setReadOnly();
-        return subject;
-    }
-
     private void sendRemoveInfoToBilling(String pathInPnfs) {
         try {
             DoorRequestInfoMessage infoRemove =
                 new DoorRequestInfoMessage(getNucleus().getCellName()+"@"+
                                            getNucleus().getCellDomainName(), "remove");
-            infoRemove.setOwner(_dnUser == null? _user : _dnUser);
-            infoRemove.setGid(_pwdRecord.GID);
-            infoRemove.setUid(_pwdRecord.UID);
+            infoRemove.setOwner(getUser());
+            infoRemove.setGid((int) Subjects.getPrimaryGid(_subject));
+            infoRemove.setUid((int) Subjects.getUid(_subject));
             infoRemove.setPath(pathInPnfs);
             infoRemove.setClient(_client_data_host);
 
@@ -4586,7 +4334,7 @@ public abstract class AbstractFtpDoorV1
     /** A long format corresponding to the 'normal' FTP list format. */
     class LongListPrinter implements DirectoryListPrinter
     {
-        private final Subject _subject;
+        private final String _userName;
         private final PrintWriter _out;
         private final org.dcache.namespace.PermissionHandler _pdp =
             new org.dcache.namespace.ChainedPermissionHandler
@@ -4598,7 +4346,7 @@ public abstract class AbstractFtpDoorV1
         public LongListPrinter(PrintWriter writer)
         {
             _out = writer;
-            _subject = getSubject();
+            _userName = Subjects.getUserName(_subject);
         }
 
         public Set<org.dcache.namespace.FileAttribute> getRequiredAttributes()
@@ -4649,8 +4397,8 @@ public abstract class AbstractFtpDoorV1
 
             _out.format(format,
                         mode,
-                        _pwdRecord.Username,
-                        _pwdRecord.Username,
+                        _userName,
+                        _userName,
                         attr.getSize(),
                         modified,
                         entry.getName());
@@ -4664,7 +4412,6 @@ public abstract class AbstractFtpDoorV1
     private class FactPrinter implements DirectoryListPrinter
     {
         private final PrintWriter _out;
-        private final Subject _subject;
         private final org.dcache.namespace.PermissionHandler _pdp =
             new org.dcache.namespace.ChainedPermissionHandler
             (
@@ -4675,7 +4422,6 @@ public abstract class AbstractFtpDoorV1
         public FactPrinter(PrintWriter writer)
         {
             _out = writer;
-            _subject = getSubject();
         }
 
         public Set<org.dcache.namespace.FileAttribute> getRequiredAttributes()

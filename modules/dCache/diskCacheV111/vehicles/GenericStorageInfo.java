@@ -367,4 +367,34 @@ public class GenericStorageInfo
                                        e.getMessage());
         }
     }
+
+    /**
+     * Create a {@link StorageInfo} corresponding to given store unit and cacheClass
+     *
+     * @param storeUnit
+     * @param cacheClass
+     * @return StorageInfo
+     * @throws IllegalArgumentException if store unit format do not match to
+     * x:y@z or equal to '*'
+     */
+    public static StorageInfo valueOf(String storeUnit, String cacheClass)
+            throws IllegalArgumentException {
+        StorageInfo si;
+
+        if (storeUnit.equals("*")) {
+            si = new GenericStorageInfo();
+        } else {
+
+            String[] unitParts = storeUnit.split("@");
+            if (unitParts.length != 2) {
+                throw new IllegalArgumentException("Invalid format: expected<x:y@z> got <" + storeUnit + ">");
+            }
+            si = new GenericStorageInfo(unitParts[1], unitParts[0]);
+        }
+
+        if (!cacheClass.equals("*")) {
+            si.setCacheClass(cacheClass);
+        }
+        return si;
+    }
 }

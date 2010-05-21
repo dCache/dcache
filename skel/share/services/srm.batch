@@ -249,6 +249,7 @@ onerror shutdown
 #exec context localhost.exe -ifnotok=srmDbHostIsSet
 #onerror shutdown
 #
+exec file:${dcache.home}/share/cells/embedded-gPlazma.fragment
 
 create org.dcache.cells.UniversalSpringCell jsrm \
    "classpath:diskCacheV111/srm/jsrm.xml \
@@ -318,10 +319,9 @@ create org.dcache.cells.UniversalSpringCell jsrm \
         -srmOldRequestRemovalPeriodSeconds=${srmOldRequestRemovalPeriodSeconds} \
         -srmJdbcExecutionThreadNum=${srmJdbcExecutionThreadNum} \
         -srmMaxNumberOfJdbcTasksInQueue=${srmMaxNumberOfJdbcTasksInQueue} \
-        -useGPlazmaAuthorizationCell=${useGPlazmaAuthorizationCell} \
         -delegateToGPlazma=${delegateToGPlazma} \
-        -useGPlazmaAuthorizationModule=${useGPlazmaAuthorizationModule} \
-        -gplazmaPolicy=${gplazmaPolicy} \
+        -use-gplazma-authorization-cell=${useGplazma} \
+        -useGPlazmaAuthorizationModule=false \
         -srmAuthzCacheLifetime=${srmAuthzCacheLifetime} \
         -srmLoginBroker=srm-LoginBroker \
         -protocolFamily=SRM \

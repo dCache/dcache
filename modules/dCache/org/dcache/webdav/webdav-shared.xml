@@ -49,14 +49,26 @@
     <constructor-arg value="2"/>
   </bean>
 
+  <bean id="login-strategy" class="org.dcache.auth.UnionLoginStrategy">
+    <description>Processes login requests</description>
+    <property name="loginStrategies">
+      <list>
+        <bean class="org.dcache.auth.GplazmaLoginStrategy">
+          <constructor-arg>
+            <bean class="org.dcache.auth.AuthzQueryHelper">
+              <constructor-arg ref="gplazma-stub"/>
+            </bean>
+          </constructor-arg>
+        </bean>
+      </list>
+    </property>
+    <property name="anonymousAccess" value="${webdavAnonymousAccess}"/>
+  </bean>
+
   <bean id="security-filter" class="org.dcache.webdav.SecurityFilter">
     <description>Handles authorization for the WebDAV door</description>
     <property name="readOnly" value="${webdavReadOnly}"/>
-    <property name="anonymousAccess" value="${webdavAnonymousAccess}"/>
-    <property name="useGplazmaCell" value="${useGPlazmaAuthorizationCell}"/>
-    <property name="useGplazmaModule" value="${useGPlazmaAuthorizationModule}"/>
-    <property name="gplazmaPolicyFilePath" value="${gplazmaPolicy}"/>
-    <property name="gplazmaStub" ref="gplazma-stub"/>
+    <property name="loginStrategy" ref="login-strategy"/>
   </bean>
 
   <bean id="logging-filter" class="org.dcache.webdav.LoggingFilter">

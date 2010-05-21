@@ -233,25 +233,41 @@ public class ChimeraNameSpaceProvider
     }
 
     public void deleteEntry(Subject subject, PnfsId pnfsId) throws CacheException {
+
+        boolean removed;
+
         try {
             FsInode inode = new FsInode(_fs, pnfsId.toIdString() );
-            _fs.remove(inode);
+            removed = _fs.remove(inode);
         }catch(FileNotFoundHimeraFsException fnf) {
             throw new FileNotFoundCacheException("No such file or directory: " + pnfsId);
         }catch(ChimeraFsException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                      e.getMessage());
         }
+
+        if (!removed) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     "Entry could not be removed: " + pnfsId);
+        }
     }
 
     public void deleteEntry(Subject subject, String path) throws CacheException {
+
+        boolean removed;
+
         try {
-            _fs.remove(path);
+            removed = _fs.remove(path);
         }catch(FileNotFoundHimeraFsException fnf) {
             throw new FileNotFoundCacheException("No such file or directory: " + path);
         }catch(ChimeraFsException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                      e.getMessage());
+        }
+
+        if (!removed) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     "Entry could not be removed: " + path);
         }
     }
 

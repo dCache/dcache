@@ -90,7 +90,7 @@ if [ $1 = 0 ]; then
         ${RPM_INSTALL_PREFIX}/bin/dcache stop > /dev/null 2>&1
     fi
 fi
-
+axis
 #%postun
 
 %files
@@ -98,7 +98,6 @@ fi
 /opt/d-cache/
 %attr(0755,root,root) /opt/d-cache/install/install.sh
 %attr(0755,root,root) /opt/d-cache/install/preparePnfs.sh
-%attr(0755,root,root) /opt/d-cache/install/deploy_srmv2.sh
 %attr(0755,root,root) /opt/d-cache/install/migrate-config-to-197.sh
 %attr(0755,root,root) /opt/d-cache/jobs/hsmcp.sh
 %attr(0755,root,root) /opt/d-cache/jobs/hsmcpV4.sh
@@ -110,11 +109,8 @@ fi
 %config(noreplace) /opt/d-cache/config/chimera-config.xml
 %config(noreplace) /opt/d-cache/config/log4j.properties
 %config(noreplace) /opt/d-cache/etc/dcachesrm-gplazma.policy
-%config(noreplace) /opt/d-cache/config/*.batch
-%config(noreplace) /opt/d-cache/etc/srm_setup.env
 %config(noreplace) /opt/d-cache/etc/tc-config.xml
 %config(noreplace) /opt/d-cache/etc/layouts/*.conf
 %config(noreplace) /opt/d-cache/etc/dcache.conf
-%config /opt/d-cache/share/cells/*.cell
 %changelog
 
