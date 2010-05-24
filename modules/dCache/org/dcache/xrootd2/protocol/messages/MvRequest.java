@@ -2,11 +2,9 @@ package org.dcache.xrootd2.protocol.messages;
 
 import static org.dcache.xrootd2.protocol.XrootdProtocol.kXR_mv;
 
-import java.util.Map;
-import org.dcache.xrootd2.util.ParseException;
 import org.jboss.netty.buffer.ChannelBuffer;
 
-public class MvRequest extends AuthorizableRequestMessage
+public class MvRequest extends AbstractRequestMessage
 {
     private final String sourcePath;
     private final String targetPath;
@@ -40,14 +38,8 @@ public class MvRequest extends AuthorizableRequestMessage
         }
     }
 
-    @Override
     public String getOpaque() {
         return opaque;
-    }
-
-    @Override
-    public Map<String, String> getOpaqueMap() throws ParseException {
-        return getOpaqueMap(opaque);
     }
 
     public String getSourcePath() {

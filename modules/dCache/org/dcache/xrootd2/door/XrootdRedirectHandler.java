@@ -10,7 +10,6 @@ import java.nio.channels.ClosedChannelException;
 import java.security.SecureRandom;
 
 import org.dcache.xrootd2.protocol.XrootdProtocol;
-import org.dcache.xrootd2.protocol.messages.AuthorizableRequestMessage;
 import org.dcache.xrootd2.protocol.messages.CloseRequest;
 import org.dcache.xrootd2.protocol.messages.OpenRequest;
 import org.dcache.xrootd2.protocol.messages.RedirectResponse;
@@ -20,6 +19,7 @@ import org.dcache.xrootd2.protocol.messages.StatxRequest;
 import org.dcache.xrootd2.protocol.messages.StatxResponse;
 import org.dcache.xrootd2.security.AuthorizationHandler;
 import org.dcache.xrootd2.util.FileStatus;
+import org.dcache.xrootd2.util.OpaqueStringParser;
 import org.dcache.xrootd2.util.ParseException;
 import org.dcache.xrootd2.core.XrootdRequestHandler;
 import org.dcache.xrootd2.protocol.messages.*;
@@ -161,7 +161,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         try {
            String authPath = checkOperationPermission(neededPerm,
                                                       req.getPath(),
-                                                      req,
+                                                      req.getOpaque(),
                                                       localAddress);
             ////////////////////////////////////////////////////////////////
             // interact with core dCache to open the requested file
@@ -339,7 +339,8 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         try {
             String authPath = checkOperationPermission(FilePerm.DELETE,
                                                        req.getPath(),
-                                                       req, localAddress);
+                                                       req.getOpaque(),
+                                                       localAddress);
 
             _door.deleteFile(authPath);
             respond(ctx, e, new OKResponse(req.getStreamID()));
@@ -383,7 +384,8 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         try {
             String authPath = checkOperationPermission(FilePerm.DELETE,
                                                        req.getPath(),
-                                                       req, localAddress);
+                                                       req.getOpaque(),
+                                                       localAddress);
 
             _door.deleteDirectory(authPath);
             respond(ctx, e, new OKResponse(req.getStreamID()));
@@ -431,7 +433,8 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         try {
             String authPath = checkOperationPermission(FilePerm.WRITE,
                                                        req.getPath(),
-                                                       req, localAddress);
+                                                       req.getOpaque(),
+                                                       localAddress);
 
             _door.createDirectory(authPath, req.shouldMkPath());
             respond(ctx, e, new OKResponse(req.getStreamID()));
@@ -492,12 +495,12 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         try {
             String authSourcePath = checkOperationPermission(FilePerm.DELETE,
                                                              req.getSourcePath(),
-                                                             req,
+                                                             req.getOpaque(),
                                                              localAddress);
 
             String authTargetPath = checkOperationPermission(FilePerm.WRITE,
                                                              req.getTargetPath(),
-                                                             req,
+                                                             req.getOpaque(),
                                                              localAddress);
 
             _door.moveFile(authSourcePath, authTargetPath);
@@ -561,7 +564,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
      */
     private String checkOperationPermission(FilePerm neededPerm,
                                             String path,
-                                            AuthorizableRequestMessage req,
+                                            String opaque,
                                             InetSocketAddress localAddress)
                                  throws PermissionDeniedCacheException {
         AuthorizationHandler authzHandler =
@@ -570,17 +573,14 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         if (authzHandler != null) {
             // all information neccessary for checking authorization
             // is found in opaque
-            Map<String, String> opaque;
+            Map<String, String> opaqueMap;
             try {
-                opaque = req.getOpaqueMap();
+                opaqueMap = OpaqueStringParser.getOpaqueMap(opaque);
             } catch (ParseException e) {
                 StringBuffer msg =
                     new StringBuffer("invalid opaque data: ");
                 msg.append(e);
-                String s = req.getOpaque();
-                if (s != null) {
-                    msg.append(" opaque=").append(s);
-                }
+                msg.append(" opaque=").append(opaque);
                 throw new PermissionDeniedCacheException(msg.toString());
             }
 
@@ -588,7 +588,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
 
             try {
                 isAuthorized =
-                    authzHandler.checkAuthz(path, opaque, neededPerm,
+                    authzHandler.checkAuthz(path, opaqueMap, neededPerm,
                                             localAddress);
             } catch (GeneralSecurityException e) {
                 throw new PermissionDeniedCacheException("authorization check"

@@ -1,14 +1,11 @@
 package org.dcache.xrootd2.protocol.messages;
 
-import java.util.Map;
 import java.util.zip.Adler32;
 
 import static org.dcache.xrootd2.protocol.XrootdProtocol.*;
-import org.dcache.xrootd2.util.ParseException;
-
 import org.jboss.netty.buffer.ChannelBuffer;
 
-public class OpenRequest extends AuthorizableRequestMessage
+public class OpenRequest extends AbstractRequestMessage
 {
     private final int mode;
     private final int options;
@@ -63,15 +60,9 @@ public class OpenRequest extends AuthorizableRequestMessage
         return path;
     }
 
-    @Override
     public String getOpaque()
     {
         return opaque;
-    }
-
-    @Override
-    public Map<String,String> getOpaqueMap() throws ParseException {
-        return getOpaqueMap(opaque);
     }
 
     public boolean isAsync() {

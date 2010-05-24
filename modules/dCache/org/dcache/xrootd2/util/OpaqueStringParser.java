@@ -1,20 +1,10 @@
-package org.dcache.xrootd2.protocol.messages;
+package org.dcache.xrootd2.util;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.dcache.xrootd2.util.ParseException;
-import org.jboss.netty.buffer.ChannelBuffer;
-
-public abstract class AuthorizableRequestMessage extends AbstractRequestMessage {
-    public AuthorizableRequestMessage(ChannelBuffer buffer) {
-        super(buffer);
-    }
-
-    public abstract Map<String,String> getOpaqueMap() throws ParseException;
-    public abstract String getOpaque();
-
+public class OpaqueStringParser {
     /**
      * The opaque information is included in the path in a format similar to
      * URL-encoding (&key1=val1&key2=val2...). This method translates that
@@ -25,7 +15,8 @@ public abstract class AuthorizableRequestMessage extends AbstractRequestMessage 
      * @return Map from keys to values in the opaque string
      * @throws ParseException if value is missing for a key in the string
      */
-    protected Map<String,String> getOpaqueMap(String opaque) throws ParseException
+    public static Map<String,String> getOpaqueMap(String opaque)
+                                                        throws ParseException
     {
         if (opaque == null) {
             return Collections.emptyMap();
@@ -43,8 +34,10 @@ public abstract class AuthorizableRequestMessage extends AbstractRequestMessage 
 
                 int delimiter = opaque.indexOf("=",tokenStart);
                 if (delimiter == -1 || delimiter >= tokenEnd) {
-                    throw new ParseException("Opaque information is missing a value for variable " +
-                                              opaque.substring(tokenStart, tokenEnd));
+                    String variable = opaque.substring(tokenStart, tokenEnd);
+                    throw new ParseException("Opaque information is missing a"
+                                             + "value for variable " +
+                                              variable);
                 }
 
                 map.put(opaque.substring(tokenStart, delimiter),

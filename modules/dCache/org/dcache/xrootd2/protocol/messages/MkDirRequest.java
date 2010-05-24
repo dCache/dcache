@@ -1,9 +1,6 @@
 package org.dcache.xrootd2.protocol.messages;
 
-import java.util.Map;
-
 import static org.dcache.xrootd2.protocol.XrootdProtocol.*;
-import org.dcache.xrootd2.util.ParseException;
 import org.jboss.netty.buffer.ChannelBuffer;
 
 /**
@@ -11,7 +8,7 @@ import org.jboss.netty.buffer.ChannelBuffer;
  * can not be determined. Supporting the mode is dependant on implementation of
  * authenticated (GSI) xrootd
  */
-public class MkDirRequest extends AuthorizableRequestMessage
+public class MkDirRequest extends AbstractRequestMessage
 {
     private final short options;
     private final int mode;
@@ -41,14 +38,8 @@ public class MkDirRequest extends AuthorizableRequestMessage
 
     }
 
-    @Override
     public String getOpaque() {
         return opaque;
-    }
-
-    @Override
-    public Map<String, String> getOpaqueMap() throws ParseException {
-        return getOpaqueMap(opaque);
     }
 
     public String getPath() {
