@@ -36,7 +36,7 @@ public class      LoginExampleCell
      super( name ) ;
      
      _engine  = engine ;     
-     _user    = engine.getUserName().getName() ;
+     _user    = Subjects.getUserName(engine.getSubject());
      _host    = engine.getInetAddress() ;
      
      setPrintoutLevel( CellNucleus.PRINT_EVERYTHING ) ;

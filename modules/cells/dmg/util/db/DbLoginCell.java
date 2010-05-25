@@ -47,7 +47,7 @@ public class      DbLoginCell
      _reader = engine.getReader() ;
      _in   = new BufferedReader( _reader ) ;
      _out  = new PrintWriter( engine.getWriter() ) ;
-     _user = engine.getUserName().getName() ;
+     _user = Subjects.getUserName(engine.getSubject());     
      _host = engine.getInetAddress() ;
 
      _destination  = getCellName() ;
