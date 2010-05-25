@@ -39,6 +39,7 @@ import java.util.Iterator;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.Collections;
+import javax.security.auth.Subject;
 import diskCacheV111.services.space.message.*;
 //import  dmg.util.*;
 import dmg.cells.nucleus.CellAdapter;
@@ -60,7 +61,6 @@ import diskCacheV111.vehicles.PnfsSetStorageInfoMessage;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
 import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
-import diskCacheV111.vehicles.GridProtocolInfo;
 import diskCacheV111.vehicles.PnfsDeleteEntryNotificationMessage;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FQAN;
@@ -4692,25 +4692,12 @@ public final class Manager
                         rp  = storageInfo.getRetentionPolicy();
                         defaultSpaceToken=storageInfo.getMap().get("writeToken");
                         ProtocolInfo protocolInfo = selectPool.getProtocolInfo();
-                        AuthorizationRecord authRecord = null;
-                        if (selectPool.getSubject()!=null) {
-                                //
-                                // use subject to extract AuthorizationRecord
-                                //
-                                authRecord = Subjects.getAuthorizationRecord(selectPool.getSubject());
-                        }
-                        else {
-                                //
-                                // below is old behavior
-                                //
-                                if(protocolInfo instanceof GridProtocolInfo) {
-                                        authRecord = ((GridProtocolInfo)protocolInfo).getAuthorizationRecord();
-                                        if (logger.isDebugEnabled()) {
-                                                logger.debug("protocol info is " +
-                                                             "GridProtocolInfo "+
-                                                             " authRecord="+authRecord);
-                                        }
-                                }
+                        Subject subject = selectPool.getSubject();
+                        AuthorizationRecord authRecord;
+                        if (Subjects.getFqans(subject).isEmpty() && Subjects.getUserName(subject) == null) {
+                            authRecord = null;
+                        } else {
+                            authRecord = Subjects.getAuthorizationRecord(subject);
                         }
                         if (defaultSpaceToken==null) {
                                 if(reserveSpaceForNonSRMTransfers && authRecord != null) {

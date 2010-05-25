@@ -2,9 +2,8 @@ package diskCacheV111.vehicles;
 
 import diskCacheV111.util.VOInfo;
 import dmg.cells.nucleus.CellPath;
-import org.dcache.auth.AuthorizationRecord;
 
-public class DCapProtocolInfo implements IpProtocolInfo, GridProtocolInfo {
+public class DCapProtocolInfo implements IpProtocolInfo {
 
     private final String _name;
     private final int _minor;
@@ -18,7 +17,6 @@ public class DCapProtocolInfo implements IpProtocolInfo, GridProtocolInfo {
     private boolean _fileCheck = true;
     private boolean _isPassive = false;
     private CellPath _door = null;
-    private AuthorizationRecord _authRecord;
 
     private static final long serialVersionUID = 7432555710192378884L;
 
@@ -138,13 +136,5 @@ public class DCapProtocolInfo implements IpProtocolInfo, GridProtocolInfo {
 
     public void door(CellPath door) {
         _door = door;
-    }
-
-    public void setAuthorizationRecord(AuthorizationRecord authRecord) {
-        _authRecord = authRecord;
-    }
-
-    public AuthorizationRecord getAuthorizationRecord() {
-        return _authRecord;
     }
 }
