@@ -11,7 +11,8 @@ import org.dcache.auth.UserNamePrincipal;
 
 public class Subjects {
 
-    private static final String UNKNOWN = "<unknown>";
+    private static final String UNKNOWN = "unknown";
+
     /*
      * Try user name, X509, kerberos, Origin
      */
