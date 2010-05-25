@@ -1,0 +1,19 @@
+@CHARSET "UTF-8";
+/*
+    Document   : logIn
+    Created on : Feb 12, 2010, 3:53:45 PM
+    Author     : jans
+    Description:
+        Purpose of the stylesheet follows.
+*/
+table {
+
+
+}
+
+td, th
+{
+    background-color: #6699cc;
+    padding: 4px;
+    border: 1px solid gray;
+}

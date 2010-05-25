@@ -1,9 +1,6 @@
 package org.dcache.webadmin.view.pages.poollist;
 
 import java.util.List;
-import org.apache.wicket.Request;
-import org.apache.wicket.Response;
-import org.apache.wicket.Session;
 import org.apache.wicket.util.tester.FormTester;
 import org.apache.wicket.util.tester.WicketTester;
 import org.dcache.webadmin.controller.exceptions.PoolBeanServiceException;
@@ -12,7 +9,8 @@ import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.impl.DAOFactoryImplHelper;
 import org.dcache.webadmin.view.WebAdminInterface;
 import org.dcache.webadmin.view.beans.PoolBean;
-import org.dcache.webadmin.view.beans.WebAdminInterfaceSession;
+import org.dcache.webadmin.view.pages.ApplicationFactoryHelper;
+import org.dcache.webadmin.view.pages.login.LogIn;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -35,20 +33,8 @@ public class PoolListTest {
 
     @Before
     public void setUp() {
-        WebAdminInterface authenticatedWebApp = new WebAdminInterface() {
-
-            @Override
-            public String getConfigurationType() {
-                return DEPLOYMENT;
-            }
-
-            @Override
-            public Session newSession(Request request,
-                    Response response) {
-                return new WebAdminInterfaceSession(request);
-            }
-        };
-
+        WebAdminInterface authenticatedWebApp =
+                ApplicationFactoryHelper.createSignedInApplication();
         DAOFactory daoFactory = new DAOFactoryImplHelper();
         _poolBeanService = new PoolBeanServiceImpl(daoFactory);
         authenticatedWebApp.setPoolBeanService(_poolBeanService);
@@ -109,5 +95,13 @@ public class PoolListTest {
     private void selectAll(FormTester formTester) {
         formTester.setValue(LISTVIEW_ID + ":0:" + LISTVIEW_ROW_CHECKBOX_ID, true);
         formTester.setValue(LISTVIEW_ID + ":1:" + LISTVIEW_ROW_CHECKBOX_ID, true);
+    }
+
+    @Test
+    public void testLogInRedirect() {
+        WicketTester redirectTester = new WicketTester(
+                ApplicationFactoryHelper.createNotSignedInApplication());
+        redirectTester.startPage(PoolList.class);
+        redirectTester.assertRenderedPage(LogIn.class);
     }
 }
