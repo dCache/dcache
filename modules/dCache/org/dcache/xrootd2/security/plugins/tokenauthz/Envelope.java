@@ -8,7 +8,6 @@ import java.net.URISyntaxException;
 import java.net.URI;
 import java.net.UnknownHostException;
 import java.security.GeneralSecurityException;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -19,7 +18,6 @@ import java.util.NoSuchElementException;
 import java.util.Stack;
 import java.util.StringTokenizer;
 
-import org.dcache.xrootd2.protocol.XrootdProtocol;
 import org.dcache.xrootd2.protocol.XrootdProtocol.FilePerm;
 
 /**
@@ -64,11 +62,11 @@ public class Envelope {
             this.lfn = lfn;
             this.turlString = turl;
 
-            if (filePermissions.containsKey(access)) {
+            if (!filePermissions.containsKey(access)) {
                 throw new CorruptedEnvelopeException("file permisson flag for lfn "+lfn+" must be one out of 'read', 'write-once', 'write' or 'delete'");
-            } else {
-                this.access = filePermissions.get(access).ordinal();
             }
+
+            this.access = filePermissions.get(access).ordinal();
 
             try {
                 this.turl = parseTurl();

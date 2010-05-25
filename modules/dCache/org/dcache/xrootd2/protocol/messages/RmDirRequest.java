@@ -2,12 +2,9 @@ package org.dcache.xrootd2.protocol.messages;
 
 import static org.dcache.xrootd2.protocol.XrootdProtocol.*;
 
-import java.util.Map;
-
-import org.dcache.xrootd2.util.ParseException;
 import org.jboss.netty.buffer.ChannelBuffer;
 
-public class RmDirRequest extends AuthorizableRequestMessage {
+public class RmDirRequest extends AbstractRequestMessage {
 
     private final String path;
     private final String opaque;
@@ -36,13 +33,7 @@ public class RmDirRequest extends AuthorizableRequestMessage {
         return path;
     }
 
-    @Override
     public String getOpaque() {
         return opaque;
-    }
-
-    @Override
-    public Map<String, String> getOpaqueMap() throws ParseException {
-        return getOpaqueMap(opaque);
     }
 }
