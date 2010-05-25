@@ -1980,9 +1980,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             throws CacheException
         {
             super.doLogin();
-            if (!Subjects.isNobody(_subject)) {
-                _protocolInfo.setAuthorizationRecord(Subjects.getAuthorizationRecord(_subject));
-            }
         }
 
         @Override

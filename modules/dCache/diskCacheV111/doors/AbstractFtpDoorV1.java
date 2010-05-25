@@ -3049,8 +3049,7 @@ public abstract class AbstractFtpDoorV1
                                  parallel,
                                  parallel,
                                  parallel,
-                                 bufSize, 0, 0,
-                                 Subjects.getAuthorizationRecord(_subject));
+                                 bufSize, 0, 0);
 
         PoolMgrSelectPoolMsg request;
         if (isWrite) {
@@ -3095,8 +3094,7 @@ public abstract class AbstractFtpDoorV1
                                      parallel,
                                      bufSize,
                                      offset,
-                                     size,
-                                     Subjects.getAuthorizationRecord(_subject));
+                                     size);
         } else {
             protocolInfo =
                 new GFtpProtocolInfo("GFtp",
@@ -3108,8 +3106,7 @@ public abstract class AbstractFtpDoorV1
                                      parallel,
                                      bufSize,
                                      offset,
-                                     size,
-                                     Subjects.getAuthorizationRecord(_subject));
+                                     size);
         }
 
         protocolInfo.setDoorCellName(getCellName());

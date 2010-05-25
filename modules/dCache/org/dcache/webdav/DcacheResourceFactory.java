@@ -1187,7 +1187,7 @@ public class DcacheResourceFactory
                                         RELAY_PROTOCOL_INFO_STREAMS,
                                         RELAY_PROTOCOL_INFO_BUFFERSIZE,
                                         RELAY_PROTOCOL_INFO_OFFSET,
-                                        RELAY_PROTOCOL_INFO_SIZE, null);
+                                        RELAY_PROTOCOL_INFO_SIZE);
         }
 
         public void relayData(InputStream inputStream)

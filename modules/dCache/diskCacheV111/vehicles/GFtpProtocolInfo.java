@@ -67,10 +67,8 @@ COPYRIGHT STATUS:
 package diskCacheV111.vehicles ;
 
 import diskCacheV111.util.VOInfo;
-import org.dcache.auth.AuthorizationRecord;
 
-
-public class GFtpProtocolInfo implements IpProtocolInfo , GridProtocolInfo {
+public class GFtpProtocolInfo implements IpProtocolInfo {
     private String _name  = "Unkown" ;
     private int    _minor = 0 ;
     private int    _major = 0 ;
@@ -115,14 +113,12 @@ public class GFtpProtocolInfo implements IpProtocolInfo , GridProtocolInfo {
      * Added for GFtp/2. We rely on default initialisation to false.
      */
     private boolean _passive;
-    private AuthorizationRecord _authRecord;
 
     private static final long serialVersionUID = 5591743387114320262L;
 
     public GFtpProtocolInfo( String protocol, int major , int minor ,
                              String host , int port, int start, int min,
-                             int max, int bufferSize ,long offset, long size,
-                             AuthorizationRecord authRecord){
+                             int max, int bufferSize ,long offset, long size){
         _name  = protocol ;
         _minor = minor ;
         _major = major ;
@@ -134,7 +130,6 @@ public class GFtpProtocolInfo implements IpProtocolInfo , GridProtocolInfo {
         _bufferSize = bufferSize;
         _offset = offset;
         _size = size;
-        _authRecord=authRecord;
     }
 
     //
@@ -264,9 +259,5 @@ public class GFtpProtocolInfo implements IpProtocolInfo , GridProtocolInfo {
 
     public String getChecksumType(){
         return _checksumType;
-    }
-
-   public AuthorizationRecord getAuthorizationRecord() {
-        return _authRecord;
     }
 }
