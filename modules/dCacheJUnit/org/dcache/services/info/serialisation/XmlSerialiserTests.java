@@ -60,7 +60,16 @@ public class XmlSerialiserTests {
     + "dCacheDomain = element domain { attribute name {'dCacheDomain'}, \n"
     + "                               ( cells-any-order\n"
     + "                                &element routine-info { empty })}\n"
-    + "domains = element domains { (infoDomain, dCacheDomain) | (dCacheDomain, infoDomain)} \n"
+    + "awkwardDomain = element domain {attribute name {'''\"bothersome\"&annoying<Cells>'sDomain'''}, \n"
+    + "                                ( element cells {\n"
+    + "                                    element cell { attribute id {'''\"Foo & Bar\" <foobar@example.org>'s cell'''}} \n"
+    + "                                  })}\n"
+    + "domains = element domains { (infoDomain, dCacheDomain, awkwardDomain) | \n"
+    + "                            (infoDomain, awkwardDomain, dCacheDomain) | \n"
+    + "                            (awkwardDomain, infoDomain, dCacheDomain) | \n"
+    + "                            (awkwardDomain, dCacheDomain, infoDomain) | \n"
+    + "                            (dCacheDomain, infoDomain, awkwardDomain) | \n"
+    + "                            (dCacheDomain, awkwardDomain, infoDomain)} \n"
     + "start = element dCache { domains }\n";
 
 
@@ -91,6 +100,12 @@ public class XmlSerialiserTests {
                 .parsePath( "domains.infoDomain.cells.cell-2"), "cell", "id");
         _exhibitor.addListItem( StatePath
                 .parsePath( "domains.infoDomain.cells.cell-3"), "cell", "id");
+
+        // The "bothersome" domain contains characters that must be marked-up
+        StatePath domainPath = StatePath.parsePath( "domains.\"bothersome\"&annoying<Cells>'sDomain");
+        _exhibitor.addListItem(  domainPath, "domain", "name");
+        StatePath cellsPath = domainPath.newChild( "cells");
+        _exhibitor.addListItem( cellsPath.newChild( "\"Foo & Bar\" <foobar@example.org>'s cell"), "cell", "id");
     }
 
     @Test

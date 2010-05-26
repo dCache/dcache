@@ -293,7 +293,7 @@ public class XmlSerialiser extends SubtreeVisitor implements StateSerialiser {
                 sb.append( " ");
                 sb.append( attr[i].name);
                 sb.append( "=\"");
-                sb.append( xmlAttrMarkup( attr[i].value));
+                sb.append( xmlTextMarkup( attr[i].value));
                 sb.append( "\"");
             }
         }
@@ -318,25 +318,14 @@ public class XmlSerialiser extends SubtreeVisitor implements StateSerialiser {
 
     /**
      * Mark-up an String so it can be included as XML data.  Specifically, we
-     * mark-up any occurrences of '<', '&' and '>'
+     * mark-up any occurrences of '<', '&', '>', '\"' and '\''.
      *
      * @param value the string value to mark-up
      * @return value that is safe to include in as an XML text-node.
      */
     private String xmlTextMarkup( String value) {
-        return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll( ">", "&gt;");
+        return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll( ">", "&gt;").replaceAll( "\"", "&quot;").replaceAll( "\'", "&apos;");
     }
-
-
-    /**
-     * Mark-up an attribute's value.
-     * @param value before marking up
-     * @return the marked-up value.
-     */
-    private String xmlAttrMarkup( String value) {
-        return value.replaceAll("\"", "&quot;");
-    }
-
 
     /**
      * Update our stored prefix for indentation.
