@@ -57,7 +57,7 @@ public class CostModuleTest {
     public void testPoolNotExist() {
         assertNull( "getPoolCostInfo() on non existing pool", _costModule.getPoolCostInfo( POOL_NAME));
         assertNull( "getPoolCost() on non-existing pool", _costModule.getPoolCost(  POOL_NAME, DEFAULT_FILE_SIZE));
-        assertEquals( "getPoolsPercentilePerformanceCost on non-existing pool", 0, _costModule.getPoolsPercentilePerformanceCost( DEFAULT_PERCENTILE));
+        assertEquals( "getPoolsPercentilePerformanceCost on non-existing pool", 0, _costModule.getPoolsPercentilePerformanceCost( DEFAULT_PERCENTILE), 0);
     }
 
 
@@ -67,7 +67,7 @@ public class CostModuleTest {
 
         assertNull("getPoolCostInfo on a pool without costInfo", _costModule.getPoolCostInfo( POOL_NAME));
         assertNull( "getPoolCost() on a pool without costInfo", _costModule.getPoolCost(  POOL_NAME, DEFAULT_FILE_SIZE));
-        assertEquals( "getPoolsPercentilePerformanceCost on a pool without costInfo", 0, _costModule.getPoolsPercentilePerformanceCost( DEFAULT_PERCENTILE));
+        assertEquals( "getPoolsPercentilePerformanceCost on a pool without costInfo", 0, _costModule.getPoolsPercentilePerformanceCost( DEFAULT_PERCENTILE), 0);
     }
 
 
@@ -94,11 +94,11 @@ public class CostModuleTest {
 
         assertNotNull( "getPoolCost() on a pool without costInfo", poolCost);
         assertEquals( "perf cost for pool without queue info", INFINITE_PERF_COST_VALUE,
-                      poolCost.getPerformanceCost());
+                      poolCost.getPerformanceCost(), 0);
         assertTrue( "space cost for pool > 0", poolCost.getSpaceCost() > 0);
         assertEquals( "getPoolsPercentilePerformanceCost on a single pool",
                       INFINITE_PERF_COST_VALUE,
-                      _costModule.getPoolsPercentilePerformanceCost( DEFAULT_PERCENTILE));
+                      _costModule.getPoolsPercentilePerformanceCost( DEFAULT_PERCENTILE), 0);
     }
 
     @Test
@@ -132,7 +132,7 @@ public class CostModuleTest {
         assertTrue( "perf cost for pool != INF", perfCost != INFINITE_PERF_COST_VALUE);
         assertEquals( "getPoolsPercentilePerformanceCost on a single pool",
                       perfCost,
-                      _costModule.getPoolsPercentilePerformanceCost( DEFAULT_PERCENTILE));
+                      _costModule.getPoolsPercentilePerformanceCost( DEFAULT_PERCENTILE), 0);
     }
 
     @Test
@@ -361,6 +361,6 @@ public class CostModuleTest {
     private void assertPercentileCost( double fraction, double expectedCost) {
         assertEquals( "check " + Double.toString( expectedCost) + " percentile cost",
                       expectedCost,
-                      _costModule.getPoolsPercentilePerformanceCost( fraction));
+                      _costModule.getPoolsPercentilePerformanceCost( fraction), 0);
     }
 }
