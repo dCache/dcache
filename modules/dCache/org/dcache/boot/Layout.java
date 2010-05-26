@@ -1,25 +1,24 @@
 package org.dcache.boot;
 
-import java.util.Map;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.Properties;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
-import java.net.URL;
-import java.net.URI;
-import java.net.URISyntaxException;
-
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.BufferedReader;
 import java.io.LineNumberReader;
-import java.io.StringReader;
 import java.io.PrintStream;
+import java.io.StringReader;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import org.dcache.util.ReplaceableProperties;
 import org.dcache.util.DeprecatableProperties;
 import org.dcache.util.NetworkUtils;
+import org.dcache.util.ReplaceableProperties;
 
 /**
  * Layout encapsulates the configuration of a set of domains.
@@ -29,7 +28,7 @@ public class Layout
     private static final int READ_AHEAD_LIMIT = 256;
 
     private static final Pattern SECTION_HEADER =
-        Pattern.compile("^\\[([^\\]/]+)(/([^\\]/]+))?\\]\\s*$");
+        Pattern.compile("^\\s*\\[([^\\]/]+)(/([^\\]/]+))?\\]\\s*$");
 
     private final ReplaceableProperties _properties;
     private final Map<String,Domain> _domains =
