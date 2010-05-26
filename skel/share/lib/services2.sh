@@ -20,7 +20,7 @@ setBootLoaderQuiet()
 
 setBootLoaderNoisy()
 {
-    unset BOOTLOADER_IS_QUIET
+    unset BOOTLOADER_IS_QUIET || :
 }
 
 # Prints all domains that match a given pattern
