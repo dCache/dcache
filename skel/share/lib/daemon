@@ -55,30 +55,30 @@ run()
 
 loop()
 {
-    if [ -n "$log" ]; then
+    if [ -n "$shouldLog" ]; then
         echo
         log "Launching $*"
     fi
 
     while run "$@"; wait $!; [ ! -f "$restart" ]; do
-        if [ -n "$log" ]; then
+        if [ -n "$shouldLog" ]; then
             log "Process terminated unexpectedly"
         fi
 
         if [ -n "$delay" ] ; then
-            if [ -n "$log" ]; then
+            if [ -n "$shouldLog" ]; then
                 log "Sleeping $delay seconds"
             fi
             sleep "$delay"
         fi
 
-        if [ -n "$log" ]; then
+        if [ -n "$shouldLog" ]; then
             echo
             log "Restarting $*"
         fi
     done
 
-    if [ -n "$log" ]; then
+    if [ -n "$shouldLog" ]; then
         log "Process terminated"
     fi
 }
@@ -99,7 +99,7 @@ while getopts c:d:p:r:u:o:lf opt "$@"; do
         r) restart="$OPTARG";;
         u) user="$OPTARG";;
         o) output="$OPTARG";;
-        l) log=1;;
+        l) shouldLog=1;;
         f) fork=1;;
     esac
 done
@@ -123,7 +123,7 @@ if [ -n "$user" ]; then
     # To preserve white space, we need to quote each argument.  Notice
     # that ${x:+-x "$x"} doesn't work on Solaris due to the space in
     # the expression.
-    param="${fork:+-f} ${log:+-l} ${childPid:+-c} ${childPid:+\"$childPid\"} ${pid:+-p} ${pid:+\"$pid\"} ${restart:+-r} ${restart:+\"$restart\"} ${delay:+-d} ${delay:+\"$delay\"}"
+    param="${fork:+-f} ${shouldLog:+-l} ${childPid:+-c} ${childPid:+\"$childPid\"} ${pid:+-p} ${pid:+\"$pid\"} ${restart:+-r} ${restart:+\"$restart\"} ${delay:+-d} ${delay:+\"$delay\"}"
     for i in "$@"; do
         param="$param \"$i\""
     done
