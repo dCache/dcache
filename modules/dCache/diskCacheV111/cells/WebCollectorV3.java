@@ -766,9 +766,9 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         page.beginTable("sortable",
                         "cell",     "CellName",
                         "domain",   "DomainName",
-                        "total",    "Total Space/MB",
-                        "free",     "Free Space/MB",
-                        "precious", "Precious Space/MB",
+                        "total",    "Total Space/MiB",
+                        "free",     "Free Space/MiB",
+                        "precious", "Precious Space/MiB",
                         "layout",   "<span>Layout   " +
                           "(<span class=\"layout_precious\">precious/</span>" +
                           "<span class=\"layout_used\">used/</span>" +
