@@ -70,6 +70,11 @@ public class Domain
         return _properties.getReplacement(PROPERTY_DOMAIN_NAME);
     }
 
+    List<ReplaceableProperties> getServices()
+    {
+        return _services;
+    }
+
     public void start()
         throws URISyntaxException, CommandException, IOException
     {
