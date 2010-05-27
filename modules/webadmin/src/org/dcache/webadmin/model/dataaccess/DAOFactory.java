@@ -1,5 +1,7 @@
 package org.dcache.webadmin.model.dataaccess;
 
+import org.dcache.webadmin.model.dataaccess.communication.CommandSenderFactory;
+
 /**
  * The instantiation of DAOs is abstracted this way to make Unittests with
  * Helper DAOs/DAO-Factories possible.
@@ -10,4 +12,6 @@ public interface DAOFactory {
     public PoolsDAO getPoolsDAO();
 
     public void setDefaultXMLDataGatherer(XMLDataGatherer xmlDataGatherer);
+
+    public void setDefaultCommandSenderFactory(CommandSenderFactory commandSenderFactory);
 }

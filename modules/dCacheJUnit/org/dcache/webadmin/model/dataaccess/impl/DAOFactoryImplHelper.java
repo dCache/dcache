@@ -1,5 +1,6 @@
 package org.dcache.webadmin.model.dataaccess.impl;
 
+import org.dcache.webadmin.model.dataaccess.communication.CommandSenderFactory;
 import org.dcache.webadmin.model.dataaccess.PoolsDAO;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.XMLDataGatherer;
@@ -17,7 +18,13 @@ public class DAOFactoryImplHelper implements DAOFactory {
         return _poolsDao;
     }
 
+    @Override
     public void setDefaultXMLDataGatherer(XMLDataGatherer xmlDataGatherer) {
-//  meant not to do anything
+//  meant not to do anything -- feel free to implement later when needed
+    }
+
+    @Override
+    public void setDefaultCommandSenderFactory(CommandSenderFactory commandSenderFactory) {
+//  meant not to do anything -- feel free to implement later when needed
     }
 }

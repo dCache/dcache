@@ -10,13 +10,25 @@
         <property name="timeout" value="4000"/>
     </bean>
 
+    <bean id="PoolCellStub"
+        class="org.dcache.webadmin.model.dataaccess.impl.ServletContextCellStub">
+        <constructor-arg type="java.lang.String" value=""/>
+        <property name="timeout" value="4000"/>
+    </bean>
+
     <bean id="XMLDataGatherer"
         class="org.dcache.webadmin.model.dataaccess.impl.CellXMLDataGatherer">
         <property name="infoCellStub" ref="infoCellStub"/>
     </bean>
 
+    <bean id="CommandSenderFactory"
+        class="org.dcache.webadmin.model.dataaccess.communication.impl.CellCommandSenderFactory">
+        <property name="poolCellStub" ref="PoolCellStub"/>
+    </bean>
+
     <bean id="DAOFactory" class="org.dcache.webadmin.model.dataaccess.impl.DAOFactoryImpl">
         <property name="defaultXMLDataGatherer" ref="XMLDataGatherer"/>
+        <property name="defaultCommandSenderFactory" ref="CommandSenderFactory"/>
     </bean>
 
     <bean id="PoolBeanService" class="org.dcache.webadmin.controller.impl.PoolBeanServiceImpl">

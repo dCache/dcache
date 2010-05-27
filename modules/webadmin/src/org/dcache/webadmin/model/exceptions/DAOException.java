@@ -27,4 +27,14 @@ public class DAOException extends Exception {
     public DAOException(Throwable cause) {
         super(cause);
     }
+
+    /**
+     * Constructor with error message.
+     *
+     * @param cause
+     *            the root cause of the exception
+     */
+    public DAOException(String msg) {
+        super(msg);
+    }
 }
