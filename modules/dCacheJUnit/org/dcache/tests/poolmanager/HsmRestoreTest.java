@@ -69,7 +69,6 @@ public class HsmRestoreTest {
 
     @Before
     public void setUp() throws Exception {
-        Logger.getRootLogger().setLevel(Level.DEBUG);
         _counter = _counter + 1;
         _cell= new GenericMockCellHelper("HsmRestoreTest" + _counter, "-threadPool=org.dcache.tests.util.CurrentThreadExceutorHelper");
 
