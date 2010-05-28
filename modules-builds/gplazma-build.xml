@@ -29,14 +29,6 @@
         </condition>
     </target>
 
-    <!-- Packages for gplazma.jar -->
-
-    <selector id="gplazma.selector">
-        <or>
-            <filename name="gplazma/**" />
-        </or>
-    </selector>
-
     <!-- Classpath for gplazma.jar. -->
 
     <path id="gplazma.classpath">
@@ -48,6 +40,7 @@
         <fileset dir="${libDir}/gplazma" includes="**/*.jar" />
         <fileset dir="${libDir}/log4j" includes="*.jar" />
         <fileset dir="${libDir}/slf4j" includes="*.jar" />
+        <pathelement location="${classesDir}/dcache-common.jar" />
     </path>
 
 
@@ -61,9 +54,7 @@
 
         <javac destdir="${gplazma.build.dir}" source="${javac.source}" target="${javac.target}" classpathref="gplazma.classpath" debug="${javac.debug}" verbose="${javac.verbose}">
             <src path="${gplazma.src}" />
-            <and>
                 <filename name="**/*.java" />
-            </and>
         </javac>
 
     </target>
@@ -75,10 +66,7 @@
 
         <jar jarfile="${gplazma.jar}">
             <fileset dir="${gplazma.build.dir}">
-                <and>
-                    <selector refid="gplazma.selector" />
                     <filename name="**/*.class" />
-                </and>
             </fileset>
         </jar>
 
