@@ -1894,8 +1894,8 @@ public class PoolV4
     public String hh_mover_kill = "<jobId> [-force]" ;
     public String hh_p2p_set_max_active = "<maxActiveIoMovers>";
     public String hh_p2p_ls = "[-binary [jobId] ]";
-    public String hh_p2p_remove = "<jobId>";
-    public String hh_p2p_kill = "<jobId> [-force]" ;
+    public String hh_p2p_remove = "<jobId>; OBSOLETE: use: mover remove -queue=" + P2P_QUEUE_NAME;
+    public String hh_p2p_kill = "<jobId> [-force]; OBSOLETE: use: mover kill -queue=" + P2P_QUEUE_NAME;
 
     public String ac_mover_set_max_active_$_1(Args args)
         throws NumberFormatException, IllegalArgumentException
@@ -2022,10 +2022,7 @@ public class PoolV4
     public String ac_p2p_remove_$_1(Args args)
         throws NoSuchElementException, NumberFormatException
     {
-        JobScheduler p2pQueue = _ioQueue.getQueue(P2P_QUEUE_NAME);
-        int id = Integer.parseInt(args.argv(0));
-        p2pQueue.remove(id);
-        return "Removed";
+        return "OBSOLETE: use: mover remove -queue=" + P2P_QUEUE_NAME;
     }
 
     public String ac_mover_kill_$_1(Args args)
@@ -2041,11 +2038,7 @@ public class PoolV4
     public String ac_p2p_kill_$_1(Args args)
         throws NoSuchElementException, NumberFormatException
     {
-        JobScheduler p2pQueue = _ioQueue.getQueue(P2P_QUEUE_NAME);
-        int id = Integer.parseInt(args.argv(0));
-        boolean force = args.getOpt("force") != null;
-        mover_kill(p2pQueue, id, force);
-        return "Kill initialized";
+        return "OBSOLETE: use: mover kill -queue=" + P2P_QUEUE_NAME;
     }
 
     private void mover_kill(JobScheduler js, int id, boolean force)
