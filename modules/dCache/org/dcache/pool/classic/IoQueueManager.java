@@ -15,7 +15,7 @@ import java.util.NoSuchElementException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class IoQueueManager implements JobScheduler {
+class IoQueueManager {
 
     private final static Logger _log = LoggerFactory.getLogger(IoQueueManager.class);
 
@@ -66,11 +66,19 @@ class IoQueueManager implements JobScheduler {
         return Collections.unmodifiableCollection(_list);
     }
 
-    public synchronized JobScheduler getSchedulerByName(String queueName) {
+    public synchronized JobScheduler getQueue(String queueName) {
         return _hash.get(queueName);
     }
 
-    public synchronized JobScheduler getSchedulerById(int id) {
+    /**
+     * Get {@link List} of defined {@link JobScheduler}s.
+     * @return schedulers.
+     */
+    public synchronized List<JobScheduler> getQueues() {
+        return new ArrayList<JobScheduler>(_list);
+    }
+
+    public synchronized JobScheduler getQueueByJobId(int id) {
         int pos = id % 10;
         if (pos >= _list.size()) {
             throw new IllegalArgumentException("Invalid id (doesn't below to any known scheduler)");
@@ -79,7 +87,7 @@ class IoQueueManager implements JobScheduler {
     }
 
     public synchronized JobInfo getJobInfo(int id) {
-        return getSchedulerById(id).getJobInfo(id);
+        return getQueueByJobId(id).getJobInfo(id);
     }
 
     public synchronized int add(String queueName, Runnable runnable, int priority) throws InvocationTargetException {
@@ -96,21 +104,11 @@ class IoQueueManager implements JobScheduler {
     }
 
     public synchronized void kill(int jobId, boolean force) throws NoSuchElementException {
-        getSchedulerById(jobId).kill(jobId, force);
+        getQueueByJobId(jobId).kill(jobId, force);
     }
 
     public synchronized void remove(int jobId) throws NoSuchElementException {
-        getSchedulerById(jobId).remove(jobId);
-    }
-
-    public synchronized StringBuffer printJobQueue(StringBuffer sb) {
-        if (sb == null) {
-            sb = new StringBuffer();
-        }
-        for (JobScheduler s : _list) {
-            s.printJobQueue(sb);
-        }
-        return sb;
+        getQueueByJobId(jobId).remove(jobId);
     }
 
     public synchronized int getMaxActiveJobs() {
@@ -137,26 +135,12 @@ class IoQueueManager implements JobScheduler {
         return sum;
     }
 
-    public synchronized void setMaxActiveJobs(int maxJobs) {
-    }
-
     public synchronized List<JobInfo> getJobInfos() {
         List<JobInfo> list = new ArrayList<JobInfo>();
         for (JobScheduler s : _list) {
             list.addAll(s.getJobInfos());
         }
         return list;
-    }
-
-    public void setSchedulerId(int id) {
-    }
-
-    public String getSchedulerName() {
-        return "Manager";
-    }
-
-    public int getSchedulerId() {
-        return -1;
     }
 
     public synchronized void printSetup(PrintWriter pw) {

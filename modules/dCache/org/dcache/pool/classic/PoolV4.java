@@ -1089,7 +1089,9 @@ public class PoolV4
         }
 
         try {
-            mover_kill(kill.getMoverId(), false);
+            int id = kill.getMoverId();
+            JobScheduler js = _ioQueue.getQueueByJobId(id);
+            mover_kill(js, id, false);
             kill.setSucceeded();
         } catch (NoSuchElementException e) {
             _log.info(e.toString());
@@ -1520,7 +1522,7 @@ public class PoolV4
         info.setP2pClientQueueSizes(_p2pClient.getActiveJobs(), _p2pClient
                                     .getMaxActiveJobs(), _p2pClient.getQueueSize());
 
-        JobScheduler p2pQueue = _ioQueue.getSchedulerByName(P2P_QUEUE_NAME);
+        JobScheduler p2pQueue = _ioQueue.getQueue(P2P_QUEUE_NAME);
         info.setP2pServerQueueSizes(p2pQueue.getActiveJobs(),
                 p2pQueue.getMaxActiveJobs(), p2pQueue.getQueueSize());
 
@@ -1903,7 +1905,7 @@ public class PoolV4
         if (queueName == null)
             return mover_set_max_active(_ioQueue.getDefaultScheduler(), args);
 
-        JobScheduler js = _ioQueue.getSchedulerByName(queueName);
+        JobScheduler js = _ioQueue.getQueue(queueName);
 
         if (js == null)
             return "Not found : " + queueName;
@@ -1915,7 +1917,7 @@ public class PoolV4
     public String ac_p2p_set_max_active_$_1(Args args)
         throws NumberFormatException, IllegalArgumentException
     {
-        JobScheduler p2pQueue = _ioQueue.getSchedulerByName(P2P_QUEUE_NAME);
+        JobScheduler p2pQueue = _ioQueue.getQueue(P2P_QUEUE_NAME);
         return mover_set_max_active(p2pQueue, args);
     }
 
@@ -1949,98 +1951,100 @@ public class PoolV4
         return sb.toString();
     }
 
-    public Object ac_mover_ls_$_0_1(Args args)
-        throws NoSuchElementException
-    {
+    public Object ac_mover_ls_$_0_1(Args args) throws NoSuchElementException {
         String queueName = args.getOpt("queue");
-        if (queueName == null)
-            return mover_ls(_ioQueue, args);
+        boolean binary = args.getOpt("binary") != null;
+
+        if (binary && args.argc() > 0) {
+            int id = Integer.parseInt(args.argv(0));
+            JobScheduler js = _ioQueue.getQueueByJobId(id);
+            return js.getJobInfo(id);
+        }
+
+        if (queueName == null) {
+            return mover_ls(_ioQueue.getQueues(), binary);
+        }
 
         if (queueName.length() == 0) {
             StringBuilder sb = new StringBuilder();
             for (JobScheduler js : _ioQueue.getSchedulers()) {
                 sb.append("[").append(js.getSchedulerName()).append("]\n");
-                sb.append(mover_ls(js, args).toString());
+                sb.append(mover_ls(js, binary).toString());
             }
             return sb.toString();
         }
 
-        JobScheduler js = _ioQueue.getSchedulerByName(queueName);
-
-        if (js == null)
+        JobScheduler js = _ioQueue.getQueue(queueName);
+        if (js == null) {
             throw new NoSuchElementException(queueName);
+        }
 
-        return mover_ls(js, args);
+        return mover_ls(js, binary);
 
     }
 
     public Object ac_p2p_ls_$_0_1(Args args)
     {
-        JobScheduler p2pQueue = _ioQueue.getSchedulerByName(P2P_QUEUE_NAME);
-        return mover_ls(p2pQueue, args);
+        JobScheduler p2pQueue = _ioQueue.getQueue(P2P_QUEUE_NAME);
+        return mover_ls(p2pQueue, args.getOpt("binary") != null);
     }
 
-    private Object mover_ls(JobScheduler js, Args args)
-        throws NumberFormatException
-    {
-        boolean binary = args.getOpt("binary") != null;
+    private Object mover_ls(JobScheduler js, boolean binary) {
+        return mover_ls(Arrays.asList(js), binary);
+    }
+
+    private Object mover_ls(List<JobScheduler> jobSchedulers, boolean binary) {        
+
         if (binary) {
-            if (args.argc() > 0) {
-                return js.getJobInfo(Integer.parseInt(args.argv(0)));
-            } else {
-                List<JobInfo> list = js.getJobInfos();
-                return list.toArray(new IoJobInfo[list.size()]);
+            List<JobInfo> list = new ArrayList<JobInfo>();
+            for (JobScheduler js : jobSchedulers) {
+                list.addAll(js.getJobInfos());
             }
+            return list.toArray(new IoJobInfo[0]);
         } else {
-            return js.printJobQueue(null).toString();
+            StringBuffer sb = new StringBuffer();
+            for (JobScheduler js : jobSchedulers) {
+                js.printJobQueue(sb);
+            }
+            return sb.toString();
         }
     }
 
     public String ac_mover_remove_$_1(Args args)
         throws NoSuchElementException, NumberFormatException
     {
-        return mover_remove(_ioQueue, args);
+        int id = Integer.parseInt(args.argv(0));
+        JobScheduler js = _ioQueue.getQueueByJobId(id);
+        js.remove(id);
+        return "Removed";
     }
 
     public String ac_p2p_remove_$_1(Args args)
         throws NoSuchElementException, NumberFormatException
     {
-        JobScheduler p2pQueue = _ioQueue.getSchedulerByName(P2P_QUEUE_NAME);
-        return mover_remove(p2pQueue, args);
-    }
-
-    private String mover_remove(JobScheduler js, Args args)
-        throws NoSuchElementException, NumberFormatException
-    {
+        JobScheduler p2pQueue = _ioQueue.getQueue(P2P_QUEUE_NAME);
         int id = Integer.parseInt(args.argv(0));
-        js.remove(id);
+        p2pQueue.remove(id);
         return "Removed";
     }
 
     public String ac_mover_kill_$_1(Args args)
         throws NoSuchElementException, NumberFormatException
     {
-        return mover_kill(_ioQueue, args);
+        int id = Integer.parseInt(args.argv(0));
+        boolean force = args.getOpt("force") != null;
+        JobScheduler js = _ioQueue.getQueueByJobId(id);
+        mover_kill(js, id, force);
+        return "Kill initialized";
     }
 
     public String ac_p2p_kill_$_1(Args args)
         throws NoSuchElementException, NumberFormatException
     {
-        JobScheduler p2pQueue = _ioQueue.getSchedulerByName(P2P_QUEUE_NAME);
-        return mover_kill(p2pQueue, args);
-    }
-
-    private void mover_kill(int id, boolean force)
-        throws NoSuchElementException
-    {
-        mover_kill(_ioQueue, id, force);
-    }
-
-    private String mover_kill(JobScheduler js, Args args)
-        throws NoSuchElementException, NumberFormatException
-    {
+        JobScheduler p2pQueue = _ioQueue.getQueue(P2P_QUEUE_NAME);
         int id = Integer.parseInt(args.argv(0));
-        mover_kill(js, id, args.getOpt("force") != null);
+        boolean force = args.getOpt("force") != null;
+        mover_kill(p2pQueue, id, force);
         return "Kill initialized";
     }
 
