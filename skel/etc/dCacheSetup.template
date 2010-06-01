@@ -164,6 +164,7 @@ java="/usr/bin/java"
 #   Do not change unless you know what you are doing.
 #
 #   If the globus.tcp.port.range is changed, the clientDataPortRange
+#   variable below MUST be changed accordingly.
 #
 java_options="-server -Xmx512m -XX:MaxDirectMemorySize=512m \
               -Dsun.net.inetaddr.ttl=1800 \
@@ -188,8 +189,6 @@ java_options="-server -Xmx512m -XX:MaxDirectMemorySize=512m \
 #
 #user=
 
-#
-#   Additional option for Kerberos5 authentication:
 #
 #   Other additional options that might be useful:
 #              -Xms512m \
