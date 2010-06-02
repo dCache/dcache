@@ -3532,7 +3532,7 @@ public abstract class AbstractFtpDoorV1
         } catch (FileNotFoundCacheException e) {
             reply("550 Directory not found");
         } catch (NotDirCacheException e) {
-            reply("550 Directory not found");
+            reply("550 Not a directory");
         } catch (PermissionDeniedCacheException e) {
             reply("550 Permission denied");
         } catch (CacheException e) {
@@ -3632,7 +3632,7 @@ public abstract class AbstractFtpDoorV1
         } catch (FileNotFoundCacheException e) {
             reply("501 Directory not found");
         } catch (NotDirCacheException e) {
-            reply("501 Directory not found");
+            reply("501 Not a directory");
         } catch (PermissionDeniedCacheException e) {
             reply("550 Permission denied");
         } catch (CacheException e) {
