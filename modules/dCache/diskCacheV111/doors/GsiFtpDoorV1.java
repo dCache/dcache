@@ -216,7 +216,7 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
             error("Failed to extract X509 chain: " + e);
             println("530 Login failed: " + e.getMessage());
         } catch (PermissionDeniedCacheException e) {
-            warn("Login denied for " + subject);
+            warn("Login denied for " + subject + ": " + e);
             println("530 Login incorrect");
         } catch (CacheException e) {
             error("Login failed for " + subject + ": " + e);
