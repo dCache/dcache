@@ -10,19 +10,6 @@
     <property name="location" value="domaincontext:"/>
     <property name="properties">
       <value>
-        replicateOnArrival=off
-        poolIoQueue=
-        checkRepository=true
-        waitForRepositoryReady=false
-        metaDataRepository=org.dcache.pool.repository.meta.file.FileMetaDataRepository
-        metaDataRepositoryImport=org.dcache.pool.repository.meta.EmptyMetaDataStore
-        gsiftpReadAhead=16777216
-        allowCleaningPreciousFiles=false
-        poolupDestination=PoolManager
-        lfs=none
-        pnfsmanager=PnfsManager
-        flushMessageTarget=broadcast
-        sweeper=org.dcache.pool.classic.SpaceSweeper2
         workerThreads=5
         messageThreads=5
         messageThreadsMax=50
@@ -32,7 +19,6 @@
         callbackThreadsMax=50
         callbackThreadsKeepAliveTime=60
         callbackThreadsQueueMax=1000
-        maxDiskSpace=Infinity
       </value>
     </property>
   </bean>
