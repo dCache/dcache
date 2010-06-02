@@ -102,11 +102,11 @@ public class JobSchedulerTestCell extends CellAdapter {
    public String hh_start = "[-prio=high|regular|low] <name> \"<args>\"" ;
    public String ac_start_$_2( Args args )throws Exception {
        String prio = args.getOpt("prio") ;
-       int priority = 0 ;
-       if( prio == null )priority = SimpleJobScheduler.REGULAR ;
-       else if( prio.equals("high") )priority = SimpleJobScheduler.HIGH ;
-       else if( prio.equals("regular") )priority = SimpleJobScheduler.REGULAR ;
-       else if( prio.equals("low") )priority = SimpleJobScheduler.LOW ;
+       JobScheduler.Priority priority;
+       if( prio == null )priority = JobScheduler.Priority.REGULAR ;
+       else if( prio.equals("high") )priority = JobScheduler.Priority.HIGH ;
+       else if( prio.equals("regular") )priority = JobScheduler.Priority.REGULAR ;
+       else if( prio.equals("low") )priority = JobScheduler.Priority.LOW ;
        else throw new IllegalArgumentException("Illegal priority : "+prio ) ;
 
 //       BJob job = new BJob( args.argv(0) , args.argv(1) ) ;

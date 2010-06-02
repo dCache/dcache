@@ -90,7 +90,7 @@ class IoQueueManager {
         return getQueueByJobId(id).getJobInfo(id);
     }
 
-    public synchronized int add(String queueName, Runnable runnable, int priority) throws InvocationTargetException {
+    public synchronized int add(String queueName, Runnable runnable, JobScheduler.Priority priority) throws InvocationTargetException {
         JobScheduler js = (queueName == null) ? null : _hash.get(queueName);
         return (js == null) ? add(runnable, priority) : js.add(runnable, priority);
     }
@@ -99,7 +99,7 @@ class IoQueueManager {
         return getDefaultScheduler().add(runnable);
     }
 
-    public synchronized int add(Runnable runnable, int priority) throws InvocationTargetException {
+    public synchronized int add(Runnable runnable, JobScheduler.Priority priority) throws InvocationTargetException {
         return getDefaultScheduler().add(runnable, priority);
     }
 

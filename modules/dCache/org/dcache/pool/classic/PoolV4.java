@@ -52,7 +52,6 @@ import diskCacheV111.util.HsmSet;
 import diskCacheV111.util.JobScheduler;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.SimpleJobScheduler;
 import diskCacheV111.util.UnitInteger;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.InfoMessage;
@@ -653,11 +652,11 @@ public class PoolV4
         String queueName = message.getIoQueueName();
 
         if (message instanceof PoolAcceptFileMessage) {
-            return _ioQueue.add(queueName, request, SimpleJobScheduler.HIGH);
+            return _ioQueue.add(queueName, request, JobScheduler.Priority.HIGH);
         } else if (message.isPool2Pool()) {
-            return _ioQueue.add(P2P_QUEUE_NAME, request, SimpleJobScheduler.HIGH);
+            return _ioQueue.add(P2P_QUEUE_NAME, request, JobScheduler.Priority.HIGH);
         } else {
-            return _ioQueue.add(queueName, request, SimpleJobScheduler.REGULAR);
+            return _ioQueue.add(queueName, request, JobScheduler.Priority.REGULAR);
         }
     }
 

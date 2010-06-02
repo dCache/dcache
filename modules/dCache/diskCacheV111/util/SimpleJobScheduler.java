@@ -9,7 +9,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.Future;
 import java.lang.reflect.InvocationTargetException;
 
-import org.dcache.util.ReflectionUtils;
 import org.dcache.util.CDCThreadFactory;
 import org.dcache.util.FireAndForgetTask;
 
@@ -24,10 +23,6 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
     private final static Logger _log =
         LoggerFactory.getLogger(SimpleJobScheduler.class);
 
-    public static final int LOW = 0;
-    public static final int REGULAR = 1;
-    public static final int HIGH = 2;
-
     private static final int WAITING = 10;
     private static final int ACTIVE = 11;
     private static final int KILLED = 12;
@@ -38,12 +33,11 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
     private int _nextId = 1000;
     private final Object _lock = new Object();
     private final Thread _worker;
-    private final LinkedList<SJob>[] _queues = new LinkedList[3];
+    private final Queue<SJob> _queue;
     private final Map<Integer, SJob> _jobs = new HashMap<Integer, SJob>();
     private int _batch = -1;
     private String _name = "regular";
     private int _id = -1;
-    private boolean _fifo;
 
     private String[] _st_string = { "W", "A", "K", "R" };
 
@@ -52,22 +46,24 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
      */
     private final ExecutorService _jobExecutor;
 
-    private class SJob implements Job, Runnable {
+    private class SJob implements Job, Runnable, Comparable<SJob> {
 
         private final long _submitTime = System.currentTimeMillis();
         private long _startTime = 0;
         private int _status = WAITING;
         private final Runnable _runnable;
         private final int _id;
-        private final int _priority;
+        private final Priority _priority;
         private Future _future;
         private CDC _cdc;
+        private final long _ctime;
 
-        private SJob(Runnable runnable, int id, int priority) {
+        private SJob(Runnable runnable, int id, Priority priority) {
             _runnable = runnable;
             _id = id;
             _priority = priority;
             _cdc = new CDC();
+            _ctime = System.nanoTime();
         }
 
         public int getJobId() {
@@ -144,9 +140,7 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
             StringBuffer sb = new StringBuffer();
             sb.append(_id).append(" ").append(getStatusString()).append(" ");
             sb
-                    .append(
-                            _priority == LOW ? "L" : _priority == REGULAR ? "R"
-                                    : "H").append(" ");
+                    .append(_priority).append(" ");
             if (_runnable instanceof Batchable) {
                 Batchable b = (Batchable) _runnable;
                 sb.append("{").append(b.getClient()).append(":").append(
@@ -167,6 +161,48 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
 
             return (o instanceof SJob) && (((SJob) o)._id == _id);
         }
+
+        @Override
+        public int compareTo(SJob o) {
+            if (_priority != o._priority) {
+                return _priority.compareTo(o._priority);
+            }
+
+            /*
+             * entry with lower ctime have to be taken first.
+             */
+            if (_ctime < o._ctime) {
+                return 1;
+            }
+            if (_ctime > o._ctime) {
+                return -1;
+            }
+            return 0;
+        }
+    }
+
+    public class FifoComparator implements Comparator<SJob> {
+
+        @Override
+        public int compare(SJob o1, SJob o2) {
+            if (o1._priority != o2._priority) {
+                return o1._priority.compareTo(o2._priority);
+            }
+
+            return o1.compareTo(o2);
+        }
+    }
+
+    public class LifoComparator implements Comparator<SJob> {
+
+        @Override
+        public int compare(SJob o1, SJob o2) {
+            if (o1._priority != o2._priority) {
+                return o1._priority.compareTo(o2._priority);
+            }
+
+            return o2.compareTo(o1);
+        }
     }
 
     public SimpleJobScheduler(String name) {
@@ -184,10 +220,8 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
     public SimpleJobScheduler(ThreadFactory factory, String name, boolean fifo)
     {
         _name = name;
-        _fifo = fifo;
-        for (int i = 0; i < _queues.length; i++) {
-            _queues[i] = new LinkedList<SJob>();
-        }
+        _queue = new PriorityQueue<SJob>(16, fifo? new FifoComparator() :
+            new LifoComparator());
 
         _jobExecutor =
             Executors.newCachedThreadPool(new CDCThreadFactory(factory) {
@@ -217,13 +251,11 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
     }
 
     public int add(Runnable runnable) throws InvocationTargetException {
-        return add(runnable, REGULAR);
+        return add(runnable, Priority.REGULAR);
     }
 
-    public int add(Runnable runnable, int priority)
+    public int add(Runnable runnable, Priority priority)
             throws InvocationTargetException {
-        if ((priority < LOW) || (priority > HIGH))
-            throw new IllegalArgumentException("Illegal Priority : " + priority);
         synchronized (_lock) {
 
             int id = _id < 0 ? (_nextId++) : ((_nextId++) * 10 + _id);
@@ -244,7 +276,7 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
 
             SJob job = new SJob(runnable, id, priority);
             _jobs.put(id, job);
-            _queues[priority].add(job);
+            _queue.add(job);
             _lock.notifyAll();
             return id;
 
@@ -329,8 +361,7 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
                         + job.getStatusString() + " : Job-" + jobId);
             }
 
-            List l = _queues[job._priority];
-            l.remove(job);
+            _queue.remove(job);
             _jobs.remove(job._id);
             if (job._runnable instanceof Batchable)
                 ((Batchable) job._runnable).unqueued();
@@ -347,10 +378,7 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
     }
 
     public int getQueueSize() {
-        int size = 0;
-        for (int i = 0; i < 3; i++)
-            size += _queues[i].size();
-        return size;
+        return _queue.size();
     }
 
     public int getActiveJobs() {
@@ -405,20 +433,11 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
                 try {
                     while (true) {
                         if (_batch != 0) {
-                            for (int i = HIGH; i >= 0; i--) {
-                                while (_activeJobs < _maxActiveJobs) {
-                                    if (_queues[i].isEmpty()) break;
-                                    SJob job;
-                                    if (_fifo) {
-                                        job = _queues[i].removeFirst();
-                                    } else {
-                                        job = _queues[i].removeLast();
-                                    }
-                                    // System.out.println("Starting : "+job ) ;
-                                    _activeJobs++;
-                                    _batch = _batch > 0 ? _batch - 1 : _batch;
-                                    job.start();
-                                }
+                            while (_activeJobs < _maxActiveJobs && !_queue.isEmpty()) {
+                                SJob job = _queue.poll();
+                                _activeJobs++;
+                                _batch = _batch > 0 ? _batch - 1 : _batch;
+                                job.start();
                             }
                         }
                         _lock.wait();

@@ -6,6 +6,10 @@ import java.util.* ;
 import java.lang.reflect.InvocationTargetException ;
 
 public interface JobScheduler {
+    public enum Priority {
+        LOW, REGULAR, HIGH
+    }
+
     public interface Job {
        public long getSubmitTime() ;
        public long getStartTime() ;
@@ -16,7 +20,7 @@ public interface JobScheduler {
 
     public int  add( Runnable runnable )
            throws InvocationTargetException ;
-    public int  add( Runnable runnable , int priority )
+    public int  add( Runnable runnable , Priority priority )
            throws InvocationTargetException ;
     public void kill( int jobId, boolean force )
         throws NoSuchElementException;
