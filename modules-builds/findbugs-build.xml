@@ -20,7 +20,6 @@
             <class location="${classesDir}/cells.jar" />
             <class location="${classesDir}/dcache.jar" />
             <class location="${classesDir}/srm.jar" />
-            <class location="${classesDir}/srm-tomcat.jar" />
             <class location="${classesDir}/javatunnel.jar" />
             <class location="${classesDir}/xrootd-tokenauthz.jar" />
         </findbugs>
@@ -38,7 +37,6 @@
             <class location="${classesDir}/cells.jar" />
             <class location="${classesDir}/dcache.jar" />
             <class location="${classesDir}/srm.jar" />
-            <class location="${classesDir}/srm-tomcat.jar" />
             <class location="${classesDir}/javatunnel.jar" />
             <class location="${classesDir}/xrootd-tokenauthz.jar" />
             <sourcePath path="modules/cells" />

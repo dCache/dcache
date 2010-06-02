@@ -389,8 +389,10 @@ public class PermissionHandlerNameSpaceProvider
         if (!Subjects.isRoot(subject)) {
             PnfsId pnfsId = pathToPnfsid(subject, path, true);
             FileAttributes attributes =
-                getFileAttributesForPermissionHandler(pnfsId);
-            if (_handler.canListDir(subject, attributes) != ACCESS_ALLOWED) {
+                getFileAttributesForPermissionHandler(pnfsId, TYPE);
+            if (attributes.getFileType() != DIR) {
+                throw new NotDirCacheException("Not a directory");
+            } else if (_handler.canListDir(subject, attributes) != ACCESS_ALLOWED) {
                 throw new PermissionDeniedCacheException("Access denied: " +
                                                          path);
             }

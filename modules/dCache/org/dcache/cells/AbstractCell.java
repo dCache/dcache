@@ -26,6 +26,7 @@ import dmg.cells.nucleus.UOID;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.Reply;
 import dmg.cells.nucleus.CDC;
+import dmg.cells.nucleus.CellEndpoint;
 
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.util.CacheException;
@@ -172,6 +173,8 @@ public class AbstractCell extends CellAdapter
      */
     protected String _definedSetup;
 
+    protected MessageProcessingMonitor _monitor;
+
     /**
      * Strips the first argument if it starts with an exclamation
      * mark.
@@ -233,6 +236,12 @@ public class AbstractCell extends CellAdapter
     {
         super(cellName, cellType, stripDefinedSetup(arguments), false);
 
+        _monitor = new MessageProcessingMonitor();
+        _monitor.setCellEndpoint(this);
+        if (arguments.getOpt("monitor") != null) {
+            _monitor.setEnabled(true);
+        }
+
         String cellClass = arguments.getOpt("cellClass");
         if (cellClass != null) {
             getNucleus().setCellClass(cellClass);
@@ -243,6 +252,7 @@ public class AbstractCell extends CellAdapter
 
         parseOptions();
         addMessageListener(this);
+        addCommandListener(_monitor);
     }
 
     public void cleanUp()
@@ -744,7 +754,7 @@ public class AbstractCell extends CellAdapter
     /**
      * Sends a reply back to the sender of <code>envelope</code>.
      */
-    private void sendReply(CellMessage envelope, Object result)
+    private void sendReply(CellEndpoint endpoint, CellMessage envelope, Object result)
     {
         Object o = envelope.getMessageObject();
         if (o instanceof Message) {
@@ -781,10 +791,10 @@ public class AbstractCell extends CellAdapter
             envelope.revertDirection();
             if (result instanceof Reply) {
                 Reply reply = (Reply)result;
-                reply.deliver(this, envelope);
+                reply.deliver(endpoint, envelope);
             } else {
                 envelope.setMessageObject(result);
-                sendMessage(envelope);
+                endpoint.sendMessage(envelope);
             }
         } catch (NoRouteToCellException e) {
             _logger.error("Cannot deliver reply: No route to " + envelope.getDestinationAddress());
@@ -821,6 +831,7 @@ public class AbstractCell extends CellAdapter
     @Override
     public void messageToForward(CellMessage envelope)
     {
+        CellEndpoint endpoint = _monitor.getReplyCellEndpoint(envelope);
         UOID uoid = envelope.getUOID();
         boolean isReply = isReply(envelope);
         Object result = _forwardDispatcher.call(envelope);
@@ -830,9 +841,14 @@ public class AbstractCell extends CellAdapter
                 throw new RuntimeException(String.format(MSG_UOID_MISMATCH, result));
             }
 
-            sendReply(envelope, result);
+            sendReply(endpoint, envelope, result);
         } else if (uoid.equals(envelope.getUOID())) {
-            super.messageToForward(envelope);
+            envelope.nextDestination();
+            try {
+                endpoint.sendMessage(envelope);
+            } catch (NoRouteToCellException e) {
+                sendReply(this, envelope, e);
+            }
         }
     }
 
@@ -866,6 +882,7 @@ public class AbstractCell extends CellAdapter
      */
     public void messageArrived(CellMessage envelope)
     {
+        CellEndpoint endpoint = _monitor.getReplyCellEndpoint(envelope);
         UOID uoid = envelope.getUOID();
         boolean isReply = isReply(envelope);
         Object result = _messageDispatcher.call(envelope);
@@ -874,7 +891,7 @@ public class AbstractCell extends CellAdapter
             if (!uoid.equals(envelope.getUOID())) {
                 throw new RuntimeException(String.format(MSG_UOID_MISMATCH, result));
             }
-            sendReply(envelope, result);
+            sendReply(endpoint, envelope, result);
         }
     }
 
@@ -892,5 +909,4 @@ public class AbstractCell extends CellAdapter
     public  CellVersion getCellVersion(){
         return getStaticCellVersion() ;
     }
-
 }

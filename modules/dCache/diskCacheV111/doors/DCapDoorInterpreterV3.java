@@ -1153,7 +1153,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             if (_message.getReturnCode() != 0) {
                 try {
                     if (!fileAttributesNotAvailable()){
-                        sendReply("pnfsGetFileAttributesArrived", reply);
                         removeUs();
                         return;
                     }
@@ -1187,6 +1186,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         protected boolean fileAttributesNotAvailable() throws CacheException
         {
+            sendReply("fileAttributesNotAvailable", _message);
             return false;
         }
 
@@ -1706,7 +1706,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         @Override
         public boolean fileAttributesNotAvailable() throws CacheException
         {
-            boolean rc = true;
             try {
                 String path = _message.getPnfsPath();
                 String parent = new File(path).getParent();
@@ -1714,21 +1713,14 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 if (_permissionHandler.canCreateDir(_pnfs.getPnfsIdByPath(parent), _subject, _origin) == AccessType.ACCESS_ALLOWED) {
                     _pnfs.createPnfsDirectory( path , getUid(), getGid(), getMode(0755));
                     sendReply("fileAttributesNotAvailable", 0, "");
-                    rc = false;
                 }else{
-                   sendReply("fileAttributesNotAvailable", 23, "Permission denied", "EACCES");
+                    sendReply("fileAttributesNotAvailable", 23, "Permission denied", "EACCES");
                 }
             } catch (ACLException e) {
-               sendReply("fileAttributesNotAvailable", 23, e.getMessage(), "EACCES");
-            } catch (CacheException e) {
                 sendReply("fileAttributesNotAvailable", 23, e.getMessage(), "EACCES");
-            } finally {
-                removeUs();
             }
-
-            return rc;
+            return false;
         }
-
 
         @Override
         public void fileAttributesAvailable() {
@@ -2053,9 +2045,13 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 throw new
                 CacheException( 107 , "Hsm only supports existing files" ) ;
             //
-            // if this is not a url it's of course and error.
+            // if this is not a url it's of course an error.
             //
-            if( ! _isUrl )return false ;
+            if( ! _isUrl ) {
+                sendReply("fileAttributesNotAvailable", _message);
+                return false ;
+            }
+
             _log.debug("storageInfoNotAvailable : is url (mode={})", _ioMode);
 
             if( _ioMode.equals("r") )

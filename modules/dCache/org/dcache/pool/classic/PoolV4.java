@@ -193,20 +193,6 @@ public class PoolV4
         // the setup is done.
         //
         _pingThread = new PoolManagerPingThread();
-
-        //
-        // get additional tags
-        //
-        for (Map.Entry<String,String> option: _args.options().entrySet()) {
-            String key = option.getKey();
-            if ((key.length() > 4) && key.startsWith("tag.")) {
-                _tags.put(key.substring(4), option.getValue());
-            }
-        }
-
-        for (Map.Entry<String, String> e: _tags.entrySet() ) {
-            _log.info("Tag: " + e.getKey() + "="+ e.getValue());
-        }
     }
 
     protected void assertNotRunning(String error)
