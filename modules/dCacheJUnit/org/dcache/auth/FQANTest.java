@@ -1,4 +1,4 @@
-package diskCacheV111.util;
+package org.dcache.auth;
 
 import org.junit.After;
 import org.junit.AfterClass;

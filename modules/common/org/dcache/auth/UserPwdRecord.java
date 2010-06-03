@@ -1,8 +1,5 @@
 package org.dcache.auth;
 
-import diskCacheV111.util.*;
-import java.util.*;
-
 public class UserPwdRecord extends UserAuthBase
 {
     String Password = null;

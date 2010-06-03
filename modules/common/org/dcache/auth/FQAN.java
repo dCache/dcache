@@ -7,7 +7,7 @@
  * and open the template in the editor.
  */
 
-package diskCacheV111.util;
+package org.dcache.auth;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 

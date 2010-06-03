@@ -4,7 +4,7 @@ import java.util.*;
 import java.io.*;
 import java.lang.*;
 import java.text.ParseException;
-import diskCacheV111.util.FQAN;
+import org.dcache.auth.FQAN;
 
 
 public class LinkGroupAuthorizationFile  {

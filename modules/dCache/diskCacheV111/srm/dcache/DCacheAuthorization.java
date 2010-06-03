@@ -139,7 +139,8 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.srm.dcache;
 
-import diskCacheV111.util.KAuthFile;
+import org.dcache.auth.UserAuthRecord;
+import org.dcache.auth.KAuthFile;
 import org.dcache.auth.*;
 import org.dcache.auth.persistence.AuthRecordPersistenceManager;
 import org.dcache.srm.SRMAuthorization;

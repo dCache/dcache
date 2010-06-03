@@ -19,7 +19,7 @@ import org.ietf.jgss.GSSName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import diskCacheV111.util.KAuthFile;
+import org.dcache.auth.KAuthFile;
 import org.dcache.auth.UserAuthRecord;
 import gplazma.authz.AuthorizationException;
 import gplazma.authz.AuthorizationConfig;

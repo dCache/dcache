@@ -3,6 +3,8 @@
  */
 package diskCacheV111.admin ;
 
+import org.dcache.auth.UserAuthBase;
+import org.dcache.auth.UserAuthRecord;
 import java.util.*;
 
 import dmg.cells.nucleus.CellAdapter;

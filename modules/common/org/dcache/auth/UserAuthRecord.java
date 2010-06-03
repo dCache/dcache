@@ -1,10 +1,5 @@
 package org.dcache.auth;
 
-import diskCacheV111.util.*;
-import javax.persistence.Entity;
-import javax.persistence.Inheritance;
-import javax.persistence.InheritanceType;
-import javax.persistence.Basic;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.TreeSet;

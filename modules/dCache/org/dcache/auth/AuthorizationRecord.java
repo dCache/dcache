@@ -25,7 +25,6 @@ import javax.persistence.OrderBy;
 import static javax.persistence.CascadeType.ALL;
 import static javax.persistence.FetchType.EAGER;
 import org.dcache.srm.SRMUser;
-import diskCacheV111.util.FQAN;
 import javax.security.auth.Subject;
 
 /**
