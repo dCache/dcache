@@ -87,8 +87,7 @@ import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.PoolMgrQueryPoolsMsg;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.AuthorizationRecord;
-import org.dcache.auth.AuthzQueryHelper;
-import org.dcache.auth.GplazmaLoginStrategy;
+import org.dcache.services.login.RemoteLoginStrategy;
 import org.dcache.auth.KauthFileLoginStrategy;
 import org.dcache.srm.SrmCancelUseOfSpaceCallbacks;
 import org.dcache.srm.SrmReleaseSpaceCallbacks;
@@ -764,7 +763,7 @@ public final class Storage
                 if (config.getUseGplazmaAuthzCellFlag() ||
                     config.getUseGplazmaAuthzModuleFlag()) {
                     loginStrategy =
-                        new GplazmaLoginStrategy(new AuthzQueryHelper(this));
+                        new RemoteLoginStrategy(new CellStub(this, new CellPath("gPlazma"), 30000));
                 } else {
                     loginStrategy =
                         new KauthFileLoginStrategy(new File(config.getKpwdfile()));

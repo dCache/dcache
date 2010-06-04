@@ -24,10 +24,6 @@ set context -c srmDbUser          srmdcache
 set context -c srmDbPassword      srmdcache
 set context -c srmPasswordFile    ""
 
-set context -c useGPlazmaAuthorizationCell      true
-set context -c delegateToGPlazma    false
-set context -c useGPlazmaAuthorizationModule    false
-set context -c gplazmaPolicy      ${dcache.home}/etc/dcachesrm-gplazma.policy
 set context -c srmAuthzCacheLifetime   180
 
 set context -c parallelStreams      10
@@ -319,8 +315,7 @@ create org.dcache.cells.UniversalSpringCell jsrm \
         -srmOldRequestRemovalPeriodSeconds=${srmOldRequestRemovalPeriodSeconds} \
         -srmJdbcExecutionThreadNum=${srmJdbcExecutionThreadNum} \
         -srmMaxNumberOfJdbcTasksInQueue=${srmMaxNumberOfJdbcTasksInQueue} \
-        -delegateToGPlazma=${delegateToGPlazma} \
-        -useGplazma=${useGplazma} \
+        -useLoginService=${useLoginService} \
         -srmAuthzCacheLifetime=${srmAuthzCacheLifetime} \
         -srmLoginBroker=srm-LoginBroker \
         -protocolFamily=SRM \

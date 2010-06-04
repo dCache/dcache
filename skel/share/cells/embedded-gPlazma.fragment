@@ -1,48 +1,37 @@
-#fragment creates gPlazma if gPlazma is wanted as a Module
+# Fragment creates a gPlazma login cell if gPlazma is configured as a module
 
-define env gPlazma.exe enddefine
-# Starts the gPlazma cell
+define env startLogin.exe enddefine
+  onerror shutdown
+  check -strong gplazmaPolicy
+  check -strong gPlazmaNumberOfSimutaneousRequests
 
-# Defaults
+  create org.dcache.cells.UniversalSpringCell "gPlazma" \
+    "classpath:org/dcache/services/login/gplazma.xml \
+     -monitor \
+     -num-simultaneous-requests=${gPlazmaNumberOfSimutaneousRequests} \
+     -gplazmaPolicy=${gplazmaPolicy} \
+     -messageExecutor=message-thread-pool \
+  "
 
-onerror continue
-set context -c srmDatabaseHost    localhost
-set context -c srmDbName          dcache
-set context -c srmDbUser          srmdcache
-set context -c srmDbPassword      srmdcache
-set context -c gPlazmaNumberOfSimutaneousRequests  30
-set context -c gPlazmaRequestTimeout               180
-set context -c gplazmaPolicy     ${dcache.home}/etc/dcachesrm-gplazma.policy
-set env useGplazma true
-onerror shutdown
-
-create org.dcache.auth.gplazma.GPLAZMA gPlazma \
-          "default  \
-           -gplazma-authorization-module-policy=${gplazmaPolicy} \
-	   -jdbcUrl=jdbc:postgresql://${srmDatabaseHost}/${srmDbName} \
-           -jdbcDriver=org.postgresql.Driver \
-           -dbUser=${srmDbUser} \
-           -dbPass=${srmDbPassword} \
-           -num-simultaneous-requests=${gPlazmaNumberOfSimutaneousRequests} \
-           -request-timeout=${gPlazmaRequestTimeout} \
-"
+  set env useLoginService true
 enddefine
 
-define env gPlazmaCheck.exe enddefine
-
-# Only start gPlazma if it does not already exist
-onerror continue
-getcellinfo gPlazma
-exec env gPlazma.exe -ifnotok
-onerror shutdown
-
+define env startLoginIfNotRunning.exe enddefine
+  onerror continue
+  getcellinfo gPlazma
+  exec env startLogin.exe -ifnotok
 enddefine
 
+# Since gPlazma is no longer available as a module ${useLoginService}
+# has to be true now if either ${useGPlazmaAuthorizationCell} or
+# ${useGPlazmaAuthorizationModule} is true
+
+onerror shutdown
+check -strong useGPlazmaAuthorizationCell
+check -strong useGPlazmaAuthorizationModule
+
 onerror continue
-# since gPlazma is no longer available as a module
-# ${useGPlazmaAuthorizationCell} has to be true now if eighter
-# ${useGPlazmaAuthorizationCell} or ${useGPlazmaAuthorizationModule} is true
-set env useGplazma ${useGPlazmaAuthorizationCell}
+set env useLoginService ${useGPlazmaAuthorizationCell}
 eval "${useGPlazmaAuthorizationModule}" "true" ==
-exec env gPlazmaCheck.exe -ifok
+exec env startLoginIfNotRunning.exe -ifok
 onerror shutdown

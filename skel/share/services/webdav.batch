@@ -26,8 +26,6 @@ check -strong poolmanager
 check -strong gplazma
 check -strong loginBrokerUpdateTime
 check -strong loginBrokerUpdateThreshold
-check -strong useGPlazmaAuthorizationCell
-check -strong useGPlazmaAuthorizationModule
 check -strong webdav.static-content.dir.local
 check -strong webdav.static-content.dir.default
 check -strong webdav.static-content.location
@@ -41,7 +39,6 @@ check -strong webdav.overwrite
 check webdavInternalAddress
 check webdavIoQueue
 check loginBroker
-check gplazmaPolicy
 
 define env verify-http.exe enddefine
 enddefine
@@ -61,7 +58,7 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
     -webdavPnfsTimeout=${webdavPnfsTimeout} \
     -webdavPoolManagerTimeout=${webdavPoolManagerTimeout} \
     -webdavPoolTimeout=${webdavPoolTimeout} \
-    -webdavGplazmaTimeout=${webdavGplazmaTimeout} \
+    -webdavLoginTimeout=${webdavGplazmaTimeout} \
     -webdavPort=${port} \
     -webdavAddress=${webdavAddress} \
     -webdavInternalAddress=${webdavInternalAddress} \

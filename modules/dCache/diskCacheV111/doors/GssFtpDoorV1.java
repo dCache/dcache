@@ -8,14 +8,15 @@ package diskCacheV111.doors;
 
 //cells
 import dmg.cells.nucleus.CellVersion;
+import dmg.cells.nucleus.CellPath;
 import dmg.util.StreamEngine;
 import dmg.util.Args;
 
 //dcache
 import diskCacheV111.util.Base64;
 import org.dcache.auth.*;
-import gplazma.authz.AuthorizationException;
-import diskCacheV111.services.acl.GrantAllPermissionHandler;
+import org.dcache.services.login.RemoteLoginStrategy;
+import org.dcache.cells.CellStub;
 
 //java
 import java.net.InetAddress;
@@ -67,9 +68,9 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         super.init();
         _gssFlavor = "unknown";
 
-        if (_use_gplazmaAuthzCell || _use_gplazmaAuthzModule) {
+        if (_useLoginService) {
             _loginStrategy =
-                new GplazmaLoginStrategy(new AuthzQueryHelper(this));
+                new RemoteLoginStrategy(new CellStub(this, new CellPath("gPlazma"), 30000));
         } else {
             _loginStrategy =
                 new KauthFileLoginStrategy(new File(_kpwdFilePath));

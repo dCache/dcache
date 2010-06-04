@@ -21,12 +21,8 @@ check -strong gsiftpMaxRetries
 check -strong gsiftpMaxStreamsPerClient
 check -strong gsiftpDefaultStreamsPerClient
 check -strong gsiftpDeleteOnConnectionClosed
-check -strong useGPlazmaAuthorizationCell
-check -strong delegateToGPlazma
-check -strong useGPlazmaAuthorizationModule
 check gsiftpPoolManager
 check gsiftpPoolProxy
-check gplazmaPolicy
 check gsiftpIoQueue
 check kpwdFile
 check gsiftpAdapterInternalInterface
@@ -94,9 +90,7 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
              -maxStreamsPerClient=${gsiftpMaxStreamsPerClient} \
              -defaultStreamsPerClient=${gsiftpDefaultStreamsPerClient} \
              -deleteOnConnectionClosed=${gsiftpDeleteOnConnectionClosed} \
-             -delegate-to-gplazma=${delegateToGPlazma} \
-             -use-gplazma-authorization-cell=${useGplazma} \
-             -use-gplazma-authorization-module=false \
+             -use-login-service=${useLoginService} \
              -io-queue=${gsiftpIoQueue} \
              -kpwd-file=${kpwdFile} \
              -stageConfigurationFilePath=${stageConfigurationFilePath} \

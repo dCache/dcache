@@ -9,7 +9,6 @@ import dmg.util.*;
 import diskCacheV111.services.acl.PermissionHandler;
 import diskCacheV111.services.acl.DelegatingPermissionHandler;
 import diskCacheV111.services.acl.GrantAllPermissionHandler;
-import gplazma.authz.AuthorizationException;
 import diskCacheV111.poolManager.RequestContainerV5;
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 
@@ -26,7 +25,7 @@ import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.RetentionPolicy;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.UnionLoginStrategy;
-import org.dcache.auth.GplazmaLoginStrategy;
+import org.dcache.services.login.RemoteLoginStrategy;
 import org.dcache.auth.CachingLoginStrategy;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.LoginReply;
@@ -34,6 +33,7 @@ import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.auth.AuthzQueryHelper;
+import org.dcache.cells.CellStub;
 
 import diskCacheV111.util.PnfsHandler;
 import java.security.Principal;
@@ -199,7 +199,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     private boolean _isRetentionPolicyOverwriteAllowed = false;
 
     public DCapDoorInterpreterV3(CellEndpoint cell, PrintWriter pw, Subject subject)
-        throws ACLException, IOException, AuthorizationException
+        throws ACLException, IOException
     {
         _out  = pw ;
         _cell = cell ;
@@ -317,10 +317,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     }
 
     private LoginStrategy createLoginStrategy()
-        throws AuthorizationException
     {
         LoginStrategy gplazma =
-            new GplazmaLoginStrategy(new AuthzQueryHelper(_cell));
+            new RemoteLoginStrategy(new CellStub(_cell, new CellPath("gPlazma"), 30000));
         UnionLoginStrategy union = new UnionLoginStrategy();
         union.setLoginStrategies(Collections.singletonList(gplazma));
         if (!_authorizationStrong) {

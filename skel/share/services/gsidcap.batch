@@ -5,9 +5,6 @@ check -strong port
 
 # Defaults
 onerror continue
-set context -c useGPlazmaAuthorizationModule  false
-set context -c useGPlazmaAuthorizationCell    true
-set context -c gplazmaPolicy               ${dcache.home}/etc/dcachesrm-gplazma.policy
 set context -c gsidcapIoQueue              ""
 set context -c gsidcapIoQueueOverwrite     denied
 set context -c gsidcapMaxLogin             1500
@@ -32,7 +29,6 @@ exec file:${dcache.home}/share/cells/stage.fragment doors
 exec file:${dcache.home}/share/cells/permission.fragment
 exec file:${dcache.home}/share/cells/embedded-gPlazma.fragment
 
-#
 create dmg.cells.services.login.LoginManager ${cell.name} \
              "${port} \
               diskCacheV111.doors.DCapDoor \
@@ -55,10 +51,5 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
               -stageConfigurationFilePath=${stageConfigurationFilePath} \
               -io-queue=${gsidcapIoQueue} \
               -io-queue-overwrite=${gsidcapIoQueueOverwrite} \
-              -use-gplazma-authorization-cell=${useGplazma} \
-              -use-gplazma-authorization-module=false \
-              -gplazma-authorization-module-policy=${gplazmaPolicy} \
               -socketfactory=javatunnel.TunnelServerSocketCreator,javatunnel.GsiTunnel,dummy"
 
-#
-#

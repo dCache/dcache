@@ -1,39 +1,28 @@
-# Starts the gPlazma cell
+# Starts the gPlazma login cell
 
-# Defaults
-onerror continue
-set context -c srmDatabaseHost    localhost
-set context -c srmDbName          dcache
-set context -c srmDbUser          srmdcache
-set context -c srmDbPassword      srmdcache
-set context -c gPlazmaNumberOfSimutaneousRequests  30
-set context -c gPlazmaRequestTimeout               180
-set context -c gplazmaPolicy     ${dcache.home}/etc/dcachesrm-gplazma.policy
-onerror shutdown
+define env startLogin.exe enddefine
+  onerror shutdown
+  check -strong cell.name
+  check -strong gplazmaPolicy
+  check -strong gPlazmaNumberOfSimutaneousRequests
 
-define env globalgplazma.exe enddefine
-
-create org.dcache.auth.gplazma.GPLAZMA ${cell.name} \
-          "default  \
-           -export  \
-           -gplazma-authorization-module-policy=${gplazmaPolicy} \
-	   -jdbcUrl=jdbc:postgresql://${srmDatabaseHost}/${srmDbName} \
-           -jdbcDriver=org.postgresql.Driver \
-           -dbUser=${srmDbUser} \
-           -dbPass=${srmDbPassword} \
-           -num-simultaneous-requests=${gPlazmaNumberOfSimutaneousRequests} \
-           -request-timeout=${gPlazmaRequestTimeout} \
-"
+  create org.dcache.cells.UniversalSpringCell ${cell.name} \
+    "classpath:org/dcache/services/login/gplazma.xml \
+     -export -monitor \
+     -num-simultaneous-requests=${gPlazmaNumberOfSimutaneousRequests} \
+     -gplazmaPolicy=${gplazmaPolicy} \
+     -messageExecutor=message-thread-pool \
+  "
 enddefine
 
-define env error.exe enddefine
-say -level=esay Local gPlazma exists. Misconfigured instance. Killing local and starting global one.
-kill gPlazma
+define env killLogin.exe enddefine
+  say -level=esay Local gplazma service exists. Misconfigured instance. Killing local and starting global one.
+  kill ${cell.name}
 enddefine
 
-# Only start gPlazma if it does not already exist
+# Only start gplazma service if it does not already exist
 onerror continue
-getcellinfo gPlazma
-exec env error.exe -ifok
+getcellinfo ${cell.name}
+exec env killLogin.exe -ifok
 onerror shutdown
-exec env globalgplazma.exe
+exec env startLogin.exe

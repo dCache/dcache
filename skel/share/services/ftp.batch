@@ -20,7 +20,6 @@ check -strong gsiftpDefaultStreamsPerClient
 check -strong gsiftpDeleteOnConnectionClosed
 check gsiftpPoolManager
 check gsiftpPoolProxy
-check gplazmaPolicy
 check gsiftpIoQueue
 check kpwdFile
 check gsiftpAdapterInternalInterface

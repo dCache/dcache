@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+
+
+  <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    <description>Imported configuration data</description>
+    <property name="location" value="domaincontext:"/>
+  </bean>
+
+  <bean id="message-thread-pool"
+        class="java.util.concurrent.Executors"
+        factory-method="newFixedThreadPool"
+        destroy-method="shutdown">
+    <description>Thread pool for message processing</description>
+    <constructor-arg value="${num-simultaneous-requests}"/>
+  </bean>
+
+  <bean id="timeout-thread"
+        class="java.util.concurrent.Executors"
+        factory-method="newSingleThreadScheduledExecutor"
+        destroy-method="shutdown">
+    <description>Thread for timeout handling</description>
+  </bean>
+
+  <bean id="login-strategy" class="org.dcache.auth.GplazmaLoginStrategy">
+    <description>Interfaces with gPlazma</description>
+    <property name="policyFile" value="${gplazmaPolicy}"/>
+  </bean>
+
+  <bean id="message-handler" class="org.dcache.services.login.MessageHandler">
+    <description>Processes login requests</description>
+    <property name="loginStrategy" ref="login-strategy"/>
+    <property name="timeoutExecutor" ref="timeout-thread"/>
+  </bean>
+</beans>

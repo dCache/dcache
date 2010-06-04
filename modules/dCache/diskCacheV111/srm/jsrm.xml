@@ -87,8 +87,8 @@
       -old-request-remove-period-secs=${srmOldRequestRemovalPeriodSeconds}
       -jdbc-execution-thread-num=${srmJdbcExecutionThreadNum}
       -max-queued-jdbc-tasks-num=${srmMaxNumberOfJdbcTasksInQueue}
-      -use-gplazma-authorization-cell=${useGplazma}
-      -delegate-to-gplazma=${delegateToGPlazma}
+      -use-gplazma-authorization-cell=${useLoginService}
+      -delegate-to-gplazma=false
       -use-gplazma-authorization-module=false
       -gplazma-authorization-module-policy=${gplazmaPolicy}
       -srm-authz-cache-lifetime=${srmAuthzCacheLifetime}

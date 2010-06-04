@@ -4,6 +4,7 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
 import java.security.cert.X509Certificate;
@@ -11,6 +12,9 @@ import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import org.globus.gsi.jaas.GlobusPrincipal;
 import gplazma.authz.AuthorizationException;
+import gplazma.authz.AuthorizationController;
+import gplazma.authz.util.NameRolePair;
+import gplazma.authz.records.gPlazmaAuthorizationRecord;
 
 import diskCacheV111.vehicles.AuthenticationMessage;
 
@@ -22,8 +26,7 @@ import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.RootDirectory;
 
 /**
- * A LoginStrategy that wraps the AuthzQueryHelper gPlazma client
- * stub.
+ * A LoginStrategy that wraps a gPlazma AuthorizationController.
  *
  * Supports login for Subjects with the following principals:
  *
@@ -38,17 +41,29 @@ import org.dcache.auth.attributes.RootDirectory;
 public class GplazmaLoginStrategy implements LoginStrategy
 {
     private final static List<String> NO_ROLES = Collections.emptyList();
-    private final AuthzQueryHelper _authzQueryHelper;
+    private String _policyFile;
 
-    public GplazmaLoginStrategy(AuthzQueryHelper authzQueryHelper)
+    public GplazmaLoginStrategy()
     {
-        _authzQueryHelper = authzQueryHelper;
     }
 
-    private LoginReply toReply(AuthenticationMessage message)
+    public void setPolicyFile(String policyFile)
+    {
+        if (policyFile == null) {
+            throw new NullPointerException();
+        }
+        _policyFile = policyFile;
+    }
+
+    public String getPolicyFile()
+    {
+        return _policyFile;
+    }
+
+    private LoginReply toReply(Map<NameRolePair,gPlazmaAuthorizationRecord> map)
     {
         AuthorizationRecord authrec =
-            RecordConvert.gPlazmaToAuthorizationRecord(message.getgPlazmaAuthzMap());
+            RecordConvert.gPlazmaToAuthorizationRecord(map);
         LoginReply reply =
             new LoginReply(Subjects.getSubject(authrec), new HashSet<LoginAttribute>());
         reply.getLoginAttributes().add(new HomeDirectory(authrec.getHome()));
@@ -59,7 +74,10 @@ public class GplazmaLoginStrategy implements LoginStrategy
     public LoginReply login(Subject subject) throws CacheException
     {
         try {
-            /* Since the legacy interface to gPlazma had explicit
+            AuthorizationController gplazma =
+                new AuthorizationController(_policyFile);
+
+            /* Since the legacy interface to gPlazma has explicit
              * knowledge about various types of Principals, we are forced
              * to iterate over the Principals and feed them into the
              * legacy interface.
@@ -67,7 +85,6 @@ public class GplazmaLoginStrategy implements LoginStrategy
              * The old and the new interface do not fit very well
              * together, so this is essentially a big hack.
              */
-
             String user = Subjects.getUserName(subject);
 
             /* Attempt to login using the X509Certificate chain.
@@ -75,27 +92,20 @@ public class GplazmaLoginStrategy implements LoginStrategy
             Set<X509Certificate[]> chains =
                 subject.getPublicCredentials(X509Certificate[].class);
             for (X509Certificate[] chain: chains) {
-                return toReply(_authzQueryHelper.authorize(chain, user));
+                return toReply(gplazma.authorize(chain, user, null, null));
             }
 
             /* Attempt to log in with DN and FQAN.
              */
-            Collection<String> fqanCollection = Subjects.getFqans(subject);
-            List<String> fqans = null;
-            if (!fqanCollection.isEmpty()) {
-                fqans = new ArrayList(fqanCollection);
-            }
-
+            List<String> fqans = new ArrayList(Subjects.getFqans(subject));
             for (GlobusPrincipal dn: subject.getPrincipals(GlobusPrincipal.class)) {
-                return toReply(_authzQueryHelper.authorize(dn.getName(), fqans, user));
+                return toReply(gplazma.authorize(dn.getName(), fqans, null, user, null, null));
             }
 
             /* Attempt to log in with Kerberos and User name.
              */
             for (KerberosPrincipal principal: subject.getPrincipals(KerberosPrincipal.class)) {
-                return toReply(_authzQueryHelper.authorize(principal.getName(),
-                                                           NO_ROLES,
-                                                           user));
+                return toReply(gplazma.authorize(principal.getName(), NO_ROLES, null, user, null, null));
             }
         } catch (AuthorizationException e) {
             throw new PermissionDeniedCacheException("Login failed: " + e.getMessage());

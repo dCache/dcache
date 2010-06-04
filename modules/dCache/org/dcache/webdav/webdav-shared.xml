@@ -21,10 +21,10 @@
     <property name="timeout" value="${webdavPoolTimeout}"/>
   </bean>
 
-  <bean id="gplazma-stub" class="org.dcache.cells.CellStub">
-    <description>gPlazma communication stub</description>
-    <property name="destination" value="${gplazma}"/>
-    <property name="timeout" value="${webdavGplazmaTimeout}"/>
+  <bean id="login-stub" class="org.dcache.cells.CellStub">
+    <description>Login cell communication stub</description>
+    <property name="destination" value="gPlazma"/>
+    <property name="timeout" value="${webdavLoginTimeout}"/>
   </bean>
 
   <bean id="billing-stub" class="org.dcache.cells.CellStub">
@@ -53,12 +53,8 @@
     <description>Processes login requests</description>
     <property name="loginStrategies">
       <list>
-        <bean class="org.dcache.auth.GplazmaLoginStrategy">
-          <constructor-arg>
-            <bean class="org.dcache.auth.AuthzQueryHelper">
-              <constructor-arg ref="gplazma-stub"/>
-            </bean>
-          </constructor-arg>
+        <bean class="org.dcache.services.login.RemoteLoginStrategy">
+          <property name="cellStub" ref="login-stub"/>
         </bean>
       </list>
     </property>

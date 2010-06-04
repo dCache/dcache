@@ -511,40 +511,15 @@ public abstract class AbstractFtpDoorV1
     protected boolean _isProxyRequiredOnActive;
 
     /**
-     * If use_gplazmaAuthzCell is true, the door will first contact
-     * the GPLAZMA cell for authentification.
+     * If true, the door will first contact the login service for
+     * login processing.
      */
     @Option(
-        name = "use-gplazma-authorization-cell",
-        description = "Whether to use gPlazma cell for authorization",
+        name = "use-login-service",
+        description = "Whether to use the login service",
         defaultValue = "false"
     )
-    protected boolean _use_gplazmaAuthzCell;
-
-    @Option(
-        name = "delegate-to-gplazma",
-        description = "Whether to delegate credentials to gPlazma",
-        defaultValue = "false"
-    )
-    protected boolean _delegate_to_gplazma;
-
-    /**
-     * If use_gplazmaAuthzModule is true, then the door will consult
-     * the authorization module and use its policy configuration, else
-     * door keeps using kpwd.
-     */
-    @Option(
-        name = "use-gplazma-authorization-module",
-        description = "Whether to use the gPlazma module for authorization",
-        defaultValue = "false"
-    )
-    protected boolean _use_gplazmaAuthzModule;
-
-    @Option(
-        name = "gplazma-authorization-module-policy",
-        description = "Path to gPlazma policy file"
-    )
-    protected String _gplazmaPolicyFilePath;
+    protected boolean _useLoginService;
 
      /**
      * File (StageConfiguration.conf) containing DNs and FQANs whose owner are allowed to STAGE files
@@ -910,18 +885,9 @@ public abstract class AbstractFtpDoorV1
         if (_local_host == null)
             _local_host = _engine.getLocalAddress().getHostName();
 
-        if (!_use_gplazmaAuthzModule) {
-            _gplazmaPolicyFilePath = null;
-        } else if (_gplazmaPolicyFilePath == null) {
-            String s = "FTP Door: -gplazma-authorization-module-policy " +
-                "file argument wasn't specified";
-            error(s);
-            throw new IllegalArgumentException(s);
-        }
-
-        /* Use kpwd file if gPlazma is not enabled.
+        /* Use kpwd file if login service is not enabled.
          */
-        if (!(_use_gplazmaAuthzModule || _use_gplazmaAuthzCell)) {
+        if (!_useLoginService) {
             _kpwdFilePath = args.getOpt("kpwd-file");
             if ((_kpwdFilePath == null) ||
                 (_kpwdFilePath.length() == 0) ||
