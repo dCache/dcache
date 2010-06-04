@@ -85,7 +85,11 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.PoolMgrQueryPoolsMsg;
+import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.AuthorizationRecord;
+import org.dcache.auth.AuthzQueryHelper;
+import org.dcache.auth.GplazmaLoginStrategy;
+import org.dcache.auth.KauthFileLoginStrategy;
 import org.dcache.srm.SrmCancelUseOfSpaceCallbacks;
 import org.dcache.srm.SrmReleaseSpaceCallbacks;
 import org.dcache.srm.SrmUseSpaceCallbacks;
@@ -756,16 +760,21 @@ public final class Storage
             if(config.isGsissl()) {
                 config.setWebservice_protocol("https");
 
-                config.setAuthorization(
-                    DCacheAuthorization.getDCacheAuthorization(
-                    config.getUseGplazmaAuthzCellFlag(),
-                    config.getDelegateToGplazmaFlag(),
-                    config.getUseGplazmaAuthzModuleFlag(),
-                    config.getGplazmaPolicy(),
-                    config.getAuthzCacheLifetime(),
-                    config.getKpwdfile(),
-                    this,
-                    authRecordPersistenceManager));
+                LoginStrategy loginStrategy;
+                if (config.getUseGplazmaAuthzCellFlag() ||
+                    config.getUseGplazmaAuthzModuleFlag()) {
+                    loginStrategy =
+                        new GplazmaLoginStrategy(new AuthzQueryHelper(this));
+                } else {
+                    loginStrategy =
+                        new KauthFileLoginStrategy(new File(config.getKpwdfile()));
+                }
+
+                DCacheAuthorization authorization =
+                    new DCacheAuthorization(loginStrategy,
+                                            authRecordPersistenceManager);
+                authorization.setCacheLifetime(config.getAuthzCacheLifetime());
+                config.setAuthorization(authorization);
             } else {
                 config.setWebservice_protocol("http");
             }
@@ -946,7 +955,7 @@ public final class Storage
         } else {
             sb.append("  info is not yet available !!!");
         }
- 
+
         sb.append('\n');
         sb.append(config.toString()).append('\n');
         try {

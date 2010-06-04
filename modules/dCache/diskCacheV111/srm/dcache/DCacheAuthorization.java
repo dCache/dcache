@@ -139,18 +139,24 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.srm.dcache;
 
-import org.dcache.auth.UserAuthRecord;
-import org.dcache.auth.KAuthFile;
 import org.dcache.auth.*;
+import org.dcache.auth.attributes.LoginAttribute;
+import org.dcache.auth.attributes.RootDirectory;
+import org.dcache.auth.attributes.HomeDirectory;
+import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.persistence.AuthRecordPersistenceManager;
 import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMUser;
+import diskCacheV111.util.CacheException;
 import org.ietf.jgss.GSSContext;
-import gplazma.authz.AuthorizationController;
-import gplazma.authz.AuthorizationException;
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.CellAdapter;
+import org.ietf.jgss.GSSException;
+import org.globus.gsi.gssapi.GSSConstants;
+import org.globus.gsi.jaas.GlobusPrincipal;
+import org.gridforum.jgss.ExtendedGSSContext;
+
+import java.security.cert.X509Certificate;
+import javax.security.auth.Subject;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -171,32 +177,15 @@ public final class DCacheAuthorization implements SRMAuthorization {
 
     private static  org.slf4j.Logger _logAuth =
              org.slf4j.LoggerFactory.getLogger(DCacheAuthorization.class);
-    private static DCacheAuthorization srmauthorization;
-    private String kAuthFileName;
-    private String gplazmaPolicyFilePath;
-    private boolean use_gplazmaAuthzModule=false;
-	private boolean use_gplazmaAuthzCell=false;
-    protected boolean delegate_to_gplazma=false;
-    private CellAdapter parentcell=null;
     private static Map UsernameMap = new HashMap();
-    private static long cache_lifetime=0L;
+    private long cache_lifetime=0L;
     private AuthRecordPersistenceManager authRecordPersistenceManager;
+    private final LoginStrategy loginStrategy;
 
-
-    //constructor being used
-    private DCacheAuthorization(boolean use_gplazmaAuthzCell,
-            boolean delegate_to_gplazma,
-            boolean use_gplazmaAuthzModule,
-            String kAuthFileName,
-            String gplazmaPolicyFilePath,
-            CellAdapter parentcell,
-            AuthRecordPersistenceManager authRecordPersistenceManager) {
-       this.use_gplazmaAuthzCell=use_gplazmaAuthzCell;
-       this.delegate_to_gplazma=delegate_to_gplazma;
-       this.use_gplazmaAuthzModule=use_gplazmaAuthzModule;
-       this.kAuthFileName = kAuthFileName;
-       this.gplazmaPolicyFilePath = gplazmaPolicyFilePath;
-       this.parentcell = parentcell;
+    public DCacheAuthorization(LoginStrategy loginStrategy,
+            AuthRecordPersistenceManager authRecordPersistenceManager)
+    {
+       this.loginStrategy = loginStrategy;
        this.authRecordPersistenceManager = authRecordPersistenceManager;
     }
 
@@ -249,13 +238,7 @@ public final class DCacheAuthorization implements SRMAuthorization {
         }
 
         if(user_rec  == null){
-            if (!use_gplazmaAuthzCell && !use_gplazmaAuthzModule) {
-               user_rec = authorize(secureId,name);
-            }
-            else {
-               user_rec = authorize(gsscontext,name);
-            }
-
+            user_rec = authorize(secureId, gsscontext, name);
             user_rec = authRecordPersistenceManager.persist(user_rec);
 
             if(cache_lifetime>0) {
@@ -271,141 +254,53 @@ public final class DCacheAuthorization implements SRMAuthorization {
 
     }
 
-    private AuthorizationRecord authorize(String secureId,String name)
-    throws SRMAuthorizationException {
-
-        if(name==null) {
-            name = getUserNameByGlobusId(secureId);
-        }
-        UserAuthRecord legacyauthrec = getUserRecord(name,secureId);
-        AuthorizationRecord authrec = convertLegacyToNewAuthRec(legacyauthrec);
-        return authrec;
-    }
-
-    private AuthorizationRecord authorize(GSSContext serviceContext,String name)
-    throws SRMAuthorizationException {
-        AuthzQueryHelper authHelper;
-        AuthorizationRecord authRecord = null;
-
-        if (use_gplazmaAuthzCell) {
-          try {
-            authHelper = new AuthzQueryHelper(parentcell);
-            authHelper.setDelegateToGplazma(delegate_to_gplazma);
-            authRecord =  authHelper.getAuthorization(serviceContext).getAuthorizationRecord();
-          } catch (AuthorizationException ase) {
-            if(!use_gplazmaAuthzModule) {
-              throw new SRMAuthorizationException(ase.getMessage());
-            }
-            ase.printStackTrace();
-            _logAuth.error("Authorization through gPlazma cell failed " + ase);
-          }
-        }
-
-        if (authRecord==null && use_gplazmaAuthzModule) {
-          try {
-             AuthorizationController authCrtl = new AuthorizationController(gplazmaPolicyFilePath);
-             //authCrtl.setLoglevel();
-             authRecord = RecordConvert.gPlazmaToAuthorizationRecord(authCrtl.authorize(serviceContext, name, null, null));
-          }
-          catch(Exception ee) {
-             ee.printStackTrace();
-             throw new SRMAuthorizationException(ee.toString());
-          }
-          if(authRecord == null) {
-             throw new SRMAuthorizationException("srm authorization failed, permission denied");
-          }
-        }
-        return authRecord;
-    }
-
-    private String getUserNameByGlobusId(String globusId)
-    throws SRMAuthorizationException {
-        KAuthFile authf = null;
+    private AuthorizationRecord authorize(String secureId,
+                                          GSSContext serviceContext,
+                                          String name)
+        throws SRMAuthorizationException
+    {
         try {
-            authf = new KAuthFile(kAuthFileName);
-        }
-        catch(java.io.IOException ioe) {
-            ioe.printStackTrace();
-            throw new SRMAuthorizationException(ioe.toString());
-        }
-        String username =authf.getIdMapping(globusId);
-        if(username == null) {
-            throw new SRMAuthorizationException(
-            " can not determine username from GlobusId="+globusId);
-        }
-        return username;
-    }
-
-    private UserAuthRecord getUserRecord(String username,String globusId)
-    throws SRMAuthorizationException {
-        KAuthFile authf = null;
-        try {
-            authf = new KAuthFile(kAuthFileName);
-        }
-        catch(java.io.IOException ioe) {
-            ioe.printStackTrace();
-            throw new SRMAuthorizationException(ioe.toString());
-        }
-        UserAuthRecord userRecord = authf.getUserRecord(username);
-
-        if(userRecord == null) {
-            throw new SRMAuthorizationException(
-            "user "+username+" is not found");
-        }
-
-        if(!userRecord.hasSecureIdentity(globusId)) {
-            throw new SRMAuthorizationException(
-            "srm authorization failed for user "+username+"with GlobusId="+globusId);
-        }
-        //users.put(username,userRecord);
-        return userRecord;
-    }
-
-    public static SRMAuthorization getDCacheAuthorization(
-            boolean use_gplazmaAuthzCell,
-            boolean delegate_to_gplazma,
-            boolean use_gplazmaAuthzModule,
-            String gplazmaPolicyFilePath,
-            String cache_lifetime_str,
-            String kAuthFileName,
-            CellAdapter parentcell,
-            AuthRecordPersistenceManager authRecordPersistenceManager) {
-        if(srmauthorization == null) {
-            srmauthorization = new DCacheAuthorization(
-                    use_gplazmaAuthzCell,
-                    delegate_to_gplazma,
-                    use_gplazmaAuthzModule,
-                    kAuthFileName,
-                    gplazmaPolicyFilePath,
-                    parentcell,
-                    authRecordPersistenceManager);
-        }
-        if(!use_gplazmaAuthzModule) {
-            if(!srmauthorization.kAuthFileName.equals(kAuthFileName)) {
-                srmauthorization = new DCacheAuthorization(
-                        use_gplazmaAuthzCell,
-                        delegate_to_gplazma,
-                        use_gplazmaAuthzModule,
-                        kAuthFileName,
-                        gplazmaPolicyFilePath,
-                        parentcell,
-                        authRecordPersistenceManager);
+            if (!(serviceContext instanceof ExtendedGSSContext)) {
+                throw new RuntimeException("GSSContext not instance of ExtendedGSSContext");
             }
-        }
-        else {
-            if(!srmauthorization.gplazmaPolicyFilePath.equals(gplazmaPolicyFilePath)) {
-                srmauthorization = new DCacheAuthorization(
-                        use_gplazmaAuthzCell,
-                        delegate_to_gplazma,
-                        use_gplazmaAuthzModule,
-                        kAuthFileName,
-                        gplazmaPolicyFilePath,
-                        parentcell,
-                        authRecordPersistenceManager);
+
+            ExtendedGSSContext extendedcontext =
+                (ExtendedGSSContext) serviceContext;
+            X509Certificate[] chain =
+                (X509Certificate[]) extendedcontext.inquireByOid(GSSConstants.X509_CERT_CHAIN);
+
+            Subject subject = new Subject();
+            if (name != null && !name.isEmpty()) {
+                subject.getPrincipals().add(new UserNamePrincipal(name));
             }
+            if (secureId != null && !secureId.isEmpty()) {
+                /* Technically, the secureId could be a
+                 * KerberosPrincipal too. At this point we cannot tell
+                 * the difference anymore.
+                 */
+                subject.getPrincipals().add(new GlobusPrincipal(secureId));
+            }
+            subject.getPublicCredentials().add(chain);
+
+            LoginReply login = loginStrategy.login(subject);
+            AuthorizationRecord authRecord =
+                Subjects.getAuthorizationRecord(login.getSubject());
+
+            for (LoginAttribute attribute: login.getLoginAttributes()) {
+                if (attribute instanceof RootDirectory) {
+                    authRecord.setRoot(((RootDirectory) attribute).getRoot());
+                } else if (attribute instanceof HomeDirectory) {
+                    authRecord.setHome(((HomeDirectory) attribute).getHome());
+                } else if (attribute instanceof ReadOnly) {
+                    authRecord.setReadOnly(((ReadOnly) attribute).isReadOnly());
+                }
+            }
+            return authRecord;
+        } catch (GSSException e) {
+            throw new SRMAuthorizationException(e.getMessage(), e);
+        } catch (CacheException e) {
+            throw new SRMAuthorizationException(e.getMessage(), e);
         }
-        if(srmauthorization!=null) srmauthorization.setCacheLifetime(cache_lifetime_str);
-        return srmauthorization;
     }
 
   public void setCacheLifetime(String lifetime_str) {
