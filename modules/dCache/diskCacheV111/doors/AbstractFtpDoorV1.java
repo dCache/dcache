@@ -1893,16 +1893,13 @@ public abstract class AbstractFtpDoorV1
             if (newcwd == null)
                 newcwd = _pathRoot;
 
-            FileAttributes attributes =
-                _pnfs.getFileAttributes(newcwd, EnumSet.of(SIMPLE_TYPE));
-            if (attributes.getFileType() != FileType.DIR) {
-                reply("550 Not a directory: " + arg);
-                return;
-            }
+            checkIsDirectory(newcwd);
             _curDirV = newcwd.substring(_pathRoot.length());
             if (_curDirV.length() == 0)
                 _curDirV = "/";
             reply("250 CWD command succcessful. New CWD is <" + _curDirV + ">");
+        } catch (NotDirCacheException e) {
+            reply("550 Not a directory: " + arg);
         } catch (FileNotFoundCacheException e) {
             reply("550 File not found");
         } catch (CacheException e) {
@@ -3463,7 +3460,7 @@ public abstract class AbstractFtpDoorV1
         }
 
         try {
-            /* 550 is now a valid reply for NLST. However other FTP
+            /* 550 is not a valid reply for NLST. However other FTP
              * servers use this return code for NLST. Gerd and Timur
              * decided to follow their example and violate the spec.
              */
@@ -3472,6 +3469,13 @@ public abstract class AbstractFtpDoorV1
                 reply("550 Access denied");
                 return;
             }
+
+            /* RFC 3659 seems to imply that we have to report on
+             * illegal arguments (ie attempts to list files) before
+             * opening the data connection. We are therefore forced to
+             * query the file type first.
+             */
+            checkIsDirectory(path);
 
             reply("150 Opening ASCII data connection for file list", false);
             try {
@@ -3574,6 +3578,13 @@ public abstract class AbstractFtpDoorV1
                 reply("501 Directory not found");
                 return;
             }
+
+            /* RFC 3659 seems to imply that we have to report on
+             * illegal arguments (ie attempts to list files) before
+             * opening the data connection. We are therefore forced to
+             * query the file type first.
+             */
+            checkIsDirectory(path);
 
             reply("150 Openening ASCII mode data connection for MLSD", false);
             try {
@@ -3763,6 +3774,21 @@ public abstract class AbstractFtpDoorV1
             " file " + transfer.pnfsId);
         _transfer.state = "mover " + transfer.moverId
             + (isWrite ? ": receiving" : ": sending");
+    }
+
+    /**
+     * Throws NotDirCacheException if the given path is not a
+     * directory. Throws FileNotFoundCacheException if the path does
+     * not exist.
+     */
+    private void checkIsDirectory(String path)
+        throws CacheException
+    {
+        FileAttributes attributes =
+            _pnfs.getFileAttributes(path, EnumSet.of(SIMPLE_TYPE));
+        if (attributes.getFileType() != FileType.DIR) {
+            throw new NotDirCacheException("Not a directory");
+        }
     }
 
     private class PerfMarkerTask
