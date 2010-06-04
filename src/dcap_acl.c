@@ -15,7 +15,7 @@
 #include <errno.h>
 #include "dcap_shared.h"
 
-#ifdef HAVE_ACL || HAVE_FACL
+#if defined(HAVE_ACL) || defined(HAVE_FACL)
 
 /* This code is only needed to preload ACL's */
 
