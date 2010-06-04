@@ -21,6 +21,9 @@
             <and>
                 <available file="${gplazma.jar}" type="file" />
                 <uptodate targetfile="${gplazma.jar}">
+                    <srcfiles dir="${gplazma.junit.src}">
+                        <include name="**/*.java" />
+                    </srcfiles>
                     <srcfiles dir="${gplazma.src}">
                         <include name="**/*.java" />
                     </srcfiles>
@@ -41,6 +44,7 @@
         <fileset dir="${libDir}/log4j" includes="*.jar" />
         <fileset dir="${libDir}/slf4j" includes="*.jar" />
         <pathelement location="${classesDir}/dcache-common.jar" />
+        <pathelement location="${libDir}/junit/junit-4.3.1.jar" />
     </path>
 
 
@@ -54,7 +58,8 @@
 
         <javac destdir="${gplazma.build.dir}" source="${javac.source}" target="${javac.target}" classpathref="gplazma.classpath" debug="${javac.debug}" verbose="${javac.verbose}">
             <src path="${gplazma.src}" />
-                <filename name="**/*.java" />
+            <src path="${gplazma.junit.src}" />
+            <filename name="**/*.java" />
         </javac>
 
     </target>
