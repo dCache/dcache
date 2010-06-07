@@ -3919,6 +3919,8 @@ public abstract class AbstractFtpDoorV1
             reply(sw.toString());
         } catch (InterruptedException e) {
             reply("451 Operation cancelled");
+        } catch (FileNotFoundCacheException e) {
+            reply("550 File not found");
         } catch (PermissionDeniedCacheException e) {
             reply("550 Permission denied");
         } catch (CacheException e) {
