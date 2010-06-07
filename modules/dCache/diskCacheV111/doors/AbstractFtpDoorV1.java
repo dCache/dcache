@@ -2151,6 +2151,25 @@ public abstract class AbstractFtpDoorV1
                 _pnfs.getFileAttributes(pnfsPath,
                                         EnumSet.of(PNFSID, TYPE,
                                                    OWNER, OWNER_GROUP));
+
+            // Extract fields of interest
+            PnfsId       myPnfsId   = attributes.getPnfsId();
+            boolean      isADir     = (attributes.getFileType() == FileType.DIR);
+            boolean      isASymLink = (attributes.getFileType() == FileType.LINK);
+            int          myUid      = attributes.getOwner();
+            int          myGid      = attributes.getGroup();
+
+            // Chmod on symbolic links not yet supported (should change perms on file/dir pointed to)
+            if (isASymLink) {
+                reply("502 chmod of symbolic links is not yet supported.");
+                return;
+            }
+
+            FileMetaData newMetaData =
+                new FileMetaData(isADir,myUid,myGid,newperms);
+            _pnfs.pnfsSetFileMetaData(myPnfsId,newMetaData);
+
+            reply("200 OK");
         } catch (PermissionDeniedCacheException e) {
             reply("550 Permission denied");
             return;
@@ -2158,31 +2177,6 @@ public abstract class AbstractFtpDoorV1
             reply("550 Permission denied, reason: " + ce);
             return;
         }
-
-        // Extract fields of interest
-        PnfsId       myPnfsId   = attributes.getPnfsId();
-        boolean      isADir     = (attributes.getFileType() == FileType.DIR);
-        boolean      isASymLink = (attributes.getFileType() == FileType.LINK);
-        int          myUid      = attributes.getOwner();
-        int          myGid      = attributes.getGroup();
-
-        // Only file/directory owner can change permissions on that file/directory
-        if (!Subjects.hasUid(_subject, myUid)) {
-            reply("550 Permission denied. Only owner can change permissions.");
-            return;
-        }
-
-        // Chmod on symbolic links not yet supported (should change perms on file/dir pointed to)
-        if (isASymLink) {
-            reply("502 chmod of symbolic links is not yet supported.");
-            return;
-        }
-
-        FileMetaData newMetaData = new FileMetaData(isADir,myUid,myGid,newperms);
-
-        _pnfs.pnfsSetFileMetaData(myPnfsId,newMetaData);
-
-        reply("200 OK");
     }
 
     public void ac_sbuf(String arg)

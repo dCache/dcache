@@ -5,12 +5,12 @@ import  diskCacheV111.util.* ;
 import diskCacheV111.util.* ;
 public class PnfsSetFileMetaDataMessage extends PnfsMessage {
 
-    private FileMetaData _metaData    = null ; 
+    private FileMetaData _metaData    = null ;
     private boolean      _resolve     = true ;
-    
+
     private static final long serialVersionUID = -2893526041428172736L;
-    
-    public PnfsSetFileMetaDataMessage(){ 
+
+    public PnfsSetFileMetaDataMessage(){
        super() ;
        setReplyRequired(false);
     }
@@ -18,6 +18,13 @@ public class PnfsSetFileMetaDataMessage extends PnfsMessage {
         super( pnfsId ) ;
 	setReplyRequired(false);
     }
+
+    public PnfsSetFileMetaDataMessage(PnfsId pnfsId, FileMetaData meta)
+    {
+        this(pnfsId);
+        setMetaData(meta);
+    }
+
     public FileMetaData getMetaData(){ return _metaData ; }
     public void setMetaData( FileMetaData metaData ){ _metaData = metaData ; }
     public String toString(){

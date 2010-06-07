@@ -329,14 +329,11 @@ public class PnfsHandler
 
    }
 
-
-   public void pnfsSetFileMetaData( PnfsId pnfsId, FileMetaData meta) {
-       PnfsSetFileMetaDataMessage msg =  new PnfsSetFileMetaDataMessage( pnfsId );
-       msg.setMetaData( meta );
-       notify(msg );
-       return;
-   }
-
+    public void pnfsSetFileMetaData(PnfsId pnfsId, FileMetaData meta)
+        throws CacheException
+    {
+        pnfsRequest(new PnfsSetFileMetaDataMessage(pnfsId, meta));
+    }
 
     public void renameEntry(PnfsId pnfsId, String newName)
         throws CacheException
