@@ -12,7 +12,7 @@ public class DCacheServicesTest {
 
     @Before
     public void setUp() {
-        _tester = new WicketTester(ApplicationFactoryHelper.createSignedInApplication());
+        _tester = new WicketTester(ApplicationFactoryHelper.createSignedInAsAdminApplication());
     }
 
     @Test

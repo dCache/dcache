@@ -4,8 +4,10 @@ import diskCacheV111.pools.PoolV2Mode;
 import java.util.List;
 import java.util.ArrayList;
 import org.apache.wicket.AttributeModifier;
+import org.apache.wicket.authorization.strategies.role.metadata.MetaDataRoleAuthorizationStrategy;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
+import org.apache.wicket.markup.html.form.Button;
 import org.apache.wicket.markup.html.form.CheckBox;
 import org.apache.wicket.markup.html.form.ChoiceRenderer;
 import org.apache.wicket.markup.html.form.DropDownChoice;
@@ -25,6 +27,7 @@ import org.dcache.webadmin.view.WebAdminInterface;
 import org.dcache.webadmin.view.beans.PoolBean;
 import org.dcache.webadmin.view.beans.SelectOption;
 import org.dcache.webadmin.view.pages.AuthenticatedWebPage;
+import org.dcache.webadmin.view.util.Role;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
 
@@ -98,6 +101,10 @@ public class PoolList extends AuthenticatedWebPage {
 
         public PoolUsageForm(String id) {
             super(id);
+            SubmitButton button = new SubmitButton("submit");
+            MetaDataRoleAuthorizationStrategy.authorize(button, ENABLE, Role.ADMIN);
+            this.add(button);
+            _log.debug("isEnabled : {}", String.valueOf(button.isEnabled()));
         }
 
         @Override
@@ -107,13 +114,21 @@ public class PoolList extends AuthenticatedWebPage {
                 try {
                     _log.debug("selected: {}", _selectedOption.getValue());
                     PoolV2Mode poolMode = new PoolV2Mode(_selectedOption.getKey());
-                    getPoolBeanService().changePoolMode(_poolBeans, poolMode, "Jan");
+                    getPoolBeanService().changePoolMode(_poolBeans, poolMode,
+                            getWebadminSession().getUserName());
                     getPoolsAction();
                 } catch (PoolBeanServiceException ex) {
                     _log.error("something went wrong with enable/disable");
                     this.error(getErrorMessage("error.changePoolModeFailed") + ex.getMessage());
                 }
             }
+        }
+    }
+
+    private class SubmitButton extends Button {
+
+        public SubmitButton(String id) {
+            super(id);
         }
     }
 

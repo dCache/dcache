@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
  */
 public class WebAdminInterfaceSession extends WebSession {
 
-    private String _user;
+    private UserBean _user;
     private static final Logger _log = LoggerFactory.getLogger(WebAdminInterfaceSession.class);
 
     public WebAdminInterfaceSession(Request request) {
@@ -23,11 +23,11 @@ public class WebAdminInterfaceSession extends WebSession {
         return _user != null;
     }
 
-    public String getUser() {
-        return _user;
+    public String getUserName() {
+        return _user.getUsername();
     }
 
-    public void setUser(final String user) {
+    public void setUser(final UserBean user) {
         _user = user;
     }
 

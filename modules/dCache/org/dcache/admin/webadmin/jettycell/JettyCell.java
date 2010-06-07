@@ -73,6 +73,17 @@ public class JettyCell extends AbstractCell {
     log = false,
     required = true)
     private String _trustPassword;
+//    the GID a user has to have to be considered an Admin of webadmininterface
+    @Option(name = "admin-GID",
+    description = "admin GID for webadmininterface",
+    required = true)
+    private int _adminGid;
+//    FIXME with new gplazma this should be known by gplazma and not be needed
+//    anymore
+    @Option(name = "kpwd-file",
+    description = "path to the kpwd-file",
+    required = true)
+    private String _kpwdFile;
     @Option(name = "dCacheInstanceName",
     description = "The dCache-Instance Name",
     required = false)
@@ -165,6 +176,14 @@ public class JettyCell extends AbstractCell {
         webappContext.setWar(_webappsPath + WEBAPP_CONTEXT + ".war");
         webappContext.setExtractWAR(true);
         return webappContext;
+    }
+
+    public int getAdminGid() {
+        return _adminGid;
+    }
+
+    public String getKpwdFile() {
+        return _kpwdFile;
     }
 
     public String getDcacheName() {

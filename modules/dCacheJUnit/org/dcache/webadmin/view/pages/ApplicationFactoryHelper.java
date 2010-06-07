@@ -4,7 +4,9 @@ import org.apache.wicket.Request;
 import org.apache.wicket.Response;
 import org.apache.wicket.Session;
 import org.dcache.webadmin.view.WebAdminInterface;
+import org.dcache.webadmin.view.beans.UserBean;
 import org.dcache.webadmin.view.beans.WebAdminInterfaceSession;
+import org.dcache.webadmin.view.util.Role;
 
 /**
  * Helper to construct the Application for tests
@@ -12,7 +14,7 @@ import org.dcache.webadmin.view.beans.WebAdminInterfaceSession;
  */
 public class ApplicationFactoryHelper {
 
-    public static WebAdminInterface createSignedInApplication() {
+    public static WebAdminInterface createSignedInAsAdminApplication() {
         WebAdminInterface application = new WebAdminInterface() {
 
             @Override
@@ -23,13 +25,35 @@ public class ApplicationFactoryHelper {
             @Override
             public Session newSession(Request request,
                     Response response) {
-                return new WebAdminInterfaceSession(request) {
+                WebAdminInterfaceSession session = new WebAdminInterfaceSession(request);
+                UserBean user = new UserBean();
+                user.setUsername("admin");
+                user.addRole(Role.ADMIN);
+                session.setUser(user);
+                return session;
+            }
+        };
 
-                    @Override
-                    public boolean isSignedIn() {
-                        return true;
-                    }
-                };
+        return application;
+    }
+
+    public static WebAdminInterface createSignedInAsGuestApplication() {
+        WebAdminInterface application = new WebAdminInterface() {
+
+            @Override
+            public String getConfigurationType() {
+                return DEPLOYMENT;
+            }
+
+            @Override
+            public Session newSession(Request request,
+                    Response response) {
+                WebAdminInterfaceSession session = new WebAdminInterfaceSession(request);
+                UserBean user = new UserBean();
+                user.setUsername("Guest");
+                user.addRole(Role.GUEST);
+                session.setUser(user);
+                return session;
             }
         };
 
@@ -45,7 +69,8 @@ public class ApplicationFactoryHelper {
             }
 
             @Override
-            public Session newSession(Request request,
+            public Session newSession(
+                    Request request,
                     Response response) {
                 return new WebAdminInterfaceSession(request) {
 

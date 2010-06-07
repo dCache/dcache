@@ -34,7 +34,7 @@ public class PoolListTest {
     @Before
     public void setUp() {
         WebAdminInterface authenticatedWebApp =
-                ApplicationFactoryHelper.createSignedInApplication();
+                ApplicationFactoryHelper.createSignedInAsAdminApplication();
         DAOFactory daoFactory = new DAOFactoryImplHelper();
         _poolBeanService = new PoolBeanServiceImpl(daoFactory);
         authenticatedWebApp.setPoolBeanService(_poolBeanService);

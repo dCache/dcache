@@ -16,6 +16,7 @@ import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.model.StringResourceModel;
 import org.dcache.webadmin.view.WebAdminInterface;
 import org.dcache.webadmin.view.beans.LogInBean;
+import org.dcache.webadmin.view.beans.UserBean;
 import org.dcache.webadmin.view.beans.WebAdminInterfaceSession;
 
 @RequireHttps
@@ -89,7 +90,9 @@ public class LogIn extends WebPage {
             if (!session.isSignedIn()) {
                 // Trivial password "db" for now
                 if ("Guest".equalsIgnoreCase(username) && "Guest".equalsIgnoreCase(password)) {
-                    session.setUser(username);
+                    UserBean userBean = new UserBean();
+                    userBean.setUsername(username);
+                    session.setUser(userBean);
                 }
             }
             return session.isSignedIn();
