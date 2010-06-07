@@ -18,7 +18,7 @@ const int dc_getMinor()
 
 const char *dc_getPatch()
 {
-	return &"@VER_PATCH@";
+	return "@VER_PATCH@";
 }
 
 /*depricated method please use above methods*/
