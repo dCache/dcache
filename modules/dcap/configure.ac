@@ -53,7 +53,6 @@ AC_PROG_LN_S
 AM_PROG_CC_C_O
 AC_SEARCH_LIBS([gethostbyname], [nsl])
 AC_SEARCH_LIBS([bind], [socket])
-AC_SEARCH_LIBS([adler32], [z])
 AC_CHECK_FUNCS([alarm])
 AC_CHECK_FUNCS([atexit])
 AC_CHECK_FUNCS([bzero])
@@ -129,6 +128,20 @@ dnl Store the compile flags prior to testing the presance.
 _cppflags="${CPPFLAGS}"
 _ldflags="${LDFLAGS}"
 _ldlibpath="${LD_LIBRARY_PATH}"
+
+
+dnl === zlib stuff ===
+
+AC_CHECK_LIB(z, adler32, [ZLIB="-lz"],[
+AC_MSG_ERROR([zlib was not found])
+])
+AC_SUBST(ZLIB)
+
+CPPFLAGS=${_cppflags}
+LDFLAGS=${_ldflags}
+LD_LIBRARY_PATH=${_ldlibpath}
+
+
 
 dnl === openssl stuff ===
 
