@@ -28,4 +28,14 @@ public interface RequestCounter {
      */
     public int getTotalRequests();
 
+    /**
+     * Reset the counter.
+     */
+    public void reset();
+
+    /**
+     * Shutdown the counter.
+     */
+    public void shutdown();
+
 }
