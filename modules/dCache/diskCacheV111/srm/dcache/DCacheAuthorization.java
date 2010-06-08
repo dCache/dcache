@@ -282,19 +282,9 @@ public final class DCacheAuthorization implements SRMAuthorization {
             }
             subject.getPublicCredentials().add(chain);
 
-            LoginReply login = loginStrategy.login(subject);
             AuthorizationRecord authRecord =
-                Subjects.getAuthorizationRecord(login.getSubject());
+                new AuthorizationRecord(loginStrategy.login(subject));
 
-            for (LoginAttribute attribute: login.getLoginAttributes()) {
-                if (attribute instanceof RootDirectory) {
-                    authRecord.setRoot(((RootDirectory) attribute).getRoot());
-                } else if (attribute instanceof HomeDirectory) {
-                    authRecord.setHome(((HomeDirectory) attribute).getHome());
-                } else if (attribute instanceof ReadOnly) {
-                    authRecord.setReadOnly(((ReadOnly) attribute).isReadOnly());
-                }
-            }
             return authRecord;
         } catch (GSSException e) {
             throw new SRMAuthorizationException(e.getMessage(), e);

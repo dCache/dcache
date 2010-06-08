@@ -306,73 +306,9 @@ public class Subjects extends dmg.util.Subjects
         return subject;
     }
 
-    /**
-     * Converts to a Subject an AuthorizationRecord. The the UID
-     * (UidPrincipal), GID (GidPrincipal), the mapped user name
-     * (UserNamePrincipal), the DN (GlobusPrincipal), and FQAN
-     * (FQANPrincipal) will be included in the AuthorizationRecord.
-     *
-     * Notice that the AuthorizationRecord will represent a subset of
-     * the information stored in the subject.
-     *
-     * All GIDs will become part of the primary group list. The
-     * primary GIDs will appear first in the primary group list.
-     */
     public static AuthorizationRecord getAuthorizationRecord(Subject subject)
     {
-        boolean hasUid = false;
-
-        AuthorizationRecord record = new AuthorizationRecord();
-
-        List<GroupList> groupLists = new LinkedList<GroupList>();
-
-        GroupList primaryGroupList = new GroupList();
-        primaryGroupList.setAuthRecord(record);
-        primaryGroupList.setGroups(new ArrayList<Group>());
-        groupLists.add(primaryGroupList);
-
-        for (Principal principal: subject.getPrincipals()) {
-            if (principal instanceof UidPrincipal) {
-                if (hasUid) {
-                    throw new IllegalArgumentException("Cannot convert Subject with more than one UID");
-                }
-                hasUid = true;
-                record.setUid((int) ((UidPrincipal) principal).getUid());
-            } else if (principal instanceof FQANPrincipal) {
-                FQANPrincipal fqanPrincipal = (FQANPrincipal) principal;
-                if (fqanPrincipal.isPrimary() && primaryGroupList.getAttribute() == null) {
-                    primaryGroupList.setAttribute(fqanPrincipal.getName());
-                } else {
-                    GroupList groupList = new GroupList();
-                    groupList.setAuthRecord(record);
-                    groupList.setAttribute(fqanPrincipal.getName());
-                    groupList.setGroups(new ArrayList<Group>());
-                    groupLists.add(groupList);
-                }
-            } else if (principal instanceof GidPrincipal) {
-                GidPrincipal gidPrincipal = (GidPrincipal) principal;
-                Group group = new Group();
-                group.setGid((int) gidPrincipal.getGid());
-                if (gidPrincipal.isPrimaryGroup()) {
-                    primaryGroupList.getGroups().add(0, group);
-                } else {
-                    primaryGroupList.getGroups().add(group);
-                }
-            } else if (principal instanceof GlobusPrincipal) {
-                record.setName(((GlobusPrincipal) principal).getName());
-            } else if (principal instanceof UserNamePrincipal) {
-                record.setIdentity(((UserNamePrincipal) principal).getName());
-            }
-        }
-
-        if (!hasUid) {
-            throw new IllegalArgumentException("Cannot convert Subject without UID");
-        }
-
-        record.setGroupLists(groupLists);
-        record.setId();
-
-        return record;
+        return new AuthorizationRecord(subject);
     }
 
     /**

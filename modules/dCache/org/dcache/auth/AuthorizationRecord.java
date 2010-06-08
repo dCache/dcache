@@ -12,6 +12,8 @@ package org.dcache.auth;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.io.Serializable;
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -26,6 +28,14 @@ import static javax.persistence.CascadeType.ALL;
 import static javax.persistence.FetchType.EAGER;
 import org.dcache.srm.SRMUser;
 import javax.security.auth.Subject;
+import java.security.Principal;
+import org.dcache.auth.LoginReply;
+import org.dcache.auth.attributes.LoginAttribute;
+import org.dcache.auth.attributes.RootDirectory;
+import org.dcache.auth.attributes.HomeDirectory;
+import org.dcache.auth.attributes.ReadOnly;
+import org.globus.gsi.jaas.GlobusPrincipal;
+
 
 /**
  *
@@ -57,6 +67,102 @@ public class AuthorizationRecord implements Serializable, SRMUser{
 
     /** Creates a new instance of AuthorizationRecord */
     public AuthorizationRecord() {
+    }
+
+
+    /**
+     * Converts a Subject to an AuthorizationRecord. The the UID
+     * (UidPrincipal), GID (GidPrincipal), the mapped user name
+     * (UserNamePrincipal), the DN (GlobusPrincipal), and FQAN
+     * (FQANPrincipal) will be included in the AuthorizationRecord.
+     *
+     * Notice that the AuthorizationRecord will represent a subset of
+     * the information stored in the subject.
+     *
+     * All GIDs will become part of the primary group list. The
+     * primary GIDs will appear first in the primary group list.
+     */
+    public AuthorizationRecord(Subject subject)
+    {
+        this(new LoginReply(subject, Collections.EMPTY_SET));
+    }
+
+    /**
+     * Converts a LoginReply to an AuthorizationRecord. The the UID
+     * (UidPrincipal), GID (GidPrincipal), the mapped user name
+     * (UserNamePrincipal), the DN (GlobusPrincipal), and FQAN
+     * (FQANPrincipal), home directory (HomeDirectory), root directory
+     * (RootDirectory) and read-only (ReadOnly) status will be
+     * included in the AuthorizationRecord.
+     *
+     * Notice that the AuthorizationRecord will represent a subset of
+     * the information stored in the LoginReply.
+     *
+     * All GIDs will become part of the primary group list. The
+     * primary GIDs will appear first in the primary group list.
+     */
+    public AuthorizationRecord(LoginReply login)
+    {
+        boolean hasUid = false;
+
+        List<GroupList> groupLists = new LinkedList<GroupList>();
+
+        GroupList primaryGroupList = new GroupList();
+        primaryGroupList.setAuthRecord(this);
+        primaryGroupList.setGroups(new ArrayList<Group>());
+        groupLists.add(primaryGroupList);
+
+        for (Principal principal: login.getSubject().getPrincipals()) {
+            if (principal instanceof UidPrincipal) {
+                if (hasUid) {
+                    throw new IllegalArgumentException("Cannot convert Subject with more than one UID");
+                }
+                hasUid = true;
+                setUid((int) ((UidPrincipal) principal).getUid());
+            } else if (principal instanceof FQANPrincipal) {
+                FQANPrincipal fqanPrincipal = (FQANPrincipal) principal;
+                if (fqanPrincipal.isPrimary() && primaryGroupList.getAttribute() == null) {
+                    primaryGroupList.setAttribute(fqanPrincipal.getName());
+                } else {
+                    GroupList groupList = new GroupList();
+                    groupList.setAuthRecord(this);
+                    groupList.setAttribute(fqanPrincipal.getName());
+                    groupList.setGroups(new ArrayList<Group>());
+                    groupLists.add(groupList);
+                }
+            } else if (principal instanceof GidPrincipal) {
+                GidPrincipal gidPrincipal = (GidPrincipal) principal;
+                Group group = new Group();
+                group.setGid((int) gidPrincipal.getGid());
+                if (gidPrincipal.isPrimaryGroup()) {
+                    primaryGroupList.getGroups().add(0, group);
+                } else {
+                    primaryGroupList.getGroups().add(group);
+                }
+            } else if (principal instanceof GlobusPrincipal) {
+                setName(((GlobusPrincipal) principal).getName());
+            } else if (principal instanceof UserNamePrincipal) {
+                setIdentity(((UserNamePrincipal) principal).getName());
+            }
+        }
+
+        if (!hasUid) {
+            throw new IllegalArgumentException("Cannot convert Subject without UID");
+        }
+
+        setGroupLists(groupLists);
+
+        for (LoginAttribute attribute: login.getLoginAttributes()) {
+            if (attribute instanceof RootDirectory) {
+                setRoot(((RootDirectory) attribute).getRoot());
+            } else if (attribute instanceof HomeDirectory) {
+                setHome(((HomeDirectory) attribute).getHome());
+            } else if (attribute instanceof ReadOnly) {
+                setReadOnly(((ReadOnly) attribute).isReadOnly());
+            }
+        }
+
+        setId();
     }
 
     /**
