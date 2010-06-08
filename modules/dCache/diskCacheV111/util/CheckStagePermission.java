@@ -123,8 +123,12 @@ public class CheckStagePermission {
               _fileWriteLock.lock();
               if ( fileNeedsRereading() ) {
                   BufferedReader reader = new BufferedReader(new FileReader(_stageConfigFile));
-                  _regexList = readStageConfigFile(reader);
-                  _lastTimeReadingStageConfigFile = System.currentTimeMillis();
+                  try {
+                       _regexList = readStageConfigFile(reader);
+                       _lastTimeReadingStageConfigFile = System.currentTimeMillis();
+                  } finally {
+                       reader.close();
+                  }
               }
           } finally {
               _fileWriteLock.unlock();
