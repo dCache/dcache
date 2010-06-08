@@ -37,7 +37,7 @@ import javax.security.auth.Subject;
 public class AuthorizationRecord implements Serializable, SRMUser{
     private static final long serialVersionUID = 7412538400840464074L;
     /**
-     *this is the id of the authorization record that is used as 
+     *this is the id of the authorization record that is used as
      * a primary key in the database
      * it is set to a unique value by gPlazma
      * It has nothing to do with user id
@@ -54,14 +54,14 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     private int currentGIDindex=0;
     private String authn = null;
     private String authz = null;
-    
+
     /** Creates a new instance of AuthorizationRecord */
     public AuthorizationRecord() {
     }
-    
+
     /**
      *this is the id getter
-     * this id is a property of the authorization record that is used as 
+     * this id is a property of the authorization record that is used as
      * a primary key in the database
      * it is set to a unique value by gPlazma
      * It has nothing to do with user id
@@ -74,7 +74,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
 
     /**
      *this is the id setter
-     * this id is a property of the authorization record that is used as 
+     * this id is a property of the authorization record that is used as
      * a primary key in the database
      * it is set to a unique value by gPlazma
      * It has nothing to do with user id
@@ -100,7 +100,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     public void setIdentity(String identity) {
         this.identity = identity;
     }
-    
+
     @Basic
     @Column( name="uid")
     public int getUid() {
@@ -110,9 +110,9 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     public void setUid(int uid) {
         this.uid = uid;
     }
-    
+
     @OneToMany(mappedBy="authRecord",
-        fetch=EAGER, 
+        fetch=EAGER,
         targetEntity=GroupList.class,
         cascade = {ALL})
     @OrderBy //PK is assumed
@@ -123,7 +123,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     public void setGroupLists(List<GroupList> groupLists) {
         this.groupLists = groupLists;
     }
-    
+
     @Basic
     @Column( name="priority")
     public int getPriority() {
@@ -184,7 +184,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     public void setCurrentGIDindex(int currentGIDindex) {
         this.currentGIDindex = currentGIDindex;
     }
-    
+
     public void incrementGIDindex() {
         currentGIDindex++;
     }
@@ -198,7 +198,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     public void setName(String name) {
         this.name = name;
     }
-    
+
     public String toString()
     {
         StringBuilder sb = new java.lang.StringBuilder("AR:");
@@ -227,7 +227,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
         sb.append(" >");
         return sb.toString();
     }
-    
+
     public String hashCodeString() {
         return Integer.toHexString(hashCode());
     }
@@ -260,7 +260,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
         }
         return null;
     }
-    
+
     @Transient
     protected GroupList getPrimaryGroupList() {
         if(groupLists != null && !groupLists.isEmpty() ) {
@@ -268,7 +268,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
         }
         return null;
     }
-    
+
     @Transient
     public int getGid() {
         GroupList primaryGroupList = getPrimaryGroupList();
@@ -284,9 +284,9 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     @Transient
     public long getId(AuthorizationRecord authrec) {
         long id = authrec.getId();
-        
+
         if(id != 0 ) return id;
-        
+
         int authn_hash = getAuthn().hashCode();
         int authz_hash = getAuthz().hashCode();
 
@@ -349,7 +349,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
         initHashStrings();
         return getAuthn().hashCode()^getAuthz().hashCode();
     }
-    
+
     @Transient
     public int[] getGids() {
         List<Integer> gids = new ArrayList<Integer>();
@@ -362,11 +362,11 @@ public class AuthorizationRecord implements Serializable, SRMUser{
                     }
                 }
             }
-        } 
+        }
         if(gids.isEmpty()) {
             return new int[] {-1};
         }
-        
+
         int [] gidIntArray = new int[gids.size()];
         for(int i=0; i<gidIntArray.length; i++) {
             gidIntArray[i] = gids.get(i);
@@ -378,7 +378,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     public Subject getSubject() {
         return Subjects.getSubject(this);
     }
-    
+
     /**
      *
      * @return UserAuthRecord which corresponds to this GroupList
