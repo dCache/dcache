@@ -23,5 +23,5 @@ public interface GPlazmaMappingPlugin extends GPlazmaPlugin {
 
     public void reverseMap(SessionID sID,
                            Principal sourcePrincipal,
-                           Set<Principal> principals) throws Exception;
+                           Set<Principal> principals) throws AuthenticationException;
 }

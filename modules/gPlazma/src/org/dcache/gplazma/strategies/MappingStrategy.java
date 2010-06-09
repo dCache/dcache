@@ -6,7 +6,6 @@ import java.util.Set;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.SessionID;
 import org.dcache.gplazma.plugins.GPlazmaMappingPlugin;
-import org.dcache.gplazma.strategies.GPlazmaStrategy;
 
 /**
  * Implementing classes will use a (combination of) GPlazmaMappingPlugins to
@@ -23,5 +22,6 @@ public interface MappingStrategy
 
     public void reverseMap(SessionID sID,
                            Principal sourcePrincipal,
-                           Set<Principal> principals) throws Exception;
+                           Set<Principal> principals)
+               throws AuthenticationException;
 }
