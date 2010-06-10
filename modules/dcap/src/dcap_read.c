@@ -20,8 +20,10 @@
 #include "dcap_shared.h"
 
 ssize_t dc_real_read( struct vsp_node *node, void *buff, size_t buflen);
+#ifdef HAVE_OFF64_T
 ssize_t dc_pread64( int fd, void *buff, size_t buflen, off64_t);
 extern off64_t dc_real_lseek(struct vsp_node *node, off64_t offset, int whence);
+#endif
 extern int dc_real_fsync(struct vsp_node *);
 
 ssize_t
@@ -55,10 +57,32 @@ dc_read(int fd, void *buff, size_t buflen)
 ssize_t
 dc_pread(int fd, void *buff, size_t buflen, off_t offset)
 {
-	return dc_pread64(fd, buff, buflen, (off64_t)offset);
+        ssize_t n = -1;
+        struct vsp_node *node;
+
+#ifdef DC_CALL_TRACE
+        showTraceBack();
+#endif
+
+        /* nothing wrong ... yet */
+        dc_errno = DEOK;
+
+        node = get_vsp_node(fd);
+        if (node == NULL) {
+                /* we have not such file descriptor, so lets give a try to system */
+                return system_pread(fd, buff, buflen, offset);
+        }
+
+        if( dc_real_lseek(node, offset, SEEK_SET) >=0 ) {
+                n = dc_real_read(node, buff, buflen);
+        }
+
+        m_unlock(&node->mux);
+
+        return n;
 }
 
-
+#ifdef HAVE_OFF64_T
 ssize_t
 dc_pread64(int fd, void *buff, size_t buflen, off64_t offset)
 {
@@ -87,6 +111,7 @@ dc_pread64(int fd, void *buff, size_t buflen, off64_t offset)
 	return n;
 
 }
+#endif
 
 
 ssize_t

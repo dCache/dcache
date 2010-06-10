@@ -17,23 +17,26 @@
 
 #include "dcap_shared.h"
 
-
-off64_t dc_real_lseek(struct vsp_node *node, off64_t offset, int whence);
+off_t dc_real_lseek(struct vsp_node *node, off_t offset, int whence);
+#ifdef HAVE_LSEEK64
+off64_t dc_real_lseek64(struct vsp_node *node, off64_t offset, int whence);
+#endif
 extern int dc_real_fsync( struct vsp_node *node);
+#ifdef HAVE_LSEEK64
 off64_t dc_lseek64(int fd,off64_t offset, int whence);
-
-
+#endif
+off_t dc_lseek(int fd, off_t offset, int whence);
 
 off_t dc_lseek(int fd, off_t offset, int whence) {
 
-	off64_t o = dc_lseek64( fd, (off64_t)offset, whence);
+	off_t o = dc_lseek64( fd, (off_t)offset, whence);
 	return (off_t) o;
 
 }
 
 
 
-
+#ifdef HAVE_LSEEK64
 off64_t
 dc_lseek64(int fd, off64_t offset, int whence)
 {
@@ -59,8 +62,9 @@ dc_lseek64(int fd, off64_t offset, int whence)
 	return n;	
 	
 }
+#endif
 
-
+#ifdef HAVE_LSEEK64
 off64_t
 dc_real_lseek(struct vsp_node *node, off64_t offset, int whence)
 {	
@@ -244,3 +248,5 @@ dc_real_lseek(struct vsp_node *node, off64_t offset, int whence)
 	}
 	return (off64_t)result.lseek;
 }
+#endif
+

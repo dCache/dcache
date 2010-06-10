@@ -103,7 +103,9 @@ dc_open(const char *fname, int flags,...)
 								 * with Disk Cache */
 				free(path);				 
 				dc_debug(DC_INFO, "Using system native open for %s.", fname);		
-			    flags |= O_LARGEFILE ;
+			        #ifdef O_LARGEFILE
+                                flags |= O_LARGEFILE;
+                                #endif
 				return system_open(fname, flags, mode);
 		}
 	
@@ -190,7 +192,9 @@ dc_open(const char *fname, int flags,...)
 	 * dCache always has LARGE FILE SUPPORT,
 	 * remove extra flag, while it makes trouble in ascii open
 	 */
+        #ifdef O_LARGEFILE
 	node->flags =  flags & ~O_LARGEFILE;
+        #endif
 	node->mode = mode;
 	
 	if(url == NULL) {

@@ -19,9 +19,13 @@
 #include "dcap_shared.h"
 
 ssize_t dc_real_write( struct vsp_node *node, const void *buff, size_t buflen);
+#ifdef HAVE_OFF64_T
 ssize_t dc_pwrite64(int fd, const void *buff, size_t buflen, off64_t offset);
 off64_t dc_real_lseek(struct vsp_node *node, off64_t offset, int whence);
-
+#else
+off_t dc_real_lseek64(struct vsp_node *node, off_t offset, int whence);
+#endif
+ssize_t dc_pwrite(int fd, const void *buff, size_t buflen, off_t offset);
 ssize_t
 dc_write(int fd,const void *buff, size_t buflen)
 {
@@ -51,11 +55,33 @@ dc_write(int fd,const void *buff, size_t buflen)
 ssize_t
 dc_pwrite(int fd, const void *buff, size_t buflen, off_t offset)
 {
-	return dc_pwrite64(fd, buff, buflen, (off64_t) offset);
+        ssize_t n = -1;
+        struct vsp_node *node;
+
+#ifdef DC_CALL_TRACE
+        showTraceBack();
+#endif
+
+        /* nothing wrong ... yet */
+        dc_errno = DEOK;
+
+        node = get_vsp_node(fd);
+        if (node == NULL) {
+                /* we have not such file descriptor, so lets give a try to system */
+                return system_pwrite(fd, buff, buflen, offset);
+        }
+
+        if( dc_real_lseek(node, offset, SEEK_SET) >=0 ) {
+                n = dc_real_write(node, buff, buflen);
+        }
+
+        m_unlock(&node->mux);
+
+        return n;
 	
 }
 
-
+#ifdef HAVE_OFF64_T
 ssize_t
 dc_pwrite64(int fd, const void *buff, size_t buflen, off64_t offset)
 {
@@ -84,6 +110,7 @@ dc_pwrite64(int fd, const void *buff, size_t buflen, off64_t offset)
 	return n;	
 	
 }
+#endif
 
 ssize_t
 dc_real_write( struct vsp_node *node, const void *buff, size_t buflen)
@@ -131,8 +158,11 @@ dc_real_write( struct vsp_node *node, const void *buff, size_t buflen)
 			}
 
 			/* keep current position, including seeks */
+#ifdef HAVE_OFF64_T
 			node->ahead->base = dc_real_lseek(node, (off64_t)0, SEEK_CUR);
-			
+#else
+			node->ahead->base = dc_real_lseek(node, (off_t)0, SEEK_CUR);
+#endif
 			node->ahead->isDirty = 1;
 			node->ahead->cur = 0;
 			node->ahead->used = 0;
