@@ -189,14 +189,13 @@ public class PerformanceTest extends Thread
         try {
             switch (aOp) {
                 case CREATE_ENTRY:
-                    FileMetaData metaData =  new FileMetaData(false, UID, GID, PERMISSION);
-                    PnfsId id = provider.createEntry(Subjects.ROOT, path, metaData, false);
+                    provider.createEntry(Subjects.ROOT, path, UID, GID, PERMISSION, false);
                     break;
                 case PATH_TO_PNFS_ID:
-                    id = getPnfsid(path);
+                    getPnfsid(path);
                     break;
                 case FILE_META_DATA:
-                    metaData = provider.getFileMetaData(Subjects.ROOT, getPnfsid(path));
+                    provider.getFileMetaData(Subjects.ROOT, getPnfsid(path));
                     break;
                 case DELETE_ENTRY:
                     provider.deleteEntry(Subjects.ROOT, getPnfsid(path));

@@ -52,15 +52,18 @@ public interface NameSpaceProvider
 
 
     /**
-     * create file or directory for given path
+     * Create file or directory for given path.
+     *
      * @param subject Subject of user who invoked this method.
      * @param path full path of new object
-     * @param metaData initial values for object metadata, like owner, group, permissions mode
+     * @param uid uid of new entry or -1 for default
+     * @param gid gid of new entry or -1 for default
+     * @param mode mode of new entry or -1 for default
      * @param isDirectory create a directory if true
      * @return PnfsId of newly created object
      * @throws CacheException
      */
-    PnfsId createEntry(Subject subject, String path, FileMetaData metaData, boolean isDirectory) throws CacheException;
+    PnfsId createEntry(Subject subject, String path, int uid, int gid, int mode, boolean isDirectory) throws CacheException;
 
     /**
      * remove file or directory associated with given pnfsid

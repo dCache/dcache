@@ -201,22 +201,20 @@ public class ChimeraNameSpaceProvider
         return fileMetaData;
     }
 
-    public PnfsId createEntry(Subject subject, String path,  FileMetaData metaData, boolean isDir ) throws CacheException {
+    public PnfsId createEntry(Subject subject, String path,  int uid, int gid, int mode, boolean isDir ) throws CacheException {
 
 
         FsInode inode = null;
 
         try {
-            Stat metadataStat = fileMetadata2Stat(metaData, isDir );
-
             File newEntryFile = new File(path);
 
             FsInode parent = _fs.path2inode(newEntryFile.getParent());
 
             if( isDir ) {
-                inode = _fs.mkdir(parent, newEntryFile.getName(), metadataStat.getUid(), metadataStat.getGid(), metadataStat.getMode() );
+                inode = _fs.mkdir(parent, newEntryFile.getName(), uid, gid, mode);
             }else{
-                inode = _fs.createFile(parent, newEntryFile.getName(), metadataStat.getUid(), metadataStat.getGid(), metadataStat.getMode() );
+                inode = _fs.createFile(parent, newEntryFile.getName(), uid, gid, mode);
             }
         } catch (NotDirChimeraException e) {
             throw new NotDirCacheException("Not a directory: " + path);

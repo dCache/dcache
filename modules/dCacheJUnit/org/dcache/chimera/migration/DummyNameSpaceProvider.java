@@ -51,7 +51,7 @@ public class DummyNameSpaceProvider implements NameSpaceProvider {
 
     @Override
     public PnfsId createEntry( Subject subject, String path,
-                               FileMetaData metaData, boolean isDirectory)
+                               int uid, int gid, int mode, boolean isDirectory)
             throws CacheException {
         fail( "not implemented");
         return null;

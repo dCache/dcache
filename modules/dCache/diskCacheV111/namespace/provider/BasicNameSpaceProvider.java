@@ -303,7 +303,7 @@ public class BasicNameSpaceProvider
         }
     }
 
-    public PnfsId createEntry(Subject subject, String name, FileMetaData metaData, boolean isDirectory ) throws CacheException {
+    public PnfsId createEntry(Subject subject, String name, int uid, int gid, int mode, boolean isDirectory ) throws CacheException {
 
 
         String globalPath = name;
@@ -360,9 +360,10 @@ public class BasicNameSpaceProvider
             throw new IllegalArgumentException( "Not a pnfs file system");
         }
 
-
         pnfsId = pf.getPnfsId();
         try {
+            FileMetaData metaData =
+                new FileMetaData(isDirectory, uid, gid, mode);
             this.setFileMetaData(subject, pnfsId, metaData);
         } catch (RuntimeException e) {
             pf.delete();

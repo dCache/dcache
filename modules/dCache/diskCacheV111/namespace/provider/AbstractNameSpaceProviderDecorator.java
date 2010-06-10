@@ -47,10 +47,10 @@ public class AbstractNameSpaceProviderDecorator
     }
 
     @Override
-    public PnfsId createEntry(Subject subject, String path, FileMetaData metaData, boolean isDirectory)
+    public PnfsId createEntry(Subject subject, String path, int uid, int gid, int mode, boolean isDirectory)
         throws CacheException
     {
-        return _inner.createEntry(subject, path, metaData, isDirectory);
+        return _inner.createEntry(subject, path, uid, gid, mode, isDirectory);
     }
 
     @Override

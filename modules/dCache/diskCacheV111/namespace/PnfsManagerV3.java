@@ -1016,8 +1016,7 @@ public class PnfsManagerV3 extends CellAdapter
             checkMask(pnfsMessage.getSubject(), file.getParent(),
                       pnfsMessage.getAccessMask());
 
-            FileMetaData metadata = new FileMetaData(true, pnfsMessage.getUid(), pnfsMessage.getGid(), pnfsMessage.getMode());
-            pnfsId = _nameSpaceProvider.createEntry(pnfsMessage.getSubject(), pnfsMessage.getPath(), metadata, true);
+            pnfsId = _nameSpaceProvider.createEntry(pnfsMessage.getSubject(), pnfsMessage.getPath(), pnfsMessage.getUid(), pnfsMessage.getGid(), pnfsMessage.getMode(), true);
 
             pnfsMessage.setPnfsId(pnfsId);
             pnfsMessage.setSucceeded();
@@ -1065,8 +1064,7 @@ public class PnfsManagerV3 extends CellAdapter
             checkMask(pnfsMessage.getSubject(), file.getParent(),
                       pnfsMessage.getAccessMask());
 
-            FileMetaData metadata = new FileMetaData(false, pnfsMessage.getUid(), pnfsMessage.getGid(), pnfsMessage.getMode());
-            pnfsId = _nameSpaceProvider.createEntry(pnfsMessage.getSubject(), pnfsMessage.getPath(),metadata, false);
+            pnfsId = _nameSpaceProvider.createEntry(pnfsMessage.getSubject(), pnfsMessage.getPath(), pnfsMessage.getUid(), pnfsMessage.getGid(), pnfsMessage.getMode(), false);
 
             pnfsMessage.setPnfsId(pnfsId);
             pnfsMessage.setSucceeded();
