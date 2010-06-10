@@ -1612,9 +1612,13 @@ public class PnfsManagerV3 extends CellAdapter
                     index =
                         (int) (Math.abs((long) pnfsId.hashCode()) % _locationFifos.length);
                     _log.info("Using location thread [" + pnfsId + "] " + index);
+                } else if (path != null) {
+                    index =
+                        (int) (Math.abs((long) path.hashCode()) % _locationFifos.length);
+                    _log.info("Using location thread [" + path + "] " + index);
                 } else {
                     index = _random.nextInt(_locationFifos.length);
-                    _log.info("Using location thread [" + path + "] " + index);
+                    _log.info("Using random location thread " + index);
                 }
                 fifo = _locationFifos[index];
             } else {
@@ -1631,7 +1635,7 @@ public class PnfsManagerV3 extends CellAdapter
                     _log.info("Using thread [" + path + "] " + index);
                 } else {
                     index = _random.nextInt(_fifos.length);
-                    _log.info("Using thread [" + pnfsId + "] " + index);
+                    _log.info("Using random thread " + index);
                 }
                 fifo = _fifos[index];
             }
@@ -1905,8 +1909,8 @@ public class PnfsManagerV3 extends CellAdapter
      * Returns the thread group number for a path. The mapping is
      * based on the database ID of the path.  A cache is used to avoid
      * lookups in the name space provider once the path prefix for a
-     * database has been determined. In case of a cache miss a random
-     * thread group is chosen.
+     * database has been determined. In case of a cache miss an
+     * arbitrary but deterministic thread group is chosen.
      */
     private int pathToThreadGroup(String path)
     {
@@ -1920,7 +1924,7 @@ public class PnfsManagerV3 extends CellAdapter
 
         _log.info("Path cache miss for " + path);
 
-        return _random.nextInt(_threadGroups);
+        return path.hashCode() % _threadGroups;
     }
 
     /**
