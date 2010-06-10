@@ -28,7 +28,7 @@ int char2dirent64(const char *, struct dirent64 *);
 int char2dirent(const char *, struct dirent *);
 
 
-#if defined(__linux__) || defined(__GNU__) || defined(__FreeBSD_kernel__)
+#ifdef linux
 
 struct __dirstream   {
     int fd;         /* File descriptor.  */
@@ -52,6 +52,11 @@ struct __dirstream   {
 #define DIRENT_FD(x) x->dd_fd
 #define DIRENT_DATA(x) x->dd_buf
 
+#endif
+
+#ifdef __DARWIN_UNIX03
+#  define DIRENT_FD(x) x->__dd_fd
+#  define DIRENT_DATA(x) x->__dd_buf
 #endif
 
 
@@ -131,7 +136,6 @@ DIR * dc_opendir(const char *path)
 
 /* MAXPATHLEN + 2x ':' + type (1) + '\0' + pnfsid(24) +len(3 -> MAXPATHLEN == 256 ) */
 #define CHAINSIZE 287
-
 struct dirent *dc_readdir( DIR *dir)
 {
 
@@ -145,11 +149,11 @@ struct dirent *dc_readdir( DIR *dir)
 	}
 			
 	memcpy(ent.d_name, ep->d_name, 256);
-#if defined(__linux__) || defined(__GNU__) || defined(__FreeBSD_kernel__)
+#if defined(linux) || defined(__DARWIN_UNIX03)
 	ent.d_type = ep->d_type;
 #endif
 	ent.d_reclen = ep->d_reclen;
-#if !defined(__GNU__) && !defined(__FreeBSD_kernel__)
+#ifndef __DARWIN_UNIX03
 	ent.d_off = (off_t)ep->d_off;
 #endif
 	ent.d_ino = (ino_t)ep->d_ino;
@@ -278,6 +282,7 @@ void dc_seekdir(DIR *dir, off_t offset)
 	Format:
 		pnfsid:type(f,d,u):name len:name
 */
+
 int char2dirent64(const char *line, struct dirent64 *ent)
 {
 	
@@ -301,7 +306,7 @@ int char2dirent64(const char *line, struct dirent64 *ent)
 	}	
 
 	s++;
-#if defined(__linux__) || defined(__GNU__) || defined(__FreeBSD_kernel__)
+#ifdef linux
 	switch(s[0]){
 		case 'f' :
 			ent->d_type = DT_REG;
@@ -352,7 +357,7 @@ int char2dirent(const char *line, struct dirent *ent)
 	}	
 
 	s++;
-#if defined(__linux__) || defined(__GNU__) || defined(__FreeBSD_kernel__)
+#ifdef linux
 	switch(s[0]){
 		case 'f' :
 			ent->d_type = DT_REG;

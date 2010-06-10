@@ -47,12 +47,18 @@ union pointer_converter {
   ssize_t (*s_read)       (int, void *, size_t);
   ssize_t (*s_readv)      (int, const struct iovec *vector, int count);
   ssize_t (*s_pread)      (int, void *, size_t, off_t);
+#ifdef HAVE_PREAD64
   ssize_t (*s_pread64)    (int, void *, size_t, off64_t);
+#endif
   ssize_t (*s_write)      (int, const void *, size_t);
   ssize_t (*s_writev)     (int, const struct iovec *vector, int count);
   ssize_t (*s_pwrite)     (int, const void *, size_t, off_t);
+#ifdef HAVE_PWRITE64
   ssize_t (*s_pwrite64)   (int, const void *, size_t, off64_t);
+#endif
+#ifdef HAVE_OFF64_T
   off64_t (*s_lseek64)    (int, off64_t, int);
+#endif
   int (*s_close)          (int);
 #ifdef _STAT_VER
   int (*s_stat)           (int , const char *, struct stat *);
@@ -92,8 +98,14 @@ union pointer_converter {
   int (*s_fclose)         (FILE *);
   size_t (*s_fwrite)      (const void *, size_t, size_t, FILE *);
   size_t (*s_fread)       (void *, size_t, size_t, FILE *);
+  off_t (*s_fseeko)       (FILE *, off_t, int);
+#ifdef HAVE_FSEEKO64
   int (*s_fseeko64)       (FILE *, off64_t, int);
+#endif
+  off_t (*s_ftello)       (FILE *);
+#ifdef HAVE_FTELLO64
   off64_t (*s_ftello64)   (FILE *);
+#endif
   int (*s_ferror)         (FILE *);
   int (*s_fflush)         (FILE *);
   int (*s_feof)           (FILE *);
@@ -115,12 +127,18 @@ static int (*s_open)           (const char *, int, ...);
 static ssize_t (*s_read)       (int, void *, size_t);
 static ssize_t (*s_readv)      (int, const struct iovec *vector, int count);
 static ssize_t (*s_pread)      (int, void *, size_t, off_t);
+#ifdef HAVE_PREAD64
 static ssize_t (*s_pread64)    (int, void *, size_t, off64_t);
+#endif
 static ssize_t (*s_write)      (int, const void *, size_t);
 static ssize_t (*s_writev)     (int, const struct iovec *vector, int count);
 static ssize_t (*s_pwrite)     (int, const void *, size_t, off_t);
+#ifdef HAVE_PWRITE64
 static ssize_t (*s_pwrite64)   (int, const void *, size_t, off64_t);
+#endif
+#ifdef HAVE_LSEEK64
 static off64_t (*s_lseek64)    (int, off64_t, int);
+#endif
 static int (*s_close)          (int);
 
 /* 
@@ -170,8 +188,14 @@ static FILE * (*s_fdopen)(int, const char *);
 static int  (*s_fclose)(FILE *);
 static size_t (*s_fwrite)(const void *, size_t, size_t, FILE *);
 static size_t (*s_fread)(void *, size_t, size_t, FILE *);
+static int (*s_fseeko)(FILE *, off_t, int);
+#ifdef HAVE_FSEEKO64
 static int (*s_fseeko64)(FILE *, off64_t, int);
+#endif
+static off_t (*s_ftello)(FILE *);
+#ifdef HAVE_FTELLO64
 static off64_t (*s_ftello64)(FILE *);
+#endif
 static int (*s_ferror)(FILE *);
 static int (*s_fflush)(FILE *);
 static int (*s_feof)(FILE *);
@@ -251,12 +275,18 @@ static int initIfNeeded()
 	ASSIGN_FN( s_read,     convert, handle, READ_SYM);
 	ASSIGN_FN( s_readv,    convert, handle, READV_SYM);
 	ASSIGN_FN( s_pread,    convert, handle, PREAD_SYM);
+#ifdef HAVE_PREAD64
 	ASSIGN_FN( s_pread64,  convert, handle, PREAD64_SYM);
+#endif
 	ASSIGN_FN( s_write,    convert, handle, WRITE_SYM);
 	ASSIGN_FN( s_writev,   convert, handle, WRITEV_SYM);
 	ASSIGN_FN( s_pwrite,   convert, handle, PWRITE_SYM);
+#ifdef HAVE_PWRITE64
 	ASSIGN_FN( s_pwrite64, convert, handle, PWRITE64_SYM);
+#endif
+#ifdef HAVE_LSEEK64
 	ASSIGN_FN( s_lseek64,  convert, handle, LSEEK64_SYM);
+#endif
 	ASSIGN_FN( s_close,    convert, handle, CLOSE_SYM);		 
 	ASSIGN_FN( s_stat,     convert, handle, STAT64_SYM);
 	ASSIGN_FN( s_stat64,   convert, handle, STAT64_SYM);
@@ -295,10 +325,15 @@ static int initIfNeeded()
 	ASSIGN_FN( s_fdopen,   convert, handle, "fdopen");
 	ASSIGN_FN( s_fread,    convert, handle, "fread");
 	ASSIGN_FN( s_fwrite,   convert, handle, "fwrite");
+#ifdef HAVE_FSEEKO64
 	ASSIGN_FN( s_fseeko64, convert, handle, "fseeko64");
+#endif
 	ASSIGN_FN( s_fclose,   convert, handle, "fclose");
 	ASSIGN_FN( s_fflush,   convert, handle, "fflush");
+    ASSIGN_FN( s_ftello, convert, handle, "ftello");
+#ifdef HAVE_FTELLO64
 	ASSIGN_FN( s_ftello64, convert, handle, "ftello64");
+#endif
 	ASSIGN_FN( s_feof,     convert, handle, "feof");
 	ASSIGN_FN( s_ferror,   convert, handle, "ferror");
 	ASSIGN_FN( s_fgets,    convert, handle, "fgets");
@@ -306,16 +341,36 @@ static int initIfNeeded()
 	
 	if( (s_open == NULL) || (s_read == NULL) ||
 		(s_pread == NULL) || (s_write == NULL) || 
-		(s_pwrite == NULL) || (s_pread64 == NULL) || (s_pwrite64 == NULL) ||
-		(s_lseek64 == NULL) || (s_close == NULL) ||
-		(s_stat == NULL) || (s_fstat == NULL ) || (s_fsync == NULL) || 
-		(s_stat64 == NULL) || (s_fstat64 == NULL ) || 
-		(s_lstat == NULL) || (s_lstat64 == NULL ) || 
-		(s_dup == NULL) || (s_opendir == NULL) || (s_closedir == NULL) ||
-		(s_readdir == NULL) || (s_readdir64 ==  NULL) ||
-		(s_telldir == NULL) || (s_seekdir == NULL) || 
-		(s_unlink == NULL ) || (s_rmdir == NULL ) || 
-		(s_mkdir == NULL ) || (s_chmod == NULL ) || (s_access == NULL )  || 
+		(s_pwrite == NULL) ||
+#ifdef HAVE_PREAD64
+		(s_pread64 == NULL) ||
+#endif
+#ifdef HAVE_PWRITE64
+		(s_pwrite64 == NULL) ||
+#endif
+#ifdef HAVE_LSEEK64
+		(s_lseek64 == NULL) || 
+#endif
+		(s_close == NULL) ||
+		(s_stat == NULL) || 
+		(s_fstat == NULL ) || 
+		(s_fsync == NULL) || 
+		(s_stat64 == NULL) || 
+		(s_fstat64 == NULL ) || 
+		(s_lstat == NULL) || 
+		(s_lstat64 == NULL ) || 
+		(s_dup == NULL) || 
+		(s_opendir == NULL) || 
+		(s_closedir == NULL) ||
+		(s_readdir == NULL) || 
+		(s_readdir64 ==  NULL) ||
+		(s_telldir == NULL) || 
+		(s_seekdir == NULL) || 
+		(s_unlink == NULL ) || 
+		(s_rmdir == NULL ) || 
+		(s_mkdir == NULL ) || 
+		(s_chmod == NULL ) || 
+		(s_access == NULL )  || 
 #ifdef HAVE_ACL
 		(s_acl == NULL ) ||
 #endif /* HAVE_ACL */
@@ -404,10 +459,12 @@ int system_pread(int fd, void *buf, size_t buflen, off_t offset)
 	return initIfNeeded() == 0 ? s_pread( fd, buf, buflen, offset) : -1;
 }
 
+#ifdef HAVE_PREAD64
 int system_pread64(int fd, void *buf, size_t buflen, off64_t offset)
 {
 	return initIfNeeded() == 0 ? s_pread64( fd, buf, buflen, offset) : -1;
 }
+#endif
 
 int system_write(int fd, const void *buf, size_t buflen)
 {
@@ -425,22 +482,25 @@ int system_pwrite(int fd, void *buf, size_t buflen, off_t offset)
 	return initIfNeeded() == 0 ? s_pwrite( fd, buf, buflen, offset) : -1;
 }
 
+#ifdef HAVE_PWRITE64
 int system_pwrite64(int fd, void *buf, size_t buflen, off64_t offset)
 {
 	return initIfNeeded() == 0 ? s_pwrite64( fd, buf, buflen, offset) : -1;
 }
+#endif
 
 int system_close(int fd)
 {
 	return initIfNeeded() == 0 ? s_close(fd) : -1;
 }
 
-
+#ifdef HAVE_LSEEK64
 off64_t
 system_lseek64(int fd, off64_t offset, int whence)
 {
 	return initIfNeeded() == 0 ? s_lseek64(fd, offset, whence) : -1;
 }
+#endif
 
 #ifdef _STAT_VER
 int system_fstat( int fd, struct stat *buf)
@@ -657,15 +717,29 @@ int system_fflush(FILE *stream)
 	return initIfNeeded() == 0 ? s_fflush(stream) : -1;
 }
 
+off_t system_ftello(FILE *stream)
+{
+	return initIfNeeded() == 0 ? s_ftello(stream) : -1;
+}
+
+#ifdef HAVE_FTELLO64
 long system_ftello64(FILE *stream)
 {
 	return initIfNeeded() == 0 ? s_ftello64(stream) : -1;
 }
+#endif
 
+int system_fseeko(FILE *stream, off_t offset, int w)
+{
+	return initIfNeeded() == 0 ? s_fseeko(stream, offset, w) : -1;
+}
+
+#ifdef HAVE_FSEEKO64
 int system_fseeko64(FILE *stream, off64_t offset, int w)
 {
 	return initIfNeeded() == 0 ? s_fseeko64(stream, offset, w) : -1;
 }
+#endif
 
 char * system_fgets( char *s, int size, FILE *stream)
 {

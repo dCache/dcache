@@ -53,6 +53,8 @@ AC_PROG_LN_S
 AM_PROG_CC_C_O
 AC_SEARCH_LIBS([gethostbyname], [nsl])
 AC_SEARCH_LIBS([bind], [socket])
+
+AC_STRUCT_DIRENT_D_INO
 AC_CHECK_FUNCS([alarm])
 AC_CHECK_FUNCS([atexit])
 AC_CHECK_FUNCS([bzero])
@@ -82,6 +84,11 @@ AC_CHECK_FUNCS([facl])
 AC_CHECK_FUNCS([_xstat])
 AC_CHECK_FUNCS([_lxstat])
 AC_CHECK_FUNCS([_fxstat])
+AC_CHECK_FUNCS([lseek64])
+AC_CHECK_FUNCS([pread64])
+AC_CHECK_FUNCS([pwrite64])
+AC_CHECK_FUNCS([ftello64])
+AC_CHECK_FUNCS([fseeko64])
 AC_CHECK_HEADERS([arpa/inet.h])
 AC_CHECK_HEADERS([fcntl.h])
 AC_CHECK_HEADERS([limits.h])
@@ -95,9 +102,12 @@ AC_CHECK_HEADERS([termios.h])
 AC_CHECK_HEADERS([stropts.h])
 AC_CHECK_MEMBERS([struct stat.st_blksize])
 AC_CHECK_MEMBERS([struct stat.st_rdev])
+AC_CHECK_MEMBER([struct dirent.dirent])
+AC_CHECK_MEMBER([struct dirent.dirent64])
 AC_CHECK_MEMBERS([FILE._fileno])
 AC_CHECK_MEMBERS([FILE._magic])
 AC_CHECK_MEMBERS([FILE._file])
+AC_CHECK_MEMBERS([FILE._flag])
 AC_C_CONST
 AC_FUNC_CHOWN
 AC_FUNC_CLOSEDIR_VOID
@@ -162,6 +172,19 @@ AC_SUBST(SSL_LIBS)
 CPPFLAGS=${_cppflags}
 LDFLAGS=${_ldflags}
 LD_LIBRARY_PATH=${_ldlibpath}
+
+dnl === Thinks that should be in macros already ===
+AC_CACHE_CHECK([for off64_t],
+    ac_cv_have_off64_t,
+    AC_TRY_COMPILE([
+        #define _LARGEFILE64_SOURCE
+        #include <sys/types.h>],
+        [off64_t testoffset],
+        ac_cv_have_off64_t=yes,
+        ac_cv_have_off64_t=no))
+if test x"$ac_cv_have_off64_t" = "xyes" ; then
+    AC_DEFINE(HAVE_OFF64_T, 1, [Whether off64_t type is available])
+fi
 
 
 dnl === Globus stuff ===
