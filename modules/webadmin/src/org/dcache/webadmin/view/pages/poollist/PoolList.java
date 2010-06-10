@@ -103,8 +103,8 @@ public class PoolList extends AuthenticatedWebPage {
             super(id);
             SubmitButton button = new SubmitButton("submit");
             MetaDataRoleAuthorizationStrategy.authorize(button, ENABLE, Role.ADMIN);
+            _log.debug("submit isEnabled : {}", String.valueOf(button.isEnabled()));
             this.add(button);
-            _log.debug("isEnabled : {}", String.valueOf(button.isEnabled()));
         }
 
         @Override

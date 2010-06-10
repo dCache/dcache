@@ -21,6 +21,7 @@ import org.dcache.webadmin.view.pages.login.LogIn;
 import org.apache.wicket.authorization.strategies.page.SimplePageAuthorizationStrategy;
 import org.apache.wicket.authorization.strategies.role.IRoleCheckingStrategy;
 import org.apache.wicket.authorization.strategies.role.RoleAuthorizationStrategy;
+import org.dcache.webadmin.controller.LogInService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,6 +32,7 @@ import org.slf4j.LoggerFactory;
 public class WebAdminInterface extends WebApplication {
 
     private PoolBeanService _poolBeanService;
+    private LogInService _logInService;
     private int _httpPort;
     private int _httpsPort;
     private String _dcacheName;
@@ -67,11 +69,19 @@ public class WebAdminInterface extends WebApplication {
     }
 
     public void setPoolBeanService(PoolBeanService poolBeanService) {
-        this._poolBeanService = poolBeanService;
+        _poolBeanService = poolBeanService;
     }
 
     public PoolBeanService getPoolBeanService() {
         return _poolBeanService;
+    }
+
+    public void setLogInService(LogInService logInService) {
+        _logInService = logInService;
+    }
+
+    public LogInService getLogInService() {
+        return _logInService;
     }
 
     public void setDcacheName(String dCacheName) {

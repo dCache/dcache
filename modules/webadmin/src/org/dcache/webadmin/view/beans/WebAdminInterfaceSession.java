@@ -31,10 +31,15 @@ public class WebAdminInterfaceSession extends WebSession {
         _user = user;
     }
 
+    public void logoutUser() {
+        _user = null;
+    }
+
     public boolean hasAnyRole(Roles roles) {
-//        when gPlazma is integrated
-//     TODO something like this: return _user.hasAnyRole(roles);
         _log.debug("asking for available roles {}", roles);
-        return true;
+        if (!isSignedIn()) {
+            return false;
+        }
+        return _user.hasAnyRole(roles);
     }
 }

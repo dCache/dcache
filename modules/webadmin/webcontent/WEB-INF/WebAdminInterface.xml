@@ -4,7 +4,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
            http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
 
-    <bean id="infoCellStub"
+    <bean id="InfoCellStub"
         class="org.dcache.webadmin.model.dataaccess.impl.ServletContextCellStub">
         <constructor-arg type="java.lang.String" value="info"/>
         <property name="timeout" value="4000"/>
@@ -16,9 +16,15 @@
         <property name="timeout" value="4000"/>
     </bean>
 
+    <bean id="GplazmaCellStub"
+        class="org.dcache.webadmin.model.dataaccess.impl.ServletContextCellStub">
+        <constructor-arg type="java.lang.String" value="gPlazma"/>
+        <property name="timeout" value="180000"/>
+    </bean>
+
     <bean id="XMLDataGatherer"
         class="org.dcache.webadmin.model.dataaccess.impl.CellXMLDataGatherer">
-        <property name="infoCellStub" ref="infoCellStub"/>
+        <property name="infoCellStub" ref="InfoCellStub"/>
     </bean>
 
     <bean id="CommandSenderFactory"
@@ -37,23 +43,62 @@
         </constructor-arg>
     </bean>
 
+    <bean id="LoginStrategy" class="org.dcache.auth.UnionLoginStrategy">
+        <description>Processes login requests</description>
+        <property name="loginStrategies">
+            <list>
+                <bean class="org.dcache.auth.KauthFileLoginStrategy">
+                    <constructor-arg>
+                        <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
+                            <property name="targetBeanName" value="InfoCellStub"/>
+                            <property name="propertyPath" value="kpwdFile"/>
+                        </bean>
+                    </constructor-arg>
+                </bean>
+                <bean class="org.dcache.auth.GplazmaLoginStrategy">
+                    <constructor-arg>
+                        <bean class="org.dcache.auth.AuthzQueryHelper">
+                            <constructor-arg ref="GplazmaCellStub"/>
+                        </bean>
+                    </constructor-arg>
+                </bean>
+            </list>
+        </property>
+        <property name="anonymousAccess" value="NONE"/>
+    </bean>
+
+    <bean id="LogInService" class="org.dcache.webadmin.controller.impl.GuestLogInDecorator">
+        <constructor-arg>
+            <bean class="org.dcache.webadmin.controller.impl.LoginStrategyLogInService">
+                <property name="loginStrategy" ref="LoginStrategy"/>
+                <property name="adminGid">
+                    <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
+                        <property name="targetBeanName" value="InfoCellStub"/>
+                        <property name="propertyPath" value="adminGid"/>
+                    </bean>
+                </property>
+            </bean>
+        </constructor-arg>
+    </bean>
+
     <bean id="WebAdminInterface" class="org.dcache.webadmin.view.WebAdminInterface">
         <property name="poolBeanService" ref="PoolBeanService"/>
+        <property name="logInService" ref="LogInService"/>
         <property name="httpPort">
             <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
-                <property name="targetBeanName" value="infoCellStub"/>
+                <property name="targetBeanName" value="InfoCellStub"/>
                 <property name="propertyPath" value="httpPort"/>
             </bean>
         </property>
         <property name="httpsPort">
             <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
-                <property name="targetBeanName" value="infoCellStub"/>
+                <property name="targetBeanName" value="InfoCellStub"/>
                 <property name="propertyPath" value="httpsPort"/>
             </bean>
         </property>
         <property name="dcacheName">
             <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
-                <property name="targetBeanName" value="infoCellStub"/>
+                <property name="targetBeanName" value="InfoCellStub"/>
                 <property name="propertyPath" value="dcacheName"/>
             </bean>
         </property>

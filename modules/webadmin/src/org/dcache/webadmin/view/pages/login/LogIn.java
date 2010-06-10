@@ -1,5 +1,7 @@
 package org.dcache.webadmin.view.pages.login;
 
+import java.security.cert.X509Certificate;
+import javax.servlet.http.HttpServletRequest;
 import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.protocol.https.RequireHttps;
@@ -9,11 +11,14 @@ import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Button;
 import org.apache.wicket.markup.html.form.CheckBox;
-import org.apache.wicket.markup.html.form.Form;
+import org.apache.wicket.markup.html.form.StatelessForm;
 import org.apache.wicket.markup.html.form.PasswordTextField;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.model.StringResourceModel;
+import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
+import org.dcache.webadmin.controller.LogInService;
+import org.dcache.webadmin.controller.exceptions.LogInServiceException;
 import org.dcache.webadmin.view.WebAdminInterface;
 import org.dcache.webadmin.view.beans.LogInBean;
 import org.dcache.webadmin.view.beans.UserBean;
@@ -22,6 +27,8 @@ import org.dcache.webadmin.view.beans.WebAdminInterfaceSession;
 @RequireHttps
 public class LogIn extends WebPage {
 
+    public static final String X509_CERTIFICATE_ATTRIBUTE =
+            "javax.servlet.request.X509Certificate";
     private static final Logger _log = LoggerFactory.getLogger(LogIn.class);
 
     public LogIn() {
@@ -36,9 +43,14 @@ public class LogIn extends WebPage {
         return new StringResourceModel(resourceKey, this, null).getString();
     }
 
-    private class LogInForm extends Form {
+    private LogInService getLogInService() {
+        return ((WebAdminInterface) getApplication()).getLogInService();
+    }
+
+    private class LogInForm extends StatelessForm {
 
         private TextField _username;
+        private PasswordTextField _password;
         private CheckBox _rememberMe;
         private WebMarkupContainer _rememberMeRow;
         private LogInBean _logInModel;
@@ -48,8 +60,11 @@ public class LogIn extends WebPage {
             _logInModel = (LogInBean) getDefaultModelObject();
 
             _username = new TextField("username");
+            _username.setRequired(true);
             add(_username);
-            add(new PasswordTextField("password"));
+            _password = new PasswordTextField("password");
+
+            add(_password);
             add(new LogInButton("submit"));
             _rememberMeRow = new WebMarkupContainer("rememberMeRow");
             add(_rememberMeRow);
@@ -78,24 +93,17 @@ public class LogIn extends WebPage {
             _rememberMe.setPersistent(enable);
         }
 
-        private boolean logIn(String username, String password) {
-            return authenticate(username, password);
+        private void setGoOnPage() {
+            // If login has been called because the user was not yet
+            // logged in, then continue to the original destination,
+            // otherwise to the Home page
+            if (!continueToOriginalDestination()) {
+                setResponsePage(getApplication().getHomePage());
+            }
         }
 
-        /*
-         * method will be replaced with "real" call to gPlazma - just a temp solution
-         */
-        private final boolean authenticate(final String username, final String password) {
-            WebAdminInterfaceSession session = (WebAdminInterfaceSession) getSession();
-            if (!session.isSignedIn()) {
-                // Trivial password "db" for now
-                if ("Guest".equalsIgnoreCase(username) && "Guest".equalsIgnoreCase(password)) {
-                    UserBean userBean = new UserBean();
-                    userBean.setUsername(username);
-                    session.setUser(userBean);
-                }
-            }
-            return session.isSignedIn();
+        private WebAdminInterfaceSession getWebadminSession() {
+            return (WebAdminInterfaceSession) this.getSession();
         }
 
         private class LogInButton extends Button {
@@ -106,17 +114,19 @@ public class LogIn extends WebPage {
 
             @Override
             public void onSubmit() {
-//       TODO gplazma integration
-                _log.debug("username: {}", _logInModel.getUsername());
-                if (logIn(_logInModel.getUsername(), _logInModel.getPassword())) {
-                    // If login has been called because the user was not yet
-                    // logged in, then continue to the original destination,
-                    // otherwise to the Home page
-                    if (!continueToOriginalDestination()) {
-                        setResponsePage(getApplication().getHomePage());
+                WebAdminInterfaceSession session = getWebadminSession();
+                try {
+                    if (!session.isSignedIn()) {
+                        _log.debug("username: {}", _logInModel.getUsername());
+                        UserBean user = getLogInService().authenticate(
+                                _logInModel.getUsername(),
+                                _logInModel.getPassword().toCharArray());
+                        session.setUser(user);
                     }
-                } else {
+                    setGoOnPage();
+                } catch (LogInServiceException ex) {
                     error(getErrorMessage("loginError"));
+                    _log.debug("user/pwd sign in error");
                 }
             }
         }
@@ -125,11 +135,46 @@ public class LogIn extends WebPage {
 
             public CertSignInButton(String id) {
                 super(id);
+//                deactivate checking of formdata for certsignin
+                this.setDefaultFormProcessing(false);
             }
 
             @Override
             public void onSubmit() {
-//       TODO gplazma integration
+                WebAdminInterfaceSession session = getWebadminSession();
+                try {
+                    if (!session.isSignedIn()) {
+                        X509Certificate[] certChain = getCertChain();
+                        _log.debug("cert sign in");
+                        UserBean user = getLogInService().authenticate(certChain);
+                        session.setUser(user);
+                    }
+                    setGoOnPage();
+                } catch (IllegalArgumentException ex) {
+                    error(getErrorMessage("loginError"));
+                    _log.debug("no certificate provided");
+                } catch (LogInServiceException ex) {
+                    error(getErrorMessage("loginError"));
+                    String cause = "unknown";
+                    if (ex.getCause() != null) {
+                        cause = ex.getCause().getMessage();
+                    }
+                    _log.debug("cert sign in error - cause {}", cause);
+                }
+            }
+
+            private X509Certificate[] getCertChain() {
+                ServletWebRequest servletWebRequest = (ServletWebRequest) getRequest();
+                HttpServletRequest request = servletWebRequest.getHttpServletRequest();
+                Object certificate = request.getAttribute(X509_CERTIFICATE_ATTRIBUTE);
+                _log.debug("Certificate in request: {}", certificate.toString());
+                X509Certificate[] chain = null;
+                if (certificate instanceof X509Certificate[]) {
+                    chain = (X509Certificate[]) certificate;
+                } else {
+                    throw new IllegalArgumentException();
+                }
+                return chain;
             }
         }
     }

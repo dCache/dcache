@@ -9,6 +9,7 @@
      <!-- CLASSPATH -->
     <path id="webappbuild.class.path">
         <pathelement location="${buildDir}/classes/dcache.jar" />
+        <pathelement location="${buildDir}/classes/dcache-common.jar" />
         <fileset dir="${libDir}/log4j/" includes="*.jar" />
         <fileset dir="${libDir}/slf4j/" includes="*.jar" />
         <fileset dir="${libDir}/wicket/" includes="*.jar" />
