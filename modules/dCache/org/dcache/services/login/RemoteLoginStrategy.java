@@ -12,13 +12,20 @@ public class RemoteLoginStrategy implements LoginStrategy
 {
     private CellStub _stub;
 
+    public RemoteLoginStrategy()
+    {
+    }
+
     public RemoteLoginStrategy(CellStub stub)
     {
-        _stub = stub;
+        setCellStub(stub);
     }
 
     public void setCellStub(CellStub stub)
     {
+        if (stub == null) {
+            throw new NullPointerException();
+        }
         _stub = stub;
     }
 
@@ -29,6 +36,10 @@ public class RemoteLoginStrategy implements LoginStrategy
 
     public LoginReply login(Subject subject) throws CacheException
     {
+        if (_stub == null) {
+            throw new IllegalStateException("CellStub is not set");
+        }
+
         try {
             LoginMessage message =
                 _stub.sendAndWait(new LoginMessage(subject));
