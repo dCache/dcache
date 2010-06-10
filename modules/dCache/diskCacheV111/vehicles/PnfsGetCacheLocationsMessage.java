@@ -44,24 +44,23 @@ public class PnfsGetCacheLocationsMessage extends PnfsMessage {
     }
 
     @Override
-    public boolean isSubsumedBy(Message message)
+    public boolean fold(Message message)
     {
         if (message.getClass().equals(PnfsGetCacheLocationsMessage.class)) {
             PnfsId pnfsId = getPnfsId();
             String path = getPnfsPath();
             PnfsGetCacheLocationsMessage msg =
                 (PnfsGetCacheLocationsMessage) message;
-            return
-                (pnfsId == null || pnfsId.equals(msg.getPnfsId())) &&
-                (path == null || path.equals(msg.getPnfsPath()));
+            if ((pnfsId == null || pnfsId.equals(msg.getPnfsId())) &&
+                (path == null || path.equals(msg.getPnfsPath())) &&
+                (getSubject().equals(msg.getSubject()))) {
+                setPnfsId(msg.getPnfsId());
+                setPnfsPath(msg.getPnfsPath());
+                setCacheLocations(msg.getCacheLocations());
+                return true;
+            }
         }
 
         return false;
-    }
-
-    @Override
-    public boolean isIdempotent()
-    {
-        return true;
     }
 }

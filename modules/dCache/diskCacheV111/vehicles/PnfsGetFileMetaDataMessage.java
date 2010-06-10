@@ -125,26 +125,16 @@ public class PnfsGetFileMetaDataMessage extends PnfsGetFileAttributes
     }
 
     @Override
-    public boolean isSubsumedBy(Message message)
+    public boolean fold(Message message)
     {
         if (message.getClass().equals(PnfsGetFileMetaDataMessage.class)) {
-            PnfsId pnfsId = getPnfsId();
-            String path = getPnfsPath();
             PnfsGetFileMetaDataMessage other =
                 (PnfsGetFileMetaDataMessage) message;
-            return
-                other.resolve() == resolve() &&
-                (pnfsId == null || pnfsId.equals(other.getPnfsId())) &&
-                (path == null || path.equals(other.getPnfsPath())) &&
-                (!isChecksumsRequested() || other.isChecksumsRequested());
+            if (other.resolve() == resolve()) {
+                return super.fold(message);
+            }
         }
 
         return false;
-    }
-
-    @Override
-    public boolean isIdempotent()
-    {
-        return true;
     }
 }

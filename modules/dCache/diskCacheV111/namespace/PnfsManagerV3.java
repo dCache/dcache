@@ -83,7 +83,7 @@ public class PnfsManagerV3 extends CellAdapter
     private CellPath     _pnfsDeleteNotificationRelay = null;
 
     /**
-     * Whether to use folding of idempotent messages.
+     * Whether to use folding.
      */
     private boolean      _canFold = false;
 
@@ -1533,7 +1533,7 @@ public class PnfsManagerV3 extends CellAdapter
 
         protected void fold(PnfsMessage message)
         {
-            if (_canFold && message.isIdempotent()) {
+            if (_canFold) {
                 Iterator<CellMessage> i = _fifo.iterator();
                 while (i.hasNext()) {
                     CellMessage envelope = (CellMessage) i.next();
@@ -1544,13 +1544,12 @@ public class PnfsManagerV3 extends CellAdapter
                         break;
                     }
 
-                    if (other.isSubsumedBy(message)) {
-                        _log.info("Collapsing " + message.getClass().getSimpleName());
+                    if (other.fold(message)) {
+                        _log.info("Folded {}", other.getClass().getSimpleName());
                         _foldedCounters.incrementRequests(message.getClass());
 
                         i.remove();
                         envelope.revertDirection();
-                        envelope.setMessageObject(message);
 
                         try {
                             sendMessage(envelope);

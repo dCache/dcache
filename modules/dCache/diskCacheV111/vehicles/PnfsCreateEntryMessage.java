@@ -51,22 +51,11 @@ public class PnfsCreateEntryMessage extends PnfsGetStorageInfoMessage {
     @Override
     public boolean invalidates(Message message)
     {
-        /* Notice that PnfsCreateEntryMessage inherits from
-         * PnfsGetStorageInfoMessage. Therefore we cannot rely on the
-         * default implementation in PnfsMessage.
-         */
-        if (message instanceof PnfsMessage) {
-            PnfsMessage msg = (PnfsMessage) message;
-            if (getPnfsPath() != null && msg.getPnfsPath() != null &&
-                !getPnfsPath().equals(msg.getPnfsPath())) {
-                return false;
-            }
-        }
-        return true;
+        return genericInvalidatesForPnfsMessage(message);
     }
 
     @Override
-    public boolean isIdempotent()
+    public boolean fold(Message message)
     {
         return false;
     }

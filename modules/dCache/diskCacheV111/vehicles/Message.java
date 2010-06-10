@@ -117,8 +117,9 @@ public class Message
      * Returns true if this message could possibly change the effect
      * or result of <code>message</code>.
      *
-     * In a message queue, two idempotent operations can be folded if
-     * they are not invalidated by any messages in between.
+     * In a message queue, a message can be used to fold other
+     * messages as long as it is not invalidated by any intermediate
+     * messages.
      */
     public boolean invalidates(Message message)
     {
@@ -126,28 +127,27 @@ public class Message
     }
 
     /**
-     * Returns true if this message is subsumed by the message
-     * provided as an argument.
+     * Folds the reply of another Messages into this Message.
      *
-     * A message A subsumes a message B if and only if all of the
-     * following conditions are satisfied:
+     * For some Messages the correct reply can be derived from the
+     * reply of another Message. In those cases processing of this
+     * Message can be skipped and instead the reply of the other
+     * Message can be folded into this Message.
      *
-     * - both A and B are idempotent,
-     * - a reply to A can be used as a valid reply to B,
-     * - executing B after A does not change the state of the system.
+     * A prerequiste for folding to succeed is that this Message is
+     * side effect free. It does however not matter whether the other
+     * Message has side effects.
+     *
+     * This method updates this Message by extracting the correct
+     * reply from the Message given as an argument. If successfull,
+     * this Message can be send as a valid reply back to the
+     * requestor. If not successful, this Message is unmodified.
+     *
+     * @param message Another Message to fold into this Message
+     * @return true if the operation succeeded, false otherwise
+     * @see invalidates
      */
-    public boolean isSubsumedBy(Message message)
-    {
-        return false;
-    }
-
-    /**
-     * Returns true if this message is idempotent, that is, the result
-     * of applying two identical instances of this message is the
-     * same, assuming the state of the system has not changed in
-     * between.
-     */
-    public boolean isIdempotent()
+    public boolean fold(Message message)
     {
         return false;
     }
