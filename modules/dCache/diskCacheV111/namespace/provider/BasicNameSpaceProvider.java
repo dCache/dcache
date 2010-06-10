@@ -58,6 +58,8 @@ import org.dcache.acl.handler.singleton.AclHandler;
 
 import javax.security.auth.Subject;
 
+import org.dcache.auth.Subjects;
+
 import static org.dcache.auth.Subjects.ROOT;
 import static org.dcache.namespace.FileAttribute.*;
 
@@ -358,6 +360,40 @@ public class BasicNameSpaceProvider
             _logNameSpace.warn("requested path ["+globalPath+"], is not an pnfs path");
             pf.delete();
             throw new IllegalArgumentException( "Not a pnfs file system");
+        }
+
+        if (!Subjects.isNobody(subject)) {
+            if (uid == DEFAULT) {
+                uid = (int) Subjects.getUid(subject);
+            }
+
+            if (gid == DEFAULT) {
+                gid = (int) Subjects.getPrimaryGid(subject);
+            }
+        }
+
+        if (uid == DEFAULT || gid == DEFAULT || mode == DEFAULT) {
+            PnfsId parentId = pf.getParentId();
+            FileAttributes parentAttributes =
+                getFileAttributes(subject, parentId,
+                                  EnumSet.of(MODE, OWNER, OWNER_GROUP));
+
+            if (uid == DEFAULT) {
+                uid = parentAttributes.getOwner();
+            }
+
+            if (gid == DEFAULT) {
+                gid = parentAttributes.getGroup();
+            }
+
+            if (mode == DEFAULT) {
+                mode = parentAttributes.getMode();
+                if (isDirectory) {
+                    mode &= UMASK_DIR;
+                } else {
+                    mode &= UMASK_FILE;
+                }
+            }
         }
 
         pnfsId = pf.getPnfsId();

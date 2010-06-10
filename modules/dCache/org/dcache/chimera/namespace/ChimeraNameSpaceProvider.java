@@ -56,6 +56,7 @@ import org.dcache.vehicles.FileAttributes;
 import org.dcache.acl.ACLException;
 import org.dcache.acl.handler.singleton.AclHandler;
 import org.dcache.chimera.DirectoryStreamB;
+import org.dcache.auth.Subjects;
 
 public class ChimeraNameSpaceProvider
     implements NameSpaceProvider
@@ -210,6 +211,31 @@ public class ChimeraNameSpaceProvider
             File newEntryFile = new File(path);
 
             FsInode parent = _fs.path2inode(newEntryFile.getParent());
+
+            if (uid == DEFAULT) {
+                if (Subjects.isNobody(subject)) {
+                    uid = parent.statCache().getUid();
+                } else {
+                    uid = (int) Subjects.getUid(subject);
+                }
+            }
+
+            if (gid == DEFAULT) {
+                if (Subjects.isNobody(subject)) {
+                    gid = parent.statCache().getGid();
+                } else {
+                    gid = (int) Subjects.getPrimaryGid(subject);
+                }
+            }
+
+            if (mode == DEFAULT) {
+                mode = parent.statCache().getMode();
+                if (isDir) {
+                    mode &= UMASK_DIR;
+                } else {
+                    mode &= UMASK_FILE;
+                }
+            }
 
             if( isDir ) {
                 inode = _fs.mkdir(parent, newEntryFile.getName(), uid, gid, mode);

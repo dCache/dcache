@@ -3,12 +3,15 @@
 package diskCacheV111.vehicles;
 
 import org.dcache.namespace.FileAttribute;
+import diskCacheV111.namespace.NameSpaceProvider;
 import java.util.Set;
 
 public class PnfsCreateEntryMessage extends PnfsGetStorageInfoMessage {
 
     private String      _path        = null;
-    private int _uid = -1 , _gid = -1 , _mode = 0 ;
+    private int _uid = NameSpaceProvider.DEFAULT;
+    private int _gid = NameSpaceProvider.DEFAULT;
+    private int _mode = NameSpaceProvider.DEFAULT;
 
     private static final long serialVersionUID = -8197311585737333341L;
 
