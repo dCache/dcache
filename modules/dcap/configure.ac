@@ -54,7 +54,6 @@ AM_PROG_CC_C_O
 AC_SEARCH_LIBS([gethostbyname], [nsl])
 AC_SEARCH_LIBS([bind], [socket])
 
-AC_STRUCT_DIRENT_D_INO
 AC_CHECK_FUNCS([alarm])
 AC_CHECK_FUNCS([atexit])
 AC_CHECK_FUNCS([bzero])
