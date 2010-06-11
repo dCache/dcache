@@ -9,12 +9,12 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: dcap_command.h,v 1.11 2006-07-17 15:13:36 tigran Exp $
  */
- 
+
 #ifndef DCAP_COMMAND_H
 #define DCAP_COMMAND_H
 

@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: dcap_reconnect.h,v 1.10 2004-11-01 19:33:29 tigran Exp $
  */

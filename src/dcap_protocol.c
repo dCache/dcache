@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: dcap_protocol.c,v 1.11 2006-03-28 11:42:49 tigran Exp $
  */

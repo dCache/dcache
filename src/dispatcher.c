@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: dispatcher.c,v 1.6 2004-11-01 19:33:29 tigran Exp $
  */
@@ -136,7 +136,7 @@ thread_task(void *arg)
 }
 
 
-int 
+int
 main()
 {
 
@@ -256,7 +256,7 @@ main()
 }
 
 
-static int 
+static int
 getMessage(int fd, int myID, client * clnt, message * out)
 {
 
@@ -269,9 +269,9 @@ getMessage(int fd, int myID, client * clnt, message * out)
 	while (1) {
 		m_lock(&clnt[myID].lock);
 		if (clnt[myID].mnum) {
-			
+
 			/* printf("Hey! I([%d]) have message in the Queue. Skeep scanning...\n", myID); */
-			 
+
 
 			out = clnt[myID].mQueue[0];
 			if (clnt[myID].mnum > 1) {
@@ -324,7 +324,7 @@ getMessage(int fd, int myID, client * clnt, message * out)
 						m_unlock(&clnt[destination].lock);
 						return -1;
 					}
-					
+
 					clnt[destination].mQueue = tmp;
 					clnt[destination].qLen += 1;
 

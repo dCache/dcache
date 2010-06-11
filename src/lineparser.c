@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: lineparser.c,v 1.3 2004-11-01 19:33:30 tigran Exp $
  */
@@ -70,14 +70,14 @@ lineParser( const char *buffer, const char *separator)
 			token[ti] = c;
 			ti++;
 			continue;
-			
+
 		}
 
 	}
 
 
 	if(status != Idle) {
-	
+
 		/* if we have incompite token - fix it */
 		token[ti] = '\0';
 		argc++;

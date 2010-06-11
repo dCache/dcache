@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: dcap_dup.c,v 1.4 2004-11-01 19:33:29 tigran Exp $
  */
@@ -29,7 +29,7 @@ int dc_dup(int fd)
 #endif
 
 	node = get_vsp_node(fd);
-	
+
 	if( node == NULL ) {
 		dc_debug(DC_INFO, "System native dup for [%d]", fd);
 		return system_dup(fd);
@@ -37,16 +37,16 @@ int dc_dup(int fd)
 
 
 	ret = system_dup(fd);
-	
+
 	if(ret > 0 ) {
 		node_attach_fd( node, ret );
 		dc_debug(DC_INFO, "dc_dup: [%d](original) duplicated to [%d]", fd, ret);
 	}else{
-		dc_debug(DC_ERROR, "dc_dup: system dup failed for [%d]", fd);	
+		dc_debug(DC_ERROR, "dc_dup: system dup failed for [%d]", fd);
 	}
 
 	m_unlock(&node->mux);
-	return ret; 
+	return ret;
 
 
 }

@@ -1,7 +1,7 @@
 /*
  * $Id: util.h,v 1.1 2002-10-14 10:31:36 cvs Exp $
  */
- 
+
 #ifndef DCAP_GSS_UTIL_H
 #define DCAP_GSS_UTIL_H
 

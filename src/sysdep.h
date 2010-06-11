@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: sysdep.h,v 1.11 2004-11-01 19:33:30 tigran Exp $
  */

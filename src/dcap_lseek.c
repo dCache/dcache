@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: dcap_lseek.c,v 1.19 2004-11-04 14:34:31 tigran Exp $
  */
@@ -46,10 +46,10 @@ dc_lseek64(int fd, off64_t offset, int whence)
 #ifdef DC_CALL_TRACE
 	showTraceBack();
 #endif
-	
+
 	/* nothing wrong ... yet */
 	dc_errno = DEOK;
-	
+
 	node = get_vsp_node(fd);
 	if (node == NULL) {
 		/* we have not such file descriptor, so lets give a try to system */
@@ -58,16 +58,16 @@ dc_lseek64(int fd, off64_t offset, int whence)
 
 	n = dc_real_lseek(node, offset, whence);
 	m_unlock(&node->mux);
-	
-	return n;	
-	
+
+	return n;
+
 }
 #endif
 
 #ifdef HAVE_LSEEK64
 off64_t
 dc_real_lseek(struct vsp_node *node, off64_t offset, int whence)
-{	
+{
 
 	int64_t         off;
 	int32_t         lseekmsg[5];
@@ -78,7 +78,7 @@ dc_real_lseek(struct vsp_node *node, off64_t offset, int whence)
 
 
 	if( (node->ahead != NULL) && ( node->ahead->buffer != NULL) && node->ahead->used) {
-		use_ahead = 1;		
+		use_ahead = 1;
 	}
 
 
@@ -89,7 +89,7 @@ dc_real_lseek(struct vsp_node *node, off64_t offset, int whence)
 			dc_debug(DC_IO, "[%d] SEEK_SET to the current position, skipping", node->dataFd);
 			return offset;
 		}
-		 
+
 	}
 
 
@@ -109,11 +109,11 @@ dc_real_lseek(struct vsp_node *node, off64_t offset, int whence)
 				default:
 					off = node->ahead->base + node->ahead->cur;
 			}
-						
-		
+
+
 		}else{
 			switch( node->whence ) {
-			
+
 				case SEEK_SET:
 					off = node->seek;
 					break;
@@ -121,10 +121,10 @@ dc_real_lseek(struct vsp_node *node, off64_t offset, int whence)
 					off = node->pos + node->seek;
 					break;
 				default:
-					off = node->pos;			
+					off = node->pos;
 			}
 		}
-		
+
 		return off;
 	}
 
@@ -136,9 +136,9 @@ dc_real_lseek(struct vsp_node *node, off64_t offset, int whence)
 
     /* funish unsafe write operation
           if node->unsafeWrite flag > 1 : transaction in progress */
-		   
+
 	if(node->unsafeWrite > 1) {
-	
+
 		size = htonl(-1); /* send end of data */
 		writen(node->dataFd, (char *) &size, sizeof(size), NULL);
 		/* FIXME: error detection missing */
@@ -148,13 +148,13 @@ dc_real_lseek(struct vsp_node *node, off64_t offset, int whence)
 			dc_errno = DEUOF;
 			return -1;
 		}
-		
-		
+
+
 		node->unsafeWrite = 1;
 	}
-        
-        
-        
+
+
+
 	/* to be fast in seek+read, do not realy seeks now. Do it only read
 	  calls as SEEK_AND_READ command */
 
@@ -162,7 +162,7 @@ dc_real_lseek(struct vsp_node *node, off64_t offset, int whence)
 	case SEEK_SET:
 		/* TODO: what happens, if user will requests
 		   offset out of file size ?*/
-	   
+
 		if( use_ahead && ( (off64_t)(node->ahead->base + node->ahead->used) > offset) &&
 					(offset >= (off64_t)node->ahead->base) ) {
 			node->ahead->cur = offset - node->ahead->base;
@@ -171,21 +171,21 @@ dc_real_lseek(struct vsp_node *node, off64_t offset, int whence)
 			node->whence = -1;
 			return offset;
 		}
-		
+
 		if( use_ahead ) {
 			node->ahead->used = 0;
 			node->ahead->cur = 0;
-			node->ahead->base = 0;			
+			node->ahead->base = 0;
 		}
-		
+
 		node->seek = offset;
 		node->whence = SEEK_SET;
 		dc_debug(DC_IO, "[%d] Expected seek offset: %ld.", node->dataFd, node->seek);
-		return offset;		
+		return offset;
 
 
 	case SEEK_CUR:
-		if(node->whence == -1) {	   
+		if(node->whence == -1) {
 			if( use_ahead && (node->ahead->cur + offset >= 0) &&
 						(node->ahead->cur + offset  <= node->ahead->used ) ) {
 				node->ahead->cur += offset;
@@ -196,7 +196,7 @@ dc_real_lseek(struct vsp_node *node, off64_t offset, int whence)
 				return (off64_t)result.lseek;
 			}
 		}
-		
+
 		if(use_ahead) {
 			node->seek  = offset +  node->ahead->cur - node->ahead->used;
 			node->ahead->used = 0;
@@ -204,18 +204,18 @@ dc_real_lseek(struct vsp_node *node, off64_t offset, int whence)
 			node->seek += offset;
 		}
 		if(node->whence != SEEK_SET ) {
-			node->whence = SEEK_CUR;	
+			node->whence = SEEK_CUR;
 			result.lseek = node->pos + node->seek;
 		}else{ /* SEEK_SET */
 			result.lseek = node->seek;
 		}
 
 		dc_debug(DC_IO, "[%d] SEEK_CUR offset: %ld expected position %ld.", node->dataFd, node->seek, node->pos + node->seek);
-		
-		return (off64_t)result.lseek;			
-		
+
+		return (off64_t)result.lseek;
+
 	case SEEK_END:
-	
+
 		/* we have to replay sone thing on SEEK_END,
 		   so lets make real seek*/
 		lseekmsg[0] = htonl(16);
@@ -235,7 +235,7 @@ dc_real_lseek(struct vsp_node *node, off64_t offset, int whence)
 	tmp = sendDataMessage(node, (char *) lseekmsg, sizeof(lseekmsg), ASCII_NULL, &result);
 
 	if (tmp != COMM_SENT) {
-		dc_debug(DC_ERROR, "sendDataMessage failed.");		
+		dc_debug(DC_ERROR, "sendDataMessage failed.");
 		return -1;
 	}
 

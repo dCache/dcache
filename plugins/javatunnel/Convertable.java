@@ -9,7 +9,7 @@ import java.io.OutputStream;
 import javax.security.auth.Subject;
 
 interface Convertable {
-    
+
     public boolean auth( InputStream in, OutputStream out, Object addon);
     public boolean verify( InputStream in, OutputStream out, Object addon);
     public void encode( byte[] buf , int len, OutputStream out) throws java.io.IOException ;

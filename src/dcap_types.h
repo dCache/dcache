@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: dcap_types.h,v 1.50 2007-07-09 19:35:09 tigran Exp $
  */
@@ -58,7 +58,7 @@ typedef struct {
 	int             qLen;		/* queue length */
 	int             mnum;		/* message number */
 	unsigned int	id;		/* message Queue ID*/
-	
+
 #ifndef NOT_THREAD_SAFE
 	pthread_mutex_t lock;
 #endif /* NOT_THREAD_SAFE */
@@ -110,9 +110,9 @@ typedef struct vsp_node {
         off_t seek;           /* seek offset */
 #endif
 	int whence;		/* seek whence */
-	
+
 	unsigned int asciiCommand; /* the actual command */
-	
+
 	char *pnfsId;		/* pNfs ID */
 	unsigned short data_port;		/* TCP port for data socket (callback)*/
 	struct vsp_node *next;	/* pointer to next node */
@@ -121,7 +121,7 @@ typedef struct vsp_node {
 	char *file_name;	/* file name */
 	mode_t mode;		/* file open mode */
 	uid_t uid;          /* file owner, used by chown */
-	gid_t gid;          /* file owner group, used by chown */	
+	gid_t gid;          /* file owner group, used by chown */
 	int flags;          /* file open flags */
 	time_t atime;       /* file stageing time */
 	char *stagelocation; /* location of client in stage request */
@@ -133,21 +133,21 @@ typedef struct vsp_node {
 	int sndBuf; /* TCP send buffer size */
 	int rcvBuf; /* TCP recive buffer size */
 	char *ipc;  /* pointer to the "some" data */
-	
-	
+
+
 	checkSum *sum; /* checksum */
 
 	/* to be able to have a dup */
 	unsigned int reference; /* reference count */
 	int fd_set[32]; /* quick hack to allow multiple file descriptors */
-		
+
 	int isPassive; /* passive connetion: client connects to the pool */
 
 
 #ifndef NOT_THREAD_SAFE
 	pthread_mutex_t mux;
 #endif /* NOT_THREAD_SAFE */
-	
+
 }               vsp_Node;
 
 

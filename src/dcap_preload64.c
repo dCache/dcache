@@ -10,8 +10,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: dcap_preload64.c,v 1.7 2004-11-04 14:16:39 tigran Exp $
  */
@@ -34,7 +34,7 @@
 
 /*
  *  work around linux glibc header files mess:
- *  all calls replaced with there 64 bit implementations 
+ *  all calls replaced with there 64 bit implementations
  *  if _FILE_OFFSET_BITS=64 is defined.
  */
 
@@ -42,12 +42,12 @@ int open64(const char *path, int flags,...)
 {
 	mode_t mode = 0;
 	va_list    args;
-	
+
 	if (flags & O_CREAT) {
 		va_start(args, flags);
 		mode = va_arg(args, mode_t);
 		va_end(args);
-	}	
+	}
 
 	dc_debug(DC_TRACE, "Running preloaded open64 for %s", path);
 	return dc_open(path, flags, mode);

@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: parser.c,v 1.8 2004-11-01 19:33:30 tigran Exp $
  */
@@ -21,7 +21,7 @@
 
 /*
  * posible tokens:
- * 
+ *
  * [0-9]* [a-zAZ]* "[a-zA-Z0-9 ]*" -key=value, where value can be any token
  */
 
@@ -120,7 +120,7 @@ CommandParser(const char *buffer)
 
 
 	if(status != Idle) {
-	
+
 		/* if we have incompite token - fix it */
 		token[ti] = '\0';
 		argc++;

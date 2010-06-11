@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: dcap_rename.c,v 1.2 2005-04-25 07:56:37 tigran Exp $
  */
@@ -20,11 +20,11 @@
 
 int dc_rename( const char *oldPath, const char *newPath )
 {
-	
+
 	struct vsp_node *node;
 	dcap_url *url;
 	int rc;
-	
+
 #ifdef DC_CALL_TRACE
 	showTraceBack();
 #endif
@@ -32,16 +32,16 @@ int dc_rename( const char *oldPath, const char *newPath )
 	/* nothing wrong ... yet */
 	dc_errno = DEOK;
 	errno = 0;
-	
-	url = (dcap_url *)dc_getURL(oldPath);	
-	
+
+	url = (dcap_url *)dc_getURL(oldPath);
+
 	if( url == NULL ) {
 		dc_debug(DC_INFO, "Using system native rename for %s to %s.", oldPath, newPath);
 		return system_rename(oldPath, newPath);
 	}
-	
-	
-	
+
+
+
 	node = new_vsp_node(oldPath);
 	if (node == NULL) {
 		dc_debug(DC_ERROR, "dc_rename: Failed to create new node.");
@@ -50,7 +50,7 @@ int dc_rename( const char *oldPath, const char *newPath )
 		free(url);
 		return -1;
 	}
-	
+
 
 	node->url = url;
 	if (url == NULL ) {
@@ -69,10 +69,10 @@ int dc_rename( const char *oldPath, const char *newPath )
 
 	/* node cleanup procedure */
 	node_unplug( node );
-		
-	deleteQueue(node->queueID);
-	node_destroy(node);	
 
-	return rc;	
-	
+	deleteQueue(node->queueID);
+	node_destroy(node);
+
+	return rc;
+
 }

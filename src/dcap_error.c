@@ -9,12 +9,12 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
- * $Id: dcap_error.c,v 1.23 2006-09-22 13:25:46 tigran Exp $ 
+ * $Id: dcap_error.c,v 1.23 2006-09-22 13:25:46 tigran Exp $
  */
- 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -46,18 +46,18 @@ __dc_errno()
 	/* only one thread allowed to kreate key*/
 	m_lock(&kLock);
 	if(!err_once) {
-		t_keycreate(&err_key, NULL);	
+		t_keycreate(&err_key, NULL);
 		err_once++;
 	}
 	m_unlock(&kLock);
-	
+
 	t_getspecific(err_key, (void **)&en);
 	if( en == NULL ) {
 		en = calloc(1, sizeof(int));
 		t_setspecific(err_key, (void *)en);
 	}
-	
-	return en;	
+
+	return en;
 }
 
 char **
@@ -72,13 +72,13 @@ __dc_srvMessage()
 		msg_once++;
 	}
 	m_unlock(&kLock);
-	
+
 	t_getspecific(srvMessage_key, (void **)&msg);
 	if ( msg == NULL ) {
 		msg = calloc(1,sizeof(char *));
 		t_setspecific(srvMessage_key, (void *)msg);
 	}
-	
+
 	return msg;
 }
 
@@ -93,7 +93,7 @@ static char * dc_errno2srvMessage()
 		msgPtr_once++;
 	}
 	m_unlock(&kLock);
-	
+
 	t_getspecific(srvMessagePtr_key, (void **)&sPtr);
 	if ( sPtr == NULL ) {
 		sPtr = calloc(DC_MAX_SRV_ERR_MSG + 1,sizeof(char));
@@ -101,7 +101,7 @@ static char * dc_errno2srvMessage()
 		sPtr[DC_MAX_SRV_ERR_MSG] = '\0';
 		t_setspecific(srvMessagePtr_key, (void *)sPtr);
 	}
-	
+
 	return sPtr;
 }
 
@@ -118,7 +118,7 @@ static char srvConstMessage[DC_MAX_SRV_ERR_MSG];
 static const char *const dcap_errlist[] = {
 	"OK",
 	"Unexpected data on CONTROL connection",
-	"Unexpected data on DATA connection",	
+	"Unexpected data on DATA connection",
 	"Unexpected data on CONTROL or DATA connection",
 	"Message not confirmed",
 	"Message not acknowledged",
@@ -154,7 +154,7 @@ static const char *const dcap_errlist[] = {
 	""
 };
 
-void 
+void
 dc_perror(const char *msg)
 {
 	const char * dc_strerror(int);
@@ -162,10 +162,10 @@ dc_perror(const char *msg)
 
 	if ((msg != NULL) && strlen(msg)) {
 		system_write(2, msg, strlen(msg) );
-		system_write(2, " : ", 3); 
+		system_write(2, " : ", 3);
 	}
 
-	
+
 	system_write(2, dc_strerror(dc_errno), strlen(dc_strerror(dc_errno)) );
 	system_write(2, "\n", 1);
 	if (errno) {
@@ -195,16 +195,16 @@ void dc_setServerError(const char *msg)
 		free(srvMessage);
 		srvMessage = NULL;
 	}
-	
+
 	if(msg != NULL) {
 		srvMessage = strdup(msg);
 		dc_errno = DESRVMSG;
 	}
-	
+
 	errno = EIO;
-	
+
 	/* 'p' will point to the buffer for error mesage */
-#ifdef _REENTRANT	
+#ifdef _REENTRANT
 	p = dc_errno2srvMessage();
 #else
 	p = srvConstMessage;
@@ -214,7 +214,7 @@ void dc_setServerError(const char *msg)
 	if(len > DC_MAX_SRV_ERR_MSG) {
 		len = DC_MAX_SRV_ERR_MSG;
 	}
-	
+
 	strncpy(p, msg, len);
 	p[len] = '\0';
 
@@ -225,20 +225,20 @@ void dc_setServerError(const char *msg)
 const char * dc_strerror(int errnum)
 {
     const char *p;
-	
+
 	if( (errnum > DEMAXERRORNUM) || (errnum < DEOK) ) {
 		return "Unknown error";
 	}
-	
+
 	if(errnum == DESRVMSG) {
-#ifdef _REENTRANT	
+#ifdef _REENTRANT
 	p = dc_errno2srvMessage();
 #else
 	p = srvConstMessage;
-#endif /* _REENTRANT */	
+#endif /* _REENTRANT */
 	}else{
 		p = dcap_errlist[errnum];
 	}
-	
+
 	return (const char *)p;
 }

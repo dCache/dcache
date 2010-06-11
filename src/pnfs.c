@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: pnfs.c,v 1.16 2006-01-09 14:28:15 tigran Exp $
  */
@@ -39,7 +39,7 @@
 /*
  * isPnfs: checks for pnfs file system return value: 1: Pnfs 0: regular file
  * system -1: error
- * 
+ *
  */
 
 int
@@ -124,7 +124,7 @@ getPnfsID(struct vsp_node * node)
 	char           *pnfsLayer;
 	int             tmp;
 	struct          stat buf;
-	
+
 	pnfsLayer = (char *) malloc(strlen(node->file_name) + strlen("/.(id)()") + 1 + strlen(node->directory));
 
 	if (pnfsLayer == NULL) {
@@ -136,7 +136,7 @@ getPnfsID(struct vsp_node * node)
 
 	dc_debug(DC_TRACE, "Looking for pnfsID in %s\n", pnfsLayer);
 	tmp = system_open(pnfsLayer, O_RDONLY, 0);
-	
+
 	/* we does not need pnfsLayer anymore, so free it */
 	free(pnfsLayer);
 
@@ -144,14 +144,14 @@ getPnfsID(struct vsp_node * node)
 		dc_errno = DEPNFSID;
 		return -1;
 	}
-	
+
 	if(system_fstat(tmp, &buf) < 0) {
 		system_close(tmp);
 		dc_errno = DEPNFSID;
 		return -1;
-		
+
 	}
-	
+
 	/* pNfs id always have '\n' at the end, which we does not needed */
 	/* that is why we allocate one byte less memory */
 	node->pnfsId = (char *) malloc(buf.st_size);
@@ -169,7 +169,7 @@ getPnfsID(struct vsp_node * node)
 		dc_errno = DEPNFSID;
 		return -1;
 	}
-	
+
 	node->pnfsId[buf.st_size - 1] = '\0';
 
 	system_close(tmp);
@@ -189,11 +189,11 @@ getPnfsIDbyPath(const char *path)
 	char *dir;
 	char *file;
 	char *pnfsId;
-	
+
 	dir = xdirname(path);
 	file = xbasename(path);
-	
-	
+
+
 	pnfsLayer = (char *) malloc(strlen(file) + strlen("/.(id)()") + 1 + strlen(dir));
 
 	if (pnfsLayer == NULL) {
@@ -207,7 +207,7 @@ getPnfsIDbyPath(const char *path)
 
 	dc_debug(DC_TRACE, "Looking for pnfsID in %s\n", pnfsLayer);
 	tmp = system_open(pnfsLayer, O_RDONLY, 0);
-	
+
 	/* we does not need pnfsLayer anymore, so free it */
 	free(pnfsLayer);
 
@@ -215,14 +215,14 @@ getPnfsIDbyPath(const char *path)
 		dc_errno = DEPNFSID;
 		return NULL;
 	}
-	
+
 	if(system_fstat(tmp, &buf) < 0) {
 		system_close(tmp);
 		dc_errno = DEPNFSID;
 		return NULL;
-		
+
 	}
-	
+
 	/* pNfs id always have '\n' at the end, which we does not needed */
 	/* that is why we allocate one byte less memory */
 	pnfsId = (char *) malloc(buf.st_size);
@@ -239,7 +239,7 @@ getPnfsIDbyPath(const char *path)
 		dc_errno = DEPNFSID;
 		return NULL;
 	}
-	
+
 	pnfsId[buf.st_size - 1] = '\0';
 
 	system_close(tmp);

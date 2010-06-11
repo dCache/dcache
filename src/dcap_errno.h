@@ -9,12 +9,12 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: dcap_errno.h,v 1.8 2004-11-01 19:33:29 tigran Exp $
  */
- 
+
 #ifndef _DC_ERROR_NUM_H
 #define _DC_ERROR_NUM_H
 

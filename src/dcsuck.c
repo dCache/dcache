@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: dcsuck.c,v 1.2 2007-06-07 08:00:06 tigran Exp $
  */
@@ -49,21 +49,21 @@ int main(int argc, char *argv[])
 	ssize_t data_len;
 	int rc;
 	char extraOption[MAXPATHLEN];
-	
-	
-	
+
+
+
 	if( argc < 3 ) {
 		fprintf(stderr,"usage: %s <path in dcache> <local path>\n",argv[0]);
 		exit(1);
 	}
-	
-	
+
+
 	extraOption[0] = '\0';
-	
+
 	while( (c = getopt(argc, argv, "Ad:o:h:iX:Pt:l:aB:b:up:T:r:s:w:c")) != EOF) {
-	
+
 		switch(c) {
-			case 'd':				
+			case 'd':
 				dc_setStrDebugLevel(optarg);
 				break;
 			case 'X':
@@ -71,15 +71,15 @@ int main(int argc, char *argv[])
 				break;
 		}
 	}
-	
-	
+
+
 	rc = dc_stat64(argv[optind], &sbuf);
-	
+
 	if ( (rc == 0) && ( S_ISDIR(sbuf.st_mode) || S_ISCHR(sbuf.st_mode)) ) {
 		fprintf(stderr,"file %s: Not a regular file\n",argv[optind]);
 		return -1 ;
 	}
-	
+
 	rc = 0;
 	dc_setExtraOption(extraOption);
 	src = dc_open(argv[optind], O_RDONLY );
@@ -92,8 +92,8 @@ int main(int argc, char *argv[])
 		dc_perror("Can't open destination file");
 		dc_close(src);
 		return -2;
-	}	
-	
+	}
+
 	data_len = dc_readTo(src, dest, sbuf.st_size);
 	if( data_len != sbuf.st_size) {
 		fprintf(stderr,"recived data (%lld) .NE. file size(%lld) \n", data_len, sbuf.st_size);
@@ -102,6 +102,6 @@ int main(int argc, char *argv[])
 
 	dc_close(src);
 	close(dest);
-	
+
 	return rc;
 }

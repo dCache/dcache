@@ -9,23 +9,23 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: dc_hack.h,v 1.8 2005-12-19 11:06:28 tigran Exp $
  */
 
- 
+
 #ifndef DC_HACK_H
 #define DC_HACK_H
 
 /*
  *  quick hack to make a application dCache aware
  *  gcc -include dc_hack.h -o someaoo someapp.c -ldcap
- * 
+ *
  *  This hack is for tests only and do not appropriate for any production code
  */
- 
+
 #warning "Use of dc_hack.h is not appropriate for a production purposes."
 #warning "Please modify you code to call DCAP functions directly."
 

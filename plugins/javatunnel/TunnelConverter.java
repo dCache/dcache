@@ -17,18 +17,18 @@ class TunnelConverter implements Convertable,UserBindible  {
     private final static int IO_BUFFER_SIZE = 1048576; // 1 MB
 
     public void encode(byte[] buf, int len, OutputStream out) throws java.io.IOException  {
-        
+
         byte[] realBytes = new byte[len];
-                
+
         System.arraycopy(buf, 0, realBytes, 0, len);
-        
-        String outData = "enc " + Base64.byteArrayToBase64(realBytes) ;        
-		
+
+        String outData = "enc " + Base64.byteArrayToBase64(realBytes) ;
+
 		out.write(outData.getBytes());
 		out.write('\n');
-        
+
     }
-    
+
     public byte[] decode(InputStream in) throws java.io.IOException {
 
         byte[] buf = new byte[IO_BUFFER_SIZE];
@@ -51,19 +51,19 @@ class TunnelConverter implements Convertable,UserBindible  {
         return Base64.base64ToByteArray(new String(buf, 4, total - 5));
 
     }
-    
+
     public boolean auth(InputStream in, OutputStream out, Object addon) {
-        
+
         if( _isAuthentificated ) {
             return true;
         }
-        
+
         try{
-            
+
             PrintStream os = null;
             DataInputStream is = null;
             os = new PrintStream(out);
-            
+
             String secret = "xxx >> SECRET << xxxx";
             os.println(secret);
         }catch ( Exception e ) {
@@ -72,15 +72,15 @@ class TunnelConverter implements Convertable,UserBindible  {
         }
         return true;
     }
-    
+
     public boolean verify(InputStream in, OutputStream out, Object addon) {
         try{
-            
-            
+
+
             DataInputStream is = null;
-            is = new DataInputStream(in);                        
+            is = new DataInputStream(in);
             System.out.println(  is.readLine());
-            
+
         }catch ( IOException e ) {
             _log.error("verify failed", e);
             return false;

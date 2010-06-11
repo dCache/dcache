@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: input_parser.c,v 1.10 2005-10-28 09:05:07 tigran Exp $
  */
@@ -142,10 +142,10 @@ main()
 	int p[2];
 
 	printf("MESSAGE: [%s]\n", MSG);
-	
-	
+
+
 	pipe(p);
-	
+
 	write(p[1], MSG, strlen(MSG));
 	argv = inputParser(p[0]);
 

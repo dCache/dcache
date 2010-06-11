@@ -10,7 +10,7 @@
  *   See the file COPYING.LIB
  *
  */
- 
+
 /*
  * $Id: dcap_close.c,v 1.8 2004-12-01 14:25:39 tigran Exp $
  */
@@ -40,8 +40,8 @@ static unsigned int closeTimeOut;
  */
 
 
-int 
-validate_env_variable(char* timeout_var, long* timeout_val) 
+int
+validate_env_variable(char* timeout_var, long* timeout_val)
 {
 	char *timeout_str, *end;
 	timeout_str = getenv(timeout_var);
@@ -118,7 +118,7 @@ dc_close(int fd)
 	dc_real_fsync( node );
 
 	if(node->unsafeWrite > 1) {
-	
+
 		size = htonl(-1); /* send end of data */
 		writen(node->dataFd, (char *) &size, sizeof(size), NULL);
 		/* FIXME: error detection missing */
@@ -142,7 +142,7 @@ dc_close(int fd)
 			dc_debug(DC_INFO, "File checksum is: %u", node->sum->sum);
 		}else{
 			closemsg[0] = htonl(4);
-			msglen = 2;			
+			msglen = 2;
 		}
 
 		closemsg[1] = htonl(IOCMD_CLOSE); /* actual command */
@@ -176,7 +176,7 @@ dc_close(int fd)
 
 		close_data_socket(node->dataFd);
 		deleteQueue(node->queueID);
-		
+
 	}
 
 
@@ -186,7 +186,7 @@ dc_close(int fd)
 	return res;
 }
 
-/* 
+/*
    dc_close2  - same as dc_close, but does not send close command to the
    pool.
 */
@@ -217,7 +217,7 @@ dc_close2(int fd)
 
 
 	if(node->unsafeWrite) {
-	
+
 		size = htonl(-1); /* send end of data */
 		writen(node->dataFd, (char *) &size, sizeof(size), NULL);
 		/* FIXME: error detection missing */
@@ -228,12 +228,12 @@ dc_close2(int fd)
 		}
 	}
 
-	close_data_socket(node->dataFd);	
+	close_data_socket(node->dataFd);
 
 	deleteQueue(node->queueID);
 
 	m_unlock(&node->mux);
-	
+
 	node_destroy(node);
 
 	return res;
@@ -248,21 +248,21 @@ extern fdList getAllFD();
  */
 void dc_closeAll()
 {
-	
+
 	int i;
-	fdList list = getAllFD(); 
+	fdList list = getAllFD();
 	for( i = 0; i < list.len; i++) {
 		dc_close(list.fds[i]);
 	}
-	
-	
+
+
 	if( list.len > 0 ) {
 		free(list.fds);
 	}
 }
 
 void dc_setCloseTimeout(unsigned int t)
-{	
+{
 	closeTimeOut_set = 1;
 	closeTimeOut = t;
 }

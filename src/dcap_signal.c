@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: dcap_signal.c,v 1.9 2004-11-01 19:33:29 tigran Exp $
  */
@@ -51,5 +51,5 @@ dcap_signal()
 		dc_debug(DC_ERROR,"Sigaction failed!");
 	}
 
-	return 0;	
+	return 0;
 }

@@ -5,7 +5,7 @@
  *       THIS IS UNPUBLISHED PROPRIETARY SOURCE CODE OF
  *                 DESY Hamburg DMG-Division
  */
- 
+
 #ifndef GSS_IO_TUNNEL_H
 #define GSS_IO_TUNNEL_H
 

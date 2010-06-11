@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: array.c,v 1.8 2004-11-01 19:33:28 tigran Exp $
  */
@@ -136,12 +136,12 @@ deleteMemberByValue(int value)
 	if (( array == NULL ) || ( len == 0 ) ) {
 		return;
 	}
-	
+
 	tmpArray = (arrayElement *) malloc(sizeof(arrayElement) * (len - 1));
 	if (tmpArray == NULL) {
 		return;
 	}
-	
+
 	for (i = 0, j = 0; i < len; i++) {
 
 		if (array[i].value == value) {
@@ -158,14 +158,14 @@ deleteMemberByValue(int value)
 	return;
 }
 
-void 
+void
 lockMember()
 {
 	m_lock(&gLock);
 }
 
 
-void 
+void
 unlockMember()
 {
 	m_unlock(&gLock);

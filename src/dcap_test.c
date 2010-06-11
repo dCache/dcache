@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: dcap_test.c,v 1.37 2004-11-03 14:09:23 tigran Exp $
  */
@@ -92,18 +92,18 @@ void mode2string(mode_t m, char *s)
 	if( S_ISFIFO(m) ) s[0] = 'F';
 	if( S_ISLNK(m) )  s[0] = 'l';
 	if( S_ISSOCK(m) ) s[0] = 's';
-	
-	
+
+
 	if( m & S_IRUSR ) s[1] = 'r';
 	if( m & S_IWUSR ) s[2] = 'w';
 	if( m & S_IXUSR ) s[3] = 'x';
-	
+
 	if( m & S_IRGRP ) s[4] = 'r';
 	if( m & S_IWGRP ) s[5] = 'w';
 	if( m & S_IXGRP ) s[6] = 'x';
-	
+
 	if( m & S_IROTH ) s[7] = 'r';
-	if( m & S_IWOTH ) s[8] = 'w';						
+	if( m & S_IWOTH ) s[8] = 'w';
 	if( m & S_IXOTH ) s[9] = 'x';
 
 	s[10] = '\0';
@@ -128,16 +128,16 @@ thread_task() {
 	int fd;
 	offset = 0;
 	ntrans = 0;
-        
+
 	while (1) {
 		sw = sw == 1 ? 0 : 1;
-		
+
 		fd = dup_fd[sw];
 
 		rn = rand()%512 - 1 ;
 		offset += rn*sizeof(long) ;
 		if( (off_t)(offset + sizeof(long)*TESTBLOCK) >= size) {
-			printf("offset(%ld) >= size(%ld): break\n", offset, size);                   
+			printf("offset(%ld) >= size(%ld): break\n", offset, size);
 			break;
 		}
 
@@ -156,7 +156,7 @@ thread_task() {
 		for( i = 0; i < TESTBLOCK; i++) {
 
 			offset += sizeof(long);
-			
+
 			if( (value[i]  != offset) && ( offset != byteSwapL(value[i]) ) ){
 				printf("PANIC: value! tranfer # = %d ", ntrans);
 				printf("offset=%ld: value=%ld@%d\n", offset, value[i], i);
@@ -186,7 +186,7 @@ main(int argc, char *argv[])
 	struct passwd *pw;
 	struct group *gr;
 	char mode[11];
-	
+
 	if (argc > 2) exit(1);
 
 	if (argc == 2) {
@@ -194,22 +194,22 @@ main(int argc, char *argv[])
 	} else {
 		fname = DATAFILE;
 	}
-		
+
 	dc_setStrDebugLevel("info");
-	
-	
-	
+
+
+
 	if( dc_access(fname, F_OK) < 0) {
 		if( !make_index(fname) ) {
 			exit(2);
 		}
 	}
-		
+
 	if( dc_lstat(fname, &s) < 0 ) {
 		dc_perror("dc_lstat fialed: ");
 		return -1;
 	}else{
-	
+
 		pw = getpwuid(s.st_uid);
 		gr = getgrgid(s.st_gid);
 		mode2string(s.st_mode, mode);
@@ -225,19 +225,19 @@ main(int argc, char *argv[])
 		printf("st_blocks:  %ld\n", s.st_blocks);
 		printf("st_atime:   %s", ctime(&s.st_atime) );
 		printf("st_mtime:   %s", ctime(&s.st_mtime) );
-		printf("st_ctime:   %s", ctime(&s.st_ctime) );	
+		printf("st_ctime:   %s", ctime(&s.st_ctime) );
 		printf("\n");
-		
-		
+
+
 	/*	if(pw != NULL) free(pw);
 		if(gr != NULL) free(gr); */
-	}		
+	}
 
 	srand(time(NULL));
 
 	while(1)
 	{
-	
+
 		dup_fd[0] = dc_open(fname, O_RDONLY);
 		if(dup_fd[0] < 0 ) {
 			dc_error("failed to open file:");
@@ -269,7 +269,7 @@ main(int argc, char *argv[])
 			printf("st_blocks:  %ld\n", s.st_blocks);
 			printf("st_atime:   %s", ctime(&s.st_atime) );
 			printf("st_mtime:   %s", ctime(&s.st_mtime) );
-			printf("st_ctime:   %s", ctime(&s.st_ctime) );	
+			printf("st_ctime:   %s", ctime(&s.st_ctime) );
 			printf("\n");
 
 
@@ -283,12 +283,12 @@ main(int argc, char *argv[])
 			dc_error("dc_dup failed");
 			exit(1);
 		}
-		
+
 
 		size = dc_lseek(dup_fd[0], (off_t)0, SEEK_END);
 		dc_lseek(dup_fd[1], (off_t)0, SEEK_SET);
 
-	
+
 		thread_task();
 
 		dc_close(dup_fd[0]);

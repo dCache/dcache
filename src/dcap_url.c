@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: dcap_url.c,v 1.17 2005-08-15 10:05:03 tigran Exp $
  */
@@ -49,10 +49,10 @@ dcap_url* dc_getURL( const char *path )
 	char *domain;
 	struct servent *se;
 	short port;
-	
-	
+
+
 	if(path == NULL) {
-		dc_errno = DEURL;	
+		dc_errno = DEURL;
 		return NULL;
 	}
 
@@ -86,19 +86,19 @@ dcap_url* dc_getURL( const char *path )
 	url->file = NULL;
 	url->prefix = NULL;
 	url->type= type;
-	
+
 
 	if( s != path ) {
-		url->prefix = (char *)xstrndup(path, s - path );		
+		url->prefix = (char *)xstrndup(path, s - path );
 	}else{
 		s = (char *)path;
 	}
-	
+
 	/* now s is a pointer to url without prefix */
 
 	s = (char *)(s + strlen(DCAP_PREFIX));
 
-	
+
 	/* w points to a first / in the path */
 	w = strchr(s, '/');
 	if(w == NULL) {
@@ -106,14 +106,14 @@ dcap_url* dc_getURL( const char *path )
 		return NULL;
 	}
 
-	url->file = strdup(w + 1);	
+	url->file = strdup(w + 1);
 
-	host_len = w-s;	
+	host_len = w-s;
 
     if( host_len != 0 ) {
 
 		host = xstrndup(s, host_len );
-		
+
 		if(host == NULL) {
 			dc_debug(DC_ERROR, "Failed to duplicate host in url %s", path);
 			free(url);
@@ -132,12 +132,12 @@ dcap_url* dc_getURL( const char *path )
 			url->host = malloc(host_len + 1 + 8);
 			url->host[0] = '\0';
 			sprintf(url->host, "%s:%d", host, port );
-			free(host);			
+			free(host);
 		}else{
 			url->host = host;
 		}
-		
-		
+
+
 	}else{
 
 		if( url->type == URL_PNFS ) {
@@ -152,10 +152,10 @@ dcap_url* dc_getURL( const char *path )
 			w = (char *) domain + strlen(domain);
 		}
 
-		host_len = w - domain ;	
+		host_len = w - domain ;
 		def_door_len = strlen(DEFAULT_DOOR);
-		
-		
+
+
 		url->host = (char *)malloc( def_door_len + host_len + host_len >  0 ? 2 : 1);
 		if(url->host == NULL) {
 			dc_debug(DC_ERROR, "Failed to allocate hostname for %s", path);
@@ -168,8 +168,8 @@ dcap_url* dc_getURL( const char *path )
 			memcpy(url->host + def_door_len, ".", 1);
 		}
 		memcpy(url->host + def_door_len +1, domain, host_len);
-		url->host[host_len + def_door_len +1] = '\0';		
-				
+		url->host[host_len + def_door_len +1] = '\0';
+
 	}
 
 	return url;
@@ -178,13 +178,13 @@ dcap_url* dc_getURL( const char *path )
 char * url2config( dcap_url *url , char *configLine )
 {
 	configLine[0] = '\0';
-	
+
 	sprintf(configLine, "%s", url->host);
-	
+
 	if ( url->prefix != NULL ) {
 		sprintf(configLine, "%s:lib%sTunnel.so", configLine, url->prefix );
-	}	
-	
-	return configLine;	
+	}
+
+	return configLine;
 }
 

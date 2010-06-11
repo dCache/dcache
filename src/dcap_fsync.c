@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: dcap_fsync.c,v 1.5 2004-11-01 19:33:29 tigran Exp $
  */
@@ -31,7 +31,7 @@ int dc_fsync(int fd)
 #ifdef DC_CALL_TRACE
 	showTraceBack();
 #endif
-	
+
 	node = get_vsp_node(fd);
 	if( node == NULL ) {
 #ifdef WIN32
@@ -57,14 +57,14 @@ int dc_real_fsync( struct vsp_node *node)
 
 
 	if(  (node->ahead != NULL) && ( node->ahead->buffer != NULL ) && node->ahead->isDirty ) {
-		
+
 		dc_debug(DC_IO, "[%d] Syncing %ld bytes.", node->dataFd, node->ahead->used);
-			
+
 		if( dc_real_write( node, NULL, 0) < 0 ) {
 			rc = -1;
 		}
 	}
-	
+
 	return rc;
 }
 

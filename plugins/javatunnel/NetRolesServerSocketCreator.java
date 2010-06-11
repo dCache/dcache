@@ -8,15 +8,15 @@ import java.net.ServerSocket;
 import java.lang.reflect.*;
 
 public class NetRolesServerSocketCreator {
-        
-    
-    public  NetRolesServerSocketCreator(String[] args) {                
+
+
+    public  NetRolesServerSocketCreator(String[] args) {
 
     }
-    
-    
-    
-    
+
+
+
+
     public ServerSocket createServerSocket( int port ) throws java.io.IOException {
         return new  NetRolesServerSocket(port);
     }

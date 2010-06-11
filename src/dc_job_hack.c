@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: dc_job_hack.c,v 1.2 2004-11-01 19:33:28 tigran Exp $
  */

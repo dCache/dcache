@@ -61,7 +61,7 @@ int max( int a, int b)
 
 int min( int a, int b)
 {
-	return a < b ? a : b; 
+	return a < b ? a : b;
 }
 
 
@@ -321,7 +321,7 @@ xyzprintf (struct state *state, const char *char_format, va_list ap)
 	else
 	  break;
       }
-      
+
       if((flags & space_flag) && (flags & plus_flag))
 	flags ^= space_flag;
 
@@ -377,7 +377,7 @@ xyzprintf (struct state *state, const char *char_format, va_list ap)
 	len += append_string(state,
 			     va_arg(ap, unsigned char*),
 			     width,
-			     prec, 
+			     prec,
 			     flags);
 	break;
       case 'd' :
@@ -550,7 +550,7 @@ sockaddr_to_gss_address (const struct sockaddr *sa,
 	struct sockaddr_in *sin;
 
     switch (sa->sa_family) {
-    case AF_INET : 
+    case AF_INET :
 		sin = (struct sockaddr_in *)sa;
 
 		gss_addr->length = 4;
