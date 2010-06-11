@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: str2errno.c,v 1.2 2005-04-25 07:56:37 tigran Exp $
  */
@@ -18,14 +18,14 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
- 
+
 typedef struct {
 	const char *errStr;
 	int errNo;
 } errnoMap;
 
 
-static errnoMap eMap[] = {	
+static errnoMap eMap[] = {
 
 	{ "EOK",	0 },	/* Ok */
 	{ "EPERM",	1 },	/* Operation not permitted */
@@ -63,24 +63,24 @@ static errnoMap eMap[] = {
 	{ "EDOM",	33 },	/* Math argument out of domain of func */
 	{ "ERANGE",	34 },	/* Math result not representable */
 
-	{ NULL, -1 } 
+	{ NULL, -1 }
 };
 
 
 int str2errno( const char *errStr)
 {
-	
-	
+
+
 	int i;
 	int err = EIO; /* default error: I/O error */
-	
+
 	for( i = 0; eMap[i].errStr != NULL; i++ ) {
 		if( strcmp(errStr, eMap[i].errStr) == 0 ) {
 			err = eMap[i].errNo;
 		}
 	}
-	
-	
+
+
 	return err;
 }
 
@@ -92,14 +92,14 @@ int str2errno( const char *errStr)
 #ifdef _MAIN_
 
 int main( int argc, char *argv[] )
-{	
-	
+{
+
 	if( argc != 2 ) {
 		errno = EAGAIN;
 	}else{
 		errno = str2errno(argv[1]);
 	}
-	
+
 	perror("str2errno ");
 }
 

@@ -12,7 +12,7 @@
                          define the locations and files for dCap
   -->
 
-  <!-- Output Files 
+  <!-- Output Files
        For each of these jar files there are targets below -->
 
   <property name="javatunnel.jar" location="${classesDir}/javatunnel.jar" />
@@ -41,7 +41,7 @@
     <or>
       <filename name="**/cog-jglobus.jar"/>
       <filename name="**/cells.jar"/>
-    </or>      
+    </or>
   </selector>
 
   <path id="javatunnel.classpath">
@@ -67,14 +67,14 @@
     <!-- One cvs checkout for each dependency -->
     <cvs command="checkout" cvsroot="${cvs.cvsroot}" cvsrsh="ssh" dest="${internalLibDir}"
       package="external/globus" />
-    
+
     <cvs command="checkout" cvsroot="${cvs.cvsroot}" cvsrsh="ssh" dest="${internalLibDir}"
       package="external/cog" />
-    
+
     <move file="${internalLibDir}/external/globus" todir="${internalLibDir}" />
     <move file="${internalLibDir}/external/cog" todir="${internalLibDir}" />
     <delete dir="${internalLibDir}/external" />
-    
+
   </target>
 
   <!--
@@ -135,7 +135,7 @@
     </apply>
 
     <echo>Unpacking to ${globus.libDir}/globus-gsi</echo>
-    
+
     <mkdir dir="${globus.libDir}/globus-gsi" />
     <apply dir="${globus.libDir}/globus-gsi" executable="tar" verbose="true" parallel="false">
       <arg value="xzf" />
@@ -158,11 +158,11 @@
 
     <delete dir="${globus.untaredTo}" />
     <delete dir="${cog.untaredTo}" />
-    
+
   </target>
 
 
-  <!-- 
+  <!--
              Targets for javatunnel.jar
   -->
 
@@ -174,7 +174,7 @@
 
     <!-- Debug/Info only -->
     <echo>Classpath of javatunnel: ${javatunnel.classpath.value} </echo>
-    
+
     <!-- This is a list of classes which are needed from external libs -->
     <checkclass classname="org.apache.log4j.Logger" classpath="${javatunnel.classpath.value}" />
     <checkclass classname="org.globus.gsi.GlobusCredential" classpath="${javatunnel.classpath.value}" />
@@ -183,7 +183,7 @@
         The following classes are missing in the classpath.
         They might be fetchted from CVS with 'ant libs.cvs'.
     </checkclassfail>
-   
+
   </target>
 
   <!-- Compile -->
@@ -191,11 +191,11 @@
 
   <target name="javatunnel.compile" depends="prepare,javatunnel.depend" description="Compile Java code for javatunnel.jar" >
 
-    <javac destdir="${buildDir}" 
-           classpath="${javatunnel.classpath.value}" 
-           source="${javac.source}" 
-           target="${javac.target}" 
-           debug="${javac.debug}" 
+    <javac destdir="${buildDir}"
+           classpath="${javatunnel.classpath.value}"
+           source="${javac.source}"
+           target="${javac.target}"
+           debug="${javac.debug}"
            verbose="${javac.verbose}">
       <src path="${javatunnel.sourceDir}" />
       <and>
@@ -219,14 +219,14 @@
 
   </target>
 
-  <!-- 
+  <!--
              Targets for dcap libraries
   -->
 
   <!-- Compile -->
- 
+
   <target name="dcap.compile" depends="prepare,lib.globus.untar" description="Compile dCap client libraries" >
-  
+
     <property name="dcap.distDir" location="${distDir}/dcap" />
 
     <echo>make clean</echo>

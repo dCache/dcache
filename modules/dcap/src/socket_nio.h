@@ -9,12 +9,12 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: socket_nio.h,v 1.5 2004-11-01 19:33:30 tigran Exp $
  */
- 
+
 #ifndef DCAP_SOCKET_NIO
 #define DCAP_SOCKET_NIO
 #include <sys/types.h>

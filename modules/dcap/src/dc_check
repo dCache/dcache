@@ -3,7 +3,7 @@
 #
 dccp -P -t -1 $*
 
-if test $? -eq 0 
+if test $? -eq 0
 then
     r="passed"
 else

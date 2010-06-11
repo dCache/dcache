@@ -8,46 +8,46 @@ import java.net.*;
 import java.io.*;
 
 public class NetRolesSocket extends Socket {
-    
+
     private String _user = "nobody@NOWHERE" ;
-    
+
     NetRolesSocket() throws SocketException {
-        super();        
+        super();
     }
-    
+
     NetRolesSocket(SocketImpl impl) throws SocketException {
-        super(impl);        
+        super(impl);
     }
-    
+
     NetRolesSocket(InetAddress address, int port)
     throws IOException {
         super(address, port);
     }
-    
-    
+
+
     NetRolesSocket(InetAddress address, int port, InetAddress localAddr, int localPort)
     throws IOException {
-        super(address, port, localAddr, localPort);        
+        super(address, port, localAddr, localPort);
     }
-    
+
     NetRolesSocket(String host, int port)
     throws UnknownHostException, IOException {
-        super(host, port);        
+        super(host, port);
     }
-    
+
     NetRolesSocket(String host, int port, InetAddress localAddr, int localPort)
     throws IOException {
         super(host, port, localAddr, localPort);
-    }            
+    }
 
     public void setUserPrincipal(String user) {
         int i = user.indexOf(':');
         _user = user.substring(1,i);
-    }    
-    
-    
+    }
+
+
     public String getUserPrincipal() {
         return _user;
-    }    
-    
+    }
+
 }

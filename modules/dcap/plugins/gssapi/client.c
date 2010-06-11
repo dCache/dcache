@@ -32,11 +32,11 @@ main(int argc, char *argv[])
 	int n;
 	char c;
 	char buffer[512];
-	
+
 	if(argc != 3 ) {
 		printf("Usage: %s <host> <port>\n", argv[0]);
 		exit(1);
-		
+
 	}
 
 	fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -70,8 +70,8 @@ main(int argc, char *argv[])
 
 
 	printf("Done %d %d\n", fd, eInit(fd));
-	
-	
+
+
 	while(1) {
 		eWrite(fd, "Hello Java\n", 11);
 		while(1) {

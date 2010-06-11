@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: dcap_preload.c,v 1.39 2006-09-26 07:47:27 tigran Exp $
  */
@@ -26,32 +26,32 @@
 #include <sys/mman.h>
 
 
-/* 
+/*
  * some applications do not close the file, which they have opned
  */
 static int cleanupEnabled;
-extern void dc_closeAll(); 
+extern void dc_closeAll();
 
 
 /* Replacing system calls with our if we are PRELOAD library */
- 
+
 int open(const char *path, int flags,...)
 {
 	int rc;
 	mode_t mode = 0;
 	va_list    args;
-	
+
 	if (flags & O_CREAT) {
 		va_start(args, flags);
 		mode = va_arg(args, mode_t);
 		va_end(args);
-	}	
+	}
 
 	rc =  dc_open(path, flags, mode);
-	
+
 	dc_debug(DC_TRACE, "Running preloaded open for %s, fd = %d", path, rc);
 	if( (rc >=0 ) && ! cleanupEnabled) {
-		dc_debug(DC_INFO, "Enabling cleanup atexit");		
+		dc_debug(DC_INFO, "Enabling cleanup atexit");
 		++cleanupEnabled;
 		atexit( dc_closeAll );
 	}
@@ -61,10 +61,10 @@ int open(const char *path, int flags,...)
 int creat(const char *path, mode_t mode)
 {
 	int rc;
-	
+
 	rc = dc_creat(path, mode);
 	dc_debug(DC_TRACE, "Running preloaded creat for %s, fd = %d", path, rc);
-	
+
 	return rc;
 }
 
@@ -199,7 +199,7 @@ ssize_t readv(int fd, const struct iovec *iov, int iovcnt)
 	dc_debug(DC_TRACE, "Running preloaded readv for [%d]", fd);
 	return dc_readv(fd, iov, iovcnt);
 }
- 
+
 ssize_t  pread(int fd, void  *buff,  size_t n , off_t off)
 {
 	dc_debug(DC_TRACE, "Running preloaded pread for [%d]", fd);
@@ -244,7 +244,7 @@ int fsync(int fd)
 
 int close(int fd)
 {
-	dc_debug(DC_TRACE, "Running preloaded close for [%d]", fd);	
+	dc_debug(DC_TRACE, "Running preloaded close for [%d]", fd);
 	return dc_close(fd);
 }
 
@@ -302,10 +302,10 @@ FILE *fopen(const char *path, const char *mode)
 {
 	dc_debug(DC_TRACE, "Running preloaded fopen for [%s, %s]", path, mode);
 	if(!cleanupEnabled) {
-		dc_debug(DC_INFO, "Enabling cleanup atexit");		
+		dc_debug(DC_INFO, "Enabling cleanup atexit");
 		++cleanupEnabled;
 		atexit( dc_closeAll );
-	}	
+	}
 	return dc_fopen(path, mode);
 
 }
@@ -435,7 +435,7 @@ int chown( const char *path, uid_t uid, gid_t gid)
         dc_debug(DC_TRACE, "Running preloaded chown for path %s,  %d:%d", path, uid, gid);
         return dc_chown(path, uid, gid);
 }
-                                                                                
+
 void clearerr(FILE *stream)
 {
 	dc_errno = DEOK;

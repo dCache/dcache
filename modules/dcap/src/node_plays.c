@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: node_plays.c,v 1.34 2006-09-22 13:25:46 tigran Exp $
  */
@@ -40,7 +40,7 @@ static struct vsp_node *lastNode = NULL;
 void node_dupToAll(struct vsp_node *node, int fd)
 {
 	unsigned int i;
-	
+
 	for( i = 0; i < node->reference; i++) {
 		if( node->fd_set[i] != fd ) {
 			node->fd_set[i] = dup2(fd, node->fd_set[i] );
@@ -62,17 +62,17 @@ void node_detach_fd( struct vsp_node *node, int fd)
 	unsigned int i;
 
 	for( i = 0; i < node->reference; i++) {
-		
+
 		if( node->fd_set[i] == fd ) {
 			--node->reference;
-			
+
 			if( node->reference != 0 ) {
 				node->fd_set[i] = node->fd_set[node->reference];
 			}
-			
+
 			node->dataFd = fd;
 		}
-	
+
 	}
 
 
@@ -86,15 +86,15 @@ int node_init(struct vsp_node *node, const char *path)
 	node->ahead = NULL;
 	node->fd = -1;
 	node->dataFd = -1;
-	
+
 	node->asciiCommand = 0;
-	
+
 	node->pos = 0;
 	node->whence = -1;
 	node->seek = 0;
-	
+
 	node->stagelocation = NULL;
-	
+
 	node->unsafeWrite = getenv("DCACHE_USE_UNSAFE") != NULL ? 1 : 0;
 	node->url = NULL;
 	node->tunnel = NULL;
@@ -104,14 +104,14 @@ int node_init(struct vsp_node *node, const char *path)
 
 	node->uid = -1;
 	node->gid = -1;
-	
+
 	node->reference = 0;
-	
-	node->sum = NULL;	
-	
+
+	node->sum = NULL;
+
 	node->file_name = xbasename(path);
 	node->directory = xdirname(path);
-	
+
 	node->isPassive = 0;
 
 	return 0;
@@ -123,7 +123,7 @@ new_vsp_node(const char *path)
 {
 
 	struct vsp_node *node;
-	
+
 	/* allocate and clear memory */
 	node = (struct vsp_node *) calloc(1,sizeof(struct vsp_node));
 
@@ -138,7 +138,7 @@ new_vsp_node(const char *path)
 		return NULL;
 	}
 
-	rw_wrlock(&nodeRWlock);	
+	rw_wrlock(&nodeRWlock);
 
 	if (vspNode == NULL) {
 		vspNode = node;
@@ -147,24 +147,24 @@ new_vsp_node(const char *path)
 		node->prev = lastNode;
 		lastNode->next = node;
 	}
-			
+
 	lastNode = node;
-	
+
 	m_init(&node->mux);
 	m_lock(&node->mux);
-	rw_unlock(&nodeRWlock);	
-	
+	rw_unlock(&nodeRWlock);
+
 	return node;
 }
 
-struct vsp_node * 
+struct vsp_node *
 delete_vsp_node(int fd)
 {
 
 	struct vsp_node *node;
 	unsigned int i;
 
-	rw_wrlock(&nodeRWlock);	
+	rw_wrlock(&nodeRWlock);
 
 	node = vspNode;
 
@@ -172,19 +172,19 @@ delete_vsp_node(int fd)
 
 			for( i = 0; i < node->reference; i++ ) {
 				if (node->fd_set[i] == fd) {
-				
+
 				node_detach_fd(node, fd);
-				
+
 				real_node_unplug(node);
 				m_lock(&node->mux);
-				rw_unlock(&nodeRWlock);	
+				rw_unlock(&nodeRWlock);
 
 				return node;
 			}
 		}
 		node = node->next;
 	}
-	
+
 	/* node not exist */
 	rw_unlock(&nodeRWlock);
 
@@ -203,10 +203,10 @@ get_vsp_node(int fd)
 	node = vspNode;
 
 	while (node != NULL) {
-	
+
 		for( i = 0; i < node->reference; i++ ) {
 			if (node->fd_set[i] == fd) {
-				
+
 				node->dataFd = fd;
 				m_lock(&node->mux);
 				rw_unlock(&nodeRWlock);
@@ -217,7 +217,7 @@ get_vsp_node(int fd)
 		node = node->next;
 	}
 
-	rw_unlock(&nodeRWlock);	
+	rw_unlock(&nodeRWlock);
 
 	return NULL;
 
@@ -236,7 +236,7 @@ void node_destroy( struct vsp_node *node)
 		m_unlock(&node->mux);
 		return;
 	}
-	
+
 	dc_debug(DC_INFO, "[%d] destroing node", node->dataFd);
 
 
@@ -251,8 +251,8 @@ void node_destroy( struct vsp_node *node)
 			free( node->url->prefix);
 		}
 		free(node->url);
-	}	
-	
+	}
+
 	if(node->ipc != NULL) {
 		free(node->ipc);
 	}
@@ -260,12 +260,12 @@ void node_destroy( struct vsp_node *node)
 	if( node->stagelocation != NULL ) {
 		free(node->stagelocation);
 	}
-	
+
 	if(node->ahead != NULL) {
 		if(node->ahead->buffer != NULL) {
 			free(node->ahead->buffer);
 		}
-		
+
 		free(node->ahead);
 	}
 
@@ -274,7 +274,7 @@ void node_destroy( struct vsp_node *node)
 		free( node->sum );
 	}
 
-	m_unlock(&node->mux);	
+	m_unlock(&node->mux);
 	free(node);
 
 }
@@ -285,7 +285,7 @@ void node_unplug( struct vsp_node *node)
 
 
 	rw_wrlock(&nodeRWlock);
-	
+
 	real_node_unplug(node);
 
 	rw_unlock(&nodeRWlock);
@@ -300,13 +300,13 @@ static void real_node_unplug( struct vsp_node *node)
 
 
 	if(node == NULL) return;
-	
-	
+
+
 	if( node->reference > 0 ) {
 		dc_debug(DC_INFO, "[%d] reference %d unplug canceled", node->dataFd, node->reference);
 		return;
 	}
-	
+
 	dc_debug(DC_INFO, "[%d] unpluging node", node->dataFd);
 
 
@@ -332,31 +332,31 @@ static void real_node_unplug( struct vsp_node *node)
 
 fdList getAllFD()
 {
-	
+
 	struct vsp_node *node;
 	int *all = NULL;
 	int count;
 	int nc;
 	int i;
 	fdList list;
-	
-	rw_wrlock(&nodeRWlock);	
+
+	rw_wrlock(&nodeRWlock);
 
 
-	/* find out houw many fd's at all */		
+	/* find out houw many fd's at all */
 	node = vspNode;
 
 	count = 0;
 	while (node != NULL) {
-		count +=  node->reference;		
+		count +=  node->reference;
 		node = node->next;
 	}
-	
-	
+
+
 	if( count > 0 ) {
 		all = (int *)malloc( count*sizeof(int) );
 		if( all != NULL ) {
-			
+
 			node = vspNode;
 			nc = 0;
 			while( node != NULL ) {
@@ -365,14 +365,14 @@ fdList getAllFD()
 					++nc;
 				}
 				node = node->next;
-			}						
+			}
 		}
 	}
-			
+
 	rw_unlock(&nodeRWlock);
-	
+
 	list.len = count;
 	list.fds = all;
-		
-	return list;		
+
+	return list;
 }

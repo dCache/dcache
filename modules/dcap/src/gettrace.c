@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: gettrace.c,v 1.3 2004-11-01 19:33:29 tigran Exp $
  */
@@ -79,7 +79,7 @@ asymbol **read_bfd_stuff(bfd * abfd)
     if (storage_needed < 0) {
 		return 0;
 	}
-	
+
 	if (storage_needed == 0) {
 		return 0;
 	}
@@ -124,7 +124,7 @@ static int printStackInfo(const char *address, int i)
 
     if (!func) {
 		func = "<unknown-function>";
-    } else {  
+    } else {
 		if ( (strstr(func, "_start") )|| (strstr(func, "main") ) ) {
 			ret = 0;
 		}
@@ -154,7 +154,7 @@ static void init_traceBack()
 
 	    mcheck_init_bfd(exename);
 		++init;
-		
+
 	}
 }
 

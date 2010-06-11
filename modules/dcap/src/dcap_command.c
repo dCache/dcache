@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: dcap_command.c,v 1.29 2006-09-26 07:40:16 tigran Exp $
  */
@@ -49,7 +49,7 @@ int do_command_fail(char **argv, asciiMessage *result)
    }else{
         dc_setServerError(argv[2]);
    }
-   
+
    /* set errno to errno  recived from  door */
    if( argv[3] != NULL ) {
         errno = str2errno(argv[3]);
@@ -102,7 +102,7 @@ int do_command_ok(char **argv, asciiMessage *result)
 
    result->type = ASCII_OK;
    dc_debug(DC_INFO, "Server reply: %s destination [%d].", argv[0], result->destination);
-   return 0;   
+   return 0;
 }
 
 int do_command_retry(char **argv, asciiMessage *result)
@@ -141,7 +141,7 @@ int do_command_stat(char **argv, asciiMessage *result)
 #endif
 	string2stat64( ( const char **)argv, s);
 	result->msg = (char *)s;
-	
+
 	return 0;
 }
 
@@ -150,21 +150,21 @@ int do_command_shutdown(char **argv, asciiMessage *result)
    result->type = ASCII_SHUTDOWN;
    dc_debug(DC_ERROR, "Control line going to shutdown.");
    return 0;
-} 
+}
 
 
 int do_command_connect(char **argv, asciiMessage *result)
-{	
+{
 	poolConnectInfo *pool;
 	dc_debug(DC_INFO, "'connect to %s:%s' received for [%d]", argv[1], argv[2], result->destination);
-	
+
 	pool = (poolConnectInfo *)malloc( sizeof(poolConnectInfo) );
 
 
 	pool->hostname = strdup(argv[1]);
 	pool->port = atoi(argv[2]);
 	pool->challenge = strdup(argv[3]);
-	
+
 
 	result->msg = (char *)pool;
 	result->type = ASCII_CONNECT;

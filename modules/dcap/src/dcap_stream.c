@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: dcap_stream.c,v 1.21 2006-08-30 09:54:02 tigran Exp $
  */
@@ -62,7 +62,7 @@ int dc_fclose(FILE *fp)
 
 	int status;
 	struct vsp_node *node;
-	
+
 	node = get_vsp_node(FILE_NO(fp));
 	if( node == NULL ) {
 		return system_fclose(fp);
@@ -70,7 +70,7 @@ int dc_fclose(FILE *fp)
 
 	/* FIXME */
 	m_unlock(&node->mux);
-	
+
 	status =  dc_close(FILE_NO(fp));
 	free((char *)fp);
 
@@ -81,12 +81,12 @@ int dc_feof(FILE *fp)
 {
 	int     rc 	;
 	struct vsp_node *node;
-	
+
 	node = get_vsp_node(FILE_NO(fp));
 	if( node == NULL ) {
 		return system_feof(fp);
 	}
-#if defined HAVE_FILE__FLAG	
+#if defined HAVE_FILE__FLAG
 #if defined(__linux__) || defined(__GNU__) || defined(__FreeBSD_kernel__) || defined(__CYGWIN__)
 	if ( ((FILE *)fp)->_flags & _IO_EOF_SEEN ) {
 #else
@@ -98,8 +98,8 @@ int dc_feof(FILE *fp)
 	}
 #endif
 	m_unlock(&node->mux);
-	return rc ; 
-	
+	return rc ;
+
 }
 
 FILE   *dc_fopen64(const char *file, const char *mode);
@@ -109,24 +109,24 @@ FILE   *dc_fopen(const char *file, const char *mode)
 	return dc_fopen64(file, mode);
 }
 
-FILE   *dc_fopen64(const char *file, const char *mode) 
+FILE   *dc_fopen64(const char *file, const char *mode)
 {
 	int fd, rw, oflags ;
 	FILE *fp;
 
 	if( isPnfs( file )  || isUrl(file) ) {
 
-		rw= ( mode[1] == '+' ) ; 
+		rw= ( mode[1] == '+' ) ;
 		switch(*mode) {
 			case 'a':
 				oflags= O_APPEND | O_CREAT | ( rw ? O_RDWR : O_WRONLY ) ;
-				break ; 
+				break ;
 			case 'r':
 				oflags= rw ? O_RDWR : O_RDONLY ;
-				break ; 
+				break ;
 			case 'w':
-				oflags= O_TRUNC | O_CREAT | ( rw ? O_RDWR : O_WRONLY ) ; 
-				break ; 
+				oflags= O_TRUNC | O_CREAT | ( rw ? O_RDWR : O_WRONLY ) ;
+				break ;
 			default:
 				return NULL ;
 		}
@@ -165,7 +165,7 @@ FILE   *dc_fopen64(const char *file, const char *mode)
 	return fp;
 }
 
-FILE   *dc_fdopen(int fd, const char *mode) 
+FILE   *dc_fdopen(int fd, const char *mode)
 {
 
 	FILE *fp;
@@ -175,7 +175,7 @@ FILE   *dc_fdopen(int fd, const char *mode)
 	if( node == NULL ) {
 		 return system_fdopen(fd, mode);
 	}
- 
+
 
 	fp = (FILE *)malloc( sizeof(FILE) );
 	if( fp == NULL ) {
@@ -201,11 +201,11 @@ FILE   *dc_fdopen(int fd, const char *mode)
 	return fp;
 }
 
-size_t dc_fread(void *ptr, size_t size, size_t items, FILE *fp)  
+size_t dc_fread(void *ptr, size_t size, size_t items, FILE *fp)
 {
 	int	rc ;
 	struct vsp_node *node;
-	
+
 	node = get_vsp_node(FILE_NO(fp));
 	if( node == NULL ) {
 		return system_fread( ptr, size, items, fp);
@@ -220,27 +220,27 @@ size_t dc_fread(void *ptr, size_t size, size_t items, FILE *fp)
 			((FILE *)fp)->_flags |= _IO_EOF_SEEN;
 #else
 			((FILE *)fp)->_flag |= _IOEOF;
-#endif		
+#endif
 #endif
 			rc = 0;
-			break ; 
+			break ;
 		default:
 			rc= (rc+size-1)/size ;
-			break ; 
+			break ;
 	}
-	
+
 	m_unlock(&node->mux);
-	return rc ; 
+	return rc ;
 }
 
 
 
-int dc_fseek(FILE *fp, long offset, int whence)  
-{	
+int dc_fseek(FILE *fp, long offset, int whence)
+{
 	return dc_fseeko(fp, (off_t)offset, whence);
 }
 
-int dc_fseeko(FILE *fp, off_t offset, int whence)  
+int dc_fseeko(FILE *fp, off_t offset, int whence)
 {
         off_t rc;
         struct vsp_node *node;
@@ -262,12 +262,12 @@ int dc_fseeko(FILE *fp, off_t offset, int whence)
 }
 
 #ifdef HAVE_OFF64_T
-int dc_fseeko64(FILE *fp, off64_t offset, int whence)  
+int dc_fseeko64(FILE *fp, off64_t offset, int whence)
 {
 
 	off64_t rc;
 	struct vsp_node *node;
-	
+
 	node = get_vsp_node(FILE_NO(fp));
 	if( node == NULL ) {
 		return system_fseeko64( fp, offset, whence);
@@ -280,7 +280,7 @@ int dc_fseeko64(FILE *fp, off64_t offset, int whence)
 
  	rc = dc_real_lseek(node,offset,whence);
 	m_unlock(&node->mux);
-	
+
 	return rc < 0 ? -1 : 0;
 }
 #endif
@@ -312,9 +312,9 @@ off64_t dc_ftello64(FILE *fp)
 
 	off64_t rc;
 	struct vsp_node *node;
-	
+
 	node = get_vsp_node(FILE_NO(fp));
-	
+
 	if( node == NULL ) {
 		return system_ftello64(fp);
 	}
@@ -332,12 +332,12 @@ off64_t dc_ftello64(FILE *fp)
 }
 #endif
 
-size_t dc_fwrite(const void *ptr, size_t size, size_t items, FILE *fp) 
+size_t dc_fwrite(const void *ptr, size_t size, size_t items, FILE *fp)
 {
 	int rc ;
-	
+
 	struct vsp_node *node;
-	
+
 	node = get_vsp_node(FILE_NO(fp));
 	if( node == NULL ) {
 		return system_fwrite( ptr, size, items, fp);
@@ -354,24 +354,24 @@ size_t dc_fwrite(const void *ptr, size_t size, size_t items, FILE *fp)
 			((FILE *)fp)->_flag |= _IOERR ;
 #endif
 #endif
-			rc= 0 ; 
-			break ; 
+			rc= 0 ;
+			break ;
 		case 0:
 #ifdef HAVE_FILE__FLAG
 #if defined(__linux__) || defined(__GNU__) || defined(__FreeBSD_kernel__) || defined(__CYGWIN__)
-			((FILE *)fp)->_flags |= _IO_EOF_SEEN ; 
+			((FILE *)fp)->_flags |= _IO_EOF_SEEN ;
 #else
-			((FILE *)fp)->_flag |= _IOEOF ; 
+			((FILE *)fp)->_flag |= _IOEOF ;
 #endif
 #endif
-			break ; 
+			break ;
 		default:
 			rc= (rc+size-1)/size ;
-			break ; 
+			break ;
 	}
-	
+
 	m_unlock(&node->mux);
-	return rc ; 
+	return rc ;
 }
 
 
@@ -379,16 +379,16 @@ int dc_ferror(FILE *fp)
 {
 
 	struct vsp_node *node;
-	
+
 	node = get_vsp_node(FILE_NO(fp));
 	if( node == NULL ) {
 		return system_ferror(fp);
 	}
-	
+
 
 	m_unlock(&node->mux);
-	return dc_errno; 
-	
+	return dc_errno;
+
 }
 
 
@@ -396,20 +396,20 @@ int dc_fflush(FILE *fp)
 {
 
 	struct vsp_node *node;
-	
+
 	if(fp == NULL ) {
 		return system_fflush(fp);
 	}
-	
+
 	node = get_vsp_node(FILE_NO(fp));
 	if( node == NULL ) {
 		return system_fflush(fp);
 	}
 
 	m_unlock(&node->mux);
-	return 0; 
-	
-}  
+	return 0;
+
+}
 
 
 char * dc_fgets(char *s, int size, FILE *fp)
@@ -419,7 +419,7 @@ char * dc_fgets(char *s, int size, FILE *fp)
 	char c;
 	int n;
 	char *rs;
-	
+
 	node = get_vsp_node(FILE_NO(fp));
 	if( node == NULL ) {
 		return system_fgets(s, size, fp);
@@ -432,16 +432,16 @@ char * dc_fgets(char *s, int size, FILE *fp)
 		 s[i++] = c;
 		 if( c == '\n' ) break;
 	}
-	
+
 	s[i] = '\0';
-	
-	
+
+
 	if( (n < 0)  || ( i == 0 ) ){
 		rs = NULL;
 	}else{
 		rs = s;
 	}
-	
+
 	m_unlock(&node->mux);
 	return rs;
 }
@@ -452,7 +452,7 @@ int dc_fgetc(FILE *fp)
 
 	unsigned char c;
 	int n;
-	
+
 	node = get_vsp_node(FILE_NO(fp));
 	if( node == NULL ) {
 		return system_fgetc(fp);

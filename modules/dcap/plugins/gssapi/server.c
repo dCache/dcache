@@ -118,7 +118,7 @@ main(int argc, char *argv[])
 
 
 	gss_check(sock );
-	
+
 	close(sock);
 	return 0;
 

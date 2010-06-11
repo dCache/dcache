@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: links.c,v 1.14 2004-11-01 19:33:30 tigran Exp $
  */
@@ -55,11 +55,11 @@ char *followLink( const char *path)
 	}
 
 	ret = realpath(path, real_path);
-	
+
 	if ( ret == NULL ) {
 		free(real_path);
 	}
-	
+
 	return ret;
 }
 

@@ -41,9 +41,9 @@ class TunnelInputStream extends InputStream {
 
         return (int) b;
     }
-	
+
 	public void close() throws IOException {
 		_in.close();
 	}
-    
+
 }

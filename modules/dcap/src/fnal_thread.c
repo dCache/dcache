@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: fnal_thread.c,v 1.6 2004-11-01 19:33:29 tigran Exp $
  */
@@ -54,16 +54,16 @@ thread_task(void *arg) {
 
         offset = 0;
         tid = ((int *)arg)[0];
-        printf("thread %d: fd = %d\n", tid, fd); 
+        printf("thread %d: fd = %d\n", tid, fd);
         ntrans = 0;
-		
-        
+
+
         while (1) {
 
                 rn = rand()%512 - 1 ;
                 offset += rn*sizeof(value) ;
                 if( offset >= size) {
-                  printf("offset >= size: break\n");                   
+                  printf("offset >= size: break\n");
                   break;
                 }
 
@@ -75,14 +75,14 @@ thread_task(void *arg) {
                 }
 
                 offset += sizeof(value);
-				
+
                 if( ( offset != value ) && ( offset != byteSwapL(value)) ) {
                         printf("[%d] PANIC: value! tranfer # = %d ",
 tid, ntrans);
                         printf("offset=%08X: value=%08X\n", offset,
 value);
                         fflush(stdout);
-						exit(11);                  
+						exit(11);
                         return NULL;
                 } else {
                  /*  printf("offset=%08X: %08X\n", offset, value); */
@@ -92,10 +92,10 @@ value);
                   printf("[%d]: %d transfers cur. offset=%08X\n", tid, ntrans, offset);
                   fflush(stdout);
                 }
-                
+
 
         }
-        
+
         return NULL;
 
 }
@@ -119,9 +119,9 @@ main(int argc, char *argv[])
         } else {
           fname = DATAFILE;
         }
-		
+
         dc_setDebugLevel(3);
-        
+
         fd = dc_open(fname, O_RDONLY);
         if(fd < 0 ) {
           dc_error("failed to open file:");
@@ -131,11 +131,11 @@ main(int argc, char *argv[])
 		  /* keep read-ahead buffer for speed */
           /* dc_noBuffering(fd); */
         }
-        
-		
+
+
 		size = dc_lseek(fd, 0L, SEEK_END);
 		dc_lseek(fd, 0L, SEEK_SET);
-				
+
         /* srand(time(NULL)); */
          tnum = atoi(argv[1]);
         tr = (pthread_t *)malloc(sizeof(pthread_t)*tnum);
@@ -147,14 +147,14 @@ main(int argc, char *argv[])
             pthread_create(&tr[i], NULL, thread_task, (void *)pargs);
             sleep(5);
           }
-          
+
           for(i = 0; i < tnum; i++) {
             pthread_join(tr[i], NULL);
           }
 
 
           ++counter;
-        
+
         }
 }
 

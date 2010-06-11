@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: socket_nio.c,v 1.10 2004-11-01 19:33:30 tigran Exp $
  */
@@ -38,7 +38,7 @@ int setNonBlocking(int fd)
 #else
 
 	int flag;
-	
+
 	flag = fcntl(fd, F_GETFL, 0);
 	if(flag == -1) {
 		flag = 0;
@@ -54,7 +54,7 @@ int clearNonBlocking(int fd)
 	return ioctlsocket(fd, FIONBIO, NULL);
 #else
 	int flag;
-	
+
 	flag = fcntl(fd, F_GETFL, 0);
 	if(flag == -1) {
 		flag = 0;
@@ -78,7 +78,7 @@ int  nio_connect(int  s,  const  struct  sockaddr   *name,   int namelen, unsign
 	dcap_set_alarm(timeout);
 
 #ifndef WIN32
-	rtime = times(&dumm);	
+	rtime = times(&dumm);
 #endif
 	rc = connect(s, name, namelen);
 	if((rc == -1) || isIOFailed ) {
@@ -88,7 +88,7 @@ int  nio_connect(int  s,  const  struct  sockaddr   *name,   int namelen, unsign
 		dc_debug(DC_TIME, "Connected in %2.2fs.", (times(&dumm) - rtime)/(double)sysconf(_SC_CLK_TCK ));
 #endif
 	}
-	
+
 	dcap_set_alarm(0);
 	return rc;
 }

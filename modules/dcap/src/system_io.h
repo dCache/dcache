@@ -10,8 +10,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: system_io.h,v 1.41 2006-09-26 07:41:11 tigran Exp $
  */
@@ -100,12 +100,12 @@ extern int system_fgetc( FILE *);
 #    define system_read(a,b,c) read(a,b,c)
 #    ifdef DCAP_NO_PREAD
          #include <stdio.h> /* for SEEK_SET */
-         static int system_pread(int a,void *b,int c, long d) { 
+         static int system_pread(int a,void *b,int c, long d) {
               lseek(a,d, SEEK_SET) ;
               return read(a, b, c);
          }
 
-         static int system_pwrite(int a,const void *b,int c, long d) { 
+         static int system_pwrite(int a,const void *b,int c, long d) {
               lseek(a,d, SEEK_SET) ;
               return write(a, b, c);
          }

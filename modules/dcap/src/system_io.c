@@ -10,12 +10,12 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: system_io.c,v 1.54 2006-09-26 07:41:11 tigran Exp $
  */
- 
+
 #ifdef LIBC_SYSCALLS
 
 #include <stdio.h>
@@ -141,7 +141,7 @@ static off64_t (*s_lseek64)    (int, off64_t, int);
 #endif
 static int (*s_close)          (int);
 
-/* 
+/*
  * A version number is included in the x86 SVR4 stat interface
  * so that SVR3 binaries can be supported
  */
@@ -227,8 +227,8 @@ static int initIfNeeded()
 	char *em;
 
 	sigset_t block_set;
-	
-	
+
+
 	/* we do not want to be interrupted */
 	sigemptyset(&block_set);
 	sigaddset(&block_set, SIGALRM);
@@ -236,10 +236,10 @@ static int initIfNeeded()
 
 	m_lock(&gLock);
 
-	if(handle != NULL) {		
+	if(handle != NULL) {
 		m_unlock(&gLock);
 /*		dc_debug(DC_TRACE, "System IO already initialized.");		*/
-		
+
 		/* restore signal handling */
 		sigprocmask(SIG_UNBLOCK, &block_set, NULL);
 		return 0;
@@ -251,26 +251,26 @@ static int initIfNeeded()
 	}
 	if( libname != NULL ) {
 		handle = dlopen( libname, RTLD_NOW | RTLD_GLOBAL);
-		if(handle == NULL) {		
+		if(handle == NULL) {
 			m_unlock(&gLock);
 /*			dc_debug(DC_ERROR, "Failed to initialize System IO: (%s).", dlerror()); */
 #if 0
 			perror(dlerror() );
 #endif
 			/* restore signal handling */
-			sigprocmask(SIG_UNBLOCK, &block_set, NULL); 
+			sigprocmask(SIG_UNBLOCK, &block_set, NULL);
 			return -1;
 		}
 	}
 	#ifdef RTLD_NEXT
 	else{
 		/* try to use other dynamic libraries to get requaried functions */
-		
+
 		handle = RTLD_NEXT;
 	}
 	#endif
 
-    
+
 	ASSIGN_FN( s_open,     convert, handle, OPEN_SYM);
 	ASSIGN_FN( s_read,     convert, handle, READ_SYM);
 	ASSIGN_FN( s_readv,    convert, handle, READV_SYM);
@@ -287,7 +287,7 @@ static int initIfNeeded()
 #ifdef HAVE_LSEEK64
 	ASSIGN_FN( s_lseek64,  convert, handle, LSEEK64_SYM);
 #endif
-	ASSIGN_FN( s_close,    convert, handle, CLOSE_SYM);		 
+	ASSIGN_FN( s_close,    convert, handle, CLOSE_SYM);
 	ASSIGN_FN( s_stat,     convert, handle, STAT64_SYM);
 	ASSIGN_FN( s_stat64,   convert, handle, STAT64_SYM);
 	ASSIGN_FN( s_lstat,    convert, handle, LSTAT_SYM);
@@ -338,9 +338,9 @@ static int initIfNeeded()
 	ASSIGN_FN( s_ferror,   convert, handle, "ferror");
 	ASSIGN_FN( s_fgets,    convert, handle, "fgets");
 	ASSIGN_FN( s_fgetc,    convert, handle, "fgetc");
-	
+
 	if( (s_open == NULL) || (s_read == NULL) ||
-		(s_pread == NULL) || (s_write == NULL) || 
+		(s_pread == NULL) || (s_write == NULL) ||
 		(s_pwrite == NULL) ||
 #ifdef HAVE_PREAD64
 		(s_pread64 == NULL) ||
@@ -349,28 +349,28 @@ static int initIfNeeded()
 		(s_pwrite64 == NULL) ||
 #endif
 #ifdef HAVE_LSEEK64
-		(s_lseek64 == NULL) || 
+		(s_lseek64 == NULL) ||
 #endif
 		(s_close == NULL) ||
-		(s_stat == NULL) || 
-		(s_fstat == NULL ) || 
-		(s_fsync == NULL) || 
-		(s_stat64 == NULL) || 
-		(s_fstat64 == NULL ) || 
-		(s_lstat == NULL) || 
-		(s_lstat64 == NULL ) || 
-		(s_dup == NULL) || 
-		(s_opendir == NULL) || 
+		(s_stat == NULL) ||
+		(s_fstat == NULL ) ||
+		(s_fsync == NULL) ||
+		(s_stat64 == NULL) ||
+		(s_fstat64 == NULL ) ||
+		(s_lstat == NULL) ||
+		(s_lstat64 == NULL ) ||
+		(s_dup == NULL) ||
+		(s_opendir == NULL) ||
 		(s_closedir == NULL) ||
-		(s_readdir == NULL) || 
+		(s_readdir == NULL) ||
 		(s_readdir64 ==  NULL) ||
-		(s_telldir == NULL) || 
-		(s_seekdir == NULL) || 
-		(s_unlink == NULL ) || 
-		(s_rmdir == NULL ) || 
-		(s_mkdir == NULL ) || 
-		(s_chmod == NULL ) || 
-		(s_access == NULL )  || 
+		(s_telldir == NULL) ||
+		(s_seekdir == NULL) ||
+		(s_unlink == NULL ) ||
+		(s_rmdir == NULL ) ||
+		(s_mkdir == NULL ) ||
+		(s_chmod == NULL ) ||
+		(s_access == NULL )  ||
 #ifdef HAVE_ACL
 		(s_acl == NULL ) ||
 #endif /* HAVE_ACL */
@@ -379,15 +379,15 @@ static int initIfNeeded()
 #endif /* HAVE_FACL */
 
 		(s_chown == NULL ) ) {
-		
+
 		/* try to write error message it's possible */
 		if( s_write != NULL ) {
 			em = dlerror();
-			if(em != NULL ) {		
+			if(em != NULL ) {
 				s_write(2, em, strlen(em) );
 			}
 		}
-		
+
 /*		dc_debug(DC_ERROR, "Failed to initialize System IO: (%s).", dlerror()); */
 		dlclose(handle);
 		handle = NULL;
@@ -415,8 +415,8 @@ static int initIfNeeded()
 		fprintf(stderr, "readdir 0x%x\n", sReaddir);
 		fprintf(stderr, "readdir64 0x%x\n", sReaddir64);
 		fprintf(stderr, "closedir 0x%x\n", sClosedir);
-		fprintf(stderr, "seekdir 0x%x\n", sSeekdir);						
-		fprintf(stderr, "telldir 0x%x\n", sTelldir);		
+		fprintf(stderr, "seekdir 0x%x\n", sSeekdir);
+		fprintf(stderr, "telldir 0x%x\n", sTelldir);
 		fflush(stderr);
 #endif
 		/* restore signal handling */
@@ -424,14 +424,14 @@ static int initIfNeeded()
 
 		return -17;
 
-	
+
 	}
-	
+
 	m_unlock(&gLock);
 
 	/* restore signal handling */
-	sigprocmask(SIG_UNBLOCK, &block_set, NULL); 
-	
+	sigprocmask(SIG_UNBLOCK, &block_set, NULL);
+
 	return 0;
 
 }
@@ -507,10 +507,10 @@ int system_fstat( int fd, struct stat *buf)
 {
 	struct stat64 s;
 	int rc;
-	
-	if ( initIfNeeded() != 0 ) { 
+
+	if ( initIfNeeded() != 0 ) {
 		return -1;
-	} 
+	}
 
 	rc = s_fstat64(_STAT_VER, fd, &s);
 
@@ -534,10 +534,10 @@ int system_stat( const char *path, struct stat *buf)
 {
 	struct stat64 s;
 	int rc;
-	
-	if ( initIfNeeded() != 0 ) { 
+
+	if ( initIfNeeded() != 0 ) {
 		return -1;
-	} 
+	}
 
 	rc = s_stat64(_STAT_VER, path, &s);
 
@@ -552,7 +552,7 @@ int system_lstat( const char *path, struct stat *buf)
 	int rc;
 	if ( initIfNeeded() != 0 ) {
 		return -1;
-	} 
+	}
 
 	rc = s_lstat64(_STAT_VER, path, &s);
 
@@ -569,10 +569,10 @@ int system_fstat( int fd, struct stat *buf)
 {
 	struct stat64 s;
 	int rc;
-	
-	if ( initIfNeeded() != 0 ) { 
+
+	if ( initIfNeeded() != 0 ) {
 		return -1;
-	} 
+	}
 
 	rc = s_fstat64(fd, &s);
 
@@ -596,10 +596,10 @@ int system_stat( const char *path, struct stat *buf)
 {
 	struct stat64 s;
 	int rc;
-	
-	if ( initIfNeeded() != 0 ) { 
+
+	if ( initIfNeeded() != 0 ) {
 		return -1;
-	} 
+	}
 
 	rc = s_stat64(path, &s);
 
@@ -614,7 +614,7 @@ int system_lstat( const char *path, struct stat *buf)
 	int rc;
 	if ( initIfNeeded() != 0 ) {
 		return -1;
-	} 
+	}
 
 	rc = s_lstat64(path, &s);
 

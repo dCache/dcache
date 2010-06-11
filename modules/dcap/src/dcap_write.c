@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: dcap_write.c,v 1.21 2006-09-26 07:47:27 tigran Exp $
  */
@@ -37,19 +37,19 @@ dc_write(int fd,const void *buff, size_t buflen)
 #endif
 
 	/* nothing wrong ... yet */
-	dc_errno = DEOK;	
-	
+	dc_errno = DEOK;
+
 	node = get_vsp_node(fd);
 	if (node == NULL) {
 		/* we have not such file descriptor, so lets give a try to system */
 		return system_write(fd, buff, buflen);
 	}
-	
+
 	n = dc_real_write(node, buff, buflen);
 	m_unlock(&node->mux);
-	
-	return n;	
-	
+
+	return n;
+
 }
 
 ssize_t
@@ -78,7 +78,7 @@ dc_pwrite(int fd, const void *buff, size_t buflen, off_t offset)
         m_unlock(&node->mux);
 
         return n;
-	
+
 }
 
 #ifdef HAVE_OFF64_T
@@ -91,10 +91,10 @@ dc_pwrite64(int fd, const void *buff, size_t buflen, off64_t offset)
 #ifdef DC_CALL_TRACE
 	showTraceBack();
 #endif
-	
+
 	/* nothing wrong ... yet */
-	dc_errno = DEOK;	
-	
+	dc_errno = DEOK;
+
 	node = get_vsp_node(fd);
 	if (node == NULL) {
 		/* we have not such file descriptor, so lets give a try to system */
@@ -104,11 +104,11 @@ dc_pwrite64(int fd, const void *buff, size_t buflen, off64_t offset)
 	if( dc_real_lseek(node, offset, SEEK_SET) >=0 ) {
 		n = dc_real_write(node, buff, buflen);
 	}
-	
+
 	m_unlock(&node->mux);
-	
-	return n;	
-	
+
+	return n;
+
 }
 #endif
 
@@ -141,9 +141,9 @@ dc_real_write( struct vsp_node *node, const void *buff, size_t buflen)
 	}
 
 	if( use_io_buf ) {
-		
+
 		if( ! node->ahead->isDirty ) {
-		
+
 			if( node->ahead->used ) {
 				switch( node->whence ){
 					case SEEK_SET:
@@ -167,8 +167,8 @@ dc_real_write( struct vsp_node *node, const void *buff, size_t buflen)
 			node->ahead->cur = 0;
 			node->ahead->used = 0;
 		}
-	
-	
+
+
 		len = node->ahead->size - node->ahead->cur;
 		if( buflen && ( len > buflen ) ) {
 			memcpy( node->ahead->buffer +node->ahead->cur ,  buff, buflen );
@@ -180,11 +180,11 @@ dc_real_write( struct vsp_node *node, const void *buff, size_t buflen)
 			}
 			return buflen;
 		}
-		
+
 		if( !buflen ) {
 			dc_debug(DC_IO, "[%d] Flushing %d bytes of IO buffer.", node->dataFd, node->ahead->cur);
-		}	
-	
+		}
+
 	}
 
 
@@ -205,14 +205,14 @@ dc_real_write( struct vsp_node *node, const void *buff, size_t buflen)
 			dc_debug(DC_IO,"[%d] Sending IOCMD_WRITE.", node->dataFd);
 
 		}else{
-		
-		
+
+
 			/* in case of seeks and write, there is no way to keep track of check summ */
 			if( node->sum != NULL ) {
 				node->sum->isOk = 0 ;
 			}
-		
-		
+
+
 			writemsg[0] = htonl(16);
 			writemsg[1] = htonl(IOCMD_SEEK_WRITE);
 
@@ -222,18 +222,18 @@ dc_real_write( struct vsp_node *node, const void *buff, size_t buflen)
 			if(node->whence == SEEK_SET) {
 				writemsg[4] = htonl(IOCMD_SEEK_SET);
 			}else{
-				writemsg[4] = htonl(IOCMD_SEEK_CURRENT);		
+				writemsg[4] = htonl(IOCMD_SEEK_CURRENT);
 			}
-			
+
 			dc_debug(DC_IO,"[%d] Sending IOCMD_SEEK_WRITE.", node->dataFd);
-			msglen = 5;		
+			msglen = 5;
 		}
 
 		tmp = sendDataMessage(node, (char *) writemsg, msglen*sizeof(int32_t), ASCII_NULL, NULL);
 
 		if (tmp != COMM_SENT) {
 			m_unlock(&node->mux);
-			dc_debug(DC_ERROR, "sendDataMessage failed.");		
+			dc_debug(DC_ERROR, "sendDataMessage failed.");
 			return -1;
 		}
 
@@ -261,13 +261,13 @@ dc_real_write( struct vsp_node *node, const void *buff, size_t buflen)
 	}
 
 	writen(node->dataFd, (const char *)buff, buflen, NULL); /* send data */
-	
+
 	/* update the ckecksum */
 	if( (node->sum != NULL ) && (node->sum->isOk == 1) ) {
 		if( use_io_buf ) {
 			update_checkSum(node->sum, (unsigned char *)node->ahead->buffer, node->ahead->cur);
 		}
-		
+
 		/*
 		 *  we do not need to calculate checksum if buff == NULL ( flush operation )
 		 *  if we do so, then check sum well be reseted to default value;
@@ -275,10 +275,10 @@ dc_real_write( struct vsp_node *node, const void *buff, size_t buflen)
 		if( buff != NULL ) {
 			update_checkSum(node->sum, (unsigned char *)buff, buflen);
 		}
-	}		
-	
+	}
+
 	if(!node->unsafeWrite) {
-	
+
 		size = htonl(-1); /* send end of data */
 		writen(node->dataFd, (char *) &size, sizeof(size), NULL);
 		/* FIXME: error detection missing */
@@ -290,11 +290,11 @@ dc_real_write( struct vsp_node *node, const void *buff, size_t buflen)
 	}
 
 	if( node->whence == SEEK_SET ) {
-		node->pos = dataLen + node->seek;	
+		node->pos = dataLen + node->seek;
 	} else { /* SEEK_CUR */
 		node->pos += (node->seek + dataLen);
 	}
-		
+
 	node->seek = 0;
 	node->whence = -1;
 
@@ -314,7 +314,7 @@ dc_real_write( struct vsp_node *node, const void *buff, size_t buflen)
 }
 
 ssize_t dc_writev(int fd, const struct iovec *vector, int count) {
-	
+
 	ssize_t n;
 	struct vsp_node *node;
 	char *iobuf;
@@ -328,8 +328,8 @@ ssize_t dc_writev(int fd, const struct iovec *vector, int count) {
 #endif
 
 	/* nothing wrong ... yet */
-	dc_errno = DEOK;	
-	
+	dc_errno = DEOK;
+
 #ifdef IOV_MAX
 	if( (count == 0) || (count > IOV_MAX) ) {
 #else
@@ -338,41 +338,41 @@ ssize_t dc_writev(int fd, const struct iovec *vector, int count) {
 		errno = EINVAL;
 		return -1;
 	}
-	
-	
+
+
 	node = get_vsp_node(fd);
 	if (node == NULL) {
 		/* we have not such file descriptor, so lets give a try to system */
 		return system_writev(fd, vector, count);
 	}
-	
-	
+
+
 	iobuf_len = 0;
 	for(i = 0; i < count; i++) {
 		iobuf_len += vector[i].iov_len;
 	}
-	
+
 	/* check for overflow */
 	if( iobuf_len < 0 ) {
 		errno = EINVAL;
 		return -1;
 	}
-	
+
 	iobuf = (char *)malloc(iobuf_len);
 	if(iobuf == NULL) {
 		m_unlock(&node->mux);
 		return -1;
 	}
-	
+
 	for(i = 0; i < count; i++) {
 		memcpy(iobuf + iobuf_pos, vector[i].iov_base, vector[i].iov_len);
 		iobuf_pos += vector[i].iov_len;
-	}		
-	
+	}
+
 	n = dc_real_write(node, iobuf, iobuf_len);
-	
+
 	/* we do not need the lock any more */
-	m_unlock(&node->mux);		
-	free(iobuf);	
+	m_unlock(&node->mux);
+	free(iobuf);
 	return n;
 }

@@ -9,31 +9,31 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: dcap_chown.c,v 1.1 2006-03-28 11:42:49 tigran Exp $
  */
- 
- 
+
+
  #include "dcap_shared.h"
- 
+
 
 int dc_chown( const char *path, uid_t uid, gid_t gid)
  {
- 
- 	
+
+
 	dcap_url *url;
 	struct vsp_node *node;
 	int rc;
-	
+
 	url = (dcap_url *)dc_getURL(path);
  	if( url == NULL ) {
 		dc_debug(DC_INFO, "Using system native chown for %s.", path);
 		return system_chown(path, uid, gid);
-	
+
 	}
- 
+
  	node = new_vsp_node( path );
 	if( node == NULL ) {
 		free(url->file);
@@ -48,7 +48,7 @@ int dc_chown( const char *path, uid_t uid, gid_t gid)
 		node->pnfsId = (char *)strdup(url->file);
 	}else{
 		node->pnfsId = (char *)strdup(path);
-	}	
+	}
 	node->asciiCommand = DCAP_CMD_CHOWN;
 
 	node->uid = uid;
@@ -57,10 +57,10 @@ int dc_chown( const char *path, uid_t uid, gid_t gid)
 
 	/* node cleanup procedure */
 	node_unplug( node );
-		
-	deleteQueue(node->queueID);
-	node_destroy(node);	
 
-	return rc;	
+	deleteQueue(node->queueID);
+	node_destroy(node);
+
+	return rc;
 
 }

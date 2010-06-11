@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: dcap_shared.h,v 1.7 2005-02-01 09:23:09 tigran Exp $
  */

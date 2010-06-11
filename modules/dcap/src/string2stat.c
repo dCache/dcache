@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: string2stat.c,v 1.10 2005-08-15 10:05:03 tigran Exp $
  */
@@ -32,8 +32,8 @@ mode_t string2mode(const char *str_mode)
 {
 
 	mode_t mode = 0; /*  d rwx rwx rwx */
-	
-	
+
+
 	if( strlen( str_mode ) < 9 ) {
 		/* invalid mode */
 		return 0;
@@ -60,12 +60,12 @@ mode_t string2mode(const char *str_mode)
 			break;
 #endif /* ! WIN32 */
 	}
-	
-	
-#ifndef WIN32 
+
+
+#ifndef WIN32
 
 	/* owner */
-	
+
 	if( str_mode[1] == 'r' )
 		mode |= S_IRUSR; /* u+r */
 	if( str_mode[2] == 'w' )
@@ -73,7 +73,7 @@ mode_t string2mode(const char *str_mode)
 	if( str_mode[3] == 'x' )
 		mode |= S_IXUSR; /* u+x */
 
-	
+
 	/* group */
 
 	if( str_mode[4] == 'r' )
@@ -82,9 +82,9 @@ mode_t string2mode(const char *str_mode)
 		mode |= S_IWGRP; /* g+w */
 	if( str_mode[6] == 'x' )
 		mode |= S_IXGRP; /* g+x */
-	
+
 	/* others */
-	
+
 	if( str_mode[7] == 'r' )
 		mode |= S_IROTH; /* o+r */
 	if( str_mode[8] == 'w' )
@@ -99,7 +99,7 @@ mode_t string2mode(const char *str_mode)
 	if( str_mode[2] == 'w' )
 		mode |= _S_IWRITE;
 #endif/* ! WIN32 */
-	
+
 	return mode;
 }
 
@@ -111,27 +111,27 @@ void string2stat64( const char **arg,  struct stat64 *s )
 {
 	 int i;
 	 char *c;
-	 
+
 #ifdef WIN32
 	 memset( s, 0, sizeof(struct _stati64) );
 #else
 	 memset( s, 0, sizeof(struct stat64) );
 #endif
-	 
+
 	 for( i = 1; arg[i] != NULL; i++) {
-	 	
-		
+
+
 		c = strchr( arg[i], '=' );
-		
+
 		if( c == NULL ) continue;
-		
+
 		c++;
-		
+
 		if( strncmp( arg[i], "-st_dev", c - arg[i] -2 ) == 0 ) {
 			s->st_dev = atoi(c);
 			continue;
 		}
-		
+
 		if( strncmp( arg[i], "-st_ino", c - arg[i] -2 ) == 0 ) {
 			s->st_ino = atoi(c);
 			continue;

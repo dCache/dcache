@@ -2,8 +2,8 @@
  * @(#)Base64.java	1.2 01/01/31
  *
  * Copyright 1996-2000 Sun Microsystems, Inc. All Rights Reserved.
- * 
- * This software is the proprietary information of Sun Microsystems, Inc.  
+ *
+ * This software is the proprietary information of Sun Microsystems, Inc.
  * Use is subject to license terms.
  */
 
@@ -80,7 +80,7 @@ public class Base64 {
 
     /**
      * This array is a lookup table that translates 6-bit positive integer
-     * index values into their "Base64 Alphabet" equivalents as specified 
+     * index values into their "Base64 Alphabet" equivalents as specified
      * in Table 1 of RFC 2045.
      */
     private static final char intToBase64[] = {
@@ -109,7 +109,7 @@ public class Base64 {
     /**
      * Translates the specified Base64 string (as per Preferences.get(byte[]))
      * into a byte array.
-     * 
+     *
      * @throw IllegalArgumentException if <tt>s</tt> is not a valid Base64
      *        string.
      */
@@ -120,7 +120,7 @@ public class Base64 {
     /**
      * Translates the specified "aternate representation" Base64 string
      * into a byte array.
-     * 
+     *
      * @throw IllegalArgumentException or ArrayOutOfBoundsException
      *        if <tt>s</tt> is not a valid alternate representation
      *        Base64 string.
@@ -221,7 +221,7 @@ public class Base64 {
         34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50,
         51, 22, 23, 24, 25
     };
-    
+
     public static void main(String args[]) {
         int numRuns  = Integer.parseInt(args[0]);
         int numBytes = Integer.parseInt(args[1]);

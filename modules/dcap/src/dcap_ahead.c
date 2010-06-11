@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: dcap_ahead.c,v 1.18 2004-11-01 19:33:29 tigran Exp $
  */
@@ -58,11 +58,11 @@ void dc_setNodeBufferSize(struct vsp_node *node, size_t newSize)
 	char *tmpBuffer;
 
 	if(node == NULL) return;
-	
+
 	if( node->ahead == NULL ) {
 
 		node->ahead = (ioBuffer *)malloc( sizeof(ioBuffer) );
-		
+
 		if(node->ahead == NULL) {
 			dc_debug(DC_ERROR, "Failed allocate memory for read-ahead, so skipping");
 		}else{
@@ -75,20 +75,20 @@ void dc_setNodeBufferSize(struct vsp_node *node, size_t newSize)
 		}
 
 	}
-	
+
 
 	if(node->ahead != NULL) {
 
 		if( node->ahead->buffer == NULL ) {
 
 			/* allocating the buffer first time */
-	
+
 			dc_debug(DC_INFO, "[%d] Allocating %d bytes as Read-ahead buffer.", node->dataFd, newSize);
 			node->ahead->buffer = (char *)malloc(newSize);
 
 			if( node->ahead->buffer == NULL ) {
 				dc_debug(DC_ERROR, "[%d] Failed to allocate %ld bytes for Read-ahead buffer.", node->dataFd, newSize);
-			}else{			
+			}else{
 				node->ahead->size = newSize;
 				node->ahead->used = 0;
 				node->ahead->cur = 0;
@@ -111,23 +111,23 @@ void dc_setNodeBufferSize(struct vsp_node *node, size_t newSize)
 				return;
 			}
 
-			
+
 			node->ahead->buffer = tmpBuffer;
-			
+
 			if( newSize < node->ahead->size ) {
 
 				/* if newSize < oldSize, make a corrections
 					of current position and buffer used size.
-					NOTE, that if used < newSize, no changes needed for 
+					NOTE, that if used < newSize, no changes needed for
 					current position as it can not be bigger than used. */
 
 				if(node->ahead->used > newSize) {
-					
+
 					node->seek = node->ahead->base + newSize;
 					node->whence = SEEK_SET;
-					
+
 					dc_set_pos(node, DCFT_POSITION, -1);
-					
+
 					node->ahead->used = newSize;
 
 					if(node->ahead->cur > newSize) {
@@ -151,13 +151,13 @@ void dc_setBufferSize(int fd, size_t newSize)
     struct vsp_node *node;
 
     node = get_vsp_node(fd);
-	
+
 	if( node == NULL ){
 		return;
 	}
-	
+
 	dc_setNodeBufferSize(node, newSize);
-	
+
 	m_unlock(&node->mux);
 
 }

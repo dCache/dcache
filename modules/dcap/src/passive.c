@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: passive.c,v 1.1 2006-07-17 15:13:36 tigran Exp $
  */
@@ -71,14 +71,14 @@ int connect_to_pool( struct vsp_node *node , poolConnectInfo *pool)
 		dc_errno = DECONNECT;
 		return -1;
 	}
-	
-	
+
+
 	passive[0] = htonl(node->queueID);
 	passive[1] = htonl( strlen(pool->challenge) );
-	
+
 	system_write(fd, passive, 8);
 	system_write(fd, pool->challenge, strlen(pool->challenge) );
-		
+
 	node->isPassive = 1;
 	node_attach_fd(node, fd);
 

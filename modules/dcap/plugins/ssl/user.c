@@ -19,14 +19,14 @@ void clear_entry ( user_entry *en)
 		memset(en->passwd, 0, strlen(en->passwd) );
 		free(en->passwd);
 	}
-	
+
 	free(en->login);
 
 }
 
 
 char * askLogin()
-{	
+{
 
 	int input = 0; /* stdin */
 	int output = 2; /* stderr */
@@ -37,10 +37,10 @@ char * askLogin()
 	char c;
 	struct termios term, oterm;
 	static const char prom[]="DCAP user Authentication\nLogin: ";
-	
+
 	write(output, prom, strlen(prom));
-	
-	
+
+
 	/* Turn off echo if possible. */
 	if (tcgetattr(input, &oterm) == 0) {
 		memcpy(&term, &oterm, sizeof(term));
@@ -54,7 +54,7 @@ char * askLogin()
 		read(input, &c, 1);
 		s[i++] = c;
 	} while (c != '\n');
-	
+
 	s[i-1] = '\0'; /* last character new-line */
 
 	/* Restore old terminal settings and signals. */
@@ -63,7 +63,7 @@ char * askLogin()
 	}
 
 	ret = strdup(s);
-	
+
 	memset(s, 0, strlen(s) );
 
 	return ret;
@@ -72,21 +72,21 @@ char * askLogin()
 
 
 char * askPassword()
-{	
+{
 
 	int input = 0; /* stdin */
 	int output = 2; /* stderr */
-	
+
 	char s[32];
 	char *ret;
 	int i = 0;
 	char c;
 	struct termios term, oterm;
 	static const char prom[]="Password: ";
-	
+
 	write(output, prom, strlen(prom));
-	
-	
+
+
 	/* Turn off echo if possible. */
 	if (tcgetattr(input, &oterm) == 0) {
 		memcpy(&term, &oterm, sizeof(term));
@@ -106,9 +106,9 @@ char * askPassword()
 	if (!(term.c_lflag & ECHO)) {
 		(void)write(output, "\n", 1);
 	}
-	
+
 	s[i-1] = '\0'; /* last character new-line */
-	
+
 
 	/* Restore old terminal settings and signals. */
 	if (memcmp(&term, &oterm, sizeof(term)) != 0) {
@@ -116,7 +116,7 @@ char * askPassword()
 	}
 
 	ret = strdup(s);
-	
+
 	memset(s, 0, strlen(s) );
 
 	return ret;
@@ -128,16 +128,16 @@ user_entry * getUserEntry()
 {
 
 	user_entry *ue;
-	
+
 	ue = (user_entry *)malloc(sizeof(user_entry));
-	
+
 
 	fprintf(stderr, "\n"); fflush(stderr);
-	
+
 	ue->login = askLogin();
 	ue->passwd = askPassword();
-	
-	
+
+
 	return ue;
 
 
@@ -148,15 +148,15 @@ user_entry * getUserEntry()
 int
 main() {
 	user_entry *ue;
-	
+
 	ue = getUserEntry();
-	
+
 	printf("User = %s\n", ue->login == NULL ? "NULL" : ue->login);
 	printf("Pass = %s\n", ue->passwd == NULL ? "NULL" : ue->passwd);
-	
-	
+
+
 	clear_entry(ue);
-	
+
 }
 
 #endif

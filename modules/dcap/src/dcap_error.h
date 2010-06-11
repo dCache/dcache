@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: dcap_error.h,v 1.3 2004-11-01 19:33:29 tigran Exp $
  */

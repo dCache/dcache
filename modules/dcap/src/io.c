@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: io.c,v 1.7 2004-11-01 19:33:30 tigran Exp $
  */
@@ -30,7 +30,7 @@ writen(int fd, const char *buf, int bufsize, ioTunnel *en)
 
 	while (nleft > 0) {
 #ifdef WIN32
-		nwritten = send(fd, buf, nleft, 0); 
+		nwritten = send(fd, buf, nleft, 0);
 #else
 		nwritten = en == NULL ? system_write(fd, buf, nleft) : en->eWrite(fd, buf, nleft);
 #endif /* WIN32 */
@@ -55,7 +55,7 @@ writeln(int fd, const char *buf, int bufsize, ioTunnel *en)
 	while (nleft > 0) {
 
 #ifdef WIN32
-		nwritten = send(fd, buf, nleft, 0); 
+		nwritten = send(fd, buf, nleft, 0);
 #else
 		nwritten = en == NULL ? system_write(fd, buf, nleft) : en->eWrite(fd, buf, nleft);
 #endif /* WIN32 */
@@ -68,7 +68,7 @@ writeln(int fd, const char *buf, int bufsize, ioTunnel *en)
 	}
 
 #ifdef WIN32
-	send(fd, &c, 1, 0); 
+	send(fd, &c, 1, 0);
 #else
 	en == NULL ? system_write(fd, &c, 1) : en->eWrite(fd, &c, 1);
 #endif /* WIN32 */
@@ -85,7 +85,7 @@ readln(int fd, char *str, int bufsize, ioTunnel *en)
 	for (i = 0; i < bufsize - 1; i++) {
 
 #ifdef WIN32
-		rc = recv(fd, &c, 1, 0); 
+		rc = recv(fd, &c, 1, 0);
 #else
 		rc = en == NULL ? system_read(fd, &c, 1) : en->eRead(fd, &c, 1);
 #endif /* WIN32 */

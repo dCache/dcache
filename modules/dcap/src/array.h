@@ -9,9 +9,9 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
-/* 
+
+
+/*
  * $Id: array.h,v 1.4 2004-11-01 19:33:28 tigran Exp $
  */
 #ifndef ARRAY_H

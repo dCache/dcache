@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: dcap_interpreter.c,v 1.25 2006-07-17 15:13:36 tigran Exp $
  */
@@ -39,7 +39,7 @@ static command  command_table[] = {
 	{"pong",    do_command_pong},
 	{"stat",    do_command_stat},
 	{"shutdown", do_command_shutdown},
-	{"connect", do_command_connect},	
+	{"connect", do_command_connect},
 	{"hello",	NULL},
 	{NULL,		NULL},
 };
@@ -48,7 +48,7 @@ static command  command_table[] = {
 /*
  * DiskCache Door line format <sessionId> <commandId> <comPartner>
  * <requestCommand> [<requestArguments ...>]
- * 
+ *
  */
 
 
@@ -62,7 +62,7 @@ dcap_interpreter(const char **argv)
 	if (argv == NULL) {
 		return -1;
 	}
-		
+
 	if ((argv[0] != NULL) && (argv[1] != NULL) && (argv[2] != NULL) && (argv[3] != NULL)) {
 
 		result = ( asciiMessage *)malloc(sizeof(asciiMessage));
@@ -81,16 +81,16 @@ dcap_interpreter(const char **argv)
 				if (command_table[i].action != NULL) {
 					command_table[i].action((char **) &argv[3], result);
 				}
-				
+
 				queueAddMessage(result->destination, result);
 				/* and go a way */
-				return 0;	
+				return 0;
 			}
 		}
-		
+
 		/* if we are here - command not recognized */
 		do_command_dummy((char **)argv, result);
-		
+
 		/* no one need the result */
 		free(result);
 		return 0;
