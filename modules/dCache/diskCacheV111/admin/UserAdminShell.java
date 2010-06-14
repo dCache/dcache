@@ -2,18 +2,50 @@
 
 package diskCacheV111.admin ;
 
-import dmg.cells.services.login.* ;
-import dmg.cells.nucleus.* ;
-import dmg.util.* ;
+import java.io.CharArrayWriter;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.StringTokenizer;
 
-import diskCacheV111.util.*;
-import diskCacheV111.vehicles.*;
-import diskCacheV111.services.space.*;
 import diskCacheV111.pools.PoolV2Mode;
-
-import java.util.* ;
-import java.io.* ;
-import java.net.* ;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.DCapProtocolInfo;
+import diskCacheV111.vehicles.Message;
+import diskCacheV111.vehicles.PnfsFlagMessage;
+import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
+import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
+import diskCacheV111.vehicles.PnfsMapPathMessage;
+import diskCacheV111.vehicles.Pool2PoolTransferMsg;
+import diskCacheV111.vehicles.PoolLinkInfo;
+import diskCacheV111.vehicles.PoolMgrGetPoolByLink;
+import diskCacheV111.vehicles.PoolMgrGetPoolLinks;
+import diskCacheV111.vehicles.PoolMgrReplicateFileMsg;
+import diskCacheV111.vehicles.PoolModifyModeMessage;
+import diskCacheV111.vehicles.PoolModifyPersistencyMessage;
+import diskCacheV111.vehicles.PoolRemoveFilesMessage;
+import diskCacheV111.vehicles.PoolSetStickyMessage;
+import diskCacheV111.vehicles.QuotaMgrCheckQuotaMessage;
+import diskCacheV111.vehicles.StorageInfo;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellNucleus;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.CellShell;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.cells.nucleus.SerializationException;
+import dmg.util.AclException;
+import dmg.util.Args;
+import dmg.util.AuthorizedString;
+import dmg.util.CommandException;
+import dmg.util.CommandExitException;
+import dmg.util.CommandInterpreter;
+import dmg.util.CommandPanicException;
+import dmg.util.CommandSyntaxException;
+import dmg.util.CommandThrowableException;
 
 /**
   *
@@ -24,6 +56,8 @@ import java.net.* ;
 public class      UserAdminShell
 //       extends    dmg.cells.services.login.user.MinimalAdminShell {
        extends    CommandInterpreter {
+    private static final String ADMIN_COMMAND_NOOP = "xyzzy";
+    private static final int CD_PROBE_MESSAGE_TIMEOUT_MS = 1000;
 
     private CellNucleus _nucleus  = null ;
     private String      _user     = null ;
@@ -175,6 +209,7 @@ public class      UserAdminShell
            return ( ( i < 0 ) || ( i >= _path.length ) ) ? "" : _path[i] ;
         }
         private String [] getPath(){ return _path ; }
+        @Override
         public String toString(){ return _pathString ;}
         public String toLongString(){
             StringBuffer sb = new StringBuffer() ;
@@ -617,10 +652,10 @@ public class      UserAdminShell
        return result.getReturnCode() == 0 ? "" : result.getErrorObject().toString() ;
 
     }
-    private PnfsFlagReply setPnfsFlag( 
-        String destination , 
-        String key , 
-        String value , 
+    private PnfsFlagReply setPnfsFlag(
+        String destination ,
+        String key ,
+        String value ,
         boolean mode)
             throws Exception {
 
@@ -1045,7 +1080,10 @@ public class      UserAdminShell
 
        }
 
-       if( newPosition.remoteName != null )checkCdPermission( newPosition.remoteName ) ;
+       if( newPosition.remoteName != null ) {
+           checkCdPermission( newPosition.remoteName ) ;
+           checkCellExists( newPosition.remote);
+       }
 
        synchronized( this ){
            _currentPosition = newPosition ;
@@ -1068,6 +1106,18 @@ public class      UserAdminShell
              checkPermission( "cell."+prefix+"-pools.execute" ) ;
           }
        }
+    }
+    private void checkCellExists( CellPath remoteCell) {
+        CellMessage checkMsg = new CellMessage( remoteCell , ADMIN_COMMAND_NOOP);
+        try {
+            _nucleus.sendAndWait( checkMsg, CD_PROBE_MESSAGE_TIMEOUT_MS);
+        } catch (SerializationException e) {
+            throw new RuntimeException("Failed to serialise test message", e);
+        } catch (NoRouteToCellException e) {
+            throw new IllegalArgumentException("Cannot cd to this cell as it doesn't exist");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
     protected Object executeLocalCommand( Args args ) throws Exception {
        say( "Local command "+args ) ;
