@@ -26,4 +26,8 @@ define env topo-hybrid.exe end
   exec env topo-jms.exe
 end
 
+define env topo-none.exe end
+  exec env topo-cells.exe
+end
+
 exec env topo-${broker.scheme}.exe
