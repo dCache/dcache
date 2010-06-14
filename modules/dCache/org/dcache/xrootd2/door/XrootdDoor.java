@@ -16,10 +16,13 @@ import java.util.Set;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.security.auth.Subject;
@@ -29,9 +32,11 @@ import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.Subjects;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
 import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.xrootd2.security.AbstractAuthorizationFactory;
+import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.util.Transfer;
 import org.dcache.util.PingMoversTask;
@@ -39,6 +44,7 @@ import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellStub;
+import org.dcache.cells.MessageCallback;
 
 import diskCacheV111.movers.NetIFContainer;
 import diskCacheV111.util.CacheException;
@@ -52,6 +58,7 @@ import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.IoDoorInfo;
 import diskCacheV111.vehicles.IoDoorEntry;
 import dmg.cells.nucleus.CellVersion;
+import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
 import dmg.util.Args;
 import org.dcache.auth.Origin;
@@ -113,6 +120,11 @@ public class XrootdDoor
     private String _ioQueue;
 
     private FsPath _rootPath = new FsPath();
+
+    private Map<UUID, DirlistRequestHandler> _requestHandlers =
+        new ConcurrentHashMap<UUID, DirlistRequestHandler>();
+
+    private ScheduledExecutorService _dirlistTimeoutExecutor;
 
     /**
      * Transfers with a mover.
@@ -362,6 +374,11 @@ public class XrootdDoor
         executor.scheduleAtFixedRate(new PingMoversTask(_transfers.values()),
                                      PING_DELAY, PING_DELAY,
                                      TimeUnit.MILLISECONDS);
+    }
+
+    public void setDirlistTimeoutExecutor(ScheduledExecutorService executor)
+    {
+        _dirlistTimeoutExecutor = executor;
     }
 
     /**
@@ -646,6 +663,136 @@ public class XrootdDoor
     }
 
     /**
+     * List the contents of a path, usually a directory. In order to make
+     * fragmented responses, as supported by the xrootd protocol, possible and
+     * not block the processing thread in the door, this will register the
+     * passed callback along with the UUID of the message that is sent to
+     * PNFS-manager.
+     *
+     * Once PNFS-manager replies to the message, that callback is retrieved and
+     * the response is processed by the callback.
+     *
+     * @param path The path that is listed
+     * @param callback The callback that will process the response
+     * @throws CacheException Listing message can not be routed to PnfsManager.
+     */
+    public void listPath(String path,
+                         MessageCallback<PnfsListDirectoryMessage> callback)
+    {
+        PnfsListDirectoryMessage msg =
+            new PnfsListDirectoryMessage(path, null, null,
+                                         EnumSet.noneOf(FileAttribute.class));
+        UUID uuid = msg.getUUID();
+
+        try {
+            DirlistRequestHandler requestHandler =
+                new DirlistRequestHandler(uuid,
+                                          _pnfs.getPnfsTimeout(),
+                                          callback);
+            _requestHandlers.put(uuid, requestHandler);
+            _pnfs.send(msg);
+            requestHandler.resetTimeout();
+        } catch (NoRouteToCellException nrtce) {
+            _requestHandlers.remove(uuid);
+            callback.noroute();
+        } catch (RejectedExecutionException ree) {
+            _requestHandlers.remove(uuid);
+            callback.failure(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                             ree.getMessage());
+        }
+    }
+
+    /**
+     * Encapsulate the list directory callback into a handler that manages the
+     * scheduled executor service for the timeout handling.
+     *
+     */
+    private class DirlistRequestHandler {
+        private ScheduledFuture<?> _executionInstance;
+        private final long _timeout;
+        private final UUID _uuid;
+        private final MessageCallback<PnfsListDirectoryMessage> _callback;
+
+        public DirlistRequestHandler(UUID uuid,
+                              long responseTimeout,
+                              MessageCallback<PnfsListDirectoryMessage> callback) {
+            _uuid = uuid;
+            _timeout = responseTimeout;
+            _callback = callback;
+        }
+
+        /**
+         * Final listing result. Report back via callback and cancel
+         * the timeout handler.
+         * @param msg The reply containing the listing result.
+         */
+        public synchronized void success(PnfsListDirectoryMessage msg) {
+            if (_requestHandlers.remove(_uuid) == this) {
+                cancelTimeout();
+                _callback.success(msg);
+            }
+        }
+
+        /**
+         * Partial listing result, report that back to the callback. Also,
+         * reset the timeout timer in anticipation of further listing results.
+         * @param msg The reply containing the partial directory listing.
+         */
+        public synchronized void continueListing(PnfsListDirectoryMessage msg) {
+            try {
+                _callback.success(msg);
+                resetTimeout();
+            } catch (RejectedExecutionException ree) {
+                _requestHandlers.remove(_uuid);
+                _callback.failure(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                  ree.getMessage());
+            }
+        }
+
+        /**
+         * Remove the request handler from the list, report a failure to the
+         * callback and cancel the timeout timer.
+         * @param msg The reply received from PNFS
+         */
+        public synchronized void failure(PnfsListDirectoryMessage msg) {
+            if (_requestHandlers.remove(_uuid) == this) {
+                cancelTimeout();
+                _callback.failure(msg.getReturnCode(), msg.getErrorObject());
+            }
+        }
+
+        /**
+         * Reschedule the timeout task with the same timeout as initially.
+         * Rescheduling means cancelling the old task and submitting a new one.
+         * @throws RejectedExecutionException
+         */
+        public synchronized void resetTimeout()
+            throws RejectedExecutionException {
+            Runnable target = new Runnable() {
+                public void run() {
+                    if (_requestHandlers.remove(_uuid)
+                            == DirlistRequestHandler.this) {
+                        _callback.timeout();
+                    }
+                }
+            };
+
+            if (_executionInstance != null) {
+                _executionInstance.cancel(false);
+            }
+
+            _executionInstance =
+                _dirlistTimeoutExecutor.schedule(target,
+                                                 _timeout,
+                                                 TimeUnit.MILLISECONDS);
+        }
+
+        public synchronized void cancelTimeout() {
+            _executionInstance.cancel(false);
+        }
+    }
+
+    /**
      * Check whether the given path matches against a list of allowed
      * write paths.
      *
@@ -741,6 +888,31 @@ public class XrootdDoor
         } else {
             _log.warn("Ignoring unknown protocol info {} from pool {}",
                       msg.getProtocolInfo(), msg.getPoolName());
+        }
+    }
+
+    /**
+     * Try to find callback registered in listPath(...) and process the
+     * response there
+     * @param msg The reply to a PnfsListDirectoryMessage sent earlier.
+     */
+    public void messageArrived(PnfsListDirectoryMessage msg)
+    {
+        UUID uuid = msg.getUUID();
+        DirlistRequestHandler request = _requestHandlers.get(uuid);
+
+        if (request == null) {
+            _log.info("Did not find the callback for directory listing " +
+                      "message with UUID {}.", uuid);
+            return;
+        }
+
+        if (msg.getReturnCode() == 0 && msg.isFinal()) {
+            request.success(msg);
+        } else if (msg.getReturnCode() == 0) {
+            request.continueListing(msg);
+        } else {
+            request.failure(msg);
         }
     }
 
