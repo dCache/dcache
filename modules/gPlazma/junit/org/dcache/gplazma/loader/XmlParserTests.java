@@ -6,7 +6,6 @@ import static org.junit.Assert.assertNotNull;
 
 import java.io.Reader;
 import java.io.StringReader;
-import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -17,43 +16,26 @@ import java.util.Set;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.Result;
-import javax.xml.transform.Source;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
 import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Document;
-import org.w3c.dom.Node;
 
 public class XmlParserTests {
-    private static final TransformerFactory TRANSFORMER_FACTORY =
-            TransformerFactory.newInstance();
     private static final DocumentBuilderFactory BUILDER_FACTORY =
             DocumentBuilderFactory.newInstance();
 
     private Document _emptyDocument;
-
-    private Document _document;
-    private Node _pluginsElement;
+    private PluginXmlGenerator _pluginXml;
 
     private Set<PluginMetadata> _plugins;
 
     @Before
     public void setUp() throws ParserConfigurationException {
         DocumentBuilder builder = BUILDER_FACTORY.newDocumentBuilder();
-
         _emptyDocument = builder.newDocument();
-
-        _document = builder.newDocument();
-        _pluginsElement = _document.createElement( "plugins");
-        _document.appendChild( _pluginsElement);
+        _pluginXml = new PluginXmlGenerator();
     }
 
     @Test
@@ -91,7 +73,7 @@ public class XmlParserTests {
 
     @Test
     public void testPluginsAndEmptyPlugin() {
-        addEmptyPlugin();
+        _pluginXml.addEmptyPlugin();
 
         parseAndGetPlugins();
 
@@ -102,7 +84,7 @@ public class XmlParserTests {
     public void testPluginsAndValidPluginWithSingleName() {
         String pluginName = "foo";
         Set<String> names = Collections.singleton( pluginName);
-        addPlugin( names, DummyPlugin.class.getName());
+        _pluginXml.addPlugin( names, DummyPlugin.class);
 
         parseAndGetPlugins();
 
@@ -121,7 +103,7 @@ public class XmlParserTests {
                 new HashSet<String>( Arrays.asList( pluginShortestName,
                         "foo-o-matic", "original-foo"));
 
-        addPlugin( names, DummyPlugin.class.getName());
+        _pluginXml.addPlugin( names, DummyPlugin.class);
 
         parseAndGetPlugins();
 
@@ -137,11 +119,11 @@ public class XmlParserTests {
     public void testPluginsAndTwoValidPlugins() {
         String plugin1Name = "foo";
         Set<String> plugin1Names = Collections.singleton( plugin1Name);
-        addPlugin( plugin1Names, DummyPlugin.class.getName());
+        _pluginXml.addPlugin( plugin1Names, DummyPlugin.class);
 
         String plugin2Name = "bar";
         Set<String> plugin2Names = Collections.singleton( plugin2Name);
-        addPlugin( plugin2Names, AnotherDummyPlugin.class.getName());
+        _pluginXml.addPlugin( plugin2Names, AnotherDummyPlugin.class);
 
         parseAndGetPlugins();
 
@@ -167,7 +149,7 @@ public class XmlParserTests {
         String pluginName = "foo";
         Set<String> names = Collections.singleton( pluginName);
         String defaultControl = "required";
-        addPlugin( names, DummyPlugin.class.getName(), defaultControl);
+        _pluginXml.addPlugin( names, DummyPlugin.class.getName(), defaultControl);
 
         parseAndGetPlugins();
 
@@ -185,11 +167,11 @@ public class XmlParserTests {
 
         String plugin1Name = "foo";
         Set<String> plugin1Names = Collections.singleton( plugin1Name);
-        addPlugin( plugin1Names, className);
+        _pluginXml.addPlugin( plugin1Names, className);
 
         String plugin2Name = "bar";
         Set<String> plugin2Names = Collections.singleton( plugin2Name);
-        addPlugin( plugin2Names, className);
+        _pluginXml.addPlugin( plugin2Names, className);
 
         parseAndGetPlugins();
 
@@ -202,15 +184,15 @@ public class XmlParserTests {
 
         String plugin1Name = "foo";
         Set<String> plugin1Names = Collections.singleton( plugin1Name);
-        addPlugin( plugin1Names, className);
+        _pluginXml.addPlugin( plugin1Names, className);
 
         String plugin2Name = "bar";
         Set<String> plugin2Names = Collections.singleton( plugin2Name);
-        addPlugin( plugin2Names, className);
+        _pluginXml.addPlugin( plugin2Names, className);
 
         String plugin3Name = "baz";
         Set<String> plugin3Names = Collections.singleton( plugin3Name);
-        addPlugin( plugin3Names, className);
+        _pluginXml.addPlugin( plugin3Names, className);
 
         parseAndGetPlugins();
 
@@ -259,75 +241,15 @@ public class XmlParserTests {
      * SUPPORT METHODS
      */
 
-    private void addEmptyPlugin() {
-        Set<String> names = Collections.emptySet();
-        addPlugin( names);
-    }
-
-    private void addPlugin( Set<String> names) {
-        addPlugin( names, null);
-    }
-
-    private void addPlugin( Set<String> names, String pluginClass) {
-        addPlugin( names, pluginClass, null);
-    }
-
-    private void addPlugin( Set<String> names, String pluginClass,
-                            String defaultControl) {
-        Node pluginNode = _document.createElement( "plugin");
-        _pluginsElement.appendChild( pluginNode);
-
-        for( String name : names) {
-            addTextElement( pluginNode, "name", name);
-        }
-
-        if( pluginClass != null) {
-            addTextElement( pluginNode, "class", pluginClass);
-        }
-
-        if( defaultControl != null) {
-            addTextElement( pluginNode, "default-control", defaultControl);
-        }
-    }
-
-    private void addTextElement( Node parentNode, String localName,
-                                 String contents) {
-        Node childNode = _document.createElement( localName);
-        Node textNode = _document.createTextNode( contents);
-        childNode.appendChild( textNode);
-        parentNode.appendChild( childNode);
-    }
 
     private void parseAndGetPlugins() {
-        parseAndGetPlugins( _document);
-    }
-
-    private void parseAndGetPlugins( Document document) {
-        String xmlData = serialiseXml( document);
+        String xmlData = _pluginXml.toString();
         parseAndGetPlugins( xmlData);
     }
 
-    private String serialiseXml( Document document) {
-        Source source = new DOMSource( document);
-
-        StringWriter writer = new StringWriter();
-        Result result = new StreamResult( writer);
-
-        Transformer identityTransformer;
-        try {
-            identityTransformer = TRANSFORMER_FACTORY.newTransformer();
-        } catch (TransformerConfigurationException e) {
-            throw new RuntimeException( "Unable to create identity transformation",
-                                        e);
-        }
-
-        try {
-            identityTransformer.transform( source, result);
-        } catch (TransformerException e) {
-            throw new RuntimeException( "Identity transformation failed", e);
-        }
-
-        return writer.toString();
+    private void parseAndGetPlugins( Document document) {
+        String xmlData = PluginXmlGenerator.documentAsString( document);
+        parseAndGetPlugins( xmlData);
     }
 
     private void parseAndGetPlugins( String xmlData) {
