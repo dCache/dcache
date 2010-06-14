@@ -176,8 +176,12 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
             if (neededPerm == FilePerm.WRITE) {
                 boolean createDir = (options & XrootdProtocol.kXR_mkpath) ==
                     XrootdProtocol.kXR_mkpath;
+                boolean overwrite = (options & XrootdProtocol.kXR_delete) ==
+                    XrootdProtocol.kXR_delete;
+
                 transfer =
-                    _door.write(remoteAddress, authPath, checksum, createDir);
+                    _door.write(remoteAddress, authPath, checksum,
+                                createDir, overwrite);
             } else {
                 transfer =
                     _door.read(remoteAddress, authPath, checksum);

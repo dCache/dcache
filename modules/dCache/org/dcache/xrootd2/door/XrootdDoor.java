@@ -52,7 +52,6 @@ import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.IoDoorInfo;
@@ -481,7 +480,7 @@ public class XrootdDoor
 
     public XrootdTransfer
         write(InetSocketAddress client, String path, long checksum,
-              boolean createDir)
+              boolean createDir, boolean overwrite)
         throws CacheException, InterruptedException
     {
         FsPath fullPath = createFullPath(path);
@@ -495,6 +494,7 @@ public class XrootdDoor
         }
 
         XrootdTransfer transfer = createTransfer(client, fullPath, checksum);
+        transfer.setOverwriteAllowed(overwrite);
         int handle = transfer.getFileHandle();
         InetSocketAddress address = null;
         _transfers.put(handle, transfer);
@@ -505,7 +505,6 @@ public class XrootdDoor
                 transfer.createNameSpaceEntry();
             }
             try {
-                PnfsId pnfsid = transfer.getPnfsId();
                 do {
                     transfer.selectPool();
                     try {
