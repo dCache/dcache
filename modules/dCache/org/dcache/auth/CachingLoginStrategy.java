@@ -22,7 +22,7 @@ public class CachingLoginStrategy implements LoginStrategy
 
     public synchronized LoginReply login(Subject subject) throws CacheException
     {
-        if (!subject.equals(_lastReply)) {
+        if (!subject.equals(_lastSubject)) {
             _lastReply = _loginStrategy.login(subject);
             _lastSubject = new Subject(true,
                                        subject.getPrincipals(),
