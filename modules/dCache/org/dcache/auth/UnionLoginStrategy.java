@@ -47,6 +47,7 @@ public class UnionLoginStrategy implements LoginStrategy
 
     public void setAnonymousAccess(AccessLevel level)
     {
+        _log.debug( "Setting anonymous access to {}", level);
         _anonymousAccess = level;
     }
 
@@ -58,8 +59,12 @@ public class UnionLoginStrategy implements LoginStrategy
     public LoginReply login(Subject subject) throws CacheException
     {
         for (LoginStrategy strategy: _loginStrategies) {
+            _log.debug( "Attempting login strategy: {}", strategy.getClass().getName());
+
             try {
                 LoginReply login = strategy.login(subject);
+                _log.debug( "Login strategy returned {}", login.getSubject());
+
                 if (!Subjects.isNobody(login.getSubject())) {
                     return login;
                 }
@@ -68,25 +73,38 @@ public class UnionLoginStrategy implements LoginStrategy
                  * IllegalArgumentException when provided with a
                  * Subject they cannot handle.
                  */
+                _log.debug("Login failed with IllegalArgumentException for {}: {}", subject,
+                        e.getMessage());
             } catch (PermissionDeniedCacheException e) {
                 /* As we form the union of all allowed logins of all
                  * strategies, we ignore the failure and try the next
                  * strategy.
                  */
-                _log.debug("Login failed for {}: {}", subject, e);
+                _log.debug("Permission denied for {}: {}", subject,
+                        e.getMessage());
+            } catch (CacheException e) {
+                /* LoginStrategy may throw CacheException if the login failed without
+                 * actively denying the user.
+                 */
+                _log.debug("Login failed with CacheException for {}: {}", subject,
+                        e.getMessage());
             }
         }
+        _log.debug( "Strategies failed, trying for anonymous access");
 
         switch (_anonymousAccess) {
         case READONLY:
+            _log.debug( "Allowing read-only access as an anonymous user");
             LoginReply reply = new LoginReply();
             reply.getLoginAttributes().add(new ReadOnly(true));
             return reply;
 
         case FULL:
+            _log.debug( "Allowing full access as an anonymous user");
             return new LoginReply();
 
         default:
+            _log.debug( "Login failed");
             throw new PermissionDeniedCacheException("Access denied");
         }
     }
