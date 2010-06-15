@@ -1,8 +1,12 @@
 # Starts ACL-administration cell
 #
 
-# Load permission check related settings
-exec file:${dcache.home}/share/cells/permission.fragment
+check -strong aclEnabled
+check -strong aclTable
+check -strong aclConnDriver
+check -strong aclConnUrl
+check -strong aclConnUser
+check aclConnPswd
 
 create org.dcache.acl.AclCell acladmin \
         "-export \
