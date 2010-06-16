@@ -43,25 +43,25 @@ public class PAMStyleStrategy<T extends GPlazmaPlugin> {
      * <br>
      * <ul>
      * <li>
-     * required — the module must be successfully checked in order to allow
+     * required - the module must be successfully checked in order to allow
      * authentication. If a required module check fails, the user is not
      * notified until all other modules of the same module type
      * have been checked.
      * </li>
      * <li>
-     * requisite — the module must be successfully checked in order for the
+     * requisite - the module must be successfully checked in order for the
      * authentication to be successful. However, if a requisite module check
      * fails, the user is notified immediately with a message reflecting the
      * first failed required or requisite module.
      * </li>
      * <li>
-     * sufficient — the module checks are ignored if it fails. But, if a
+     * sufficient - the module checks are ignored if it fails. But, if a
      * sufficient flagged module is successfully checked and no required
      * flagged modules above it have failed, then no other modules of this
      * module type are checked and the user is authenticated.
      * </li>
      * <li>
-     * optional — the module checks are ignored if it fails. If the module
+     * optional - the module checks are ignored if it fails. If the module
      * check is successful, it does not play a role in the overall success
      * or failure for that module type. The only time a module flagged as
      * optional is necessary for successful authentication is when no other
