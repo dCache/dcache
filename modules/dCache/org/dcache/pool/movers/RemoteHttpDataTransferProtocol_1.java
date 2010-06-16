@@ -7,6 +7,7 @@ package org.dcache.pool.movers;
  */
 
 import diskCacheV111.vehicles.*;
+import diskCacheV111.util.Base64;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 import org.dcache.pool.repository.Allocator;
@@ -88,7 +89,7 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
         if (userInfo != null)
             {
 		// set the authentication
-                String userPassEncoding = new sun.misc.BASE64Encoder().encode(userInfo.getBytes());
+            String userPassEncoding = Base64.byteArrayToBase64(userInfo.getBytes());
     		httpconnection.setRequestProperty("Authorization", "Basic " +
                                                   userPassEncoding);
             }
