@@ -7,15 +7,13 @@ import java.util.Set;
 import java.util.List;
 import org.dcache.webadmin.model.businessobjects.NamedCell;
 import org.dcache.webadmin.model.businessobjects.Pool;
-import org.dcache.webadmin.model.dataaccess.XMLDataGatherer;
-import org.dcache.webadmin.model.exceptions.DataGatheringException;
 import org.dcache.webadmin.view.beans.PoolBean;
 
 /**
  * XML-Data Source for Unit Tests with standardized XML-Output.
  * @author jans
  */
-public class XMLDataGathererHelper implements XMLDataGatherer {
+public class XMLDataGathererHelper {
 
     public static final String POOL1_NAME = "myFirstPool";
     public static final String POOL1_DOMAIN = "myFirstPoolDomain";
@@ -183,25 +181,6 @@ public class XMLDataGathererHelper implements XMLDataGatherer {
             "  </domain>" +
             " </domains>" +
             "</dCache>";
-
-    public String getXML(List<String> pathElements) throws DataGatheringException {
-        if (pathElements.equals(PoolsDAOImpl.NAMEDCELLS_PATH)) {
-            return getNamedCellsResponse();
-        } else if (pathElements.equals(PoolsDAOImpl.POOLS_PATH)) {
-            return getPoolsResponse();
-        } else {
-            throw new UnsupportedOperationException();
-        }
-
-    }
-
-    private String getNamedCellsResponse() {
-        return namedCellXmlcontent;
-    }
-
-    private String getPoolsResponse() {
-        return poolsXmlcontent;
-    }
 
     public static Set<Pool> getExpectedPools() {
         Set<Pool> pools = new HashSet<Pool>(2);

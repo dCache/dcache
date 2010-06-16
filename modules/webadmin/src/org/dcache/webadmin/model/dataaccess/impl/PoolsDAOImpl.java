@@ -8,7 +8,6 @@ import java.util.Set;
 import org.dcache.webadmin.model.businessobjects.NamedCell;
 import org.dcache.webadmin.model.businessobjects.Pool;
 import org.dcache.webadmin.model.dataaccess.PoolsDAO;
-import org.dcache.webadmin.model.dataaccess.XMLDataGatherer;
 import org.dcache.webadmin.model.dataaccess.communication.CellMessageGenerator;
 import org.dcache.webadmin.model.dataaccess.communication.CellMessageGenerator.CellMessageRequest;
 import org.dcache.webadmin.model.exceptions.DataGatheringException;
@@ -17,6 +16,7 @@ import org.dcache.webadmin.model.exceptions.DAOException;
 import org.w3c.dom.Document;
 import org.dcache.webadmin.model.dataaccess.communication.CommandSender;
 import org.dcache.webadmin.model.dataaccess.communication.CommandSenderFactory;
+import org.dcache.webadmin.model.dataaccess.communication.impl.InfoGetSerialisedDataMessageGenerator;
 import org.dcache.webadmin.model.dataaccess.communication.impl.PoolModifyModeMessageGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,10 +24,10 @@ import org.slf4j.LoggerFactory;
 /**
  * This is an DataAccessObject for the pools offered by the model. It provides
  * the access to the needed data concerning pools.
- * It gets the data from its XMLDataGatherer. This answer is processed
+ * It processes the collected data
  * in the XML-processor and
- * put into the matching businessobjects. This is returned to the caller.
- * It sends commands to pools via a commandSender.
+ * puts it into the matching businessobjects. This is returned to the caller.
+ * It sends commands via a commandSender.
  * @author jan schaefer 29-10-2009
  */
 public class PoolsDAOImpl implements PoolsDAO {
@@ -37,11 +37,9 @@ public class PoolsDAOImpl implements PoolsDAO {
     public static final List<String> POOLS_PATH = Arrays.asList("pools");
     private static Logger _log = LoggerFactory.getLogger(PoolsDAOImpl.class);
     private XMLProcessor _xmlProcessor = new XMLProcessor();
-    private XMLDataGatherer _xmlDataGatherer;
     private CommandSenderFactory _commandSenderFactory;
 
-    public PoolsDAOImpl(XMLDataGatherer xmlDataGatherer, CommandSenderFactory commandSenderFactory) {
-        _xmlDataGatherer = xmlDataGatherer;
+    public PoolsDAOImpl(CommandSenderFactory commandSenderFactory) {
         _commandSenderFactory = commandSenderFactory;
     }
 
@@ -64,7 +62,20 @@ public class PoolsDAOImpl implements PoolsDAO {
     }
 
     private String getPoolListXML() throws DataGatheringException {
-        return _xmlDataGatherer.getXML(POOLS_PATH);
+        try {
+            InfoGetSerialisedDataMessageGenerator messageGenerator =
+                    new InfoGetSerialisedDataMessageGenerator(POOLS_PATH);
+            CommandSender commandSender =
+                    _commandSenderFactory.createCommandSender(messageGenerator);
+            commandSender.sendAndWait();
+            if (commandSender.allSuccessful()) {
+                return messageGenerator.getXML();
+            } else {
+                throw new DataGatheringException("couldn't get data from info provider");
+            }
+        } catch (InterruptedException e) {
+            throw new DataGatheringException("Interrupted during data gathering", e);
+        }
     }
 
     @Override
@@ -86,7 +97,20 @@ public class PoolsDAOImpl implements PoolsDAO {
     }
 
     private String getNamedCellsXML() throws DataGatheringException {
-        return _xmlDataGatherer.getXML(NAMEDCELLS_PATH);
+        try {
+            InfoGetSerialisedDataMessageGenerator messageGenerator =
+                    new InfoGetSerialisedDataMessageGenerator(NAMEDCELLS_PATH);
+            CommandSender commandSender =
+                    _commandSenderFactory.createCommandSender(messageGenerator);
+            commandSender.sendAndWait();
+            if (commandSender.allSuccessful()) {
+                return messageGenerator.getXML();
+            } else {
+                throw new DataGatheringException("couldn't get data from info provider");
+            }
+        } catch (InterruptedException e) {
+            throw new DataGatheringException("Interrupted during data gathering", e);
+        }
     }
 
     @Override

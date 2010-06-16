@@ -24,5 +24,7 @@ public interface CellMessageGenerator<M extends Message> extends Iterable<CellMe
         public void setSuccessful(boolean successful);
 
         public CellPath getDestination();
+
+        public void setAnswer(Message answer);
     }
 }

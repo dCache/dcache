@@ -91,5 +91,10 @@ public class PoolModifyModeMessageGenerator implements CellMessageGenerator<Pool
         public void setSuccessful(boolean successful) {
             _sentSuccessfully = successful;
         }
+
+        @Override
+        public void setAnswer(Message answer) {
+//            currently no interest in answer since it is not used
+        }
     }
 }

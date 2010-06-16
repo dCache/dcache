@@ -22,18 +22,12 @@
         <property name="timeout" value="180000"/>
     </bean>
 
-    <bean id="XMLDataGatherer"
-        class="org.dcache.webadmin.model.dataaccess.impl.CellXMLDataGatherer">
-        <property name="infoCellStub" ref="InfoCellStub"/>
-    </bean>
-
     <bean id="CommandSenderFactory"
         class="org.dcache.webadmin.model.dataaccess.communication.impl.CellCommandSenderFactory">
         <property name="poolCellStub" ref="PoolCellStub"/>
     </bean>
 
     <bean id="DAOFactory" class="org.dcache.webadmin.model.dataaccess.impl.DAOFactoryImpl">
-        <property name="defaultXMLDataGatherer" ref="XMLDataGatherer"/>
         <property name="defaultCommandSenderFactory" ref="CommandSenderFactory"/>
     </bean>
 

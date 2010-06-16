@@ -11,7 +11,5 @@ public interface DAOFactory {
 
     public PoolsDAO getPoolsDAO();
 
-    public void setDefaultXMLDataGatherer(XMLDataGatherer xmlDataGatherer);
-
     public void setDefaultCommandSenderFactory(CommandSenderFactory commandSenderFactory);
 }

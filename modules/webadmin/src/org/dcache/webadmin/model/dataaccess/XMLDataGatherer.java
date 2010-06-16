@@ -1,6 +1,5 @@
 package org.dcache.webadmin.model.dataaccess;
 
-import java.util.List;
 import org.dcache.webadmin.model.exceptions.DataGatheringException;
 
 /**
@@ -9,5 +8,5 @@ import org.dcache.webadmin.model.exceptions.DataGatheringException;
  */
 public interface XMLDataGatherer {
 
-    public String getXML(List<String> pathElements) throws DataGatheringException;
+    public String getXML() throws DataGatheringException;
 }

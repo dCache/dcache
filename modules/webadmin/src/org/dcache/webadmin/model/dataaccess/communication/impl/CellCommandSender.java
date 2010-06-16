@@ -58,6 +58,7 @@ public class CellCommandSender implements CommandSender {
     }
 
     private void processFailure() {
+        _log.debug("failure {}", System.currentTimeMillis());
         _allSuccessful = false;
     }
 
@@ -66,7 +67,7 @@ public class CellCommandSender implements CommandSender {
     }
 
     /**
-     * Callback to handle answer of a Pool to a PoolModifyModeMessage.
+     * Callback to handle answer of a Cell to a Message.
      * @author jans
      */
     private class CellMessageCallback implements MessageCallback<Message> {
@@ -82,7 +83,10 @@ public class CellCommandSender implements CommandSender {
         private void evaluateReply(Message answer) {
             if ((answer != null) && (answer.getReturnCode() == 0)) {
                 _messageRequest.setSuccessful(true);
+            } else {
+                processFailure();
             }
+            _messageRequest.setAnswer(answer);
         }
 
         @Override
@@ -93,26 +97,26 @@ public class CellCommandSender implements CommandSender {
 
         @Override
         public void failure(int rc, Object error) {
-            setAnswered();
             processFailure();
+            setAnswered();
         }
 
         @Override
         public void noroute() {
-            setAnswered();
             processFailure();
+            setAnswered();
         }
 
         @Override
         public void timeout() {
-            setAnswered();
             processFailure();
+            setAnswered();
         }
 
         private void setAnswered() {
-            processAnswered();
             _log.debug("{} answered {}", _messageRequest.getDestination(),
                     System.currentTimeMillis());
+            processAnswered();
         }
     }
 }
