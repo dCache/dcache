@@ -99,6 +99,8 @@ import javax.security.auth.Subject;
 import org.dcache.namespace.PermissionHandler;
 import org.dcache.acl.enums.AccessType;
 import org.apache.log4j.Logger;
+import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
 
 /**
  *
@@ -113,7 +115,7 @@ public final class PutCompanion implements MessageCallback<PnfsMessage>
     public  static final long PNFS_TIMEOUT = 10*Constants.MINUTE;
     private static final int INITIAL_STATE=0;
     private static final int WAITING_FOR_FILE_INFO_MESSAGE=1;
-    private static final int RESEIVED_FILE_INFO_MESSAGE=2;
+    private static final int RECEIVED_FILE_INFO_MESSAGE=2;
     private static final int WAITING_FOR_DIRECTORY_INFO_MESSAGE=3;
     private static final int RECEIVED_DIRECTORY_INFO_MESSAGE=4;
     private static final int WAITING_FOR_CREATE_DIRECTORY_RESPONSE_MESSAGE=5;
@@ -177,7 +179,7 @@ public final class PutCompanion implements MessageCallback<PnfsMessage>
             PnfsGetStorageInfoMessage storage_info_msg =
             (PnfsGetStorageInfoMessage)message;
             if(state == WAITING_FOR_FILE_INFO_MESSAGE) {
-                state = RESEIVED_FILE_INFO_MESSAGE;
+                state = RECEIVED_FILE_INFO_MESSAGE;
                 fileInfoArrived(storage_info_msg);
                 return;
             } else if(state == WAITING_FOR_DIRECTORY_INFO_MESSAGE) {
@@ -202,49 +204,67 @@ public final class PutCompanion implements MessageCallback<PnfsMessage>
         }
     }
 
-        public void failure(int rc, Object error) {
+    public void failure(int rc, Object error) {
         _log.debug(this.toString()+" failed reply arrived, rc:"+rc+" error:"+error);
-        if( state == WAITING_FOR_CREATE_DIRECTORY_RESPONSE_MESSAGE) {
+        if (state == WAITING_FOR_CREATE_DIRECTORY_RESPONSE_MESSAGE) {
             state = RECEIVED_CREATE_DIRECTORY_RESPONSE_MESSAGE;
-                String errorString = "directory creation failed: "+getCurrentDirPath()+" reason: "+
-                error;
-                unregisterAndFailCreator(errorString);
-                //  notify all waiting of error (on all levels)
-                //   unregisterCreator(pnfsPath, this, message);
-                callbacks.Error(errorString);
-                return;
-        } else if(state == WAITING_FOR_FILE_INFO_MESSAGE) {
-                    state = RESEIVED_FILE_INFO_MESSAGE;
+            String errorString = "directory creation failed: "+
+                getCurrentDirPath()+" reason: "+error;
+            unregisterAndFailCreator(errorString);
+            //   notify all waiting of error (on all levels)
+            //   unregisterCreator(pnfsPath, this, message);
+            callbacks.Error(errorString);
+            return;
+        }
+        else if(state == WAITING_FOR_FILE_INFO_MESSAGE) {
+            state = RECEIVED_FILE_INFO_MESSAGE;
             String fileName = (String) pathItems.get(pathItems.size()-1);
+            if(error instanceof PermissionDeniedCacheException) {
+                callbacks.AuthorizationError(error.toString());
+                return;
+            }
             if(fileName.length() >PNFS_MAX_FILE_NAME_LENGTH) {
                 callbacks.Error("File name is too long");
                 return;
             }
-            _log.debug("file does not exist, now get info for directory");
-
-            // next time we will go into different path
-
-            //
-            //this is how we get the directory containing this path
-            //
-            current_dir_depth = pathItems.size();
-            askPnfsForParentInfo();
-        } else if(state == WAITING_FOR_DIRECTORY_INFO_MESSAGE) {
-                    state = RECEIVED_DIRECTORY_INFO_MESSAGE;
+            if (error instanceof FileNotFoundCacheException ) {
+                // file does not exist, go up a tree
+                _log.debug("file does not exist, now get info for directory");
+                current_dir_depth = pathItems.size();
+                askPnfsForParentInfo();
+                return;
+            }
+            else {
+                _log.error("Unexpected Error : "+error.toString());
+                callbacks.Error("Unexpected Error "+error.toString());
+                return;
+            }
+        }
+        else if(state == WAITING_FOR_DIRECTORY_INFO_MESSAGE) {
+            state = RECEIVED_DIRECTORY_INFO_MESSAGE;
+            if(error instanceof PermissionDeniedCacheException) {
+                callbacks.AuthorizationError(error.toString());
+                return;
+            }
+            if (error instanceof FileNotFoundCacheException ) {
                 if(recursive_directory_creation) {
                     askPnfsForParentInfo();
                     return;
                 }
-                String errorString = "GetStorageInfoFailed message.getReturnCode" +
-                        " () != 0, error="+error;
-                unregisterAndFailCreator(errorString);
-                _log.error(errorString);
-                callbacks.GetStorageInfoFailed("GetStorageInfoFailed " +
-                        "PnfsGetStorageInfoMessage.getReturnCode () != 0 => " +
-                        "parrent directory does not exist");
-                return ;
+            }
+            //
+            // Any other error
+            //
+            String errorString = "GetStorageInfoFailed message.getReturnCode" +
+                " () != 0, error="+error;
+            unregisterAndFailCreator(errorString);
+            _log.error(errorString);
+            callbacks.GetStorageInfoFailed("GetStorageInfoFailed " +
+                                           "PnfsGetStorageInfoMessage.getReturnCode () != 0 => " +
+                                           "parrent directory does not exist");
+            return ;
         }
-     }
+    }
 
     public void noroute() {
         _log.error(this.toString()+" No Route to PnfsManager");
@@ -390,7 +410,7 @@ public final class PutCompanion implements MessageCallback<PnfsMessage>
 
 
         try {
-            pnfsStub.send(dirMsg,PnfsMessage.class, 
+            pnfsStub.send(dirMsg,PnfsMessage.class,
                     new ThreadManagerMessageCallback(this) );
         }
         catch(Exception ee ) {
@@ -510,8 +530,8 @@ public final class PutCompanion implements MessageCallback<PnfsMessage>
                 return "INITIAL_STATE";
             case WAITING_FOR_FILE_INFO_MESSAGE:
                 return "WAITING_FOR_FILE_INFO_MESSAGE";
-            case RESEIVED_FILE_INFO_MESSAGE:
-                return "RESEIVED_FILE_INFO_MESSAGE";
+            case RECEIVED_FILE_INFO_MESSAGE:
+                return "RECEIVED_FILE_INFO_MESSAGE";
             case WAITING_FOR_DIRECTORY_INFO_MESSAGE:
                 return "WAITING_FOR_DIRECTORY_INFO_MESSAGE";
             case RECEIVED_DIRECTORY_INFO_MESSAGE:
