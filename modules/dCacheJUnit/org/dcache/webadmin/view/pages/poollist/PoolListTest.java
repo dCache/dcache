@@ -88,7 +88,7 @@ public class PoolListTest {
 
     @Test
     public void testHomeLink() {
-        _tester.clickLink(POOLUSAGE_FORM_ID + ":" + HOMELINK_ID);
+        _tester.clickLink(HOMELINK_ID);
         _tester.assertRenderedPage(_tester.getApplication().getHomePage());
     }
 

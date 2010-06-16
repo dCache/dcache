@@ -1,3 +1,4 @@
+
 <project name="webadmin" basedir="." default="help">
 
     <!-- All to srcdir web-app part -->
@@ -69,11 +70,16 @@
             </fileset>
         </copy>
         <!--stick to the wicket specific directory structure ->
-        put html and props in the right folders-->
+        put html, css and props in the right folders-->
         <copy todir="${webappPackageDir.classes}">
             <fileset dir="${webappDir.src}">
                 <include name="**/*.html" />
                 <include name="**/*.properties" />
+                <include name="**/*.css" />
+                <include name="**/*.gif" />
+                <include name="**/*.jpg" />
+                <include name="**/*.png" />
+                <include name="**/*.xml" />
             </fileset>
         </copy>
 

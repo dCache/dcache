@@ -34,7 +34,7 @@ public class LogIn extends WebPage {
     public LogIn() {
         final FeedbackPanel feedback = new FeedbackPanel("feedback");
         add(new Label("dCacheInstanceName",
-                ((WebAdminInterface) getApplication()).getDcacheName()));
+                getWebadminApplication().getDcacheName()));
         add(feedback);
         add(new LogInForm("LogInForm"));
     }
@@ -44,7 +44,15 @@ public class LogIn extends WebPage {
     }
 
     private LogInService getLogInService() {
-        return ((WebAdminInterface) getApplication()).getLogInService();
+        return getWebadminApplication().getLogInService();
+    }
+
+    private WebAdminInterfaceSession getWebadminSession() {
+        return (WebAdminInterfaceSession) this.getSession();
+    }
+
+    private WebAdminInterface getWebadminApplication() {
+        return (WebAdminInterface) getApplication();
     }
 
     private class LogInForm extends StatelessForm {
@@ -100,10 +108,6 @@ public class LogIn extends WebPage {
             if (!continueToOriginalDestination()) {
                 setResponsePage(getApplication().getHomePage());
             }
-        }
-
-        private WebAdminInterfaceSession getWebadminSession() {
-            return (WebAdminInterfaceSession) this.getSession();
         }
 
         private class LogInButton extends Button {

@@ -4,20 +4,23 @@
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <title>dCache Services</title>
         <link rel="stylesheet" type="text/css" href="common.css" />
-        <link rel="stylesheet" type="text/css" href="dCacheServices.css" />
-    </head>
-    <body>
-        <div id="head"></div>
-        <div id="main">
-            <h1><span wicket:id="dCacheInstanceName"></span></h1>
-            <div class="link_container"id="services">
-                <h1><wicket:message key="dcacheServices.linkcollection1.header">missing</wicket:message></h1>
-                <div class="link">
-                    <a href="#" wicket:id="poolListLink">
-                        <wicket:message key="dcacheServices.poolListLink">missing</wicket:message>
-                    </a>
-                </div>
+    <wicket:link>
+        <link rel="stylesheet" type="text/css" href="DCacheServices.css" />
+    </wicket:link>
+
+</head>
+<body>
+    <div id="head"></div>
+    <div id="main">
+        <h1><span wicket:id="dCacheInstanceName"></span></h1>
+        <div class="link_container"id="services">
+            <h1><wicket:message key="dcacheServices.linkcollection1.header">missing</wicket:message></h1>
+            <div class="link">
+                <a href="#" wicket:id="poolListLink">
+                    <wicket:message key="dcacheServices.poolListLink">missing</wicket:message>
+                </a>
             </div>
         </div>
-    </body>
+    </div>
+</body>
 </html>

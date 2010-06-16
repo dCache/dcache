@@ -43,15 +43,15 @@ public class PoolList extends AuthenticatedWebPage {
     private static final Logger _log = LoggerFactory.getLogger(PoolList.class);
 
     public PoolList() {
-        Form headerForm = new PoolUsageForm("poolUsageForm");
-        headerForm.add(new CustomLink("homeLink", getApplication().getHomePage()));
-        headerForm.add(createPoolModeDropDown("mode"));
-        headerForm.add(new FeedbackPanel("feedback"));
+        add(new CustomLink("homeLink", getApplication().getHomePage()));
+        Form poolUsageForm = new PoolUsageForm("poolUsageForm");
+        poolUsageForm.add(createPoolModeDropDown("mode"));
+        poolUsageForm.add(new FeedbackPanel("feedback"));
         getPoolsAction();
         ListView poolListView = new PoolBeanListView("listview",
                 new PropertyModel(this, "_poolBeans"));
-        headerForm.add(poolListView);
-        add(headerForm);
+        poolUsageForm.add(poolListView);
+        add(poolUsageForm);
     }
 
     private DropDownChoice createPoolModeDropDown(String id) {
@@ -83,7 +83,7 @@ public class PoolList extends AuthenticatedWebPage {
     }
 
     private PoolBeanService getPoolBeanService() {
-        return ((WebAdminInterface) getApplication()).getPoolBeanService();
+        return getWebadminApplication().getPoolBeanService();
     }
 
     private void getPoolsAction() {

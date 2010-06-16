@@ -1,6 +1,7 @@
 package org.dcache.webadmin.view.pages;
 
 import org.apache.wicket.markup.html.WebPage;
+import org.dcache.webadmin.view.WebAdminInterface;
 import org.dcache.webadmin.view.beans.WebAdminInterfaceSession;
 
 /**
@@ -15,5 +16,13 @@ public abstract class AuthenticatedWebPage extends WebPage {
      */
     public WebAdminInterfaceSession getWebadminSession() {
         return (WebAdminInterfaceSession) getSession();
+    }
+
+    /*
+     * conveniance method since every AuthenticatedWebPage will need the
+     * application-object to retrive the user
+     */
+    public WebAdminInterface getWebadminApplication() {
+        return (WebAdminInterface) getApplication();
     }
 }
