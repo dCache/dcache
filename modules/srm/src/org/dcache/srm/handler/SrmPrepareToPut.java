@@ -38,10 +38,10 @@ import org.apache.axis.types.URI.MalformedURIException;
  * @author  timur
  */
 public class SrmPrepareToPut {
-    private static Logger logger = 
+    private static Logger logger =
             LoggerFactory.getLogger(SrmPrepareToPut.class);
-    
-    
+
+
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement storage;
     SrmPrepareToPutRequest request;
@@ -50,7 +50,7 @@ public class SrmPrepareToPut {
     RequestCredential credential;
     Configuration configuration;
     String client_host;
-    
+
     /** Creates a new instance of SrmLs */
     public SrmPrepareToPut(SRMUser user,
             RequestCredential credential,
@@ -74,9 +74,9 @@ public class SrmPrepareToPut {
         }
         this.client_host = client_host;
     }
-    
+
     boolean longFormat =false;
-    
+
     String servicePathAndSFNPart = "";
     int port;
     String host;
@@ -92,14 +92,14 @@ public class SrmPrepareToPut {
             logger.error(srme.toString());
             response = getFailedResponse(srme.toString());
         }
-        
+
         return response;
     }
-    
+
     public static final SrmPrepareToPutResponse getFailedResponse(String error) {
         return getFailedResponse(error,null);
     }
-    
+
     public static final SrmPrepareToPutResponse getFailedResponse(String error,TStatusCode statusCode) {
         if(statusCode == null) {
             statusCode =TStatusCode.SRM_FAILURE;
@@ -111,7 +111,7 @@ public class SrmPrepareToPut {
         srmPrepareToPutResponse.setReturnStatus(status);
         return srmPrepareToPutResponse;
     }
-    
+
     private static final String[] emptyArr = new String[0];
 
     public SrmPrepareToPutResponse srmPrepareToPut()
@@ -128,29 +128,29 @@ public class SrmPrepareToPut {
                     request.getTransferParameters().getArrayOfTransferProtocols().getStringArray();
         }
         protocols = Tools.trimStringArray(protocols);
-        
+
         if(protocols == null || protocols.length <1) {
             return getFailedResponse("request contains no transfer protocols");
         }
-	
+
         if(request.getTransferParameters() != null &&
                 request.getTransferParameters().getArrayOfClientNetworks() != null ) {
-            String[] clientNetworks = 
+            String[] clientNetworks =
                 request.getTransferParameters().getArrayOfClientNetworks().getStringArray();
-            if(clientNetworks != null && 
+            if(clientNetworks != null &&
                 clientNetworks.length >0 &&
                 clientNetworks[0] != null) {
                 client_host = clientNetworks[0];
             }
         }
-        
+
         String spaceToken = request.getTargetSpaceToken();
         TRetentionPolicy retentionPolicy =null;
         TAccessLatency accessLatency = null;
         if(request.getTargetFileRetentionPolicyInfo() != null) {
-            retentionPolicy = 
+            retentionPolicy =
                     request.getTargetFileRetentionPolicyInfo().getRetentionPolicy();
-            accessLatency = 
+            accessLatency =
                     request.getTargetFileRetentionPolicyInfo().getAccessLatency();
         }
         TPutFileRequest [] fileRequests = null;
@@ -172,7 +172,7 @@ public class SrmPrepareToPut {
             }
         }
         TOverwriteMode overwriteMode = request.getOverwriteOption();
-        if(overwriteMode != null && 
+        if(overwriteMode != null &&
            overwriteMode.equals(TOverwriteMode.WHEN_FILES_ARE_DIFFERENT)) {
             return getFailedResponse(
 		"Overwrite Mode WHEN_FILES_ARE_DIFFERENT is not supported",
@@ -189,10 +189,10 @@ public class SrmPrepareToPut {
 		 }
 	     }
 	}
-	if (!foundMatchedProtocol) { 
+	if (!foundMatchedProtocol) {
  	    TReturnStatus status = new TReturnStatus();
  	    status.setStatusCode(TStatusCode.SRM_NOT_SUPPORTED);
-            StringBuffer errorsb = 
+            StringBuffer errorsb =
                 new StringBuffer("Protocol(s) specified not supported: [ ");
 	    for(String protocol:protocols) {
                 errorsb.append(protocol).append(' ');
@@ -204,8 +204,8 @@ public class SrmPrepareToPut {
  	    org.dcache.srm.v2_2.TPutRequestFileStatus[] statusArray = new org.dcache.srm.v2_2.TPutRequestFileStatus[fileRequests.length];
  	    for (int i = 0; i < fileRequests.length ; ++i ) {
  		TPutFileRequest fr = fileRequests[i];
- 		if (fr!=null) { 
- 		    if (fr.getTargetSURL()!=null) { 
+ 		if (fr!=null) {
+ 		    if (fr.getTargetSURL()!=null) {
  			TPutRequestFileStatus fileStatus = new TPutRequestFileStatus();
  			TReturnStatus fileReturnStatus = new TReturnStatus();
  			fileReturnStatus.setStatusCode(TStatusCode.SRM_FAILURE);
@@ -220,7 +220,7 @@ public class SrmPrepareToPut {
  	    srmPrepareToPutResponse.setArrayOfFileStatuses(arrayOfFileStatuses);
  	    return srmPrepareToPutResponse;
  	}
-	
+
         for (int i = 0; i < fileRequests.length ; ++i ) {
             TPutFileRequest nextRequest = fileRequests[i];
             if(nextRequest == null ) {
@@ -228,7 +228,7 @@ public class SrmPrepareToPut {
             }
             String nextSurl =null;
             if(nextRequest.getTargetSURL() != null ) {
-                
+
                 nextSurl = nextRequest.getTargetSURL().toString();
             }
             if(nextSurl == null) {
@@ -236,7 +236,7 @@ public class SrmPrepareToPut {
             }
             org.apache.axis.types.UnsignedLong knownSize = nextRequest.getExpectedFileSize();
             if(knownSize != null) {
-                
+
                 sizes[i] = knownSize.longValue();
             }
             // if knownsize is null then the sizes[i] should have be
@@ -272,12 +272,12 @@ public class SrmPrepareToPut {
                     retentionPolicy,
                     accessLatency,
                     request.getUserRequestDescription());
-	    if (request.getStorageSystemInfo()!=null) { 
-		    if ( request.getStorageSystemInfo().getExtraInfoArray()!=null) { 
-			    if (request.getStorageSystemInfo().getExtraInfoArray().length>0) { 
-				    for (int i=0;i<request.getStorageSystemInfo().getExtraInfoArray().length;i++) { 
+	    if (request.getStorageSystemInfo()!=null) {
+		    if ( request.getStorageSystemInfo().getExtraInfoArray()!=null) {
+			    if (request.getStorageSystemInfo().getExtraInfoArray().length>0) {
+				    for (int i=0;i<request.getStorageSystemInfo().getExtraInfoArray().length;i++) {
 					    TExtraInfo extraInfo = request.getStorageSystemInfo().getExtraInfoArray()[i];
-					    if (extraInfo.getKey().equals("priority")) { 
+					    if (extraInfo.getKey().equals("priority")) {
 						    int priority = Integer.parseInt(extraInfo.getValue());
 						    r.setPriority(priority);
 					    }
@@ -285,11 +285,11 @@ public class SrmPrepareToPut {
 			    }
 		    }
 	    }
-            
+
             if(overwriteMode != null) {
                 r.setOverwriteMode(overwriteMode);
             }
-	    
+
             r.schedule();
             // RequestScheduler will take care of the rest
             //getRequestScheduler.add(r);
@@ -299,8 +299,8 @@ public class SrmPrepareToPut {
             logger.warn(e.toString());
             return getFailedResponse(e.toString());
         }
-        
+
     }
-    
-    
+
+
 }

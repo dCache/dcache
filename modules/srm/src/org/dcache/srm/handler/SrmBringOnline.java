@@ -32,10 +32,10 @@ import org.apache.axis.types.URI.MalformedURIException;
  * @author  timur
  */
 public class SrmBringOnline {
-    
-    private static Logger logger = 
+
+    private static Logger logger =
             LoggerFactory.getLogger(SrmBringOnline.class);
-    
+
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement storage;
     SrmBringOnlineRequest request;
@@ -70,7 +70,7 @@ public class SrmBringOnline {
             throw new NullPointerException("configuration is null");
         }
         }
-    
+
     boolean longFormat =false;
     String servicePathAndSFNPart = "";
     int port;
@@ -87,14 +87,14 @@ public class SrmBringOnline {
             logger.error(srme.toString());
             response = getFailedResponse(srme.toString());
         }
-        
+
         return response;
     }
-    
+
     public static final SrmBringOnlineResponse getFailedResponse(String error) {
         return getFailedResponse(error,null);
     }
-    
+
     public static final SrmBringOnlineResponse getFailedResponse(String error,TStatusCode statusCode) {
         if(statusCode == null) {
             statusCode =TStatusCode.SRM_FAILURE;
@@ -120,15 +120,15 @@ public class SrmBringOnline {
         protocols = Tools.trimStringArray(protocols);
         if(request.getTransferParameters() != null &&
                 request.getTransferParameters().getArrayOfClientNetworks() != null ) {
-            String[] clientNetworks = 
+            String[] clientNetworks =
                 request.getTransferParameters().getArrayOfClientNetworks().getStringArray();
-            if(clientNetworks != null && 
+            if(clientNetworks != null &&
                 clientNetworks.length >0 &&
                 clientNetworks[0] != null) {
                 client_host = clientNetworks[0];
             }
         }
-        
+
         TGetFileRequest [] fileRequests = null;
         if(request.getArrayOfFileRequests() != null ) {
             fileRequests = request.getArrayOfFileRequests().getRequestArray();
@@ -149,19 +149,19 @@ public class SrmBringOnline {
                 lifetimeInSeconds>0
                 ?lifetimeInSeconds*1000
                 :configuration.getBringOnlineLifetime();
-        
+
         long desiredLietimeInSeconds ;
-        
-        if (request.getDesiredLifeTime() != null 
+
+        if (request.getDesiredLifeTime() != null
             && request.getDesiredLifeTime().intValue() != 0) {
-            desiredLietimeInSeconds = 
+            desiredLietimeInSeconds =
                 (long)request.getDesiredLifeTime().intValue();
         } else if( lifetimeInSeconds>0 ) {
             desiredLietimeInSeconds = lifetimeInSeconds;
         } else {
             desiredLietimeInSeconds = configuration.getBringOnlineLifetime() / 1000;
         }
-        
+
         for (int i = 0; i < fileRequests.length ; ++i ) {
             TGetFileRequest nextRequest = fileRequests[i];
             if(nextRequest == null ) {
@@ -170,7 +170,7 @@ public class SrmBringOnline {
             }
             String nextSurl =null;
             if(nextRequest.getSourceSURL() != null) {
-                
+
                 nextSurl = nextRequest.getSourceSURL().toString();
             }
             if(nextSurl == null) {
@@ -193,12 +193,12 @@ public class SrmBringOnline {
                     request.getUserRequestDescription(),
                     client_host);
 
-	    if (request.getStorageSystemInfo()!=null) { 
-		    if ( request.getStorageSystemInfo().getExtraInfoArray()!=null) { 
-			    if (request.getStorageSystemInfo().getExtraInfoArray().length>0) { 
-				    for (int i=0;i<request.getStorageSystemInfo().getExtraInfoArray().length;i++) { 
+	    if (request.getStorageSystemInfo()!=null) {
+		    if ( request.getStorageSystemInfo().getExtraInfoArray()!=null) {
+			    if (request.getStorageSystemInfo().getExtraInfoArray().length>0) {
+				    for (int i=0;i<request.getStorageSystemInfo().getExtraInfoArray().length;i++) {
 					    TExtraInfo extraInfo = request.getStorageSystemInfo().getExtraInfoArray()[i];
-					    if (extraInfo.getKey().equals("priority")) { 
+					    if (extraInfo.getKey().equals("priority")) {
 						    int priority = Integer.parseInt(extraInfo.getValue());
 						    r.setPriority(priority);
 					    }
@@ -217,8 +217,8 @@ public class SrmBringOnline {
             logger.error(e.toString());
             return getFailedResponse(e.toString());
         }
-        
+
     }
-    
-    
+
+
 }

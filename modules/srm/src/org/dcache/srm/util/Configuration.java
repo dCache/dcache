@@ -1181,7 +1181,7 @@ public class Configuration {
         this.timeout_script = timeout_script;
     }
 
-    /** 
+    /**
      * this method returns collection of the local srm hosts.
      * A host part of the srm url (surl) is used to determine if the surl
      * references file in this storage system.
@@ -1201,7 +1201,7 @@ public class Configuration {
         }
     }
 
-    /** 
+    /**
      * This method adds values to the collection of the local srm hosts.
      * A host part of the srm url (surl) is used to determine if the surl
      * references file in this storage system.
@@ -2445,7 +2445,7 @@ public class Configuration {
 	    return asynchronousLs;
     }
 
-    public void setAsynchronousLs(boolean  yes) { 
+    public void setAsynchronousLs(boolean  yes) {
 	    asynchronousLs=yes;
     }
 
