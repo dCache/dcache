@@ -1924,7 +1924,7 @@ public class PnfsManagerV3 extends CellAdapter
 
         _log.info("Path cache miss for " + path);
 
-        return path.hashCode() % _threadGroups;
+        return (int) (Math.abs(path.hashCode())) % _threadGroups;
     }
 
     /**
