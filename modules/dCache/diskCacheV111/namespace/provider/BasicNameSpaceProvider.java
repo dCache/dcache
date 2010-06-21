@@ -348,9 +348,9 @@ public class BasicNameSpaceProvider
 
         if (!rc) {
             if (!parent.exists()) {
-                throw new FileNotFoundCacheException("No such file or directory: " + name);
+                throw new FileNotFoundCacheException("No such file or directory: " + parent);
             } else if (!parent.isDirectory()) {
-                throw new NotDirCacheException("Not a directory: " + name);
+                throw new NotDirCacheException("Not a directory: " + parent);
             } else {
                 throw new FileExistsCacheException("File exists: " + name);
             }

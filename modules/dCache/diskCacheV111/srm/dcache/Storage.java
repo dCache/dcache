@@ -2437,26 +2437,11 @@ public final class Storage
     {
         _log.debug("Storage.createDirectory");
 
-        try {
-            /* We copy the mode (permissions) of the parent directory,
-             * so we start by querying it. REVISIT: It's a bit strange
-             * that PNFS doesn't provide an option to copy the parent
-             * mode.
-             */
-            String path = getFullPath(directory);
-            String parent = FsPath.getParent(path);
-            FileAttributes attr =
-                _pnfs.getFileAttributes(parent, EnumSet.of(MODE));
+        Subject subject = Subjects.getSubject((AuthorizationRecord) user);
+        PnfsHandler handler = new PnfsHandler(_pnfs, subject);
 
-            /* Permission checks are performed by PnfsManager because
-             * we specify a Subject for the request.
-             */
-            AuthorizationRecord duser = (AuthorizationRecord) user;
-            PnfsHandler handler =
-                new PnfsHandler(_pnfs, Subjects.getSubject(duser));
-            handler.createPnfsDirectory(path,
-                                        duser.getUid(), duser.getGid(),
-                                        attr.getMode());
+        try {
+            handler.createPnfsDirectory(getFullPath(directory));
         } catch (TimeoutCacheException e) {
             throw new SRMInternalErrorException("Internal name space timeout", e);
         } catch (NotDirCacheException e) {

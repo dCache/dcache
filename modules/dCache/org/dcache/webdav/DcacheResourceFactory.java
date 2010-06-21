@@ -107,9 +107,6 @@ public class DcacheResourceFactory
     private static final int RELAY_PROTOCOL_INFO_OFFSET = 0;
     private static final int RELAY_PROTOCOL_INFO_SIZE = 0;
 
-    private static final int DIRECTORY_UMASK = 0755;
-    private static final int DIRECTORY_UMASK_ANONYMOUS = 0777;
-
     private static final long PING_DELAY = 300000;
 
 
@@ -541,8 +538,7 @@ public class DcacheResourceFactory
      * using a GridFTP mode S data connection.
      */
     public DcacheResource
-        createFile(FileAttributes parent, FsPath path,
-                   InputStream inputStream, Long length)
+        createFile(FsPath path, InputStream inputStream, Long length)
         throws CacheException, InterruptedException, IOException
     {
         Subject subject = getSubject();
@@ -552,7 +548,7 @@ public class DcacheResourceFactory
         _transfers.add(transfer);
         try {
             boolean success = false;
-            transfer.createNameSpaceEntry(parent);
+            transfer.createNameSpaceEntry();
             try {
                 PnfsId pnfsid = transfer.getPnfsId();
                 transfer.setLength(length);
@@ -816,17 +812,9 @@ public class DcacheResourceFactory
         makeDirectory(FileAttributes parent, FsPath path)
         throws CacheException
     {
-        Subject subject = getSubject();
-        long[] uids = Subjects.getUids(subject);
-        long[] gids = Subjects.getGids(subject);
-        int uid = (uids.length > 0) ? (int) uids[0] : parent.getOwner();
-        int gid = (gids.length > 0) ? (int) gids[0] : parent.getGroup();
-        int umask =
-            (uids.length > 0) ? DIRECTORY_UMASK : DIRECTORY_UMASK_ANONYMOUS;
-        PnfsHandler pnfs = new PnfsHandler(_pnfs, subject);
+        PnfsHandler pnfs = new PnfsHandler(_pnfs, getSubject());
         PnfsCreateEntryMessage reply =
-            pnfs.createPnfsDirectory(path.toString(), uid, gid,
-                                     umask & parent.getMode());
+            pnfs.createPnfsDirectory(path.toString());
         FileAttributes attributes =
             pnfs.getFileAttributes(reply.getPnfsId(), REQUIRED_ATTRIBUTES);
 
