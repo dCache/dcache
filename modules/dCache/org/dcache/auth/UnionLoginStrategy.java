@@ -69,9 +69,8 @@ public class UnionLoginStrategy implements LoginStrategy
                     return login;
                 }
             } catch (IllegalArgumentException e) {
-                /* Our current LoginStrategies throw
-                 * IllegalArgumentException when provided with a
-                 * Subject they cannot handle.
+                /* LoginStrategies throw IllegalArgumentException when
+                 * provided with a Subject they cannot handle.
                  */
                 _log.debug("Login failed with IllegalArgumentException for {}: {}", subject,
                         e.getMessage());
@@ -81,12 +80,6 @@ public class UnionLoginStrategy implements LoginStrategy
                  * strategy.
                  */
                 _log.debug("Permission denied for {}: {}", subject,
-                        e.getMessage());
-            } catch (CacheException e) {
-                /* LoginStrategy may throw CacheException if the login failed without
-                 * actively denying the user.
-                 */
-                _log.debug("Login failed with CacheException for {}: {}", subject,
                         e.getMessage());
             }
         }
