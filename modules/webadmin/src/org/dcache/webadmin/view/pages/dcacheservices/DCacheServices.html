@@ -1,26 +1,16 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
     <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <title>dCache Services</title>
-        <link rel="stylesheet" type="text/css" href="common.css" />
-    <wicket:link>
-        <link rel="stylesheet" type="text/css" href="DCacheServices.css" />
-    </wicket:link>
-
+        <title></title>
+    <wicket:head>
+        <wicket:link>
+            <link href="DCacheServices.css" rel="stylesheet" type="text/css"  />
+        </wicket:link>
+    </wicket:head>
 </head>
 <body>
-    <div id="head"></div>
-    <div id="main">
-        <h1><span wicket:id="dCacheInstanceName"></span></h1>
-        <div class="link_container"id="services">
-            <h1><wicket:message key="dcacheServices.linkcollection1.header">missing</wicket:message></h1>
-            <div class="link">
-                <a href="#" wicket:id="poolListLink">
-                    <wicket:message key="dcacheServices.poolListLink">missing</wicket:message>
-                </a>
-            </div>
-        </div>
-    </div>
+<wicket:extend>
+    <h1><span wicket:id="dCacheInstanceName"></span></h1>
+</wicket:extend>
 </body>
 </html>
+

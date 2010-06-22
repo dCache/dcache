@@ -2,7 +2,6 @@ package org.dcache.webadmin.view.pages.login;
 
 import java.security.cert.X509Certificate;
 import javax.servlet.http.HttpServletRequest;
-import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.protocol.https.RequireHttps;
 import org.slf4j.Logger;
@@ -15,17 +14,16 @@ import org.apache.wicket.markup.html.form.StatelessForm;
 import org.apache.wicket.markup.html.form.PasswordTextField;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.model.CompoundPropertyModel;
-import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
 import org.dcache.webadmin.controller.LogInService;
 import org.dcache.webadmin.controller.exceptions.LogInServiceException;
-import org.dcache.webadmin.view.WebAdminInterface;
 import org.dcache.webadmin.view.beans.LogInBean;
 import org.dcache.webadmin.view.beans.UserBean;
 import org.dcache.webadmin.view.beans.WebAdminInterfaceSession;
+import org.dcache.webadmin.view.pages.basepage.BasePage;
 
 @RequireHttps
-public class LogIn extends WebPage {
+public class LogIn extends BasePage {
 
     public static final String X509_CERTIFICATE_ATTRIBUTE =
             "javax.servlet.request.X509Certificate";
@@ -39,20 +37,8 @@ public class LogIn extends WebPage {
         add(new LogInForm("LogInForm"));
     }
 
-    private String getErrorMessage(String resourceKey) {
-        return new StringResourceModel(resourceKey, this, null).getString();
-    }
-
     private LogInService getLogInService() {
         return getWebadminApplication().getLogInService();
-    }
-
-    private WebAdminInterfaceSession getWebadminSession() {
-        return (WebAdminInterfaceSession) this.getSession();
-    }
-
-    private WebAdminInterface getWebadminApplication() {
-        return (WebAdminInterface) getApplication();
     }
 
     private class LogInForm extends StatelessForm {
@@ -129,7 +115,7 @@ public class LogIn extends WebPage {
                     }
                     setGoOnPage();
                 } catch (LogInServiceException ex) {
-                    error(getErrorMessage("loginError"));
+                    error(getStringResource("loginError"));
                     _log.debug("user/pwd sign in error");
                 }
             }
@@ -155,10 +141,10 @@ public class LogIn extends WebPage {
                     }
                     setGoOnPage();
                 } catch (IllegalArgumentException ex) {
-                    error(getErrorMessage("loginError"));
+                    error(getStringResource("loginError"));
                     _log.debug("no certificate provided");
                 } catch (LogInServiceException ex) {
-                    error(getErrorMessage("loginError"));
+                    error(getStringResource("loginError"));
                     String cause = "unknown";
                     if (ex.getCause() != null) {
                         cause = ex.getCause().getMessage();

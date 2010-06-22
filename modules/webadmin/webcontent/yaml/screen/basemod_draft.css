@@ -1,0 +1,102 @@
+@charset "UTF-8";
+/**
+ * "Yet Another Multicolumn Layout" - (X)HTML/CSS Framework
+ *
+ * (en) Template for designing a screen layout
+ * (de) Gestaltungsvorlage für die Erstellung eines Screenlayouts
+ *
+ * @copyright       Copyright 2005-2010, Dirk Jesse
+ * @license         CC-A 2.0 (http://creativecommons.org/licenses/by/2.0/),
+ *                  YAML-C (http://www.yaml.de/en/license/license-conditions.html)
+ * @link            http://www.yaml.de
+ * @package         yaml
+ * @version         3.2.1
+ * @revision        $Revision:392 $
+ * @lastmodified    $Date:2009-07-05 12:18:40 +0200 (So, 05. Jul 2009) $
+ */
+
+@media screen, projection
+{
+  /** 
+   * (en) Forcing vertical scrollbars in IE8, Firefox, Webkit & Opera 
+   * (de) Erzwingen vertikaler Scrollbalken in IE8, Firefox, Webkit & Opera 
+   *
+   * @workaround
+   * @affected IE8, FF, Webkit, Opera
+   * @css-for all
+   * @valid CSS3
+   */
+
+  body { overflow-y:scroll; }
+
+ /*------------------------------------------------------------------------------------------------------*/
+
+ /**
+  * Design of the Basic Layout | Gestaltung des YAML Basis-Layouts
+  *
+  * @section layout-basics
+  */
+
+  /* Page margins and background | Randbereiche & Seitenhintergrund */
+  body {  }
+
+  /* Layout:Width, Background, Border | Layout:Breite, Hintergrund, Rahmen */
+  .page_margins {  }
+  .page{  }
+
+  /* Design of the Main Layout Elements | Gestaltung der Hauptelemente des Layouts */
+  #header {  }
+  #topnav {  }
+
+  #main {  }
+
+  #footer {  }
+
+ /*------------------------------------------------------------------------------------------------------*/
+
+ /**
+  * Formatting of the Content Area | Formatierung der Inhaltsbereichs
+  *
+  * @section layout-main
+  */
+
+  #col1 {  }
+  #col1_content {  }
+
+  #col2 {  }
+  #col2_content {  }
+
+  #col3 {  }
+  #col3_content {  }
+
+
+ /*------------------------------------------------------------------------------------------------------*/
+
+ /**
+  * Design of Additional Layout Elements | Gestaltung weiterer Layoutelemente
+  *
+  * @section layout-misc
+  */
+  
+  
+  
+ /**
+  * ------------------------------------------------------------------------------------------------- #
+  *
+  * Skiplinks 
+  *
+  * (en) Visual styling for skiplink navigation
+  * (de) Visuelle Gestaltung der Skiplink-Navigation
+  *
+  * @section content-skiplinks
+  */
+  
+  #skiplinks a.skip:focus,
+  #skiplinks a.skip:active { 
+	color:#fff; 
+	background:#333; 
+	border-bottom:1px #000 solid;
+	padding:10px 0;
+	text-decoration:none;
+  }  
+}

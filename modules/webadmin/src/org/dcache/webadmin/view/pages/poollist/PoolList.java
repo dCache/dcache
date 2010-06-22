@@ -21,12 +21,11 @@ import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.StringResourceModel;
 import org.dcache.webadmin.controller.PoolBeanService;
 import org.dcache.webadmin.controller.exceptions.PoolBeanServiceException;
-import org.dcache.webadmin.view.util.CustomLink;
 import org.dcache.webadmin.view.util.EvenOddListView;
-import org.dcache.webadmin.view.WebAdminInterface;
 import org.dcache.webadmin.view.beans.PoolBean;
 import org.dcache.webadmin.view.beans.SelectOption;
 import org.dcache.webadmin.view.pages.AuthenticatedWebPage;
+import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.util.Role;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
@@ -35,7 +34,7 @@ import org.slf4j.Logger;
  * The PoolUsage Webpage
  * @author jans
  */
-public class PoolList extends AuthenticatedWebPage {
+public class PoolList extends BasePage implements AuthenticatedWebPage {
 
     private static final int DEFAULT_DROP_DOWN_CHOICE = 0;
     private List<PoolBean> _poolBeans;
@@ -43,7 +42,6 @@ public class PoolList extends AuthenticatedWebPage {
     private static final Logger _log = LoggerFactory.getLogger(PoolList.class);
 
     public PoolList() {
-        add(new CustomLink("homeLink", getApplication().getHomePage()));
         Form poolUsageForm = new PoolUsageForm("poolUsageForm");
         poolUsageForm.add(createPoolModeDropDown("mode"));
         poolUsageForm.add(new FeedbackPanel("feedback"));
@@ -78,10 +76,6 @@ public class PoolList extends AuthenticatedWebPage {
         return list;
     }
 
-    private String getErrorMessage(String resourceKey) {
-        return new StringResourceModel(resourceKey, this, null).getString();
-    }
-
     private PoolBeanService getPoolBeanService() {
         return getWebadminApplication().getPoolBeanService();
     }
@@ -91,7 +85,7 @@ public class PoolList extends AuthenticatedWebPage {
             _log.debug("getPoolListAction called");
             this._poolBeans = getPoolBeanService().getPoolBeans();
         } catch (PoolBeanServiceException ex) {
-            this.error(getErrorMessage("error.getPoolsFailed") + ex.getMessage());
+            this.error(getStringResource("error.getPoolsFailed") + ex.getMessage());
             _log.debug("getPoolListAction failed {}", ex.getMessage());
             this._poolBeans = null;
         }
@@ -119,7 +113,7 @@ public class PoolList extends AuthenticatedWebPage {
                     getPoolsAction();
                 } catch (PoolBeanServiceException ex) {
                     _log.error("something went wrong with enable/disable");
-                    this.error(getErrorMessage("error.changePoolModeFailed") + ex.getMessage());
+                    this.error(getStringResource("error.changePoolModeFailed") + ex.getMessage());
                 }
             }
         }
