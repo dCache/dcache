@@ -73,14 +73,12 @@ fi
 if [ -f ${RPM_INSTALL_PREFIX}/classes/gplazma.jar ]; then
    rm -f ${RPM_INSTALL_PREFIX}/classes/gplazma.jar
 fi
+
 if [ -d ${RPM_INSTALL_PREFIX}/classes/gplazma-libs ]; then
    rm -rf ${RPM_INSTALL_PREFIX}/classes/gplazma-libs
 fi
 
-#%post
-
 %preun
-
 #
 # stop dCache
 #
@@ -90,8 +88,6 @@ if [ $1 = 0 ]; then
         ${RPM_INSTALL_PREFIX}/bin/dcache stop > /dev/null 2>&1
     fi
 fi
-axis
-#%postun
 
 %files
 %defattr(-,root,root)

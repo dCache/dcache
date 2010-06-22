@@ -11,7 +11,6 @@ import org.globus.gsi.jaas.GlobusPrincipal;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
-import diskCacheV111.util.KAuthFile;
 
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.HomeDirectory;

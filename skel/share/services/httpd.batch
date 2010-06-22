@@ -1,37 +1,37 @@
-#
-#   Make sure we got what we need.
-#
+# The httpd service provides the web interface to dCache
+# administration. It consists of the http service cell (a small
+# embedded web service) and several utility cells that collect
+# information from dCache.
 
 # Required variables
-check -strong port config
+####################################################################
 
-#
-define context TransferObserverSetup endDefine
-  table define large 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16
-  table define small 6,8,4,5,9,10,11,15
-endDefine
-create diskCacheV111.cells.TransferObserverV1 TransferObserver \
-              "default \
-               -loginBroker=LoginBroker \
-               -update=60 \
-               -fieldMap=diskCacheV111.util.MapInfoFields \
-               -mapFile=/etc/passwd "
-#
-#   The web server part
-#
+onerror shutdown
+check -strong port
+check -strong config
+check -strong dcache.home
+check -strong cell.name
+
 onerror continue
 set context -c styles ${dcache.home}/docs/styles
 onerror shutdown
+
+# Default content for httpd service.
+#
+# Can be redefined in etc/httpd.conf or additional content can
+# be defined in httpdSetupExtra.
+####################################################################
+
 define context httpdSetup endDefine
-   set alias homeerror context home.html
-   set alias <home> file ${config}/../docs/skins/home-skin-basic.html -onError=homeerror
+   set alias default context home.html
+   set alias <home> file ${config}/../docs/skins/home-skin-basic.html -onError=default
    set alias docs directory ${config}/../docs
    set alias images directory ${images}
    set alias styles directory ${styles}
    set alias scripts directory ${config}/../docs/scripts
    set alias offline context offline.html
    set alias context context *
-   set alias <default> context home.html
+   set alias <default> context missing.html
    set alias robots.txt context robots.txt
    set alias cellInfo  context cellInfoTable.html  -onError=offline
    set alias usageInfo context poolUsageTable.html -onError=offline
@@ -45,7 +45,8 @@ define context httpdSetup endDefine
    set update 60
 endDefine
 
-#  set alias system   class dmg.cells.services.HttpSystemService
+# Default navigation page
+####################################################################
 
 define context home.html endDefine
 <html>
@@ -88,6 +89,21 @@ define context home.html endDefine
 </html>
 endDefine
 
+# Page to show for missing content
+####################################################################
+
+define context missing.html endDefine
+<html>
+<head><title>No such page</title></head>
+<body background="/images/bg.jpg">
+<h1>Page not found.</h1>
+</body>
+</html>
+endDefine
+
+# Page to show for offline components
+####################################################################
+
 define context offline.html endDefine
 <html>
 <head><title>dCache OFFLINE</title></head>
@@ -106,50 +122,72 @@ define context offline.html endDefine
 </html>
 endDefine
 
-#
-#  Our /robots.txt file.  This advertises which parts of the HTTP service indexing robots
-#  (web-crawlers) should index.  The particular configuration below disallows all indexing.
-#  Details on how to configure robot.txt files are available from:
-#      http://www.robotstxt.org/robotstxt.html
-#
+# Our /robots.txt file.  This advertises which parts of the HTTP
+# service indexing robots (web-crawlers) should index.  The particular
+# configuration below disallows all indexing.  Details on how to
+# configure robot.txt files are available from:
+# http://www.robotstxt.org/robotstxt.html
+####################################################################
+
 define context robots.txt endDefine
 User-agent: *
 Disallow: /
 endDefine
 
+# Any of the above defaults can be redefined in etc/httpd.conf
+####################################################################
 
-define context online.html endDefine
-<html>
-<head><title>dCache OFFLINE</title></head>
-<body bgcolor=blue >
-<center><img src="/images/eagle_logo.gif"></center>
-<p>
-<center>
-<table border=0 width="90%" cellspacing=0 cellpadding=6>
-<tr>
-<td bgcolor=yellow align=left width="50%">Pool : poolA</td>
-<td bgcolor=yellow align=right width="50%">4/5/2001</td>
-</tr>
-</table>
-</center>
-</body>
-</html>
+define env notice.exe endDefine
+  say -level=esay "${dcache.home}/etc/httpd.conf not loaded. This is not an error."
 endDefine
-# copy context:online.html context:setup.html
-#
-create dmg.cells.services.HttpServiceCell  ${cell.name}  ${port}
-#
-#create diskCacheV111.services.web.PoolInfoObserverV2 poolCollector \
-#               "PoolManager \
-#                -config=${config}/PoolCollector.conf \
-#                -pool-refresh-time=60 \
-#                -poolManager-refresh-time=300 \
-#               "
-#
+
+onerror continue
+exec file:${dcache.home}/etc/httpd.conf
+exec env notice.exe -ifnotok
+
+# Transfer observer collects information about active transfers
+####################################################################
+
+onerror shutdown
+define context TransferObserverSetup endDefine
+  table define large 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16
+  table define small 6,8,4,5,9,10,11,15
+endDefine
+
+create diskCacheV111.cells.TransferObserverV1 TransferObserver \
+              "default \
+               -loginBroker=LoginBroker \
+               -update=60 \
+               -fieldMap=diskCacheV111.util.MapInfoFields \
+               -mapFile=/etc/passwd "
+
+
+# PoolInfoObserverV2 collects information about pool groups
+####################################################################
+
+onerror shutdown
+create diskCacheV111.services.web.PoolInfoObserverV2 poolCollector \
+               "PoolManager \
+                -config=${config}/PoolCollector.conf \
+                -pool-refresh-time=60 \
+                -poolManager-refresh-time=300 \
+               "
+
+# WebCollectorV3 collects information about cells and pools
+####################################################################
+
+onerror shutdown
 create diskCacheV111.cells.WebCollectorV3 collector \
     "PnfsManager \
      PoolManager \
      gPlazma \
      -loginBroker=LoginBroker,srm-LoginBroker \
      -replyObject"
-#
+
+
+# The http service cell provides the web interface
+####################################################################
+
+onerror shutdown
+create dmg.cells.services.HttpServiceCell ${cell.name} \
+       "!httpdSetupExtra ${port}"

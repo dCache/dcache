@@ -320,8 +320,7 @@ create org.dcache.cells.UniversalSpringCell jsrm \
         -srmJdbcExecutionThreadNum=${srmJdbcExecutionThreadNum} \
         -srmMaxNumberOfJdbcTasksInQueue=${srmMaxNumberOfJdbcTasksInQueue} \
         -delegateToGPlazma=${delegateToGPlazma} \
-        -use-gplazma-authorization-cell=${useGplazma} \
-        -useGPlazmaAuthorizationModule=false \
+        -useGplazma=${useGplazma} \
         -srmAuthzCacheLifetime=${srmAuthzCacheLifetime} \
         -srmLoginBroker=srm-LoginBroker \
         -protocolFamily=SRM \

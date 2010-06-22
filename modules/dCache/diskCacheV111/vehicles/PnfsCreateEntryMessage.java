@@ -3,12 +3,15 @@
 package diskCacheV111.vehicles;
 
 import org.dcache.namespace.FileAttribute;
+import diskCacheV111.namespace.NameSpaceProvider;
 import java.util.Set;
 
 public class PnfsCreateEntryMessage extends PnfsGetStorageInfoMessage {
 
     private String      _path        = null;
-    private int _uid = -1 , _gid = -1 , _mode = 0 ;
+    private int _uid = NameSpaceProvider.DEFAULT;
+    private int _gid = NameSpaceProvider.DEFAULT;
+    private int _mode = NameSpaceProvider.DEFAULT;
 
     private static final long serialVersionUID = -8197311585737333341L;
 
@@ -48,22 +51,11 @@ public class PnfsCreateEntryMessage extends PnfsGetStorageInfoMessage {
     @Override
     public boolean invalidates(Message message)
     {
-        /* Notice that PnfsCreateEntryMessage inherits from
-         * PnfsGetStorageInfoMessage. Therefore we cannot rely on the
-         * default implementation in PnfsMessage.
-         */
-        if (message instanceof PnfsMessage) {
-            PnfsMessage msg = (PnfsMessage) message;
-            if (getPnfsPath() != null && msg.getPnfsPath() != null &&
-                !getPnfsPath().equals(msg.getPnfsPath())) {
-                return false;
-            }
-        }
-        return true;
+        return genericInvalidatesForPnfsMessage(message);
     }
 
     @Override
-    public boolean isIdempotent()
+    public boolean fold(Message message)
     {
         return false;
     }

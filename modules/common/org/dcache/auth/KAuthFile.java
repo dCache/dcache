@@ -64,11 +64,9 @@ COPYRIGHT STATUS:
   documents or software obtained from this server.
  */
 
-package diskCacheV111.util;
-import org.dcache.auth.UserPwdRecord ;
+package org.dcache.auth;
 import java.util.*;
 import java.io.*;
-import org.dcache.auth.UserAuthRecord;
 
 // WARINING THIS CLASS IS NOT THREAD SAFE
 // Format of : authentication file:

@@ -12,6 +12,8 @@ package org.dcache.auth;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.io.Serializable;
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -25,8 +27,15 @@ import javax.persistence.OrderBy;
 import static javax.persistence.CascadeType.ALL;
 import static javax.persistence.FetchType.EAGER;
 import org.dcache.srm.SRMUser;
-import diskCacheV111.util.FQAN;
 import javax.security.auth.Subject;
+import java.security.Principal;
+import org.dcache.auth.LoginReply;
+import org.dcache.auth.attributes.LoginAttribute;
+import org.dcache.auth.attributes.RootDirectory;
+import org.dcache.auth.attributes.HomeDirectory;
+import org.dcache.auth.attributes.ReadOnly;
+import org.globus.gsi.jaas.GlobusPrincipal;
+
 
 /**
  *
@@ -38,7 +47,7 @@ import javax.security.auth.Subject;
 public class AuthorizationRecord implements Serializable, SRMUser{
     private static final long serialVersionUID = 7412538400840464074L;
     /**
-     *this is the id of the authorization record that is used as 
+     *this is the id of the authorization record that is used as
      * a primary key in the database
      * it is set to a unique value by gPlazma
      * It has nothing to do with user id
@@ -55,14 +64,110 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     private int currentGIDindex=0;
     private String authn = null;
     private String authz = null;
-    
+
     /** Creates a new instance of AuthorizationRecord */
     public AuthorizationRecord() {
     }
-    
+
+
+    /**
+     * Converts a Subject to an AuthorizationRecord. The the UID
+     * (UidPrincipal), GID (GidPrincipal), the mapped user name
+     * (UserNamePrincipal), the DN (GlobusPrincipal), and FQAN
+     * (FQANPrincipal) will be included in the AuthorizationRecord.
+     *
+     * Notice that the AuthorizationRecord will represent a subset of
+     * the information stored in the subject.
+     *
+     * All GIDs will become part of the primary group list. The
+     * primary GIDs will appear first in the primary group list.
+     */
+    public AuthorizationRecord(Subject subject)
+    {
+        this(new LoginReply(subject, Collections.EMPTY_SET));
+    }
+
+    /**
+     * Converts a LoginReply to an AuthorizationRecord. The the UID
+     * (UidPrincipal), GID (GidPrincipal), the mapped user name
+     * (UserNamePrincipal), the DN (GlobusPrincipal), and FQAN
+     * (FQANPrincipal), home directory (HomeDirectory), root directory
+     * (RootDirectory) and read-only (ReadOnly) status will be
+     * included in the AuthorizationRecord.
+     *
+     * Notice that the AuthorizationRecord will represent a subset of
+     * the information stored in the LoginReply.
+     *
+     * All GIDs will become part of the primary group list. The
+     * primary GIDs will appear first in the primary group list.
+     */
+    public AuthorizationRecord(LoginReply login)
+    {
+        boolean hasUid = false;
+
+        List<GroupList> groupLists = new LinkedList<GroupList>();
+
+        GroupList primaryGroupList = new GroupList();
+        primaryGroupList.setAuthRecord(this);
+        primaryGroupList.setGroups(new ArrayList<Group>());
+        groupLists.add(primaryGroupList);
+
+        for (Principal principal: login.getSubject().getPrincipals()) {
+            if (principal instanceof UidPrincipal) {
+                if (hasUid) {
+                    throw new IllegalArgumentException("Cannot convert Subject with more than one UID");
+                }
+                hasUid = true;
+                setUid((int) ((UidPrincipal) principal).getUid());
+            } else if (principal instanceof FQANPrincipal) {
+                FQANPrincipal fqanPrincipal = (FQANPrincipal) principal;
+                if (fqanPrincipal.isPrimary() && primaryGroupList.getAttribute() == null) {
+                    primaryGroupList.setAttribute(fqanPrincipal.getName());
+                } else {
+                    GroupList groupList = new GroupList();
+                    groupList.setAuthRecord(this);
+                    groupList.setAttribute(fqanPrincipal.getName());
+                    groupList.setGroups(new ArrayList<Group>());
+                    groupLists.add(groupList);
+                }
+            } else if (principal instanceof GidPrincipal) {
+                GidPrincipal gidPrincipal = (GidPrincipal) principal;
+                Group group = new Group();
+                group.setGid((int) gidPrincipal.getGid());
+                if (gidPrincipal.isPrimaryGroup()) {
+                    primaryGroupList.getGroups().add(0, group);
+                } else {
+                    primaryGroupList.getGroups().add(group);
+                }
+            } else if (principal instanceof GlobusPrincipal) {
+                setName(((GlobusPrincipal) principal).getName());
+            } else if (principal instanceof UserNamePrincipal) {
+                setIdentity(((UserNamePrincipal) principal).getName());
+            }
+        }
+
+        if (!hasUid) {
+            throw new IllegalArgumentException("Cannot convert Subject without UID");
+        }
+
+        setGroupLists(groupLists);
+
+        for (LoginAttribute attribute: login.getLoginAttributes()) {
+            if (attribute instanceof RootDirectory) {
+                setRoot(((RootDirectory) attribute).getRoot());
+            } else if (attribute instanceof HomeDirectory) {
+                setHome(((HomeDirectory) attribute).getHome());
+            } else if (attribute instanceof ReadOnly) {
+                setReadOnly(((ReadOnly) attribute).isReadOnly());
+            }
+        }
+
+        setId();
+    }
+
     /**
      *this is the id getter
-     * this id is a property of the authorization record that is used as 
+     * this id is a property of the authorization record that is used as
      * a primary key in the database
      * it is set to a unique value by gPlazma
      * It has nothing to do with user id
@@ -75,7 +180,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
 
     /**
      *this is the id setter
-     * this id is a property of the authorization record that is used as 
+     * this id is a property of the authorization record that is used as
      * a primary key in the database
      * it is set to a unique value by gPlazma
      * It has nothing to do with user id
@@ -101,7 +206,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     public void setIdentity(String identity) {
         this.identity = identity;
     }
-    
+
     @Basic
     @Column( name="uid")
     public int getUid() {
@@ -111,9 +216,9 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     public void setUid(int uid) {
         this.uid = uid;
     }
-    
+
     @OneToMany(mappedBy="authRecord",
-        fetch=EAGER, 
+        fetch=EAGER,
         targetEntity=GroupList.class,
         cascade = {ALL})
     @OrderBy //PK is assumed
@@ -124,7 +229,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     public void setGroupLists(List<GroupList> groupLists) {
         this.groupLists = groupLists;
     }
-    
+
     @Basic
     @Column( name="priority")
     public int getPriority() {
@@ -185,7 +290,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     public void setCurrentGIDindex(int currentGIDindex) {
         this.currentGIDindex = currentGIDindex;
     }
-    
+
     public void incrementGIDindex() {
         currentGIDindex++;
     }
@@ -199,7 +304,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     public void setName(String name) {
         this.name = name;
     }
-    
+
     public String toString()
     {
         StringBuilder sb = new java.lang.StringBuilder("AR:");
@@ -228,7 +333,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
         sb.append(" >");
         return sb.toString();
     }
-    
+
     public String hashCodeString() {
         return Integer.toHexString(hashCode());
     }
@@ -261,7 +366,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
         }
         return null;
     }
-    
+
     @Transient
     protected GroupList getPrimaryGroupList() {
         if(groupLists != null && !groupLists.isEmpty() ) {
@@ -269,7 +374,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
         }
         return null;
     }
-    
+
     @Transient
     public int getGid() {
         GroupList primaryGroupList = getPrimaryGroupList();
@@ -285,9 +390,9 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     @Transient
     public long getId(AuthorizationRecord authrec) {
         long id = authrec.getId();
-        
+
         if(id != 0 ) return id;
-        
+
         int authn_hash = getAuthn().hashCode();
         int authz_hash = getAuthz().hashCode();
 
@@ -350,7 +455,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
         initHashStrings();
         return getAuthn().hashCode()^getAuthz().hashCode();
     }
-    
+
     @Transient
     public int[] getGids() {
         List<Integer> gids = new ArrayList<Integer>();
@@ -363,11 +468,11 @@ public class AuthorizationRecord implements Serializable, SRMUser{
                     }
                 }
             }
-        } 
+        }
         if(gids.isEmpty()) {
             return new int[] {-1};
         }
-        
+
         int [] gidIntArray = new int[gids.size()];
         for(int i=0; i<gidIntArray.length; i++) {
             gidIntArray[i] = gids.get(i);
@@ -379,7 +484,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     public Subject getSubject() {
         return Subjects.getSubject(this);
     }
-    
+
     /**
      *
      * @return UserAuthRecord which corresponds to this GroupList

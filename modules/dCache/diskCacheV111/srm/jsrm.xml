@@ -87,9 +87,9 @@
       -old-request-remove-period-secs=${srmOldRequestRemovalPeriodSeconds}
       -jdbc-execution-thread-num=${srmJdbcExecutionThreadNum}
       -max-queued-jdbc-tasks-num=${srmMaxNumberOfJdbcTasksInQueue}
-      -use-gplazma-authorization-cell=${useGPlazmaAuthorizationCell}
+      -use-gplazma-authorization-cell=${useGplazma}
       -delegate-to-gplazma=${delegateToGPlazma}
-      -use-gplazma-authorization-module=${useGPlazmaAuthorizationModule}
+      -use-gplazma-authorization-module=false
       -gplazma-authorization-module-policy=${gplazmaPolicy}
       -srm-authz-cache-lifetime=${srmAuthzCacheLifetime}
       -srmLoginBroker=${srmLoginBroker}
@@ -153,7 +153,7 @@
 
           <property name="acceptors" value="${srmJettyConnectorAcceptors}"/>
           <property name="maxIdleTime" value="${srmJettyConnectorMaxIdleTime}"/>
-          <property name="lowResourceMaxIdleTime" 
+          <property name="lowResourceMaxIdleTime"
                     value="${srmJettyConnectorLowResourceMaxIdleTime}"/>
           <property name="acceptQueueSize" value="${srmJettyConnectorBackLog}"/>
 

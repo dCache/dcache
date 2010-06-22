@@ -83,7 +83,7 @@ public class PnfsManagerV3 extends CellAdapter
     private CellPath     _pnfsDeleteNotificationRelay = null;
 
     /**
-     * Whether to use folding of idempotent messages.
+     * Whether to use folding.
      */
     private boolean      _canFold = false;
 
@@ -1016,8 +1016,7 @@ public class PnfsManagerV3 extends CellAdapter
             checkMask(pnfsMessage.getSubject(), file.getParent(),
                       pnfsMessage.getAccessMask());
 
-            FileMetaData metadata = new FileMetaData(true, pnfsMessage.getUid(), pnfsMessage.getGid(), pnfsMessage.getMode());
-            pnfsId = _nameSpaceProvider.createEntry(pnfsMessage.getSubject(), pnfsMessage.getPath(), metadata, true);
+            pnfsId = _nameSpaceProvider.createEntry(pnfsMessage.getSubject(), pnfsMessage.getPath(), pnfsMessage.getUid(), pnfsMessage.getGid(), pnfsMessage.getMode(), true);
 
             pnfsMessage.setPnfsId(pnfsId);
             pnfsMessage.setSucceeded();
@@ -1065,8 +1064,7 @@ public class PnfsManagerV3 extends CellAdapter
             checkMask(pnfsMessage.getSubject(), file.getParent(),
                       pnfsMessage.getAccessMask());
 
-            FileMetaData metadata = new FileMetaData(false, pnfsMessage.getUid(), pnfsMessage.getGid(), pnfsMessage.getMode());
-            pnfsId = _nameSpaceProvider.createEntry(pnfsMessage.getSubject(), pnfsMessage.getPath(),metadata, false);
+            pnfsId = _nameSpaceProvider.createEntry(pnfsMessage.getSubject(), pnfsMessage.getPath(), pnfsMessage.getUid(), pnfsMessage.getGid(), pnfsMessage.getMode(), false);
 
             pnfsMessage.setPnfsId(pnfsId);
             pnfsMessage.setSucceeded();
@@ -1535,7 +1533,7 @@ public class PnfsManagerV3 extends CellAdapter
 
         protected void fold(PnfsMessage message)
         {
-            if (_canFold && message.isIdempotent()) {
+            if (_canFold) {
                 Iterator<CellMessage> i = _fifo.iterator();
                 while (i.hasNext()) {
                     CellMessage envelope = (CellMessage) i.next();
@@ -1546,13 +1544,12 @@ public class PnfsManagerV3 extends CellAdapter
                         break;
                     }
 
-                    if (other.isSubsumedBy(message)) {
-                        _log.info("Collapsing " + message.getClass().getSimpleName());
+                    if (other.fold(message)) {
+                        _log.info("Folded {}", other.getClass().getSimpleName());
                         _foldedCounters.incrementRequests(message.getClass());
 
                         i.remove();
                         envelope.revertDirection();
-                        envelope.setMessageObject(message);
 
                         try {
                             sendMessage(envelope);
@@ -1615,9 +1612,13 @@ public class PnfsManagerV3 extends CellAdapter
                     index =
                         (int) (Math.abs((long) pnfsId.hashCode()) % _locationFifos.length);
                     _log.info("Using location thread [" + pnfsId + "] " + index);
+                } else if (path != null) {
+                    index =
+                        (int) (Math.abs((long) path.hashCode()) % _locationFifos.length);
+                    _log.info("Using location thread [" + path + "] " + index);
                 } else {
                     index = _random.nextInt(_locationFifos.length);
-                    _log.info("Using location thread [" + path + "] " + index);
+                    _log.info("Using random location thread " + index);
                 }
                 fifo = _locationFifos[index];
             } else {
@@ -1634,7 +1635,7 @@ public class PnfsManagerV3 extends CellAdapter
                     _log.info("Using thread [" + path + "] " + index);
                 } else {
                     index = _random.nextInt(_fifos.length);
-                    _log.info("Using thread [" + pnfsId + "] " + index);
+                    _log.info("Using random thread " + index);
                 }
                 fifo = _fifos[index];
             }
@@ -1908,8 +1909,8 @@ public class PnfsManagerV3 extends CellAdapter
      * Returns the thread group number for a path. The mapping is
      * based on the database ID of the path.  A cache is used to avoid
      * lookups in the name space provider once the path prefix for a
-     * database has been determined. In case of a cache miss a random
-     * thread group is chosen.
+     * database has been determined. In case of a cache miss an
+     * arbitrary but deterministic thread group is chosen.
      */
     private int pathToThreadGroup(String path)
     {
@@ -1923,7 +1924,7 @@ public class PnfsManagerV3 extends CellAdapter
 
         _log.info("Path cache miss for " + path);
 
-        return _random.nextInt(_threadGroups);
+        return (int) (Math.abs(path.hashCode())) % _threadGroups;
     }
 
     /**

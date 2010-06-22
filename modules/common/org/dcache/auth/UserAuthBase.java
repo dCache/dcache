@@ -2,17 +2,6 @@ package org.dcache.auth;
 
 //import org.glite.security.voms.FQAN;
 
-import diskCacheV111.util.*;
-import java.util.*;
-import javax.persistence.Entity;
-import javax.persistence.Inheritance;
-import javax.persistence.InheritanceType;
-import javax.persistence.Basic;
-import javax.persistence.Id;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Column;
-
 public abstract class UserAuthBase extends Object implements java.io.Serializable {
     static final long serialVersionUID = -7700110348980815506L;
     

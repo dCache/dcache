@@ -35,7 +35,7 @@ public class AbstractNameSpaceProvider
     }
 
     @Override
-    public PnfsId createEntry(Subject subject, String path, FileMetaData metaData, boolean isDirectory)
+    public PnfsId createEntry(Subject subject, String path, int uid, int gid, int mode, boolean isDirectory)
         throws CacheException
     {
         throw new UnsupportedOperationException();

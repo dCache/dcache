@@ -1,7 +1,10 @@
 package org.dcache.xrootd2.door;
 
 import java.net.InetSocketAddress;
+
+
 import java.security.GeneralSecurityException;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
@@ -9,6 +12,8 @@ import java.util.Collections;
 import java.nio.channels.ClosedChannelException;
 import java.security.SecureRandom;
 
+import org.dcache.cells.MessageCallback;
+import org.dcache.util.list.DirectoryEntry;
 import org.dcache.xrootd2.protocol.XrootdProtocol;
 import org.dcache.xrootd2.protocol.messages.CloseRequest;
 import org.dcache.xrootd2.protocol.messages.OpenRequest;
@@ -22,6 +27,7 @@ import org.dcache.xrootd2.util.FileStatus;
 import org.dcache.xrootd2.util.OpaqueStringParser;
 import org.dcache.xrootd2.util.ParseException;
 import org.dcache.xrootd2.core.XrootdRequestHandler;
+import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.xrootd2.protocol.messages.*;
 import static org.dcache.xrootd2.protocol.XrootdProtocol.*;
 
@@ -170,8 +176,12 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
             if (neededPerm == FilePerm.WRITE) {
                 boolean createDir = (options & XrootdProtocol.kXR_mkpath) ==
                     XrootdProtocol.kXR_mkpath;
+                boolean overwrite = (options & XrootdProtocol.kXR_delete) ==
+                    XrootdProtocol.kXR_delete;
+
                 transfer =
-                    _door.write(remoteAddress, authPath, checksum, createDir);
+                    _door.write(remoteAddress, authPath, checksum,
+                                createDir, overwrite);
             } else {
                 transfer =
                     _door.read(remoteAddress, authPath, checksum);
@@ -538,6 +548,48 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         }
     }
 
+    @Override
+    protected void doOnDirList(ChannelHandlerContext context,
+                               MessageEvent event,
+                               DirListRequest request)
+    {
+        Channel channel = event.getChannel();
+        InetSocketAddress localAddress =
+                            (InetSocketAddress) channel.getLocalAddress();
+
+        String listPath = request.getPath();
+
+        if (listPath.isEmpty()) {
+            respondWithError(context, event, request,
+                             kXR_ArgMissing, "no source path specified");
+            return;
+        }
+
+        try {
+            String authPath = checkOperationPermission(FilePerm.READ, listPath,
+                                                       request.getOpaque(),
+                                                       localAddress);
+
+            _log.info("Listing directory {}", authPath);
+            MessageCallback<PnfsListDirectoryMessage> callback =
+                                    new ListCallback(request, context, event);
+            _door.listPath(authPath, callback);
+
+        } catch (CacheException ce) {
+
+            respondWithError(context, event, request,
+                             XrootdProtocol.kXR_ServerError,
+                             String.format("Internal server error! (%s)",
+                                           ce.getMessage()));
+        } catch (RuntimeException re) {
+            _log.error("dirlist failed due to a bug", re);
+            respondWithError(context, event, request,
+                             XrootdProtocol.kXR_ServerError,
+                             String.format("Internal server error (%s)",
+                                           re.getMessage()));
+        }
+    }
+
     protected void doOnClose(ChannelHandlerContext ctx, MessageEvent e, CloseRequest msg)
     {
         unsupported(ctx, e, msg);
@@ -716,5 +768,131 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
     {
         return new FileStatus(0, meta.getFileSize(), getFileStatusFlags(meta),
                               meta.getLastModifiedTime());
+    }
+
+    /**
+     * Callback responding to client depending on the list directory messages
+     * it receives from Pnfs via the door.
+     * @author tzangerl
+     *
+     */
+    private class ListCallback
+                        implements MessageCallback<PnfsListDirectoryMessage> {
+
+        private final DirListRequest _request;
+        private final ChannelHandlerContext _context;
+        private final MessageEvent _event;
+
+        public ListCallback(DirListRequest request,
+                            ChannelHandlerContext context,
+                            MessageEvent event) {
+            _request = request;
+            _context = context;
+            _event = event;
+        }
+
+        /**
+         * Respond to client if message contains errors. Try to use
+         * meaningful status codes from the xrootd-protocol to map the errors
+         * from PnfsManager.
+         *
+         * @param rc The error code of the message
+         * @param error Object describing the actual error that occured
+         */
+        @Override
+        public void failure(int rc, Object error) {
+            switch (rc) {
+            case CacheException.TIMEOUT:
+                respondWithError(_context,
+                                 _event,
+                                 _request,
+                                 kXR_ServerError,
+                                 "Timeout when trying to list directory: " +
+                                 error.toString());
+                break;
+            case CacheException.DIR_NOT_EXISTS:
+                respondWithError(_context,
+                                 _event,
+                                 _request,
+                                 kXR_NotFound,
+                                 "Directory does not exist: " +
+                                 error.toString());
+                break;
+            case CacheException.PERMISSION_DENIED:
+                respondWithError(_context,
+                                 _event,
+                                 _request,
+                                 kXR_NotAuthorized,
+                                 "Permission to list that directory denied: " +
+                                 error.toString());
+                break;
+            default:
+                respondWithError(_context,
+                                 _event,
+                                 _request,
+                                 kXR_ServerError,
+                                 "Error when processing list response: " +
+                                 error.toString());
+                break;
+            }
+        }
+
+        /**
+         * Reply to client if no route to PNFS manager was found.
+         *
+         */
+        @Override
+        public void noroute() {
+            respondWithError(_context,
+                             _event,
+                             _request,
+                             kXR_ServerError,
+                             "Could not contact PNFS Manager.");
+
+        }
+
+        /**
+         * In case of a listing success, inspect the message. If the message
+         * is the final listing message, reply with kXR_ok and the full
+         * directory listing. If the message is not the final message, reply
+         * with oksofar and the partial directory listing.
+         *
+         * @param message The PnfsListDirectoryMessage-reply as it was received
+         * from the PNFSManager.
+         */
+        @Override
+        public void success(PnfsListDirectoryMessage message) {
+
+            Collection<DirectoryEntry> directories = message.getEntries();
+
+            if (message.isFinal()) {
+                _log.debug("XrootdRedirectHandler: Received final listing " +
+                           "message!");
+                respond(_context,
+                        _event,
+                        new DirListResponse(_request.getStreamID(),
+                                            directories));
+            } else {
+                respond(_context,
+                        _event,
+                        new DirListResponse(_request.getStreamID(),
+                                            kXR_oksofar,
+                                            directories));
+            }
+        }
+
+        /**
+         * Respond to client in the case of a timeout.
+         */
+        @Override
+        public void timeout() {
+            respondWithError(_context,
+                             _event,
+                             _request,
+                             kXR_ServerError,
+                             "Timeout when trying to list directory!");
+
+        }
+
     }
 }

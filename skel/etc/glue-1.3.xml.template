@@ -1750,8 +1750,8 @@
       <sub match="gsiftp"  replace-with="2.0"/>
       <sub match="gsidcap" replace-with="1.0"/>
       <sub match="dcap"    replace-with="1.0"/>
-      <sub match="Xrootd"  replace-with="2.7"/>
-      <sub match="root"    replace-with="2.7"/>
+      <sub match="Xrootd"  replace-with="2.96"/>
+      <sub match="root"    replace-with="2.96"/>
     </map>
 
     <!--+

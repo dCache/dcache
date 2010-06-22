@@ -20,6 +20,26 @@ import org.dcache.vehicles.FileAttributes;
 public interface NameSpaceProvider
 {
     /**
+     * When the mode field is not specified in createEntry, the mode
+     * is inherited from the parent directory. When creating new
+     * directories, this UMASK is applied to the inherited mode.
+     */
+    public final int UMASK_DIR = 0777;
+
+    /**
+     * When the mode field is not specified in createEntry, the mode
+     * is inherited from the parent directory. When creating new
+     * regular files, this UMASK is applied to the inherited mode.
+     */
+    public final int UMASK_FILE = 0666;
+
+    /**
+     * Special value used to indicate that a default value should be
+     * used.
+     */
+    public static final int DEFAULT = -1;
+
+    /**
      * set if there is no old value
      */
     public static final int SI_EXCLUSIVE = 0;
@@ -52,15 +72,18 @@ public interface NameSpaceProvider
 
 
     /**
-     * create file or directory for given path
+     * Create file or directory for given path.
+     *
      * @param subject Subject of user who invoked this method.
      * @param path full path of new object
-     * @param metaData initial values for object metadata, like owner, group, permissions mode
+     * @param uid uid of new entry or -1 for default
+     * @param gid gid of new entry or -1 for default
+     * @param mode mode of new entry or -1 for default
      * @param isDirectory create a directory if true
      * @return PnfsId of newly created object
      * @throws CacheException
      */
-    PnfsId createEntry(Subject subject, String path, FileMetaData metaData, boolean isDirectory) throws CacheException;
+    PnfsId createEntry(Subject subject, String path, int uid, int gid, int mode, boolean isDirectory) throws CacheException;
 
     /**
      * remove file or directory associated with given pnfsid

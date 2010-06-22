@@ -1,5 +1,6 @@
 package diskCacheV111.admin ;
 
+import org.dcache.auth.KAuthFile;
 import java.util.* ;
 import java.io.* ;
 

@@ -280,6 +280,24 @@ public class RequestCounters<T> {
     }
 
     /**
+    * Reset all counters.
+    */
+   public synchronized void reset() {
+       for(RequestCounterImpl counter : counters.values()) {
+           counter.reset();
+       }
+   }
+
+   /**
+    * Shutdown all counters.
+    */
+   public synchronized void shutdown() {
+       for(RequestCounterImpl counter : counters.values()) {
+           counter.shutdown();
+       }
+   }
+
+    /**
      *
      * @return keyset
      */
@@ -300,6 +318,16 @@ public class RequestCounters<T> {
 
             public int getTotalRequests(){
                 return RequestCounters.this.getTotalRequests();
+            }
+
+            @Override
+            public void reset() {
+                RequestCounters.this.reset();
+            }
+
+            @Override
+            public void shutdown() {
+                RequestCounters.this.shutdown();
             }
         };
     }

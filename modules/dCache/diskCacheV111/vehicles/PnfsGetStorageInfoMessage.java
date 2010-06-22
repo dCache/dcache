@@ -77,22 +77,4 @@ public class PnfsGetStorageInfoMessage extends PnfsGetFileMetaDataMessage {
         _followLinks = followLinks;
         super.setResolve(followLinks);
     }
-
-    @Override
-    public boolean isSubsumedBy(Message message)
-    {
-        if (message.getClass().equals(PnfsGetStorageInfoMessage.class)) {
-            PnfsId pnfsId = getPnfsId();
-            String path = getPnfsPath();
-            PnfsGetStorageInfoMessage other =
-                (PnfsGetStorageInfoMessage) message;
-            return
-                other.resolve() == resolve() &&
-                (pnfsId == null || pnfsId.equals(other.getPnfsId())) &&
-                (path == null || path.equals(other.getPnfsPath())) &&
-                (!isChecksumsRequested() || other.isChecksumsRequested());
-        }
-
-        return false;
-    }
 }

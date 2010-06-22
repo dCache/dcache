@@ -5,7 +5,7 @@ import java.awt.geom.Arc2D;
 import java.util.*;
 import java.io.*;
 import java.lang.*;
-import diskCacheV111.util.FQAN;
+import org.dcache.auth.FQAN;
 
 public class LinkGroupAuthorizationRecord {
 	private String linkGroupName;

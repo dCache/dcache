@@ -64,6 +64,7 @@ import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.util.FireAndForgetTask;
 
 public class HsmStorageHandler2
     extends AbstractCellComponent
@@ -737,7 +738,7 @@ public class HsmStorageHandler2
             new HsmRemoveTask(getCellEndpoint(),
                               _hsmRemoveTaskExecutor,
                               _hsmSet, _maxRemoveRun, message);
-        _hsmRemoveExecutor.execute(task);
+        _hsmRemoveExecutor.execute(new FireAndForgetTask(task));
     }
 
     //////////////////////////////////////////////////////////////////////

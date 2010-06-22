@@ -1,11 +1,11 @@
 package dmg.util ;
 
-import java.util.* ;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.lang.reflect.* ;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.StringTokenizer;
 /**
   *
   *   Scans a specified object and makes a special set
@@ -477,6 +477,13 @@ public class CommandInterpreter implements Interpretable {
           args.shift();
           return runHelp( args ) ;
 
+       }
+       //
+       // check for the NOOP command.
+       //
+       if( ( args.argc() > 0 ) &&
+           ( args.argv(0).equals("xyzzy") ) ) {
+           return "Nothing happens.";
        }
        //
        // walk along the command tree as long as arguments are

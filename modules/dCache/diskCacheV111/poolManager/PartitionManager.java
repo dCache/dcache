@@ -100,14 +100,30 @@ public class PartitionManager
        "";
     public String hh_pm_set = "[<partitionName>] OPTIONS #  help pm set" ;
     public String ac_pm_set_$_0_1( Args args ){
-
+        String returnMessage = "";
         String name = args.argc() == 0 ? "default" : args.argv(0) ;
         Info info = _infoMap.get(name) ;
 
-        if( info == null )
+        //TODO: ultimately we want to remove support for this behaviour
+        if( info == null ) {
           _infoMap.put( name , info = new Info( name , _defaultPartitionInfo ) ) ;
+          returnMessage = "partition " + name + " created";
+        }
 
         scanParameter( args , info._parameter ) ;
+
+        return returnMessage;
+    }
+
+    public String hh_pm_create = "<partitionName>";
+    public String ac_pm_create_$_1( Args args) {
+        String name = args.argv(0);
+
+        if( _infoMap.containsKey( name)) {
+            return "Partition " + name + " already exists.";
+        }
+
+        _infoMap.put(name, new Info(name, _defaultPartitionInfo));
 
         return "" ;
     }
@@ -515,6 +531,7 @@ public class PartitionManager
         for (Info info: _infoMap.values()) {
             if (info._name.equals("default"))
                 continue;
+            pw.append("pm create ").append(info._name).append("\n");
             dumpInfo(pw, info);
         }
     }

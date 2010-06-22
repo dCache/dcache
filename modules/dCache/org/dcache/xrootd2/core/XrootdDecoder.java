@@ -1,12 +1,13 @@
 package org.dcache.xrootd2.core;
 
 import org.jboss.netty.handler.codec.frame.FrameDecoder;
+
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.buffer.ChannelBuffer;
 
 import org.dcache.xrootd2.protocol.messages.*;
-import static org.dcache.xrootd.protocol.XrootdProtocol.*;
+import static org.dcache.xrootd2.protocol.XrootdProtocol.*;
 
 /**
  * A FrameDecoder decoding xrootd frames into AbstractRequestMessage
@@ -82,6 +83,8 @@ public class XrootdDecoder extends FrameDecoder
             return new MkDirRequest(frame);
         case kXR_mv:
             return new MvRequest(frame);
+        case kXR_dirlist:
+            return new DirListRequest(frame);
         default:
             return new UnknownRequest(frame);
         }

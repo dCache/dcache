@@ -38,6 +38,13 @@
     <constructor-arg value="1"/>
   </bean>
 
+  <bean id="dirlist-timeout-executor"
+        class="java.util.concurrent.Executors"
+        factory-method="newSingleThreadScheduledExecutor"
+        destroy-method="shutdown">
+    <description>Thread pool for dirlist callback timeouts</description>
+  </bean>
+
   <bean id="request-thread-pool"
         class="org.jboss.netty.handler.execution.MemoryAwareThreadPoolExecutor"
         destroy-method="shutdown">
@@ -115,6 +122,7 @@
     <property name="rootPath" value="${xrootdRootPath}"/>
     <property name="moverTimeout" value="${xrootdMoverTimeout}"/>
     <property name="executor" ref="scheduled-thread-pool"/>
+    <property name="dirlistTimeoutExecutor" ref="dirlist-timeout-executor" />
   </bean>
 
   <bean id="lb" class="org.dcache.util.LoginBrokerHandler"

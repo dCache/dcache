@@ -80,7 +80,7 @@ public class PermissionHandlerNameSpaceProvider
 
     @Override
     public PnfsId createEntry(Subject subject, String path,
-                              FileMetaData metaData, boolean isDirectory)
+                              int uid, int gid, int mode, boolean isDirectory)
         throws CacheException
     {
         if (!Subjects.isRoot(subject)) {
@@ -101,7 +101,7 @@ public class PermissionHandlerNameSpaceProvider
                 }
             }
         }
-        return super.createEntry(subject, path, metaData, isDirectory);
+        return super.createEntry(subject, path, uid, gid, mode, isDirectory);
     }
 
     @Override

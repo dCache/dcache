@@ -10,6 +10,7 @@ set context -c pnfsNumberOfThreadGroups 1
 set context -c pnfsNumberOfListThreads 2
 set context -c DefaultAccessLatency NEARLINE
 set context -c DefaultRetentionPolicy CUSTODIAL
+set context -c pnfsFolding       false
 onerror shutdown
 
 # Load permission check related settings
@@ -32,6 +33,7 @@ create diskCacheV111.namespace.PnfsManagerV3 ${cell.name} \
         -aclConnUrl=${aclConnUrl} \
         -aclConnUser=${aclConnUser} \
         -aclConnPswd=${aclConnPswd} \
+        -folding=${pnfsFolding} \
         -chimeraConfig=${config}/chimera-config.xml \
         -namespace-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory \
         -cachelocation-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory \

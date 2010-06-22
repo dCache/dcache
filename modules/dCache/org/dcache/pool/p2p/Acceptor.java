@@ -63,9 +63,7 @@ class Acceptor implements Runnable
     synchronized int register(Companion companion)
         throws IOException
     {
-        if (_sessions.isEmpty()) {
-            start();
-        }
+        start();
 
         int id = _nextId++;
         _sessions.put(id, companion);
@@ -132,7 +130,8 @@ class Acceptor implements Runnable
     synchronized private void start()
         throws IOException
     {
-        if (_worker == null) {
+        if (_worker == null || !_worker.isAlive()) {
+            _worker = null;
             try {
                 _serverChannel = ServerSocketChannel.open();
                 try {
@@ -231,6 +230,12 @@ class Acceptor implements Runnable
         } catch (Exception e) {
             _error = e.getMessage();
             _log.error("Bug detected: " + e, e);
+        } finally {
+            try {
+                _serverChannel.close();
+            } catch (IOException e) {
+                _log.warn("Failure closing socket: " + e);
+            }
         }
     }
 

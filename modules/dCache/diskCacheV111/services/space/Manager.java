@@ -63,7 +63,7 @@ import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.PnfsDeleteEntryNotificationMessage;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.FQAN;
+import org.dcache.auth.FQAN;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.Pgpass;
 import diskCacheV111.util.VOInfo;

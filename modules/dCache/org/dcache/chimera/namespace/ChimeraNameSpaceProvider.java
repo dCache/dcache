@@ -56,6 +56,7 @@ import org.dcache.vehicles.FileAttributes;
 import org.dcache.acl.ACLException;
 import org.dcache.acl.handler.singleton.AclHandler;
 import org.dcache.chimera.DirectoryStreamB;
+import org.dcache.auth.Subjects;
 
 public class ChimeraNameSpaceProvider
     implements NameSpaceProvider
@@ -201,22 +202,45 @@ public class ChimeraNameSpaceProvider
         return fileMetaData;
     }
 
-    public PnfsId createEntry(Subject subject, String path,  FileMetaData metaData, boolean isDir ) throws CacheException {
+    public PnfsId createEntry(Subject subject, String path,  int uid, int gid, int mode, boolean isDir ) throws CacheException {
 
 
         FsInode inode = null;
 
         try {
-            Stat metadataStat = fileMetadata2Stat(metaData, isDir );
-
             File newEntryFile = new File(path);
 
             FsInode parent = _fs.path2inode(newEntryFile.getParent());
 
+            if (uid == DEFAULT) {
+                if (Subjects.isNobody(subject)) {
+                    uid = parent.statCache().getUid();
+                } else {
+                    uid = (int) Subjects.getUid(subject);
+                }
+            }
+
+            if (gid == DEFAULT) {
+                if (Subjects.isNobody(subject)) {
+                    gid = parent.statCache().getGid();
+                } else {
+                    gid = (int) Subjects.getPrimaryGid(subject);
+                }
+            }
+
+            if (mode == DEFAULT) {
+                mode = parent.statCache().getMode();
+                if (isDir) {
+                    mode &= UMASK_DIR;
+                } else {
+                    mode &= UMASK_FILE;
+                }
+            }
+
             if( isDir ) {
-                inode = _fs.mkdir(parent, newEntryFile.getName(), metadataStat.getUid(), metadataStat.getGid(), metadataStat.getMode() );
+                inode = _fs.mkdir(parent, newEntryFile.getName(), uid, gid, mode);
             }else{
-                inode = _fs.createFile(parent, newEntryFile.getName(), metadataStat.getUid(), metadataStat.getGid(), metadataStat.getMode() );
+                inode = _fs.createFile(parent, newEntryFile.getName(), uid, gid, mode);
             }
         } catch (NotDirChimeraException e) {
             throw new NotDirCacheException("Not a directory: " + path);

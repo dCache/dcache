@@ -67,6 +67,8 @@ public class XrootdRequestHandler extends SimpleChannelHandler
             doOnMkDir(ctx, e, (MkDirRequest) msg);
         } else if (msg instanceof MvRequest) {
             doOnMv(ctx, e, (MvRequest) msg);
+        } else if (msg instanceof DirListRequest) {
+            doOnDirList(ctx, e, (DirListRequest) msg);
         }
     }
 
@@ -176,6 +178,11 @@ public class XrootdRequestHandler extends SimpleChannelHandler
 
     protected void doOnMv(ChannelHandlerContext ctx, MessageEvent e,
                             MvRequest msg) {
+        unsupported(ctx, e, msg);
+    }
+
+    protected void doOnDirList(ChannelHandlerContext ctx, MessageEvent e,
+                               DirListRequest msg) {
         unsupported(ctx, e, msg);
     }
 }
