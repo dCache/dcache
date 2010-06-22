@@ -77,8 +77,9 @@ public class SecurityFilter implements Filter
             LoginReply login = _loginStrategy.login(subject);
             subject = login.getSubject();
 
-            if (isAuthorizedMethod(request.getMethod(), login)) {
+            if (!isAuthorizedMethod(request.getMethod(), login)) {
                 manager.getResponseHandler().respondMethodNotAllowed(new EmptyResource(request), response, request);
+                return;
             }
 
             /* Add the origin of the request to the subject. This
