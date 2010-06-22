@@ -20,6 +20,9 @@ public interface LoginStrategy
      *
      * @throws PermissionDeniedCacheException when the login is denied
      * @throws CacheException when the login failed
+     * @throws IllegalArgumentException when the Subject cannot be processed
+     *         because its credentials or principals are not supported by
+     *         this LoginStrategy
      */
     LoginReply login(Subject subject) throws CacheException;
 

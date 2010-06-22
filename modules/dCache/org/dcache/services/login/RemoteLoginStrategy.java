@@ -42,52 +42,39 @@ public class RemoteLoginStrategy implements LoginStrategy
         }
 
         try {
-            LoginMessage message = logInRemotely(subject);
+            LoginMessage message = _stub.sendAndWait(new LoginMessage(subject));
             return new LoginReply(message.getSubject(),
                                   message.getLoginAttributes());
-        } catch (InterruptedException e) {
-            throw new CacheException("Login failed because the operation was interrupted");
-        }
-    }
-
-
-    private LoginMessage logInRemotely(Subject subject) throws InterruptedException,
-                                                             CacheException
-    {
-        LoginMessage message;
-
-        /*
-         * Note that dCache vehicles can transport errors.  These are
-         * re-thrown as a CacheException (or subclass thereof) with a
-         * corresponding return-code value.  The return-code exists to
-         * support legacy code; subclassing CacheException is more
-         * correct.
-         *
-         * Some exceptions, if thrown by the remote cell, will be translated
-         * to the generic CacheException class.  In particular, if
-         * IllegalArgumentException is thrown then the generic
-         * CacheException will be thrown with return-code
-         * CacheException.INVALID_ARGS.
-         *
-         * LoginStrategy classes are expected to throw either
-         * PermissionDeniedCacheException or (as a legacy option)
-         * IllegalArgumentException; however, remotely throwing
-         * IllegalArgumentException will be mapped to CacheException,
-         * so breaking the LoginStrategy contract.
-         *
-         * Here we map a generic CacheException with return-code
-         * CacheException.INVALID_ARGS to the PermissionDeniedCacheException.
-         */
-        try {
-            message = _stub.sendAndWait(new LoginMessage(subject));
         } catch (CacheException e) {
-            if( e.getRc() == CacheException.INVALID_ARGS) {
-                throw new PermissionDeniedCacheException(e.getMessage());
+            /* Note that dCache vehicles can transport errors.  These
+             * are re-thrown as a CacheException (or subclass thereof)
+             * with a corresponding return-code value.  The
+             * return-code exists to support legacy code; subclassing
+             * CacheException is more correct.
+             *
+             * Some exceptions, if thrown by the remote cell, will be
+             * translated to the generic CacheException class.  In
+             * particular, if IllegalArgumentException is thrown then
+             * the generic CacheException will be thrown with
+             * return-code CacheException.INVALID_ARGS.
+             *
+             * LoginStrategy classes are expected to throw
+             * IllegalArgumentException when presented with a Subject
+             * they structurally do not support; however, remotely
+             * throwing IllegalArgumentException will be mapped to
+             * CacheException, so breaking the LoginStrategy contract.
+             *
+             * Here we map a generic CacheException with return-code
+             * CacheException.INVALID_ARGS to
+             * IllegalArgumentException.
+             */
+            if (e.getRc() == CacheException.INVALID_ARGS) {
+                throw new IllegalArgumentException(e.getMessage(), e);
             } else {
                 throw e;
             }
+        } catch (InterruptedException e) {
+            throw new CacheException("Login failed because the operation was interrupted");
         }
-
-        return message;
     }
 }
