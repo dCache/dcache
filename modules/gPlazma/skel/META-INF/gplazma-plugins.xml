@@ -1,0 +1,7 @@
+
+<plugins>
+    <plugin>
+        <name>KpwdUsernamePassword</name>
+        <class>org/dcache/gplazma/KpwdFileUsernamePasswordAuthenticationPlugin</class>
+    </plugin>
+</plugins>

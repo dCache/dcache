@@ -61,6 +61,8 @@
             <src path="${gplazma.junit.src}" />
             <filename name="**/*.java" />
         </javac>
+        <!--and the plugins xml-->
+        <copy file="${gplazma.src}/../skel/META-INF/gplazma-plugins.xml" todir="${gplazma.build.dir}/META-INF"/>
 
     </target>
 
@@ -72,6 +74,9 @@
         <jar jarfile="${gplazma.jar}">
             <fileset dir="${gplazma.build.dir}">
                     <filename name="**/*.class" />
+            </fileset>
+            <fileset dir="${gplazma.build.dir}">
+                    <filename name="**/*.xml" />
             </fileset>
         </jar>
 
