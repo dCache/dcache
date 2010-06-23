@@ -16,7 +16,7 @@
         <property name="timeout" value="4000"/>
     </bean>
 
-    <bean id="GplazmaCellStub"
+    <bean id="LoginCellStub"
         class="org.dcache.webadmin.model.dataaccess.impl.ServletContextCellStub">
         <constructor-arg type="java.lang.String" value="gPlazma"/>
         <property name="timeout" value="180000"/>
@@ -49,12 +49,8 @@
                         </bean>
                     </constructor-arg>
                 </bean>
-                <bean class="org.dcache.auth.GplazmaLoginStrategy">
-                    <constructor-arg>
-                        <bean class="org.dcache.auth.AuthzQueryHelper">
-                            <constructor-arg ref="GplazmaCellStub"/>
-                        </bean>
-                    </constructor-arg>
+                <bean class="org.dcache.services.login.RemoteLoginStrategy">
+                    <property name="cellStub" ref="LoginCellStub"/>
                 </bean>
             </list>
         </property>
