@@ -42,7 +42,7 @@ public class PluginRepository {
         return metadata;
     }
 
-    public void plugins( PluginMetadataProcessor processor) {
+    public void processPluginsWith( PluginMetadataProcessor processor) {
         for( PluginMetadata plugin : _plugins) {
             processor.process( plugin);
         }
