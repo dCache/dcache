@@ -30,7 +30,6 @@ import org.dcache.auth.LoginReply;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.UserNamePrincipal;
-import org.dcache.auth.AuthzQueryHelper;
 import org.dcache.cells.CellStub;
 
 import diskCacheV111.util.PnfsHandler;
