@@ -1,6 +1,5 @@
 package org.dcache.webadmin.model.dataaccess.impl;
 
-import java.util.Iterator;
 import java.util.Set;
 import org.dcache.webadmin.model.businessobjects.NamedCell;
 import org.dcache.webadmin.model.businessobjects.Pool;
@@ -68,13 +67,17 @@ public class XMLProcessorTest {
         assertNotSame("zero elements returned", 0, namedCells.size());
 //      look, if the specific element is in it
         boolean isFound = false;
-        for (NamedCell currentNamedCell : XMLDataGathererHelper.getExpectedNamedCells()) {
-            if (currentNamedCell.getCellName().equals(XMLDataGathererHelper.TESTCELL_NAME)) {
-                isFound = true;
-                break;
+        for (NamedCell expectedNamedCell : XMLDataGathererHelper.getExpectedNamedCells()) {
+            for (NamedCell currentCell : namedCells) {
+                if (expectedNamedCell.getCellName().equals(currentCell.getCellName())) {
+                    assertEquals(currentCell.getDomainName(),
+                            expectedNamedCell.getDomainName());
+                    isFound = true;
+                    break;
+                }
             }
         }
-        assertTrue("named cells equality", isFound);
+        assertTrue("none of the named cells found in result", isFound);
     }
 
     @Test
