@@ -1,12 +1,13 @@
 package org.dcache.webadmin.view.pages.poolqueues;
 
-import java.util.ArrayList;
 import java.util.List;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.panel.Fragment;
 import org.apache.wicket.model.PropertyModel;
+import org.dcache.webadmin.controller.PoolQueuesService;
+import org.dcache.webadmin.controller.exceptions.PoolQueuesServiceException;
 import org.dcache.webadmin.view.beans.PoolQueueBean;
 import org.dcache.webadmin.view.beans.PoolRequestQueue;
 import org.dcache.webadmin.view.pages.AuthenticatedWebPage;
@@ -43,15 +44,19 @@ public class PoolQueues extends BasePage implements AuthenticatedWebPage {
         add(new PoolFragment("total", _total));
     }
 
+    private PoolQueuesService getPoolQueuesService() {
+        return getWebadminApplication().getPoolQueuesService();
+    }
+
     private void getPoolQueuesAction() {
-        _log.debug("getPoolQueuesAction called");
-//        TODO implementation and invocation of real service
-        _poolQueues = new ArrayList<PoolQueueBean>();
-        PoolQueueBean blub = new PoolQueueBean();
-        blub.setName("pool");
-        blub.setDomainName("blubdomain");
-        blub.setMovers(new PoolRequestQueue(5, 6, 7));
-        _poolQueues.add(blub);
+        try {
+            _log.debug("getPoolQueuesAction called");
+            _poolQueues = getPoolQueuesService().getPoolQueues();
+        } catch (PoolQueuesServiceException ex) {
+            this.error(getStringResource("error.getPoolsQueuesFailed") + ex.getMessage());
+            _log.debug("getPoolQueuesAction failed {}", ex.getMessage());
+            _poolQueues = null;
+        }
         calculateTotal();
     }
 

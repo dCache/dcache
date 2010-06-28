@@ -3,7 +3,6 @@ package org.dcache.webadmin.controller.impl;
 import diskCacheV111.pools.PoolV2Mode;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.List;
@@ -13,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.dcache.webadmin.controller.PoolBeanService;
 import org.dcache.webadmin.controller.exceptions.PoolBeanServiceException;
 import org.dcache.webadmin.controller.util.BeanDataMapper;
+import org.dcache.webadmin.controller.util.NamedCellUtil;
 import org.dcache.webadmin.model.businessobjects.NamedCell;
 import org.dcache.webadmin.model.businessobjects.Pool;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
@@ -27,7 +27,7 @@ import org.dcache.webadmin.view.beans.PoolBean;
  */
 public class PoolBeanServiceImpl implements PoolBeanService {
 
-    private static final Logger _log = LoggerFactory.getLogger(PoolBeanServiceImpl.class.getName());
+    private static final Logger _log = LoggerFactory.getLogger(PoolBeanServiceImpl.class);
     private DAOFactory _daoFactory;
 
     public PoolBeanServiceImpl(DAOFactory DAOFactory) {
@@ -40,7 +40,8 @@ public class PoolBeanServiceImpl implements PoolBeanService {
             Set<Pool> pools = getPoolsDAO().getPools();
             _log.debug("returned pools: " + pools.size());
             List<PoolBean> poolBeans = new ArrayList<PoolBean>(pools.size());
-            Map<String, NamedCell> namedCells = createCellMap(getPoolsDAO().getNamedCells());
+            Map<String, NamedCell> namedCells = NamedCellUtil.createCellMap(
+                    getPoolsDAO().getNamedCells());
             for (Pool currentPool : pools) {
                 PoolBean newPoolBean = createPoolBean(currentPool, namedCells);
                 poolBeans.add(newPoolBean);
@@ -66,14 +67,6 @@ public class PoolBeanServiceImpl implements PoolBeanService {
 //        if there is no match for the pool in the namedCells(perhaps
 //        not yet available etc.) fill in only the pool
         return BeanDataMapper.poolModelToView(pool);
-    }
-
-    private Map<String, NamedCell> createCellMap(Set<NamedCell> namedCells) {
-        Map<String, NamedCell> cells = new HashMap();
-        for (NamedCell currentNamedCell : namedCells) {
-            cells.put(currentNamedCell.getCellName(), currentNamedCell);
-        }
-        return cells;
     }
 
     private PoolsDAO getPoolsDAO() {

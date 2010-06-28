@@ -11,6 +11,7 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
+import org.dcache.webadmin.model.businessobjects.MoverQueue;
 import org.dcache.webadmin.model.businessobjects.NamedCell;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
@@ -48,6 +49,16 @@ public class XMLProcessor {
     private static final String POOLMEMBER_TOTAL_SPACE = "/space/metric[@name='total']";
     private static final String POOLMEMBER_PRECIOUS_SPACE = "/space/metric[@name='precious']";
     private static final String POOLMEMBER_USED_SPACE = "/space/metric[@name='used']";
+    private static final String POOLMEMBER_STORE_QUEUE = "/queues/queue[@type='store']";
+    private static final String POOLMEMBER_MOVER_QUEUE = "/queues/queue[@type='mover']";
+    private static final String POOLMEMBER_RESTORE_QUEUE = "/queues/queue[@type='restore']";
+    private static final String POOLMEMBER_P2PCLIENT_QUEUE = "/queues/queue[@type='p2p-clientqueue']";
+    private static final String POOLMEMBER_REGULAR_QUEUE = "/queues/named-queues/queue[@name='regular']";
+    private static final String POOLMEMBER_P2P_QUEUE = "/queues/named-queues/queue[@name='p2p']";
+    private static final String POOLMEMBER_P2PSERVER_QUEUE = "/queues/queue[@type='p2p-queue']";
+    private static final String QUEUE_ACTIVE_FRAGMENT = "/metric[@name='active']/text()";
+    private static final String QUEUE_MAX_FRAGMENT = "/metric[@name='max-active']/text()";
+    private static final String QUEUE_QUEUED_FRAGMENT = "/metric[@name='queued']/text()";
 //  attributes
     private static final String ATTRIBUTE_NAME = "name";
     private XPathFactory _factory = XPathFactory.newInstance();
@@ -163,6 +174,20 @@ public class XMLProcessor {
                 POOLMEMBER_PRECIOUS_SPACE, poolName), document));
         pool.setUsedSpace(getLongFromXpath(buildPoolXpathExpression(
                 POOLMEMBER_USED_SPACE, poolName), document));
+        pool.setStores(getMoverQueue(buildPoolXpathExpression(
+                POOLMEMBER_STORE_QUEUE, poolName), document));
+        pool.setMovers(getMoverQueue(buildPoolXpathExpression(
+                POOLMEMBER_MOVER_QUEUE, poolName), document));
+        pool.setRestores(getMoverQueue(buildPoolXpathExpression(
+                POOLMEMBER_RESTORE_QUEUE, poolName), document));
+        pool.setP2pclient(getMoverQueue(buildPoolXpathExpression(
+                POOLMEMBER_P2PCLIENT_QUEUE, poolName), document));
+        pool.setRegular(getMoverQueue(buildPoolXpathExpression(
+                POOLMEMBER_REGULAR_QUEUE, poolName), document));
+        pool.setP2p(getMoverQueue(buildPoolXpathExpression(
+                POOLMEMBER_P2P_QUEUE, poolName), document));
+        pool.setP2pserver(getMoverQueue(buildPoolXpathExpression(
+                POOLMEMBER_P2PSERVER_QUEUE, poolName), document));
         return pool;
     }
 
@@ -170,8 +195,8 @@ public class XMLProcessor {
         return SPECIALPOOL_FRAGMENT + poolName + CLOSING_FRAGMENT + metric;
     }
 
-    private long getLongFromXpath(String xpathExpression, Document document) {
-        long result = 0L;
+    private Long getLongFromXpath(String xpathExpression, Document document) {
+        Long result = 0L;
         try {
             String xpathResult = (String) _xpath.evaluate(xpathExpression, document,
                     XPathConstants.STRING);
@@ -207,5 +232,16 @@ public class XMLProcessor {
             _log.debug("couldn't retrieve nodelist for: {}", xpathExpression);
         }
         return result;
+    }
+
+    private MoverQueue getMoverQueue(String queue, Document document) {
+        MoverQueue moverQueue = new MoverQueue();
+        String maxMetric = queue + QUEUE_MAX_FRAGMENT;
+        moverQueue.setMax(getLongFromXpath(maxMetric, document).intValue());
+        String queuedMetric = queue + QUEUE_QUEUED_FRAGMENT;
+        moverQueue.setQueued(getLongFromXpath(queuedMetric, document).intValue());
+        String activeMetric = queue + QUEUE_ACTIVE_FRAGMENT;
+        moverQueue.setActive(getLongFromXpath(activeMetric, document).intValue());
+        return moverQueue;
     }
 }

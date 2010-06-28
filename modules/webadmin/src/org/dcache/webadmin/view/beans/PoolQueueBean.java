@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author jans
  */
-public class PoolQueueBean implements Serializable {
+public class PoolQueueBean implements Comparable, Serializable {
 
     private String _name = "";
     private String _domainName = "";
@@ -107,5 +107,16 @@ public class PoolQueueBean implements Serializable {
         _p2pclient.addQueue(queueToAdd.getP2pclient());
         _p2p.addQueue(queueToAdd.getP2p());
         _movers.addQueue(queueToAdd.getMovers());
+    }
+
+    public int compareTo(Object other) {
+
+        if (other == null) {
+            throw new NullPointerException();
+        }
+//      throws ClassCastException if wrong object is delivered, according to
+//      specification
+        PoolQueueBean otherBean = (PoolQueueBean) other;
+        return this.getName().compareTo(otherBean.getName());
     }
 }

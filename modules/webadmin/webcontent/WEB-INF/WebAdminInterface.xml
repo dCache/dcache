@@ -71,9 +71,16 @@
         </constructor-arg>
     </bean>
 
+    <bean id="PoolQueuesService" class="org.dcache.webadmin.controller.impl.StandardPoolQueuesService">
+        <constructor-arg>
+            <ref bean="DAOFactory"/>
+        </constructor-arg>
+    </bean>
+
     <bean id="WebAdminInterface" class="org.dcache.webadmin.view.WebAdminInterface">
         <property name="poolBeanService" ref="PoolBeanService"/>
         <property name="logInService" ref="LogInService"/>
+        <property name="poolQueuesService" ref="PoolQueuesService"/>
         <property name="httpPort">
             <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
                 <property name="targetBeanName" value="InfoCellStub"/>

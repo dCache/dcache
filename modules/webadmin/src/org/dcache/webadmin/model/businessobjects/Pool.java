@@ -10,68 +10,131 @@ import java.io.Serializable;
  */
 public class Pool implements Serializable {
 
-    private String name = "";
-    private boolean enabled = false;
-    private long totalSpace = 0;
-    private long freeSpace = 0;
-    private long preciousSpace = 0;
-    private long usedSpace = 0;
+    private String _name = "";
+    private boolean _enabled = false;
+    private long _totalSpace = 0;
+    private long _freeSpace = 0;
+    private long _preciousSpace = 0;
+    private long _usedSpace = 0;
+    private MoverQueue _movers = new MoverQueue(0, 0, 0);
+    private MoverQueue _restores = new MoverQueue(0, 0, 0);
+    private MoverQueue _stores = new MoverQueue(0, 0, 0);
+    private MoverQueue _p2pserver = new MoverQueue(0, 0, 0);
+    private MoverQueue _p2pclient = new MoverQueue(0, 0, 0);
+    private MoverQueue _p2p = new MoverQueue(0, 0, 0);
+    private MoverQueue _regular = new MoverQueue(0, 0, 0);
 
     public Pool() {
     }
 
     public boolean isEnabled() {
-        return enabled;
+        return _enabled;
     }
 
     public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
+        _enabled = enabled;
     }
 
     public long getFreeSpace() {
-        return freeSpace;
+        return _freeSpace;
     }
 
     public void setFreeSpace(long freeSpace) {
-        this.freeSpace = freeSpace;
+        _freeSpace = freeSpace;
     }
 
     public long getUsedSpace() {
-        return usedSpace;
+        return _usedSpace;
     }
 
     public void setUsedSpace(long usedSpace) {
-        this.usedSpace = usedSpace;
+        _usedSpace = usedSpace;
     }
 
     public long getPreciousSpace() {
-        return preciousSpace;
+        return _preciousSpace;
     }
 
     public void setPreciousSpace(long preciousSpace) {
-        this.preciousSpace = preciousSpace;
+        _preciousSpace = preciousSpace;
     }
 
     public long getTotalSpace() {
-        return totalSpace;
+        return _totalSpace;
     }
 
     public void setTotalSpace(long totalSpace) {
-        this.totalSpace = totalSpace;
+        _totalSpace = totalSpace;
     }
 
     public String getName() {
-        return name;
+        return _name;
     }
 
     public void setName(String name) {
-        this.name = name;
+        _name = name;
+    }
+
+    public MoverQueue getMovers() {
+        return _movers;
+    }
+
+    public void setMovers(MoverQueue movers) {
+        _movers = movers;
+    }
+
+    public MoverQueue getP2p() {
+        return _p2p;
+    }
+
+    public void setP2p(MoverQueue p2p) {
+        _p2p = p2p;
+    }
+
+    public MoverQueue getP2pclient() {
+        return _p2pclient;
+    }
+
+    public void setP2pclient(MoverQueue p2pclient) {
+        _p2pclient = p2pclient;
+    }
+
+    public MoverQueue getP2pserver() {
+        return _p2pserver;
+    }
+
+    public void setP2pserver(MoverQueue p2pserver) {
+        _p2pserver = p2pserver;
+    }
+
+    public MoverQueue getRegular() {
+        return _regular;
+    }
+
+    public void setRegular(MoverQueue regular) {
+        _regular = regular;
+    }
+
+    public MoverQueue getRestores() {
+        return _restores;
+    }
+
+    public void setRestores(MoverQueue restores) {
+        _restores = restores;
+    }
+
+    public MoverQueue getStores() {
+        return _stores;
+    }
+
+    public void setStores(MoverQueue stores) {
+        _stores = stores;
     }
 
     @Override
     public int hashCode() {
-        return (int) (name.hashCode() ^ totalSpace ^
-                freeSpace ^ preciousSpace ^ usedSpace);
+        return (int) (_name.hashCode() ^ _totalSpace ^
+                _freeSpace ^ _preciousSpace ^ _usedSpace);
     }
 
     @Override
@@ -86,23 +149,46 @@ public class Pool implements Serializable {
 
         Pool otherPool = (Pool) testObject;
 
-        if (!(otherPool.name.equals(name))) {
+        if (!(otherPool._name.equals(_name))) {
             return false;
         }
 
-        if (!(otherPool.freeSpace == freeSpace)) {
+        if (!(otherPool._freeSpace == _freeSpace)) {
             return false;
         }
-        if (!(otherPool.preciousSpace == preciousSpace)) {
+        if (!(otherPool._preciousSpace == _preciousSpace)) {
             return false;
         }
-        if (!(otherPool.totalSpace == totalSpace)) {
+        if (!(otherPool._totalSpace == _totalSpace)) {
             return false;
         }
-        if (!(otherPool.usedSpace == usedSpace)) {
+        if (!(otherPool._usedSpace == _usedSpace)) {
             return false;
         }
-
+        if (!(otherPool._movers.equals(_movers))) {
+            return false;
+        }
+        if (!(otherPool._movers.equals(_movers))) {
+            return false;
+        }
+        if (!(otherPool._p2p.equals(_p2p))) {
+            return false;
+        }
+        if (!(otherPool._p2pclient.equals(_p2pclient))) {
+            return false;
+        }
+        if (!(otherPool._p2pserver.equals(_p2pserver))) {
+            return false;
+        }
+        if (!(otherPool._regular.equals(_regular))) {
+            return false;
+        }
+        if (!(otherPool._restores.equals(_restores))) {
+            return false;
+        }
+        if (!(otherPool._stores.equals(_stores))) {
+            return false;
+        }
         return true;
     }
 }

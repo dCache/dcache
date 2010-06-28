@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.List;
+import org.dcache.webadmin.model.businessobjects.MoverQueue;
 import org.dcache.webadmin.model.businessobjects.NamedCell;
 import org.dcache.webadmin.model.businessobjects.Pool;
 import org.dcache.webadmin.view.beans.PoolBean;
@@ -22,6 +23,11 @@ public class XMLDataGathererHelper {
     public static final long POOL1_PRECIOUS_SPACE = 16110;
     public static final long POOL1_TOTAL_SPACE = 2147483648L;
     public static final long POOL1_USED_SPACE = 16110;
+    public static final MoverQueue POOL1_MOVERS = new MoverQueue(0, 100, 0);
+    public static final MoverQueue POOL1_RESTORES = new MoverQueue(0, 100, 0);
+    public static final MoverQueue POOL1_STORES = new MoverQueue(0, 100, 0);
+    public static final MoverQueue POOL1_P2PSERVER = new MoverQueue(0, 100, 0);
+    public static final MoverQueue POOL1_P2PCLIENT = new MoverQueue(10, 10, 10);
     public static final String POOL2_NAME = "mySecondPool";
     public static final String POOL2_DOMAIN = "mySecondPoolDomain";
     public static final boolean IS_POOL2_ENABLED = false;
@@ -43,26 +49,26 @@ public class XMLDataGathererHelper {
             "      <metric name=\"read-only\" type=\"boolean\">false</metric>" +
             "      <metric name=\"last-heartbeat\" type=\"integer\">4396</metric>" +
             "      <queues>        <queue type=\"store\">" +
-            "          <metric name=\"max-active\" type=\"integer\">0</metric>" +
-            "          <metric name=\"queued\" type=\"integer\">0</metric>" +
-            "          <metric name=\"active\" type=\"integer\">0</metric>" +
+            "          <metric name=\"max-active\" type=\"integer\">" + POOL1_STORES.getMax() + "</metric>" +
+            "          <metric name=\"queued\" type=\"integer\">" + POOL1_STORES.getQueued() + "</metric>" +
+            "          <metric name=\"active\" type=\"integer\">" + POOL1_STORES.getActive() + "</metric>" +
             "        </queue>" +
             "        <queue type=\"mover\">" +
-            "          <metric name=\"max-active\" type=\"integer\">100</metric>" +
-            "          <metric name=\"queued\" type=\"integer\">0</metric>" +
-            "          <metric name=\"active\" type=\"integer\">0</metric>" +
+            "          <metric name=\"max-active\" type=\"integer\">" + POOL1_MOVERS.getMax() + "</metric>" +
+            "          <metric name=\"queued\" type=\"integer\">" + POOL1_MOVERS.getQueued() + "</metric>" +
+            "          <metric name=\"active\" type=\"integer\">" + POOL1_MOVERS.getActive() + "</metric>" +
             "        </queue>        <queue type=\"restore\">" +
-            "          <metric name=\"max-active\" type=\"integer\">0</metric>" +
-            "          <metric name=\"queued\" type=\"integer\">0</metric>" +
-            "          <metric name=\"active\" type=\"integer\">0</metric>" +
+            "          <metric name=\"max-active\" type=\"integer\">" + POOL1_RESTORES.getMax() + "</metric>" +
+            "          <metric name=\"queued\" type=\"integer\">" + POOL1_RESTORES.getQueued() + "</metric>" +
+            "          <metric name=\"active\" type=\"integer\">" + POOL1_RESTORES.getActive() + "</metric>" +
             "        </queue>        <queue type=\"p2p-clientqueue\">" +
-            "          <metric name=\"max-active\" type=\"integer\">10</metric>" +
-            "          <metric name=\"queued\" type=\"integer\">0</metric>" +
-            "          <metric name=\"active\" type=\"integer\">0</metric>" +
+            "          <metric name=\"max-active\" type=\"integer\">" + POOL1_P2PCLIENT.getMax() + "</metric>" +
+            "          <metric name=\"queued\" type=\"integer\">" + POOL1_P2PCLIENT.getQueued() + "</metric>" +
+            "          <metric name=\"active\" type=\"integer\">" + POOL1_P2PCLIENT.getActive() + "</metric>" +
             "        </queue>        <queue type=\"p2p-queue\">" +
-            "          <metric name=\"max-active\" type=\"integer\">10</metric>" +
-            "          <metric name=\"queued\" type=\"integer\">0</metric>    " +
-            "      <metric name=\"active\" type=\"integer\">0</metric>" +
+            "          <metric name=\"max-active\" type=\"integer\">" + POOL1_P2PSERVER.getMax() + "</metric>" +
+            "          <metric name=\"queued\" type=\"integer\">" + POOL1_P2PSERVER.getQueued() + "</metric> " +
+            "      <metric name=\"active\" type=\"integer\">" + POOL1_P2PSERVER.getActive() + "</metric>" +
             "        </queue>      </queues>      <space>" +
             "        <metric name=\"total\" type=\"integer\">" + POOL1_TOTAL_SPACE + "</metric>" +
             "        <metric name=\"free\" type=\"integer\">" + POOL1_FREE_SPACE + "</metric>" +
@@ -212,6 +218,11 @@ public class XMLDataGathererHelper {
         pool1.setPreciousSpace(POOL1_PRECIOUS_SPACE);
         pool1.setTotalSpace(POOL1_TOTAL_SPACE);
         pool1.setUsedSpace(POOL1_USED_SPACE);
+        pool1.setMovers(POOL1_MOVERS);
+        pool1.setP2pclient(POOL1_P2PCLIENT);
+        pool1.setP2pserver(POOL1_P2PSERVER);
+        pool1.setRestores(POOL1_RESTORES);
+        pool1.setStores(POOL1_STORES);
         return pool1;
     }
 
