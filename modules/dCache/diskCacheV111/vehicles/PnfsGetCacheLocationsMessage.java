@@ -57,7 +57,9 @@ public class PnfsGetCacheLocationsMessage extends PnfsMessage {
                 (PnfsGetCacheLocationsMessage) message;
             return
                 (pnfsId == null || pnfsId.equals(msg.getPnfsId())) &&
-                (path == null || path.equals(msg.getPnfsPath()));
+                (path == null || path.equals(msg.getPnfsPath())) &&
+                (getSubject().equals(msg.getSubject())) &&
+                (getId() == msg.getId());
         }
 
         return false;

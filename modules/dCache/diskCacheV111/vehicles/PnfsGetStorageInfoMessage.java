@@ -45,7 +45,9 @@ public class PnfsGetStorageInfoMessage extends PnfsGetFileMetaDataMessage {
                 other.resolve() == resolve() &&
                 (pnfsId == null || pnfsId.equals(other.getPnfsId())) &&
                 (path == null || path.equals(other.getPnfsPath())) &&
-                (!isChecksumsRequested() || other.isChecksumsRequested());
+                (!isChecksumsRequested() || other.isChecksumsRequested()) &&
+                (getSubject().equals(other.getSubject())) &&
+                (getId() == other.getId());
         }
 
         return false;
