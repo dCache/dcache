@@ -30,13 +30,13 @@ public class Utf8DataClassLoader extends ClassLoader {
     private static final String URL_SCHEMA = "test";
     private static final String URL_HOSTNAME = "ignored-host.invalid";
     private static final int URL_DEFAULT_PORT = -1;
-    private static final URL NO_MATCHING_RESOURCE_URL = null;
 
     private final URLStreamHandler _handler = new TestURLStreamHandler();
     private final List<String> _resourceData = new ArrayList<String>();
     private final String _path;
 
     public Utf8DataClassLoader( String path) {
+        super(Utf8DataClassLoader.class.getClassLoader());
         _path = path;
     }
 
@@ -52,9 +52,9 @@ public class Utf8DataClassLoader extends ClassLoader {
     protected URL findResource( String name) {
         if( name.equals( _path) && !_resourceData.isEmpty()) {
             return newUrlForIndex( 0);
+        } else {
+            return null;
         }
-
-        return NO_MATCHING_RESOURCE_URL;
     }
 
     private URL newUrlForIndex( int index) {

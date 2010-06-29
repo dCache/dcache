@@ -1,18 +1,27 @@
 package org.dcache.gplazma.configuration;
 
+import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
+import org.dcache.gplazma.plugins.GPlazmaMappingPlugin;
+import org.dcache.gplazma.plugins.GPlazmaAccountPlugin;
+import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
+import org.dcache.gplazma.plugins.GPlazmaPlugin;
+
 /**
  *
  * @author timur
  */
 public enum  ConfigurationItemType {
-    AUTHENTICATION("auth"),
-    MAPPING("map"),
-    ACCOUNT("account"),
-    SESSION("session");
+    AUTHENTICATION("auth",GPlazmaAuthenticationPlugin.class),
+    MAPPING("map",GPlazmaMappingPlugin.class),
+    ACCOUNT("account",GPlazmaAccountPlugin.class),
+    SESSION("session",GPlazmaSessionPlugin.class);
 
     private final String name;
-    private ConfigurationItemType(String name) {
+    private final Class <? extends GPlazmaPlugin> type;
+
+    private ConfigurationItemType(String name, Class <? extends GPlazmaPlugin> type) {
         this.name = name;
+        this.type = type;
     }
     /** this package visible method is used to restore the State from
      * the database
@@ -34,5 +43,12 @@ public enum  ConfigurationItemType {
     @Override
     public String toString() {
         return name;
+    }
+
+    /**
+     * @return the type
+     */
+    public Class<? extends GPlazmaPlugin> getType() {
+        return type;
     }
 }

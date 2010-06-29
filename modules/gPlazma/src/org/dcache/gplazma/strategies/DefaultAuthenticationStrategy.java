@@ -15,11 +15,12 @@ import org.slf4j.LoggerFactory;
  */
 public class DefaultAuthenticationStrategy implements AuthenticationStrategy {
 
-    private static final Logger logger =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(DefaultAuthenticationStrategy.class);
 
     private PAMStyleStrategy<GPlazmaAuthenticationPlugin> pamStyleAuthentiationStrategy;
 
+    @Override
     public void setPlugins(List<GPlazmaPluginElement<GPlazmaAuthenticationPlugin>> plugins) {
         pamStyleAuthentiationStrategy = new PAMStyleStrategy(plugins);
     }
@@ -43,13 +44,16 @@ public class DefaultAuthenticationStrategy implements AuthenticationStrategy {
      * @see PAMStyleStrategy
      * @see PluginCaller
      */
+    @Override
     public synchronized void authenticate(
             final SessionID sessionID,
             final Set<Object> publicCredential,
             final Set<Object> privateCredential,
             final Set<Principal> identifiedPrincipals) throws AuthenticationException {
        pamStyleAuthentiationStrategy.callPlugins( new PluginCaller<GPlazmaAuthenticationPlugin>() {
-            public boolean call(GPlazmaAuthenticationPlugin plugin) throws AuthenticationException {
+           @Override
+           public boolean call(GPlazmaAuthenticationPlugin plugin) throws AuthenticationException {
+                LOGGER.debug("calling authenticate of plugin {}",plugin);
                 plugin.authenticate(
                         sessionID,
                         publicCredential,
@@ -60,6 +64,7 @@ public class DefaultAuthenticationStrategy implements AuthenticationStrategy {
         });
 
         if(identifiedPrincipals.isEmpty()) {
+            LOGGER.debug("identified principals set is empty after all plugins ran");
             throw new AuthenticationException("all authentication plugins ran, " +
                     "no principals were identified");
         }
